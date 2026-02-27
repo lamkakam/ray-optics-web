@@ -1,0 +1,11 @@
+import nextConfig from "eslint-config-next";
+
+/** @type {import("eslint").Linter.Config[]} */
+const config = [
+  ...nextConfig,
+  {
+    ignores: ["node_modules/", ".next/", "coverage/"],
+  },
+];
+
+export default config;
