@@ -123,9 +123,25 @@ opm.update_model()`);
 }
 
 
+/** Use AFTER setting the optical surfaces */
+export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>): Promise<Record<string, number>> {
+  const json = (await runPython(`
+fod = pm.opt_model['analysis_results']['parax_data'].fod
+
+json.dumps({k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))})
+`)) as string;
+  return JSON.parse(json);
+}
+
+
+// Expose for Components
 export async function setOpticalSurfaces(opticalModel: OpticalModel): Promise<void> {
   await _setOpticalSurfaces(opticalModel, requirePyodide());
   return;
+}
+
+export async function getFirstOrderData(): Promise<Record<string, number>> {
+  return await _getFirstOrderData(requirePyodide());
 }
 
 expose({

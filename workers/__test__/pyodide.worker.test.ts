@@ -1,6 +1,9 @@
 import { describe, it, expect } from "@jest/globals";
 import { type OpticalModel } from "../../lib/opticalModel";
-import { _setOpticalSurfaces } from "../pyodide.worker";
+import {
+  _setOpticalSurfaces,
+  _getFirstOrderData,
+} from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
   specs: {
@@ -77,5 +80,19 @@ describe("_setOpticalSurfaces", () => {
     let pythonScript = "";
     await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("opm = OpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']");
+  });
+});
+
+
+describe("_getFirstOrderData", () => {
+  it("should get the first order data from the correct attribute of the optical model", async () => {
+    let pythonScript = "";
+    const result = await _getFirstOrderData(async (code) => {
+      pythonScript = code;
+      const mockJSON = JSON.stringify({ efl: 200, bfl: 100 });
+      return mockJSON;
+    });
+    expect(pythonScript).toContain("pm.opt_model['analysis_results']['parax_data'].fod");
+    expect(result).toMatchObject({ efl: 200, bfl: 100 });
   });
 });
