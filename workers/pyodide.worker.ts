@@ -68,11 +68,6 @@ await micropip.install([
 
 // ─── End of DANGEROUS ZONE ────────────────────────────────────────────────────────────────────
 
-export async function runPython(code: string): Promise<unknown> {
-  if (!pyodide) throw new Error("Pyodide not initialized. Call init() first.");
-  return pyodide.runPythonAsync(code);
-}
-
 function requirePyodide(): (code: string) => Promise<unknown> {
   if (!pyodide) throw new Error("Pyodide not initialized. Call init() first.");
   return pyodide.runPythonAsync.bind(pyodide);
@@ -146,6 +141,5 @@ export async function getFirstOrderData(): Promise<Record<string, number>> {
 
 expose({
   init,
-  runPython,
   setOpticalSurfaces,
 });
