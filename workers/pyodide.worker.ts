@@ -1,8 +1,12 @@
 import { expose } from "comlink";
-import { loadPyodide } from "pyodide";
 import { type OpticalModel } from "../lib/opticalModel";
 
-let pyodide: Awaited<ReturnType<typeof loadPyodide>> | null = null;
+declare function importScripts(...urls: string[]): void;
+declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
+
+const CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full";
+
+let pyodide: any = null;
 
 // WARNING: DON'T TOUCH THE FORMATTING OF THE STRING LITERALS BELOW
 
@@ -11,16 +15,9 @@ let pyodide: Awaited<ReturnType<typeof loadPyodide>> | null = null;
 export async function init(): Promise<void> {
   if (pyodide) return;
   try {
-    // the version of pyodide must match exactly the one installed
-    pyodide = await loadPyodide({
-      indexURL: "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/",
-    });
+    importScripts(`${CDN}/pyodide.js`);
+    pyodide = await loadPyodide({ indexURL: `${CDN}/` });
 
-    // For the deps of rayoptics and opticalglass (required by rayoptics), see
-    // Check https://github.com/mjhoptics/ray-optics/blob/v0.9.4/docs/source/requirements.txt
-    // Check https://github.com/mjhoptics/opticalglass/blob/v1.1.0/docs/requirements.txt
-
-    // Load Pyodide pre-installed packages. You can't upgrade them anyway
     await pyodide.loadPackage([
       "micropip",
       "numpy",
@@ -31,43 +28,38 @@ export async function init(): Promise<void> {
     ]);
 
     await pyodide.runPythonAsync(`
-    import sys, types
-    for m in ['PySide6','PySide6.QtWidgets','PySide6.QtCore',
-              'PySide6.QtGui','psutil','zmq','pyzmq',
-              'tornado','tornado.ioloop']:
-      sys.modules[m] = types.ModuleType(m)
-    `);
-
-    // Install rayoptics without its dependencies because it requires desktop-only 
-    // packages like PySide6, psutil, pyzmq, etc., which don't work in WebAssembly
-    await pyodide.runPythonAsync(`
-    import micropip
-    await micropip.install("rayoptics==0.9.4", deps=False)
-    await micropip.install("opticalglass==1.1.0", deps=False)
-    `);
+import sys, types
+for m in ['PySide6','PySide6.QtWidgets','PySide6.QtCore',
+          'PySide6.QtGui','psutil','zmq','pyzmq',
+          'tornado','tornado.ioloop']:
+    sys.modules[m] = types.ModuleType(m)
+`);
 
     await pyodide.runPythonAsync(`
-    import micropip
-    await micropip.install([
-      'attrs',
-      'anytree',
-      'transforms3d',
-      'traitlets',
-      'json5',
-      'packaging',
-      'json-tricks',
-      'deprecation',
-      'pyyaml',
-      'requests',
-      'openpyxl',
-      'parsimonious',
-    ])
-    `);
+import micropip
+await micropip.install("rayoptics==0.9.4", deps=False)
+await micropip.install("opticalglass==1.1.0", deps=False)
+`);
 
     await pyodide.runPythonAsync(`
-    from rayoptics.environment import *
-    import json
-    `);
+import micropip
+await micropip.install([
+  'attrs',
+  'anytree',
+  'transforms3d',
+  'traitlets',
+  'json5',
+  'packaging',
+  'json-tricks',
+  'deprecation',
+  'pyyaml',
+  'requests',
+  'openpyxl',
+  'parsimonious',
+])
+`);
+
+    await pyodide.runPythonAsync("import json\nfrom rayoptics.environment import *");
   } catch (err) {
     pyodide = null;
     throw err;
@@ -77,9 +69,7 @@ export async function init(): Promise<void> {
 // ─── End of DANGEROUS ZONE ────────────────────────────────────────────────────────────────────
 
 export async function runPython(code: string): Promise<unknown> {
-  if (!pyodide) {
-    throw new Error("Pyodide not initialized. Call init() first.");
-  }
+  if (!pyodide) throw new Error("Pyodide not initialized. Call init() first.");
   return pyodide.runPythonAsync(code);
 }
 
@@ -88,7 +78,6 @@ function requirePyodide(): (code: string) => Promise<unknown> {
   return pyodide.runPythonAsync.bind(pyodide);
 }
 
-// TODO: Add more functions here
 
 // export for testing
 export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython: (code: string) => Promise<unknown>): Promise<void> {
@@ -135,11 +124,12 @@ opm.update_model()`);
 
 
 export async function setOpticalSurfaces(opticalModel: OpticalModel): Promise<void> {
-  await _setOpticalSurfaces(opticalModel, runPython);
+  await _setOpticalSurfaces(opticalModel, requirePyodide());
   return;
 }
 
 expose({
   init,
+  runPython,
   setOpticalSurfaces,
 });
