@@ -142,4 +142,5 @@ export async function getFirstOrderData(): Promise<Record<string, number>> {
 expose({
   init,
   setOpticalSurfaces,
+  getFirstOrderData,
 });
