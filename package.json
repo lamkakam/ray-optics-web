@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "start": "next start",
+    "serve": "npx serve out",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "test": "jest",
