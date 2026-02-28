@@ -3,6 +3,10 @@ import { type OpticalModel } from "../../lib/opticalModel";
 import {
   _setOpticalSurfaces,
   _getFirstOrderData,
+  _plotLensLayout,
+  _plotRayFan,
+  _plotOpdFan,
+  _plotSpotDiagram,
 } from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
@@ -94,5 +98,120 @@ describe("_getFirstOrderData", () => {
     });
     expect(pythonScript).toContain("pm.opt_model['analysis_results']['parax_data'].fod");
     expect(result).toMatchObject({ efl: 200, bfl: 100 });
+  });
+});
+
+
+describe("_plotLensLayout", () => {
+  it("should use InteractiveLayout with opm and return base64 string", async () => {
+    let pythonScript = "";
+    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+    const result = await _plotLensLayout(async (code) => {
+      pythonScript = code;
+      return mockBase64;
+    });
+    expect(pythonScript).toContain("InteractiveLayout");
+    expect(pythonScript).toContain("opt_model=opm");
+    expect(pythonScript).toContain("do_draw_rays=True");
+    expect(pythonScript).toContain("_fig_to_base64(fig)");
+    expect(result).toBe(mockBase64);
+  });
+});
+
+
+describe("_plotRayFan", () => {
+  it("should use trace_fan with the correct field index", async () => {
+    let pythonScript = "";
+    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+    const result = await _plotRayFan(async (code) => {
+      pythonScript = code;
+      return mockBase64;
+    }, 1);
+    expect(pythonScript).toContain("sm.trace_fan");
+    expect(pythonScript).toContain("fi = 1");
+    expect(pythonScript).toContain("_fig_to_base64(fig)");
+    expect(result).toBe(mockBase64);
+  });
+
+  it("should use the transverse ray aberration evaluation function", async () => {
+    let pythonScript = "";
+    await _plotRayFan(async (code) => {
+      pythonScript = code;
+      return "";
+    }, 0);
+    expect(pythonScript).toContain("fld.ref_sphere");
+    expect(pythonScript).toContain("defocused_pt - image_pt");
+    expect(pythonScript).not.toContain("wave_abr_full_calc");
+  });
+
+  it("should plot both tangential and sagittal fans", async () => {
+    let pythonScript = "";
+    await _plotRayFan(async (code) => {
+      pythonScript = code;
+      return "";
+    }, 0);
+    expect(pythonScript).toContain("Tangential");
+    expect(pythonScript).toContain("Sagittal");
+  });
+});
+
+
+describe("_plotOpdFan", () => {
+  it("should use trace_fan with the correct field index", async () => {
+    let pythonScript = "";
+    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+    const result = await _plotOpdFan(async (code) => {
+      pythonScript = code;
+      return mockBase64;
+    }, 2);
+    expect(pythonScript).toContain("sm.trace_fan");
+    expect(pythonScript).toContain("fi = 2");
+    expect(pythonScript).toContain("_fig_to_base64(fig)");
+    expect(result).toBe(mockBase64);
+  });
+
+  it("should use the OPD evaluation function with wave_abr_full_calc", async () => {
+    let pythonScript = "";
+    await _plotOpdFan(async (code) => {
+      pythonScript = code;
+      return "";
+    }, 0);
+    expect(pythonScript).toContain("wave_abr_full_calc");
+    expect(pythonScript).toContain("nm_to_sys_units");
+  });
+
+  it("should plot both tangential and sagittal fans", async () => {
+    let pythonScript = "";
+    await _plotOpdFan(async (code) => {
+      pythonScript = code;
+      return "";
+    }, 0);
+    expect(pythonScript).toContain("Tangential");
+    expect(pythonScript).toContain("Sagittal");
+  });
+});
+
+
+describe("_plotSpotDiagram", () => {
+  it("should use trace_grid with the correct field index", async () => {
+    let pythonScript = "";
+    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+    const result = await _plotSpotDiagram(async (code) => {
+      pythonScript = code;
+      return mockBase64;
+    }, 1);
+    expect(pythonScript).toContain("trace_grid");
+    expect(pythonScript).toContain("fi = 1");
+    expect(pythonScript).toContain("_fig_to_base64(fig)");
+    expect(result).toBe(mockBase64);
+  });
+
+  it("should set equal aspect ratio for the scatter plot", async () => {
+    let pythonScript = "";
+    await _plotSpotDiagram(async (code) => {
+      pythonScript = code;
+      return "";
+    }, 0);
+    expect(pythonScript).toContain("set_aspect('equal')");
   });
 });

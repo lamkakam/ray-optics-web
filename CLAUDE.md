@@ -6,11 +6,12 @@
 
 ## Development Methodology
 - TDD. Never implement anything before writing tests. The newly added tests should fail first, then you implement the feature to make the tests pass.
-- Don't merge anything into main without human approval
+- Never push to main branch. Always push to a feature branch and open a PR for human approval
 - All tests must be pass before merging into main
 - Always read skills md files under `./claude/skills` before planning
 - In TypeScript, use `undefined` instead of `null` whenever possible
-
+- Make the modules loosely coupled
+- Read the example usage of RayOptics from [here](https://ray-optics.readthedocs.io/en/latest/examples/SasianTriplet/SasianTriplet.html)
 
 ## Tech Stack
 
