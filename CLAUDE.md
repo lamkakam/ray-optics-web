@@ -9,6 +9,7 @@
 - Don't merge anything into main without human approval
 - All tests must be pass before merging into main
 - Always read skills md files under `./claude/skills` before planning
+- In TypeScript, use `undefined` instead of `null` whenever possible
 
 
 ## Tech Stack
@@ -37,7 +38,7 @@ RayOptics computations are CPU-intensive. **Never run Pyodide on the main thread
 2. React component communicates with the worker through a typed Comlink proxy.
 3. RayOptics under Pyodide env in the web worker does all the computations. Result is serialized and returned via `json.dumps`.
 4. The worker parses the serialized result into a TypeScript object.
-5. React component receives the object.
+5. React component receives the object and renders the UI accordingly. The web worker is still alive awaiting further requests initiated from a React component.
 
 ### Key Architectural Decisions
 
