@@ -41,18 +41,18 @@ await micropip.install("rayoptics==0.9.4", deps=False)
 await micropip.install("opticalglass==1.1.0", deps=False)
 `);
 
+    // DON'T PIN pyyaml to 6.0.1 (despite specifically required by opticalglass).
+    // NO AVAILABLE WHEEL FOR pyyaml==6.0.1
     await pyodide.runPythonAsync(`
 import micropip
 await micropip.install([
-  'attrs',
   'anytree==2.12.1',
   'transforms3d==0.4.2',
   'traitlets==5.14.3',
-  'json5',
   'packaging==24.2',
   'json-tricks==3.17.3',
   'deprecation==2.1.0',
-  'pyyaml==6.0.1',
+  'pyyaml',
   'requests==2.32.3',
   'openpyxl==3.1.2',
   'parsimonious==0.10.0',
