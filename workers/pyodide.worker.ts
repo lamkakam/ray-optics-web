@@ -45,17 +45,17 @@ await micropip.install("opticalglass==1.1.0", deps=False)
 import micropip
 await micropip.install([
   'attrs',
-  'anytree',
-  'transforms3d',
-  'traitlets',
+  'anytree==2.12.1',
+  'transforms3d==0.4.2',
+  'traitlets==5.14.3',
   'json5',
-  'packaging',
-  'json-tricks',
-  'deprecation',
-  'pyyaml',
-  'requests',
-  'openpyxl',
-  'parsimonious',
+  'packaging==24.2',
+  'json-tricks==3.17.3',
+  'deprecation==2.1.0',
+  'pyyaml==6.0.1',
+  'requests==2.32.3',
+  'openpyxl==3.1.2',
+  'parsimonious==0.10.0',
 ])
 `);
 
