@@ -213,8 +213,8 @@ opm.update_model()`);
 /** ONLY USE AFTER setting the optical surfaces */
 export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>): Promise<Record<string, number>> {
   const json = (await runPython(`
-        fod = pm.opt_model['analysis_results']['parax_data'].fod
-        json.dumps({k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))})
+      fod = pm.opt_model['analysis_results']['parax_data'].fod
+      json.dumps({k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))})
 `)) as string;
   return JSON.parse(json);
 }
