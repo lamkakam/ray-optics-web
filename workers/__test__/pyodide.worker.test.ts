@@ -1,6 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
 import { type OpticalModel } from "../../lib/opticalModel";
 import {
+  _init,
   _setOpticalSurfaces,
   _getFirstOrderData,
   _plotLensLayout,
@@ -171,60 +172,56 @@ describe("_plotSpotDiagram", () => {
 });
 
 
-describe("init() Python function definitions", () => {
-  // We test via the init() runPythonAsync calls.
-  // Since init() is not easily testable in isolation (requires Pyodide),
-  // we verify the source code contains the function definitions.
-  // This is a structural test that reads the worker source.
-  it("should define plot_lens_layout with InteractiveLayout in init()", async () => {
-    const fs = await import("fs");
-    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
-    expect(source).toContain("def plot_lens_layout():");
-    expect(source).toContain("InteractiveLayout");
+describe("_init", () => {
+  it("should define all plot functions via runPython", async () => {
+    const scripts: string[] = [];
+    await _init(async (code) => { scripts.push(code); });
+    const allCode = scripts.join("\n");
+
+    // plot_lens_layout
+    expect(allCode).toContain("def plot_lens_layout():");
+    expect(allCode).toContain("InteractiveLayout");
+
+    // _ray_abr
+    expect(allCode).toContain("def _ray_abr(");
+    expect(allCode).toContain("defocused_pt - image_pt");
+
+    // plot_ray_fan
+    expect(allCode).toContain("def plot_ray_fan(fi):");
+    expect(allCode).toContain("sm.trace_fan(_ray_abr");
+    expect(allCode).toContain("Tangential");
+    expect(allCode).toContain("Sagittal");
+
+    // _opd_abr
+    expect(allCode).toContain("def _opd_abr(");
+    expect(allCode).toContain("wave_abr_full_calc");
+
+    // plot_opd_fan
+    expect(allCode).toContain("def plot_opd_fan(fi):");
+    expect(allCode).toContain("sm.trace_fan(_opd_abr");
+
+    // _spot
+    expect(allCode).toContain("def _spot(");
+    expect(allCode).toContain("np.array([t_abr[0], t_abr[1]])");
+
+    // plot_spot_diagram
+    expect(allCode).toContain("def plot_spot_diagram(fi):");
+    expect(allCode).toContain("sm.trace_grid(_spot");
+    expect(allCode).toContain("set_aspect('equal')");
   });
 
-  it("should define _ray_abr with transverse ray aberration logic in init()", async () => {
-    const fs = await import("fs");
-    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
-    expect(source).toContain("def _ray_abr(");
-    expect(source).toContain("defocused_pt - image_pt");
+  it("should install rayoptics and opticalglass", async () => {
+    const scripts: string[] = [];
+    await _init(async (code) => { scripts.push(code); });
+    const allCode = scripts.join("\n");
+    expect(allCode).toContain('micropip.install("rayoptics==0.9.4"');
+    expect(allCode).toContain('micropip.install("opticalglass==1.1.0"');
   });
 
-  it("should define plot_ray_fan with trace_fan and Tangential/Sagittal in init()", async () => {
-    const fs = await import("fs");
-    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
-    expect(source).toContain("def plot_ray_fan(fi):");
-    expect(source).toContain("sm.trace_fan(_ray_abr");
-    expect(source).toContain("Tangential");
-    expect(source).toContain("Sagittal");
-  });
-
-  it("should define _opd_abr with wave_abr_full_calc in init()", async () => {
-    const fs = await import("fs");
-    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
-    expect(source).toContain("def _opd_abr(");
-    expect(source).toContain("wave_abr_full_calc");
-  });
-
-  it("should define plot_opd_fan with trace_fan in init()", async () => {
-    const fs = await import("fs");
-    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
-    expect(source).toContain("def plot_opd_fan(fi):");
-    expect(source).toContain("sm.trace_fan(_opd_abr");
-  });
-
-  it("should define _spot with spot calculation in init()", async () => {
-    const fs = await import("fs");
-    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
-    expect(source).toContain("def _spot(");
-    expect(source).toContain("np.array([t_abr[0], t_abr[1]])");
-  });
-
-  it("should define plot_spot_diagram with trace_grid and set_aspect('equal') in init()", async () => {
-    const fs = await import("fs");
-    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
-    expect(source).toContain("def plot_spot_diagram(fi):");
-    expect(source).toContain("sm.trace_grid(_spot");
-    expect(source).toContain("set_aspect('equal')");
+  it("should import rayoptics environment", async () => {
+    const scripts: string[] = [];
+    await _init(async (code) => { scripts.push(code); });
+    const allCode = scripts.join("\n");
+    expect(allCode).toContain("from rayoptics.environment import *");
   });
 });

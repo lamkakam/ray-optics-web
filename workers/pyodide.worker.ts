@@ -12,22 +12,12 @@ let pyodide: any = null;
 
 // ─── DANGEROUS ZONE ────────────────────────────────────────────────────────────────────
 // WARNING: DON'T TOUCH THIS PART UNLESS YOU KNOW WHAT YOU ARE DOING
-export async function init(): Promise<void> {
-  if (pyodide) return;
-  try {
-    importScripts(`${CDN}/pyodide.js`);
-    pyodide = await loadPyodide({ indexURL: `${CDN}/` });
 
-    await pyodide.loadPackage([
-      "micropip",
-      "numpy",
-      "scipy",
-      "matplotlib",
-      "pandas",
-      "xlrd",
-    ]);
-
-    await pyodide.runPythonAsync(`
+// export for testing
+export async function _init(
+  runPython: (code: string) => Promise<unknown>
+): Promise<void> {
+  await runPython(`
         import sys, types
         for m in ['PySide6','PySide6.QtWidgets','PySide6.QtCore',
                   'PySide6.QtGui','psutil','zmq','pyzmq',
@@ -35,15 +25,15 @@ export async function init(): Promise<void> {
             sys.modules[m] = types.ModuleType(m)
 `);
 
-    await pyodide.runPythonAsync(`
+  await runPython(`
         import micropip
         await micropip.install("rayoptics==0.9.4", deps=False)
         await micropip.install("opticalglass==1.1.0", deps=False)
 `);
 
-    // DON'T PIN pyyaml to 6.0.1 (despite specifically required by opticalglass).
-    // NO AVAILABLE WHEEL FOR pyyaml==6.0.1
-    await pyodide.runPythonAsync(`
+  // DON'T PIN pyyaml to 6.0.1 (despite specifically required by opticalglass).
+  // NO AVAILABLE WHEEL FOR pyyaml==6.0.1
+  await runPython(`
         import micropip
         await micropip.install([
             'anytree==2.12.1',
@@ -59,9 +49,9 @@ export async function init(): Promise<void> {
         ])
 `);
 
-    await pyodide.runPythonAsync("import json\nfrom rayoptics.environment import *");
+  await runPython("import json\nfrom rayoptics.environment import *");
 
-    await pyodide.runPythonAsync(`
+  await runPython(`
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
@@ -151,6 +141,24 @@ export async function init(): Promise<void> {
             fig.tight_layout()
             return _fig_to_base64(fig)
 `);
+}
+
+export async function init(): Promise<void> {
+  if (pyodide) return;
+  try {
+    importScripts(`${CDN}/pyodide.js`);
+    pyodide = await loadPyodide({ indexURL: `${CDN}/` });
+
+    await pyodide.loadPackage([
+      "micropip",
+      "numpy",
+      "scipy",
+      "matplotlib",
+      "pandas",
+      "xlrd",
+    ]);
+
+    await _init(pyodide.runPythonAsync.bind(pyodide));
   } catch (err) {
     pyodide = null;
     throw err;
