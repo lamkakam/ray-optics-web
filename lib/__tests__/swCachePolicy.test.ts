@@ -17,6 +17,12 @@ describe("shouldCache", () => {
     ).toBe(true);
   });
 
+  it("returns true for PyPI metadata API URLs", () => {
+    expect(
+      shouldCache("https://pypi.org/pypi/rayoptics/json")
+    ).toBe(true);
+  });
+
   it("returns true for PyPI wheel URLs", () => {
     expect(
       shouldCache(

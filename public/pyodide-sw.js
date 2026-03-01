@@ -4,6 +4,7 @@ const CACHE_NAME = "pyodide-cache-v1";
 const CACHEABLE_HOSTS = [
   "cdn.jsdelivr.net/pyodide/",
   "files.pythonhosted.org/",
+  "pypi.org/pypi/",
 ];
 
 function shouldCache(url) {
