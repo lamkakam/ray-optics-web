@@ -103,115 +103,128 @@ describe("_getFirstOrderData", () => {
 
 
 describe("_plotLensLayout", () => {
-  it("should use InteractiveLayout with opm and return base64 string", async () => {
-    let pythonScript = "";
+  it("should call plot_lens_layout() and return the result", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotLensLayout(async (code) => {
-      pythonScript = code;
+      expect(code).toBe("plot_lens_layout()");
       return mockBase64;
     });
-    expect(pythonScript).toContain("InteractiveLayout");
-    expect(pythonScript).toContain("opt_model=opm");
-    expect(pythonScript).toContain("do_draw_rays=True");
-    expect(pythonScript).toContain("_fig_to_base64(fig)");
     expect(result).toBe(mockBase64);
   });
 });
 
 
 describe("_plotRayFan", () => {
-  it("should use trace_fan with the correct field index", async () => {
-    let pythonScript = "";
+  it("should call plot_ray_fan with the correct field index", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotRayFan(async (code) => {
-      pythonScript = code;
+      expect(code).toBe("plot_ray_fan(1)");
       return mockBase64;
     }, 1);
-    expect(pythonScript).toContain("sm.trace_fan");
-    expect(pythonScript).toContain("fi = 1");
-    expect(pythonScript).toContain("_fig_to_base64(fig)");
     expect(result).toBe(mockBase64);
   });
 
-  it("should use the transverse ray aberration evaluation function", async () => {
-    let pythonScript = "";
+  it("should pass field index 0 correctly", async () => {
     await _plotRayFan(async (code) => {
-      pythonScript = code;
+      expect(code).toBe("plot_ray_fan(0)");
       return "";
     }, 0);
-    expect(pythonScript).toContain("fld.ref_sphere");
-    expect(pythonScript).toContain("defocused_pt - image_pt");
-    expect(pythonScript).not.toContain("wave_abr_full_calc");
-  });
-
-  it("should plot both tangential and sagittal fans", async () => {
-    let pythonScript = "";
-    await _plotRayFan(async (code) => {
-      pythonScript = code;
-      return "";
-    }, 0);
-    expect(pythonScript).toContain("Tangential");
-    expect(pythonScript).toContain("Sagittal");
   });
 });
 
 
 describe("_plotOpdFan", () => {
-  it("should use trace_fan with the correct field index", async () => {
-    let pythonScript = "";
+  it("should call plot_opd_fan with the correct field index", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotOpdFan(async (code) => {
-      pythonScript = code;
+      expect(code).toBe("plot_opd_fan(2)");
       return mockBase64;
     }, 2);
-    expect(pythonScript).toContain("sm.trace_fan");
-    expect(pythonScript).toContain("fi = 2");
-    expect(pythonScript).toContain("_fig_to_base64(fig)");
     expect(result).toBe(mockBase64);
   });
 
-  it("should use the OPD evaluation function with wave_abr_full_calc", async () => {
-    let pythonScript = "";
+  it("should pass field index 0 correctly", async () => {
     await _plotOpdFan(async (code) => {
-      pythonScript = code;
+      expect(code).toBe("plot_opd_fan(0)");
       return "";
     }, 0);
-    expect(pythonScript).toContain("wave_abr_full_calc");
-    expect(pythonScript).toContain("nm_to_sys_units");
-  });
-
-  it("should plot both tangential and sagittal fans", async () => {
-    let pythonScript = "";
-    await _plotOpdFan(async (code) => {
-      pythonScript = code;
-      return "";
-    }, 0);
-    expect(pythonScript).toContain("Tangential");
-    expect(pythonScript).toContain("Sagittal");
   });
 });
 
 
 describe("_plotSpotDiagram", () => {
-  it("should use trace_grid with the correct field index", async () => {
-    let pythonScript = "";
+  it("should call plot_spot_diagram with the correct field index", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotSpotDiagram(async (code) => {
-      pythonScript = code;
+      expect(code).toBe("plot_spot_diagram(1)");
       return mockBase64;
     }, 1);
-    expect(pythonScript).toContain("trace_grid");
-    expect(pythonScript).toContain("fi = 1");
-    expect(pythonScript).toContain("_fig_to_base64(fig)");
     expect(result).toBe(mockBase64);
   });
 
-  it("should set equal aspect ratio for the scatter plot", async () => {
-    let pythonScript = "";
+  it("should pass field index 0 correctly", async () => {
     await _plotSpotDiagram(async (code) => {
-      pythonScript = code;
+      expect(code).toBe("plot_spot_diagram(0)");
       return "";
     }, 0);
-    expect(pythonScript).toContain("set_aspect('equal')");
+  });
+});
+
+
+describe("init() Python function definitions", () => {
+  // We test via the init() runPythonAsync calls.
+  // Since init() is not easily testable in isolation (requires Pyodide),
+  // we verify the source code contains the function definitions.
+  // This is a structural test that reads the worker source.
+  it("should define plot_lens_layout with InteractiveLayout in init()", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
+    expect(source).toContain("def plot_lens_layout():");
+    expect(source).toContain("InteractiveLayout");
+  });
+
+  it("should define _ray_abr with transverse ray aberration logic in init()", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
+    expect(source).toContain("def _ray_abr(");
+    expect(source).toContain("defocused_pt - image_pt");
+  });
+
+  it("should define plot_ray_fan with trace_fan and Tangential/Sagittal in init()", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
+    expect(source).toContain("def plot_ray_fan(fi):");
+    expect(source).toContain("sm.trace_fan(_ray_abr");
+    expect(source).toContain("Tangential");
+    expect(source).toContain("Sagittal");
+  });
+
+  it("should define _opd_abr with wave_abr_full_calc in init()", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
+    expect(source).toContain("def _opd_abr(");
+    expect(source).toContain("wave_abr_full_calc");
+  });
+
+  it("should define plot_opd_fan with trace_fan in init()", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
+    expect(source).toContain("def plot_opd_fan(fi):");
+    expect(source).toContain("sm.trace_fan(_opd_abr");
+  });
+
+  it("should define _spot with spot calculation in init()", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
+    expect(source).toContain("def _spot(");
+    expect(source).toContain("np.array([t_abr[0], t_abr[1]])");
+  });
+
+  it("should define plot_spot_diagram with trace_grid and set_aspect('equal') in init()", async () => {
+    const fs = await import("fs");
+    const source = fs.readFileSync("workers/pyodide.worker.ts", "utf-8");
+    expect(source).toContain("def plot_spot_diagram(fi):");
+    expect(source).toContain("sm.trace_grid(_spot");
+    expect(source).toContain("set_aspect('equal')");
   });
 });
