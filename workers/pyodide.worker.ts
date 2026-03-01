@@ -12,6 +12,137 @@ let pyodide: any = null;
 
 // ─── DANGEROUS ZONE ────────────────────────────────────────────────────────────────────
 // WARNING: DON'T TOUCH THIS PART UNLESS YOU KNOW WHAT YOU ARE DOING
+
+// export for testing
+export async function _init(
+  runPython: (code: string) => Promise<unknown>
+): Promise<void> {
+  await runPython(`
+        import sys, types
+        for m in ['PySide6','PySide6.QtWidgets','PySide6.QtCore',
+                  'PySide6.QtGui','psutil','zmq','pyzmq',
+                  'tornado','tornado.ioloop']:
+            sys.modules[m] = types.ModuleType(m)
+`);
+
+  await runPython(`
+        import micropip
+        await micropip.install("rayoptics==0.9.4", deps=False)
+        await micropip.install("opticalglass==1.1.0", deps=False)
+`);
+
+  // DON'T PIN pyyaml to 6.0.1 (despite specifically required by opticalglass).
+  // NO AVAILABLE WHEEL FOR pyyaml==6.0.1
+  await runPython(`
+        import micropip
+        await micropip.install([
+            'anytree==2.12.1',
+            'transforms3d==0.4.2',
+            'traitlets==5.14.3',
+            'packaging==24.2',
+            'json-tricks==3.17.3',
+            'deprecation==2.1.0',
+            'pyyaml',
+            'requests==2.32.3',
+            'openpyxl==3.1.2',
+            'parsimonious==0.10.0',
+        ])
+`);
+
+  await runPython("import json\nfrom rayoptics.environment import *");
+
+  await runPython(`
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        from io import BytesIO
+        import base64
+        import rayoptics.optical.model_constants as mc
+        from rayoptics.raytr.waveabr import wave_abr_full_calc
+
+        def _fig_to_base64(fig, dpi=150):
+            buf = BytesIO()
+            fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight')
+            buf.seek(0)
+            data = base64.b64encode(buf.read()).decode('utf-8')
+            buf.close()
+            plt.close(fig)
+            return data
+
+        def plot_lens_layout():
+            fig = plt.figure(FigureClass=InteractiveLayout, opt_model=opm,
+                            do_draw_rays=True, do_paraxial_layout=False, is_dark=False)
+            fig.plot()
+            return _fig_to_base64(fig)
+
+        def plot_ray_fan(fi):
+            def _ray_abr(p, xy, ray_pkg, fld, wvl, foc):
+                if ray_pkg[mc.ray] is not None:
+                    image_pt = fld.ref_sphere[0]
+                    ray = ray_pkg[mc.ray]
+                    dist = foc / ray[-1][mc.d][2]
+                    defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
+                t_abr = defocused_pt - image_pt
+                return t_abr[xy]
+            return None
+
+            fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
+            for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
+                fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_ray_abr, fi, xy)
+                for k in range(len(fans_x)):
+                    ax.plot(fans_x[k], fans_y[k], color=colors[k])
+                ax.set_title(title)
+                ax.axhline(0, color='black', linewidth=0.5)
+                ax.axvline(0, color='black', linewidth=0.5)
+            fig.tight_layout()
+            return _fig_to_base64(fig)
+
+
+        def plot_opd_fan(fi):
+            def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
+                if ray_pkg[mc.ray] is not None:
+                    fod = opm['analysis_results']['parax_data'].fod
+                    opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg,
+                                                fld.chief_ray, fld.ref_sphere)
+                    return opd_val / opm.nm_to_sys_units(wvl)
+                return None
+
+            fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
+            for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
+                fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_opd_abr, fi, xy)
+                for k in range(len(fans_x)):
+                    ax.plot(fans_x[k], fans_y[k], color=colors[k])
+                ax.set_title(title)
+                ax.axhline(0, color='black', linewidth=0.5)
+                ax.axvline(0, color='black', linewidth=0.5)
+            fig.tight_layout()
+            return _fig_to_base64(fig)
+
+        def plot_spot_diagram(fi):
+            def _spot(p, wi, ray_pkg, fld, wvl, foc):
+                if ray_pkg is not None:
+                    image_pt = fld.ref_sphere[0]
+                    ray = ray_pkg[mc.ray]
+                    dist = foc / ray[-1][mc.d][2]
+                    defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
+                    t_abr = defocused_pt - image_pt
+                    return np.array([t_abr[0], t_abr[1]])
+                return None
+
+            fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+            ax.set_aspect('equal')
+            grids, rc = sm.trace_grid(_spot, fi, wl=None, num_rays=21,
+                                      form='list', append_if_none=False)
+            for gi, grid in enumerate(grids):
+                x_pts = [pt[0] for pt in grid]
+                y_pts = [pt[1] for pt in grid]
+                ax.scatter(x_pts, y_pts, s=1, color=rc[gi])
+            ax.set_title(f'Field {fi}')
+            fig.tight_layout()
+            return _fig_to_base64(fig)
+`);
+}
+
 export async function init(): Promise<void> {
   if (pyodide) return;
   try {
@@ -27,58 +158,7 @@ export async function init(): Promise<void> {
       "xlrd",
     ]);
 
-    await pyodide.runPythonAsync(`
-import sys, types
-for m in ['PySide6','PySide6.QtWidgets','PySide6.QtCore',
-          'PySide6.QtGui','psutil','zmq','pyzmq',
-          'tornado','tornado.ioloop']:
-    sys.modules[m] = types.ModuleType(m)
-`);
-
-    await pyodide.runPythonAsync(`
-import micropip
-await micropip.install("rayoptics==0.9.4", deps=False)
-await micropip.install("opticalglass==1.1.0", deps=False)
-`);
-
-    // DON'T PIN pyyaml to 6.0.1 (despite specifically required by opticalglass).
-    // NO AVAILABLE WHEEL FOR pyyaml==6.0.1
-    await pyodide.runPythonAsync(`
-import micropip
-await micropip.install([
-  'anytree==2.12.1',
-  'transforms3d==0.4.2',
-  'traitlets==5.14.3',
-  'packaging==24.2',
-  'json-tricks==3.17.3',
-  'deprecation==2.1.0',
-  'pyyaml',
-  'requests==2.32.3',
-  'openpyxl==3.1.2',
-  'parsimonious==0.10.0',
-])
-`);
-
-    await pyodide.runPythonAsync("import json\nfrom rayoptics.environment import *");
-
-    await pyodide.runPythonAsync(`
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from io import BytesIO
-import base64
-import rayoptics.optical.model_constants as mc
-from rayoptics.raytr.waveabr import wave_abr_full_calc
-
-def _fig_to_base64(fig, dpi=150):
-    buf = BytesIO()
-    fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight')
-    buf.seek(0)
-    data = base64.b64encode(buf.read()).decode('utf-8')
-    buf.close()
-    plt.close(fig)
-    return data
-`);
+    await _init(pyodide.runPythonAsync.bind(pyodide));
   } catch (err) {
     pyodide = null;
     throw err;
@@ -121,6 +201,7 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
     return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, '${medium}'${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${setStop}`;
   }, "");
 
+  // WARNING: DON'T TOUCH THE FORMATTING BELOW
   await runPython(`
 opm = OpticalModel()
 sm  = opm['seq_model']
@@ -137,12 +218,11 @@ opm.update_model()`);
 }
 
 
-/** Use AFTER setting the optical surfaces */
+/** ONLY USE AFTER setting the optical surfaces */
 export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>): Promise<Record<string, number>> {
   const json = (await runPython(`
-fod = pm.opt_model['analysis_results']['parax_data'].fod
-
-json.dumps({k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))})
+      fod = pm.opt_model['analysis_results']['parax_data'].fod
+      json.dumps({k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))})
 `)) as string;
   return JSON.parse(json);
 }
@@ -151,95 +231,19 @@ json.dumps({k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, 
 // ─── Plot Functions (injectable for testing) ─────────────────────────────────
 
 export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>): Promise<string> {
-  return (await runPython(`
-fig = plt.figure(FigureClass=InteractiveLayout, opt_model=opm,
-                 do_draw_rays=True, do_paraxial_layout=False, is_dark=False)
-fig.plot()
-_fig_to_base64(fig)
-`)) as string;
+  return (await runPython("plot_lens_layout()")) as string;
 }
 
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`
-def _ray_abr(p, xy, ray_pkg, fld, wvl, foc):
-    if ray_pkg[mc.ray] is not None:
-        image_pt = fld.ref_sphere[0]
-        ray = ray_pkg[mc.ray]
-        dist = foc / ray[-1][mc.d][2]
-        defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-        t_abr = defocused_pt - image_pt
-        return t_abr[xy]
-    return None
-
-fi = ${fieldIndex}
-fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
-
-for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
-    fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_ray_abr, fi, xy)
-    for k in range(len(fans_x)):
-        ax.plot(fans_x[k], fans_y[k], color=colors[k])
-    ax.set_title(title)
-    ax.axhline(0, color='black', linewidth=0.5)
-    ax.axvline(0, color='black', linewidth=0.5)
-
-fig.tight_layout()
-_fig_to_base64(fig)
-`)) as string;
+  return (await runPython(`plot_ray_fan(${fieldIndex})`)) as string;
 }
 
 export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`
-def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
-    if ray_pkg[mc.ray] is not None:
-        fod = opm['analysis_results']['parax_data'].fod
-        opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg,
-                                     fld.chief_ray, fld.ref_sphere)
-        return opd_val / opm.nm_to_sys_units(wvl)
-    return None
-
-fi = ${fieldIndex}
-fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
-
-for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
-    fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_opd_abr, fi, xy)
-    for k in range(len(fans_x)):
-        ax.plot(fans_x[k], fans_y[k], color=colors[k])
-    ax.set_title(title)
-    ax.axhline(0, color='black', linewidth=0.5)
-    ax.axvline(0, color='black', linewidth=0.5)
-
-fig.tight_layout()
-_fig_to_base64(fig)
-`)) as string;
+  return (await runPython(`plot_opd_fan(${fieldIndex})`)) as string;
 }
 
 export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`
-def _spot(p, wi, ray_pkg, fld, wvl, foc):
-    if ray_pkg is not None:
-        image_pt = fld.ref_sphere[0]
-        ray = ray_pkg[mc.ray]
-        dist = foc / ray[-1][mc.d][2]
-        defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-        t_abr = defocused_pt - image_pt
-        return np.array([t_abr[0], t_abr[1]])
-    return None
-
-fi = ${fieldIndex}
-fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-ax.set_aspect('equal')
-
-grids, rc = sm.trace_grid(_spot, fi, wl=None, num_rays=21,
-                          form='list', append_if_none=False)
-for gi, grid in enumerate(grids):
-    x_pts = [pt[0] for pt in grid]
-    y_pts = [pt[1] for pt in grid]
-    ax.scatter(x_pts, y_pts, s=1, color=rc[gi])
-
-ax.set_title(f'Field {fi}')
-fig.tight_layout()
-_fig_to_base64(fig)
-`)) as string;
+  return (await runPython(`plot_spot_diagram(${fieldIndex})`)) as string;
 }
 
 
