@@ -215,27 +215,26 @@ _fig_to_base64(fig)
 
 export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
   return (await runPython(`
+def _spot(p, wi, ray_pkg, fld, wvl, foc):
+    if ray_pkg is not None:
+        image_pt = fld.ref_sphere[0]
+        ray = ray_pkg[mc.ray]
+        dist = foc / ray[-1][mc.d][2]
+        defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
+        t_abr = defocused_pt - image_pt
+        return np.array([t_abr[0], t_abr[1]])
+    return None
+
 fi = ${fieldIndex}
 fig, ax = plt.subplots(1, 1, figsize=(5, 5))
 ax.set_aspect('equal')
 
-fld = osp['fov'].fields[fi]
-wvls = osp['wvls']
-ref_wvl_idx = wvls.reference_wvl
-
-for wi, wvl in enumerate(wvls.wavelengths):
-    grid = sm.trace_grid(None, fi, wl=wvl, num_rays=21)
-    ray_list = grid[0]
-    x_pts = []
-    y_pts = []
-    for row in ray_list:
-        for ray_pkg in row:
-            if ray_pkg is not None and ray_pkg[mc.ray] is not None:
-                ray = ray_pkg[mc.ray]
-                x_pts.append(ray[-1][mc.p][0])
-                y_pts.append(ray[-1][mc.p][1])
-    color = wvls.render_colors()[wi] if hasattr(wvls, 'render_colors') else None
-    ax.scatter(x_pts, y_pts, s=1, color=color)
+grids, rc = sm.trace_grid(_spot, fi, wl=None, num_rays=21,
+                          form='list', append_if_none=False)
+for gi, grid in enumerate(grids):
+    x_pts = [pt[0] for pt in grid]
+    y_pts = [pt[1] for pt in grid]
+    ax.scatter(x_pts, y_pts, s=1, color=rc[gi])
 
 ax.set_title(f'Field {fi}')
 fig.tight_layout()
