@@ -69,6 +69,11 @@ export async function _init(
             plt.close(fig)
             return data
 
+        def get_first_order_data(opm):
+            pm  = opm['parax_model']
+            fod = pm.opt_model['analysis_results']['parax_data'].fod
+            return {k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))}
+
         def plot_lens_layout():
             fig = plt.figure(FigureClass=InteractiveLayout, opt_model=opm,
                             do_draw_rays=True, do_paraxial_layout=False, is_dark=False)
@@ -220,10 +225,7 @@ opm.update_model()`);
 
 /** ONLY USE AFTER setting the optical surfaces */
 export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>): Promise<Record<string, number>> {
-  const json = (await runPython(`
-      fod = pm.opt_model['analysis_results']['parax_data'].fod
-      json.dumps({k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))})
-`)) as string;
+  const json = (await runPython("json.dumps(get_first_order_data(opm))")) as string;
   return JSON.parse(json);
 }
 

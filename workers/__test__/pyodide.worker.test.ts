@@ -97,7 +97,7 @@ describe("_getFirstOrderData", () => {
       const mockJSON = JSON.stringify({ efl: 200, bfl: 100 });
       return mockJSON;
     });
-    expect(pythonScript).toContain("pm.opt_model['analysis_results']['parax_data'].fod");
+    expect(pythonScript).toContain("json.dumps(get_first_order_data(opm))");
     expect(result).toMatchObject({ efl: 200, bfl: 100 });
   });
 });
@@ -177,6 +177,10 @@ describe("_init", () => {
     const scripts: string[] = [];
     await _init(async (code) => { scripts.push(code); });
     const allCode = scripts.join("\n");
+
+    // get_first_order_data
+    expect(allCode).toContain("def get_first_order_data(opm):");
+    expect(allCode).toContain("opt_model['analysis_results']['parax_data'].fod");
 
     // plot_lens_layout
     expect(allCode).toContain("def plot_lens_layout():");
