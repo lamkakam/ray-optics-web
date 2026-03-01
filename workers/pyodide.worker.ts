@@ -60,6 +60,25 @@ await micropip.install([
 `);
 
     await pyodide.runPythonAsync("import json\nfrom rayoptics.environment import *");
+
+    await pyodide.runPythonAsync(`
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from io import BytesIO
+import base64
+import rayoptics.optical.model_constants as mc
+from rayoptics.raytr.waveabr import wave_abr_full_calc
+
+def _fig_to_base64(fig, dpi=150):
+    buf = BytesIO()
+    fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight')
+    buf.seek(0)
+    data = base64.b64encode(buf.read()).decode('utf-8')
+    buf.close()
+    plt.close(fig)
+    return data
+`);
   } catch (err) {
     pyodide = null;
     throw err;
@@ -129,6 +148,101 @@ json.dumps({k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, 
 }
 
 
+// ─── Plot Functions (injectable for testing) ─────────────────────────────────
+
+export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>): Promise<string> {
+  return (await runPython(`
+fig = plt.figure(FigureClass=InteractiveLayout, opt_model=opm,
+                 do_draw_rays=True, do_paraxial_layout=False, is_dark=False)
+fig.plot()
+_fig_to_base64(fig)
+`)) as string;
+}
+
+export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
+  return (await runPython(`
+def _ray_abr(p, xy, ray_pkg, fld, wvl, foc):
+    if ray_pkg[mc.ray] is not None:
+        image_pt = fld.ref_sphere[0]
+        ray = ray_pkg[mc.ray]
+        dist = foc / ray[-1][mc.d][2]
+        defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
+        t_abr = defocused_pt - image_pt
+        return t_abr[xy]
+    return None
+
+fi = ${fieldIndex}
+fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
+
+for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
+    fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_ray_abr, fi, xy)
+    for k in range(len(fans_x)):
+        ax.plot(fans_x[k], fans_y[k], color=colors[k])
+    ax.set_title(title)
+    ax.axhline(0, color='black', linewidth=0.5)
+    ax.axvline(0, color='black', linewidth=0.5)
+
+fig.tight_layout()
+_fig_to_base64(fig)
+`)) as string;
+}
+
+export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
+  return (await runPython(`
+def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
+    if ray_pkg[mc.ray] is not None:
+        fod = opm['analysis_results']['parax_data'].fod
+        opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg,
+                                     fld.chief_ray, fld.ref_sphere)
+        return opd_val / opm.nm_to_sys_units(wvl)
+    return None
+
+fi = ${fieldIndex}
+fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
+
+for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
+    fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_opd_abr, fi, xy)
+    for k in range(len(fans_x)):
+        ax.plot(fans_x[k], fans_y[k], color=colors[k])
+    ax.set_title(title)
+    ax.axhline(0, color='black', linewidth=0.5)
+    ax.axvline(0, color='black', linewidth=0.5)
+
+fig.tight_layout()
+_fig_to_base64(fig)
+`)) as string;
+}
+
+export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
+  return (await runPython(`
+def _spot(p, wi, ray_pkg, fld, wvl, foc):
+    if ray_pkg is not None:
+        image_pt = fld.ref_sphere[0]
+        ray = ray_pkg[mc.ray]
+        dist = foc / ray[-1][mc.d][2]
+        defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
+        t_abr = defocused_pt - image_pt
+        return np.array([t_abr[0], t_abr[1]])
+    return None
+
+fi = ${fieldIndex}
+fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+ax.set_aspect('equal')
+
+grids, rc = sm.trace_grid(_spot, fi, wl=None, num_rays=21,
+                          form='list', append_if_none=False)
+for gi, grid in enumerate(grids):
+    x_pts = [pt[0] for pt in grid]
+    y_pts = [pt[1] for pt in grid]
+    ax.scatter(x_pts, y_pts, s=1, color=rc[gi])
+
+ax.set_title(f'Field {fi}')
+fig.tight_layout()
+_fig_to_base64(fig)
+`)) as string;
+}
+
+
 // Expose for Components
 export async function setOpticalSurfaces(opticalModel: OpticalModel): Promise<void> {
   await _setOpticalSurfaces(opticalModel, requirePyodide());
@@ -139,8 +253,28 @@ export async function getFirstOrderData(): Promise<Record<string, number>> {
   return await _getFirstOrderData(requirePyodide());
 }
 
+export async function plotLensLayout(): Promise<string> {
+  return await _plotLensLayout(requirePyodide());
+}
+
+export async function plotRayFan(fieldIndex: number): Promise<string> {
+  return await _plotRayFan(requirePyodide(), fieldIndex);
+}
+
+export async function plotOpdFan(fieldIndex: number): Promise<string> {
+  return await _plotOpdFan(requirePyodide(), fieldIndex);
+}
+
+export async function plotSpotDiagram(fieldIndex: number): Promise<string> {
+  return await _plotSpotDiagram(requirePyodide(), fieldIndex);
+}
+
 expose({
   init,
   setOpticalSurfaces,
   getFirstOrderData,
+  plotLensLayout,
+  plotRayFan,
+  plotOpdFan,
+  plotSpotDiagram,
 });
