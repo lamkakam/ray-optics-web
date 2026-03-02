@@ -14,6 +14,10 @@ interface AgGridReactProps {
   [key: string]: unknown;
 }
 
+export function AgGridProvider({ children }: { children: React.ReactNode; modules?: unknown[] }) {
+  return <>{children}</>;
+}
+
 export function AgGridReact({ rowData, columnDefs }: AgGridReactProps) {
   return (
     <table data-testid="ag-grid-mock">

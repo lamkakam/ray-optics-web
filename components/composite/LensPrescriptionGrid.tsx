@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { AgGridReact } from "ag-grid-react";
+import { AgGridReact, AgGridProvider } from "ag-grid-react";
+import { AllCommunityModule } from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
@@ -74,16 +75,18 @@ export function LensPrescriptionGrid({
       data-ag-theme-mode={theme}
       aria-label="Lens prescription editor"
     >
-      <AgGridReact
-        rowData={rows}
-        columnDefs={columnDefs}
-        rowSelection="single"
-        domLayout="autoHeight"
-        getRowId={(params) => params.data.id}
-        stopEditingWhenCellsLoseFocus={true}
-        enterNavigatesVertically={true}
-        enterNavigatesVerticallyAfterEdit={true}
-      />
+      <AgGridProvider modules={[AllCommunityModule]}>
+        <AgGridReact
+          rowData={rows}
+          columnDefs={columnDefs}
+          rowSelection="single"
+          domLayout="autoHeight"
+          getRowId={(params) => params.data.id}
+          stopEditingWhenCellsLoseFocus={true}
+          enterNavigatesVertically={true}
+          enterNavigatesVerticallyAfterEdit={true}
+        />
+      </AgGridProvider>
     </div>
   );
 }

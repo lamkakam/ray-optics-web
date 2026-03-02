@@ -15,3 +15,5 @@ export interface ColGroupDef<TData = unknown> {
   children?: (ColDef<TData> | ColGroupDef<TData>)[];
   [key: string]: unknown;
 }
+
+export const AllCommunityModule = {};

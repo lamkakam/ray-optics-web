@@ -91,7 +91,7 @@ export function LensPrescriptionContainer({
       />
 
       <MediumSelectorModal
-        key={mediumModal.open ? mediumModal.rowId : "closed"}
+        key={mediumModal.open ? mediumModal.rowId : "medium-closed"}
         isOpen={mediumModal.open}
         initialMedium={mediumRow?.medium ?? "air"}
         initialManufacturer={mediumRow?.manufacturer ?? "air"}
@@ -104,7 +104,7 @@ export function LensPrescriptionContainer({
       />
 
       <AsphericalModal
-        key={asphericalModal.open ? asphericalModal.rowId : "closed"}
+        key={asphericalModal.open ? asphericalModal.rowId : "aspherical-closed"}
         isOpen={asphericalModal.open}
         initialConicConstant={asphericalRow?.aspherical?.conicConstant ?? 0}
         initialType={
