@@ -1,0 +1,63 @@
+import type { Surfaces, Surface } from "./opticalModel";
+import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "./gridTypes";
+
+let nextId = 0;
+
+export function generateRowId(): string {
+  return `row-surface-${nextId++}`;
+}
+
+export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
+  const objectRow: GridRow = {
+    id: OBJECT_ROW_ID,
+    kind: "object",
+    objectDistance: surfaces.object.distance,
+  };
+
+  const surfaceRows: GridRow[] = surfaces.surfaces.map((s) => ({
+    id: generateRowId(),
+    kind: "surface" as const,
+    label: s.label,
+    curvatureRadius: s.curvatureRadius,
+    thickness: s.thickness,
+    medium: s.medium,
+    manufacturer: s.manufacturer,
+    semiDiameter: s.semiDiameter,
+    ...(s.aspherical !== undefined ? { aspherical: s.aspherical } : {}),
+  }));
+
+  const imageRow: GridRow = {
+    id: IMAGE_ROW_ID,
+    kind: "image",
+    curvatureRadius: surfaces.image.curvatureRadius,
+  };
+
+  return [objectRow, ...surfaceRows, imageRow];
+}
+
+export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
+  const objectRow = rows.find((r) => r.kind === "object");
+  const imageRow = rows.find((r) => r.kind === "image");
+  const surfaceRows = rows.filter((r) => r.kind === "surface");
+
+  const surfaces: Surface[] = surfaceRows.map((r) => {
+    const surface: Surface = {
+      label: r.label ?? "Default",
+      curvatureRadius: r.curvatureRadius ?? 0,
+      thickness: r.thickness ?? 0,
+      medium: r.medium ?? "air",
+      manufacturer: r.manufacturer ?? "air",
+      semiDiameter: r.semiDiameter ?? 1,
+    };
+    if (r.aspherical !== undefined) {
+      surface.aspherical = r.aspherical;
+    }
+    return surface;
+  });
+
+  return {
+    object: { distance: objectRow?.objectDistance ?? 0 },
+    image: { curvatureRadius: imageRow?.curvatureRadius ?? 0 },
+    surfaces,
+  };
+}

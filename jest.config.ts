@@ -14,9 +14,12 @@ const config: Config = {
     "^@/(.*)$": "<rootDir>/$1",
     "^comlink$": "<rootDir>/__mocks__/comlink.ts",
     "^pyodide$": "<rootDir>/__mocks__/pyodide.ts",
+    "^ag-grid-react$": "<rootDir>/__mocks__/ag-grid-react.tsx",
+    "^ag-grid-community$": "<rootDir>/__mocks__/ag-grid-community.ts",
+    "^ag-grid-community/styles/.*$": "<rootDir>/__mocks__/ag-grid-community.ts",
   },
   setupFilesAfterEnv: ["@testing-library/jest-dom"],
-  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/"],
+  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/", "<rootDir>/e2e/"],
 };
 
 export default config;
