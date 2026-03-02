@@ -4,8 +4,6 @@ import React from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule } from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-quartz.css";
 import type { GridRow } from "@/lib/gridTypes";
 
 interface LensPrescriptionGridProps {
@@ -14,7 +12,6 @@ interface LensPrescriptionGridProps {
   readonly onOpenMediumModal: (rowId: string) => void;
   readonly onOpenAsphericalModal: (rowId: string) => void;
   readonly onRowSelected: (rowId: string | undefined) => void;
-  readonly theme?: "light" | "dark";
 }
 
 export function LensPrescriptionGrid({
@@ -23,7 +20,6 @@ export function LensPrescriptionGrid({
   onOpenMediumModal,
   onOpenAsphericalModal,
   onRowSelected,
-  theme = "light",
 }: LensPrescriptionGridProps) {
   const columnDefs: ColDef<GridRow>[] = [
     {
@@ -71,8 +67,6 @@ export function LensPrescriptionGrid({
 
   return (
     <div
-      className="ag-theme-quartz"
-      data-ag-theme-mode={theme}
       aria-label="Lens prescription editor"
     >
       <AgGridProvider modules={[AllCommunityModule]}>
