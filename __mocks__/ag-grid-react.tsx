@@ -4,8 +4,11 @@ interface ColDef {
   headerName?: string;
   field?: string;
   editable?: boolean | ((params: { data: Record<string, unknown> }) => boolean);
+  cellEditor?: string;
+  cellEditorParams?: { values?: unknown[] };
   cellRenderer?: (params: { data: Record<string, unknown>; value: unknown }) => React.ReactNode;
   valueGetter?: (params: { data: Record<string, unknown> }) => unknown;
+  valueFormatter?: (params: { value: unknown }) => string;
   valueParser?: (params: { newValue: string; oldValue: unknown }) => unknown;
   valueSetter?: (params: { data: Record<string, unknown>; newValue: unknown; oldValue: unknown }) => boolean;
   [key: string]: unknown;
@@ -51,6 +54,42 @@ function EditableCell({
   );
 }
 
+function SelectCell({
+  col,
+  row,
+  value,
+  headerName,
+}: {
+  col: ColDef;
+  row: Record<string, unknown>;
+  value: unknown;
+  headerName: string;
+}) {
+  const values = col.cellEditorParams?.values ?? [];
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newValue = e.target.value;
+    const oldValue = value;
+    if (col.valueSetter) {
+      col.valueSetter({ data: row, newValue, oldValue });
+    }
+  };
+
+  return (
+    <select
+      aria-label={headerName}
+      value={String(value ?? "")}
+      onChange={handleChange}
+    >
+      {values.map((v) => (
+        <option key={String(v)} value={String(v)}>
+          {col.valueFormatter ? col.valueFormatter({ value: v }) : String(v)}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export function AgGridProvider({ children }: { children: React.ReactNode; modules?: unknown[] }) {
   return <>{children}</>;
 }
@@ -80,13 +119,17 @@ export function AgGridReact({ rowData, columnDefs }: AgGridReactProps) {
                   ? col.editable({ data: row })
                   : col.editable === true;
 
+              const isSelectEditor = col.cellEditor === "agSelectCellEditor";
+
               return (
                 <td key={colIdx}>
                   {col.cellRenderer
                     ? col.cellRenderer({ data: row, value })
-                    : isEditable
-                      ? <EditableCell col={col} row={row} value={value} />
-                      : String(value ?? "")}
+                    : isEditable && isSelectEditor
+                      ? <SelectCell col={col} row={row} value={value} headerName={col.headerName ?? col.field ?? ""} />
+                      : isEditable
+                        ? <EditableCell col={col} row={row} value={value} />
+                        : String(value ?? "")}
                 </td>
               );
             })}

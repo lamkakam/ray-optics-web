@@ -75,7 +75,7 @@ describe("LensPrescriptionGrid", () => {
   // --- Surface label column ---
   it("renders a select dropdown for surface rows in the Surface column", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const selects = screen.getAllByRole("combobox", { name: "Surface label" });
+    const selects = screen.getAllByRole("combobox", { name: "Surface" });
     expect(selects).toHaveLength(2); // two surface rows
   });
 
@@ -92,7 +92,7 @@ describe("LensPrescriptionGrid", () => {
   it("calls onRowChange when surface label is changed", async () => {
     const onRowChange = jest.fn();
     render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
-    const selects = screen.getAllByRole("combobox", { name: "Surface label" });
+    const selects = screen.getAllByRole("combobox", { name: "Surface" });
 
     await userEvent.selectOptions(selects[0], "Stop");
 
@@ -178,17 +178,6 @@ describe("LensPrescriptionGrid", () => {
   });
 
   // --- Cell click delegation (clicking empty space in a cell) ---
-  it("focuses the select when clicking cell area around a SurfaceLabelCell", async () => {
-    render(<LensPrescriptionGrid {...defaultProps} />);
-    const selects = screen.getAllByRole("combobox", { name: "Surface label" });
-    const cellWrapper = selects[0].closest("[data-cell-wrapper]")!;
-    expect(cellWrapper).toBeInTheDocument();
-
-    await userEvent.click(cellWrapper);
-
-    expect(selects[0]).toHaveFocus();
-  });
-
   it("opens medium modal when clicking cell area around the medium button", async () => {
     const onOpenMediumModal = jest.fn();
     render(<LensPrescriptionGrid {...defaultProps} onOpenMediumModal={onOpenMediumModal} />);

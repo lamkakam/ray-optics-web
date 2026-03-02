@@ -5,26 +5,8 @@ import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule } from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/lib/gridTypes";
-import { SurfaceLabelCell } from "@/components/micro/SurfaceLabelCell";
 import { MediumCell } from "@/components/micro/MediumCell";
 import { AsphericalCell } from "@/components/micro/AsphericalCell";
-
-function FocusWrapper({ children }: { readonly children: React.ReactNode }) {
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return;
-    const el = e.currentTarget.querySelector<HTMLElement>("input, select, button");
-    el?.focus();
-  };
-  return (
-    <div
-      data-cell-wrapper
-      className="w-full h-full flex items-center"
-      onClick={handleClick}
-    >
-      {children}
-    </div>
-  );
-}
 
 function ActionWrapper({
   children,
@@ -108,17 +90,19 @@ export function LensPrescriptionGrid({
     {
       headerName: "Surface",
       field: "label",
-      cellRenderer: (params: { data: GridRow }) => {
+      editable: (params) => params.data?.kind === "surface",
+      cellEditor: "agSelectCellEditor",
+      cellEditorParams: { values: ["Default", "Stop"] },
+      valueGetter: (params) => {
+        if (!params.data) return "";
         if (params.data.kind === "object") return "Object";
         if (params.data.kind === "image") return "Image";
-        return (
-          <FocusWrapper>
-            <SurfaceLabelCell
-              value={params.data.label ?? "Default"}
-              onValueChange={(val) => onRowChange(params.data.id, { label: val })}
-            />
-          </FocusWrapper>
-        );
+        return params.data.label ?? "Default";
+      },
+      valueSetter: (params) => {
+        if (!params.data) return false;
+        onRowChange(params.data.id, { label: params.newValue as "Default" | "Stop" });
+        return true;
       },
     },
     {
