@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/lib/gridTypes";
 
@@ -38,6 +39,10 @@ describe("LensPrescriptionGrid", () => {
     onRowSelected: jest.fn(),
   };
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders the AG Grid mock table", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
@@ -64,5 +69,106 @@ describe("LensPrescriptionGrid", () => {
   it("has an aria-label on the wrapper", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     expect(screen.getByLabelText("Lens prescription editor")).toBeInTheDocument();
+  });
+
+  // --- Surface label column ---
+  it("renders a select dropdown for surface rows in the Surface column", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const selects = screen.getAllByRole("combobox", { name: "Surface label" });
+    expect(selects).toHaveLength(2); // two surface rows
+  });
+
+  it("renders 'Object' text for object row in the Surface column", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    expect(screen.getByText("Object")).toBeInTheDocument();
+  });
+
+  it("renders 'Image' text for image row in the Surface column", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    expect(screen.getByText("Image")).toBeInTheDocument();
+  });
+
+  it("calls onRowChange when surface label is changed", async () => {
+    const onRowChange = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
+    const selects = screen.getAllByRole("combobox", { name: "Surface label" });
+
+    await userEvent.selectOptions(selects[0], "Stop");
+
+    expect(onRowChange).toHaveBeenCalledWith("s1", { label: "Stop" });
+  });
+
+  // --- Medium column ---
+  it("renders medium buttons for surface rows", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
+    expect(mediumButtons).toHaveLength(2); // two surface rows
+  });
+
+  it("calls onOpenMediumModal when medium button is clicked", async () => {
+    const onOpenMediumModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenMediumModal={onOpenMediumModal} />);
+    const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
+
+    await userEvent.click(mediumButtons[0]);
+
+    expect(onOpenMediumModal).toHaveBeenCalledWith("s1");
+  });
+
+  // --- Aspherical column ---
+  it("renders aspherical checkboxes for surface rows", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const checkboxes = screen.getAllByRole("checkbox", { name: "Edit aspherical parameters" });
+    expect(checkboxes).toHaveLength(2); // two surface rows
+  });
+
+  it("calls onOpenAsphericalModal when aspherical checkbox is clicked", async () => {
+    const onOpenAsphericalModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenAsphericalModal={onOpenAsphericalModal} />);
+    const checkboxes = screen.getAllByRole("checkbox", { name: "Edit aspherical parameters" });
+
+    await userEvent.click(checkboxes[1]); // s2 has aspherical
+
+    expect(onOpenAsphericalModal).toHaveBeenCalledWith("s2");
+  });
+
+  // --- Numeric columns (Radius, Thickness, Semi-diam.) ---
+  it("renders text inputs for editable numeric cells", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const inputs = screen.getAllByRole("textbox");
+    // s1: radius, thickness, semi-diam (3)
+    // s2: radius, thickness, semi-diam (3)
+    // image: radius (1)
+    expect(inputs).toHaveLength(7);
+  });
+
+  it("calls onRowChange when a numeric cell value changes", async () => {
+    const onRowChange = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
+    const inputs = screen.getAllByRole("textbox");
+
+    // First textbox should be s1 radius (value 50)
+    await userEvent.clear(inputs[0]);
+    await userEvent.type(inputs[0], "100");
+    await userEvent.tab();
+
+    expect(onRowChange).toHaveBeenCalledWith("s1", { curvatureRadius: 100 });
+  });
+
+  // --- Row selection ---
+  it("renders radio buttons for surface rows", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const radios = screen.getAllByRole("radio");
+    expect(radios).toHaveLength(2); // two surface rows
+  });
+
+  it("calls onRowSelected when a radio button is clicked", async () => {
+    const onRowSelected = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onRowSelected={onRowSelected} />);
+    const radios = screen.getAllByRole("radio");
+
+    await userEvent.click(radios[0]);
+
+    expect(onRowSelected).toHaveBeenCalledWith("s1");
   });
 });

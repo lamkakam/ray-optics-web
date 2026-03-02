@@ -3,6 +3,7 @@ import React from "react";
 interface ColDef {
   headerName?: string;
   field?: string;
+  cellRenderer?: (params: { data: Record<string, unknown>; value: unknown }) => React.ReactNode;
   [key: string]: unknown;
 }
 
@@ -33,7 +34,14 @@ export function AgGridReact({ rowData, columnDefs }: AgGridReactProps) {
           <tr key={rowIdx}>
             {columnDefs?.map((col, colIdx) => (
               <td key={colIdx}>
-                {col.field ? String(row[col.field] ?? "") : ""}
+                {col.cellRenderer
+                  ? col.cellRenderer({
+                      data: row,
+                      value: col.field ? row[col.field] : undefined,
+                    })
+                  : col.field
+                    ? String(row[col.field] ?? "")
+                    : ""}
               </td>
             ))}
           </tr>

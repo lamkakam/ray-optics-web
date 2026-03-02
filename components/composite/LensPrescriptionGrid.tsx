@@ -5,6 +5,10 @@ import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule } from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/lib/gridTypes";
+import { SurfaceLabelCell } from "@/components/micro/SurfaceLabelCell";
+import { NumberCell } from "@/components/micro/NumberCell";
+import { MediumCell } from "@/components/micro/MediumCell";
+import { AsphericalCell } from "@/components/micro/AsphericalCell";
 
 interface LensPrescriptionGridProps {
   readonly rows: GridRow[];
@@ -26,42 +30,95 @@ export function LensPrescriptionGrid({
       headerName: "",
       field: "kind",
       width: 40,
-      checkboxSelection: (params) =>
-        params.data?.kind === "surface",
+      cellRenderer: (params: { data: GridRow }) => {
+        if (params.data.kind !== "surface") return null;
+        return (
+          <input
+            type="radio"
+            name="row-selection"
+            onClick={() => onRowSelected(params.data.id)}
+          />
+        );
+      },
     },
     {
       headerName: "Surface",
       field: "label",
-      valueGetter: (params) => {
-        if (params.data?.kind === "object") return "Object";
-        if (params.data?.kind === "image") return "Image";
-        return params.data?.label ?? "Default";
+      cellRenderer: (params: { data: GridRow }) => {
+        if (params.data.kind === "object") return "Object";
+        if (params.data.kind === "image") return "Image";
+        return (
+          <SurfaceLabelCell
+            value={params.data.label ?? "Default"}
+            onValueChange={(val) => onRowChange(params.data.id, { label: val })}
+          />
+        );
       },
     },
     {
       headerName: "Radius",
       field: "curvatureRadius",
-      editable: (params) => params.data?.kind !== "object",
+      cellRenderer: (params: { data: GridRow }) => {
+        if (params.data.kind === "object") return null;
+        return (
+          <NumberCell
+            value={params.data.curvatureRadius ?? 0}
+            onValueChange={(val) => onRowChange(params.data.id, { curvatureRadius: val })}
+          />
+        );
+      },
     },
     {
       headerName: "Thickness",
       field: "thickness",
-      editable: (params) => params.data?.kind === "surface",
+      cellRenderer: (params: { data: GridRow }) => {
+        if (params.data.kind !== "surface") return null;
+        return (
+          <NumberCell
+            value={params.data.thickness ?? 0}
+            onValueChange={(val) => onRowChange(params.data.id, { thickness: val })}
+          />
+        );
+      },
     },
     {
       headerName: "Medium",
       field: "medium",
+      cellRenderer: (params: { data: GridRow }) => {
+        if (params.data.kind !== "surface") return null;
+        return (
+          <MediumCell
+            medium={params.data.medium ?? ""}
+            onOpenModal={() => onOpenMediumModal(params.data.id)}
+          />
+        );
+      },
     },
     {
       headerName: "Semi-diam.",
       field: "semiDiameter",
-      editable: (params) => params.data?.kind === "surface",
+      cellRenderer: (params: { data: GridRow }) => {
+        if (params.data.kind !== "surface") return null;
+        return (
+          <NumberCell
+            value={params.data.semiDiameter ?? 0}
+            onValueChange={(val) => onRowChange(params.data.id, { semiDiameter: val })}
+          />
+        );
+      },
     },
     {
       headerName: "Asph.",
       field: "aspherical",
-      valueGetter: (params) =>
-        params.data?.aspherical !== undefined,
+      cellRenderer: (params: { data: GridRow }) => {
+        if (params.data.kind !== "surface") return null;
+        return (
+          <AsphericalCell
+            isAspherical={params.data.aspherical !== undefined}
+            onOpenModal={() => onOpenAsphericalModal(params.data.id)}
+          />
+        );
+      },
     },
   ];
 
@@ -76,9 +133,6 @@ export function LensPrescriptionGrid({
           rowSelection="single"
           domLayout="autoHeight"
           getRowId={(params) => params.data.id}
-          stopEditingWhenCellsLoseFocus={true}
-          enterNavigatesVertically={true}
-          enterNavigatesVerticallyAfterEdit={true}
         />
       </AgGridProvider>
     </div>
