@@ -18,6 +18,8 @@ export interface LensEditorState {
   updateRow: (id: string, patch: Partial<GridRow>) => void;
   addRowAfterSelected: () => void;
   deleteSelectedRow: () => void;
+  addRowAfter: (id: string) => void;
+  deleteRow: (id: string) => void;
   setSelectedRowId: (id: string | undefined) => void;
   openMediumModal: (rowId: string) => void;
   closeMediumModal: () => void;
@@ -77,6 +79,41 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
     set({
       rows: rows.filter((r) => r.id !== selectedRowId),
       selectedRowId: undefined,
+    });
+  },
+
+  addRowAfter: (id) => {
+    const { rows } = get();
+    const index = rows.findIndex((r) => r.id === id);
+    if (index === -1) return;
+
+    const row = rows[index];
+    if (row.kind === "image") return;
+
+    const newRow: GridRow = {
+      id: generateRowId(),
+      kind: "surface",
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "air",
+      semiDiameter: 1,
+    };
+
+    const newRows = [...rows];
+    newRows.splice(index + 1, 0, newRow);
+    set({ rows: newRows });
+  },
+
+  deleteRow: (id) => {
+    const { rows } = get();
+    const row = rows.find((r) => r.id === id);
+    if (!row || row.kind !== "surface") return;
+
+    set({
+      rows: rows.filter((r) => r.id !== id),
+      selectedRowId: get().selectedRowId === id ? undefined : get().selectedRowId,
     });
   },
 

@@ -36,7 +36,8 @@ describe("LensPrescriptionGrid", () => {
     onRowChange: jest.fn(),
     onOpenMediumModal: jest.fn(),
     onOpenAsphericalModal: jest.fn(),
-    onRowSelected: jest.fn(),
+    onAddRowAfter: jest.fn(),
+    onDeleteRow: jest.fn(),
   };
 
   beforeEach(() => {
@@ -176,20 +177,48 @@ describe("LensPrescriptionGrid", () => {
     expect(onRowChange).toHaveBeenCalledWith(OBJECT_ROW_ID, { objectDistance: 500.5 });
   });
 
-  // --- Row selection ---
-  it("renders radio buttons for surface rows", () => {
+  // --- Add/Delete row buttons ---
+  it("renders a '+' button for object and surface rows but not image", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const radios = screen.getAllByRole("radio");
-    expect(radios).toHaveLength(2); // two surface rows
+    const addButtons = screen.getAllByRole("button", { name: "Insert row" });
+    // object: 1, s1: 1, s2: 1, image: 0
+    expect(addButtons).toHaveLength(3);
   });
 
-  it("calls onRowSelected when a radio button is clicked", async () => {
-    const onRowSelected = jest.fn();
-    render(<LensPrescriptionGrid {...defaultProps} onRowSelected={onRowSelected} />);
-    const radios = screen.getAllByRole("radio");
+  it("renders a '-' button only for surface rows", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const deleteButtons = screen.getAllByRole("button", { name: "Delete row" });
+    // s1: 1, s2: 1
+    expect(deleteButtons).toHaveLength(2);
+  });
 
-    await userEvent.click(radios[0]);
+  it("calls onAddRowAfter when '+' button is clicked on object row", async () => {
+    const onAddRowAfter = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onAddRowAfter={onAddRowAfter} />);
+    const addButtons = screen.getAllByRole("button", { name: "Insert row" });
 
-    expect(onRowSelected).toHaveBeenCalledWith("s1");
+    await userEvent.click(addButtons[0]); // first '+' is for object row
+
+    expect(onAddRowAfter).toHaveBeenCalledWith(OBJECT_ROW_ID);
+  });
+
+  it("calls onAddRowAfter when '+' button is clicked on surface row", async () => {
+    const onAddRowAfter = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onAddRowAfter={onAddRowAfter} />);
+    const addButtons = screen.getAllByRole("button", { name: "Insert row" });
+
+    await userEvent.click(addButtons[1]); // second '+' is for s1
+
+    expect(onAddRowAfter).toHaveBeenCalledWith("s1");
+  });
+
+  it("calls onDeleteRow when '-' button is clicked on surface row", async () => {
+    const onDeleteRow = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onDeleteRow={onDeleteRow} />);
+    const deleteButtons = screen.getAllByRole("button", { name: "Delete row" });
+
+    await userEvent.click(deleteButtons[0]); // first '-' is for s1
+
+    expect(onDeleteRow).toHaveBeenCalledWith("s1");
   });
 });

@@ -24,7 +24,6 @@ export function LensPrescriptionContainer({
   const store = useMemo(() => createStore<LensEditorState>(createLensEditorSlice), []);
 
   const rows = useStore(store, (s) => s.rows);
-  const selectedRowId = useStore(store, (s) => s.selectedRowId);
   const mediumModal = useStore(store, (s) => s.mediumModal);
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
 
@@ -41,10 +40,6 @@ export function LensPrescriptionContainer({
     prevRowsRef.current = rows;
     onSurfacesChange(gridRowsToSurfaces(rows));
   }, [rows, onSurfacesChange]);
-
-  const selectedRow = rows.find((r) => r.id === selectedRowId);
-  const canAdd = selectedRow?.kind === "surface";
-  const canDelete = selectedRow?.kind === "surface";
 
   const mediumRow = rows.find((r) => r.id === mediumModal.rowId);
   const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);
@@ -63,20 +58,6 @@ export function LensPrescriptionContainer({
   return (
     <div>
       <div role="toolbar" aria-label="Grid toolbar">
-        <button
-          type="button"
-          disabled={!canAdd}
-          onClick={() => store.getState().addRowAfterSelected()}
-        >
-          Add Row
-        </button>
-        <button
-          type="button"
-          disabled={!canDelete}
-          onClick={() => store.getState().deleteSelectedRow()}
-        >
-          Delete Row
-        </button>
         <button type="button" onClick={handleExport}>
           Export JSON
         </button>
@@ -87,7 +68,8 @@ export function LensPrescriptionContainer({
         onRowChange={(id, patch) => store.getState().updateRow(id, patch)}
         onOpenMediumModal={(rowId) => store.getState().openMediumModal(rowId)}
         onOpenAsphericalModal={(rowId) => store.getState().openAsphericalModal(rowId)}
-        onRowSelected={(rowId) => store.getState().setSelectedRowId(rowId)}
+        onAddRowAfter={(rowId) => store.getState().addRowAfter(rowId)}
+        onDeleteRow={(rowId) => store.getState().deleteRow(rowId)}
       />
 
       <MediumSelectorModal

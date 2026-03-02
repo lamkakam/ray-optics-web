@@ -213,6 +213,79 @@ describe("lensEditorStore", () => {
     });
   });
 
+  describe("addRowAfter", () => {
+    it("adds a new surface row after the specified row", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().addRowAfter("s1");
+
+      const rows = store.getState().rows;
+      expect(rows).toHaveLength(5);
+      expect(rows[2].kind).toBe("surface");
+      expect(rows[2].label).toBe("Default");
+      expect(rows[2].medium).toBe("air");
+    });
+
+    it("adds a row after the object row", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().addRowAfter(OBJECT_ROW_ID);
+
+      const rows = store.getState().rows;
+      expect(rows).toHaveLength(5);
+      expect(rows[0].kind).toBe("object");
+      expect(rows[1].kind).toBe("surface");
+      expect(rows[1].medium).toBe("air");
+    });
+
+    it("does not add a row after the image row", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().addRowAfter(IMAGE_ROW_ID);
+      expect(store.getState().rows).toHaveLength(4);
+    });
+
+    it("does nothing for non-existent id", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().addRowAfter("nonexistent");
+      expect(store.getState().rows).toHaveLength(4);
+    });
+  });
+
+  describe("deleteRow", () => {
+    it("deletes the specified surface row", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().deleteRow("s1");
+
+      const rows = store.getState().rows;
+      expect(rows).toHaveLength(3);
+      expect(rows.find((r) => r.id === "s1")).toBeUndefined();
+    });
+
+    it("does not delete the object row", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().deleteRow(OBJECT_ROW_ID);
+      expect(store.getState().rows).toHaveLength(4);
+    });
+
+    it("does not delete the image row", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().deleteRow(IMAGE_ROW_ID);
+      expect(store.getState().rows).toHaveLength(4);
+    });
+
+    it("does nothing for non-existent id", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().deleteRow("nonexistent");
+      expect(store.getState().rows).toHaveLength(4);
+    });
+  });
+
   describe("exportToJson", () => {
     it("returns JSON string of current rows converted to Surfaces", () => {
       const store = makeStore();

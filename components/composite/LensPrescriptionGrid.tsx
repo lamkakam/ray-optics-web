@@ -15,7 +15,8 @@ interface LensPrescriptionGridProps {
   readonly onRowChange: (id: string, patch: Partial<GridRow>) => void;
   readonly onOpenMediumModal: (rowId: string) => void;
   readonly onOpenAsphericalModal: (rowId: string) => void;
-  readonly onRowSelected: (rowId: string | undefined) => void;
+  readonly onAddRowAfter: (rowId: string) => void;
+  readonly onDeleteRow: (rowId: string) => void;
 }
 
 export function LensPrescriptionGrid({
@@ -23,21 +24,37 @@ export function LensPrescriptionGrid({
   onRowChange,
   onOpenMediumModal,
   onOpenAsphericalModal,
-  onRowSelected,
+  onAddRowAfter,
+  onDeleteRow,
 }: LensPrescriptionGridProps) {
   const columnDefs: ColDef<GridRow>[] = [
     {
       headerName: "",
       field: "kind",
-      width: 40,
+      width: 80,
       cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind !== "surface") return null;
+        const { kind, id } = params.data;
         return (
-          <input
-            type="radio"
-            name="row-selection"
-            onClick={() => onRowSelected(params.data.id)}
-          />
+          <span>
+            {kind !== "image" && (
+              <button
+                type="button"
+                aria-label="Insert row"
+                onClick={() => onAddRowAfter(id)}
+              >
+                +
+              </button>
+            )}
+            {kind === "surface" && (
+              <button
+                type="button"
+                aria-label="Delete row"
+                onClick={() => onDeleteRow(id)}
+              >
+                −
+              </button>
+            )}
+          </span>
         );
       },
     },

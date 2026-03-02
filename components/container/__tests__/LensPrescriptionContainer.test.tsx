@@ -39,34 +39,34 @@ describe("LensPrescriptionContainer", () => {
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
-  it("renders Add Row button", () => {
-    render(<LensPrescriptionContainer {...defaultProps} />);
-    expect(screen.getByText("Add Row")).toBeInTheDocument();
-  });
-
-  it("renders Delete Row button", () => {
-    render(<LensPrescriptionContainer {...defaultProps} />);
-    expect(screen.getByText("Delete Row")).toBeInTheDocument();
-  });
-
   it("renders Export JSON button", () => {
     render(<LensPrescriptionContainer {...defaultProps} />);
     expect(screen.getByText("Export JSON")).toBeInTheDocument();
-  });
-
-  it("Add Row button is disabled when no row is selected", () => {
-    render(<LensPrescriptionContainer {...defaultProps} />);
-    expect(screen.getByText("Add Row")).toBeDisabled();
-  });
-
-  it("Delete Row button is disabled when no row is selected", () => {
-    render(<LensPrescriptionContainer {...defaultProps} />);
-    expect(screen.getByText("Delete Row")).toBeDisabled();
   });
 
   it("renders rows from initialSurfaces (object + 2 surfaces + image)", () => {
     render(<LensPrescriptionContainer {...defaultProps} />);
     const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
     expect(rows).toHaveLength(4);
+  });
+
+  it("adds a row when '+' is clicked on a surface row", async () => {
+    render(<LensPrescriptionContainer {...defaultProps} />);
+    const addButtons = screen.getAllByRole("button", { name: "Insert row" });
+
+    await userEvent.click(addButtons[1]); // '+' on first surface row
+
+    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    expect(rows).toHaveLength(5);
+  });
+
+  it("deletes a row when '-' is clicked on a surface row", async () => {
+    render(<LensPrescriptionContainer {...defaultProps} />);
+    const deleteButtons = screen.getAllByRole("button", { name: "Delete row" });
+
+    await userEvent.click(deleteButtons[0]); // '-' on first surface row
+
+    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    expect(rows).toHaveLength(3);
   });
 });
