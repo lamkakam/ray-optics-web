@@ -10,6 +10,45 @@ import { NumberCell } from "@/components/micro/NumberCell";
 import { MediumCell } from "@/components/micro/MediumCell";
 import { AsphericalCell } from "@/components/micro/AsphericalCell";
 
+function FocusWrapper({ children }: { readonly children: React.ReactNode }) {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    const el = e.currentTarget.querySelector<HTMLElement>("input, select, button");
+    el?.focus();
+  };
+  return (
+    <div
+      data-cell-wrapper
+      className="w-full h-full flex items-center"
+      onClick={handleClick}
+    >
+      {children}
+    </div>
+  );
+}
+
+function ActionWrapper({
+  children,
+  onAction,
+}: {
+  readonly children: React.ReactNode;
+  readonly onAction: () => void;
+}) {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return;
+    onAction();
+  };
+  return (
+    <div
+      data-cell-wrapper
+      className="w-full h-full flex items-center cursor-pointer"
+      onClick={handleClick}
+    >
+      {children}
+    </div>
+  );
+}
+
 interface LensPrescriptionGridProps {
   readonly rows: GridRow[];
   readonly onRowChange: (id: string, patch: Partial<GridRow>) => void;
@@ -65,10 +104,12 @@ export function LensPrescriptionGrid({
         if (params.data.kind === "object") return "Object";
         if (params.data.kind === "image") return "Image";
         return (
-          <SurfaceLabelCell
-            value={params.data.label ?? "Default"}
-            onValueChange={(val) => onRowChange(params.data.id, { label: val })}
-          />
+          <FocusWrapper>
+            <SurfaceLabelCell
+              value={params.data.label ?? "Default"}
+              onValueChange={(val) => onRowChange(params.data.id, { label: val })}
+            />
+          </FocusWrapper>
         );
       },
     },
@@ -78,10 +119,12 @@ export function LensPrescriptionGrid({
       cellRenderer: (params: { data: GridRow }) => {
         if (params.data.kind === "object") return null;
         return (
-          <NumberCell
-            value={params.data.curvatureRadius ?? 0}
-            onValueChange={(val) => onRowChange(params.data.id, { curvatureRadius: val })}
-          />
+          <FocusWrapper>
+            <NumberCell
+              value={params.data.curvatureRadius ?? 0}
+              onValueChange={(val) => onRowChange(params.data.id, { curvatureRadius: val })}
+            />
+          </FocusWrapper>
         );
       },
     },
@@ -92,17 +135,21 @@ export function LensPrescriptionGrid({
         if (params.data.kind === "image") return null;
         if (params.data.kind === "object") {
           return (
-            <NumberCell
-              value={params.data.objectDistance ?? 0}
-              onValueChange={(val) => onRowChange(params.data.id, { objectDistance: val })}
-            />
+            <FocusWrapper>
+              <NumberCell
+                value={params.data.objectDistance ?? 0}
+                onValueChange={(val) => onRowChange(params.data.id, { objectDistance: val })}
+              />
+            </FocusWrapper>
           );
         }
         return (
-          <NumberCell
-            value={params.data.thickness ?? 0}
-            onValueChange={(val) => onRowChange(params.data.id, { thickness: val })}
-          />
+          <FocusWrapper>
+            <NumberCell
+              value={params.data.thickness ?? 0}
+              onValueChange={(val) => onRowChange(params.data.id, { thickness: val })}
+            />
+          </FocusWrapper>
         );
       },
     },
@@ -112,10 +159,12 @@ export function LensPrescriptionGrid({
       cellRenderer: (params: { data: GridRow }) => {
         if (params.data.kind !== "surface") return null;
         return (
-          <MediumCell
-            medium={params.data.medium ?? ""}
-            onOpenModal={() => onOpenMediumModal(params.data.id)}
-          />
+          <ActionWrapper onAction={() => onOpenMediumModal(params.data.id)}>
+            <MediumCell
+              medium={params.data.medium ?? ""}
+              onOpenModal={() => onOpenMediumModal(params.data.id)}
+            />
+          </ActionWrapper>
         );
       },
     },
@@ -125,10 +174,12 @@ export function LensPrescriptionGrid({
       cellRenderer: (params: { data: GridRow }) => {
         if (params.data.kind !== "surface") return null;
         return (
-          <NumberCell
-            value={params.data.semiDiameter ?? 0}
-            onValueChange={(val) => onRowChange(params.data.id, { semiDiameter: val })}
-          />
+          <FocusWrapper>
+            <NumberCell
+              value={params.data.semiDiameter ?? 0}
+              onValueChange={(val) => onRowChange(params.data.id, { semiDiameter: val })}
+            />
+          </FocusWrapper>
         );
       },
     },
@@ -138,10 +189,12 @@ export function LensPrescriptionGrid({
       cellRenderer: (params: { data: GridRow }) => {
         if (params.data.kind !== "surface") return null;
         return (
-          <AsphericalCell
-            isAspherical={params.data.aspherical !== undefined}
-            onOpenModal={() => onOpenAsphericalModal(params.data.id)}
-          />
+          <ActionWrapper onAction={() => onOpenAsphericalModal(params.data.id)}>
+            <AsphericalCell
+              isAspherical={params.data.aspherical !== undefined}
+              onOpenModal={() => onOpenAsphericalModal(params.data.id)}
+            />
+          </ActionWrapper>
         );
       },
     },

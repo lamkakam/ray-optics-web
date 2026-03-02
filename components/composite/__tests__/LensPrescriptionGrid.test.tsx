@@ -177,6 +177,51 @@ describe("LensPrescriptionGrid", () => {
     expect(onRowChange).toHaveBeenCalledWith(OBJECT_ROW_ID, { objectDistance: 500.5 });
   });
 
+  // --- Cell click delegation (clicking empty space in a cell) ---
+  it("focuses the input when clicking cell area around a NumberCell", async () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const inputs = screen.getAllByRole("textbox");
+    const cellWrapper = inputs[1].closest("[data-cell-wrapper]")!;
+    expect(cellWrapper).toBeInTheDocument();
+
+    await userEvent.click(cellWrapper);
+
+    expect(inputs[1]).toHaveFocus();
+  });
+
+  it("focuses the select when clicking cell area around a SurfaceLabelCell", async () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const selects = screen.getAllByRole("combobox", { name: "Surface label" });
+    const cellWrapper = selects[0].closest("[data-cell-wrapper]")!;
+    expect(cellWrapper).toBeInTheDocument();
+
+    await userEvent.click(cellWrapper);
+
+    expect(selects[0]).toHaveFocus();
+  });
+
+  it("opens medium modal when clicking cell area around the medium button", async () => {
+    const onOpenMediumModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenMediumModal={onOpenMediumModal} />);
+    const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
+    const cellWrapper = mediumButtons[0].closest("[data-cell-wrapper]")!;
+
+    await userEvent.click(cellWrapper);
+
+    expect(onOpenMediumModal).toHaveBeenCalledWith("s1");
+  });
+
+  it("opens aspherical modal when clicking cell area around the checkbox", async () => {
+    const onOpenAsphericalModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenAsphericalModal={onOpenAsphericalModal} />);
+    const checkboxes = screen.getAllByRole("checkbox", { name: "Edit aspherical parameters" });
+    const cellWrapper = checkboxes[0].closest("[data-cell-wrapper]")!;
+
+    await userEvent.click(cellWrapper);
+
+    expect(onOpenAsphericalModal).toHaveBeenCalledWith("s1");
+  });
+
   // --- Add/Delete row buttons ---
   it("renders a '+' button for object and surface rows but not image", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
