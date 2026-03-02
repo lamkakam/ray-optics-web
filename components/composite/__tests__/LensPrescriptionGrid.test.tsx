@@ -136,10 +136,11 @@ describe("LensPrescriptionGrid", () => {
   it("renders text inputs for editable numeric cells", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     const inputs = screen.getAllByRole("textbox");
+    // object: thickness (objectDistance) (1)
     // s1: radius, thickness, semi-diam (3)
     // s2: radius, thickness, semi-diam (3)
     // image: radius (1)
-    expect(inputs).toHaveLength(7);
+    expect(inputs).toHaveLength(8);
   });
 
   it("calls onRowChange when a numeric cell value changes", async () => {
@@ -147,12 +148,32 @@ describe("LensPrescriptionGrid", () => {
     render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
     const inputs = screen.getAllByRole("textbox");
 
-    // First textbox should be s1 radius (value 50)
-    await userEvent.clear(inputs[0]);
-    await userEvent.type(inputs[0], "100");
+    // Second textbox should be s1 radius (value 50) — first is object thickness
+    await userEvent.clear(inputs[1]);
+    await userEvent.type(inputs[1], "100");
     await userEvent.tab();
 
     expect(onRowChange).toHaveBeenCalledWith("s1", { curvatureRadius: 100 });
+  });
+
+  // --- Object row thickness (object distance) ---
+  it("renders a thickness input for the Object row", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const inputs = screen.getAllByRole("textbox");
+    // First textbox is object's thickness (objectDistance = 1e10)
+    expect(inputs[0]).toHaveValue("10000000000");
+  });
+
+  it("calls onRowChange with objectDistance when Object thickness changes", async () => {
+    const onRowChange = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
+    const inputs = screen.getAllByRole("textbox");
+
+    await userEvent.clear(inputs[0]);
+    await userEvent.type(inputs[0], "500.5");
+    await userEvent.tab();
+
+    expect(onRowChange).toHaveBeenCalledWith(OBJECT_ROW_ID, { objectDistance: 500.5 });
   });
 
   // --- Row selection ---

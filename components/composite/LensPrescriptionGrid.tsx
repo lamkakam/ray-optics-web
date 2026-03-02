@@ -72,7 +72,15 @@ export function LensPrescriptionGrid({
       headerName: "Thickness",
       field: "thickness",
       cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind !== "surface") return null;
+        if (params.data.kind === "image") return null;
+        if (params.data.kind === "object") {
+          return (
+            <NumberCell
+              value={params.data.objectDistance ?? 0}
+              onValueChange={(val) => onRowChange(params.data.id, { objectDistance: val })}
+            />
+          );
+        }
         return (
           <NumberCell
             value={params.data.thickness ?? 0}
