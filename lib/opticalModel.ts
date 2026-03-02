@@ -32,9 +32,7 @@ export interface Surface {
   };
 }
 
-/** Complete optical model returned from the worker. */
-export interface OpticalModel {
-  specs: OpticalSpecs;
+export interface Surfaces {
   object: {
     distance: number,
   },
@@ -42,5 +40,10 @@ export interface OpticalModel {
     curvatureRadius: number, // 0 means flat (infinite radius)
   },
   surfaces: Surface[];
+}
+
+/** Complete optical model returned from the worker. */
+export interface OpticalModel extends Surfaces {
+  specs: OpticalSpecs;
 }
 

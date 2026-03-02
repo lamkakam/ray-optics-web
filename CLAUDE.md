@@ -58,6 +58,9 @@ ray-optics-web/
 │   ├── layout.tsx
 │   └── page.tsx
 ├── components/                 # React UI components
+│   ├── micro/                  # Minimal components, not relying on other React components. Single responsibilty.
+│   ├── composite/              # Composed with micro-components
+│   └── container/              # Containers for state management and logics
 ├── workers/
 │   └── pyodide.worker.ts       # Web Worker: Pyodide init + rayoptics API
 ├── hooks/
