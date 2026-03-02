@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
 
@@ -21,6 +21,21 @@ describe("MediumSelectorModal", () => {
   it("renders a dialog when isOpen is true", () => {
     render(<MediumSelectorModal {...defaultProps} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("renders a backdrop overlay behind the dialog", () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+    const backdrop = screen.getByTestId("modal-backdrop");
+    expect(backdrop).toBeInTheDocument();
+  });
+
+  it("calls onClose when clicking the backdrop overlay", async () => {
+    const onClose = jest.fn();
+    render(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
+    const backdrop = screen.getByTestId("modal-backdrop");
+
+    await userEvent.click(backdrop);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("has a manufacturer dropdown with Special and real manufacturers", () => {
@@ -49,7 +64,6 @@ describe("MediumSelectorModal", () => {
       />
     );
 
-    // Should default to Special since manufacturer is "air"
     expect(screen.getByLabelText("Medium")).toBeInTheDocument();
     const mediumSelect = screen.getByLabelText("Medium");
     const options = Array.from(
@@ -83,7 +97,6 @@ describe("MediumSelectorModal", () => {
       />
     );
 
-    // Select Special → air
     await userEvent.selectOptions(screen.getByLabelText("Medium"), "REFL");
     await userEvent.click(screen.getByText("Confirm"));
 

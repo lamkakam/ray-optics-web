@@ -67,52 +67,60 @@ export function MediumSelectorModal({
   const mediaOptions = isSpecial ? SPECIAL_MEDIA : glassList;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="medium-modal-title"
-    >
-      <h2 id="medium-modal-title">Select Medium</h2>
-
-      <label htmlFor="manufacturer-select">Manufacturer</label>
-      <select
-        id="manufacturer-select"
-        aria-label="Manufacturer"
-        value={manufacturer}
-        onChange={(e) => {
-          setManufacturer(e.target.value);
-          if (e.target.value === "Special") {
-            setMedium("air");
-          }
-        }}
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        data-testid="modal-backdrop"
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="medium-modal-title"
+        className="relative z-10 rounded-lg bg-white p-6 shadow-xl"
       >
-        {MANUFACTURERS.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+        <h2 id="medium-modal-title">Select Medium</h2>
 
-      <label htmlFor="medium-select">Medium</label>
-      <select
-        id="medium-select"
-        aria-label="Medium"
-        value={medium}
-        onChange={(e) => setMedium(e.target.value)}
-      >
-        {mediaOptions.map((g) => (
-          <option key={g} value={g}>
-            {g}
-          </option>
-        ))}
-      </select>
+        <label htmlFor="manufacturer-select">Manufacturer</label>
+        <select
+          id="manufacturer-select"
+          aria-label="Manufacturer"
+          value={manufacturer}
+          onChange={(e) => {
+            setManufacturer(e.target.value);
+            if (e.target.value === "Special") {
+              setMedium("air");
+            }
+          }}
+        >
+          {MANUFACTURERS.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
 
-      <button type="button" onClick={() => onConfirm(medium, isSpecial ? "air" : manufacturer)}>
-        Confirm
-      </button>
-      <button type="button" onClick={onClose}>
-        Cancel
-      </button>
+        <label htmlFor="medium-select">Medium</label>
+        <select
+          id="medium-select"
+          aria-label="Medium"
+          value={medium}
+          onChange={(e) => setMedium(e.target.value)}
+        >
+          {mediaOptions.map((g) => (
+            <option key={g} value={g}>
+              {g}
+            </option>
+          ))}
+        </select>
+
+        <button type="button" onClick={() => onConfirm(medium, isSpecial ? "air" : manufacturer)}>
+          Confirm
+        </button>
+        <button type="button" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

@@ -24,6 +24,21 @@ describe("AsphericalModal", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
+  it("renders a backdrop overlay behind the dialog", () => {
+    render(<AsphericalModal {...defaultProps} />);
+    const backdrop = screen.getByTestId("modal-backdrop");
+    expect(backdrop).toBeInTheDocument();
+  });
+
+  it("calls onClose when clicking the backdrop overlay", async () => {
+    const onClose = jest.fn();
+    render(<AsphericalModal {...defaultProps} onClose={onClose} />);
+    const backdrop = screen.getByTestId("modal-backdrop");
+
+    await userEvent.click(backdrop);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("always shows conic constant input", () => {
     render(<AsphericalModal {...defaultProps} />);
     expect(screen.getByLabelText("Conic constant")).toBeInTheDocument();
@@ -74,6 +89,51 @@ describe("AsphericalModal", () => {
       conicConstant: -1.5,
       type: "Conical",
       polynomialCoefficients: [],
+    });
+  });
+
+  it("accepts typed floating-point conic constant and confirms", async () => {
+    const onConfirm = jest.fn();
+    render(
+      <AsphericalModal
+        {...defaultProps}
+        onConfirm={onConfirm}
+        initialConicConstant={0}
+      />
+    );
+
+    const input = screen.getByLabelText("Conic constant");
+    await userEvent.clear(input);
+    await userEvent.type(input, "-0.5");
+    await userEvent.click(screen.getByText("Confirm"));
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      conicConstant: -0.5,
+      type: "Conical",
+      polynomialCoefficients: [],
+    });
+  });
+
+  it("accepts typed floating-point coefficient and confirms", async () => {
+    const onConfirm = jest.fn();
+    render(
+      <AsphericalModal
+        {...defaultProps}
+        initialType="EvenAspherical"
+        initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+        onConfirm={onConfirm}
+      />
+    );
+
+    const a2Input = screen.getByLabelText("a2");
+    await userEvent.clear(a2Input);
+    await userEvent.type(a2Input, "0.001");
+    await userEvent.click(screen.getByText("Confirm"));
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      conicConstant: 0,
+      type: "EvenAspherical",
+      polynomialCoefficients: [0.001],
     });
   });
 

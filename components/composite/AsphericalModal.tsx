@@ -31,10 +31,17 @@ function truncateTrailingZeros(arr: number[]): number[] {
   return lastNonZero === -1 ? [] : arr.slice(0, lastNonZero + 1);
 }
 
-function padCoefficients(coefficients: number[]): number[] {
+function padCoefficients(coefficients: number[]): string[] {
   const c = [...coefficients];
   while (c.length < 10) c.push(0);
-  return c;
+  return c.map(String);
+}
+
+function parseNumericString(s: string, fallback: number): number {
+  const trimmed = s.trim();
+  if (trimmed === "") return fallback;
+  const v = parseFloat(trimmed);
+  return Number.isFinite(v) ? v : fallback;
 }
 
 export function AsphericalModal({
@@ -46,9 +53,9 @@ export function AsphericalModal({
   onClose,
   onRemove,
 }: AsphericalModalProps) {
-  const [conicConstant, setConicConstant] = useState(initialConicConstant);
+  const [conicConstantStr, setConicConstantStr] = useState(String(initialConicConstant));
   const [type, setType] = useState<AsphericalType>(initialType);
-  const [coefficients, setCoefficients] = useState<number[]>(() =>
+  const [coefficientStrs, setCoefficientStrs] = useState<string[]>(() =>
     padCoefficients(initialCoefficients)
   );
 
@@ -62,13 +69,17 @@ export function AsphericalModal({
   }, [isOpen, onClose]);
 
   const handleConfirm = () => {
+    const conicConstant = parseNumericString(conicConstantStr, initialConicConstant);
+    const coefficients = coefficientStrs.map((s, i) =>
+      parseNumericString(s, initialCoefficients[i] ?? 0)
+    );
     const polynomialCoefficients =
       type === "EvenAspherical" ? truncateTrailingZeros(coefficients) : [];
     onConfirm({ conicConstant, type, polynomialCoefficients });
   };
 
-  const updateCoefficient = (index: number, value: number) => {
-    setCoefficients((prev) => {
+  const updateCoefficient = (index: number, value: string) => {
+    setCoefficientStrs((prev) => {
       const next = [...prev];
       next[index] = value;
       return next;
@@ -78,67 +89,67 @@ export function AsphericalModal({
   if (!isOpen) return undefined;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="aspherical-modal-title"
-    >
-      <h2 id="aspherical-modal-title">Aspherical Parameters</h2>
-
-      <label htmlFor="conic-constant">Conic constant</label>
-      <input
-        id="conic-constant"
-        aria-label="Conic constant"
-        type="number"
-        step="any"
-        value={conicConstant}
-        onChange={(e) => {
-          const v = parseFloat(e.target.value);
-          if (Number.isFinite(v)) setConicConstant(v);
-        }}
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        data-testid="modal-backdrop"
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
       />
-
-      <label htmlFor="aspherical-type">Type</label>
-      <select
-        id="aspherical-type"
-        aria-label="Type"
-        value={type}
-        onChange={(e) => setType(e.target.value as AsphericalType)}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="aspherical-modal-title"
+        className="relative z-10 rounded-lg bg-white p-6 shadow-xl"
       >
-        <option value="Conical">Conical</option>
-        <option value="EvenAspherical">Even Aspherical</option>
-      </select>
+        <h2 id="aspherical-modal-title">Aspherical Parameters</h2>
 
-      {type === "EvenAspherical" && (
-        <div>
-          {COEFFICIENT_LABELS.map((label, i) => (
-            <div key={label}>
-              <label htmlFor={`coeff-${label}`}>{label}</label>
-              <input
-                id={`coeff-${label}`}
-                aria-label={label}
-                type="number"
-                step="any"
-                value={coefficients[i]}
-                onChange={(e) => {
-                  const v = parseFloat(e.target.value);
-                  if (Number.isFinite(v)) updateCoefficient(i, v);
-                }}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+        <label htmlFor="conic-constant">Conic constant</label>
+        <input
+          id="conic-constant"
+          aria-label="Conic constant"
+          type="text"
+          value={conicConstantStr}
+          onChange={(e) => setConicConstantStr(e.target.value)}
+        />
 
-      <button type="button" onClick={onRemove}>
-        Remove Aspherical
-      </button>
-      <button type="button" onClick={handleConfirm}>
-        Confirm
-      </button>
-      <button type="button" onClick={onClose}>
-        Cancel
-      </button>
+        <label htmlFor="aspherical-type">Type</label>
+        <select
+          id="aspherical-type"
+          aria-label="Type"
+          value={type}
+          onChange={(e) => setType(e.target.value as AsphericalType)}
+        >
+          <option value="Conical">Conical</option>
+          <option value="EvenAspherical">Even Aspherical</option>
+        </select>
+
+        {type === "EvenAspherical" && (
+          <div>
+            {COEFFICIENT_LABELS.map((label, i) => (
+              <div key={label}>
+                <label htmlFor={`coeff-${label}`}>{label}</label>
+                <input
+                  id={`coeff-${label}`}
+                  aria-label={label}
+                  type="text"
+                  value={coefficientStrs[i]}
+                  onChange={(e) => updateCoefficient(i, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button type="button" onClick={onRemove}>
+          Remove Aspherical
+        </button>
+        <button type="button" onClick={handleConfirm}>
+          Confirm
+        </button>
+        <button type="button" onClick={onClose}>
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }
