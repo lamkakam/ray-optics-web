@@ -20,13 +20,13 @@ export interface OpticalSpecs {
 
 /** Represents a single optical surface in the sequential model. */
 export interface Surface {
-  label: "Default" | "Object" | "Stop";
-  curvatureRadius: number; // 0 means flat (infinite radius). Ignored by "Object
+  label: "Default" | "Stop";
+  curvatureRadius: number; // 0 means flat (infinite radius).
   thickness: number;
-  medium: string; // Ignored by "Object". Can be "air" or "REFL"
-  manufacturer: string; // Ignored by "Object". If medium is "air" or "REFL", manufacturer is also "air"
-  semiDiameter?: number; // Ignored by "Object"
-  aspherical?: { // Ignored by "Object"
+  medium: string; // can be "air" or "REFL"
+  manufacturer: string; // if medium is "air" or "REFL", manufacturer is also "air"
+  semiDiameter: number;
+  aspherical?: {
     conicConstant: number;
     polynomialCoefficients?: number[]; // length <= 10
   };
@@ -35,6 +35,12 @@ export interface Surface {
 /** Complete optical model returned from the worker. */
 export interface OpticalModel {
   specs: OpticalSpecs;
+  object: {
+    distance: number,
+  },
+  image: {
+    curvatureRadius: number, // 0 means flat (infinite radius)
+  },
   surfaces: Surface[];
 }
 

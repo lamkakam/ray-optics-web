@@ -16,30 +16,40 @@ const allSphericalOpticalModel: OpticalModel = {
     field: { space: "object", type: "angle", maxField: 20.0, fields: [0., 0.707, 1.], isRelative: true },
     wavelengths: { weights: [[656.3, 1.], [587., 2.], [486.1, 1.]], referenceIndex: 1 },
   },
+  object: { distance: 1e10 },
+  image: { curvatureRadius: -42 },
   surfaces: [
-    { label: "Object", curvatureRadius: 0, thickness: 1e10, medium: "air", manufacturer: "" },
-    { label: "Default", curvatureRadius: 23.713, thickness: 4.831, medium: "N-LAK9", manufacturer: "Schott" },
-    { label: "Default", curvatureRadius: 7331.288000, thickness: 5.86, medium: "air", manufacturer: "" },
-    { label: "Stop", curvatureRadius: -24.456, thickness: 0.975, medium: "N-SF5", manufacturer: "Schott" },
-    { label: "Default", curvatureRadius: 21.896, thickness: 4.822, medium: "air", manufacturer: "" },
-    { label: "Default", curvatureRadius: 86.759, thickness: 3.127, medium: "N-LAK9", manufacturer: "Schott" },
+    { label: "Default", curvatureRadius: 23.713, thickness: 4.831, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 10.009 },
+    { label: "Default", curvatureRadius: 7331.288000, thickness: 5.86, medium: "air", manufacturer: "", semiDiameter: 8.9483 },
+    { label: "Stop", curvatureRadius: -24.456, thickness: 0.975, medium: "N-SF5", manufacturer: "Schott", semiDiameter: 4.7918 },
+    { label: "Default", curvatureRadius: 21.896, thickness: 4.822, medium: "air", manufacturer: "", semiDiameter: 4.7760 },
+    { label: "Default", curvatureRadius: 86.759, thickness: 3.127, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 8.0218 },
     // manufacturer is set to be "Schott" on purpose for testing
-    { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "Schott" },
+    { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "Schott", semiDiameter: 8.3321 },
   ],
 };
 
 
 const opticalModelWithAspherical: OpticalModel = {
   specs: { ...allSphericalOpticalModel.specs },
+  object: { distance: 1e10 },
+  image: { curvatureRadius: -42 },
   surfaces: [
-    { label: "Object", curvatureRadius: 0, thickness: 1e10, medium: "air", manufacturer: "" },
-    { label: "Stop", curvatureRadius: 0, thickness: 0, medium: "air", manufacturer: "" },
-    { label: "Default", curvatureRadius: 23.713, thickness: 4.831, medium: "N-LAK9", manufacturer: "Schott", aspherical: { conicConstant: 0.1, polynomialCoefficients: [0, 0.02, 0, 0, 0, 0, 0, 0, 0, 0] } },
-    { label: "Default", curvatureRadius: 7331.288000, thickness: 5.86, medium: "air", manufacturer: "" },
-    { label: "Default", curvatureRadius: -24.456, thickness: 0.975, medium: "N-SF5", manufacturer: "Schott" },
-    { label: "Default", curvatureRadius: 21.896, thickness: 4.822, medium: "air", manufacturer: "" },
-    { label: "Default", curvatureRadius: 86.759, thickness: 3.127, medium: "N-LAK9", manufacturer: "Schott" },
-    { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "" },
+    { label: "Stop", curvatureRadius: 0, thickness: 0, medium: "air", manufacturer: "", semiDiameter: 10.009 },
+    {
+      label: "Default",
+      curvatureRadius: 23.713,
+      thickness: 4.831,
+      medium: "N-LAK9",
+      manufacturer: "Schott",
+      aspherical: { conicConstant: 0.1, polynomialCoefficients: [0, 0.02, 0, 0, 0, 0, 0, 0, 0, 0] },
+      semiDiameter: 10.009
+    },
+    { label: "Default", curvatureRadius: 7331.288000, thickness: 5.86, medium: "air", manufacturer: "", semiDiameter: 8.9483 },
+    { label: "Default", curvatureRadius: -24.456, thickness: 0.975, medium: "N-SF5", manufacturer: "Schott", semiDiameter: 4.7918 },
+    { label: "Default", curvatureRadius: 21.896, thickness: 4.822, medium: "air", manufacturer: "", semiDiameter: 4.7760 },
+    { label: "Default", curvatureRadius: 86.759, thickness: 3.127, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 8.0218 },
+    { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "", semiDiameter: 8.3321 },
   ],
 };
 
@@ -55,24 +65,32 @@ describe("_setOpticalSurfaces", () => {
   it("should set optical surfaces including stops by calling add_surface correctly", async () => {
     let pythonScript = "";
     await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
-    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'])");
-    expect(pythonScript).toContain("sm.add_surface([7331.288, 5.86, 'air'])");
-    expect(pythonScript).toContain("sm.add_surface([-24.456, 0.975, 'N-SF5', 'Schott'])\nsm.set_stop()");
-    expect(pythonScript).toContain("sm.add_surface([21.896, 4.822, 'air'])");
-    expect(pythonScript).toContain("sm.add_surface([86.759, 3.127, 'N-LAK9', 'Schott'])");
-    expect(pythonScript).toContain("sm.add_surface([-20.4942, 41.2365, 'air'])\nopm.update_model()");
+    expect(pythonScript).toContain("sm.do_apertures = False");
+    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'], sd=10.009)");
+    expect(pythonScript).toContain("sm.add_surface([7331.288, 5.86, 'air'], sd=8.9483)");
+    expect(pythonScript).toContain("sm.add_surface([-24.456, 0.975, 'N-SF5', 'Schott'], sd=4.7918)\nsm.set_stop()");
+    expect(pythonScript).toContain("sm.add_surface([21.896, 4.822, 'air'], sd=4.776)");
+    expect(pythonScript).toContain("sm.add_surface([86.759, 3.127, 'N-LAK9', 'Schott'], sd=8.0218)");
+    expect(pythonScript).toContain("sm.add_surface([-20.4942, 41.2365, 'air'], sd=8.3321)");
+    expect(pythonScript).toContain("opm.update_model()");
   });
 
   it("should set an aspherical surface correctly", async () => {
     let pythonScript = "";
     await _setOpticalSurfaces(opticalModelWithAspherical, async (code) => { pythonScript = code; });
-    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'])\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])");
+    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])");
   });
 
-  it("should set the object correctly", async () => {
+  it("should set the object distance correctly", async () => {
     let pythonScript = "";
     await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.gaps[0].thi=1000000000");
+  });
+
+  it("should set the image curvature radius correctly", async () => {
+    let pythonScript = "";
+    await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
+    expect(pythonScript).toContain("sm.ifcs[-1].profile.r = -42");
   });
 
   it("should set the radius_mode correctly", async () => {

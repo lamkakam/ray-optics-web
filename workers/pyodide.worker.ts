@@ -59,6 +59,7 @@ export async function _init(
         import base64
         import rayoptics.optical.model_constants as mc
         from rayoptics.raytr.waveabr import wave_abr_full_calc
+        from rayoptics.raytr.trace import apply_paraxial_vignetting
 
         def _fig_to_base64(fig, dpi=150):
             buf = BytesIO()
@@ -180,7 +181,7 @@ function requirePyodide(): (code: string) => Promise<unknown> {
 
 // export for testing
 export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython: (code: string) => Promise<unknown>): Promise<void> {
-  const { specs, surfaces } = opticalModel;
+  const { specs, surfaces, object, image } = opticalModel;
   const {
     pupil: { space: pupilSpace, type: pupilType, value: pupilValue },
     field: { space: fieldSpace, type: fieldType, maxField, fields, isRelative: isFieldRelative },
@@ -190,14 +191,8 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
   const formattedWeights = weights
     .reduce((acc, [wl, weight], idx) => `${acc}(${wl}, ${weight})${idx === weights.length - 1 ? "" : ","}`, "");
 
-  const addSurfaceCommands = surfaces.reduce((acc, surface, idx) => {
+  const addSurfaceCommands = surfaces.reduce((acc, surface) => {
     const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical } = surface;
-    if (idx === 0) {
-      // first surface is always the Object
-      return `${acc}\nsm.gaps[0].thi=${thickness}`;
-    }
-
-
     // common surface
     const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
     const glassManufacturer = medium === "air" || medium === "REFL" ? "" : `, '${manufacturer}'`;
@@ -205,6 +200,9 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
     const asphericalCommands = aspherical === undefined ? "" : `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${aspherical.conicConstant}, coefs=${JSON.stringify(aspherical.polynomialCoefficients)})`;
     return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, '${medium}'${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${setStop}`;
   }, "");
+
+  const { distance: objectDistance } = object;
+  const { curvatureRadius: imageCurvatureRadius } = image;
 
   // WARNING: DON'T TOUCH THE FORMATTING BELOW
   await runPython(`
@@ -218,8 +216,14 @@ osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxFi
 osp['wvls'] = WvlSpec([${formattedWeights}], ref_wl=${refWavelengthIdx})
 
 opm.radius_mode = True
+sm.do_apertures = False
+
+sm.gaps[0].thi=${objectDistance}
 ${addSurfaceCommands}
-opm.update_model()`);
+sm.ifcs[-1].profile.r = ${imageCurvatureRadius}
+
+opm.update_model()
+apply_paraxial_vignetting(opm)`);
 }
 
 
