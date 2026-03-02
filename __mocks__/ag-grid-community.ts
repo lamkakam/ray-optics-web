@@ -7,6 +7,9 @@ export interface ColDef<TData = unknown, TValue = unknown> {
   editable?: boolean | ((params: { data: TData }) => boolean);
   checkboxSelection?: boolean | ((params: { data: TData }) => boolean);
   valueGetter?: (params: { data: TData }) => TValue;
+  valueParser?: (params: { newValue: string; oldValue: TValue }) => TValue;
+  valueSetter?: (params: { data: TData; newValue: TValue; oldValue: TValue }) => boolean;
+  cellDataType?: string;
   [key: string]: unknown;
 }
 

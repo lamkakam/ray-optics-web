@@ -6,7 +6,6 @@ import { AllCommunityModule } from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/lib/gridTypes";
 import { SurfaceLabelCell } from "@/components/micro/SurfaceLabelCell";
-import { NumberCell } from "@/components/micro/NumberCell";
 import { MediumCell } from "@/components/micro/MediumCell";
 import { AsphericalCell } from "@/components/micro/AsphericalCell";
 
@@ -47,6 +46,15 @@ function ActionWrapper({
       {children}
     </div>
   );
+}
+
+const VALID_NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
+
+function numberValueParser(params: { newValue: string; oldValue: unknown }) {
+  const raw = String(params.newValue ?? "").trim();
+  if (raw === "" || !VALID_NUMBER.test(raw)) return params.oldValue;
+  const num = parseFloat(raw);
+  return Number.isFinite(num) ? num : params.oldValue;
 }
 
 interface LensPrescriptionGridProps {
@@ -116,41 +124,33 @@ export function LensPrescriptionGrid({
     {
       headerName: "Radius",
       field: "curvatureRadius",
-      cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind === "object") return null;
-        return (
-          <FocusWrapper>
-            <NumberCell
-              value={params.data.curvatureRadius ?? 0}
-              onValueChange={(val) => onRowChange(params.data.id, { curvatureRadius: val })}
-            />
-          </FocusWrapper>
-        );
+      editable: (params) => params.data?.kind !== "object",
+      valueParser: numberValueParser,
+      valueSetter: (params) => {
+        if (!params.data) return false;
+        onRowChange(params.data.id, { curvatureRadius: params.newValue as number });
+        return true;
       },
     },
     {
       headerName: "Thickness",
       field: "thickness",
-      cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind === "image") return null;
+      editable: (params) => params.data?.kind !== "image",
+      valueGetter: (params) => {
+        if (!params.data) return undefined;
+        if (params.data.kind === "object") return params.data.objectDistance ?? 0;
+        if (params.data.kind === "image") return undefined;
+        return params.data.thickness ?? 0;
+      },
+      valueParser: numberValueParser,
+      valueSetter: (params) => {
+        if (!params.data) return false;
         if (params.data.kind === "object") {
-          return (
-            <FocusWrapper>
-              <NumberCell
-                value={params.data.objectDistance ?? 0}
-                onValueChange={(val) => onRowChange(params.data.id, { objectDistance: val })}
-              />
-            </FocusWrapper>
-          );
+          onRowChange(params.data.id, { objectDistance: params.newValue as number });
+        } else {
+          onRowChange(params.data.id, { thickness: params.newValue as number });
         }
-        return (
-          <FocusWrapper>
-            <NumberCell
-              value={params.data.thickness ?? 0}
-              onValueChange={(val) => onRowChange(params.data.id, { thickness: val })}
-            />
-          </FocusWrapper>
-        );
+        return true;
       },
     },
     {
@@ -171,16 +171,12 @@ export function LensPrescriptionGrid({
     {
       headerName: "Semi-diam.",
       field: "semiDiameter",
-      cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind !== "surface") return null;
-        return (
-          <FocusWrapper>
-            <NumberCell
-              value={params.data.semiDiameter ?? 0}
-              onValueChange={(val) => onRowChange(params.data.id, { semiDiameter: val })}
-            />
-          </FocusWrapper>
-        );
+      editable: (params) => params.data?.kind === "surface",
+      valueParser: numberValueParser,
+      valueSetter: (params) => {
+        if (!params.data) return false;
+        onRowChange(params.data.id, { semiDiameter: params.newValue as number });
+        return true;
       },
     },
     {

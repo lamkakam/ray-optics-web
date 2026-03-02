@@ -178,17 +178,6 @@ describe("LensPrescriptionGrid", () => {
   });
 
   // --- Cell click delegation (clicking empty space in a cell) ---
-  it("focuses the input when clicking cell area around a NumberCell", async () => {
-    render(<LensPrescriptionGrid {...defaultProps} />);
-    const inputs = screen.getAllByRole("textbox");
-    const cellWrapper = inputs[1].closest("[data-cell-wrapper]")!;
-    expect(cellWrapper).toBeInTheDocument();
-
-    await userEvent.click(cellWrapper);
-
-    expect(inputs[1]).toHaveFocus();
-  });
-
   it("focuses the select when clicking cell area around a SurfaceLabelCell", async () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     const selects = screen.getAllByRole("combobox", { name: "Surface label" });
