@@ -1,12 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
-import { AllCommunityModule } from "ag-grid-community";
+import {
+  AllCommunityModule,
+  themeQuartz,
+  colorSchemeLight,
+  colorSchemeDark,
+} from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/lib/gridTypes";
 import { MediumCell } from "@/components/micro/MediumCell";
 import { AsphericalCell } from "@/components/micro/AsphericalCell";
+import { useTheme } from "@/components/ThemeProvider";
 
 function ActionWrapper({
   children,
@@ -56,19 +62,29 @@ export function LensPrescriptionGrid({
   onAddRowAfter,
   onDeleteRow,
 }: LensPrescriptionGridProps) {
+  const { theme } = useTheme();
+  const gridTheme = useMemo(
+    () =>
+      theme === "dark"
+        ? themeQuartz.withPart(colorSchemeDark)
+        : themeQuartz.withPart(colorSchemeLight),
+    [theme],
+  );
+
   const columnDefs: ColDef<GridRow>[] = [
     {
       headerName: "",
       field: "kind",
-      width: 80,
+      width: 100,
       cellRenderer: (params: { data: GridRow }) => {
         const { kind, id } = params.data;
         return (
-          <span>
+          <span className="flex items-center gap-2">
             {kind !== "image" && (
               <button
                 type="button"
                 aria-label="Insert row"
+                className="w-6 h-6 inline-flex items-center justify-center rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition"
                 onClick={() => onAddRowAfter(id)}
               >
                 +
@@ -78,6 +94,7 @@ export function LensPrescriptionGrid({
               <button
                 type="button"
                 aria-label="Delete row"
+                className="w-6 h-6 inline-flex items-center justify-center rounded bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition"
                 onClick={() => onDeleteRow(id)}
               >
                 −
@@ -186,6 +203,7 @@ export function LensPrescriptionGrid({
     >
       <AgGridProvider modules={[AllCommunityModule]}>
         <AgGridReact
+          theme={gridTheme}
           rowData={rows}
           columnDefs={columnDefs}
           rowSelection="single"

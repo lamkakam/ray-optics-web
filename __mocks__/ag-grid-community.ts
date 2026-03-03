@@ -23,3 +23,14 @@ export interface ColGroupDef<TData = unknown> {
 }
 
 export const AllCommunityModule = {};
+
+// Theme stubs for AG Grid v35 theming API
+const createThemeStub = (name: string) => ({
+  _name: name,
+  withPart: (part: { _name: string }) => createThemeStub(`${name}+${part._name}`),
+  withParams: () => createThemeStub(name),
+});
+
+export const themeQuartz = createThemeStub("quartz");
+export const colorSchemeLight = { _name: "colorSchemeLight" };
+export const colorSchemeDark = { _name: "colorSchemeDark" };

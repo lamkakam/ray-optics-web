@@ -4,6 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
 import type { Surfaces } from "@/lib/opticalModel";
 
+jest.mock("@/components/ThemeProvider", () => ({
+  useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
+}));
+
 const testSurfaces: Surfaces = {
   object: { distance: 1e10 },
   image: { curvatureRadius: 0 },

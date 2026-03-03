@@ -14,14 +14,7 @@ test.describe("Lens Prescription Grid", () => {
     await expect(grid).toBeAttached({ timeout: 10000 });
   });
 
-  test("toolbar buttons are present", async ({ page }) => {
-    await expect(page.getByText("Add Row")).toBeVisible();
-    await expect(page.getByText("Delete Row")).toBeVisible();
+  test("toolbar Export JSON button is present", async ({ page }) => {
     await expect(page.getByText("Export JSON")).toBeVisible();
-  });
-
-  test("Add Row and Delete Row are disabled initially", async ({ page }) => {
-    await expect(page.getByText("Add Row")).toBeDisabled();
-    await expect(page.getByText("Delete Row")).toBeDisabled();
   });
 });

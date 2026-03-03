@@ -4,6 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/lib/gridTypes";
 
+// Mock useTheme — default to light
+const mockToggleTheme = jest.fn();
+let mockTheme: "light" | "dark" = "light";
+jest.mock("@/components/ThemeProvider", () => ({
+  useTheme: () => ({ theme: mockTheme, toggleTheme: mockToggleTheme }),
+}));
+
 const testRows: GridRow[] = [
   { id: OBJECT_ROW_ID, kind: "object", objectDistance: 1e10 },
   {
@@ -243,5 +250,40 @@ describe("LensPrescriptionGrid", () => {
     await userEvent.click(deleteButtons[0]); // first '-' is for s1
 
     expect(onDeleteRow).toHaveBeenCalledWith("s1");
+  });
+
+  // --- AG Grid theme integration ---
+  it("passes light theme to AG Grid when ThemeProvider is light", () => {
+    mockTheme = "light";
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid.dataset.theme).toBe("quartz+colorSchemeLight");
+  });
+
+  it("passes dark theme to AG Grid when ThemeProvider is dark", () => {
+    mockTheme = "dark";
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid.dataset.theme).toBe("quartz+colorSchemeDark");
+  });
+
+  // --- Button size and spacing ---
+  it("renders add/delete buttons with appropriate size classes", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const addButtons = screen.getAllByRole("button", { name: "Insert row" });
+    const deleteButtons = screen.getAllByRole("button", { name: "Delete row" });
+
+    for (const btn of [...addButtons, ...deleteButtons]) {
+      expect(btn.className).toMatch(/w-6/);
+      expect(btn.className).toMatch(/h-6/);
+    }
+  });
+
+  it("renders add/delete buttons in a flex container with gap", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const addButtons = screen.getAllByRole("button", { name: "Insert row" });
+    const container = addButtons[0].parentElement!;
+    expect(container.className).toMatch(/flex/);
+    expect(container.className).toMatch(/gap-2/);
   });
 });
