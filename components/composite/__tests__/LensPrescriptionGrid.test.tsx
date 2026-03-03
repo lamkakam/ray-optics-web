@@ -68,7 +68,7 @@ describe("LensPrescriptionGrid", () => {
     const headerTexts = Array.from(headers).map((h) => h.textContent);
 
     expect(headerTexts).toContain("Surface");
-    expect(headerTexts).toContain("Radius");
+    expect(headerTexts).toContain("Radius of Curvature");
     expect(headerTexts).toContain("Thickness");
     expect(headerTexts).toContain("Medium");
     expect(headerTexts).toContain("Semi-diam.");

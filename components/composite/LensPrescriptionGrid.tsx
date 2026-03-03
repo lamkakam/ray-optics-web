@@ -123,7 +123,7 @@ export function LensPrescriptionGrid({
       },
     },
     {
-      headerName: "Radius",
+      headerName: "Radius of Curvature",
       field: "curvatureRadius",
       editable: (params) => params.data?.kind !== "object",
       valueParser: numberValueParser,
@@ -206,6 +206,7 @@ export function LensPrescriptionGrid({
           theme={gridTheme}
           rowData={rows}
           columnDefs={columnDefs}
+          defaultColDef={{ sortable: false, suppressMovable: true }}
           rowSelection="single"
           domLayout="autoHeight"
           getRowId={(params) => params.data.id}
