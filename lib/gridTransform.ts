@@ -42,12 +42,12 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
 
   const surfaces: Surface[] = surfaceRows.map((r) => {
     const surface: Surface = {
-      label: r.label,
-      curvatureRadius: r.curvatureRadius,
-      thickness: r.thickness,
-      medium: r.medium,
-      manufacturer: r.manufacturer,
-      semiDiameter: r.semiDiameter,
+      label: r.label ?? "Default",
+      curvatureRadius: r.curvatureRadius ?? 0,
+      thickness: r.thickness ?? 0,
+      medium: r.medium ?? "air",
+      manufacturer: r.manufacturer ?? "",
+      semiDiameter: r.semiDiameter ?? 1,
     };
     if (r.aspherical !== undefined) {
       surface.aspherical = r.aspherical;
