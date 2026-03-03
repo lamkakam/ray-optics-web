@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Ray Optics Web",
@@ -13,11 +14,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <ServiceWorkerRegistrar />
-        {children}
+        <ThemeProvider>
+          <ServiceWorkerRegistrar />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
 }
+
