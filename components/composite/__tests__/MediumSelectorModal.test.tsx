@@ -3,14 +3,18 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
 
+jest.mock("@/data/glass-catalogs.json", () => ({
+  Schott: ["N-BK7", "N-SF6"],
+  Ohara: ["S-FPL51"],
+}));
+
 describe("MediumSelectorModal", () => {
   const defaultProps = {
     isOpen: true,
     initialMedium: "air",
-    initialManufacturer: "air",
+    initialManufacturer: "",
     onConfirm: jest.fn(),
     onClose: jest.fn(),
-    onFetchGlassList: jest.fn().mockResolvedValue(["N-BK7", "N-SF6", "N-SK16"]),
   };
 
   it("does not render when isOpen is false", () => {
@@ -38,7 +42,7 @@ describe("MediumSelectorModal", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("has a manufacturer dropdown with Special and real manufacturers", () => {
+  it("has a manufacturer dropdown with Special and manufacturers from JSON", () => {
     render(<MediumSelectorModal {...defaultProps} />);
     const select = screen.getByLabelText("Manufacturer");
     expect(select).toBeInTheDocument();
@@ -48,44 +52,39 @@ describe("MediumSelectorModal", () => {
     ).map((o) => o.value);
     expect(options).toContain("Special");
     expect(options).toContain("Schott");
-    expect(options).toContain("Hoya");
     expect(options).toContain("Ohara");
-    expect(options).toContain("CDGM");
-    expect(options).toContain("Hikari");
-    expect(options).toContain("Sumita");
+    expect(options).toHaveLength(3); // Special + 2 from mock
   });
 
   it("shows special options (air, REFL) when Special manufacturer selected", async () => {
     render(
       <MediumSelectorModal
         {...defaultProps}
-        initialManufacturer="air"
+        initialManufacturer=""
         initialMedium="air"
       />
     );
 
-    expect(screen.getByLabelText("Medium")).toBeInTheDocument();
-    const mediumSelect = screen.getByLabelText("Medium");
+    expect(screen.getByLabelText("Glass")).toBeInTheDocument();
+    const glassSelect = screen.getByLabelText("Glass");
     const options = Array.from(
-      (mediumSelect as HTMLSelectElement).options
+      (glassSelect as HTMLSelectElement).options
     ).map((o) => o.value);
     expect(options).toContain("air");
     expect(options).toContain("REFL");
   });
 
-  it("fetches glass list when a real manufacturer is selected", async () => {
-    const onFetchGlassList = jest
-      .fn()
-      .mockResolvedValue(["N-BK7", "N-SF6"]);
-    render(
-      <MediumSelectorModal
-        {...defaultProps}
-        onFetchGlassList={onFetchGlassList}
-      />
-    );
+  it("shows glass options synchronously when a real manufacturer is selected", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
-    expect(onFetchGlassList).toHaveBeenCalledWith("Schott");
+
+    const glassSelect = screen.getByLabelText("Glass");
+    const options = Array.from(
+      (glassSelect as HTMLSelectElement).options
+    ).map((o) => o.value);
+    expect(options).toContain("N-BK7");
+    expect(options).toContain("N-SF6");
   });
 
   it("calls onConfirm with selected medium and manufacturer", async () => {
@@ -97,10 +96,10 @@ describe("MediumSelectorModal", () => {
       />
     );
 
-    await userEvent.selectOptions(screen.getByLabelText("Medium"), "REFL");
+    await userEvent.selectOptions(screen.getByLabelText("Glass"), "REFL");
     await userEvent.click(screen.getByText("Confirm"));
 
-    expect(onConfirm).toHaveBeenCalledWith("REFL", "air");
+    expect(onConfirm).toHaveBeenCalledWith("REFL", "");
   });
 
   it("calls onClose when Cancel is clicked", async () => {

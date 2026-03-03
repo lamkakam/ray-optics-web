@@ -35,7 +35,6 @@ describe("LensPrescriptionContainer", () => {
   const defaultProps = {
     initialSurfaces: testSurfaces,
     onSurfacesChange: jest.fn(),
-    onFetchGlassList: jest.fn().mockResolvedValue([]),
   };
 
   it("renders the grid", () => {

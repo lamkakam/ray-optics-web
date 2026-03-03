@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { cx } from "@/components/ui/modalTokens";
+import glassCatalogs from "@/data/glass-catalogs.json";
 
-const MANUFACTURERS = ["Special", "Schott", "Hoya", "Ohara", "CDGM", "Hikari", "Sumita"];
+const MANUFACTURERS = ["Special", ...Object.keys(glassCatalogs)];
 const SPECIAL_MEDIA = ["air", "REFL"];
 
 interface MediumSelectorModalProps {
@@ -12,11 +13,10 @@ interface MediumSelectorModalProps {
   readonly initialManufacturer: string;
   readonly onConfirm: (medium: string, manufacturer: string) => void;
   readonly onClose: () => void;
-  readonly onFetchGlassList: (manufacturer: string) => Promise<string[]>;
 }
 
 function isSpecialMedium(manufacturer: string): boolean {
-  return manufacturer === "air" || manufacturer === "Special";
+  return manufacturer === "" || manufacturer === "air" || manufacturer === "Special";
 }
 
 export function MediumSelectorModal({
@@ -25,33 +25,10 @@ export function MediumSelectorModal({
   initialManufacturer,
   onConfirm,
   onClose,
-  onFetchGlassList,
 }: MediumSelectorModalProps) {
   const initialMfr = isSpecialMedium(initialManufacturer) ? "Special" : initialManufacturer;
   const [manufacturer, setManufacturer] = useState(initialMfr);
   const [medium, setMedium] = useState(initialMedium);
-  const [glassList, setGlassList] = useState<string[]>([]);
-  const glassCache = useRef<Record<string, string[]>>({});
-
-  useEffect(() => {
-    if (!isOpen || manufacturer === "Special") return;
-
-    if (glassCache.current[manufacturer]) {
-      setGlassList(glassCache.current[manufacturer]);
-      return;
-    }
-
-    let cancelled = false;
-    onFetchGlassList(manufacturer).then((list) => {
-      if (cancelled) return;
-      glassCache.current[manufacturer] = list;
-      setGlassList(list);
-      if (list.length > 0 && !list.includes(medium)) {
-        setMedium(list[0]);
-      }
-    });
-    return () => { cancelled = true; };
-  }, [isOpen, manufacturer, onFetchGlassList, medium]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -65,7 +42,9 @@ export function MediumSelectorModal({
   if (!isOpen) return undefined;
 
   const isSpecial = manufacturer === "Special";
-  const mediaOptions = isSpecial ? SPECIAL_MEDIA : glassList;
+  const mediaOptions = isSpecial
+    ? SPECIAL_MEDIA
+    : (glassCatalogs as Record<string, string[]>)[manufacturer] ?? [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -97,9 +76,15 @@ export function MediumSelectorModal({
               className={cx.select}
               value={manufacturer}
               onChange={(e) => {
-                setManufacturer(e.target.value);
-                if (e.target.value === "Special") {
+                const newMfr = e.target.value;
+                setManufacturer(newMfr);
+                if (newMfr === "Special") {
                   setMedium("air");
+                } else {
+                  const list = (glassCatalogs as Record<string, string[]>)[newMfr] ?? [];
+                  if (list.length > 0 && !list.includes(medium)) {
+                    setMedium(list[0]);
+                  }
                 }
               }}
             >
@@ -113,11 +98,11 @@ export function MediumSelectorModal({
 
           <div>
             <label htmlFor="medium-select" className={cx.label}>
-              Medium
+              Glass
             </label>
             <select
               id="medium-select"
-              aria-label="Medium"
+              aria-label="Glass"
               className={cx.select}
               value={medium}
               onChange={(e) => setMedium(e.target.value)}
@@ -139,7 +124,7 @@ export function MediumSelectorModal({
           <button
             type="button"
             className={cx.btnPrimary}
-            onClick={() => onConfirm(medium, isSpecial ? "air" : manufacturer)}
+            onClick={() => onConfirm(medium, isSpecial ? "" : manufacturer)}
           >
             Confirm
           </button>

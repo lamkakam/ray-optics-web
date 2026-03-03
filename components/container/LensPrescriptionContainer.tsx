@@ -13,13 +13,11 @@ import { AsphericalModal, type AsphericalType } from "@/components/composite/Asp
 interface LensPrescriptionContainerProps {
   readonly initialSurfaces: Surfaces;
   readonly onSurfacesChange: (surfaces: Surfaces) => void;
-  readonly onFetchGlassList: (manufacturer: string) => Promise<string[]>;
 }
 
 export function LensPrescriptionContainer({
   initialSurfaces,
   onSurfacesChange,
-  onFetchGlassList,
 }: LensPrescriptionContainerProps) {
   const store = useMemo(() => createStore<LensEditorState>(createLensEditorSlice), []);
 
@@ -82,7 +80,6 @@ export function LensPrescriptionContainer({
           store.getState().closeMediumModal();
         }}
         onClose={() => store.getState().closeMediumModal()}
-        onFetchGlassList={onFetchGlassList}
       />
 
       <AsphericalModal

@@ -28,7 +28,7 @@ const DEMO_SURFACES: Surfaces = {
       curvatureRadius: -200.0,
       thickness: 3.0,
       medium: "air",
-      manufacturer: "air",
+      manufacturer: "",
       semiDiameter: 12.5,
     },
     {
@@ -44,7 +44,7 @@ const DEMO_SURFACES: Surfaces = {
       curvatureRadius: 35.0,
       thickness: 3.0,
       medium: "air",
-      manufacturer: "air",
+      manufacturer: "",
       semiDiameter: 10.0,
     },
     {
@@ -60,17 +60,11 @@ const DEMO_SURFACES: Surfaces = {
       curvatureRadius: -26.777,
       thickness: 68.0,
       medium: "air",
-      manufacturer: "air",
+      manufacturer: "",
       semiDiameter: 12.5,
     },
   ],
 };
-
-async function fetchGlassList(manufacturer: string): Promise<string[]> {
-  // TODO: Wire to Pyodide worker when available
-  console.log(`Fetching glass list for ${manufacturer}`);
-  return [];
-}
 
 export default function Home() {
   return (
@@ -81,7 +75,6 @@ export default function Home() {
         onSurfacesChange={(surfaces) => {
           console.log("Surfaces changed:", surfaces);
         }}
-        onFetchGlassList={fetchGlassList}
       />
     </main>
   );
