@@ -24,7 +24,7 @@ export interface Surface {
   curvatureRadius: number; // 0 means flat (infinite radius).
   thickness: number;
   medium: string; // can be "air" or "REFL"
-  manufacturer: string; // if medium is "air" or "REFL", manufacturer is also "air"
+  manufacturer: string; // if medium is "air" or "REFL", manufacturer is ""
   semiDiameter: number;
   aspherical?: {
     conicConstant: number;

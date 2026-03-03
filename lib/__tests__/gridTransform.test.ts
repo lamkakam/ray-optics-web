@@ -20,7 +20,7 @@ const DEMO_SURFACES: Surfaces = {
       curvatureRadius: -200.0,
       thickness: 3.0,
       medium: "air",
-      manufacturer: "air",
+      manufacturer: "",
       semiDiameter: 12.5,
     },
     {
@@ -36,7 +36,7 @@ const DEMO_SURFACES: Surfaces = {
       curvatureRadius: 35.0,
       thickness: 3.0,
       medium: "air",
-      manufacturer: "air",
+      manufacturer: "",
       semiDiameter: 10.0,
     },
     {
@@ -52,7 +52,7 @@ const DEMO_SURFACES: Surfaces = {
       curvatureRadius: -26.777,
       thickness: 68.0,
       medium: "air",
-      manufacturer: "air",
+      manufacturer: "",
       semiDiameter: 12.5,
     },
   ],
@@ -123,7 +123,7 @@ describe("surfacesToGridRows", () => {
           curvatureRadius: 50,
           thickness: 5,
           medium: "air",
-          manufacturer: "air",
+          manufacturer: "",
           semiDiameter: 10,
         },
       ],
@@ -157,7 +157,7 @@ describe("surfacesToGridRows", () => {
           curvatureRadius: 50,
           thickness: 5,
           medium: "air",
-          manufacturer: "air",
+          manufacturer: "",
           semiDiameter: 10,
           aspherical: {
             conicConstant: -1.5,
@@ -167,10 +167,13 @@ describe("surfacesToGridRows", () => {
       ],
     };
     const rows = surfacesToGridRows(withAsph);
-    expect(rows[1].aspherical).toEqual({
-      conicConstant: -1.5,
-      polynomialCoefficients: [0.001, 0.0002],
-    });
+    const surfaceRow = rows[1];
+    if (surfaceRow.kind === "surface") {
+      expect(surfaceRow.aspherical).toEqual({
+        conicConstant: -1.5,
+        polynomialCoefficients: [0.001, 0.0002],
+      });
+    }
   });
 });
 
@@ -215,7 +218,7 @@ describe("gridRowsToSurfaces", () => {
         curvatureRadius: 0,
         thickness: 0,
         medium: "air",
-        manufacturer: "air",
+        manufacturer: "",
         semiDiameter: 1,
       },
       { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
@@ -242,7 +245,7 @@ describe("round-trip", () => {
           curvatureRadius: 50,
           thickness: 5,
           medium: "air",
-          manufacturer: "air",
+          manufacturer: "",
           semiDiameter: 10,
           aspherical: {
             conicConstant: -1.0,

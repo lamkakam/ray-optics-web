@@ -106,16 +106,15 @@ export function LensPrescriptionGrid({
     },
     {
       headerName: "Surface",
-      field: "label",
-      editable: (params) => params.data?.kind === "surface",
-      cellEditor: "agSelectCellEditor",
-      cellEditorParams: { values: ["Default", "Stop"] },
       valueGetter: (params) => {
         if (!params.data) return "";
         if (params.data.kind === "object") return "Object";
         if (params.data.kind === "image") return "Image";
-        return params.data.label ?? "Default";
+        return params.data.label;
       },
+      editable: (params) => params.data?.kind === "surface",
+      cellEditor: "agSelectCellEditor",
+      cellEditorParams: { values: ["Default", "Stop"] },
       valueSetter: (params) => {
         if (!params.data) return false;
         onRowChange(params.data.id, { label: params.newValue as "Default" | "Stop" });
@@ -124,7 +123,11 @@ export function LensPrescriptionGrid({
     },
     {
       headerName: "Radius of Curvature",
-      field: "curvatureRadius",
+      valueGetter: (params) => {
+        if (!params.data) return undefined;
+        if (params.data.kind === "object") return undefined;
+        return params.data.curvatureRadius;
+      },
       editable: (params) => params.data?.kind !== "object",
       valueParser: numberValueParser,
       valueSetter: (params) => {
@@ -135,14 +138,13 @@ export function LensPrescriptionGrid({
     },
     {
       headerName: "Thickness",
-      field: "thickness",
-      editable: (params) => params.data?.kind !== "image",
       valueGetter: (params) => {
         if (!params.data) return undefined;
-        if (params.data.kind === "object") return params.data.objectDistance ?? 0;
+        if (params.data.kind === "object") return params.data.objectDistance;
         if (params.data.kind === "image") return undefined;
-        return params.data.thickness ?? 0;
+        return params.data.thickness;
       },
+      editable: (params) => params.data?.kind !== "image",
       valueParser: numberValueParser,
       valueSetter: (params) => {
         if (!params.data) return false;
@@ -156,13 +158,16 @@ export function LensPrescriptionGrid({
     },
     {
       headerName: "Medium",
-      field: "medium",
+      valueGetter: (params) => {
+        if (!params.data || params.data.kind !== "surface") return undefined;
+        return params.data.medium;
+      },
       cellRenderer: (params: { data: GridRow }) => {
         if (params.data.kind !== "surface") return null;
         return (
           <ActionWrapper onAction={() => onOpenMediumModal(params.data.id)}>
             <MediumCell
-              medium={params.data.medium ?? ""}
+              medium={params.data.medium}
               onOpenModal={() => onOpenMediumModal(params.data.id)}
             />
           </ActionWrapper>
@@ -171,7 +176,10 @@ export function LensPrescriptionGrid({
     },
     {
       headerName: "Semi-diam.",
-      field: "semiDiameter",
+      valueGetter: (params) => {
+        if (!params.data || params.data.kind !== "surface") return undefined;
+        return params.data.semiDiameter;
+      },
       editable: (params) => params.data?.kind === "surface",
       valueParser: numberValueParser,
       valueSetter: (params) => {
@@ -182,7 +190,10 @@ export function LensPrescriptionGrid({
     },
     {
       headerName: "Asph.",
-      field: "aspherical",
+      valueGetter: (params) => {
+        if (!params.data || params.data.kind !== "surface") return undefined;
+        return params.data.aspherical;
+      },
       cellRenderer: (params: { data: GridRow }) => {
         if (params.data.kind !== "surface") return null;
         return (

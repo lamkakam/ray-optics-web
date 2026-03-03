@@ -36,18 +36,18 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
 }
 
 export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
-  const objectRow = rows.find((r) => r.kind === "object");
-  const imageRow = rows.find((r) => r.kind === "image");
-  const surfaceRows = rows.filter((r) => r.kind === "surface");
+  const objectRow = rows.find((r): r is GridRow & { kind: "object" } => r.kind === "object");
+  const imageRow = rows.find((r): r is GridRow & { kind: "image" } => r.kind === "image");
+  const surfaceRows = rows.filter((r): r is GridRow & { kind: "surface" } => r.kind === "surface");
 
   const surfaces: Surface[] = surfaceRows.map((r) => {
     const surface: Surface = {
-      label: r.label ?? "Default",
-      curvatureRadius: r.curvatureRadius ?? 0,
-      thickness: r.thickness ?? 0,
-      medium: r.medium ?? "air",
-      manufacturer: r.manufacturer ?? "air",
-      semiDiameter: r.semiDiameter ?? 1,
+      label: r.label,
+      curvatureRadius: r.curvatureRadius,
+      thickness: r.thickness,
+      medium: r.medium,
+      manufacturer: r.manufacturer,
+      semiDiameter: r.semiDiameter,
     };
     if (r.aspherical !== undefined) {
       surface.aspherical = r.aspherical;

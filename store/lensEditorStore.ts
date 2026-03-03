@@ -16,8 +16,6 @@ export interface LensEditorState {
 
   setRows: (rows: GridRow[]) => void;
   updateRow: (id: string, patch: Partial<GridRow>) => void;
-  addRowAfterSelected: () => void;
-  deleteSelectedRow: () => void;
   addRowAfter: (id: string) => void;
   deleteRow: (id: string) => void;
   setSelectedRowId: (id: string | undefined) => void;
@@ -39,48 +37,9 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   updateRow: (id, patch) =>
     set((state) => ({
       rows: state.rows.map((r) =>
-        r.id === id ? { ...r, ...patch, id: r.id, kind: r.kind } : r
+        r.id === id ? { ...r, ...patch, id: r.id, kind: r.kind } as GridRow : r
       ),
     })),
-
-  addRowAfterSelected: () => {
-    const { rows, selectedRowId } = get();
-    if (selectedRowId === undefined) return;
-
-    const selectedIndex = rows.findIndex((r) => r.id === selectedRowId);
-    if (selectedIndex === -1) return;
-
-    const selectedRow = rows[selectedIndex];
-    if (selectedRow.kind !== "surface") return;
-
-    const newRow: GridRow = {
-      id: generateRowId(),
-      kind: "surface",
-      label: "Default",
-      curvatureRadius: 0,
-      thickness: 0,
-      medium: "air",
-      manufacturer: "air",
-      semiDiameter: 1,
-    };
-
-    const newRows = [...rows];
-    newRows.splice(selectedIndex + 1, 0, newRow);
-    set({ rows: newRows });
-  },
-
-  deleteSelectedRow: () => {
-    const { rows, selectedRowId } = get();
-    if (selectedRowId === undefined) return;
-
-    const selectedRow = rows.find((r) => r.id === selectedRowId);
-    if (!selectedRow || selectedRow.kind !== "surface") return;
-
-    set({
-      rows: rows.filter((r) => r.id !== selectedRowId),
-      selectedRowId: undefined,
-    });
-  },
 
   addRowAfter: (id) => {
     const { rows } = get();
@@ -97,7 +56,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
       curvatureRadius: 0,
       thickness: 0,
       medium: "air",
-      manufacturer: "air",
+      manufacturer: "",
       semiDiameter: 1,
     };
 

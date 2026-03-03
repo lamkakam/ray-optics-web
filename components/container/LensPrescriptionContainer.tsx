@@ -73,8 +73,8 @@ export function LensPrescriptionContainer({
       <MediumSelectorModal
         key={mediumModal.open ? mediumModal.rowId : "medium-closed"}
         isOpen={mediumModal.open}
-        initialMedium={mediumRow?.medium ?? "air"}
-        initialManufacturer={mediumRow?.manufacturer ?? "air"}
+        initialMedium={mediumRow?.kind === "surface" ? mediumRow.medium : "air"}
+        initialManufacturer={mediumRow?.kind === "surface" ? mediumRow.manufacturer : ""}
         onConfirm={(medium, manufacturer) => {
           store.getState().updateRow(mediumModal.rowId, { medium, manufacturer });
           store.getState().closeMediumModal();
@@ -85,13 +85,13 @@ export function LensPrescriptionContainer({
       <AsphericalModal
         key={asphericalModal.open ? asphericalModal.rowId : "aspherical-closed"}
         isOpen={asphericalModal.open}
-        initialConicConstant={asphericalRow?.aspherical?.conicConstant ?? 0}
+        initialConicConstant={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.conicConstant ?? 0) : 0}
         initialType={
-          asphericalRow?.aspherical?.polynomialCoefficients?.length
+          asphericalRow?.kind === "surface" && asphericalRow.aspherical?.polynomialCoefficients?.length
             ? "EvenAspherical"
             : "Conical"
         }
-        initialCoefficients={asphericalRow?.aspherical?.polynomialCoefficients ?? []}
+        initialCoefficients={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.polynomialCoefficients ?? []) : []}
         onConfirm={(params: { conicConstant: number; type: AsphericalType; polynomialCoefficients: number[] }) => {
           const aspherical = {
             conicConstant: params.conicConstant,

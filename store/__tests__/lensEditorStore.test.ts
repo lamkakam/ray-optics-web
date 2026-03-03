@@ -52,7 +52,7 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
       store.getState().updateRow("s1", { curvatureRadius: 100 });
       const updated = store.getState().rows.find((r) => r.id === "s1");
-      expect(updated?.curvatureRadius).toBe(100);
+      expect(updated).toMatchObject({ curvatureRadius: 100 });
     });
 
     it("does not modify other rows", () => {
@@ -60,7 +60,7 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
       store.getState().updateRow("s1", { curvatureRadius: 100 });
       const s2 = store.getState().rows.find((r) => r.id === "s2");
-      expect(s2?.curvatureRadius).toBe(-30);
+      expect(s2).toMatchObject({ curvatureRadius: -30 });
     });
 
     it("ignores update for non-existent id", () => {
@@ -84,103 +84,6 @@ describe("lensEditorStore", () => {
       store.getState().setSelectedRowId("s1");
       store.getState().setSelectedRowId(undefined);
       expect(store.getState().selectedRowId).toBeUndefined();
-    });
-  });
-
-  describe("addRowAfterSelected", () => {
-    it("adds a new surface row after the selected surface row", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().setSelectedRowId("s1");
-      store.getState().addRowAfterSelected();
-
-      const rows = store.getState().rows;
-      expect(rows).toHaveLength(5);
-      expect(rows[2].kind).toBe("surface");
-      expect(rows[2].label).toBe("Default");
-      expect(rows[2].curvatureRadius).toBe(0);
-      expect(rows[2].thickness).toBe(0);
-      expect(rows[2].medium).toBe("air");
-      expect(rows[2].manufacturer).toBe("air");
-      expect(rows[2].semiDiameter).toBe(1);
-      expect(rows[2].aspherical).toBeUndefined();
-    });
-
-    it("does nothing when no row is selected", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().addRowAfterSelected();
-      expect(store.getState().rows).toHaveLength(4);
-    });
-
-    it("does nothing when object row is selected", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().setSelectedRowId(OBJECT_ROW_ID);
-      store.getState().addRowAfterSelected();
-      expect(store.getState().rows).toHaveLength(4);
-    });
-
-    it("does nothing when image row is selected", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().setSelectedRowId(IMAGE_ROW_ID);
-      store.getState().addRowAfterSelected();
-      expect(store.getState().rows).toHaveLength(4);
-    });
-
-    it("assigns a unique id to the new row", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().setSelectedRowId("s1");
-      store.getState().addRowAfterSelected();
-      const rows = store.getState().rows;
-      const ids = rows.map((r) => r.id);
-      expect(new Set(ids).size).toBe(ids.length);
-    });
-  });
-
-  describe("deleteSelectedRow", () => {
-    it("deletes the selected surface row", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().setSelectedRowId("s1");
-      store.getState().deleteSelectedRow();
-
-      const rows = store.getState().rows;
-      expect(rows).toHaveLength(3);
-      expect(rows.find((r) => r.id === "s1")).toBeUndefined();
-    });
-
-    it("clears selectedRowId after deletion", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().setSelectedRowId("s1");
-      store.getState().deleteSelectedRow();
-      expect(store.getState().selectedRowId).toBeUndefined();
-    });
-
-    it("does not delete object row", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().setSelectedRowId(OBJECT_ROW_ID);
-      store.getState().deleteSelectedRow();
-      expect(store.getState().rows).toHaveLength(4);
-    });
-
-    it("does not delete image row", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().setSelectedRowId(IMAGE_ROW_ID);
-      store.getState().deleteSelectedRow();
-      expect(store.getState().rows).toHaveLength(4);
-    });
-
-    it("does nothing when no row selected", () => {
-      const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      store.getState().deleteSelectedRow();
-      expect(store.getState().rows).toHaveLength(4);
     });
   });
 
@@ -221,9 +124,13 @@ describe("lensEditorStore", () => {
 
       const rows = store.getState().rows;
       expect(rows).toHaveLength(5);
-      expect(rows[2].kind).toBe("surface");
-      expect(rows[2].label).toBe("Default");
-      expect(rows[2].medium).toBe("air");
+      const newRow = rows[2];
+      expect(newRow.kind).toBe("surface");
+      if (newRow.kind === "surface") {
+        expect(newRow.label).toBe("Default");
+        expect(newRow.medium).toBe("air");
+        expect(newRow.manufacturer).toBe("");
+      }
     });
 
     it("adds a row after the object row", () => {
@@ -234,8 +141,12 @@ describe("lensEditorStore", () => {
       const rows = store.getState().rows;
       expect(rows).toHaveLength(5);
       expect(rows[0].kind).toBe("object");
-      expect(rows[1].kind).toBe("surface");
-      expect(rows[1].medium).toBe("air");
+      const newRow = rows[1];
+      expect(newRow.kind).toBe("surface");
+      if (newRow.kind === "surface") {
+        expect(newRow.medium).toBe("air");
+        expect(newRow.manufacturer).toBe("");
+      }
     });
 
     it("does not add a row after the image row", () => {
