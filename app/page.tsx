@@ -1,7 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { Surfaces } from "@/lib/opticalModel";
+import type { Surfaces, OpticalSpecs } from "@/lib/opticalModel";
+
+const SpecsConfigurerContainer = dynamic(
+  () =>
+    import("@/components/container/SpecsConfigurerContainer").then(
+      (mod) => mod.SpecsConfigurerContainer
+    ),
+  { ssr: false }
+);
 
 const LensPrescriptionContainer = dynamic(
   () =>
@@ -66,10 +74,35 @@ const DEMO_SURFACES: Surfaces = {
   ],
 };
 
+const DEMO_SPECS: OpticalSpecs = {
+  pupil: { space: "object", type: "epd", value: 25 },
+  field: {
+    space: "object",
+    type: "angle",
+    maxField: 20,
+    fields: [0, 0.7, 1],
+    isRelative: true,
+  },
+  wavelengths: {
+    weights: [
+      [486.133, 1],
+      [587.562, 1],
+      [656.273, 1],
+    ],
+    referenceIndex: 1,
+  },
+};
+
 export default function Home() {
   return (
     <main className="min-h-screen p-4">
       <h1 className="text-2xl font-bold mb-4">Ray Optics Web</h1>
+      <SpecsConfigurerContainer
+        initialSpecs={DEMO_SPECS}
+        onSpecsChange={(specs) => {
+          console.log("Specs changed:", specs);
+        }}
+      />
       <LensPrescriptionContainer
         initialSurfaces={DEMO_SURFACES}
         onSurfacesChange={(surfaces) => {
