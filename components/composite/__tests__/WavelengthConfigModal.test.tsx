@@ -3,6 +3,11 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { WavelengthConfigModal } from "@/components/composite/WavelengthConfigModal";
 
+// Mock useTheme — default to light
+jest.mock("@/components/ThemeProvider", () => ({
+  useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
+}));
+
 const defaultProps = {
   isOpen: true,
   initialWeights: [

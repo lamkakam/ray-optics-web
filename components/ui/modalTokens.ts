@@ -20,6 +20,8 @@ export const cx = {
     "rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700",
   btnSecondary:
     "rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800",
+  btnToggle:
+    "rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 transition hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700",
   btnDanger:
     "rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-700",
   divider:

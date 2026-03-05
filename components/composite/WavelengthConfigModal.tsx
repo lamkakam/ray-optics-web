@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
 import { cx } from "@/components/ui/modalTokens";
+import { useTheme } from "@/components/ThemeProvider";
 import { FRAUNHOFER_LINES, lookupWavelength } from "@/lib/fraunhoferLines";
 
 interface WavelengthRow {
@@ -53,6 +54,15 @@ export function WavelengthConfigModal({
   onApply,
   onClose,
 }: WavelengthConfigModalProps) {
+  const { theme } = useTheme();
+  const gridTheme = useMemo(
+    () =>
+      theme === "dark"
+        ? themeQuartz.withPart(colorSchemeDark)
+        : themeQuartz.withPart(colorSchemeLight),
+    [theme],
+  );
+
   const [rows, setRows] = useState<WavelengthRow[]>(() => weightsToRows(initialWeights));
   const [referenceIndex, setReferenceIndex] = useState(initialReferenceIndex);
 
@@ -228,6 +238,7 @@ export function WavelengthConfigModal({
         <div className="mb-4" style={{ width: "100%" }}>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
+              theme={gridTheme}
               rowData={rows as unknown as Record<string, unknown>[]}
               columnDefs={columnDefs as unknown as ColDef[]}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}

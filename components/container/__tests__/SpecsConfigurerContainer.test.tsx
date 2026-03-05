@@ -4,6 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurerContainer";
 import type { OpticalSpecs } from "@/lib/opticalModel";
 
+// Mock useTheme — default to light
+jest.mock("@/components/ThemeProvider", () => ({
+  useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
+}));
+
 const testSpecs: OpticalSpecs = {
   pupil: { space: "object", type: "epd", value: 25 },
   field: {

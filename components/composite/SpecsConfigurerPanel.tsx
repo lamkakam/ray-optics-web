@@ -103,7 +103,7 @@ export function SpecsConfigurerPanel({
         <button
           type="button"
           aria-label="Configure field"
-          className={cx.btnSecondary + " w-full text-left"}
+          className={cx.btnToggle + " w-full text-left"}
           onClick={onOpenFieldModal}
         >
           {fieldSummary}
@@ -118,7 +118,7 @@ export function SpecsConfigurerPanel({
         <button
           type="button"
           aria-label="Configure wavelengths"
-          className={cx.btnSecondary + " w-full text-left"}
+          className={cx.btnToggle + " w-full text-left"}
           onClick={onOpenWavelengthModal}
         >
           {wavelengthSummary}
