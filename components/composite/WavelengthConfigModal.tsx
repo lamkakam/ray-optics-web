@@ -64,15 +64,7 @@ export function WavelengthConfigModal({
     }
   }, [isOpen, initialWeights, initialReferenceIndex]);
 
-  // Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+
 
   const addRow = useCallback((afterId: string) => {
     setRows((prev) => {
@@ -229,7 +221,7 @@ export function WavelengthConfigModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div data-testid="modal-backdrop" className={cx.backdrop} onClick={onClose} />
+      <div data-testid="modal-backdrop" className={cx.backdrop} />
       <div role="dialog" aria-modal="true" aria-labelledby="wavelength-modal-title" className={cx.panel + " max-w-2xl"}>
         <h2 id="wavelength-modal-title" className={cx.title}>Wavelengths</h2>
 

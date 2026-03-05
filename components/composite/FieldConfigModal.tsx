@@ -61,15 +61,7 @@ export function FieldConfigModal({
     }
   }, [isOpen, initialSpace, initialType, initialMaxField, initialRelativeFields]);
 
-  // Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+
 
   const addRow = useCallback((afterId: string) => {
     setRows((prev) => {
@@ -163,7 +155,7 @@ export function FieldConfigModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div data-testid="modal-backdrop" className={cx.backdrop} onClick={onClose} />
+      <div data-testid="modal-backdrop" className={cx.backdrop} />
       <div role="dialog" aria-modal="true" aria-labelledby="field-modal-title" className={cx.panel}>
         <h2 id="field-modal-title" className={cx.title}>Field</h2>
 

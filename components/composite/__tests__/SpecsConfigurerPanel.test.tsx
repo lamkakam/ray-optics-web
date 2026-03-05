@@ -20,6 +20,12 @@ describe("SpecsConfigurerPanel", () => {
   });
 
   describe("rendering", () => {
+    it("constrains the panel to half the viewport width", () => {
+      const { container } = render(<SpecsConfigurerPanel {...defaultProps} />);
+      const root = container.firstElementChild;
+      expect(root).toHaveClass("max-w-[50vw]");
+    });
+
     it("renders System Aperture label", () => {
       render(<SpecsConfigurerPanel {...defaultProps} />);
       expect(screen.getByText("System Aperture")).toBeInTheDocument();

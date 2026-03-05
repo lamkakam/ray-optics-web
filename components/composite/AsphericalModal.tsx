@@ -63,14 +63,7 @@ export function AsphericalModal({
     padCoefficients(initialCoefficients)
   );
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+
 
   const handleConfirm = () => {
     const conicConstant = parseNumericString(conicConstantStr, initialConicConstant);
@@ -97,7 +90,6 @@ export function AsphericalModal({
       <div
         data-testid="modal-backdrop"
         className={cx.backdrop}
-        onClick={onClose}
       />
       <div
         role="dialog"

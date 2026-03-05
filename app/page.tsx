@@ -96,7 +96,7 @@ const DEMO_SPECS: OpticalSpecs = {
 export default function Home() {
   return (
     <main className="min-h-screen p-4">
-      <h1 className="text-2xl font-bold mb-4">Ray Optics Web</h1>
+      <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Ray Optics Web</h1>
       <SpecsConfigurerContainer
         initialSpecs={DEMO_SPECS}
         onSpecsChange={(specs) => {

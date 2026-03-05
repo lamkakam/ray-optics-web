@@ -162,20 +162,20 @@ describe("WavelengthConfigModal", () => {
     expect(onApply).not.toHaveBeenCalled();
   });
 
-  it("calls onClose when Escape is pressed", async () => {
+  it("does not call onClose when Escape is pressed", async () => {
     const onClose = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onClose={onClose} />);
 
     await userEvent.keyboard("{Escape}");
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(0);
   });
 
-  it("calls onClose when backdrop is clicked", async () => {
+  it("does not call onClose when backdrop is clicked", async () => {
     const onClose = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onClose={onClose} />);
 
     await userEvent.click(screen.getByTestId("modal-backdrop"));
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(0);
   });
 
   it("adjusts referenceIndex when deleting a row before the reference", async () => {

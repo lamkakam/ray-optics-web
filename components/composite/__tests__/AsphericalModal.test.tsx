@@ -30,13 +30,13 @@ describe("AsphericalModal", () => {
     expect(backdrop).toBeInTheDocument();
   });
 
-  it("calls onClose when clicking the backdrop overlay", async () => {
+  it("does not call onClose when clicking the backdrop overlay", async () => {
     const onClose = jest.fn();
     render(<AsphericalModal {...defaultProps} onClose={onClose} />);
     const backdrop = screen.getByTestId("modal-backdrop");
 
     await userEvent.click(backdrop);
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(0);
   });
 
   it("always shows conic constant input", () => {
@@ -153,12 +153,12 @@ describe("AsphericalModal", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("calls onClose when Escape is pressed", async () => {
+  it("does not call onClose when Escape is pressed", async () => {
     const onClose = jest.fn();
     render(<AsphericalModal {...defaultProps} onClose={onClose} />);
 
     await userEvent.keyboard("{Escape}");
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(0);
   });
 
   it("truncates trailing zeros from coefficients on confirm", async () => {

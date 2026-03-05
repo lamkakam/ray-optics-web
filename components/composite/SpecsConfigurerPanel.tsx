@@ -65,7 +65,7 @@ export function SpecsConfigurerPanel({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="max-w-[50vw] space-y-4">
       {/* System Aperture */}
       <section>
         <h3 className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
