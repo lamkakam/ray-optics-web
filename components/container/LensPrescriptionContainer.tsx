@@ -1,44 +1,23 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef } from "react";
-import { createStore, useStore } from "zustand";
+import React from "react";
+import { useStore, type StoreApi } from "zustand";
 import { cx } from "@/components/ui/modalTokens";
-import type { Surfaces } from "@/lib/opticalModel";
-import type { GridRow } from "@/lib/gridTypes";
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
-import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
+import { type LensEditorState } from "@/store/lensEditorStore";
 import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
 import { AsphericalModal, type AsphericalType } from "@/components/composite/AsphericalModal";
 
 interface LensPrescriptionContainerProps {
-  readonly initialSurfaces: Surfaces;
-  readonly onSurfacesChange: (surfaces: Surfaces) => void;
+  readonly store: StoreApi<LensEditorState>;
 }
 
 export function LensPrescriptionContainer({
-  initialSurfaces,
-  onSurfacesChange,
+  store,
 }: LensPrescriptionContainerProps) {
-  const store = useMemo(() => createStore<LensEditorState>(createLensEditorSlice), []);
-
   const rows = useStore(store, (s) => s.rows);
   const mediumModal = useStore(store, (s) => s.mediumModal);
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
-
-  // Initialize rows from props
-  useEffect(() => {
-    store.getState().setRows(surfacesToGridRows(initialSurfaces));
-  }, [initialSurfaces, store]);
-
-  // Notify parent when rows change
-  const prevRowsRef = useRef<GridRow[]>([]);
-  useEffect(() => {
-    if (rows.length === 0) return;
-    if (rows === prevRowsRef.current) return;
-    prevRowsRef.current = rows;
-    onSurfacesChange(gridRowsToSurfaces(rows));
-  }, [rows, onSurfacesChange]);
 
   const mediumRow = rows.find((r) => r.id === mediumModal.rowId);
   const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);

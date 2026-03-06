@@ -1,31 +1,22 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from "react";
-import dynamic from "next/dynamic";
+import { createStore } from "zustand";
 import type { Surfaces, OpticalSpecs } from "@/lib/opticalModel";
+import { usePyodide } from "@/hooks/usePyodide";
+import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
+import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
+import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
+import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurerContainer";
+import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
 import { LensLayoutPanel } from "@/components/micro/LensLayoutPanel";
 import {
   AnalysisPlotView,
   type PlotType,
 } from "@/components/micro/AnalysisPlotView";
 import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
+import { ErrorModal } from "@/components/micro/ErrorModal";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
-
-const SpecsConfigurerContainer = dynamic(
-  () =>
-    import("@/components/container/SpecsConfigurerContainer").then(
-      (mod) => mod.SpecsConfigurerContainer
-    ),
-  { ssr: false }
-);
-
-const LensPrescriptionContainer = dynamic(
-  () =>
-    import("@/components/container/LensPrescriptionContainer").then(
-      (mod) => mod.LensPrescriptionContainer
-    ),
-  { ssr: false }
-);
 
 const DEMO_SURFACES: Surfaces = {
   object: { distance: 1e10 },
@@ -102,7 +93,21 @@ const DEMO_SPECS: OpticalSpecs = {
 };
 
 export default function Home() {
-  const [specs, setSpecs] = useState<OpticalSpecs>(DEMO_SPECS);
+  const { proxy, isReady } = usePyodide();
+
+  const specsStore = useMemo(() => {
+    const s = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+    s.getState().loadFromSpecs(DEMO_SPECS);
+    return s;
+  }, []);
+
+  const lensStore = useMemo(() => {
+    const s = createStore<LensEditorState>(createLensEditorSlice);
+    s.getState().setRows(surfacesToGridRows(DEMO_SURFACES));
+    return s;
+  }, []);
+
+  const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(DEMO_SPECS);
   const [layoutImage, setLayoutImage] = useState<string | undefined>();
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [plotImage, setPlotImage] = useState<string | undefined>();
@@ -112,64 +117,136 @@ export default function Home() {
   const [firstOrderData, setFirstOrderData] = useState<
     Record<string, number> | undefined
   >();
+  const [computing, setComputing] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
 
   const fieldOptions = useMemo(() => {
-    const { fields, maxField, type } = specs.field;
+    const { fields, maxField, type } = committedSpecs.field;
     const unit = type === "angle" ? "°" : " mm";
     return fields.map((rf, i) => ({
       label: `${(rf * maxField).toFixed(1)}${unit}`,
       value: i,
     }));
-  }, [specs.field]);
+  }, [committedSpecs.field]);
 
-  const handleSpecsChange = useCallback((newSpecs: OpticalSpecs) => {
-    setSpecs(newSpecs);
-  }, []);
+  const getPlotFunction = useCallback(
+    (plotType: PlotType) => {
+      if (!proxy) return undefined;
+      switch (plotType) {
+        case "rayFan":
+          return proxy.plotRayFan;
+        case "opdFan":
+          return proxy.plotOpdFan;
+        case "spotDiagram":
+          return proxy.plotSpotDiagram;
+      }
+    },
+    [proxy]
+  );
 
-  const handleSurfacesChange = useCallback((_surfaces: Surfaces) => {
-    // Will trigger model update when worker integration is connected
-  }, []);
+  const handleSubmit = useCallback(async () => {
+    if (!proxy) return;
 
-  const handleRefreshLayout = useCallback(() => {
-    // Will call worker.plotLensLayout() when connected
+    const specs = specsStore.getState().toOpticalSpecs();
+    const surfacesData = gridRowsToSurfaces(lensStore.getState().rows);
+    const model = { specs, ...surfacesData };
+
+    setComputing(true);
     setLayoutLoading(true);
-    setTimeout(() => setLayoutLoading(false), 100);
-  }, []);
+    setPlotLoading(true);
 
-  const handleFieldChange = useCallback((fieldIndex: number) => {
-    setSelectedFieldIndex(fieldIndex);
-    // Will call the appropriate plot function when worker is connected
-  }, []);
+    try {
+      // Step 1: setOpticalSurfaces MUST complete first
+      await proxy.setOpticalSurfaces(model);
 
-  const handlePlotTypeChange = useCallback((plotType: PlotType) => {
-    setSelectedPlotType(plotType);
-    // Will call the appropriate plot function when worker is connected
-  }, []);
+      // Step 2: parallel calls
+      const plotFn = getPlotFunction(selectedPlotType);
+      const [fod, layout, plot] = await Promise.all([
+        proxy.getFirstOrderData(),
+        proxy.plotLensLayout(),
+        plotFn ? plotFn(selectedFieldIndex) : Promise.resolve(undefined),
+      ]);
+
+      setFirstOrderData(fod);
+      setLayoutImage(layout);
+      setPlotImage(plot);
+      setCommittedSpecs(specs);
+    } catch {
+      setErrorModalOpen(true);
+    } finally {
+      setComputing(false);
+      setLayoutLoading(false);
+      setPlotLoading(false);
+    }
+  }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedPlotType, getPlotFunction]);
+
+  const handleRefreshLayout = useCallback(async () => {
+    if (!proxy) return;
+    setLayoutLoading(true);
+    try {
+      const layout = await proxy.plotLensLayout();
+      setLayoutImage(layout);
+    } catch {
+      setErrorModalOpen(true);
+    } finally {
+      setLayoutLoading(false);
+    }
+  }, [proxy]);
+
+  const handleFieldChange = useCallback(
+    async (fieldIndex: number) => {
+      setSelectedFieldIndex(fieldIndex);
+      if (!proxy) return;
+      setPlotLoading(true);
+      try {
+        const plotFn = getPlotFunction(selectedPlotType);
+        if (plotFn) {
+          const plot = await plotFn(fieldIndex);
+          setPlotImage(plot);
+        }
+      } catch {
+        setErrorModalOpen(true);
+      } finally {
+        setPlotLoading(false);
+      }
+    },
+    [proxy, selectedPlotType, getPlotFunction]
+  );
+
+  const handlePlotTypeChange = useCallback(
+    async (plotType: PlotType) => {
+      setSelectedPlotType(plotType);
+      if (!proxy) return;
+      setPlotLoading(true);
+      try {
+        const plotFn = getPlotFunction(plotType);
+        if (plotFn) {
+          const plot = await plotFn(selectedFieldIndex);
+          setPlotImage(plot);
+        }
+      } catch {
+        setErrorModalOpen(true);
+      } finally {
+        setPlotLoading(false);
+      }
+    },
+    [proxy, selectedFieldIndex, getPlotFunction]
+  );
 
   const drawerTabs = useMemo(
     () => [
       {
         id: "specs",
         label: "System Specs",
-        content: (
-          <SpecsConfigurerContainer
-            initialSpecs={specs}
-            onSpecsChange={handleSpecsChange}
-          />
-        ),
+        content: <SpecsConfigurerContainer store={specsStore} />,
       },
       {
         id: "prescription",
         label: "Prescription",
-        content: (
-          <LensPrescriptionContainer
-            initialSurfaces={DEMO_SURFACES}
-            onSurfacesChange={handleSurfacesChange}
-          />
-        ),
+        content: <LensPrescriptionContainer store={lensStore} />,
       },
     ],
-    [specs, handleSpecsChange, handleSurfacesChange]
+    [specsStore, lensStore]
   );
 
   return (
@@ -179,6 +256,14 @@ export default function Home() {
         <h1 className="font-semibold text-gray-900 dark:text-gray-100">
           Ray Optics Web
         </h1>
+        <button
+          type="button"
+          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          disabled={!isReady || computing}
+          onClick={handleSubmit}
+        >
+          Update System
+        </button>
         <div className="flex gap-2">
           <FirstOrderChips data={firstOrderData} />
         </div>
@@ -211,6 +296,12 @@ export default function Home() {
 
       {/* Bottom drawer */}
       <BottomDrawer tabs={drawerTabs} />
+
+      {/* Error modal */}
+      <ErrorModal
+        isOpen={errorModalOpen}
+        onClose={() => setErrorModalOpen(false)}
+      />
     </div>
   );
 }

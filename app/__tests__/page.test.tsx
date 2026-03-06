@@ -1,43 +1,46 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
-
-// Mock next/dynamic — jest resolves imports synchronously
-jest.mock("next/dynamic", () => {
-  return (
-    loader: () => Promise<unknown>,
-    _opts?: Record<string, unknown>
-  ) => {
-    let Comp: React.ComponentType | undefined;
-    loader().then((resolved: unknown) => {
-      if (typeof resolved === "function") {
-        // loader already extracted the named export (e.g. .then(m => m.Foo))
-        Comp = resolved as React.ComponentType;
-      } else if (resolved && typeof resolved === "object") {
-        const mod = resolved as Record<string, unknown>;
-        Comp =
-          (mod.default as React.ComponentType | undefined) ??
-          (Object.values(mod).find(
-            (v) => typeof v === "function"
-          ) as React.ComponentType | undefined);
-      }
-    });
-    const DynamicWrapper = (props: Record<string, unknown>) => {
-      if (!Comp) return null;
-      return React.createElement(Comp, props);
-    };
-    DynamicWrapper.displayName = "DynamicMock";
-    return DynamicWrapper;
-  };
-});
 
 // Mock useTheme
 jest.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
 }));
 
+// Mock usePyodide
+const mockSetOpticalSurfaces = jest.fn().mockResolvedValue(undefined);
+const mockGetFirstOrderData = jest
+  .fn()
+  .mockResolvedValue({ efl: 100, ffl: -80, bfl: 90 });
+const mockPlotLensLayout = jest.fn().mockResolvedValue("base64-layout");
+const mockPlotRayFan = jest.fn().mockResolvedValue("base64-rayfan");
+const mockPlotOpdFan = jest.fn().mockResolvedValue("base64-opdfan");
+const mockPlotSpotDiagram = jest.fn().mockResolvedValue("base64-spot");
+
+const mockProxy = {
+  init: jest.fn().mockResolvedValue(undefined),
+  setOpticalSurfaces: mockSetOpticalSurfaces,
+  getFirstOrderData: mockGetFirstOrderData,
+  plotLensLayout: mockPlotLensLayout,
+  plotRayFan: mockPlotRayFan,
+  plotOpdFan: mockPlotOpdFan,
+  plotSpotDiagram: mockPlotSpotDiagram,
+};
+
+jest.mock("@/hooks/usePyodide", () => ({
+  usePyodide: () => ({
+    proxy: mockProxy,
+    isReady: true,
+    error: undefined,
+  }),
+}));
+
 describe("Home page", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("renders the header with title", () => {
     render(<Home />);
     expect(screen.getByText("Ray Optics Web")).toBeInTheDocument();
@@ -82,5 +85,63 @@ describe("Home page", () => {
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     // The Export JSON button is in LensPrescriptionContainer
     expect(screen.getByText("Export JSON")).toBeInTheDocument();
+  });
+
+  // --- New tests for submit button and worker integration ---
+
+  it("renders an Update System button in the header", () => {
+    render(<Home />);
+    expect(
+      screen.getByRole("button", { name: "Update System" })
+    ).toBeInTheDocument();
+  });
+
+  it("calls worker APIs in correct order when Update System is clicked", async () => {
+    render(<Home />);
+    const btn = screen.getByRole("button", { name: "Update System" });
+
+    await userEvent.click(btn);
+
+    await waitFor(() => {
+      expect(mockSetOpticalSurfaces).toHaveBeenCalledTimes(1);
+    });
+
+    // After setOpticalSurfaces, the parallel calls happen
+    await waitFor(() => {
+      expect(mockGetFirstOrderData).toHaveBeenCalledTimes(1);
+      expect(mockPlotLensLayout).toHaveBeenCalledTimes(1);
+      expect(mockPlotRayFan).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("shows error modal on worker error and hides it on OK", async () => {
+    mockSetOpticalSurfaces.mockRejectedValueOnce(new Error("bad input"));
+    render(<Home />);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Update System" })
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+
+    expect(
+      screen.getByText(
+        "The input parameters are invalid. Please check your specifications and prescription."
+      )
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("field dropdown reflects committedSpecs, not draft edits", () => {
+    // Initially renders with DEMO_SPECS field options
+    render(<Home />);
+    const fieldSelect = screen.getByLabelText("Field");
+    expect(fieldSelect).toContainHTML("0.0°");
+    expect(fieldSelect).toContainHTML("14.0°");
+    expect(fieldSelect).toContainHTML("20.0°");
   });
 });

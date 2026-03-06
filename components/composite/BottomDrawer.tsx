@@ -77,8 +77,6 @@ export function BottomDrawer({ tabs }: BottomDrawerProps) {
     }
   }, [collapsed]);
 
-  const activeContent = tabs.find((t) => t.id === activeTab)?.content;
-
   return (
     <div
       className="flex flex-col border-t border-gray-200 bg-white will-change-[height] dark:border-gray-700 dark:bg-gray-900"
@@ -129,7 +127,7 @@ export function BottomDrawer({ tabs }: BottomDrawerProps) {
       {/* Tab content */}
       {!collapsed && (
         <div role="tabpanel" className="flex-1 overflow-auto p-3">
-          {activeContent}
+          {tabs.find((t) => t.id === activeTab)?.content}
         </div>
       )}
     </div>
