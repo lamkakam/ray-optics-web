@@ -6,7 +6,7 @@ const config: Config = {
     "^.+\\.tsx?$": [
       "ts-jest",
       {
-        tsconfig: "tsconfig.json",
+        tsconfig: "tsconfig.test.json",
       },
     ],
   },
@@ -18,7 +18,7 @@ const config: Config = {
     "^ag-grid-community$": "<rootDir>/__mocks__/ag-grid-community.ts",
     "^ag-grid-community/styles/.*$": "<rootDir>/__mocks__/ag-grid-community.ts",
   },
-  setupFilesAfterEnv: ["@testing-library/jest-dom"],
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/", "<rootDir>/e2e/"],
 };
 
