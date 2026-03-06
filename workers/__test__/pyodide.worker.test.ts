@@ -30,7 +30,7 @@ const allSphericalOpticalModel: OpticalModel = {
 };
 
 
-const opticalModelWithAspherical: OpticalModel = {
+const opticalModelWithEvenAspherical: OpticalModel = {
   specs: { ...allSphericalOpticalModel.specs },
   object: { distance: 1e10 },
   image: { curvatureRadius: -42 },
@@ -50,6 +50,25 @@ const opticalModelWithAspherical: OpticalModel = {
     { label: "Default", curvatureRadius: 21.896, thickness: 4.822, medium: "air", manufacturer: "", semiDiameter: 4.7760 },
     { label: "Default", curvatureRadius: 86.759, thickness: 3.127, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 8.0218 },
     { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "", semiDiameter: 8.3321 },
+  ],
+};
+
+const opticalModelWithConic: OpticalModel = {
+  specs: { ...allSphericalOpticalModel.specs },
+  object: { ...allSphericalOpticalModel.object },
+  image: { ...allSphericalOpticalModel.image },
+  surfaces: [
+    ...allSphericalOpticalModel.surfaces.slice(0, 1),
+    {
+      label: "Default",
+      curvatureRadius: 23.713,
+      thickness: 4.831,
+      medium: "N-LAK9",
+      manufacturer: "Schott",
+      aspherical: { conicConstant: 0.1 },
+      semiDiameter: 10.009
+    },
+    ...allSphericalOpticalModel.surfaces.slice(2),
   ],
 };
 
@@ -77,7 +96,7 @@ describe("_setOpticalSurfaces", () => {
 
   it("should set an aspherical surface correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(opticalModelWithAspherical, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(opticalModelWithEvenAspherical, async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])");
   });
 
@@ -103,6 +122,12 @@ describe("_setOpticalSurfaces", () => {
     let pythonScript = "";
     await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("opm = OpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']");
+  });
+
+  it("should set a conic surface correctly", async () => {
+    let pythonScript = "";
+    await _setOpticalSurfaces(opticalModelWithConic, async (code) => { pythonScript = code; });
+    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1)");
   });
 });
 

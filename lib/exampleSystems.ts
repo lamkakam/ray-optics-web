@@ -130,11 +130,9 @@ const ReflectorWithOpticalWindow: OpticalModel = {
       medium: "REFL",
       manufacturer: "",
       semiDiameter: 107.539583,
-      /*
       aspherical: {
         conicConstant: -1,
       },
-      */
     },
     {
       label: "Default",

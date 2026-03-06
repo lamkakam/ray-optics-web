@@ -197,7 +197,17 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
     const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
     const glassManufacturer = medium === "air" || medium === "REFL" ? "" : `, '${manufacturer}'`;
     const setStop = label === "Stop" ? "\nsm.set_stop()" : "";
-    const asphericalCommands = aspherical === undefined ? "" : `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${aspherical.conicConstant}, coefs=${JSON.stringify(aspherical.polynomialCoefficients)})`;
+
+    let asphericalCommands = "";
+    if (aspherical !== undefined) {
+      const { conicConstant, polynomialCoefficients } = aspherical;
+      if (polynomialCoefficients === undefined) {
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
+      } else {
+        const coefsString = JSON.stringify(polynomialCoefficients);
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
+      }
+    }
     return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, '${medium}'${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${setStop}`;
   }, "");
 
