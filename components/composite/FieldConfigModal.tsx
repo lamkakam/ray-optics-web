@@ -112,6 +112,8 @@ export function FieldConfigModal({
 
   if (!isOpen) return undefined;
 
+  const atLimit = rows.length >= MAX_ROWS;
+
   const columnDefs: ColDef<FieldRow>[] = [
     {
       headerName: "",
@@ -125,6 +127,7 @@ export function FieldConfigModal({
               type="button"
               aria-label="Add field row"
               className="px-1 text-green-600 hover:text-green-800"
+              style={{ visibility: atLimit ? "hidden" : "visible" }}
               onClick={() => addRow(params.data!.id)}
             >
               +
@@ -210,6 +213,7 @@ export function FieldConfigModal({
         </div>
 
         <div className="mb-4" style={{ width: "100%" }}>
+          <p className="mb-1 text-xs text-gray-500">Maximum 10 relative fields</p>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}

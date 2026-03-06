@@ -171,6 +171,32 @@ describe("FieldConfigModal", () => {
     expect(onClose).toHaveBeenCalledTimes(0);
   });
 
+  it("renders info text about maximum 10 relative fields", () => {
+    render(<FieldConfigModal {...defaultProps} />);
+    expect(screen.getByText("Maximum 10 relative fields")).toBeInTheDocument();
+  });
+
+  it("hides add buttons when at 10 rows", () => {
+    const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
+    render(<FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />);
+    const addBtns = screen.getAllByLabelText("Add field row");
+    addBtns.forEach((btn) => {
+      expect(btn).toHaveStyle({ visibility: "hidden" });
+    });
+  });
+
+  it("shows add buttons after deleting a row from 10", async () => {
+    const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
+    render(<FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />);
+    const deleteBtns = screen.getAllByLabelText("Delete field row");
+    await userEvent.click(deleteBtns[0]);
+
+    const addBtns = screen.getAllByLabelText("Add field row");
+    addBtns.forEach((btn) => {
+      expect(btn).toHaveStyle({ visibility: "visible" });
+    });
+  });
+
   it("sets initial dropdown values from props", () => {
     render(<FieldConfigModal {...defaultProps} initialSpace="image" initialType="height" />);
     const spaceDropdown = screen.getByLabelText("Field space") as HTMLSelectElement;

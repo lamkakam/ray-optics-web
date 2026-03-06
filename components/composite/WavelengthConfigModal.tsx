@@ -124,6 +124,8 @@ export function WavelengthConfigModal({
 
   if (!isOpen) return undefined;
 
+  const atLimit = rows.length >= MAX_ROWS;
+
   const columnDefs: ColDef<WavelengthRow>[] = [
     {
       headerName: "",
@@ -137,6 +139,7 @@ export function WavelengthConfigModal({
               type="button"
               aria-label="Add wavelength row"
               className="px-1 text-green-600 hover:text-green-800"
+              style={{ visibility: atLimit ? "hidden" : "visible" }}
               onClick={() => addRow(params.data!.id)}
             >
               +
@@ -236,6 +239,7 @@ export function WavelengthConfigModal({
         <h2 id="wavelength-modal-title" className={cx.title}>Wavelengths</h2>
 
         <div className="mb-4" style={{ width: "100%" }}>
+          <p className="mb-1 text-xs text-gray-500">Maximum 10 wavelengths</p>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}

@@ -183,6 +183,44 @@ describe("WavelengthConfigModal", () => {
     expect(onClose).toHaveBeenCalledTimes(0);
   });
 
+  it("renders info text about maximum 10 wavelengths", () => {
+    render(<WavelengthConfigModal {...defaultProps} />);
+    expect(screen.getByText("Maximum 10 wavelengths")).toBeInTheDocument();
+  });
+
+  it("hides add buttons when at 10 rows", () => {
+    const tenWeights: [number, number][] = Array.from({ length: 10 }, () => [546.073, 1]);
+    render(
+      <WavelengthConfigModal
+        {...defaultProps}
+        initialWeights={tenWeights}
+        initialReferenceIndex={0}
+      />
+    );
+    const addBtns = screen.getAllByLabelText("Add wavelength row");
+    addBtns.forEach((btn) => {
+      expect(btn).toHaveStyle({ visibility: "hidden" });
+    });
+  });
+
+  it("shows add buttons after deleting a row from 10", async () => {
+    const tenWeights: [number, number][] = Array.from({ length: 10 }, () => [546.073, 1]);
+    render(
+      <WavelengthConfigModal
+        {...defaultProps}
+        initialWeights={tenWeights}
+        initialReferenceIndex={0}
+      />
+    );
+    const deleteBtns = screen.getAllByLabelText("Delete wavelength row");
+    await userEvent.click(deleteBtns[0]);
+
+    const addBtns = screen.getAllByLabelText("Add wavelength row");
+    addBtns.forEach((btn) => {
+      expect(btn).toHaveStyle({ visibility: "visible" });
+    });
+  });
+
   it("adjusts referenceIndex when deleting a row before the reference", async () => {
     // Reference is index 1 (587.562), delete index 1 (second row)
     // After deletion: reference should point to what was index 2 (now index 1)
