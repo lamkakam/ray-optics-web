@@ -5,6 +5,7 @@ import { createStore } from "zustand";
 import type { Surfaces, OpticalSpecs } from "@/lib/opticalModel";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
+import { ExampleSystems } from "@/lib/exampleSystems";
 import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurerContainer";
@@ -18,96 +19,24 @@ import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
 
-const DEMO_SURFACES: Surfaces = {
-  object: { distance: 1e10 },
-  image: { curvatureRadius: 0 },
-  surfaces: [
-    {
-      label: "Default",
-      curvatureRadius: 26.777,
-      thickness: 6.0,
-      medium: "SK16",
-      manufacturer: "Schott",
-      semiDiameter: 12.5,
-    },
-    {
-      label: "Default",
-      curvatureRadius: -200.0,
-      thickness: 3.0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 12.5,
-    },
-    {
-      label: "Stop",
-      curvatureRadius: -35.0,
-      thickness: 2.0,
-      medium: "F2",
-      manufacturer: "Schott",
-      semiDiameter: 10.0,
-    },
-    {
-      label: "Default",
-      curvatureRadius: 35.0,
-      thickness: 3.0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 10.0,
-    },
-    {
-      label: "Default",
-      curvatureRadius: 200.0,
-      thickness: 6.0,
-      medium: "SK16",
-      manufacturer: "Schott",
-      semiDiameter: 12.5,
-    },
-    {
-      label: "Default",
-      curvatureRadius: -26.777,
-      thickness: 68.0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 12.5,
-    },
-  ],
-};
-
-const DEMO_SPECS: OpticalSpecs = {
-  pupil: { space: "object", type: "epd", value: 25 },
-  field: {
-    space: "object",
-    type: "angle",
-    maxField: 20,
-    fields: [0, 0.7, 1],
-    isRelative: true,
-  },
-  wavelengths: {
-    weights: [
-      [486.133, 1],
-      [587.562, 1],
-      [656.273, 1],
-    ],
-    referenceIndex: 1,
-  },
-};
+const exampleSystem = ExampleSystems["Reflector with Optical Window"];
 
 export default function Home() {
   const { proxy, isReady } = usePyodide();
 
   const specsStore = useMemo(() => {
     const s = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
-    s.getState().loadFromSpecs(DEMO_SPECS);
+    s.getState().loadFromSpecs(exampleSystem.specs);
     return s;
   }, []);
 
   const lensStore = useMemo(() => {
     const s = createStore<LensEditorState>(createLensEditorSlice);
-    s.getState().setRows(surfacesToGridRows(DEMO_SURFACES));
+    s.getState().setRows(surfacesToGridRows(exampleSystem));
     return s;
   }, []);
 
-  const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(DEMO_SPECS);
+  const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(exampleSystem.specs);
   const [layoutImage, setLayoutImage] = useState<string | undefined>();
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [plotImage, setPlotImage] = useState<string | undefined>();

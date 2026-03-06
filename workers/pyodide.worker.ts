@@ -211,6 +211,8 @@ sm  = opm['seq_model']
 osp = opm['optical_spec']
 pm  = opm['parax_model']
 
+opm.system_spec.dimensions = 'MM'
+
 osp['pupil'] = PupilSpec(osp, key=['${pupilSpace}', '${pupilType}'], value=${pupilValue})
 osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"})
 osp['wvls'] = WvlSpec([${formattedWeights}], ref_wl=${refWavelengthIdx})
