@@ -1,5 +1,7 @@
+export type FraunhoferSymbol = "r" | "C" | "C'" | "d" | "e" | "F" | "F'" | "g" | "h" | "i";
+
 export interface FraunhoferLine {
-  readonly symbol: string;
+  readonly symbol: FraunhoferSymbol;
   readonly wavelength: number; // nm
 }
 
@@ -17,11 +19,13 @@ export const FRAUNHOFER_LINES: readonly FraunhoferLine[] = [
   { symbol: "i", wavelength: 365.015 },
 ] as const;
 
-const wavelengthMap = new Map(
+const wavelengthMap = new Map<string, number>(
   FRAUNHOFER_LINES.map((l) => [l.symbol, l.wavelength])
 );
 
 /** Look up a wavelength (nm) by Fraunhofer line symbol. Case-sensitive. */
+export function lookupWavelength(symbol: FraunhoferSymbol): number;
+export function lookupWavelength(symbol: string): number | undefined;
 export function lookupWavelength(symbol: string): number | undefined {
   return wavelengthMap.get(symbol);
 }

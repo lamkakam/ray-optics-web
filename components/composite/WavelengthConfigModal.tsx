@@ -85,7 +85,7 @@ export function WavelengthConfigModal({
       const newRow: WavelengthRow = {
         id: generateWlRowId(),
         fraunhofer: "e",
-        wavelength: 546.073,
+        wavelength: lookupWavelength("e"),
         weight: 1,
       };
       const next = [...prev];
@@ -172,7 +172,7 @@ export function WavelengthConfigModal({
       },
       valueParser: (params) => {
         const parsed = parseFloat(params.newValue);
-        return isNaN(parsed) || parsed <= 0 ? 546.073 : parsed;
+        return isNaN(parsed) || parsed <= 0 ? lookupWavelength("e") : parsed;
       },
       valueSetter: (params) => {
         if (!params.data) return false;

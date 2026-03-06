@@ -3,13 +3,13 @@ import type { OpticalSpecs } from "@/lib/opticalModel";
 
 export interface SpecsConfigurerState {
   // Aperture
-  pupilSpace: "object" | "image";
-  pupilType: "epd" | "f/#" | "NA";
+  pupilSpace: OpticalSpecs["pupil"]["space"];
+  pupilType: OpticalSpecs["pupil"]["type"];
   pupilValue: number;
 
   // Field
-  fieldSpace: "object" | "image";
-  fieldType: "angle" | "height";
+  fieldSpace: OpticalSpecs["field"]["space"];
+  fieldType: OpticalSpecs["field"]["type"];
   maxField: number;
   relativeFields: number[];
 
@@ -23,13 +23,13 @@ export interface SpecsConfigurerState {
 
   // Actions
   setAperture: (patch: {
-    pupilSpace?: "object" | "image";
-    pupilType?: "epd" | "f/#" | "NA";
+    pupilSpace?: OpticalSpecs["pupil"]["space"];
+    pupilType?: OpticalSpecs["pupil"]["type"];
     pupilValue?: number;
   }) => void;
   setField: (field: {
-    space: "object" | "image";
-    type: "angle" | "height";
+    space: OpticalSpecs["field"]["space"];
+    type: OpticalSpecs["field"]["type"];
     maxField: number;
     relativeFields: number[];
   }) => void;
