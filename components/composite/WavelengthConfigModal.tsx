@@ -3,6 +3,7 @@ import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
 import { cx } from "@/components/ui/modalTokens";
+import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { useTheme } from "@/components/ThemeProvider";
 import { FRAUNHOFER_LINES, lookupWavelength } from "@/lib/fraunhoferLines";
 
@@ -134,27 +135,13 @@ export function WavelengthConfigModal({
         if (!params.data) return undefined;
         const isFirst = rows.findIndex((r) => r.id === params.data!.id) === 0;
         return (
-          <span className="flex gap-1">
-            <button
-              type="button"
-              aria-label="Add wavelength row"
-              className="px-1 text-green-600 hover:text-green-800"
-              style={{ visibility: atLimit ? "hidden" : "visible" }}
-              onClick={() => addRow(params.data!.id)}
-            >
-              +
-            </button>
-            {!isFirst && (
-              <button
-                type="button"
-                aria-label="Delete wavelength row"
-                className="px-1 text-red-600 hover:text-red-800"
-                onClick={() => handleDeleteRow(params.data!.id)}
-              >
-                −
-              </button>
-            )}
-          </span>
+          <GridRowButtons
+            onAdd={() => addRow(params.data!.id)}
+            addHidden={atLimit}
+            onDelete={!isFirst ? () => handleDeleteRow(params.data!.id) : undefined}
+            addLabel="Add wavelength row"
+            deleteLabel="Delete wavelength row"
+          />
         );
       },
     },

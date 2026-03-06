@@ -12,6 +12,7 @@ import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/lib/gridTypes";
 import { MediumCell } from "@/components/micro/MediumCell";
 import { AsphericalCell } from "@/components/micro/AsphericalCell";
+import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { useTheme } from "@/components/ThemeProvider";
 
 function ActionWrapper({
@@ -79,28 +80,10 @@ export function LensPrescriptionGrid({
       cellRenderer: (params: { data: GridRow }) => {
         const { kind, id } = params.data;
         return (
-          <span className="flex items-center gap-2">
-            {kind !== "image" && (
-              <button
-                type="button"
-                aria-label="Insert row"
-                className="w-6 h-6 inline-flex items-center justify-center rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition"
-                onClick={() => onAddRowAfter(id)}
-              >
-                +
-              </button>
-            )}
-            {kind === "surface" && (
-              <button
-                type="button"
-                aria-label="Delete row"
-                className="w-6 h-6 inline-flex items-center justify-center rounded bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition"
-                onClick={() => onDeleteRow(id)}
-              >
-                −
-              </button>
-            )}
-          </span>
+          <GridRowButtons
+            onAdd={kind !== "image" ? () => onAddRowAfter(id) : undefined}
+            onDelete={kind === "surface" ? () => onDeleteRow(id) : undefined}
+          />
         );
       },
     },
