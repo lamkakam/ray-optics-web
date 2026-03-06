@@ -58,9 +58,12 @@ export function SpecsConfigurerPanel({
   };
 
   const handleValueBlur = () => {
-    const parsed = parseFloat(valueStr);
-    if (!isNaN(parsed)) {
+    const trimmed = valueStr.trim();
+    const parsed = Number(trimmed);
+    if (trimmed !== "" && !isNaN(parsed)) {
       onApertureChange({ pupilValue: parsed });
+    } else {
+      setValueStr(String(pupilValue));
     }
   };
 

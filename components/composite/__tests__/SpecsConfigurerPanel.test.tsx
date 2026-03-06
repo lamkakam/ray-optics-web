@@ -127,6 +127,17 @@ describe("SpecsConfigurerPanel", () => {
       );
     });
 
+    it("reverts to previous valid value when invalid input is entered on blur", async () => {
+      render(<SpecsConfigurerPanel {...defaultProps} pupilValue={25.15} />);
+      const input = screen.getByLabelText("Aperture value");
+
+      expect(input).toHaveValue("25.15");
+      await userEvent.clear(input);
+      await userEvent.type(input, "25.15aaa");
+      await userEvent.tab();
+      expect(input).toHaveValue("25.15");
+    });
+
     it("calls onOpenFieldModal when field button is clicked", async () => {
       const onOpenFieldModal = jest.fn();
       render(<SpecsConfigurerPanel {...defaultProps} onOpenFieldModal={onOpenFieldModal} />);
