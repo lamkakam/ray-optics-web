@@ -9,10 +9,9 @@
 - Always work on a feature branch. Never work on main branch.
 - Never push to main branch. Always push to a feature branch and open a PR for human approval
 - All tests must be pass before merging into main
-- Always read skills md files under `./claude/skills` before planning
+- Always read relevant skills md files under `./claude/skills` before planning
 - In TypeScript, use `undefined` instead of `null` whenever possible
 - Make the modules loosely coupled
-- Read the example usage of RayOptics from [here](https://ray-optics.readthedocs.io/en/latest/examples/SasianTriplet/SasianTriplet.html)
 
 ## Tech Stack
 
