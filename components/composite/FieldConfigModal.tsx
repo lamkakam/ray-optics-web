@@ -5,6 +5,7 @@ import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } fr
 import { cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { useTheme } from "@/components/ThemeProvider";
+import type { FieldSpace, FieldType } from "@/store/specsConfigurerStore";
 
 interface FieldRow {
   readonly id: string;
@@ -12,16 +13,16 @@ interface FieldRow {
 }
 
 interface FieldConfigResult {
-  readonly space: "object" | "image";
-  readonly type: "angle" | "height";
+  readonly space: FieldSpace;
+  readonly type: FieldType;
   readonly maxField: number;
   readonly relativeFields: number[];
 }
 
 interface FieldConfigModalProps {
   readonly isOpen: boolean;
-  readonly initialSpace: "object" | "image";
-  readonly initialType: "angle" | "height";
+  readonly initialSpace: FieldSpace;
+  readonly initialType: FieldType;
   readonly initialMaxField: number;
   readonly initialRelativeFields: readonly number[];
   readonly onApply: (result: FieldConfigResult) => void;
@@ -167,7 +168,7 @@ export function FieldConfigModal({
               aria-label="Field space"
               className={cx.select}
               value={space}
-              onChange={(e) => setSpace(e.target.value as "object" | "image")}
+              onChange={(e) => setSpace(e.target.value as FieldSpace)}
             >
               <option value="object">Object</option>
               <option value="image">Image</option>
@@ -180,7 +181,7 @@ export function FieldConfigModal({
               aria-label="Field type"
               className={cx.select}
               value={fieldType}
-              onChange={(e) => setFieldType(e.target.value as "angle" | "height")}
+              onChange={(e) => setFieldType(e.target.value as FieldType)}
             >
               <option value="height">Height</option>
               <option value="angle">Angle</option>

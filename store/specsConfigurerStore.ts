@@ -1,21 +1,30 @@
 import type { StateCreator } from "zustand";
 import type { OpticalSpecs } from "@/lib/opticalModel";
+import { lookupWavelength } from "@/lib/fraunhoferLines";
+
+/** Reusable type aliases derived from OpticalSpecs */
+export type PupilSpace = OpticalSpecs["pupil"]["space"];
+export type PupilType = OpticalSpecs["pupil"]["type"];
+export type FieldSpace = OpticalSpecs["field"]["space"];
+export type FieldType = OpticalSpecs["field"]["type"];
+export type WavelengthWeights = OpticalSpecs["wavelengths"]["weights"];
+export type ReferenceIndex = OpticalSpecs["wavelengths"]["referenceIndex"];
 
 export interface SpecsConfigurerState {
   // Aperture
-  pupilSpace: OpticalSpecs["pupil"]["space"];
-  pupilType: OpticalSpecs["pupil"]["type"];
+  pupilSpace: PupilSpace;
+  pupilType: PupilType;
   pupilValue: number;
 
   // Field
-  fieldSpace: OpticalSpecs["field"]["space"];
-  fieldType: OpticalSpecs["field"]["type"];
+  fieldSpace: FieldSpace;
+  fieldType: FieldType;
   maxField: number;
   relativeFields: number[];
 
   // Wavelengths
-  wavelengthWeights: [number, number][];
-  referenceIndex: number;
+  wavelengthWeights: WavelengthWeights;
+  referenceIndex: ReferenceIndex;
 
   // Modal state
   fieldModalOpen: boolean;
@@ -23,19 +32,19 @@ export interface SpecsConfigurerState {
 
   // Actions
   setAperture: (patch: {
-    pupilSpace?: OpticalSpecs["pupil"]["space"];
-    pupilType?: OpticalSpecs["pupil"]["type"];
+    pupilSpace?: PupilSpace;
+    pupilType?: PupilType;
     pupilValue?: number;
   }) => void;
   setField: (field: {
-    space: OpticalSpecs["field"]["space"];
-    type: OpticalSpecs["field"]["type"];
+    space: FieldSpace;
+    type: FieldType;
     maxField: number;
     relativeFields: number[];
   }) => void;
   setWavelengths: (wl: {
-    weights: [number, number][];
-    referenceIndex: number;
+    weights: WavelengthWeights;
+    referenceIndex: ReferenceIndex;
   }) => void;
   openFieldModal: () => void;
   closeFieldModal: () => void;
@@ -61,7 +70,7 @@ export const createSpecsConfigurerSlice: StateCreator<SpecsConfigurerState> = (
   relativeFields: [0],
 
   // Wavelength defaults
-  wavelengthWeights: [[546.073, 1]],
+  wavelengthWeights: [[lookupWavelength("e"), 1]],
   referenceIndex: 0,
 
   // Modal state

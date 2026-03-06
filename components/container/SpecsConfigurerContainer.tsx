@@ -6,6 +6,12 @@ import type { OpticalSpecs } from "@/lib/opticalModel";
 import {
   createSpecsConfigurerSlice,
   type SpecsConfigurerState,
+  type PupilSpace,
+  type PupilType,
+  type FieldSpace,
+  type FieldType,
+  type WavelengthWeights,
+  type ReferenceIndex,
 } from "@/store/specsConfigurerStore";
 import { SpecsConfigurerPanel } from "@/components/composite/SpecsConfigurerPanel";
 import { FieldConfigModal } from "@/components/composite/FieldConfigModal";
@@ -47,8 +53,8 @@ export function SpecsConfigurerContainer({
 
   const handleApertureChange = useCallback(
     (patch: {
-      pupilSpace?: "object" | "image";
-      pupilType?: "epd" | "f/#" | "NA";
+      pupilSpace?: PupilSpace;
+      pupilType?: PupilType;
       pupilValue?: number;
     }) => {
       store.getState().setAperture(patch);
@@ -60,8 +66,8 @@ export function SpecsConfigurerContainer({
 
   const handleFieldApply = useCallback(
     (result: {
-      space: "object" | "image";
-      type: "angle" | "height";
+      space: FieldSpace;
+      type: FieldType;
       maxField: number;
       relativeFields: number[];
     }) => {
@@ -74,7 +80,7 @@ export function SpecsConfigurerContainer({
   );
 
   const handleWavelengthApply = useCallback(
-    (result: { weights: [number, number][]; referenceIndex: number }) => {
+    (result: { weights: WavelengthWeights; referenceIndex: ReferenceIndex }) => {
       store.getState().setWavelengths(result);
       store.getState().closeWavelengthModal();
       const specs = store.getState().toOpticalSpecs();

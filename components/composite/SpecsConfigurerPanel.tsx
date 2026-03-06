@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { cx } from "@/components/ui/modalTokens";
 import { Tooltip } from "@/components/micro/Tooltip";
+import type { PupilSpace, PupilType } from "@/store/specsConfigurerStore";
 
 interface AperturePatch {
-  readonly pupilSpace?: "object" | "image";
-  readonly pupilType?: "epd" | "f/#" | "NA";
+  readonly pupilSpace?: PupilSpace;
+  readonly pupilType?: PupilType;
   readonly pupilValue?: number;
 }
 
 interface SpecsConfigurerPanelProps {
-  readonly pupilSpace: "object" | "image";
-  readonly pupilType: "epd" | "f/#" | "NA";
+  readonly pupilSpace: PupilSpace;
+  readonly pupilType: PupilType;
   readonly pupilValue: number;
   readonly fieldSummary: string;
   readonly wavelengthSummary: string;
@@ -22,8 +23,8 @@ interface SpecsConfigurerPanelProps {
 const APERTURE_OPTIONS: readonly {
   label: string;
   value: string;
-  pupilSpace: "object" | "image";
-  pupilType: "epd" | "f/#" | "NA";
+  pupilSpace: PupilSpace;
+  pupilType: PupilType;
 }[] = [
   { label: "Entrance Pupil Diameter", value: "object:epd", pupilSpace: "object", pupilType: "epd" },
   { label: "Image Space F/#", value: "image:f/#", pupilSpace: "image", pupilType: "f/#" },
