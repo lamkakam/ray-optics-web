@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import { createStore } from "zustand";
 import type { Surfaces, OpticalSpecs } from "@/lib/opticalModel";
 import { usePyodide } from "@/hooks/usePyodide";
@@ -17,26 +17,25 @@ import {
 } from "@/components/micro/AnalysisPlotView";
 import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
+import { cx } from "@/components/ui/modalTokens";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
-
-const exampleSystem = ExampleSystems["Reflector with Optical Window"];
 
 export default function Home() {
   const { proxy, isReady } = usePyodide();
 
-  const specsStore = useMemo(() => {
-    const s = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
-    s.getState().loadFromSpecs(exampleSystem.specs);
-    return s;
-  }, []);
+  const specsStore = useMemo(
+    () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
+    []
+  );
 
-  const lensStore = useMemo(() => {
-    const s = createStore<LensEditorState>(createLensEditorSlice);
-    s.getState().setRows(surfacesToGridRows(exampleSystem));
-    return s;
-  }, []);
+  const lensStore = useMemo(
+    () => createStore<LensEditorState>(createLensEditorSlice),
+    []
+  );
 
-  const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(exampleSystem.specs);
+  const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(
+    () => specsStore.getState().toOpticalSpecs()
+  );
   const [layoutImage, setLayoutImage] = useState<string | undefined>();
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [plotImage, setPlotImage] = useState<string | undefined>();
@@ -48,6 +47,35 @@ export default function Home() {
   >();
   const [computing, setComputing] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [pendingExample, setPendingExample] = useState<string | undefined>();
+  const exampleSelectRef = useRef<HTMLSelectElement>(null);
+
+  const exampleSystemNames = useMemo(() => Object.keys(ExampleSystems), []);
+
+  const handleExampleChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const name = e.target.value;
+      if (!ExampleSystems[name]) return;
+      setPendingExample(name);
+    },
+    []
+  );
+
+  const handleExampleConfirm = useCallback(() => {
+    if (!pendingExample) return;
+    const system = ExampleSystems[pendingExample];
+    if (!system) return;
+    specsStore.getState().loadFromSpecs(system.specs);
+    lensStore.getState().setRows(surfacesToGridRows(system));
+    setPendingExample(undefined);
+  }, [pendingExample, specsStore, lensStore]);
+
+  const handleExampleCancel = useCallback(() => {
+    setPendingExample(undefined);
+    if (exampleSelectRef.current) {
+      exampleSelectRef.current.value = "";
+    }
+  }, []);
 
   const fieldOptions = useMemo(() => {
     const { fields, maxField, type } = committedSpecs.field;
@@ -100,7 +128,8 @@ export default function Home() {
       setLayoutImage(layout);
       setPlotImage(plot);
       setCommittedSpecs(specs);
-    } catch {
+    } catch (err) {
+      console.log("Update System failed:", err);
       setErrorModalOpen(true);
     } finally {
       setComputing(false);
@@ -185,6 +214,22 @@ export default function Home() {
         <h1 className="font-semibold text-gray-900 dark:text-gray-100">
           Ray Optics Web
         </h1>
+        <select
+          ref={exampleSelectRef}
+          aria-label="Example system"
+          className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          defaultValue=""
+          onChange={handleExampleChange}
+        >
+          <option value="" disabled>
+            Load example system...
+          </option>
+          {exampleSystemNames.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -225,6 +270,27 @@ export default function Home() {
 
       {/* Bottom drawer */}
       <BottomDrawer tabs={drawerTabs} />
+
+      {/* Confirm overwrite modal */}
+      {pendingExample !== undefined && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className={cx.backdrop} onClick={handleExampleCancel} />
+          <div className={`${cx.panel} max-w-md`} role="dialog" aria-modal="true">
+            <h2 className={cx.title}>Load Example System</h2>
+            <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
+              This will overwrite your current configuration. Continue?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button type="button" className={cx.btnSecondary} onClick={handleExampleCancel}>
+                Cancel
+              </button>
+              <button type="button" className={cx.btnPrimary} onClick={handleExampleConfirm}>
+                Load
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error modal */}
       <ErrorModal

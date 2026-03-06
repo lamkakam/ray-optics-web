@@ -59,13 +59,11 @@ describe("Home page", () => {
     expect(screen.getByLabelText("Plot type")).toBeInTheDocument();
   });
 
-  it("renders field options as absolute field values with units", () => {
+  it("renders field options from default specs initially", () => {
     render(<Home />);
     const fieldSelect = screen.getByLabelText("Field");
-    // Demo fields: [0, 0.7, 1] relative, maxField = 20, type = angle
-    expect(fieldSelect).toContainHTML("0.0°");
-    expect(fieldSelect).toContainHTML("14.0°");
-    expect(fieldSelect).toContainHTML("20.0°");
+    // Default specs: fields [0], maxField = 0, type = height
+    expect(fieldSelect).toContainHTML("0.0 mm");
   });
 
   it("renders the bottom drawer with System Specs and Prescription tabs", () => {
@@ -137,11 +135,98 @@ describe("Home page", () => {
   });
 
   it("field dropdown reflects committedSpecs, not draft edits", () => {
-    // Initially renders with DEMO_SPECS field options
+    // Initially renders with default specs (no example loaded)
     render(<Home />);
     const fieldSelect = screen.getByLabelText("Field");
-    expect(fieldSelect).toContainHTML("0.0°");
-    expect(fieldSelect).toContainHTML("14.0°");
-    expect(fieldSelect).toContainHTML("20.0°");
+    expect(fieldSelect).toContainHTML("0.0 mm");
+  });
+
+  // --- Example system selector tests ---
+
+  it("renders an Example Systems select to the left of Update System", () => {
+    render(<Home />);
+    const select = screen.getByLabelText("Example system");
+    const updateBtn = screen.getByRole("button", { name: "Update System" });
+    expect(select).toBeInTheDocument();
+    // Select should come before the button in DOM order
+    expect(
+      select.compareDocumentPosition(updateBtn) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it("starts with no example selected and shows a placeholder option", () => {
+    render(<Home />);
+    const select = screen.getByLabelText("Example system") as HTMLSelectElement;
+    // The first selected option should be the placeholder
+    expect(select.value).toBe("");
+    expect(select.options[0].text).toMatch(/example/i);
+    expect(select.options[0].disabled).toBe(true);
+  });
+
+  it("lists all example systems as options", () => {
+    render(<Home />);
+    const select = screen.getByLabelText("Example system");
+    const options = Array.from(
+      (select as HTMLSelectElement).options
+    ).map((o) => o.text);
+    expect(options).toContain("Sasian Triplet");
+    expect(options).toContain("Reflector with Optical Window");
+  });
+
+  it("shows confirmation modal when selecting an example system", async () => {
+    render(<Home />);
+    const select = screen.getByLabelText("Example system");
+
+    await userEvent.selectOptions(select, "Sasian Triplet");
+
+    // A confirmation dialog should appear
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(
+      screen.getByText(/overwrite/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /cancel/i })
+    ).toBeInTheDocument();
+  });
+
+  it("loads example system when user confirms in the modal", async () => {
+    render(<Home />);
+    const select = screen.getByLabelText("Example system");
+
+    await userEvent.selectOptions(select, "Sasian Triplet");
+
+    // Confirm
+    await userEvent.click(screen.getByRole("button", { name: /confirm|ok|load/i }));
+
+    // Modal closes
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    // Verify specs updated: Sasian Triplet has EPD 12.5
+    expect(screen.getByDisplayValue("12.5")).toBeInTheDocument();
+
+    // Check prescription tab has the right surface data
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
+    expect(screen.getByDisplayValue("23.713")).toBeInTheDocument();
+  });
+
+  it("does not load example system when user cancels in the modal", async () => {
+    render(<Home />);
+    const select = screen.getByLabelText("Example system") as HTMLSelectElement;
+
+    await userEvent.selectOptions(select, "Sasian Triplet");
+
+    // Cancel
+    await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
+
+    // Modal closes
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    // Select reverts to placeholder
+    expect(select.value).toBe("");
+
+    // Specs should remain at defaults (pupilValue 0.5, not 12.5)
+    expect(screen.queryByDisplayValue("12.5")).not.toBeInTheDocument();
   });
 });
