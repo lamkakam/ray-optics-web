@@ -12,6 +12,7 @@ export function MediumCell({ medium, onOpenModal }: MediumCellProps) {
     <button
       type="button"
       aria-label="Edit medium"
+      className="cursor-pointer"
       onClick={onOpenModal}
     >
       {medium}
