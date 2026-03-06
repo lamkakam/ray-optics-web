@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { cx } from "@/components/ui/modalTokens";
 import glassCatalogs from "@/data/glass-catalogs.json";
 
@@ -30,14 +30,7 @@ export function MediumSelectorModal({
   const [manufacturer, setManufacturer] = useState(initialMfr);
   const [medium, setMedium] = useState(initialMedium);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+
 
   if (!isOpen) return undefined;
 
@@ -51,13 +44,12 @@ export function MediumSelectorModal({
       <div
         data-testid="modal-backdrop"
         className={cx.backdrop}
-        onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="medium-modal-title"
-        className={cx.panel}
+        className={cx.panel + " max-w-md"}
       >
         {/* ── Title ── */}
         <h2 id="medium-modal-title" className={cx.title}>

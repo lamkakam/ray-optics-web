@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef } from "react";
 import { createStore, useStore } from "zustand";
+import { cx } from "@/components/ui/modalTokens";
 import type { Surfaces } from "@/lib/opticalModel";
 import type { GridRow } from "@/lib/gridTypes";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
@@ -56,7 +57,7 @@ export function LensPrescriptionContainer({
   return (
     <div>
       <div role="toolbar" aria-label="Grid toolbar">
-        <button type="button" onClick={handleExport}>
+        <button type="button" className={cx.btnPrimary} onClick={handleExport}>
           Export JSON
         </button>
       </div>

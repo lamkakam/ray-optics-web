@@ -42,9 +42,11 @@ describe("LensPrescriptionContainer", () => {
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
-  it("renders Export JSON button", () => {
+  it("renders Export JSON button with primary button styling", () => {
     render(<LensPrescriptionContainer {...defaultProps} />);
-    expect(screen.getByText("Export JSON")).toBeInTheDocument();
+    const btn = screen.getByText("Export JSON");
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveClass("rounded-lg", "bg-blue-600");
   });
 
   it("renders rows from initialSurfaces (object + 2 surfaces + image)", () => {
