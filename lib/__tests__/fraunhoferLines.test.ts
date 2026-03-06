@@ -37,15 +37,14 @@ describe("lookupWavelength", () => {
     expect(lookupWavelength("C")).toBe(656.273);
   });
 
-  it("is case-sensitive", () => {
-    expect(lookupWavelength("c")).toBeUndefined();
+  it("returns correct wavelength for all symbols", () => {
     expect(lookupWavelength("C")).toBe(656.273);
-    expect(lookupWavelength("f")).toBeUndefined();
     expect(lookupWavelength("F")).toBe(486.133);
-  });
-
-  it("returns undefined for unknown symbols", () => {
-    expect(lookupWavelength("Z")).toBeUndefined();
-    expect(lookupWavelength("")).toBeUndefined();
+    expect(lookupWavelength("r")).toBe(706.519);
+    expect(lookupWavelength("C'")).toBe(643.847);
+    expect(lookupWavelength("F'")).toBe(479.991);
+    expect(lookupWavelength("g")).toBe(435.835);
+    expect(lookupWavelength("h")).toBe(404.656);
+    expect(lookupWavelength("i")).toBe(365.015);
   });
 });

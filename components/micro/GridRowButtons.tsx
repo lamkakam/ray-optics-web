@@ -1,4 +1,5 @@
 import React from "react";
+import { cx } from "@/components/ui/modalTokens";
 
 interface GridRowButtonsProps {
   readonly onAdd?: () => void;
@@ -22,7 +23,7 @@ export function GridRowButtons({
           type="button"
           title={addLabel}
           aria-label={addLabel}
-          className="w-6 h-6 inline-flex items-center justify-center rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition cursor-pointer"
+          className={cx.btnIconAdd}
           style={addHidden ? { visibility: "hidden" } : undefined}
           onClick={onAdd}
         >
@@ -34,7 +35,7 @@ export function GridRowButtons({
           type="button"
           title={deleteLabel}
           aria-label={deleteLabel}
-          className="w-6 h-6 inline-flex items-center justify-center rounded bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition cursor-pointer"
+          className={cx.btnIconDelete}
           onClick={onDelete}
         >
           −

@@ -26,4 +26,12 @@ export const cx = {
     "rounded-lg bg-red-600 px-4 py-2 font-medium text-white transition hover:bg-red-700 cursor-pointer",
   divider:
     "border-t border-gray-200 dark:border-gray-700",
+  btnIconAdd:
+    "w-6 h-6 inline-flex items-center justify-center rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition cursor-pointer",
+  btnIconDelete:
+    "w-6 h-6 inline-flex items-center justify-center rounded bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition cursor-pointer",
+  caption:
+    "mb-1 text-xs text-gray-500",
+  tooltip:
+    "pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 z-10",
 } as const;

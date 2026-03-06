@@ -1,4 +1,5 @@
 import React from "react";
+import { cx } from "@/components/ui/modalTokens";
 
 interface TooltipProps {
   readonly text: string;
@@ -15,7 +16,7 @@ export function Tooltip({ text, children, position = "top" }: TooltipProps) {
       {children}
       <span
         role="tooltip"
-        className={`pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 z-10 ${positionClasses}`}
+        className={`${cx.tooltip} ${positionClasses}`}
       >
         {text}
       </span>

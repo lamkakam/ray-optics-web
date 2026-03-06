@@ -5,7 +5,7 @@ import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } fr
 import { cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { useTheme } from "@/components/ThemeProvider";
-import { FRAUNHOFER_LINES, lookupWavelength } from "@/lib/fraunhoferLines";
+import { FRAUNHOFER_LINES, lookupWavelength, type FraunhoferSymbol } from "@/lib/fraunhoferLines";
 
 interface WavelengthRow {
   readonly id: string;
@@ -155,10 +155,9 @@ export function WavelengthConfigModal({
       },
       valueSetter: (params) => {
         if (!params.data) return false;
-        const wl = lookupWavelength(params.newValue as string);
-        if (wl !== undefined) {
-          updateRow(params.data.id, { fraunhofer: params.newValue as string, wavelength: wl });
-        }
+        const symbol = params.newValue as FraunhoferSymbol;
+        const wl = lookupWavelength(symbol);
+        updateRow(params.data.id, { fraunhofer: symbol, wavelength: wl });
         return true;
       },
     },
@@ -226,7 +225,7 @@ export function WavelengthConfigModal({
         <h2 id="wavelength-modal-title" className={cx.title}>Wavelengths</h2>
 
         <div className="mb-4" style={{ width: "100%" }}>
-          <p className="mb-1 text-xs text-gray-500">Maximum 10 wavelengths</p>
+          <p className={cx.caption}>Maximum 10 wavelengths</p>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}

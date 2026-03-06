@@ -201,7 +201,7 @@ export function FieldConfigModal({
         </div>
 
         <div className="mb-4" style={{ width: "100%" }}>
-          <p className="mb-1 text-xs text-gray-500">Maximum 10 relative fields</p>
+          <p className={cx.caption}>Maximum 10 relative fields</p>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}
