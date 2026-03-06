@@ -13,15 +13,15 @@ describe("FirstOrderChips", () => {
     expect(screen.getByText("EFL: 100.23mm")).toBeInTheDocument();
   });
 
-  it("renders f/# chip when fno is present", () => {
-    render(<FirstOrderChips data={{ fno: 4.012 }} />);
-    expect(screen.getByText("f/4.01")).toBeInTheDocument();
+  it("renders BFL chip when efl is present", () => {
+    render(<FirstOrderChips data={{ bfl: 55.1 }} />);
+    expect(screen.getByText("BFL: 55.10mm")).toBeInTheDocument();
   });
 
   it("renders multiple chips", () => {
-    render(<FirstOrderChips data={{ efl: 100, fno: 4, img_ht: 36.4 }} />);
+    render(<FirstOrderChips data={{ efl: 100, bfl: 16, img_ht: 36.4 }} />);
     expect(screen.getByText("EFL: 100.00mm")).toBeInTheDocument();
-    expect(screen.getByText("f/4.00")).toBeInTheDocument();
+    expect(screen.getByText("BFL: 16.00mm")).toBeInTheDocument();
     expect(screen.getByText("IMG HT: 36.40mm")).toBeInTheDocument();
   });
 });
