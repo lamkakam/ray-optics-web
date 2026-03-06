@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 
 interface DrawerTab {
   readonly id: string;
@@ -18,11 +18,11 @@ const SNAP_EXPANDED = 0.7;
 
 export function BottomDrawer({ tabs }: BottomDrawerProps) {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
-  const [height, setHeight] = useState(
-    typeof window !== "undefined"
-      ? Math.round(window.innerHeight * SNAP_HALF)
-      : 300
-  );
+  const [height, setHeight] = useState(300);
+
+  useEffect(() => {
+    setHeight(Math.round(window.innerHeight * SNAP_HALF));
+  }, []);
   const [collapsed, setCollapsed] = useState(false);
   const dragging = useRef(false);
   const startY = useRef(0);
@@ -69,12 +69,7 @@ export function BottomDrawer({ tabs }: BottomDrawerProps) {
 
   const toggleCollapse = useCallback(() => {
     if (collapsed) {
-      setHeight(
-        Math.round(
-          (typeof window !== "undefined" ? window.innerHeight : 750) *
-            SNAP_HALF
-        )
-      );
+      setHeight(Math.round(window.innerHeight * SNAP_HALF));
       setCollapsed(false);
     } else {
       setHeight(SNAP_COLLAPSED);
