@@ -64,4 +64,27 @@ describe("GridRowButtons", () => {
     expect(screen.getByRole("button", { name: "Insert row" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete row" })).toBeInTheDocument();
   });
+
+  it("add button has title attribute for native tooltip", () => {
+    render(<GridRowButtons onAdd={() => {}} />);
+    expect(screen.getByRole("button", { name: "Insert row" })).toHaveAttribute("title", "Insert row");
+  });
+
+  it("delete button has title attribute for native tooltip", () => {
+    render(<GridRowButtons onDelete={() => {}} />);
+    expect(screen.getByRole("button", { name: "Delete row" })).toHaveAttribute("title", "Delete row");
+  });
+
+  it("title attributes use custom labels", () => {
+    render(
+      <GridRowButtons
+        onAdd={() => {}}
+        onDelete={() => {}}
+        addLabel="Add field row"
+        deleteLabel="Delete field row"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Add field row" })).toHaveAttribute("title", "Add field row");
+    expect(screen.getByRole("button", { name: "Delete field row" })).toHaveAttribute("title", "Delete field row");
+  });
 });

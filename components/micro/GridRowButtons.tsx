@@ -20,6 +20,7 @@ export function GridRowButtons({
       {onAdd !== undefined && (
         <button
           type="button"
+          title={addLabel}
           aria-label={addLabel}
           className="w-6 h-6 inline-flex items-center justify-center rounded bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition cursor-pointer"
           style={addHidden ? { visibility: "hidden" } : undefined}
@@ -31,6 +32,7 @@ export function GridRowButtons({
       {onDelete !== undefined && (
         <button
           type="button"
+          title={deleteLabel}
           aria-label={deleteLabel}
           className="w-6 h-6 inline-flex items-center justify-center rounded bg-red-600 text-white text-sm font-bold hover:bg-red-700 transition cursor-pointer"
           onClick={onDelete}

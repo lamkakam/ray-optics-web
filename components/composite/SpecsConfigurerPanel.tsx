@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { cx } from "@/components/ui/modalTokens";
+import { Tooltip } from "@/components/micro/Tooltip";
 
 interface AperturePatch {
   readonly pupilSpace?: "object" | "image";
@@ -103,14 +104,16 @@ export function SpecsConfigurerPanel({
         <h3 className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
           Field
         </h3>
-        <button
-          type="button"
-          aria-label="Configure field"
-          className={cx.btnToggle + " w-full text-left"}
-          onClick={onOpenFieldModal}
-        >
-          {fieldSummary}
-        </button>
+        <Tooltip text="Click to configure field settings" position="bottom">
+          <button
+            type="button"
+            aria-label="Configure field"
+            className={cx.btnToggle + " w-full text-left"}
+            onClick={onOpenFieldModal}
+          >
+            {fieldSummary}
+          </button>
+        </Tooltip>
       </section>
 
       {/* Wavelengths */}
@@ -118,14 +121,16 @@ export function SpecsConfigurerPanel({
         <h3 className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
           Wavelengths
         </h3>
-        <button
-          type="button"
-          aria-label="Configure wavelengths"
-          className={cx.btnToggle + " w-full text-left"}
-          onClick={onOpenWavelengthModal}
-        >
-          {wavelengthSummary}
-        </button>
+        <Tooltip text="Click to configure wavelengths" position="bottom">
+          <button
+            type="button"
+            aria-label="Configure wavelengths"
+            className={cx.btnToggle + " w-full text-left"}
+            onClick={onOpenWavelengthModal}
+          >
+            {wavelengthSummary}
+          </button>
+        </Tooltip>
       </section>
     </div>
   );
