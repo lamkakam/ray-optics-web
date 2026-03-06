@@ -159,43 +159,6 @@ Debounce model updates (e.g., 300ms after the last surface/spec edit) before cal
 
 ---
 
-## Tailwind Layout Sketch
-
-```tsx
-<div className="h-screen flex flex-col">
-  {/* Header */}
-  <header className="h-12 shrink-0 border-b px-4 flex items-center gap-4">
-    <h1 className="font-semibold">Ray Optics Web</h1>
-    <div className="flex gap-2 text-sm text-muted-foreground">
-      {/* first-order data chips */}
-    </div>
-  </header>
-
-  {/* Main content — fills remaining height */}
-  <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-    {/* Lens layout */}
-    <div className="flex-1 lg:w-[65%] p-4 flex items-center justify-center">
-      <img
-        src={`data:image/png;base64,${layoutImage}`}
-        className="max-w-full max-h-full object-contain"
-        alt="Lens layout diagram"
-      />
-    </div>
-    {/* Analysis sidebar */}
-    <div className="lg:w-[35%] border-l p-4 overflow-y-auto">
-      {/* field dropdown + plot type dropdown + plot image */}
-    </div>
-  </div>
-
-  {/* Bottom drawer */}
-  <div className="border-t" style={{ height: drawerHeight }}>
-    {/* drag handle + tabs + content */}
-  </div>
-</div>
-```
-
----
-
 ## Implementation Notes
 
 - No external drawer library needed. A pointer-event drag handler with `requestAnimationFrame` and three snap points is sufficient. Store `drawerHeight` in local React state.
