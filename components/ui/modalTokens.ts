@@ -7,7 +7,7 @@
 export const cx = {
   backdrop: "absolute inset-0 bg-black/50 backdrop-blur-sm",
   panel:
-    "relative z-10 w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl animate-modal-enter dark:border-gray-700 dark:bg-gray-900",
+    "relative z-10 w-full rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl animate-modal-enter dark:border-gray-700 dark:bg-gray-900",
   title:
     "mb-4 border-b border-gray-200 pb-3 text-lg font-semibold text-gray-900 dark:border-gray-700 dark:text-gray-100",
   label:

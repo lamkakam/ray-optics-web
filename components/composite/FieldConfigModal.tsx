@@ -156,7 +156,7 @@ export function FieldConfigModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div data-testid="modal-backdrop" className={cx.backdrop} />
-      <div role="dialog" aria-modal="true" aria-labelledby="field-modal-title" className={cx.panel}>
+      <div role="dialog" aria-modal="true" aria-labelledby="field-modal-title" className={cx.panel + " max-w-lg"}>
         <h2 id="field-modal-title" className={cx.title}>Field</h2>
 
         <div className="mb-4 flex items-center gap-3">

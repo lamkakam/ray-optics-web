@@ -95,7 +95,7 @@ export function AsphericalModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="aspherical-modal-title"
-        className={cx.panel}
+        className={cx.panel + " max-w-md"}
       >
         {/* ── Title ── */}
         <h2 id="aspherical-modal-title" className={cx.title}>

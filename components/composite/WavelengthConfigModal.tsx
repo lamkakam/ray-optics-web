@@ -222,7 +222,7 @@ export function WavelengthConfigModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div data-testid="modal-backdrop" className={cx.backdrop} />
-      <div role="dialog" aria-modal="true" aria-labelledby="wavelength-modal-title" className={cx.panel + " max-w-2xl"}>
+      <div role="dialog" aria-modal="true" aria-labelledby="wavelength-modal-title" className={cx.panel + " max-w-3xl"}>
         <h2 id="wavelength-modal-title" className={cx.title}>Wavelengths</h2>
 
         <div className="mb-4" style={{ width: "100%" }}>

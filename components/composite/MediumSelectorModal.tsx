@@ -49,7 +49,7 @@ export function MediumSelectorModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="medium-modal-title"
-        className={cx.panel}
+        className={cx.panel + " max-w-md"}
       >
         {/* ── Title ── */}
         <h2 id="medium-modal-title" className={cx.title}>
