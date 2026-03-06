@@ -88,9 +88,9 @@ export async function _init(
                     ray = ray_pkg[mc.ray]
                     dist = foc / ray[-1][mc.d][2]
                     defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-                t_abr = defocused_pt - image_pt
-                return t_abr[xy]
-            return None
+                    t_abr = defocused_pt - image_pt
+                    return t_abr[xy]
+                return None
 
             fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
             for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
