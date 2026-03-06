@@ -118,7 +118,7 @@ export function FieldConfigModal({
   const columnDefs: ColDef<FieldRow>[] = [
     {
       headerName: "",
-      width: 80,
+      width: 100,
       cellRenderer: (params: { data: FieldRow | undefined }) => {
         if (!params.data) return undefined;
         const isFirst = rows.findIndex((r) => r.id === params.data!.id) === 0;

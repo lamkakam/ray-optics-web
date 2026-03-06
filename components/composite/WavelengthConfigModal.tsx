@@ -130,7 +130,7 @@ export function WavelengthConfigModal({
   const columnDefs: ColDef<WavelengthRow>[] = [
     {
       headerName: "",
-      width: 80,
+      width: 100,
       cellRenderer: (params: { data: WavelengthRow | undefined }) => {
         if (!params.data) return undefined;
         const isFirst = rows.findIndex((r) => r.id === params.data!.id) === 0;
