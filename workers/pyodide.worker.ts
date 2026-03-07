@@ -70,6 +70,9 @@ export async function _init(
             plt.close(fig)
             return data
 
+        def _get_wvl_lbl(opm, idx) -> str:
+            return f"{opm['optical_spec']['wvls'].wavelengths[idx]}nm"
+
         def get_first_order_data(opm):
             pm  = opm['parax_model']
             fod = pm.opt_model['analysis_results']['parax_data'].fod
@@ -81,7 +84,7 @@ export async function _init(
             fig.plot()
             return _fig_to_base64(fig)
 
-        def plot_ray_fan(fi):
+        def plot_ray_fan(fi, opm):
             def _ray_abr(p, xy, ray_pkg, fld, wvl, foc):
                 if ray_pkg[mc.ray] is not None:
                     image_pt = fld.ref_sphere[0]
@@ -96,35 +99,44 @@ export async function _init(
             for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
                 fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_ray_abr, fi, xy)
                 for k in range(len(fans_x)):
-                    ax.plot(fans_x[k], fans_y[k], color=colors[k])
+                    ax.plot(fans_x[k], fans_y[k], color=colors[k], label=_get_wvl_lbl(opm, k))
                 ax.set_title(title)
                 ax.axhline(0, color='black', linewidth=0.5)
                 ax.axvline(0, color='black', linewidth=0.5)
+                ax.set_xlabel("Pupil Radius (% Zone)")
+                ax.set_ylabel("Transverse Aberr. (mm)")
+                ax.legend(loc='center', bbox_to_anchor=(0.5, -0.5), ncol=2)
+                ax.ticklabel_format(style='sci', useMathText=True)
             fig.tight_layout()
             return _fig_to_base64(fig)
 
 
-        def plot_opd_fan(fi):
+        def plot_opd_fan(fi, opm):
             def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
                 if ray_pkg[mc.ray] is not None:
                     fod = opm['analysis_results']['parax_data'].fod
-                    opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg,
-                                                fld.chief_ray, fld.ref_sphere)
-                    return opd_val / opm.nm_to_sys_units(wvl)
+                    opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg, fld.chief_ray, fld.ref_sphere)
+                    
+                    # wvl is in the unit of nm but opd_val is in mm
+                    return opd_val / wvl * 1e6
                 return None
 
             fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
             for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
                 fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_opd_abr, fi, xy)
                 for k in range(len(fans_x)):
-                    ax.plot(fans_x[k], fans_y[k], color=colors[k])
+                    ax.plot(fans_x[k], fans_y[k], color=colors[k], label=_get_wvl_lbl(opm, k))
                 ax.set_title(title)
                 ax.axhline(0, color='black', linewidth=0.5)
                 ax.axvline(0, color='black', linewidth=0.5)
+                ax.set_xlabel("Pupil Radius (% Zone)")
+                ax.set_ylabel("waves")
+                ax.legend(loc='center', bbox_to_anchor=(0.5, -0.5), ncol=2)
+                ax.ticklabel_format(style='sci', useMathText=True)
             fig.tight_layout()
             return _fig_to_base64(fig)
 
-        def plot_spot_diagram(fi):
+        def plot_spot_diagram(fi, opm):
             def _spot(p, wi, ray_pkg, fld, wvl, foc):
                 if ray_pkg is not None:
                     image_pt = fld.ref_sphere[0]
@@ -135,15 +147,19 @@ export async function _init(
                     return np.array([t_abr[0], t_abr[1]])
                 return None
 
-            fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+            fig, ax = plt.subplots(1, 1, figsize=(4, 4))
             ax.set_aspect('equal')
             grids, rc = sm.trace_grid(_spot, fi, wl=None, num_rays=21,
                                       form='list', append_if_none=False)
             for gi, grid in enumerate(grids):
                 x_pts = [pt[0] for pt in grid]
                 y_pts = [pt[1] for pt in grid]
-                ax.scatter(x_pts, y_pts, s=1, color=rc[gi])
+                ax.scatter(x_pts, y_pts, s=1, color=rc[gi], label=_get_wvl_lbl(opm, gi))
             ax.set_title(f'Field {fi}')
+            ax.set_xlabel("mm")
+            ax.set_ylabel("mm")
+            ax.legend(loc='center', bbox_to_anchor=(0.5, -0.3), ncol=2)
+            ax.ticklabel_format(style='sci', useMathText=True)
             fig.tight_layout()
             return _fig_to_base64(fig)
 `);
@@ -253,15 +269,15 @@ export async function _plotLensLayout(runPython: (code: string) => Promise<unkno
 }
 
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`plot_ray_fan(${fieldIndex})`)) as string;
+  return (await runPython(`plot_ray_fan(${fieldIndex}, opm)`)) as string;
 }
 
 export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`plot_opd_fan(${fieldIndex})`)) as string;
+  return (await runPython(`plot_opd_fan(${fieldIndex}, opm)`)) as string;
 }
 
 export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`plot_spot_diagram(${fieldIndex})`)) as string;
+  return (await runPython(`plot_spot_diagram(${fieldIndex}, opm)`)) as string;
 }
 
 

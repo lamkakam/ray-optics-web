@@ -162,7 +162,7 @@ describe("_plotRayFan", () => {
   it("should call plot_ray_fan with the correct field index", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotRayFan(async (code) => {
-      expect(code).toBe("plot_ray_fan(1)");
+      expect(code).toBe("plot_ray_fan(1, opm)");
       return mockBase64;
     }, 1);
     expect(result).toBe(mockBase64);
@@ -170,7 +170,7 @@ describe("_plotRayFan", () => {
 
   it("should pass field index 0 correctly", async () => {
     await _plotRayFan(async (code) => {
-      expect(code).toBe("plot_ray_fan(0)");
+      expect(code).toBe("plot_ray_fan(0, opm)");
       return "";
     }, 0);
   });
@@ -181,7 +181,7 @@ describe("_plotOpdFan", () => {
   it("should call plot_opd_fan with the correct field index", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotOpdFan(async (code) => {
-      expect(code).toBe("plot_opd_fan(2)");
+      expect(code).toBe("plot_opd_fan(2, opm)");
       return mockBase64;
     }, 2);
     expect(result).toBe(mockBase64);
@@ -189,7 +189,7 @@ describe("_plotOpdFan", () => {
 
   it("should pass field index 0 correctly", async () => {
     await _plotOpdFan(async (code) => {
-      expect(code).toBe("plot_opd_fan(0)");
+      expect(code).toBe("plot_opd_fan(0, opm)");
       return "";
     }, 0);
   });
@@ -200,7 +200,7 @@ describe("_plotSpotDiagram", () => {
   it("should call plot_spot_diagram with the correct field index", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotSpotDiagram(async (code) => {
-      expect(code).toBe("plot_spot_diagram(1)");
+      expect(code).toBe("plot_spot_diagram(1, opm)");
       return mockBase64;
     }, 1);
     expect(result).toBe(mockBase64);
@@ -208,7 +208,7 @@ describe("_plotSpotDiagram", () => {
 
   it("should pass field index 0 correctly", async () => {
     await _plotSpotDiagram(async (code) => {
-      expect(code).toBe("plot_spot_diagram(0)");
+      expect(code).toBe("plot_spot_diagram(0, opm)");
       return "";
     }, 0);
   });
@@ -234,7 +234,7 @@ describe("_init", () => {
     expect(allCode).toContain("defocused_pt - image_pt");
 
     // plot_ray_fan
-    expect(allCode).toContain("def plot_ray_fan(fi):");
+    expect(allCode).toContain("def plot_ray_fan(fi, opm):");
     expect(allCode).toContain("sm.trace_fan(_ray_abr");
     expect(allCode).toContain("Tangential");
     expect(allCode).toContain("Sagittal");
@@ -244,7 +244,7 @@ describe("_init", () => {
     expect(allCode).toContain("wave_abr_full_calc");
 
     // plot_opd_fan
-    expect(allCode).toContain("def plot_opd_fan(fi):");
+    expect(allCode).toContain("def plot_opd_fan(fi, opm):");
     expect(allCode).toContain("sm.trace_fan(_opd_abr");
 
     // _spot
@@ -252,7 +252,7 @@ describe("_init", () => {
     expect(allCode).toContain("np.array([t_abr[0], t_abr[1]])");
 
     // plot_spot_diagram
-    expect(allCode).toContain("def plot_spot_diagram(fi):");
+    expect(allCode).toContain("def plot_spot_diagram(fi, opm):");
     expect(allCode).toContain("sm.trace_grid(_spot");
     expect(allCode).toContain("set_aspect('equal')");
   });
