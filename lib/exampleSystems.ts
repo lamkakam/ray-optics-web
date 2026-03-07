@@ -83,7 +83,7 @@ const SasianTriplet: OpticalModel = {
   ],
 } as const;
 
-// Example from https://www.telescope-optics.net/reflecting.htm
+// Design from https://www.telescope-optics.net/reflecting.htm
 const ReflectorWithOpticalWindow: OpticalModel = {
   specs: {
     pupil: { space: "object", type: "epd", value: 200 },
@@ -144,6 +144,62 @@ const ReflectorWithOpticalWindow: OpticalModel = {
     },
   ],
 } as const;
+
+// Design from https://telescope-optics.net/schmidt_camera_aberrations.htm
+const schmidtCamera: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 200 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 1.5,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+    },
+    wavelengths: {
+      weights: [
+        [546.073, 0.98],
+        [486.133, 0.18],
+        [656.273, 0.075],
+        [435.835, 0.035],
+      ],
+      referenceIndex: 0,
+    },
+  },
+  object: { distance: 1e10 },
+  image: { curvatureRadius: -325.3 },
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: 0,
+      thickness: 5,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 100,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -2.8e4,
+      thickness: 640,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 100.086210,
+      aspherical: {
+        conicConstant: 0,
+        polynomialCoefficients: [0, 1.795e-9, 6.6e-15, 2.5e-20, 0, 0, 0, 0, 0, 0],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: -640,
+      thickness: -318.09168,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 115.658528,
+    },
+  ],
+} as const;
+
 
 // Example #57 at https://www.telescope-optics.net/commercial_telescopes.htm
 const orthoAPO: OpticalModel = {
@@ -273,6 +329,7 @@ const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
 export const ExampleSystems: Record<string, OpticalModel> = {
   "Sasian Triplet": SasianTriplet,
   "Reflector with Optical Window": ReflectorWithOpticalWindow,
+  "Schmidt Camera": schmidtCamera,
   "Ortho-APO f/7.7": orthoAPO,
   "Fluorite Doublet APO f/8 w/ Wide Air Gap & Aspherized Surface": fluoriteDoubletAPOWithAspherizedSurface,
 } as const;
