@@ -157,7 +157,7 @@ export async function _init(
                     return np.array([t_abr[0], t_abr[1]])
                 return None
 
-            fig, ax = plt.subplots(1, 1, figsize=(4, 4))
+            fig, ax = plt.subplots(1, 1, figsize=(5, 5))
             ax.set_aspect('equal')
             grids, rc = sm.trace_grid(_spot, fi, wl=None, num_rays=21,
                                       form='list', append_if_none=False)

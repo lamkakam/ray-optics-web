@@ -158,12 +158,12 @@ const schmidtCamera: OpticalModel = {
     },
     wavelengths: {
       weights: [
-        [546.073, 0.98],
-        [486.133, 0.18],
-        [656.273, 0.075],
         [435.835, 0.035],
+        [486.133, 0.18],
+        [546.073, 0.98],
+        [656.273, 0.075],
       ],
-      referenceIndex: 0,
+      referenceIndex: 2,
     },
   },
   object: { distance: 1e10 },
@@ -214,12 +214,12 @@ const orthoAPO: OpticalModel = {
     },
     wavelengths: {
       weights: [
-        [546.073, 0.98],
-        [486.133, 0.18],
-        [656.273, 0.075],
         [435.835, 0.035],
+        [486.133, 0.18],
+        [546.073, 0.98],
+        [656.273, 0.075],
       ],
-      referenceIndex: 0,
+      referenceIndex: 2,
     },
   },
 
