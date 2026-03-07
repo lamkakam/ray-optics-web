@@ -46,7 +46,7 @@ function weightsToRows(weights: readonly [number, number][]): WavelengthRow[] {
   }));
 }
 
-const MAX_ROWS = 10;
+const MAX_ROWS = 7;
 
 export function WavelengthConfigModal({
   isOpen,
@@ -225,7 +225,7 @@ export function WavelengthConfigModal({
         <h2 id="wavelength-modal-title" className={cx.title}>Wavelengths</h2>
 
         <div className="mb-4" style={{ width: "100%" }}>
-          <p className={cx.caption}>Maximum 10 wavelengths</p>
+          <p className={cx.caption}>Maximum 7 wavelengths</p>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}
