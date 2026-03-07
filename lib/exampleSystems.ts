@@ -373,6 +373,35 @@ const edDoublet: OpticalModel = {
   ],
 };
 
+// 11.24 at https://telescope-optics.net/miscellaneous_optics.htm
+const petzvalAPO: OpticalModel = {
+  specs: { ...orthoAPO.specs },
+  object: { ...orthoAPO.object },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    { label: "Stop", curvatureRadius: 481, thickness: 9, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 70 },
+    { label: "Default", curvatureRadius: 230.3, thickness: 6.2, medium: "air", manufacturer: "", semiDiameter: 69.656085 },
+    { label: "Default", curvatureRadius: 230.3, thickness: 13, medium: "S-FPL53", manufacturer: "Ohara", semiDiameter: 70.268998 },
+    { label: "Default", curvatureRadius: 2169, thickness: 660, medium: "air", manufacturer: "", semiDiameter: 69.949825 },
+    { label: "Default", curvatureRadius: 980, thickness: 11, medium: "S-FPL53", manufacturer: "Ohara", semiDiameter: 55.980378 },
+    { label: "Default", curvatureRadius: -230.3, thickness: 3.2, medium: "air", manufacturer: "", semiDiameter: 55.626726 },
+    { label: "Default", curvatureRadius: -230.3, thickness: 7, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 55.138617 },
+    { label: "Default", curvatureRadius: -828, thickness: 603.304561, medium: "air", manufacturer: "", semiDiameter: 55.007989 },
+  ],
+} as const;
+
+//
+const petzvalAPORearLensesRemoved: OpticalModel = {
+  specs: { ...petzvalAPO.specs },
+  object: { ...petzvalAPO.object },
+  image: { ...petzvalAPO.image },
+  surfaces: [
+    ...petzvalAPO.surfaces.slice(0, 3),
+    { label: "Default", curvatureRadius: 2169, thickness: 1807, medium: "air", manufacturer: "", semiDiameter: 69.949825 },
+  ],
+} as const;
+
+
 
 
 export const ExampleSystems: Record<string, OpticalModel> = {
@@ -384,4 +413,6 @@ export const ExampleSystems: Record<string, OpticalModel> = {
   "Fraunhofer Achromat 120mm f/23.6 (CA ratio = 5)": fraunhoferAchromat,
   "Fraunhofer Achromat 120mm f/7.5 (CA ratio = 1.59)": fraunhoferAchromatFast,
   "APO Doublet (S-FPL53/N-ZK7) 120mm f/7.5": edDoublet,
+  "APO Petzval 140mm f/7": petzvalAPO,
+  "APO Petzval 140mm f/7 (but with rear lenses removed)": petzvalAPORearLensesRemoved,
 } as const;
