@@ -117,11 +117,18 @@ export default function Home() {
       await proxy.setOpticalSurfaces(model);
 
       // Step 2: parallel calls
+      const clampedFieldIndex = Math.min(
+        selectedFieldIndex,
+        specs.field.fields.length - 1
+      );
+      if (clampedFieldIndex !== selectedFieldIndex) {
+        setSelectedFieldIndex(clampedFieldIndex);
+      }
       const plotFn = getPlotFunction(selectedPlotType);
       const [fod, layout, plot] = await Promise.all([
         proxy.getFirstOrderData(),
         proxy.plotLensLayout(),
-        plotFn ? plotFn(selectedFieldIndex) : Promise.resolve(undefined),
+        plotFn ? plotFn(clampedFieldIndex) : Promise.resolve(undefined),
       ]);
 
       setFirstOrderData(fod);
