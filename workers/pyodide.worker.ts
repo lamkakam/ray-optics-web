@@ -105,9 +105,10 @@ export async function _init(
                 ax.axvline(0, color='black', linewidth=0.5)
                 ax.set_xlabel("Pupil Radius (% Zone)")
                 ax.set_ylabel("Transverse Aberr. (mm)")
-                ax.legend(loc='center', bbox_to_anchor=(0.5, -0.5), ncol=2)
                 ax.ticklabel_format(style='sci', useMathText=True)
-            fig.tight_layout()
+            handles, labels = ax_y.get_legend_handles_labels()
+            fig.legend(handles, labels, loc='lower center', ncol=max(len(handles), 1), bbox_to_anchor=(0.5, 0))
+            fig.tight_layout(rect=[0, 0.12, 1, 1])
             return _fig_to_base64(fig)
 
 
@@ -131,9 +132,10 @@ export async function _init(
                 ax.axvline(0, color='black', linewidth=0.5)
                 ax.set_xlabel("Pupil Radius (% Zone)")
                 ax.set_ylabel("waves")
-                ax.legend(loc='center', bbox_to_anchor=(0.5, -0.5), ncol=2)
                 ax.ticklabel_format(style='sci', useMathText=True)
-            fig.tight_layout()
+            handles, labels = ax_y.get_legend_handles_labels()
+            fig.legend(handles, labels, loc='lower center', ncol=max(len(handles), 1), bbox_to_anchor=(0.5, 0))
+            fig.tight_layout(rect=[0, 0.12, 1, 1])
             return _fig_to_base64(fig)
 
         def plot_spot_diagram(fi, opm):
