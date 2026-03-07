@@ -83,7 +83,7 @@ const SasianTriplet: OpticalModel = {
   ],
 } as const;
 
-
+// Example from https://www.telescope-optics.net/reflecting.htm
 const ReflectorWithOpticalWindow: OpticalModel = {
   specs: {
     pupil: { space: "object", type: "epd", value: 200 },
@@ -145,8 +145,134 @@ const ReflectorWithOpticalWindow: OpticalModel = {
   ],
 } as const;
 
+// Example #57 at https://www.telescope-optics.net/commercial_telescopes.htm
+const orthoAPO: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 130 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.5,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+    },
+    wavelengths: {
+      weights: [
+        [546.073, 0.98],
+        [486.133, 0.18],
+        [656.273, 0.075],
+        [435.835, 0.035],
+      ],
+      referenceIndex: 0,
+    },
+  },
+
+  object: { distance: 1e10 },
+  image: { curvatureRadius: -260 },
+
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: 2372,
+      thickness: 12,
+      medium: "S-FPL53",
+      manufacturer: "Ohara",
+      semiDiameter: 65,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -257,
+      thickness: 22.5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 64.972277,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -235,
+      thickness: 7,
+      medium: "S-BSL7",
+      manufacturer: "Ohara",
+      semiDiameter: 62.395437,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 2528,
+      thickness: 1,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 62.501830,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 435,
+      thickness: 11,
+      medium: "S-FPL53",
+      manufacturer: "Ohara",
+      semiDiameter: 62.537719,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -908,
+      thickness: 934.504573,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 62.328801,
+    },
+  ],
+} as const;
+
+// Example #27 at https://www.telescope-optics.net/commercial_telescopes.htm
+const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
+  specs: { ...orthoAPO.specs },
+
+  object: { ...orthoAPO.object },
+  image: { curvatureRadius: -480 },
+
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: 529.4,
+      thickness: 13,
+      medium: "N-SK11",
+      manufacturer: "Schott",
+      semiDiameter: 65,
+      aspherical: {
+        conicConstant: 0,
+        polynomialCoefficients: [0, 2.696e-10, -2.41e-14, -3.237e-18, 0, 0, 0, 0, 0, 0],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: 192.46,
+      thickness: 15.66,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 64.495513,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 195.69,
+      thickness: 21.4,
+      medium: "CaF2",
+      manufacturer: "Schott",
+      semiDiameter: 66.514355,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -818.4,
+      thickness: 1055.725,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 66.232228,
+    },
+  ],
+} as const;
+
 
 export const ExampleSystems: Record<string, OpticalModel> = {
   "Sasian Triplet": SasianTriplet,
   "Reflector with Optical Window": ReflectorWithOpticalWindow,
+  "Ortho-APO f/7.7": orthoAPO,
+  "Fluorite Doublet APO f/8 w/ Wide Air Gap & Aspherized Surface": fluoriteDoubletAPOWithAspherizedSurface,
 } as const;

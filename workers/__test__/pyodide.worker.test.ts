@@ -85,19 +85,19 @@ describe("_setOpticalSurfaces", () => {
     let pythonScript = "";
     await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.do_apertures = False");
-    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'], sd=10.009)");
-    expect(pythonScript).toContain("sm.add_surface([7331.288, 5.86, 'air'], sd=8.9483)");
-    expect(pythonScript).toContain("sm.add_surface([-24.456, 0.975, 'N-SF5', 'Schott'], sd=4.7918)\nsm.set_stop()");
-    expect(pythonScript).toContain("sm.add_surface([21.896, 4.822, 'air'], sd=4.776)");
-    expect(pythonScript).toContain("sm.add_surface([86.759, 3.127, 'N-LAK9', 'Schott'], sd=8.0218)");
-    expect(pythonScript).toContain("sm.add_surface([-20.4942, 41.2365, 'air'], sd=8.3321)");
+    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)");
+    expect(pythonScript).toContain("sm.add_surface([7331.288, 5.86, \"air\"], sd=8.9483)");
+    expect(pythonScript).toContain("sm.add_surface([-24.456, 0.975, \"N-SF5\", \"Schott\"], sd=4.7918)\nsm.set_stop()");
+    expect(pythonScript).toContain("sm.add_surface([21.896, 4.822, \"air\"], sd=4.776)");
+    expect(pythonScript).toContain("sm.add_surface([86.759, 3.127, \"N-LAK9\", \"Schott\"], sd=8.0218)");
+    expect(pythonScript).toContain("sm.add_surface([-20.4942, 41.2365, \"air\"], sd=8.3321)");
     expect(pythonScript).toContain("opm.update_model()");
   });
 
   it("should set an aspherical surface correctly", async () => {
     let pythonScript = "";
     await _setOpticalSurfaces(opticalModelWithEvenAspherical, async (code) => { pythonScript = code; });
-    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])");
+    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])");
   });
 
   it("should set the object distance correctly", async () => {
@@ -127,7 +127,7 @@ describe("_setOpticalSurfaces", () => {
   it("should set a conic surface correctly", async () => {
     let pythonScript = "";
     await _setOpticalSurfaces(opticalModelWithConic, async (code) => { pythonScript = code; });
-    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1)");
+    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1)");
   });
 });
 

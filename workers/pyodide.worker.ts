@@ -60,6 +60,14 @@ export async function _init(
         import rayoptics.optical.model_constants as mc
         from rayoptics.raytr.waveabr import wave_abr_full_calc
         from rayoptics.raytr.trace import apply_paraxial_vignetting
+        from opticalglass.rindexinfo import create_material
+        import yaml
+
+        ### Forcefully set the db as 'data-nk'
+        with open('/database/data/main/CaF2/nk/Daimon-20.yml') as _f:
+            _caf2_yaml = yaml.safe_load(_f)
+        caf2 = create_material(_caf2_yaml, 'CaF2', 'rii-main', 'data-nk')
+        ###
 
         def _fig_to_base64(fig, dpi=150):
             buf = BytesIO()
@@ -182,9 +190,15 @@ export async function init(): Promise<void> {
       "xlrd",
     ]);
 
+    const caf2Res = await fetch(`${self.location.origin}/database/data/main/CaF2/nk/Daimon-20.yml`);
+    const caf2Yaml = await caf2Res.text();
+    pyodide.FS.mkdirTree('/database/data/main/CaF2/nk');
+    pyodide.FS.writeFile('/database/data/main/CaF2/nk/Daimon-20.yml', caf2Yaml);
+
     await _init(pyodide.runPythonAsync.bind(pyodide));
   } catch (err) {
     pyodide = null;
+    console.error(err);
     throw err;
   }
 }
@@ -213,20 +227,21 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
     const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical } = surface;
     // common surface
     const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
-    const glassManufacturer = medium === "air" || medium === "REFL" ? "" : `, '${manufacturer}'`;
+    const glassManufacturer = medium === "air" || medium === "REFL" || medium === "CaF2" ? "" : `, ${JSON.stringify(manufacturer)}`;
+    const mediumOption = medium === "CaF2" ? "caf2" : JSON.stringify(medium);
     const setStop = label === "Stop" ? "\nsm.set_stop()" : "";
 
     let asphericalCommands = "";
     if (aspherical !== undefined) {
       const { conicConstant, polynomialCoefficients } = aspherical;
       if (polynomialCoefficients === undefined) {
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
       } else {
         const coefsString = JSON.stringify(polynomialCoefficients);
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
       }
     }
-    return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, '${medium}'${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${setStop}`;
+    return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${setStop}`;
   }, "");
 
   const { distance: objectDistance } = object;

@@ -5,7 +5,7 @@ import { cx } from "@/components/ui/modalTokens";
 import glassCatalogs from "@/data/glass-catalogs.json";
 
 const MANUFACTURERS = ["Special", ...Object.keys(glassCatalogs)];
-const SPECIAL_MEDIA = ["air", "REFL"];
+const SPECIAL_MEDIA = ["air", "REFL", "CaF2"];
 
 interface MediumSelectorModalProps {
   readonly isOpen: boolean;
