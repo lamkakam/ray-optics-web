@@ -31,7 +31,9 @@ export function LensLayoutPanel({
         </>
       ) : (
         <div className="flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">
-          Loading lens layout...
+          {loading
+            ? "Loading lens layout..."
+            : "Configure the System Specs & Lens Prescription below, or choose an example system, then click \u201cUpdate System\u201d to view the lens layout."}
         </div>
       )}
       <button

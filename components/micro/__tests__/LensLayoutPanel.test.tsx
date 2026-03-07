@@ -4,8 +4,18 @@ import userEvent from "@testing-library/user-event";
 import { LensLayoutPanel } from "@/components/micro/LensLayoutPanel";
 
 describe("LensLayoutPanel", () => {
-  it("renders a loading skeleton when imageBase64 is undefined", () => {
+  it("renders a placeholder when imageBase64 is undefined and not loading", () => {
     render(<LensLayoutPanel onRefresh={jest.fn()} />);
+    expect(
+      screen.getByText(
+        "Configure the System Specs & Lens Prescription below, or choose an example system, then click \u201cUpdate System\u201d to view the lens layout."
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+  it("shows loading message when imageBase64 is undefined and loading is true", () => {
+    render(<LensLayoutPanel loading onRefresh={jest.fn()} />);
     expect(screen.getByText("Loading lens layout...")).toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
