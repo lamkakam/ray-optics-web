@@ -325,11 +325,63 @@ const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
   ],
 } as const;
 
+// derived from https://telescope-optics.net/achromats.htm
+const fraunhoferAchromat: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 100 },
+    field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
+    wavelengths: {
+      weights: [...orthoAPO.specs.wavelengths.weights],
+      referenceIndex: orthoAPO.specs.wavelengths.referenceIndex,
+    },
+  },
+
+  object: { ...orthoAPO.object },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    { label: "Stop", curvatureRadius: 0.6 * 120 * 23.6, thickness: 0.011 * 120 * 23.6, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 60 },
+    { label: "Default", curvatureRadius: -0.36 * 120 * 23.6, thickness: 0.001, medium: "air", manufacturer: "", semiDiameter: 60 },
+    { label: "Default", curvatureRadius: -0.363 * 120 * 23.6, thickness: 0.007 * 120 * 23.6, medium: "N-F2", manufacturer: "Schott", semiDiameter: 60 },
+    { label: "Default", curvatureRadius: -1.51 * 120 * 23.6, thickness: 2813.82, medium: "air", manufacturer: "", semiDiameter: 60 },
+  ],
+} as const;
+
+// derived from https://telescope-optics.net/achromats.htm
+const fraunhoferAchromatFast: OpticalModel = {
+  specs: { ...fraunhoferAchromat.specs },
+  object: { ...fraunhoferAchromat.object },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    { label: "Stop", curvatureRadius: 0.6 * 120 * 7.5, thickness: 0.011 * 120 * 7.5, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 60 },
+    { label: "Default", curvatureRadius: -0.36 * 120 * 7.5, thickness: 0.001, medium: "air", manufacturer: "", semiDiameter: 60 },
+    { label: "Default", curvatureRadius: -0.363 * 120 * 7.5, thickness: 0.007 * 120 * 7.5, medium: "N-F2", manufacturer: "Schott", semiDiameter: 60 },
+    { label: "Default", curvatureRadius: -1.51 * 120 * 7.5, thickness: 894.22, medium: "air", manufacturer: "", semiDiameter: 60 },
+  ],
+} as const;
+
+
+// Example #19 at https://www.telescope-optics.net/commercial_telescopes.htm
+const edDoublet: OpticalModel = {
+  specs: { ...fraunhoferAchromat.specs },
+  object: { ...fraunhoferAchromat.object },
+  image: { curvatureRadius: -340 },
+  surfaces: [
+    { label: "Stop", curvatureRadius: 499, thickness: 16, medium: "S-FPL53", manufacturer: "Ohara", semiDiameter: 60 },
+    { label: "Default", curvatureRadius: -200, thickness: 0.7, medium: "air", manufacturer: "", semiDiameter: 60 },
+    { label: "Default", curvatureRadius: -203.7, thickness: 8, medium: "N-ZK7", manufacturer: "Schott", semiDiameter: 60 },
+    { label: "Default", curvatureRadius: -955, thickness: 3.9 + 883.840824, medium: "air", manufacturer: "", semiDiameter: 60 },
+  ],
+};
+
+
 
 export const ExampleSystems: Record<string, OpticalModel> = {
   "Sasian Triplet": SasianTriplet,
   "Reflector with Optical Window": ReflectorWithOpticalWindow,
-  "Schmidt Camera": schmidtCamera,
-  "Ortho-APO f/7.7": orthoAPO,
-  "Fluorite Doublet APO f/8 w/ Wide Air Gap & Aspherized Surface": fluoriteDoubletAPOWithAspherizedSurface,
+  "Schmidt Camera 200mm f/5": schmidtCamera,
+  "Ortho-APO 130mm f/7.7": orthoAPO,
+  "Fluorite Doublet APO 130mmf/8 w/ Wide Air Gap & Aspherized Surface": fluoriteDoubletAPOWithAspherizedSurface,
+  "Fraunhofer Achromat 120mm f/23.6 (CA ratio = 5)": fraunhoferAchromat,
+  "Fraunhofer Achromat 120mm f/7.5 (CA ratio = 1.59)": fraunhoferAchromatFast,
+  "APO Doublet (S-FPL53/N-ZK7) 120mm f/7.5": edDoublet,
 } as const;
