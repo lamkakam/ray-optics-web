@@ -34,7 +34,7 @@ export function AnalysisPlotView({
   onPlotTypeChange,
 }: AnalysisPlotViewProps) {
   return (
-    <div className="flex h-full flex-col gap-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <div className="flex gap-3">
         <div className="flex-1">
           <label htmlFor="analysis-field-select" className={cx.label}>
@@ -74,7 +74,7 @@ export function AnalysisPlotView({
         </div>
       </div>
 
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex min-h-0 flex-1 items-center justify-center">
         {loading ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">
             Loading plot...

@@ -255,7 +255,7 @@ export default function Home() {
         </div>
 
         {/* Analysis sidebar */}
-        <div className="border-t border-gray-200 p-4 lg:w-[35%] lg:border-l lg:border-t-0 dark:border-gray-700">
+        <div className="flex flex-1 flex-col min-h-0 border-t border-gray-200 p-4 lg:w-[35%] lg:border-l lg:border-t-0 dark:border-gray-700">
           <AnalysisPlotView
             fieldOptions={fieldOptions}
             selectedFieldIndex={selectedFieldIndex}
