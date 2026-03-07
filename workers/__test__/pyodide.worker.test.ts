@@ -27,7 +27,7 @@ const allSphericalOpticalModel: OpticalModel = {
     // manufacturer is set to be "Schott" on purpose for testing
     { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "Schott", semiDiameter: 8.3321 },
   ],
-};
+} as const;
 
 
 const opticalModelWithEvenAspherical: OpticalModel = {
@@ -51,7 +51,22 @@ const opticalModelWithEvenAspherical: OpticalModel = {
     { label: "Default", curvatureRadius: 86.759, thickness: 3.127, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 8.0218 },
     { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "", semiDiameter: 8.3321 },
   ],
-};
+} as const;
+
+const fluoriteSinglet: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 10 },
+    field: { space: "object", type: "angle", maxField: 0.5, fields: [0], isRelative: true },
+    wavelengths: { weights: [[656.3, 1.], [587., 2.], [486.1, 1.]], referenceIndex: 1 },
+  },
+  object: { distance: 1e10 },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "CaF2", manufacturer: "", semiDiameter: 10 },
+    { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+  ],
+} as const;
+
 
 const opticalModelWithConic: OpticalModel = {
   specs: { ...allSphericalOpticalModel.specs },
@@ -128,6 +143,12 @@ describe("_setOpticalSurfaces", () => {
     let pythonScript = "";
     await _setOpticalSurfaces(opticalModelWithConic, async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1)");
+  });
+
+  it("should set a surface with fluorite correctly", async () => {
+    let pythonScript = "";
+    await _setOpticalSurfaces(fluoriteSinglet, async (code) => { pythonScript = code; });
+    expect(pythonScript).toContain("sm.add_surface([30, 1.1, caf2], sd=10)");
   });
 });
 
@@ -220,6 +241,9 @@ describe("_init", () => {
     const scripts: string[] = [];
     await _init(async (code) => { scripts.push(code); });
     const allCode = scripts.join("\n");
+
+    // setup for CaF2
+    expect(allCode).toMatch(/caf2 = create_material\([a-zA-Z\d_]+, 'CaF2', 'rii-main', 'data-nk'\)/);
 
     // get_first_order_data
     expect(allCode).toContain("def get_first_order_data(opm):");

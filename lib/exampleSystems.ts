@@ -317,7 +317,7 @@ const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
     {
       label: "Default",
       curvatureRadius: -818.4,
-      thickness: 1055.725,
+      thickness: 1055.91,
       medium: "air",
       manufacturer: "",
       semiDiameter: 66.232228,

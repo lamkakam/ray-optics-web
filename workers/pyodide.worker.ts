@@ -64,7 +64,7 @@ export async function _init(
         import yaml
 
         ### Forcefully set the db as 'data-nk'
-        with open('/database/data/main/CaF2/nk/Daimon-20.yml') as _f:
+        with open('/database/data/main/CaF2/nk/Malitson.yml') as _f:
             _caf2_yaml = yaml.safe_load(_f)
         caf2 = create_material(_caf2_yaml, 'CaF2', 'rii-main', 'data-nk')
         ###
@@ -190,10 +190,10 @@ export async function init(): Promise<void> {
       "xlrd",
     ]);
 
-    const caf2Res = await fetch(`${self.location.origin}/database/data/main/CaF2/nk/Daimon-20.yml`);
+    const caf2Res = await fetch(`${self.location.origin}/database/data/main/CaF2/nk/Malitson.yml`);
     const caf2Yaml = await caf2Res.text();
     pyodide.FS.mkdirTree('/database/data/main/CaF2/nk');
-    pyodide.FS.writeFile('/database/data/main/CaF2/nk/Daimon-20.yml', caf2Yaml);
+    pyodide.FS.writeFile('/database/data/main/CaF2/nk/Malitson.yml', caf2Yaml);
 
     await _init(pyodide.runPythonAsync.bind(pyodide));
   } catch (err) {
