@@ -390,7 +390,7 @@ const petzvalAPO: OpticalModel = {
   ],
 } as const;
 
-//
+// derived from 11.24 at https://telescope-optics.net/miscellaneous_optics.htm
 const petzvalAPORearLensesRemoved: OpticalModel = {
   specs: { ...petzvalAPO.specs },
   object: { ...petzvalAPO.object },
@@ -401,6 +401,48 @@ const petzvalAPORearLensesRemoved: OpticalModel = {
   ],
 } as const;
 
+
+// modified eyepiece design by Imaizumi M. US#5,557,464 (1996)
+// this modified config is from https://telescope-optics.net/eyepiece_raytrace.htm
+const modifiedImaizumiEyepieceReversed: OpticalModel = {
+  specs: {
+    // this is the exit pupil of the eyepiece
+    // because it's reversed tracing, the space is "object" not "image".
+    // exit pupil diameter of eyepiece === eyepiece focal length / objective f-number
+    // this eyepiece efl is around 10mm, so by setting epd to be 1, the objective f-number is around 10
+    pupil: { space: "object", type: "epd", value: 1 },
+
+    // this is the half-AFoV of the eyepiece
+    // because it's reversed tracing, the space is "object" not "image".
+    field: { space: "object", type: "angle", maxField: 40, fields: [0, 0.5, 1], isRelative: true },
+    wavelengths: {
+      weights: [
+        [486.133, 0.18],
+        [546.073, 0.98],
+        [656.273, 0.075],
+      ],
+      referenceIndex: 1,
+    },
+  },
+
+  object: { distance: 1e10 },
+  image: { curvatureRadius: 0 },
+
+  surfaces: [
+    { label: "Stop", curvatureRadius: 0, thickness: 7.76, medium: "Air", manufacturer: "", semiDiameter: 0.5 }, // semi-diameter is half of the epd
+    { label: "Default", curvatureRadius: -24.8, thickness: 1.5, medium: "N-SF14", manufacturer: "Schott", semiDiameter: 6.7304 },
+    { label: "Default", curvatureRadius: 70.4, thickness: 7.6, medium: "N-SK14", manufacturer: "Schott", semiDiameter: 8.3700 },
+    { label: "Default", curvatureRadius: -14.95, thickness: 0.23, medium: "air", manufacturer: "", semiDiameter: 10.328 },
+    { label: "Default", curvatureRadius: 48.6, thickness: 5.3, medium: "N-LAF34", manufacturer: "Schott", semiDiameter: 13.563 },
+    { label: "Default", curvatureRadius: -30.1, thickness: 0.23, medium: "air", manufacturer: "", semiDiameter: 13.578 },
+    { label: "Default", curvatureRadius: 17.5, thickness: 10.8, medium: "N-SK14", manufacturer: "Schott", semiDiameter: 11.986 },
+    { label: "Default", curvatureRadius: -20.98, thickness: 1.6, medium: "N-SF14", manufacturer: "Schott", semiDiameter: 10.582 },
+    { label: "Default", curvatureRadius: 21.5, thickness: 21.68, medium: "air", manufacturer: "", semiDiameter: 8.6427 },
+    { label: "Default", curvatureRadius: -11.09, thickness: 1.22, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 7.0088 },
+    { label: "Default", curvatureRadius: -68.3, thickness: 2.3, medium: "N-SF6", manufacturer: "Schott", semiDiameter: 7.7057 },
+    { label: "Default", curvatureRadius: -24.6, thickness: -18.14, medium: "air", manufacturer: "", semiDiameter: 7.9817 },
+  ],
+} as const;
 
 
 
@@ -415,4 +457,5 @@ export const ExampleSystems: Record<string, OpticalModel> = {
   "APO Doublet (S-FPL53/N-ZK7) 120mm f/7.5": edDoublet,
   "APO Petzval 140mm f/7": petzvalAPO,
   "APO Petzval 140mm f/7 (but with rear lenses removed)": petzvalAPORearLensesRemoved,
+  "Reversed Tracing of Modified Imaizumi M. Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
 } as const;
