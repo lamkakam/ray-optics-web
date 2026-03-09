@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
 
 export type AsphericalType = "Conical" | "EvenAspherical";
 
@@ -63,7 +63,16 @@ export function AsphericalModal({
     padCoefficients(initialCoefficients)
   );
 
-
+  const backdrop = `${cx.modal.color.backdrop} ${cx.modal.style.backdrop}`;
+  const panel = `${cx.modal.style.panel} ${cx.modal.color.panel} ${cx.modal.size.panel}`;
+  const title = `${cx.modal.style.title} ${cx.modal.color.title}`;
+  const label = `${cx.label.style.base} ${cx.label.color.default} ${cx.label.size.default}`;
+  const input = `${cx.input.style.base} ${cx.input.color.default} ${cx.input.size.default}`;
+  const select = `${cx.select.style.base} ${cx.select.color.default} ${cx.select.size.default}`;
+  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
+  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
+  const btnDanger = `${cx.button.style.base} ${cx.button.color.danger} ${cx.button.size.md}`;
+  const divider = `${cx.divider.style.base} ${cx.divider.color.default}`;
 
   const handleConfirm = () => {
     const conicConstant = parseNumericString(conicConstantStr, initialConicConstant);
@@ -89,43 +98,43 @@ export function AsphericalModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
         data-testid="modal-backdrop"
-        className={cx.backdrop}
+        className={backdrop}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="aspherical-modal-title"
-        className={cx.panel + " max-w-md"}
+        className={`${panel} max-w-md`}
       >
         {/* ── Title ── */}
-        <h2 id="aspherical-modal-title" className={cx.title}>
+        <h2 id="aspherical-modal-title" className={title}>
           Aspherical Parameters
         </h2>
 
         {/* ── Conic constant + Type (2-col grid) ── */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <label htmlFor="conic-constant" className={cx.label}>
+            <label htmlFor="conic-constant" className={label}>
               Conic constant
             </label>
             <input
               id="conic-constant"
               aria-label="Conic constant"
               type="text"
-              className={cx.input}
+              className={input}
               value={conicConstantStr}
               onChange={(e) => setConicConstantStr(e.target.value)}
             />
           </div>
 
           <div>
-            <label htmlFor="aspherical-type" className={cx.label}>
+            <label htmlFor="aspherical-type" className={label}>
               Type
             </label>
             <select
               id="aspherical-type"
               aria-label="Type"
-              className={cx.select}
+              className={select}
               value={type}
               onChange={(e) => setType(e.target.value as AsphericalType)}
             >
@@ -138,20 +147,20 @@ export function AsphericalModal({
         {/* ── Polynomial coefficients (2-col grid) ── */}
         {type === "EvenAspherical" && (
           <div className="mb-4">
-            <p className={`mb-2 ${cx.label}`}>
+            <p className={`mb-2 ${label}`}>
               Even Aspherical Coefficients
             </p>
             <div className="grid grid-cols-2 gap-3">
-              {COEFFICIENT_LABELS.map((label, i) => (
-                <div key={label}>
-                  <label htmlFor={`coeff-${label}`} className={cx.label}>
-                    {label}
+              {COEFFICIENT_LABELS.map((lbl, i) => (
+                <div key={lbl}>
+                  <label htmlFor={`coeff-${lbl}`} className={label}>
+                    {lbl}
                   </label>
                   <input
-                    id={`coeff-${label}`}
-                    aria-label={label}
+                    id={`coeff-${lbl}`}
+                    aria-label={lbl}
                     type="text"
-                    className={cx.input}
+                    className={input}
                     value={coefficientStrs[i]}
                     onChange={(e) => updateCoefficient(i, e.target.value)}
                   />
@@ -162,15 +171,15 @@ export function AsphericalModal({
         )}
 
         {/* ── Actions ── */}
-        <div className={`flex items-center gap-3 pt-4 ${cx.divider}`}>
-          <button type="button" className={cx.btnDanger} onClick={onRemove}>
+        <div className={`flex items-center gap-3 pt-4 ${divider}`}>
+          <button type="button" className={btnDanger} onClick={onRemove}>
             Remove Aspherical
           </button>
           <span className="flex-1" />
-          <button type="button" className={cx.btnSecondary} onClick={onClose}>
+          <button type="button" className={btnSecondary} onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className={cx.btnPrimary} onClick={handleConfirm}>
+          <button type="button" className={btnPrimary} onClick={handleConfirm}>
             Confirm
           </button>
         </div>

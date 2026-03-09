@@ -17,7 +17,7 @@ import {
 } from "@/components/micro/AnalysisPlotView";
 import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
-import { cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 
@@ -217,19 +217,29 @@ export default function Home() {
     [specsStore, lensStore]
   );
 
+  const backdrop = `${cx.modal.color.backdrop} ${cx.modal.style.backdrop}`;
+  const panel = `${cx.modal.style.panel} ${cx.modal.color.panel} ${cx.modal.size.panel}`;
+  const title = `${cx.modal.style.title} ${cx.modal.color.title}`;
+  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
+  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
+  const btnPrimarySubmit = `${cx.button.style.base} ${cx.button.style.disabled} ${cx.button.color.primary} ${cx.button.size.sm}`;
+  const headerSelect = `${cx.select.style.compact} ${cx.select.color.compact} ${cx.select.size.compact}`;
+  const initOverlay = `${cx.overlay.style.init} ${cx.overlay.color.init}`;
+  const initCard = `${cx.overlay.style.card} ${cx.overlay.color.card}`;
+
   const confirmOverwriteModal = pendingExample !== undefined && (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className={cx.backdrop} onClick={handleExampleCancel} />
-      <div className={`${cx.panel} max-w-md`} role="dialog" aria-modal="true">
-        <h2 className={cx.title}>Load Example System</h2>
+      <div className={backdrop} onClick={handleExampleCancel} />
+      <div className={`${panel} max-w-md`} role="dialog" aria-modal="true">
+        <h2 className={title}>Load Example System</h2>
         <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
           This will overwrite your current configuration. Continue?
         </p>
         <div className="flex justify-end gap-3">
-          <button type="button" className={cx.btnSecondary} onClick={handleExampleCancel}>
+          <button type="button" className={btnSecondary} onClick={handleExampleCancel}>
             Cancel
           </button>
-          <button type="button" className={cx.btnPrimary} onClick={handleExampleConfirm}>
+          <button type="button" className={btnPrimary} onClick={handleExampleConfirm}>
             Load
           </button>
         </div>
@@ -244,9 +254,9 @@ export default function Home() {
     />
   );
 
-  const initOverlay = !isReady && (
-    <div className={cx.initOverlay}>
-      <div className={cx.initCard}>
+  const initOverlayNode = !isReady && (
+    <div className={initOverlay}>
+      <div className={initCard}>
         <svg
           className="h-10 w-10 animate-spin text-blue-400"
           xmlns="http://www.w3.org/2000/svg"
@@ -283,7 +293,7 @@ export default function Home() {
         <select
           ref={exampleSelectRef}
           aria-label="Example system"
-          className={cx.headerSelect}
+          className={headerSelect}
           defaultValue=""
           onChange={handleExampleChange}
         >
@@ -298,7 +308,7 @@ export default function Home() {
         </select>
         <button
           type="button"
-          className={cx.btnPrimarySubmit}
+          className={btnPrimarySubmit}
           disabled={!isReady || computing}
           onClick={handleSubmit}
         >
@@ -334,7 +344,7 @@ export default function Home() {
       <BottomDrawer tabs={drawerTabs} draggable={true} />
       {confirmOverwriteModal}
       {errorModal}
-      {initOverlay}
+      {initOverlayNode}
     </div>
   );
 
@@ -347,7 +357,7 @@ export default function Home() {
         <select
           ref={exampleSelectRef}
           aria-label="Example system"
-          className={`mb-2 w-full ${cx.headerSelect}`}
+          className={`mb-2 w-full ${headerSelect}`}
           defaultValue=""
           onChange={handleExampleChange}
         >
@@ -362,7 +372,7 @@ export default function Home() {
         </select>
         <button
           type="button"
-          className={`mb-2 ${cx.btnPrimarySubmit}`}
+          className={`mb-2 ${btnPrimarySubmit}`}
           disabled={!isReady || computing}
           onClick={handleSubmit}
         >
@@ -398,7 +408,7 @@ export default function Home() {
       <BottomDrawer tabs={drawerTabs} draggable={false} />
       {confirmOverwriteModal}
       {errorModal}
-      {initOverlay}
+      {initOverlayNode}
     </div>
   );
 

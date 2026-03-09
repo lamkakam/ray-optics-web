@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
-import { cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { useTheme } from "@/components/ThemeProvider";
 import type { FieldSpace, FieldType } from "@/store/specsConfigurerStore";
@@ -116,6 +116,17 @@ export function FieldConfigModal({
 
   const atLimit = rows.length >= MAX_ROWS;
 
+  const backdrop = `${cx.modal.color.backdrop} ${cx.modal.style.backdrop}`;
+  const panel = `${cx.modal.style.panel} ${cx.modal.color.panel} ${cx.modal.size.panel}`;
+  const title = `${cx.modal.style.title} ${cx.modal.color.title}`;
+  const label = `${cx.label.style.base} ${cx.label.color.default} ${cx.label.size.default}`;
+  const select = `${cx.select.style.base} ${cx.select.color.default} ${cx.select.size.default}`;
+  const input = `${cx.input.style.base} ${cx.input.color.default} ${cx.input.size.default}`;
+  const caption = `${cx.label.style.caption} ${cx.label.color.caption} ${cx.label.size.caption}`;
+  const divider = `${cx.divider.style.base} ${cx.divider.color.default}`;
+  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
+  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
+
   const columnDefs: ColDef<FieldRow>[] = [
     {
       headerName: "",
@@ -156,17 +167,17 @@ export function FieldConfigModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div data-testid="modal-backdrop" className={cx.backdrop} />
-      <div role="dialog" aria-modal="true" aria-labelledby="field-modal-title" className={cx.panel + " max-w-lg"}>
-        <h2 id="field-modal-title" className={cx.title}>Field</h2>
+      <div data-testid="modal-backdrop" className={backdrop} />
+      <div role="dialog" aria-modal="true" aria-labelledby="field-modal-title" className={`${panel} max-w-lg`}>
+        <h2 id="field-modal-title" className={title}>Field</h2>
 
         <div className="mb-4 flex items-center gap-3">
           <div>
-            <label className={cx.label} htmlFor="field-space">Field space</label>
+            <label className={label} htmlFor="field-space">Field space</label>
             <select
               id="field-space"
               aria-label="Field space"
-              className={cx.select}
+              className={select}
               value={space}
               onChange={(e) => setSpace(e.target.value as FieldSpace)}
             >
@@ -175,11 +186,11 @@ export function FieldConfigModal({
             </select>
           </div>
           <div>
-            <label className={cx.label} htmlFor="field-type">Field type</label>
+            <label className={label} htmlFor="field-type">Field type</label>
             <select
               id="field-type"
               aria-label="Field type"
-              className={cx.select}
+              className={select}
               value={fieldType}
               onChange={(e) => setFieldType(e.target.value as FieldType)}
             >
@@ -188,12 +199,12 @@ export function FieldConfigModal({
             </select>
           </div>
           <div>
-            <label className={cx.label} htmlFor="field-max">Max field value</label>
+            <label className={label} htmlFor="field-max">Max field value</label>
             <input
               id="field-max"
               type="text"
               aria-label="Max field value"
-              className={cx.input}
+              className={input}
               value={maxFieldStr}
               onChange={(e) => setMaxFieldStr(e.target.value)}
             />
@@ -201,7 +212,7 @@ export function FieldConfigModal({
         </div>
 
         <div className="mb-4" style={{ width: "100%" }}>
-          <p className={cx.caption}>Maximum 10 relative fields</p>
+          <p className={caption}>Maximum 10 relative fields</p>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}
@@ -214,9 +225,9 @@ export function FieldConfigModal({
           </AgGridProvider>
         </div>
 
-        <div className={`flex items-center justify-end gap-3 pt-4 ${cx.divider}`}>
-          <button type="button" className={cx.btnSecondary} onClick={onClose}>Cancel</button>
-          <button type="button" className={cx.btnPrimary} onClick={handleApply}>Apply</button>
+        <div className={`flex items-center justify-end gap-3 pt-4 ${divider}`}>
+          <button type="button" className={btnSecondary} onClick={onClose}>Cancel</button>
+          <button type="button" className={btnPrimary} onClick={handleApply}>Apply</button>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useStore, type StoreApi } from "zustand";
-import { cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { type LensEditorState } from "@/store/lensEditorStore";
 import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
@@ -36,7 +36,7 @@ export function LensPrescriptionContainer({
   return (
     <div>
       <div role="toolbar" aria-label="Grid toolbar">
-        <button type="button" className={cx.btnPrimary} onClick={handleExport}>
+        <button type="button" className={`${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`} onClick={handleExport}>
           Export JSON
         </button>
       </div>

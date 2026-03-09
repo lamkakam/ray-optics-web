@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Tooltip } from "@/components/micro/Tooltip";
 import type { PupilSpace, PupilType } from "@/store/specsConfigurerStore";
 
@@ -73,13 +73,13 @@ export function SpecsConfigurerPanel({
     <div className="max-w-[50vw] space-y-4">
       {/* System Aperture */}
       <section>
-        <h3 className={`mb-2 text-sm font-semibold ${cx.sectionHeadingColor}`}>
+        <h3 className={`mb-2 text-sm font-semibold ${cx.text.color.heading}`}>
           System Aperture
         </h3>
         <div className="flex items-center gap-3">
           <select
             aria-label="System aperture type"
-            className={cx.select}
+            className={`${cx.select.style.base} ${cx.select.color.default} ${cx.select.size.default}`}
             value={currentDropdownValue}
             onChange={handleDropdownChange}
           >
@@ -92,7 +92,7 @@ export function SpecsConfigurerPanel({
           <input
             type="text"
             aria-label="Aperture value"
-            className={cx.input}
+            className={`${cx.input.style.base} ${cx.input.color.default} ${cx.input.size.default}`}
             value={valueStr}
             onChange={(e) => setValueStr(e.target.value)}
             onBlur={handleValueBlur}
@@ -102,14 +102,14 @@ export function SpecsConfigurerPanel({
 
       {/* Field */}
       <section>
-        <h3 className={`mb-2 text-sm font-semibold ${cx.sectionHeadingColor}`}>
+        <h3 className={`mb-2 text-sm font-semibold ${cx.text.color.heading}`}>
           Field
         </h3>
         <Tooltip text="Click to configure field settings" position="bottom">
           <button
             type="button"
             aria-label="Configure field"
-            className={cx.btnToggle + " w-full text-left"}
+            className={`border ${cx.button.style.base} ${cx.button.color.toggle} ${cx.button.size.md} w-full text-left`}
             onClick={onOpenFieldModal}
           >
             {fieldSummary}
@@ -119,14 +119,14 @@ export function SpecsConfigurerPanel({
 
       {/* Wavelengths */}
       <section>
-        <h3 className={`mb-2 text-sm font-semibold ${cx.sectionHeadingColor}`}>
+        <h3 className={`mb-2 text-sm font-semibold ${cx.text.color.heading}`}>
           Wavelengths
         </h3>
         <Tooltip text="Click to configure wavelengths" position="bottom">
           <button
             type="button"
             aria-label="Configure wavelengths"
-            className={cx.btnToggle + " w-full text-left"}
+            className={`border ${cx.button.style.base} ${cx.button.color.toggle} ${cx.button.size.md} w-full text-left`}
             onClick={onOpenWavelengthModal}
           >
             {wavelengthSummary}

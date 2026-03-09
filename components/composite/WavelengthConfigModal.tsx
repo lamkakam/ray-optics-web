@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
-import { cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { useTheme } from "@/components/ThemeProvider";
 import { FRAUNHOFER_LINES, lookupWavelength, type FraunhoferSymbol } from "@/lib/fraunhoferLines";
@@ -127,6 +127,14 @@ export function WavelengthConfigModal({
 
   const atLimit = rows.length >= MAX_ROWS;
 
+  const backdrop = `${cx.modal.color.backdrop} ${cx.modal.style.backdrop}`;
+  const panel = `${cx.modal.style.panel} ${cx.modal.color.panel} ${cx.modal.size.panel}`;
+  const title = `${cx.modal.style.title} ${cx.modal.color.title}`;
+  const caption = `${cx.label.style.caption} ${cx.label.color.caption} ${cx.label.size.caption}`;
+  const divider = `${cx.divider.style.base} ${cx.divider.color.default}`;
+  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
+  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
+
   const columnDefs: ColDef<WavelengthRow>[] = [
     {
       headerName: "",
@@ -220,12 +228,12 @@ export function WavelengthConfigModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div data-testid="modal-backdrop" className={cx.backdrop} />
-      <div role="dialog" aria-modal="true" aria-labelledby="wavelength-modal-title" className={cx.panel + " max-w-4xl"}>
-        <h2 id="wavelength-modal-title" className={cx.title}>Wavelengths</h2>
+      <div data-testid="modal-backdrop" className={backdrop} />
+      <div role="dialog" aria-modal="true" aria-labelledby="wavelength-modal-title" className={`${panel} max-w-4xl`}>
+        <h2 id="wavelength-modal-title" className={title}>Wavelengths</h2>
 
         <div className="mb-4" style={{ width: "100%" }}>
-          <p className={cx.caption}>Maximum 7 wavelengths</p>
+          <p className={caption}>Maximum 7 wavelengths</p>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}
@@ -238,9 +246,9 @@ export function WavelengthConfigModal({
           </AgGridProvider>
         </div>
 
-        <div className={`flex items-center justify-end gap-3 pt-4 ${cx.divider}`}>
-          <button type="button" className={cx.btnSecondary} onClick={onClose}>Cancel</button>
-          <button type="button" className={cx.btnPrimary} onClick={handleApply}>Apply</button>
+        <div className={`flex items-center justify-end gap-3 pt-4 ${divider}`}>
+          <button type="button" className={btnSecondary} onClick={onClose}>Cancel</button>
+          <button type="button" className={btnPrimary} onClick={handleApply}>Apply</button>
         </div>
       </div>
     </div>

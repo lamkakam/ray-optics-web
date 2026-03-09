@@ -1,5 +1,5 @@
 import React from "react";
-import { cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
 
 interface LensLayoutPanelProps {
   readonly imageBase64?: string;
@@ -13,7 +13,7 @@ export function LensLayoutPanel({
   onRefresh,
 }: LensLayoutPanelProps) {
   return (
-    <div className={cx.imagePanelContainer}>
+    <div className={cx.panel.style.imageContainer}>
       {imageBase64 ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element -- base64 data URI, not optimizable by next/image */}
@@ -23,15 +23,15 @@ export function LensLayoutPanel({
             className="max-h-full max-w-full object-contain"
           />
           {loading && (
-            <div className={cx.loadingOverlay}>
-              <span className={`text-sm ${cx.loadingTextColor}`}>
+            <div className={`${cx.panel.style.loadingOverlay} ${cx.panel.color.loadingOverlay}`}>
+              <span className={`text-sm ${cx.text.color.loading}`}>
                 Updating...
               </span>
             </div>
           )}
         </>
       ) : (
-        <div className={cx.emptyState}>
+        <div className={`${cx.panel.style.emptyState} ${cx.text.color.empty}`}>
           {loading
             ? "Loading lens layout..."
             : "Configure the System Specs & Lens Prescription below, or choose an example system, then click \u201cUpdate System\u201d to view the lens layout."}
@@ -42,7 +42,7 @@ export function LensLayoutPanel({
         aria-label="Refresh lens layout"
         disabled={loading}
         onClick={onRefresh}
-        className={cx.btnFloatingRefresh}
+        className={`${cx.button.style.floating} ${cx.button.color.floating} ${cx.button.size.xs}`}
       >
         ↻
       </button>
