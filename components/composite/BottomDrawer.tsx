@@ -10,13 +10,14 @@ interface DrawerTab {
 
 interface BottomDrawerProps {
   readonly tabs: readonly DrawerTab[];
+  readonly draggable?: boolean;
 }
 
 const SNAP_COLLAPSED = 48;
 const SNAP_HALF = 0.4;
 const SNAP_EXPANDED = 0.7;
 
-export function BottomDrawer({ tabs }: BottomDrawerProps) {
+export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
   const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   const [height, setHeight] = useState(300);
 
@@ -76,6 +77,36 @@ export function BottomDrawer({ tabs }: BottomDrawerProps) {
       setCollapsed(true);
     }
   }, [collapsed]);
+
+  if (!draggable) {
+    return (
+      <div className="flex flex-col border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex shrink-0 items-center gap-1 border-b border-gray-200 px-3 dark:border-gray-700">
+          <div role="tablist" className="flex flex-1 gap-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                role="tab"
+                aria-label={tab.label}
+                aria-selected={activeTab === tab.id}
+                className={`rounded-t-lg px-3 py-1.5 text-sm font-medium transition ${
+                  activeTab === tab.id
+                    ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                }`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div role="tabpanel" className="p-3">
+          {tabs.find((t) => t.id === activeTab)?.content}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

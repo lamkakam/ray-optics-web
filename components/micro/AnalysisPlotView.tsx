@@ -16,6 +16,7 @@ interface AnalysisPlotViewProps {
   readonly loading?: boolean;
   readonly onFieldChange: (fieldIndex: number) => void;
   readonly onPlotTypeChange: (plotType: PlotType) => void;
+  readonly autoHeight?: boolean;
 }
 
 const PLOT_TYPE_LABELS: Record<PlotType, string> = {
@@ -32,9 +33,10 @@ export function AnalysisPlotView({
   loading,
   onFieldChange,
   onPlotTypeChange,
+  autoHeight,
 }: AnalysisPlotViewProps) {
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3">
+    <div className={`flex ${autoHeight ? "" : "h-full "}min-h-0 flex-col gap-3`}>
       <div className="flex gap-3">
         <div className="flex-1">
           <label htmlFor="analysis-field-select" className={cx.label}>
@@ -74,7 +76,7 @@ export function AnalysisPlotView({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 items-center justify-center">
+      <div className={autoHeight ? "flex items-center justify-center" : "flex min-h-0 flex-1 items-center justify-center"}>
         {loading ? (
           <span className="text-sm text-gray-400 dark:text-gray-500">
             Loading plot...
@@ -84,7 +86,7 @@ export function AnalysisPlotView({
           <img
             src={`data:image/png;base64,${plotImageBase64}`}
             alt="Analysis plot"
-            className="max-h-full max-w-full object-contain"
+            className={autoHeight ? "w-full h-auto" : "max-h-full max-w-full object-contain"}
           />
         ) : (
           <span className="text-sm text-gray-400 dark:text-gray-500">

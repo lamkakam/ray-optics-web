@@ -218,7 +218,7 @@ export default function Home() {
   );
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className={`flex flex-col ${isLG ? "h-screen" : ""}`}>
       {/* Header */}
       {isLG ? (
         <header className="flex h-12 shrink-0 items-center gap-4 border-b border-gray-200 px-4 dark:border-gray-700">
@@ -289,9 +289,9 @@ export default function Home() {
       )}
 
       {/* Main content */}
-      <div className={`flex min-h-0 flex-1 ${isLG ? "flex-row" : "flex-col"}`}>
+      <div className={isLG ? "flex min-h-0 flex-1 flex-row" : "flex flex-col"}>
         {/* Lens layout */}
-        <div className={`flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4${isLG ? " w-[65%]" : ""}`}>
+        <div className={isLG ? "flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]" : "w-[70vw] mx-auto p-4"}>
           <LensLayoutPanel
             imageBase64={layoutImage}
             loading={layoutLoading}
@@ -300,7 +300,7 @@ export default function Home() {
         </div>
 
         {/* Analysis sidebar */}
-        <div className={`flex flex-1 flex-col min-h-0 p-4 dark:border-gray-700 ${isLG ? "border-l border-gray-200 w-[35%]" : "border-t border-gray-200"}`}>
+        <div className={isLG ? "flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]" : "w-[70vw] mx-auto p-4 border-t border-gray-200 dark:border-gray-700"}>
           <AnalysisPlotView
             fieldOptions={fieldOptions}
             selectedFieldIndex={selectedFieldIndex}
@@ -309,12 +309,13 @@ export default function Home() {
             loading={plotLoading}
             onFieldChange={handleFieldChange}
             onPlotTypeChange={handlePlotTypeChange}
+            autoHeight={!isLG}
           />
         </div>
       </div>
 
       {/* Bottom drawer */}
-      <BottomDrawer tabs={drawerTabs} />
+      <BottomDrawer tabs={drawerTabs} draggable={isLG} />
 
       {/* Confirm overwrite modal */}
       {pendingExample !== undefined && (

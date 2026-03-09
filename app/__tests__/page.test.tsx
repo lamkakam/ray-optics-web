@@ -211,6 +211,13 @@ describe("Home page", () => {
     expect(screen.getByDisplayValue("23.713")).toBeInTheDocument();
   });
 
+  it("does not render a drag handle on small screens (screenSM default in JSDOM)", () => {
+    render(<Home />);
+    expect(
+      screen.queryByRole("separator", { name: "Resize drawer" })
+    ).not.toBeInTheDocument();
+  });
+
   it("does not load example system when user cancels in the modal", async () => {
     render(<Home />);
     const select = screen.getByLabelText("Example system") as HTMLSelectElement;

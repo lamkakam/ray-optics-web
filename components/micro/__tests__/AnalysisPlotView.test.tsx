@@ -69,4 +69,19 @@ describe("AnalysisPlotView", () => {
     render(<AnalysisPlotView {...defaultProps} />);
     expect(screen.getByText("No plot available")).toBeInTheDocument();
   });
+
+  describe("autoHeight mode", () => {
+    it("applies w-full and h-auto classes to the plot image", () => {
+      render(<AnalysisPlotView {...defaultProps} plotImageBase64="xyz789" autoHeight />);
+      const img = screen.getByRole("img", { name: "Analysis plot" });
+      expect(img).toHaveClass("w-full");
+      expect(img).toHaveClass("h-auto");
+    });
+
+    it("does not apply max-h-full to the plot image", () => {
+      render(<AnalysisPlotView {...defaultProps} plotImageBase64="xyz789" autoHeight />);
+      const img = screen.getByRole("img", { name: "Analysis plot" });
+      expect(img).not.toHaveClass("max-h-full");
+    });
+  });
 });
