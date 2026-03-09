@@ -19,9 +19,12 @@ import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { cx } from "@/components/ui/modalTokens";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
+import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 
 export default function Home() {
   const { proxy, isReady } = usePyodide();
+  const screenSize = useScreenBreakpoint();
+  const isLG = screenSize === "screenLG";
 
   const specsStore = useMemo(
     () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
@@ -251,9 +254,9 @@ export default function Home() {
       </header>
 
       {/* Main content */}
-      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+      <div className={`flex min-h-0 flex-1 ${isLG ? "flex-row" : "flex-col"}`}>
         {/* Lens layout */}
-        <div className="flex flex-1 items-center justify-center p-4 lg:w-[65%]">
+        <div className={`flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4${isLG ? " w-[65%]" : ""}`}>
           <LensLayoutPanel
             imageBase64={layoutImage}
             loading={layoutLoading}
@@ -262,7 +265,7 @@ export default function Home() {
         </div>
 
         {/* Analysis sidebar */}
-        <div className="flex flex-1 flex-col min-h-0 border-t border-gray-200 p-4 lg:w-[35%] lg:border-l lg:border-t-0 dark:border-gray-700">
+        <div className={`flex flex-1 flex-col min-h-0 p-4 dark:border-gray-700 ${isLG ? "border-l border-gray-200 w-[35%]" : "border-t border-gray-200"}`}>
           <AnalysisPlotView
             fieldOptions={fieldOptions}
             selectedFieldIndex={selectedFieldIndex}
