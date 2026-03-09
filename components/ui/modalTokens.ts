@@ -30,25 +30,27 @@ const globalTokens = {
   },
 } as const;
 
+const g = globalTokens;
+
 export const componentTokens = {
   button: {
     color: {
-      primary:    "bg-blue-600 text-white hover:bg-blue-700",
-      secondary:  "border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800",
-      toggle:     "border-gray-300 text-gray-700 hover:bg-blue-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700",
-      danger:     "bg-red-600 text-white hover:bg-red-700",
-      floating:   "border-gray-300 bg-white/80 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-700",
-      iconAdd:    "bg-blue-600 text-white hover:bg-blue-700",
-      iconDelete: "bg-red-600 text-white hover:bg-red-700",
+      primary:    `${g.color.primaryBg} ${g.color.inverseText}`,
+      secondary:  `${g.color.inputBorder} ${g.color.secondaryText} hover:bg-gray-100 dark:hover:bg-gray-800`,
+      toggle:     `${g.color.inputBorder} ${g.color.secondaryText} hover:bg-blue-50 dark:bg-gray-800 dark:hover:bg-gray-700`,
+      danger:     `${g.color.dangerBg} ${g.color.inverseText}`,
+      floating:   `${g.color.inputBorder} bg-white/80 text-gray-600 hover:bg-gray-100 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-700`,
+      iconAdd:    `${g.color.primaryBg} ${g.color.inverseText}`,
+      iconDelete: `${g.color.dangerBg} ${g.color.inverseText}`,
     },
     size: {
-      md:   "px-4 py-2",
-      sm:   "px-3 py-1.5 text-sm",
-      xs:   "px-2 py-1 text-xs",
+      md:   g.size.btnMd,
+      sm:   g.size.btnSm,
+      xs:   g.size.btnXs,
       icon: "w-6 h-6 text-sm",
     },
     style: {
-      base:     "rounded-lg font-medium transition cursor-pointer",
+      base:     g.style.btnBase,
       iconBase: "inline-flex items-center justify-center rounded font-bold transition cursor-pointer",
       floating: "absolute right-2 top-2 rounded-lg border disabled:opacity-50",
       disabled: "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -57,27 +59,27 @@ export const componentTokens = {
 
   input: {
     color: {
-      default: "border-gray-300 bg-gray-50 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100",
+      default: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
     },
     size: {
-      default: "px-3 py-2 text-sm",
+      default: `${g.size.inputPadding} text-sm`,
     },
     style: {
-      base: "w-full rounded-lg border outline-none transition focus:ring-2 focus:ring-blue-500",
+      base: g.style.inputBase,
     },
   },
 
   select: {
     color: {
-      default: "border-gray-300 bg-gray-50 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100",
-      compact: "border-gray-300 bg-white text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100",
+      default: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
+      compact: `${g.color.inputBorder} bg-white ${g.color.primaryText}`,
     },
     size: {
-      default: "px-3 py-2 text-sm",
+      default: `${g.size.inputPadding} text-sm`,
       compact: "px-2 py-1.5 text-sm",
     },
     style: {
-      base:    "w-full rounded-lg border outline-none transition focus:ring-2 focus:ring-blue-500",
+      base:    g.style.inputBase,
       compact: "rounded-lg border outline-none",
     },
   },
@@ -85,8 +87,8 @@ export const componentTokens = {
   modal: {
     color: {
       backdrop: "bg-black/50",
-      panel:    "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900",
-      title:    "border-gray-200 text-gray-900 dark:border-gray-700 dark:text-gray-100",
+      panel:    `${g.color.defaultBorder} bg-white dark:bg-gray-900`,
+      title:    `${g.color.defaultBorder} ${g.color.primaryText}`,
     },
     size: {
       panel: "p-6",
@@ -100,7 +102,7 @@ export const componentTokens = {
 
   label: {
     color: {
-      default: "text-gray-700 dark:text-gray-300",
+      default: g.color.secondaryText,
       caption: "text-gray-500",
     },
     size: {
@@ -115,7 +117,7 @@ export const componentTokens = {
 
   chip: {
     color: {
-      default: "border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400",
+      default: `${g.color.defaultBorder} ${g.color.surfaceBg} text-gray-600 dark:text-gray-400`,
     },
     size: {
       default: "px-2 py-0.5 text-xs",
@@ -127,7 +129,7 @@ export const componentTokens = {
 
   divider: {
     color: {
-      default: "border-gray-200 dark:border-gray-700",
+      default: g.color.defaultBorder,
     },
     style: {
       base: "border-t",
@@ -157,10 +159,10 @@ export const componentTokens = {
 
   text: {
     color: {
-      loading:     "text-gray-500 dark:text-gray-400",
+      loading:     g.color.mutedText,
       placeholder: "text-gray-400 dark:text-gray-500",
-      body:        "text-gray-700 dark:text-gray-300",
-      heading:     "text-gray-900 dark:text-gray-100",
+      body:        g.color.secondaryText,
+      heading:     g.color.primaryText,
       empty:       "text-gray-400 dark:text-gray-500",
     },
   },
@@ -188,5 +190,3 @@ export const componentTokens = {
   },
 } as const;
 
-// Suppress unused-variable warning for globalTokens (kept for documentation purposes)
-void globalTokens;
