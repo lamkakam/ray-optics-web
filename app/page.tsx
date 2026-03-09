@@ -220,38 +220,73 @@ export default function Home() {
   return (
     <div className="flex h-screen flex-col">
       {/* Header */}
-      <header className="flex h-12 shrink-0 items-center gap-4 border-b border-gray-200 px-4 dark:border-gray-700">
-        <h1 className="font-semibold text-gray-900 dark:text-gray-100">
-          Ray Optics Web
-        </h1>
-        <select
-          ref={exampleSelectRef}
-          aria-label="Example system"
-          className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          defaultValue=""
-          onChange={handleExampleChange}
-        >
-          <option value="" disabled>
-            Load example system...
-          </option>
-          {exampleSystemNames.map((name) => (
-            <option key={name} value={name}>
-              {name}
+      {isLG ? (
+        <header className="flex h-12 shrink-0 items-center gap-4 border-b border-gray-200 px-4 dark:border-gray-700">
+          <h1 className="font-semibold text-gray-900 dark:text-gray-100">
+            Ray Optics Web
+          </h1>
+          <select
+            ref={exampleSelectRef}
+            aria-label="Example system"
+            className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            defaultValue=""
+            onChange={handleExampleChange}
+          >
+            <option value="" disabled>
+              Load example system...
             </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          disabled={!isReady || computing}
-          onClick={handleSubmit}
-        >
-          Update System
-        </button>
-        <div className="flex gap-2">
-          <FirstOrderChips data={firstOrderData} />
-        </div>
-      </header>
+            {exampleSystemNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            disabled={!isReady || computing}
+            onClick={handleSubmit}
+          >
+            Update System
+          </button>
+          <div className="flex gap-2">
+            <FirstOrderChips data={firstOrderData} />
+          </div>
+        </header>
+      ) : (
+        <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
+          <h1 className="mb-2 font-semibold text-gray-900 dark:text-gray-100">
+            Ray Optics Web
+          </h1>
+          <select
+            ref={exampleSelectRef}
+            aria-label="Example system"
+            className="mb-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            defaultValue=""
+            onChange={handleExampleChange}
+          >
+            <option value="" disabled>
+              Load example system...
+            </option>
+            {exampleSystemNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="mb-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            disabled={!isReady || computing}
+            onClick={handleSubmit}
+          >
+            Update System
+          </button>
+          <div className="flex flex-wrap gap-2">
+            <FirstOrderChips data={firstOrderData} />
+          </div>
+        </header>
+      )}
 
       {/* Main content */}
       <div className={`flex min-h-0 flex-1 ${isLG ? "flex-row" : "flex-col"}`}>
