@@ -217,90 +217,107 @@ export default function Home() {
     [specsStore, lensStore]
   );
 
-  return (
-    <div className={`flex flex-col ${isLG ? "h-screen" : ""}`}>
-      {/* Header */}
-      {isLG ? (
-        <header className="flex h-12 shrink-0 items-center gap-4 border-b border-gray-200 px-4 dark:border-gray-700">
-          <h1 className="font-semibold text-gray-900 dark:text-gray-100">
-            Ray Optics Web
-          </h1>
-          <select
-            ref={exampleSelectRef}
-            aria-label="Example system"
-            className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            defaultValue=""
-            onChange={handleExampleChange}
-          >
-            <option value="" disabled>
-              Load example system...
-            </option>
-            {exampleSystemNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            disabled={!isReady || computing}
-            onClick={handleSubmit}
-          >
-            Update System
+  const confirmOverwriteModal = pendingExample !== undefined && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className={cx.backdrop} onClick={handleExampleCancel} />
+      <div className={`${cx.panel} max-w-md`} role="dialog" aria-modal="true">
+        <h2 className={cx.title}>Load Example System</h2>
+        <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
+          This will overwrite your current configuration. Continue?
+        </p>
+        <div className="flex justify-end gap-3">
+          <button type="button" className={cx.btnSecondary} onClick={handleExampleCancel}>
+            Cancel
           </button>
-          <div className="flex gap-2">
-            <FirstOrderChips data={firstOrderData} />
-          </div>
-        </header>
-      ) : (
-        <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
-          <h1 className="mb-2 font-semibold text-gray-900 dark:text-gray-100">
-            Ray Optics Web
-          </h1>
-          <select
-            ref={exampleSelectRef}
-            aria-label="Example system"
-            className="mb-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-            defaultValue=""
-            onChange={handleExampleChange}
-          >
-            <option value="" disabled>
-              Load example system...
-            </option>
-            {exampleSystemNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            className="mb-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            disabled={!isReady || computing}
-            onClick={handleSubmit}
-          >
-            Update System
+          <button type="button" className={cx.btnPrimary} onClick={handleExampleConfirm}>
+            Load
           </button>
-          <div className="flex flex-wrap gap-2">
-            <FirstOrderChips data={firstOrderData} />
-          </div>
-        </header>
-      )}
+        </div>
+      </div>
+    </div>
+  );
 
-      {/* Main content */}
-      <div className={isLG ? "flex min-h-0 flex-1 flex-row" : "flex flex-col"}>
-        {/* Lens layout */}
-        <div className={isLG ? "flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]" : "w-[70vw] mx-auto p-4"}>
+  const errorModal = (
+    <ErrorModal
+      isOpen={errorModalOpen}
+      onClose={() => setErrorModalOpen(false)}
+    />
+  );
+
+  const initOverlay = !isReady && (
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm">
+      <div className="flex flex-col items-center gap-4 rounded-xl bg-white/10 px-10 py-8 text-white shadow-xl dark:bg-black/20">
+        <svg
+          className="h-10 w-10 animate-spin text-blue-400"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+        <p className="text-lg font-semibold tracking-wide">Initializing Ray Optics</p>
+        <p className="text-sm text-white/70">Loading Pyodide and installing packages…</p>
+      </div>
+    </div>
+  );
+
+  const layoutLG: React.ReactNode = (
+    <div className="flex flex-col h-screen">
+      <header className="flex h-12 shrink-0 items-center gap-4 border-b border-gray-200 px-4 dark:border-gray-700">
+        <h1 className="font-semibold text-gray-900 dark:text-gray-100">
+          Ray Optics Web
+        </h1>
+        <select
+          ref={exampleSelectRef}
+          aria-label="Example system"
+          className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          defaultValue=""
+          onChange={handleExampleChange}
+        >
+          <option value="" disabled>
+            Load example system...
+          </option>
+          {exampleSystemNames.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          disabled={!isReady || computing}
+          onClick={handleSubmit}
+        >
+          Update System
+        </button>
+        <div className="flex gap-2">
+          <FirstOrderChips data={firstOrderData} />
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1 flex-row">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
           <LensLayoutPanel
             imageBase64={layoutImage}
             loading={layoutLoading}
             onRefresh={handleRefreshLayout}
           />
         </div>
-
-        {/* Analysis sidebar */}
-        <div className={isLG ? "flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]" : "w-[70vw] mx-auto p-4 border-t border-gray-200 dark:border-gray-700"}>
+        <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
           <AnalysisPlotView
             fieldOptions={fieldOptions}
             selectedFieldIndex={selectedFieldIndex}
@@ -309,71 +326,81 @@ export default function Home() {
             loading={plotLoading}
             onFieldChange={handleFieldChange}
             onPlotTypeChange={handlePlotTypeChange}
-            autoHeight={!isLG}
+            autoHeight={false}
           />
         </div>
       </div>
 
-      {/* Bottom drawer */}
-      <BottomDrawer tabs={drawerTabs} draggable={isLG} />
-
-      {/* Confirm overwrite modal */}
-      {pendingExample !== undefined && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className={cx.backdrop} onClick={handleExampleCancel} />
-          <div className={`${cx.panel} max-w-md`} role="dialog" aria-modal="true">
-            <h2 className={cx.title}>Load Example System</h2>
-            <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
-              This will overwrite your current configuration. Continue?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button type="button" className={cx.btnSecondary} onClick={handleExampleCancel}>
-                Cancel
-              </button>
-              <button type="button" className={cx.btnPrimary} onClick={handleExampleConfirm}>
-                Load
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Error modal */}
-      <ErrorModal
-        isOpen={errorModalOpen}
-        onClose={() => setErrorModalOpen(false)}
-      />
-
-      {/* Initialization overlay */}
-      {!isReady && (
-        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 rounded-xl bg-white/10 px-10 py-8 text-white shadow-xl dark:bg-black/20">
-            <svg
-              className="h-10 w-10 animate-spin text-blue-400"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-              />
-            </svg>
-            <p className="text-lg font-semibold tracking-wide">Initializing Ray Optics</p>
-            <p className="text-sm text-white/70">Loading Pyodide and installing packages…</p>
-          </div>
-        </div>
-      )}
+      <BottomDrawer tabs={drawerTabs} draggable={true} />
+      {confirmOverwriteModal}
+      {errorModal}
+      {initOverlay}
     </div>
   );
+
+  const layoutSM: React.ReactNode = (
+    <div className="flex flex-col">
+      <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
+        <h1 className="mb-2 font-semibold text-gray-900 dark:text-gray-100">
+          Ray Optics Web
+        </h1>
+        <select
+          ref={exampleSelectRef}
+          aria-label="Example system"
+          className="mb-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          defaultValue=""
+          onChange={handleExampleChange}
+        >
+          <option value="" disabled>
+            Load example system...
+          </option>
+          {exampleSystemNames.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="mb-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          disabled={!isReady || computing}
+          onClick={handleSubmit}
+        >
+          Update System
+        </button>
+        <div className="flex flex-wrap gap-2">
+          <FirstOrderChips data={firstOrderData} />
+        </div>
+      </header>
+
+      <div className="flex flex-col">
+        <div className="w-[70vw] mx-auto p-4">
+          <LensLayoutPanel
+            imageBase64={layoutImage}
+            loading={layoutLoading}
+            onRefresh={handleRefreshLayout}
+          />
+        </div>
+        <div className="w-[70vw] mx-auto p-4 border-t border-gray-200 dark:border-gray-700">
+          <AnalysisPlotView
+            fieldOptions={fieldOptions}
+            selectedFieldIndex={selectedFieldIndex}
+            selectedPlotType={selectedPlotType}
+            plotImageBase64={plotImage}
+            loading={plotLoading}
+            onFieldChange={handleFieldChange}
+            onPlotTypeChange={handlePlotTypeChange}
+            autoHeight={true}
+          />
+        </div>
+      </div>
+
+      <BottomDrawer tabs={drawerTabs} draggable={false} />
+      {confirmOverwriteModal}
+      {errorModal}
+      {initOverlay}
+    </div>
+  );
+
+  return isLG ? layoutLG : layoutSM;
 }
