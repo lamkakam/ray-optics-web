@@ -73,7 +73,7 @@ export function SpecsConfigurerPanel({
     <div className="max-w-[50vw] space-y-4">
       {/* System Aperture */}
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <h3 className={`mb-2 text-sm font-semibold ${cx.sectionHeadingColor}`}>
           System Aperture
         </h3>
         <div className="flex items-center gap-3">
@@ -102,7 +102,7 @@ export function SpecsConfigurerPanel({
 
       {/* Field */}
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <h3 className={`mb-2 text-sm font-semibold ${cx.sectionHeadingColor}`}>
           Field
         </h3>
         <Tooltip text="Click to configure field settings" position="bottom">
@@ -119,7 +119,7 @@ export function SpecsConfigurerPanel({
 
       {/* Wavelengths */}
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+        <h3 className={`mb-2 text-sm font-semibold ${cx.sectionHeadingColor}`}>
           Wavelengths
         </h3>
         <Tooltip text="Click to configure wavelengths" position="bottom">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import { cx } from "@/components/ui/modalTokens";
 
 interface DrawerTab {
   readonly id: string;
@@ -90,9 +91,7 @@ export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
                 aria-label={tab.label}
                 aria-selected={activeTab === tab.id}
                 className={`rounded-t-lg px-3 py-1.5 text-sm font-medium transition ${
-                  activeTab === tab.id
-                    ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  activeTab === tab.id ? cx.tabActive : cx.tabInactive
                 }`}
                 onClick={() => setActiveTab(tab.id)}
               >
