@@ -52,4 +52,10 @@ export const cx = {
     "flex items-center justify-center text-sm text-gray-400 dark:text-gray-500",
   btnFloatingRefresh:
     "absolute right-2 top-2 rounded-lg border border-gray-300 bg-white/80 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-700",
+  loadingTextColor:
+    "text-gray-500 dark:text-gray-400",
+  placeholderTextColor:
+    "text-gray-400 dark:text-gray-500",
+  modalBodyTextColor:
+    "text-gray-700 dark:text-gray-300",
 } as const;

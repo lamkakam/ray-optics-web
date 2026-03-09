@@ -78,7 +78,7 @@ export function AnalysisPlotView({
 
       <div className={autoHeight ? "flex items-center justify-center" : "flex min-h-0 flex-1 items-center justify-center"}>
         {loading ? (
-          <span className="text-sm text-gray-400 dark:text-gray-500">
+          <span className={`text-sm ${cx.placeholderTextColor}`}>
             Loading plot...
           </span>
         ) : plotImageBase64 ? (
@@ -89,7 +89,7 @@ export function AnalysisPlotView({
             className={autoHeight ? "w-full h-auto" : "max-h-full max-w-full object-contain"}
           />
         ) : (
-          <span className="text-sm text-gray-400 dark:text-gray-500">
+          <span className={`text-sm ${cx.placeholderTextColor}`}>
             No plot available
           </span>
         )}

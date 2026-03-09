@@ -24,7 +24,7 @@ export function LensLayoutPanel({
           />
           {loading && (
             <div className={cx.loadingOverlay}>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className={`text-sm ${cx.loadingTextColor}`}>
                 Updating...
               </span>
             </div>

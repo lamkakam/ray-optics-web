@@ -14,7 +14,7 @@ export function ErrorModal({ isOpen, onClose }: ErrorModalProps) {
       <div className={cx.backdrop} onClick={onClose} />
       <div className={`${cx.panel} max-w-md`} role="dialog" aria-modal="true">
         <h2 className={cx.title}>Error</h2>
-        <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
+        <p className={`mb-6 text-sm ${cx.modalBodyTextColor}`}>
           The input parameters are invalid. Please check your specifications and
           prescription.
         </p>
