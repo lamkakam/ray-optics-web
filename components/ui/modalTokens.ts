@@ -42,4 +42,14 @@ export const cx = {
     "fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm",
   initCard:
     "flex flex-col items-center gap-4 rounded-xl bg-white/10 px-10 py-8 text-white shadow-xl dark:bg-black/20",
+  chip:
+    "rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400",
+  imagePanelContainer:
+    "relative flex h-full w-full flex-col items-center justify-center",
+  loadingOverlay:
+    "absolute inset-0 flex items-center justify-center bg-white/60 dark:bg-gray-900/60",
+  emptyState:
+    "flex items-center justify-center text-sm text-gray-400 dark:text-gray-500",
+  btnFloatingRefresh:
+    "absolute right-2 top-2 rounded-lg border border-gray-300 bg-white/80 px-2 py-1 text-xs text-gray-600 transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-700",
 } as const;

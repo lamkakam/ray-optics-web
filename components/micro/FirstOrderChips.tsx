@@ -1,4 +1,5 @@
 import React from "react";
+import { cx } from "@/components/ui/modalTokens";
 
 interface FirstOrderChipsProps {
   readonly data?: Record<string, number>;
@@ -21,7 +22,7 @@ export function FirstOrderChips({ data }: FirstOrderChipsProps) {
     ({ key, format }) => (
       <span
         key={key}
-        className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+        className={cx.chip}
       >
         {format(data[key])}
       </span>
