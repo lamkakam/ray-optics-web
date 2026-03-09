@@ -34,4 +34,12 @@ export const cx = {
     "mb-1 text-xs text-gray-500",
   tooltip:
     "pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 z-10",
+  headerSelect:
+    "rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100",
+  btnPrimarySubmit:
+    "rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
+  initOverlay:
+    "fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm",
+  initCard:
+    "flex flex-col items-center gap-4 rounded-xl bg-white/10 px-10 py-8 text-white shadow-xl dark:bg-black/20",
 } as const;

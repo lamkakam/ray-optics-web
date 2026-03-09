@@ -245,8 +245,8 @@ export default function Home() {
   );
 
   const initOverlay = !isReady && (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gray-900/60 backdrop-blur-sm">
-      <div className="flex flex-col items-center gap-4 rounded-xl bg-white/10 px-10 py-8 text-white shadow-xl dark:bg-black/20">
+    <div className={cx.initOverlay}>
+      <div className={cx.initCard}>
         <svg
           className="h-10 w-10 animate-spin text-blue-400"
           xmlns="http://www.w3.org/2000/svg"
@@ -283,7 +283,7 @@ export default function Home() {
         <select
           ref={exampleSelectRef}
           aria-label="Example system"
-          className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          className={cx.headerSelect}
           defaultValue=""
           onChange={handleExampleChange}
         >
@@ -298,7 +298,7 @@ export default function Home() {
         </select>
         <button
           type="button"
-          className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className={cx.btnPrimarySubmit}
           disabled={!isReady || computing}
           onClick={handleSubmit}
         >
@@ -347,7 +347,7 @@ export default function Home() {
         <select
           ref={exampleSelectRef}
           aria-label="Example system"
-          className="mb-2 w-full rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          className={`mb-2 w-full ${cx.headerSelect}`}
           defaultValue=""
           onChange={handleExampleChange}
         >
@@ -362,7 +362,7 @@ export default function Home() {
         </select>
         <button
           type="button"
-          className="mb-2 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className={`mb-2 ${cx.btnPrimarySubmit}`}
           disabled={!isReady || computing}
           onClick={handleSubmit}
         >
