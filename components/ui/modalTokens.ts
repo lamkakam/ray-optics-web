@@ -72,7 +72,7 @@ export const componentTokens = {
   select: {
     color: {
       default: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
-      compact: `${g.color.inputBorder} bg-white ${g.color.primaryText}`,
+      compact: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
     },
     size: {
       default: `${g.size.inputPadding} text-sm`,
