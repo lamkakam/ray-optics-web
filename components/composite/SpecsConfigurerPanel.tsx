@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Tooltip } from "@/components/micro/Tooltip";
+import { Button } from "@/components/micro/Button";
 import type { PupilSpace, PupilType } from "@/store/specsConfigurerStore";
 
 interface AperturePatch {
@@ -106,14 +107,14 @@ export function SpecsConfigurerPanel({
           Field
         </h3>
         <Tooltip text="Click to configure field settings" position="bottom">
-          <button
-            type="button"
+          <Button
+            variant="toggle"
             aria-label="Configure field"
-            className={`border ${cx.button.style.base} ${cx.button.color.toggle} ${cx.button.size.md} w-full text-left`}
+            className="w-full text-left"
             onClick={onOpenFieldModal}
           >
             {fieldSummary}
-          </button>
+          </Button>
         </Tooltip>
       </section>
 
@@ -123,14 +124,14 @@ export function SpecsConfigurerPanel({
           Wavelengths
         </h3>
         <Tooltip text="Click to configure wavelengths" position="bottom">
-          <button
-            type="button"
+          <Button
+            variant="toggle"
             aria-label="Configure wavelengths"
-            className={`border ${cx.button.style.base} ${cx.button.color.toggle} ${cx.button.size.md} w-full text-left`}
+            className="w-full text-left"
             onClick={onOpenWavelengthModal}
           >
             {wavelengthSummary}
-          </button>
+          </Button>
         </Tooltip>
       </section>
     </div>

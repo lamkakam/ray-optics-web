@@ -4,6 +4,7 @@ import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
+import { Button } from "@/components/micro/Button";
 import { useTheme } from "@/components/ThemeProvider";
 import type { FieldSpace, FieldType } from "@/store/specsConfigurerStore";
 
@@ -124,8 +125,6 @@ export function FieldConfigModal({
   const input = `${cx.input.style.base} ${cx.input.color.default} ${cx.input.size.default}`;
   const caption = `${cx.label.style.caption} ${cx.label.color.caption} ${cx.label.size.caption}`;
   const divider = `${cx.divider.style.base} ${cx.divider.color.default}`;
-  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
-  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
 
   const columnDefs: ColDef<FieldRow>[] = [
     {
@@ -226,8 +225,8 @@ export function FieldConfigModal({
         </div>
 
         <div className={`flex items-center justify-end gap-3 pt-4 ${divider}`}>
-          <button type="button" className={btnSecondary} onClick={onClose}>Cancel</button>
-          <button type="button" className={btnPrimary} onClick={handleApply}>Apply</button>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={handleApply}>Apply</Button>
         </div>
       </div>
     </div>

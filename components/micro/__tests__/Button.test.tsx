@@ -1,0 +1,148 @@
+import React from "react";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Button } from "@/components/micro/Button";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
+
+function splitClasses(str: string): string[] {
+  return str.trim().split(/\s+/).filter(Boolean);
+}
+
+function expectClasses(element: HTMLElement, ...tokenStrings: string[]) {
+  tokenStrings.forEach((token) => {
+    splitClasses(token).forEach((cls) => {
+      expect(element).toHaveClass(cls);
+    });
+  });
+}
+
+describe("Button", () => {
+  it("renders children", () => {
+    render(<Button variant="primary">Click me</Button>);
+    expect(screen.getByRole("button", { name: "Click me" })).toBeInTheDocument();
+  });
+
+  it("defaults type to button", () => {
+    render(<Button variant="primary">OK</Button>);
+    expect(screen.getByRole("button")).toHaveAttribute("type", "button");
+  });
+
+  it("forwards type override", () => {
+    render(<Button variant="primary" type="submit">Submit</Button>);
+    expect(screen.getByRole("button")).toHaveAttribute("type", "submit");
+  });
+
+  it("variant primary applies correct token classes", () => {
+    render(<Button variant="primary">P</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn,
+      cx.button.style.base,
+      cx.button.color.primary,
+      cx.button.size.md,
+      cx.button.style.disabled,
+    );
+  });
+
+  it("variant secondary applies correct token classes and border", () => {
+    render(<Button variant="secondary">S</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn,
+      cx.button.style.base,
+      cx.button.color.secondary,
+      cx.button.size.md,
+      cx.button.style.disabled,
+    );
+    expect(btn).toHaveClass("border");
+  });
+
+  it("variant toggle applies correct token classes and border", () => {
+    render(<Button variant="toggle">T</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn,
+      cx.button.style.base,
+      cx.button.color.toggle,
+      cx.button.size.md,
+      cx.button.style.disabled,
+    );
+    expect(btn).toHaveClass("border");
+  });
+
+  it("variant danger applies correct token classes", () => {
+    render(<Button variant="danger">D</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn,
+      cx.button.style.base,
+      cx.button.color.danger,
+      cx.button.size.md,
+      cx.button.style.disabled,
+    );
+  });
+
+  it("variant floating applies correct token classes", () => {
+    render(<Button variant="floating">↻</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn,
+      cx.button.style.floating,
+      cx.button.color.floating,
+      cx.button.size.xs,
+      cx.button.style.disabled,
+    );
+  });
+
+  it("variant iconAdd applies correct token classes", () => {
+    render(<Button variant="iconAdd">+</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn,
+      cx.button.style.iconBase,
+      cx.button.color.iconAdd,
+      cx.button.size.icon,
+      cx.button.style.disabled,
+    );
+  });
+
+  it("variant iconDelete applies correct token classes", () => {
+    render(<Button variant="iconDelete">−</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn,
+      cx.button.style.iconBase,
+      cx.button.color.iconDelete,
+      cx.button.size.icon,
+      cx.button.style.disabled,
+    );
+  });
+
+  it("merges extra className", () => {
+    render(<Button variant="primary" className="w-full text-left">X</Button>);
+    const btn = screen.getByRole("button");
+    expect(btn).toHaveClass("w-full");
+    expect(btn).toHaveClass("text-left");
+  });
+
+  it("forwards onClick", async () => {
+    const onClick = jest.fn();
+    render(<Button variant="primary" onClick={onClick}>Go</Button>);
+    await userEvent.click(screen.getByRole("button"));
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("forwards aria-label", () => {
+    render(<Button variant="primary" aria-label="my-action">Go</Button>);
+    expect(screen.getByRole("button", { name: "my-action" })).toBeInTheDocument();
+  });
+
+  it("forwards title", () => {
+    render(<Button variant="primary" title="My Title">Go</Button>);
+    expect(screen.getByRole("button")).toHaveAttribute("title", "My Title");
+  });
+
+  it("forwards disabled", () => {
+    render(<Button variant="primary" disabled>Go</Button>);
+    expect(screen.getByRole("button")).toBeDisabled();
+  });
+
+  it("applies disabled style classes", () => {
+    render(<Button variant="primary" disabled>Go</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn, cx.button.style.disabled);
+  });
+});

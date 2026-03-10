@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useStore, type StoreApi } from "zustand";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { type LensEditorState } from "@/store/lensEditorStore";
+import { Button } from "@/components/micro/Button";
 import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
 import { AsphericalModal, type AsphericalType } from "@/components/composite/AsphericalModal";
@@ -36,9 +36,7 @@ export function LensPrescriptionContainer({
   return (
     <div>
       <div role="toolbar" aria-label="Grid toolbar">
-        <button type="button" className={`${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`} onClick={handleExport}>
-          Export JSON
-        </button>
+        <Button variant="primary" onClick={handleExport}>Export JSON</Button>
       </div>
 
       <LensPrescriptionGrid
