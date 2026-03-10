@@ -2,14 +2,13 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 
-interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
+interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> { }
 
 const BASE_CLASSES = [
-  cx.label.style.baseDisplay,
-  cx.label.style.baseFontWeight,
-  cx.label.size.baseMargin,
+  cx.label.style.fontWeight,
+  cx.label.size.margin,
   cx.label.color.textColor,
-  cx.label.size.default,
+  cx.label.size.fontSize,
 ] as const;
 
 export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
@@ -17,7 +16,7 @@ export const Label = React.forwardRef<HTMLLabelElement, LabelProps>(
     return (
       <label
         ref={ref}
-        className={clsx(BASE_CLASSES, className)}
+        className={clsx("block", BASE_CLASSES, className)}
         {...rest}
       />
     );

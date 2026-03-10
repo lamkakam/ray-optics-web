@@ -26,11 +26,11 @@ describe("Label", () => {
     const el = screen.getByText("test");
     expectClasses(
       el,
-      cx.label.style.baseDisplay,
-      cx.label.style.baseFontWeight,
-      cx.label.size.baseMargin,
+      "block",
+      cx.label.style.fontWeight,
+      cx.label.size.margin,
       cx.label.color.textColor,
-      cx.label.size.default,
+      cx.label.size.fontSize,
     );
   });
 

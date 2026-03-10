@@ -153,17 +153,16 @@ export const componentTokens = {
   label: {
     color: {
       textColor: g.color.secondaryText,
-      captionTextColor: "text-gray-500",
+      captionTextColor: "text-gray-500", // TODO: move it to text.color.captionTextColor
     },
     size: {
-      default: "text-sm",
-      caption: "text-xs",
-      baseMargin: "mb-1",
+      fontSize: "text-sm",
+      caption: "text-xs", // TODO: move it to text.size.captionFontSize
+      margin: "mb-1",
     },
     style: {
-      caption: "mb-1",
-      baseDisplay: "block",
-      baseFontWeight: "font-medium",
+      caption: "mb-1", // TODO: move it to text.size.captionMargin
+      fontWeight: "font-medium",
     },
   },
 
@@ -233,6 +232,9 @@ export const componentTokens = {
       bodyTextColor: g.color.secondaryText,
       headingTextColor: g.color.primaryText,
       emptyTextColor: "text-gray-400 dark:text-gray-500",
+    },
+    style: {
+      fontWeight: "font-medium",
     },
   },
 
