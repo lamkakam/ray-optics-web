@@ -8,7 +8,7 @@
 - TDD. Never implement anything before writing tests. The newly added tests should fail first, then you implement the feature to make the tests pass.
 - Always work on a feature branch. Never work on main branch.
 - Never push to main branch. Always push to a feature branch and open a PR for human approval
-- All tests must be pass before merging into main
+- All tests must be pass and type checking must be passed before merging into main
 - Always read relevant skills md files under `./claude/skills` before planning
 - In TypeScript, use `undefined` instead of `null` whenever possible
 - Make the modules loosely coupled
