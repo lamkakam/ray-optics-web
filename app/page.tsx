@@ -219,9 +219,9 @@ export default function Home() {
     [specsStore, lensStore]
   );
 
-  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdrop);
-  const panel = clsx(cx.modal.style.panel, cx.modal.size.panelWidth, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding);
-  const title = clsx(cx.modal.style.title, cx.modal.size.titleSize, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
+  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropPosition, cx.modal.style.backdropBlur);
+  const panel = clsx(cx.modal.style.panelPosition, cx.modal.style.panelZIndex, cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.style.panelBorderStyle, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow, cx.modal.style.panelAnimation);
+  const title = clsx(cx.modal.style.titleBorderStyle, cx.modal.style.titleFontWeight, cx.modal.size.titleFontSize, cx.modal.size.titleMargin, cx.modal.size.titlePadding, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
   const headerSelect = clsx(cx.select.style.compactBorderStyle, cx.select.style.compactBorderRadius, cx.select.style.compactOutlineStyle, cx.select.style.transitionStyle, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.compactHorizontalPadding, cx.select.size.compactVerticalPadding, cx.select.size.compactFontSize);
   const initOverlay = clsx(cx.overlay.style.init, cx.overlay.color.initBgColor);
   const initCard = clsx(cx.overlay.style.card, cx.overlay.color.cardBgColor, cx.overlay.color.cardTextColor);

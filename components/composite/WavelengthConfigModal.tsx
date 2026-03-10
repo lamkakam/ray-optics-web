@@ -129,9 +129,9 @@ export function WavelengthConfigModal({
 
   const atLimit = rows.length >= MAX_ROWS;
 
-  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdrop);
-  const panel = clsx(cx.modal.style.panel, cx.modal.size.panelWidth, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding);
-  const title = clsx(cx.modal.style.title, cx.modal.size.titleSize, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
+  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropPosition, cx.modal.style.backdropBlur);
+  const panel = clsx(cx.modal.style.panelPosition, cx.modal.style.panelZIndex, cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.style.panelBorderStyle, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow, cx.modal.style.panelAnimation);
+  const title = clsx(cx.modal.style.titleBorderStyle, cx.modal.style.titleFontWeight, cx.modal.size.titleFontSize, cx.modal.size.titleMargin, cx.modal.size.titlePadding, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
   const caption = clsx(cx.label.style.caption, cx.label.color.captionTextColor, cx.label.size.caption);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
