@@ -8,12 +8,12 @@ export type ButtonSize = "md" | "xs";
 const { color: c, size: sz, style: s } = cx.button;
 
 const VARIANT_CLASSES = {
-  primary:   `${c.primaryBgColor} ${c.primaryHoverBgColor} ${c.primaryTextColor} ${s.borderRadius} ${s.fontWeight} transition`,
+  primary: `${c.primaryBgColor} ${c.primaryHoverBgColor} ${c.primaryTextColor} ${s.borderRadius} ${s.fontWeight} transition`,
   secondary: `border ${c.secondaryBorderColor} ${c.secondaryBgColor} ${c.secondaryTextColor} ${c.secondaryHoverBgColor} ${s.borderRadius} ${s.fontWeight} transition`,
-  toggle:    `border ${c.toggleBorderColor} ${c.toggleBgColor} ${c.toggleTextColor} ${c.toggleHoverBgColor} ${s.borderRadius} ${s.fontWeight} transition`,
-  danger:    `${c.dangerBgColor} ${c.dangerHoverBgColor} ${c.dangerTextColor} ${s.borderRadius} ${s.fontWeight} transition`,
-  floating:  `absolute ${s.floating} ${c.floatingBorderColor} ${c.floatingBgColor} ${c.floatingTextColor} ${c.floatingHoverBgColor} ${s.floatingHorizontalMargin} ${s.floatingVerticalMargin} ${sz.xs}`,
-  icon:      `inline-flex items-center justify-center ${c.iconBgColor} ${c.iconHoverBgColor} ${c.iconTextColor} ${s.iconBorderRadius} ${s.iconFontWeight} ${s.iconHorizontalMargin} ${s.iconVerticalMargin}`,
+  toggle: `border ${c.toggleBorderColor} ${c.toggleBgColor} ${c.toggleTextColor} ${c.toggleHoverBgColor} ${s.borderRadius} ${s.fontWeight} transition`,
+  danger: `${c.dangerBgColor} ${c.dangerHoverBgColor} ${c.dangerTextColor} ${s.borderRadius} ${s.fontWeight} transition`,
+  floating: `absolute border ${s.borderRadius} ${c.floatingBorderColor} ${c.floatingBgColor} ${c.floatingTextColor} ${c.floatingHoverBgColor} ${s.floatingHorizontalMargin} ${s.floatingVerticalMargin} ${sz.xs}`,
+  icon: `inline-flex items-center justify-center ${c.iconBgColor} ${c.iconHoverBgColor} ${c.iconTextColor} ${s.iconBorderRadius} ${s.iconFontWeight} ${s.iconHorizontalMargin} ${s.iconVerticalMargin}`,
 } as const satisfies Record<ButtonVariant, string>;
 
 const SIZE_CLASSES = {
