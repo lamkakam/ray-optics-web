@@ -21,7 +21,7 @@ export function GridRowButtons({
       {onAdd !== undefined && (
         <Button
           variant="primary"
-          size="icon"
+          size="xs"
           title={addLabel}
           aria-label={addLabel}
           style={addHidden ? { visibility: "hidden" } : undefined}
@@ -33,7 +33,7 @@ export function GridRowButtons({
       {onDelete !== undefined && (
         <Button
           variant="danger"
-          size="icon"
+          size="xs"
           title={deleteLabel}
           aria-label={deleteLabel}
           onClick={onDelete}

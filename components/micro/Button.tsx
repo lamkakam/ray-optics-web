@@ -2,63 +2,57 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 
-export type ButtonVariant = "primary" | "secondary" | "toggle" | "danger" | "floating";
-export type ButtonSize = "md" | "xs" | "icon";
+export type ButtonVariant = "primary" | "secondary" | "toggle" | "danger" | "floating" | "icon";
+export type ButtonSize = "md" | "xs";
 
 const { color: c, size: sz, style: s } = cx.button;
 
-const VARIANT_COLORS = {
-  primary:   [c.primaryBgColor, c.primaryHoverBgColor, c.primaryTextColor],
-  secondary: [c.secondaryBorderColor, c.secondaryBgColor, c.secondaryTextColor, c.secondaryHoverBgColor],
-  toggle:    [c.toggleBorderColor, c.toggleBgColor, c.toggleTextColor, c.toggleHoverBgColor],
-  danger:    [c.dangerBgColor, c.dangerHoverBgColor, c.dangerTextColor],
-  floating:  [c.floatingBorderColor, c.floatingBgColor, c.floatingTextColor, c.floatingHoverBgColor],
-} as const satisfies Record<ButtonVariant, string[]>;
-
-const VARIANT_STRUCTURE = {
-  primary:   [s.borderRadius, s.fontWeight, "transition"],
-  secondary: ["border", s.borderRadius, s.fontWeight, "transition"],
-  toggle:    ["border", s.borderRadius, s.fontWeight, "transition"],
-  danger:    [s.borderRadius, s.fontWeight, "transition"],
-  floating:  ["absolute", s.floating, s.floatingHorizontalMargin, s.floatingVerticalMargin],
-} as const satisfies Record<ButtonVariant, string[]>;
-
-const ICON_STRUCTURE = [
-  "inline-flex", "items-center", "justify-center",
-  s.iconBorderRadius, s.iconFontWeight, s.iconHorizontalMargin, s.iconVerticalMargin,
-] as const;
+const VARIANT_CLASSES = {
+  primary:   `${c.primaryBgColor} ${c.primaryHoverBgColor} ${c.primaryTextColor} ${s.borderRadius} ${s.fontWeight} transition`,
+  secondary: `border ${c.secondaryBorderColor} ${c.secondaryBgColor} ${c.secondaryTextColor} ${c.secondaryHoverBgColor} ${s.borderRadius} ${s.fontWeight} transition`,
+  toggle:    `border ${c.toggleBorderColor} ${c.toggleBgColor} ${c.toggleTextColor} ${c.toggleHoverBgColor} ${s.borderRadius} ${s.fontWeight} transition`,
+  danger:    `${c.dangerBgColor} ${c.dangerHoverBgColor} ${c.dangerTextColor} ${s.borderRadius} ${s.fontWeight} transition`,
+  floating:  `absolute ${s.floating} ${c.floatingBorderColor} ${c.floatingBgColor} ${c.floatingTextColor} ${c.floatingHoverBgColor} ${s.floatingHorizontalMargin} ${s.floatingVerticalMargin} ${sz.xs}`,
+  icon:      `inline-flex items-center justify-center ${c.iconBgColor} ${c.iconHoverBgColor} ${c.iconTextColor} ${s.iconBorderRadius} ${s.iconFontWeight} ${s.iconHorizontalMargin} ${s.iconVerticalMargin}`,
+} as const satisfies Record<ButtonVariant, string>;
 
 const SIZE_CLASSES = {
-  md:   sz.md,
-  xs:   sz.xs,
-  icon: sz.icon,
+  md: sz.md,
+  xs: sz.xs,
 } as const satisfies Record<ButtonSize, string>;
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  readonly variant: ButtonVariant;
+type IconButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  readonly variant: "icon";
+  readonly size?: never;
+};
+
+type RegularButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  readonly variant: Exclude<ButtonVariant, "icon">;
   readonly size?: ButtonSize;
-}
+};
+
+type ButtonProps = IconButtonProps | RegularButtonProps;
 
 export function Button({
   variant,
-  size = "md",
+  size,
   type = "button",
   className,
   children,
   ...rest
 }: ButtonProps) {
-  const isIcon = size === "icon";
-  const isFloating = variant === "floating";
+  const sizeClass = variant === "icon" || variant === "floating"
+    ? undefined
+    : SIZE_CLASSES[size ?? "md"];
 
   return (
     <button
       type={type}
       className={clsx(
-        isIcon ? ICON_STRUCTURE : VARIANT_STRUCTURE[variant],
+        VARIANT_CLASSES[variant],
         s.cursor,
         s.opacity,
-        VARIANT_COLORS[variant],
-        isFloating ? sz.xs : SIZE_CLASSES[size],
+        sizeClass,
         className,
       )}
       {...rest}

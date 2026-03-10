@@ -50,12 +50,14 @@ export const componentTokens = {
       floatingBgColor:         "bg-white/80 dark:bg-gray-800/80",
       floatingTextColor:       "text-gray-600 dark:text-gray-300",
       floatingHoverBgColor:    "hover:bg-gray-100 dark:hover:bg-gray-700",
+      iconBgColor:             "bg-gray-100 dark:bg-gray-700",
+      iconHoverBgColor:        "hover:bg-gray-200 dark:hover:bg-gray-600",
+      iconTextColor:           g.color.secondaryText,
     },
     size: {
       md:   g.size.btnMd,
       sm:   g.size.btnSm,
       xs:   g.size.btnXs,
-      icon: "text-sm",
     },
     style: {
       borderRadius:             "rounded-lg",

@@ -118,8 +118,8 @@ describe("Button", () => {
     expect(btn).toHaveClass("absolute");
   });
 
-  it("variant primary size icon applies icon style and icon size", () => {
-    render(<Button variant="primary" size="icon">+</Button>);
+  it("variant icon applies correct token classes", () => {
+    render(<Button variant="icon">+</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
       "inline-flex",
@@ -130,36 +130,15 @@ describe("Button", () => {
       cx.button.style.iconHorizontalMargin,
       cx.button.style.iconVerticalMargin,
       cx.button.style.cursor,
-      cx.button.color.primaryBgColor,
-      cx.button.color.primaryHoverBgColor,
-      cx.button.color.primaryTextColor,
-      cx.button.size.icon,
+      cx.button.color.iconBgColor,
+      cx.button.color.iconHoverBgColor,
+      cx.button.color.iconTextColor,
       cx.button.style.opacity,
     );
   });
 
-  it("variant danger size icon applies icon style and icon size", () => {
-    render(<Button variant="danger" size="icon">−</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      "inline-flex",
-      "items-center",
-      "justify-center",
-      cx.button.style.iconBorderRadius,
-      cx.button.style.iconFontWeight,
-      cx.button.style.iconHorizontalMargin,
-      cx.button.style.iconVerticalMargin,
-      cx.button.style.cursor,
-      cx.button.color.dangerBgColor,
-      cx.button.color.dangerHoverBgColor,
-      cx.button.color.dangerTextColor,
-      cx.button.size.icon,
-      cx.button.style.opacity,
-    );
-  });
-
-  it("size icon uses iconBorderRadius/iconFontWeight not borderRadius/fontWeight", () => {
-    render(<Button variant="primary" size="icon">+</Button>);
+  it("variant icon does not apply regular borderRadius, fontWeight, or size classes", () => {
+    render(<Button variant="icon">+</Button>);
     const btn = screen.getByRole("button");
     splitClasses(cx.button.style.borderRadius).forEach((cls) => {
       expect(btn).not.toHaveClass(cls);
@@ -167,7 +146,26 @@ describe("Button", () => {
     splitClasses(cx.button.style.fontWeight).forEach((cls) => {
       expect(btn).not.toHaveClass(cls);
     });
+    splitClasses(cx.button.size.md).forEach((cls) => {
+      expect(btn).not.toHaveClass(cls);
+    });
     expectClasses(btn, cx.button.style.iconBorderRadius, cx.button.style.iconFontWeight);
+  });
+
+  it("variant danger size xs applies correct token classes", () => {
+    render(<Button variant="danger" size="xs">−</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn,
+      cx.button.style.borderRadius,
+      cx.button.style.fontWeight,
+      "transition",
+      cx.button.style.cursor,
+      cx.button.color.dangerBgColor,
+      cx.button.color.dangerHoverBgColor,
+      cx.button.color.dangerTextColor,
+      cx.button.size.xs,
+      cx.button.style.opacity,
+    );
   });
 
   it("floating variant always uses xs size regardless of size prop", () => {
