@@ -67,10 +67,10 @@ export function WavelengthConfigModal({
   const [rows, setRows] = useState<WavelengthRow[]>(() => weightsToRows(initialWeights));
   const [referenceIndex, setReferenceIndex] = useState(initialReferenceIndex);
 
-  // Reset draft state when modal opens
+  // Reset draft state when modal opens (reset-on-open pattern: syncing local draft state with props)
   useEffect(() => {
     if (isOpen) {
-      setRows(weightsToRows(initialWeights));
+      setRows(weightsToRows(initialWeights)); // eslint-disable-line react-hooks/set-state-in-effect
       setReferenceIndex(initialReferenceIndex);
     }
   }, [isOpen, initialWeights, initialReferenceIndex]);

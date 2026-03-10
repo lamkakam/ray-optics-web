@@ -1,5 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
-import { useForceUpdate } from "./useForceUpdate";
+import { useLayoutEffect, useState } from "react";
 
 export type ScreenSize = "screenSM" | "screenLG";
 const DEFAULT_SCREEN: ScreenSize = "screenLG";
@@ -41,18 +40,14 @@ function unsubscribe(id: number): void {
 
 // --- Hook ---
 export function useScreenBreakpoint(): ScreenSize {
-  const [, forceUpdate] = useForceUpdate();
-  const sizeRef = useRef<ScreenSize>(DEFAULT_SCREEN);
+  const [size, setSize] = useState<ScreenSize>(DEFAULT_SCREEN);
 
   useLayoutEffect(() => {
-    const id = subscribe((size) => {
-      sizeRef.current = size;
-      forceUpdate();
-    });
+    const id = subscribe(setSize);
     return () => unsubscribe(id);
   }, []);
 
-  return sizeRef.current;
+  return size;
 }
 
 /** Reset module state. Only for testing. */

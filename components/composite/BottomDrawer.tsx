@@ -23,7 +23,7 @@ export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
   const [height, setHeight] = useState(300);
 
   useEffect(() => {
-    setHeight(Math.round(window.innerHeight * SNAP_HALF));
+    setHeight(Math.round(window.innerHeight * SNAP_HALF)); // eslint-disable-line react-hooks/set-state-in-effect -- syncing with browser viewport API
   }, []);
   const [collapsed, setCollapsed] = useState(false);
   const dragging = useRef(false);

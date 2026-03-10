@@ -63,10 +63,10 @@ export function FieldConfigModal({
   const [maxFieldStr, setMaxFieldStr] = useState(String(initialMaxField));
   const [rows, setRows] = useState<FieldRow[]>(() => fieldsToRows(initialRelativeFields));
 
-  // Reset draft state when modal opens
+  // Reset draft state when modal opens (reset-on-open pattern: syncing local draft state with props)
   useEffect(() => {
     if (isOpen) {
-      setSpace(initialSpace);
+      setSpace(initialSpace); // eslint-disable-line react-hooks/set-state-in-effect
       setFieldType(initialType);
       setMaxFieldStr(String(initialMaxField));
       setRows(fieldsToRows(initialRelativeFields));
