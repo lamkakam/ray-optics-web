@@ -8,13 +8,15 @@
 
 const globalTokens = {
   color: {
+    primaryColor: "bg-blue-600",
+    errorColor: "bg-red-600",
+    primaryText: "text-gray-900 dark:text-gray-100",
+    secondaryText: "text-gray-700 dark:text-gray-300",
+    mutedText: "text-gray-500 dark:text-gray-400",
     reverseText: "text-white",
     defaultBorder: "border-gray-200 dark:border-gray-700",
     inputBorder: "border-gray-300 dark:border-gray-600",
     surfaceBg: "bg-gray-50 dark:bg-gray-800",
-    primaryText: "text-gray-900 dark:text-gray-100",
-    secondaryText: "text-gray-700 dark:text-gray-300",
-    mutedText: "text-gray-500 dark:text-gray-400",
     focusRingColor: "focus:ring-blue-500",
   },
   size: {
@@ -28,10 +30,10 @@ const g = globalTokens;
 export const componentTokens = {
   button: {
     color: {
-      primaryBgColor: "bg-blue-600",
+      primaryBgColor: g.color.primaryColor,
       primaryHoverBgColor: "hover:bg-blue-700",
       primaryTextColor: g.color.reverseText,
-      dangerBgColor: "bg-red-600",
+      dangerBgColor: g.color.errorColor,
       dangerHoverBgColor: "hover:bg-red-700",
       dangerTextColor: g.color.reverseText,
       secondaryBorderColor: g.color.inputBorder,
