@@ -104,7 +104,7 @@ describe("Button", () => {
     render(<Button variant="floating">↻</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
-      cx.button.style.floating,
+      cx.button.style.borderRadius,
       cx.button.style.floatingHorizontalMargin,
       cx.button.style.floatingVerticalMargin,
       cx.button.style.cursor,
@@ -115,7 +115,7 @@ describe("Button", () => {
       cx.button.size.xs,
       cx.button.style.opacity,
     );
-    expect(btn).toHaveClass("absolute");
+    expect(btn).toHaveClass("absolute", "border");
   });
 
   it("variant icon applies correct token classes", () => {
