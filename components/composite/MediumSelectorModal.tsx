@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
+import { Select } from "@/components/micro/Select";
 import glassCatalogs from "@/data/glass-catalogs.json";
 
 const MANUFACTURERS = ["Special", ...Object.keys(glassCatalogs)];
@@ -41,7 +42,6 @@ export function MediumSelectorModal({
     : (glassCatalogs as Record<string, string[]>)[manufacturer] ?? [];
 
   const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
-  const select = clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   return (
@@ -52,10 +52,10 @@ export function MediumSelectorModal({
             <label htmlFor="manufacturer-select" className={label}>
               Manufacturer
             </label>
-            <select
+            <Select
               id="manufacturer-select"
               aria-label="Manufacturer"
-              className={select}
+              options={MANUFACTURERS.map((m) => ({ value: m, label: m }))}
               value={manufacturer}
               onChange={(e) => {
                 const newMfr = e.target.value;
@@ -69,32 +69,20 @@ export function MediumSelectorModal({
                   }
                 }
               }}
-            >
-              {MANUFACTURERS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
           <div>
             <label htmlFor="medium-select" className={label}>
               Glass
             </label>
-            <select
+            <Select
               id="medium-select"
               aria-label="Glass"
-              className={select}
+              options={mediaOptions.map((g) => ({ value: g, label: g }))}
               value={medium}
               onChange={(e) => setMedium(e.target.value)}
-            >
-              {mediaOptions.map((g) => (
-                <option key={g} value={g}>
-                  {g}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
 
