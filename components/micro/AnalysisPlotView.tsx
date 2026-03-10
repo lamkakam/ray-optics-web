@@ -1,6 +1,7 @@
 import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Label } from "@/components/micro/Label";
 import { Select, type SelectOption } from "@/components/micro/Select";
 
 export type PlotType = "rayFan" | "opdFan" | "spotDiagram";
@@ -42,9 +43,9 @@ export function AnalysisPlotView({
     <div className={`flex ${autoHeight ? "" : "h-full "}min-h-0 flex-col gap-3`}>
       <div className="flex gap-3">
         <div className="flex-1">
-          <label htmlFor="analysis-field-select" className={clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default)}>
+          <Label htmlFor="analysis-field-select">
             Field
-          </label>
+          </Label>
           <Select
             id="analysis-field-select"
             aria-label="Field"
@@ -54,9 +55,9 @@ export function AnalysisPlotView({
           />
         </div>
         <div className="flex-1">
-          <label htmlFor="analysis-plot-type-select" className={clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default)}>
+          <Label htmlFor="analysis-plot-type-select">
             Plot type
-          </label>
+          </Label>
           <Select
             id="analysis-plot-type-select"
             aria-label="Plot type"

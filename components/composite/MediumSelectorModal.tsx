@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
+import { Label } from "@/components/micro/Label";
 import { Modal } from "@/components/micro/Modal";
 import { Select } from "@/components/micro/Select";
 import glassCatalogs from "@/data/glass-catalogs.json";
@@ -41,7 +42,6 @@ export function MediumSelectorModal({
     ? SPECIAL_MEDIA
     : (glassCatalogs as Record<string, string[]>)[manufacturer] ?? [];
 
-  const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   return (
@@ -49,9 +49,9 @@ export function MediumSelectorModal({
         {/* ── Form fields ── */}
         <div className="space-y-4 mb-4">
           <div>
-            <label htmlFor="manufacturer-select" className={label}>
+            <Label htmlFor="manufacturer-select">
               Manufacturer
-            </label>
+            </Label>
             <Select
               id="manufacturer-select"
               aria-label="Manufacturer"
@@ -73,9 +73,9 @@ export function MediumSelectorModal({
           </div>
 
           <div>
-            <label htmlFor="medium-select" className={label}>
+            <Label htmlFor="medium-select">
               Glass
-            </label>
+            </Label>
             <Select
               id="medium-select"
               aria-label="Glass"

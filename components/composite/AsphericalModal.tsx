@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
 import { Input } from "@/components/micro/Input";
+import { Label } from "@/components/micro/Label";
 import { Modal } from "@/components/micro/Modal";
 import { Select } from "@/components/micro/Select";
 
@@ -68,7 +69,6 @@ export function AsphericalModal({
     padCoefficients(initialCoefficients)
   );
 
-  const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   const handleConfirm = () => {
@@ -94,9 +94,9 @@ export function AsphericalModal({
         {/* ── Conic constant + Type (2-col grid) ── */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <label htmlFor="conic-constant" className={label}>
+            <Label htmlFor="conic-constant">
               Conic constant
-            </label>
+            </Label>
             <Input
               id="conic-constant"
               aria-label="Conic constant"
@@ -107,9 +107,9 @@ export function AsphericalModal({
           </div>
 
           <div>
-            <label htmlFor="aspherical-type" className={label}>
+            <Label htmlFor="aspherical-type">
               Type
-            </label>
+            </Label>
             <Select
               id="aspherical-type"
               aria-label="Type"
@@ -126,15 +126,15 @@ export function AsphericalModal({
         {/* ── Polynomial coefficients (2-col grid) ── */}
         {type === "EvenAspherical" && (
           <div className="mb-4">
-            <p className={`mb-2 ${label}`}>
+            <p className={clsx("mb-2", cx.label.style.baseFontWeight, cx.label.color.textColor, cx.label.size.default)}>
               Even Aspherical Coefficients
             </p>
             <div className="grid grid-cols-2 gap-3">
               {COEFFICIENT_LABELS.map((lbl, i) => (
                 <div key={lbl}>
-                  <label htmlFor={`coeff-${lbl}`} className={label}>
+                  <Label htmlFor={`coeff-${lbl}`}>
                     {lbl}
-                  </label>
+                  </Label>
                   <Input
                     id={`coeff-${lbl}`}
                     aria-label={lbl}
