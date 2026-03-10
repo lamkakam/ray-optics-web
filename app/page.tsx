@@ -228,7 +228,6 @@ export default function Home() {
     <Modal
       isOpen={pendingExample !== undefined}
       title="Load Example System"
-      onBackdropClick={handleExampleCancel}
     >
       <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
         This will overwrite your current configuration. Continue?
