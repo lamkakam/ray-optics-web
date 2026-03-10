@@ -66,8 +66,8 @@ export function AsphericalModal({
   );
 
   const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdrop);
-  const panel = clsx(cx.modal.style.panel, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding);
-  const title = clsx(cx.modal.style.title, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
+  const panel = clsx(cx.modal.style.panel, cx.modal.size.panelWidth, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding);
+  const title = clsx(cx.modal.style.title, cx.modal.size.titleSize, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
   const label = clsx(cx.label.style.base, cx.label.color.textColor, cx.label.size.default);
   const input = clsx(cx.input.style.borderRadius, cx.input.style.borderStyle, cx.input.style.outlineStyle, cx.input.style.transitionStyle, cx.input.size.defaultWidth, cx.input.size.focusRingWidth, cx.input.color.focusRingColor, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.horizontalPadding, cx.input.size.verticalPadding, cx.input.size.fontSize);
   const select = clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);

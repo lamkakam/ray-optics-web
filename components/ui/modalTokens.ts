@@ -137,11 +137,13 @@ export const componentTokens = {
     },
     size: {
       panelPadding: "p-6",
+      panelWidth: "w-full",
+      titleSize: "mb-4 pb-3 text-lg",
     },
     style: {
       backdrop: "absolute inset-0 backdrop-blur-sm",
-      panel: "relative z-10 w-full rounded-2xl border shadow-2xl animate-modal-enter",
-      title: "mb-4 border-b pb-3 text-lg font-semibold",
+      panel: "relative z-10 rounded-2xl border shadow-2xl animate-modal-enter",
+      title: "border-b font-semibold",
     },
   },
 
