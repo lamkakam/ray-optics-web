@@ -18,6 +18,7 @@ import {
 import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Button } from "@/components/micro/Button";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 
@@ -220,9 +221,6 @@ export default function Home() {
   const backdrop = `${cx.modal.color.backdrop} ${cx.modal.style.backdrop}`;
   const panel = `${cx.modal.style.panel} ${cx.modal.color.panel} ${cx.modal.size.panel}`;
   const title = `${cx.modal.style.title} ${cx.modal.color.title}`;
-  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
-  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
-  const btnPrimarySubmit = `${cx.button.style.base} ${cx.button.style.disabled} ${cx.button.color.primary} ${cx.button.size.sm}`;
   const headerSelect = `${cx.select.style.compact} ${cx.select.color.compact} ${cx.select.size.compact}`;
   const initOverlay = `${cx.overlay.style.init} ${cx.overlay.color.init}`;
   const initCard = `${cx.overlay.style.card} ${cx.overlay.color.card}`;
@@ -236,12 +234,12 @@ export default function Home() {
           This will overwrite your current configuration. Continue?
         </p>
         <div className="flex justify-end gap-3">
-          <button type="button" className={btnSecondary} onClick={handleExampleCancel}>
+          <Button variant="secondary" onClick={handleExampleCancel}>
             Cancel
-          </button>
-          <button type="button" className={btnPrimary} onClick={handleExampleConfirm}>
+          </Button>
+          <Button variant="primary" onClick={handleExampleConfirm}>
             Load
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -306,14 +304,14 @@ export default function Home() {
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          className={btnPrimarySubmit}
+        <Button
+          variant="primary"
+          size="xs"
           disabled={!isReady || computing}
           onClick={handleSubmit}
         >
           Update System
-        </button>
+        </Button>
         <div className="flex gap-2">
           <FirstOrderChips data={firstOrderData} />
         </div>
@@ -370,14 +368,15 @@ export default function Home() {
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          className={`mb-2 ${btnPrimarySubmit}`}
+        <Button
+          variant="primary"
+          size="xs"
+          className="mb-2"
           disabled={!isReady || computing}
           onClick={handleSubmit}
         >
           Update System
-        </button>
+        </Button>
         <div className="flex flex-wrap gap-2">
           <FirstOrderChips data={firstOrderData} />
         </div>

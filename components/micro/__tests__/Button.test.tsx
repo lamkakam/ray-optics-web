@@ -36,10 +36,14 @@ describe("Button", () => {
     render(<Button variant="primary">P</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
-      cx.button.style.base,
-      cx.button.color.primary,
+      cx.button.style.borderRadius,
+      cx.button.style.fontWeight,
+      "transition",
+      cx.button.style.cursor,
+      cx.button.color.primaryBgColor,
+      cx.button.color.primaryTextColor,
       cx.button.size.md,
-      cx.button.style.disabled,
+      cx.button.style.opacity,
     );
   });
 
@@ -47,10 +51,16 @@ describe("Button", () => {
     render(<Button variant="secondary">S</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
-      cx.button.style.base,
-      cx.button.color.secondary,
+      cx.button.style.borderRadius,
+      cx.button.style.fontWeight,
+      "transition",
+      cx.button.style.cursor,
+      cx.button.color.secondaryBorderColor,
+      cx.button.color.secondaryBgColor,
+      cx.button.color.secondaryTextColor,
+      cx.button.color.secondaryHoverBgColor,
       cx.button.size.md,
-      cx.button.style.disabled,
+      cx.button.style.opacity,
     );
     expect(btn).toHaveClass("border");
   });
@@ -59,10 +69,16 @@ describe("Button", () => {
     render(<Button variant="toggle">T</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
-      cx.button.style.base,
-      cx.button.color.toggle,
+      cx.button.style.borderRadius,
+      cx.button.style.fontWeight,
+      "transition",
+      cx.button.style.cursor,
+      cx.button.color.toggleBorderColor,
+      cx.button.color.toggleBgColor,
+      cx.button.color.toggleTextColor,
+      cx.button.color.toggleHoverBgColor,
       cx.button.size.md,
-      cx.button.style.disabled,
+      cx.button.style.opacity,
     );
     expect(btn).toHaveClass("border");
   });
@@ -71,10 +87,14 @@ describe("Button", () => {
     render(<Button variant="danger">D</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
-      cx.button.style.base,
-      cx.button.color.danger,
+      cx.button.style.borderRadius,
+      cx.button.style.fontWeight,
+      "transition",
+      cx.button.style.cursor,
+      cx.button.color.dangerBgColor,
+      cx.button.color.dangerTextColor,
       cx.button.size.md,
-      cx.button.style.disabled,
+      cx.button.style.opacity,
     );
   });
 
@@ -83,46 +103,67 @@ describe("Button", () => {
     const btn = screen.getByRole("button");
     expectClasses(btn,
       cx.button.style.floating,
-      cx.button.color.floating,
+      cx.button.style.floatingHorizontalMargin,
+      cx.button.style.floatingVerticalMargin,
+      cx.button.style.cursor,
+      cx.button.color.floatingBorderColor,
+      cx.button.color.floatingBgColor,
+      cx.button.color.floatingTextColor,
+      cx.button.color.floatingHoverBgColor,
       cx.button.size.xs,
-      cx.button.style.disabled,
+      cx.button.style.opacity,
     );
+    expect(btn).toHaveClass("absolute");
   });
 
-  it("variant primary size icon applies iconBase style and icon size", () => {
+  it("variant primary size icon applies icon style and icon size", () => {
     render(<Button variant="primary" size="icon">+</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
-      cx.button.style.iconBase,
-      cx.button.color.primary,
+      "inline-flex",
+      "items-center",
+      "justify-center",
+      cx.button.style.iconBorderRadius,
+      cx.button.style.iconFontWeight,
+      cx.button.style.iconHorizontalMargin,
+      cx.button.style.iconVerticalMargin,
+      cx.button.style.cursor,
+      cx.button.color.primaryBgColor,
+      cx.button.color.primaryTextColor,
       cx.button.size.icon,
-      cx.button.style.disabled,
+      cx.button.style.opacity,
     );
   });
 
-  it("variant danger size icon applies iconBase style and icon size", () => {
+  it("variant danger size icon applies icon style and icon size", () => {
     render(<Button variant="danger" size="icon">−</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
-      cx.button.style.iconBase,
-      cx.button.color.danger,
+      "inline-flex",
+      "items-center",
+      "justify-center",
+      cx.button.style.iconBorderRadius,
+      cx.button.style.iconFontWeight,
+      cx.button.style.iconHorizontalMargin,
+      cx.button.style.iconVerticalMargin,
+      cx.button.style.cursor,
+      cx.button.color.dangerBgColor,
+      cx.button.color.dangerTextColor,
       cx.button.size.icon,
-      cx.button.style.disabled,
+      cx.button.style.opacity,
     );
   });
 
-  it("size icon uses iconBase style not base", () => {
+  it("size icon uses iconBorderRadius/iconFontWeight not borderRadius/fontWeight", () => {
     render(<Button variant="primary" size="icon">+</Button>);
     const btn = screen.getByRole("button");
-    // iconBase and base share some classes (transition, cursor-pointer);
-    // verify classes exclusive to base are absent and iconBase-exclusive ones present
-    const iconBaseClasses = new Set(splitClasses(cx.button.style.iconBase));
-    splitClasses(cx.button.style.base).forEach((cls) => {
-      if (!iconBaseClasses.has(cls)) {
-        expect(btn).not.toHaveClass(cls);
-      }
+    splitClasses(cx.button.style.borderRadius).forEach((cls) => {
+      expect(btn).not.toHaveClass(cls);
     });
-    expectClasses(btn, cx.button.style.iconBase);
+    splitClasses(cx.button.style.fontWeight).forEach((cls) => {
+      expect(btn).not.toHaveClass(cls);
+    });
+    expectClasses(btn, cx.button.style.iconBorderRadius, cx.button.style.iconFontWeight);
   });
 
   it("floating variant always uses xs size regardless of size prop", () => {
@@ -166,6 +207,6 @@ describe("Button", () => {
   it("applies disabled style classes", () => {
     render(<Button variant="primary" disabled>Go</Button>);
     const btn = screen.getByRole("button");
-    expectClasses(btn, cx.button.style.disabled);
+    expectClasses(btn, cx.button.style.opacity, cx.button.style.cursor);
   });
 });

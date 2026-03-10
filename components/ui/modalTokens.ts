@@ -10,7 +10,7 @@ const globalTokens = {
   color: {
     primaryBg:     "bg-blue-600 hover:bg-blue-700",
     dangerBg:      "bg-red-600 hover:bg-red-700",
-    inverseText:   "text-white",
+    reverseText:   "text-white",
     defaultBorder: "border-gray-200 dark:border-gray-700",
     inputBorder:   "border-gray-300 dark:border-gray-600",
     surfaceBg:     "bg-gray-50 dark:bg-gray-800",
@@ -26,7 +26,6 @@ const globalTokens = {
   },
   style: {
     inputBase: "w-full rounded-lg border outline-none transition focus:ring-2 focus:ring-blue-500",
-    btnBase:   "rounded-lg font-medium transition cursor-pointer",
   },
 } as const;
 
@@ -35,23 +34,41 @@ const g = globalTokens;
 export const componentTokens = {
   button: {
     color: {
-      primary:    `${g.color.primaryBg} ${g.color.inverseText}`,
-      secondary:  `${g.color.inputBorder} ${g.color.secondaryText} hover:bg-gray-100 dark:hover:bg-gray-800`,
-      toggle:     `${g.color.inputBorder} ${g.color.secondaryText} hover:bg-blue-50 dark:bg-gray-800 dark:hover:bg-gray-700`,
-      danger:     `${g.color.dangerBg} ${g.color.inverseText}`,
-      floating:   `${g.color.inputBorder} bg-white/80 text-gray-600 hover:bg-gray-100 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-700`,
+      primaryBgColor:          g.color.primaryBg,
+      primaryTextColor:        g.color.reverseText,
+      dangerBgColor:           g.color.dangerBg,
+      dangerTextColor:         g.color.reverseText,
+      secondaryBorderColor:    g.color.inputBorder,
+      secondaryBgColor:        "bg-transparent",
+      secondaryTextColor:      g.color.secondaryText,
+      secondaryHoverBgColor:   "hover:bg-gray-100 dark:hover:bg-gray-800",
+      toggleBorderColor:       g.color.inputBorder,
+      toggleBgColor:           "dark:bg-gray-800",
+      toggleTextColor:         g.color.secondaryText,
+      toggleHoverBgColor:      "hover:bg-blue-50 dark:hover:bg-gray-700",
+      floatingBorderColor:     g.color.inputBorder,
+      floatingBgColor:         "bg-white/80 dark:bg-gray-800/80",
+      floatingTextColor:       "text-gray-600 dark:text-gray-300",
+      floatingHoverBgColor:    "hover:bg-gray-100 dark:hover:bg-gray-700",
     },
     size: {
       md:   g.size.btnMd,
       sm:   g.size.btnSm,
       xs:   g.size.btnXs,
-      icon: "w-6 h-6 text-sm",
+      icon: "text-sm",
     },
     style: {
-      base:     g.style.btnBase,
-      iconBase: "inline-flex items-center justify-center rounded font-bold transition cursor-pointer",
-      floating: "absolute right-2 top-2 rounded-lg border disabled:opacity-50",
-      disabled: "disabled:opacity-50 disabled:cursor-not-allowed",
+      borderRadius:             "rounded-lg",
+      fontWeight:               "font-medium",
+      iconBorderRadius:         "rounded",
+      iconFontWeight:           "font-bold",
+      iconHorizontalMargin:     "w-6",
+      iconVerticalMargin:       "h-6",
+      opacity:                  "disabled:opacity-50",
+      cursor:                   "cursor-pointer disabled:cursor-not-allowed",
+      floatingHorizontalMargin: "right-2",
+      floatingVerticalMargin:   "top-2",
+      floating:                 "rounded-lg border",
     },
   },
 
