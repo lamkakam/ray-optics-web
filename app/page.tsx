@@ -17,6 +17,7 @@ import {
 } from "@/components/micro/AnalysisPlotView";
 import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
+import { Modal } from "@/components/micro/Modal";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
@@ -219,31 +220,27 @@ export default function Home() {
     [specsStore, lensStore]
   );
 
-  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropPosition, cx.modal.style.backdropBlur);
-  const panel = clsx(cx.modal.style.panelPosition, cx.modal.style.panelZIndex, cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.style.panelBorderStyle, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow, cx.modal.style.panelAnimation);
-  const title = clsx(cx.modal.style.titleBorderStyle, cx.modal.style.titleFontWeight, cx.modal.size.titleFontSize, cx.modal.size.titleMargin, cx.modal.size.titlePadding, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
   const headerSelect = clsx(cx.select.style.compactBorderStyle, cx.select.style.compactBorderRadius, cx.select.style.compactOutlineStyle, cx.select.style.transitionStyle, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.compactHorizontalPadding, cx.select.size.compactVerticalPadding, cx.select.size.compactFontSize);
   const initOverlay = clsx(cx.overlay.style.initLayout, cx.overlay.style.initZIndex, cx.overlay.style.initBlur, cx.overlay.color.initBgColor);
   const initCard = clsx(cx.overlay.style.cardLayout, cx.overlay.style.cardBorderRadius, cx.overlay.size.cardHorizontalPadding, cx.overlay.size.cardVerticalPadding, cx.overlay.style.cardShadow, cx.overlay.color.cardBgColor, cx.overlay.color.cardTextColor);
 
-  const confirmOverwriteModal = pendingExample !== undefined && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className={backdrop} onClick={handleExampleCancel} />
-      <div className={clsx(panel, "max-w-md")} role="dialog" aria-modal="true">
-        <h2 className={title}>Load Example System</h2>
-        <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
-          This will overwrite your current configuration. Continue?
-        </p>
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={handleExampleCancel}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleExampleConfirm}>
-            Load
-          </Button>
-        </div>
+  const confirmOverwriteModal = (
+    <Modal
+      isOpen={pendingExample !== undefined}
+      title="Load Example System"
+    >
+      <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
+        This will overwrite your current configuration. Continue?
+      </p>
+      <div className="flex justify-end gap-3">
+        <Button variant="secondary" onClick={handleExampleCancel}>
+          Cancel
+        </Button>
+        <Button variant="primary" onClick={handleExampleConfirm}>
+          Load
+        </Button>
       </div>
-    </div>
+    </Modal>
   );
 
   const errorModal = (

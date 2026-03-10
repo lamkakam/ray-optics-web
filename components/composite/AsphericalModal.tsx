@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
+import { Modal } from "@/components/micro/Modal";
 
 export type AsphericalType = "Conical" | "EvenAspherical";
 
@@ -65,9 +66,6 @@ export function AsphericalModal({
     padCoefficients(initialCoefficients)
   );
 
-  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropPosition, cx.modal.style.backdropBlur);
-  const panel = clsx(cx.modal.style.panelPosition, cx.modal.style.panelZIndex, cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.style.panelBorderStyle, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow, cx.modal.style.panelAnimation);
-  const title = clsx(cx.modal.style.titleBorderStyle, cx.modal.style.titleFontWeight, cx.modal.size.titleFontSize, cx.modal.size.titleMargin, cx.modal.size.titlePadding, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
   const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
   const input = clsx(cx.input.style.borderRadius, cx.input.style.borderStyle, cx.input.style.outlineStyle, cx.input.style.transitionStyle, cx.input.size.defaultWidth, cx.input.size.focusRingWidth, cx.input.color.focusRingColor, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.horizontalPadding, cx.input.size.verticalPadding, cx.input.size.fontSize);
   const select = clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);
@@ -91,25 +89,8 @@ export function AsphericalModal({
     });
   };
 
-  if (!isOpen) return undefined;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        data-testid="modal-backdrop"
-        className={backdrop}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="aspherical-modal-title"
-        className={`${panel} max-w-md`}
-      >
-        {/* ── Title ── */}
-        <h2 id="aspherical-modal-title" className={title}>
-          Aspherical Parameters
-        </h2>
-
+    <Modal isOpen={isOpen} title="Aspherical Parameters" titleId="aspherical-modal-title" size="md">
         {/* ── Conic constant + Type (2-col grid) ── */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
@@ -176,7 +157,6 @@ export function AsphericalModal({
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

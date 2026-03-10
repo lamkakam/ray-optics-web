@@ -1,7 +1,10 @@
+"use client";
+
 import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
+import { Modal } from "@/components/micro/Modal";
 
 interface ErrorModalProps {
   readonly isOpen: boolean;
@@ -9,21 +12,15 @@ interface ErrorModalProps {
 }
 
 export function ErrorModal({ isOpen, onClose }: ErrorModalProps) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className={clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropPosition, cx.modal.style.backdropBlur)} onClick={onClose} />
-      <div className={clsx(cx.modal.style.panelPosition, cx.modal.style.panelZIndex, cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.style.panelBorderStyle, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow, cx.modal.style.panelAnimation, "max-w-md")} role="dialog" aria-modal="true">
-        <h2 className={clsx(cx.modal.style.titleBorderStyle, cx.modal.style.titleFontWeight, cx.modal.size.titleFontSize, cx.modal.size.titleMargin, cx.modal.size.titlePadding, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor)}>Error</h2>
-        <p className={clsx("mb-6 text-sm", cx.text.color.bodyTextColor)}>
-          The input parameters are invalid. Please check your specifications and
-          prescription.
-        </p>
-        <div className="flex justify-end">
-          <Button variant="primary" onClick={onClose}>OK</Button>
-        </div>
+    <Modal isOpen={isOpen} title="Error" size="md">
+      <p className={clsx("mb-6 text-sm", cx.text.color.bodyTextColor)}>
+        The input parameters are invalid. Please check your specifications and
+        prescription.
+      </p>
+      <div className="flex justify-end">
+        <Button variant="primary" onClick={onClose}>OK</Button>
       </div>
-    </div>
+    </Modal>
   );
 }
