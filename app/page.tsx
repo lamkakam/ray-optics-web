@@ -288,7 +288,7 @@ export default function Home() {
         </h1>
         <Select
           ref={exampleSelectRef}
-          compact
+          type="compact"
           placeholder="Load example system..."
           aria-label="Example system"
           options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
@@ -344,7 +344,7 @@ export default function Home() {
         </h1>
         <Select
           ref={exampleSelectRef}
-          compact
+          type="compact"
           placeholder="Load example system..."
           aria-label="Example system"
           options={exampleSystemNames.map((name) => ({ value: name, label: name }))}

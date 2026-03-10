@@ -72,13 +72,13 @@ describe("Select", () => {
   });
 
   it("does not apply w-full in compact mode", () => {
-    render(<Select options={OPTIONS} compact aria-label="test" />);
+    render(<Select options={OPTIONS} type="compact" aria-label="test" />);
     const el = screen.getByRole("combobox");
     notExpectClasses(el, cx.select.size.defaultWidth);
   });
 
-  it("applies compact token classes when compact=true", () => {
-    render(<Select options={OPTIONS} compact aria-label="test" />);
+  it("applies compact token classes when type is compact", () => {
+    render(<Select options={OPTIONS} type="compact" aria-label="test" />);
     const el = screen.getByRole("combobox");
     expectClasses(el,
       cx.select.style.compactBorderStyle,
