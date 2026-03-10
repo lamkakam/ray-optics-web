@@ -1,5 +1,6 @@
 import React from "react";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Button } from "@/components/micro/Button";
 
 interface LensLayoutPanelProps {
   readonly imageBase64?: string;
@@ -37,15 +38,14 @@ export function LensLayoutPanel({
             : "Configure the System Specs & Lens Prescription below, or choose an example system, then click \u201cUpdate System\u201d to view the lens layout."}
         </div>
       )}
-      <button
-        type="button"
+      <Button
+        variant="floating"
         aria-label="Refresh lens layout"
         disabled={loading}
         onClick={onRefresh}
-        className={`${cx.button.style.floating} ${cx.button.color.floating} ${cx.button.size.xs}`}
       >
         ↻
-      </button>
+      </Button>
     </div>
   );
 }

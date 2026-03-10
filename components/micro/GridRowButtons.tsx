@@ -1,5 +1,5 @@
 import React from "react";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Button } from "@/components/micro/Button";
 
 interface GridRowButtonsProps {
   readonly onAdd?: () => void;
@@ -19,27 +19,27 @@ export function GridRowButtons({
   return (
     <span className="flex items-center gap-2">
       {onAdd !== undefined && (
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="xs"
           title={addLabel}
           aria-label={addLabel}
-          className={`${cx.button.style.iconBase} ${cx.button.color.iconAdd} ${cx.button.size.icon}`}
           style={addHidden ? { visibility: "hidden" } : undefined}
           onClick={onAdd}
         >
           +
-        </button>
+        </Button>
       )}
       {onDelete !== undefined && (
-        <button
-          type="button"
+        <Button
+          variant="danger"
+          size="xs"
           title={deleteLabel}
           aria-label={deleteLabel}
-          className={`${cx.button.style.iconBase} ${cx.button.color.iconDelete} ${cx.button.size.icon}`}
           onClick={onDelete}
         >
           −
-        </button>
+        </Button>
       )}
     </span>
   );

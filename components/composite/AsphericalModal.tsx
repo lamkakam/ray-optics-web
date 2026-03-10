@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Button } from "@/components/micro/Button";
 
 export type AsphericalType = "Conical" | "EvenAspherical";
 
@@ -69,9 +70,6 @@ export function AsphericalModal({
   const label = `${cx.label.style.base} ${cx.label.color.default} ${cx.label.size.default}`;
   const input = `${cx.input.style.base} ${cx.input.color.default} ${cx.input.size.default}`;
   const select = `${cx.select.style.base} ${cx.select.color.default} ${cx.select.size.default}`;
-  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
-  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
-  const btnDanger = `${cx.button.style.base} ${cx.button.color.danger} ${cx.button.size.md}`;
   const divider = `${cx.divider.style.base} ${cx.divider.color.default}`;
 
   const handleConfirm = () => {
@@ -172,16 +170,10 @@ export function AsphericalModal({
 
         {/* ── Actions ── */}
         <div className={`flex items-center gap-3 pt-4 ${divider}`}>
-          <button type="button" className={btnDanger} onClick={onRemove}>
-            Remove Aspherical
-          </button>
+          <Button variant="danger" onClick={onRemove}>Remove Aspherical</Button>
           <span className="flex-1" />
-          <button type="button" className={btnSecondary} onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" className={btnPrimary} onClick={handleConfirm}>
-            Confirm
-          </button>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Button } from "@/components/micro/Button";
 import glassCatalogs from "@/data/glass-catalogs.json";
 
 const MANUFACTURERS = ["Special", ...Object.keys(glassCatalogs)];
@@ -45,8 +46,6 @@ export function MediumSelectorModal({
   const label = `${cx.label.style.base} ${cx.label.color.default} ${cx.label.size.default}`;
   const select = `${cx.select.style.base} ${cx.select.color.default} ${cx.select.size.default}`;
   const divider = `${cx.divider.style.base} ${cx.divider.color.default}`;
-  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
-  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -119,16 +118,10 @@ export function MediumSelectorModal({
 
         {/* ── Actions ── */}
         <div className={`flex items-center justify-end gap-3 pt-4 ${divider}`}>
-          <button type="button" className={btnSecondary} onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className={btnPrimary}
-            onClick={() => onConfirm(medium, isSpecial ? "" : manufacturer)}
-          >
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={() => onConfirm(medium, isSpecial ? "" : manufacturer)}>
             Confirm
-          </button>
+          </Button>
         </div>
       </div>
     </div>

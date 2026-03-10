@@ -1,5 +1,6 @@
 import React from "react";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Button } from "@/components/micro/Button";
 
 interface ErrorModalProps {
   readonly isOpen: boolean;
@@ -19,9 +20,7 @@ export function ErrorModal({ isOpen, onClose }: ErrorModalProps) {
           prescription.
         </p>
         <div className="flex justify-end">
-          <button type="button" className={`${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`} onClick={onClose}>
-            OK
-          </button>
+          <Button variant="primary" onClick={onClose}>OK</Button>
         </div>
       </div>
     </div>
