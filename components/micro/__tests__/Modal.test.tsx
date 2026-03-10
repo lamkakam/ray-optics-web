@@ -81,4 +81,18 @@ describe("Modal", () => {
     expect(h2.id).toBe("my-title-id");
     expect(screen.getByRole("dialog")).toHaveAttribute("aria-labelledby", "my-title-id");
   });
+
+  it.each([
+    ["md", "max-w-md"],
+    ["lg", "max-w-lg"],
+    ["4xl", "max-w-4xl"],
+  ] as const)("applies %s size as %s class on the dialog panel", (size, expectedClass) => {
+    render(<Modal isOpen={true} title="Test Modal" size={size}><p>content</p></Modal>);
+    expect(screen.getByRole("dialog")).toHaveClass(expectedClass);
+  });
+
+  it("defaults to md size when size is not provided", () => {
+    render(<Modal isOpen={true} title="Test Modal"><p>content</p></Modal>);
+    expect(screen.getByRole("dialog")).toHaveClass("max-w-md");
+  });
 });

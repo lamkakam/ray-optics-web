@@ -45,7 +45,7 @@ export function MediumSelectorModal({
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   return (
-    <Modal isOpen={isOpen} title="Select Medium" titleId="medium-modal-title" maxWidth="max-w-md">
+    <Modal isOpen={isOpen} title="Select Medium" titleId="medium-modal-title" size="md">
         {/* ── Form fields ── */}
         <div className="space-y-4 mb-4">
           <div>

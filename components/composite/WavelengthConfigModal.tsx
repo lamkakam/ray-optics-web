@@ -223,7 +223,7 @@ export function WavelengthConfigModal({
   ];
 
   return (
-    <Modal isOpen={isOpen} title="Wavelengths" titleId="wavelength-modal-title" maxWidth="max-w-4xl">
+    <Modal isOpen={isOpen} title="Wavelengths" titleId="wavelength-modal-title" size="4xl">
         <div className="mb-4" style={{ width: "100%" }}>
           <p className={caption}>Maximum 7 wavelengths</p>
           <AgGridProvider modules={[AllCommunityModule]}>

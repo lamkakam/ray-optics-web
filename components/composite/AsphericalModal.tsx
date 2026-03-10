@@ -90,7 +90,7 @@ export function AsphericalModal({
   };
 
   return (
-    <Modal isOpen={isOpen} title="Aspherical Parameters" titleId="aspherical-modal-title" maxWidth="max-w-md">
+    <Modal isOpen={isOpen} title="Aspherical Parameters" titleId="aspherical-modal-title" size="md">
         {/* ── Conic constant + Type (2-col grid) ── */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>

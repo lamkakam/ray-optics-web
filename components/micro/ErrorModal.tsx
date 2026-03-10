@@ -13,7 +13,7 @@ interface ErrorModalProps {
 
 export function ErrorModal({ isOpen, onClose }: ErrorModalProps) {
   return (
-    <Modal isOpen={isOpen} title="Error" maxWidth="max-w-md">
+    <Modal isOpen={isOpen} title="Error" size="md">
       <p className={clsx("mb-6 text-sm", cx.text.color.bodyTextColor)}>
         The input parameters are invalid. Please check your specifications and
         prescription.

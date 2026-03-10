@@ -4,16 +4,24 @@ import React, { useId } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 
+export type ModalSize = "md" | "lg" | "4xl";
+
+const sizeClasses: Record<ModalSize, string> = {
+  md: "max-w-md",
+  lg: "max-w-lg",
+  "4xl": "max-w-4xl",
+};
+
 interface ModalProps {
   readonly isOpen: boolean;
   readonly title: string;
   readonly titleId?: string;
-  readonly maxWidth?: string;
+  readonly size?: ModalSize;
   readonly onBackdropClick?: () => void;
   readonly children: React.ReactNode;
 }
 
-export function Modal({ isOpen, title, titleId, maxWidth = "max-w-md", onBackdropClick, children }: ModalProps) {
+export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, children }: ModalProps) {
   const generatedId = useId();
   const resolvedTitleId = titleId ?? generatedId;
 
@@ -33,7 +41,7 @@ export function Modal({ isOpen, title, titleId, maxWidth = "max-w-md", onBackdro
         role="dialog"
         aria-modal="true"
         aria-labelledby={resolvedTitleId}
-        className={`relative z-10 border animate-modal-enter ${panel} ${maxWidth}`}
+        className={`relative z-10 border animate-modal-enter ${panel} ${sizeClasses[size]}`}
       >
         <h2 id={resolvedTitleId} className={`border-b ${titleClass}`}>{title}</h2>
         {children}

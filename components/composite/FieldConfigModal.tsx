@@ -162,7 +162,7 @@ export function FieldConfigModal({
   ];
 
   return (
-    <Modal isOpen={isOpen} title="Field" titleId="field-modal-title" maxWidth="max-w-lg">
+    <Modal isOpen={isOpen} title="Field" titleId="field-modal-title" size="lg">
         <div className="mb-4 flex items-center gap-3">
           <div>
             <label className={label} htmlFor="field-space">Field space</label>
