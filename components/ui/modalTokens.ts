@@ -8,23 +8,21 @@
 
 const globalTokens = {
   color: {
+    primaryColor: "bg-blue-600",
+    errorColor: "bg-red-600",
+    primaryText: "text-gray-900 dark:text-gray-100",
+    secondaryText: "text-gray-700 dark:text-gray-300",
+    mutedText: "text-gray-500 dark:text-gray-400",
     reverseText: "text-white",
     defaultBorder: "border-gray-200 dark:border-gray-700",
     inputBorder: "border-gray-300 dark:border-gray-600",
     surfaceBg: "bg-gray-50 dark:bg-gray-800",
-    primaryText: "text-gray-900 dark:text-gray-100",
-    secondaryText: "text-gray-700 dark:text-gray-300",
-    mutedText: "text-gray-500 dark:text-gray-400",
+    focusRingColor: "focus:ring-blue-500",
   },
   size: {
-    inputPadding: "px-3 py-2",
-    btnMd: "px-4 py-2",
-    btnSm: "px-3 py-1.5 text-sm",
-    btnXs: "px-2 py-1 text-xs",
+    focusRingWidth: "focus:ring-2",
   },
-  style: {
-    inputBase: "w-full rounded-lg border outline-none transition focus:ring-2 focus:ring-blue-500",
-  },
+  style: {},
 } as const;
 
 const g = globalTokens;
@@ -32,10 +30,10 @@ const g = globalTokens;
 export const componentTokens = {
   button: {
     color: {
-      primaryBgColor: "bg-blue-600",
+      primaryBgColor: g.color.primaryColor,
       primaryHoverBgColor: "hover:bg-blue-700",
       primaryTextColor: g.color.reverseText,
-      dangerBgColor: "bg-red-600",
+      dangerBgColor: g.color.errorColor,
       dangerHoverBgColor: "hover:bg-red-700",
       dangerTextColor: g.color.reverseText,
       secondaryBorderColor: g.color.inputBorder,
@@ -55,97 +53,146 @@ export const componentTokens = {
       iconTextColor: g.color.secondaryText,
     },
     size: {
-      md: g.size.btnMd,
-      sm: g.size.btnSm,
-      xs: g.size.btnXs,
+      horizontalPaddingMd: "px-4",
+      verticalPaddingMd: "py-2",
+      horizontalPaddingSm: "px-3",
+      verticalPaddingSm: "py-1.5",
+      horizontalPaddingXs: "px-2",
+      verticalPaddingXs: "py-1",
+      fontSizeMd: "text-base",
+      fontSizeSm: "text-sm",
+      fontSizeXs: "text-xs",
+      iconHorizontalMargin: "w-6",
+      iconVerticalMargin: "h-6",
+      floatingHorizontalMargin: "right-2",
+      floatingVerticalMargin: "top-2",
     },
     style: {
       borderRadius: "rounded-lg",
       fontWeight: "font-medium",
       iconBorderRadius: "rounded",
       iconFontWeight: "font-bold",
-      iconHorizontalMargin: "w-6",
-      iconVerticalMargin: "h-6",
       opacity: "disabled:opacity-50",
       cursor: "cursor-pointer disabled:cursor-not-allowed",
-      floatingHorizontalMargin: "right-2",
-      floatingVerticalMargin: "top-2",
     },
   },
 
   input: {
     color: {
-      default: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
+      borderColor: g.color.inputBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: g.color.primaryText,
+      focusRingColor: g.color.focusRingColor,
     },
     size: {
-      default: `${g.size.inputPadding} text-sm`,
+      horizontalPadding: "px-3",
+      verticalPadding: "py-2",
+      fontSize: "text-sm",
+      defaultWidth: "w-full",
+      focusRingWidth: g.size.focusRingWidth,
     },
     style: {
-      base: g.style.inputBase,
+      borderRadius: "rounded-lg",
+      borderStyle: "border",
+      outlineStyle: "outline-none",
+      transitionStyle: "transition",
     },
   },
 
   select: {
     color: {
-      default: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
-      compact: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
+      borderColor: g.color.inputBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: g.color.primaryText,
+      focusRingColor: g.color.focusRingColor,
     },
     size: {
-      default: `${g.size.inputPadding} text-sm`,
-      compact: "px-2 py-1.5 text-sm",
+      horizontalPadding: "px-3",
+      verticalPadding: "py-2",
+      fontSize: "text-sm",
+      compactHorizontalPadding: "px-2",
+      compactVerticalPadding: "py-1.5",
+      compactFontSize: "text-sm",
+      defaultWidth: "w-full",
+      focusRingWidth: g.size.focusRingWidth,
     },
     style: {
-      base: g.style.inputBase,
-      compact: "rounded-lg border outline-none",
+      compactBorderStyle: "border",
+      compactBorderRadius: "rounded-lg",
+      compactOutlineStyle: "outline-none",
+      borderRadius: "rounded-lg",
+      borderStyle: "border",
+      outlineStyle: "outline-none",
+      transitionStyle: "transition",
     },
   },
 
   modal: {
     color: {
-      backdrop: "bg-black/50",
-      panel: `${g.color.defaultBorder} bg-white dark:bg-gray-900`,
-      title: `${g.color.defaultBorder} ${g.color.primaryText}`,
+      backdropBgColor: "bg-black/50",
+      panelBorderColor: g.color.defaultBorder,
+      panelBgColor: "bg-white dark:bg-gray-900",
+      titleBorderColor: g.color.defaultBorder,
+      titleTextColor: g.color.primaryText,
     },
     size: {
-      panel: "p-6",
+      panelPadding: "p-6",
+      panelWidth: "w-full",
+      titleFontSize: "text-lg",
+      titlePadding: "pb-3",
+      titleMargin: "mb-4",
     },
     style: {
-      backdrop: "absolute inset-0 backdrop-blur-sm",
-      panel: "relative z-10 w-full rounded-2xl border shadow-2xl animate-modal-enter",
-      title: "mb-4 border-b pb-3 text-lg font-semibold",
+      backdropPosition: "absolute inset-0",
+      backdropBlur: "backdrop-blur-sm",
+      panelPosition: "relative",
+      panelZIndex: "z-10",
+      panelBorderRadius: "rounded-2xl",
+      panelBorderStyle: "border",
+      panelShadow: "shadow-2xl",
+      panelAnimation: "animate-modal-enter",
+      titleBorderStyle: "border-b",
+      titleFontWeight: "font-semibold",
     },
   },
 
   label: {
     color: {
-      default: g.color.secondaryText,
-      caption: "text-gray-500",
+      textColor: g.color.secondaryText,
+      captionTextColor: "text-gray-500",
     },
     size: {
       default: "text-sm",
       caption: "text-xs",
+      baseMargin: "mb-1",
     },
     style: {
-      base: "mb-1 block font-medium",
       caption: "mb-1",
+      baseDisplay: "block",
+      baseFontWeight: "font-medium",
     },
   },
 
   chip: {
     color: {
-      default: `${g.color.defaultBorder} ${g.color.surfaceBg} text-gray-600 dark:text-gray-400`,
+      borderColor: g.color.defaultBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: "text-gray-600 dark:text-gray-400",
     },
     size: {
-      default: "px-2 py-0.5 text-xs",
+      horizontalPadding: "px-2",
+      verticalPadding: "py-0.5",
+      fontSize: "text-xs",
     },
     style: {
-      base: "rounded-full border",
+      borderRadius: "rounded-full",
+      borderStyle: "border",
     },
   },
 
   divider: {
     color: {
-      default: g.color.defaultBorder,
+      borderColor: g.color.defaultBorder,
     },
     style: {
       base: "border-t",
@@ -154,20 +201,32 @@ export const componentTokens = {
 
   tooltip: {
     color: {
-      default: "bg-gray-900 text-white",
+      bgColor: "bg-gray-900",
+      textColor: "text-white",
     },
     size: {
-      default: "px-2 py-1 text-xs",
+      horizontalPadding: "px-2",
+      verticalPadding: "py-1",
+      fontSize: "text-xs",
     },
     style: {
-      base: "pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded opacity-0 transition-opacity group-hover:opacity-100 z-10",
+      position: "absolute left-1/2 -translate-x-1/2",
+      pointerEvents: "pointer-events-none",
+      whiteSpace: "whitespace-nowrap",
+      borderRadius: "rounded",
+      opacity: "opacity-0",
+      transition: "transition-opacity",
+      hoverOpacity: "group-hover:opacity-100",
+      zIndex: "z-10",
     },
   },
 
   tab: {
     color: {
-      active: "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100",
-      inactive: "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
+      activeBgColor: "bg-gray-100 dark:bg-gray-800",
+      activeTextColor: "text-gray-900 dark:text-gray-100",
+      inactiveTextColor: "text-gray-500 dark:text-gray-400",
+      inactiveHoverTextColor: "hover:text-gray-700 dark:hover:text-gray-200",
     },
     size: {},
     style: {},
@@ -175,33 +234,45 @@ export const componentTokens = {
 
   text: {
     color: {
-      loading: g.color.mutedText,
-      placeholder: "text-gray-400 dark:text-gray-500",
-      body: g.color.secondaryText,
-      heading: g.color.primaryText,
-      empty: "text-gray-400 dark:text-gray-500",
+      loadingTextColor: g.color.mutedText,
+      placeholderTextColor: "text-gray-400 dark:text-gray-500",
+      bodyTextColor: g.color.secondaryText,
+      headingTextColor: g.color.primaryText,
+      emptyTextColor: "text-gray-400 dark:text-gray-500",
     },
   },
 
   panel: {
     color: {
-      loadingOverlay: "bg-white/60 dark:bg-gray-900/60",
+      loadingOverlayBgColor: "bg-white/60 dark:bg-gray-900/60",
+    },
+    size: {
+      emptyStateFontSize: "text-sm",
     },
     style: {
       imageContainer: "relative flex h-full w-full flex-col items-center justify-center",
       loadingOverlay: "absolute inset-0 flex items-center justify-center",
-      emptyState: "flex items-center justify-center text-sm",
+      emptyStateLayout: "flex items-center justify-center",
     },
   },
 
   overlay: {
     color: {
-      init: "bg-gray-900/60",
-      card: "bg-white/10 text-white dark:bg-black/20",
+      initBgColor: "bg-gray-900/60",
+      cardBgColor: "bg-white/10 dark:bg-black/20",
+      cardTextColor: "text-white",
+    },
+    size: {
+      cardHorizontalPadding: "px-10",
+      cardVerticalPadding: "py-8",
     },
     style: {
-      init: "fixed inset-0 z-[200] flex flex-col items-center justify-center backdrop-blur-sm",
-      card: "flex flex-col items-center gap-4 rounded-xl px-10 py-8 shadow-xl",
+      initLayout: "fixed inset-0 flex flex-col items-center justify-center",
+      initZIndex: "z-[200]",
+      initBlur: "backdrop-blur-sm",
+      cardLayout: "flex flex-col items-center gap-4",
+      cardBorderRadius: "rounded-xl",
+      cardShadow: "shadow-xl",
     },
   },
 } as const;

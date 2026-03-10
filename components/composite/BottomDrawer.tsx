@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 
 interface DrawerTab {
@@ -90,9 +91,12 @@ export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
                 role="tab"
                 aria-label={tab.label}
                 aria-selected={activeTab === tab.id}
-                className={`rounded-t-lg px-3 py-1.5 text-sm font-medium transition ${
-                  activeTab === tab.id ? cx.tab.color.active : cx.tab.color.inactive
-                }`}
+                className={clsx(
+                  "rounded-t-lg px-3 py-1.5 text-sm font-medium transition",
+                  activeTab === tab.id
+                    ? [cx.tab.color.activeBgColor, cx.tab.color.activeTextColor]
+                    : [cx.tab.color.inactiveTextColor, cx.tab.color.inactiveHoverTextColor],
+                )}
                 onClick={() => setActiveTab(tab.id)}
               >
                 {tab.label}

@@ -43,7 +43,9 @@ describe("Button", () => {
       cx.button.color.primaryBgColor,
       cx.button.color.primaryHoverBgColor,
       cx.button.color.primaryTextColor,
-      cx.button.size.md,
+      cx.button.size.horizontalPaddingMd,
+      cx.button.size.verticalPaddingMd,
+      cx.button.size.fontSizeMd,
       cx.button.style.opacity,
     );
   });
@@ -60,7 +62,9 @@ describe("Button", () => {
       cx.button.color.secondaryBgColor,
       cx.button.color.secondaryTextColor,
       cx.button.color.secondaryHoverBgColor,
-      cx.button.size.md,
+      cx.button.size.horizontalPaddingMd,
+      cx.button.size.verticalPaddingMd,
+      cx.button.size.fontSizeMd,
       cx.button.style.opacity,
     );
     expect(btn).toHaveClass("border");
@@ -78,7 +82,9 @@ describe("Button", () => {
       cx.button.color.toggleBgColor,
       cx.button.color.toggleTextColor,
       cx.button.color.toggleHoverBgColor,
-      cx.button.size.md,
+      cx.button.size.horizontalPaddingMd,
+      cx.button.size.verticalPaddingMd,
+      cx.button.size.fontSizeMd,
       cx.button.style.opacity,
     );
     expect(btn).toHaveClass("border");
@@ -95,7 +101,9 @@ describe("Button", () => {
       cx.button.color.dangerBgColor,
       cx.button.color.dangerHoverBgColor,
       cx.button.color.dangerTextColor,
-      cx.button.size.md,
+      cx.button.size.horizontalPaddingMd,
+      cx.button.size.verticalPaddingMd,
+      cx.button.size.fontSizeMd,
       cx.button.style.opacity,
     );
   });
@@ -105,14 +113,16 @@ describe("Button", () => {
     const btn = screen.getByRole("button");
     expectClasses(btn,
       cx.button.style.borderRadius,
-      cx.button.style.floatingHorizontalMargin,
-      cx.button.style.floatingVerticalMargin,
+      cx.button.size.floatingHorizontalMargin,
+      cx.button.size.floatingVerticalMargin,
       cx.button.style.cursor,
       cx.button.color.floatingBorderColor,
       cx.button.color.floatingBgColor,
       cx.button.color.floatingTextColor,
       cx.button.color.floatingHoverBgColor,
-      cx.button.size.xs,
+      cx.button.size.horizontalPaddingXs,
+      cx.button.size.verticalPaddingXs,
+      cx.button.size.fontSizeXs,
       cx.button.style.opacity,
     );
     expect(btn).toHaveClass("absolute", "border");
@@ -127,8 +137,8 @@ describe("Button", () => {
       "justify-center",
       cx.button.style.iconBorderRadius,
       cx.button.style.iconFontWeight,
-      cx.button.style.iconHorizontalMargin,
-      cx.button.style.iconVerticalMargin,
+      cx.button.size.iconHorizontalMargin,
+      cx.button.size.iconVerticalMargin,
       cx.button.style.cursor,
       cx.button.color.iconBgColor,
       cx.button.color.iconHoverBgColor,
@@ -146,10 +156,11 @@ describe("Button", () => {
     splitClasses(cx.button.style.fontWeight).forEach((cls) => {
       expect(btn).not.toHaveClass(cls);
     });
-    splitClasses(cx.button.size.md).forEach((cls) => {
+    // horizontalPaddingMd (px-4) is unique to md and must not appear on icon
+    splitClasses(cx.button.size.horizontalPaddingMd).forEach((cls) => {
       expect(btn).not.toHaveClass(cls);
     });
-    expectClasses(btn, cx.button.style.iconBorderRadius, cx.button.style.iconFontWeight);
+    expectClasses(btn, cx.button.style.iconBorderRadius, cx.button.style.iconFontWeight, cx.button.size.iconHorizontalMargin, cx.button.size.iconVerticalMargin);
   });
 
   it("variant danger size xs applies correct token classes", () => {
@@ -163,7 +174,27 @@ describe("Button", () => {
       cx.button.color.dangerBgColor,
       cx.button.color.dangerHoverBgColor,
       cx.button.color.dangerTextColor,
-      cx.button.size.xs,
+      cx.button.size.horizontalPaddingXs,
+      cx.button.size.verticalPaddingXs,
+      cx.button.size.fontSizeXs,
+      cx.button.style.opacity,
+    );
+  });
+
+  it("variant primary size sm applies correct token classes", () => {
+    render(<Button variant="primary" size="sm">P</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn,
+      cx.button.style.borderRadius,
+      cx.button.style.fontWeight,
+      "transition",
+      cx.button.style.cursor,
+      cx.button.color.primaryBgColor,
+      cx.button.color.primaryHoverBgColor,
+      cx.button.color.primaryTextColor,
+      cx.button.size.horizontalPaddingSm,
+      cx.button.size.verticalPaddingSm,
+      cx.button.size.fontSizeSm,
       cx.button.style.opacity,
     );
   });
@@ -171,8 +202,13 @@ describe("Button", () => {
   it("floating variant always uses xs size regardless of size prop", () => {
     render(<Button variant="floating" size="md">↻</Button>);
     const btn = screen.getByRole("button");
-    expectClasses(btn, cx.button.size.xs);
-    splitClasses(cx.button.size.md).forEach((cls) => {
+    expectClasses(btn,
+      cx.button.size.horizontalPaddingXs,
+      cx.button.size.verticalPaddingXs,
+      cx.button.size.fontSizeXs,
+    );
+    // horizontalPaddingMd (px-4) is unique to md and must not appear when xs is forced
+    splitClasses(cx.button.size.horizontalPaddingMd).forEach((cls) => {
       expect(btn).not.toHaveClass(cls);
     });
   });

@@ -1,4 +1,5 @@
 import React from "react";
+import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 
 interface FirstOrderChipsProps {
@@ -22,7 +23,7 @@ export function FirstOrderChips({ data }: FirstOrderChipsProps) {
     ({ key, format }) => (
       <span
         key={key}
-        className={`${cx.chip.style.base} ${cx.chip.color.default} ${cx.chip.size.default}`}
+        className={clsx(cx.chip.style.borderRadius, cx.chip.style.borderStyle, cx.chip.color.borderColor, cx.chip.color.bgColor, cx.chip.color.textColor, cx.chip.size.horizontalPadding, cx.chip.size.verticalPadding, cx.chip.size.fontSize)}
       >
         {format(data[key])}
       </span>
