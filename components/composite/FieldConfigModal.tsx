@@ -122,8 +122,8 @@ export function FieldConfigModal({
   const panel = clsx(cx.modal.style.panel, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding);
   const title = clsx(cx.modal.style.title, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
   const label = clsx(cx.label.style.base, cx.label.color.textColor, cx.label.size.default);
-  const select = clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.padding, cx.select.size.fontSize);
-  const input = clsx(cx.input.style.base, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.padding, cx.input.size.fontSize);
+  const select = clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);
+  const input = clsx(cx.input.style.base, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.horizontalPadding, cx.input.size.verticalPadding, cx.input.size.fontSize);
   const caption = clsx(cx.label.style.caption, cx.label.color.captionTextColor, cx.label.size.caption);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 

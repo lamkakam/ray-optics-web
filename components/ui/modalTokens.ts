@@ -16,9 +16,7 @@ const globalTokens = {
     secondaryText: "text-gray-700 dark:text-gray-300",
     mutedText: "text-gray-500 dark:text-gray-400",
   },
-  size: {
-    inputPadding: "px-3 py-2",
-  },
+  size: {},
   style: {
     inputBase: "w-full rounded-lg border outline-none transition focus:ring-2 focus:ring-blue-500",
   },
@@ -83,7 +81,8 @@ export const componentTokens = {
       textColor: g.color.primaryText,
     },
     size: {
-      padding: g.size.inputPadding,
+      horizontalPadding: "px-3",
+      verticalPadding: "py-2",
       fontSize: "text-sm",
     },
     style: {
@@ -98,14 +97,18 @@ export const componentTokens = {
       textColor: g.color.primaryText,
     },
     size: {
-      padding: g.size.inputPadding,
+      horizontalPadding: "px-3",
+      verticalPadding: "py-2",
       fontSize: "text-sm",
-      compactPadding: "px-2 py-1.5",
+      compactHorizontalPadding: "px-2",
+      compactVerticalPadding: "py-1.5",
       compactFontSize: "text-sm",
     },
     style: {
       base: g.style.inputBase,
-      compact: "rounded-lg border outline-none",
+      compactBorderStyle: "border",
+      compactBorderRadius: "rounded-lg",
+      compactOutlineStyle: "outline-none",
     },
   },
 

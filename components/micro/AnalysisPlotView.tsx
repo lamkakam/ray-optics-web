@@ -46,7 +46,7 @@ export function AnalysisPlotView({
           <select
             id="analysis-field-select"
             aria-label="Field"
-            className={clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.padding, cx.select.size.fontSize)}
+            className={clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize)}
             value={selectedFieldIndex}
             onChange={(e) => onFieldChange(Number(e.target.value))}
           >
@@ -64,7 +64,7 @@ export function AnalysisPlotView({
           <select
             id="analysis-plot-type-select"
             aria-label="Plot type"
-            className={clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.padding, cx.select.size.fontSize)}
+            className={clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize)}
             value={selectedPlotType}
             onChange={(e) => onPlotTypeChange(e.target.value as PlotType)}
           >
