@@ -8,6 +8,7 @@ import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
 import { Input } from "@/components/micro/Input";
+import { Select } from "@/components/micro/Select";
 import { useTheme } from "@/components/ThemeProvider";
 import type { FieldSpace, FieldType } from "@/store/specsConfigurerStore";
 
@@ -119,7 +120,6 @@ export function FieldConfigModal({
   const atLimit = rows.length >= MAX_ROWS;
 
   const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
-  const select = clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);
   const caption = clsx(cx.label.style.caption, cx.label.color.captionTextColor, cx.label.size.caption);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
@@ -166,29 +166,29 @@ export function FieldConfigModal({
         <div className="mb-4 flex items-center gap-3">
           <div>
             <label className={label} htmlFor="field-space">Field space</label>
-            <select
+            <Select
               id="field-space"
               aria-label="Field space"
-              className={select}
               value={space}
               onChange={(e) => setSpace(e.target.value as FieldSpace)}
-            >
-              <option value="object">Object</option>
-              <option value="image">Image</option>
-            </select>
+              options={[
+                { value: "object", label: "Object" },
+                { value: "image", label: "Image" },
+              ]}
+            />
           </div>
           <div>
             <label className={label} htmlFor="field-type">Field type</label>
-            <select
+            <Select
               id="field-type"
               aria-label="Field type"
-              className={select}
               value={fieldType}
               onChange={(e) => setFieldType(e.target.value as FieldType)}
-            >
-              <option value="height">Height</option>
-              <option value="angle">Angle</option>
-            </select>
+              options={[
+                { value: "height", label: "Height" },
+                { value: "angle", label: "Angle" },
+              ]}
+            />
           </div>
           <div>
             <label className={label} htmlFor="field-max">Max field value</label>
