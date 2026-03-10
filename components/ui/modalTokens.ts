@@ -40,8 +40,6 @@ export const componentTokens = {
       toggle:     `${g.color.inputBorder} ${g.color.secondaryText} hover:bg-blue-50 dark:bg-gray-800 dark:hover:bg-gray-700`,
       danger:     `${g.color.dangerBg} ${g.color.inverseText}`,
       floating:   `${g.color.inputBorder} bg-white/80 text-gray-600 hover:bg-gray-100 dark:bg-gray-800/80 dark:text-gray-300 dark:hover:bg-gray-700`,
-      iconAdd:    `${g.color.primaryBg} ${g.color.inverseText}`,
-      iconDelete: `${g.color.dangerBg} ${g.color.inverseText}`,
     },
     size: {
       md:   g.size.btnMd,

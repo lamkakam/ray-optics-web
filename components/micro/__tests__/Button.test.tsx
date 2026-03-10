@@ -89,26 +89,49 @@ describe("Button", () => {
     );
   });
 
-  it("variant iconAdd applies correct token classes", () => {
-    render(<Button variant="iconAdd">+</Button>);
+  it("variant primary size icon applies iconBase style and icon size", () => {
+    render(<Button variant="primary" size="icon">+</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
       cx.button.style.iconBase,
-      cx.button.color.iconAdd,
+      cx.button.color.primary,
       cx.button.size.icon,
       cx.button.style.disabled,
     );
   });
 
-  it("variant iconDelete applies correct token classes", () => {
-    render(<Button variant="iconDelete">−</Button>);
+  it("variant danger size icon applies iconBase style and icon size", () => {
+    render(<Button variant="danger" size="icon">−</Button>);
     const btn = screen.getByRole("button");
     expectClasses(btn,
       cx.button.style.iconBase,
-      cx.button.color.iconDelete,
+      cx.button.color.danger,
       cx.button.size.icon,
       cx.button.style.disabled,
     );
+  });
+
+  it("size icon uses iconBase style not base", () => {
+    render(<Button variant="primary" size="icon">+</Button>);
+    const btn = screen.getByRole("button");
+    // iconBase and base share some classes (transition, cursor-pointer);
+    // verify classes exclusive to base are absent and iconBase-exclusive ones present
+    const iconBaseClasses = new Set(splitClasses(cx.button.style.iconBase));
+    splitClasses(cx.button.style.base).forEach((cls) => {
+      if (!iconBaseClasses.has(cls)) {
+        expect(btn).not.toHaveClass(cls);
+      }
+    });
+    expectClasses(btn, cx.button.style.iconBase);
+  });
+
+  it("floating variant always uses xs size regardless of size prop", () => {
+    render(<Button variant="floating" size="md">↻</Button>);
+    const btn = screen.getByRole("button");
+    expectClasses(btn, cx.button.size.xs);
+    splitClasses(cx.button.size.md).forEach((cls) => {
+      expect(btn).not.toHaveClass(cls);
+    });
   });
 
   it("merges extra className", () => {
