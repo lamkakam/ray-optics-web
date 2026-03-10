@@ -1,5 +1,6 @@
 import { create, type StateCreator } from "zustand";
 import type { GridRow } from "@/lib/gridTypes";
+import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/lib/gridTypes";
 import { gridRowsToSurfaces } from "@/lib/gridTransform";
 import { generateRowId } from "@/lib/gridTransform";
 
@@ -26,8 +27,13 @@ export interface LensEditorState {
   exportToJson: () => string;
 }
 
+const DEFAULT_ROWS: GridRow[] = [
+  { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+  { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
+];
+
 export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) => ({
-  rows: [],
+  rows: DEFAULT_ROWS,
   selectedRowId: undefined,
   mediumModal: { open: false, rowId: "" },
   asphericalModal: { open: false, rowId: "" },
