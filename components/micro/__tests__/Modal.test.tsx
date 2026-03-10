@@ -35,12 +35,23 @@ describe("Modal", () => {
     expect(screen.getByTestId("modal-backdrop")).toBeInTheDocument();
   });
 
-  it("backdrop has no onClick handler", async () => {
+  it("backdrop has no onClick handler when onBackdropClick is not provided", async () => {
     render(<Modal isOpen={true} title="Test Modal"><p>content</p></Modal>);
     const backdrop = screen.getByTestId("modal-backdrop");
     // Should not throw and nothing should happen
     await userEvent.click(backdrop);
     expect(backdrop).toBeInTheDocument();
+  });
+
+  it("calls onBackdropClick when backdrop is clicked", async () => {
+    const onBackdropClick = jest.fn();
+    render(
+      <Modal isOpen={true} title="Test Modal" onBackdropClick={onBackdropClick}>
+        <p>content</p>
+      </Modal>
+    );
+    await userEvent.click(screen.getByTestId("modal-backdrop"));
+    expect(onBackdropClick).toHaveBeenCalledTimes(1);
   });
 
   it("keyboard events do not propagate out of modal container", () => {

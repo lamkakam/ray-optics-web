@@ -9,10 +9,11 @@ interface ModalProps {
   readonly title: string;
   readonly titleId?: string;
   readonly maxWidth?: string;
+  readonly onBackdropClick?: () => void;
   readonly children: React.ReactNode;
 }
 
-export function Modal({ isOpen, title, titleId, maxWidth = "max-w-md", children }: ModalProps) {
+export function Modal({ isOpen, title, titleId, maxWidth = "max-w-md", onBackdropClick, children }: ModalProps) {
   const generatedId = useId();
   const resolvedTitleId = titleId ?? generatedId;
 
@@ -27,7 +28,7 @@ export function Modal({ isOpen, title, titleId, maxWidth = "max-w-md", children 
       className="fixed inset-0 z-50 flex items-center justify-center"
       onKeyDown={(e) => e.stopPropagation()}
     >
-      <div data-testid="modal-backdrop" className={backdrop} />
+      <div data-testid="modal-backdrop" className={backdrop} onClick={onBackdropClick} />
       <div
         role="dialog"
         aria-modal="true"
