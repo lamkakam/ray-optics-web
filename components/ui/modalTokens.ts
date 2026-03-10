@@ -75,7 +75,9 @@ export const componentTokens = {
 
   input: {
     color: {
-      default: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
+      borderColor: g.color.inputBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: g.color.primaryText,
     },
     size: {
       default: `${g.size.inputPadding} text-sm`,
@@ -87,8 +89,9 @@ export const componentTokens = {
 
   select: {
     color: {
-      default: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
-      compact: `${g.color.inputBorder} ${g.color.surfaceBg} ${g.color.primaryText}`,
+      borderColor: g.color.inputBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: g.color.primaryText,
     },
     size: {
       default: `${g.size.inputPadding} text-sm`,
@@ -102,12 +105,14 @@ export const componentTokens = {
 
   modal: {
     color: {
-      backdrop: "bg-black/50",
-      panel: `${g.color.defaultBorder} bg-white dark:bg-gray-900`,
-      title: `${g.color.defaultBorder} ${g.color.primaryText}`,
+      backdropBgColor: "bg-black/50",
+      panelBorderColor: g.color.defaultBorder,
+      panelBgColor: "bg-white dark:bg-gray-900",
+      titleBorderColor: g.color.defaultBorder,
+      titleTextColor: g.color.primaryText,
     },
     size: {
-      panel: "p-6",
+      panelPadding: "p-6",
     },
     style: {
       backdrop: "absolute inset-0 backdrop-blur-sm",
@@ -118,8 +123,8 @@ export const componentTokens = {
 
   label: {
     color: {
-      default: g.color.secondaryText,
-      caption: "text-gray-500",
+      textColor: g.color.secondaryText,
+      captionTextColor: "text-gray-500",
     },
     size: {
       default: "text-sm",
@@ -133,7 +138,9 @@ export const componentTokens = {
 
   chip: {
     color: {
-      default: `${g.color.defaultBorder} ${g.color.surfaceBg} text-gray-600 dark:text-gray-400`,
+      borderColor: g.color.defaultBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: "text-gray-600 dark:text-gray-400",
     },
     size: {
       default: "px-2 py-0.5 text-xs",
@@ -145,7 +152,7 @@ export const componentTokens = {
 
   divider: {
     color: {
-      default: g.color.defaultBorder,
+      borderColor: g.color.defaultBorder,
     },
     style: {
       base: "border-t",
@@ -154,7 +161,8 @@ export const componentTokens = {
 
   tooltip: {
     color: {
-      default: "bg-gray-900 text-white",
+      bgColor: "bg-gray-900",
+      textColor: "text-white",
     },
     size: {
       default: "px-2 py-1 text-xs",
@@ -166,8 +174,10 @@ export const componentTokens = {
 
   tab: {
     color: {
-      active: "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100",
-      inactive: "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
+      activeBgColor: "bg-gray-100 dark:bg-gray-800",
+      activeTextColor: "text-gray-900 dark:text-gray-100",
+      inactiveTextColor: "text-gray-500 dark:text-gray-400",
+      inactiveHoverTextColor: "hover:text-gray-700 dark:hover:text-gray-200",
     },
     size: {},
     style: {},
@@ -175,17 +185,17 @@ export const componentTokens = {
 
   text: {
     color: {
-      loading: g.color.mutedText,
-      placeholder: "text-gray-400 dark:text-gray-500",
-      body: g.color.secondaryText,
-      heading: g.color.primaryText,
-      empty: "text-gray-400 dark:text-gray-500",
+      loadingTextColor: g.color.mutedText,
+      placeholderTextColor: "text-gray-400 dark:text-gray-500",
+      bodyTextColor: g.color.secondaryText,
+      headingTextColor: g.color.primaryText,
+      emptyTextColor: "text-gray-400 dark:text-gray-500",
     },
   },
 
   panel: {
     color: {
-      loadingOverlay: "bg-white/60 dark:bg-gray-900/60",
+      loadingOverlayBgColor: "bg-white/60 dark:bg-gray-900/60",
     },
     style: {
       imageContainer: "relative flex h-full w-full flex-col items-center justify-center",
@@ -196,8 +206,9 @@ export const componentTokens = {
 
   overlay: {
     color: {
-      init: "bg-gray-900/60",
-      card: "bg-white/10 text-white dark:bg-black/20",
+      initBgColor: "bg-gray-900/60",
+      cardBgColor: "bg-white/10 dark:bg-black/20",
+      cardTextColor: "text-white",
     },
     style: {
       init: "fixed inset-0 z-[200] flex flex-col items-center justify-center backdrop-blur-sm",

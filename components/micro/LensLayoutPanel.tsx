@@ -1,4 +1,5 @@
 import React from "react";
+import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
 
@@ -14,7 +15,7 @@ export function LensLayoutPanel({
   onRefresh,
 }: LensLayoutPanelProps) {
   return (
-    <div className={cx.panel.style.imageContainer}>
+    <div className={clsx(cx.panel.style.imageContainer)}>
       {imageBase64 ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element -- base64 data URI, not optimizable by next/image */}
@@ -24,15 +25,15 @@ export function LensLayoutPanel({
             className="max-h-full max-w-full object-contain"
           />
           {loading && (
-            <div className={`${cx.panel.style.loadingOverlay} ${cx.panel.color.loadingOverlay}`}>
-              <span className={`text-sm ${cx.text.color.loading}`}>
+            <div className={clsx(cx.panel.style.loadingOverlay, cx.panel.color.loadingOverlayBgColor)}>
+              <span className={clsx("text-sm", cx.text.color.loadingTextColor)}>
                 Updating...
               </span>
             </div>
           )}
         </>
       ) : (
-        <div className={`${cx.panel.style.emptyState} ${cx.text.color.empty}`}>
+        <div className={clsx(cx.panel.style.emptyState, cx.text.color.emptyTextColor)}>
           {loading
             ? "Loading lens layout..."
             : "Configure the System Specs & Lens Prescription below, or choose an example system, then click \u201cUpdate System\u201d to view the lens layout."}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
 
@@ -64,13 +65,13 @@ export function AsphericalModal({
     padCoefficients(initialCoefficients)
   );
 
-  const backdrop = `${cx.modal.color.backdrop} ${cx.modal.style.backdrop}`;
-  const panel = `${cx.modal.style.panel} ${cx.modal.color.panel} ${cx.modal.size.panel}`;
-  const title = `${cx.modal.style.title} ${cx.modal.color.title}`;
-  const label = `${cx.label.style.base} ${cx.label.color.default} ${cx.label.size.default}`;
-  const input = `${cx.input.style.base} ${cx.input.color.default} ${cx.input.size.default}`;
-  const select = `${cx.select.style.base} ${cx.select.color.default} ${cx.select.size.default}`;
-  const divider = `${cx.divider.style.base} ${cx.divider.color.default}`;
+  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdrop);
+  const panel = clsx(cx.modal.style.panel, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding);
+  const title = clsx(cx.modal.style.title, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
+  const label = clsx(cx.label.style.base, cx.label.color.textColor, cx.label.size.default);
+  const input = clsx(cx.input.style.base, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.default);
+  const select = clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.default);
+  const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   const handleConfirm = () => {
     const conicConstant = parseNumericString(conicConstantStr, initialConicConstant);

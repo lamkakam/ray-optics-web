@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Tooltip } from "@/components/micro/Tooltip";
 import { Button } from "@/components/micro/Button";
@@ -74,13 +75,13 @@ export function SpecsConfigurerPanel({
     <div className="max-w-[50vw] space-y-4">
       {/* System Aperture */}
       <section>
-        <h3 className={`mb-2 text-sm font-semibold ${cx.text.color.heading}`}>
+        <h3 className={clsx("mb-2 text-sm font-semibold", cx.text.color.headingTextColor)}>
           System Aperture
         </h3>
         <div className="flex items-center gap-3">
           <select
             aria-label="System aperture type"
-            className={`${cx.select.style.base} ${cx.select.color.default} ${cx.select.size.default}`}
+            className={clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.default)}
             value={currentDropdownValue}
             onChange={handleDropdownChange}
           >
@@ -93,7 +94,7 @@ export function SpecsConfigurerPanel({
           <input
             type="text"
             aria-label="Aperture value"
-            className={`${cx.input.style.base} ${cx.input.color.default} ${cx.input.size.default}`}
+            className={clsx(cx.input.style.base, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.default)}
             value={valueStr}
             onChange={(e) => setValueStr(e.target.value)}
             onBlur={handleValueBlur}
@@ -103,7 +104,7 @@ export function SpecsConfigurerPanel({
 
       {/* Field */}
       <section>
-        <h3 className={`mb-2 text-sm font-semibold ${cx.text.color.heading}`}>
+        <h3 className={clsx("mb-2 text-sm font-semibold", cx.text.color.headingTextColor)}>
           Field
         </h3>
         <Tooltip text="Click to configure field settings" position="bottom">
@@ -120,7 +121,7 @@ export function SpecsConfigurerPanel({
 
       {/* Wavelengths */}
       <section>
-        <h3 className={`mb-2 text-sm font-semibold ${cx.text.color.heading}`}>
+        <h3 className={clsx("mb-2 text-sm font-semibold", cx.text.color.headingTextColor)}>
           Wavelengths
         </h3>
         <Tooltip text="Click to configure wavelengths" position="bottom">
