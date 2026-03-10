@@ -80,7 +80,8 @@ export const componentTokens = {
       textColor: g.color.primaryText,
     },
     size: {
-      default: `${g.size.inputPadding} text-sm`,
+      padding: g.size.inputPadding,
+      fontSize: "text-sm",
     },
     style: {
       base: g.style.inputBase,
@@ -94,8 +95,10 @@ export const componentTokens = {
       textColor: g.color.primaryText,
     },
     size: {
-      default: `${g.size.inputPadding} text-sm`,
-      compact: "px-2 py-1.5 text-sm",
+      padding: g.size.inputPadding,
+      fontSize: "text-sm",
+      compactPadding: "px-2 py-1.5",
+      compactFontSize: "text-sm",
     },
     style: {
       base: g.style.inputBase,
@@ -143,7 +146,8 @@ export const componentTokens = {
       textColor: "text-gray-600 dark:text-gray-400",
     },
     size: {
-      default: "px-2 py-0.5 text-xs",
+      padding: "px-2 py-0.5",
+      fontSize: "text-xs",
     },
     style: {
       base: "rounded-full border",
@@ -165,7 +169,8 @@ export const componentTokens = {
       textColor: "text-white",
     },
     size: {
-      default: "px-2 py-1 text-xs",
+      padding: "px-2 py-1",
+      fontSize: "text-xs",
     },
     style: {
       base: "pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded opacity-0 transition-opacity group-hover:opacity-100 z-10",

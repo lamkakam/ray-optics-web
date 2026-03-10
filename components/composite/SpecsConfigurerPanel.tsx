@@ -81,7 +81,7 @@ export function SpecsConfigurerPanel({
         <div className="flex items-center gap-3">
           <select
             aria-label="System aperture type"
-            className={clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.default)}
+            className={clsx(cx.select.style.base, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.padding, cx.select.size.fontSize)}
             value={currentDropdownValue}
             onChange={handleDropdownChange}
           >
@@ -94,7 +94,7 @@ export function SpecsConfigurerPanel({
           <input
             type="text"
             aria-label="Aperture value"
-            className={clsx(cx.input.style.base, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.default)}
+            className={clsx(cx.input.style.base, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.padding, cx.input.size.fontSize)}
             value={valueStr}
             onChange={(e) => setValueStr(e.target.value)}
             onBlur={handleValueBlur}
