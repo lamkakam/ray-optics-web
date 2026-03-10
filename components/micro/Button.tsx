@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 
 export type ButtonVariant = "primary" | "secondary" | "toggle" | "danger" | "floating" | "icon";
-export type ButtonSize = "md" | "xs";
+export type ButtonSize = "md" | "sm" | "xs";
 
 const { color: c, size: sz, style: s } = cx.button;
 
@@ -17,9 +17,10 @@ const VARIANT_CLASSES = {
 } as const satisfies Record<ButtonVariant, readonly string[]>;
 
 const SIZE_CLASSES = {
-  md: sz.md,
-  xs: sz.xs,
-} as const satisfies Record<ButtonSize, string>;
+  md: [sz.horizontalPaddingMd, sz.verticalPaddingMd, sz.fontSizeMd],
+  sm: [sz.horizontalPaddingSm, sz.verticalPaddingSm, sz.fontSizeSm],
+  xs: [sz.horizontalPaddingXs, sz.verticalPaddingXs, sz.fontSizeXs],
+} as const satisfies Record<ButtonSize, readonly string[]>;
 
 type IconButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   readonly variant: "icon";

@@ -18,9 +18,6 @@ const globalTokens = {
   },
   size: {
     inputPadding: "px-3 py-2",
-    btnMd: "px-4 py-2",
-    btnSm: "px-3 py-1.5 text-sm",
-    btnXs: "px-2 py-1 text-xs",
   },
   style: {
     inputBase: "w-full rounded-lg border outline-none transition focus:ring-2 focus:ring-blue-500",
@@ -55,9 +52,15 @@ export const componentTokens = {
       iconTextColor: g.color.secondaryText,
     },
     size: {
-      md: g.size.btnMd,
-      sm: g.size.btnSm,
-      xs: g.size.btnXs,
+      horizontalPaddingMd: "px-4",
+      verticalPaddingMd: "py-2",
+      horizontalPaddingSm: "px-3",
+      verticalPaddingSm: "py-1.5",
+      horizontalPaddingXs: "px-2",
+      verticalPaddingXs: "py-1",
+      fontSizeMd: "text-base",
+      fontSizeSm: "text-sm",
+      fontSizeXs: "text-xs",
     },
     style: {
       borderRadius: "rounded-lg",
