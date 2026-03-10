@@ -7,6 +7,7 @@ import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
+import { Input } from "@/components/micro/Input";
 import { useTheme } from "@/components/ThemeProvider";
 import type { FieldSpace, FieldType } from "@/store/specsConfigurerStore";
 
@@ -119,7 +120,6 @@ export function FieldConfigModal({
 
   const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
   const select = clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);
-  const input = clsx(cx.input.style.borderRadius, cx.input.style.borderStyle, cx.input.style.outlineStyle, cx.input.style.transitionStyle, cx.input.size.defaultWidth, cx.input.size.focusRingWidth, cx.input.color.focusRingColor, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.horizontalPadding, cx.input.size.verticalPadding, cx.input.size.fontSize);
   const caption = clsx(cx.label.style.caption, cx.label.color.captionTextColor, cx.label.size.caption);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
@@ -192,11 +192,10 @@ export function FieldConfigModal({
           </div>
           <div>
             <label className={label} htmlFor="field-max">Max field value</label>
-            <input
+            <Input
               id="field-max"
               type="text"
               aria-label="Max field value"
-              className={input}
               value={maxFieldStr}
               onChange={(e) => setMaxFieldStr(e.target.value)}
             />

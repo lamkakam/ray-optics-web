@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
+import { Input } from "@/components/micro/Input";
 import { Modal } from "@/components/micro/Modal";
 
 export type AsphericalType = "Conical" | "EvenAspherical";
@@ -67,7 +68,6 @@ export function AsphericalModal({
   );
 
   const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
-  const input = clsx(cx.input.style.borderRadius, cx.input.style.borderStyle, cx.input.style.outlineStyle, cx.input.style.transitionStyle, cx.input.size.defaultWidth, cx.input.size.focusRingWidth, cx.input.color.focusRingColor, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.horizontalPadding, cx.input.size.verticalPadding, cx.input.size.fontSize);
   const select = clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
@@ -97,11 +97,10 @@ export function AsphericalModal({
             <label htmlFor="conic-constant" className={label}>
               Conic constant
             </label>
-            <input
+            <Input
               id="conic-constant"
               aria-label="Conic constant"
               type="text"
-              className={input}
               value={conicConstantStr}
               onChange={(e) => setConicConstantStr(e.target.value)}
             />
@@ -136,11 +135,10 @@ export function AsphericalModal({
                   <label htmlFor={`coeff-${lbl}`} className={label}>
                     {lbl}
                   </label>
-                  <input
+                  <Input
                     id={`coeff-${lbl}`}
                     aria-label={lbl}
                     type="text"
-                    className={input}
                     value={coefficientStrs[i]}
                     onChange={(e) => updateCoefficient(i, e.target.value)}
                   />

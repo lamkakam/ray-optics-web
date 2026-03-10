@@ -4,6 +4,7 @@ import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Tooltip } from "@/components/micro/Tooltip";
 import { Button } from "@/components/micro/Button";
 import { Select } from "@/components/micro/Select";
+import { Input } from "@/components/micro/Input";
 import type { PupilSpace, PupilType } from "@/store/specsConfigurerStore";
 
 interface AperturePatch {
@@ -86,10 +87,9 @@ export function SpecsConfigurerPanel({
             value={currentDropdownValue}
             onChange={handleDropdownChange}
           />
-          <input
+          <Input
             type="text"
             aria-label="Aperture value"
-            className={clsx(cx.input.style.borderRadius, cx.input.style.borderStyle, cx.input.style.outlineStyle, cx.input.style.transitionStyle, cx.input.size.defaultWidth, cx.input.size.focusRingWidth, cx.input.color.focusRingColor, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.horizontalPadding, cx.input.size.verticalPadding, cx.input.size.fontSize)}
             value={valueStr}
             onChange={(e) => setValueStr(e.target.value)}
             onBlur={handleValueBlur}
