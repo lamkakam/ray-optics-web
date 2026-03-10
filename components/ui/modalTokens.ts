@@ -17,9 +17,7 @@ const globalTokens = {
     mutedText: "text-gray-500 dark:text-gray-400",
   },
   size: {},
-  style: {
-    inputBase: "w-full rounded-lg border outline-none transition focus:ring-2 focus:ring-blue-500",
-  },
+  style: {},
 } as const;
 
 const g = globalTokens;
@@ -79,14 +77,20 @@ export const componentTokens = {
       borderColor: g.color.inputBorder,
       bgColor: g.color.surfaceBg,
       textColor: g.color.primaryText,
+      focusRingColor: "focus:ring-blue-500",
     },
     size: {
       horizontalPadding: "px-3",
       verticalPadding: "py-2",
       fontSize: "text-sm",
+      defaultWidth: "w-full",
+      focusRingWidth: "focus:ring-2",
     },
     style: {
-      base: g.style.inputBase,
+      borderRadius: "rounded-lg",
+      borderStyle: "border",
+      outlineStyle: "outline-none",
+      transitionStyle: "transition",
     },
   },
 
@@ -95,6 +99,7 @@ export const componentTokens = {
       borderColor: g.color.inputBorder,
       bgColor: g.color.surfaceBg,
       textColor: g.color.primaryText,
+      focusRingColor: "focus:ring-blue-500",
     },
     size: {
       horizontalPadding: "px-3",
@@ -103,12 +108,17 @@ export const componentTokens = {
       compactHorizontalPadding: "px-2",
       compactVerticalPadding: "py-1.5",
       compactFontSize: "text-sm",
+      defaultWidth: "w-full",
+      focusRingWidth: "focus:ring-2",
     },
     style: {
-      base: g.style.inputBase,
       compactBorderStyle: "border",
       compactBorderRadius: "rounded-lg",
       compactOutlineStyle: "outline-none",
+      borderRadius: "rounded-lg",
+      borderStyle: "border",
+      outlineStyle: "outline-none",
+      transitionStyle: "transition",
     },
   },
 
