@@ -27,10 +27,10 @@ const allSphericalOpticalModel: OpticalModel = {
     // manufacturer is set to be "Schott" on purpose for testing
     { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "Schott", semiDiameter: 8.3321 },
   ],
-};
+} as const;
 
 
-const opticalModelWithAspherical: OpticalModel = {
+const opticalModelWithEvenAspherical: OpticalModel = {
   specs: { ...allSphericalOpticalModel.specs },
   object: { distance: 1e10 },
   image: { curvatureRadius: -42 },
@@ -51,6 +51,40 @@ const opticalModelWithAspherical: OpticalModel = {
     { label: "Default", curvatureRadius: 86.759, thickness: 3.127, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 8.0218 },
     { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "", semiDiameter: 8.3321 },
   ],
+} as const;
+
+const fluoriteSinglet: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 10 },
+    field: { space: "object", type: "angle", maxField: 0.5, fields: [0], isRelative: true },
+    wavelengths: { weights: [[656.3, 1.], [587., 2.], [486.1, 1.]], referenceIndex: 1 },
+  },
+  object: { distance: 1e10 },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "CaF2", manufacturer: "", semiDiameter: 10 },
+    { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+  ],
+} as const;
+
+
+const opticalModelWithConic: OpticalModel = {
+  specs: { ...allSphericalOpticalModel.specs },
+  object: { ...allSphericalOpticalModel.object },
+  image: { ...allSphericalOpticalModel.image },
+  surfaces: [
+    ...allSphericalOpticalModel.surfaces.slice(0, 1),
+    {
+      label: "Default",
+      curvatureRadius: 23.713,
+      thickness: 4.831,
+      medium: "N-LAK9",
+      manufacturer: "Schott",
+      aspherical: { conicConstant: 0.1 },
+      semiDiameter: 10.009
+    },
+    ...allSphericalOpticalModel.surfaces.slice(2),
+  ],
 };
 
 describe("_setOpticalSurfaces", () => {
@@ -66,19 +100,19 @@ describe("_setOpticalSurfaces", () => {
     let pythonScript = "";
     await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.do_apertures = False");
-    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'], sd=10.009)");
-    expect(pythonScript).toContain("sm.add_surface([7331.288, 5.86, 'air'], sd=8.9483)");
-    expect(pythonScript).toContain("sm.add_surface([-24.456, 0.975, 'N-SF5', 'Schott'], sd=4.7918)\nsm.set_stop()");
-    expect(pythonScript).toContain("sm.add_surface([21.896, 4.822, 'air'], sd=4.776)");
-    expect(pythonScript).toContain("sm.add_surface([86.759, 3.127, 'N-LAK9', 'Schott'], sd=8.0218)");
-    expect(pythonScript).toContain("sm.add_surface([-20.4942, 41.2365, 'air'], sd=8.3321)");
+    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)");
+    expect(pythonScript).toContain("sm.add_surface([7331.288, 5.86, \"air\"], sd=8.9483)");
+    expect(pythonScript).toContain("sm.add_surface([-24.456, 0.975, \"N-SF5\", \"Schott\"], sd=4.7918)\nsm.set_stop()");
+    expect(pythonScript).toContain("sm.add_surface([21.896, 4.822, \"air\"], sd=4.776)");
+    expect(pythonScript).toContain("sm.add_surface([86.759, 3.127, \"N-LAK9\", \"Schott\"], sd=8.0218)");
+    expect(pythonScript).toContain("sm.add_surface([-20.4942, 41.2365, \"air\"], sd=8.3321)");
     expect(pythonScript).toContain("opm.update_model()");
   });
 
   it("should set an aspherical surface correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(opticalModelWithAspherical, async (code) => { pythonScript = code; });
-    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, 'N-LAK9', 'Schott'], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])");
+    await _setOpticalSurfaces(opticalModelWithEvenAspherical, async (code) => { pythonScript = code; });
+    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])");
   });
 
   it("should set the object distance correctly", async () => {
@@ -103,6 +137,18 @@ describe("_setOpticalSurfaces", () => {
     let pythonScript = "";
     await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("opm = OpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']");
+  });
+
+  it("should set a conic surface correctly", async () => {
+    let pythonScript = "";
+    await _setOpticalSurfaces(opticalModelWithConic, async (code) => { pythonScript = code; });
+    expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1)");
+  });
+
+  it("should set a surface with fluorite correctly", async () => {
+    let pythonScript = "";
+    await _setOpticalSurfaces(fluoriteSinglet, async (code) => { pythonScript = code; });
+    expect(pythonScript).toContain("sm.add_surface([30, 1.1, caf2], sd=10)");
   });
 });
 
@@ -137,7 +183,7 @@ describe("_plotRayFan", () => {
   it("should call plot_ray_fan with the correct field index", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotRayFan(async (code) => {
-      expect(code).toBe("plot_ray_fan(1)");
+      expect(code).toBe("plot_ray_fan(1, opm)");
       return mockBase64;
     }, 1);
     expect(result).toBe(mockBase64);
@@ -145,7 +191,7 @@ describe("_plotRayFan", () => {
 
   it("should pass field index 0 correctly", async () => {
     await _plotRayFan(async (code) => {
-      expect(code).toBe("plot_ray_fan(0)");
+      expect(code).toBe("plot_ray_fan(0, opm)");
       return "";
     }, 0);
   });
@@ -156,7 +202,7 @@ describe("_plotOpdFan", () => {
   it("should call plot_opd_fan with the correct field index", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotOpdFan(async (code) => {
-      expect(code).toBe("plot_opd_fan(2)");
+      expect(code).toBe("plot_opd_fan(2, opm)");
       return mockBase64;
     }, 2);
     expect(result).toBe(mockBase64);
@@ -164,7 +210,7 @@ describe("_plotOpdFan", () => {
 
   it("should pass field index 0 correctly", async () => {
     await _plotOpdFan(async (code) => {
-      expect(code).toBe("plot_opd_fan(0)");
+      expect(code).toBe("plot_opd_fan(0, opm)");
       return "";
     }, 0);
   });
@@ -175,7 +221,7 @@ describe("_plotSpotDiagram", () => {
   it("should call plot_spot_diagram with the correct field index", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotSpotDiagram(async (code) => {
-      expect(code).toBe("plot_spot_diagram(1)");
+      expect(code).toBe("plot_spot_diagram(1, opm)");
       return mockBase64;
     }, 1);
     expect(result).toBe(mockBase64);
@@ -183,7 +229,7 @@ describe("_plotSpotDiagram", () => {
 
   it("should pass field index 0 correctly", async () => {
     await _plotSpotDiagram(async (code) => {
-      expect(code).toBe("plot_spot_diagram(0)");
+      expect(code).toBe("plot_spot_diagram(0, opm)");
       return "";
     }, 0);
   });
@@ -195,6 +241,9 @@ describe("_init", () => {
     const scripts: string[] = [];
     await _init(async (code) => { scripts.push(code); });
     const allCode = scripts.join("\n");
+
+    // setup for CaF2
+    expect(allCode).toMatch(/caf2 = create_material\([a-zA-Z\d_]+, 'CaF2', 'rii-main', 'data-nk'\)/);
 
     // get_first_order_data
     expect(allCode).toContain("def get_first_order_data(opm):");
@@ -209,7 +258,7 @@ describe("_init", () => {
     expect(allCode).toContain("defocused_pt - image_pt");
 
     // plot_ray_fan
-    expect(allCode).toContain("def plot_ray_fan(fi):");
+    expect(allCode).toContain("def plot_ray_fan(fi, opm):");
     expect(allCode).toContain("sm.trace_fan(_ray_abr");
     expect(allCode).toContain("Tangential");
     expect(allCode).toContain("Sagittal");
@@ -219,7 +268,7 @@ describe("_init", () => {
     expect(allCode).toContain("wave_abr_full_calc");
 
     // plot_opd_fan
-    expect(allCode).toContain("def plot_opd_fan(fi):");
+    expect(allCode).toContain("def plot_opd_fan(fi, opm):");
     expect(allCode).toContain("sm.trace_fan(_opd_abr");
 
     // _spot
@@ -227,7 +276,7 @@ describe("_init", () => {
     expect(allCode).toContain("np.array([t_abr[0], t_abr[1]])");
 
     // plot_spot_diagram
-    expect(allCode).toContain("def plot_spot_diagram(fi):");
+    expect(allCode).toContain("def plot_spot_diagram(fi, opm):");
     expect(allCode).toContain("sm.trace_grid(_spot");
     expect(allCode).toContain("set_aspect('equal')");
   });

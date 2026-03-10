@@ -87,12 +87,12 @@ describe("WavelengthConfigModal", () => {
     expect(rows).toHaveLength(3); // header + 2 data rows
   });
 
-  it("does not add more than 10 rows", async () => {
-    const tenWeights: [number, number][] = Array.from({ length: 10 }, () => [546.073, 1]);
+  it("does not add more than 7 rows", async () => {
+    const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [546.073, 1]);
     render(
       <WavelengthConfigModal
         {...defaultProps}
-        initialWeights={tenWeights}
+        initialWeights={sevenWeights}
         initialReferenceIndex={0}
       />
     );
@@ -101,7 +101,7 @@ describe("WavelengthConfigModal", () => {
 
     const grid = screen.getByTestId("ag-grid-mock");
     const rows = within(grid).getAllByRole("row");
-    expect(rows).toHaveLength(11); // header + 10 (unchanged)
+    expect(rows).toHaveLength(8); // header + 7 (unchanged)
   });
 
   it("deletes a row when delete button is clicked", async () => {
@@ -183,17 +183,17 @@ describe("WavelengthConfigModal", () => {
     expect(onClose).toHaveBeenCalledTimes(0);
   });
 
-  it("renders info text about maximum 10 wavelengths", () => {
+  it("renders info text about maximum 7 wavelengths", () => {
     render(<WavelengthConfigModal {...defaultProps} />);
-    expect(screen.getByText("Maximum 10 wavelengths")).toBeInTheDocument();
+    expect(screen.getByText("Maximum 7 wavelengths")).toBeInTheDocument();
   });
 
-  it("hides add buttons when at 10 rows", () => {
-    const tenWeights: [number, number][] = Array.from({ length: 10 }, () => [546.073, 1]);
+  it("hides add buttons when at 7 rows", () => {
+    const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [546.073, 1]);
     render(
       <WavelengthConfigModal
         {...defaultProps}
-        initialWeights={tenWeights}
+        initialWeights={sevenWeights}
         initialReferenceIndex={0}
       />
     );
@@ -203,12 +203,12 @@ describe("WavelengthConfigModal", () => {
     });
   });
 
-  it("shows add buttons after deleting a row from 10", async () => {
-    const tenWeights: [number, number][] = Array.from({ length: 10 }, () => [546.073, 1]);
+  it("shows add buttons after deleting a row from 7", async () => {
+    const sevenWeights: [number, number][] = Array.from({ length: 7 }, () => [546.073, 1]);
     render(
       <WavelengthConfigModal
         {...defaultProps}
-        initialWeights={tenWeights}
+        initialWeights={sevenWeights}
         initialReferenceIndex={0}
       />
     );

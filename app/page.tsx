@@ -1,114 +1,416 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import React, { useState, useCallback, useMemo, useRef } from "react";
+import { createStore } from "zustand";
 import type { Surfaces, OpticalSpecs } from "@/lib/opticalModel";
-
-const SpecsConfigurerContainer = dynamic(
-  () =>
-    import("@/components/container/SpecsConfigurerContainer").then(
-      (mod) => mod.SpecsConfigurerContainer
-    ),
-  { ssr: false }
-);
-
-const LensPrescriptionContainer = dynamic(
-  () =>
-    import("@/components/container/LensPrescriptionContainer").then(
-      (mod) => mod.LensPrescriptionContainer
-    ),
-  { ssr: false }
-);
-
-const DEMO_SURFACES: Surfaces = {
-  object: { distance: 1e10 },
-  image: { curvatureRadius: 0 },
-  surfaces: [
-    {
-      label: "Default",
-      curvatureRadius: 26.777,
-      thickness: 6.0,
-      medium: "SK16",
-      manufacturer: "Schott",
-      semiDiameter: 12.5,
-    },
-    {
-      label: "Default",
-      curvatureRadius: -200.0,
-      thickness: 3.0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 12.5,
-    },
-    {
-      label: "Stop",
-      curvatureRadius: -35.0,
-      thickness: 2.0,
-      medium: "F2",
-      manufacturer: "Schott",
-      semiDiameter: 10.0,
-    },
-    {
-      label: "Default",
-      curvatureRadius: 35.0,
-      thickness: 3.0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 10.0,
-    },
-    {
-      label: "Default",
-      curvatureRadius: 200.0,
-      thickness: 6.0,
-      medium: "SK16",
-      manufacturer: "Schott",
-      semiDiameter: 12.5,
-    },
-    {
-      label: "Default",
-      curvatureRadius: -26.777,
-      thickness: 68.0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 12.5,
-    },
-  ],
-};
-
-const DEMO_SPECS: OpticalSpecs = {
-  pupil: { space: "object", type: "epd", value: 25 },
-  field: {
-    space: "object",
-    type: "angle",
-    maxField: 20,
-    fields: [0, 0.7, 1],
-    isRelative: true,
-  },
-  wavelengths: {
-    weights: [
-      [486.133, 1],
-      [587.562, 1],
-      [656.273, 1],
-    ],
-    referenceIndex: 1,
-  },
-};
+import { usePyodide } from "@/hooks/usePyodide";
+import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
+import { ExampleSystems } from "@/lib/exampleSystems";
+import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
+import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
+import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurerContainer";
+import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
+import { LensLayoutPanel } from "@/components/micro/LensLayoutPanel";
+import {
+  AnalysisPlotView,
+  type PlotType,
+} from "@/components/micro/AnalysisPlotView";
+import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
+import { ErrorModal } from "@/components/micro/ErrorModal";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { BottomDrawer } from "@/components/composite/BottomDrawer";
+import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 
 export default function Home() {
-  return (
-    <main className="min-h-screen p-4">
-      <h1 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Ray Optics Web</h1>
-      <SpecsConfigurerContainer
-        initialSpecs={DEMO_SPECS}
-        onSpecsChange={(specs) => {
-          console.log("Specs changed:", specs);
-        }}
-      />
-      <LensPrescriptionContainer
-        initialSurfaces={DEMO_SURFACES}
-        onSurfacesChange={(surfaces) => {
-          console.log("Surfaces changed:", surfaces);
-        }}
-      />
-    </main>
+  const { proxy, isReady } = usePyodide();
+  const screenSize = useScreenBreakpoint();
+  const isLG = screenSize === "screenLG";
+
+  const specsStore = useMemo(
+    () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
+    []
   );
+
+  const lensStore = useMemo(
+    () => createStore<LensEditorState>(createLensEditorSlice),
+    []
+  );
+
+  const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(
+    () => specsStore.getState().toOpticalSpecs()
+  );
+  const [layoutImage, setLayoutImage] = useState<string | undefined>();
+  const [layoutLoading, setLayoutLoading] = useState(false);
+  const [plotImage, setPlotImage] = useState<string | undefined>();
+  const [plotLoading, setPlotLoading] = useState(false);
+  const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
+  const [selectedPlotType, setSelectedPlotType] = useState<PlotType>("rayFan");
+  const [firstOrderData, setFirstOrderData] = useState<
+    Record<string, number> | undefined
+  >();
+  const [computing, setComputing] = useState(false);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [pendingExample, setPendingExample] = useState<string | undefined>();
+  const exampleSelectRef = useRef<HTMLSelectElement>(null);
+
+  const exampleSystemNames = useMemo(() => Object.keys(ExampleSystems), []);
+
+  const handleExampleChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const name = e.target.value;
+      if (!ExampleSystems[name]) return;
+      setPendingExample(name);
+    },
+    []
+  );
+
+  const handleExampleConfirm = useCallback(() => {
+    if (!pendingExample) return;
+    const system = ExampleSystems[pendingExample];
+    if (!system) return;
+    specsStore.getState().loadFromSpecs(system.specs);
+    lensStore.getState().setRows(surfacesToGridRows(system));
+    setPendingExample(undefined);
+  }, [pendingExample, specsStore, lensStore]);
+
+  const handleExampleCancel = useCallback(() => {
+    setPendingExample(undefined);
+    if (exampleSelectRef.current) {
+      exampleSelectRef.current.value = "";
+    }
+  }, []);
+
+  const fieldOptions = useMemo(() => {
+    const { fields, maxField, type } = committedSpecs.field;
+    const unit = type === "angle" ? "°" : " mm";
+    return fields.map((rf, i) => ({
+      label: `${(rf * maxField).toFixed(1)}${unit}`,
+      value: i,
+    }));
+  }, [committedSpecs.field]);
+
+  const getPlotFunction = useCallback(
+    (plotType: PlotType) => {
+      if (!proxy) return undefined;
+      switch (plotType) {
+        case "rayFan":
+          return proxy.plotRayFan;
+        case "opdFan":
+          return proxy.plotOpdFan;
+        case "spotDiagram":
+          return proxy.plotSpotDiagram;
+      }
+    },
+    [proxy]
+  );
+
+  const handleSubmit = useCallback(async () => {
+    if (!proxy) return;
+
+    const specs = specsStore.getState().toOpticalSpecs();
+    const surfacesData = gridRowsToSurfaces(lensStore.getState().rows);
+    const model = { specs, ...surfacesData };
+
+    setComputing(true);
+    setLayoutLoading(true);
+    setPlotLoading(true);
+
+    try {
+      // Step 1: setOpticalSurfaces MUST complete first
+      await proxy.setOpticalSurfaces(model);
+
+      // Step 2: parallel calls
+      const clampedFieldIndex = Math.min(
+        selectedFieldIndex,
+        specs.field.fields.length - 1
+      );
+      if (clampedFieldIndex !== selectedFieldIndex) {
+        setSelectedFieldIndex(clampedFieldIndex);
+      }
+      const plotFn = getPlotFunction(selectedPlotType);
+      const [fod, layout, plot] = await Promise.all([
+        proxy.getFirstOrderData(),
+        proxy.plotLensLayout(),
+        plotFn ? plotFn(clampedFieldIndex) : Promise.resolve(undefined),
+      ]);
+
+      setFirstOrderData(fod);
+      setLayoutImage(layout);
+      setPlotImage(plot);
+      setCommittedSpecs(specs);
+    } catch (err) {
+      console.log("Update System failed:", err);
+      setErrorModalOpen(true);
+    } finally {
+      setComputing(false);
+      setLayoutLoading(false);
+      setPlotLoading(false);
+    }
+  }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedPlotType, getPlotFunction]);
+
+  const handleRefreshLayout = useCallback(async () => {
+    if (!proxy) return;
+    setLayoutLoading(true);
+    try {
+      const layout = await proxy.plotLensLayout();
+      setLayoutImage(layout);
+    } catch {
+      setErrorModalOpen(true);
+    } finally {
+      setLayoutLoading(false);
+    }
+  }, [proxy]);
+
+  const handleFieldChange = useCallback(
+    async (fieldIndex: number) => {
+      setSelectedFieldIndex(fieldIndex);
+      if (!proxy) return;
+      setPlotLoading(true);
+      try {
+        const plotFn = getPlotFunction(selectedPlotType);
+        if (plotFn) {
+          const plot = await plotFn(fieldIndex);
+          setPlotImage(plot);
+        }
+      } catch {
+        setErrorModalOpen(true);
+      } finally {
+        setPlotLoading(false);
+      }
+    },
+    [proxy, selectedPlotType, getPlotFunction]
+  );
+
+  const handlePlotTypeChange = useCallback(
+    async (plotType: PlotType) => {
+      setSelectedPlotType(plotType);
+      if (!proxy) return;
+      setPlotLoading(true);
+      try {
+        const plotFn = getPlotFunction(plotType);
+        if (plotFn) {
+          const plot = await plotFn(selectedFieldIndex);
+          setPlotImage(plot);
+        }
+      } catch {
+        setErrorModalOpen(true);
+      } finally {
+        setPlotLoading(false);
+      }
+    },
+    [proxy, selectedFieldIndex, getPlotFunction]
+  );
+
+  const drawerTabs = useMemo(
+    () => [
+      {
+        id: "specs",
+        label: "System Specs",
+        content: <SpecsConfigurerContainer store={specsStore} />,
+      },
+      {
+        id: "prescription",
+        label: "Prescription",
+        content: <LensPrescriptionContainer store={lensStore} />,
+      },
+    ],
+    [specsStore, lensStore]
+  );
+
+  const backdrop = `${cx.modal.color.backdrop} ${cx.modal.style.backdrop}`;
+  const panel = `${cx.modal.style.panel} ${cx.modal.color.panel} ${cx.modal.size.panel}`;
+  const title = `${cx.modal.style.title} ${cx.modal.color.title}`;
+  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
+  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
+  const btnPrimarySubmit = `${cx.button.style.base} ${cx.button.style.disabled} ${cx.button.color.primary} ${cx.button.size.sm}`;
+  const headerSelect = `${cx.select.style.compact} ${cx.select.color.compact} ${cx.select.size.compact}`;
+  const initOverlay = `${cx.overlay.style.init} ${cx.overlay.color.init}`;
+  const initCard = `${cx.overlay.style.card} ${cx.overlay.color.card}`;
+
+  const confirmOverwriteModal = pendingExample !== undefined && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className={backdrop} onClick={handleExampleCancel} />
+      <div className={`${panel} max-w-md`} role="dialog" aria-modal="true">
+        <h2 className={title}>Load Example System</h2>
+        <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
+          This will overwrite your current configuration. Continue?
+        </p>
+        <div className="flex justify-end gap-3">
+          <button type="button" className={btnSecondary} onClick={handleExampleCancel}>
+            Cancel
+          </button>
+          <button type="button" className={btnPrimary} onClick={handleExampleConfirm}>
+            Load
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const errorModal = (
+    <ErrorModal
+      isOpen={errorModalOpen}
+      onClose={() => setErrorModalOpen(false)}
+    />
+  );
+
+  const initOverlayNode = !isReady && (
+    <div className={initOverlay}>
+      <div className={initCard}>
+        <svg
+          className="h-10 w-10 animate-spin text-blue-400"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
+        </svg>
+        <p className="text-lg font-semibold tracking-wide">Initializing Ray Optics</p>
+        <p className="text-sm text-white/70">Loading Pyodide and installing packages…</p>
+      </div>
+    </div>
+  );
+
+  const layoutLG: React.ReactNode = (
+    <div className="flex flex-col h-screen">
+      <header className="flex h-12 shrink-0 items-center gap-4 border-b border-gray-200 px-4 dark:border-gray-700">
+        <h1 className="font-semibold text-gray-900 dark:text-gray-100">
+          Ray Optics Web
+        </h1>
+        <select
+          ref={exampleSelectRef}
+          aria-label="Example system"
+          className={headerSelect}
+          defaultValue=""
+          onChange={handleExampleChange}
+        >
+          <option value="" disabled>
+            Load example system...
+          </option>
+          {exampleSystemNames.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className={btnPrimarySubmit}
+          disabled={!isReady || computing}
+          onClick={handleSubmit}
+        >
+          Update System
+        </button>
+        <div className="flex gap-2">
+          <FirstOrderChips data={firstOrderData} />
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1 flex-row">
+        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
+          <LensLayoutPanel
+            imageBase64={layoutImage}
+            loading={layoutLoading}
+            onRefresh={handleRefreshLayout}
+          />
+        </div>
+        <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
+          <AnalysisPlotView
+            fieldOptions={fieldOptions}
+            selectedFieldIndex={selectedFieldIndex}
+            selectedPlotType={selectedPlotType}
+            plotImageBase64={plotImage}
+            loading={plotLoading}
+            onFieldChange={handleFieldChange}
+            onPlotTypeChange={handlePlotTypeChange}
+            autoHeight={false}
+          />
+        </div>
+      </div>
+
+      <BottomDrawer tabs={drawerTabs} draggable={true} />
+      {confirmOverwriteModal}
+      {errorModal}
+      {initOverlayNode}
+    </div>
+  );
+
+  const layoutSM: React.ReactNode = (
+    <div className="flex flex-col">
+      <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
+        <h1 className="mb-2 font-semibold text-gray-900 dark:text-gray-100">
+          Ray Optics Web
+        </h1>
+        <select
+          ref={exampleSelectRef}
+          aria-label="Example system"
+          className={`mb-2 w-full ${headerSelect}`}
+          defaultValue=""
+          onChange={handleExampleChange}
+        >
+          <option value="" disabled>
+            Load example system...
+          </option>
+          {exampleSystemNames.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className={`mb-2 ${btnPrimarySubmit}`}
+          disabled={!isReady || computing}
+          onClick={handleSubmit}
+        >
+          Update System
+        </button>
+        <div className="flex flex-wrap gap-2">
+          <FirstOrderChips data={firstOrderData} />
+        </div>
+      </header>
+
+      <div className="flex flex-col">
+        <div className="w-[70vw] mx-auto p-4">
+          <LensLayoutPanel
+            imageBase64={layoutImage}
+            loading={layoutLoading}
+            onRefresh={handleRefreshLayout}
+          />
+        </div>
+        <div className="w-[70vw] mx-auto p-4 border-t border-gray-200 dark:border-gray-700">
+          <AnalysisPlotView
+            fieldOptions={fieldOptions}
+            selectedFieldIndex={selectedFieldIndex}
+            selectedPlotType={selectedPlotType}
+            plotImageBase64={plotImage}
+            loading={plotLoading}
+            onFieldChange={handleFieldChange}
+            onPlotTypeChange={handlePlotTypeChange}
+            autoHeight={true}
+          />
+        </div>
+      </div>
+
+      <BottomDrawer tabs={drawerTabs} draggable={false} />
+      {confirmOverwriteModal}
+      {errorModal}
+      {initOverlayNode}
+    </div>
+  );
+
+  return isLG ? layoutLG : layoutSM;
 }

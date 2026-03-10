@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/modalTokens";
 import glassCatalogs from "@/data/glass-catalogs.json";
 
 const MANUFACTURERS = ["Special", ...Object.keys(glassCatalogs)];
-const SPECIAL_MEDIA = ["air", "REFL"];
+const SPECIAL_MEDIA = ["air", "REFL", "CaF2"];
 
 interface MediumSelectorModalProps {
   readonly isOpen: boolean;
@@ -39,33 +39,42 @@ export function MediumSelectorModal({
     ? SPECIAL_MEDIA
     : (glassCatalogs as Record<string, string[]>)[manufacturer] ?? [];
 
+  const backdrop = `${cx.modal.color.backdrop} ${cx.modal.style.backdrop}`;
+  const panel = `${cx.modal.style.panel} ${cx.modal.color.panel} ${cx.modal.size.panel}`;
+  const title = `${cx.modal.style.title} ${cx.modal.color.title}`;
+  const label = `${cx.label.style.base} ${cx.label.color.default} ${cx.label.size.default}`;
+  const select = `${cx.select.style.base} ${cx.select.color.default} ${cx.select.size.default}`;
+  const divider = `${cx.divider.style.base} ${cx.divider.color.default}`;
+  const btnPrimary = `${cx.button.style.base} ${cx.button.color.primary} ${cx.button.size.md}`;
+  const btnSecondary = `border ${cx.button.style.base} ${cx.button.color.secondary} ${cx.button.size.md}`;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
         data-testid="modal-backdrop"
-        className={cx.backdrop}
+        className={backdrop}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="medium-modal-title"
-        className={cx.panel + " max-w-md"}
+        className={`${panel} max-w-md`}
       >
         {/* ── Title ── */}
-        <h2 id="medium-modal-title" className={cx.title}>
+        <h2 id="medium-modal-title" className={title}>
           Select Medium
         </h2>
 
         {/* ── Form fields ── */}
         <div className="space-y-4 mb-4">
           <div>
-            <label htmlFor="manufacturer-select" className={cx.label}>
+            <label htmlFor="manufacturer-select" className={label}>
               Manufacturer
             </label>
             <select
               id="manufacturer-select"
               aria-label="Manufacturer"
-              className={cx.select}
+              className={select}
               value={manufacturer}
               onChange={(e) => {
                 const newMfr = e.target.value;
@@ -89,13 +98,13 @@ export function MediumSelectorModal({
           </div>
 
           <div>
-            <label htmlFor="medium-select" className={cx.label}>
+            <label htmlFor="medium-select" className={label}>
               Glass
             </label>
             <select
               id="medium-select"
               aria-label="Glass"
-              className={cx.select}
+              className={select}
               value={medium}
               onChange={(e) => setMedium(e.target.value)}
             >
@@ -109,13 +118,13 @@ export function MediumSelectorModal({
         </div>
 
         {/* ── Actions ── */}
-        <div className={`flex items-center justify-end gap-3 pt-4 ${cx.divider}`}>
-          <button type="button" className={cx.btnSecondary} onClick={onClose}>
+        <div className={`flex items-center justify-end gap-3 pt-4 ${divider}`}>
+          <button type="button" className={btnSecondary} onClick={onClose}>
             Cancel
           </button>
           <button
             type="button"
-            className={cx.btnPrimary}
+            className={btnPrimary}
             onClick={() => onConfirm(medium, isSpecial ? "" : manufacturer)}
           >
             Confirm

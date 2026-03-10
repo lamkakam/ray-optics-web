@@ -60,6 +60,14 @@ export async function _init(
         import rayoptics.optical.model_constants as mc
         from rayoptics.raytr.waveabr import wave_abr_full_calc
         from rayoptics.raytr.trace import apply_paraxial_vignetting
+        from opticalglass.rindexinfo import create_material
+        import yaml
+
+        ### Forcefully set the db as 'data-nk'
+        with open('/database/data/main/CaF2/nk/Malitson.yml') as _f:
+            _caf2_yaml = yaml.safe_load(_f)
+        caf2 = create_material(_caf2_yaml, 'CaF2', 'rii-main', 'data-nk')
+        ###
 
         def _fig_to_base64(fig, dpi=150):
             buf = BytesIO()
@@ -69,6 +77,9 @@ export async function _init(
             buf.close()
             plt.close(fig)
             return data
+
+        def _get_wvl_lbl(opm, idx) -> str:
+            return f"{opm['optical_spec']['wvls'].wavelengths[idx]}nm"
 
         def get_first_order_data(opm):
             pm  = opm['parax_model']
@@ -81,50 +92,61 @@ export async function _init(
             fig.plot()
             return _fig_to_base64(fig)
 
-        def plot_ray_fan(fi):
+        def plot_ray_fan(fi, opm):
             def _ray_abr(p, xy, ray_pkg, fld, wvl, foc):
                 if ray_pkg[mc.ray] is not None:
                     image_pt = fld.ref_sphere[0]
                     ray = ray_pkg[mc.ray]
                     dist = foc / ray[-1][mc.d][2]
                     defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-                t_abr = defocused_pt - image_pt
-                return t_abr[xy]
-            return None
+                    t_abr = defocused_pt - image_pt
+                    return t_abr[xy]
+                return None
 
             fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
             for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
                 fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_ray_abr, fi, xy)
                 for k in range(len(fans_x)):
-                    ax.plot(fans_x[k], fans_y[k], color=colors[k])
+                    ax.plot(fans_x[k], fans_y[k], color=colors[k], label=_get_wvl_lbl(opm, k))
                 ax.set_title(title)
                 ax.axhline(0, color='black', linewidth=0.5)
                 ax.axvline(0, color='black', linewidth=0.5)
-            fig.tight_layout()
+                ax.set_xlabel("Pupil Radius (% Zone)")
+                ax.set_ylabel("Transverse Aberr. (mm)")
+                ax.ticklabel_format(style='sci', useMathText=True)
+            handles, labels = ax_y.get_legend_handles_labels()
+            fig.legend(handles, labels, loc='lower center', ncol=max(len(handles), 1), bbox_to_anchor=(0.5, 0))
+            fig.tight_layout(rect=[0, 0.12, 1, 1])
             return _fig_to_base64(fig)
 
 
-        def plot_opd_fan(fi):
+        def plot_opd_fan(fi, opm):
             def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
                 if ray_pkg[mc.ray] is not None:
                     fod = opm['analysis_results']['parax_data'].fod
-                    opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg,
-                                                fld.chief_ray, fld.ref_sphere)
-                    return opd_val / opm.nm_to_sys_units(wvl)
+                    opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg, fld.chief_ray, fld.ref_sphere)
+                    
+                    # wvl is in the unit of nm but opd_val is in mm
+                    return opd_val / wvl * 1e6
                 return None
 
             fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
             for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
                 fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_opd_abr, fi, xy)
                 for k in range(len(fans_x)):
-                    ax.plot(fans_x[k], fans_y[k], color=colors[k])
+                    ax.plot(fans_x[k], fans_y[k], color=colors[k], label=_get_wvl_lbl(opm, k))
                 ax.set_title(title)
                 ax.axhline(0, color='black', linewidth=0.5)
                 ax.axvline(0, color='black', linewidth=0.5)
-            fig.tight_layout()
+                ax.set_xlabel("Pupil Radius (% Zone)")
+                ax.set_ylabel("waves")
+                ax.ticklabel_format(style='sci', useMathText=True)
+            handles, labels = ax_y.get_legend_handles_labels()
+            fig.legend(handles, labels, loc='lower center', ncol=max(len(handles), 1), bbox_to_anchor=(0.5, 0))
+            fig.tight_layout(rect=[0, 0.12, 1, 1])
             return _fig_to_base64(fig)
 
-        def plot_spot_diagram(fi):
+        def plot_spot_diagram(fi, opm):
             def _spot(p, wi, ray_pkg, fld, wvl, foc):
                 if ray_pkg is not None:
                     image_pt = fld.ref_sphere[0]
@@ -142,8 +164,12 @@ export async function _init(
             for gi, grid in enumerate(grids):
                 x_pts = [pt[0] for pt in grid]
                 y_pts = [pt[1] for pt in grid]
-                ax.scatter(x_pts, y_pts, s=1, color=rc[gi])
+                ax.scatter(x_pts, y_pts, s=1, color=rc[gi], label=_get_wvl_lbl(opm, gi))
             ax.set_title(f'Field {fi}')
+            ax.set_xlabel("mm")
+            ax.set_ylabel("mm")
+            ax.legend(loc='center', bbox_to_anchor=(0.5, -0.3), ncol=2)
+            ax.ticklabel_format(style='sci', useMathText=True)
             fig.tight_layout()
             return _fig_to_base64(fig)
 `);
@@ -164,9 +190,15 @@ export async function init(): Promise<void> {
       "xlrd",
     ]);
 
+    const caf2Res = await fetch(`${self.location.origin}/database/data/main/CaF2/nk/Malitson.yml`);
+    const caf2Yaml = await caf2Res.text();
+    pyodide.FS.mkdirTree('/database/data/main/CaF2/nk');
+    pyodide.FS.writeFile('/database/data/main/CaF2/nk/Malitson.yml', caf2Yaml);
+
     await _init(pyodide.runPythonAsync.bind(pyodide));
   } catch (err) {
     pyodide = null;
+    console.error(err);
     throw err;
   }
 }
@@ -195,10 +227,21 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
     const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical } = surface;
     // common surface
     const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
-    const glassManufacturer = medium === "air" || medium === "REFL" ? "" : `, '${manufacturer}'`;
+    const glassManufacturer = medium === "air" || medium === "REFL" || medium === "CaF2" ? "" : `, ${JSON.stringify(manufacturer)}`;
+    const mediumOption = medium === "CaF2" ? "caf2" : JSON.stringify(medium);
     const setStop = label === "Stop" ? "\nsm.set_stop()" : "";
-    const asphericalCommands = aspherical === undefined ? "" : `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${aspherical.conicConstant}, coefs=${JSON.stringify(aspherical.polynomialCoefficients)})`;
-    return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, '${medium}'${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${setStop}`;
+
+    let asphericalCommands = "";
+    if (aspherical !== undefined) {
+      const { conicConstant, polynomialCoefficients } = aspherical;
+      if (polynomialCoefficients === undefined) {
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
+      } else {
+        const coefsString = JSON.stringify(polynomialCoefficients);
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
+      }
+    }
+    return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${setStop}`;
   }, "");
 
   const { distance: objectDistance } = object;
@@ -210,6 +253,8 @@ opm = OpticalModel()
 sm  = opm['seq_model']
 osp = opm['optical_spec']
 pm  = opm['parax_model']
+
+opm.system_spec.dimensions = 'MM'
 
 osp['pupil'] = PupilSpec(osp, key=['${pupilSpace}', '${pupilType}'], value=${pupilValue})
 osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"})
@@ -241,15 +286,15 @@ export async function _plotLensLayout(runPython: (code: string) => Promise<unkno
 }
 
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`plot_ray_fan(${fieldIndex})`)) as string;
+  return (await runPython(`plot_ray_fan(${fieldIndex}, opm)`)) as string;
 }
 
 export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`plot_opd_fan(${fieldIndex})`)) as string;
+  return (await runPython(`plot_opd_fan(${fieldIndex}, opm)`)) as string;
 }
 
 export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`plot_spot_diagram(${fieldIndex})`)) as string;
+  return (await runPython(`plot_spot_diagram(${fieldIndex}, opm)`)) as string;
 }
 
 

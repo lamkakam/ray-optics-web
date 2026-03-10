@@ -1,10 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useCallback } from "react";
-import { createStore, useStore } from "zustand";
-import type { OpticalSpecs } from "@/lib/opticalModel";
+import React, { useCallback } from "react";
+import { useStore, type StoreApi } from "zustand";
 import {
-  createSpecsConfigurerSlice,
   type SpecsConfigurerState,
   type PupilSpace,
   type PupilType,
@@ -18,23 +16,12 @@ import { FieldConfigModal } from "@/components/composite/FieldConfigModal";
 import { WavelengthConfigModal } from "@/components/composite/WavelengthConfigModal";
 
 interface SpecsConfigurerContainerProps {
-  readonly initialSpecs: OpticalSpecs;
-  readonly onSpecsChange: (specs: OpticalSpecs) => void;
+  readonly store: StoreApi<SpecsConfigurerState>;
 }
 
 export function SpecsConfigurerContainer({
-  initialSpecs,
-  onSpecsChange,
+  store,
 }: SpecsConfigurerContainerProps) {
-  const store = useMemo(
-    () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
-    []
-  );
-
-  // Initialize from props
-  useEffect(() => {
-    store.getState().loadFromSpecs(initialSpecs);
-  }, [initialSpecs, store]);
 
   const pupilSpace = useStore(store, (s) => s.pupilSpace);
   const pupilType = useStore(store, (s) => s.pupilType);
@@ -58,10 +45,8 @@ export function SpecsConfigurerContainer({
       pupilValue?: number;
     }) => {
       store.getState().setAperture(patch);
-      const specs = store.getState().toOpticalSpecs();
-      onSpecsChange(specs);
     },
-    [store, onSpecsChange]
+    [store]
   );
 
   const handleFieldApply = useCallback(
@@ -73,20 +58,16 @@ export function SpecsConfigurerContainer({
     }) => {
       store.getState().setField(result);
       store.getState().closeFieldModal();
-      const specs = store.getState().toOpticalSpecs();
-      onSpecsChange(specs);
     },
-    [store, onSpecsChange]
+    [store]
   );
 
   const handleWavelengthApply = useCallback(
     (result: { weights: WavelengthWeights; referenceIndex: ReferenceIndex }) => {
       store.getState().setWavelengths(result);
       store.getState().closeWavelengthModal();
-      const specs = store.getState().toOpticalSpecs();
-      onSpecsChange(specs);
     },
-    [store, onSpecsChange]
+    [store]
   );
 
   return (
