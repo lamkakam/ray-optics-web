@@ -12,7 +12,7 @@ const VARIANT_CLASSES = {
   secondary: ["border", c.secondaryBorderColor, c.secondaryBgColor, c.secondaryTextColor, c.secondaryHoverBgColor, s.borderRadius, s.fontWeight, "transition"],
   toggle: ["border", c.toggleBorderColor, c.toggleBgColor, c.toggleTextColor, c.toggleHoverBgColor, s.borderRadius, s.fontWeight, "transition"],
   danger: [c.dangerBgColor, c.dangerHoverBgColor, c.dangerTextColor, s.borderRadius, s.fontWeight, "transition"],
-  floating: ["absolute", "border", s.borderRadius, c.floatingBorderColor, c.floatingBgColor, c.floatingTextColor, c.floatingHoverBgColor, s.floatingHorizontalMargin, s.floatingVerticalMargin, sz.xs],
+  floating: ["absolute", "border", s.borderRadius, c.floatingBorderColor, c.floatingBgColor, c.floatingTextColor, c.floatingHoverBgColor, s.floatingHorizontalMargin, s.floatingVerticalMargin],
   icon: ["inline-flex", "items-center", "justify-center", c.iconBgColor, c.iconHoverBgColor, c.iconTextColor, s.iconBorderRadius, s.iconFontWeight, s.iconHorizontalMargin, s.iconVerticalMargin],
 } as const satisfies Record<ButtonVariant, readonly string[]>;
 
@@ -42,7 +42,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const sizeClass = variant === "icon" || variant === "floating"
-    ? undefined
+    ? SIZE_CLASSES.xs
     : SIZE_CLASSES[size ?? "md"];
 
   return (
