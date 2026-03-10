@@ -8,8 +8,6 @@
 
 const globalTokens = {
   color: {
-    primaryBg:     "bg-blue-600 hover:bg-blue-700",
-    dangerBg:      "bg-red-600 hover:bg-red-700",
     reverseText:   "text-white",
     defaultBorder: "border-gray-200 dark:border-gray-700",
     inputBorder:   "border-gray-300 dark:border-gray-600",
@@ -34,9 +32,11 @@ const g = globalTokens;
 export const componentTokens = {
   button: {
     color: {
-      primaryBgColor:          g.color.primaryBg,
+      primaryBgColor:          "bg-blue-600",
+      primaryHoverBgColor:     "hover:bg-blue-700",
       primaryTextColor:        g.color.reverseText,
-      dangerBgColor:           g.color.dangerBg,
+      dangerBgColor:           "bg-red-600",
+      dangerHoverBgColor:      "hover:bg-red-700",
       dangerTextColor:         g.color.reverseText,
       secondaryBorderColor:    g.color.inputBorder,
       secondaryBgColor:        "bg-transparent",
