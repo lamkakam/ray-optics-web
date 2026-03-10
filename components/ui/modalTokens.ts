@@ -15,8 +15,11 @@ const globalTokens = {
     primaryText: "text-gray-900 dark:text-gray-100",
     secondaryText: "text-gray-700 dark:text-gray-300",
     mutedText: "text-gray-500 dark:text-gray-400",
+    focusRingColor: "focus:ring-blue-500",
   },
-  size: {},
+  size: {
+    focusRingWidth: "focus:ring-2",
+  },
   style: {},
 } as const;
 
@@ -77,14 +80,14 @@ export const componentTokens = {
       borderColor: g.color.inputBorder,
       bgColor: g.color.surfaceBg,
       textColor: g.color.primaryText,
-      focusRingColor: "focus:ring-blue-500",
+      focusRingColor: g.color.focusRingColor,
     },
     size: {
       horizontalPadding: "px-3",
       verticalPadding: "py-2",
       fontSize: "text-sm",
       defaultWidth: "w-full",
-      focusRingWidth: "focus:ring-2",
+      focusRingWidth: g.size.focusRingWidth,
     },
     style: {
       borderRadius: "rounded-lg",
@@ -99,7 +102,7 @@ export const componentTokens = {
       borderColor: g.color.inputBorder,
       bgColor: g.color.surfaceBg,
       textColor: g.color.primaryText,
-      focusRingColor: "focus:ring-blue-500",
+      focusRingColor: g.color.focusRingColor,
     },
     size: {
       horizontalPadding: "px-3",
@@ -109,7 +112,7 @@ export const componentTokens = {
       compactVerticalPadding: "py-1.5",
       compactFontSize: "text-sm",
       defaultWidth: "w-full",
-      focusRingWidth: "focus:ring-2",
+      focusRingWidth: g.size.focusRingWidth,
     },
     style: {
       compactBorderStyle: "border",
