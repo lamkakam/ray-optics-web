@@ -37,6 +37,16 @@ function makeTestRows(): GridRow[] {
 }
 
 describe("lensEditorStore", () => {
+  describe("initial state", () => {
+    it("has an object row and an image row", () => {
+      const store = makeStore();
+      const rows = store.getState().rows;
+      expect(rows).toHaveLength(2);
+      expect(rows[0]).toMatchObject({ id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 });
+      expect(rows[1]).toMatchObject({ id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 });
+    });
+  });
+
   describe("setRows", () => {
     it("sets rows", () => {
       const store = makeStore();
