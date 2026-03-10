@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { Button } from "@/components/micro/Button";
+import { Modal } from "@/components/micro/Modal";
 import { useTheme } from "@/components/ThemeProvider";
 import type { FieldSpace, FieldType } from "@/store/specsConfigurerStore";
 
@@ -114,13 +115,8 @@ export function FieldConfigModal({
     });
   };
 
-  if (!isOpen) return undefined;
-
   const atLimit = rows.length >= MAX_ROWS;
 
-  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropPosition, cx.modal.style.backdropBlur);
-  const panel = clsx(cx.modal.style.panelPosition, cx.modal.style.panelZIndex, cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.style.panelBorderStyle, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow, cx.modal.style.panelAnimation);
-  const title = clsx(cx.modal.style.titleBorderStyle, cx.modal.style.titleFontWeight, cx.modal.size.titleFontSize, cx.modal.size.titleMargin, cx.modal.size.titlePadding, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
   const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
   const select = clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);
   const input = clsx(cx.input.style.borderRadius, cx.input.style.borderStyle, cx.input.style.outlineStyle, cx.input.style.transitionStyle, cx.input.size.defaultWidth, cx.input.size.focusRingWidth, cx.input.color.focusRingColor, cx.input.color.borderColor, cx.input.color.bgColor, cx.input.color.textColor, cx.input.size.horizontalPadding, cx.input.size.verticalPadding, cx.input.size.fontSize);
@@ -166,11 +162,7 @@ export function FieldConfigModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div data-testid="modal-backdrop" className={backdrop} />
-      <div role="dialog" aria-modal="true" aria-labelledby="field-modal-title" className={`${panel} max-w-lg`}>
-        <h2 id="field-modal-title" className={title}>Field</h2>
-
+    <Modal isOpen={isOpen} title="Field" titleId="field-modal-title" maxWidth="max-w-lg">
         <div className="mb-4 flex items-center gap-3">
           <div>
             <label className={label} htmlFor="field-space">Field space</label>
@@ -229,7 +221,6 @@ export function FieldConfigModal({
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button variant="primary" onClick={handleApply}>Apply</Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

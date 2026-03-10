@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
+import { Modal } from "@/components/micro/Modal";
 import glassCatalogs from "@/data/glass-catalogs.json";
 
 const MANUFACTURERS = ["Special", ...Object.keys(glassCatalogs)];
@@ -34,37 +35,17 @@ export function MediumSelectorModal({
 
 
 
-  if (!isOpen) return undefined;
-
   const isSpecial = manufacturer === "Special";
   const mediaOptions = isSpecial
     ? SPECIAL_MEDIA
     : (glassCatalogs as Record<string, string[]>)[manufacturer] ?? [];
 
-  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropPosition, cx.modal.style.backdropBlur);
-  const panel = clsx(cx.modal.style.panelPosition, cx.modal.style.panelZIndex, cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.style.panelBorderStyle, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow, cx.modal.style.panelAnimation);
-  const title = clsx(cx.modal.style.titleBorderStyle, cx.modal.style.titleFontWeight, cx.modal.size.titleFontSize, cx.modal.size.titleMargin, cx.modal.size.titlePadding, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
   const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
   const select = clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        data-testid="modal-backdrop"
-        className={backdrop}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="medium-modal-title"
-        className={`${panel} max-w-md`}
-      >
-        {/* ── Title ── */}
-        <h2 id="medium-modal-title" className={title}>
-          Select Medium
-        </h2>
-
+    <Modal isOpen={isOpen} title="Select Medium" titleId="medium-modal-title" maxWidth="max-w-md">
         {/* ── Form fields ── */}
         <div className="space-y-4 mb-4">
           <div>
@@ -124,7 +105,6 @@ export function MediumSelectorModal({
             Confirm
           </Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

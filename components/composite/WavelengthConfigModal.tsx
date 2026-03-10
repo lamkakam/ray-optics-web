@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { Button } from "@/components/micro/Button";
+import { Modal } from "@/components/micro/Modal";
 import { useTheme } from "@/components/ThemeProvider";
 import { FRAUNHOFER_LINES, lookupWavelength, type FraunhoferSymbol } from "@/lib/fraunhoferLines";
 
@@ -125,13 +126,8 @@ export function WavelengthConfigModal({
     });
   };
 
-  if (!isOpen) return undefined;
-
   const atLimit = rows.length >= MAX_ROWS;
 
-  const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropPosition, cx.modal.style.backdropBlur);
-  const panel = clsx(cx.modal.style.panelPosition, cx.modal.style.panelZIndex, cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.style.panelBorderStyle, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow, cx.modal.style.panelAnimation);
-  const title = clsx(cx.modal.style.titleBorderStyle, cx.modal.style.titleFontWeight, cx.modal.size.titleFontSize, cx.modal.size.titleMargin, cx.modal.size.titlePadding, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
   const caption = clsx(cx.label.style.caption, cx.label.color.captionTextColor, cx.label.size.caption);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
@@ -227,11 +223,7 @@ export function WavelengthConfigModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div data-testid="modal-backdrop" className={backdrop} />
-      <div role="dialog" aria-modal="true" aria-labelledby="wavelength-modal-title" className={`${panel} max-w-4xl`}>
-        <h2 id="wavelength-modal-title" className={title}>Wavelengths</h2>
-
+    <Modal isOpen={isOpen} title="Wavelengths" titleId="wavelength-modal-title" maxWidth="max-w-4xl">
         <div className="mb-4" style={{ width: "100%" }}>
           <p className={caption}>Maximum 7 wavelengths</p>
           <AgGridProvider modules={[AllCommunityModule]}>
@@ -250,7 +242,6 @@ export function WavelengthConfigModal({
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button variant="primary" onClick={handleApply}>Apply</Button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
