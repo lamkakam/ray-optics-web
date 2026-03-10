@@ -21,6 +21,7 @@ import { Modal } from "@/components/micro/Modal";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
+import { Select } from "@/components/micro/Select";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 
@@ -220,7 +221,6 @@ export default function Home() {
     [specsStore, lensStore]
   );
 
-  const headerSelect = clsx(cx.select.style.compactBorderStyle, cx.select.style.compactBorderRadius, cx.select.style.compactOutlineStyle, cx.select.style.transitionStyle, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.compactHorizontalPadding, cx.select.size.compactVerticalPadding, cx.select.size.compactFontSize);
   const initOverlay = clsx(cx.overlay.style.initLayout, cx.overlay.style.initZIndex, cx.overlay.style.initBlur, cx.overlay.color.initBgColor);
   const initCard = clsx(cx.overlay.style.cardLayout, cx.overlay.style.cardBorderRadius, cx.overlay.size.cardHorizontalPadding, cx.overlay.size.cardVerticalPadding, cx.overlay.style.cardShadow, cx.overlay.color.cardBgColor, cx.overlay.color.cardTextColor);
 
@@ -286,22 +286,15 @@ export default function Home() {
         <h1 className="font-semibold text-gray-900 dark:text-gray-100">
           Ray Optics Web
         </h1>
-        <select
+        <Select
           ref={exampleSelectRef}
+          compact
+          placeholder="Load example system..."
           aria-label="Example system"
-          className={headerSelect}
+          options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
           defaultValue=""
           onChange={handleExampleChange}
-        >
-          <option value="" disabled>
-            Load example system...
-          </option>
-          {exampleSystemNames.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
+        />
         <Button
           variant="primary"
           disabled={!isReady || computing}
@@ -349,22 +342,16 @@ export default function Home() {
         <h1 className="mb-2 font-semibold text-gray-900 dark:text-gray-100">
           Ray Optics Web
         </h1>
-        <select
+        <Select
           ref={exampleSelectRef}
+          compact
+          placeholder="Load example system..."
           aria-label="Example system"
-          className={`mb-2 w-full ${headerSelect}`}
+          options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
           defaultValue=""
           onChange={handleExampleChange}
-        >
-          <option value="" disabled>
-            Load example system...
-          </option>
-          {exampleSystemNames.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
+          className="mb-2 w-full"
+        />
         <Button
           variant="primary"
           className="mb-2"

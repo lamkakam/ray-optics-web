@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Tooltip } from "@/components/micro/Tooltip";
 import { Button } from "@/components/micro/Button";
+import { Select } from "@/components/micro/Select";
 import type { PupilSpace, PupilType } from "@/store/specsConfigurerStore";
 
 interface AperturePatch {
@@ -79,18 +80,12 @@ export function SpecsConfigurerPanel({
           System Aperture
         </h3>
         <div className="flex items-center gap-3">
-          <select
+          <Select
             aria-label="System aperture type"
-            className={clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize)}
+            options={APERTURE_OPTIONS}
             value={currentDropdownValue}
             onChange={handleDropdownChange}
-          >
-            {APERTURE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          />
           <input
             type="text"
             aria-label="Aperture value"

@@ -1,13 +1,11 @@
 import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Select, type SelectOption } from "@/components/micro/Select";
 
 export type PlotType = "rayFan" | "opdFan" | "spotDiagram";
 
-interface FieldOption {
-  readonly label: string;
-  readonly value: number;
-}
+type FieldOption = SelectOption & { readonly value: number };
 
 interface AnalysisPlotViewProps {
   readonly fieldOptions: readonly FieldOption[];
@@ -26,6 +24,10 @@ const PLOT_TYPE_LABELS: Record<PlotType, string> = {
   spotDiagram: "Spot Diagram",
 };
 
+const PLOT_TYPE_OPTIONS: SelectOption[] = (Object.keys(PLOT_TYPE_LABELS) as PlotType[]).map(
+  (key) => ({ value: key, label: PLOT_TYPE_LABELS[key] })
+);
+
 export function AnalysisPlotView({
   fieldOptions,
   selectedFieldIndex,
@@ -43,37 +45,25 @@ export function AnalysisPlotView({
           <label htmlFor="analysis-field-select" className={clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default)}>
             Field
           </label>
-          <select
+          <Select
             id="analysis-field-select"
             aria-label="Field"
-            className={clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize)}
+            options={fieldOptions}
             value={selectedFieldIndex}
             onChange={(e) => onFieldChange(Number(e.target.value))}
-          >
-            {fieldOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          />
         </div>
         <div className="flex-1">
           <label htmlFor="analysis-plot-type-select" className={clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default)}>
             Plot type
           </label>
-          <select
+          <Select
             id="analysis-plot-type-select"
             aria-label="Plot type"
-            className={clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize)}
+            options={PLOT_TYPE_OPTIONS}
             value={selectedPlotType}
             onChange={(e) => onPlotTypeChange(e.target.value as PlotType)}
-          >
-            {(Object.keys(PLOT_TYPE_LABELS) as PlotType[]).map((key) => (
-              <option key={key} value={key}>
-                {PLOT_TYPE_LABELS[key]}
-              </option>
-            ))}
-          </select>
+          />
         </div>
       </div>
 
