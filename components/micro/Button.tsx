@@ -12,8 +12,8 @@ const VARIANT_CLASSES = {
   secondary: ["border", c.secondaryBorderColor, c.secondaryBgColor, c.secondaryTextColor, c.secondaryHoverBgColor, s.borderRadius, s.fontWeight, "transition"],
   toggle: ["border", c.toggleBorderColor, c.toggleBgColor, c.toggleTextColor, c.toggleHoverBgColor, s.borderRadius, s.fontWeight, "transition"],
   danger: [c.dangerBgColor, c.dangerHoverBgColor, c.dangerTextColor, s.borderRadius, s.fontWeight, "transition"],
-  floating: ["absolute", "border", s.borderRadius, c.floatingBorderColor, c.floatingBgColor, c.floatingTextColor, c.floatingHoverBgColor, s.floatingHorizontalMargin, s.floatingVerticalMargin],
-  icon: ["inline-flex", "items-center", "justify-center", c.iconBgColor, c.iconHoverBgColor, c.iconTextColor, s.iconBorderRadius, s.iconFontWeight, s.iconHorizontalMargin, s.iconVerticalMargin],
+  floating: ["absolute", "border", s.borderRadius, c.floatingBorderColor, c.floatingBgColor, c.floatingTextColor, c.floatingHoverBgColor, sz.floatingHorizontalMargin, sz.floatingVerticalMargin],
+  icon: ["inline-flex", "items-center", "justify-center", c.iconBgColor, c.iconHoverBgColor, c.iconTextColor, s.iconBorderRadius, s.iconFontWeight, sz.iconHorizontalMargin, sz.iconVerticalMargin],
 } as const satisfies Record<ButtonVariant, readonly string[]>;
 
 const SIZE_CLASSES = {

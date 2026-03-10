@@ -113,8 +113,8 @@ describe("Button", () => {
     const btn = screen.getByRole("button");
     expectClasses(btn,
       cx.button.style.borderRadius,
-      cx.button.style.floatingHorizontalMargin,
-      cx.button.style.floatingVerticalMargin,
+      cx.button.size.floatingHorizontalMargin,
+      cx.button.size.floatingVerticalMargin,
       cx.button.style.cursor,
       cx.button.color.floatingBorderColor,
       cx.button.color.floatingBgColor,
@@ -137,8 +137,8 @@ describe("Button", () => {
       "justify-center",
       cx.button.style.iconBorderRadius,
       cx.button.style.iconFontWeight,
-      cx.button.style.iconHorizontalMargin,
-      cx.button.style.iconVerticalMargin,
+      cx.button.size.iconHorizontalMargin,
+      cx.button.size.iconVerticalMargin,
       cx.button.style.cursor,
       cx.button.color.iconBgColor,
       cx.button.color.iconHoverBgColor,
@@ -160,7 +160,7 @@ describe("Button", () => {
     splitClasses(cx.button.size.horizontalPaddingMd).forEach((cls) => {
       expect(btn).not.toHaveClass(cls);
     });
-    expectClasses(btn, cx.button.style.iconBorderRadius, cx.button.style.iconFontWeight);
+    expectClasses(btn, cx.button.style.iconBorderRadius, cx.button.style.iconFontWeight, cx.button.size.iconHorizontalMargin, cx.button.size.iconVerticalMargin);
   });
 
   it("variant danger size xs applies correct token classes", () => {
