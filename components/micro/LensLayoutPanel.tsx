@@ -33,7 +33,7 @@ export function LensLayoutPanel({
           )}
         </>
       ) : (
-        <div className={clsx(cx.panel.style.emptyState, cx.text.color.emptyTextColor)}>
+        <div className={clsx(cx.panel.style.emptyStateLayout, cx.panel.size.emptyStateFontSize, cx.text.color.emptyTextColor)}>
           {loading
             ? "Loading lens layout..."
             : "Configure the System Specs & Lens Prescription below, or choose an example system, then click \u201cUpdate System\u201d to view the lens layout."}

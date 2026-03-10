@@ -40,7 +40,7 @@ export function AnalysisPlotView({
     <div className={`flex ${autoHeight ? "" : "h-full "}min-h-0 flex-col gap-3`}>
       <div className="flex gap-3">
         <div className="flex-1">
-          <label htmlFor="analysis-field-select" className={clsx(cx.label.style.base, cx.label.color.textColor, cx.label.size.default)}>
+          <label htmlFor="analysis-field-select" className={clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default)}>
             Field
           </label>
           <select
@@ -58,7 +58,7 @@ export function AnalysisPlotView({
           </select>
         </div>
         <div className="flex-1">
-          <label htmlFor="analysis-plot-type-select" className={clsx(cx.label.style.base, cx.label.color.textColor, cx.label.size.default)}>
+          <label htmlFor="analysis-plot-type-select" className={clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default)}>
             Plot type
           </label>
           <select

@@ -17,7 +17,7 @@ export function Tooltip({ text, children, position = "top" }: TooltipProps) {
       {children}
       <span
         role="tooltip"
-        className={clsx(cx.tooltip.style.base, cx.tooltip.color.bgColor, cx.tooltip.color.textColor, cx.tooltip.size.padding, cx.tooltip.size.fontSize, positionClasses)}
+        className={clsx(cx.tooltip.style.position, cx.tooltip.style.pointerEvents, cx.tooltip.style.whiteSpace, cx.tooltip.style.borderRadius, cx.tooltip.style.opacity, cx.tooltip.style.transition, cx.tooltip.style.hoverOpacity, cx.tooltip.style.zIndex, cx.tooltip.color.bgColor, cx.tooltip.color.textColor, cx.tooltip.size.horizontalPadding, cx.tooltip.size.verticalPadding, cx.tooltip.size.fontSize, positionClasses)}
       >
         {text}
       </span>

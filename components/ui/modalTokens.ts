@@ -164,10 +164,12 @@ export const componentTokens = {
     size: {
       default: "text-sm",
       caption: "text-xs",
+      baseMargin: "mb-1",
     },
     style: {
-      base: "mb-1 block font-medium",
       caption: "mb-1",
+      baseDisplay: "block",
+      baseFontWeight: "font-medium",
     },
   },
 
@@ -178,11 +180,13 @@ export const componentTokens = {
       textColor: "text-gray-600 dark:text-gray-400",
     },
     size: {
-      padding: "px-2 py-0.5",
+      horizontalPadding: "px-2",
+      verticalPadding: "py-0.5",
       fontSize: "text-xs",
     },
     style: {
-      base: "rounded-full border",
+      borderRadius: "rounded-full",
+      borderStyle: "border",
     },
   },
 
@@ -201,11 +205,19 @@ export const componentTokens = {
       textColor: "text-white",
     },
     size: {
-      padding: "px-2 py-1",
+      horizontalPadding: "px-2",
+      verticalPadding: "py-1",
       fontSize: "text-xs",
     },
     style: {
-      base: "pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap rounded opacity-0 transition-opacity group-hover:opacity-100 z-10",
+      position: "absolute left-1/2 -translate-x-1/2",
+      pointerEvents: "pointer-events-none",
+      whiteSpace: "whitespace-nowrap",
+      borderRadius: "rounded",
+      opacity: "opacity-0",
+      transition: "transition-opacity",
+      hoverOpacity: "group-hover:opacity-100",
+      zIndex: "z-10",
     },
   },
 
@@ -234,10 +246,13 @@ export const componentTokens = {
     color: {
       loadingOverlayBgColor: "bg-white/60 dark:bg-gray-900/60",
     },
+    size: {
+      emptyStateFontSize: "text-sm",
+    },
     style: {
       imageContainer: "relative flex h-full w-full flex-col items-center justify-center",
       loadingOverlay: "absolute inset-0 flex items-center justify-center",
-      emptyState: "flex items-center justify-center text-sm",
+      emptyStateLayout: "flex items-center justify-center",
     },
   },
 
@@ -247,9 +262,17 @@ export const componentTokens = {
       cardBgColor: "bg-white/10 dark:bg-black/20",
       cardTextColor: "text-white",
     },
+    size: {
+      cardHorizontalPadding: "px-10",
+      cardVerticalPadding: "py-8",
+    },
     style: {
-      init: "fixed inset-0 z-[200] flex flex-col items-center justify-center backdrop-blur-sm",
-      card: "flex flex-col items-center gap-4 rounded-xl px-10 py-8 shadow-xl",
+      initLayout: "fixed inset-0 flex flex-col items-center justify-center",
+      initZIndex: "z-[200]",
+      initBlur: "backdrop-blur-sm",
+      cardLayout: "flex flex-col items-center gap-4",
+      cardBorderRadius: "rounded-xl",
+      cardShadow: "shadow-xl",
     },
   },
 } as const;

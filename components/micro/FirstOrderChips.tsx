@@ -23,7 +23,7 @@ export function FirstOrderChips({ data }: FirstOrderChipsProps) {
     ({ key, format }) => (
       <span
         key={key}
-        className={clsx(cx.chip.style.base, cx.chip.color.borderColor, cx.chip.color.bgColor, cx.chip.color.textColor, cx.chip.size.padding, cx.chip.size.fontSize)}
+        className={clsx(cx.chip.style.borderRadius, cx.chip.style.borderStyle, cx.chip.color.borderColor, cx.chip.color.bgColor, cx.chip.color.textColor, cx.chip.size.horizontalPadding, cx.chip.size.verticalPadding, cx.chip.size.fontSize)}
       >
         {format(data[key])}
       </span>
