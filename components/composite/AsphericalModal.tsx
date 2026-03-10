@@ -6,6 +6,7 @@ import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
 import { Input } from "@/components/micro/Input";
 import { Modal } from "@/components/micro/Modal";
+import { Select } from "@/components/micro/Select";
 
 export type AsphericalType = "Conical" | "EvenAspherical";
 
@@ -68,7 +69,6 @@ export function AsphericalModal({
   );
 
   const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
-  const select = clsx(cx.select.style.borderRadius, cx.select.style.borderStyle, cx.select.style.outlineStyle, cx.select.style.transitionStyle, cx.select.size.defaultWidth, cx.select.size.focusRingWidth, cx.select.color.focusRingColor, cx.select.color.borderColor, cx.select.color.bgColor, cx.select.color.textColor, cx.select.size.horizontalPadding, cx.select.size.verticalPadding, cx.select.size.fontSize);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   const handleConfirm = () => {
@@ -110,16 +110,16 @@ export function AsphericalModal({
             <label htmlFor="aspherical-type" className={label}>
               Type
             </label>
-            <select
+            <Select
               id="aspherical-type"
               aria-label="Type"
-              className={select}
               value={type}
               onChange={(e) => setType(e.target.value as AsphericalType)}
-            >
-              <option value="Conical">Conical</option>
-              <option value="EvenAspherical">Even Aspherical</option>
-            </select>
+              options={[
+                { value: "Conical", label: "Conical" },
+                { value: "EvenAspherical", label: "Even Aspherical" },
+              ]}
+            />
           </div>
         </div>
 
