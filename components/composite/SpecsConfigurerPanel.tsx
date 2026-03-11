@@ -29,10 +29,10 @@ const APERTURE_OPTIONS: readonly {
   pupilSpace: PupilSpace;
   pupilType: PupilType;
 }[] = [
-  { label: "Entrance Pupil Diameter", value: "object:epd", pupilSpace: "object", pupilType: "epd" },
-  { label: "Image Space F/#", value: "image:f/#", pupilSpace: "image", pupilType: "f/#" },
-  { label: "Object Space NA", value: "object:NA", pupilSpace: "object", pupilType: "NA" },
-];
+    { label: "Entrance Pupil Diameter", value: "object:epd", pupilSpace: "object", pupilType: "epd" },
+    { label: "Image Space F/#", value: "image:f/#", pupilSpace: "image", pupilType: "f/#" },
+    { label: "Object Space NA", value: "object:NA", pupilSpace: "object", pupilType: "NA" },
+  ];
 
 export function SpecsConfigurerPanel({
   pupilSpace,

@@ -35,8 +35,8 @@ export function LensPrescriptionContainer({
 
   return (
     <div>
-      <div role="toolbar" aria-label="Grid toolbar">
-        <Button variant="primary" onClick={handleExport}>Export JSON</Button>
+      <div role="toolbar" aria-label="Grid toolbar" className="mb-2">
+        <Button variant="primary" size="sm" onClick={handleExport}>Export JSON</Button>
       </div>
 
       <LensPrescriptionGrid
