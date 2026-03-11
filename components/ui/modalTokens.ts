@@ -13,10 +13,11 @@ const globalTokens = {
     primaryText: "text-gray-900 dark:text-gray-100",
     secondaryText: "text-gray-700 dark:text-gray-300",
     mutedText: "text-gray-500 dark:text-gray-400",
-    reverseText: "text-white",
+    reverseText: "text-white dark:text-black",
     defaultBorder: "border-gray-200 dark:border-gray-700",
     inputBorder: "border-gray-300 dark:border-gray-600",
     surfaceBg: "bg-gray-50 dark:bg-gray-800",
+    reverseSurfaceBg: "bg-gray-800 dark:bg-gray-50",
     focusRingColor: "focus:ring-blue-500",
     backdropBgColor: "bg-black/50",
     overlayPanelBgColor: "bg-white dark:bg-gray-900",
@@ -38,10 +39,10 @@ export const componentTokens = {
     color: {
       primaryBgColor: g.color.primaryColor,
       primaryHoverBgColor: "hover:bg-blue-700",
-      primaryTextColor: g.color.reverseText,
+      primaryTextColor: "text-white",
       dangerBgColor: g.color.errorColor,
       dangerHoverBgColor: "hover:bg-red-700",
-      dangerTextColor: g.color.reverseText,
+      dangerTextColor: "text-white",
       secondaryBorderColor: g.color.inputBorder,
       secondaryBgColor: "bg-transparent",
       secondaryTextColor: g.color.secondaryText,
@@ -204,8 +205,8 @@ export const componentTokens = {
 
   tooltip: {
     color: {
-      bgColor: "bg-gray-900",
-      textColor: "text-white",
+      bgColor: g.color.reverseSurfaceBg,
+      textColor: g.color.reverseText,
     },
     size: {
       horizontalPadding: "px-2",
@@ -213,9 +214,7 @@ export const componentTokens = {
       fontSize: "text-xs",
     },
     style: {
-      position: "absolute left-1/2 -translate-x-1/2",
       pointerEvents: "pointer-events-none",
-      whiteSpace: "whitespace-nowrap",
       borderRadius: "rounded",
       opacity: "opacity-0",
       transition: "transition-opacity",
