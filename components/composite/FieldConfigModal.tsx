@@ -8,6 +8,7 @@ import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
 import { Input } from "@/components/micro/Input";
+import { Label } from "@/components/micro/Label";
 import { Select } from "@/components/micro/Select";
 import { useTheme } from "@/components/ThemeProvider";
 import type { FieldSpace, FieldType } from "@/store/specsConfigurerStore";
@@ -119,8 +120,7 @@ export function FieldConfigModal({
 
   const atLimit = rows.length >= MAX_ROWS;
 
-  const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
-  const caption = clsx(cx.label.style.caption, cx.label.color.captionTextColor, cx.label.size.caption);
+  const caption = clsx(cx.text.size.captionMargin, cx.text.color.captionTextColor, cx.text.size.captionFontSize);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   const columnDefs: ColDef<FieldRow>[] = [
@@ -165,7 +165,7 @@ export function FieldConfigModal({
     <Modal isOpen={isOpen} title="Field" titleId="field-modal-title" size="lg">
         <div className="mb-4 flex items-center gap-3">
           <div>
-            <label className={label} htmlFor="field-space">Field space</label>
+            <Label htmlFor="field-space">Field space</Label>
             <Select
               id="field-space"
               aria-label="Field space"
@@ -178,7 +178,7 @@ export function FieldConfigModal({
             />
           </div>
           <div>
-            <label className={label} htmlFor="field-type">Field type</label>
+            <Label htmlFor="field-type">Field type</Label>
             <Select
               id="field-type"
               aria-label="Field type"
@@ -191,7 +191,7 @@ export function FieldConfigModal({
             />
           </div>
           <div>
-            <label className={label} htmlFor="field-max">Max field value</label>
+            <Label htmlFor="field-max">Max field value</Label>
             <Input
               id="field-max"
               type="text"

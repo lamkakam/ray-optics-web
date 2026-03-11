@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
 import { Input } from "@/components/micro/Input";
+import { Label } from "@/components/micro/Label";
 import { Modal } from "@/components/micro/Modal";
 import { Select } from "@/components/micro/Select";
 
@@ -68,7 +69,6 @@ export function AsphericalModal({
     padCoefficients(initialCoefficients)
   );
 
-  const label = clsx(cx.label.style.baseDisplay, cx.label.style.baseFontWeight, cx.label.size.baseMargin, cx.label.color.textColor, cx.label.size.default);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   const handleConfirm = () => {
@@ -91,70 +91,70 @@ export function AsphericalModal({
 
   return (
     <Modal isOpen={isOpen} title="Aspherical Parameters" titleId="aspherical-modal-title" size="md">
-        {/* ── Conic constant + Type (2-col grid) ── */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label htmlFor="conic-constant" className={label}>
-              Conic constant
-            </label>
-            <Input
-              id="conic-constant"
-              aria-label="Conic constant"
-              type="text"
-              value={conicConstantStr}
-              onChange={(e) => setConicConstantStr(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label htmlFor="aspherical-type" className={label}>
-              Type
-            </label>
-            <Select
-              id="aspherical-type"
-              aria-label="Type"
-              value={type}
-              onChange={(e) => setType(e.target.value as AsphericalType)}
-              options={[
-                { value: "Conical", label: "Conical" },
-                { value: "EvenAspherical", label: "Even Aspherical" },
-              ]}
-            />
-          </div>
+      {/* ── Conic constant + Type (2-col grid) ── */}
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <Label htmlFor="conic-constant">
+            Conic constant
+          </Label>
+          <Input
+            id="conic-constant"
+            aria-label="Conic constant"
+            type="text"
+            value={conicConstantStr}
+            onChange={(e) => setConicConstantStr(e.target.value)}
+          />
         </div>
 
-        {/* ── Polynomial coefficients (2-col grid) ── */}
-        {type === "EvenAspherical" && (
-          <div className="mb-4">
-            <p className={`mb-2 ${label}`}>
-              Even Aspherical Coefficients
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              {COEFFICIENT_LABELS.map((lbl, i) => (
-                <div key={lbl}>
-                  <label htmlFor={`coeff-${lbl}`} className={label}>
-                    {lbl}
-                  </label>
-                  <Input
-                    id={`coeff-${lbl}`}
-                    aria-label={lbl}
-                    type="text"
-                    value={coefficientStrs[i]}
-                    onChange={(e) => updateCoefficient(i, e.target.value)}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Actions ── */}
-        <div className={`flex items-center gap-3 pt-4 ${divider}`}>
-          <Button variant="danger" onClick={onRemove}>Remove Aspherical</Button>
-          <span className="flex-1" />
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+        <div>
+          <Label htmlFor="aspherical-type">
+            Type
+          </Label>
+          <Select
+            id="aspherical-type"
+            aria-label="Type"
+            value={type}
+            onChange={(e) => setType(e.target.value as AsphericalType)}
+            options={[
+              { value: "Conical", label: "Conical" },
+              { value: "EvenAspherical", label: "Even Aspherical" },
+            ]}
+          />
         </div>
+      </div>
+
+      {/* ── Polynomial coefficients (2-col grid) ── */}
+      {type === "EvenAspherical" && (
+        <div className="mb-4">
+          <p className={clsx("mb-2", cx.label.style.fontWeight, cx.label.color.textColor, cx.label.size.fontSize)}>
+            Even Aspherical Coefficients
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {COEFFICIENT_LABELS.map((lbl, i) => (
+              <div key={lbl}>
+                <Label htmlFor={`coeff-${lbl}`}>
+                  {lbl}
+                </Label>
+                <Input
+                  id={`coeff-${lbl}`}
+                  aria-label={lbl}
+                  type="text"
+                  value={coefficientStrs[i]}
+                  onChange={(e) => updateCoefficient(i, e.target.value)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Actions ── */}
+      <div className={`flex items-center gap-3 pt-4 ${divider}`}>
+        <Button variant="danger" onClick={onRemove}>Remove Aspherical</Button>
+        <span className="flex-1" />
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+      </div>
     </Modal>
   );
 }
