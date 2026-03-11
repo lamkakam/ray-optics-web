@@ -1,6 +1,5 @@
 import React from "react";
-import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Chip } from "@/components/micro/Chip";
 
 interface FirstOrderChipsProps {
   readonly data?: Record<string, number>;
@@ -20,14 +19,7 @@ export function FirstOrderChips({ data }: FirstOrderChipsProps) {
   if (!data) return null;
 
   const chips = CHIP_CONFIG.filter(({ key }) => key in data).map(
-    ({ key, format }) => (
-      <span
-        key={key}
-        className={clsx(cx.chip.style.borderRadius, cx.chip.style.borderStyle, cx.chip.color.borderColor, cx.chip.color.bgColor, cx.chip.color.textColor, cx.chip.size.horizontalPadding, cx.chip.size.verticalPadding, cx.chip.size.fontSize)}
-      >
-        {format(data[key])}
-      </span>
-    )
+    ({ key, format }) => <Chip key={key}>{format(data[key])}</Chip>
   );
 
   return <>{chips}</>;
