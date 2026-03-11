@@ -257,7 +257,7 @@ export default function Home() {
 
   const layoutLG: React.ReactNode = (
     <div className="flex flex-col h-screen">
-      <header className="flex h-12 shrink-0 items-center gap-4 border-b border-gray-200 px-4 dark:border-gray-700">
+      <header className="flex h-12 shrink-0 items-center gap-4 border-gray-200 px-4 dark:border-gray-700">
         <Header level={1}>Ray Optics Web</Header>
         <Select
           ref={exampleSelectRef}
