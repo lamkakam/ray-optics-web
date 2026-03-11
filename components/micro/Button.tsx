@@ -1,5 +1,6 @@
 import React from "react";
 import clsx from "clsx";
+import { twMerge } from "tailwind-merge";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 
 export type ButtonVariant = "primary" | "secondary" | "toggle" | "danger" | "floating";
@@ -48,13 +49,13 @@ export function Button({
   return (
     <button
       type={type}
-      className={clsx(
+      className={twMerge(clsx(
         VARIANT_CLASSES[variant],
         s.cursor,
         s.opacity,
         sizeClass,
         className,
-      )}
+      ))}
       {...rest}
     >
       {children}
