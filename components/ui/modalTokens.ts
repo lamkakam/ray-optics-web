@@ -241,36 +241,20 @@ export const componentTokens = {
 
   text: {
     color: {
-      loadingTextColor: g.color.mutedText,
-      placeholderTextColor: "text-gray-400 dark:text-gray-500",
-      headingTextColor: g.color.primaryText,
       subheadingTextColor: g.color.secondaryText,
       bodyTextColor: g.color.secondaryText,
-      emptyTextColor: "text-gray-400 dark:text-gray-500",
-      captionTextColor: "text-gray-500",
+      placeholderTextColor: g.color.mutedText,
+      captionTextColor: g.color.mutedText,
     },
     size: {
-      captionFontSize: "text-xs",
       subheadingFontSize: "text-sm",
       bodyFontSize: "text-sm",
+      placeholderFontSize: "text-sm",
+      captionFontSize: "text-xs",
       captionMargin: "mb-1",
     },
     style: {
       subheadingFontWeight: "font-medium",
-    },
-  },
-
-  panel: {
-    color: {
-      loadingOverlayBgColor: "bg-white/60 dark:bg-gray-900/60",
-    },
-    size: {
-      emptyStateFontSize: "text-sm",
-    },
-    style: {
-      imageContainer: "relative flex h-full w-full flex-col items-center justify-center",
-      loadingOverlay: "absolute inset-0 flex items-center justify-center",
-      emptyStateLayout: "flex items-center justify-center",
     },
   },
 
