@@ -44,7 +44,7 @@ export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, ch
         aria-labelledby={resolvedTitleId}
         className={`relative z-10 border animate-modal-enter ${panel} ${sizeClasses[size]}`}
       >
-        <Header level={2} variant="modal" id={resolvedTitleId} className={titleBorderClass}>{title}</Header>
+        <Header level={2} id={resolvedTitleId} className={clsx(titleBorderClass, cx.modal.size.titlePadding, cx.modal.size.titleMargin)}>{title}</Header>
         {children}
       </div>
     </div>

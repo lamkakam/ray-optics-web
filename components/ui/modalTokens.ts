@@ -155,12 +155,12 @@ export const componentTokens = {
       textColor: g.color.primaryText,
     },
     size: {
-      pageFontSize: "",
-      modalFontSize: "text-lg",
-      sectionFontSize: "text-sm",
-      sectionMargin: "mb-2",
-      modalMargin: "mb-4",
-      modalPadding: "pb-3",
+      h1FontSize: "text-xl",
+      h2FontSize: "text-lg",
+      h3FontSize: "text-base",
+      h4FontSize: "text-sm",
+      h5FontSize: "text-xs",
+      h6FontSize: "text-xs",
     },
     style: {
       fontWeight: "font-semibold",

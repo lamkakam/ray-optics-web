@@ -284,7 +284,7 @@ export default function Home() {
   const layoutLG: React.ReactNode = (
     <div className="flex flex-col h-screen">
       <header className="flex h-12 shrink-0 items-center gap-4 border-b border-gray-200 px-4 dark:border-gray-700">
-        <Header level={1} variant="page">Ray Optics Web</Header>
+        <Header level={1}>Ray Optics Web</Header>
         <Select
           ref={exampleSelectRef}
           type="compact"
@@ -338,7 +338,7 @@ export default function Home() {
   const layoutSM: React.ReactNode = (
     <div className="flex flex-col">
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
-        <Header level={1} variant="page" className="mb-2">Ray Optics Web</Header>
+        <Header level={1} className="mb-2">Ray Optics Web</Header>
         <Select
           ref={exampleSelectRef}
           type="compact"

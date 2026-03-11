@@ -76,7 +76,7 @@ export function SpecsConfigurerPanel({
     <div className="max-w-[50vw] space-y-4">
       {/* System Aperture */}
       <section>
-        <Header level={3} variant="section">System Aperture</Header>
+        <Header level={3} className="mb-2">System Aperture</Header>
         <div className="flex items-center gap-3">
           <Select
             aria-label="System aperture type"
@@ -96,7 +96,7 @@ export function SpecsConfigurerPanel({
 
       {/* Field */}
       <section>
-        <Header level={3} variant="section">Field</Header>
+        <Header level={3} className="mb-2">Field</Header>
         <Tooltip text="Click to configure field settings" position="bottom">
           <Button
             variant="toggle"
@@ -111,7 +111,7 @@ export function SpecsConfigurerPanel({
 
       {/* Wavelengths */}
       <section>
-        <Header level={3} variant="section">Wavelengths</Header>
+        <Header level={3} className="mb-2">Wavelengths</Header>
         <Tooltip text="Click to configure wavelengths" position="bottom">
           <Button
             variant="toggle"

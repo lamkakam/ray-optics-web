@@ -17,50 +17,41 @@ function expectClasses(element: HTMLElement, ...tokenStrings: string[]) {
 
 describe("Header", () => {
   it.each([1, 2, 3, 4, 5, 6] as const)("renders <h%i> tag for level=%i", (level) => {
-    render(<Header level={level} variant="page">Heading</Header>);
+    render(<Header level={level}>Heading</Header>);
     expect(screen.getByText("Heading").tagName).toBe(`H${level}`);
   });
 
-  it("'page' variant applies font-semibold and textColor tokens", () => {
-    render(<Header level={1} variant="page">Page Title</Header>);
-    const el = screen.getByText("Page Title");
-    expectClasses(el, cx.header.style.fontWeight, cx.header.color.textColor);
-  });
+  it.each([1, 2, 3, 4, 5, 6] as const)(
+    "level=%i applies fontWeight and textColor tokens",
+    (level) => {
+      render(<Header level={level}>Heading {level}</Header>);
+      const el = screen.getByText(`Heading ${level}`);
+      expectClasses(el, cx.header.style.fontWeight, cx.header.color.textColor);
+    },
+  );
 
-  it("'section' variant applies mb-2 text-sm font-semibold and textColor tokens", () => {
-    render(<Header level={3} variant="section">Section</Header>);
-    const el = screen.getByText("Section");
-    expectClasses(
-      el,
-      cx.header.size.sectionMargin,
-      cx.header.size.sectionFontSize,
-      cx.header.style.fontWeight,
-      cx.header.color.textColor,
-    );
-  });
-
-  it("'modal' variant applies text-lg font-semibold pb-3 mb-4 and textColor tokens", () => {
-    render(<Header level={2} variant="modal">Modal Title</Header>);
-    const el = screen.getByText("Modal Title");
-    expectClasses(
-      el,
-      cx.header.size.modalFontSize,
-      cx.header.style.fontWeight,
-      cx.header.size.modalPadding,
-      cx.header.size.modalMargin,
-      cx.header.color.textColor,
-    );
+  it.each([
+    [1, cx.header.size.h1FontSize],
+    [2, cx.header.size.h2FontSize],
+    [3, cx.header.size.h3FontSize],
+    [4, cx.header.size.h4FontSize],
+    [5, cx.header.size.h5FontSize],
+    [6, cx.header.size.h6FontSize],
+  ] as const)("level=%i applies %s fontSize", (level, fontSize) => {
+    render(<Header level={level}>Size {level}</Header>);
+    const el = screen.getByText(`Size ${level}`);
+    expectClasses(el, fontSize);
   });
 
   it("merges extra className prop", () => {
-    render(<Header level={1} variant="page" className="extra-class another">test</Header>);
+    render(<Header level={1} className="extra-class another">test</Header>);
     const el = screen.getByText("test");
     expect(el).toHaveClass("extra-class");
     expect(el).toHaveClass("another");
   });
 
   it("renders children", () => {
-    render(<Header level={2} variant="modal">Hello World</Header>);
+    render(<Header level={2}>Hello World</Header>);
     expect(screen.getByText("Hello World")).toBeInTheDocument();
   });
 });
