@@ -202,15 +202,6 @@ export const componentTokens = {
     },
   },
 
-  divider: {
-    color: {
-      borderColor: g.color.defaultBorder,
-    },
-    style: {
-      base: "border-t",
-    },
-  },
-
   tooltip: {
     color: {
       bgColor: "bg-gray-900",

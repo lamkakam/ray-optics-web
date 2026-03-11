@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
-import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
@@ -121,8 +119,6 @@ export function FieldConfigModal({
 
   const atLimit = rows.length >= MAX_ROWS;
 
-  const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
-
   const columnDefs: ColDef<FieldRow>[] = [
     {
       headerName: "",
@@ -163,63 +159,63 @@ export function FieldConfigModal({
 
   return (
     <Modal isOpen={isOpen} title="Field" titleId="field-modal-title" size="lg">
-        <div className="mb-4 flex items-center gap-3">
-          <div>
-            <Label htmlFor="field-space">Field space</Label>
-            <Select
-              id="field-space"
-              aria-label="Field space"
-              value={space}
-              onChange={(e) => setSpace(e.target.value as FieldSpace)}
-              options={[
-                { value: "object", label: "Object" },
-                { value: "image", label: "Image" },
-              ]}
-            />
-          </div>
-          <div>
-            <Label htmlFor="field-type">Field type</Label>
-            <Select
-              id="field-type"
-              aria-label="Field type"
-              value={fieldType}
-              onChange={(e) => setFieldType(e.target.value as FieldType)}
-              options={[
-                { value: "height", label: "Height" },
-                { value: "angle", label: "Angle" },
-              ]}
-            />
-          </div>
-          <div>
-            <Label htmlFor="field-max">Max field value</Label>
-            <Input
-              id="field-max"
-              type="text"
-              aria-label="Max field value"
-              value={maxFieldStr}
-              onChange={(e) => setMaxFieldStr(e.target.value)}
-            />
-          </div>
+      <div className="mb-4 flex items-center gap-3">
+        <div>
+          <Label htmlFor="field-space">Field space</Label>
+          <Select
+            id="field-space"
+            aria-label="Field space"
+            value={space}
+            onChange={(e) => setSpace(e.target.value as FieldSpace)}
+            options={[
+              { value: "object", label: "Object" },
+              { value: "image", label: "Image" },
+            ]}
+          />
         </div>
+        <div>
+          <Label htmlFor="field-type">Field type</Label>
+          <Select
+            id="field-type"
+            aria-label="Field type"
+            value={fieldType}
+            onChange={(e) => setFieldType(e.target.value as FieldType)}
+            options={[
+              { value: "height", label: "Height" },
+              { value: "angle", label: "Angle" },
+            ]}
+          />
+        </div>
+        <div>
+          <Label htmlFor="field-max">Max field value</Label>
+          <Input
+            id="field-max"
+            type="text"
+            aria-label="Max field value"
+            value={maxFieldStr}
+            onChange={(e) => setMaxFieldStr(e.target.value)}
+          />
+        </div>
+      </div>
 
-        <div className="mb-4" style={{ width: "100%" }}>
-          <Paragraph variant="caption">Maximum 10 relative fields</Paragraph>
-          <AgGridProvider modules={[AllCommunityModule]}>
-            <AgGridReact
-              theme={gridTheme}
-              rowData={rows as unknown as Record<string, unknown>[]}
-              columnDefs={columnDefs as unknown as ColDef[]}
-              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-              domLayout="autoHeight"
-              getRowId={(params: { data: Record<string, unknown> }) => (params.data as unknown as FieldRow).id}
-            />
-          </AgGridProvider>
-        </div>
+      <div className="mb-4" style={{ width: "100%" }}>
+        <Paragraph variant="caption">Maximum 10 relative fields</Paragraph>
+        <AgGridProvider modules={[AllCommunityModule]}>
+          <AgGridReact
+            theme={gridTheme}
+            rowData={rows as unknown as Record<string, unknown>[]}
+            columnDefs={columnDefs as unknown as ColDef[]}
+            defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+            domLayout="autoHeight"
+            getRowId={(params: { data: Record<string, unknown> }) => (params.data as unknown as FieldRow).id}
+          />
+        </AgGridProvider>
+      </div>
 
-        <div className={`flex items-center justify-end gap-3 pt-4 ${divider}`}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleApply}>Apply</Button>
-        </div>
+      <div className="flex items-center justify-end gap-3 pt-4">
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button variant="primary" onClick={handleApply}>Apply</Button>
+      </div>
     </Modal>
   );
 }
