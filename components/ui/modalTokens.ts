@@ -150,6 +150,23 @@ export const componentTokens = {
     },
   },
 
+  header: {
+    color: {
+      textColor: g.color.primaryText,
+    },
+    size: {
+      pageFontSize: "",
+      modalFontSize: "text-lg",
+      sectionFontSize: "text-sm",
+      sectionMargin: "mb-2",
+      modalMargin: "mb-4",
+      modalPadding: "pb-3",
+    },
+    style: {
+      fontWeight: "font-semibold",
+    },
+  },
+
   label: {
     color: {
       textColor: g.color.secondaryText,

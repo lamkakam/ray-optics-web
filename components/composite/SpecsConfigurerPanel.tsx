@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from "react";
-import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Tooltip } from "@/components/micro/Tooltip";
 import { Button } from "@/components/micro/Button";
 import { Select } from "@/components/micro/Select";
 import { Input } from "@/components/micro/Input";
+import { Header } from "@/components/micro/Header";
 import type { PupilSpace, PupilType } from "@/store/specsConfigurerStore";
 
 interface AperturePatch {
@@ -77,9 +76,7 @@ export function SpecsConfigurerPanel({
     <div className="max-w-[50vw] space-y-4">
       {/* System Aperture */}
       <section>
-        <h3 className={clsx("mb-2 text-sm font-semibold", cx.text.color.headingTextColor)}>
-          System Aperture
-        </h3>
+        <Header level={3} variant="section">System Aperture</Header>
         <div className="flex items-center gap-3">
           <Select
             aria-label="System aperture type"
@@ -99,9 +96,7 @@ export function SpecsConfigurerPanel({
 
       {/* Field */}
       <section>
-        <h3 className={clsx("mb-2 text-sm font-semibold", cx.text.color.headingTextColor)}>
-          Field
-        </h3>
+        <Header level={3} variant="section">Field</Header>
         <Tooltip text="Click to configure field settings" position="bottom">
           <Button
             variant="toggle"
@@ -116,9 +111,7 @@ export function SpecsConfigurerPanel({
 
       {/* Wavelengths */}
       <section>
-        <h3 className={clsx("mb-2 text-sm font-semibold", cx.text.color.headingTextColor)}>
-          Wavelengths
-        </h3>
+        <Header level={3} variant="section">Wavelengths</Header>
         <Tooltip text="Click to configure wavelengths" position="bottom">
           <Button
             variant="toggle"

@@ -3,6 +3,7 @@
 import React, { useId } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Header } from "@/components/micro/Header";
 
 export type ModalSize = "md" | "lg" | "4xl";
 
@@ -29,7 +30,7 @@ export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, ch
 
   const backdrop = clsx(cx.modal.color.backdropBgColor, cx.modal.style.backdropBlur);
   const panel = clsx(cx.modal.size.panelWidth, cx.modal.style.panelBorderRadius, cx.modal.color.panelBorderColor, cx.modal.color.panelBgColor, cx.modal.size.panelPadding, cx.modal.style.panelShadow);
-  const titleClass = clsx(cx.modal.style.titleFontWeight, cx.modal.size.titleFontSize, cx.modal.size.titleMargin, cx.modal.size.titlePadding, cx.modal.color.titleBorderColor, cx.modal.color.titleTextColor);
+  const titleBorderClass = clsx("border-b", cx.modal.color.titleBorderColor);
 
   return (
     <div
@@ -43,7 +44,7 @@ export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, ch
         aria-labelledby={resolvedTitleId}
         className={`relative z-10 border animate-modal-enter ${panel} ${sizeClasses[size]}`}
       >
-        <h2 id={resolvedTitleId} className={`border-b ${titleClass}`}>{title}</h2>
+        <Header level={2} variant="modal" id={resolvedTitleId} className={titleBorderClass}>{title}</Header>
         {children}
       </div>
     </div>

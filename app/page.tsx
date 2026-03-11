@@ -21,6 +21,7 @@ import { Modal } from "@/components/micro/Modal";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
+import { Header } from "@/components/micro/Header";
 import { Select } from "@/components/micro/Select";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
@@ -283,9 +284,7 @@ export default function Home() {
   const layoutLG: React.ReactNode = (
     <div className="flex flex-col h-screen">
       <header className="flex h-12 shrink-0 items-center gap-4 border-b border-gray-200 px-4 dark:border-gray-700">
-        <h1 className="font-semibold text-gray-900 dark:text-gray-100">
-          Ray Optics Web
-        </h1>
+        <Header level={1} variant="page">Ray Optics Web</Header>
         <Select
           ref={exampleSelectRef}
           type="compact"
@@ -339,9 +338,7 @@ export default function Home() {
   const layoutSM: React.ReactNode = (
     <div className="flex flex-col">
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
-        <h1 className="mb-2 font-semibold text-gray-900 dark:text-gray-100">
-          Ray Optics Web
-        </h1>
+        <Header level={1} variant="page" className="mb-2">Ray Optics Web</Header>
         <Select
           ref={exampleSelectRef}
           type="compact"
