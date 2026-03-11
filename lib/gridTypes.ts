@@ -16,5 +16,13 @@ export type GridRow = { readonly id: string } & (
         conicConstant: number;
         polynomialCoefficients?: number[];
       };
+      decenter?: {
+        posAndOrientation: "bend" | "dec and return" | "decenter" | "reverse";
+        alpha: number;
+        beta: number;
+        gamma: number;
+        offsetX: number;
+        offsetY: number;
+      };
     }
 );

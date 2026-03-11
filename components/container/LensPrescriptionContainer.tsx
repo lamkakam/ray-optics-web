@@ -7,6 +7,7 @@ import { Button } from "@/components/micro/Button";
 import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
 import { AsphericalModal, type AsphericalType } from "@/components/composite/AsphericalModal";
+import { DecenterModal, type DecenterType } from "@/components/composite/DecenterModal";
 
 interface LensPrescriptionContainerProps {
   readonly store: StoreApi<LensEditorState>;
@@ -18,9 +19,11 @@ export function LensPrescriptionContainer({
   const rows = useStore(store, (s) => s.rows);
   const mediumModal = useStore(store, (s) => s.mediumModal);
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
+  const decenterModal = useStore(store, (s) => s.decenterModal);
 
   const mediumRow = rows.find((r) => r.id === mediumModal.rowId);
   const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);
+  const decenterRow = rows.find((r) => r.id === decenterModal.rowId);
 
   const handleExport = () => {
     const json = store.getState().exportToJson();
@@ -44,6 +47,7 @@ export function LensPrescriptionContainer({
         onRowChange={(id, patch) => store.getState().updateRow(id, patch)}
         onOpenMediumModal={(rowId) => store.getState().openMediumModal(rowId)}
         onOpenAsphericalModal={(rowId) => store.getState().openAsphericalModal(rowId)}
+        onOpenDecenterModal={(rowId) => store.getState().openDecenterModal(rowId)}
         onAddRowAfter={(rowId) => store.getState().addRowAfter(rowId)}
         onDeleteRow={(rowId) => store.getState().deleteRow(rowId)}
       />
@@ -84,6 +88,21 @@ export function LensPrescriptionContainer({
         onRemove={() => {
           store.getState().updateRow(asphericalModal.rowId, { aspherical: undefined });
           store.getState().closeAsphericalModal();
+        }}
+      />
+
+      <DecenterModal
+        key={decenterModal.open ? decenterModal.rowId : "decenter-closed"}
+        isOpen={decenterModal.open}
+        initialDecenter={decenterRow?.kind === "surface" ? decenterRow.decenter : undefined}
+        onConfirm={(decenter: DecenterType) => {
+          store.getState().updateRow(decenterModal.rowId, { decenter });
+          store.getState().closeDecenterModal();
+        }}
+        onClose={() => store.getState().closeDecenterModal()}
+        onRemove={() => {
+          store.getState().updateRow(decenterModal.rowId, { decenter: undefined });
+          store.getState().closeDecenterModal();
         }}
       />
     </div>

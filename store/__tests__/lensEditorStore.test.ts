@@ -124,6 +124,26 @@ describe("lensEditorStore", () => {
         rowId: "",
       });
     });
+
+    it("opens and closes decenter modal", () => {
+      const store = makeStore();
+      store.getState().openDecenterModal("s1");
+      expect(store.getState().decenterModal).toEqual({
+        open: true,
+        rowId: "s1",
+      });
+
+      store.getState().closeDecenterModal();
+      expect(store.getState().decenterModal).toEqual({
+        open: false,
+        rowId: "",
+      });
+    });
+
+    it("initializes decenterModal as closed", () => {
+      const store = makeStore();
+      expect(store.getState().decenterModal).toEqual({ open: false, rowId: "" });
+    });
   });
 
   describe("addRowAfter", () => {

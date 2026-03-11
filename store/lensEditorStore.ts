@@ -14,6 +14,7 @@ export interface LensEditorState {
   selectedRowId: string | undefined;
   mediumModal: ModalState;
   asphericalModal: ModalState;
+  decenterModal: ModalState;
 
   setRows: (rows: GridRow[]) => void;
   updateRow: (id: string, patch: Partial<GridRow>) => void;
@@ -24,6 +25,8 @@ export interface LensEditorState {
   closeMediumModal: () => void;
   openAsphericalModal: (rowId: string) => void;
   closeAsphericalModal: () => void;
+  openDecenterModal: (rowId: string) => void;
+  closeDecenterModal: () => void;
   exportToJson: () => string;
 }
 
@@ -37,6 +40,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   selectedRowId: undefined,
   mediumModal: { open: false, rowId: "" },
   asphericalModal: { open: false, rowId: "" },
+  decenterModal: { open: false, rowId: "" },
 
   setRows: (rows) => set({ rows }),
 
@@ -95,6 +99,12 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
   closeAsphericalModal: () =>
     set({ asphericalModal: { open: false, rowId: "" } }),
+
+  openDecenterModal: (rowId) =>
+    set({ decenterModal: { open: true, rowId } }),
+
+  closeDecenterModal: () =>
+    set({ decenterModal: { open: false, rowId: "" } }),
 
   exportToJson: () => {
     const { rows } = get();

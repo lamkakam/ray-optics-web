@@ -43,6 +43,7 @@ describe("LensPrescriptionGrid", () => {
     onRowChange: jest.fn(),
     onOpenMediumModal: jest.fn(),
     onOpenAsphericalModal: jest.fn(),
+    onOpenDecenterModal: jest.fn(),
     onAddRowAfter: jest.fn(),
     onDeleteRow: jest.fn(),
   };
@@ -72,6 +73,7 @@ describe("LensPrescriptionGrid", () => {
     expect(headerTexts).toContain("Thickness");
     expect(headerTexts).toContain("Medium");
     expect(headerTexts).toContain("Semi-diam.");
+    expect(headerTexts).toContain("Decenter");
   });
 
   it("has an aria-label on the wrapper", () => {
@@ -250,6 +252,34 @@ describe("LensPrescriptionGrid", () => {
     await userEvent.click(deleteButtons[0]); // first '-' is for s1
 
     expect(onDeleteRow).toHaveBeenCalledWith("s1");
+  });
+
+  // --- Decenter column ---
+  it("renders decenter buttons for surface rows", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+    expect(decenterButtons).toHaveLength(2); // two surface rows
+  });
+
+  it("calls onOpenDecenterModal when decenter button is clicked", async () => {
+    const onOpenDecenterModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenDecenterModal={onOpenDecenterModal} />);
+    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+
+    await userEvent.click(decenterButtons[0]);
+
+    expect(onOpenDecenterModal).toHaveBeenCalledWith("s1");
+  });
+
+  it("opens decenter modal when clicking cell area around the decenter button", async () => {
+    const onOpenDecenterModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenDecenterModal={onOpenDecenterModal} />);
+    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+    const cellWrapper = decenterButtons[0].closest("[data-cell-wrapper]")!;
+
+    await userEvent.click(cellWrapper);
+
+    expect(onOpenDecenterModal).toHaveBeenCalledWith("s1");
   });
 
   // --- AG Grid theme integration ---

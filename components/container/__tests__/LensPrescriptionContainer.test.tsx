@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
@@ -85,5 +85,68 @@ describe("LensPrescriptionContainer", () => {
     const surfaces = gridRowsToSurfaces(store.getState().rows);
     expect(surfaces.surfaces).toHaveLength(2);
     expect(surfaces.surfaces[0].curvatureRadius).toBe(50);
+  });
+
+  it("renders DecenterModal when decenterModal is open", () => {
+    const store = createTestStore();
+    render(<LensPrescriptionContainer store={store} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    act(() => {
+      const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
+      store.getState().openDecenterModal(rowId);
+    });
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Decenter & Tilt")).toBeInTheDocument();
+  });
+
+  it("closes DecenterModal when Cancel is clicked", async () => {
+    const store = createTestStore();
+    render(<LensPrescriptionContainer store={store} />);
+
+    act(() => {
+      const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
+      store.getState().openDecenterModal(rowId);
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(store.getState().decenterModal.open).toBe(false);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("saves decenter data and closes modal when Confirm is clicked", async () => {
+    const store = createTestStore();
+    render(<LensPrescriptionContainer store={store} />);
+    const surfaceRow = store.getState().rows.find((r) => r.kind === "surface")!;
+
+    act(() => {
+      store.getState().openDecenterModal(surfaceRow.id);
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(store.getState().decenterModal.open).toBe(false);
+    const updatedRow = store.getState().rows.find((r) => r.id === surfaceRow.id);
+    expect(updatedRow?.kind === "surface" && updatedRow.decenter).toBeDefined();
+  });
+
+  it("removes decenter and closes modal when Remove Decenter is clicked", async () => {
+    const store = createTestStore();
+    const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
+    // Pre-set decenter
+    store.getState().updateRow(rowId, {
+      decenter: { posAndOrientation: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
+    });
+
+    render(<LensPrescriptionContainer store={store} />);
+
+    act(() => {
+      store.getState().openDecenterModal(rowId);
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Remove Decenter" }));
+    expect(store.getState().decenterModal.open).toBe(false);
+    const updatedRow = store.getState().rows.find((r) => r.id === rowId);
+    expect(updatedRow?.kind === "surface" && updatedRow.decenter).toBeUndefined();
   });
 });

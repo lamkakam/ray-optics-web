@@ -12,6 +12,7 @@ import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/lib/gridTypes";
 import { MediumCell } from "@/components/micro/MediumCell";
 import { AsphericalCell } from "@/components/micro/AsphericalCell";
+import { DecenterCell } from "@/components/micro/DecenterCell";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -51,6 +52,7 @@ interface LensPrescriptionGridProps {
   readonly onRowChange: (id: string, patch: Partial<GridRow>) => void;
   readonly onOpenMediumModal: (rowId: string) => void;
   readonly onOpenAsphericalModal: (rowId: string) => void;
+  readonly onOpenDecenterModal: (rowId: string) => void;
   readonly onAddRowAfter: (rowId: string) => void;
   readonly onDeleteRow: (rowId: string) => void;
 }
@@ -60,6 +62,7 @@ export function LensPrescriptionGrid({
   onRowChange,
   onOpenMediumModal,
   onOpenAsphericalModal,
+  onOpenDecenterModal,
   onAddRowAfter,
   onDeleteRow,
 }: LensPrescriptionGridProps) {
@@ -184,6 +187,24 @@ export function LensPrescriptionGrid({
             <AsphericalCell
               isAspherical={params.data.aspherical !== undefined}
               onOpenModal={() => onOpenAsphericalModal(params.data.id)}
+            />
+          </ActionWrapper>
+        );
+      },
+    },
+    {
+      headerName: "Decenter",
+      valueGetter: (params) => {
+        if (!params.data || params.data.kind !== "surface") return undefined;
+        return params.data.decenter;
+      },
+      cellRenderer: (params: { data: GridRow }) => {
+        if (params.data.kind !== "surface") return null;
+        return (
+          <ActionWrapper onAction={() => onOpenDecenterModal(params.data.id)}>
+            <DecenterCell
+              isDecenterSet={params.data.decenter !== undefined}
+              onOpenModal={() => onOpenDecenterModal(params.data.id)}
             />
           </ActionWrapper>
         );
