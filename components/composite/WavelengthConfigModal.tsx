@@ -2,8 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
-import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
@@ -129,8 +127,6 @@ export function WavelengthConfigModal({
 
   const atLimit = rows.length >= MAX_ROWS;
 
-  const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
-
   const columnDefs: ColDef<WavelengthRow>[] = [
     {
       headerName: "",
@@ -224,24 +220,24 @@ export function WavelengthConfigModal({
 
   return (
     <Modal isOpen={isOpen} title="Wavelengths" titleId="wavelength-modal-title" size="4xl">
-        <div className="mb-4" style={{ width: "100%" }}>
-          <Paragraph variant="caption">Maximum 7 wavelengths</Paragraph>
-          <AgGridProvider modules={[AllCommunityModule]}>
-            <AgGridReact
-              theme={gridTheme}
-              rowData={rows as unknown as Record<string, unknown>[]}
-              columnDefs={columnDefs as unknown as ColDef[]}
-              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-              domLayout="autoHeight"
-              getRowId={(params: { data: Record<string, unknown> }) => (params.data as unknown as WavelengthRow).id}
-            />
-          </AgGridProvider>
-        </div>
+      <div className="mb-4" style={{ width: "100%" }}>
+        <Paragraph variant="caption">Maximum 7 wavelengths</Paragraph>
+        <AgGridProvider modules={[AllCommunityModule]}>
+          <AgGridReact
+            theme={gridTheme}
+            rowData={rows as unknown as Record<string, unknown>[]}
+            columnDefs={columnDefs as unknown as ColDef[]}
+            defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+            domLayout="autoHeight"
+            getRowId={(params: { data: Record<string, unknown> }) => (params.data as unknown as WavelengthRow).id}
+          />
+        </AgGridProvider>
+      </div>
 
-        <div className={`flex items-center justify-end gap-3 pt-4 ${divider}`}>
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleApply}>Apply</Button>
-        </div>
+      <div className="flex items-center justify-end gap-3 pt-4">
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button variant="primary" onClick={handleApply}>Apply</Button>
+      </div>
     </Modal>
   );
 }

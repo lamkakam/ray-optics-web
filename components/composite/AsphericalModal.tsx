@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
 import { Input } from "@/components/micro/Input";
 import { Label } from "@/components/micro/Label";
@@ -69,8 +67,6 @@ export function AsphericalModal({
   const [coefficientStrs, setCoefficientStrs] = useState<string[]>(() =>
     padCoefficients(initialCoefficients)
   );
-
-  const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   const handleConfirm = () => {
     const conicConstant = parseNumericString(conicConstantStr, initialConicConstant);
@@ -150,7 +146,7 @@ export function AsphericalModal({
       )}
 
       {/* ── Actions ── */}
-      <div className={`flex items-center gap-3 pt-4 ${divider}`}>
+      <div className="flex items-center gap-3 pt-4">
         <Button variant="danger" onClick={onRemove}>Remove Aspherical</Button>
         <span className="flex-1" />
         <Button variant="secondary" onClick={onClose}>Cancel</Button>
