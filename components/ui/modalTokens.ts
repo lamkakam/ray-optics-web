@@ -260,20 +260,6 @@ export const componentTokens = {
     },
   },
 
-  panel: {
-    color: {
-      loadingOverlayBgColor: "bg-white/60 dark:bg-gray-900/60",
-    },
-    size: {
-      emptyStateFontSize: "text-sm",
-    },
-    style: {
-      imageContainer: "relative flex h-full w-full flex-col items-center justify-center",
-      loadingOverlay: "absolute inset-0 flex items-center justify-center",
-      emptyStateLayout: "flex items-center justify-center",
-    },
-  },
-
   overlay: {
     color: {
       initBgColor: "bg-gray-900/60",

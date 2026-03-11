@@ -15,7 +15,7 @@ export function LensLayoutPanel({
   onRefresh,
 }: LensLayoutPanelProps) {
   return (
-    <div className={clsx(cx.panel.style.imageContainer)}>
+    <div className="relative flex h-full w-full flex-col items-center justify-center">
       {imageBase64 ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element -- base64 data URI, not optimizable by next/image */}
@@ -25,7 +25,7 @@ export function LensLayoutPanel({
             className="max-h-full max-w-full object-contain"
           />
           {loading && (
-            <div className={clsx(cx.panel.style.loadingOverlay, cx.panel.color.loadingOverlayBgColor)}>
+            <div className={clsx("absolute inset-0 flex items-center justify-center", "dark:bg-gray-900/60")}>
               <span className={clsx("text-sm", cx.text.color.loadingTextColor)}>
                 Updating...
               </span>
@@ -33,7 +33,7 @@ export function LensLayoutPanel({
           )}
         </>
       ) : (
-        <div className={clsx(cx.panel.style.emptyStateLayout, cx.panel.size.emptyStateFontSize, cx.text.color.emptyTextColor)}>
+        <div className={clsx("flex items-center justify-center", cx.text.color.emptyTextColor)}>
           {loading
             ? "Loading lens layout..."
             : "Configure the System Specs & Lens Prescription below, or choose an example system, then click \u201cUpdate System\u201d to view the lens layout."}
