@@ -21,10 +21,17 @@ const SIZE_CLASSES = {
   xs: [sz.horizontalPaddingXs, sz.verticalPaddingXs, sz.fontSizeXs],
 } as const satisfies Record<ButtonSize, readonly string[]>;
 
-type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+type FloatingButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  readonly variant: "floating";
+  readonly size?: never;
+};
+
+type RegularButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   readonly variant: ButtonVariant;
   readonly size?: ButtonSize;
 };
+
+type ButtonProps = FloatingButtonProps | RegularButtonProps;
 
 export function Button({
   variant,
