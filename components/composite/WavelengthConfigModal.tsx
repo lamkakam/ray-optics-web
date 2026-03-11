@@ -7,6 +7,7 @@ import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { GridRowButtons } from "@/components/micro/GridRowButtons";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
+import { Paragraph } from "@/components/micro/Paragraph";
 import { useTheme } from "@/components/ThemeProvider";
 import { FRAUNHOFER_LINES, lookupWavelength, type FraunhoferSymbol } from "@/lib/fraunhoferLines";
 
@@ -128,7 +129,6 @@ export function WavelengthConfigModal({
 
   const atLimit = rows.length >= MAX_ROWS;
 
-  const caption = clsx(cx.text.size.captionMargin, cx.text.color.captionTextColor, cx.text.size.captionFontSize);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   const columnDefs: ColDef<WavelengthRow>[] = [
@@ -225,7 +225,7 @@ export function WavelengthConfigModal({
   return (
     <Modal isOpen={isOpen} title="Wavelengths" titleId="wavelength-modal-title" size="4xl">
         <div className="mb-4" style={{ width: "100%" }}>
-          <p className={caption}>Maximum 7 wavelengths</p>
+          <Paragraph variant="caption">Maximum 7 wavelengths</Paragraph>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}
