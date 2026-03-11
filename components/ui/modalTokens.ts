@@ -190,7 +190,7 @@ export const componentTokens = {
     color: {
       borderColor: g.color.defaultBorder,
       bgColor: g.color.surfaceBg,
-      textColor: "text-gray-600 dark:text-gray-400",
+      textColor: g.color.secondaryText,
     },
     size: {
       horizontalPadding: "px-2",
