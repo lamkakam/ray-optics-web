@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Tooltip } from "../Tooltip";
 
 describe("Tooltip", () => {
@@ -48,5 +49,48 @@ describe("Tooltip", () => {
     const tip = screen.getByRole("tooltip");
     expect(tip).toHaveClass("top-full");
     expect(tip).not.toHaveClass("bottom-full");
+  });
+
+  describe("portal mode", () => {
+    it("renders tooltip text in the document when portal is true", () => {
+      render(
+        <Tooltip text="Portal tip" portal>
+          <button>Trigger</button>
+        </Tooltip>,
+      );
+      expect(screen.getByRole("tooltip")).toHaveTextContent("Portal tip");
+    });
+
+    it("portal tooltip has opacity-0 when not hovered", () => {
+      render(
+        <Tooltip text="Portal tip" portal>
+          <button>Trigger</button>
+        </Tooltip>,
+      );
+      expect(screen.getByRole("tooltip")).toHaveClass("opacity-0");
+    });
+
+    it("portal tooltip becomes opacity-100 on mouse enter", async () => {
+      const user = userEvent.setup();
+      render(
+        <Tooltip text="Portal tip" portal>
+          <button>Trigger</button>
+        </Tooltip>,
+      );
+      await user.hover(screen.getByRole("button", { name: "Trigger" }));
+      expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
+    });
+
+    it("portal tooltip returns to opacity-0 on mouse leave", async () => {
+      const user = userEvent.setup();
+      render(
+        <Tooltip text="Portal tip" portal>
+          <button>Trigger</button>
+        </Tooltip>,
+      );
+      await user.hover(screen.getByRole("button", { name: "Trigger" }));
+      await user.unhover(screen.getByRole("button", { name: "Trigger" }));
+      expect(screen.getByRole("tooltip")).toHaveClass("opacity-0");
+    });
   });
 });

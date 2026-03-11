@@ -1,5 +1,6 @@
 import React from "react";
 import { Button } from "@/components/micro/Button";
+import { Tooltip } from "@/components/micro/Tooltip";
 
 interface GridRowButtonsProps {
   readonly onAdd?: () => void;
@@ -19,29 +20,33 @@ export function GridRowButtons({
   return (
     <span className="flex items-center gap-2">
       {onAdd !== undefined && (
-        <Button
-          variant="secondary"
-          size="sm"
-          className="rounded"
-          title={addLabel}
-          aria-label={addLabel}
-          style={addHidden ? { visibility: "hidden" } : undefined}
-          onClick={onAdd}
-        >
-          +
-        </Button>
+        <Tooltip text={addLabel} portal>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="rounded"
+            title={addLabel}
+            aria-label={addLabel}
+            style={addHidden ? { visibility: "hidden" } : undefined}
+            onClick={onAdd}
+          >
+            +
+          </Button>
+        </Tooltip>
       )}
       {onDelete !== undefined && (
-        <Button
-          variant="secondary"
-          size="sm"
-          className="rounded"
-          title={deleteLabel}
-          aria-label={deleteLabel}
-          onClick={onDelete}
-        >
-          −
-        </Button>
+        <Tooltip text={deleteLabel} portal>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="rounded"
+            title={deleteLabel}
+            aria-label={deleteLabel}
+            onClick={onDelete}
+          >
+            −
+          </Button>
+        </Tooltip>
       )}
     </span>
   );
