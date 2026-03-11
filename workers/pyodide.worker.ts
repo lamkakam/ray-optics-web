@@ -245,7 +245,7 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
 
     let decenterCommands = "";
     if (decenter !== undefined) {
-      const { posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = decenter;
+      const { coordinateSystemStrategy: posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = decenter;
       decenterCommands = `\nsm.ifcs[sm.cur_surface].decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
     }
 
@@ -257,7 +257,7 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
 
   let imageDecenterCommands = "";
   if (imageDecenter !== undefined) {
-    const { posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = imageDecenter;
+    const { coordinateSystemStrategy: posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = imageDecenter;
     imageDecenterCommands = `\nsm.ifcs[-1].decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
   }
 

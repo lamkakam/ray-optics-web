@@ -138,7 +138,7 @@ describe("_setOpticalSurfaces", () => {
       ...allSphericalOpticalModel,
       image: {
         curvatureRadius: -42,
-        decenter: { posAndOrientation: "decenter", alpha: 1.5, beta: 0, gamma: 0, offsetX: 0.1, offsetY: 0.2 },
+        decenter: { coordinateSystemStrategy: "decenter", alpha: 1.5, beta: 0, gamma: 0, offsetX: 0.1, offsetY: 0.2 },
       },
     };
     let pythonScript = "";
@@ -154,7 +154,7 @@ describe("_setOpticalSurfaces", () => {
       surfaces: [
         {
           ...allSphericalOpticalModel.surfaces[0],
-          decenter: { posAndOrientation: "bend", alpha: 0, beta: 2.0, gamma: 0, offsetX: 0.5, offsetY: -0.5 },
+          decenter: { coordinateSystemStrategy: "bend", alpha: 0, beta: 2.0, gamma: 0, offsetX: 0.5, offsetY: -0.5 },
         },
         ...allSphericalOpticalModel.surfaces.slice(1),
       ],

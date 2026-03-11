@@ -137,7 +137,7 @@ describe("LensPrescriptionContainer", () => {
     const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
     // Pre-set decenter
     store.getState().updateRow(rowId, {
-      decenter: { posAndOrientation: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
+      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
     });
 
     render(<LensPrescriptionContainer store={store} />);
@@ -169,7 +169,7 @@ describe("LensPrescriptionContainer", () => {
   it("pre-populates modal with existing image row decenter", () => {
     const store = createTestStore();
     store.getState().updateRow(IMAGE_ROW_ID, {
-      decenter: { posAndOrientation: "decenter", alpha: 1.5, beta: 0, gamma: 0, offsetX: 0.1, offsetY: 0.2 },
+      decenter: { coordinateSystemStrategy: "decenter", alpha: 1.5, beta: 0, gamma: 0, offsetX: 0.1, offsetY: 0.2 },
     });
     render(<LensPrescriptionContainer store={store} />);
 
@@ -198,7 +198,7 @@ describe("LensPrescriptionContainer", () => {
   it("removes decenter from image row when Remove Decenter is clicked", async () => {
     const store = createTestStore();
     store.getState().updateRow(IMAGE_ROW_ID, {
-      decenter: { posAndOrientation: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
+      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
     });
     render(<LensPrescriptionContainer store={store} />);
 

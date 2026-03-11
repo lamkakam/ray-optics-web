@@ -18,8 +18,8 @@ export interface OpticalSpecs {
   };
 }
 
-type DecenterConfig = {
-  posAndOrientation: "bend" | "dec and return" | "decenter" | "reverse";
+export type DecenterConfig = {
+  coordinateSystemStrategy: "bend" | "dec and return" | "decenter" | "reverse";
   alpha: number,
   beta: number,
   gamma: number,

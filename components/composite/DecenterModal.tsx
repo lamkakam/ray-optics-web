@@ -6,17 +6,10 @@ import { Input } from "@/components/micro/Input";
 import { Label } from "@/components/micro/Label";
 import { Modal } from "@/components/micro/Modal";
 import { Select } from "@/components/micro/Select";
+import { type DecenterConfig } from "@/lib/opticalModel";
 
-type PosAndOrientation = "bend" | "dec and return" | "decenter" | "reverse";
-
-export interface DecenterType {
-  posAndOrientation: PosAndOrientation;
-  alpha: number;
-  beta: number;
-  gamma: number;
-  offsetX: number;
-  offsetY: number;
-}
+type DecenterCoordinateSystemStrategy = DecenterConfig["coordinateSystemStrategy"];
+export type DecenterType = DecenterConfig;
 
 interface DecenterModalProps {
   readonly isOpen: boolean;
@@ -48,7 +41,7 @@ export function DecenterModal({
   onRemove,
 }: DecenterModalProps) {
   const init = initialDecenter ?? {
-    posAndOrientation: "bend" as PosAndOrientation,
+    coordinateSystemStrategy: "bend" as DecenterCoordinateSystemStrategy,
     alpha: 0,
     beta: 0,
     gamma: 0,
@@ -56,7 +49,7 @@ export function DecenterModal({
     offsetY: 0,
   };
 
-  const [posAndOrientation, setPosAndOrientation] = useState<PosAndOrientation>(init.posAndOrientation);
+  const [posAndOrientation, setPosAndOrientation] = useState<DecenterCoordinateSystemStrategy>(init.coordinateSystemStrategy);
   const [alphaStr, setAlphaStr] = useState(String(init.alpha));
   const [betaStr, setBetaStr] = useState(String(init.beta));
   const [gammaStr, setGammaStr] = useState(String(init.gamma));
@@ -65,7 +58,7 @@ export function DecenterModal({
 
   const handleConfirm = () => {
     onConfirm({
-      posAndOrientation,
+      coordinateSystemStrategy: posAndOrientation,
       alpha: parseNumericString(alphaStr, init.alpha),
       beta: parseNumericString(betaStr, init.beta),
       gamma: parseNumericString(gammaStr, init.gamma),
@@ -83,7 +76,7 @@ export function DecenterModal({
           id="pos-and-orientation"
           aria-label="Position & Orientation"
           value={posAndOrientation}
-          onChange={(e) => setPosAndOrientation(e.target.value as PosAndOrientation)}
+          onChange={(e) => setPosAndOrientation(e.target.value as DecenterCoordinateSystemStrategy)}
           options={POS_AND_ORIENTATION_OPTIONS}
         />
       </div>

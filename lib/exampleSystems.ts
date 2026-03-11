@@ -142,7 +142,7 @@ const ReflectorWithOpticalWindow: OpticalModel = {
       manufacturer: "",
       semiDiameter: 28.489411,
       decenter: {
-        posAndOrientation: "bend",
+        coordinateSystemStrategy: "bend",
         alpha: 45,
         beta: 0,
         gamma: 0,

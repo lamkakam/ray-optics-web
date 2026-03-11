@@ -149,7 +149,7 @@ describe("surfacesToGridRows", () => {
 
   it("preserves decenter data on image row", () => {
     const decenter = {
-      posAndOrientation: "decenter" as const,
+      coordinateSystemStrategy: "decenter" as const,
       alpha: 1.0,
       beta: 2.0,
       gamma: 3.0,
@@ -191,7 +191,7 @@ describe("surfacesToGridRows", () => {
           manufacturer: "",
           semiDiameter: 10,
           decenter: {
-            posAndOrientation: "decenter",
+            coordinateSystemStrategy: "decenter",
             alpha: 1.0,
             beta: 2.0,
             gamma: 3.0,
@@ -205,7 +205,7 @@ describe("surfacesToGridRows", () => {
     const surfaceRow = rows[1];
     if (surfaceRow.kind === "surface") {
       expect(surfaceRow.decenter).toEqual({
-        posAndOrientation: "decenter",
+        coordinateSystemStrategy: "decenter",
         alpha: 1.0,
         beta: 2.0,
         gamma: 3.0,
@@ -298,7 +298,7 @@ describe("gridRowsToSurfaces", () => {
 
   it("preserves decenter on image row", () => {
     const decenter = {
-      posAndOrientation: "bend" as const,
+      coordinateSystemStrategy: "bend" as const,
       alpha: 0,
       beta: 1.5,
       gamma: 0,
@@ -385,7 +385,7 @@ describe("round-trip", () => {
           manufacturer: "",
           semiDiameter: 10,
           decenter: {
-            posAndOrientation: "bend",
+            coordinateSystemStrategy: "bend",
             alpha: 0,
             beta: 5.0,
             gamma: 0,
@@ -405,7 +405,7 @@ describe("round-trip", () => {
       image: {
         curvatureRadius: 0,
         decenter: {
-          posAndOrientation: "dec and return",
+          coordinateSystemStrategy: "dec and return",
           alpha: 1.0,
           beta: 0,
           gamma: 0,

@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { DecenterModal } from "@/components/composite/DecenterModal";
 
 const defaultDecenter = {
-  posAndOrientation: "decenter" as const,
+  coordinateSystemStrategy: "decenter" as const,
   alpha: 0,
   beta: 5.0,
   gamma: 0,
@@ -141,7 +141,7 @@ describe("DecenterModal", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
     expect(onConfirm).toHaveBeenCalledWith({
-      posAndOrientation: "decenter",
+      coordinateSystemStrategy: "decenter",
       alpha: 0,
       beta: 5.0,
       gamma: 0,
