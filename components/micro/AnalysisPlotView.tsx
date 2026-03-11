@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Label } from "@/components/micro/Label";
 import { Select, type SelectOption } from "@/components/micro/Select";
+import { Paragraph } from "./Paragraph";
 
 export type PlotType = "rayFan" | "opdFan" | "spotDiagram";
 
@@ -70,9 +71,9 @@ export function AnalysisPlotView({
 
       <div className={autoHeight ? "flex items-center justify-center" : "flex min-h-0 flex-1 items-center justify-center"}>
         {loading ? (
-          <span className={clsx("text-sm", cx.text.color.placeholderTextColor)}>
+          <Paragraph variant="placeholder">
             Loading plot...
-          </span>
+          </Paragraph>
         ) : plotImageBase64 ? (
           /* eslint-disable-next-line @next/next/no-img-element -- base64 data URI */
           <img
@@ -81,9 +82,9 @@ export function AnalysisPlotView({
             className={autoHeight ? "w-full h-auto" : "max-h-full max-w-full object-contain"}
           />
         ) : (
-          <span className={clsx("text-sm", cx.text.color.placeholderTextColor)}>
+          <Paragraph variant="placeholder">
             No plot available
-          </span>
+          </Paragraph>
         )}
       </div>
     </div>

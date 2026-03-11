@@ -241,18 +241,16 @@ export const componentTokens = {
 
   text: {
     color: {
-      loadingTextColor: g.color.mutedText,
-      placeholderTextColor: "text-gray-400 dark:text-gray-500",
-      headingTextColor: g.color.primaryText,
       subheadingTextColor: g.color.secondaryText,
       bodyTextColor: g.color.secondaryText,
-      emptyTextColor: "text-gray-400 dark:text-gray-500",
-      captionTextColor: "text-gray-500",
+      placeholderTextColor: g.color.mutedText,
+      captionTextColor: g.color.mutedText,
     },
     size: {
-      captionFontSize: "text-xs",
       subheadingFontSize: "text-sm",
       bodyFontSize: "text-sm",
+      placeholderFontSize: "text-sm",
+      captionFontSize: "text-xs",
       captionMargin: "mb-1",
     },
     style: {

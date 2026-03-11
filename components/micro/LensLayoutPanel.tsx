@@ -2,6 +2,7 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
+import { Paragraph } from "./Paragraph";
 
 interface LensLayoutPanelProps {
   readonly imageBase64?: string;
@@ -26,18 +27,18 @@ export function LensLayoutPanel({
           />
           {loading && (
             <div className={clsx("absolute inset-0 flex items-center justify-center", "dark:bg-gray-900/60")}>
-              <span className={clsx("text-sm", cx.text.color.loadingTextColor)}>
+              <Paragraph variant="placeholder">
                 Updating...
-              </span>
+              </Paragraph>
             </div>
           )}
         </>
       ) : (
-        <div className={clsx("flex items-center justify-center", cx.text.color.emptyTextColor)}>
+        <Paragraph variant="placeholder">
           {loading
             ? "Loading lens layout..."
             : "Configure the System Specs & Lens Prescription below, or choose an example system, then click \u201cUpdate System\u201d to view the lens layout."}
-        </div>
+        </Paragraph>
       )}
       <Button
         variant="floating"

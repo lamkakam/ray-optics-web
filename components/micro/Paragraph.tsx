@@ -2,12 +2,13 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 
-export type ParagraphVariant = "body" | "caption" | "subheading";
+export type ParagraphVariant = "body" | "caption" | "subheading" | "placeholder";
 
 const VARIANT_CLASSES: Record<ParagraphVariant, readonly string[]> = {
   body: [cx.text.color.bodyTextColor, cx.text.size.bodyFontSize],
   caption: [cx.text.size.captionMargin, cx.text.color.captionTextColor, cx.text.size.captionFontSize],
   subheading: [cx.text.style.subheadingFontWeight, cx.text.color.subheadingTextColor, cx.text.size.subheadingFontSize],
+  placeholder: [cx.text.color.placeholderTextColor, cx.text.size.placeholderFontSize],
 } as const satisfies Record<ParagraphVariant, readonly string[]>;
 
 interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
