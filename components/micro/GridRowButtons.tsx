@@ -22,6 +22,7 @@ export function GridRowButtons({
         <Button
           variant="primary"
           size="xs"
+          className="rounded"
           title={addLabel}
           aria-label={addLabel}
           style={addHidden ? { visibility: "hidden" } : undefined}
@@ -34,6 +35,7 @@ export function GridRowButtons({
         <Button
           variant="danger"
           size="xs"
+          className="rounded"
           title={deleteLabel}
           aria-label={deleteLabel}
           onClick={onDelete}

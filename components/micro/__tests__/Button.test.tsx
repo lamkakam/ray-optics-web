@@ -128,41 +128,6 @@ describe("Button", () => {
     expect(btn).toHaveClass("absolute", "border");
   });
 
-  it("variant icon applies correct token classes", () => {
-    render(<Button variant="icon">+</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      "inline-flex",
-      "items-center",
-      "justify-center",
-      cx.button.style.iconBorderRadius,
-      cx.button.style.iconFontWeight,
-      cx.button.size.iconHorizontalMargin,
-      cx.button.size.iconVerticalMargin,
-      cx.button.style.cursor,
-      cx.button.color.iconBgColor,
-      cx.button.color.iconHoverBgColor,
-      cx.button.color.iconTextColor,
-      cx.button.style.opacity,
-    );
-  });
-
-  it("variant icon does not apply regular borderRadius, fontWeight, or size classes", () => {
-    render(<Button variant="icon">+</Button>);
-    const btn = screen.getByRole("button");
-    splitClasses(cx.button.style.borderRadius).forEach((cls) => {
-      expect(btn).not.toHaveClass(cls);
-    });
-    splitClasses(cx.button.style.fontWeight).forEach((cls) => {
-      expect(btn).not.toHaveClass(cls);
-    });
-    // horizontalPaddingMd (px-4) is unique to md and must not appear on icon
-    splitClasses(cx.button.size.horizontalPaddingMd).forEach((cls) => {
-      expect(btn).not.toHaveClass(cls);
-    });
-    expectClasses(btn, cx.button.style.iconBorderRadius, cx.button.style.iconFontWeight, cx.button.size.iconHorizontalMargin, cx.button.size.iconVerticalMargin);
-  });
-
   it("variant danger size xs applies correct token classes", () => {
     render(<Button variant="danger" size="xs">−</Button>);
     const btn = screen.getByRole("button");

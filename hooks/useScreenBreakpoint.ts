@@ -3,7 +3,7 @@ import { useLayoutEffect, useState } from "react";
 export type ScreenSize = "screenSM" | "screenLG";
 const DEFAULT_SCREEN: ScreenSize = "screenLG";
 
-const BREAKPOINT_QUERY = "(min-width: 1024px)";
+const BREAKPOINT_QUERY = "(min-width: 1440px)";
 
 interface SubscriptionEntry {
   handler: (e: MediaQueryListEvent) => void;

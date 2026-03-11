@@ -270,6 +270,7 @@ export default function Home() {
         />
         <Button
           variant="primary"
+          size="sm"
           disabled={!isReady || computing}
           onClick={handleSubmit}
         >
@@ -325,6 +326,7 @@ export default function Home() {
         />
         <Button
           variant="primary"
+          size="sm"
           className="mb-2"
           disabled={!isReady || computing}
           onClick={handleSubmit}
