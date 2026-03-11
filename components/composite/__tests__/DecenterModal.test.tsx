@@ -49,7 +49,7 @@ describe("DecenterModal", () => {
         onRemove={jest.fn()}
       />
     );
-    expect(screen.getByText("Decenter & Tilt")).toBeInTheDocument();
+    expect(screen.getByText("Tilt & Decenter")).toBeInTheDocument();
   });
 
   it("renders Position & Orientation select", () => {

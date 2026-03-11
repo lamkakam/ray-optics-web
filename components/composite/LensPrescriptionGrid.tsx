@@ -193,7 +193,7 @@ export function LensPrescriptionGrid({
       },
     },
     {
-      headerName: "Decenter",
+      headerName: "Tilt & Decenter",
       valueGetter: (params) => {
         if (!params.data || params.data.kind !== "surface") return undefined;
         return params.data.decenter;

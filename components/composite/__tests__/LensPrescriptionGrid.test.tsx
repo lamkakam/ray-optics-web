@@ -73,7 +73,7 @@ describe("LensPrescriptionGrid", () => {
     expect(headerTexts).toContain("Thickness");
     expect(headerTexts).toContain("Medium");
     expect(headerTexts).toContain("Semi-diam.");
-    expect(headerTexts).toContain("Decenter");
+    expect(headerTexts).toContain("Tilt & Decenter");
   });
 
   it("has an aria-label on the wrapper", () => {

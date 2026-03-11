@@ -48,7 +48,7 @@ export function DecenterModal({
   onRemove,
 }: DecenterModalProps) {
   const init = initialDecenter ?? {
-    posAndOrientation: "decenter" as PosAndOrientation,
+    posAndOrientation: "bend" as PosAndOrientation,
     alpha: 0,
     beta: 0,
     gamma: 0,
@@ -75,7 +75,7 @@ export function DecenterModal({
   };
 
   return (
-    <Modal isOpen={isOpen} title="Decenter & Tilt" titleId="decenter-modal-title" size="md">
+    <Modal isOpen={isOpen} title="Tilt & Decenter" titleId="decenter-modal-title" size="md">
       {/* Position & Orientation */}
       <div className="mb-4">
         <Label htmlFor="pos-and-orientation">Position & Orientation</Label>

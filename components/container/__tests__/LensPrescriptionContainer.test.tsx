@@ -98,7 +98,7 @@ describe("LensPrescriptionContainer", () => {
     });
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Decenter & Tilt")).toBeInTheDocument();
+    expect(screen.getByText("Tilt & Decenter")).toBeInTheDocument();
   });
 
   it("closes DecenterModal when Cancel is clicked", async () => {

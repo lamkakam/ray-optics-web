@@ -141,6 +141,14 @@ const ReflectorWithOpticalWindow: OpticalModel = {
       medium: "REFL",
       manufacturer: "",
       semiDiameter: 28.489411,
+      decenter: {
+        posAndOrientation: "bend",
+        alpha: 45,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      },
     },
   ],
 } as const;
