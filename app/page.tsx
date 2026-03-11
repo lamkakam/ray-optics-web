@@ -275,10 +275,10 @@ export default function Home() {
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
           />
         </svg>
-        <Paragraph className={clsx(`!${cx.overlay.color.cardTextColor}`, "text-lg font-semibold tracking-wide")}>
+        <Paragraph className={clsx("text-lg font-semibold tracking-wide")}>
           Initializing Ray Optics
         </Paragraph>
-        <Paragraph className="!text-white/70">
+        <Paragraph>
           Loading Pyodide and installing packages…
         </Paragraph>
       </div>
