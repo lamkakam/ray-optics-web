@@ -24,6 +24,7 @@ import { Button } from "@/components/micro/Button";
 import { Select } from "@/components/micro/Select";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
+import { Paragraph } from "@/components/micro/Paragraph";
 
 export default function Home() {
   const { proxy, isReady } = usePyodide();
@@ -229,9 +230,9 @@ export default function Home() {
       isOpen={pendingExample !== undefined}
       title="Load Example System"
     >
-      <p className="mb-6 text-sm text-gray-700 dark:text-gray-300">
+      <Paragraph variant="body" className="mb-6">
         This will overwrite your current configuration. Continue?
-      </p>
+      </Paragraph>
       <div className="flex justify-end gap-3">
         <Button variant="secondary" onClick={handleExampleCancel}>
           Cancel
@@ -274,8 +275,12 @@ export default function Home() {
             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
           />
         </svg>
-        <p className="text-lg font-semibold tracking-wide">Initializing Ray Optics</p>
-        <p className="text-sm text-white/70">Loading Pyodide and installing packages…</p>
+        <Paragraph className={clsx(`!${cx.overlay.color.cardTextColor}`, "text-lg font-semibold tracking-wide")}>
+          Initializing Ray Optics
+        </Paragraph>
+        <Paragraph className="!text-white/70">
+          Loading Pyodide and installing packages…
+        </Paragraph>
       </div>
     </div>
   );
