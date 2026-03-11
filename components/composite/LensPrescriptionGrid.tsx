@@ -195,11 +195,11 @@ export function LensPrescriptionGrid({
     {
       headerName: "Tilt & Decenter",
       valueGetter: (params) => {
-        if (!params.data || params.data.kind !== "surface") return undefined;
+        if (!params.data || params.data.kind === "object") return undefined;
         return params.data.decenter;
       },
       cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind !== "surface") return null;
+        if (params.data.kind === "object") return null;
         return (
           <ActionWrapper onAction={() => onOpenDecenterModal(params.data.id)}>
             <DecenterCell

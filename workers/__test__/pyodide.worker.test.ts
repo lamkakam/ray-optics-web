@@ -127,6 +127,45 @@ describe("_setOpticalSurfaces", () => {
     expect(pythonScript).toContain("sm.ifcs[-1].profile.r = -42");
   });
 
+  it("should not emit image decenter command when image has no decenter", async () => {
+    let pythonScript = "";
+    await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
+    expect(pythonScript).not.toContain("sm.ifcs[-1].decenter");
+  });
+
+  it("should set image decenter when provided", async () => {
+    const modelWithImageDecenter: OpticalModel = {
+      ...allSphericalOpticalModel,
+      image: {
+        curvatureRadius: -42,
+        decenter: { posAndOrientation: "decenter", alpha: 1.5, beta: 0, gamma: 0, offsetX: 0.1, offsetY: 0.2 },
+      },
+    };
+    let pythonScript = "";
+    await _setOpticalSurfaces(modelWithImageDecenter, async (code) => { pythonScript = code; });
+    expect(pythonScript).toContain(
+      `sm.ifcs[-1].decenter = DecenterData("decenter", alpha=1.5, beta=0, gamma=0, x=0.1, y=0.2)`
+    );
+  });
+
+  it("should set surface decenter when provided", async () => {
+    const modelWithDecenter: OpticalModel = {
+      ...allSphericalOpticalModel,
+      surfaces: [
+        {
+          ...allSphericalOpticalModel.surfaces[0],
+          decenter: { posAndOrientation: "bend", alpha: 0, beta: 2.0, gamma: 0, offsetX: 0.5, offsetY: -0.5 },
+        },
+        ...allSphericalOpticalModel.surfaces.slice(1),
+      ],
+    };
+    let pythonScript = "";
+    await _setOpticalSurfaces(modelWithDecenter, async (code) => { pythonScript = code; });
+    expect(pythonScript).toContain(
+      `sm.ifcs[sm.cur_surface].decenter = DecenterData("bend", alpha=0, beta=2, gamma=0, x=0.5, y=-0.5)`
+    );
+  });
+
   it("should set the radius_mode correctly", async () => {
     let pythonScript = "";
     await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });

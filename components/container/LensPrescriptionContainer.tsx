@@ -94,7 +94,7 @@ export function LensPrescriptionContainer({
       <DecenterModal
         key={decenterModal.open ? decenterModal.rowId : "decenter-closed"}
         isOpen={decenterModal.open}
-        initialDecenter={decenterRow?.kind === "surface" ? decenterRow.decenter : undefined}
+        initialDecenter={decenterRow?.kind !== "object" ? decenterRow?.decenter : undefined}
         onConfirm={(decenter: DecenterType) => {
           store.getState().updateRow(decenterModal.rowId, { decenter });
           store.getState().closeDecenterModal();

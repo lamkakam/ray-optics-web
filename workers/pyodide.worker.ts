@@ -253,7 +253,13 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
   }, "");
 
   const { distance: objectDistance } = object;
-  const { curvatureRadius: imageCurvatureRadius } = image;
+  const { curvatureRadius: imageCurvatureRadius, decenter: imageDecenter } = image;
+
+  let imageDecenterCommands = "";
+  if (imageDecenter !== undefined) {
+    const { posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = imageDecenter;
+    imageDecenterCommands = `\nsm.ifcs[-1].decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
+  }
 
   // WARNING: DON'T TOUCH THE FORMATTING BELOW
   await runPython(`
@@ -274,6 +280,7 @@ sm.do_apertures = False
 sm.gaps[0].thi=${objectDistance}
 ${addSurfaceCommands}
 sm.ifcs[-1].profile.r = ${imageCurvatureRadius}
+${imageDecenterCommands}
 
 opm.update_model()
 apply_paraxial_vignetting(opm)`);

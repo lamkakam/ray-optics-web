@@ -255,13 +255,13 @@ describe("LensPrescriptionGrid", () => {
   });
 
   // --- Decenter column ---
-  it("renders decenter buttons for surface rows", () => {
+  it("renders decenter buttons for surface rows and image row", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
-    expect(decenterButtons).toHaveLength(2); // two surface rows
+    expect(decenterButtons).toHaveLength(3); // two surface rows + image row
   });
 
-  it("calls onOpenDecenterModal when decenter button is clicked", async () => {
+  it("calls onOpenDecenterModal when decenter button is clicked on a surface row", async () => {
     const onOpenDecenterModal = jest.fn();
     render(<LensPrescriptionGrid {...defaultProps} onOpenDecenterModal={onOpenDecenterModal} />);
     const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
@@ -269,6 +269,16 @@ describe("LensPrescriptionGrid", () => {
     await userEvent.click(decenterButtons[0]);
 
     expect(onOpenDecenterModal).toHaveBeenCalledWith("s1");
+  });
+
+  it("calls onOpenDecenterModal when decenter button is clicked on image row", async () => {
+    const onOpenDecenterModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenDecenterModal={onOpenDecenterModal} />);
+    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+
+    await userEvent.click(decenterButtons[2]); // last button is image row
+
+    expect(onOpenDecenterModal).toHaveBeenCalledWith(IMAGE_ROW_ID);
   });
 
   it("opens decenter modal when clicking cell area around the decenter button", async () => {
@@ -280,6 +290,17 @@ describe("LensPrescriptionGrid", () => {
     await userEvent.click(cellWrapper);
 
     expect(onOpenDecenterModal).toHaveBeenCalledWith("s1");
+  });
+
+  it("opens decenter modal when clicking cell area around the image row decenter button", async () => {
+    const onOpenDecenterModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenDecenterModal={onOpenDecenterModal} />);
+    const decenterButtons = screen.getAllByRole("button", { name: "Edit decenter and tilt" });
+    const cellWrapper = decenterButtons[2].closest("[data-cell-wrapper]")!; // image row
+
+    await userEvent.click(cellWrapper);
+
+    expect(onOpenDecenterModal).toHaveBeenCalledWith(IMAGE_ROW_ID);
   });
 
   // --- AG Grid theme integration ---

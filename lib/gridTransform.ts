@@ -31,6 +31,7 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
     id: IMAGE_ROW_ID,
     kind: "image",
     curvatureRadius: surfaces.image.curvatureRadius,
+    ...(surfaces.image.decenter !== undefined ? { decenter: surfaces.image.decenter } : {}),
   };
 
   return [objectRow, ...surfaceRows, imageRow];
@@ -61,7 +62,10 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
 
   return {
     object: { distance: objectRow?.objectDistance ?? 0 },
-    image: { curvatureRadius: imageRow?.curvatureRadius ?? 0 },
+    image: {
+      curvatureRadius: imageRow?.curvatureRadius ?? 0,
+      ...(imageRow?.decenter !== undefined ? { decenter: imageRow.decenter } : {}),
+    },
     surfaces,
   };
 }
