@@ -1,17 +1,12 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { Tabs, TabItem } from "@/components/micro/Tabs";
 
-interface DrawerTab {
-  readonly id: string;
-  readonly label: string;
-  readonly content: React.ReactNode;
-}
+export type { TabItem };
 
 interface BottomDrawerProps {
-  readonly tabs: readonly DrawerTab[];
+  readonly tabs: readonly TabItem[];
   readonly draggable?: boolean;
 }
 
@@ -20,7 +15,6 @@ const SNAP_HALF = 0.4;
 const SNAP_EXPANDED = 0.7;
 
 export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
-  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
   const [height, setHeight] = useState(300);
 
   useEffect(() => {
@@ -83,30 +77,7 @@ export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
   if (!draggable) {
     return (
       <div className="flex flex-col border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-        <div className="flex shrink-0 items-center gap-1 border-b border-gray-200 px-3 dark:border-gray-700">
-          <div role="tablist" className="flex flex-1 gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                role="tab"
-                aria-label={tab.label}
-                aria-selected={activeTab === tab.id}
-                className={clsx(
-                  "rounded-t-lg px-3 py-1.5 text-sm font-medium transition",
-                  activeTab === tab.id
-                    ? [cx.tab.color.activeBgColor, cx.tab.color.activeTextColor]
-                    : [cx.tab.color.inactiveTextColor, cx.tab.color.inactiveHoverTextColor],
-                )}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div role="tabpanel" className="p-3">
-          {tabs.find((t) => t.id === activeTab)?.content}
-        </div>
+        <Tabs tabs={tabs} panelClassName="p-3" />
       </div>
     );
   }
@@ -128,42 +99,21 @@ export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
         <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
       </div>
 
-      {/* Tab bar + toggle */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-gray-200 px-3 dark:border-gray-700">
-        <div role="tablist" className="flex flex-1 gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-label={tab.label}
-              aria-selected={activeTab === tab.id}
-              className={`rounded-t-lg px-3 py-1.5 text-sm font-medium transition ${
-                activeTab === tab.id
-                  ? "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              }`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          aria-label="Toggle drawer"
-          className="rounded p-1 text-gray-400 transition hover:text-gray-600 dark:hover:text-gray-300"
-          onClick={toggleCollapse}
-        >
-          {collapsed ? "▲" : "▼"}
-        </button>
-      </div>
-
-      {/* Tab content */}
-      {!collapsed && (
-        <div role="tabpanel" className="flex-1 overflow-auto p-3">
-          {tabs.find((t) => t.id === activeTab)?.content}
-        </div>
-      )}
+      <Tabs
+        tabs={tabs}
+        actions={
+          <button
+            type="button"
+            aria-label="Toggle drawer"
+            className="rounded p-1 text-gray-400 transition hover:text-gray-600 dark:hover:text-gray-300"
+            onClick={toggleCollapse}
+          >
+            {collapsed ? "▲" : "▼"}
+          </button>
+        }
+        showPanel={!collapsed}
+        panelClassName="flex-1 overflow-auto p-3"
+      />
     </div>
   );
 }
