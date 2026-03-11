@@ -128,7 +128,7 @@ export function WavelengthConfigModal({
 
   const atLimit = rows.length >= MAX_ROWS;
 
-  const caption = clsx(cx.label.style.caption, cx.label.color.captionTextColor, cx.label.size.caption);
+  const caption = clsx(cx.text.size.captionMargin, cx.text.color.captionTextColor, cx.text.size.captionFontSize);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   const columnDefs: ColDef<WavelengthRow>[] = [
