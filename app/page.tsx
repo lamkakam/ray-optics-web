@@ -276,10 +276,11 @@ export default function Home() {
         >
           Update System
         </Button>
-        <div className="flex gap-2">
-          <FirstOrderChips data={firstOrderData} />
-        </div>
       </header>
+
+      <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+        <FirstOrderChips data={firstOrderData} />
+      </div>
 
       <div className="flex min-h-0 flex-1 flex-row">
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
