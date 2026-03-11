@@ -60,6 +60,7 @@ export async function _init(
         import rayoptics.optical.model_constants as mc
         from rayoptics.raytr.waveabr import wave_abr_full_calc
         from rayoptics.raytr.trace import apply_paraxial_vignetting
+        from rayoptics.elem.surface import DecenterData
         from opticalglass.rindexinfo import create_material
         import yaml
 
@@ -224,7 +225,7 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
     .reduce((acc, [wl, weight], idx) => `${acc}(${wl}, ${weight})${idx === weights.length - 1 ? "" : ","}`, "");
 
   const addSurfaceCommands = surfaces.reduce((acc, surface) => {
-    const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical } = surface;
+    const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter } = surface;
     // common surface
     const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
     const glassManufacturer = medium === "air" || medium === "REFL" || medium === "CaF2" ? "" : `, ${JSON.stringify(manufacturer)}`;
@@ -241,7 +242,14 @@ export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython:
         asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
       }
     }
-    return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${setStop}`;
+
+    let decenterCommands = "";
+    if (decenter !== undefined) {
+      const { posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = decenter;
+      decenterCommands = `\nsm.ifcs[sm.cur_surface].decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
+    }
+
+    return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${decenterCommands}${setStop}`;
   }, "");
 
   const { distance: objectDistance } = object;

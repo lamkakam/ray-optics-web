@@ -30,6 +30,14 @@ export interface Surface {
     conicConstant: number;
     polynomialCoefficients?: number[]; // length <= 10
   };
+  decenter?: {
+    posAndOrientation: "bend" | "dec and return" | "decenter" | "reverse";
+    alpha: number,
+    beta: number,
+    gamma: number,
+    offsetX: number,
+    offsetY: number,
+  },
 }
 
 export interface Surfaces {
