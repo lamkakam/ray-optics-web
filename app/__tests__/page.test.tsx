@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
 
 // Mock useTheme
+const mockToggleTheme = jest.fn();
 jest.mock("@/components/ThemeProvider", () => ({
-  useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
+  useTheme: () => ({ theme: "light", toggleTheme: mockToggleTheme }),
 }));
 
 // Mock usePyodide
@@ -235,5 +236,67 @@ describe("Home page", () => {
 
     // Specs should remain at defaults (pupilValue 0.5, not 12.5)
     expect(screen.queryByDisplayValue("12.5")).not.toBeInTheDocument();
+  });
+
+  // --- Settings modal tests ---
+
+  it("renders a settings button in the header", () => {
+    render(<Home />);
+    expect(
+      screen.getByRole("button", { name: "Settings" })
+    ).toBeInTheDocument();
+  });
+
+  it("opens settings modal when settings button is clicked", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("settings modal has title 'Settings'", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("Settings");
+  });
+
+  it("settings modal contains a theme select", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByLabelText("Theme")).toBeInTheDocument();
+  });
+
+  it("settings modal contains an Ok button", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("button", { name: "Ok" })).toBeInTheDocument();
+  });
+
+  it("settings modal closes when Ok is clicked", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Ok" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("theme select defaults to current theme", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    const themeSelect = screen.getByLabelText("Theme") as HTMLSelectElement;
+    expect(themeSelect.value).toBe("light");
+  });
+
+  it("selecting a different theme option calls toggleTheme", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    await userEvent.selectOptions(screen.getByLabelText("Theme"), "dark");
+    expect(mockToggleTheme).toHaveBeenCalledTimes(1);
+  });
+
+  it("selecting the same theme option does not call toggleTheme", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    await userEvent.selectOptions(screen.getByLabelText("Theme"), "light");
+    expect(mockToggleTheme).not.toHaveBeenCalled();
   });
 });

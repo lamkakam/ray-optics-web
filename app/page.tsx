@@ -25,11 +25,13 @@ import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 import { Paragraph } from "@/components/micro/Paragraph";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
+import { useTheme } from "@/components/ThemeProvider";
 
 export default function Home() {
   const { proxy, isReady } = usePyodide();
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
+  const { theme, toggleTheme } = useTheme();
 
   const specsStore = useMemo(
     () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
@@ -55,6 +57,7 @@ export default function Home() {
   >();
   const [computing, setComputing] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [pendingExample, setPendingExample] = useState<string | undefined>();
   const exampleSelectRef = useRef<HTMLSelectElement>(null);
 
@@ -84,6 +87,14 @@ export default function Home() {
       exampleSelectRef.current.value = "";
     }
   }, []);
+
+  const handleThemeChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const selected = e.target.value as "light" | "dark";
+      if (selected !== theme) toggleTheme();
+    },
+    [theme, toggleTheme]
+  );
 
   const fieldOptions = useMemo(() => {
     const { fields, maxField, type } = committedSpecs.field;
@@ -248,6 +259,33 @@ export default function Home() {
     />
   );
 
+  const themeOptions = [
+    { value: "light", label: "Light" },
+    { value: "dark", label: "Dark" },
+  ];
+
+  const settingsModal = (
+    <Modal isOpen={settingsModalOpen} title="Settings">
+      <div className="mb-6">
+        <label htmlFor="theme-select" className="block text-sm font-medium mb-2">
+          Theme
+        </label>
+        <Select
+          id="theme-select"
+          aria-label="Theme"
+          options={themeOptions}
+          value={theme}
+          onChange={handleThemeChange}
+        />
+      </div>
+      <div className="flex justify-end">
+        <Button variant="primary" onClick={() => setSettingsModalOpen(false)}>
+          Ok
+        </Button>
+      </div>
+    </Modal>
+  );
+
   const initOverlayNode = !isReady && (
     <LoadingOverlay
       title="Initializing Ray Optics"
@@ -275,6 +313,15 @@ export default function Home() {
           onClick={handleSubmit}
         >
           Update System
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          aria-label="Settings"
+          className="ml-auto"
+          onClick={() => setSettingsModalOpen(true)}
+        >
+          ⚙
         </Button>
       </header>
 
@@ -307,6 +354,7 @@ export default function Home() {
       <BottomDrawer tabs={drawerTabs} draggable={true} />
       {confirmOverwriteModal}
       {errorModal}
+      {settingsModal}
       {initOverlayNode}
     </div>
   );
@@ -314,7 +362,18 @@ export default function Home() {
   const layoutSM: React.ReactNode = (
     <div className="flex flex-col">
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
-        <Header level={1} className="mb-2">Ray Optics Web</Header>
+        <div className="flex items-center mb-2">
+          <Header level={1}>Ray Optics Web</Header>
+          <Button
+            variant="secondary"
+            size="sm"
+            aria-label="Settings"
+            className="ml-auto"
+            onClick={() => setSettingsModalOpen(true)}
+          >
+            ⚙
+          </Button>
+        </div>
         <Select
           ref={exampleSelectRef}
           type="compact"
@@ -364,6 +423,7 @@ export default function Home() {
       <BottomDrawer tabs={drawerTabs} draggable={false} />
       {confirmOverwriteModal}
       {errorModal}
+      {settingsModal}
       {initOverlayNode}
     </div>
   );
