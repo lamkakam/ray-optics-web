@@ -5,9 +5,9 @@ import { componentTokens as cx } from "@/components/ui/modalTokens";
 export type ParagraphVariant = "body" | "caption" | "subheading";
 
 const VARIANT_CLASSES: Record<ParagraphVariant, readonly string[]> = {
-  body: [cx.text.color.bodyTextColor, "text-sm"],
+  body: [cx.text.color.bodyTextColor, cx.text.size.bodyFontSize],
   caption: [cx.text.size.captionMargin, cx.text.color.captionTextColor, cx.text.size.captionFontSize],
-  subheading: [cx.label.style.fontWeight, cx.label.color.textColor, cx.label.size.fontSize],
+  subheading: [cx.text.style.subheadingFontWeight, cx.text.color.subheadingTextColor, cx.text.size.subheadingFontSize],
 } as const satisfies Record<ParagraphVariant, readonly string[]>;
 
 interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
