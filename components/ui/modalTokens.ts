@@ -16,8 +16,8 @@ const globalTokens = {
     reverseText: "text-white dark:text-black",
     defaultBorder: "border-gray-200 dark:border-gray-700",
     inputBorder: "border-gray-300 dark:border-gray-600",
-    surfaceBg: "bg-gray-50 dark:bg-gray-800",
-    reverseSurfaceBg: "bg-gray-800 dark:bg-gray-50",
+    surfaceBg: "bg-gray-100 dark:bg-gray-800",
+    reverseSurfaceBg: "bg-gray-800 dark:bg-gray-100",
     focusRingColor: "focus:ring-blue-500",
     backdropBgColor: "bg-black/50",
     overlayPanelBgColor: "bg-white dark:bg-gray-900",
@@ -225,9 +225,9 @@ export const componentTokens = {
 
   tab: {
     color: {
-      activeBgColor: "bg-gray-100 dark:bg-gray-800",
-      activeTextColor: "text-gray-900 dark:text-gray-100",
-      inactiveTextColor: "text-gray-500 dark:text-gray-400",
+      activeBgColor: g.color.surfaceBg,
+      activeTextColor: g.color.primaryText,
+      inactiveTextColor: g.color.mutedText,
       inactiveHoverTextColor: "hover:text-gray-700 dark:hover:text-gray-200",
     },
     size: {},
