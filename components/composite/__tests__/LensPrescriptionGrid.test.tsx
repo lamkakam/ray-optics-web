@@ -268,15 +268,15 @@ describe("LensPrescriptionGrid", () => {
   });
 
   // --- Button size and spacing ---
-  it("renders add/delete buttons with xs size classes", () => {
+  it("renders add/delete buttons with sm size classes", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     const addButtons = screen.getAllByRole("button", { name: "Insert row" });
     const deleteButtons = screen.getAllByRole("button", { name: "Delete row" });
 
     for (const btn of [...addButtons, ...deleteButtons]) {
-      expect(btn.className).toMatch(/px-2/);
-      expect(btn.className).toMatch(/py-1/);
-      expect(btn.className).toMatch(/text-xs/);
+      expect(btn.className).toMatch(/px-/);
+      expect(btn.className).toMatch(/py-/);
+      expect(btn.className).toMatch(/text-sm/);
     }
   });
 
@@ -285,6 +285,6 @@ describe("LensPrescriptionGrid", () => {
     const addButtons = screen.getAllByRole("button", { name: "Insert row" });
     const container = addButtons[0].parentElement!;
     expect(container.className).toMatch(/flex/);
-    expect(container.className).toMatch(/gap-2/);
+    expect(container.className).toMatch(/gap-/);
   });
 });

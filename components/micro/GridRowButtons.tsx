@@ -20,8 +20,8 @@ export function GridRowButtons({
     <span className="flex items-center gap-2">
       {onAdd !== undefined && (
         <Button
-          variant="primary"
-          size="xs"
+          variant="secondary"
+          size="sm"
           className="rounded"
           title={addLabel}
           aria-label={addLabel}
@@ -33,8 +33,8 @@ export function GridRowButtons({
       )}
       {onDelete !== undefined && (
         <Button
-          variant="danger"
-          size="xs"
+          variant="secondary"
+          size="sm"
           className="rounded"
           title={deleteLabel}
           aria-label={deleteLabel}
