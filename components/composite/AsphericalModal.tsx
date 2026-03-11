@@ -8,6 +8,7 @@ import { Input } from "@/components/micro/Input";
 import { Label } from "@/components/micro/Label";
 import { Modal } from "@/components/micro/Modal";
 import { Select } from "@/components/micro/Select";
+import { Paragraph } from "@/components/micro/Paragraph";
 
 export type AsphericalType = "Conical" | "EvenAspherical";
 
@@ -126,9 +127,9 @@ export function AsphericalModal({
       {/* ── Polynomial coefficients (2-col grid) ── */}
       {type === "EvenAspherical" && (
         <div className="mb-4">
-          <p className={clsx("mb-2", cx.label.style.fontWeight, cx.label.color.textColor, cx.label.size.fontSize)}>
+          <Paragraph variant="subheading" className="mb-2">
             Even Aspherical Coefficients
-          </p>
+          </Paragraph>
           <div className="grid grid-cols-2 gap-3">
             {COEFFICIENT_LABELS.map((lbl, i) => (
               <div key={lbl}>

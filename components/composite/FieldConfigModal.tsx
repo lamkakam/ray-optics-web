@@ -10,6 +10,7 @@ import { Modal } from "@/components/micro/Modal";
 import { Input } from "@/components/micro/Input";
 import { Label } from "@/components/micro/Label";
 import { Select } from "@/components/micro/Select";
+import { Paragraph } from "@/components/micro/Paragraph";
 import { useTheme } from "@/components/ThemeProvider";
 import type { FieldSpace, FieldType } from "@/store/specsConfigurerStore";
 
@@ -120,7 +121,6 @@ export function FieldConfigModal({
 
   const atLimit = rows.length >= MAX_ROWS;
 
-  const caption = clsx(cx.text.size.captionMargin, cx.text.color.captionTextColor, cx.text.size.captionFontSize);
   const divider = clsx(cx.divider.style.base, cx.divider.color.borderColor);
 
   const columnDefs: ColDef<FieldRow>[] = [
@@ -203,7 +203,7 @@ export function FieldConfigModal({
         </div>
 
         <div className="mb-4" style={{ width: "100%" }}>
-          <p className={caption}>Maximum 10 relative fields</p>
+          <Paragraph variant="caption">Maximum 10 relative fields</Paragraph>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}
