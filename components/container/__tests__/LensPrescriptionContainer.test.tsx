@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
@@ -97,8 +97,9 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openDecenterModal(rowId);
     });
 
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("Tilt & Decenter")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText("Tilt & Decenter")).toBeInTheDocument();
   });
 
   it("closes DecenterModal when Cancel is clicked", async () => {
