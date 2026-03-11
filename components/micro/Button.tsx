@@ -54,6 +54,7 @@ export function Button({
         s.cursor,
         s.opacity,
         sizeClass,
+        "flex items-center justify-center",
         className,
       ))}
       {...rest}
