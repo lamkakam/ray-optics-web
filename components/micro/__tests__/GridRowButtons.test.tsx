@@ -87,4 +87,24 @@ describe("GridRowButtons", () => {
     expect(screen.getByRole("button", { name: "Add field row" })).toHaveAttribute("title", "Add field row");
     expect(screen.getByRole("button", { name: "Delete field row" })).toHaveAttribute("title", "Delete field row");
   });
+
+  it("add button has a portal Tooltip with addLabel text", () => {
+    render(<GridRowButtons onAdd={() => {}} addLabel="Insert row" />);
+    const tooltips = screen.getAllByRole("tooltip");
+    expect(tooltips.some((t) => t.textContent === "Insert row")).toBe(true);
+  });
+
+  it("delete button has a portal Tooltip with deleteLabel text", () => {
+    render(<GridRowButtons onDelete={() => {}} deleteLabel="Delete row" />);
+    const tooltips = screen.getAllByRole("tooltip");
+    expect(tooltips.some((t) => t.textContent === "Delete row")).toBe(true);
+  });
+
+  it("both buttons have portal Tooltips when both provided", () => {
+    render(<GridRowButtons onAdd={() => {}} onDelete={() => {}} />);
+    const tooltips = screen.getAllByRole("tooltip");
+    expect(tooltips).toHaveLength(2);
+    expect(tooltips.some((t) => t.textContent === "Insert row")).toBe(true);
+    expect(tooltips.some((t) => t.textContent === "Delete row")).toBe(true);
+  });
 });
