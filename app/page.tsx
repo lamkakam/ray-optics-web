@@ -18,14 +18,13 @@ import {
 import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { Modal } from "@/components/micro/Modal";
-import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Button } from "@/components/micro/Button";
 import { Header } from "@/components/micro/Header";
 import { Select } from "@/components/micro/Select";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 import { Paragraph } from "@/components/micro/Paragraph";
+import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
 
 export default function Home() {
   const { proxy, isReady } = usePyodide();
@@ -223,9 +222,6 @@ export default function Home() {
     [specsStore, lensStore]
   );
 
-  const initOverlay = clsx(cx.overlay.style.initLayout, cx.overlay.style.initZIndex, cx.overlay.style.initBlur, cx.overlay.color.initBgColor);
-  const initCard = clsx(cx.overlay.style.cardLayout, cx.overlay.style.cardBorderRadius, cx.overlay.size.cardHorizontalPadding, cx.overlay.size.cardVerticalPadding, cx.overlay.style.cardShadow, cx.overlay.color.cardBgColor, cx.overlay.color.cardTextColor);
-
   const confirmOverwriteModal = (
     <Modal
       isOpen={pendingExample !== undefined}
@@ -253,37 +249,10 @@ export default function Home() {
   );
 
   const initOverlayNode = !isReady && (
-    <div className={initOverlay}>
-      <div className={initCard}>
-        <svg
-          className="h-10 w-10 animate-spin text-blue-400"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <circle
-            className="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            strokeWidth="4"
-          />
-          <path
-            className="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-          />
-        </svg>
-        <Paragraph className={clsx("text-lg font-semibold tracking-wide")}>
-          Initializing Ray Optics
-        </Paragraph>
-        <Paragraph>
-          Loading Pyodide and installing packages…
-        </Paragraph>
-      </div>
-    </div>
+    <LoadingOverlay
+      title="Initializing Ray Optics"
+      contents="Loading Pyodide and installing packages…"
+    />
   );
 
   const layoutLG: React.ReactNode = (

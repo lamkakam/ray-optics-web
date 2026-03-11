@@ -18,11 +18,17 @@ const globalTokens = {
     inputBorder: "border-gray-300 dark:border-gray-600",
     surfaceBg: "bg-gray-50 dark:bg-gray-800",
     focusRingColor: "focus:ring-blue-500",
+    backdropBgColor: "bg-black/50",
+    overlayPanelBgColor: "bg-white dark:bg-gray-900",
   },
   size: {
     focusRingWidth: "focus:ring-2",
   },
-  style: {},
+  style: {
+    backdropBlur: "backdrop-blur-sm",
+    overlayPanelBorderRadius: "rounded-2xl",
+    overlayPanelShadow: "shadow-2xl",
+  },
 } as const;
 
 const g = globalTokens;
@@ -129,9 +135,9 @@ export const componentTokens = {
 
   modal: {
     color: {
-      backdropBgColor: "bg-black/50",
+      backdropBgColor: g.color.backdropBgColor,
       panelBorderColor: g.color.defaultBorder,
-      panelBgColor: "bg-white dark:bg-gray-900",
+      panelBgColor: g.color.overlayPanelBgColor,
       titleBorderColor: g.color.defaultBorder,
       titleTextColor: g.color.primaryText,
     },
@@ -143,10 +149,9 @@ export const componentTokens = {
       titleMargin: "mb-4",
     },
     style: {
-      backdropBlur: "backdrop-blur-sm",
-      panelBorderRadius: "rounded-2xl",
-      panelShadow: "shadow-2xl",
-      titleFontWeight: "font-semibold",
+      backdropBlur: g.style.backdropBlur,
+      panelBorderRadius: g.style.overlayPanelBorderRadius,
+      panelShadow: g.style.overlayPanelShadow,
     },
   },
 
@@ -260,21 +265,19 @@ export const componentTokens = {
 
   overlay: {
     color: {
-      initBgColor: "bg-gray-900/60",
-      cardBgColor: "bg-white/10 dark:bg-black/20",
-      cardTextColor: "text-white",
+      backdropBgColor: g.color.backdropBgColor,
+      panelBgColor: g.color.overlayPanelBgColor,
+      panelTextColor: g.color.secondaryText,
     },
     size: {
-      cardHorizontalPadding: "px-10",
-      cardVerticalPadding: "py-8",
+      panelHorizontalPadding: "px-10",
+      panelVerticalPadding: "py-8",
     },
     style: {
-      initLayout: "fixed inset-0 flex flex-col items-center justify-center",
-      initZIndex: "z-[200]",
-      initBlur: "backdrop-blur-sm",
-      cardLayout: "flex flex-col items-center gap-4",
-      cardBorderRadius: "rounded-xl",
-      cardShadow: "shadow-xl",
+      zIndex: "z-[200]",
+      backdropBlur: g.style.backdropBlur,
+      panelBorderRadius: g.style.overlayPanelBorderRadius,
+      panelShadow: g.style.overlayPanelShadow,
     },
   },
 } as const;
