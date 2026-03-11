@@ -205,7 +205,7 @@ export const componentTokens = {
   tooltip: {
     color: {
       bgColor: "bg-gray-900",
-      textColor: "text-white",
+      textColor: g.color.reverseText,
     },
     size: {
       horizontalPadding: "px-2",
@@ -213,9 +213,7 @@ export const componentTokens = {
       fontSize: "text-xs",
     },
     style: {
-      position: "absolute left-1/2 -translate-x-1/2",
       pointerEvents: "pointer-events-none",
-      whiteSpace: "whitespace-nowrap",
       borderRadius: "rounded",
       opacity: "opacity-0",
       transition: "transition-opacity",
