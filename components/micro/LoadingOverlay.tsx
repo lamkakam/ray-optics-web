@@ -10,24 +10,22 @@ interface LoadingOverlayProps {
 
 export function LoadingOverlay({ title, contents }: LoadingOverlayProps) {
   const overlayClass = clsx(
-    cx.overlay.style.initLayout,
-    cx.overlay.style.initZIndex,
-    cx.overlay.style.initBlur,
-    cx.overlay.color.initBgColor
+    cx.overlay.style.zIndex,
+    cx.overlay.style.backdropBlur,
+    cx.overlay.color.backdropBgColor
   );
-  const cardClass = clsx(
-    cx.overlay.style.cardLayout,
-    cx.overlay.style.cardBorderRadius,
-    cx.overlay.size.cardHorizontalPadding,
-    cx.overlay.size.cardVerticalPadding,
-    cx.overlay.style.cardShadow,
-    cx.overlay.color.cardBgColor,
-    cx.overlay.color.cardTextColor
+  const panelClass = clsx(
+    cx.overlay.style.panelBorderRadius,
+    cx.overlay.size.panelHorizontalPadding,
+    cx.overlay.size.panelVerticalPadding,
+    cx.overlay.style.panelShadow,
+    cx.overlay.color.panelBgColor,
+    cx.overlay.color.panelTextColor
   );
 
   return (
-    <div className={overlayClass}>
-      <div className={cardClass}>
+    <div className={`fixed inset-0 flex flex-col items-center justify-center ${overlayClass}`}>
+      <div className={`flex flex-col items-center gap-4 ${panelClass}`}>
         <svg
           className="h-10 w-10 animate-spin text-blue-400"
           xmlns="http://www.w3.org/2000/svg"
