@@ -153,6 +153,437 @@ const ReflectorWithOpticalWindow: OpticalModel = {
   ],
 } as const;
 
+// from https://www.telescope-optics.net/early%20telescopes.htm
+const herschelReflector: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 1200 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 2,
+      fields: [0, 0.5, 1],
+      isRelative: true,
+    },
+    wavelengths: {
+      weights: [
+        [587.562, 1],
+      ],
+      referenceIndex: 0,
+    },
+  },
+
+  object: { distance: 1e10 },
+  image: { curvatureRadius: -1.2e4 },
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: -2.4e4,
+      thickness: -1.2e4,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 600,
+      decenter: {
+        coordinateSystemStrategy: "bend",
+        alpha: 2,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      },
+    },
+  ],
+} as const;
+
+// from https://www.telescope-optics.net/early%20telescopes.htm
+const mikeJonesImprovedHerschelReflector: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 1220 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.05,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+    },
+    wavelengths: {
+      weights: [
+        [546.073, 1],
+      ],
+      referenceIndex: 0,
+    },
+  },
+
+  object: {
+    distance: 1e10
+  },
+  image: {
+    curvatureRadius: 0,
+    decenter: {
+      coordinateSystemStrategy: "decenter",
+      alpha: 2.995768,
+      beta: 0,
+      gamma: 0,
+      offsetX: 0,
+      offsetY: 0.02777,
+    }
+  },
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: -24384,
+      thickness: -11600,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 609.6,
+      aspherical: {
+        conicConstant: -1,
+      },
+      decenter: {
+        coordinateSystemStrategy: "bend",
+        alpha: 1.7,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 39.722912,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: -9,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 53,
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: -16.95086,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: -2.663858,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: -556.536,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 53,
+      decenter: {
+        coordinateSystemStrategy: "reverse",
+        alpha: -16.95086,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: -2.663858,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: -39.994547,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 39.543155,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 39.048232,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -514.2,
+      thickness: -11,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 39.048232,
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 13.801745,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 53,
+      decenter: {
+        coordinateSystemStrategy: "reverse",
+        alpha: 13.801745,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: -554.4,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 39.242722,
+    }
+  ]
+} as const;
+
+// from https://www.telescope-optics.net/ATM_telescopes.htm
+const quadSchiefspiegler: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 318 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.125,
+      fields: [0, 0.5, 1],
+      isRelative: true,
+    },
+    wavelengths: {
+      weights: [
+        [587.562, 1],
+      ],
+      referenceIndex: 0,
+    },
+  },
+  object: {
+    distance: 1e10
+  },
+  image: {
+    curvatureRadius: 0,
+    decenter: {
+      coordinateSystemStrategy: "dec and return",
+      alpha: -9.15,
+      beta: 0,
+      gamma: 0,
+      offsetX: 0,
+      offsetY: 0,
+    }
+  },
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: -7620,
+      thickness: -2172,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 159,
+      aspherical: {
+        conicConstant: -0.55,
+      },
+      decenter: {
+        coordinateSystemStrategy: "bend",
+        alpha: -3.15,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: -7620,
+      thickness: 1700,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 73.096057,
+      decenter: {
+        coordinateSystemStrategy: "bend",
+        alpha: 9.6,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: -53238,
+      thickness: -1122.4,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 38.475044,
+      decenter: {
+        coordinateSystemStrategy: "bend",
+        alpha: 38.55,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    }
+  ]
+} as const;
+
+// from https://www.telescope-optics.net/ATM_telescopes.htm
+const clydeBoneJrMersenne: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 762 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.09,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+    },
+    wavelengths: {
+      weights: [
+        [435.835, 0.035],
+        [486.133, 0.18],
+        [546.073, 0.98],
+        [656.273, 0.075],
+      ],
+      referenceIndex: 2,
+    },
+  },
+
+  object: {
+    distance: 1e10,
+  },
+  image: {
+    curvatureRadius: 0,
+  },
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: -7620,
+      thickness: -3124.2,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 381,
+      aspherical: {
+        conicConstant: -1
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: -1371.6,
+      thickness: 2437,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 68.583124,
+      aspherical: {
+        conicConstant: -1,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: -690,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 68.596663,
+      decenter: {
+        coordinateSystemStrategy: "bend",
+        alpha: 45,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 99,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 68.600496,
+      decenter: {
+        coordinateSystemStrategy: "bend",
+        alpha: -45,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 426,
+      thickness: 7.5,
+      medium: "K7",
+      manufacturer: "Schott",
+      semiDiameter: 70,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 194.3,
+      thickness: 5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 70,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 194.3,
+      thickness: 15,
+      medium: "CaF2",
+      manufacturer: "",
+      semiDiameter: 70,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 504.3,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 70,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 505,
+      thickness: 8.3,
+      medium: "CaF2",
+      manufacturer: "",
+      semiDiameter: 40,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -232,
+      thickness: 0.5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 40,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -237.5,
+      thickness: 6,
+      medium: "K7",
+      manufacturer: "Schott",
+      semiDiameter: 40,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -1200,
+      thickness: 403.92367,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 40,
+    }
+  ],
+} as const;
+
+
 // Design from https://telescope-optics.net/schmidt_camera_aberrations.htm
 const schmidtCamera: OpticalModel = {
   specs: {
@@ -456,14 +887,18 @@ const modifiedImaizumiEyepieceReversed: OpticalModel = {
 
 export const ExampleSystems: Record<string, OpticalModel> = {
   "Sasian Triplet": SasianTriplet,
-  "Reflector with Optical Window": ReflectorWithOpticalWindow,
+  "Newtonian Reflector with Optical Window": ReflectorWithOpticalWindow,
+  "Herschel's 40-foot Reflector": herschelReflector,
+  "Mike I. Jones's Improved Herschel Reflector": mikeJonesImprovedHerschelReflector,
+  "Terry Platt's 318mm f/21 Buchroeder \"Quad-Schiefspiegler\"": quadSchiefspiegler,
+  "Clyde Bone Jr. 30-inch f/5 Mersenne": clydeBoneJrMersenne,
   "Schmidt Camera 200mm f/5": schmidtCamera,
   "Ortho-APO 130mm f/7.7": orthoAPO,
-  "Fluorite Doublet APO 130mmf/8 w/ Wide Air Gap & Aspherized Surface": fluoriteDoubletAPOWithAspherizedSurface,
+  "Fluorite Doublet APO 130mm f/8 w/ Wide Air Gap & Aspherized Surface": fluoriteDoubletAPOWithAspherizedSurface,
   "Fraunhofer Achromat 120mm f/23.6 (CA ratio = 5)": fraunhoferAchromat,
   "Fraunhofer Achromat 120mm f/7.5 (CA ratio = 1.59)": fraunhoferAchromatFast,
   "APO Doublet (S-FPL53/N-ZK7) 120mm f/7.5": edDoublet,
   "APO Petzval 140mm f/7": petzvalAPO,
   "APO Petzval 140mm f/7 (but with rear lenses removed)": petzvalAPORearLensesRemoved,
-  "Reversed Tracing of Modified Imaizumi M. Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
+  "Reversed Tracing of Modified Imaizumi M. 80deg AFoV Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
 } as const;
