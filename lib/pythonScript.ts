@@ -1,8 +1,9 @@
 
 import type { OpticalModel } from "./opticalModel";
 
+export type SetAutoApertureFlag = "autoAperture" | "manualAperture";
 
-export function buildOpticalModelScript(opticalModel: OpticalModel): string {
+export function buildOpticalModelScript(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag): string {
   const { specs, surfaces, object, image } = opticalModel;
   const {
     pupil: { space: pupilSpace, type: pupilType, value: pupilValue },
@@ -50,6 +51,7 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
     imageDecenterCommands = `\nsm.ifcs[-1].decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
   }
 
+  const doApertureFlag = setAutoAperture === "autoAperture" ? "True" : "False";
 
   // WARNING: DON'T TOUCH THE FORMATTING BELOW
   return `
@@ -65,7 +67,7 @@ osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxFi
 osp['wvls'] = WvlSpec([${formattedWeights}], ref_wl=${refWavelengthIdx})
 
 opm.radius_mode = True
-sm.do_apertures = False
+sm.do_apertures = ${doApertureFlag}
 
 sm.gaps[0].thi=${objectDistance}
 ${addSurfaceCommands}
@@ -76,7 +78,7 @@ opm.update_model()
 apply_paraxial_vignetting(opm)`;
 }
 
-export function buildExportScript(opticalModel: OpticalModel) {
+export function buildExportScript(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag) {
   const scriptForImporting = `
 isdark = False
 from rayoptics.environment import *
@@ -89,7 +91,7 @@ caf2 = create_glass(caf2_url, "rindexinfo")
 `;
 
   return `${scriptForImporting}
-${buildOpticalModelScript(opticalModel)}
+${buildOpticalModelScript(opticalModel, setAutoAperture)}
 
 sm.list_model()
 pm.first_order_data()

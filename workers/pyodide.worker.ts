@@ -1,5 +1,6 @@
 import { expose } from "comlink";
 import { type OpticalModel } from "../lib/opticalModel";
+import { type SetAutoApertureFlag } from "../lib/pythonScript";
 import { buildOpticalModelScript } from "../lib/pythonScript";
 
 declare function importScripts(...urls: string[]): void;
@@ -214,9 +215,9 @@ function requirePyodide(): (code: string) => Promise<unknown> {
 
 
 // export for testing
-export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython: (code: string) => Promise<unknown>): Promise<void> {
+export async function _setOpticalSurfaces(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag, runPython: (code: string) => Promise<unknown>): Promise<void> {
   await runPython(
-    buildOpticalModelScript(opticalModel),
+    buildOpticalModelScript(opticalModel, setAutoAperture),
   );
 }
 
@@ -249,7 +250,7 @@ export async function _plotSpotDiagram(runPython: (code: string) => Promise<unkn
 
 // Expose for Components
 export async function setOpticalSurfaces(opticalModel: OpticalModel): Promise<void> {
-  await _setOpticalSurfaces(opticalModel, requirePyodide());
+  await _setOpticalSurfaces(opticalModel, "manualAperture", requirePyodide());
   return;
 }
 

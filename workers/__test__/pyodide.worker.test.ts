@@ -90,7 +90,7 @@ const opticalModelWithConic: OpticalModel = {
 describe("_setOpticalSurfaces", () => {
   it("should set optical specs by calling PupilSpec, FieldSpec, and WvlSpec correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(allSphericalOpticalModel, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)");
     expect(pythonScript).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True)");
     expect(pythonScript).toContain("osp['wvls'] = WvlSpec([(656.3, 1),(587, 2),(486.1, 1)], ref_wl=1)");
@@ -98,7 +98,7 @@ describe("_setOpticalSurfaces", () => {
 
   it("should set optical surfaces including stops by calling add_surface correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(allSphericalOpticalModel, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.do_apertures = False");
     expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)");
     expect(pythonScript).toContain("sm.add_surface([7331.288, 5.86, \"air\"], sd=8.9483)");
@@ -111,25 +111,25 @@ describe("_setOpticalSurfaces", () => {
 
   it("should set an aspherical surface correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(opticalModelWithEvenAspherical, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(opticalModelWithEvenAspherical, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1, coefs=[0,0.02,0,0,0,0,0,0,0,0])");
   });
 
   it("should set the object distance correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(allSphericalOpticalModel, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.gaps[0].thi=1000000000");
   });
 
   it("should set the image curvature radius correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(allSphericalOpticalModel, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.ifcs[-1].profile.r = -42");
   });
 
   it("should not emit image decenter command when image has no decenter", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(allSphericalOpticalModel, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).not.toContain("sm.ifcs[-1].decenter");
   });
 
@@ -142,7 +142,7 @@ describe("_setOpticalSurfaces", () => {
       },
     };
     let pythonScript = "";
-    await _setOpticalSurfaces(modelWithImageDecenter, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(modelWithImageDecenter, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain(
       `sm.ifcs[-1].decenter = DecenterData("decenter", alpha=1.5, beta=0, gamma=0, x=0.1, y=0.2)`
     );
@@ -160,7 +160,7 @@ describe("_setOpticalSurfaces", () => {
       ],
     };
     let pythonScript = "";
-    await _setOpticalSurfaces(modelWithDecenter, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(modelWithDecenter, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain(
       `sm.ifcs[sm.cur_surface].decenter = DecenterData("bend", alpha=0, beta=2, gamma=0, x=0.5, y=-0.5)`
     );
@@ -168,25 +168,25 @@ describe("_setOpticalSurfaces", () => {
 
   it("should set the radius_mode correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(allSphericalOpticalModel, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("opm.radius_mode = True");
   });
 
   it("should call the OpticalModel constructor correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(allSphericalOpticalModel, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(allSphericalOpticalModel, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("opm = OpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']");
   });
 
   it("should set a conic surface correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(opticalModelWithConic, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(opticalModelWithConic, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1)");
   });
 
   it("should set a surface with fluorite correctly", async () => {
     let pythonScript = "";
-    await _setOpticalSurfaces(fluoriteSinglet, async (code) => { pythonScript = code; });
+    await _setOpticalSurfaces(fluoriteSinglet, "manualAperture", async (code) => { pythonScript = code; });
     expect(pythonScript).toContain("sm.add_surface([30, 1.1, caf2], sd=10)");
   });
 });

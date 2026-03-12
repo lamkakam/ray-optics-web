@@ -115,7 +115,7 @@ export function LensPrescriptionContainer({
 
       <PythonScriptModal
         isOpen={pythonScriptOpen}
-        script={pythonScriptOpen ? buildExportScript(getOpticalModel()) : ""}
+        script={pythonScriptOpen ? buildExportScript(getOpticalModel(), "manualAperture") : ""}
         onClose={() => setPythonScriptOpen(false)}
       />
     </div>
