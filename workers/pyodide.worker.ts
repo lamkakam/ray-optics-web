@@ -1,5 +1,6 @@
 import { expose } from "comlink";
 import { type OpticalModel } from "../lib/opticalModel";
+import { getPythonScriptForDefiningOpticalModelWithRayOptics } from "../lib/pythonScriptStrings";
 
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
@@ -214,76 +215,9 @@ function requirePyodide(): (code: string) => Promise<unknown> {
 
 // export for testing
 export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython: (code: string) => Promise<unknown>): Promise<void> {
-  const { specs, surfaces, object, image } = opticalModel;
-  const {
-    pupil: { space: pupilSpace, type: pupilType, value: pupilValue },
-    field: { space: fieldSpace, type: fieldType, maxField, fields, isRelative: isFieldRelative },
-    wavelengths: { weights, referenceIndex: refWavelengthIdx }
-  } = specs;
-
-  const formattedWeights = weights
-    .reduce((acc, [wl, weight], idx) => `${acc}(${wl}, ${weight})${idx === weights.length - 1 ? "" : ","}`, "");
-
-  const addSurfaceCommands = surfaces.reduce((acc, surface) => {
-    const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter } = surface;
-    // common surface
-    const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
-    const glassManufacturer = medium === "air" || medium === "REFL" || medium === "CaF2" ? "" : `, ${JSON.stringify(manufacturer)}`;
-    const mediumOption = medium === "CaF2" ? "caf2" : JSON.stringify(medium);
-    const setStop = label === "Stop" ? "\nsm.set_stop()" : "";
-
-    let asphericalCommands = "";
-    if (aspherical !== undefined) {
-      const { conicConstant, polynomialCoefficients } = aspherical;
-      if (polynomialCoefficients === undefined) {
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
-      } else {
-        const coefsString = JSON.stringify(polynomialCoefficients);
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
-      }
-    }
-
-    let decenterCommands = "";
-    if (decenter !== undefined) {
-      const { coordinateSystemStrategy: posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = decenter;
-      decenterCommands = `\nsm.ifcs[sm.cur_surface].decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
-    }
-
-    return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${decenterCommands}${setStop}`;
-  }, "");
-
-  const { distance: objectDistance } = object;
-  const { curvatureRadius: imageCurvatureRadius, decenter: imageDecenter } = image;
-
-  let imageDecenterCommands = "";
-  if (imageDecenter !== undefined) {
-    const { coordinateSystemStrategy: posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = imageDecenter;
-    imageDecenterCommands = `\nsm.ifcs[-1].decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
-  }
-
-  // WARNING: DON'T TOUCH THE FORMATTING BELOW
-  await runPython(`
-opm = OpticalModel()
-sm  = opm['seq_model']
-osp = opm['optical_spec']
-pm  = opm['parax_model']
-
-opm.system_spec.dimensions = 'MM'
-
-osp['pupil'] = PupilSpec(osp, key=['${pupilSpace}', '${pupilType}'], value=${pupilValue})
-osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"})
-osp['wvls'] = WvlSpec([${formattedWeights}], ref_wl=${refWavelengthIdx})
-
-opm.radius_mode = True
-sm.do_apertures = False
-
-sm.gaps[0].thi=${objectDistance}
-${addSurfaceCommands}
-sm.ifcs[-1].profile.r = ${imageCurvatureRadius}
-${imageDecenterCommands}
-
-opm.update_model()
-apply_paraxial_vignetting(opm)`);
+  await runPython(
+    getPythonScriptForDefiningOpticalModelWithRayOptics(opticalModel),
+  );
 }
 
 
