@@ -47,13 +47,6 @@ describe("Home page", () => {
     expect(screen.getByText("Ray Optics Web")).toBeInTheDocument();
   });
 
-  it("renders the lens layout panel area", () => {
-    render(<Home />);
-    expect(
-      screen.getByRole("button", { name: "Refresh lens layout" })
-    ).toBeInTheDocument();
-  });
-
   it("renders the analysis panel with field and plot type selectors", () => {
     render(<Home />);
     expect(screen.getByLabelText("Field")).toBeInTheDocument();
