@@ -6,7 +6,7 @@ import { LensPrescriptionContainer } from "@/components/container/LensPrescripti
 import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { IMAGE_ROW_ID } from "@/lib/gridTypes";
-import type { Surfaces } from "@/lib/opticalModel";
+import type { Surfaces, OpticalModel } from "@/lib/opticalModel";
 
 jest.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
@@ -41,27 +41,40 @@ function createTestStore() {
   return store;
 }
 
+const testOpticalModel: OpticalModel = {
+  ...testSurfaces,
+  specs: {
+    pupil: { space: "object", type: "epd", value: 25 },
+    field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
+    wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
+  },
+};
+
+function getOpticalModel(): OpticalModel {
+  return testOpticalModel;
+}
+
 describe("LensPrescriptionContainer", () => {
   it("renders the grid", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} />);
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} />);
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
   it("renders Export JSON button with primary button styling", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} />);
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} />);
     const btn = screen.getByText("Export JSON");
     expect(btn).toBeInTheDocument();
     expect(btn).toHaveClass("rounded-lg", "bg-blue-600");
   });
 
   it("renders rows from store (object + 2 surfaces + image)", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} />);
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} />);
     const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
     expect(rows).toHaveLength(4);
   });
 
   it("adds a row when '+' is clicked on a surface row", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} />);
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} />);
     const addButtons = screen.getAllByRole("button", { name: "Insert row" });
 
     await userEvent.click(addButtons[1]); // '+' on first surface row
@@ -71,7 +84,7 @@ describe("LensPrescriptionContainer", () => {
   });
 
   it("deletes a row when '-' is clicked on a surface row", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} />);
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} />);
     const deleteButtons = screen.getAllByRole("button", { name: "Delete row" });
 
     await userEvent.click(deleteButtons[0]); // '-' on first surface row
@@ -82,7 +95,7 @@ describe("LensPrescriptionContainer", () => {
 
   it("store reflects current surfaces", () => {
     const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} />);
+    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} />);
     const surfaces = gridRowsToSurfaces(store.getState().rows);
     expect(surfaces.surfaces).toHaveLength(2);
     expect(surfaces.surfaces[0].curvatureRadius).toBe(50);
@@ -90,7 +103,7 @@ describe("LensPrescriptionContainer", () => {
 
   it("renders DecenterModal when decenterModal is open", () => {
     const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} />);
+    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     act(() => {
@@ -105,7 +118,7 @@ describe("LensPrescriptionContainer", () => {
 
   it("closes DecenterModal when Cancel is clicked", async () => {
     const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} />);
+    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} />);
 
     act(() => {
       const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
@@ -119,7 +132,7 @@ describe("LensPrescriptionContainer", () => {
 
   it("saves decenter data and closes modal when Confirm is clicked", async () => {
     const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} />);
+    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} />);
     const surfaceRow = store.getState().rows.find((r) => r.kind === "surface")!;
 
     act(() => {
@@ -140,7 +153,7 @@ describe("LensPrescriptionContainer", () => {
       decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
     });
 
-    render(<LensPrescriptionContainer store={store} />);
+    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} />);
 
     act(() => {
       store.getState().openDecenterModal(rowId);
@@ -155,7 +168,7 @@ describe("LensPrescriptionContainer", () => {
   // --- Image row decenter ---
   it("renders DecenterModal when decenterModal is open for image row", () => {
     const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} />);
+    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} />);
 
     act(() => {
       store.getState().openDecenterModal(IMAGE_ROW_ID);
@@ -171,7 +184,7 @@ describe("LensPrescriptionContainer", () => {
     store.getState().updateRow(IMAGE_ROW_ID, {
       decenter: { coordinateSystemStrategy: "decenter", alpha: 1.5, beta: 0, gamma: 0, offsetX: 0.1, offsetY: 0.2 },
     });
-    render(<LensPrescriptionContainer store={store} />);
+    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} />);
 
     act(() => {
       store.getState().openDecenterModal(IMAGE_ROW_ID);
@@ -183,7 +196,7 @@ describe("LensPrescriptionContainer", () => {
 
   it("saves decenter on image row when Confirm is clicked", async () => {
     const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} />);
+    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} />);
 
     act(() => {
       store.getState().openDecenterModal(IMAGE_ROW_ID);
@@ -200,7 +213,7 @@ describe("LensPrescriptionContainer", () => {
     store.getState().updateRow(IMAGE_ROW_ID, {
       decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
     });
-    render(<LensPrescriptionContainer store={store} />);
+    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} />);
 
     act(() => {
       store.getState().openDecenterModal(IMAGE_ROW_ID);
@@ -210,5 +223,26 @@ describe("LensPrescriptionContainer", () => {
     expect(store.getState().decenterModal.open).toBe(false);
     const imageRow = store.getState().rows.find((r) => r.kind === "image");
     expect(imageRow?.kind === "image" && imageRow.decenter).toBeUndefined();
+  });
+
+  // --- Export Python Script ---
+  it("renders 'Export Python Script' button", () => {
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} />);
+    expect(screen.getByRole("button", { name: "Export Python Script" })).toBeInTheDocument();
+  });
+
+  it("clicking 'Export Python Script' opens a dialog with title 'Python Script'", async () => {
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} />);
+    await userEvent.click(screen.getByRole("button", { name: "Export Python Script" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Python Script")).toBeInTheDocument();
+  });
+
+  it("clicking OK in the Python Script dialog closes it", async () => {
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} />);
+    await userEvent.click(screen.getByRole("button", { name: "Export Python Script" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Ok" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

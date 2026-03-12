@@ -1,6 +1,6 @@
 import { expose } from "comlink";
 import { type OpticalModel } from "../lib/opticalModel";
-import { getPythonScriptForDefiningOpticalModelWithRayOptics } from "../lib/pythonScriptStrings";
+import { buildOpticalModelScript } from "../lib/pythonScript";
 
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
@@ -216,7 +216,7 @@ function requirePyodide(): (code: string) => Promise<unknown> {
 // export for testing
 export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython: (code: string) => Promise<unknown>): Promise<void> {
   await runPython(
-    getPythonScriptForDefiningOpticalModelWithRayOptics(opticalModel),
+    buildOpticalModelScript(opticalModel),
   );
 }
 

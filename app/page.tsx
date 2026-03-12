@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { createStore } from "zustand";
-import type { Surfaces, OpticalSpecs } from "@/lib/opticalModel";
+import type { Surfaces, OpticalSpecs, OpticalModel } from "@/lib/opticalModel";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { ExampleSystems } from "@/lib/exampleSystems";
@@ -217,6 +217,12 @@ export default function Home() {
     [proxy, selectedFieldIndex, getPlotFunction]
   );
 
+  const getOpticalModel = useCallback((): OpticalModel => {
+    const specs = specsStore.getState().toOpticalSpecs();
+    const surfaces = gridRowsToSurfaces(lensStore.getState().rows);
+    return { specs, ...surfaces };
+  }, [specsStore, lensStore]);
+
   const drawerTabs = useMemo(
     () => [
       {
@@ -227,10 +233,10 @@ export default function Home() {
       {
         id: "prescription",
         label: "Prescription",
-        content: <LensPrescriptionContainer store={lensStore} />,
+        content: <LensPrescriptionContainer store={lensStore} getOpticalModel={getOpticalModel} />,
       },
     ],
-    [specsStore, lensStore]
+    [specsStore, lensStore, getOpticalModel]
   );
 
   const confirmOverwriteModal = (

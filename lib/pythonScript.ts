@@ -2,7 +2,7 @@
 import type { OpticalModel } from "./opticalModel";
 
 
-export function getPythonScriptForDefiningOpticalModelWithRayOptics(opticalModel: OpticalModel): string {
+export function buildOpticalModelScript(opticalModel: OpticalModel): string {
   const { specs, surfaces, object, image } = opticalModel;
   const {
     pupil: { space: pupilSpace, type: pupilType, value: pupilValue },
@@ -76,7 +76,7 @@ opm.update_model()
 apply_paraxial_vignetting(opm)`;
 }
 
-export function getPythonScriptForExport(opticalModel: OpticalModel) {
+export function buildExportScript(opticalModel: OpticalModel) {
   const scriptForImporting = `
 isdark = False
 from rayoptics.environment import *
@@ -89,7 +89,7 @@ caf2 = create_glass(caf2_url, "rindexinfo")
 `;
 
   return `${scriptForImporting}
-${getPythonScriptForDefiningOpticalModelWithRayOptics(opticalModel)}
+${buildOpticalModelScript(opticalModel)}
 
 sm.list_model()
 pm.first_order_data()
