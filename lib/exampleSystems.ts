@@ -841,6 +841,86 @@ const petzvalAPORearLensesRemoved: OpticalModel = {
 } as const;
 
 
+const tripletAPOWithSingletMeniscusLens: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 86 },
+    field: { space: "image", type: "height", maxField: 21.6, fields: [0, 0.3, 0.5, 0.707, 0.85, 1], isRelative: true },
+    wavelengths: { ...orthoAPO.specs.wavelengths },
+  },
+
+  object: { distance: 1e10 },
+
+  image: { curvatureRadius: 0 },
+
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: 265.876554,
+      thickness: 12,
+      medium: "S-FPL51",
+      manufacturer: "Ohara",
+      semiDiameter: 43,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -221.064133,
+      thickness: 1,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 43,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -219.387282,
+      thickness: 6,
+      medium: "H-ZK3",
+      manufacturer: "CDGM",
+      semiDiameter: 43,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 219.387282,
+      thickness: 1,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 43,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 219.387282,
+      thickness: 12,
+      medium: "S-FPL51",
+      manufacturer: "Ohara",
+      semiDiameter: 43,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -715.129836,
+      thickness: 352.349497,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 43,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 62.396199,
+      thickness: 10,
+      medium: "S-BSL 7",
+      manufacturer: "Ohara",
+      semiDiameter: 43,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 56.024154,
+      thickness: 200.192,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 38,
+    },
+  ],
+} as const;
+
+
 // modified eyepiece design by Imaizumi M. US#5,557,464 (1996)
 // this modified config is from https://telescope-optics.net/eyepiece_raytrace.htm
 const modifiedImaizumiEyepieceReversed: OpticalModel = {
@@ -899,6 +979,7 @@ const list: Record<string, OpticalModel> = {
   "APO Doublet (S-FPL53/N-ZK7) 120mm f/7.5": edDoublet,
   "APO Petzval 140mm f/7": petzvalAPO,
   "APO Petzval 140mm f/7 (but with rear lenses removed)": petzvalAPORearLensesRemoved,
+  "Flatfield Quadruplet APO 86mm f/7 (Triplet with Singlet Meniscus Lens)": tripletAPOWithSingletMeniscusLens,
   "Reversed Tracing of Modified Imaizumi M. 80deg AFoV Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
 } as const;
 
