@@ -1,5 +1,16 @@
 import type { OpticalModel } from "./opticalModel";
 
+const commonWavelengthConfig: OpticalModel["specs"]["wavelengths"] = {
+  weights: [
+    [435.835, 0.035],
+    [486.133, 0.18],
+    [546.073, 0.98],
+    [656.273, 0.075],
+    [706.519, 0.0028],
+  ],
+  referenceIndex: 2,
+};
+
 //              r            t        medium     mode   zdr      sd
 //  Obj:     0.000000  1.00000e+10       air             1  3.6397e+09
 //    1:    23.713000      4.83100    N-LAK9             1      10.009
@@ -164,12 +175,7 @@ const herschelReflector: OpticalModel = {
       fields: [0, 0.5, 1],
       isRelative: true,
     },
-    wavelengths: {
-      weights: [
-        [587.562, 1],
-      ],
-      referenceIndex: 0,
-    },
+    wavelengths: commonWavelengthConfig,
   },
 
   object: { distance: 1e10 },
@@ -205,12 +211,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
       fields: [0, 0.707, 1],
       isRelative: true,
     },
-    wavelengths: {
-      weights: [
-        [546.073, 1],
-      ],
-      referenceIndex: 0,
-    },
+    wavelengths: commonWavelengthConfig,
   },
 
   object: {
@@ -338,7 +339,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
     {
       label: "Default",
       curvatureRadius: 0,
-      thickness: -554.4,
+      thickness: -557.1,
       medium: "air",
       manufacturer: "",
       semiDiameter: 39.242722,
@@ -357,16 +358,7 @@ const tiltedHoughton: OpticalModel = {
       fields: [0, 0.707, 1],
       isRelative: true,
     },
-    wavelengths: {
-      weights: [
-        [435.835, 0.035],
-        [486.133, 0.18],
-        [546.073, 0.98],
-        [656.273, 0.075],
-        [706.519, 0.0028],
-      ],
-      referenceIndex: 2,
-    },
+    wavelengths: commonWavelengthConfig,
   },
 
   object: {
@@ -481,12 +473,7 @@ const quadSchiefspiegler: OpticalModel = {
       fields: [0, 0.5, 1],
       isRelative: true,
     },
-    wavelengths: {
-      weights: [
-        [587.562, 1],
-      ],
-      referenceIndex: 0,
-    },
+    wavelengths: commonWavelengthConfig,
   },
   object: {
     distance: 1e10
@@ -568,15 +555,7 @@ const clydeBoneJrMersenne: OpticalModel = {
       fields: [0, 0.707, 1],
       isRelative: true,
     },
-    wavelengths: {
-      weights: [
-        [435.835, 0.035],
-        [486.133, 0.18],
-        [546.073, 0.98],
-        [656.273, 0.075],
-      ],
-      referenceIndex: 2,
-    },
+    wavelengths: commonWavelengthConfig,
   },
 
   object: {
@@ -719,15 +698,7 @@ const schmidtCamera: OpticalModel = {
       fields: [0, 0.707, 1],
       isRelative: true,
     },
-    wavelengths: {
-      weights: [
-        [435.835, 0.035],
-        [486.133, 0.18],
-        [546.073, 0.98],
-        [656.273, 0.075],
-      ],
-      referenceIndex: 2,
-    },
+    wavelengths: commonWavelengthConfig,
   },
   object: { distance: 1e10 },
   image: { curvatureRadius: -325.3 },
@@ -775,15 +746,7 @@ const orthoAPO: OpticalModel = {
       fields: [0, 0.707, 1],
       isRelative: true,
     },
-    wavelengths: {
-      weights: [
-        [435.835, 0.035],
-        [486.133, 0.18],
-        [546.073, 0.98],
-        [656.273, 0.075],
-      ],
-      referenceIndex: 2,
-    },
+    wavelengths: commonWavelengthConfig,
   },
 
   object: { distance: 1e10 },
@@ -843,9 +806,19 @@ const orthoAPO: OpticalModel = {
 
 // Example #27 at https://www.telescope-optics.net/commercial_telescopes.htm
 const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
-  specs: { ...orthoAPO.specs },
+  specs: {
+    pupil: { space: "object", type: "epd", value: 130 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 0.5,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+    },
+    wavelengths: commonWavelengthConfig,
+  },
 
-  object: { ...orthoAPO.object },
+  object: { distance: 1e10 },
   image: { curvatureRadius: -480 },
 
   surfaces: [
@@ -891,15 +864,12 @@ const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
 // derived from https://telescope-optics.net/achromats.htm
 const fraunhoferAchromat: OpticalModel = {
   specs: {
-    pupil: { space: "object", type: "epd", value: 100 },
+    pupil: { space: "object", type: "epd", value: 120 },
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
-    wavelengths: {
-      weights: [...orthoAPO.specs.wavelengths.weights],
-      referenceIndex: orthoAPO.specs.wavelengths.referenceIndex,
-    },
+    wavelengths: commonWavelengthConfig,
   },
 
-  object: { ...orthoAPO.object },
+  object: { distance: 1e10 },
   image: { curvatureRadius: 0 },
   surfaces: [
     { label: "Stop", curvatureRadius: 0.6 * 120 * 23.6, thickness: 0.011 * 120 * 23.6, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 60 },
@@ -911,8 +881,12 @@ const fraunhoferAchromat: OpticalModel = {
 
 // derived from https://telescope-optics.net/achromats.htm
 const fraunhoferAchromatFast: OpticalModel = {
-  specs: { ...fraunhoferAchromat.specs },
-  object: { ...fraunhoferAchromat.object },
+  specs: {
+    pupil: { space: "object", type: "epd", value: 120 },
+    field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
+    wavelengths: commonWavelengthConfig,
+  },
+  object: { distance: 1e10 },
   image: { curvatureRadius: 0 },
   surfaces: [
     { label: "Stop", curvatureRadius: 0.6 * 120 * 7.5, thickness: 0.011 * 120 * 7.5, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 60 },
@@ -925,8 +899,12 @@ const fraunhoferAchromatFast: OpticalModel = {
 
 // Example #19 at https://www.telescope-optics.net/commercial_telescopes.htm
 const edDoublet: OpticalModel = {
-  specs: { ...fraunhoferAchromat.specs },
-  object: { ...fraunhoferAchromat.object },
+  specs: {
+    pupil: { space: "object", type: "epd", value: 120 },
+    field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
+    wavelengths: commonWavelengthConfig,
+  },
+  object: { distance: 1e10 },
   image: { curvatureRadius: -340 },
   surfaces: [
     { label: "Stop", curvatureRadius: 499, thickness: 16, medium: "S-FPL53", manufacturer: "Ohara", semiDiameter: 60 },
@@ -938,8 +916,12 @@ const edDoublet: OpticalModel = {
 
 // 11.24 at https://telescope-optics.net/miscellaneous_optics.htm
 const petzvalAPO: OpticalModel = {
-  specs: { ...orthoAPO.specs },
-  object: { ...orthoAPO.object },
+  specs: {
+    pupil: { space: "object", type: "epd", value: 140 },
+    field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
+    wavelengths: commonWavelengthConfig,
+  },
+  object: { distance: 1e10 },
   image: { curvatureRadius: 0 },
   surfaces: [
     { label: "Stop", curvatureRadius: 481, thickness: 9, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 70 },
@@ -955,12 +937,12 @@ const petzvalAPO: OpticalModel = {
 
 // derived from 11.24 at https://telescope-optics.net/miscellaneous_optics.htm
 const petzvalAPORearLensesRemoved: OpticalModel = {
-  specs: { ...petzvalAPO.specs },
-  object: { ...petzvalAPO.object },
-  image: { ...petzvalAPO.image },
+  specs: petzvalAPO.specs,
+  object: petzvalAPO.object,
+  image: petzvalAPO.image,
   surfaces: [
     ...petzvalAPO.surfaces.slice(0, 3),
-    { label: "Default", curvatureRadius: 2169, thickness: 1807, medium: "air", manufacturer: "", semiDiameter: 69.949825 },
+    { label: "Default", curvatureRadius: 2169, thickness: 1807.12, medium: "air", manufacturer: "", semiDiameter: 69.949825 },
   ],
 } as const;
 
@@ -969,7 +951,7 @@ const tripletAPOWithSingletMeniscusLens: OpticalModel = {
   specs: {
     pupil: { space: "object", type: "epd", value: 86 },
     field: { space: "image", type: "height", maxField: 21.6, fields: [0, 0.3, 0.5, 0.707, 0.85, 1], isRelative: true },
-    wavelengths: { ...orthoAPO.specs.wavelengths },
+    wavelengths: commonWavelengthConfig,
   },
 
   object: { distance: 1e10 },

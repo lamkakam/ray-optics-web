@@ -57,7 +57,7 @@ describe("Home page", () => {
     render(<Home />);
     const fieldSelect = screen.getByLabelText("Field");
     // Default specs: fields [0], maxField = 0, type = height
-    expect(fieldSelect).toContainHTML("0.0 mm");
+    expect(fieldSelect).toContainHTML("0.00 mm");
   });
 
   it("renders the bottom drawer with System Specs and Prescription tabs", () => {
@@ -132,7 +132,7 @@ describe("Home page", () => {
     // Initially renders with default specs (no example loaded)
     render(<Home />);
     const fieldSelect = screen.getByLabelText("Field");
-    expect(fieldSelect).toContainHTML("0.0 mm");
+    expect(fieldSelect).toContainHTML("0.00 mm");
   });
 
   // --- Example system selector tests ---
