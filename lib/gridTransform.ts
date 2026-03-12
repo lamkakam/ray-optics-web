@@ -24,12 +24,14 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
     manufacturer: s.manufacturer,
     semiDiameter: s.semiDiameter,
     ...(s.aspherical !== undefined ? { aspherical: s.aspherical } : {}),
+    ...(s.decenter !== undefined ? { decenter: s.decenter } : {}),
   }));
 
   const imageRow: GridRow = {
     id: IMAGE_ROW_ID,
     kind: "image",
     curvatureRadius: surfaces.image.curvatureRadius,
+    ...(surfaces.image.decenter !== undefined ? { decenter: surfaces.image.decenter } : {}),
   };
 
   return [objectRow, ...surfaceRows, imageRow];
@@ -52,12 +54,18 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
     if (r.aspherical !== undefined) {
       surface.aspherical = r.aspherical;
     }
+    if (r.decenter !== undefined) {
+      surface.decenter = r.decenter;
+    }
     return surface;
   });
 
   return {
     object: { distance: objectRow?.objectDistance ?? 0 },
-    image: { curvatureRadius: imageRow?.curvatureRadius ?? 0 },
+    image: {
+      curvatureRadius: imageRow?.curvatureRadius ?? 0,
+      ...(imageRow?.decenter !== undefined ? { decenter: imageRow.decenter } : {}),
+    },
     surfaces,
   };
 }

@@ -18,6 +18,15 @@ export interface OpticalSpecs {
   };
 }
 
+export type DecenterConfig = {
+  coordinateSystemStrategy: "bend" | "dec and return" | "decenter" | "reverse";
+  alpha: number,
+  beta: number,
+  gamma: number,
+  offsetX: number,
+  offsetY: number,
+};
+
 /** Represents a single optical surface in the sequential model. */
 export interface Surface {
   label: "Default" | "Stop";
@@ -30,6 +39,7 @@ export interface Surface {
     conicConstant: number;
     polynomialCoefficients?: number[]; // length <= 10
   };
+  decenter?: DecenterConfig,
 }
 
 export interface Surfaces {
@@ -38,6 +48,7 @@ export interface Surfaces {
   },
   image: {
     curvatureRadius: number, // 0 means flat (infinite radius)
+    decenter?: DecenterConfig,
   },
   surfaces: Surface[];
 }

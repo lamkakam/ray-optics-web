@@ -147,6 +147,74 @@ describe("surfacesToGridRows", () => {
     expect(rows[1].kind).toBe("image");
   });
 
+  it("preserves decenter data on image row", () => {
+    const decenter = {
+      coordinateSystemStrategy: "decenter" as const,
+      alpha: 1.0,
+      beta: 2.0,
+      gamma: 3.0,
+      offsetX: 0.5,
+      offsetY: -0.5,
+    };
+    const withImageDecenter: Surfaces = {
+      object: { distance: 0 },
+      image: { curvatureRadius: 0, decenter },
+      surfaces: [],
+    };
+    const rows = surfacesToGridRows(withImageDecenter);
+    const imageRow = rows.find((r) => r.kind === "image");
+    expect(imageRow).toBeDefined();
+    if (imageRow?.kind === "image") {
+      expect(imageRow.decenter).toEqual(decenter);
+    }
+  });
+
+  it("omits decenter from image row when not set", () => {
+    const rows = surfacesToGridRows(DEMO_SURFACES);
+    const imageRow = rows.find((r) => r.kind === "image");
+    expect(imageRow).toBeDefined();
+    if (imageRow?.kind === "image") {
+      expect(imageRow.decenter).toBeUndefined();
+    }
+  });
+
+  it("preserves decenter data on surface rows", () => {
+    const withDecenter: Surfaces = {
+      object: { distance: 0 },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 50,
+          thickness: 5,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+          decenter: {
+            coordinateSystemStrategy: "decenter",
+            alpha: 1.0,
+            beta: 2.0,
+            gamma: 3.0,
+            offsetX: 0.5,
+            offsetY: -0.5,
+          },
+        },
+      ],
+    };
+    const rows = surfacesToGridRows(withDecenter);
+    const surfaceRow = rows[1];
+    if (surfaceRow.kind === "surface") {
+      expect(surfaceRow.decenter).toEqual({
+        coordinateSystemStrategy: "decenter",
+        alpha: 1.0,
+        beta: 2.0,
+        gamma: 3.0,
+        offsetX: 0.5,
+        offsetY: -0.5,
+      });
+    }
+  });
+
   it("preserves aspherical data", () => {
     const withAsph: Surfaces = {
       object: { distance: 0 },
@@ -208,6 +276,52 @@ describe("gridRowsToSurfaces", () => {
     });
   });
 
+  it("excludes decenter key when undefined (surface row)", () => {
+    const rows: GridRow[] = [
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      {
+        id: "s1",
+        kind: "surface",
+        label: "Default",
+        curvatureRadius: 0,
+        thickness: 0,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 1,
+      },
+      { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
+    ];
+
+    const surfaces = gridRowsToSurfaces(rows);
+    expect(surfaces.surfaces[0]).not.toHaveProperty("decenter");
+  });
+
+  it("preserves decenter on image row", () => {
+    const decenter = {
+      coordinateSystemStrategy: "bend" as const,
+      alpha: 0,
+      beta: 1.5,
+      gamma: 0,
+      offsetX: 0.1,
+      offsetY: 0.2,
+    };
+    const rows: GridRow[] = [
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0, decenter },
+    ];
+    const surfaces = gridRowsToSurfaces(rows);
+    expect(surfaces.image.decenter).toEqual(decenter);
+  });
+
+  it("excludes decenter key from image when undefined", () => {
+    const rows: GridRow[] = [
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
+    ];
+    const surfaces = gridRowsToSurfaces(rows);
+    expect(surfaces.image).not.toHaveProperty("decenter");
+  });
+
   it("excludes aspherical key when undefined", () => {
     const rows: GridRow[] = [
       { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
@@ -256,6 +370,53 @@ describe("round-trip", () => {
     };
     const result = gridRowsToSurfaces(surfacesToGridRows(withAsph));
     expect(result).toEqual(withAsph);
+  });
+
+  it("round-trips surfaces with decenter data", () => {
+    const withDecenter: Surfaces = {
+      object: { distance: 0 },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 50,
+          thickness: 5,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+          decenter: {
+            coordinateSystemStrategy: "bend",
+            alpha: 0,
+            beta: 5.0,
+            gamma: 0,
+            offsetX: 1.0,
+            offsetY: 0,
+          },
+        },
+      ],
+    };
+    const result = gridRowsToSurfaces(surfacesToGridRows(withDecenter));
+    expect(result).toEqual(withDecenter);
+  });
+
+  it("round-trips image decenter data", () => {
+    const withImageDecenter: Surfaces = {
+      object: { distance: 0 },
+      image: {
+        curvatureRadius: 0,
+        decenter: {
+          coordinateSystemStrategy: "dec and return",
+          alpha: 1.0,
+          beta: 0,
+          gamma: 0,
+          offsetX: 0.5,
+          offsetY: 0.5,
+        },
+      },
+      surfaces: [],
+    };
+    const result = gridRowsToSurfaces(surfacesToGridRows(withImageDecenter));
+    expect(result).toEqual(withImageDecenter);
   });
 
   it("round-trips zero surfaces", () => {
