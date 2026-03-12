@@ -1,7 +1,6 @@
 import { create, type StateCreator } from "zustand";
 import type { GridRow } from "@/lib/gridTypes";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/lib/gridTypes";
-import { gridRowsToSurfaces } from "@/lib/gridTransform";
 import { generateRowId } from "@/lib/gridTransform";
 
 interface ModalState {
@@ -12,6 +11,7 @@ interface ModalState {
 export interface LensEditorState {
   rows: GridRow[];
   selectedRowId: string | undefined;
+  autoAperture: boolean;
   mediumModal: ModalState;
   asphericalModal: ModalState;
   decenterModal: ModalState;
@@ -21,13 +21,13 @@ export interface LensEditorState {
   addRowAfter: (id: string) => void;
   deleteRow: (id: string) => void;
   setSelectedRowId: (id: string | undefined) => void;
+  setAutoAperture: (value: boolean) => void;
   openMediumModal: (rowId: string) => void;
   closeMediumModal: () => void;
   openAsphericalModal: (rowId: string) => void;
   closeAsphericalModal: () => void;
   openDecenterModal: (rowId: string) => void;
   closeDecenterModal: () => void;
-  exportToJson: () => string;
 }
 
 const DEFAULT_ROWS: GridRow[] = [
@@ -38,6 +38,7 @@ const DEFAULT_ROWS: GridRow[] = [
 export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) => ({
   rows: DEFAULT_ROWS,
   selectedRowId: undefined,
+  autoAperture: false,
   mediumModal: { open: false, rowId: "" },
   asphericalModal: { open: false, rowId: "" },
   decenterModal: { open: false, rowId: "" },
@@ -88,6 +89,8 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
   setSelectedRowId: (id) => set({ selectedRowId: id }),
 
+  setAutoAperture: (value) => set({ autoAperture: value }),
+
   openMediumModal: (rowId) =>
     set({ mediumModal: { open: true, rowId } }),
 
@@ -105,12 +108,6 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
   closeDecenterModal: () =>
     set({ decenterModal: { open: false, rowId: "" } }),
-
-  exportToJson: () => {
-    const { rows } = get();
-    const surfaces = gridRowsToSurfaces(rows);
-    return JSON.stringify(surfaces, undefined, 2);
-  },
 });
 
 export const useLensEditorStore = create<LensEditorState>(createLensEditorSlice);

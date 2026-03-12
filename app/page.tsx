@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { createStore } from "zustand";
-import type { OpticalSpecs, OpticalModel } from "@/lib/opticalModel";
+import type { OpticalSpecs, OpticalModel, ImportedLensData } from "@/lib/opticalModel";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { ExampleSystems } from "@/lib/exampleSystems";
@@ -210,6 +210,12 @@ export default function Home() {
     return { specs, ...surfaces };
   }, [specsStore, lensStore]);
 
+  const handleImportJson = useCallback((data: ImportedLensData) => {
+    specsStore.getState().loadFromSpecs(data.specs);
+    lensStore.getState().setRows(surfacesToGridRows(data));
+    lensStore.getState().setAutoAperture(data.setAutoAperture);
+  }, [specsStore, lensStore]);
+
   const drawerTabs = useMemo(
     () => [
       {
@@ -220,10 +226,10 @@ export default function Home() {
       {
         id: "prescription",
         label: "Prescription",
-        content: <LensPrescriptionContainer store={lensStore} getOpticalModel={getOpticalModel} />,
+        content: <LensPrescriptionContainer store={lensStore} getOpticalModel={getOpticalModel} onImportJson={handleImportJson} />,
       },
     ],
-    [specsStore, lensStore, getOpticalModel]
+    [specsStore, lensStore, getOpticalModel, handleImportJson]
   );
 
   const confirmOverwriteModal = (

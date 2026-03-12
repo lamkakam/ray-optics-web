@@ -227,17 +227,23 @@ describe("lensEditorStore", () => {
     });
   });
 
-  describe("exportToJson", () => {
-    it("returns JSON string of current rows converted to Surfaces", () => {
+  describe("setAutoAperture", () => {
+    it("defaults to false", () => {
       const store = makeStore();
-      store.getState().setRows(makeTestRows());
-      const json = store.getState().exportToJson();
-      const parsed = JSON.parse(json);
+      expect(store.getState().autoAperture).toBe(false);
+    });
 
-      expect(parsed.object.distance).toBe(1e10);
-      expect(parsed.image.curvatureRadius).toBe(0);
-      expect(parsed.surfaces).toHaveLength(2);
-      expect(parsed.surfaces[0].medium).toBe("BK7");
+    it("sets autoAperture to true", () => {
+      const store = makeStore();
+      store.getState().setAutoAperture(true);
+      expect(store.getState().autoAperture).toBe(true);
+    });
+
+    it("sets autoAperture back to false", () => {
+      const store = makeStore();
+      store.getState().setAutoAperture(true);
+      store.getState().setAutoAperture(false);
+      expect(store.getState().autoAperture).toBe(false);
     });
   });
 });
