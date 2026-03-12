@@ -884,8 +884,7 @@ const modifiedImaizumiEyepieceReversed: OpticalModel = {
 } as const;
 
 
-
-export const ExampleSystems: Record<string, OpticalModel> = {
+const list: Record<string, OpticalModel> = {
   "Sasian Triplet": SasianTriplet,
   "Newtonian Reflector with Optical Window": ReflectorWithOpticalWindow,
   "Herschel's 40-foot Reflector": herschelReflector,
@@ -902,3 +901,8 @@ export const ExampleSystems: Record<string, OpticalModel> = {
   "APO Petzval 140mm f/7 (but with rear lenses removed)": petzvalAPORearLensesRemoved,
   "Reversed Tracing of Modified Imaizumi M. 80deg AFoV Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
 } as const;
+
+export const ExampleSystems: { [x: string]: OpticalModel } = Object.keys(list).reduce((acc, name, idx) => ({
+  ...acc,
+  [`${idx + 1}: ${name}`]: list[name],
+}), {} as { [x: string]: OpticalModel });

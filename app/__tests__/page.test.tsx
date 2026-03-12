@@ -152,7 +152,7 @@ describe("Home page", () => {
     // Select should come before the button in DOM order
     expect(
       select.compareDocumentPosition(updateBtn) &
-        Node.DOCUMENT_POSITION_FOLLOWING
+      Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
   });
 
@@ -171,15 +171,15 @@ describe("Home page", () => {
     const options = Array.from(
       (select as HTMLSelectElement).options
     ).map((o) => o.text);
-    expect(options).toContain("Sasian Triplet");
-    expect(options).toContain("Reflector with Optical Window");
+    expect(options).toContain("1: Sasian Triplet");
+    expect(options).toContain("2: Newtonian Reflector with Optical Window");
   });
 
   it("shows confirmation modal when selecting an example system", async () => {
     render(<Home />);
     const select = screen.getByLabelText("Example system");
 
-    await userEvent.selectOptions(select, "Sasian Triplet");
+    await userEvent.selectOptions(select, "1: Sasian Triplet");
 
     // A confirmation dialog should appear
     const dialog = screen.getByRole("dialog");
@@ -196,7 +196,7 @@ describe("Home page", () => {
     render(<Home />);
     const select = screen.getByLabelText("Example system");
 
-    await userEvent.selectOptions(select, "Sasian Triplet");
+    await userEvent.selectOptions(select, "1: Sasian Triplet");
 
     // Confirm
     await userEvent.click(screen.getByRole("button", { name: /confirm|ok|load/i }));
@@ -223,7 +223,7 @@ describe("Home page", () => {
     render(<Home />);
     const select = screen.getByLabelText("Example system") as HTMLSelectElement;
 
-    await userEvent.selectOptions(select, "Sasian Triplet");
+    await userEvent.selectOptions(select, "1: Sasian Triplet");
 
     // Cancel
     await userEvent.click(screen.getByRole("button", { name: /cancel/i }));
