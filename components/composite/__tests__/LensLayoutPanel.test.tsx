@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { LensLayoutPanel } from "@/components/micro/LensLayoutPanel";
+import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
 
 describe("LensLayoutPanel", () => {
   it("renders a placeholder when imageBase64 is undefined and not loading", () => {

@@ -13,7 +13,7 @@ import type { GridRow } from "@/lib/gridTypes";
 import { MediumCell } from "@/components/micro/MediumCell";
 import { AsphericalCell } from "@/components/micro/AsphericalCell";
 import { DecenterCell } from "@/components/micro/DecenterCell";
-import { GridRowButtons } from "@/components/micro/GridRowButtons";
+import { GridRowButtons } from "@/components/composite/GridRowButtons";
 import { useTheme } from "@/components/ThemeProvider";
 
 function ActionWrapper({

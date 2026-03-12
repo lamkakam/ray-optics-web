@@ -10,12 +10,12 @@ import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorS
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurerContainer";
 import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
-import { LensLayoutPanel } from "@/components/micro/LensLayoutPanel";
+import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
 import {
   AnalysisPlotView,
   type PlotType,
-} from "@/components/micro/AnalysisPlotView";
-import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
+} from "@/components/composite/AnalysisPlotView";
+import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { Modal } from "@/components/micro/Modal";
 import { Button } from "@/components/micro/Button";

@@ -1,6 +1,6 @@
 import React from "react";
 import clsx from "clsx";
-import { Paragraph } from "./Paragraph";
+import { Paragraph } from "@/components/micro/Paragraph";
 
 interface LensLayoutPanelProps {
   readonly imageBase64?: string;

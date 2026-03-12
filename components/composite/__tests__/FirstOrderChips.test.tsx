@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { FirstOrderChips } from "@/components/micro/FirstOrderChips";
+import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 
 describe("FirstOrderChips", () => {
   it("renders nothing when data is undefined", () => {

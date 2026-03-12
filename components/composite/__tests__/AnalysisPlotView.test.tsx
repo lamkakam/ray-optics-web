@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AnalysisPlotView } from "@/components/micro/AnalysisPlotView";
+import { AnalysisPlotView } from "@/components/composite/AnalysisPlotView";
 
 describe("AnalysisPlotView", () => {
   const fieldOptions = [

@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/components/ui/modalTokens";
 import { Label } from "@/components/micro/Label";
 import { Select, type SelectOption } from "@/components/micro/Select";
-import { Paragraph } from "./Paragraph";
+import { Paragraph } from "@/components/micro/Paragraph";
 
 export type PlotType = "rayFan" | "opdFan" | "spotDiagram";
 

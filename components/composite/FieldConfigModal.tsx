@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
-import { GridRowButtons } from "@/components/micro/GridRowButtons";
+import { GridRowButtons } from "@/components/composite/GridRowButtons";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
 import { Input } from "@/components/micro/Input";
