@@ -1,25 +1,31 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useStore, type StoreApi } from "zustand";
 import { type LensEditorState } from "@/store/lensEditorStore";
+import { type OpticalModel } from "@/lib/opticalModel";
+import { buildExportScript } from "@/lib/pythonScript";
 import { Button } from "@/components/micro/Button";
 import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
 import { AsphericalModal, type AsphericalType } from "@/components/composite/AsphericalModal";
 import { DecenterModal, type DecenterType } from "@/components/composite/DecenterModal";
+import { PythonScriptModal } from "@/components/composite/PythonScriptModal";
 
 interface LensPrescriptionContainerProps {
   readonly store: StoreApi<LensEditorState>;
+  readonly getOpticalModel: () => OpticalModel;
 }
 
 export function LensPrescriptionContainer({
   store,
+  getOpticalModel,
 }: LensPrescriptionContainerProps) {
   const rows = useStore(store, (s) => s.rows);
   const mediumModal = useStore(store, (s) => s.mediumModal);
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
   const decenterModal = useStore(store, (s) => s.decenterModal);
+  const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
 
   const mediumRow = rows.find((r) => r.id === mediumModal.rowId);
   const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);
@@ -38,8 +44,9 @@ export function LensPrescriptionContainer({
 
   return (
     <div>
-      <div role="toolbar" aria-label="Grid toolbar" className="mb-2">
+      <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
         <Button variant="primary" size="sm" onClick={handleExport}>Export JSON</Button>
+        <Button variant="secondary" size="sm" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
       </div>
 
       <LensPrescriptionGrid
@@ -104,6 +111,12 @@ export function LensPrescriptionContainer({
           store.getState().updateRow(decenterModal.rowId, { decenter: undefined });
           store.getState().closeDecenterModal();
         }}
+      />
+
+      <PythonScriptModal
+        isOpen={pythonScriptOpen}
+        script={pythonScriptOpen ? buildExportScript(getOpticalModel()) : ""}
+        onClose={() => setPythonScriptOpen(false)}
       />
     </div>
   );

@@ -1,19 +1,15 @@
 import React from "react";
 import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
-import { Button } from "@/components/micro/Button";
 import { Paragraph } from "./Paragraph";
 
 interface LensLayoutPanelProps {
   readonly imageBase64?: string;
   readonly loading?: boolean;
-  readonly onRefresh: () => void;
 }
 
 export function LensLayoutPanel({
   imageBase64,
   loading,
-  onRefresh,
 }: LensLayoutPanelProps) {
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center">
@@ -40,14 +36,6 @@ export function LensLayoutPanel({
             : "Configure the System Specs & Lens Prescription below, or choose an example system, then click \u201cUpdate System\u201d to view the lens layout."}
         </Paragraph>
       )}
-      <Button
-        variant="floating"
-        aria-label="Refresh lens layout"
-        disabled={loading}
-        onClick={onRefresh}
-      >
-        ↻
-      </Button>
     </div>
   );
 }

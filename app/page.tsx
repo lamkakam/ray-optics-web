@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { createStore } from "zustand";
-import type { Surfaces, OpticalSpecs } from "@/lib/opticalModel";
+import type { OpticalSpecs, OpticalModel } from "@/lib/opticalModel";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { ExampleSystems } from "@/lib/exampleSystems";
@@ -164,19 +164,6 @@ export default function Home() {
     }
   }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedPlotType, getPlotFunction]);
 
-  const handleRefreshLayout = useCallback(async () => {
-    if (!proxy) return;
-    setLayoutLoading(true);
-    try {
-      const layout = await proxy.plotLensLayout();
-      setLayoutImage(layout);
-    } catch {
-      setErrorModalOpen(true);
-    } finally {
-      setLayoutLoading(false);
-    }
-  }, [proxy]);
-
   const handleFieldChange = useCallback(
     async (fieldIndex: number) => {
       setSelectedFieldIndex(fieldIndex);
@@ -217,6 +204,12 @@ export default function Home() {
     [proxy, selectedFieldIndex, getPlotFunction]
   );
 
+  const getOpticalModel = useCallback((): OpticalModel => {
+    const specs = specsStore.getState().toOpticalSpecs();
+    const surfaces = gridRowsToSurfaces(lensStore.getState().rows);
+    return { specs, ...surfaces };
+  }, [specsStore, lensStore]);
+
   const drawerTabs = useMemo(
     () => [
       {
@@ -227,10 +220,10 @@ export default function Home() {
       {
         id: "prescription",
         label: "Prescription",
-        content: <LensPrescriptionContainer store={lensStore} />,
+        content: <LensPrescriptionContainer store={lensStore} getOpticalModel={getOpticalModel} />,
       },
     ],
-    [specsStore, lensStore]
+    [specsStore, lensStore, getOpticalModel]
   );
 
   const confirmOverwriteModal = (
@@ -334,7 +327,6 @@ export default function Home() {
           <LensLayoutPanel
             imageBase64={layoutImage}
             loading={layoutLoading}
-            onRefresh={handleRefreshLayout}
           />
         </div>
         <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
@@ -403,7 +395,6 @@ export default function Home() {
           <LensLayoutPanel
             imageBase64={layoutImage}
             loading={layoutLoading}
-            onRefresh={handleRefreshLayout}
           />
         </div>
         <div className="w-[70vw] mx-auto p-4 border-t border-gray-200 dark:border-gray-700">
