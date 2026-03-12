@@ -346,6 +346,130 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
   ]
 } as const;
 
+// from https://www.telescope-optics.net/miscellaneous_optics.htm
+const tiltedHoughton: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 150 },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: -0.5,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+    },
+    wavelengths: {
+      weights: [
+        [435.835, 0.035],
+        [486.133, 0.18],
+        [546.073, 0.98],
+        [656.273, 0.075],
+        [706.519, 0.0028],
+      ],
+      referenceIndex: 2,
+    },
+  },
+
+  object: {
+    distance: 1e10,
+  },
+
+  image: {
+    curvatureRadius: 2600,
+    decenter: {
+      coordinateSystemStrategy: "bend",
+      alpha: 5.66,
+      beta: 0,
+      gamma: 0,
+      offsetX: 0,
+      offsetY: 0,
+    }
+  },
+
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: 2022,
+      thickness: 11.2,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 75,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 10.5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 74.922466,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -2022,
+      thickness: 9.9,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 74.812074,
+      decenter: {
+        coordinateSystemStrategy: "dec and return",
+        alpha: 5.4,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 1140,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 74.868647,
+      decenter: {
+        coordinateSystemStrategy: "dec and return",
+        alpha: 5.4,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 1.5,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: -2404.5,
+      thickness: -1050,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 84.762317,
+      decenter: {
+        coordinateSystemStrategy: "bend",
+        alpha: 3,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 153.195342,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 19.846683,
+      decenter: {
+        coordinateSystemStrategy: "bend",
+        alpha: -48,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      },
+    },
+  ],
+} as const;
+
+
 // from https://www.telescope-optics.net/ATM_telescopes.htm
 const quadSchiefspiegler: OpticalModel = {
   specs: {
@@ -969,6 +1093,7 @@ const list: Record<string, OpticalModel> = {
   "Newtonian Reflector with Optical Window": ReflectorWithOpticalWindow,
   "Herschel's 40-foot Reflector": herschelReflector,
   "Mike I. Jones's Improved Herschel Reflector": mikeJonesImprovedHerschelReflector,
+  "Tilted Houghton-Herschel 150mm f/8": tiltedHoughton,
   "Terry Platt's 318mm f/21 Buchroeder \"Quad-Schiefspiegler\"": quadSchiefspiegler,
   "Clyde Bone Jr. 30-inch f/5 Mersenne": clydeBoneJrMersenne,
   "Schmidt Camera 200mm f/5": schmidtCamera,
