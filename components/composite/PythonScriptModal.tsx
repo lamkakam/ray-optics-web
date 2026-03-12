@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Modal } from "@/components/micro/Modal";
 import { Button } from "@/components/micro/Button";
 
@@ -11,10 +11,29 @@ interface PythonScriptModalProps {
 }
 
 export function PythonScriptModal({ isOpen, script, onClose }: PythonScriptModalProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(script).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
     <Modal isOpen={isOpen} title="Python Script" size="4xl">
-      <div className="overflow-auto max-h-[60vh] w-full mb-4">
-        <pre className="text-xs font-mono whitespace-pre w-full"><code>{script}</code></pre>
+      <div className="relative w-full mb-4">
+        <div className="overflow-auto max-h-[60vh] w-full">
+          <pre className="text-xs font-mono whitespace-pre w-full"><code>{script}</code></pre>
+        </div>
+        <Button
+          variant="floating"
+          aria-label="Copy to clipboard"
+          title="Copy to clipboard"
+          onClick={handleCopy}
+        >
+          {copied ? "Copied!" : "Copy"}
+        </Button>
       </div>
       <div className="flex justify-end">
         <Button variant="primary" onClick={onClose}>Ok</Button>

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { PythonScriptModal } from "@/components/composite/PythonScriptModal";
 
@@ -53,5 +53,46 @@ describe("PythonScriptModal", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  describe("copy button", () => {
+    beforeEach(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText: jest.fn().mockResolvedValue(undefined) },
+        writable: true,
+      });
+    });
+
+    it("renders copy button when isOpen=true", () => {
+      render(
+        <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
+      );
+      expect(screen.getByRole("button", { name: "Copy to clipboard" })).toBeInTheDocument();
+    });
+
+    it("calls clipboard API with script on click", async () => {
+      render(
+        <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
+      );
+      await userEvent.click(screen.getByRole("button", { name: "Copy to clipboard" }));
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(SAMPLE_SCRIPT);
+    });
+
+    it("shows 'Copied!' feedback then reverts to 'Copy' after 2s", async () => {
+      jest.useFakeTimers();
+      render(
+        <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
+      );
+      const button = screen.getByRole("button", { name: "Copy to clipboard" });
+      await act(async () => {
+        fireEvent.click(button);
+      });
+      expect(button).toHaveTextContent("Copied!");
+      act(() => {
+        jest.advanceTimersByTime(2000);
+      });
+      expect(button).toHaveTextContent("Copy");
+      jest.useRealTimers();
+    });
   });
 });
