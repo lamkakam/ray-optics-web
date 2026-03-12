@@ -253,23 +253,26 @@ describe("LensPrescriptionContainer", () => {
   });
 
   // --- Auto-aperture toggle ---
-  it("renders toggle button with 'Manual' text initially", () => {
+  it("renders toggle button with 'Manual' text and visible 'Semi-diameter' label initially", () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
-    expect(screen.getByRole("button", { name: "Semi-diameter: Manual" })).toBeInTheDocument();
+    expect(screen.getByText("Semi-diameter")).toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: "Semi-diameter" });
+    expect(toggle).toHaveTextContent("Manual");
   });
 
   it("clicking toggle changes text to 'Auto'", async () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
-    await userEvent.click(screen.getByRole("button", { name: "Semi-diameter: Manual" }));
-    expect(screen.getByRole("button", { name: "Semi-diameter: Auto" })).toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: "Semi-diameter" });
+    await userEvent.click(toggle);
+    expect(toggle).toHaveTextContent("Auto");
   });
 
   it("clicking toggle twice reverts to 'Manual'", async () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
-    const toggle = screen.getByRole("button", { name: "Semi-diameter: Manual" });
+    const toggle = screen.getByRole("button", { name: "Semi-diameter" });
     await userEvent.click(toggle);
-    await userEvent.click(screen.getByRole("button", { name: "Semi-diameter: Auto" }));
-    expect(screen.getByRole("button", { name: "Semi-diameter: Manual" })).toBeInTheDocument();
+    await userEvent.click(toggle);
+    expect(toggle).toHaveTextContent("Manual");
   });
 
   // --- Import JSON ---
@@ -282,7 +285,7 @@ describe("LensPrescriptionContainer", () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
 
     const validData: ImportedLensData = {
-      setAutoAperture: true,
+      setAutoAperture: "autoAperture",
       specs: testOpticalModel.specs,
       object: testOpticalModel.object,
       image: testOpticalModel.image,

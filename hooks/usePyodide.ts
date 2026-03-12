@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
 import type { OpticalModel } from "@/lib/opticalModel";
+import type { SetAutoApertureFlag } from "@/lib/apertureFlag";
 import { createPyodideWorker } from "./createPyodideWorker";
 
 export interface PyodideWorkerAPI {
   init(): Promise<void>;
-  setOpticalSurfaces(model: OpticalModel): Promise<void>;
+  setOpticalSurfaces(model: OpticalModel, setAutoAperture: SetAutoApertureFlag): Promise<void>;
   getFirstOrderData(): Promise<Record<string, number>>;
   plotLensLayout(): Promise<string>;
   plotRayFan(fieldIndex: number): Promise<string>;

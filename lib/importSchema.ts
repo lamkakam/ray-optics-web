@@ -53,7 +53,7 @@ const importedLensDataSchema = {
   required: ["setAutoAperture", "specs", "object", "image", "surfaces"],
   additionalProperties: false,
   properties: {
-    setAutoAperture: { type: "boolean" },
+    setAutoAperture: { type: "string", enum: ["autoAperture", "manualAperture"] },
     specs: {
       type: "object",
       required: ["pupil", "field", "wavelengths"],

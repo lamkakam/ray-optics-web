@@ -58,6 +58,7 @@ export interface OpticalModel extends Surfaces {
   specs: OpticalSpecs;
 }
 
-export type SetAutoApertureFlag = boolean;
+import type { SetAutoApertureFlag } from "./apertureFlag";
+export type { SetAutoApertureFlag };
 export type ImportedLensData = { setAutoAperture: SetAutoApertureFlag } & OpticalModel;
 

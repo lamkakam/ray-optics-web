@@ -1,7 +1,7 @@
 
 import type { OpticalModel } from "./opticalModel";
-
-export type SetAutoApertureFlag = "autoAperture" | "manualAperture";
+import type { SetAutoApertureFlag } from "./apertureFlag";
+export type { SetAutoApertureFlag };
 
 export function buildOpticalModelScript(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag): string {
   const { specs, surfaces, object, image } = opticalModel;

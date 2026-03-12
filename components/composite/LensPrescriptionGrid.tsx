@@ -77,7 +77,7 @@ export function LensPrescriptionGrid({
     [theme],
   );
 
-  const columnDefs: ColDef<GridRow>[] = [
+  const columnDefs = useMemo<ColDef<GridRow>[]>(() => [
     {
       headerName: "",
       field: "kind",
@@ -212,7 +212,7 @@ export function LensPrescriptionGrid({
         );
       },
     },
-  ];
+  ], [semiDiameterReadonly, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenDecenterModal, onAddRowAfter, onDeleteRow]);
 
   return (
     <div

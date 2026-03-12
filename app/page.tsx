@@ -133,7 +133,9 @@ export default function Home() {
 
     try {
       // Step 1: setOpticalSurfaces MUST complete first
-      await proxy.setOpticalSurfaces(model);
+      const autoAperture = lensStore.getState().autoAperture;
+      const apertureFlag = autoAperture ? "autoAperture" as const : "manualAperture" as const;
+      await proxy.setOpticalSurfaces(model, apertureFlag);
 
       // Step 2: parallel calls
       const clampedFieldIndex = Math.min(
@@ -213,7 +215,7 @@ export default function Home() {
   const handleImportJson = useCallback((data: ImportedLensData) => {
     specsStore.getState().loadFromSpecs(data.specs);
     lensStore.getState().setRows(surfacesToGridRows(data));
-    lensStore.getState().setAutoAperture(data.setAutoAperture);
+    lensStore.getState().setAutoAperture(data.setAutoAperture === "autoAperture");
   }, [specsStore, lensStore]);
 
   const drawerTabs = useMemo(

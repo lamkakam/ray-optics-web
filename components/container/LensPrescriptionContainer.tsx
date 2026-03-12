@@ -7,6 +7,8 @@ import { type OpticalModel, type ImportedLensData } from "@/lib/opticalModel";
 import { buildExportScript } from "@/lib/pythonScript";
 import { validateImportedLensData } from "@/lib/importSchema";
 import { Button } from "@/components/micro/Button";
+import { Label } from "@/components/micro/Label";
+import { Tooltip } from "@/components/micro/Tooltip";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
@@ -40,7 +42,7 @@ export function LensPrescriptionContainer({
 
   const handleExport = () => {
     const model = getOpticalModel();
-    const data: ImportedLensData = { setAutoAperture: autoAperture, ...model };
+    const data: ImportedLensData = { setAutoAperture: autoAperture ? "autoAperture" : "manualAperture", ...model };
     const json = JSON.stringify(data, undefined, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -94,15 +96,18 @@ export function LensPrescriptionContainer({
       </div>
 
       <div className="mt-2 mb-2 flex items-center gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          aria-label={`Semi-diameter: ${autoAperture ? "Auto" : "Manual"}`}
-          aria-pressed={autoAperture}
-          onClick={() => store.getState().setAutoAperture(!autoAperture)}
-        >
-          {autoAperture ? "Auto" : "Manual"}
-        </Button>
+        <Label htmlFor="auto-aperture-toggle">Semi-diameter</Label>
+        <Tooltip text={autoAperture ? "Auto (read-only)" : "Manual (editable)"}>
+          <Button
+            id="auto-aperture-toggle"
+            variant="secondary"
+            size="sm"
+            aria-pressed={autoAperture}
+            onClick={() => store.getState().setAutoAperture(!autoAperture)}
+          >
+            {autoAperture ? "Auto" : "Manual"}
+          </Button>
+        </Tooltip>
       </div>
 
       <LensPrescriptionGrid
