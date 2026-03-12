@@ -148,7 +148,7 @@ const ReflectorWithOpticalWindow: OpticalModel = {
     {
       label: "Default",
       curvatureRadius: 0,
-      thickness: 200,
+      thickness: 200.000100215,
       medium: "REFL",
       manufacturer: "",
       semiDiameter: 28.489411,
