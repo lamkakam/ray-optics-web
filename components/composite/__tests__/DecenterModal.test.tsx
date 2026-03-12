@@ -76,7 +76,7 @@ describe("DecenterModal", () => {
       />
     );
     const select = screen.getByRole("combobox", { name: "Coordinate system for this and following surfaces" });
-    expect(select).toContainElement(screen.getByRole("option", { name: "Tilt & decenter for this surface; tilt only for following surfaces" }));
+    expect(select).toContainElement(screen.getByRole("option", { name: "Tilt & decenter for this surface; double tilt for following surfaces" }));
     expect(select).toContainElement(screen.getByRole("option", { name: "Apply to this surface only; restore previous coordinate system for following surfaces" }));
     expect(select).toContainElement(screen.getByRole("option", { name: "New coordinate system for this and following surfaces" }));
     expect(select).toContainElement(screen.getByRole("option", { name: "No change to this surface; reversed coordinate system for following surfaces" }));

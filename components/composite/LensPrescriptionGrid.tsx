@@ -55,6 +55,7 @@ interface LensPrescriptionGridProps {
   readonly onOpenDecenterModal: (rowId: string) => void;
   readonly onAddRowAfter: (rowId: string) => void;
   readonly onDeleteRow: (rowId: string) => void;
+  readonly semiDiameterReadonly?: boolean;
 }
 
 export function LensPrescriptionGrid({
@@ -65,6 +66,7 @@ export function LensPrescriptionGrid({
   onOpenDecenterModal,
   onAddRowAfter,
   onDeleteRow,
+  semiDiameterReadonly = false,
 }: LensPrescriptionGridProps) {
   const { theme } = useTheme();
   const gridTheme = useMemo(
@@ -75,7 +77,7 @@ export function LensPrescriptionGrid({
     [theme],
   );
 
-  const columnDefs: ColDef<GridRow>[] = [
+  const columnDefs = useMemo<ColDef<GridRow>[]>(() => [
     {
       headerName: "",
       field: "kind",
@@ -166,7 +168,7 @@ export function LensPrescriptionGrid({
         if (!params.data || params.data.kind !== "surface") return undefined;
         return params.data.semiDiameter;
       },
-      editable: (params) => params.data?.kind === "surface",
+      editable: (params) => !semiDiameterReadonly && params.data?.kind === "surface",
       valueParser: numberValueParser,
       valueSetter: (params) => {
         if (!params.data) return false;
@@ -210,7 +212,7 @@ export function LensPrescriptionGrid({
         );
       },
     },
-  ];
+  ], [semiDiameterReadonly, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenDecenterModal, onAddRowAfter, onDeleteRow]);
 
   return (
     <div

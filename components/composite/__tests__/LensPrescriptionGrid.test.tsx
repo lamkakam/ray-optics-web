@@ -303,6 +303,21 @@ describe("LensPrescriptionGrid", () => {
     expect(onOpenDecenterModal).toHaveBeenCalledWith(IMAGE_ROW_ID);
   });
 
+  // --- semiDiameterReadonly prop ---
+  it("renders semi-diam inputs for surface rows when semiDiameterReadonly is false (default)", () => {
+    render(<LensPrescriptionGrid {...defaultProps} semiDiameterReadonly={false} />);
+    const inputs = screen.getAllByRole("textbox");
+    // object: thickness (1), s1: radius, thickness, semi-diam (3), s2: radius, thickness, semi-diam (3), image: radius (1) = 8
+    expect(inputs).toHaveLength(8);
+  });
+
+  it("renders no semi-diam inputs for surface rows when semiDiameterReadonly is true", () => {
+    render(<LensPrescriptionGrid {...defaultProps} semiDiameterReadonly={true} />);
+    const inputs = screen.getAllByRole("textbox");
+    // object: thickness (1), s1: radius, thickness (2), s2: radius, thickness (2), image: radius (1) = 6
+    expect(inputs).toHaveLength(6);
+  });
+
   // --- AG Grid theme integration ---
   it("passes light theme to AG Grid when ThemeProvider is light", () => {
     mockTheme = "light";

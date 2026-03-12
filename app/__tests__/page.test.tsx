@@ -96,6 +96,10 @@ describe("Home page", () => {
 
     await waitFor(() => {
       expect(mockSetOpticalSurfaces).toHaveBeenCalledTimes(1);
+      expect(mockSetOpticalSurfaces).toHaveBeenCalledWith(
+        expect.anything(),
+        "manualAperture",
+      );
     });
 
     // After setOpticalSurfaces, the parallel calls happen

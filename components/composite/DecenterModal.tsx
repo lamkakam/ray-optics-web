@@ -27,7 +27,7 @@ function parseNumericString(s: string, fallback: number): number {
 }
 
 const POS_AND_ORIENTATION_OPTIONS = [
-  { value: "bend", label: "Tilt & decenter for this surface; tilt only for following surfaces" },
+  { value: "bend", label: "Tilt & decenter for this surface; double tilt for following surfaces" },
   { value: "dec and return", label: "Apply to this surface only; restore previous coordinate system for following surfaces" },
   { value: "decenter", label: "New coordinate system for this and following surfaces" },
   { value: "reverse", label: "No change to this surface; reversed coordinate system for following surfaces" },

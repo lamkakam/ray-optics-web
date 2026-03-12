@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { createStore } from "zustand";
-import type { OpticalSpecs, OpticalModel } from "@/lib/opticalModel";
+import type { OpticalSpecs, OpticalModel, ImportedLensData } from "@/lib/opticalModel";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { ExampleSystems } from "@/lib/exampleSystems";
@@ -133,7 +133,9 @@ export default function Home() {
 
     try {
       // Step 1: setOpticalSurfaces MUST complete first
-      await proxy.setOpticalSurfaces(model);
+      const autoAperture = lensStore.getState().autoAperture;
+      const apertureFlag = autoAperture ? "autoAperture" as const : "manualAperture" as const;
+      await proxy.setOpticalSurfaces(model, apertureFlag);
 
       // Step 2: parallel calls
       const clampedFieldIndex = Math.min(
@@ -161,6 +163,11 @@ export default function Home() {
       setComputing(false);
       setLayoutLoading(false);
       setPlotLoading(false);
+
+      // Reset example selection dropdown
+      if (exampleSelectRef.current) {
+        exampleSelectRef.current.value = "";
+      }
     }
   }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedPlotType, getPlotFunction]);
 
@@ -210,6 +217,12 @@ export default function Home() {
     return { specs, ...surfaces };
   }, [specsStore, lensStore]);
 
+  const handleImportJson = useCallback((data: ImportedLensData) => {
+    specsStore.getState().loadFromSpecs(data.specs);
+    lensStore.getState().setRows(surfacesToGridRows(data));
+    lensStore.getState().setAutoAperture(data.setAutoAperture === "autoAperture");
+  }, [specsStore, lensStore]);
+
   const drawerTabs = useMemo(
     () => [
       {
@@ -220,10 +233,10 @@ export default function Home() {
       {
         id: "prescription",
         label: "Prescription",
-        content: <LensPrescriptionContainer store={lensStore} getOpticalModel={getOpticalModel} />,
+        content: <LensPrescriptionContainer store={lensStore} getOpticalModel={getOpticalModel} onImportJson={handleImportJson} />,
       },
     ],
-    [specsStore, lensStore, getOpticalModel]
+    [specsStore, lensStore, getOpticalModel, handleImportJson]
   );
 
   const confirmOverwriteModal = (

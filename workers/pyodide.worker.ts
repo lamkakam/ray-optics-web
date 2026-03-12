@@ -1,5 +1,6 @@
 import { expose } from "comlink";
 import { type OpticalModel } from "../lib/opticalModel";
+import { type SetAutoApertureFlag } from "../lib/apertureFlag";
 import { buildOpticalModelScript } from "../lib/pythonScript";
 
 declare function importScripts(...urls: string[]): void;
@@ -113,7 +114,7 @@ export async function _init(
                 ax.set_title(title)
                 ax.axhline(0, color='black', linewidth=0.5)
                 ax.axvline(0, color='black', linewidth=0.5)
-                ax.set_xlabel("Pupil Radius (% Zone)")
+                ax.set_xlabel("Pupil Radius (Relative)")
                 ax.set_ylabel("Transverse Aberr. (mm)")
                 ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-3, 3))
             handles, labels = ax_y.get_legend_handles_labels()
@@ -140,7 +141,7 @@ export async function _init(
                 ax.set_title(title)
                 ax.axhline(0, color='black', linewidth=0.5)
                 ax.axvline(0, color='black', linewidth=0.5)
-                ax.set_xlabel("Pupil Radius (% Zone)")
+                ax.set_xlabel("Pupil Radius (Relative)")
                 ax.set_ylabel("waves")
                 ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-3, 3))
             handles, labels = ax_y.get_legend_handles_labels()
@@ -214,9 +215,9 @@ function requirePyodide(): (code: string) => Promise<unknown> {
 
 
 // export for testing
-export async function _setOpticalSurfaces(opticalModel: OpticalModel, runPython: (code: string) => Promise<unknown>): Promise<void> {
+export async function _setOpticalSurfaces(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag, runPython: (code: string) => Promise<unknown>): Promise<void> {
   await runPython(
-    buildOpticalModelScript(opticalModel),
+    buildOpticalModelScript(opticalModel, setAutoAperture),
   );
 }
 
@@ -248,9 +249,8 @@ export async function _plotSpotDiagram(runPython: (code: string) => Promise<unkn
 
 
 // Expose for Components
-export async function setOpticalSurfaces(opticalModel: OpticalModel): Promise<void> {
-  await _setOpticalSurfaces(opticalModel, requirePyodide());
-  return;
+export async function setOpticalSurfaces(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag): Promise<void> {
+  await _setOpticalSurfaces(opticalModel, setAutoAperture, requirePyodide());
 }
 
 export async function getFirstOrderData(): Promise<Record<string, number>> {
