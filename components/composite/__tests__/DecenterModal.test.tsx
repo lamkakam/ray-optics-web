@@ -52,7 +52,7 @@ describe("DecenterModal", () => {
     expect(screen.getByText("Tilt & Decenter")).toBeInTheDocument();
   });
 
-  it("renders Position & Orientation select", () => {
+  it("renders coordinate system select", () => {
     render(
       <DecenterModal
         isOpen={true}
@@ -62,7 +62,7 @@ describe("DecenterModal", () => {
         onRemove={jest.fn()}
       />
     );
-    expect(screen.getByRole("combobox", { name: "Position & Orientation" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Coordinate system for this and following surfaces" })).toBeInTheDocument();
   });
 
   it("renders all four posAndOrientation options", () => {
@@ -75,11 +75,11 @@ describe("DecenterModal", () => {
         onRemove={jest.fn()}
       />
     );
-    const select = screen.getByRole("combobox", { name: "Position & Orientation" });
-    expect(select).toContainElement(screen.getByRole("option", { name: "bend" }));
-    expect(select).toContainElement(screen.getByRole("option", { name: "dec and return" }));
-    expect(select).toContainElement(screen.getByRole("option", { name: "decenter" }));
-    expect(select).toContainElement(screen.getByRole("option", { name: "reverse" }));
+    const select = screen.getByRole("combobox", { name: "Coordinate system for this and following surfaces" });
+    expect(select).toContainElement(screen.getByRole("option", { name: "Tilt & decenter for this surface; tilt only for following surfaces" }));
+    expect(select).toContainElement(screen.getByRole("option", { name: "Apply to this surface only; restore previous coordinate system for following surfaces" }));
+    expect(select).toContainElement(screen.getByRole("option", { name: "New coordinate system for this and following surfaces" }));
+    expect(select).toContainElement(screen.getByRole("option", { name: "No change to this surface; reversed coordinate system for following surfaces" }));
   });
 
   it("renders numeric inputs for alpha, beta, gamma, offsetX, offsetY", () => {

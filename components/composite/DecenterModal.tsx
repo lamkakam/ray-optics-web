@@ -27,10 +27,10 @@ function parseNumericString(s: string, fallback: number): number {
 }
 
 const POS_AND_ORIENTATION_OPTIONS = [
-  { value: "bend", label: "bend" },
-  { value: "dec and return", label: "dec and return" },
-  { value: "decenter", label: "decenter" },
-  { value: "reverse", label: "reverse" },
+  { value: "bend", label: "Tilt & decenter for this surface; tilt only for following surfaces" },
+  { value: "dec and return", label: "Apply to this surface only; restore previous coordinate system for following surfaces" },
+  { value: "decenter", label: "New coordinate system for this and following surfaces" },
+  { value: "reverse", label: "No change to this surface; reversed coordinate system for following surfaces" },
 ];
 
 export function DecenterModal({
@@ -71,10 +71,10 @@ export function DecenterModal({
     <Modal isOpen={isOpen} title="Tilt & Decenter" titleId="decenter-modal-title" size="md">
       {/* Position & Orientation */}
       <div className="mb-4">
-        <Label htmlFor="pos-and-orientation">Position & Orientation</Label>
+        <Label htmlFor="pos-and-orientation">Coordinate system for this and following surfaces</Label>
         <Select
           id="pos-and-orientation"
-          aria-label="Position & Orientation"
+          aria-label="Coordinate system for this and following surfaces"
           value={posAndOrientation}
           onChange={(e) => setPosAndOrientation(e.target.value as DecenterCoordinateSystemStrategy)}
           options={POS_AND_ORIENTATION_OPTIONS}
