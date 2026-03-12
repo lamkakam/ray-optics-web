@@ -163,6 +163,11 @@ export default function Home() {
       setComputing(false);
       setLayoutLoading(false);
       setPlotLoading(false);
+
+      // Reset example selection dropdown
+      if (exampleSelectRef.current) {
+        exampleSelectRef.current.value = "";
+      }
     }
   }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedPlotType, getPlotFunction]);
 
