@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Modal } from "@/components/micro/Modal";
 import { Button } from "@/components/micro/Button";
 
+
 interface PythonScriptModalProps {
   readonly isOpen: boolean;
   readonly script: string;
@@ -28,6 +29,7 @@ export function PythonScriptModal({ isOpen, script, onClose }: PythonScriptModal
         </div>
         <Button
           variant="floating"
+          className="right-6 top-6"
           aria-label="Copy to clipboard"
           title="Copy to clipboard"
           onClick={handleCopy}
