@@ -100,7 +100,7 @@ export default function Home() {
     const { fields, maxField, type } = committedSpecs.field;
     const unit = type === "angle" ? "°" : " mm";
     return fields.map((rf, i) => ({
-      label: `${(rf * maxField).toFixed(1)}${unit}`,
+      label: `${(rf * maxField).toPrecision(3)}${unit}`,
       value: i,
     }));
   }, [committedSpecs.field]);
