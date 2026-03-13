@@ -6,8 +6,6 @@ import { buildOpticalModelScript } from "../lib/pythonScript";
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
 
-const CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full";
-
 let pyodide: any = null;
 
 // WARNING: DON'T TOUCH THE FORMATTING OF THE STRING LITERALS BELOW
@@ -17,8 +15,11 @@ let pyodide: any = null;
 
 // export for testing
 export async function _init(
-  runPython: (code: string) => Promise<unknown>
+  runPython: (code: string) => Promise<unknown>,
+  wheelIndex: Record<string, string> = {}
 ): Promise<void> {
+  const w = (key: string): string => wheelIndex[key] ?? '';
+
   await runPython(`
         import sys, types
         for m in ['PySide6','PySide6.QtWidgets','PySide6.QtCore',
@@ -29,26 +30,20 @@ export async function _init(
 
   await runPython(`
         import micropip
-        await micropip.install("rayoptics==0.9.4", deps=False)
-        await micropip.install("opticalglass==1.1.0", deps=False)
+        await micropip.install("${w('rayoptics')}", deps=False)
+        await micropip.install("${w('opticalglass')}", deps=False)
 `);
 
-  // DON'T PIN pyyaml to 6.0.1 (despite specifically required by opticalglass).
-  // NO AVAILABLE WHEEL FOR pyyaml==6.0.1
   await runPython(`
         import micropip
         await micropip.install([
-            'anytree==2.12.1',
-            'transforms3d==0.4.2',
-            'traitlets==5.14.3',
-            'packaging==24.2',
-            'json-tricks==3.17.3',
-            'deprecation==2.1.0',
-            'pyyaml',
-            'requests==2.32.3',
-            'openpyxl==3.1.2',
-            'parsimonious==0.10.0',
-        ])
+            '${w('anytree')}',
+            '${w('transforms3d')}',
+            '${w('json-tricks')}',
+            '${w('openpyxl')}',
+            '${w('parsimonious')}',
+            '${w('et-xmlfile')}',
+        ], deps=False)
 `);
 
   await runPython("import json\nfrom rayoptics.environment import *");
@@ -181,8 +176,9 @@ export async function _init(
 export async function init(): Promise<void> {
   if (pyodide) return;
   try {
-    importScripts(`${CDN}/pyodide.js`);
-    pyodide = await loadPyodide({ indexURL: `${CDN}/` });
+    const origin = self.location.origin;
+    importScripts(`${origin}/pyodide/pyodide.js`);
+    pyodide = await loadPyodide({ indexURL: `${origin}/pyodide/` });
 
     await pyodide.loadPackage([
       "micropip",
@@ -191,14 +187,24 @@ export async function init(): Promise<void> {
       "matplotlib",
       "pandas",
       "xlrd",
+      "pyyaml",
+      "traitlets",
+      "packaging",
+      "deprecation",
+      "requests",
+      "six",
+      "regex",
     ]);
 
-    const caf2Res = await fetch(`${self.location.origin}/database/data/main/CaF2/nk/Malitson.yml`);
+    const caf2Res = await fetch(`${origin}/database/data/main/CaF2/nk/Malitson.yml`);
     const caf2Yaml = await caf2Res.text();
     pyodide.FS.mkdirTree('/database/data/main/CaF2/nk');
     pyodide.FS.writeFile('/database/data/main/CaF2/nk/Malitson.yml', caf2Yaml);
 
-    await _init(pyodide.runPythonAsync.bind(pyodide));
+    const wheelIndexRes = await fetch(`${origin}/wheels/index.json`);
+    const wheelIndex: Record<string, string> = await wheelIndexRes.json();
+
+    await _init(pyodide.runPythonAsync.bind(pyodide), wheelIndex);
   } catch (err) {
     pyodide = null;
     console.error(err);
