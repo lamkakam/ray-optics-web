@@ -320,12 +320,23 @@ describe("_init", () => {
     expect(allCode).toContain("set_aspect('equal')");
   });
 
-  it("should install rayoptics and opticalglass", async () => {
+  it("should install rayoptics and opticalglass from local wheel URLs", async () => {
     const scripts: string[] = [];
-    await _init(async (code) => { scripts.push(code); });
+    const wheelIndex = {
+      'rayoptics': '/wheels/rayoptics-0.9.4-py3-none-any.whl',
+      'opticalglass': '/wheels/opticalglass-1.1.0-py3-none-any.whl',
+      'anytree': '/wheels/anytree-2.12.1-py3-none-any.whl',
+      'transforms3d': '/wheels/transforms3d-0.4.2-py3-none-any.whl',
+      'json-tricks': '/wheels/json_tricks-3.17.3-py3-none-any.whl',
+      'openpyxl': '/wheels/openpyxl-3.1.2-py3-none-any.whl',
+      'parsimonious': '/wheels/parsimonious-0.10.0-py3-none-any.whl',
+      'et-xmlfile': '/wheels/et_xmlfile-2.0.0-py3-none-any.whl',
+    };
+    await _init(async (code) => { scripts.push(code); }, wheelIndex);
     const allCode = scripts.join("\n");
-    expect(allCode).toContain('micropip.install("rayoptics==0.9.4"');
-    expect(allCode).toContain('micropip.install("opticalglass==1.1.0"');
+    expect(allCode).toContain('micropip.install("/wheels/rayoptics-0.9.4-py3-none-any.whl"');
+    expect(allCode).toContain('micropip.install("/wheels/opticalglass-1.1.0-py3-none-any.whl"');
+    expect(allCode).toContain('deps=False');
   });
 
   it("should import rayoptics environment", async () => {

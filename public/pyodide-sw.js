@@ -1,14 +1,18 @@
 // Service worker: cache-first for Pyodide + PyPI packages
 const CACHE_NAME = "pyodide-cache-v1";
 
-const CACHEABLE_HOSTS = [
-  "cdn.jsdelivr.net/pyodide/",
-  "files.pythonhosted.org/",
-  "pypi.org/pypi/",
-];
+const LOCAL_PATH_PREFIXES = ["/pyodide/", "/wheels/"];
+const EXTERNAL_HOSTNAMES = ["cdn.jsdelivr.net", "files.pythonhosted.org", "pypi.org"];
 
 function shouldCache(url) {
-  return CACHEABLE_HOSTS.some((pattern) => url.includes(pattern));
+  if (LOCAL_PATH_PREFIXES.some((p) => url.startsWith(p))) return true;
+  try {
+    const { hostname, pathname } = new URL(url);
+    if (EXTERNAL_HOSTNAMES.includes(hostname)) return false;
+    return LOCAL_PATH_PREFIXES.some((p) => pathname.startsWith(p));
+  } catch {
+    return false;
+  }
 }
 
 self.addEventListener("install", () => {
