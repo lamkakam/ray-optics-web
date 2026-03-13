@@ -313,7 +313,7 @@ export default function Home() {
           defaultValue=""
           onChange={handleExampleChange}
         />
-        <Tooltip text="Compute and update the optical system">
+        <Tooltip text="Compute and update the optical system" position="bottom">
           <Button
             variant="primary"
             size="sm"
@@ -323,17 +323,18 @@ export default function Home() {
             Update System
           </Button>
         </Tooltip>
-        <Tooltip text="Settings">
-          <Button
-            variant="secondary"
-            size="sm"
-            aria-label="Settings"
-            className="ml-auto"
-            onClick={() => setSettingsModalOpen(true)}
-          >
-            ⚙
-          </Button>
-        </Tooltip>
+        <span className="ml-auto">
+          <Tooltip text="Settings" position="bottom">
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label="Settings"
+              onClick={() => setSettingsModalOpen(true)}
+            >
+              ⚙
+            </Button>
+          </Tooltip>
+        </span>
       </header>
 
       <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
@@ -374,17 +375,18 @@ export default function Home() {
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
         <div className="flex items-center mb-2">
           <Header level={1}>Ray Optics Web</Header>
-          <Tooltip text="Settings">
-            <Button
-              variant="secondary"
-              size="sm"
-              aria-label="Settings"
-              className="ml-auto"
-              onClick={() => setSettingsModalOpen(true)}
-            >
-              ⚙
-            </Button>
-          </Tooltip>
+          <span className="ml-auto">
+            <Tooltip text="Settings" position="bottom">
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-label="Settings"
+                onClick={() => setSettingsModalOpen(true)}
+              >
+                ⚙
+              </Button>
+            </Tooltip>
+          </span>
         </div>
         <Select
           ref={exampleSelectRef}
@@ -396,7 +398,7 @@ export default function Home() {
           onChange={handleExampleChange}
           className="mb-2 w-full"
         />
-        <Tooltip text="Compute and update the optical system">
+        <Tooltip text="Compute and update the optical system" position="bottom">
           <Button
             variant="primary"
             size="sm"
