@@ -90,7 +90,7 @@ export function LensPrescriptionContainer({
       />
 
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
-        <Tooltip text="Import lens prescription from JSON" portal>
+        <Tooltip text="Import lens prescription from JSON" position="top-start" portal>
           <Button variant="secondary" size="sm" onClick={handleImportClick}>Import JSON</Button>
         </Tooltip>
         <Tooltip text="Download lens prescription as JSON" portal>
