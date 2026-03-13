@@ -13,7 +13,7 @@ interface SettingsModalProps {
   readonly onClose: () => void;
 }
 
-const themeOptions = [
+const themeOptions: { value: Theme; label: string }[] = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
 ];
