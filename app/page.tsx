@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { createStore } from "zustand";
 import type { OpticalSpecs, OpticalModel, ImportedLensData } from "@/lib/opticalModel";
+import type { Theme } from "@/lib/theme";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { ExampleSystems } from "@/lib/exampleSystems";
@@ -91,7 +92,7 @@ export default function Home() {
 
   const handleThemeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const selected = e.target.value as "light" | "dark";
+      const selected = e.target.value as Theme;
       if (selected !== theme) toggleTheme();
     },
     [theme, toggleTheme]

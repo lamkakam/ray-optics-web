@@ -3,10 +3,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/lib/gridTypes";
+import type { Theme } from "@/lib/theme";
 
 // Mock useTheme — default to light
 const mockToggleTheme = jest.fn();
-let mockTheme: "light" | "dark" = "light";
+let mockTheme: Theme = "light";
 jest.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: mockTheme, toggleTheme: mockToggleTheme }),
 }));

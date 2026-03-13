@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
+import type { Theme } from "@/lib/theme";
 import { Modal } from "@/components/micro/Modal";
 import { Button } from "@/components/micro/Button";
 import { Select } from "@/components/micro/Select";
 
 interface SettingsModalProps {
   readonly isOpen: boolean;
-  readonly theme: "light" | "dark";
+  readonly theme: Theme;
   readonly onThemeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   readonly onClose: () => void;
 }
