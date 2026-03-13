@@ -17,14 +17,14 @@ import {
 } from "@/components/composite/AnalysisPlotView";
 import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
-import { Modal } from "@/components/micro/Modal";
 import { Button } from "@/components/micro/Button";
 import { Tooltip } from "@/components/micro/Tooltip";
 import { Header } from "@/components/micro/Header";
 import { Select } from "@/components/micro/Select";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
+import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteModal";
+import { SettingsModal } from "@/components/composite/SettingsModal";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
-import { Paragraph } from "@/components/micro/Paragraph";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -240,57 +240,11 @@ export default function Home() {
     [specsStore, lensStore, getOpticalModel, handleImportJson]
   );
 
-  const confirmOverwriteModal = (
-    <Modal
-      isOpen={pendingExample !== undefined}
-      title="Load Example System"
-    >
-      <Paragraph variant="body" className="mb-6">
-        This will overwrite your current configuration. Continue?
-      </Paragraph>
-      <div className="flex justify-end gap-3">
-        <Button variant="secondary" onClick={handleExampleCancel}>
-          Cancel
-        </Button>
-        <Button variant="primary" onClick={handleExampleConfirm}>
-          Load
-        </Button>
-      </div>
-    </Modal>
-  );
-
   const errorModal = (
     <ErrorModal
       isOpen={errorModalOpen}
       onClose={() => setErrorModalOpen(false)}
     />
-  );
-
-  const themeOptions = [
-    { value: "light", label: "Light" },
-    { value: "dark", label: "Dark" },
-  ];
-
-  const settingsModal = (
-    <Modal isOpen={settingsModalOpen} title="Settings">
-      <div className="mb-6">
-        <label htmlFor="theme-select" className="block text-sm font-medium mb-2">
-          Theme
-        </label>
-        <Select
-          id="theme-select"
-          aria-label="Theme"
-          options={themeOptions}
-          value={theme}
-          onChange={handleThemeChange}
-        />
-      </div>
-      <div className="flex justify-end">
-        <Button variant="primary" onClick={() => setSettingsModalOpen(false)}>
-          Ok
-        </Button>
-      </div>
-    </Modal>
   );
 
   const initOverlayNode = !isReady && (
@@ -363,9 +317,18 @@ export default function Home() {
       </div>
 
       <BottomDrawer tabs={drawerTabs} draggable={true} />
-      {confirmOverwriteModal}
+      <ConfirmOverwriteModal
+        isOpen={pendingExample !== undefined}
+        onConfirm={handleExampleConfirm}
+        onCancel={handleExampleCancel}
+      />
       {errorModal}
-      {settingsModal}
+      <SettingsModal
+        isOpen={settingsModalOpen}
+        theme={theme}
+        onThemeChange={handleThemeChange}
+        onClose={() => setSettingsModalOpen(false)}
+      />
       {initOverlayNode}
     </div>
   );
@@ -436,9 +399,18 @@ export default function Home() {
       </div>
 
       <BottomDrawer tabs={drawerTabs} draggable={false} />
-      {confirmOverwriteModal}
+      <ConfirmOverwriteModal
+        isOpen={pendingExample !== undefined}
+        onConfirm={handleExampleConfirm}
+        onCancel={handleExampleCancel}
+      />
       {errorModal}
-      {settingsModal}
+      <SettingsModal
+        isOpen={settingsModalOpen}
+        theme={theme}
+        onThemeChange={handleThemeChange}
+        onClose={() => setSettingsModalOpen(false)}
+      />
       {initOverlayNode}
     </div>
   );

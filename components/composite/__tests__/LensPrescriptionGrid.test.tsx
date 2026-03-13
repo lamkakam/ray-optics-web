@@ -126,18 +126,18 @@ describe("LensPrescriptionGrid", () => {
   });
 
   // --- Aspherical column ---
-  it("renders aspherical checkboxes for surface rows", () => {
+  it("renders aspherical buttons for surface rows", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
-    const checkboxes = screen.getAllByRole("checkbox", { name: "Edit aspherical parameters" });
-    expect(checkboxes).toHaveLength(2); // two surface rows
+    const buttons = screen.getAllByRole("button", { name: "Edit aspherical parameters" });
+    expect(buttons).toHaveLength(2); // two surface rows
   });
 
-  it("calls onOpenAsphericalModal when aspherical checkbox is clicked", async () => {
+  it("calls onOpenAsphericalModal when aspherical button is clicked", async () => {
     const onOpenAsphericalModal = jest.fn();
     render(<LensPrescriptionGrid {...defaultProps} onOpenAsphericalModal={onOpenAsphericalModal} />);
-    const checkboxes = screen.getAllByRole("checkbox", { name: "Edit aspherical parameters" });
+    const buttons = screen.getAllByRole("button", { name: "Edit aspherical parameters" });
 
-    await userEvent.click(checkboxes[1]); // s2 has aspherical
+    await userEvent.click(buttons[1]); // s2 has aspherical
 
     expect(onOpenAsphericalModal).toHaveBeenCalledWith("s2");
   });
@@ -198,11 +198,11 @@ describe("LensPrescriptionGrid", () => {
     expect(onOpenMediumModal).toHaveBeenCalledWith("s1");
   });
 
-  it("opens aspherical modal when clicking cell area around the checkbox", async () => {
+  it("opens aspherical modal when clicking cell area around the aspherical button", async () => {
     const onOpenAsphericalModal = jest.fn();
     render(<LensPrescriptionGrid {...defaultProps} onOpenAsphericalModal={onOpenAsphericalModal} />);
-    const checkboxes = screen.getAllByRole("checkbox", { name: "Edit aspherical parameters" });
-    const cellWrapper = checkboxes[0].closest("[data-cell-wrapper]")!;
+    const buttons = screen.getAllByRole("button", { name: "Edit aspherical parameters" });
+    const cellWrapper = buttons[0].closest("[data-cell-wrapper]")!;
 
     await userEvent.click(cellWrapper);
 
