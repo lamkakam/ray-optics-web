@@ -255,6 +255,32 @@ export default function Home() {
     />
   );
 
+  const confirmOverwriteModalNode = (
+    <ConfirmOverwriteModal
+      isOpen={pendingExample !== undefined}
+      onConfirm={handleExampleConfirm}
+      onCancel={handleExampleCancel}
+    />
+  );
+
+  const settingsModalNode = (
+    <SettingsModal
+      isOpen={settingsModalOpen}
+      theme={theme}
+      onThemeChange={handleThemeChange}
+      onClose={() => setSettingsModalOpen(false)}
+    />
+  );
+
+  const lensLayoutPanel = (
+    <LensLayoutPanel
+      imageBase64={layoutImage}
+      loading={layoutLoading}
+    />
+  );
+
+  const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
+
   const layoutLG: React.ReactNode = (
     <div className="flex flex-col h-screen">
       <header className="flex h-12 shrink-0 items-center gap-4 border-gray-200 px-4 dark:border-gray-700">
@@ -293,15 +319,12 @@ export default function Home() {
       </header>
 
       <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-        <FirstOrderChips data={firstOrderData} />
+        {firstOrderChips}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-row">
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
-          <LensLayoutPanel
-            imageBase64={layoutImage}
-            loading={layoutLoading}
-          />
+          {lensLayoutPanel}
         </div>
         <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
           <AnalysisPlotView
@@ -318,18 +341,9 @@ export default function Home() {
       </div>
 
       <BottomDrawer tabs={drawerTabs} draggable={true} />
-      <ConfirmOverwriteModal
-        isOpen={pendingExample !== undefined}
-        onConfirm={handleExampleConfirm}
-        onCancel={handleExampleCancel}
-      />
+      {confirmOverwriteModalNode}
       {errorModal}
-      <SettingsModal
-        isOpen={settingsModalOpen}
-        theme={theme}
-        onThemeChange={handleThemeChange}
-        onClose={() => setSettingsModalOpen(false)}
-      />
+      {settingsModalNode}
       {initOverlayNode}
     </div>
   );
@@ -374,16 +388,13 @@ export default function Home() {
           </Button>
         </Tooltip>
         <div className="flex flex-wrap gap-2">
-          <FirstOrderChips data={firstOrderData} />
+          {firstOrderChips}
         </div>
       </header>
 
       <div className="flex flex-col">
         <div className="w-[70vw] mx-auto p-4">
-          <LensLayoutPanel
-            imageBase64={layoutImage}
-            loading={layoutLoading}
-          />
+          {lensLayoutPanel}
         </div>
         <div className="w-[70vw] mx-auto p-4 border-t border-gray-200 dark:border-gray-700">
           <AnalysisPlotView
@@ -400,18 +411,9 @@ export default function Home() {
       </div>
 
       <BottomDrawer tabs={drawerTabs} draggable={false} />
-      <ConfirmOverwriteModal
-        isOpen={pendingExample !== undefined}
-        onConfirm={handleExampleConfirm}
-        onCancel={handleExampleCancel}
-      />
+      {confirmOverwriteModalNode}
       {errorModal}
-      <SettingsModal
-        isOpen={settingsModalOpen}
-        theme={theme}
-        onThemeChange={handleThemeChange}
-        onClose={() => setSettingsModalOpen(false)}
-      />
+      {settingsModalNode}
       {initOverlayNode}
     </div>
   );
