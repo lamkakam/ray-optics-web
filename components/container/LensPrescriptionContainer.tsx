@@ -103,7 +103,7 @@ export function LensPrescriptionContainer({
 
       <div className="mt-2 mb-2 flex items-center gap-2">
         <Label htmlFor="auto-aperture-toggle">Semi-diameter</Label>
-        <Tooltip text={autoAperture ? "Auto (read-only)" : "Manual (editable)"}>
+        <Tooltip text={autoAperture ? "Click to toggle off Auto semi-diameter" : "Click to toggle on Auto semi-diameter"}>
           <Button
             id="auto-aperture-toggle"
             variant="secondary"
