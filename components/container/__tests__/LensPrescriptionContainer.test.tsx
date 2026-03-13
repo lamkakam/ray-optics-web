@@ -311,4 +311,24 @@ describe("LensPrescriptionContainer", () => {
     expect(onImportJson).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
+
+  // --- Toolbar tooltip tests ---
+
+  it("Import JSON button has a tooltip with correct text", () => {
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
+    const tooltips = screen.getAllByRole("tooltip");
+    expect(tooltips.some((t) => t.textContent === "Import lens prescription from JSON")).toBe(true);
+  });
+
+  it("Export JSON button has a tooltip with correct text", () => {
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
+    const tooltips = screen.getAllByRole("tooltip");
+    expect(tooltips.some((t) => t.textContent === "Download lens prescription as JSON")).toBe(true);
+  });
+
+  it("Export Python Script button has a tooltip with correct text", () => {
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
+    const tooltips = screen.getAllByRole("tooltip");
+    expect(tooltips.some((t) => t.textContent === "Generate a Python script")).toBe(true);
+  });
 });

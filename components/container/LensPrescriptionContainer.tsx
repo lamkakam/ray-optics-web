@@ -90,9 +90,15 @@ export function LensPrescriptionContainer({
       />
 
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
-        <Button variant="secondary" size="sm" onClick={handleImportClick}>Import JSON</Button>
-        <Button variant="primary" size="sm" onClick={handleExport}>Export JSON</Button>
-        <Button variant="secondary" size="sm" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
+        <Tooltip text="Import lens prescription from JSON">
+          <Button variant="secondary" size="sm" onClick={handleImportClick}>Import JSON</Button>
+        </Tooltip>
+        <Tooltip text="Download lens prescription as JSON">
+          <Button variant="primary" size="sm" onClick={handleExport}>Export JSON</Button>
+        </Tooltip>
+        <Tooltip text="Generate a Python script">
+          <Button variant="secondary" size="sm" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
+        </Tooltip>
       </div>
 
       <div className="mt-2 mb-2 flex items-center gap-2">
