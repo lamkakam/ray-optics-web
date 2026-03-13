@@ -51,15 +51,30 @@ describe("Tooltip", () => {
     expect(tip).not.toHaveClass("bottom-full");
   });
 
-  it("top-left position: has bottom-full but no left-1/2 or -translate-x-1/2", () => {
+  it("top-start position: has bottom-full, left-1/2, and -translate-x-1/4", () => {
     render(
-      <Tooltip text="Help text" position="top-left">
+      <Tooltip text="Help text" position="top-start">
         <span>child</span>
       </Tooltip>,
     );
     const tip = screen.getByRole("tooltip");
     expect(tip).toHaveClass("bottom-full");
-    expect(tip).not.toHaveClass("left-1/2");
+    expect(tip).toHaveClass("left-1/2");
+    expect(tip).toHaveClass("-translate-x-1/4");
+    expect(tip).not.toHaveClass("-translate-x-1/2");
+  });
+
+  it("start position: has left-1/2 and -translate-x-1/4 but no bottom-full or top-full", () => {
+    render(
+      <Tooltip text="Help text" position="start">
+        <span>child</span>
+      </Tooltip>,
+    );
+    const tip = screen.getByRole("tooltip");
+    expect(tip).toHaveClass("left-1/2");
+    expect(tip).toHaveClass("-translate-x-1/4");
+    expect(tip).not.toHaveClass("bottom-full");
+    expect(tip).not.toHaveClass("top-full");
     expect(tip).not.toHaveClass("-translate-x-1/2");
   });
 
@@ -118,15 +133,26 @@ describe("Tooltip", () => {
       expect(screen.getByRole("tooltip")).toHaveClass("opacity-0");
     });
 
-    it("portal top-left: transform is translate(0, -100%)", async () => {
+    it("portal top-start: transform is translate(-25%, -100%)", async () => {
       const user = userEvent.setup();
       render(
-        <Tooltip text="Portal tip" position="top-left" portal>
+        <Tooltip text="Portal tip" position="top-start" portal>
           <button>Trigger</button>
         </Tooltip>,
       );
       await user.hover(screen.getByRole("button", { name: "Trigger" }));
-      expect(screen.getByRole("tooltip")).toHaveStyle({ transform: "translate(0, -100%)" });
+      expect(screen.getByRole("tooltip")).toHaveStyle({ transform: "translate(-25%, -100%)" });
+    });
+
+    it("portal start: transform is translateX(-25%)", async () => {
+      const user = userEvent.setup();
+      render(
+        <Tooltip text="Portal tip" position="start" portal>
+          <button>Trigger</button>
+        </Tooltip>,
+      );
+      await user.hover(screen.getByRole("button", { name: "Trigger" }));
+      expect(screen.getByRole("tooltip")).toHaveStyle({ transform: "translateX(-25%)" });
     });
 
     it("portal no-transform: no transform style", async () => {

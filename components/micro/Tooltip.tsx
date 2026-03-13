@@ -6,7 +6,7 @@ import { componentTokens as cx } from "@/components/ui/modalTokens";
 interface TooltipProps {
   readonly text: string;
   readonly children: React.ReactNode;
-  readonly position?: "top" | "bottom" | "top-left" | "no-transform";
+  readonly position?: "top" | "bottom" | "top-start" | "start" | "no-transform";
   readonly portal?: boolean;
 }
 
@@ -49,8 +49,8 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
         const y =
-          position === "top" || position === "top-left" ? rect.top - 4
-          : position === "no-transform" ? rect.top
+          position === "top" || position === "top-start" ? rect.top - 4
+          : position === "no-transform" || position === "start" ? rect.top
           : rect.bottom + 4;
         setCoords({
           x: rect.left + rect.width / 2,
@@ -70,7 +70,8 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
           transform:
             position === "top" ? "translate(-50%, -100%)"
             : position === "bottom" ? "translateX(-50%)"
-            : position === "top-left" ? "translate(0, -100%)"
+            : position === "top-start" ? "translate(-25%, -100%)"
+            : position === "start" ? "translateX(-25%)"
             : undefined,
         }}
       >
@@ -94,7 +95,8 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
   const positionClasses =
     position === "top" ? "left-1/2 -translate-x-1/2 bottom-full mb-1"
     : position === "bottom" ? "left-1/2 -translate-x-1/2 top-full mt-1"
-    : position === "top-left" ? "bottom-full mb-1"
+    : position === "top-start" ? "left-1/2 -translate-x-1/4 bottom-full mb-1"
+    : position === "start" ? "left-1/2 -translate-x-1/4"
     : "";
 
   return (
