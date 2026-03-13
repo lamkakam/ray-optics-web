@@ -6,7 +6,7 @@ import { componentTokens as cx } from "@/components/ui/modalTokens";
 interface TooltipProps {
   readonly text: string;
   readonly children: React.ReactNode;
-  readonly position?: "top" | "bottom";
+  readonly position?: "top" | "bottom" | "top-left" | "no-transform";
   readonly portal?: boolean;
 }
 
@@ -48,9 +48,13 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
     const handleMouseEnter = () => {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
+        const y =
+          position === "top" || position === "top-left" ? rect.top - 4
+          : position === "no-transform" ? rect.top
+          : rect.bottom + 4;
         setCoords({
           x: rect.left + rect.width / 2,
-          y: position === "top" ? rect.top - 4 : rect.bottom + 4,
+          y,
         });
       }
       setVisible(true);
@@ -63,9 +67,11 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
         style={{
           left: coords.x,
           top: coords.y,
-          transform: position === "top"
-            ? "translate(-50%, -100%)"
-            : "translateX(-50%)",
+          transform:
+            position === "top" ? "translate(-50%, -100%)"
+            : position === "bottom" ? "translateX(-50%)"
+            : position === "top-left" ? "translate(0, -100%)"
+            : undefined,
         }}
       >
         {text}
@@ -86,7 +92,10 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
   }
 
   const positionClasses =
-    position === "top" ? "bottom-full mb-1" : "top-full mt-1";
+    position === "top" ? "left-1/2 -translate-x-1/2 bottom-full mb-1"
+    : position === "bottom" ? "left-1/2 -translate-x-1/2 top-full mt-1"
+    : position === "top-left" ? "bottom-full mb-1"
+    : "";
 
   return (
     <span className="group relative inline-flex">
@@ -94,7 +103,7 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
       <span
         role="tooltip"
         className={clsx(
-          "absolute left-1/2 -translate-x-1/2",
+          "absolute",
           "whitespace-nowrap",
           baseClasses,
           positionClasses,

@@ -51,6 +51,31 @@ describe("Tooltip", () => {
     expect(tip).not.toHaveClass("bottom-full");
   });
 
+  it("top-left position: has bottom-full but no left-1/2 or -translate-x-1/2", () => {
+    render(
+      <Tooltip text="Help text" position="top-left">
+        <span>child</span>
+      </Tooltip>,
+    );
+    const tip = screen.getByRole("tooltip");
+    expect(tip).toHaveClass("bottom-full");
+    expect(tip).not.toHaveClass("left-1/2");
+    expect(tip).not.toHaveClass("-translate-x-1/2");
+  });
+
+  it("no-transform position: has no position or transform classes", () => {
+    render(
+      <Tooltip text="Help text" position="no-transform">
+        <span>child</span>
+      </Tooltip>,
+    );
+    const tip = screen.getByRole("tooltip");
+    expect(tip).not.toHaveClass("bottom-full");
+    expect(tip).not.toHaveClass("top-full");
+    expect(tip).not.toHaveClass("left-1/2");
+    expect(tip).not.toHaveClass("-translate-x-1/2");
+  });
+
   describe("portal mode", () => {
     it("renders tooltip text in the document when portal is true", () => {
       render(
@@ -91,6 +116,29 @@ describe("Tooltip", () => {
       await user.hover(screen.getByRole("button", { name: "Trigger" }));
       await user.unhover(screen.getByRole("button", { name: "Trigger" }));
       expect(screen.getByRole("tooltip")).toHaveClass("opacity-0");
+    });
+
+    it("portal top-left: transform is translate(0, -100%)", async () => {
+      const user = userEvent.setup();
+      render(
+        <Tooltip text="Portal tip" position="top-left" portal>
+          <button>Trigger</button>
+        </Tooltip>,
+      );
+      await user.hover(screen.getByRole("button", { name: "Trigger" }));
+      expect(screen.getByRole("tooltip")).toHaveStyle({ transform: "translate(0, -100%)" });
+    });
+
+    it("portal no-transform: no transform style", async () => {
+      const user = userEvent.setup();
+      render(
+        <Tooltip text="Portal tip" position="no-transform" portal>
+          <button>Trigger</button>
+        </Tooltip>,
+      );
+      await user.hover(screen.getByRole("button", { name: "Trigger" }));
+      expect(screen.getByRole("tooltip")).not.toHaveStyle({ transform: "translate(-50%, -100%)" });
+      expect(screen.getByRole("tooltip")).not.toHaveStyle({ transform: "translateX(-50%)" });
     });
   });
 });
