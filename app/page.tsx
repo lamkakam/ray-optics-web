@@ -19,6 +19,7 @@ import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { Modal } from "@/components/micro/Modal";
 import { Button } from "@/components/micro/Button";
+import { Tooltip } from "@/components/micro/Tooltip";
 import { Header } from "@/components/micro/Header";
 import { Select } from "@/components/micro/Select";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
@@ -312,23 +313,28 @@ export default function Home() {
           defaultValue=""
           onChange={handleExampleChange}
         />
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={!isReady || computing}
-          onClick={handleSubmit}
-        >
-          Update System
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          aria-label="Settings"
-          className="ml-auto"
-          onClick={() => setSettingsModalOpen(true)}
-        >
-          ⚙
-        </Button>
+        <Tooltip text="Compute and update the optical system" position="bottom">
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={!isReady || computing}
+            onClick={handleSubmit}
+          >
+            Update System
+          </Button>
+        </Tooltip>
+        <span className="ml-auto">
+          <Tooltip text="Settings" position="bottom">
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label="Settings"
+              onClick={() => setSettingsModalOpen(true)}
+            >
+              ⚙
+            </Button>
+          </Tooltip>
+        </span>
       </header>
 
       <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
@@ -369,15 +375,18 @@ export default function Home() {
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
         <div className="flex items-center mb-2">
           <Header level={1}>Ray Optics Web</Header>
-          <Button
-            variant="secondary"
-            size="sm"
-            aria-label="Settings"
-            className="ml-auto"
-            onClick={() => setSettingsModalOpen(true)}
-          >
-            ⚙
-          </Button>
+          <span className="ml-auto">
+            <Tooltip text="Settings" position="bottom">
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-label="Settings"
+                onClick={() => setSettingsModalOpen(true)}
+              >
+                ⚙
+              </Button>
+            </Tooltip>
+          </span>
         </div>
         <Select
           ref={exampleSelectRef}
@@ -389,15 +398,17 @@ export default function Home() {
           onChange={handleExampleChange}
           className="mb-2 w-full"
         />
-        <Button
-          variant="primary"
-          size="sm"
-          className="mb-2"
-          disabled={!isReady || computing}
-          onClick={handleSubmit}
-        >
-          Update System
-        </Button>
+        <Tooltip text="Compute and update the optical system" position="bottom">
+          <Button
+            variant="primary"
+            size="sm"
+            className="mb-2"
+            disabled={!isReady || computing}
+            onClick={handleSubmit}
+          >
+            Update System
+          </Button>
+        </Tooltip>
         <div className="flex flex-wrap gap-2">
           <FirstOrderChips data={firstOrderData} />
         </div>

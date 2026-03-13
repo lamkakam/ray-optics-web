@@ -95,4 +95,25 @@ describe("PythonScriptModal", () => {
       jest.useRealTimers();
     });
   });
+
+  // --- Tooltip tests ---
+
+  it("Copy button has a tooltip that becomes visible on hover", () => {
+    render(
+      <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
+    );
+    const btn = screen.getByRole("button", { name: "Copy to clipboard" });
+    // Fire mouseEnter on the Tooltip's span wrapper (direct parent of the button)
+    fireEvent.mouseEnter(btn.parentElement!);
+    expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
+  });
+
+  it("Copy button wrapper div has absolute positioning classes", () => {
+    render(
+      <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
+    );
+    const btn = screen.getByRole("button", { name: "Copy to clipboard" });
+    const wrapper = btn.closest("div.absolute");
+    expect(wrapper).toHaveClass("absolute", "right-6", "top-6");
+  });
 });

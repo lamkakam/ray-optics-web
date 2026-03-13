@@ -97,7 +97,7 @@ export function SpecsConfigurerPanel({
       {/* Field */}
       <section>
         <Header level={3} className="mb-2">Field</Header>
-        <Tooltip text="Click to configure field settings" position="bottom">
+        <Tooltip text="Click to configure field settings" position="top-start">
           <Button
             variant="toggle"
             aria-label="Configure field"
@@ -112,7 +112,7 @@ export function SpecsConfigurerPanel({
       {/* Wavelengths */}
       <section>
         <Header level={3} className="mb-2">Wavelengths</Header>
-        <Tooltip text="Click to configure wavelengths" position="bottom">
+        <Tooltip text="Click to configure wavelengths" position="top-start">
           <Button
             variant="toggle"
             aria-label="Configure wavelengths"

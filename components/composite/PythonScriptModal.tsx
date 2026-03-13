@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Modal } from "@/components/micro/Modal";
 import { Button } from "@/components/micro/Button";
+import { Tooltip } from "@/components/micro/Tooltip";
 
 
 interface PythonScriptModalProps {
@@ -27,15 +28,13 @@ export function PythonScriptModal({ isOpen, script, onClose }: PythonScriptModal
         <div className="overflow-auto max-h-[60vh] w-full">
           <pre className="text-xs font-mono whitespace-pre w-full"><code>{script}</code></pre>
         </div>
-        <Button
-          variant="floating"
-          className="right-6 top-6"
-          aria-label="Copy to clipboard"
-          title="Copy to clipboard"
-          onClick={handleCopy}
-        >
-          {copied ? "Copied!" : "Copy"}
-        </Button>
+        <div className="absolute right-6 top-6">
+          <Tooltip text="Copy to clipboard" portal>
+            <Button variant="floating" aria-label="Copy to clipboard" onClick={handleCopy}>
+              {copied ? "Copied!" : "Copy"}
+            </Button>
+          </Tooltip>
+        </div>
       </div>
       <div className="flex justify-end">
         <Button variant="primary" onClick={onClose}>Ok</Button>

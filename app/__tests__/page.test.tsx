@@ -296,4 +296,18 @@ describe("Home page", () => {
     await userEvent.selectOptions(screen.getByLabelText("Theme"), "light");
     expect(mockToggleTheme).not.toHaveBeenCalled();
   });
+
+  // --- Tooltip tests ---
+
+  it("Update System button has a tooltip with correct text", () => {
+    render(<Home />);
+    const tooltips = screen.getAllByRole("tooltip");
+    expect(tooltips.some((t) => t.textContent === "Compute and update the optical system")).toBe(true);
+  });
+
+  it("Settings button has a tooltip with correct text", () => {
+    render(<Home />);
+    const tooltips = screen.getAllByRole("tooltip");
+    expect(tooltips.some((t) => t.textContent === "Settings")).toBe(true);
+  });
 });
