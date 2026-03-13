@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Tooltip } from "@/components/micro/Tooltip";
 
 interface AsphericalCellProps {
   readonly isAspherical: boolean;
@@ -9,12 +10,14 @@ interface AsphericalCellProps {
 
 export function AsphericalCell({ isAspherical, onOpenModal }: AsphericalCellProps) {
   return (
-    <input
-      type="checkbox"
-      aria-label="Edit aspherical parameters"
-      checked={isAspherical}
-      readOnly
-      onClick={onOpenModal}
-    />
+    <Tooltip text="Click to set aspherical parameters" position="top" portal>
+      <input
+        type="checkbox"
+        aria-label="Edit aspherical parameters"
+        checked={isAspherical}
+        readOnly
+        onClick={onOpenModal}
+      />
+    </Tooltip>
   );
 }

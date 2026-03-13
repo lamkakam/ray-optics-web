@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Tooltip } from "@/components/micro/Tooltip";
 
 interface MediumCellProps {
   readonly medium: string;
@@ -9,13 +10,15 @@ interface MediumCellProps {
 
 export function MediumCell({ medium, onOpenModal }: MediumCellProps) {
   return (
-    <button
-      type="button"
-      aria-label="Edit medium"
-      className="cursor-pointer"
-      onClick={onOpenModal}
-    >
-      {medium}
-    </button>
+    <Tooltip text="Click to set medium or glass" position="top" portal>
+      <button
+        type="button"
+        aria-label="Edit medium"
+        className="cursor-pointer"
+        onClick={onOpenModal}
+      >
+        {medium}
+      </button>
+    </Tooltip>
   );
 }
