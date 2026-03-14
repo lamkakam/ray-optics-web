@@ -14,6 +14,7 @@ import { LensPrescriptionContainer } from "@/components/container/LensPrescripti
 import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
 import {
   AnalysisPlotView,
+  PLOT_TYPE_CONFIG,
   type PlotType,
 } from "@/components/composite/AnalysisPlotView";
 import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
@@ -116,15 +117,17 @@ export default function Home() {
   }, [committedSpecs.field]);
 
   const getPlotFunction = useCallback(
-    (plotType: PlotType) => {
+    (plotType: PlotType): ((fieldIndex: number) => Promise<string>) | undefined => {
       if (!proxy) return undefined;
       switch (plotType) {
         case "rayFan":
-          return proxy.plotRayFan;
+          return (fi) => proxy.plotRayFan(fi);
         case "opdFan":
-          return proxy.plotOpdFan;
+          return (fi) => proxy.plotOpdFan(fi);
         case "spotDiagram":
-          return proxy.plotSpotDiagram;
+          return (fi) => proxy.plotSpotDiagram(fi);
+        case "surfaceBySurface3rdOrder":
+          return (_fi) => proxy.plotSurfaceBySurface3rdOrderAberr();
       }
     },
     [proxy]
@@ -185,6 +188,7 @@ export default function Home() {
     async (fieldIndex: number) => {
       setSelectedFieldIndex(fieldIndex);
       if (!proxy) return;
+      if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
       setPlotLoading(true);
       try {
         const plotFn = getPlotFunction(selectedPlotType);

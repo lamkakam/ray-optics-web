@@ -18,6 +18,7 @@ const mockPlotLensLayout = jest.fn().mockResolvedValue("base64-layout");
 const mockPlotRayFan = jest.fn().mockResolvedValue("base64-rayfan");
 const mockPlotOpdFan = jest.fn().mockResolvedValue("base64-opdfan");
 const mockPlotSpotDiagram = jest.fn().mockResolvedValue("base64-spot");
+const mockPlotSurfaceBySurface3rdOrderAberr = jest.fn().mockResolvedValue("base64-3rdorder");
 
 const mockProxy = {
   init: jest.fn().mockResolvedValue(undefined),
@@ -27,6 +28,7 @@ const mockProxy = {
   plotRayFan: mockPlotRayFan,
   plotOpdFan: mockPlotOpdFan,
   plotSpotDiagram: mockPlotSpotDiagram,
+  plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,
 };
 
 jest.mock("@/hooks/usePyodide", () => ({
@@ -318,5 +320,58 @@ describe("Home page", () => {
     render(<Home />);
     const tooltips = screen.getAllByRole("tooltip");
     expect(tooltips.some((t) => t.textContent === "Settings")).toBe(true);
+  });
+
+  // --- surfaceBySurface3rdOrder plot type tests ---
+
+  it("calls plotSurfaceBySurface3rdOrderAberr when plot type changes to surfaceBySurface3rdOrder", async () => {
+    render(<Home />);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "surfaceBySurface3rdOrder");
+    await waitFor(() => {
+      expect(mockPlotSurfaceBySurface3rdOrderAberr).toHaveBeenCalledTimes(1);
+    });
+    expect(mockPlotRayFan).not.toHaveBeenCalled();
+  });
+
+  it("does not re-call plotSurfaceBySurface3rdOrderAberr when field changes while surfaceBySurface3rdOrder is selected", async () => {
+    render(<Home />);
+
+    // First click Update System so we have field options from committed specs
+    await userEvent.click(screen.getByRole("button", { name: "Update System" }));
+    await waitFor(() => expect(mockSetOpticalSurfaces).toHaveBeenCalledTimes(1));
+
+    // Switch to surfaceBySurface3rdOrder
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "surfaceBySurface3rdOrder");
+    await waitFor(() => expect(mockPlotSurfaceBySurface3rdOrderAberr).toHaveBeenCalledTimes(1));
+
+    jest.clearAllMocks();
+
+    // Change field — should NOT trigger another plot call
+    const fieldSelect = screen.getByLabelText("Field");
+    // The field select is disabled, so we cannot use userEvent to change it.
+    // Instead verify it is disabled.
+    expect(fieldSelect).toBeDisabled();
+    expect(mockPlotSurfaceBySurface3rdOrderAberr).not.toHaveBeenCalled();
+  });
+
+  it("calls plotSurfaceBySurface3rdOrderAberr on Update System when that plot type is selected", async () => {
+    render(<Home />);
+
+    // Switch to surfaceBySurface3rdOrder
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "surfaceBySurface3rdOrder");
+    await waitFor(() => expect(mockPlotSurfaceBySurface3rdOrderAberr).toHaveBeenCalledTimes(1));
+
+    jest.clearAllMocks();
+
+    // Click Update System
+    await userEvent.click(screen.getByRole("button", { name: "Update System" }));
+    await waitFor(() => {
+      expect(mockSetOpticalSurfaces).toHaveBeenCalledTimes(1);
+      expect(mockPlotSurfaceBySurface3rdOrderAberr).toHaveBeenCalledTimes(1);
+    });
+    expect(mockPlotRayFan).not.toHaveBeenCalled();
   });
 });

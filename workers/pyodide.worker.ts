@@ -288,6 +288,10 @@ export async function plotSpotDiagram(fieldIndex: number): Promise<string> {
   return await _plotSpotDiagram(requirePyodide(), fieldIndex);
 }
 
+export async function plotSurfaceBySurface3rdOrderAberr(): Promise<string> {
+  return await _plotSurfaceBySurface3rdOrderAberr(requirePyodide());
+}
+
 expose({
   init,
   setOpticalSurfaces,
@@ -296,4 +300,5 @@ expose({
   plotRayFan,
   plotOpdFan,
   plotSpotDiagram,
+  plotSurfaceBySurface3rdOrderAberr,
 });
