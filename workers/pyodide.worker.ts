@@ -172,7 +172,7 @@ export async function _init(
             ax.set_xlabel("mm")
             ax.set_ylabel("mm")
             ax.legend(loc='center', bbox_to_anchor=(0.5, -0.3), ncol=2)
-            ax.ticklabel_format(axis='y', style='sci', useMathText=True, scilimits=(-2, 2))
+            ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-2, 2))
             fig.tight_layout()
             return _fig_to_base64(fig)
 
@@ -184,6 +184,7 @@ export async function _init(
             ax.set_title('Surface by Surface 3rd Order Aberrations')
             to_pkg.plot.bar(ax=ax, rot=0)
             ax.grid(True)
+            ax.ticklabel_format(axis='y', style='sci', useMathText=True, scilimits=(-3, 3))
             fig.tight_layout()
             return _fig_to_base64(fig)
 `);
