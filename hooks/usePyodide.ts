@@ -14,6 +14,7 @@ export interface PyodideWorkerAPI {
   plotRayFan(fieldIndex: number): Promise<string>;
   plotOpdFan(fieldIndex: number): Promise<string>;
   plotSpotDiagram(fieldIndex: number): Promise<string>;
+  plotSurfaceBySurface3rdOrderAberr(): Promise<string>;
 }
 
 // Singleton state — shared across all hook instances

@@ -5,7 +5,7 @@ import { Label } from "@/components/micro/Label";
 import { Select, type SelectOption } from "@/components/micro/Select";
 import { Paragraph } from "@/components/micro/Paragraph";
 
-export type PlotType = "rayFan" | "opdFan" | "spotDiagram";
+export type PlotType = "rayFan" | "opdFan" | "spotDiagram" | "surfaceBySurface3rdOrder";
 
 type FieldOption = SelectOption & { readonly value: number };
 
@@ -20,14 +20,20 @@ interface AnalysisPlotViewProps {
   readonly autoHeight?: boolean;
 }
 
-const PLOT_TYPE_LABELS: Record<PlotType, string> = {
-  rayFan: "Ray Fan",
-  opdFan: "OPD Fan",
-  spotDiagram: "Spot Diagram",
+export interface PlotTypeConfig {
+  readonly label: string;
+  readonly fieldDependent: boolean;
+}
+
+export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
+  rayFan:                   { label: "Ray Fan",                             fieldDependent: true  },
+  opdFan:                   { label: "OPD Fan",                             fieldDependent: true  },
+  spotDiagram:              { label: "Spot Diagram",                        fieldDependent: true  },
+  surfaceBySurface3rdOrder: { label: "Surface by Surface 3rd Order Aberr.", fieldDependent: false },
 };
 
-const PLOT_TYPE_OPTIONS: SelectOption[] = (Object.keys(PLOT_TYPE_LABELS) as PlotType[]).map(
-  (key) => ({ value: key, label: PLOT_TYPE_LABELS[key] })
+const PLOT_TYPE_OPTIONS: SelectOption[] = (Object.keys(PLOT_TYPE_CONFIG) as PlotType[]).map(
+  (key) => ({ value: key, label: PLOT_TYPE_CONFIG[key].label })
 );
 
 export function AnalysisPlotView({
@@ -40,6 +46,8 @@ export function AnalysisPlotView({
   onPlotTypeChange,
   autoHeight,
 }: AnalysisPlotViewProps) {
+  const fieldDisabled = !PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent;
+
   return (
     <div className={`flex ${autoHeight ? "" : "h-full "}min-h-0 flex-col gap-3`}>
       <div className="flex gap-3">
@@ -52,6 +60,7 @@ export function AnalysisPlotView({
             aria-label="Field"
             options={fieldOptions}
             value={selectedFieldIndex}
+            disabled={fieldDisabled}
             onChange={(e) => onFieldChange(Number(e.target.value))}
           />
         </div>

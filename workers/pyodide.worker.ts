@@ -175,6 +175,18 @@ export async function _init(
             ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-2, 2))
             fig.tight_layout()
             return _fig_to_base64(fig)
+
+        def plot_surface_by_surface_3rd_order_aberr(opm):
+            to_pkg = compute_third_order(opm)
+            fig, ax = plt.subplots()
+            ax.set_xlabel('Surface')
+            ax.set_ylabel('3rd Order Aberrations')
+            ax.set_title('Surface by Surface 3rd Order Aberrations')
+            to_pkg.plot.bar(ax=ax, rot=0)
+            ax.grid(True)
+            ax.ticklabel_format(axis='y', style='sci', useMathText=True, scilimits=(-3, 3))
+            fig.tight_layout()
+            return _fig_to_base64(fig)
 `);
 }
 
@@ -247,6 +259,10 @@ export async function _plotSpotDiagram(runPython: (code: string) => Promise<unkn
   return (await runPython(`plot_spot_diagram(${fieldIndex}, opm)`)) as string;
 }
 
+export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: string) => Promise<unknown>): Promise<string> {
+  return (await runPython("plot_surface_by_surface_3rd_order_aberr(opm)")) as string;
+}
+
 
 // Expose for Components
 export async function setOpticalSurfaces(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag): Promise<void> {
@@ -273,6 +289,10 @@ export async function plotSpotDiagram(fieldIndex: number): Promise<string> {
   return await _plotSpotDiagram(requirePyodide(), fieldIndex);
 }
 
+export async function plotSurfaceBySurface3rdOrderAberr(): Promise<string> {
+  return await _plotSurfaceBySurface3rdOrderAberr(requirePyodide());
+}
+
 expose({
   init,
   setOpticalSurfaces,
@@ -281,4 +301,5 @@ expose({
   plotRayFan,
   plotOpdFan,
   plotSpotDiagram,
+  plotSurfaceBySurface3rdOrderAberr,
 });

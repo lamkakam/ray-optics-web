@@ -43,6 +43,8 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       cx.select.color.borderColor,
       cx.select.color.bgColor,
       cx.select.color.textColor,
+      cx.select.style.opacity,
+      cx.select.style.cursor,
       className,
     );
 

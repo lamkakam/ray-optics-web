@@ -29,13 +29,31 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByText("20.0°")).toBeInTheDocument();
   });
 
-  it("renders plot type selector with three options", () => {
+  it("renders plot type selector with four options", () => {
     render(<AnalysisPlotView {...defaultProps} />);
     const select = screen.getByLabelText("Plot type");
     expect(select).toBeInTheDocument();
     expect(screen.getByText("Ray Fan")).toBeInTheDocument();
     expect(screen.getByText("OPD Fan")).toBeInTheDocument();
     expect(screen.getByText("Spot Diagram")).toBeInTheDocument();
+    expect(screen.getByText("Surface by Surface 3rd Order Aberr.")).toBeInTheDocument();
+  });
+
+  it("field selector is enabled when selectedPlotType is rayFan", () => {
+    render(<AnalysisPlotView {...defaultProps} selectedPlotType="rayFan" />);
+    const fieldSelect = screen.getByLabelText("Field");
+    expect(fieldSelect).not.toBeDisabled();
+  });
+
+  it("field selector is disabled when selectedPlotType is surfaceBySurface3rdOrder", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType={"surfaceBySurface3rdOrder" as Parameters<typeof AnalysisPlotView>[0]["selectedPlotType"]}
+      />
+    );
+    const fieldSelect = screen.getByLabelText("Field");
+    expect(fieldSelect).toBeDisabled();
   });
 
   it("calls onFieldChange when field is changed", async () => {

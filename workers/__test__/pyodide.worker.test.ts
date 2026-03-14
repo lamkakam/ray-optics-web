@@ -8,6 +8,7 @@ import {
   _plotRayFan,
   _plotOpdFan,
   _plotSpotDiagram,
+  _plotSurfaceBySurface3rdOrderAberr,
 } from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
@@ -275,6 +276,18 @@ describe("_plotSpotDiagram", () => {
 });
 
 
+describe("_plotSurfaceBySurface3rdOrderAberr", () => {
+  it("should call plot_surface_by_surface_3rd_order_aberr(opm) and return the result", async () => {
+    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+    const result = await _plotSurfaceBySurface3rdOrderAberr(async (code) => {
+      expect(code).toBe("plot_surface_by_surface_3rd_order_aberr(opm)");
+      return mockBase64;
+    });
+    expect(result).toBe(mockBase64);
+  });
+});
+
+
 describe("_init", () => {
   it("should define all plot functions via runPython", async () => {
     const scripts: string[] = [];
@@ -318,6 +331,10 @@ describe("_init", () => {
     expect(allCode).toContain("def plot_spot_diagram(fi, opm):");
     expect(allCode).toContain("sm.trace_grid(_spot");
     expect(allCode).toContain("set_aspect('equal')");
+
+    // plot_surface_by_surface_3rd_order_aberr
+    expect(allCode).toContain("def plot_surface_by_surface_3rd_order_aberr(opm):");
+    expect(allCode).toContain("compute_third_order(opm)");
   });
 
   it("should install rayoptics and opticalglass", async () => {
