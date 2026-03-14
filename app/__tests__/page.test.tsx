@@ -6,7 +6,7 @@ import Home from "@/app/page";
 // Mock useTheme
 const mockToggleTheme = jest.fn();
 jest.mock("@/components/ThemeProvider", () => ({
-  useTheme: () => ({ theme: "light", toggleTheme: mockToggleTheme }),
+  useTheme: () => ({ theme: "light", setTheme: mockToggleTheme }),
 }));
 
 // Mock usePyodide

@@ -33,7 +33,7 @@ export default function Home() {
   const { proxy, isReady } = usePyodide();
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const specsStore = useMemo(
     () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
@@ -90,13 +90,13 @@ export default function Home() {
     }
   }, []);
 
-  const handleThemeChange = useCallback(
+  const handleThemeChange =
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const selected = e.target.value as Theme;
-      if (selected !== theme) toggleTheme();
-    },
-    [theme, toggleTheme]
-  );
+      if (selected !== theme) {
+        setTheme(selected);
+      }
+    };
 
   const fieldOptions = useMemo(() => {
     const { fields, maxField, type } = committedSpecs.field;
