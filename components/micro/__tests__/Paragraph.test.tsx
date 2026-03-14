@@ -1,7 +1,7 @@
 import React, { createRef } from "react";
 import { render, screen } from "@testing-library/react";
 import { Paragraph } from "@/components/micro/Paragraph";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 
 function splitClasses(str: string): string[] {
   return str.trim().split(/\s+/).filter(Boolean);

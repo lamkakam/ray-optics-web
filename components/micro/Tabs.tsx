@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 
 export interface TabItem {
   readonly id: string;

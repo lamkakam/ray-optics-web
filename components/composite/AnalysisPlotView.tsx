@@ -1,6 +1,6 @@
 import React from "react";
 import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 import { Label } from "@/components/micro/Label";
 import { Select, type SelectOption } from "@/components/micro/Select";
 import { Paragraph } from "@/components/micro/Paragraph";

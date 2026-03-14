@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "@/components/micro/Button";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 
 function splitClasses(str: string): string[] {
   return str.trim().split(/\s+/).filter(Boolean);

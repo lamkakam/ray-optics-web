@@ -2,7 +2,7 @@
 
 import React, { useId } from "react";
 import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 import { Header } from "@/components/micro/Header";
 
 export type ModalSize = "md" | "lg" | "4xl";

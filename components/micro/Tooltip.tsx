@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 
 interface TooltipProps {
   readonly text: string;
@@ -50,8 +50,8 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
         const rect = triggerRef.current.getBoundingClientRect();
         const y =
           position === "top" || position === "top-start" ? rect.top - 4
-          : position === "no-transform" || position === "start" ? rect.top
-          : rect.bottom + 4;
+            : position === "no-transform" || position === "start" ? rect.top
+              : rect.bottom + 4;
         setCoords({
           x: rect.left + rect.width / 2,
           y,
@@ -69,10 +69,10 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
           top: coords.y,
           transform:
             position === "top" ? "translate(-50%, -100%)"
-            : position === "bottom" ? "translateX(-50%)"
-            : position === "top-start" ? "translate(-25%, -100%)"
-            : position === "start" ? "translateX(-25%)"
-            : undefined,
+              : position === "bottom" ? "translateX(-50%)"
+                : position === "top-start" ? "translate(-25%, -100%)"
+                  : position === "start" ? "translateX(-25%)"
+                    : undefined,
         }}
       >
         {text}
@@ -94,10 +94,10 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
 
   const positionClasses =
     position === "top" ? "left-1/2 -translate-x-1/2 bottom-full mb-1"
-    : position === "bottom" ? "left-1/2 -translate-x-1/2 top-full mt-1"
-    : position === "top-start" ? "left-1/2 -translate-x-1/4 bottom-full mb-1"
-    : position === "start" ? "left-1/2 -translate-x-1/4"
-    : "";
+      : position === "bottom" ? "left-1/2 -translate-x-1/2 top-full mt-1"
+        : position === "top-start" ? "left-1/2 -translate-x-1/4 bottom-full mb-1"
+          : position === "start" ? "left-1/2 -translate-x-1/4"
+            : "";
 
   return (
     <span className="group relative inline-flex">

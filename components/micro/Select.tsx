@@ -1,6 +1,6 @@
 import React from "react";
 import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 
 export type SelectOption = {
   readonly value: string | number;
@@ -18,22 +18,22 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     const variantClasses =
       type === "compact"
         ? [
-            cx.select.style.compactBorderStyle,
-            cx.select.style.compactBorderRadius,
-            cx.select.style.compactOutlineStyle,
-            cx.select.size.compactHorizontalPadding,
-            cx.select.size.compactVerticalPadding,
-            cx.select.size.compactFontSize,
-          ]
+          cx.select.style.compactBorderStyle,
+          cx.select.style.compactBorderRadius,
+          cx.select.style.compactOutlineStyle,
+          cx.select.size.compactHorizontalPadding,
+          cx.select.size.compactVerticalPadding,
+          cx.select.size.compactFontSize,
+        ]
         : [
-            cx.select.style.borderRadius,
-            cx.select.style.borderStyle,
-            cx.select.style.outlineStyle,
-            cx.select.size.defaultWidth,
-            cx.select.size.horizontalPadding,
-            cx.select.size.verticalPadding,
-            cx.select.size.fontSize,
-          ];
+          cx.select.style.borderRadius,
+          cx.select.style.borderStyle,
+          cx.select.style.outlineStyle,
+          cx.select.size.defaultWidth,
+          cx.select.size.horizontalPadding,
+          cx.select.size.verticalPadding,
+          cx.select.size.fontSize,
+        ];
 
     const selectClassName = clsx(
       variantClasses,

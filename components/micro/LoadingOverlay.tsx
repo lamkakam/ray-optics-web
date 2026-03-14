@@ -1,6 +1,6 @@
 import React from "react";
 import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 import { Paragraph } from "@/components/micro/Paragraph";
 
 interface LoadingOverlayProps {
