@@ -175,6 +175,17 @@ export async function _init(
             ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-2, 2))
             fig.tight_layout()
             return _fig_to_base64(fig)
+
+        def plot_surface_by_surface_3rd_order_aberr(opm):
+            to_pkg = compute_third_order(opm)
+            fig, ax = plt.subplots()
+            ax.set_xlabel('Surface')
+            ax.set_ylabel('third order aberration')
+            ax.set_title('Surface by surface third order aberrations')
+            to_pkg.plot.bar(ax=ax, rot=0)
+            ax.grid(True)
+            fig.tight_layout()
+            return _fig_to_base64(fig)
 `);
 }
 
@@ -245,6 +256,10 @@ export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>,
 
 export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
   return (await runPython(`plot_spot_diagram(${fieldIndex}, opm)`)) as string;
+}
+
+export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: string) => Promise<unknown>): Promise<string> {
+  return (await runPython("plot_surface_by_surface_3rd_order_aberr(opm)")) as string;
 }
 
 
