@@ -334,7 +334,7 @@ export default function Home() {
     <Select
       ref={exampleSelectRef}
       type="compact"
-      placeholder="Load example system..."
+      placeholder="Select an example system..."
       aria-label="Example system"
       options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
       defaultValue=""
