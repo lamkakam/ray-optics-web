@@ -279,42 +279,70 @@ export default function Home() {
     />
   );
 
+  const analysisPlotView = (
+    <AnalysisPlotView
+      fieldOptions={fieldOptions}
+      selectedFieldIndex={selectedFieldIndex}
+      selectedPlotType={selectedPlotType}
+      plotImageBase64={plotImage}
+      loading={plotLoading}
+      onFieldChange={handleFieldChange}
+      onPlotTypeChange={handlePlotTypeChange}
+      autoHeight={!isLG}
+    />
+  );
+
+
   const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
+
+  const settingButton = (
+    <Tooltip text="Settings" position="bottom">
+      <Button
+        variant="secondary"
+        size="sm"
+        aria-label="Settings"
+        onClick={() => setSettingsModalOpen(true)}
+      >
+        ⚙
+      </Button>
+    </Tooltip>
+  );
+
+  const updateSystemButton = (
+    <Tooltip text="Compute and update the optical system" position="bottom">
+      <Button
+        variant="primary"
+        size="sm"
+        className={isLG ? undefined : "mb-2"}
+        disabled={!isReady || computing}
+        onClick={handleSubmit}
+      >
+        Update System
+      </Button>
+    </Tooltip>
+  );
+
+  const exampleSystemDropdown = (
+    <Select
+      ref={exampleSelectRef}
+      type="compact"
+      placeholder="Load example system..."
+      aria-label="Example system"
+      options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
+      defaultValue=""
+      onChange={handleExampleChange}
+      className={isLG ? undefined : "mb-2 w-full"}
+    />
+  );
 
   const layoutLG: React.ReactNode = (
     <div className="flex flex-col h-screen">
       <header className="flex h-12 shrink-0 items-center gap-4 border-gray-200 px-4 dark:border-gray-700">
         <Header level={1}>Ray Optics Web</Header>
-        <Select
-          ref={exampleSelectRef}
-          type="compact"
-          placeholder="Load example system..."
-          aria-label="Example system"
-          options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
-          defaultValue=""
-          onChange={handleExampleChange}
-        />
-        <Tooltip text="Compute and update the optical system" position="bottom">
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={!isReady || computing}
-            onClick={handleSubmit}
-          >
-            Update System
-          </Button>
-        </Tooltip>
+        {exampleSystemDropdown}
+        {updateSystemButton}
         <span className="ml-auto">
-          <Tooltip text="Settings" position="bottom">
-            <Button
-              variant="secondary"
-              size="sm"
-              aria-label="Settings"
-              onClick={() => setSettingsModalOpen(true)}
-            >
-              ⚙
-            </Button>
-          </Tooltip>
+          {settingButton}
         </span>
       </header>
 
@@ -327,16 +355,7 @@ export default function Home() {
           {lensLayoutPanel}
         </div>
         <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
-          <AnalysisPlotView
-            fieldOptions={fieldOptions}
-            selectedFieldIndex={selectedFieldIndex}
-            selectedPlotType={selectedPlotType}
-            plotImageBase64={plotImage}
-            loading={plotLoading}
-            onFieldChange={handleFieldChange}
-            onPlotTypeChange={handlePlotTypeChange}
-            autoHeight={false}
-          />
+          {analysisPlotView}
         </div>
       </div>
 
@@ -354,39 +373,11 @@ export default function Home() {
         <div className="flex items-center mb-2">
           <Header level={1}>Ray Optics Web</Header>
           <span className="ml-auto">
-            <Tooltip text="Settings" position="bottom">
-              <Button
-                variant="secondary"
-                size="sm"
-                aria-label="Settings"
-                onClick={() => setSettingsModalOpen(true)}
-              >
-                ⚙
-              </Button>
-            </Tooltip>
+            {settingButton}
           </span>
         </div>
-        <Select
-          ref={exampleSelectRef}
-          type="compact"
-          placeholder="Load example system..."
-          aria-label="Example system"
-          options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
-          defaultValue=""
-          onChange={handleExampleChange}
-          className="mb-2 w-full"
-        />
-        <Tooltip text="Compute and update the optical system" position="bottom">
-          <Button
-            variant="primary"
-            size="sm"
-            className="mb-2"
-            disabled={!isReady || computing}
-            onClick={handleSubmit}
-          >
-            Update System
-          </Button>
-        </Tooltip>
+        {exampleSystemDropdown}
+        {updateSystemButton}
         <div className="flex flex-wrap gap-2">
           {firstOrderChips}
         </div>
@@ -397,16 +388,7 @@ export default function Home() {
           {lensLayoutPanel}
         </div>
         <div className="w-[70vw] mx-auto p-4 border-t border-gray-200 dark:border-gray-700">
-          <AnalysisPlotView
-            fieldOptions={fieldOptions}
-            selectedFieldIndex={selectedFieldIndex}
-            selectedPlotType={selectedPlotType}
-            plotImageBase64={plotImage}
-            loading={plotLoading}
-            onFieldChange={handleFieldChange}
-            onPlotTypeChange={handlePlotTypeChange}
-            autoHeight={true}
-          />
+          {analysisPlotView}
         </div>
       </div>
 
