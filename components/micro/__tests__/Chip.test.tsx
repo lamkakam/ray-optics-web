@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { Chip } from "@/components/micro/Chip";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 
 function splitClasses(str: string): string[] {
   return str.trim().split(/\s+/).filter(Boolean);

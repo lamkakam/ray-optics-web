@@ -4,23 +4,23 @@ import userEvent from "@testing-library/user-event";
 import { AsphericalCell } from "@/components/micro/AsphericalCell";
 
 describe("AsphericalCell", () => {
-  it("renders a read-only checkbox that is unchecked when no aspherical data", () => {
+  it("renders a button showing '—' when no aspherical data", () => {
     render(<AsphericalCell isAspherical={false} onOpenModal={() => {}} />);
-    const checkbox = screen.getByLabelText("Edit aspherical parameters");
-    expect(checkbox).toBeInTheDocument();
-    expect(checkbox).not.toBeChecked();
+    const btn = screen.getByRole("button", { name: "Edit aspherical parameters" });
+    expect(btn).toBeInTheDocument();
+    expect(btn).toHaveTextContent("—");
   });
 
-  it("renders a checked checkbox when aspherical data exists", () => {
+  it("renders a button showing 'Set' when aspherical data exists", () => {
     render(<AsphericalCell isAspherical={true} onOpenModal={() => {}} />);
-    expect(screen.getByLabelText("Edit aspherical parameters")).toBeChecked();
+    expect(screen.getByRole("button", { name: "Edit aspherical parameters" })).toHaveTextContent("Set");
   });
 
   it("calls onOpenModal when clicked", async () => {
     const onOpenModal = jest.fn();
     render(<AsphericalCell isAspherical={false} onOpenModal={onOpenModal} />);
 
-    await userEvent.click(screen.getByLabelText("Edit aspherical parameters"));
+    await userEvent.click(screen.getByRole("button", { name: "Edit aspherical parameters" }));
     expect(onOpenModal).toHaveBeenCalledTimes(1);
   });
 });

@@ -1,7 +1,7 @@
 import React from "react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 
 export type ButtonVariant = "primary" | "secondary" | "toggle" | "danger" | "floating";
 export type ButtonSize = "md" | "sm" | "xs";

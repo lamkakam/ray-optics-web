@@ -1,6 +1,6 @@
 import React from "react";
 import clsx from "clsx";
-import { componentTokens as cx } from "@/components/ui/modalTokens";
+import { componentTokens as cx } from "@/components/ui/styleTokens";
 
 export type ParagraphVariant = "body" | "caption" | "subheading" | "placeholder";
 

@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { createStore } from "zustand";
 import type { OpticalSpecs, OpticalModel, ImportedLensData } from "@/lib/opticalModel";
+import type { Theme } from "@/lib/theme";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { ExampleSystems } from "@/lib/exampleSystems";
@@ -17,14 +18,14 @@ import {
 } from "@/components/composite/AnalysisPlotView";
 import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
-import { Modal } from "@/components/micro/Modal";
 import { Button } from "@/components/micro/Button";
 import { Tooltip } from "@/components/micro/Tooltip";
 import { Header } from "@/components/micro/Header";
 import { Select } from "@/components/micro/Select";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
+import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteModal";
+import { SettingsModal } from "@/components/composite/SettingsModal";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
-import { Paragraph } from "@/components/micro/Paragraph";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -91,7 +92,7 @@ export default function Home() {
 
   const handleThemeChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const selected = e.target.value as "light" | "dark";
+      const selected = e.target.value as Theme;
       if (selected !== theme) toggleTheme();
     },
     [theme, toggleTheme]
@@ -240,57 +241,11 @@ export default function Home() {
     [specsStore, lensStore, getOpticalModel, handleImportJson]
   );
 
-  const confirmOverwriteModal = (
-    <Modal
-      isOpen={pendingExample !== undefined}
-      title="Load Example System"
-    >
-      <Paragraph variant="body" className="mb-6">
-        This will overwrite your current configuration. Continue?
-      </Paragraph>
-      <div className="flex justify-end gap-3">
-        <Button variant="secondary" onClick={handleExampleCancel}>
-          Cancel
-        </Button>
-        <Button variant="primary" onClick={handleExampleConfirm}>
-          Load
-        </Button>
-      </div>
-    </Modal>
-  );
-
   const errorModal = (
     <ErrorModal
       isOpen={errorModalOpen}
       onClose={() => setErrorModalOpen(false)}
     />
-  );
-
-  const themeOptions = [
-    { value: "light", label: "Light" },
-    { value: "dark", label: "Dark" },
-  ];
-
-  const settingsModal = (
-    <Modal isOpen={settingsModalOpen} title="Settings">
-      <div className="mb-6">
-        <label htmlFor="theme-select" className="block text-sm font-medium mb-2">
-          Theme
-        </label>
-        <Select
-          id="theme-select"
-          aria-label="Theme"
-          options={themeOptions}
-          value={theme}
-          onChange={handleThemeChange}
-        />
-      </div>
-      <div className="flex justify-end">
-        <Button variant="primary" onClick={() => setSettingsModalOpen(false)}>
-          Ok
-        </Button>
-      </div>
-    </Modal>
   );
 
   const initOverlayNode = !isReady && (
@@ -300,72 +255,114 @@ export default function Home() {
     />
   );
 
+  const confirmOverwriteModalNode = (
+    <ConfirmOverwriteModal
+      isOpen={pendingExample !== undefined}
+      onConfirm={handleExampleConfirm}
+      onCancel={handleExampleCancel}
+    />
+  );
+
+  const settingsModalNode = (
+    <SettingsModal
+      isOpen={settingsModalOpen}
+      theme={theme}
+      onThemeChange={handleThemeChange}
+      onClose={() => setSettingsModalOpen(false)}
+    />
+  );
+
+  const lensLayoutPanel = (
+    <LensLayoutPanel
+      imageBase64={layoutImage}
+      loading={layoutLoading}
+    />
+  );
+
+  const analysisPlotView = (
+    <AnalysisPlotView
+      fieldOptions={fieldOptions}
+      selectedFieldIndex={selectedFieldIndex}
+      selectedPlotType={selectedPlotType}
+      plotImageBase64={plotImage}
+      loading={plotLoading}
+      onFieldChange={handleFieldChange}
+      onPlotTypeChange={handlePlotTypeChange}
+      autoHeight={!isLG}
+    />
+  );
+
+
+  const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
+
+  const settingButton = (
+    <Tooltip text="Settings" position="bottom">
+      <Button
+        variant="secondary"
+        size="sm"
+        aria-label="Settings"
+        onClick={() => setSettingsModalOpen(true)}
+      >
+        ⚙
+      </Button>
+    </Tooltip>
+  );
+
+  const updateSystemButton = (
+    <Tooltip text="Compute and update the optical system" position="bottom">
+      <Button
+        variant="primary"
+        size="sm"
+        className={isLG ? undefined : "mb-2"}
+        disabled={!isReady || computing}
+        onClick={handleSubmit}
+      >
+        Update System
+      </Button>
+    </Tooltip>
+  );
+
+  const exampleSystemDropdown = (
+    <Select
+      ref={exampleSelectRef}
+      type="compact"
+      placeholder="Load example system..."
+      aria-label="Example system"
+      options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
+      defaultValue=""
+      onChange={handleExampleChange}
+      className={isLG ? undefined : "mb-2 w-full"}
+    />
+  );
+
   const layoutLG: React.ReactNode = (
     <div className="flex flex-col h-screen">
       <header className="flex h-12 shrink-0 items-center gap-4 border-gray-200 px-4 dark:border-gray-700">
         <Header level={1}>Ray Optics Web</Header>
-        <Select
-          ref={exampleSelectRef}
-          type="compact"
-          placeholder="Load example system..."
-          aria-label="Example system"
-          options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
-          defaultValue=""
-          onChange={handleExampleChange}
-        />
-        <Tooltip text="Compute and update the optical system" position="bottom">
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={!isReady || computing}
-            onClick={handleSubmit}
-          >
-            Update System
-          </Button>
-        </Tooltip>
+        {exampleSystemDropdown}
+        {updateSystemButton}
         <span className="ml-auto">
-          <Tooltip text="Settings" position="bottom">
-            <Button
-              variant="secondary"
-              size="sm"
-              aria-label="Settings"
-              onClick={() => setSettingsModalOpen(true)}
-            >
-              ⚙
-            </Button>
-          </Tooltip>
+          {settingButton}
         </span>
       </header>
 
       <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-        <FirstOrderChips data={firstOrderData} />
+        {firstOrderChips}
       </div>
 
       <div className="flex min-h-0 flex-1 flex-row">
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
-          <LensLayoutPanel
-            imageBase64={layoutImage}
-            loading={layoutLoading}
-          />
+          {lensLayoutPanel}
         </div>
         <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
-          <AnalysisPlotView
-            fieldOptions={fieldOptions}
-            selectedFieldIndex={selectedFieldIndex}
-            selectedPlotType={selectedPlotType}
-            plotImageBase64={plotImage}
-            loading={plotLoading}
-            onFieldChange={handleFieldChange}
-            onPlotTypeChange={handlePlotTypeChange}
-            autoHeight={false}
-          />
+          {analysisPlotView}
         </div>
       </div>
 
       <BottomDrawer tabs={drawerTabs} draggable={true} />
-      {confirmOverwriteModal}
+      {confirmOverwriteModalNode}
       {errorModal}
-      {settingsModal}
+      {settingsModalNode}
       {initOverlayNode}
     </div>
   );
@@ -376,69 +373,29 @@ export default function Home() {
         <div className="flex items-center mb-2">
           <Header level={1}>Ray Optics Web</Header>
           <span className="ml-auto">
-            <Tooltip text="Settings" position="bottom">
-              <Button
-                variant="secondary"
-                size="sm"
-                aria-label="Settings"
-                onClick={() => setSettingsModalOpen(true)}
-              >
-                ⚙
-              </Button>
-            </Tooltip>
+            {settingButton}
           </span>
         </div>
-        <Select
-          ref={exampleSelectRef}
-          type="compact"
-          placeholder="Load example system..."
-          aria-label="Example system"
-          options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
-          defaultValue=""
-          onChange={handleExampleChange}
-          className="mb-2 w-full"
-        />
-        <Tooltip text="Compute and update the optical system" position="bottom">
-          <Button
-            variant="primary"
-            size="sm"
-            className="mb-2"
-            disabled={!isReady || computing}
-            onClick={handleSubmit}
-          >
-            Update System
-          </Button>
-        </Tooltip>
+        {exampleSystemDropdown}
+        {updateSystemButton}
         <div className="flex flex-wrap gap-2">
-          <FirstOrderChips data={firstOrderData} />
+          {firstOrderChips}
         </div>
       </header>
 
       <div className="flex flex-col">
         <div className="w-[70vw] mx-auto p-4">
-          <LensLayoutPanel
-            imageBase64={layoutImage}
-            loading={layoutLoading}
-          />
+          {lensLayoutPanel}
         </div>
         <div className="w-[70vw] mx-auto p-4 border-t border-gray-200 dark:border-gray-700">
-          <AnalysisPlotView
-            fieldOptions={fieldOptions}
-            selectedFieldIndex={selectedFieldIndex}
-            selectedPlotType={selectedPlotType}
-            plotImageBase64={plotImage}
-            loading={plotLoading}
-            onFieldChange={handleFieldChange}
-            onPlotTypeChange={handlePlotTypeChange}
-            autoHeight={true}
-          />
+          {analysisPlotView}
         </div>
       </div>
 
       <BottomDrawer tabs={drawerTabs} draggable={false} />
-      {confirmOverwriteModal}
+      {confirmOverwriteModalNode}
       {errorModal}
-      {settingsModal}
+      {settingsModalNode}
       {initOverlayNode}
     </div>
   );
