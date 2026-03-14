@@ -6,13 +6,15 @@ interface FirstOrderChipsProps {
 }
 
 const valueFormatter = (v: number): string => v.toFixed(2);
+const naFormatter = (v: number): string => v.toPrecision(4);
 
 const CHIP_CONFIG: { key: string; format: (v: number) => string }[] = [
   { key: "efl", format: (v) => `EFL: ${valueFormatter(v)}mm` },
   { key: "bfl", format: (v) => `BFL: ${valueFormatter(v)}mm` },
   { key: "img_ht", format: (v) => `IMG HT: ${valueFormatter(v)}mm` },
-  { key: "enp_dist", format: (v) => `ENP: ${valueFormatter(v)}mm` },
-  { key: "exp_dist", format: (v) => `EXP: ${valueFormatter(v)}mm` },
+  { key: "fno", format: (v) => `f/#: ${naFormatter(v)}` },
+  { key: "obj_na", format: (v) => `NA OBJ: ${naFormatter(v)}` },
+  { key: "img_na", format: (v) => `NA IMG: ${naFormatter(v)}` },
 ];
 
 export function FirstOrderChips({ data }: FirstOrderChipsProps) {
