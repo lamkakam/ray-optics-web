@@ -29,6 +29,8 @@ const globalTokens = {
     backdropBlur: "backdrop-blur-sm",
     overlayPanelBorderRadius: "rounded-2xl",
     overlayPanelShadow: "shadow-2xl",
+    opacity: "disabled:opacity-50",
+    cursor: "disabled:cursor-not-allowed",
   },
 } as const;
 
@@ -124,6 +126,8 @@ export const componentTokens = {
       borderStyle: "border",
       outlineStyle: "outline-none",
       transitionStyle: "transition",
+      opacity: g.style.opacity,
+      cursor: g.style.cursor,
     },
   },
 
