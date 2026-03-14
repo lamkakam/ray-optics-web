@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
-import type { OpticalModel } from "@/lib/opticalModel";
+import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
 import type { SetAutoApertureFlag } from "@/lib/apertureFlag";
 import { createPyodideWorker } from "./createPyodideWorker";
 
@@ -15,6 +15,7 @@ export interface PyodideWorkerAPI {
   plotOpdFan(fieldIndex: number): Promise<string>;
   plotSpotDiagram(fieldIndex: number): Promise<string>;
   plotSurfaceBySurface3rdOrderAberr(): Promise<string>;
+  get3rdOrderSeidelData(): Promise<SeidelData>;
 }
 
 // Singleton state — shared across all hook instances

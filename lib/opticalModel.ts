@@ -62,3 +62,16 @@ import type { SetAutoApertureFlag } from "./apertureFlag";
 export type { SetAutoApertureFlag };
 export type ImportedLensData = { setAutoAperture: SetAutoApertureFlag } & OpticalModel;
 
+export interface SeidelSurfaceBySurfaceData {
+  index: string[];    // ['S-I', 'S-II', 'S-III', 'S-IV', 'S-V']
+  columns: string[];  // surface labels + 'sum'
+  data: number[][];   // 5 × N matrix (row = aberration type, col = surface)
+}
+
+export interface SeidelData {
+  surfaceBySurface: SeidelSurfaceBySurfaceData;
+  transverse: Record<string, number>;  // TSA, TCO, TAS, SAS, PTB, DST
+  wavefront: Record<string, number>;   // W040, W131, W222, W220, W311
+  curvature: Record<string, number>;   // TCV, SCV, PCV
+}
+
