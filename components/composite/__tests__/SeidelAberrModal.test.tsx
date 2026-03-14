@@ -64,22 +64,31 @@ describe("SeidelAberrModal", () => {
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
-  it("ag-grid has column headers for surface labels and sum", () => {
+  it("ag-grid has column headers for Seidel type labels S-I through S-V", () => {
     render(<SeidelAberrModal {...defaultProps} />);
     const grid = screen.getByTestId("ag-grid-mock");
-    expect(within(grid).getByText("S1")).toBeInTheDocument();
-    expect(within(grid).getByText("S2")).toBeInTheDocument();
-    expect(within(grid).getByText("sum")).toBeInTheDocument();
+    const headerTexts = within(grid).getAllByRole("columnheader").map((th) => th.textContent);
+    expect(headerTexts).toContain("S-I");
+    expect(headerTexts).toContain("S-II");
+    expect(headerTexts).toContain("S-III");
+    expect(headerTexts).toContain("S-IV");
+    expect(headerTexts).toContain("S-V");
   });
 
-  it("ag-grid rows show Seidel type labels S-I through S-V", () => {
+  it("ag-grid rows show surface labels S1, S2 and sum", () => {
     render(<SeidelAberrModal {...defaultProps} />);
     const grid = screen.getByTestId("ag-grid-mock");
-    expect(within(grid).getByText("S-I")).toBeInTheDocument();
-    expect(within(grid).getByText("S-II")).toBeInTheDocument();
-    expect(within(grid).getByText("S-III")).toBeInTheDocument();
-    expect(within(grid).getByText("S-IV")).toBeInTheDocument();
-    expect(within(grid).getByText("S-V")).toBeInTheDocument();
+    const cellTexts = within(grid).getAllByRole("cell").map((td) => td.textContent);
+    expect(cellTexts).toContain("S1");
+    expect(cellTexts).toContain("S2");
+    expect(cellTexts).toContain("sum");
+  });
+
+  it("tab panel has a fixed height class for consistent modal size", () => {
+    render(<SeidelAberrModal {...defaultProps} />);
+    const panel = screen.getByRole("tabpanel");
+    expect(panel.className).toContain("h-72");
+    expect(panel.className).toContain("overflow-y-auto");
   });
 
   it("ag-grid cells are read-only (no input inside the grid)", () => {

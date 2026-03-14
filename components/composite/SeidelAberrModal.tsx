@@ -43,23 +43,23 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
   const { surfaceBySurface, transverse, wavefront, curvature } = data;
 
   const rowData = useMemo(() => {
-    return surfaceBySurface.index.map((aberrType, rowIdx) => {
-      const row: Record<string, unknown> = { _type: aberrType };
-      surfaceBySurface.columns.forEach((col, colIdx) => {
-        row[col] = surfaceBySurface.data[rowIdx][colIdx];
+    return surfaceBySurface.columns.map((surface, colIdx) => {
+      const row: Record<string, unknown> = { _surface: surface };
+      surfaceBySurface.index.forEach((aberrType, rowIdx) => {
+        row[aberrType] = surfaceBySurface.data[rowIdx][colIdx];
       });
       return row;
     });
   }, [surfaceBySurface]);
 
   const columnDefs: ColDef[] = useMemo(() => [
-    { headerName: "Aberration", field: "_type", editable: false },
-    ...surfaceBySurface.columns.map((col) => ({
-      headerName: col,
-      field: col,
+    { headerName: "Surface", field: "_surface", editable: false },
+    ...surfaceBySurface.index.map((aberrType) => ({
+      headerName: aberrType,
+      field: aberrType,
       editable: false,
     })),
-  ], [surfaceBySurface.columns]);
+  ], [surfaceBySurface.index]);
 
   const tabs: TabItem[] = useMemo(() => [
     {
@@ -110,7 +110,7 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
 
   return (
     <Modal isOpen={isOpen} title="3rd Order Seidel Aberrations" titleId="seidel-modal-title" size="4xl">
-      <Tabs tabs={tabs} />
+      <Tabs tabs={tabs} panelClassName="h-72 overflow-y-auto" />
       <div className="flex justify-end pt-4">
         <Button variant="primary" onClick={onClose}>Ok</Button>
       </div>
