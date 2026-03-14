@@ -75,8 +75,8 @@ describe("Home page", () => {
   it("switches to Prescription tab and shows LensPrescriptionContainer", async () => {
     render(<Home />);
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
-    // The Save Config button is in LensPrescriptionContainer
-    expect(screen.getByText("Save Config")).toBeInTheDocument();
+    // The Download Config button is in LensPrescriptionContainer
+    expect(screen.getByText("Download Config")).toBeInTheDocument();
   });
 
   it("registers a beforeunload handler that calls preventDefault", () => {

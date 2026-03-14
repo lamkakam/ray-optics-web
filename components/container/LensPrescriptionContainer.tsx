@@ -99,11 +99,11 @@ export function LensPrescriptionContainer({
       />
 
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
-        <Tooltip text="Load a previously saved config (system specs and lens prescription)" position="top-start" portal>
-          <Button variant="secondary" size="sm" onClick={handleImportClick}>Load Config</Button>
+        <Tooltip text="Load a previously downloaded config" position="top-start" portal>
+          <Button variant="primary" size="sm" onClick={handleImportClick}>Load Config</Button>
         </Tooltip>
-        <Tooltip text="Save current config (system specs and lens prescription) as JSON" portal>
-          <Button variant="primary" size="sm" onClick={handleExport}>Save Config</Button>
+        <Tooltip text="Download current config as JSON" portal>
+          <Button variant="primary" size="sm" onClick={handleExport}>Download Config</Button>
         </Tooltip>
         <Tooltip text="Generate a Python script" portal>
           <Button variant="secondary" size="sm" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>

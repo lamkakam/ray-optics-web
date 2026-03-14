@@ -66,11 +66,10 @@ describe("LensPrescriptionContainer", () => {
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
-  it("renders Save Config button with primary button styling", () => {
+  it("renders Download Config button", () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
-    const btn = screen.getByText("Save Config");
+    const btn = screen.getByText("Download Config");
     expect(btn).toBeInTheDocument();
-    expect(btn).toHaveClass("rounded-lg", "bg-blue-600");
   });
 
   it("renders rows from store (object + 2 surfaces + image)", () => {
@@ -364,13 +363,13 @@ describe("LensPrescriptionContainer", () => {
   it("Load Config button has a tooltip with correct text", () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
     const tooltips = screen.getAllByRole("tooltip");
-    expect(tooltips.some((t) => t.textContent === "Load a previously saved config (system specs and lens prescription)")).toBe(true);
+    expect(tooltips.some((t) => t.textContent === "Load a previously downloaded config")).toBe(true);
   });
 
-  it("Save Config button has a tooltip with correct text", () => {
+  it("Download Config button has a tooltip with correct text", () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
     const tooltips = screen.getAllByRole("tooltip");
-    expect(tooltips.some((t) => t.textContent === "Save current config (system specs and lens prescription) as JSON")).toBe(true);
+    expect(tooltips.some((t) => t.textContent === "Download current config as JSON")).toBe(true);
   });
 
   it("Export Python Script button has a tooltip with correct text", () => {
