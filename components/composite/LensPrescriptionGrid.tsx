@@ -169,6 +169,7 @@ export function LensPrescriptionGrid({
         return params.data.semiDiameter;
       },
       editable: (params) => !semiDiameterReadonly && params.data?.kind === "surface",
+      cellStyle: (params) => (!semiDiameterReadonly && params.data?.kind === "surface") ? undefined : { opacity: 0.5 },
       valueParser: numberValueParser,
       valueSetter: (params) => {
         if (!params.data) return false;
