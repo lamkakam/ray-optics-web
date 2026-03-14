@@ -66,14 +66,13 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
       id: "surfaceBySurface",
       label: "Surface by Surface",
       content: (
-        <div className="pt-2">
+        <div className="pt-2" style={{ width: "100%", height: "100%" }}>
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}
               rowData={rowData}
               columnDefs={columnDefs}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-              domLayout="autoHeight"
             />
           </AgGridProvider>
         </div>
