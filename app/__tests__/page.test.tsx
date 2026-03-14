@@ -75,8 +75,17 @@ describe("Home page", () => {
   it("switches to Prescription tab and shows LensPrescriptionContainer", async () => {
     render(<Home />);
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
-    // The Export JSON button is in LensPrescriptionContainer
-    expect(screen.getByText("Export JSON")).toBeInTheDocument();
+    // The Save Config button is in LensPrescriptionContainer
+    expect(screen.getByText("Save Config")).toBeInTheDocument();
+  });
+
+  it("registers a beforeunload handler that calls preventDefault", () => {
+    render(<Home />);
+    const spy = jest.spyOn(Event.prototype, "preventDefault");
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    expect(spy).toHaveBeenCalledTimes(1);
+    spy.mockRestore();
   });
 
   // --- New tests for submit button and worker integration ---

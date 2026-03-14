@@ -15,6 +15,7 @@ import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal"
 import { AsphericalModal, type AsphericalType } from "@/components/composite/AsphericalModal";
 import { DecenterModal, type DecenterType } from "@/components/composite/DecenterModal";
 import { PythonScriptModal } from "@/components/composite/PythonScriptModal";
+import { ConfirmImportModal } from "@/components/composite/ConfirmImportModal";
 
 interface LensPrescriptionContainerProps {
   readonly store: StoreApi<LensEditorState>;
@@ -34,6 +35,7 @@ export function LensPrescriptionContainer({
   const decenterModal = useStore(store, (s) => s.decenterModal);
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
   const [importErrorOpen, setImportErrorOpen] = useState(false);
+  const [pendingImportData, setPendingImportData] = useState<ImportedLensData | undefined>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const mediumRow = rows.find((r) => r.id === mediumModal.rowId);
@@ -48,7 +50,7 @@ export function LensPrescriptionContainer({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "lens-prescription.json";
+    a.download = "lens-config.json";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -66,7 +68,7 @@ export function LensPrescriptionContainer({
       try {
         const parsed: unknown = JSON.parse(event.target?.result as string);
         if (validateImportedLensData(parsed)) {
-          onImportJson(parsed);
+          setPendingImportData(parsed);
         } else {
           setImportErrorOpen(true);
         }
@@ -79,6 +81,13 @@ export function LensPrescriptionContainer({
     e.target.value = "";
   };
 
+  const handleConfirmImport = () => {
+    if (pendingImportData) onImportJson(pendingImportData);
+    setPendingImportData(undefined);
+  };
+
+  const handleCancelImport = () => setPendingImportData(undefined);
+
   return (
     <div>
       <input
@@ -90,11 +99,11 @@ export function LensPrescriptionContainer({
       />
 
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
-        <Tooltip text="Import lens prescription from JSON" position="top-start" portal>
-          <Button variant="secondary" size="sm" onClick={handleImportClick}>Import JSON</Button>
+        <Tooltip text="Load a previously saved config (system specs and lens prescription)" position="top-start" portal>
+          <Button variant="secondary" size="sm" onClick={handleImportClick}>Load Config</Button>
         </Tooltip>
-        <Tooltip text="Download lens prescription as JSON" portal>
-          <Button variant="primary" size="sm" onClick={handleExport}>Export JSON</Button>
+        <Tooltip text="Save current config (system specs and lens prescription) as JSON" portal>
+          <Button variant="primary" size="sm" onClick={handleExport}>Save Config</Button>
         </Tooltip>
         <Tooltip text="Generate a Python script" portal>
           <Button variant="secondary" size="sm" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
@@ -185,6 +194,12 @@ export function LensPrescriptionContainer({
         isOpen={pythonScriptOpen}
         script={pythonScriptOpen ? buildExportScript(getOpticalModel(), "manualAperture") : ""}
         onClose={() => setPythonScriptOpen(false)}
+      />
+
+      <ConfirmImportModal
+        isOpen={pendingImportData !== undefined}
+        onConfirm={handleConfirmImport}
+        onCancel={handleCancelImport}
       />
 
       <ErrorModal

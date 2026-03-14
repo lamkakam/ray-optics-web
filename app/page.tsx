@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { createStore } from "zustand";
 import type { OpticalSpecs, OpticalModel, ImportedLensData } from "@/lib/opticalModel";
 import type { Theme } from "@/lib/theme";
@@ -34,6 +34,14 @@ export default function Home() {
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
   const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
 
   const specsStore = useMemo(
     () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),

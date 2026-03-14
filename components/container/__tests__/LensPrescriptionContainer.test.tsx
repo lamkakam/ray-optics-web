@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, act, within } from "@testing-library/react";
+import { render, screen, act, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
@@ -66,9 +66,9 @@ describe("LensPrescriptionContainer", () => {
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
-  it("renders Export JSON button with primary button styling", () => {
+  it("renders Save Config button with primary button styling", () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
-    const btn = screen.getByText("Export JSON");
+    const btn = screen.getByText("Save Config");
     expect(btn).toBeInTheDocument();
     expect(btn).toHaveClass("rounded-lg", "bg-blue-600");
   });
@@ -275,13 +275,13 @@ describe("LensPrescriptionContainer", () => {
     expect(toggle).toHaveTextContent("Manual");
   });
 
-  // --- Import JSON ---
-  it("renders Import JSON button", () => {
+  // --- Load Config / Save Config ---
+  it("renders Load Config button", () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
-    expect(screen.getByRole("button", { name: "Import JSON" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Load Config" })).toBeInTheDocument();
   });
 
-  it("calls onImportJson with parsed data when valid JSON file is selected", async () => {
+  it("shows confirmation modal when valid JSON file is selected (not direct call)", async () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
 
     const validData: ImportedLensData = {
@@ -297,7 +297,54 @@ describe("LensPrescriptionContainer", () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     await userEvent.upload(fileInput, file);
 
+    // Should show confirmation modal, NOT call onImportJson directly
+    expect(onImportJson).not.toHaveBeenCalled();
+    const dialog = await waitFor(() => screen.getByRole("dialog"));
+    expect(dialog).toBeInTheDocument();
+  });
+
+  it("does not call onImportJson if user cancels the import confirmation", async () => {
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
+
+    const validData: ImportedLensData = {
+      setAutoAperture: "autoAperture",
+      specs: testOpticalModel.specs,
+      object: testOpticalModel.object,
+      image: testOpticalModel.image,
+      surfaces: testOpticalModel.surfaces,
+    };
+    const file = new File([JSON.stringify(validData)], "lens.json", { type: "application/json" });
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+
+    await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onImportJson).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("calls onImportJson after user confirms import", async () => {
+    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
+
+    const validData: ImportedLensData = {
+      setAutoAperture: "autoAperture",
+      specs: testOpticalModel.specs,
+      object: testOpticalModel.object,
+      image: testOpticalModel.image,
+      surfaces: testOpticalModel.surfaces,
+    };
+    const file = new File([JSON.stringify(validData)], "lens.json", { type: "application/json" });
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+
+    await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "Load" }));
+
     expect(onImportJson).toHaveBeenCalledWith(validData);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("shows error dialog when invalid JSON file is selected", async () => {
@@ -314,16 +361,16 @@ describe("LensPrescriptionContainer", () => {
 
   // --- Toolbar tooltip tests ---
 
-  it("Import JSON button has a tooltip with correct text", () => {
+  it("Load Config button has a tooltip with correct text", () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
     const tooltips = screen.getAllByRole("tooltip");
-    expect(tooltips.some((t) => t.textContent === "Import lens prescription from JSON")).toBe(true);
+    expect(tooltips.some((t) => t.textContent === "Load a previously saved config (system specs and lens prescription)")).toBe(true);
   });
 
-  it("Export JSON button has a tooltip with correct text", () => {
+  it("Save Config button has a tooltip with correct text", () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} />);
     const tooltips = screen.getAllByRole("tooltip");
-    expect(tooltips.some((t) => t.textContent === "Download lens prescription as JSON")).toBe(true);
+    expect(tooltips.some((t) => t.textContent === "Save current config (system specs and lens prescription) as JSON")).toBe(true);
   });
 
   it("Export Python Script button has a tooltip with correct text", () => {
