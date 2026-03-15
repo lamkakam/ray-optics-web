@@ -15,13 +15,13 @@ interface SeidelAberrModalProps {
   readonly onClose: () => void;
 }
 
-const SUMMARY_COL_DEFS: ColDef[] = [
+const SUMMARY_COL_DEFS: ColDef<{ _key: string; _value: number }>[] = [
   { headerName: "Aberration", field: "_key", editable: false },
   {
     headerName: "Value",
     field: "_value",
     editable: false,
-    valueFormatter: ({ value }) => (value as number).toPrecision(6),
+    valueFormatter: ({ value }) => value.toPrecision(6),
   },
 ];
 
