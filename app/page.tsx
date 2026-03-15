@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { createStore } from "zustand";
-import type { OpticalSpecs, OpticalModel, ImportedLensData } from "@/lib/opticalModel";
+import type { OpticalSpecs, OpticalModel, ImportedLensData, SeidelData } from "@/lib/opticalModel";
 import type { Theme } from "@/lib/theme";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
@@ -27,6 +27,7 @@ import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteModal";
 import { SettingsModal } from "@/components/composite/SettingsModal";
 import { PrivacyPolicyModal } from "@/components/composite/PrivacyPolicyModal";
+import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
 import { useTheme } from "@/components/ThemeProvider";
@@ -71,6 +72,8 @@ export default function Home() {
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [privacyPolicyModalOpen, setPrivacyPolicyModalOpen] = useState(false);
+  const [seidelData, setSeidelData] = useState<SeidelData | undefined>();
+  const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   const [pendingExample, setPendingExample] = useState<string | undefined>();
   const exampleSelectRef = useRef<HTMLSelectElement>(null);
 
@@ -161,15 +164,17 @@ export default function Home() {
         setSelectedFieldIndex(clampedFieldIndex);
       }
       const plotFn = getPlotFunction(selectedPlotType);
-      const [fod, layout, plot] = await Promise.all([
+      const [fod, layout, plot, seidel] = await Promise.all([
         proxy.getFirstOrderData(),
         proxy.plotLensLayout(),
         plotFn ? plotFn(clampedFieldIndex) : Promise.resolve(undefined),
+        proxy.get3rdOrderSeidelData(),
       ]);
 
       setFirstOrderData(fod);
       setLayoutImage(layout);
       setPlotImage(plot);
+      setSeidelData(seidel);
       setCommittedSpecs(specs);
     } catch (err) {
       console.log("Update System failed:", err);
@@ -356,6 +361,24 @@ export default function Home() {
     </Tooltip>
   );
 
+  const seidelButton = seidelData && (
+    <div className={isLG ? undefined : "mb-2"}>
+      <Tooltip text="View 3rd-order Seidel aberration coefficients" position="bottom">
+        <Button variant="secondary" size="sm" onClick={() => setSeidelModalOpen(true)}>
+          3rd Order Seidel Aberr.
+        </Button>
+      </Tooltip>
+    </div>
+  );
+
+  const seidelModalNode = seidelData && (
+    <SeidelAberrModal
+      isOpen={seidelModalOpen}
+      data={seidelData}
+      onClose={() => setSeidelModalOpen(false)}
+    />
+  );
+
   const exampleSystemDropdown = (
     <Select
       ref={exampleSelectRef}
@@ -375,6 +398,7 @@ export default function Home() {
         <Header level={1}>Ray Optics Web</Header>
         {exampleSystemDropdown}
         {updateSystemButton}
+        {seidelButton}
         <span className="ml-auto flex items-center gap-2">
           {privacyPolicyButton}
           {settingButton}
@@ -398,9 +422,9 @@ export default function Home() {
       {confirmOverwriteModalNode}
       {errorModal}
       {settingsModalNode}
-      {privacyPolicyModalNode}
+      {seidelModalNode}
       {initOverlayNode}
-    </div>
+    </div >
   );
 
   const layoutSM: React.ReactNode = (
@@ -415,6 +439,7 @@ export default function Home() {
         </div>
         {exampleSystemDropdown}
         {updateSystemButton}
+        {seidelButton}
         <div className="flex flex-wrap gap-2">
           {firstOrderChips}
         </div>
@@ -434,8 +459,9 @@ export default function Home() {
       {errorModal}
       {settingsModalNode}
       {privacyPolicyModalNode}
+      {seidelModalNode}
       {initOverlayNode}
-    </div>
+    </div >
   );
 
   return isLG ? layoutLG : layoutSM;

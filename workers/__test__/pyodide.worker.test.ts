@@ -9,6 +9,7 @@ import {
   _plotOpdFan,
   _plotSpotDiagram,
   _plotSurfaceBySurface3rdOrderAberr,
+  _get3rdOrderSeidelData,
 } from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
@@ -288,6 +289,29 @@ describe("_plotSurfaceBySurface3rdOrderAberr", () => {
 });
 
 
+describe("_get3rdOrderSeidelData", () => {
+  it("should call json.dumps(get_3rd_order_seidel_data(opm)) and return parsed SeidelData", async () => {
+    const mockData = {
+      surfaceBySurface: {
+        index: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+        columns: ["S1", "S2", "sum"],
+        data: [[0.1, 0.2, 0.3], [0.4, 0.5, 0.9], [0.6, 0.7, 1.3], [0.8, 0.9, 1.7], [1.0, 1.1, 2.1]],
+      },
+      transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
+      wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
+      curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
+    };
+    let capturedCode = "";
+    const result = await _get3rdOrderSeidelData(async (code) => {
+      capturedCode = code as string;
+      return JSON.stringify(mockData);
+    });
+    expect(capturedCode).toBe("json.dumps(get_3rd_order_seidel_data(opm))");
+    expect(result).toMatchObject(mockData);
+  });
+});
+
+
 describe("_init", () => {
   it("should define all plot functions via runPython", async () => {
     const scripts: string[] = [];
@@ -335,6 +359,13 @@ describe("_init", () => {
     // plot_surface_by_surface_3rd_order_aberr
     expect(allCode).toContain("def plot_surface_by_surface_3rd_order_aberr(opm):");
     expect(allCode).toContain("compute_third_order(opm)");
+
+    // get_3rd_order_seidel_data
+    expect(allCode).toContain("def get_3rd_order_seidel_data(opm):");
+    expect(allCode).toContain("seidel_to_transverse_aberration");
+    expect(allCode).toContain("seidel_to_wavefront");
+    expect(allCode).toContain("seidel_to_field_curv");
+    expect(allCode).toContain("surfaceBySurface");
   });
 
   it("should install rayoptics and opticalglass", async () => {
