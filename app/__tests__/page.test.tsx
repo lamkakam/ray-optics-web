@@ -2,24 +2,28 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
+import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
+import type { SetAutoApertureFlag } from "@/lib/apertureFlag";
+import type { Theme } from "@/lib/theme";
+import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 
 // Mock useTheme
-const mockToggleTheme = jest.fn();
+const mockToggleTheme: jest.Mock<void, [Theme]> = jest.fn();
 jest.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: mockToggleTheme }),
 }));
 
 // Mock usePyodide
-const mockSetOpticalSurfaces = jest.fn().mockResolvedValue(undefined);
-const mockGetFirstOrderData = jest
+const mockSetOpticalSurfaces: jest.Mock<Promise<void>, [OpticalModel, SetAutoApertureFlag]> = jest.fn().mockResolvedValue(undefined);
+const mockGetFirstOrderData: jest.Mock<Promise<Record<string, number>>, []> = jest
   .fn()
   .mockResolvedValue({ efl: 100, ffl: -80, bfl: 90 });
-const mockPlotLensLayout = jest.fn().mockResolvedValue("base64-layout");
-const mockPlotRayFan = jest.fn().mockResolvedValue("base64-rayfan");
-const mockPlotOpdFan = jest.fn().mockResolvedValue("base64-opdfan");
-const mockPlotSpotDiagram = jest.fn().mockResolvedValue("base64-spot");
-const mockPlotSurfaceBySurface3rdOrderAberr = jest.fn().mockResolvedValue("base64-3rdorder");
-const mockGet3rdOrderSeidelData = jest.fn().mockResolvedValue({
+const mockPlotLensLayout: jest.Mock<Promise<string>, []> = jest.fn().mockResolvedValue("base64-layout");
+const mockPlotRayFan: jest.Mock<Promise<string>, [number]> = jest.fn().mockResolvedValue("base64-rayfan");
+const mockPlotOpdFan: jest.Mock<Promise<string>, [number]> = jest.fn().mockResolvedValue("base64-opdfan");
+const mockPlotSpotDiagram: jest.Mock<Promise<string>, [number]> = jest.fn().mockResolvedValue("base64-spot");
+const mockPlotSurfaceBySurface3rdOrderAberr: jest.Mock<Promise<string>, []> = jest.fn().mockResolvedValue("base64-3rdorder");
+const mockGet3rdOrderSeidelData: jest.Mock<Promise<SeidelData>, []> = jest.fn().mockResolvedValue({
   surfaceBySurface: {
     index: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
     columns: ["S1", "sum"],
@@ -31,7 +35,7 @@ const mockGet3rdOrderSeidelData = jest.fn().mockResolvedValue({
 });
 
 const mockProxy = {
-  init: jest.fn().mockResolvedValue(undefined),
+  init: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
   setOpticalSurfaces: mockSetOpticalSurfaces,
   getFirstOrderData: mockGetFirstOrderData,
   plotLensLayout: mockPlotLensLayout,
@@ -40,7 +44,7 @@ const mockProxy = {
   plotSpotDiagram: mockPlotSpotDiagram,
   plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
-};
+} satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
 jest.mock("@/hooks/usePyodide", () => ({
   usePyodide: () => ({
