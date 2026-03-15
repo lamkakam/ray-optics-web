@@ -18,9 +18,8 @@ export function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyModalProps)
           <Paragraph variant="subheading" className="mb-1">Overview</Paragraph>
           <Paragraph>
             Ray Optics Web is a fully client-side application. All computation runs
-            in your browser using Pyodide (a Python runtime compiled to WebAssembly).
-            This application does not operate any backend server and does not collect,
-            store, or transmit any personal information.
+            in your browser using Pyodide (a Python runtime compiled to WebAssembly)
+            and RayOptics (a Python geometrical optics and image forming optics library).
           </Paragraph>
         </section>
 
@@ -33,8 +32,8 @@ export function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyModalProps)
           </Paragraph>
           <ul className="list-disc list-inside space-y-1">
             <li><code>cdn.jsdelivr.net</code> — Pyodide WebAssembly runtime and standard libraries</li>
-            <li><code>files.pythonhosted.org</code> — rayoptics and its Python dependencies (wheel files)</li>
-            <li><code>pypi.org</code> — PyPI package metadata used to resolve rayoptics dependencies</li>
+            <li><code>files.pythonhosted.org</code> — RayOptics and its Python dependencies (wheel files)</li>
+            <li><code>pypi.org</code> — PyPI package metadata used to resolve RayOptics dependencies</li>
           </ul>
         </section>
 
@@ -43,9 +42,15 @@ export function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyModalProps)
           <Paragraph>
             When your browser contacts these CDNs, your IP address may be visible to
             them and may be logged for security, abuse prevention, and operational
-            purposes. This is beyond the control of Ray Optics Web. Please review
-            the privacy policies of jsDelivr, Python Hosted, and PyPI for details on
-            how they handle this data.
+            purposes. Please review the privacy policies of jsDelivr, Python Hosted,
+            and PyPI for details on how they handle this data.
+          </Paragraph>
+        </section>
+        <section>
+          <Paragraph variant="subheading" className="mb-1">We may make changes to these terms</Paragraph>
+          <Paragraph>
+            We may update this Privacy Policy from time to time. Every time you wish to use our site,
+            please check these terms to ensure you understand the terms that apply at that time.
           </Paragraph>
         </section>
       </div>
