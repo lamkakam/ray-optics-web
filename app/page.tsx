@@ -26,6 +26,7 @@ import { Select } from "@/components/micro/Select";
 import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteModal";
 import { SettingsModal } from "@/components/composite/SettingsModal";
+import { PrivacyPolicyModal } from "@/components/composite/PrivacyPolicyModal";
 import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
@@ -70,6 +71,7 @@ export default function Home() {
   const [computing, setComputing] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [privacyPolicyModalOpen, setPrivacyPolicyModalOpen] = useState(false);
   const [seidelData, setSeidelData] = useState<SeidelData | undefined>();
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   const [pendingExample, setPendingExample] = useState<string | undefined>();
@@ -289,6 +291,13 @@ export default function Home() {
     />
   );
 
+  const privacyPolicyModalNode = (
+    <PrivacyPolicyModal
+      isOpen={privacyPolicyModalOpen}
+      onClose={() => setPrivacyPolicyModalOpen(false)}
+    />
+  );
+
   const lensLayoutPanel = (
     <LensLayoutPanel
       imageBase64={layoutImage}
@@ -311,6 +320,19 @@ export default function Home() {
 
 
   const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
+
+  const privacyPolicyButton = (
+    <Tooltip text="Privacy Policy" position="bottom">
+      <Button
+        variant="secondary"
+        size="sm"
+        aria-label="Privacy Policy"
+        onClick={() => setPrivacyPolicyModalOpen(true)}
+      >
+        🔒
+      </Button>
+    </Tooltip>
+  );
 
   const settingButton = (
     <Tooltip text="Settings" position="bottom">
@@ -377,7 +399,8 @@ export default function Home() {
         {exampleSystemDropdown}
         {updateSystemButton}
         {seidelButton}
-        <span className="ml-auto">
+        <span className="ml-auto flex items-center gap-2">
+          {privacyPolicyButton}
           {settingButton}
         </span>
       </header>
@@ -401,7 +424,7 @@ export default function Home() {
       {settingsModalNode}
       {seidelModalNode}
       {initOverlayNode}
-    </div>
+    </div >
   );
 
   const layoutSM: React.ReactNode = (
@@ -409,7 +432,8 @@ export default function Home() {
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
         <div className="flex items-center mb-2">
           <Header level={1}>Ray Optics Web</Header>
-          <span className="ml-auto">
+          <span className="ml-auto flex items-center gap-2">
+            {privacyPolicyButton}
             {settingButton}
           </span>
         </div>
@@ -434,9 +458,10 @@ export default function Home() {
       {confirmOverwriteModalNode}
       {errorModal}
       {settingsModalNode}
+      {privacyPolicyModalNode}
       {seidelModalNode}
       {initOverlayNode}
-    </div>
+    </div >
   );
 
   return isLG ? layoutLG : layoutSM;

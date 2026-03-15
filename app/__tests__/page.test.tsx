@@ -390,6 +390,33 @@ describe("Home page", () => {
     expect(mockPlotRayFan).not.toHaveBeenCalled();
   });
 
+  // --- Privacy Policy modal tests ---
+
+  it("renders a Privacy Policy button in the header", () => {
+    render(<Home />);
+    expect(
+      screen.getByRole("button", { name: "Privacy Policy" })
+    ).toBeInTheDocument();
+  });
+
+  it("opens privacy policy modal when Privacy Policy button is clicked", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Privacy Policy" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("privacy policy modal has title 'Privacy Policy'", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Privacy Policy" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent("Privacy Policy");
+  });
+
+  it("privacy policy modal closes when Close is clicked", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Privacy Policy" }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Close" }));
+  });
   // --- 3rd Order Seidel Aberr. button and modal tests ---
 
   it("'3rd Order Seidel Aberr.' button not present before Update System", () => {
@@ -433,6 +460,7 @@ describe("Home page", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
+
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
