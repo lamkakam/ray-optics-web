@@ -205,7 +205,7 @@ export async function _init(
                 'data': to_pkg.T.values.tolist(),
             }
             transverse = seidel_to_transverse_aberration(seidel_sum, fod.n_img, fod.img_na)
-            wavefront = seidel_to_wavefront(seidel_sum, wvls.central_wvl)
+            wavefront = seidel_to_wavefront(seidel_sum, wvls.central_wvl * 1e-6) # convert to mm
             curvature = seidel_to_field_curv(seidel_sum, fod.n_img, fod.opt_inv)
             return {
                 'surfaceBySurface': surface_by_surface,
