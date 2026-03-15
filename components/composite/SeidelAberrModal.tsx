@@ -15,13 +15,15 @@ interface SeidelAberrModalProps {
   readonly onClose: () => void;
 }
 
+const commonValueFormatter = (value: number) => value.toPrecision(6);
+
 const SUMMARY_COL_DEFS: ColDef<{ _key: string; _value: number }>[] = [
   { headerName: "Aberration", field: "_key", editable: false },
   {
     headerName: "Value",
     field: "_value",
     editable: false,
-    valueFormatter: ({ value }) => value.toPrecision(6),
+    valueFormatter: ({ value }) => commonValueFormatter(value as number),
   },
 ];
 
@@ -43,9 +45,9 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
 
   const surfaceRowData = useMemo(() => {
     return surfaceBySurface.columns.map((surface, colIdx) => {
-      const row: Record<string, unknown> = { _surface: surface };
+      const row: Record<string, string | number> = { _surface: surface };
       surfaceBySurface.index.forEach((aberrType, rowIdx) => {
-        row[aberrType] = surfaceBySurface.data[rowIdx][colIdx];
+        row[aberrType] = commonValueFormatter(surfaceBySurface.data[rowIdx][colIdx]);
       });
       return row;
     });
