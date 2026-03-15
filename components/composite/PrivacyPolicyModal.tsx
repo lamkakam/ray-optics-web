@@ -13,7 +13,8 @@ interface PrivacyPolicyModalProps {
 export function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyModalProps) {
   return (
     <Modal isOpen={isOpen} title="Privacy Policy" size="lg">
-      <div className="space-y-4 mb-6">
+      <div className="overflow-y-auto max-h-96 pr-1 mb-6">
+        <div className="space-y-4">
         <section>
           <Paragraph variant="subheading" className="mb-1">Overview</Paragraph>
           <Paragraph>
@@ -53,6 +54,7 @@ export function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyModalProps)
             please check these terms to ensure you understand the terms that apply at that time.
           </Paragraph>
         </section>
+        </div>
       </div>
 
       <div className="flex justify-end">
