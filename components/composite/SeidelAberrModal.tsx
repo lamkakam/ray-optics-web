@@ -59,6 +59,31 @@ const SUMMARY_COL_DEFS: ColDef<{ _key: string; _value: number }, string | number
   },
 ];
 
+const CURVATURE_COL_DEFS: ColDef<{ _key: string; _value: number }, string | number>[] = [
+  {
+    headerName: "Aberration",
+    field: "_key",
+    editable: false,
+    cellRenderer: CommonCellRendererForSummaryTable,
+    flex: 1,
+  },
+  {
+    headerName: "Value",
+    field: "_value",
+    editable: false,
+    valueFormatter: ({ value }) => commonValueFormatter(value as number),
+  },
+  {
+    headerName: "Curvature Radius",
+    field: "_value",
+    editable: false,
+    valueFormatter: ({ value }) => {
+      const v = value as number;
+      return v === 0 ? "Infinite" : (1 / v).toPrecision(6);
+    },
+  },
+];
+
 function summaryRowData(entries: Record<string, number>) {
   return Object.entries(entries).map(([key, value]) => ({ _key: key, _value: value }));
 }
@@ -149,7 +174,7 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
             <AgGridReact
               theme={gridTheme}
               rowData={curvatureRowData}
-              columnDefs={SUMMARY_COL_DEFS}
+              columnDefs={CURVATURE_COL_DEFS}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
             />
           </AgGridProvider>

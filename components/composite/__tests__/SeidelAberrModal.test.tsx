@@ -22,7 +22,7 @@ const mockData: SeidelData = {
   },
   transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
   wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
-  curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
+  curvature: { TCV: 0.1, SCV: 0.2, PCV: 0 },
 };
 
 const defaultProps = {
@@ -130,6 +130,30 @@ describe("SeidelAberrModal", () => {
     expect(within(grid).getByText("Tangential Field Curvature (TCV)")).toBeInTheDocument();
     expect(within(grid).getByText("Sagittal Field Curvature (SCV)")).toBeInTheDocument();
     expect(within(grid).getByText("Petzval Curvature (PCV)")).toBeInTheDocument();
+  });
+
+  it("Curvature tab shows a 'Curvature Radius' column header", async () => {
+    render(<SeidelAberrModal {...defaultProps} />);
+    await userEvent.click(screen.getByRole("tab", { name: "Curvature" }));
+    const grid = screen.getByTestId("ag-grid-mock");
+    const headerTexts = within(grid).getAllByRole("columnheader").map((th) => th.textContent);
+    expect(headerTexts).toContain("Curvature Radius");
+  });
+
+  it("non-zero curvature value shows 1/value in Curvature Radius column", async () => {
+    render(<SeidelAberrModal {...defaultProps} />);
+    await userEvent.click(screen.getByRole("tab", { name: "Curvature" }));
+    const grid = screen.getByTestId("ag-grid-mock");
+    // TCV = 0.1, so 1/0.1 = 10.0000 (toPrecision(6))
+    expect(within(grid).getByText((1 / 0.1).toPrecision(6))).toBeInTheDocument();
+  });
+
+  it("zero curvature value shows 'Infinite' in Curvature Radius column", async () => {
+    render(<SeidelAberrModal {...defaultProps} />);
+    await userEvent.click(screen.getByRole("tab", { name: "Curvature" }));
+    const grid = screen.getByTestId("ag-grid-mock");
+    // PCV = 0, so Curvature Radius = "Infinite"
+    expect(within(grid).getByText("Infinite")).toBeInTheDocument();
   });
 
   it("renders an Ok button", () => {
