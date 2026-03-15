@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
-import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
+import { AllCommunityModule } from "ag-grid-community";
 import { GridRowButtons } from "@/components/composite/GridRowButtons";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
@@ -9,7 +9,7 @@ import { Input } from "@/components/micro/Input";
 import { Label } from "@/components/micro/Label";
 import { Select } from "@/components/micro/Select";
 import { Paragraph } from "@/components/micro/Paragraph";
-import { useTheme } from "@/components/ThemeProvider";
+import { useAgGridTheme } from "@/hooks/useAgGridTheme";
 import type { FieldSpace, FieldType } from "@/store/specsConfigurerStore";
 
 interface FieldRow {
@@ -54,14 +54,7 @@ export function FieldConfigModal({
   onApply,
   onClose,
 }: FieldConfigModalProps) {
-  const { theme } = useTheme();
-  const gridTheme = useMemo(
-    () =>
-      theme === "dark"
-        ? themeQuartz.withPart(colorSchemeDark)
-        : themeQuartz.withPart(colorSchemeLight),
-    [theme],
-  );
+  const gridTheme = useAgGridTheme();
 
   const [space, setSpace] = useState(initialSpace);
   const [fieldType, setFieldType] = useState(initialType);

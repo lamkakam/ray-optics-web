@@ -1,12 +1,12 @@
 import React, { useMemo } from "react";
 import { AgGridReact, AgGridProvider, type CustomCellRendererProps } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
-import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
+import { AllCommunityModule } from "ag-grid-community";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
 import { Tabs } from "@/components/micro/Tabs";
 import type { TabItem } from "@/components/micro/Tabs";
-import { useTheme } from "@/components/ThemeProvider";
+import { useAgGridTheme } from "@/hooks/useAgGridTheme";
 import type { SeidelData, AberrationTypeToLabel } from "@/lib/opticalModel";
 
 interface SeidelAberrModalProps {
@@ -64,14 +64,7 @@ function summaryRowData(entries: Record<string, number>) {
 }
 
 export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProps) {
-  const { theme } = useTheme();
-  const gridTheme = useMemo(
-    () =>
-      theme === "dark"
-        ? themeQuartz.withPart(colorSchemeDark)
-        : themeQuartz.withPart(colorSchemeLight),
-    [theme],
-  );
+  const gridTheme = useAgGridTheme();
 
   const { surfaceBySurface, transverse, wavefront, curvature } = data;
 
