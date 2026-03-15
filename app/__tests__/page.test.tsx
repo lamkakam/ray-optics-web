@@ -25,8 +25,8 @@ const mockPlotSpotDiagram: jest.Mock<Promise<string>, [number]> = jest.fn().mock
 const mockPlotSurfaceBySurface3rdOrderAberr: jest.Mock<Promise<string>, []> = jest.fn().mockResolvedValue("base64-3rdorder");
 const mockGet3rdOrderSeidelData: jest.Mock<Promise<SeidelData>, []> = jest.fn().mockResolvedValue({
   surfaceBySurface: {
-    index: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
-    columns: ["S1", "sum"],
+    aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+    surfaceLabels: ["S1", "sum"],
     data: [[0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0.4], [0.5, 0.5]],
   },
   transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },

@@ -200,8 +200,8 @@ export async function _init(
             wvls = opm['optical_spec']['wvls']
             seidel_sum = to_pkg.loc['sum']
             surface_by_surface = {
-                'index': to_pkg.columns.tolist(),
-                'columns': to_pkg.index.tolist(),
+                'aberrTypes': to_pkg.columns.tolist(),
+                'surfaceLabels': to_pkg.index.tolist(),
                 'data': to_pkg.T.values.tolist(),
             }
             transverse = seidel_to_transverse_aberration(seidel_sum, fod.n_img, fod.img_na)

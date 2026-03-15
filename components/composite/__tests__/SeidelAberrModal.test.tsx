@@ -10,8 +10,8 @@ jest.mock("@/components/ThemeProvider", () => ({
 
 const mockData: SeidelData = {
   surfaceBySurface: {
-    index: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
-    columns: ["S1", "S2", "sum"],
+    aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+    surfaceLabels: ["S1", "S2", "sum"],
     data: [
       [0.1, 0.2, 0.3],
       [0.4, 0.5, 0.9],
@@ -56,7 +56,7 @@ describe("SeidelAberrModal", () => {
     expect(screen.getByRole("tab", { name: "Surface by Surface" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Transverse" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Wavefront" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Curvature" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Field Curvature" })).toBeInTheDocument();
   });
 
   it("default tab (Surface by Surface) shows ag-grid", () => {
@@ -124,7 +124,7 @@ describe("SeidelAberrModal", () => {
 
   it("clicking Curvature tab shows ag-grid with TCV/SCV/PCV keys", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
-    await userEvent.click(screen.getByRole("tab", { name: "Curvature" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Field Curvature" }));
     const grid = screen.getByTestId("ag-grid-mock");
     expect(grid).toBeInTheDocument();
     expect(within(grid).getByText("Tangential Field Curvature (TCV)")).toBeInTheDocument();
@@ -134,7 +134,7 @@ describe("SeidelAberrModal", () => {
 
   it("Curvature tab shows a 'Curvature Radius' column header", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
-    await userEvent.click(screen.getByRole("tab", { name: "Curvature" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Field Curvature" }));
     const grid = screen.getByTestId("ag-grid-mock");
     const headerTexts = within(grid).getAllByRole("columnheader").map((th) => th.textContent);
     expect(headerTexts).toContain("Curvature Radius");
@@ -142,7 +142,7 @@ describe("SeidelAberrModal", () => {
 
   it("non-zero curvature value shows 1/value in Curvature Radius column", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
-    await userEvent.click(screen.getByRole("tab", { name: "Curvature" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Field Curvature" }));
     const grid = screen.getByTestId("ag-grid-mock");
     // TCV = 0.1, so 1/0.1 = 10.0000 (toPrecision(6))
     expect(within(grid).getByText((1 / 0.1).toPrecision(6))).toBeInTheDocument();
@@ -150,7 +150,7 @@ describe("SeidelAberrModal", () => {
 
   it("zero curvature value shows 'Infinite' in Curvature Radius column", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
-    await userEvent.click(screen.getByRole("tab", { name: "Curvature" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Field Curvature" }));
     const grid = screen.getByTestId("ag-grid-mock");
     // PCV = 0, so Curvature Radius = "Infinite"
     expect(within(grid).getByText("Infinite")).toBeInTheDocument();

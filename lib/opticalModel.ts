@@ -66,8 +66,8 @@ export interface OpticalModel extends Surfaces {
 
 
 export interface SeidelSurfaceBySurfaceData {
-  index: string[];    // ['S-I', 'S-II', 'S-III', 'S-IV', 'S-V']
-  columns: string[];  // surface labels + 'sum'
+  aberrTypes: string[];    // ['S-I', 'S-II', 'S-III', 'S-IV', 'S-V']
+  surfaceLabels: string[];  // surface labels + 'sum'
   data: number[][];   // 5 × N matrix (row = aberration type, col = surface)
 }
 

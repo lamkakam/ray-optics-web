@@ -94,9 +94,9 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
   const { surfaceBySurface, transverse, wavefront, curvature } = data;
 
   const surfaceRowData = useMemo(() => {
-    return surfaceBySurface.columns.map((surface, colIdx) => {
+    return surfaceBySurface.surfaceLabels.map((surface, colIdx) => {
       const row: Record<string, string | number> = { _surface: surface };
-      surfaceBySurface.index.forEach((aberrType, rowIdx) => {
+      surfaceBySurface.aberrTypes.forEach((aberrType, rowIdx) => {
         row[aberrType] = commonValueFormatter(surfaceBySurface.data[rowIdx][colIdx]);
       });
       return row;
@@ -105,12 +105,12 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
 
   const surfaceColumnDefs: ColDef[] = useMemo(() => [
     { headerName: "Surface", field: "_surface", editable: false },
-    ...surfaceBySurface.index.map((aberrType) => ({
+    ...surfaceBySurface.aberrTypes.map((aberrType) => ({
       headerName: aberrType,
       field: aberrType,
       editable: false,
     })),
-  ], [surfaceBySurface.index]);
+  ], [surfaceBySurface.aberrTypes]);
 
   const transverseRowData = useMemo(() => summaryRowData(transverse), [transverse]);
   const wavefrontRowData = useMemo(() => summaryRowData(wavefront), [wavefront]);
@@ -167,7 +167,7 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
     },
     {
       id: "curvature",
-      label: "Curvature",
+      label: "Field Curvature",
       content: (
         <div className="pt-2" style={{ width: "100%", height: "100%" }}>
           <AgGridProvider modules={[AllCommunityModule]}>
