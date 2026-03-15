@@ -2,19 +2,14 @@
 
 import React, { useMemo } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
-import {
-  AllCommunityModule,
-  themeQuartz,
-  colorSchemeLight,
-  colorSchemeDark,
-} from "ag-grid-community";
+import { AllCommunityModule } from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/lib/gridTypes";
 import { MediumCell } from "@/components/micro/MediumCell";
 import { AsphericalCell } from "@/components/micro/AsphericalCell";
 import { DecenterCell } from "@/components/micro/DecenterCell";
 import { GridRowButtons } from "@/components/composite/GridRowButtons";
-import { useTheme } from "@/components/ThemeProvider";
+import { useAgGridTheme } from "@/hooks/useAgGridTheme";
 
 function ActionWrapper({
   children,
@@ -68,14 +63,7 @@ export function LensPrescriptionGrid({
   onDeleteRow,
   semiDiameterReadonly = false,
 }: LensPrescriptionGridProps) {
-  const { theme } = useTheme();
-  const gridTheme = useMemo(
-    () =>
-      theme === "dark"
-        ? themeQuartz.withPart(colorSchemeDark)
-        : themeQuartz.withPart(colorSchemeLight),
-    [theme],
-  );
+  const gridTheme = useAgGridTheme();
 
   const columnDefs = useMemo<ColDef<GridRow>[]>(() => [
     {

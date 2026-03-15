@@ -1,5 +1,5 @@
 import { expose } from "comlink";
-import { type OpticalModel } from "../lib/opticalModel";
+import { type OpticalModel, type SeidelData } from "../lib/opticalModel";
 import { type SetAutoApertureFlag } from "../lib/apertureFlag";
 import { buildOpticalModelScript } from "../lib/pythonScript";
 
@@ -187,6 +187,32 @@ export async function _init(
             ax.ticklabel_format(axis='y', style='sci', useMathText=True, scilimits=(-3, 3))
             fig.tight_layout()
             return _fig_to_base64(fig)
+
+        def get_3rd_order_seidel_data(opm):
+            from rayoptics.parax.thirdorder import (
+                compute_third_order,
+                seidel_to_transverse_aberration,
+                seidel_to_wavefront,
+                seidel_to_field_curv,
+            )
+            to_pkg = compute_third_order(opm)
+            fod = opm['analysis_results']['parax_data'].fod
+            wvls = opm['optical_spec']['wvls']
+            seidel_sum = to_pkg.loc['sum']
+            surface_by_surface = {
+                'aberrTypes': to_pkg.columns.tolist(),
+                'surfaceLabels': to_pkg.index.tolist(),
+                'data': to_pkg.T.values.tolist(),
+            }
+            transverse = seidel_to_transverse_aberration(seidel_sum, fod.n_img, fod.img_na)
+            wavefront = seidel_to_wavefront(seidel_sum, wvls.central_wvl * 1e-6) # convert to mm
+            curvature = seidel_to_field_curv(seidel_sum, fod.n_img, fod.opt_inv)
+            return {
+                'surfaceBySurface': surface_by_surface,
+                'transverse': transverse.to_dict(),
+                'wavefront': wavefront.to_dict(),
+                'curvature': curvature.to_dict(),
+            }
 `);
 }
 
@@ -263,6 +289,11 @@ export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: strin
   return (await runPython("plot_surface_by_surface_3rd_order_aberr(opm)")) as string;
 }
 
+export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>): Promise<SeidelData> {
+  const json = (await runPython("json.dumps(get_3rd_order_seidel_data(opm))")) as string;
+  return JSON.parse(json) as SeidelData;
+}
+
 
 // Expose for Components
 export async function setOpticalSurfaces(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag): Promise<void> {
@@ -293,6 +324,10 @@ export async function plotSurfaceBySurface3rdOrderAberr(): Promise<string> {
   return await _plotSurfaceBySurface3rdOrderAberr(requirePyodide());
 }
 
+export async function get3rdOrderSeidelData(): Promise<SeidelData> {
+  return await _get3rdOrderSeidelData(requirePyodide());
+}
+
 expose({
   init,
   setOpticalSurfaces,
@@ -302,4 +337,5 @@ expose({
   plotOpdFan,
   plotSpotDiagram,
   plotSurfaceBySurface3rdOrderAberr,
+  get3rdOrderSeidelData,
 });

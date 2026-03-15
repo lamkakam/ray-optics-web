@@ -2,26 +2,40 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
+import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
+import type { SetAutoApertureFlag } from "@/lib/apertureFlag";
+import type { Theme } from "@/lib/theme";
+import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 
 // Mock useTheme
-const mockToggleTheme = jest.fn();
+const mockToggleTheme: jest.Mock<void, [Theme]> = jest.fn();
 jest.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: mockToggleTheme }),
 }));
 
 // Mock usePyodide
-const mockSetOpticalSurfaces = jest.fn().mockResolvedValue(undefined);
-const mockGetFirstOrderData = jest
+const mockSetOpticalSurfaces: jest.Mock<Promise<void>, [OpticalModel, SetAutoApertureFlag]> = jest.fn().mockResolvedValue(undefined);
+const mockGetFirstOrderData: jest.Mock<Promise<Record<string, number>>, []> = jest
   .fn()
   .mockResolvedValue({ efl: 100, ffl: -80, bfl: 90 });
-const mockPlotLensLayout = jest.fn().mockResolvedValue("base64-layout");
-const mockPlotRayFan = jest.fn().mockResolvedValue("base64-rayfan");
-const mockPlotOpdFan = jest.fn().mockResolvedValue("base64-opdfan");
-const mockPlotSpotDiagram = jest.fn().mockResolvedValue("base64-spot");
-const mockPlotSurfaceBySurface3rdOrderAberr = jest.fn().mockResolvedValue("base64-3rdorder");
+const mockPlotLensLayout: jest.Mock<Promise<string>, []> = jest.fn().mockResolvedValue("base64-layout");
+const mockPlotRayFan: jest.Mock<Promise<string>, [number]> = jest.fn().mockResolvedValue("base64-rayfan");
+const mockPlotOpdFan: jest.Mock<Promise<string>, [number]> = jest.fn().mockResolvedValue("base64-opdfan");
+const mockPlotSpotDiagram: jest.Mock<Promise<string>, [number]> = jest.fn().mockResolvedValue("base64-spot");
+const mockPlotSurfaceBySurface3rdOrderAberr: jest.Mock<Promise<string>, []> = jest.fn().mockResolvedValue("base64-3rdorder");
+const mockGet3rdOrderSeidelData: jest.Mock<Promise<SeidelData>, []> = jest.fn().mockResolvedValue({
+  surfaceBySurface: {
+    aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+    surfaceLabels: ["S1", "sum"],
+    data: [[0.1, 0.1], [0.2, 0.2], [0.3, 0.3], [0.4, 0.4], [0.5, 0.5]],
+  },
+  transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
+  wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
+  curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
+});
 
 const mockProxy = {
-  init: jest.fn().mockResolvedValue(undefined),
+  init: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
   setOpticalSurfaces: mockSetOpticalSurfaces,
   getFirstOrderData: mockGetFirstOrderData,
   plotLensLayout: mockPlotLensLayout,
@@ -29,7 +43,8 @@ const mockProxy = {
   plotOpdFan: mockPlotOpdFan,
   plotSpotDiagram: mockPlotSpotDiagram,
   plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,
-};
+  get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
+} satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
 jest.mock("@/hooks/usePyodide", () => ({
   usePyodide: () => ({
@@ -373,5 +388,51 @@ describe("Home page", () => {
       expect(mockPlotSurfaceBySurface3rdOrderAberr).toHaveBeenCalledTimes(1);
     });
     expect(mockPlotRayFan).not.toHaveBeenCalled();
+  });
+
+  // --- 3rd Order Seidel Aberr. button and modal tests ---
+
+  it("'3rd Order Seidel Aberr.' button not present before Update System", () => {
+    render(<Home />);
+    expect(screen.queryByRole("button", { name: "3rd Order Seidel Aberr." })).not.toBeInTheDocument();
+  });
+
+  it("'3rd Order Seidel Aberr.' button appears after Update System succeeds", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Update System" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "3rd Order Seidel Aberr." })).toBeInTheDocument();
+    });
+  });
+
+  it("calls get3rdOrderSeidelData alongside getFirstOrderData on submit", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Update System" }));
+    await waitFor(() => {
+      expect(mockGet3rdOrderSeidelData).toHaveBeenCalledTimes(1);
+      expect(mockGetFirstOrderData).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("clicking '3rd Order Seidel Aberr.' button opens the Seidel dialog", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Update System" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberr." })).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "3rd Order Seidel Aberr." }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("3rd Order Seidel Aberrations")).toBeInTheDocument();
+  });
+
+  it("clicking Ok inside the Seidel modal closes it", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Update System" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberr." })).toBeInTheDocument());
+
+    await userEvent.click(screen.getByRole("button", { name: "3rd Order Seidel Aberr." }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Ok" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

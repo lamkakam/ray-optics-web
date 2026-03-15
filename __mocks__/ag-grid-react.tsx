@@ -131,7 +131,9 @@ export function AgGridReact({ rowData, columnDefs, theme }: AgGridReactProps) {
                       ? <SelectCell col={col} row={row} value={value} headerName={col.headerName ?? col.field ?? ""} />
                       : isEditable
                         ? <EditableCell col={col} row={row} value={value} />
-                        : String(value ?? "")}
+                        : col.valueFormatter
+                          ? col.valueFormatter({ value })
+                          : String(value ?? "")}
                 </td>
               );
             })}

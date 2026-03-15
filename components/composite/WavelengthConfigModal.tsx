@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
-import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
+import { AllCommunityModule } from "ag-grid-community";
 import { GridRowButtons } from "@/components/composite/GridRowButtons";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
 import { Paragraph } from "@/components/micro/Paragraph";
-import { useTheme } from "@/components/ThemeProvider";
+import { useAgGridTheme } from "@/hooks/useAgGridTheme";
 import { FRAUNHOFER_LINES, lookupWavelength, type FraunhoferSymbol } from "@/lib/fraunhoferLines";
 
 interface WavelengthRow {
@@ -57,14 +57,7 @@ export function WavelengthConfigModal({
   onApply,
   onClose,
 }: WavelengthConfigModalProps) {
-  const { theme } = useTheme();
-  const gridTheme = useMemo(
-    () =>
-      theme === "dark"
-        ? themeQuartz.withPart(colorSchemeDark)
-        : themeQuartz.withPart(colorSchemeLight),
-    [theme],
-  );
+  const gridTheme = useAgGridTheme();
 
   const [rows, setRows] = useState<WavelengthRow[]>(() => weightsToRows(initialWeights));
   const [referenceIndex, setReferenceIndex] = useState(initialReferenceIndex);
