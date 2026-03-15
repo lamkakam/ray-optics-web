@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { AgGridReact, AgGridProvider } from "ag-grid-react";
+import { AgGridReact, AgGridProvider, type CustomCellRendererProps } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule, themeQuartz, colorSchemeLight, colorSchemeDark } from "ag-grid-community";
 import { Button } from "@/components/micro/Button";
@@ -7,7 +7,7 @@ import { Modal } from "@/components/micro/Modal";
 import { Tabs } from "@/components/micro/Tabs";
 import type { TabItem } from "@/components/micro/Tabs";
 import { useTheme } from "@/components/ThemeProvider";
-import type { SeidelData } from "@/lib/opticalModel";
+import type { SeidelData, AberrationTypeToLabel } from "@/lib/opticalModel";
 
 interface SeidelAberrModalProps {
   readonly isOpen: boolean;
@@ -17,8 +17,39 @@ interface SeidelAberrModalProps {
 
 const commonValueFormatter = (value: number) => value.toPrecision(6);
 
-const SUMMARY_COL_DEFS: ColDef<{ _key: string; _value: number }>[] = [
-  { headerName: "Aberration", field: "_key", editable: false },
+const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
+  TSA: "Transverse Spherical Aberration (TSA)",
+  TCO: "Transverse Coma (TCO)",
+  TAS: "Tangential Astigmatism (TAS)",
+  SAS: "Sagittal Astigmatism (SAS)",
+  PTB: "Petzval Blur (PTB)",
+  DST: "Distortion (DST)",
+  W040: "Spherical Aberration",
+  W131: "Coma",
+  W222: "Astigmatism",
+  W220: "Field Curvature",
+  W311: "Distortion",
+  TCV: "Tangential Field Curvature (TCV)",
+  SCV: "Sagittal Field Curvature (SCV)",
+  PCV: "Petzval Curvature (PCV)",
+};
+
+const CommonCellRendererForSummaryTable = (params: CustomCellRendererProps<{ _key: string; _value: number }, string>): React.ReactNode => {
+  const key = params.data?._key;
+  if (key === undefined || key === null) {
+    return "";
+  }
+
+  return ABERRATION_TYPE_TO_LABEL[key];
+};
+
+const SUMMARY_COL_DEFS: ColDef<{ _key: string; _value: number }, string | number>[] = [
+  {
+    headerName: "Aberration",
+    field: "_key",
+    editable: false,
+    cellRenderer: CommonCellRendererForSummaryTable,
+  },
   {
     headerName: "Value",
     field: "_value",
@@ -94,6 +125,7 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
               rowData={transverseRowData}
               columnDefs={SUMMARY_COL_DEFS}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+              autoSizeStrategy={{ type: 'fitCellContents' }}
             />
           </AgGridProvider>
         </div>
@@ -110,6 +142,7 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
               rowData={wavefrontRowData}
               columnDefs={SUMMARY_COL_DEFS}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+              autoSizeStrategy={{ type: 'fitCellContents' }}
             />
           </AgGridProvider>
         </div>
@@ -126,6 +159,7 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
               rowData={curvatureRowData}
               columnDefs={SUMMARY_COL_DEFS}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+              autoSizeStrategy={{ type: 'fitCellContents' }}
             />
           </AgGridProvider>
         </div>

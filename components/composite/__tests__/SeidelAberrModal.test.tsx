@@ -102,12 +102,12 @@ describe("SeidelAberrModal", () => {
     await userEvent.click(screen.getByRole("tab", { name: "Transverse" }));
     const grid = screen.getByTestId("ag-grid-mock");
     expect(grid).toBeInTheDocument();
-    expect(within(grid).getByText("TSA")).toBeInTheDocument();
-    expect(within(grid).getByText("TCO")).toBeInTheDocument();
-    expect(within(grid).getByText("TAS")).toBeInTheDocument();
-    expect(within(grid).getByText("SAS")).toBeInTheDocument();
-    expect(within(grid).getByText("PTB")).toBeInTheDocument();
-    expect(within(grid).getByText("DST")).toBeInTheDocument();
+    expect(within(grid).getByText("Transverse Spherical Aberration (TSA)")).toBeInTheDocument();
+    expect(within(grid).getByText("Transverse Coma (TCO)")).toBeInTheDocument();
+    expect(within(grid).getByText("Tangential Astigmatism (TAS)")).toBeInTheDocument();
+    expect(within(grid).getByText("Sagittal Astigmatism (SAS)")).toBeInTheDocument();
+    expect(within(grid).getByText("Petzval Blur (PTB)")).toBeInTheDocument();
+    expect(within(grid).getByText("Distortion (DST)")).toBeInTheDocument();
   });
 
   it("clicking Wavefront tab shows ag-grid with W040/W131/W222/W220/W311 keys", async () => {
@@ -115,11 +115,11 @@ describe("SeidelAberrModal", () => {
     await userEvent.click(screen.getByRole("tab", { name: "Wavefront" }));
     const grid = screen.getByTestId("ag-grid-mock");
     expect(grid).toBeInTheDocument();
-    expect(within(grid).getByText("W040")).toBeInTheDocument();
-    expect(within(grid).getByText("W131")).toBeInTheDocument();
-    expect(within(grid).getByText("W222")).toBeInTheDocument();
-    expect(within(grid).getByText("W220")).toBeInTheDocument();
-    expect(within(grid).getByText("W311")).toBeInTheDocument();
+    expect(within(grid).getByText("Spherical Aberration")).toBeInTheDocument();
+    expect(within(grid).getByText("Coma")).toBeInTheDocument();
+    expect(within(grid).getByText("Astigmatism")).toBeInTheDocument();
+    expect(within(grid).getByText("Field Curvature")).toBeInTheDocument();
+    expect(within(grid).getByText("Distortion")).toBeInTheDocument();
   });
 
   it("clicking Curvature tab shows ag-grid with TCV/SCV/PCV keys", async () => {
@@ -127,9 +127,9 @@ describe("SeidelAberrModal", () => {
     await userEvent.click(screen.getByRole("tab", { name: "Curvature" }));
     const grid = screen.getByTestId("ag-grid-mock");
     expect(grid).toBeInTheDocument();
-    expect(within(grid).getByText("TCV")).toBeInTheDocument();
-    expect(within(grid).getByText("SCV")).toBeInTheDocument();
-    expect(within(grid).getByText("PCV")).toBeInTheDocument();
+    expect(within(grid).getByText("Tangential Field Curvature (TCV)")).toBeInTheDocument();
+    expect(within(grid).getByText("Sagittal Field Curvature (SCV)")).toBeInTheDocument();
+    expect(within(grid).getByText("Petzval Curvature (PCV)")).toBeInTheDocument();
   });
 
   it("renders an Ok button", () => {

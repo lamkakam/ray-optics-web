@@ -1,3 +1,9 @@
+import type { ReactNode } from "react";
+import type { SetAutoApertureFlag } from "./apertureFlag";
+export type { SetAutoApertureFlag };
+export type ImportedLensData = { setAutoAperture: SetAutoApertureFlag } & OpticalModel;
+
+
 /** Optical system specifications. */
 export interface OpticalSpecs {
   pupil: {
@@ -58,9 +64,6 @@ export interface OpticalModel extends Surfaces {
   specs: OpticalSpecs;
 }
 
-import type { SetAutoApertureFlag } from "./apertureFlag";
-export type { SetAutoApertureFlag };
-export type ImportedLensData = { setAutoAperture: SetAutoApertureFlag } & OpticalModel;
 
 export interface SeidelSurfaceBySurfaceData {
   index: string[];    // ['S-I', 'S-II', 'S-III', 'S-IV', 'S-V']
@@ -75,3 +78,19 @@ export interface SeidelData {
   curvature: Record<string, number>;   // TCV, SCV, PCV
 }
 
+export interface AberrationTypeToLabel extends Record<string, ReactNode> {
+  TSA: ReactNode;
+  TCO: ReactNode;
+  TAS: ReactNode;
+  SAS: ReactNode;
+  PTB: ReactNode;
+  DST: ReactNode;
+  W040: ReactNode;
+  W131: ReactNode;
+  W222: ReactNode;
+  W220: ReactNode;
+  W311: ReactNode;
+  TCV: ReactNode;
+  SCV: ReactNode;
+  PCV: ReactNode;
+}
