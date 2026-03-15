@@ -49,6 +49,7 @@ const SUMMARY_COL_DEFS: ColDef<{ _key: string; _value: number }, string | number
     field: "_key",
     editable: false,
     cellRenderer: CommonCellRendererForSummaryTable,
+    flex: 1,
   },
   {
     headerName: "Value",
@@ -125,7 +126,6 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
               rowData={transverseRowData}
               columnDefs={SUMMARY_COL_DEFS}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-              autoSizeStrategy={{ type: 'fitCellContents' }}
             />
           </AgGridProvider>
         </div>
@@ -142,7 +142,6 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
               rowData={wavefrontRowData}
               columnDefs={SUMMARY_COL_DEFS}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-              autoSizeStrategy={{ type: 'fitCellContents' }}
             />
           </AgGridProvider>
         </div>
@@ -159,7 +158,6 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
               rowData={curvatureRowData}
               columnDefs={SUMMARY_COL_DEFS}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-              autoSizeStrategy={{ type: 'fitCellContents' }}
             />
           </AgGridProvider>
         </div>
