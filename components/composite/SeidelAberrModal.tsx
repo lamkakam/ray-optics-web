@@ -15,19 +15,18 @@ interface SeidelAberrModalProps {
   readonly onClose: () => void;
 }
 
-function SummaryTable({ entries }: { entries: Record<string, number> }) {
-  return (
-    <table className="w-full text-sm">
-      <tbody>
-        {Object.entries(entries).map(([key, value]) => (
-          <tr key={key} className="border-b border-gray-200 dark:border-gray-700">
-            <td className="py-1 pr-4 font-medium">{key}</td>
-            <td className="py-1 font-mono">{value.toPrecision(6)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
+const SUMMARY_COL_DEFS: ColDef[] = [
+  { headerName: "Aberration", field: "_key", editable: false },
+  {
+    headerName: "Value",
+    field: "_value",
+    editable: false,
+    valueFormatter: ({ value }) => (value as number).toPrecision(6),
+  },
+];
+
+function summaryRowData(entries: Record<string, number>) {
+  return Object.entries(entries).map(([key, value]) => ({ _key: key, _value: value }));
 }
 
 export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProps) {
@@ -42,7 +41,7 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
 
   const { surfaceBySurface, transverse, wavefront, curvature } = data;
 
-  const rowData = useMemo(() => {
+  const surfaceRowData = useMemo(() => {
     return surfaceBySurface.columns.map((surface, colIdx) => {
       const row: Record<string, unknown> = { _surface: surface };
       surfaceBySurface.index.forEach((aberrType, rowIdx) => {
@@ -52,7 +51,7 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
     });
   }, [surfaceBySurface]);
 
-  const columnDefs: ColDef[] = useMemo(() => [
+  const surfaceColumnDefs: ColDef[] = useMemo(() => [
     { headerName: "Surface", field: "_surface", editable: false },
     ...surfaceBySurface.index.map((aberrType) => ({
       headerName: aberrType,
@@ -60,6 +59,10 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
       editable: false,
     })),
   ], [surfaceBySurface.index]);
+
+  const transverseRowData = useMemo(() => summaryRowData(transverse), [transverse]);
+  const wavefrontRowData = useMemo(() => summaryRowData(wavefront), [wavefront]);
+  const curvatureRowData = useMemo(() => summaryRowData(curvature), [curvature]);
 
   const tabs: TabItem[] = useMemo(() => [
     {
@@ -70,8 +73,8 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
           <AgGridProvider modules={[AllCommunityModule]}>
             <AgGridReact
               theme={gridTheme}
-              rowData={rowData}
-              columnDefs={columnDefs}
+              rowData={surfaceRowData}
+              columnDefs={surfaceColumnDefs}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
             />
           </AgGridProvider>
@@ -82,8 +85,15 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
       id: "transverse",
       label: "Transverse",
       content: (
-        <div className="pt-2">
-          <SummaryTable entries={transverse} />
+        <div className="pt-2" style={{ width: "100%", height: "100%" }}>
+          <AgGridProvider modules={[AllCommunityModule]}>
+            <AgGridReact
+              theme={gridTheme}
+              rowData={transverseRowData}
+              columnDefs={SUMMARY_COL_DEFS}
+              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+            />
+          </AgGridProvider>
         </div>
       ),
     },
@@ -91,8 +101,15 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
       id: "wavefront",
       label: "Wavefront",
       content: (
-        <div className="pt-2">
-          <SummaryTable entries={wavefront} />
+        <div className="pt-2" style={{ width: "100%", height: "100%" }}>
+          <AgGridProvider modules={[AllCommunityModule]}>
+            <AgGridReact
+              theme={gridTheme}
+              rowData={wavefrontRowData}
+              columnDefs={SUMMARY_COL_DEFS}
+              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+            />
+          </AgGridProvider>
         </div>
       ),
     },
@@ -100,12 +117,19 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
       id: "curvature",
       label: "Curvature",
       content: (
-        <div className="pt-2">
-          <SummaryTable entries={curvature} />
+        <div className="pt-2" style={{ width: "100%", height: "100%" }}>
+          <AgGridProvider modules={[AllCommunityModule]}>
+            <AgGridReact
+              theme={gridTheme}
+              rowData={curvatureRowData}
+              columnDefs={SUMMARY_COL_DEFS}
+              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+            />
+          </AgGridProvider>
         </div>
       ),
     },
-  ], [gridTheme, rowData, columnDefs, transverse, wavefront, curvature]);
+  ], [gridTheme, surfaceRowData, surfaceColumnDefs, transverseRowData, wavefrontRowData, curvatureRowData]);
 
   return (
     <Modal isOpen={isOpen} title="3rd Order Seidel Aberrations" titleId="seidel-modal-title" size="4xl">

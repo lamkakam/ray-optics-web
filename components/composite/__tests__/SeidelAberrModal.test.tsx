@@ -97,33 +97,39 @@ describe("SeidelAberrModal", () => {
     expect(within(grid).queryByRole("textbox")).not.toBeInTheDocument();
   });
 
-  it("clicking Transverse tab shows TSA/TCO/TAS/SAS/PTB/DST keys and values", async () => {
+  it("clicking Transverse tab shows ag-grid with TSA/TCO/TAS/SAS/PTB/DST keys", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
     await userEvent.click(screen.getByRole("tab", { name: "Transverse" }));
-    expect(screen.getByText("TSA")).toBeInTheDocument();
-    expect(screen.getByText("TCO")).toBeInTheDocument();
-    expect(screen.getByText("TAS")).toBeInTheDocument();
-    expect(screen.getByText("SAS")).toBeInTheDocument();
-    expect(screen.getByText("PTB")).toBeInTheDocument();
-    expect(screen.getByText("DST")).toBeInTheDocument();
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid).toBeInTheDocument();
+    expect(within(grid).getByText("TSA")).toBeInTheDocument();
+    expect(within(grid).getByText("TCO")).toBeInTheDocument();
+    expect(within(grid).getByText("TAS")).toBeInTheDocument();
+    expect(within(grid).getByText("SAS")).toBeInTheDocument();
+    expect(within(grid).getByText("PTB")).toBeInTheDocument();
+    expect(within(grid).getByText("DST")).toBeInTheDocument();
   });
 
-  it("clicking Wavefront tab shows W040/W131/W222/W220/W311 keys", async () => {
+  it("clicking Wavefront tab shows ag-grid with W040/W131/W222/W220/W311 keys", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
     await userEvent.click(screen.getByRole("tab", { name: "Wavefront" }));
-    expect(screen.getByText("W040")).toBeInTheDocument();
-    expect(screen.getByText("W131")).toBeInTheDocument();
-    expect(screen.getByText("W222")).toBeInTheDocument();
-    expect(screen.getByText("W220")).toBeInTheDocument();
-    expect(screen.getByText("W311")).toBeInTheDocument();
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid).toBeInTheDocument();
+    expect(within(grid).getByText("W040")).toBeInTheDocument();
+    expect(within(grid).getByText("W131")).toBeInTheDocument();
+    expect(within(grid).getByText("W222")).toBeInTheDocument();
+    expect(within(grid).getByText("W220")).toBeInTheDocument();
+    expect(within(grid).getByText("W311")).toBeInTheDocument();
   });
 
-  it("clicking Curvature tab shows TCV/SCV/PCV keys", async () => {
+  it("clicking Curvature tab shows ag-grid with TCV/SCV/PCV keys", async () => {
     render(<SeidelAberrModal {...defaultProps} />);
     await userEvent.click(screen.getByRole("tab", { name: "Curvature" }));
-    expect(screen.getByText("TCV")).toBeInTheDocument();
-    expect(screen.getByText("SCV")).toBeInTheDocument();
-    expect(screen.getByText("PCV")).toBeInTheDocument();
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid).toBeInTheDocument();
+    expect(within(grid).getByText("TCV")).toBeInTheDocument();
+    expect(within(grid).getByText("SCV")).toBeInTheDocument();
+    expect(within(grid).getByText("PCV")).toBeInTheDocument();
   });
 
   it("renders an Ok button", () => {
