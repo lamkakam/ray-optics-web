@@ -191,7 +191,7 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
         <Paragraph className="mb-4">
           Note: Third-order Seidel aberration approximation only captures the effect of
           higher-order aspheric surface up to the 4th order
-          ({" "}<MathJax inline>{`\\(r_{4}\\)`}</MathJax>{" "} and its term {" "}<MathJax inline>{`\\(a_{4}\\)`}</MathJax>).
+          ({" "}<MathJax inline>{`\\(r^{4}\\)`}</MathJax>{" "} and its term {" "}<MathJax inline>{`\\(a_{4}\\)`}</MathJax>).
           The effect of higher-order polynomial terms
           such as {" "}<MathJax inline>{`\\(a_{6}, a_{8}\\)`}</MathJax>{" "} or higher
           is outside the scope of this approximation.
