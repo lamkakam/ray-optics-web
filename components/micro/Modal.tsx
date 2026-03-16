@@ -37,7 +37,7 @@ export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, ch
       className="fixed inset-0 z-50 flex items-center justify-center"
       onKeyDown={(e) => e.stopPropagation()}
     >
-      <div data-testid="modal-backdrop" className={`absolute inset-0 ${backdrop}`} onClick={onBackdropClick} />
+      <div data-testid="modal-backdrop" className={`absolute inset-0 touch-none ${backdrop}`} onClick={onBackdropClick} />
       <div
         role="dialog"
         aria-modal="true"
