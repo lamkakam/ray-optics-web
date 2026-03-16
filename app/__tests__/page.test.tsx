@@ -421,14 +421,14 @@ describe("Home page", () => {
 
   it("'3rd Order Seidel Aberr.' button not present before Update System", () => {
     render(<Home />);
-    expect(screen.queryByRole("button", { name: "3rd Order Seidel Aberr." })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" })).not.toBeInTheDocument();
   });
 
   it("'3rd Order Seidel Aberr.' button appears after Update System succeeds", async () => {
     render(<Home />);
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "3rd Order Seidel Aberr." })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })).toBeInTheDocument();
     });
   });
 
@@ -444,9 +444,9 @@ describe("Home page", () => {
   it("clicking '3rd Order Seidel Aberr.' button opens the Seidel dialog", async () => {
     render(<Home />);
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberr." })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole("button", { name: "3rd Order Seidel Aberr." }));
+    await userEvent.click(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("3rd Order Seidel Aberrations")).toBeInTheDocument();
   });
@@ -454,9 +454,9 @@ describe("Home page", () => {
   it("clicking Ok inside the Seidel modal closes it", async () => {
     render(<Home />);
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberr." })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })).toBeInTheDocument());
 
-    await userEvent.click(screen.getByRole("button", { name: "3rd Order Seidel Aberr." }));
+    await userEvent.click(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
