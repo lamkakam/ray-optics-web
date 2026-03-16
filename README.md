@@ -10,7 +10,7 @@ This tool is provided for **educational and exploratory purposes only**. **NO GU
 
 ## Non-Affiliation Notice
 
-This project is not affiliated with, endorsed by, or in any way officially connected with RayOptics, Pyodide, telescope-optics.net, the University of Arizona, or any other organization, institution, or individual mentioned in this project.
+This project is not affiliated with, endorsed by, or in any way officially connected with any organization, institution, or individual mentioned in this project.
 
 ## Features
 
@@ -106,7 +106,7 @@ The refractive index data for fluorite used in this app is sourced from [refract
 
 The bundled example optical systems are derived or adapted from the following sources:
 
-- **Sasian Triplet** — from the [RayOptics example gallery](https://ray-optics.readthedocs.io/en/latest/examples/SasianTriplet/SasianTriplet.html), which cites Prof. Jose Sasian's OPTI 517 course at the University of Arizona (https://wp.optics.arizona.edu/jsasian/courses/opti-517/).
+- **Sasian Triplet** — from the [RayOptics example gallery](https://ray-optics.readthedocs.io/en/latest/examples/SasianTriplet/SasianTriplet.html), which cites Prof. José Sasián's OPTI 517 course at the University of Arizona (https://wp.optics.arizona.edu/jsasian/courses/opti-517/).
 - **Newtonian Reflector with Optical Window** — [telescope-optics.net: Reflecting telescopes](https://www.telescope-optics.net/reflecting.htm)
 - **Herschel's 40-foot Reflector** — [telescope-optics.net: Early telescopes](https://www.telescope-optics.net/early%20telescopes.htm)
 - **Mike I. Jones's Improved Herschel Reflector** — [telescope-optics.net: Early telescopes](https://www.telescope-optics.net/early%20telescopes.htm)
@@ -118,8 +118,8 @@ The bundled example optical systems are derived or adapted from the following so
 - **Fluorite Doublet APO 130mm f/8** (Example #27) — [telescope-optics.net: Commercial telescopes](https://www.telescope-optics.net/commercial_telescopes.htm)
 - **Fraunhofer Achromat 120mm f/23.6** and **f/7.5** — derived from [telescope-optics.net: Achromats](https://telescope-optics.net/achromats.htm)
 - **APO Doublet (S-FPL53/N-ZK7) 120mm f/7.5** (Example #19) — [telescope-optics.net: Commercial telescopes](https://www.telescope-optics.net/commercial_telescopes.htm)
-- **APO Petzval 140mm f/7** (Design 11.24, and variant with rear lenses removed) — [telescope-optics.net: Miscellaneous optics](https://telescope-optics.net/miscellaneous_optics.htm)
-- **Reversed Modified Imaizumi Eyepiece** — eyepiece design by Imaizumi M., US Patent 5,557,464 (1996); modified configuration from [telescope-optics.net: Eyepiece raytrace](https://telescope-optics.net/eyepiece_raytrace.htm)
+- **APO Petzval 140mm f/7** (Design 11.24, and variant with rear lenses removed) — [telescope-optics.net: Miscellaneous optics](https://www.telescope-optics.net/miscellaneous_optics.htm)
+- **Reverse Raytraced Imaizumi M. Eyepiece (modified)** — eyepiece design by Imaizumi M., US Patent 5,557,464 (1996); modified configuration from [telescope-optics.net: Eyepiece raytrace](https://www.telescope-optics.net/eyepiece_raytrace.htm)
 
 ## License
 
