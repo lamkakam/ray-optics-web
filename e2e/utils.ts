@@ -13,6 +13,26 @@ export async function waitForPyodide(page: Page): Promise<void> {
   await expect(updateBtn).toBeEnabled({ timeout: 5_000 });
 }
 
+export async function dismissAnyOpenDialog(page: Page): Promise<void> {
+  const dialog = page.getByRole("dialog");
+  const isVisible = await dialog.isVisible().catch(() => false);
+  if (!isVisible) return;
+  for (const label of ["Cancel", "Close", "OK"]) {
+    const btn = dialog.getByRole("button", { name: label });
+    const btnVisible = await btn.isVisible().catch(() => false);
+    if (btnVisible) {
+      await btn.click();
+      await dialog.waitFor({ state: "hidden", timeout: 5_000 }).catch(() => {});
+      return;
+    }
+  }
+}
+
+export async function reloadAndWait(page: Page): Promise<void> {
+  await page.reload();
+  await waitForPyodide(page);
+}
+
 // Helper: discover col-id from AG-Grid header text
 export async function getColId(
   page: Page,

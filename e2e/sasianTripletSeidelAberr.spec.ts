@@ -1,5 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
-import { PYODIDE_TIMEOUT, waitForPyodide, getColId } from "./utils";
+import { test, expect, type Page } from "./fixtures";
+import { dismissAnyOpenDialog, getColId } from "./utils";
 
 const MODAL_SEL = '[role="dialog"][aria-labelledby="seidel-modal-title"]';
 
@@ -24,30 +24,27 @@ function expectApprox(
   expect(Math.abs(actual - expected)).toBeLessThan(tol);
 }
 
-test("Sasian Triplet Seidel aberration modal — all tabs", async ({ page }) => {
-  test.setTimeout(PYODIDE_TIMEOUT + 60_000);
-  await page.setViewportSize({ width: 1440, height: 900 });
+test("Sasian Triplet Seidel aberration modal — all tabs", async ({
+  pyodidePage: page,
+}) => {
+  await dismissAnyOpenDialog(page);
 
-  // 1. Load page and wait for Pyodide
-  await page.goto("/");
-  await waitForPyodide(page);
-
-  // 2. Select "1: Sasian Triplet" example
+  // 1. Select "1: Sasian Triplet" example
   await page.locator('select[aria-label="Example system"]').selectOption("1: Sasian Triplet");
 
-  // 3. Confirm overwrite dialog
+  // 2. Confirm overwrite dialog
   const dialog = page.getByRole("dialog");
   await dialog.waitFor({ state: "visible", timeout: 5_000 });
   await dialog.getByRole("button", { name: "Load" }).click();
   await dialog.waitFor({ state: "hidden", timeout: 5_000 });
 
-  // 4. Click Update System and wait for completion
+  // 3. Click Update System and wait for completion
   const updateBtn = page.locator('button[aria-label="Update System"]');
   await updateBtn.click();
   await expect(updateBtn).toBeDisabled({ timeout: 5_000 });
   await expect(updateBtn).toBeEnabled({ timeout: 60_000 });
 
-  // 5. Open Seidel modal
+  // 4. Open Seidel modal
   await page.locator('button[aria-label="3rd Order Seidel Aberrations"]').click();
   const modal = page.getByRole("dialog", { name: "3rd Order Seidel Aberrations" });
   await modal.waitFor({ state: "visible", timeout: 5_000 });
