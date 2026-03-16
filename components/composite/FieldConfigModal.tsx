@@ -187,6 +187,7 @@ export function FieldConfigModal({
             id="field-max"
             type="text"
             aria-label="Max field value"
+            variant="compact"
             value={maxFieldStr}
             onChange={(e) => setMaxFieldStr(e.target.value)}
             className="w-full"
