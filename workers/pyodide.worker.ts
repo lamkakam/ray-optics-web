@@ -10,6 +10,11 @@ const CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full";
 
 let pyodide: any = null;
 
+/** For testing only — resets the singleton so init() can be re-tested. */
+export function _resetPyodideForTesting(): void {
+  pyodide = null;
+}
+
 // WARNING: DON'T TOUCH THE FORMATTING OF THE STRING LITERALS BELOW
 
 // ─── DANGEROUS ZONE ────────────────────────────────────────────────────────────────────
@@ -229,7 +234,12 @@ export async function init(): Promise<void> {
       "deprecation",
     ]);
 
-    const caf2Res = await fetch(`${self.location.origin}/database/data/main/CaF2/nk/Malitson.yml`);
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+    const caf2Url = `${self.location.origin}${basePath}/database/data/main/CaF2/nk/Malitson.yml`;
+    const caf2Res = await fetch(caf2Url);
+    if (!caf2Res.ok) {
+      throw new Error(`Failed to fetch CaF2 YAML from ${caf2Url}: ${caf2Res.status}`);
+    }
     const caf2Yaml = await caf2Res.text();
     pyodide.FS.mkdirTree('/database/data/main/CaF2/nk');
     pyodide.FS.writeFile('/database/data/main/CaF2/nk/Malitson.yml', caf2Yaml);
