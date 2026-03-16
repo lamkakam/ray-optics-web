@@ -389,7 +389,7 @@ export default function Home() {
       options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
       defaultValue=""
       onChange={handleExampleChange}
-      className={isLG ? undefined : "mb-2 w-full"}
+      className={isLG ? "max-w-xs" : "mb-2 w-full"}
     />
   );
 
