@@ -13,6 +13,13 @@ jest.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: mockToggleTheme }),
 }));
 
+// Mock useScreenBreakpoint (default: screenSM, overridable per describe)
+import type { ScreenSize } from "@/hooks/useScreenBreakpoint";
+const mockScreenSize = { value: "screenSM" as ScreenSize };
+jest.mock("@/hooks/useScreenBreakpoint", () => ({
+  useScreenBreakpoint: () => mockScreenSize.value,
+}));
+
 // Mock usePyodide
 const mockSetOpticalSurfaces: jest.Mock<Promise<void>, [OpticalModel, SetAutoApertureFlag]> = jest.fn().mockResolvedValue(undefined);
 const mockGetFirstOrderData: jest.Mock<Promise<Record<string, number>>, []> = jest
@@ -462,5 +469,30 @@ describe("Home page", () => {
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  describe("small screen layout containers", () => {
+    it("lens-layout-container has class w-full on small screens", () => {
+      render(<Home />);
+      const container = screen.getByTestId("lens-layout-container");
+      expect(container).toHaveClass("w-full");
+    });
+
+    it("analysis-plot-container has class w-full on small screens", () => {
+      render(<Home />);
+      const container = screen.getByTestId("analysis-plot-container");
+      expect(container).toHaveClass("w-full");
+    });
+  });
+
+  describe("large screen layout", () => {
+    beforeEach(() => { mockScreenSize.value = "screenLG"; });
+    afterEach(() => { mockScreenSize.value = "screenSM"; });
+
+    it("example system dropdown has a max-width constraint on large screens", () => {
+      render(<Home />);
+      const dropdown = screen.getByLabelText("Example system");
+      expect(dropdown).toHaveClass("max-w-xs");
+    });
   });
 });

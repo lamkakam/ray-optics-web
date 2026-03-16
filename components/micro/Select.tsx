@@ -21,6 +21,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           cx.select.style.compactBorderStyle,
           cx.select.style.compactBorderRadius,
           cx.select.style.compactOutlineStyle,
+          cx.select.size.compactWidth,
           cx.select.size.compactHorizontalPadding,
           cx.select.size.compactVerticalPadding,
           cx.select.size.compactFontSize,

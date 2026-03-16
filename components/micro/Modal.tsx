@@ -37,12 +37,12 @@ export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, ch
       className="fixed inset-0 z-50 flex items-center justify-center"
       onKeyDown={(e) => e.stopPropagation()}
     >
-      <div data-testid="modal-backdrop" className={`absolute inset-0 ${backdrop}`} onClick={onBackdropClick} />
+      <div data-testid="modal-backdrop" className={`absolute inset-0 touch-none ${backdrop}`} onClick={onBackdropClick} />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={resolvedTitleId}
-        className={`relative z-10 border animate-modal-enter ${panel} ${sizeClasses[size]}`}
+        className={`relative z-10 border animate-modal-enter ${panel} ${sizeClasses[size]} mx-4 sm:mx-0 max-h-[90dvh] overflow-y-auto`}
       >
         <Header level={2} id={resolvedTitleId} className={clsx(titleBorderClass, cx.modal.size.titlePadding, cx.modal.size.titleMargin)}>{title}</Header>
         {children}

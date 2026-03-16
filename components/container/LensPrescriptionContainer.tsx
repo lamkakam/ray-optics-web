@@ -8,6 +8,7 @@ import { type OpticalModel, type ImportedLensData } from "@/lib/opticalModel";
 import { buildExportScript } from "@/lib/pythonScript";
 import { validateImportedLensData } from "@/lib/importSchema";
 import { Button } from "@/components/micro/Button";
+import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 import { Label } from "@/components/micro/Label";
 import { Tooltip } from "@/components/micro/Tooltip";
 import { ErrorModal } from "@/components/micro/ErrorModal";
@@ -29,6 +30,8 @@ export function LensPrescriptionContainer({
   getOpticalModel,
   onImportJson,
 }: LensPrescriptionContainerProps) {
+  const screenSize = useScreenBreakpoint();
+  const buttonSize = screenSize === "screenSM" ? "xs" : "sm";
   const rows = useStore(store, (s) => s.rows);
   const autoAperture = useStore(store, (s) => s.autoAperture);
   const mediumModal = useStore(store, (s) => s.mediumModal);
@@ -113,13 +116,13 @@ export function LensPrescriptionContainer({
 
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
         <Tooltip text="Load a previously downloaded config" position="top-start" portal>
-          <Button variant="primary" size="sm" onClick={handleImportClick} aria-label="Load Config">Load Config</Button>
+          <Button variant="primary" size={buttonSize} onClick={handleImportClick} aria-label="Load Config">Load Config</Button>
         </Tooltip>
         <Tooltip text="Download current config as JSON" portal>
-          <Button variant="primary" size="sm" onClick={handleExport} aria-label="Download Config">Download Config</Button>
+          <Button variant="primary" size={buttonSize} onClick={handleExport} aria-label="Download Config">Download Config</Button>
         </Tooltip>
         <Tooltip text="Generate a Python script" portal>
-          <Button variant="secondary" size="sm" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
+          <Button variant="secondary" size={buttonSize} onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
         </Tooltip>
       </div>
 
@@ -129,7 +132,7 @@ export function LensPrescriptionContainer({
           <Button
             id="auto-aperture-toggle"
             variant="secondary"
-            size="sm"
+            size={buttonSize}
             aria-pressed={autoAperture}
             onClick={() => store.getState().setAutoAperture(!autoAperture)}
           >

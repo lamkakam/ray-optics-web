@@ -389,7 +389,7 @@ export default function Home() {
       options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
       defaultValue=""
       onChange={handleExampleChange}
-      className={isLG ? undefined : "mb-2 w-full"}
+      className={isLG ? "max-w-xs" : "mb-2 w-full"}
     />
   );
 
@@ -447,10 +447,10 @@ export default function Home() {
       </header>
 
       <div className="flex flex-col">
-        <div className="w-[70vw] mx-auto p-4">
+        <div data-testid="lens-layout-container" className="w-full px-2 py-3">
           {lensLayoutPanel}
         </div>
-        <div className="w-[70vw] mx-auto p-4 border-t border-gray-200 dark:border-gray-700">
+        <div data-testid="analysis-plot-container" className="w-full px-2 py-3 border-t border-gray-200 dark:border-gray-700">
           {analysisPlotView}
         </div>
       </div>

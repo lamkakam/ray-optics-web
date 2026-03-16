@@ -95,4 +95,9 @@ describe("Modal", () => {
     render(<Modal isOpen={true} title="Test Modal"><p>content</p></Modal>);
     expect(screen.getByRole("dialog")).toHaveClass("max-w-md");
   });
+
+  it("backdrop has touch-none class to prevent background scroll on mobile", () => {
+    render(<Modal isOpen={true} title="Test Modal"><p>content</p></Modal>);
+    expect(screen.getByTestId("modal-backdrop")).toHaveClass("touch-none");
+  });
 });
