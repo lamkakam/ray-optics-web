@@ -115,6 +115,7 @@ export const componentTokens = {
       compactHorizontalPadding: "px-2",
       compactVerticalPadding: "py-1.5",
       compactFontSize: "text-sm",
+      compactWidth: "w-full",
       defaultWidth: "w-full",
       focusRingWidth: g.size.focusRingWidth,
     },

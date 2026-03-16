@@ -4,6 +4,7 @@ import { componentTokens as cx } from "@/components/ui/styleTokens";
 import { Label } from "@/components/micro/Label";
 import { Select, type SelectOption } from "@/components/micro/Select";
 import { Paragraph } from "@/components/micro/Paragraph";
+import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 
 export type PlotType = "rayFan" | "opdFan" | "spotDiagram" | "surfaceBySurface3rdOrder";
 
@@ -46,6 +47,8 @@ export function AnalysisPlotView({
   onPlotTypeChange,
   autoHeight,
 }: AnalysisPlotViewProps) {
+  const screenSize = useScreenBreakpoint();
+  const selectType = screenSize === "screenSM" ? "compact" : "default";
   const fieldDisabled = !PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent;
 
   return (
@@ -61,6 +64,7 @@ export function AnalysisPlotView({
             options={fieldOptions}
             value={selectedFieldIndex}
             disabled={fieldDisabled}
+            type={selectType}
             onChange={(e) => onFieldChange(Number(e.target.value))}
           />
         </div>
@@ -73,6 +77,7 @@ export function AnalysisPlotView({
             aria-label="Plot type"
             options={PLOT_TYPE_OPTIONS}
             value={selectedPlotType}
+            type={selectType}
             onChange={(e) => onPlotTypeChange(e.target.value as PlotType)}
           />
         </div>
