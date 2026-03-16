@@ -1,6 +1,6 @@
 # ray-optics-web
 
-A web-based GUI for [RayOptics](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required. Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly).
+A web-based GUI for [RayOptics v0.9.4](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly).
 
 > **Note:** Many RayOptics functionalities are not yet included in this interface.
 
@@ -10,39 +10,38 @@ This tool is provided for **educational and exploratory purposes only**. No guar
 
 ## Features
 
-- **17 built-in example systems** — Sasian Triplet, Schmidt Camera, achromats, reflectors, APO designs, eyepieces, and more
-- **System specs editor** — aperture (EPD), field (angle or image height, multiple field points), wavelengths (Fraunhofer lines or custom nm)
-- **Prescription editor** (AG Grid) — per-surface radius of curvature, thickness, glass/medium, aperture stop
-  - Aspherical surfaces: conic constant and polynomial coefficients
-  - Decenter/tilt: coordinate system strategies (bend, decenter, dec and return, reverse)
+- **Example systems** — including Schmidt Camera, reflectors, achromats, apochromats, eyepiece, etc.
+- **System specs editor** — aperture, fields, wavelengths (Fraunhofer lines or custom)
+- **Prescription editor** per-surface radius of curvature, thickness, glass/reflective surface/air/fluorite, aperture stop
+  - Aspherical surfaces: conic constant and polynomial coefficients for even aspheric surfaces
+  - Decenter/tilt
   - Reflective surfaces (mirrors)
+  - Semi-diameter of each surface: can be set automatically or manually
 - **Lens layout** — SVG diagram of the optical system
-- **Analysis plots** — ray fan, OPD fan, spot diagram
-- **3rd-order Seidel aberrations** — surface-by-surface breakdown (transverse, wavefront, field curvature)
-- **First-order properties** — EFL, BFD, and more
-- **Import / export** JSON configuration files
-- **Light / dark theme**
+- **Analysis plots** — ray fan, OPD fan, spot diagram, surface-by-surface 3rd-order Seidel aberration breakdown
+- **3rd-order Seidel aberrations** — surface-by-surface breakdown, transverse, wavefront (in waves of reference wavelength set in System Specs), field curvature
+- **First-order properties** — EFL, BFD, image height, f/#, NA at object and image space
+- **Import / export** JSON configuration files for this web app
 
 ## Usage
 
 ### Loading an example
 
-1. Open the app in a browser and wait for the "Initializing Ray Optics" overlay to disappear
-2. Select an example from the dropdown (e.g. "1: Sasian Triplet")
+1. Open the app in a browser and wait for the initialization to complete
+2. Select an example from the dropdown (e.g. "Sasian Triplet")
 3. Confirm the overwrite dialog → click **Update System**
 4. The lens layout diagram and first-order properties appear
 
-### Editing a prescription manually
-
-1. Open the **Prescription** tab in the bottom drawer
-2. Double-click a cell to edit radius or thickness; click to select a medium from the glass catalog
-3. Use **Insert Row** to add surfaces
-4. In the **System Specs** tab, configure aperture, fields, and wavelengths
+### Entering a prescription manually
+1. In the **System Specs** tab, configure aperture, fields, and wavelengths
+2. Click the **Prescription** tab, add or remove surfaces as needed
+3. Double-click a cell to edit radius or thickness; click to select a medium from the glass catalog
+4. Configure aspherical surfaces, decenter/tilt as needed
 5. Click **Update System**
 
 ### Importing / Exporting a config
 
-- **Load Config**: click the import button in the Prescription tab and select a JSON file
+- **Load Config**: click the import button in the Prescription tab and select a JSON file previously exported from this web app
 - **Download Config**: download the current design as a JSON file
 
 ## Development Setup
@@ -65,6 +64,12 @@ npm run test
 
 # E2E tests (Playwright)
 npm run test:e2e
+
+# Build the app
+npm run build
+
+# Serve the built app locally
+npm run serve
 ```
 
 ## Architecture
