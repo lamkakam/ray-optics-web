@@ -365,7 +365,7 @@ export default function Home() {
   const seidelButton = seidelData && (
     <div className={isLG ? undefined : "mb-2"}>
       <Tooltip text="View 3rd-order Seidel aberration coefficients" position="bottom">
-        <Button variant="secondary" size="sm" onClick={() => setSeidelModalOpen(true)}>
+        <Button variant="secondary" size="sm" aria-label="3rd Order Seidel Aberrations" onClick={() => setSeidelModalOpen(true)}>
           3rd Order Seidel Aberr.
         </Button>
       </Tooltip>

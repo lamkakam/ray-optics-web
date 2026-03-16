@@ -17,7 +17,7 @@ interface SeidelAberrModalProps {
   readonly onClose: () => void;
 }
 
-const commonValueFormatter = (value: number) => value.toPrecision(6);
+const commonValueFormatter = (value: number) => value.toFixed(6);
 
 const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
   TSA: "Transverse Spherical Aberration (TSA)",
@@ -81,7 +81,7 @@ const CURVATURE_COL_DEFS: ColDef<{ _key: string; _value: number }, string | numb
     editable: false,
     valueFormatter: ({ value }) => {
       const v = value as number;
-      return v === 0 ? "Infinite" : (1 / v).toPrecision(6);
+      return v === 0 ? "Infinite" : commonValueFormatter(1 / v);
     },
   },
 ];
