@@ -113,7 +113,7 @@ export function LensPrescriptionContainer({
 
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
         <Tooltip text="Load a previously downloaded config" position="top-start" portal>
-          <Button variant="primary" size="sm" onClick={handleImportClick}>Load Config</Button>
+          <Button variant="primary" size="sm" onClick={handleImportClick} aria-label="Load Config">Load Config</Button>
         </Tooltip>
         <Tooltip text="Download current config as JSON" portal>
           <Button variant="primary" size="sm" onClick={handleExport} aria-label="Download Config">Download Config</Button>
