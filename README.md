@@ -1,12 +1,12 @@
 # ray-optics-web
 
-A web-based GUI for [RayOptics v0.9.4](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly).
+A web-based GUI for [RayOptics v0.9.4](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly). The distributions of Pyodide, RayOptics and its dependencies are served, respectively, from external sites: [jsDelivr](https://www.jsdelivr.com/) and [Python hosted](https://pythonhosted.org/).
 
 > **Note:** Many RayOptics functionalities are not yet included in this interface.
 
 ## Disclaimer
 
-This tool is provided for **educational and exploratory purposes only**. No guarantee of accuracy is made. It is not intended for production or professional optical design use.
+This tool is provided for **educational and exploratory purposes only**. **NO GUARANTEE OF ACCURACY - USE AT YOUR OWN RISK.** It is not intended for production or professional optical design use.
 
 ## Features
 
