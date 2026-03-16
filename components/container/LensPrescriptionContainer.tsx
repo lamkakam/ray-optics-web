@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { useStore, type StoreApi } from "zustand";
 import { type LensEditorState } from "@/store/lensEditorStore";
+import { type GridRow } from "@/lib/gridTypes";
 import { type OpticalModel, type ImportedLensData } from "@/lib/opticalModel";
 import { buildExportScript } from "@/lib/pythonScript";
 import { validateImportedLensData } from "@/lib/importSchema";
@@ -37,6 +38,18 @@ export function LensPrescriptionContainer({
   const [importErrorOpen, setImportErrorOpen] = useState(false);
   const [pendingImportData, setPendingImportData] = useState<ImportedLensData | undefined>();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Stable callbacks — use store.getState() so they never change reference,
+  // preventing unnecessary columnDefs recreation in LensPrescriptionGrid.
+  const handleRowChange = useCallback(
+    (id: string, patch: Partial<GridRow>) => store.getState().updateRow(id, patch),
+    [store]
+  );
+  const handleOpenMediumModal = useCallback((rowId: string) => store.getState().openMediumModal(rowId), [store]);
+  const handleOpenAsphericalModal = useCallback((rowId: string) => store.getState().openAsphericalModal(rowId), [store]);
+  const handleOpenDecenterModal = useCallback((rowId: string) => store.getState().openDecenterModal(rowId), [store]);
+  const handleAddRowAfter = useCallback((rowId: string) => store.getState().addRowAfter(rowId), [store]);
+  const handleDeleteRow = useCallback((rowId: string) => store.getState().deleteRow(rowId), [store]);
 
   const mediumRow = rows.find((r) => r.id === mediumModal.rowId);
   const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);
@@ -127,12 +140,12 @@ export function LensPrescriptionContainer({
 
       <LensPrescriptionGrid
         rows={rows}
-        onRowChange={(id, patch) => store.getState().updateRow(id, patch)}
-        onOpenMediumModal={(rowId) => store.getState().openMediumModal(rowId)}
-        onOpenAsphericalModal={(rowId) => store.getState().openAsphericalModal(rowId)}
-        onOpenDecenterModal={(rowId) => store.getState().openDecenterModal(rowId)}
-        onAddRowAfter={(rowId) => store.getState().addRowAfter(rowId)}
-        onDeleteRow={(rowId) => store.getState().deleteRow(rowId)}
+        onRowChange={handleRowChange}
+        onOpenMediumModal={handleOpenMediumModal}
+        onOpenAsphericalModal={handleOpenAsphericalModal}
+        onOpenDecenterModal={handleOpenDecenterModal}
+        onAddRowAfter={handleAddRowAfter}
+        onDeleteRow={handleDeleteRow}
         semiDiameterReadonly={autoAperture}
       />
 
