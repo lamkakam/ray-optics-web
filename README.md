@@ -84,6 +84,20 @@ Browser
     └── Pyodide → rayoptics (Python)
 ```
 
+## Third-Party Data
+
+### Fluorite (CaF2) refractive index data
+
+The refractive index data for fluorite used in this app is sourced from [refractiveindex.info](https://refractiveindex.info/?shelf=main&book=CaF2&page=Malitson) and is self-hosted at `public/database/data/main/CaF2/nk/Malitson.yml`.
+
+- Source file: https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml
+- License: [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) — this file is **not** subject to the license of this repository.
+
+**Citations:**
+
+- I. H. Malitson. A redetermination of some optical properties of calcium fluoride. [*Appl. Opt.* **2**, 1103–1107 (1963)](https://opg.optica.org/ao/abstract.cfm?uri=ao-2-11-1103).
+- M. N. Polyanskiy. Refractiveindex.info database of optical constants. *Sci. Data* **11**, 94 (2024). https://doi.org/10.1038/s41597-023-02898-2
+
 ## License
 
 See [LICENSE](./LICENSE).
