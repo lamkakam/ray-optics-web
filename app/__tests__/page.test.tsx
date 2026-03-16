@@ -463,4 +463,18 @@ describe("Home page", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+
+  describe("small screen layout containers", () => {
+    it("lens-layout-container has class w-full on small screens", () => {
+      render(<Home />);
+      const container = screen.getByTestId("lens-layout-container");
+      expect(container).toHaveClass("w-full");
+    });
+
+    it("analysis-plot-container has class w-full on small screens", () => {
+      render(<Home />);
+      const container = screen.getByTestId("analysis-plot-container");
+      expect(container).toHaveClass("w-full");
+    });
+  });
 });
