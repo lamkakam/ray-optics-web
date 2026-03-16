@@ -355,7 +355,7 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.upload(fileInput, file);
 
     expect(onImportJson).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
 
   // --- Toolbar tooltip tests ---
