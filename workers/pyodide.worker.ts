@@ -33,19 +33,12 @@ export async function _init(
         await micropip.install("opticalglass==1.1.0", deps=False)
 `);
 
-  // DON'T PIN pyyaml to 6.0.1 (despite specifically required by opticalglass).
-  // NO AVAILABLE WHEEL FOR pyyaml==6.0.1
   await runPython(`
         import micropip
         await micropip.install([
-            'anytree==2.12.1',
+            'anytree==2.13.0',
             'transforms3d==0.4.2',
-            'traitlets==5.14.3',
-            'packaging==24.2',
             'json-tricks==3.17.3',
-            'deprecation==2.1.0',
-            'pyyaml',
-            'requests==2.32.3',
             'openpyxl==3.1.2',
             'parsimonious==0.10.0',
         ])
@@ -229,6 +222,11 @@ export async function init(): Promise<void> {
       "matplotlib",
       "pandas",
       "xlrd",
+      "traitlets",
+      "packaging",
+      "pyyaml",
+      "requests",
+      "deprecation",
     ]);
 
     const caf2Res = await fetch(`${self.location.origin}/database/data/main/CaF2/nk/Malitson.yml`);
