@@ -1,6 +1,8 @@
-import { describe, it, expect } from "@jest/globals";
+import { describe, it, expect, beforeEach, afterEach } from "@jest/globals";
 import { type OpticalModel } from "../../lib/opticalModel";
 import {
+  init,
+  _resetPyodideForTesting,
   _init,
   _setOpticalSurfaces,
   _getFirstOrderData,
@@ -381,5 +383,45 @@ describe("_init", () => {
     await _init(async (code) => { scripts.push(code); });
     const allCode = scripts.join("\n");
     expect(allCode).toContain("from rayoptics.environment import *");
+  });
+});
+
+describe("init", () => {
+  let fetchMock: jest.Mock;
+
+  beforeEach(() => {
+    fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => "yaml: content",
+    });
+    global.fetch = fetchMock;
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+    delete process.env.NEXT_PUBLIC_BASE_PATH;
+    _resetPyodideForTesting();
+  });
+
+  it("fetches the YAML file from the correct URL without base path", async () => {
+    await init();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringMatching(/\/database\/data\/main\/CaF2\/nk\/Malitson\.yml$/)
+    );
+    const url: string = fetchMock.mock.calls[0][0] as string;
+    expect(url).not.toContain("undefined");
+  });
+
+  it("includes NEXT_PUBLIC_BASE_PATH in the YAML fetch URL", async () => {
+    process.env.NEXT_PUBLIC_BASE_PATH = "/ray-optics-web";
+    await init();
+    const url: string = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("/ray-optics-web/database/data/main/CaF2/nk/Malitson.yml");
+  });
+
+  it("throws if the YAML fetch returns a non-ok response", async () => {
+    fetchMock.mockResolvedValue({ ok: false, status: 404, text: async () => "Not Found" });
+    await expect(init()).rejects.toThrow(/Failed to fetch.*CaF2.*404/);
   });
 });
