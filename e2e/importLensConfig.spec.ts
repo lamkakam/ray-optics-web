@@ -1,14 +1,11 @@
 import path from "path";
-import { test, expect } from "@playwright/test";
-import { PYODIDE_TIMEOUT, waitForPyodide, getColId } from "./utils";
+import { test, expect } from "./fixtures";
+import { dismissAnyOpenDialog, getColId } from "./utils";
 
 test("import lens-config.json and verify System Specs and Prescription", async ({
-  page,
+  pyodidePage: page,
 }) => {
-  test.setTimeout(PYODIDE_TIMEOUT + 60_000);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/");
-  await waitForPyodide(page);
+  await dismissAnyOpenDialog(page);
 
   // 1. Navigate to Prescription tab and upload the JSON file
   await page.getByRole("tab", { name: "Prescription" }).click();

@@ -1,7 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import {
-  PYODIDE_TIMEOUT,
-  waitForPyodide,
+  reloadAndWait,
   getColId,
   editNumberCell,
   selectGridOption,
@@ -12,22 +11,20 @@ import {
   editWeightCell,
 } from "./utils";
 
-test("manually input Sasian Triplet and update system", async ({ page }) => {
-  test.setTimeout(PYODIDE_TIMEOUT + 60_000); // 180s total
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/");
+test("manually input Sasian Triplet and update system", async ({
+  pyodidePage: page,
+}) => {
+  // Reload to get a guaranteed blank demo model state
+  await reloadAndWait(page);
 
-  // 1. Wait for Pyodide
-  await waitForPyodide(page);
-
-  // 2. System Specs tab → Aperture value
+  // 1. System Specs tab → Aperture value
   await page.getByRole("tab", { name: "System Specs" }).click();
   const apertureInput = page.getByLabel("Aperture value");
   await apertureInput.clear();
   await apertureInput.fill("12.5");
   await apertureInput.blur();
 
-  // 3. Field modal
+  // 2. Field modal
   await page.getByLabel("Configure field").click();
   const fieldModal = page.getByRole("dialog", { name: "Field" });
   await fieldModal.waitFor({ state: "visible", timeout: 3_000 });
@@ -65,7 +62,7 @@ test("manually input Sasian Triplet and update system", async ({ page }) => {
   await fieldModal.getByRole("button", { name: "Apply" }).click();
   await fieldModal.waitFor({ state: "hidden", timeout: 5_000 });
 
-  // 4. Wavelength modal
+  // 3. Wavelength modal
   await page.getByLabel("Configure wavelengths").click();
   const wlModal = page.getByRole("dialog", { name: "Wavelengths" });
   await wlModal.waitFor({ state: "visible", timeout: 3_000 });
@@ -97,7 +94,7 @@ test("manually input Sasian Triplet and update system", async ({ page }) => {
   await wlModal.getByRole("button", { name: "Apply" }).click();
   await wlModal.waitFor({ state: "hidden", timeout: 5_000 });
 
-  // 5. Prescription tab — add 6 surfaces
+  // 4. Prescription tab — add 6 surfaces
   await page.getByRole("tab", { name: "Prescription" }).click();
   const prescGrid = '[aria-label="Lens prescription editor"]';
   // Discover col-ids from headers
@@ -131,20 +128,20 @@ test("manually input Sasian Triplet and update system", async ({ page }) => {
   await editNumberCell(page, prescGrid, 6, colIdRadius, "-20.4942");
   await editNumberCell(page, prescGrid, 6, colIdThickness, "41.2365");
 
-  // 6. Click Update System
+  // 5. Click Update System
   const updateBtn = page.locator('button[aria-label="Update System"]');
   await updateBtn.click();
 
-  // 7. Wait for compute to finish (button disabled then re-enabled)
+  // 6. Wait for compute to finish (button disabled then re-enabled)
   await expect(updateBtn).toBeDisabled({ timeout: 5_000 });
   await expect(updateBtn).toBeEnabled({ timeout: 60_000 });
 
-  // 8. Verify: EFL chip visible
+  // 7. Verify: EFL chip visible
   await expect(page.locator("text=/EFL:/").first()).toBeVisible({
     timeout: 10_000,
   });
 
-  // 9. Verify: lens layout image visible
+  // 8. Verify: lens layout image visible
   await expect(
     page.locator('img[alt="Lens layout diagram"]')
   ).toBeVisible({ timeout: 10_000 });
