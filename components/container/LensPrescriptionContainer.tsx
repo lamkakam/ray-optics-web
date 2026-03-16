@@ -129,7 +129,7 @@ export function LensPrescriptionContainer({
           <Button
             id="auto-aperture-toggle"
             variant="secondary"
-            size="sm"
+            size="xs"
             aria-pressed={autoAperture}
             onClick={() => store.getState().setAutoAperture(!autoAperture)}
           >
