@@ -1,6 +1,6 @@
 # ray-optics-web
 
-A web-based GUI for [RayOptics v0.9.4](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly). The distributions of Pyodide, RayOptics and its dependencies are served, respectively, from external sites: [jsDelivr](https://www.jsdelivr.com/) and [Python hosted](https://pythonhosted.org/).
+A web-based GUI for [RayOptics v0.9.4](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly). Pyodide is served from [jsDelivr](https://www.jsdelivr.com/); RayOptics and its dependencies are served from [Python Hosted](https://pythonhosted.org/).
 
 > **Note:** Many RayOptics functionalities are not yet included in this interface.
 
@@ -10,16 +10,16 @@ This tool is provided for **educational and exploratory purposes only**. **NO GU
 
 ## Features
 
-- **Example systems** — including Schmidt Camera, reflectors, achromats, apochromats, eyepiece, etc.
+- **Example systems** — including Schmidt Camera, reflectors, achromats, apochromats, an eyepiece, etc.
 - **System specs editor** — aperture, fields, wavelengths (Fraunhofer lines or custom)
-- **Prescription editor** per-surface radius of curvature, thickness, glass/reflective surface/air/fluorite, aperture stop
+- **Prescription editor** — per-surface radius of curvature, thickness, glass/reflective surface/air/fluorite, aperture stop
   - Aspherical surfaces: conic constant and polynomial coefficients for even aspheric surfaces
   - Decenter/tilt
   - Reflective surfaces (mirrors)
   - Semi-diameter of each surface: can be set automatically or manually
-- **Lens layout** — SVG diagram of the optical system
+- **Lens layout** — PNG diagram of the optical system
 - **Analysis plots** — ray fan, OPD fan, spot diagram, surface-by-surface 3rd-order Seidel aberration breakdown
-- **3rd-order Seidel aberrations** — surface-by-surface breakdown, transverse, wavefront (in waves of reference wavelength set in System Specs), field curvature
+- **3rd-order Seidel aberrations** — surface-by-surface breakdown, transverse ray aberrations, wavefront aberrations (in waves of reference wavelength set in System Specs), field curvature
 - **First-order properties** — EFL, BFD, image height, f/#, NA at object and image space
 - **Import / export** JSON configuration files for this web app
 
@@ -35,7 +35,7 @@ This tool is provided for **educational and exploratory purposes only**. **NO GU
 ### Entering a prescription manually
 1. In the **System Specs** tab, configure aperture, fields, and wavelengths
 2. Click the **Prescription** tab, add or remove surfaces as needed
-3. Double-click a cell to edit radius or thickness; click to select a medium from the glass catalog
+3. Double-click a cell to edit radius or thickness; click a cell to select a medium from the glass catalog
 4. Configure aspherical surfaces, decenter/tilt as needed
 5. Click **Update System**
 
