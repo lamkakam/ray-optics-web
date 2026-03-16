@@ -355,6 +355,7 @@ export default function Home() {
         className={isLG ? undefined : "mb-2"}
         disabled={!isReady || computing}
         onClick={handleSubmit}
+        aria-label="Update System"
       >
         Update System
       </Button>

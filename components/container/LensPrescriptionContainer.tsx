@@ -116,7 +116,7 @@ export function LensPrescriptionContainer({
           <Button variant="primary" size="sm" onClick={handleImportClick}>Load Config</Button>
         </Tooltip>
         <Tooltip text="Download current config as JSON" portal>
-          <Button variant="primary" size="sm" onClick={handleExport}>Download Config</Button>
+          <Button variant="primary" size="sm" onClick={handleExport} aria-label="Download Config">Download Config</Button>
         </Tooltip>
         <Tooltip text="Generate a Python script" portal>
           <Button variant="secondary" size="sm" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>

@@ -1,152 +1,16 @@
-import { test, expect, type Page } from "@playwright/test";
-
-const PYODIDE_TIMEOUT = 120_000;
-
-// Helper: discover col-id from AG-Grid header text
-async function getColId(
-  page: Page,
-  gridSel: string,
-  headerText: string
-): Promise<string> {
-  const header = page
-    .locator(`${gridSel} [role="columnheader"]:has-text("${headerText}")`)
-    .first();
-  const colId = await header.getAttribute("col-id");
-  if (!colId) throw new Error(`col-id not found for "${headerText}"`);
-  return colId;
-}
-
-// Helper: double-click cell to enter edit mode, fill, Enter to commit
-async function editNumberCell(
-  page: Page,
-  gridSel: string,
-  rowIndex: number,
-  colId: string,
-  value: string
-): Promise<void> {
-  const cellSel = `${gridSel} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="${colId}"]`;
-  const cell = page.locator(cellSel);
-  await cell.scrollIntoViewIfNeeded();
-  await cell.dblclick();
-  const input = cell.locator("input").first();
-  await input.waitFor({ state: "visible", timeout: 3_000 });
-  await input.fill(value);
-  await input.press("Enter");
-  await page.waitForTimeout(100);
-}
-
-// Helper: agSelectCellEditor — click cell, Enter, click popup option
-async function selectGridOption(
-  page: Page,
-  gridSel: string,
-  rowIndex: number,
-  colId: string,
-  option: string
-): Promise<void> {
-  const cell = page.locator(
-    `${gridSel} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="${colId}"]`
-  );
-  await cell.scrollIntoViewIfNeeded();
-  await cell.click();
-  await page.keyboard.press("Enter");
-  const opt = page
-    .locator(`.ag-popup .ag-list-item:has-text("${option}")`)
-    .first();
-  await opt.waitFor({ state: "visible", timeout: 3_000 });
-  await opt.click();
-  await page.waitForTimeout(100);
-}
-
-// Helper: insert row after given row-index, wait for new row
-async function insertRowAfter(
-  page: Page,
-  gridSel: string,
-  rowIndex: number
-): Promise<void> {
-  const row = page.locator(`${gridSel} .ag-row[row-index="${rowIndex}"]`);
-  await row.getByRole("button", { name: "Insert row" }).click();
-  await page
-    .locator(`${gridSel} .ag-row[row-index="${rowIndex + 1}"]`)
-    .waitFor({ state: "attached", timeout: 3_000 });
-}
-
-// Helper: open MediumSelectorModal, pick manufacturer+glass, Confirm
-async function setMedium(
-  page: Page,
-  gridSel: string,
-  rowIndex: number,
-  manufacturer: string,
-  glass: string
-): Promise<void> {
-  const row = page.locator(`${gridSel} .ag-row[row-index="${rowIndex}"]`);
-  await row.hover();
-  await row.getByRole("button", { name: "Edit medium" }).click();
-  const modal = page.getByRole("dialog", { name: "Select Medium" });
-  await modal.waitFor({ state: "visible", timeout: 3_000 });
-  await page.getByLabel("Manufacturer").selectOption(manufacturer);
-  await page.getByLabel("Glass").selectOption(glass);
-  await page.getByRole("button", { name: "Confirm" }).click();
-  await modal.waitFor({ state: "hidden", timeout: 5_000 });
-}
-
-// Helper: edit a number cell in FieldConfigModal's grid (col-id="value")
-async function editFieldRow(
-  page: Page,
-  modalGrid: string,
-  rowIndex: number,
-  value: string
-): Promise<void> {
-  const cell = page.locator(
-    `${modalGrid} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="value"]`
-  );
-  await cell.scrollIntoViewIfNeeded();
-  await cell.dblclick();
-  const input = cell.locator("input").first();
-  await input.waitFor({ state: "visible", timeout: 3_000 });
-  await input.fill(value);
-  await input.press("Enter");
-  await page.waitForTimeout(100);
-}
-
-// Helper: select Fraunhofer symbol in WavelengthConfigModal (col-id="fraunhofer", agSelectCellEditor)
-async function selectFraunhofer(
-  page: Page,
-  modalGrid: string,
-  rowIndex: number,
-  symbol: string
-): Promise<void> {
-  const cell = page.locator(
-    `${modalGrid} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="fraunhofer"]`
-  );
-  await cell.scrollIntoViewIfNeeded();
-  await cell.click();
-  await page.keyboard.press("Enter");
-  const opt = page
-    .locator(`.ag-popup .ag-list-item:has-text("${symbol}")`)
-    .first();
-  await opt.waitFor({ state: "visible", timeout: 3_000 });
-  await opt.click();
-  await page.waitForTimeout(100);
-}
-
-// Helper: edit weight cell (col-id="weight") in WavelengthConfigModal
-async function editWeightCell(
-  page: Page,
-  modalGrid: string,
-  rowIndex: number,
-  value: string
-): Promise<void> {
-  const cell = page.locator(
-    `${modalGrid} .ag-row[row-index="${rowIndex}"] .ag-cell[col-id="weight"]`
-  );
-  await cell.scrollIntoViewIfNeeded();
-  await cell.dblclick();
-  const input = cell.locator("input").first();
-  await input.waitFor({ state: "visible", timeout: 3_000 });
-  await input.fill(value);
-  await input.press("Enter");
-  await page.waitForTimeout(100);
-}
+import { test, expect } from "@playwright/test";
+import {
+  PYODIDE_TIMEOUT,
+  waitForPyodide,
+  getColId,
+  editNumberCell,
+  selectGridOption,
+  insertRowAfter,
+  setMedium,
+  editFieldRow,
+  selectFraunhofer,
+  editWeightCell,
+} from "./utils";
 
 test("manually input Sasian Triplet and update system", async ({ page }) => {
   test.setTimeout(PYODIDE_TIMEOUT + 60_000); // 180s total
@@ -154,14 +18,7 @@ test("manually input Sasian Triplet and update system", async ({ page }) => {
   await page.goto("/");
 
   // 1. Wait for Pyodide
-  await page
-    .getByText("Initializing Ray Optics")
-    .waitFor({ state: "visible", timeout: 10_000 });
-  await page
-    .getByText("Initializing Ray Optics")
-    .waitFor({ state: "hidden", timeout: PYODIDE_TIMEOUT });
-  const updateBtn = page.getByRole("button", { name: "Update System" });
-  await expect(updateBtn).toBeEnabled({ timeout: 5_000 });
+  await waitForPyodide(page);
 
   // 2. System Specs tab → Aperture value
   await page.getByRole("tab", { name: "System Specs" }).click();
@@ -275,6 +132,7 @@ test("manually input Sasian Triplet and update system", async ({ page }) => {
   await editNumberCell(page, prescGrid, 6, colIdThickness, "41.2365");
 
   // 6. Click Update System
+  const updateBtn = page.locator('button[aria-label="Update System"]');
   await updateBtn.click();
 
   // 7. Wait for compute to finish (button disabled then re-enabled)
