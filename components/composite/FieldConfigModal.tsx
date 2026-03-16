@@ -152,12 +152,13 @@ export function FieldConfigModal({
 
   return (
     <Modal isOpen={isOpen} title="Field" titleId="field-modal-title" size="lg">
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 items-end">
         <div>
           <Label htmlFor="field-space">Field space</Label>
           <Select
             id="field-space"
             aria-label="Field space"
+            type="compact"
             value={space}
             onChange={(e) => setSpace(e.target.value as FieldSpace)}
             options={[
@@ -171,6 +172,7 @@ export function FieldConfigModal({
           <Select
             id="field-type"
             aria-label="Field type"
+            type="compact"
             value={fieldType}
             onChange={(e) => setFieldType(e.target.value as FieldType)}
             options={[
@@ -179,7 +181,7 @@ export function FieldConfigModal({
             ]}
           />
         </div>
-        <div>
+        <div className="col-span-2 sm:col-span-1">
           <Label htmlFor="field-max">Max field value</Label>
           <Input
             id="field-max"
@@ -187,6 +189,7 @@ export function FieldConfigModal({
             aria-label="Max field value"
             value={maxFieldStr}
             onChange={(e) => setMaxFieldStr(e.target.value)}
+            className="w-full"
           />
         </div>
       </div>
