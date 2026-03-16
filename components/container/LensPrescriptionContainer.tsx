@@ -113,13 +113,13 @@ export function LensPrescriptionContainer({
 
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
         <Tooltip text="Load a previously downloaded config" position="top-start" portal>
-          <Button variant="primary" size="xs" onClick={handleImportClick} aria-label="Load Config">Load Config</Button>
+          <Button variant="primary" size="xs" className="sm:px-3 sm:py-1.5 sm:text-sm" onClick={handleImportClick} aria-label="Load Config">Load Config</Button>
         </Tooltip>
         <Tooltip text="Download current config as JSON" portal>
-          <Button variant="primary" size="xs" onClick={handleExport} aria-label="Download Config">Download Config</Button>
+          <Button variant="primary" size="xs" className="sm:px-3 sm:py-1.5 sm:text-sm" onClick={handleExport} aria-label="Download Config">Download Config</Button>
         </Tooltip>
         <Tooltip text="Generate a Python script" portal>
-          <Button variant="secondary" size="xs" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
+          <Button variant="secondary" size="xs" className="sm:px-3 sm:py-1.5 sm:text-sm" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
         </Tooltip>
       </div>
 
@@ -130,6 +130,7 @@ export function LensPrescriptionContainer({
             id="auto-aperture-toggle"
             variant="secondary"
             size="xs"
+            className="sm:px-3 sm:py-1.5 sm:text-sm"
             aria-pressed={autoAperture}
             onClick={() => store.getState().setAutoAperture(!autoAperture)}
           >
