@@ -144,8 +144,8 @@ describe("SeidelAberrModal", () => {
     render(<SeidelAberrModal {...defaultProps} />);
     await userEvent.click(screen.getByRole("tab", { name: "Field Curvature" }));
     const grid = screen.getByTestId("ag-grid-mock");
-    // TCV = 0.1, so 1/0.1 = 10.0000 (toPrecision(6))
-    expect(within(grid).getByText((1 / 0.1).toPrecision(6))).toBeInTheDocument();
+    // TCV = 0.1, so 1/0.1 = 10.000000 (toFixed(6))
+    expect(within(grid).getByText((1 / 0.1).toFixed(6))).toBeInTheDocument();
   });
 
   it("zero curvature value shows 'Infinite' in Curvature Radius column", async () => {
