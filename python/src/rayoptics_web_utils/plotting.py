@@ -4,13 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import rayoptics.optical.model_constants as mc
 from rayoptics.raytr.waveabr import wave_abr_full_calc
-from rayoptics.mpl.interactivelayout import InteractiveLayout
-from rayoptics.parax.thirdorder import compute_third_order
+from rayoptics.environment import (
+    OpticalModel,
+    InteractiveLayout,
+    compute_third_order,
+)
 
 from rayoptics_web_utils._utils import _fig_to_base64, _get_wvl_lbl
 
 
-def plot_lens_layout(opm):
+def plot_lens_layout(opm: OpticalModel) -> str:
     """Plot the lens layout and return as base64 PNG."""
     fig = plt.figure(FigureClass=InteractiveLayout, opt_model=opm,
                      do_draw_rays=True, do_paraxial_layout=False, is_dark=False)
@@ -18,7 +21,7 @@ def plot_lens_layout(opm):
     return _fig_to_base64(fig)
 
 
-def plot_ray_fan(fi, opm):
+def plot_ray_fan(fi: int, opm: OpticalModel) -> str:
     """Plot tangential and sagittal ray fan for a given field index."""
     sm = opm['seq_model']
 
@@ -49,7 +52,7 @@ def plot_ray_fan(fi, opm):
     return _fig_to_base64(fig)
 
 
-def plot_opd_fan(fi, opm):
+def plot_opd_fan(fi: int, opm: OpticalModel) -> str:
     """Plot tangential and sagittal OPD fan for a given field index."""
     sm = opm['seq_model']
 
@@ -78,7 +81,7 @@ def plot_opd_fan(fi, opm):
     return _fig_to_base64(fig)
 
 
-def plot_spot_diagram(fi, opm):
+def plot_spot_diagram(fi: int, opm: OpticalModel) -> str:
     """Plot spot diagram for a given field index."""
     sm = opm['seq_model']
 
@@ -109,7 +112,7 @@ def plot_spot_diagram(fi, opm):
     return _fig_to_base64(fig)
 
 
-def plot_surface_by_surface_3rd_order_aberr(opm):
+def plot_surface_by_surface_3rd_order_aberr(opm: OpticalModel) -> str:
     """Plot surface-by-surface 3rd order aberrations as a bar chart."""
     to_pkg = compute_third_order(opm)
     fig, ax = plt.subplots()

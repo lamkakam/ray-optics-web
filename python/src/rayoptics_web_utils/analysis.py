@@ -1,5 +1,8 @@
 """Analysis functions for extracting optical data from a rayoptics model."""
 
+from typing import Literal
+from rayoptics.environment import OpticalModel
+
 from rayoptics.parax.thirdorder import (
     compute_third_order,
     seidel_to_transverse_aberration,
@@ -8,14 +11,14 @@ from rayoptics.parax.thirdorder import (
 )
 
 
-def get_first_order_data(opm):
+def get_first_order_data(opm: OpticalModel) -> dict[str, float]:
     """Return first-order paraxial data as a dict of floats."""
     pm = opm['parax_model']
     fod = pm.opt_model['analysis_results']['parax_data'].fod
     return {k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))}
 
-
-def get_3rd_order_seidel_data(opm):
+key_of_3rd_order_seidel_data = Literal['surfaceBySurface', 'transverse', 'wavefront', 'curvature']
+def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel_data, dict]:
     """Return 3rd-order Seidel aberration data as a dict."""
     to_pkg = compute_third_order(opm)
     fod = opm['analysis_results']['parax_data'].fod

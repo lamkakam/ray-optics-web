@@ -2,9 +2,10 @@
 
 import sys
 import types
+from opticalglass.opticalmedium import OpticalMedium
 
 
-def init():
+def init() -> dict[str, OpticalMedium]:
     """Initialize the rayoptics environment for use in Pyodide.
 
     Must be called before importing any other modules from this package
