@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rayoptics-web-utils"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "rayoptics==0.9.8",
+    "opticalglass==1.1.1",
+    "anytree==2.13.0",
+    "transforms3d==0.4.2",
+    "json-tricks==3.17.3",
+    "openpyxl==3.1.5",
+    "parsimonious==0.10.0",
+    "matplotlib",
+    "numpy",
+    "pyyaml",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+rayoptics_web_utils = ["data/*.yml"]

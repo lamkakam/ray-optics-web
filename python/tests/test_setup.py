@@ -1,0 +1,44 @@
+"""Tests for rayoptics_web_utils.setup module."""
+
+import sys
+import pytest
+
+
+class TestInit:
+    """Tests for the init() function."""
+
+    def test_init_stubs_pyside6_modules(self):
+        """init() should stub PySide6 and related modules in sys.modules."""
+        from rayoptics_web_utils.setup import init
+        init()
+        stubbed = [
+            'PySide6', 'PySide6.QtWidgets', 'PySide6.QtCore',
+            'PySide6.QtGui', 'psutil', 'zmq', 'pyzmq',
+            'tornado', 'tornado.ioloop',
+        ]
+        for mod_name in stubbed:
+            assert mod_name in sys.modules, f"{mod_name} should be stubbed"
+
+    def test_init_stubs_rayoptics_qtgui(self):
+        """init() should stub rayoptics.qtgui and rayoptics.qtgui.guiappcmds."""
+        from rayoptics_web_utils.setup import init
+        init()
+        assert 'rayoptics.qtgui' in sys.modules
+        assert 'rayoptics.qtgui.guiappcmds' in sys.modules
+        qtgui = sys.modules['rayoptics.qtgui']
+        assert hasattr(qtgui, 'guiappcmds')
+
+    def test_init_returns_dict_with_caf2(self):
+        """init() should return a dict containing a 'caf2' key."""
+        from rayoptics_web_utils.setup import init
+        result = init()
+        assert isinstance(result, dict)
+        assert 'caf2' in result
+        assert result['caf2'] is not None
+
+    def test_init_sets_matplotlib_backend(self):
+        """init() should set the matplotlib backend to Agg."""
+        from rayoptics_web_utils.setup import init
+        init()
+        import matplotlib
+        assert matplotlib.get_backend() == 'agg'
