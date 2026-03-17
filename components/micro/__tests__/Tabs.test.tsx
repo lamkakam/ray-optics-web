@@ -78,4 +78,16 @@ describe("Tabs", () => {
     const panel = screen.getByRole("tabpanel");
     expect(panel.className).toMatch(/custom-panel-class/);
   });
+
+  it("tablist has overflow-x-auto to allow horizontal scrolling", () => {
+    render(<Tabs tabs={TABS} />);
+    const tablist = screen.getByRole("tablist");
+    expect(tablist.className).toMatch(/overflow-x-auto/);
+  });
+
+  it("tab buttons have whitespace-nowrap to prevent label wrapping", () => {
+    render(<Tabs tabs={TABS} />);
+    const tab = screen.getByRole("tab", { name: "Alpha" });
+    expect(tab.className).toMatch(/whitespace-nowrap/);
+  });
 });

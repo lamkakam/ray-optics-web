@@ -20,3 +20,13 @@
 .animate-modal-enter {
   animation: modal-enter 0.2s ease-out;
 }
+
+/* Prevent iOS rubber-band bounce desync between AG Grid's
+   header and body scroll containers (touch devices only) */
+@media (pointer: coarse) {
+  .ag-header-viewport,
+  .ag-body-viewport,
+  .ag-center-cols-viewport {
+    overscroll-behavior: none;
+  }
+}
