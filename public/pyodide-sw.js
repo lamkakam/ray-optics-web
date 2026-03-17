@@ -1,5 +1,5 @@
 // Service worker: cache-first for Pyodide + PyPI packages
-const CACHE_NAME = "pyodide-cache-v1";
+const CACHE_NAME = "pyodide-cache-v1.1";
 
 const CACHEABLE_HOSTS = [
   "cdn.jsdelivr.net/pyodide/",
