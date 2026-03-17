@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import rayoptics.optical.model_constants as mc
 from rayoptics.raytr.waveabr import wave_abr_full_calc
-from rayoptics.gui.layout import InteractiveLayout
+from rayoptics.mpl.interactivelayout import InteractiveLayout
 from rayoptics.parax.thirdorder import compute_third_order
 
 from rayoptics_web_utils._utils import _fig_to_base64, _get_wvl_lbl
