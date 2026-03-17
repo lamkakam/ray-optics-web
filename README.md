@@ -1,6 +1,6 @@
 # ray-optics-web
 
-A web-based GUI for [RayOptics v0.9.4](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly). Pyodide is served from [jsDelivr](https://www.jsdelivr.com/); RayOptics and its dependencies are served from [Python Hosted](https://pythonhosted.org/).
+A web-based GUI for [RayOptics v0.9.8](https://github.com/mjhoptics/ray-optics) that runs entirely in the browser — no backend server required (except for serving the static assets). Python computations execute client-side via [Pyodide](https://pyodide.org/) (WebAssembly). Pyodide is served from [jsDelivr](https://www.jsdelivr.com/); RayOptics and its dependencies are served from [Python Hosted](https://pythonhosted.org/).
 
 **Live demo:** [https://lamkakam.github.io/ray-optics-web/](https://lamkakam.github.io/ray-optics-web/)
 
@@ -56,7 +56,10 @@ This project is not affiliated with, endorsed by, or in any way officially conne
 # Install dependencies
 npm install
 
-# Run dev server (http://localhost:3000)
+# Initialize the venv for the internal Python package and install deps for the development
+bash ./scripts/init-python-venv.sh
+
+# Build the wheel of rayoptics_web_utils and then run dev server (http://localhost:3000)
 npm run dev
 
 # Type check
@@ -68,10 +71,13 @@ npm run lint
 # Unit tests (Jest)
 npm run test
 
+# Unit tests for the internal Python package
+bash ./scripts/run-python-tests.sh
+
 # E2E tests (Playwright)
 npm run test:e2e
 
-# Build the app
+# Build the wheel of rayoptics_web_utils and then build the Next app
 npm run build
 
 # Serve the built app locally
@@ -94,7 +100,7 @@ Browser
 
 ### Fluorite (CaF2) refractive index data
 
-The refractive index data for fluorite used in this app is sourced from [refractiveindex.info](https://refractiveindex.info/?shelf=main&book=CaF2&page=Malitson) and is self-hosted at `public/database/data/main/CaF2/nk/Malitson.yml`.
+The refractive index data for fluorite used in this app is sourced from [refractiveindex.info](https://refractiveindex.info/?shelf=main&book=CaF2&page=Malitson) and is at `python/src/rayoptics-web-utils/data/CaF2_Malitson.yml`.
 
 - Source file: https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml
 - License: [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) — this file is **not** subject to the license of this repository.

@@ -16,6 +16,7 @@ build/
 # misc
 *.pem
 .DS_Store
+.vscode/
 
 # debug
 npm-debug.log*
@@ -30,3 +31,11 @@ next-env.d.ts
 # playwright
 test-results/
 playwright-report/
+
+# Python
+python/.venv/
+python/src/*.egg-info/
+python/build/
+*.whl
+__pycache__/
+*.pyc

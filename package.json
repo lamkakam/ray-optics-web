@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "bash scripts/build-python-wheel.sh",
     "dev": "next dev --webpack",
+    "prebuild": "bash scripts/build-python-wheel.sh",
     "build": "next build --webpack",
     "serve": "npx serve out",
     "type-check": "tsc --noEmit",

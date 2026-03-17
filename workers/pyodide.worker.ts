@@ -15,202 +15,45 @@ export function _resetPyodideForTesting(): void {
   pyodide = null;
 }
 
-// WARNING: DON'T TOUCH THE FORMATTING OF THE STRING LITERALS BELOW
-
 // ─── DANGEROUS ZONE ────────────────────────────────────────────────────────────────────
 // WARNING: DON'T TOUCH THIS PART UNLESS YOU KNOW WHAT YOU ARE DOING
 
 // export for testing
 export async function _init(
-  runPython: (code: string) => Promise<unknown>
+  runPython: (code: string) => Promise<unknown>,
+  wheelUrl: string
 ): Promise<void> {
   await runPython(`
-        import sys, types
-        for m in ['PySide6','PySide6.QtWidgets','PySide6.QtCore',
-                  'PySide6.QtGui','psutil','zmq','pyzmq',
-                  'tornado','tornado.ioloop']:
-            sys.modules[m] = types.ModuleType(m)
+import micropip
+await micropip.install("rayoptics==0.9.8", deps=False)
+await micropip.install("opticalglass==1.1.1", deps=False)
 `);
 
   await runPython(`
-        import micropip
-        await micropip.install("rayoptics==0.9.4", deps=False)
-        await micropip.install("opticalglass==1.1.0", deps=False)
+import micropip
+await micropip.install([
+    'anytree==2.13.0',
+    'transforms3d==0.4.2',
+    'json-tricks==3.17.3',
+    'openpyxl==3.1.5',
+    'parsimonious==0.10.0',
+])
 `);
 
   await runPython(`
-        import micropip
-        await micropip.install([
-            'anytree==2.13.0',
-            'transforms3d==0.4.2',
-            'json-tricks==3.17.3',
-            'openpyxl==3.1.2',
-            'parsimonious==0.10.0',
-        ])
-`);
+import micropip
+await micropip.install("${wheelUrl}", deps=False)
+from rayoptics_web_utils import init as _rwu_init
+_rwu_init_result = _rwu_init()
+caf2 = _rwu_init_result['caf2']
 
-  await runPython("import json\nfrom rayoptics.environment import *");
+import json
+from rayoptics.environment import *
+from rayoptics.raytr.trace import apply_paraxial_vignetting
+from rayoptics.elem.surface import DecenterData
 
-  await runPython(`
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        from io import BytesIO
-        import base64
-        import rayoptics.optical.model_constants as mc
-        from rayoptics.raytr.waveabr import wave_abr_full_calc
-        from rayoptics.raytr.trace import apply_paraxial_vignetting
-        from rayoptics.elem.surface import DecenterData
-        from opticalglass.rindexinfo import create_material
-        import yaml
-
-        ### Forcefully set the db as 'data-nk'
-        with open('/database/data/main/CaF2/nk/Malitson.yml') as _f:
-            _caf2_yaml = yaml.safe_load(_f)
-        caf2 = create_material(_caf2_yaml, 'CaF2', 'rii-main', 'data-nk')
-        ###
-
-        def _fig_to_base64(fig, dpi=150):
-            buf = BytesIO()
-            fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight')
-            buf.seek(0)
-            data = base64.b64encode(buf.read()).decode('utf-8')
-            buf.close()
-            plt.close(fig)
-            return data
-
-        def _get_wvl_lbl(opm, idx) -> str:
-            return f"{opm['optical_spec']['wvls'].wavelengths[idx]}nm"
-
-        def get_first_order_data(opm):
-            pm  = opm['parax_model']
-            fod = pm.opt_model['analysis_results']['parax_data'].fod
-            return {k: float(v) for k, v in fod.__dict__.items() if isinstance(v, (int, float))}
-
-        def plot_lens_layout():
-            fig = plt.figure(FigureClass=InteractiveLayout, opt_model=opm,
-                            do_draw_rays=True, do_paraxial_layout=False, is_dark=False)
-            fig.plot()
-            return _fig_to_base64(fig)
-
-        def plot_ray_fan(fi, opm):
-            def _ray_abr(p, xy, ray_pkg, fld, wvl, foc):
-                if ray_pkg[mc.ray] is not None:
-                    image_pt = fld.ref_sphere[0]
-                    ray = ray_pkg[mc.ray]
-                    dist = foc / ray[-1][mc.d][2]
-                    defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-                    t_abr = defocused_pt - image_pt
-                    return t_abr[xy]
-                return None
-
-            fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
-            for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
-                fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_ray_abr, fi, xy)
-                for k in range(len(fans_x)):
-                    ax.plot(fans_x[k], fans_y[k], color=colors[k], label=_get_wvl_lbl(opm, k))
-                ax.set_title(title)
-                ax.axhline(0, color='black', linewidth=0.5)
-                ax.axvline(0, color='black', linewidth=0.5)
-                ax.set_xlabel("Pupil Radius (Relative)")
-                ax.set_ylabel("Transverse Aberr. (mm)")
-                ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-3, 3))
-            handles, labels = ax_y.get_legend_handles_labels()
-            fig.legend(handles, labels, loc='lower center', ncol=max(len(handles), 1), bbox_to_anchor=(0.5, 0))
-            fig.tight_layout(rect=[0, 0.12, 1, 1])
-            return _fig_to_base64(fig)
-
-
-        def plot_opd_fan(fi, opm):
-            def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
-                if ray_pkg[mc.ray] is not None:
-                    fod = opm['analysis_results']['parax_data'].fod
-                    opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg, fld.chief_ray, fld.ref_sphere)
-                    
-                    # wvl is in the unit of nm but opd_val is in mm
-                    return opd_val / wvl * 1e6
-                return None
-
-            fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
-            for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
-                fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_opd_abr, fi, xy)
-                for k in range(len(fans_x)):
-                    ax.plot(fans_x[k], fans_y[k], color=colors[k], label=_get_wvl_lbl(opm, k))
-                ax.set_title(title)
-                ax.axhline(0, color='black', linewidth=0.5)
-                ax.axvline(0, color='black', linewidth=0.5)
-                ax.set_xlabel("Pupil Radius (Relative)")
-                ax.set_ylabel("waves")
-                ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-3, 3))
-            handles, labels = ax_y.get_legend_handles_labels()
-            fig.legend(handles, labels, loc='lower center', ncol=max(len(handles), 1), bbox_to_anchor=(0.5, 0))
-            fig.tight_layout(rect=[0, 0.12, 1, 1])
-            return _fig_to_base64(fig)
-
-        def plot_spot_diagram(fi, opm):
-            def _spot(p, wi, ray_pkg, fld, wvl, foc):
-                if ray_pkg is not None:
-                    image_pt = fld.ref_sphere[0]
-                    ray = ray_pkg[mc.ray]
-                    dist = foc / ray[-1][mc.d][2]
-                    defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-                    t_abr = defocused_pt - image_pt
-                    return np.array([t_abr[0], t_abr[1]])
-                return None
-
-            fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-            ax.set_aspect('equal')
-            grids, rc = sm.trace_grid(_spot, fi, wl=None, num_rays=21,
-                                      form='list', append_if_none=False)
-            for gi, grid in enumerate(grids):
-                x_pts = [pt[0] for pt in grid]
-                y_pts = [pt[1] for pt in grid]
-                ax.scatter(x_pts, y_pts, s=1, color=rc[gi], label=_get_wvl_lbl(opm, gi))
-            ax.set_title(f'Field {fi}')
-            ax.set_xlabel("mm")
-            ax.set_ylabel("mm")
-            ax.legend(loc='center', bbox_to_anchor=(0.5, -0.3), ncol=2)
-            ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-2, 2))
-            fig.tight_layout()
-            return _fig_to_base64(fig)
-
-        def plot_surface_by_surface_3rd_order_aberr(opm):
-            to_pkg = compute_third_order(opm)
-            fig, ax = plt.subplots()
-            ax.set_xlabel('Surface')
-            ax.set_ylabel('3rd Order Aberrations')
-            ax.set_title('Surface by Surface 3rd Order Aberrations')
-            to_pkg.plot.bar(ax=ax, rot=0)
-            ax.grid(True)
-            ax.ticklabel_format(axis='y', style='sci', useMathText=True, scilimits=(-3, 3))
-            fig.tight_layout()
-            return _fig_to_base64(fig)
-
-        def get_3rd_order_seidel_data(opm):
-            from rayoptics.parax.thirdorder import (
-                compute_third_order,
-                seidel_to_transverse_aberration,
-                seidel_to_wavefront,
-                seidel_to_field_curv,
-            )
-            to_pkg = compute_third_order(opm)
-            fod = opm['analysis_results']['parax_data'].fod
-            wvls = opm['optical_spec']['wvls']
-            seidel_sum = to_pkg.loc['sum']
-            surface_by_surface = {
-                'aberrTypes': to_pkg.columns.tolist(),
-                'surfaceLabels': to_pkg.index.tolist(),
-                'data': to_pkg.T.values.tolist(),
-            }
-            transverse = seidel_to_transverse_aberration(seidel_sum, fod.n_img, fod.img_na)
-            wavefront = seidel_to_wavefront(seidel_sum, wvls.central_wvl * 1e-6) # convert to mm
-            curvature = seidel_to_field_curv(seidel_sum, fod.n_img, fod.opt_inv)
-            return {
-                'surfaceBySurface': surface_by_surface,
-                'transverse': transverse.to_dict(),
-                'wavefront': wavefront.to_dict(),
-                'curvature': curvature.to_dict(),
-            }
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data
+from rayoptics_web_utils.plotting import plot_lens_layout, plot_ray_fan, plot_opd_fan, plot_spot_diagram, plot_surface_by_surface_3rd_order_aberr
 `);
 }
 
@@ -235,16 +78,9 @@ export async function init(): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const caf2Url = `${self.location.origin}${basePath}/database/data/main/CaF2/nk/Malitson.yml`;
-    const caf2Res = await fetch(caf2Url);
-    if (!caf2Res.ok) {
-      throw new Error(`Failed to fetch CaF2 YAML from ${caf2Url}: ${caf2Res.status}`);
-    }
-    const caf2Yaml = await caf2Res.text();
-    pyodide.FS.mkdirTree('/database/data/main/CaF2/nk');
-    pyodide.FS.writeFile('/database/data/main/CaF2/nk/Malitson.yml', caf2Yaml);
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.1.0-py3-none-any.whl`;
 
-    await _init(pyodide.runPythonAsync.bind(pyodide));
+    await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
   } catch (err) {
     pyodide = null;
     console.error(err);
@@ -278,7 +114,7 @@ export async function _getFirstOrderData(runPython: (code: string) => Promise<un
 // ─── Plot Functions (injectable for testing) ─────────────────────────────────
 
 export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>): Promise<string> {
-  return (await runPython("plot_lens_layout()")) as string;
+  return (await runPython("plot_lens_layout(opm)")) as string;
 }
 
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {

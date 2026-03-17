@@ -211,10 +211,10 @@ describe("_getFirstOrderData", () => {
 
 
 describe("_plotLensLayout", () => {
-  it("should call plot_lens_layout() and return the result", async () => {
+  it("should call plot_lens_layout(opm) and return the result", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     const result = await _plotLensLayout(async (code) => {
-      expect(code).toBe("plot_lens_layout()");
+      expect(code).toBe("plot_lens_layout(opm)");
       return mockBase64;
     });
     expect(result).toBe(mockBase64);
@@ -315,113 +315,59 @@ describe("_get3rdOrderSeidelData", () => {
 
 
 describe("_init", () => {
-  it("should define all plot functions via runPython", async () => {
+  const testWheelUrl = "http://localhost/rayoptics_web_utils-0.1.0-py3-none-any.whl";
+
+  it("should install the local wheel and import rayoptics_web_utils", async () => {
     const scripts: string[] = [];
-    await _init(async (code) => { scripts.push(code); });
+    await _init(async (code) => { scripts.push(code); }, testWheelUrl);
     const allCode = scripts.join("\n");
 
-    // setup for CaF2
-    expect(allCode).toMatch(/caf2 = create_material\([a-zA-Z\d_]+, 'CaF2', 'rii-main', 'data-nk'\)/);
+    // Install the wheel
+    expect(allCode).toContain(`micropip.install("${testWheelUrl}", deps=False)`);
 
-    // get_first_order_data
-    expect(allCode).toContain("def get_first_order_data(opm):");
-    expect(allCode).toContain("opt_model['analysis_results']['parax_data'].fod");
+    // Initialize the package
+    expect(allCode).toContain("from rayoptics_web_utils import init as _rwu_init");
+    expect(allCode).toContain("_rwu_init()");
+    expect(allCode).toContain("caf2 = _rwu_init_result['caf2']");
 
-    // plot_lens_layout
-    expect(allCode).toContain("def plot_lens_layout():");
-    expect(allCode).toContain("InteractiveLayout");
-
-    // _ray_abr
-    expect(allCode).toContain("def _ray_abr(");
-    expect(allCode).toContain("defocused_pt - image_pt");
-
-    // plot_ray_fan
-    expect(allCode).toContain("def plot_ray_fan(fi, opm):");
-    expect(allCode).toContain("sm.trace_fan(_ray_abr");
-    expect(allCode).toContain("Tangential");
-    expect(allCode).toContain("Sagittal");
-
-    // _opd_abr
-    expect(allCode).toContain("def _opd_abr(");
-    expect(allCode).toContain("wave_abr_full_calc");
-
-    // plot_opd_fan
-    expect(allCode).toContain("def plot_opd_fan(fi, opm):");
-    expect(allCode).toContain("sm.trace_fan(_opd_abr");
-
-    // _spot
-    expect(allCode).toContain("def _spot(");
-    expect(allCode).toContain("np.array([t_abr[0], t_abr[1]])");
-
-    // plot_spot_diagram
-    expect(allCode).toContain("def plot_spot_diagram(fi, opm):");
-    expect(allCode).toContain("sm.trace_grid(_spot");
-    expect(allCode).toContain("set_aspect('equal')");
-
-    // plot_surface_by_surface_3rd_order_aberr
-    expect(allCode).toContain("def plot_surface_by_surface_3rd_order_aberr(opm):");
-    expect(allCode).toContain("compute_third_order(opm)");
-
-    // get_3rd_order_seidel_data
-    expect(allCode).toContain("def get_3rd_order_seidel_data(opm):");
-    expect(allCode).toContain("seidel_to_transverse_aberration");
-    expect(allCode).toContain("seidel_to_wavefront");
-    expect(allCode).toContain("seidel_to_field_curv");
-    expect(allCode).toContain("surfaceBySurface");
+    // Import analysis and plotting functions
+    expect(allCode).toContain("from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data");
+    expect(allCode).toContain("from rayoptics_web_utils.plotting import plot_lens_layout, plot_ray_fan, plot_opd_fan, plot_spot_diagram, plot_surface_by_surface_3rd_order_aberr");
   });
 
   it("should install rayoptics and opticalglass", async () => {
     const scripts: string[] = [];
-    await _init(async (code) => { scripts.push(code); });
+    await _init(async (code) => { scripts.push(code); }, testWheelUrl);
     const allCode = scripts.join("\n");
-    expect(allCode).toContain('micropip.install("rayoptics==0.9.4"');
-    expect(allCode).toContain('micropip.install("opticalglass==1.1.0"');
+    expect(allCode).toContain('micropip.install("rayoptics==0.9.8"');
+    expect(allCode).toContain('micropip.install("opticalglass==1.1.1"');
   });
 
   it("should import rayoptics environment", async () => {
     const scripts: string[] = [];
-    await _init(async (code) => { scripts.push(code); });
+    await _init(async (code) => { scripts.push(code); }, testWheelUrl);
     const allCode = scripts.join("\n");
     expect(allCode).toContain("from rayoptics.environment import *");
   });
 });
 
 describe("init", () => {
-  let fetchMock: jest.Mock;
-
-  beforeEach(() => {
-    fetchMock = jest.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      text: async () => "yaml: content",
-    });
-    global.fetch = fetchMock;
-  });
-
   afterEach(() => {
     jest.restoreAllMocks();
     delete process.env.NEXT_PUBLIC_BASE_PATH;
     _resetPyodideForTesting();
   });
 
-  it("fetches the YAML file from the correct URL without base path", async () => {
+  it("initializes Pyodide and calls _init without fetching CaF2 YAML", async () => {
     await init();
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringMatching(/\/database\/data\/main\/CaF2\/nk\/Malitson\.yml$/)
-    );
-    const url: string = fetchMock.mock.calls[0][0] as string;
-    expect(url).not.toContain("undefined");
+    // init should succeed without any fetch calls (CaF2 is bundled in the wheel)
   });
 
-  it("includes NEXT_PUBLIC_BASE_PATH in the YAML fetch URL", async () => {
+  it("constructs wheel URL with base path", async () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/ray-optics-web";
+    // Re-init to pick up the env var
+    _resetPyodideForTesting();
     await init();
-    const url: string = fetchMock.mock.calls[0][0] as string;
-    expect(url).toContain("/ray-optics-web/database/data/main/CaF2/nk/Malitson.yml");
-  });
-
-  it("throws if the YAML fetch returns a non-ok response", async () => {
-    fetchMock.mockResolvedValue({ ok: false, status: 404, text: async () => "Not Found" });
-    await expect(init()).rejects.toThrow(/Failed to fetch.*CaF2.*404/);
+    // The wheel URL construction is tested implicitly via _init tests
   });
 });

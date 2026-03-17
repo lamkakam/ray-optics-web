@@ -6,6 +6,7 @@
 
 ## Development Methodology
 - TDD. Never implement anything before writing tests. The newly added tests should fail first, then you implement the feature to make the tests pass.
+- Before working on files under `python/`, always use venv by running `source ./python/.venv/bin/activate`. Always check with `which pip`, `which pip3`, `which python` and `which python3` to ensure you are using the venv before running any Python script.
 - Always work on a feature branch. Never work on main branch.
 - Never push to main branch. Always push to a feature branch and open a PR for human approval
 - All tests must be pass and type checking must be passed before merging into main
@@ -24,7 +25,7 @@
 | Styling | Tailwind CSS |
 | Python runtime | Pyodide v0.27.7 |
 | Worker communication | Comlink |
-| Python package | `rayoptics` (via `micropip`) |
+| Internal Python package | in `python/` |
 | Package manager | npm |
 
 ## Architecture
@@ -73,7 +74,10 @@ ray-optics-web/
 # Install dependencies
 npm install
 
-# Run dev server
+# Initialize the venv for the internal Python package and install deps for the development
+bash ./scripts/init-python-venv.sh
+
+# Build the wheel of rayoptics_web_utils and then run dev server (http://localhost:3000)
 npm run dev
 
 # Type check
@@ -82,11 +86,20 @@ npm run type-check
 # Lint
 npm run lint
 
-# Build
+# Unit tests (Jest)
+npm run test
+
+# Unit tests for the internal Python package
+bash ./scripts/run-python-tests.sh
+
+# E2E tests (Playwright)
+npm run test:e2e
+
+# Build the wheel of rayoptics_web_utils and then build the Next app
 npm run build
 
-# Test
-npm run test
+# Serve the built app locally
+npm run serve
 ```
 
 ## Known Constraints & Gotchas

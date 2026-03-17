@@ -42,4 +42,28 @@ describe("shouldCache", () => {
       shouldCache("https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js")
     ).toBe(false);
   });
+
+  it("returns true for same-origin .whl files", () => {
+    const origin = "https://example.com";
+    expect(
+      shouldCache("https://example.com/rayoptics_web_utils-0.1.0-py3-none-any.whl", origin)
+    ).toBe(true);
+    expect(
+      shouldCache("https://example.com/ray-optics-web/rayoptics_web_utils-0.1.0-py3-none-any.whl", origin)
+    ).toBe(true);
+  });
+
+  it("returns false for cross-origin .whl files", () => {
+    const origin = "https://example.com";
+    expect(
+      shouldCache("https://other.com/rayoptics_web_utils-0.1.0-py3-none-any.whl", origin)
+    ).toBe(false);
+  });
+
+  it("returns false for same-origin non-.whl files", () => {
+    const origin = "https://example.com";
+    expect(
+      shouldCache("https://example.com/app.js", origin)
+    ).toBe(false);
+  });
 });

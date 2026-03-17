@@ -13,6 +13,12 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: bash scripts/init-python-venv.sh
+      - run: bash scripts/run-python-tests.sh
+      - run: bash scripts/build-python-wheel.sh
       - run: npm ci
       - run: npm run type-check
       - run: npm run lint

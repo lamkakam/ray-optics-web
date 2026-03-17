@@ -1,5 +1,5 @@
 // Service worker: cache-first for Pyodide + PyPI packages
-const CACHE_NAME = "pyodide-cache-v1";
+const CACHE_NAME = "pyodide-cache-v1.1";
 
 const CACHEABLE_HOSTS = [
   "cdn.jsdelivr.net/pyodide/",
@@ -8,7 +8,14 @@ const CACHEABLE_HOSTS = [
 ];
 
 function shouldCache(url) {
-  return CACHEABLE_HOSTS.some((pattern) => url.includes(pattern));
+  if (CACHEABLE_HOSTS.some((pattern) => url.includes(pattern))) {
+    return true;
+  }
+  // Cache same-origin .whl files (e.g., the rayoptics-web-utils wheel)
+  if (url.startsWith(self.location.origin) && url.endsWith(".whl")) {
+    return true;
+  }
+  return false;
 }
 
 self.addEventListener("install", () => {
