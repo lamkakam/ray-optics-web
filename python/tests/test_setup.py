@@ -41,4 +41,4 @@ class TestInit:
         from rayoptics_web_utils.setup import init
         init()
         import matplotlib
-        assert matplotlib.get_backend() == 'agg'
+        assert matplotlib.get_backend() == 'Agg'
