@@ -1,13 +1,10 @@
 import React, { useMemo } from "react";
-import { AgGridReact, AgGridProvider, type CustomCellRendererProps } from "ag-grid-react";
-import type { ColDef } from "ag-grid-community";
-import { AllCommunityModule } from "ag-grid-community";
 import { MathJaxContext, MathJax } from "better-react-mathjax";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
+import { Table } from "@/components/micro/Table";
 import { Tabs } from "@/components/micro/Tabs";
 import type { TabItem } from "@/components/micro/Tabs";
-import { useAgGridTheme } from "@/hooks/useAgGridTheme";
 import type { SeidelData, AberrationTypeToLabel } from "@/lib/opticalModel";
 import { Paragraph } from "../micro/Paragraph";
 
@@ -36,154 +33,86 @@ const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
   PCV: "Petzval Curvature (PCV)",
 };
 
-const CommonCellRendererForSummaryTable = (params: CustomCellRendererProps<{ _key: string; _value: number }, string>): React.ReactNode => {
-  const key = params.data?._key;
-  if (key === undefined || key === null) {
-    return "";
-  }
-
-  return ABERRATION_TYPE_TO_LABEL[key];
-};
-
-const SUMMARY_COL_DEFS: ColDef<{ _key: string; _value: number }, string | number>[] = [
-  {
-    headerName: "Aberration",
-    field: "_key",
-    editable: false,
-    cellRenderer: CommonCellRendererForSummaryTable,
-    flex: 1,
-  },
-  {
-    headerName: "Value",
-    field: "_value",
-    editable: false,
-    valueFormatter: ({ value }) => commonValueFormatter(value as number),
-  },
-];
-
-const CURVATURE_COL_DEFS: ColDef<{ _key: string; _value: number }, string | number>[] = [
-  {
-    headerName: "Aberration",
-    field: "_key",
-    editable: false,
-    cellRenderer: CommonCellRendererForSummaryTable,
-    flex: 1,
-  },
-  {
-    headerName: "Value",
-    field: "_value",
-    editable: false,
-    valueFormatter: ({ value }) => commonValueFormatter(value as number),
-  },
-  {
-    headerName: "Curvature Radius",
-    field: "_value",
-    editable: false,
-    valueFormatter: ({ value }) => {
-      const v = value as number;
-      return v === 0 ? "Infinite" : commonValueFormatter(1 / v);
-    },
-  },
-];
-
-function summaryRowData(entries: Record<string, number>) {
-  return Object.entries(entries).map(([key, value]) => ({ _key: key, _value: value }));
-}
-
 export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProps) {
-  const gridTheme = useAgGridTheme();
-
   const { surfaceBySurface, transverse, wavefront, curvature } = data;
 
-  const surfaceRowData = useMemo(() => {
-    return surfaceBySurface.surfaceLabels.map((surface, colIdx) => {
-      const row: Record<string, string | number> = { _surface: surface };
-      surfaceBySurface.aberrTypes.forEach((aberrType, rowIdx) => {
-        row[aberrType] = commonValueFormatter(surfaceBySurface.data[rowIdx][colIdx]);
-      });
-      return row;
-    });
-  }, [surfaceBySurface]);
+  const surfaceHeaders = useMemo(
+    () => ["Surface", ...surfaceBySurface.aberrTypes],
+    [surfaceBySurface.aberrTypes],
+  );
 
-  const surfaceColumnDefs: ColDef[] = useMemo(() => [
-    { headerName: "Surface", field: "_surface", editable: false },
-    ...surfaceBySurface.aberrTypes.map((aberrType) => ({
-      headerName: aberrType,
-      field: aberrType,
-      editable: false,
-    })),
-  ], [surfaceBySurface.aberrTypes]);
+  const surfaceRows = useMemo(
+    () =>
+      surfaceBySurface.surfaceLabels.map((label, colIdx) => [
+        label,
+        ...surfaceBySurface.aberrTypes.map((_, rowIdx) =>
+          commonValueFormatter(surfaceBySurface.data[rowIdx][colIdx]),
+        ),
+      ]),
+    [surfaceBySurface],
+  );
 
-  const transverseRowData = useMemo(() => summaryRowData(transverse), [transverse]);
-  const wavefrontRowData = useMemo(() => summaryRowData(wavefront), [wavefront]);
-  const curvatureRowData = useMemo(() => summaryRowData(curvature), [curvature]);
+  const transverseRows = useMemo(
+    () => Object.entries(transverse).map(([key, val]) => [ABERRATION_TYPE_TO_LABEL[key], val.toFixed(6)]),
+    [transverse],
+  );
 
-  const tabs: TabItem[] = useMemo(() => [
-    {
-      id: "surfaceBySurface",
-      label: "Surface by Surface",
-      content: (
-        <div className="pt-2" style={{ width: "100%", height: "100%" }}>
-          <AgGridProvider modules={[AllCommunityModule]}>
-            <AgGridReact
-              theme={gridTheme}
-              rowData={surfaceRowData}
-              columnDefs={surfaceColumnDefs}
-              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-            />
-          </AgGridProvider>
-        </div>
-      ),
-    },
-    {
-      id: "transverse",
-      label: "Transverse",
-      content: (
-        <div className="pt-2" style={{ width: "100%", height: "100%" }}>
-          <AgGridProvider modules={[AllCommunityModule]}>
-            <AgGridReact
-              theme={gridTheme}
-              rowData={transverseRowData}
-              columnDefs={SUMMARY_COL_DEFS}
-              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-            />
-          </AgGridProvider>
-        </div>
-      ),
-    },
-    {
-      id: "wavefront",
-      label: "Wavefront",
-      content: (
-        <div className="pt-2" style={{ width: "100%", height: "100%" }}>
-          <AgGridProvider modules={[AllCommunityModule]}>
-            <AgGridReact
-              theme={gridTheme}
-              rowData={wavefrontRowData}
-              columnDefs={SUMMARY_COL_DEFS}
-              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-            />
-          </AgGridProvider>
-        </div>
-      ),
-    },
-    {
-      id: "curvature",
-      label: "Field Curvature",
-      content: (
-        <div className="pt-2" style={{ width: "100%", height: "100%" }}>
-          <AgGridProvider modules={[AllCommunityModule]}>
-            <AgGridReact
-              theme={gridTheme}
-              rowData={curvatureRowData}
-              columnDefs={CURVATURE_COL_DEFS}
-              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-            />
-          </AgGridProvider>
-        </div>
-      ),
-    },
-  ], [gridTheme, surfaceRowData, surfaceColumnDefs, transverseRowData, wavefrontRowData, curvatureRowData]);
+  const wavefrontRows = useMemo(
+    () => Object.entries(wavefront).map(([key, val]) => [ABERRATION_TYPE_TO_LABEL[key], val.toFixed(6)]),
+    [wavefront],
+  );
+
+  const curvatureRows = useMemo(
+    () =>
+      Object.entries(curvature).map(([key, val]) => [
+        ABERRATION_TYPE_TO_LABEL[key],
+        val.toFixed(6),
+        val === 0 ? "Infinite" : (1 / val).toFixed(6),
+      ]),
+    [curvature],
+  );
+
+  const tabs: TabItem[] = useMemo(
+    () => [
+      {
+        id: "surfaceBySurface",
+        label: "Surface by Surface",
+        content: (
+          <div className="pt-2 overflow-x-auto">
+            <Table headers={surfaceHeaders} rows={surfaceRows} />
+          </div>
+        ),
+      },
+      {
+        id: "transverse",
+        label: "Transverse",
+        content: (
+          <div className="pt-2 overflow-x-auto">
+            <Table headers={["Aberration", "Value"]} rows={transverseRows} />
+          </div>
+        ),
+      },
+      {
+        id: "wavefront",
+        label: "Wavefront",
+        content: (
+          <div className="pt-2 overflow-x-auto">
+            <Table headers={["Aberration", "Value"]} rows={wavefrontRows} />
+          </div>
+        ),
+      },
+      {
+        id: "curvature",
+        label: "Field Curvature",
+        content: (
+          <div className="pt-2 overflow-x-auto">
+            <Table headers={["Aberration", "Value", "Curvature Radius"]} rows={curvatureRows} />
+          </div>
+        ),
+      },
+    ],
+    [surfaceHeaders, surfaceRows, transverseRows, wavefrontRows, curvatureRows],
+  );
 
   return (
     <MathJaxContext>
