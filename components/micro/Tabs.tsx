@@ -23,7 +23,7 @@ export function Tabs({ tabs, actions, showPanel = true, panelClassName }: TabsPr
   return (
     <>
       <div className="flex shrink-0 items-center gap-1 border-b border-gray-200 px-3 dark:border-gray-700">
-        <div role="tablist" className="flex flex-1 gap-1">
+        <div role="tablist" className="flex flex-1 gap-1 overflow-x-auto min-w-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -31,7 +31,7 @@ export function Tabs({ tabs, actions, showPanel = true, panelClassName }: TabsPr
               aria-label={tab.label}
               aria-selected={activeTab === tab.id}
               className={clsx(
-                "rounded-t-lg px-3 py-1.5 text-sm font-medium transition",
+                "rounded-t-lg px-3 py-1.5 text-sm font-medium transition whitespace-nowrap shrink-0",
                 activeTab === tab.id
                   ? [cx.tab.color.activeBgColor, cx.tab.color.activeTextColor]
                   : [cx.tab.color.inactiveTextColor, cx.tab.color.inactiveHoverTextColor],
