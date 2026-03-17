@@ -34,8 +34,8 @@ export async function _init(
 
   await runPython(`
         import micropip
-        await micropip.install("rayoptics==0.9.4", deps=False)
-        await micropip.install("opticalglass==1.1.0", deps=False)
+        await micropip.install("rayoptics==0.9.8", deps=False)
+        await micropip.install("opticalglass==1.1.1", deps=False)
 `);
 
   await runPython(`
@@ -44,17 +44,29 @@ export async function _init(
             'anytree==2.13.0',
             'transforms3d==0.4.2',
             'json-tricks==3.17.3',
-            'openpyxl==3.1.2',
+            'openpyxl==3.1.5',
             'parsimonious==0.10.0',
         ])
 `);
 
-  await runPython("import json\nfrom rayoptics.environment import *");
-
   await runPython(`
+        import sys
+        import types
+
+        # Stub out Qt modules
+        fake_qtgui = types.ModuleType('rayoptics.qtgui')
+        fake_guiappcmds = types.ModuleType('rayoptics.qtgui.guiappcmds')
+        sys.modules['rayoptics.qtgui'] = fake_qtgui
+        sys.modules['rayoptics.qtgui.guiappcmds'] = fake_guiappcmds
+        fake_qtgui.guiappcmds = fake_guiappcmds
+
+        import json
+        from rayoptics.environment import *
+
         import matplotlib
         matplotlib.use('Agg')
         import matplotlib.pyplot as plt
+
         from io import BytesIO
         import base64
         import rayoptics.optical.model_constants as mc
