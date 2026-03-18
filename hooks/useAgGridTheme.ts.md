@@ -31,6 +31,6 @@ The return type is the opaque theme object accepted by AG Grid's `theme` prop.
 - Any value of `theme` that is not `"dark"` falls through to the light scheme (safe default).
 - The memoised value is stable across re-renders when `theme` does not change, preventing unnecessary AG Grid re-renders.
 
-## Integration
+## Usages
 
 Used by components that render AG Grid tables (e.g. the surface data editor). Pass the returned theme object directly to AG Grid's `theme` prop.

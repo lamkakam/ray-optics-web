@@ -37,6 +37,6 @@ Register the Pyodide service worker (file at`public/pyodide-sw.js`) so that the 
 - Registration failures (network error, script parse error, etc.) are silently swallowed — the app functions without caching; users just re-download assets on each visit.
 - On the server `navigator` is `undefined`; the guard at the top of `registerServiceWorker` prevents any error.
 
-## Integration
+## Usages
 
 Called once at the app root (e.g. in `app/layout.tsx` or the top-level page component) to set up caching early in the page lifecycle. No return value or state is exposed — callers do not need to react to registration success or failure.

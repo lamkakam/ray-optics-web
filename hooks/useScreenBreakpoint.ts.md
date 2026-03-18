@@ -37,6 +37,6 @@ The module-level default is `"screenLG"`. The usage of `useLayoutEffect` is to a
 - Multiple hook instances each register an independent listener via the internal subscription registry; they do not interfere with one another.
 - `_resetRegistry()` is exported for test isolation only — not for production use.
 
-## Integration
+## Usages
 
 Used by layout/container components that need to conditionally render different UI variants (e.g. mobile vs desktop) based on viewport width. Pass the returned value as a prop to child components rather than calling the hook inside them, to keep children testable without a browser environment.

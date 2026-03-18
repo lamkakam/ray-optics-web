@@ -55,6 +55,6 @@ interface PyodideWorkerAPI {
 - `proxy` is `undefined` while initialising, preventing callers from invoking methods before the worker is ready.
 - `_resetSingleton()` is exported for test isolation only — NOT for production use.
 
-## Integration
+## Usages
 
 Used by container components (e.g. the main page container) that coordinate calls to the worker. Components should receive `proxy`, `isReady`, and `error` as props via dependency injection rather than calling this hook directly, to keep them testable without a real worker.
