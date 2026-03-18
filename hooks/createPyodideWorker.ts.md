@@ -2,14 +2,9 @@
 
 ## Purpose
 
-Factory function that instantiates the Pyodide web worker. Extracted into its own module so that tests can mock it without encountering `import.meta.url` resolution issues.
+Instantiate the Pyodide web worker. Extracted into its own module so that tests can mock it without encountering `import.meta.url` resolution issues.
 
 ## Return Value
-
-```ts
-function createPyodideWorker(): Worker
-```
-
 Returns a new `Worker` instance backed by `workers/pyodide.worker.ts`.
 
 ## Behavior
@@ -20,7 +15,7 @@ Constructs the worker using the Next.js-required pattern:
 new Worker(new URL("../workers/pyodide.worker.ts", import.meta.url))
 ```
 
-The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bundler uses it to locate and bundle the worker script correctly. String paths are not supported.
+The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bundler uses it to locate and bundle the worker script correctly. DO NOT USE string paths.
 
 ## Dependencies
 
@@ -30,7 +25,7 @@ The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bund
 ## Edge Cases / Error Handling
 
 - Each call returns a **new** `Worker` instance. Callers (i.e. `usePyodide`) are responsible for ensuring this is only called once (singleton pattern).
-- No error handling inside the factory — if the worker script fails to load, the `Worker` constructor throws and the caller handles it.
+- No error handling inside — if the worker script fails to load, the `Worker` constructor throws and the caller handles it.
 
 ## Integration
 

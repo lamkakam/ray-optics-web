@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Register the Pyodide service worker (`/pyodide-sw.js`) so that the browser caches the Pyodide WASM bundle and the `rayoptics` wheel, avoiding re-downloads on subsequent visits.
+Register the Pyodide service worker (file at`public/pyodide-sw.js`) so that the browser caches the Pyodide WASM bundle and the wheels of `rayoptics-web-utils` (internal package in `python/`), `rayoptics` and its deps.
 
 ## Exports
 

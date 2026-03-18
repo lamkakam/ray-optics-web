@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Initialise the singleton Pyodide web worker and expose a typed Comlink proxy to the rest of the app. All RayOptics computations run in the worker; this hook provides the React interface to them.
+Initialise the singleton Pyodide web worker and expose a typed Comlink proxy to the rest of the app. All RayOptics computations run in the web worker; this hook provides the React interface to them.
 
 ## PyodideWorkerAPI Interface
 
@@ -42,18 +42,18 @@ interface PyodideWorkerAPI {
 
 ## Dependencies
 
-- `createPyodideWorker` — factory that creates the `Worker` instance.
+- `createPyodideWorker` — function that creates the `Worker` instance.
 - `comlink.wrap` — wraps the worker as a typed async proxy.
-- `OpticalModel` — imported from `@/lib/opticalModel` (type only).
-- `SeidelData` — imported from `@/lib/opticalModel` (type only).
-- `SetAutoApertureFlag` — imported from `@/lib/apertureFlag` (type only).
+- `OpticalModel` — imported from `lib/opticalModel` (type only).
+- `SeidelData` — imported from `lib/opticalModel` (type only).
+- `SetAutoApertureFlag` — imported from `lib/apertureFlag` (type only).
 
 ## Edge Cases / Error Handling
 
 - Multiple hook instances share the same singleton proxy and init promise — calling the hook from many components is safe.
 - Errors from `proxy.init()` are caught and stored as a plain string in `error`; the worker itself remains alive.
 - `proxy` is `undefined` while initialising, preventing callers from invoking methods before the worker is ready.
-- `_resetSingleton()` is exported for test isolation only — not for production use.
+- `_resetSingleton()` is exported for test isolation only — NOT for production use.
 
 ## Integration
 
