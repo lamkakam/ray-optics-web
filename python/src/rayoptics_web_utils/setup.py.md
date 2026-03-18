@@ -30,14 +30,6 @@ Returns `{'caf2': <OpticalMedium>}`.
 - `init()` is **not** idempotent regarding `sys.modules` — it overwrites stub entries on each call, which is harmless.
 - The bundled YAML file (`data/CaF2_Malitson.yml`) is accessed via `importlib.resources` so it works correctly inside a zip-installed wheel.
 
-## Dependencies
-
-- `sys`, `types` — standard library, for module stubbing
-- `opticalglass.opticalmedium.OpticalMedium` — return type annotation; imported at module level (safe — no rayoptics dependency)
-- `matplotlib` — `matplotlib.use('Agg')`, imported inside `init()` body
-- `importlib.resources` — for locating bundled YAML data
-- `yaml` — `yaml.safe_load`, imported inside `init()` body
-- `opticalglass.rindexinfo.create_material` — constructs the `OpticalMedium` from YAML, imported inside `init()` body
 
 ## Usages
 

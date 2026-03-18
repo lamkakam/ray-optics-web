@@ -69,18 +69,6 @@ Plots a grouped bar chart of per-surface third-order Seidel aberration coefficie
 - The `_ray_abr` and `_opd_abr` callbacks return `None` for failed ray traces (`ray_pkg[mc.ray] is None`); `trace_fan` skips `None` returns.
 - OPD unit conversion: `opd_val` from `wave_abr_full_calc` is in mm; `wvl` is in nm → multiply by `1e6` to get waves.
 
-## Dependencies
-
-- `numpy` — array arithmetic in `_spot` callback
-- `matplotlib.pyplot` — figure/axes creation
-- `rayoptics.optical.model_constants` (`mc`) — `mc.ray`, `mc.p`, `mc.d` indices
-- `rayoptics.raytr.waveabr.wave_abr_full_calc` — OPD computation
-- `rayoptics.environment.OpticalModel` — type annotation
-- `rayoptics.environment.InteractiveLayout` — lens layout figure class
-- `rayoptics.environment.compute_third_order` — Seidel DataFrame
-- `rayoptics_web_utils._utils._fig_to_base64` — PNG serialisation
-- `rayoptics_web_utils._utils._get_wvl_lbl` — wavelength legend labels
-
 ## Usages
 
-- `workers/pyodide.worker.ts` — `_plotLensLayout`, `_plotRayFan`, `_plotOpdFan`, `_plotSpotDiagram`, `_plotSurfaceBySurface3rdOrderAberr` each call the corresponding function and return the base64 string directly to the TypeScript caller.
+- Imported in the Pyodide web worker (`workers/pyodide.worker.ts`)

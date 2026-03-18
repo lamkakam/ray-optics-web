@@ -51,15 +51,6 @@ Return shape:
 - `compute_third_order` returns a pandas DataFrame indexed by surface label; the `'sum'` row is the total across all surfaces.
 - `fod` (first-order data) is accessed via `opm['analysis_results']['parax_data'].fod` for Seidel functions.
 
-## Dependencies
-
-- `rayoptics.environment.OpticalModel` — type annotation
-- `rayoptics.parax.thirdorder.compute_third_order` — produces per-surface Seidel DataFrame
-- `rayoptics.parax.thirdorder.seidel_to_transverse_aberration` — converts Seidel sum to transverse aberration
-- `rayoptics.parax.thirdorder.seidel_to_wavefront` — converts Seidel sum to wavefront error
-- `rayoptics.parax.thirdorder.seidel_to_field_curv` — converts Seidel sum to field curvature
-
 ## Usages
 
-- `workers/pyodide.worker.ts` — `_getFirstOrderData` runs `json.dumps(get_first_order_data(opm))`.
-- `workers/pyodide.worker.ts` — `_get3rdOrderSeidelData` runs `json.dumps(get_3rd_order_seidel_data(opm))`.
+- Imported in the Pyodide web worker (`workers/pyodide.worker.ts`)
