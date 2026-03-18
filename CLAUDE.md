@@ -11,6 +11,7 @@
 - Never push to main branch. Always push to a feature branch and open a PR for human approval
 - All tests must be pass and type checking must be passed before merging into main
 - Always read relevant skills md files under `./claude/skills` before planning
+- Read the relevant specs in md files. Do not reinvent the wheel.
 - In TypeScript, use `undefined` instead of `null` whenever possible
 - Make the modules loosely coupled
 
