@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Pyodide web worker that runs RayOptics computations off the main thread. Loads Pyodide v0.27.7, installs `rayoptics` and supporting packages, and exposes a typed API to React components via Comlink.
+Pyodide web worker that runs RayOptics computations off the main thread. Loads Pyodide v0.27.7, installs `rayoptics_web_utils` (internal Python package in `python/`), `rayoptics` and supporting packages, and exposes a typed API to React components via Comlink. This Pyodide web worker is long living.
 
 ## Exports
 
@@ -48,24 +48,24 @@ export function _resetPyodideForTesting(): void
 
 `_init(runPython, wheelUrl)` performs three `runPython` calls:
 
-1. Installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False`).
-2. Installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`.
+1. Installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
+2. Installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
 3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2` glass object, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, and `rayoptics_web_utils.plotting`.
 
 ## Public API (Comlink)
 
-All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`, then delegate to the corresponding `_*` injectable variant.
+All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`, then delegate to the corresponding `_*` injectable variant. All public function calls except `init()` are idempotent.
 
 | Function | Description |
 |---|---|
 | `init()` | Initializes Pyodide singleton. No-op if already initialized. |
 | `setOpticalSurfaces(model, flag)` | Builds and runs the Python script that defines `opm` (the global optical model). Must be called before any data or plot function. |
-| `getFirstOrderData()` | Returns first-order data (EFL, f-number, etc.) as `Record<string, number>`. |
-| `plotLensLayout()` | Returns a lens layout plot as a string (SVG or base64 image). |
-| `plotRayFan(fieldIndex)` | Returns a transverse ray fan plot for the given field index. |
-| `plotOpdFan(fieldIndex)` | Returns an OPD fan plot for the given field index. |
-| `plotSpotDiagram(fieldIndex)` | Returns a spot diagram for the given field index. |
-| `plotSurfaceBySurface3rdOrderAberr()` | Returns a surface-by-surface Seidel aberration plot. |
+| `getFirstOrderData()` | Returns optical data from first-order approximation (EFL, f-number, etc.) as `Record<string, number>`. |
+| `plotLensLayout()` | Returns a lens layout plot as a string (base64 encoded png). |
+| `plotRayFan(fieldIndex)` | Returns a transverse ray fan plot for the given field index (zero-indexed). |
+| `plotOpdFan(fieldIndex)` | Returns an OPD fan plot for the given field index (zero-indexed). |
+| `plotSpotDiagram(fieldIndex)` | Returns a spot diagram for the given field index (zero-indexed). |
+| `plotSurfaceBySurface3rdOrderAberr()` | Returns a surface-by-surface Seidel aberration plot. Field independent. |
 | `get3rdOrderSeidelData()` | Returns `SeidelData` with 3rd-order Seidel aberration data. |
 
 ## Injectable Variants (for testing)
@@ -88,9 +88,9 @@ Each public function has a corresponding `_*` variant that accepts `runPython` a
 - **Singleton `pyodide`**: `init()` is a no-op if the singleton is already set.
 - **`requirePyodide()` guard**: All public functions call this helper. It throws `"Pyodide not initialized. Call init() first."` if `pyodide` is `null`.
 - **`setOpticalSurfaces` ordering**: Must be called before any data or plot function; it sets the global `opm` Python variable used by all subsequent calls.
-- **Plot return type**: All plot functions return a `string` (SVG markup or base64-encoded image).
+- **Plot return type**: All plot functions return a `string` (base64-encoded image).
 - **`opm` global**: The Python variable `opm` holds the current `OpticalModel` instance and is referenced directly by all analysis and plotting helpers.
-- **`caf2` global**: Initialized by `_rwu_init()` during `_init`; used by `buildOpticalModelScript` when a surface medium is `"CaF2"`.
+- **`caf2` global**: Initialized by `_rwu_init()` during `_init`.
 
 ## Edge Cases / Error Handling
 

@@ -19,7 +19,7 @@ Returns `true` when the URL matches any of the following conditions:
    - `"files.pythonhosted.org/"` — Python package files (wheels/tarballs)
    - `"pypi.org/pypi/"` — PyPI metadata API
 
-2. **Same-origin `.whl` files** — `origin` is provided, the URL starts with `origin`, and the URL ends with `".whl"`. This covers the internal `rayoptics_web_utils` wheel served from the app's own origin.
+2. **Same-origin `.whl` files** — `origin` is provided, the URL starts with `origin`, and the URL ends with `".whl"`. This covers the local `rayoptics_web_utils` wheel served from the app's own origin.
 
 Returns `false` for all other URLs.
 
