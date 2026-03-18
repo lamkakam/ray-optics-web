@@ -11,4 +11,4 @@ Package entry point. Eagerly imports `init` from `setup.py` (safe — no rayopti
 
 ## Usages
 
-- The Pyodide worker (`workers/pyodide.worker.ts`) installs this package and calls `_rwu_init()` (which maps to `init()`) during worker initialisation, then imports analysis and plotting symbols from the package.
+- The Pyodide worker (`workers/pyodide.worker.ts`) installs this package, calls `init()` during worker initialisation, then imports analysis and plotting symbols from the package namespace.

@@ -34,7 +34,7 @@ Returns `{'caf2': <OpticalMedium>}`.
 ## Usages
 
 - `rayoptics_web_utils/__init__.py` — imports `init` eagerly at package level (safe, as `setup.py` itself does not import rayoptics).
-- `workers/pyodide.worker.ts` — the third `_init` `runPython` call invokes `_rwu_init = rwu.init` then calls `_rwu_init()` and stores the result (the `caf2` object) in the Python global namespace.
+- `workers/pyodide.worker.ts` — calls `init()` during worker initialisation (before importing `rayoptics.environment`, `analysis`, or `plotting`) to stub Qt/networking modules and load the CaF2 material.
 
 ## Edge Cases / Error Handling
 
