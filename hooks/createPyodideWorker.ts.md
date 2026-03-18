@@ -17,11 +17,6 @@ new Worker(new URL("../workers/pyodide.worker.ts", import.meta.url))
 
 The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bundler uses it to locate and bundle the worker script correctly. DO NOT USE string paths.
 
-## Dependencies
-
-- Browser `Worker` API.
-- `../workers/pyodide.worker.ts` — the worker entry point (bundled separately by webpack).
-
 ## Edge Cases / Error Handling
 
 - Each call returns a **new** `Worker` instance. Callers (i.e. `usePyodide`) are responsible for ensuring this is only called once (singleton pattern).
