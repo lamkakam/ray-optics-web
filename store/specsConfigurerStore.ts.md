@@ -21,7 +21,7 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 | `fieldType` | `FieldType` | `"height"` |
 | `maxField` | `number` | `0` |
 | `relativeFields` | `number[]` | `[0]` |
-| `wavelengthWeights` | `WavelengthWeights` | `[[e-line λ, 1]]` |
+| `wavelengthWeights` | `WavelengthWeights` | `[[546.073, 1]]` (Note: `546.073` (e-line wavelength) is imported from `lib/fraunhoferLines`) |
 | `referenceIndex` | `ReferenceIndex` | `0` |
 | `fieldModalOpen` | `boolean` | `false` |
 | `wavelengthModalOpen` | `boolean` | `false` |
