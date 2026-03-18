@@ -50,22 +50,30 @@ RayOptics computations are CPU-intensive. **Never run Pyodide on the main thread
 - **Service worker caching**: Cache the Pyodide WASM bundle and `rayoptics` wheel to avoid re-downloading on every visit.
 
 
-## Project Structure (Planned)
+## Project Structure
 
 ```
 ray-optics-web/
 ├── app/                        # Next.js App Router pages
-│   ├── layout.tsx
-│   └── page.tsx
+│   └── __tests__/
 ├── components/                 # React UI components
-│   ├── micro/                  # Minimal components, not relying on other React components. Single responsibilty.
+│   ├── micro/                  # Minimal, single-responsibility components
 │   ├── composite/              # Composed with micro-components
-│   └── container/              # Containers for state management and logics
+│   └── container/              # Containers for state management and logic
+├── store/                      # Zustand global state stores
 ├── workers/
 │   └── pyodide.worker.ts       # Web Worker: Pyodide init + rayoptics API
-├── hooks/
-│   └── usePyodide.ts           # React hook exposing the worker as a typed proxy
-└── lib/                        # TypeScript types mirroring rayoptics data structures
+├── hooks/                      # React hooks (usePyodide, useAgGridTheme, etc.)
+├── lib/                        # TypeScript types and utilities
+├── python/                     # Internal Python package (rayoptics_web_utils)
+│   └── src/rayoptics_web_utils/
+├── scripts/                    # Build and setup shell scripts
+├── e2e/                        # Playwright end-to-end tests
+├── __tests__/                  # Root-level smoke tests
+├── __mocks__/                  # Jest mocks (comlink, pyodide, ag-grid)
+├── data/                       # Static data (glass catalogs)
+├── docs/                       # Supplemental documentation
+└── public/                     # Static assets (service worker, built wheel)
 ```
 
 ## Development Setup
