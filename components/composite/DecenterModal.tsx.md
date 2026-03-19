@@ -40,4 +40,4 @@ type DecenterType = DecenterConfig;  // from lib/opticalModel
 
 ## Usages
 
-- Rendered by `LensPrescriptionContainer`; opened from `DecenterCell` in the prescription grid.
+- Opened from `DecenterCell` in the lens prescription grid.

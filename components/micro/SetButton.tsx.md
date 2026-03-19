@@ -32,4 +32,4 @@ interface SetButtonProps {
 
 ## Usages
 
-- Used inside `AsphericalCell` and `DecenterCell`.
+- Used in custom cell editors for ag-grid instance(s).

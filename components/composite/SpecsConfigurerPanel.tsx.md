@@ -43,4 +43,4 @@ interface SpecsConfigurerPanelProps {
 
 ## Usages
 
-- Rendered by `SpecsConfigurerContainer`, which wires it to the `specsConfigurerStore`.
+- To be rendered by `SpecsConfigurerContainer`.

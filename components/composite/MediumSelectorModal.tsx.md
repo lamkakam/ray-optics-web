@@ -40,4 +40,4 @@ interface MediumSelectorModalProps {
 
 ## Usages
 
-- Rendered by `LensPrescriptionContainer`; opened from `MediumCell` in the prescription grid.
+- Opened from `MediumCell` in the lens prescription grid.

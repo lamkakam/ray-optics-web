@@ -12,4 +12,4 @@ Headless client component that triggers service worker registration on mount by 
 
 ## Usages
 
-- Mounted once in `app/layout.tsx` (or the root page) alongside `ThemeProvider`.
+- Mounted once in `app/layout.tsx` (or the root page).

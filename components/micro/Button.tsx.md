@@ -33,4 +33,4 @@ type ButtonProps =
 
 ## Usages
 
-- Used by virtually every interactive element in the app — modals, toolbars, grid cells, and panel actions.
+- Used by almost every interactive element in the app.

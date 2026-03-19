@@ -37,4 +37,4 @@ interface TooltipProps {
 
 ## Usages
 
-- Used in `MediumCell`, `AsphericalCell`, `DecenterCell`, `GridRowButtons`, `LensPrescriptionContainer`, and `SpecsConfigurerPanel`.
+- Used for wrapping buttons and inputables.

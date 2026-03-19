@@ -17,8 +17,8 @@ interface MediumCellProps {
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `medium` | `string` | Yes | Medium name to display (e.g. `"air"`, `"SK16"`) |
-| `onOpenModal` | `() => void` | Yes | Callback to open `MediumSelectorModal` |
+| `medium` | `string` | Yes | Medium name to display (e.g. `"air"`, `"N-BK7"`) |
+| `onOpenModal` | `() => void` | Yes | Callback to open a `Modal` instance for medium selection |
 
 ## Key Behaviors
 

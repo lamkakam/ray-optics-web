@@ -41,4 +41,4 @@ interface LensPrescriptionGridProps {
 
 ## Usages
 
-- Rendered by `LensPrescriptionContainer`.
+- To be rendered by `LensPrescriptionContainer`.

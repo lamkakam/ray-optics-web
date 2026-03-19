@@ -27,4 +27,4 @@ interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
 
 ## Usages
 
-- Used throughout the app for body copy, form captions, placeholder states in panels (`LensLayoutPanel`, `AnalysisPlotView`), and modal descriptions.
+- Used throughout the app for body copy, form captions, placeholder states and modal descriptions.

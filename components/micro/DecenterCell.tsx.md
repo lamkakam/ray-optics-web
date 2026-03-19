@@ -18,11 +18,12 @@ interface DecenterCellProps {
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | `isDecenterSet` | `boolean` | Yes | `true` when `DecenterConfig` is defined for this surface |
-| `onOpenModal` | `() => void` | Yes | Callback to open `DecenterModal` |
+| `onOpenModal` | `() => void` | Yes | Callback to open the modal for surface tilt and decenter parameters config |
 
 ## Key Behaviors
 
-- Mirrors `AsphericalCell` in structure; uses `portal` tooltip for AG Grid compatibility.
+- Delegates visual state (set vs. unset) entirely to `SetButton`.
+- Uses `portal` tooltip for AG Grid compatibility.
 
 ## Usages
 

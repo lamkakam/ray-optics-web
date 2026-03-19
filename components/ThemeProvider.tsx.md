@@ -23,4 +23,4 @@ export function useTheme(): { theme: Theme; setTheme: (newTheme: Theme) => void 
 
 ## Usages
 
-- Wraps the root layout in `app/layout.tsx`. Consumed by `SettingsModal` (via the page) and `useAgGridTheme` hook.
+- Wraps the root layout in `app/layout.tsx`. Consumed by UI components and UI-related hooks.

@@ -18,7 +18,7 @@ interface AsphericalCellProps {
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | `isAspherical` | `boolean` | Yes | `true` when the surface has aspherical data set |
-| `onOpenModal` | `() => void` | Yes | Callback to open `AsphericalModal` |
+| `onOpenModal` | `() => void` | Yes | Callback to open the modal for aspherical surface parameters config  |
 
 ## Key Behaviors
 

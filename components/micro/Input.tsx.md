@@ -25,4 +25,4 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 ## Usages
 
-- Used in `SpecsConfigurerPanel`, `FieldConfigModal`, `AsphericalModal`, and `DecenterModal` for numeric and text inputs.
+- Used for numeric and text inputs.

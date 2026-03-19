@@ -29,6 +29,3 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 - Implemented as `React.forwardRef` so it can be used inside AG Grid cell editors and third-party wrappers.
 - `disabled:opacity-50` and `disabled:cursor-not-allowed` are applied via style tokens.
 
-## Usages
-
-- Used in `SpecsConfigurerPanel`, `FieldConfigModal`, `WavelengthConfigModal`, `MediumSelectorModal`, `SettingsModal`, and `AnalysisPlotView`.

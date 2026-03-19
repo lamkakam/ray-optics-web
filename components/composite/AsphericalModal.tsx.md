@@ -47,4 +47,4 @@ type AsphericalType = "Conical" | "EvenAspherical";
 
 ## Usages
 
-- Rendered by `LensPrescriptionContainer`; opened from `AsphericalCell` in the prescription grid.
+- Opened from `AsphericalCell` in the lens prescription grid.

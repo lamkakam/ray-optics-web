@@ -39,4 +39,4 @@ interface ModalProps {
 
 ## Usages
 
-- Extended by every modal in `components/composite/` and `components/micro/ErrorModal`.
+- Used by every modal.

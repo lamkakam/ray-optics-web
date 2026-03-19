@@ -32,4 +32,4 @@ interface GridRowButtonsProps {
 
 ## Usages
 
-- Used in `LensPrescriptionGrid`, `FieldConfigModal`, and `WavelengthConfigModal` as the action column renderer.
+- Used in multiple ag-grid instances as the action column renderer.

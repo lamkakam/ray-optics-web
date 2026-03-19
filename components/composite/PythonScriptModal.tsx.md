@@ -34,4 +34,4 @@ interface PythonScriptModalProps {
 
 ## Usages
 
-- Rendered by `LensPrescriptionContainer`; opened from the "Export Python Script" toolbar button.
+- Opened from the "Export Python Script" toolbar button.

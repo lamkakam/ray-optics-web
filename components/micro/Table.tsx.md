@@ -27,4 +27,4 @@ interface TableProps {
 
 ## Usages
 
-- Used in `SeidelAberrModal` to display aberration data across four tab panels.
+- Used for displaying simple tabulated data.

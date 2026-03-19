@@ -30,4 +30,4 @@ interface SettingsModalProps {
 
 ## Usages
 
-- Opened from the page header or settings icon. The caller wires `onThemeChange` to `useTheme().setTheme`.
+- Opened from the settings button.

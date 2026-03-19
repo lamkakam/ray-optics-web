@@ -39,7 +39,3 @@ interface TabsProps {
 - Tab buttons carry `role="tab"`, `aria-selected`, and `aria-label`.
 - The content area carries `role="tabpanel"`.
 - Tab bar scrolls horizontally when tabs overflow.
-
-## Usages
-
-- Used directly in `BottomDrawer` (with the collapse toggle as `actions`), and `SeidelAberrModal`.

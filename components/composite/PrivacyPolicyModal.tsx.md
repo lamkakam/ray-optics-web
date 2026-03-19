@@ -27,4 +27,4 @@ interface PrivacyPolicyModalProps {
 
 ## Usages
 
-- Opened from the page footer or settings area via a "Privacy Policy" link.
+- Opened from the settings area via a privacy policy button (with a lock emoji).

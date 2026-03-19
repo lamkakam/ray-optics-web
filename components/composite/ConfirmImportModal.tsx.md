@@ -28,4 +28,4 @@ interface ConfirmImportModalProps {
 
 ## Usages
 
-- Rendered by `LensPrescriptionContainer`; shown after a valid JSON file is parsed but before applying it.
+- Shown after a valid JSON file is parsed but before applying it.

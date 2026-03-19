@@ -17,4 +17,4 @@ interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
 
 ## Usages
 
-- Used above every `Input` and `Select` field in modal forms and `SpecsConfigurerPanel`.
+- Used above every `Input` and `Select` field.

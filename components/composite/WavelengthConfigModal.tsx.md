@@ -34,10 +34,10 @@ interface WavelengthConfigModalProps {
 ## Key Behaviors
 
 - Reset-on-open: state is re-initialized from props when `isOpen` transitions to `true`.
-- Fraunhofer symbol and wavelength are kept in sync: editing the symbol updates the wavelength, and editing the wavelength updates the symbol if it matches a Fraunhofer line exactly.
-- Row limit is 7; the first row cannot be deleted.
+- Fraunhofer symbol and wavelength are kept in sync: editing the symbol updates the wavelength, and editing the wavelength updates the symbol if it matches a Fraunhofer line exactly. BUT THE USER'S MANUAL WAVELENGTH INPUT OVERRIDES THE VALUE OF THE SYMBOL.
+- Row limit is 7 (HARD LIMIT FROM RayOptics); the first row cannot be deleted.
 - When a row is deleted, `referenceIndex` is adjusted to remain valid.
 
 ## Usages
 
-- Rendered by `SpecsConfigurerContainer`; opened from `SpecsConfigurerPanel`.
+- Opened from `SpecsConfigurerPanel`.

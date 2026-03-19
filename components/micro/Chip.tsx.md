@@ -17,6 +17,3 @@ interface ChipProps {
 - Stateless — purely presentational.
 - Classes are computed once at module load (not per-render) since there are no dynamic props.
 
-## Usages
-
-- Used in `FirstOrderChips` to display first-order paraxial data (EFL, BFL, f/#, etc.).

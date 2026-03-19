@@ -44,4 +44,4 @@ interface FieldConfigModalProps {
 
 ## Usages
 
-- Rendered by `SpecsConfigurerContainer`; opened from `SpecsConfigurerPanel`.
+- Opened from `SpecsConfigurerPanel`.
