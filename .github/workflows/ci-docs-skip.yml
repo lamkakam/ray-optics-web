@@ -1,0 +1,11 @@
+name: CI
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.md'
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Documentation-only change — CI skipped"
