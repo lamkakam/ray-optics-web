@@ -11,7 +11,7 @@ function shouldCache(url) {
   if (CACHEABLE_HOSTS.some((pattern) => url.includes(pattern))) {
     return true;
   }
-  // Cache same-origin .whl files (e.g., the rayoptics-web-utils wheel)
+  // Cache same-origin .whl files (e.g., the local rayoptics_web_utils wheel)
   if (url.startsWith(self.location.origin) && url.endsWith(".whl")) {
     return true;
   }

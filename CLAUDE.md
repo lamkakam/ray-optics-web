@@ -11,6 +11,8 @@
 - Never push to main branch. Always push to a feature branch and open a PR for human approval
 - All tests must be pass and type checking must be passed before merging into main
 - Always read relevant skills md files under `./claude/skills` before planning
+- Read the relevant specs in md files. Do not reinvent the wheel.
+- Always update the specs (`<filename including filename extension>.md`) after changing codes in a file.
 - In TypeScript, use `undefined` instead of `null` whenever possible
 - Make the modules loosely coupled
 
@@ -50,22 +52,30 @@ RayOptics computations are CPU-intensive. **Never run Pyodide on the main thread
 - **Service worker caching**: Cache the Pyodide WASM bundle and `rayoptics` wheel to avoid re-downloading on every visit.
 
 
-## Project Structure (Planned)
+## Project Structure
 
 ```
 ray-optics-web/
 ├── app/                        # Next.js App Router pages
-│   ├── layout.tsx
-│   └── page.tsx
+│   └── __tests__/
 ├── components/                 # React UI components
-│   ├── micro/                  # Minimal components, not relying on other React components. Single responsibilty.
+│   ├── micro/                  # Minimal, single-responsibility components
 │   ├── composite/              # Composed with micro-components
-│   └── container/              # Containers for state management and logics
+│   └── container/              # Containers for state management and logic
+├── store/                      # Zustand global state stores
 ├── workers/
 │   └── pyodide.worker.ts       # Web Worker: Pyodide init + rayoptics API
-├── hooks/
-│   └── usePyodide.ts           # React hook exposing the worker as a typed proxy
-└── lib/                        # TypeScript types mirroring rayoptics data structures
+├── hooks/                      # React hooks (usePyodide, useAgGridTheme, etc.)
+├── lib/                        # TypeScript types and utilities
+├── python/                     # Internal Python package (rayoptics_web_utils)
+│   └── src/rayoptics_web_utils/
+├── scripts/                    # Build and setup shell scripts
+├── e2e/                        # Playwright end-to-end tests
+├── __tests__/                  # Root-level smoke tests
+├── __mocks__/                  # Jest mocks (comlink, pyodide, ag-grid)
+├── data/                       # Static data (glass catalogs)
+├── docs/                       # Supplemental documentation
+└── public/                     # Static assets (service worker, built wheel)
 ```
 
 ## Development Setup
@@ -74,10 +84,10 @@ ray-optics-web/
 # Install dependencies
 npm install
 
-# Initialize the venv for the internal Python package and install deps for the development
+# Initialize the venv for the local Python package and install deps for the development
 bash ./scripts/init-python-venv.sh
 
-# Build the wheel of rayoptics_web_utils and then run dev server (http://localhost:3000)
+# Build the wheel of local rayoptics_web_utils and then run dev server (http://localhost:3000)
 npm run dev
 
 # Type check
@@ -95,7 +105,7 @@ bash ./scripts/run-python-tests.sh
 # E2E tests (Playwright)
 npm run test:e2e
 
-# Build the wheel of rayoptics_web_utils and then build the Next app
+# Build the wheel of local rayoptics_web_utils and then build the Next app
 npm run build
 
 # Serve the built app locally

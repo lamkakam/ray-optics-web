@@ -100,7 +100,7 @@ Browser
 
 ### Fluorite (CaF2) refractive index data
 
-The refractive index data for fluorite used in this app is sourced from [refractiveindex.info](https://refractiveindex.info/?shelf=main&book=CaF2&page=Malitson) and is at `python/src/rayoptics-web-utils/data/CaF2_Malitson.yml`.
+The refractive index data for fluorite used in this app is sourced from [refractiveindex.info](https://refractiveindex.info/?shelf=main&book=CaF2&page=Malitson) and is at `python/src/rayoptics_web_utils/data/CaF2_Malitson.yml`.
 
 - Source file: https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml
 - License: [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) — this file is **not** subject to the license of this repository.
