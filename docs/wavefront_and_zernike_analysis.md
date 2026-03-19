@@ -27,12 +27,22 @@ rg = RayGrid(opm, f=field_index, wl=wavelength_nm, foc=0, num_rays=64)
 #   [0] = pupil_x (normalized)
 #   [1] = pupil_y (normalized)
 #   [2] = OPD in waves (but see unit bug below)
-opd = rg.grid[2] * 1e6  # correction for MM unit bug
+central_wvl = opm['optical_spec']['wvls'].central_wvl
+opd = rg.grid[2] * 1e6 * central_wvl / wavelength_nm  # unit + wavelength correction
 ```
 
-## Unit Bug
+## Unit Bug & Wavelength Correction
 
 When `opm.system_spec.dimensions = 'MM'`, the OPD numerator is in mm but the denominator (wavelength) is in nm. **Multiply OPD values by `1e6`** to get correct values in waves.
+
+Additionally, `RayGrid` internally divides all OPD values by the **central wavelength** (reference wavelength), regardless of the traced wavelength. To get OPD in waves at the traced wavelength, apply the correction factor `central_wvl / traced_wvl`:
+
+```python
+central_wvl = opm['optical_spec']['wvls'].central_wvl
+opd = rg.grid[2] * 1e6 * central_wvl / traced_wvl_nm
+```
+
+For the reference wavelength (central = traced), the factor is 1.0.
 
 ## Zernike Decomposition
 
@@ -58,28 +68,30 @@ def zernike_radial(n, m, rho):
 
 
 def noll_to_nm(j):
-    """Convert Noll index j (1-based) to (n, m)."""
+    """Convert Noll index j (1-based) to (n, m).
+
+    Sign convention: even j -> positive m (cosine), odd j -> negative m (sine).
+    """
     n = int(np.ceil((-3 + np.sqrt(9 + 8*(j-1))) / 2))
     if (n*(n+1))//2 >= j:
         n -= 1
     m_residual = j - (n*(n+1))//2 - 1
-    if n % 2 == 0:
-        m_start = 0
-    else:
-        m_start = 1
-    m_list = []
+    m_start = 0 if n % 2 == 0 else 1
+    m_abs_list = []
     for mv in range(m_start, n+1, 2):
         if mv == 0:
-            m_list.append(0)
+            m_abs_list.append(0)
         else:
-            m_list.append(mv)
-            m_list.append(-mv)
-    m = m_list[m_residual]
-    return n, m
+            m_abs_list.append(mv)
+            m_abs_list.append(mv)
+    m_abs = m_abs_list[m_residual]
+    if m_abs == 0:
+        return n, 0
+    return (n, m_abs) if j % 2 == 0 else (n, -m_abs)
 
 
 def zernike_noll(j, rho, theta):
-    """Compute Zernike polynomial Z_j in Noll ordering."""
+    """Compute Zernike polynomial Z_j in Noll ordering (unnormalized)."""
     n, m = noll_to_nm(j)
     R = zernike_radial(n, m, rho)
     if m > 0:
@@ -88,8 +100,7 @@ def zernike_noll(j, rho, theta):
         Z = R * np.sin(-m * theta)
     else:
         Z = R
-    norm = np.sqrt(2*(n+1)) if m != 0 else np.sqrt(n+1)
-    return norm * Z
+    return Z
 
 
 def fit_zernike(opd_grid, num_terms=22):
@@ -129,21 +140,25 @@ def fit_zernike(opd_grid, num_terms=22):
 | Noll j | (n, m) | Name |
 |--------|--------|------|
 | 1 | (0, 0) | Piston |
-| 2 | (1, +1) | Tilt X |
-| 3 | (1, -1) | Tilt Y |
+| 2 | (1, +1) | Tilt X (cos θ) |
+| 3 | (1, -1) | Tilt Y (sin θ) |
 | 4 | (2, 0) | Defocus |
-| 5 | (2, +2) | Astigmatism 45 |
-| 6 | (2, -2) | Astigmatism 0 |
-| 7 | (3, +1) | Coma Y |
-| 8 | (3, -1) | Coma X |
-| 9 | (3, +3) | Trefoil Y |
-| 10 | (3, -3) | Trefoil X |
+| 5 | (2, -2) | Astigmatism (sin 2θ) |
+| 6 | (2, +2) | Astigmatism (cos 2θ) |
+| 7 | (3, -1) | Coma Y (sin θ) |
+| 8 | (3, +1) | Coma X (cos θ) |
+| 9 | (3, -3) | Trefoil (sin 3θ) |
+| 10 | (3, +3) | Trefoil (cos 3θ) |
 | 11 | (4, 0) | Primary Spherical |
-| 12 | (4, +2) | Secondary Astig 0 |
-| 13 | (4, -2) | Secondary Astig 45 |
-| 14 | (4, +4) | Secondary Coma Y |
-| 15 | (4, -4) | Secondary Coma X |
+| 12 | (4, +2) | Secondary Astig (cos 2θ) |
+| 13 | (4, -2) | Secondary Astig (sin 2θ) |
+| 14 | (4, +4) | Tetrafoil (cos 4θ) |
+| 15 | (4, -4) | Tetrafoil (sin 4θ) |
 | 22 | (6, 0) | Secondary Spherical |
+
+**Sign convention**: even j → positive m (cosine term), odd j → negative m (sine term).
+
+**Normalization**: unnormalized (no √(n+1) or √(2(n+1)) factors), matching ATMOS/OSLO convention.
 
 ## Complete Example: Sasian Triplet
 
@@ -183,7 +198,7 @@ opm.update_model()
 apply_paraxial_vignetting(opm)
 
 # --- Wavefront error + Zernike for each field/wavelength ---
-correction = 1e6  # MM unit bug correction
+central_wvl = osp['wvls'].central_wvl
 wvls = [486.133, 587.562, 656.273]
 fld_labels = ['On-axis (0deg)', '0.707 field (14.1deg)', 'Full field (20deg)']
 
@@ -191,7 +206,7 @@ for fi, flabel in enumerate(fld_labels):
     for wvl in wvls:
         rg = RayGrid(opm, f=fi, wl=wvl, foc=0, num_rays=64)
         grid = rg.grid.copy()
-        grid[2] *= correction
+        grid[2] *= 1e6 * central_wvl / wvl  # unit + wavelength correction
 
         opd_valid = grid[2][~np.isnan(grid[2])]
         rms = np.sqrt(np.mean(opd_valid**2))
@@ -225,29 +240,30 @@ for fi, flabel in enumerate(fld_labels):
 
 ### Zernike Coefficients (significant terms only, > 0.005 waves)
 
-**On-axis, 587.6 nm** (rotationally symmetric as expected):
+**On-axis, 587.6 nm** (rotationally symmetric as expected, unnormalized):
 - Z1 Piston: +0.568 waves
-- Z4 Defocus: +0.455 waves
-- Z11 Primary Spherical: +0.076 waves
-- Z22 Secondary Spherical: -0.020 waves
+- Z4 Defocus: +0.788 waves
+- Z11 Primary Spherical: +0.171 waves
+- Z22 Secondary Spherical: -0.052 waves
 
-**0.707 field, 587.6 nm** (astigmatism-dominated):
+**0.707 field, 587.6 nm** (astigmatism-dominated, unnormalized):
 - Z1 Piston: +1.122 waves
-- Z4 Defocus: +0.573 waves
-- Z5 Astigmatism 45: +0.790 waves
-- Z8 Coma X: -0.053 waves
-- Z11 Primary Spherical: -0.081 waves
-- Z12 Secondary Astig 0: +0.078 waves
+- Z3 Tilt Y: -0.127 waves
+- Z4 Defocus: +0.992 waves
+- Z6 Astigmatism (cos 2θ): +1.937 waves
+- Z7 Coma Y (sin θ): -0.155 waves
+- Z11 Primary Spherical: -0.182 waves
+- Z12 Secondary Astig (cos 2θ): +0.248 waves
 
-**Full field, 587.6 nm** (mixed higher-order):
-- Z1 Piston: +2.085 waves
-- Z3 Tilt Y: +0.307 waves
-- Z4 Defocus: +0.948 waves
-- Z5 Astigmatism 45: -0.051 waves
-- Z8 Coma X: +0.092 waves
-- Z10 Trefoil X: +0.084 waves
-- Z11 Primary Spherical: -0.223 waves
-- Z12 Secondary Astig 0: +0.125 waves
+**Full field, 587.6 nm** (mixed higher-order, unnormalized):
+- Z1 Piston: +2.087 waves
+- Z3 Tilt Y: +0.586 waves
+- Z4 Defocus: +1.645 waves
+- Z6 Astigmatism (cos 2θ): -0.126 waves
+- Z7 Coma Y (sin θ): +0.243 waves
+- Z9 Trefoil (sin 3θ): +0.241 waves
+- Z11 Primary Spherical: -0.499 waves
+- Z12 Secondary Astig (cos 2θ): +0.396 waves
 
 ## Polychromatic Strehl Ratio
 

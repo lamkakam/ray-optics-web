@@ -10,16 +10,18 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 |----------|-----------|-------------|
 | `noll_to_nm` | `(j: int) -> tuple[int, int]` | Convert Noll index j (1-based) to radial order n and azimuthal frequency m |
 | `zernike_radial` | `(n: int, m: int, rho: NDArray) -> NDArray` | Radial polynomial R_n^m(rho) |
-| `zernike_noll` | `(j: int, rho: NDArray, theta: NDArray) -> NDArray` | Full normalized Zernike polynomial Z_j in Noll ordering |
+| `zernike_noll` | `(j: int, rho: NDArray, theta: NDArray) -> NDArray` | Unnormalized Zernike polynomial Z_j in Noll ordering |
 | `fit_zernike` | `(opd_grid: NDArray, num_terms: int = 22) -> NDArray` | Least-squares fit of Zernike polynomials to a (3, N, N) OPD grid |
 | `get_zernike_coefficients` | `(opm, field_index, wvl_index, num_terms=22, num_rays=64) -> dict` | High-level: compute Zernike coefficients for a field/wavelength |
 
 ## Conventions
 
 - **Noll ordering**: 1-based index j. See `docs/wavefront_and_zernike_analysis.md` for the full table.
-- **Normalization**: orthonormal over unit disk — `sqrt(2(n+1))` for m≠0, `sqrt(n+1)` for m=0.
-- **OPD units**: all coefficients and WFE values are in **waves**.
+- **Normalization**: unnormalized (no `sqrt(n+1)` or `sqrt(2(n+1))` factors), matching ATMOS/OSLO convention.
+- **OPD units**: all coefficients and WFE values are in **waves at the traced wavelength**.
 - **MM unit bug**: `RayGrid` OPD is multiplied by `1e6` to correct for the mm/nm mismatch when `dimensions='MM'`.
+- **Wavelength correction**: `RayGrid` internally divides by `central_wvl` for all wavelengths. An additional factor of `central_wvl / traced_wvl` converts OPD to waves at the traced wavelength.
+- **Noll sign convention**: even j → positive m (cosine), odd j → negative m (sine).
 - **NaN handling**: vignetted rays produce NaN in the OPD grid; these are filtered before fitting.
 - **Pupil mask**: only points with rho ≤ 1.0 are used in the fit.
 

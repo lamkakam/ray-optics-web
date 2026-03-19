@@ -16,19 +16,18 @@ def noll_to_nm(j: int) -> tuple[int, int]:
     if (n * (n + 1)) // 2 >= j:
         n -= 1
     m_residual = j - (n * (n + 1)) // 2 - 1
-    if n % 2 == 0:
-        m_start = 0
-    else:
-        m_start = 1
-    m_list: list[int] = []
+    m_start = 0 if n % 2 == 0 else 1
+    m_abs_list: list[int] = []
     for mv in range(m_start, n + 1, 2):
         if mv == 0:
-            m_list.append(0)
+            m_abs_list.append(0)
         else:
-            m_list.append(mv)
-            m_list.append(-mv)
-    m = m_list[m_residual]
-    return n, m
+            m_abs_list.append(mv)
+            m_abs_list.append(mv)
+    m_abs = m_abs_list[m_residual]
+    if m_abs == 0:
+        return n, 0
+    return (n, m_abs) if j % 2 == 0 else (n, -m_abs)
 
 
 def zernike_radial(n: int, m: int, rho: NDArray) -> NDArray:
@@ -47,7 +46,7 @@ def zernike_radial(n: int, m: int, rho: NDArray) -> NDArray:
 
 
 def zernike_noll(j: int, rho: NDArray, theta: NDArray) -> NDArray:
-    """Compute Zernike polynomial Z_j in Noll ordering."""
+    """Compute Zernike polynomial Z_j in Noll ordering (unnormalized)."""
     n, m = noll_to_nm(j)
     R = zernike_radial(n, m, rho)
     if m > 0:
@@ -56,8 +55,7 @@ def zernike_noll(j: int, rho: NDArray, theta: NDArray) -> NDArray:
         Z = R * np.sin(-m * theta)
     else:
         Z = R
-    norm = np.sqrt(2 * (n + 1)) if m != 0 else np.sqrt(n + 1)
-    return norm * Z
+    return Z
 
 
 def fit_zernike(opd_grid: NDArray, num_terms: int = 22) -> NDArray:
@@ -121,7 +119,8 @@ def get_zernike_coefficients(
 
     rg = RayGrid(opm, f=field_index, wl=wavelength_nm, foc=0, num_rays=num_rays)
     grid = rg.grid.copy()
-    grid[2] *= 1e6  # MM unit bug correction
+    central_wvl = opm['optical_spec']['wvls'].central_wvl
+    grid[2] *= 1e6 * central_wvl / wavelength_nm  # MM unit bug + wavelength correction
 
     # Compute RMS and PV from valid OPD points
     opd_valid = grid[2][~np.isnan(grid[2])]

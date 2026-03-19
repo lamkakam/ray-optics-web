@@ -50,9 +50,24 @@ class TestNollToNm:
         (2, (1, 1)),
         (3, (1, -1)),
         (4, (2, 0)),
-        (5, (2, 2)),
-        (6, (2, -2)),
+        (5, (2, -2)),
+        (6, (2, 2)),
+        (7, (3, -1)),
+        (8, (3, 1)),
+        (9, (3, -3)),
+        (10, (3, 3)),
         (11, (4, 0)),
+        (12, (4, 2)),
+        (13, (4, -2)),
+        (14, (4, 4)),
+        (15, (4, -4)),
+        (16, (5, 1)),
+        (17, (5, -1)),
+        (18, (5, 3)),
+        (19, (5, -3)),
+        (20, (5, 5)),
+        (21, (5, -5)),
+        (22, (6, 0)),
     ])
     def test_known_conversions(self, j, expected):
         from rayoptics_web_utils.zernike import noll_to_nm
@@ -97,7 +112,8 @@ class TestZernikeNoll:
         rho = np.array([0.0])
         theta = np.array([0.0])
         result = zernike_noll(4, rho, theta)
-        np.testing.assert_allclose(result, -np.sqrt(3))
+        # Unnormalized: R_2^0(0) = 2*0^2 - 1 = -1 (no sqrt(3) factor)
+        np.testing.assert_allclose(result, -1.0)
 
     def test_orthogonality(self):
         """Numerical check: integral of Z_i * Z_j over unit disk ≈ pi * delta_ij."""
@@ -120,9 +136,10 @@ class TestZernikeNoll:
         cross = np.sum(z4 * z5) * dA
         assert abs(cross) < 0.05, f"Z4·Z5 cross-integral = {cross}, expected ~0"
 
-        # Check Z4 self-integral ≈ pi
+        # Check Z4 self-integral ≈ pi/3 (unnormalized)
         self_int = np.sum(z4 * z4) * dA
-        assert abs(self_int - np.pi) < 0.1, f"Z4·Z4 integral = {self_int}, expected ~pi"
+        expected_self = np.pi / 3
+        assert abs(self_int - expected_self) < 0.1, f"Z4·Z4 integral = {self_int}, expected ~{expected_self}"
 
 
 class TestFitZernike:
@@ -233,11 +250,12 @@ class TestGetZernikeCoefficients:
             assert abs(coeffs[j - 1]) < 0.02, f"Z{j} = {coeffs[j-1]}, expected ~0 on-axis"
 
     def test_off_axis_astigmatism_significant(self, cooke_triplet):
-        """Off-axis field 1: Z5 (astigmatism) should be significant."""
+        """Off-axis field 1: Z6 (astigmatism cos2θ) should be significant."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(cooke_triplet, field_index=1, wvl_index=1)
         coeffs = result['coefficients']
-        assert abs(coeffs[4]) > 0.1, f"Z5 = {coeffs[4]}, expected significant off-axis"
+        # With corrected Noll: Z6=(2,+2)=cos(2θ), the dominant astigmatism for y-meridian field
+        assert abs(coeffs[5]) > 0.1, f"Z6 = {coeffs[5]}, expected significant off-axis"
 
     def test_rms_and_pv_positive(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
@@ -281,3 +299,39 @@ class TestGetZernikeCoefficients:
             f"On-axis Strehl ({on_axis['strehl_ratio']}) should be > "
             f"full-field Strehl ({full_field['strehl_ratio']})"
         )
+
+    def test_wavelength_correction(self, cooke_triplet):
+        """Coefficients should be in waves at the traced wavelength, not central.
+
+        RayGrid internally divides OPD by central_wvl. The correction factor
+        central_wvl/traced_wvl converts to waves at the traced wavelength.
+        For d-line (central=traced), factor=1. For F-line, factor≈1.209.
+        We verify by checking that Z11_F * λ_F and Z11_C * λ_C bracket Z11_d * λ_d
+        (the physical OPD in nm is approximately similar across wavelengths).
+        """
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        f_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=0)
+        d_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        c_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=2)
+        # Physical OPD (coeff * wavelength) should be in the same ballpark
+        phys_f = abs(f_line['coefficients'][10]) * f_line['wavelength_nm']
+        phys_d = abs(d_line['coefficients'][10]) * d_line['wavelength_nm']
+        phys_c = abs(c_line['coefficients'][10]) * c_line['wavelength_nm']
+        # Without wavelength correction, phys_f would be ~48nm and phys_d ~100nm (2x off)
+        # With correction, all three should be within ~2x of each other
+        assert 0.3 < phys_f / phys_d < 3.0, f"phys F/d = {phys_f/phys_d}, expected ~similar"
+        assert 0.3 < phys_c / phys_d < 3.0, f"phys C/d = {phys_c/phys_d}, expected ~similar"
+        # Verify F-line Z11 ≈ 0.118 (known corrected value)
+        assert abs(f_line['coefficients'][10] - 0.118) < 0.02, (
+            f"Z11 F-line = {f_line['coefficients'][10]}, expected ~0.118"
+        )
+
+    def test_coefficients_are_unnormalized(self, cooke_triplet):
+        """On-axis d-line coefficients should match ATMOS (unnormalized)."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        coeffs = result['coefficients']
+        # Piston ≈ 0.568 (ATMOS reference)
+        assert abs(coeffs[0] - 0.568) < 0.05, f"Z1 piston = {coeffs[0]}, expected ~0.568"
+        # Defocus ≈ 0.788 (ATMOS reference)
+        assert abs(coeffs[3] - 0.788) < 0.05, f"Z4 defocus = {coeffs[3]}, expected ~0.788"
