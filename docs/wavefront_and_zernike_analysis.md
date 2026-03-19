@@ -228,15 +228,15 @@ for fi, flabel in enumerate(fld_labels):
 
 | Field | Wavelength | RMS (waves) | PV (waves) |
 |-------|-----------|-------------|------------|
-| On-axis | 486.1 nm | 0.7156 | 1.3413 |
+| On-axis | 486.1 nm | 0.8649 | 1.6212 |
 | On-axis | 587.6 nm | 0.7334 | 1.4649 |
-| On-axis | 656.3 nm | 0.4018 | 0.9572 |
-| 0.707 field | 486.1 nm | 1.5971 | 3.9312 |
+| On-axis | 656.3 nm | 0.3597 | 0.8569 |
+| 0.707 field | 486.1 nm | 1.9304 | 4.7514 |
 | 0.707 field | 587.6 nm | 1.5111 | 4.4622 |
-| 0.707 field | 656.3 nm | 1.2166 | 4.6126 |
-| Full field | 486.1 nm | 2.8996 | 5.2329 |
+| 0.707 field | 656.3 nm | 1.0892 | 4.1296 |
+| Full field | 486.1 nm | 3.5046 | 6.3247 |
 | Full field | 587.6 nm | 2.3572 | 3.8920 |
-| Full field | 656.3 nm | 1.8277 | 3.2271 |
+| Full field | 656.3 nm | 1.6364 | 2.8892 |
 
 ### Zernike Coefficients (significant terms only, > 0.005 waves)
 
@@ -289,8 +289,6 @@ S_poly = Σ(w_i · S_i) / Σ(w_i)
 import numpy as np
 from rayoptics.raytr.analyses import RayGrid
 
-correction = 1e6  # MM unit bug
-
 def monochromatic_strehl(opd_waves):
     """Compute Strehl ratio from OPD grid (in waves).
     Strehl = |mean(exp(i*2*pi*W))|^2 over valid pupil points.
@@ -323,6 +321,7 @@ def polychromatic_strehl(opm, field_idx, foc=0, num_rays=128):
     wvl_spec = opm['optical_spec']['wvls']
     wavelengths = wvl_spec.wavelengths
     weights = wvl_spec.spectral_wts
+    central_wvl = wvl_spec.central_wvl
 
     total_weighted_strehl = 0.0
     total_weight = sum(weights)
@@ -330,7 +329,7 @@ def polychromatic_strehl(opm, field_idx, foc=0, num_rays=128):
     mono_strehls = []
     for wvl, wt in zip(wavelengths, weights):
         rg = RayGrid(opm, f=field_idx, wl=wvl, foc=foc, num_rays=num_rays)
-        opd = rg.grid[2] * correction
+        opd = rg.grid[2] * 1e6 * central_wvl / wvl  # unit + wavelength correction
         s = monochromatic_strehl(opd)
         mono_strehls.append((wvl, wt, s))
         total_weighted_strehl += wt * s
@@ -359,9 +358,9 @@ Wavelengths: [486.133, 587.562, 656.273], Weights: [1, 2, 1]
 
 | Field | 486.1 nm (w=1) | 587.6 nm (w=2) | 656.3 nm (w=1) | Polychromatic |
 |-------|---------------|---------------|---------------|---------------|
-| On-axis (0 deg) | 0.1022 | 0.0963 | 0.1042 | 0.0997 |
-| 0.707 field (14.1 deg) | 0.0005 | 0.0199 | 0.0358 | 0.0190 |
-| Full field (20 deg) | 0.0040 | 0.0154 | 0.0148 | 0.0124 |
+| On-axis (0 deg) | 0.0464 | 0.0963 | 0.0835 | 0.0806 |
+| 0.707 field (14.1 deg) | 0.0011 | 0.0199 | 0.0391 | 0.0200 |
+| Full field (20 deg) | 0.0001 | 0.0154 | 0.0396 | 0.0176 |
 
 All Strehl values are well below 0.8 (diffraction limit), consistent with the ~0.4–2.9 waves RMS wavefront errors. The system degrades significantly with field angle, as expected for a triplet.
 
