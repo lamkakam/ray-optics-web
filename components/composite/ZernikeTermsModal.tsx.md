@@ -46,13 +46,19 @@ interface ZernikeTermsModalProps {
 - Each row shows: Noll j, Z notation (MathJax), classical name, unnormalized coefficient, RMS-normalized coefficient.
 - Summary section displays P-V WFE, RMS WFE, and Strehl ratio.
 - Wraps in `MathJaxContext` for inline LaTeX rendering of Zernike notation.
+- **Loading states**:
+  - Initial load (`loading && !data`): shows "Loading…" text, no table.
+  - Re-fetch (`loading && data`): shows `<LoadingMask>` overlaid on the existing table (stale data stays visible behind the mask).
+  - Idle (`!loading && data`): table visible, no mask.
 
 ## Layout
 
 - Field + Wavelength dropdowns in a flex row
+- `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
 - Scrollable table area (`max-h-[60vh] overflow-y-auto`)
 - Table: 5 columns (Noll j | Notation | Classical Name | Coeff (waves) | RMS Coeff (waves))
 - Summary: P-V WFE, RMS WFE, Strehl ratio
+- `<LoadingMask />` rendered inside the `relative` wrapper only when `loading && data`
 - Ok button aligned right
 
 ## Usages

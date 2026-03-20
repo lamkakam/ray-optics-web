@@ -7,6 +7,7 @@ import { Label } from "@/components/micro/Label";
 import { Select } from "@/components/micro/Select";
 import type { SelectOption } from "@/components/micro/Select";
 import { Paragraph } from "@/components/micro/Paragraph";
+import { LoadingMask } from "@/components/micro/LoadingMask";
 import {
   type ZernikeData,
   NUM_NOLL_TERMS,
@@ -140,7 +141,7 @@ export function ZernikeTermsModal({
         {loading && !data && <Paragraph>Loading…</Paragraph>}
 
         {data && (
-          <>
+          <div className="relative">
             <div className="max-h-[60vh] overflow-y-auto">
               <Table headers={headers} rows={rows} />
             </div>
@@ -155,7 +156,8 @@ export function ZernikeTermsModal({
                 <strong>Strehl Ratio:</strong> {data.strehl_ratio.toFixed(4)}
               </Paragraph>
             </div>
-          </>
+            {loading && <LoadingMask />}
+          </div>
         )}
 
         <div className="flex justify-end pt-4">

@@ -143,6 +143,38 @@ describe("ZernikeTermsModal", () => {
     await waitFor(() => {
       expect(screen.getByText("Loading…")).toBeInTheDocument();
     });
+    // Initial load: no table yet
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("shows loading mask over table when re-fetching", async () => {
+    // First fetch resolves, then second never resolves
+    let resolveFirst!: (value: ZernikeData) => void;
+    const firstFetch = new Promise<ZernikeData>((res) => { resolveFirst = res; });
+    const onFetchData = jest.fn()
+      .mockReturnValueOnce(firstFetch)
+      .mockReturnValue(new Promise(() => {})); // never resolves
+
+    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+
+    // Resolve the first fetch so data is populated
+    resolveFirst(mockZernikeData);
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+
+    // Trigger a re-fetch via dropdown change
+    const fieldSelect = screen.getByLabelText("Field");
+    await userEvent.selectOptions(fieldSelect, "1");
+
+    // Table stays visible and loading mask appears
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByTestId("loading-mask")).toBeInTheDocument();
+  });
+
+  it("loading mask is absent when not loading with data", async () => {
+    const onFetchData = createMockFetchData();
+    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+    expect(screen.queryByTestId("loading-mask")).not.toBeInTheDocument();
   });
 
   it("Ok button calls onClose", async () => {
