@@ -56,7 +56,7 @@ interface ZernikeTermsModalProps {
 - Field + Wavelength dropdowns in a flex row
 - `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
 - Scrollable table area (`max-h-[60vh] overflow-y-auto`)
-- Table: 5 columns (Noll j | Notation | Classical Name | Coeff (waves) | RMS Coeff (waves))
+- Table: 5 columns (Noll j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
 - Summary: P-V WFE, RMS WFE, Strehl ratio
 - `<LoadingMask />` rendered inside the `relative` wrapper only when `loading && data`
 - Ok button aligned right

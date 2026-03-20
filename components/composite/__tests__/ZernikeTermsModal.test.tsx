@@ -86,8 +86,8 @@ describe("ZernikeTermsModal", () => {
     expect(screen.getByRole("columnheader", { name: "Noll j" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Notation" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Classical Name" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Coeff (waves)" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "RMS Coeff (waves)" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Non-normalized Term" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "RMS Normalized Term (waves)" })).toBeInTheDocument();
   });
 
   it("renders 56 data rows in the table", async () => {

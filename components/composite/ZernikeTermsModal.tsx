@@ -91,7 +91,7 @@ export function ZernikeTermsModal({
   );
 
   const headers = useMemo(
-    () => ["Noll j", "Notation", "Classical Name", "Coeff (waves)", "RMS Coeff (waves)"],
+    () => ["Noll j", "Notation", "Classical Name", "Non-normalized Term", "RMS Normalized Term (waves)"],
     [],
   );
 
