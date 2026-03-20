@@ -7,6 +7,8 @@ _LAZY_IMPORTS = {
     # analysis
     'get_first_order_data': 'rayoptics_web_utils.analysis',
     'get_3rd_order_seidel_data': 'rayoptics_web_utils.analysis',
+    # zernike
+    'get_zernike_coefficients': 'rayoptics_web_utils.zernike',
     # plotting
     'plot_lens_layout': 'rayoptics_web_utils.plotting',
     'plot_ray_fan': 'rayoptics_web_utils.plotting',

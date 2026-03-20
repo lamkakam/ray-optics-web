@@ -1,5 +1,6 @@
 import { expose } from "comlink";
 import { type OpticalModel, type SeidelData } from "../lib/opticalModel";
+import { type ZernikeData } from "../lib/zernikeData";
 import { type SetAutoApertureFlag } from "../lib/apertureFlag";
 import { buildOpticalModelScript } from "../lib/pythonScript";
 
@@ -78,7 +79,7 @@ export async function init(): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.1.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
   } catch (err) {
@@ -172,6 +173,26 @@ export async function get3rdOrderSeidelData(): Promise<SeidelData> {
   return await _get3rdOrderSeidelData(requirePyodide());
 }
 
+export async function _getZernikeCoefficients(
+  runPython: (code: string) => Promise<unknown>,
+  fieldIndex: number,
+  wvlIndex: number,
+  numTerms: number = 56,
+): Promise<ZernikeData> {
+  const json = (await runPython(
+    `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(opm, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}))`
+  )) as string;
+  return JSON.parse(json) as ZernikeData;
+}
+
+export async function getZernikeCoefficients(
+  fieldIndex: number,
+  wvlIndex: number,
+  numTerms?: number,
+): Promise<ZernikeData> {
+  return await _getZernikeCoefficients(requirePyodide(), fieldIndex, wvlIndex, numTerms);
+}
+
 expose({
   init,
   setOpticalSurfaces,
@@ -182,4 +203,5 @@ expose({
   plotSpotDiagram,
   plotSurfaceBySurface3rdOrderAberr,
   get3rdOrderSeidelData,
+  getZernikeCoefficients,
 });

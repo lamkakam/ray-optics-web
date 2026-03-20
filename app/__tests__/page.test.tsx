@@ -51,6 +51,7 @@ const mockProxy = {
   plotSpotDiagram: mockPlotSpotDiagram,
   plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
+  getZernikeCoefficients: jest.fn<Promise<Record<string, unknown>>, [number, number, number?]>().mockResolvedValue({}),
 } satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
 jest.mock("@/hooks/usePyodide", () => ({
