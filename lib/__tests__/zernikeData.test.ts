@@ -11,11 +11,11 @@ describe("nollToNm", () => {
     expect(nollToNm(1)).toEqual([0, 0]);
   });
 
-  it("returns (1, 1) for j=2 (Tilt Y)", () => {
+  it("returns (1, 1) for j=2 (Tilt X)", () => {
     expect(nollToNm(2)).toEqual([1, 1]);
   });
 
-  it("returns (1, -1) for j=3 (Tilt X)", () => {
+  it("returns (1, -1) for j=3 (Tilt Y)", () => {
     expect(nollToNm(3)).toEqual([1, -1]);
   });
 
@@ -75,6 +75,34 @@ describe("NOLL_CLASSICAL_NAMES", () => {
 
   it("maps j=8 to Horizontal Coma", () => {
     expect(NOLL_CLASSICAL_NAMES[8]).toBe("Horizontal Coma");
+  });
+
+  it("maps j=2 to Tilt X (m>0, cos term)", () => {
+    expect(NOLL_CLASSICAL_NAMES[2]).toBe("Tilt X");
+  });
+
+  it("maps j=3 to Tilt Y (m<0, sin term)", () => {
+    expect(NOLL_CLASSICAL_NAMES[3]).toBe("Tilt Y");
+  });
+
+  it("maps j=6 to Vertical Astigmatism", () => {
+    expect(NOLL_CLASSICAL_NAMES[6]).toBe("Vertical Astigmatism");
+  });
+
+  it("maps j=16 to Secondary Coma X (m>0, cos term)", () => {
+    expect(NOLL_CLASSICAL_NAMES[16]).toBe("Secondary Coma X");
+  });
+
+  it("maps j=17 to Secondary Coma Y (m<0, sin term)", () => {
+    expect(NOLL_CLASSICAL_NAMES[17]).toBe("Secondary Coma Y");
+  });
+
+  it("maps j=37 to Tertiary Spherical", () => {
+    expect(NOLL_CLASSICAL_NAMES[37]).toBe("Tertiary Spherical");
+  });
+
+  it("maps j=56 to Quaternary Spherical", () => {
+    expect(NOLL_CLASSICAL_NAMES[56]).toBe("Quaternary Spherical");
   });
 });
 

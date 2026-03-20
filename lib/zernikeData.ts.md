@@ -26,7 +26,7 @@ interface ZernikeData {
 | Export | Type | Description |
 |--------|------|-------------|
 | `NUM_NOLL_TERMS` | `56` | Number of Noll-ordered Zernike terms covered (Fringe 36 = Noll j=56) |
-| `NOLL_CLASSICAL_NAMES` | `Record<number, string>` | Maps Noll index j=1..56 to human-readable names (e.g. "Piston", "Defocus", "Vertical Coma") |
+| `NOLL_CLASSICAL_NAMES` | `Record<number, string>` | Maps Noll index j=1..56 to human-readable names (e.g. "Piston", "Defocus", "Vertical Coma"). Naming convention: m>0 (even j, cos term) → "X" suffix; m<0 (odd j, sin term) → "Y" suffix; m=0 → radially symmetric (no suffix). |
 
 ### Functions
 
