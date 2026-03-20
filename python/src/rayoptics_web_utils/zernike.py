@@ -30,6 +30,28 @@ def noll_to_nm(j: int) -> tuple[int, int]:
     return (n, m_abs) if j % 2 == 0 else (n, -m_abs)
 
 
+def noll_norm_factor(n: int, m: int) -> float:
+    """Noll normalization factor N_n^m = sqrt((2 - δ_{m,0})(n + 1)).
+
+    The RMS-normalized Zernike polynomial is Z̃ = N · Z_unnorm.
+    To convert unnormalized coefficients to RMS-normalized: c_rms = c / N.
+    """
+    return math.sqrt((2 - (m == 0)) * (n + 1))
+
+
+def unnormalized_to_rms_normalized(coeffs: list[float], num_terms: int) -> list[float]:
+    """Convert unnormalized Zernike coefficients to RMS-normalized (Noll convention).
+
+    Each coefficient is divided by the Noll normalization factor N_n^m,
+    so each output coefficient directly gives the RMS contribution of that term.
+    """
+    result = []
+    for j in range(1, num_terms + 1):
+        n, m = noll_to_nm(j)
+        result.append(coeffs[j - 1] / noll_norm_factor(n, abs(m)))
+    return result
+
+
 def zernike_radial(n: int, m: int, rho: NDArray) -> NDArray:
     """Radial part R_n^m(rho) of Zernike polynomial."""
     m_abs = abs(m)
@@ -111,7 +133,8 @@ def get_zernike_coefficients(
         num_rays: RayGrid resolution.
 
     Returns:
-        dict with keys: coefficients, rms_wfe, pv_wfe, num_terms, field_index, wavelength_nm.
+        dict with keys: coefficients, rms_normalized_coefficients, rms_wfe, pv_wfe,
+        strehl_ratio, num_terms, field_index, wavelength_nm.
     """
     from rayoptics.raytr.analyses import RayGrid
 
@@ -128,10 +151,13 @@ def get_zernike_coefficients(
     pv_wfe = float(np.max(opd_valid) - np.min(opd_valid))
 
     coeffs = fit_zernike(grid, num_terms=num_terms)
+    coeffs_list = [float(c) for c in coeffs]
+    rms_normalized = unnormalized_to_rms_normalized(coeffs_list, num_terms)
     strehl_ratio = _monochromatic_strehl(grid[2])
 
     return {
-        'coefficients': [float(c) for c in coeffs],
+        'coefficients': coeffs_list,
+        'rms_normalized_coefficients': rms_normalized,
         'rms_wfe': rms_wfe,
         'pv_wfe': pv_wfe,
         'strehl_ratio': strehl_ratio,

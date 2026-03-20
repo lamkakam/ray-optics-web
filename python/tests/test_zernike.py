@@ -209,6 +209,45 @@ class TestFitZernike:
             assert abs(coeffs[j - 1] - c) < 0.02, f"Z{j} = {coeffs[j-1]}, expected {c}"
 
 
+class TestNollNormFactor:
+    """Test Noll normalization factor N_n^m = sqrt((2 - delta_{m,0})(n + 1))."""
+
+    @pytest.mark.parametrize("n, m, expected", [
+        (0, 0, 1.0),           # Piston
+        (1, 1, 2.0),           # Tilt
+        (2, 0, np.sqrt(3)),    # Defocus
+        (2, 2, np.sqrt(6)),    # Astigmatism
+        (4, 0, np.sqrt(5)),    # Spherical
+    ])
+    def test_known_values(self, n, m, expected):
+        from rayoptics_web_utils.zernike import noll_norm_factor
+        assert abs(noll_norm_factor(n, m) - expected) < 1e-12
+
+
+class TestUnnormalizedToRmsNormalized:
+    """Test conversion from unnormalized to RMS-normalized coefficients."""
+
+    def test_pure_defocus(self):
+        """Pure defocus Z4=1.5 → rms[3] = 1.5 / sqrt(3)."""
+        from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
+        coeffs = [0.0, 0.0, 0.0, 1.5, 0.0]
+        result = unnormalized_to_rms_normalized(coeffs, 5)
+        assert abs(result[3] - 1.5 / np.sqrt(3)) < 1e-12
+
+    def test_all_zeros(self):
+        from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
+        coeffs = [0.0] * 5
+        result = unnormalized_to_rms_normalized(coeffs, 5)
+        assert all(c == 0.0 for c in result)
+
+    def test_piston_unchanged(self):
+        """Piston N=1.0, so value is unchanged."""
+        from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
+        coeffs = [2.5, 0.0, 0.0, 0.0, 0.0]
+        result = unnormalized_to_rms_normalized(coeffs, 5)
+        assert abs(result[0] - 2.5) < 1e-12
+
+
 class TestGetZernikeCoefficients:
     """Integration tests with Cooke Triplet model."""
 
@@ -335,3 +374,30 @@ class TestGetZernikeCoefficients:
         assert abs(coeffs[0] - 0.568) < 0.05, f"Z1 piston = {coeffs[0]}, expected ~0.568"
         # Defocus ≈ 0.788 (ATMOS reference)
         assert abs(coeffs[3] - 0.788) < 0.05, f"Z4 defocus = {coeffs[3]}, expected ~0.788"
+
+    def test_rms_normalized_key_exists(self, cooke_triplet):
+        """rms_normalized_coefficients key exists and is list[float]."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        assert 'rms_normalized_coefficients' in result
+        assert isinstance(result['rms_normalized_coefficients'], list)
+        assert all(isinstance(c, float) for c in result['rms_normalized_coefficients'])
+
+    def test_rms_normalized_length(self, cooke_triplet):
+        """rms_normalized_coefficients length matches num_terms."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        assert len(result['rms_normalized_coefficients']) == result['num_terms']
+
+    def test_rms_normalized_consistency(self, cooke_triplet):
+        """rms_normalized[j-1] * N_n^m ≈ coefficients[j-1] for each j."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients, noll_to_nm, noll_norm_factor
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        coeffs = result['coefficients']
+        rms = result['rms_normalized_coefficients']
+        for j in range(1, result['num_terms'] + 1):
+            n, m = noll_to_nm(j)
+            reconstructed = rms[j - 1] * noll_norm_factor(n, abs(m))
+            assert abs(reconstructed - coeffs[j - 1]) < 1e-10, (
+                f"Z{j}: rms*N = {reconstructed}, coeff = {coeffs[j-1]}"
+            )
