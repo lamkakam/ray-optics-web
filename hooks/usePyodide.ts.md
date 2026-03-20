@@ -17,6 +17,7 @@ interface PyodideWorkerAPI {
   plotSpotDiagram(fieldIndex: number): Promise<string>;
   plotSurfaceBySurface3rdOrderAberr(): Promise<string>;
   get3rdOrderSeidelData(): Promise<SeidelData>;
+  getZernikeCoefficients(fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>;
 }
 ```
 
@@ -46,6 +47,7 @@ interface PyodideWorkerAPI {
 - `comlink.wrap` — wraps the worker as a typed async proxy.
 - `OpticalModel` — imported from `lib/opticalModel` (type only).
 - `SeidelData` — imported from `lib/opticalModel` (type only).
+- `ZernikeData` — imported from `lib/zernikeData` (type only).
 - `SetAutoApertureFlag` — imported from `lib/apertureFlag` (type only).
 
 ## Edge Cases / Error Handling

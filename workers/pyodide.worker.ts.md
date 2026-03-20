@@ -18,6 +18,7 @@ export async function plotOpdFan(fieldIndex: number): Promise<string>
 export async function plotSpotDiagram(fieldIndex: number): Promise<string>
 export async function plotSurfaceBySurface3rdOrderAberr(): Promise<string>
 export async function get3rdOrderSeidelData(): Promise<SeidelData>
+export async function getZernikeCoefficients(fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>
 ```
 
 ### Injectable Variants (for testing)
@@ -32,6 +33,7 @@ export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>,
 export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string>
 export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: string) => Promise<unknown>): Promise<string>
 export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>): Promise<SeidelData>
+export async function _getZernikeCoefficients(runPython: (code: string) => Promise<unknown>, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>
 export function _resetPyodideForTesting(): void
 ```
 
@@ -67,6 +69,7 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `plotSpotDiagram(fieldIndex)` | Returns a spot diagram for the given field index (zero-indexed). |
 | `plotSurfaceBySurface3rdOrderAberr()` | Returns a surface-by-surface Seidel aberration plot. Field independent. |
 | `get3rdOrderSeidelData()` | Returns `SeidelData` with 3rd-order Seidel aberration data. |
+| `getZernikeCoefficients(fieldIndex, wvlIndex, numTerms?)` | Returns `ZernikeData` with Zernike polynomial coefficients for a given field and wavelength. `numTerms` defaults to 56. |
 
 ## Injectable Variants (for testing)
 
@@ -81,6 +84,7 @@ Each public function has a corresponding `_*` variant that accepts `runPython` a
 - `_plotSpotDiagram(runPython, fieldIndex)` — runs `plot_spot_diagram(fieldIndex, opm)`.
 - `_plotSurfaceBySurface3rdOrderAberr(runPython)` — runs `plot_surface_by_surface_3rd_order_aberr(opm)`.
 - `_get3rdOrderSeidelData(runPython)` — runs `json.dumps(get_3rd_order_seidel_data(opm))` and parses JSON.
+- `_getZernikeCoefficients(runPython, fieldIndex, wvlIndex, numTerms?)` — imports `get_zernike_coefficients` and runs it with `json.dumps`, parses JSON. `numTerms` defaults to 56.
 - `_resetPyodideForTesting()` — sets `pyodide = null` to allow `init()` to be re-exercised in tests.
 
 ## Key Conventions
@@ -103,6 +107,7 @@ Each public function has a corresponding `_*` variant that accepts `runPython` a
 
 - `comlink` — `expose()` to register the worker API.
 - `lib/opticalModel` — `OpticalModel`, `SeidelData` (types only).
+- `lib/zernikeData` — `ZernikeData` (type only).
 - `lib/apertureFlag` — `SetAutoApertureFlag` (type only).
 - `lib/pythonScript` — `buildOpticalModelScript` (generates the Python script for `setOpticalSurfaces`).
 

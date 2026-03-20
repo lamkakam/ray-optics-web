@@ -28,6 +28,9 @@ import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteMo
 import { SettingsModal } from "@/components/composite/SettingsModal";
 import { PrivacyPolicyModal } from "@/components/composite/PrivacyPolicyModal";
 import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
+import { ZernikeTermsModal } from "@/components/composite/ZernikeTermsModal";
+import type { ZernikeData } from "@/lib/zernikeData";
+import { NUM_NOLL_TERMS } from "@/lib/zernikeData";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
 import { useTheme } from "@/components/ThemeProvider";
@@ -74,6 +77,7 @@ export default function Home() {
   const [privacyPolicyModalOpen, setPrivacyPolicyModalOpen] = useState(false);
   const [seidelData, setSeidelData] = useState<SeidelData | undefined>();
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
+  const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
   const [pendingExample, setPendingExample] = useState<string | undefined>();
   const exampleSelectRef = useRef<HTMLSelectElement>(null);
 
@@ -120,6 +124,21 @@ export default function Home() {
       value: i,
     }));
   }, [committedSpecs.field]);
+
+  const wavelengthOptions = useMemo(() => {
+    return committedSpecs.wavelengths.weights.map(([wl], i) => ({
+      label: `${wl} nm`,
+      value: i,
+    }));
+  }, [committedSpecs.wavelengths.weights]);
+
+  const handleFetchZernikeData = useCallback(
+    async (fieldIndex: number, wvlIndex: number): Promise<ZernikeData> => {
+      if (!proxy) throw new Error("Pyodide not ready");
+      return proxy.getZernikeCoefficients(fieldIndex, wvlIndex, NUM_NOLL_TERMS);
+    },
+    [proxy],
+  );
 
   const getPlotFunction = useCallback(
     (plotType: PlotType): ((fieldIndex: number) => Promise<string>) | undefined => {
@@ -380,6 +399,26 @@ export default function Home() {
     />
   );
 
+  const zernikeButton = seidelData && (
+    <div className={isLG ? undefined : "mb-2"}>
+      <Tooltip text="View Zernike polynomial coefficients" position="bottom">
+        <Button variant="secondary" size="sm" aria-label="Zernike Terms" onClick={() => setZernikeModalOpen(true)}>
+          Zernike Terms
+        </Button>
+      </Tooltip>
+    </div>
+  );
+
+  const zernikeModalNode = seidelData && (
+    <ZernikeTermsModal
+      isOpen={zernikeModalOpen}
+      fieldOptions={fieldOptions}
+      wavelengthOptions={wavelengthOptions}
+      onFetchData={handleFetchZernikeData}
+      onClose={() => setZernikeModalOpen(false)}
+    />
+  );
+
   const exampleSystemDropdown = (
     <Select
       ref={exampleSelectRef}
@@ -400,6 +439,7 @@ export default function Home() {
         {exampleSystemDropdown}
         {updateSystemButton}
         {seidelButton}
+        {zernikeButton}
         <span className="ml-auto flex items-center gap-2">
           {privacyPolicyButton}
           {settingButton}
@@ -424,6 +464,7 @@ export default function Home() {
       {errorModal}
       {settingsModalNode}
       {seidelModalNode}
+      {zernikeModalNode}
       {initOverlayNode}
     </div >
   );
@@ -441,6 +482,7 @@ export default function Home() {
         {exampleSystemDropdown}
         {updateSystemButton}
         {seidelButton}
+        {zernikeButton}
         <div className="flex flex-wrap gap-2">
           {firstOrderChips}
         </div>
@@ -461,6 +503,7 @@ export default function Home() {
       {settingsModalNode}
       {privacyPolicyModalNode}
       {seidelModalNode}
+      {zernikeModalNode}
       {initOverlayNode}
     </div >
   );
