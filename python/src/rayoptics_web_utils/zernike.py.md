@@ -14,6 +14,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 | `noll_norm_factor` | `(n: int, m: int) -> float` | Noll normalization factor N_n^m = sqrt((2 - δ_{m,0})(n + 1)) |
 | `unnormalized_to_rms_normalized` | `(coeffs: list[float], num_terms: int) -> list[float]` | Convert unnormalized coefficients to RMS-normalized (divide by N_n^m) |
 | `fit_zernike` | `(opd_grid: NDArray, num_terms: int = 22) -> NDArray` | Least-squares fit of Zernike polynomials to a (3, N, N) OPD grid |
+| `_compute_exit_pupil_grid` | `(rg, opm, wavelength_nm: float) -> NDArray` | Build (3, N, N) grid with exit pupil coords (EIC-based) and corrected OPD |
 | `get_zernike_coefficients` | `(opm, field_index, wvl_index, num_terms=22, num_rays=64) -> dict` | High-level: compute Zernike coefficients for a field/wavelength |
 
 ## Conventions
@@ -24,6 +25,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 - **MM unit bug**: `RayGrid` OPD is multiplied by `1e6` to correct for the mm/nm mismatch when `dimensions='MM'`.
 - **Wavelength correction**: `RayGrid` internally divides by `central_wvl` for all wavelengths. An additional factor of `central_wvl / traced_wvl` converts OPD to waves at the traced wavelength.
 - **Noll sign convention**: even j → positive m (cosine), odd j → negative m (sine).
+- **Exit pupil coordinates**: Zernike fitting uses exit pupil coordinates computed via EIC (Equally Inclined Chord) expansion points, not entrance pupil coordinates from `RayGrid.grid`. This matches the convention used by OSLO and other commercial optics software. For each ray, `_compute_exit_pupil_grid` computes the EIC expansion point at the exit pupil and normalizes by `fod.exp_radius`.
 - **NaN handling**: vignetted rays produce NaN in the OPD grid; these are filtered before fitting.
 - **Pupil mask**: only points with rho ≤ 1.0 are used in the fit.
 
@@ -62,6 +64,8 @@ The RMS-normalized coefficient is `c_rms = c_unnorm / N_n^m`. Each RMS-normalize
 - `numpy` (array math, `linalg.lstsq`)
 - `math` (factorials for radial polynomial)
 - `rayoptics.raytr.analyses.RayGrid` (only in `get_zernike_coefficients`)
+- `rayoptics.raytr.waveabr.eic_distance`, `transform_after_surface` (exit pupil coordinate computation)
+- `rayoptics.optical.model_constants` (ray segment indexing: `mc.p`, `mc.d`)
 
 ## Lazy Import
 
