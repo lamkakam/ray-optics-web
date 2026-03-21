@@ -59,6 +59,40 @@ where δ_{m,0} is the Kronecker delta (1 when m=0, 0 otherwise).
 
 The RMS-normalized coefficient is `c_rms = c_unnorm / N_n^m`. Each RMS-normalized coefficient directly gives the RMS contribution of that term, and `RMS WFE ≈ sqrt(Σ c_rms[j]²)` for j ≥ 2.
 
+## Hopkins EIC OPD Method
+
+RayOptics computes wavefront OPD using the **Hopkins Equally Inclined Chord (EIC)** method. The OPD formula is:
+
+```
+OPD = -n_obj·e1 - ray_op + n_img·ekp + cr_op - n_img·ep
+```
+
+| Term | Description |
+|------|-------------|
+| `e1` | EIC distance between ray and chief ray at the first surface (entrance) |
+| `ray_op` | Total optical path of the ray through the system |
+| `ekp` | EIC distance between ray and chief ray at the last surface (exit) |
+| `cr_op` | Total optical path of the chief ray |
+| `ep` | Reference sphere correction: distance from exit pupil EIC point to the reference sphere |
+
+The reference sphere is centered at the chief ray image point (`foc=0` → chief ray intersection with the image surface) and passes through the chief ray's exit pupil EIC expansion point.
+
+### Exit Pupil Coordinate Computation
+
+`_compute_exit_pupil_grid` computes exit pupil coordinates for each ray using:
+
+1. `transform_after_surface(ifc, ray_seg)` — apply decentration to get ray coords in the exit pupil reference frame
+2. `eic_distance(ray, chief_ray)` — EIC distance at the last physical surface (`k = -2`)
+3. `eic_exp_pt = b4_pt - (ekp - cr_exp_dist) * b4_dir` — the ray's EIC expansion point
+4. `p_coord = eic_exp_pt - cr_exp_pt` — relative to the chief ray's exit pupil point
+5. Normalize by `fod.exp_radius` (paraxial exit pupil radius)
+
+### Known Convention Differences vs OSLO
+
+- **Z3 (tilt Y)**: Off-axis fields show ~0.65 wave tilt difference at full field. This is caused by the reference sphere image point — OSLO's "Central refer ray" convention uses a reference point ~3.3 μm below the chief ray intercept. Does not affect higher-order terms (Z7+).
+- **Z1/Z4 (piston/defocus)**: ~0.06 wave offset on all fields, consistent with a slight reference sphere radius difference.
+- See `docs/zernike-oslo-alignment-investigation.md` for full analysis.
+
 ## Dependencies
 
 - `numpy` (array math, `linalg.lstsq`)

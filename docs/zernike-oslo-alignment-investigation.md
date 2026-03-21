@@ -43,7 +43,55 @@ The exit pupil coordinates were computed using the Hopkins EIC (Equally Inclined
 Chord) expansion point at the exit pupil for each ray, relative to the chief ray's
 exit pupil point, normalized by the paraxial exit pupil radius.
 
-### 2. SECONDARY: Reference Sphere Differences (all fields)
+### 2. SECONDARY: Reference Sphere Image Point — Z3 Tilt (off-axis)
+
+At full field, Z3 (tilt Y) shows a 14× discrepancy: 0.698 (this repo) vs
+0.049 (OSLO). This is caused by the **reference sphere image point** used in
+the Hopkins EIC OPD computation.
+
+**Detailed investigation:**
+- The tilt is in the OPD data itself, not a coordinate or sampling artifact.
+  RayGrid OPD matches direct `wave_abr_full_calc` exactly.
+- Jacobian weighting of the non-uniform exit pupil grid has negligible effect
+  (Jacobian varies only 0.900–0.930 across the pupil).
+- Z3 varies linearly with `image_delta` Y at ~197 waves/mm.
+- An `image_delta` of ~-0.0033 mm in Y matches OSLO's Z3 = 0.049.
+
+**Image point comparison (full-field):**
+| Reference point | Image Y (mm) | Z3 (waves) |
+|-----------------|-------------|------------|
+| Real chief ray intercept (default) | 18.200449 | +0.698 |
+| Paraxial image height (efl×tan θ) | 18.198872 | +0.388 |
+| OSLO-matching point | ~18.197 | +0.049 |
+| Zero-tilt point | 18.196905 | 0.000 |
+| Ray bundle centroid | 18.195937 | -0.191 |
+
+None of the standard reference points (paraxial, centroid) exactly match OSLO.
+The OSLO-matching image point is ~3.3 μm below the chief ray intercept. This is
+likely related to OSLO's "Central refer ray" convention, which may use a reference
+ray definition that produces a slightly different image point than rayoptics' chief
+ray (which passes through the entrance pupil center).
+
+**OPD decomposition at py = ±0.8 (full field):**
+| Term | Δ (waves) |
+|------|-----------|
+| -n·e1 (entrance EIC) | -2464 |
+| -ray_op (path diff) | +492 |
+| n·ekp (exit EIC) | +1972 |
+| -n·ep (ref sphere) | +0.73 |
+| **Total ΔOPD** | **+0.567** |
+
+The tilt arises from imperfect cancellation of three enormous terms (e1, ray_op,
+ekp), each ~1000–2500 waves. The reference sphere correction (ep) contributes
+~0.73 waves of the 0.57 wave asymmetry. Shifting the image point by 3.3 μm
+changes the ep term enough to reduce the residual tilt to match OSLO.
+
+**Decision**: Accept as a known convention difference. The Z3 discrepancy does not
+affect higher-order aberration terms (Z7, Z11, Z12, Z22), which are the primary
+quantities of interest for optical design. Users can adjust the reference point via
+the `image_delta` parameter of `RayGrid` if needed.
+
+### 3. TERTIARY: Reference Sphere Defocus Offset (all fields)
 
 A consistent ~0.06 wave defocus offset is present even on-axis, where pupil
 coordinates are correct. This appears as nearly equal differences in Z1 (piston)
@@ -67,12 +115,7 @@ The defocus offset corresponds to ~9 μm of axial shift. Possible causes:
 - Subtle difference in the OPD reference (Hopkins EIC vs OSLO's method)
 - Different handling of the image surface position vs paraxial focus
 
-For off-axis fields, a ~0.003 mm Y-shift of the image reference point can explain
-the large Z3 (tilt Y) difference (0.586 → ~0.05, matching OSLO's 0.049). This
-suggests OSLO may center the reference sphere at a slightly different image point
-(e.g., the Gaussian image point vs the real chief ray intersection).
-
-### 3. RESIDUAL: Primary Astigmatism (Z6)
+### 4. RESIDUAL: Primary Astigmatism (Z6)
 
 Even with exit pupil coordinates and reference sphere adjustments, Z6 (primary
 astigmatism, ρ² cos 2θ) shows a persistent discrepancy:
@@ -108,22 +151,71 @@ This may be related to:
 - OPD computation verified against manual Hopkins EIC formula
 - Unit correction (1e6 factor for MM dimensions) verified correct
 
-## Recommended Fix
+## Fix Applied
 
-Modify `fit_zernike()` and `get_zernike_coefficients()` in `zernike.py` to:
+Exit pupil coordinate fitting has been implemented in `_compute_exit_pupil_grid()`.
+This resolves the primary discrepancy (cause #1) for higher-order terms (Z7, Z11,
+Z12, Z22). See `zernike.py.md` for implementation details.
 
-1. Compute exit pupil coordinates for each ray using the EIC expansion point
-2. Normalize by the paraxial exit pupil radius
-3. Fit Zernike polynomials in exit pupil coordinates instead of entrance pupil
-   coordinates
+The Z3 tilt offset (cause #2) and defocus offset (cause #3) are accepted as known
+convention differences related to the reference sphere definition. They do not
+affect higher-order aberration terms.
 
-This requires access to the ray data at the last physical surface and the chief
-ray exit pupil segment, which are available from the `RayGrid` trace but not
-currently exposed through the `grid` attribute. The implementation would need to
-either:
-- Extend `get_zernike_coefficients()` to compute exit pupil coords from the
-  raw ray trace data (preferred)
-- Or modify `RayGrid` to store exit pupil coordinates alongside the grid
+## Hopkins EIC Method
 
-The reference sphere offset (cause #2) is a secondary concern that may require
-further investigation into OSLO's exact reference sphere definition.
+The OPD computation in rayoptics uses the **Hopkins Equally Inclined Chord (EIC)**
+method, based on H.H. Hopkins' paper on wavefront aberration. The OPD formula is:
+
+```
+OPD = -n_obj·e1 - ray_op + n_img·ekp + cr_op - n_img·ep
+```
+
+Where:
+- `e1`: EIC distance between the ray and chief ray at the first surface (entrance)
+- `ray_op`: total optical path of the ray through the system
+- `ekp`: EIC distance between the ray and chief ray at the last surface (exit)
+- `cr_op`: total optical path of the chief ray through the system
+- `ep`: reference sphere correction (distance from exit pupil EIC point to the
+  reference sphere along the ray direction)
+
+The chief ray always has OPD = 0 by construction. For other rays, the OPD is
+the wavefront error relative to a reference sphere centered at the chief ray
+image point and passing through the chief ray's exit pupil EIC expansion point.
+
+### Exit Pupil Coordinates from EIC
+
+For each ray, the exit pupil coordinate is computed as follows:
+
+```python
+# At the last physical surface (k = -2):
+b4_pt, b4_dir = transform_after_surface(ifc, (ray[k][mc.p], ray[k][mc.d]))
+ekp = eic_distance((ray[k][mc.p], ray[k][mc.d]),
+                    (cr_ray[k][mc.p], cr_ray[k][mc.d]))
+dst = ekp - cr_exp_dist
+eic_exp_pt = b4_pt - dst * b4_dir      # ray's EIC expansion point
+p_coord = eic_exp_pt - cr_exp_pt        # relative to chief ray
+exit_px = p_coord[0] / fod.exp_radius   # normalized by paraxial exit pupil
+exit_py = p_coord[1] / fod.exp_radius
+```
+
+Key quantities:
+- `cr_exp_pt`: chief ray's EIC expansion point at the exit pupil (from
+  `transfer_to_exit_pupil`)
+- `cr_exp_dist`: z-distance from the last physical surface to the chief ray's
+  exit pupil point
+- `fod.exp_radius`: paraxial exit pupil radius (from first-order data)
+
+### Reference Sphere Geometry
+
+The reference sphere is defined by:
+- **Center**: chief ray intersection with the image surface (`cr.ray[-1][mc.p]`
+  with `foc=0`)
+- **Passes through**: chief ray exit pupil EIC point (`cr_exp_pt`)
+- **Radius**: distance from `cr_exp_pt` to the image point (adjusted by
+  `image_thi` for the last gap), typically ~55 mm at full field
+
+The `ep` correction in the OPD formula accounts for each ray's distance from the
+exit pupil EIC point to the reference sphere surface. This correction depends on
+`ref_dir` (unit vector from exit pupil to image point) and creates a field-angle-
+dependent tilt contribution to the OPD, which is the source of the Z3 discrepancy
+with OSLO (see cause #2 above).
