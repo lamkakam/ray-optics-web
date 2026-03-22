@@ -120,10 +120,78 @@ def _monochromatic_strehl(opd_waves: NDArray) -> float:
     return float(np.abs(np.mean(phase)) ** 2)
 
 
+def _compute_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
+    """Build (3, N, N) grid with exit pupil coordinates and corrected OPD.
+
+    Uses EIC (Equally Inclined Chord) expansion points to compute where each
+    ray intersects the exit pupil plane, then normalizes by the paraxial exit
+    pupil radius. This aligns with OSLO's Zernike fitting convention.
+
+    Args:
+        rg: RayGrid instance (already traced).
+        opm: OpticalModel instance.
+        wavelength_nm: traced wavelength in nm.
+
+    Returns:
+        (3, N, N) array: [0]=exit_pupil_x, [1]=exit_pupil_y, [2]=OPD in waves.
+    """
+    from rayoptics.raytr.waveabr import eic_distance, transform_after_surface
+    from rayoptics.optical import model_constants as mc
+
+    fod = opm['analysis_results']['parax_data'].fod
+    exp_radius = fod.exp_radius
+
+    fld = rg.fld
+    cr, cr_exp_seg = fld.chief_ray
+    cr_exp_pt = cr_exp_seg[0]
+    cr_exp_dist = cr_exp_seg[2]
+    ifc = cr_exp_seg[3]
+
+    grid_raw, _ = rg.grid_pkg
+    n_rows = len(grid_raw)
+    n_cols = len(grid_raw[0])
+
+    # Get OPD from rg.grid (already computed by RayGrid) with unit correction
+    opd_grid = rg.grid.copy()
+    central_wvl = opm['optical_spec']['wvls'].central_wvl
+    opd_grid[2] *= 1e6 * central_wvl / wavelength_nm
+
+    exit_px = np.full((n_rows, n_cols), np.nan)
+    exit_py = np.full((n_rows, n_cols), np.nan)
+
+    k = -2  # last physical interface (before image surface)
+    for i in range(n_rows):
+        for j in range(n_cols):
+            _, _, ray_pkg = grid_raw[i][j]
+            if ray_pkg is None:
+                continue
+            ray = ray_pkg[0]
+            try:
+                b4_pt, b4_dir = transform_after_surface(
+                    ifc, (ray[k][mc.p], ray[k][mc.d])
+                )
+                ekp = eic_distance(
+                    (ray[k][mc.p], ray[k][mc.d]),
+                    (cr.ray[k][mc.p], cr.ray[k][mc.d]),
+                )
+                dst = ekp - cr_exp_dist
+                eic_exp_pt = b4_pt - dst * b4_dir
+                p_coord = eic_exp_pt - cr_exp_pt
+                exit_px[i, j] = p_coord[0] / exp_radius
+                exit_py[i, j] = p_coord[1] / exp_radius
+            except (IndexError, TypeError):
+                continue
+
+    return np.array([exit_px, exit_py, opd_grid[2]])
+
+
 def get_zernike_coefficients(
     opm, field_index: int, wvl_index: int, num_terms: int = 22, num_rays: int = 64
 ) -> dict:
     """Compute Zernike coefficients for a given field and wavelength.
+
+    Uses exit pupil coordinates (EIC-based) for Zernike fitting, matching
+    the convention used by OSLO and other commercial optics software.
 
     Args:
         opm: OpticalModel instance (dict-accessible).
@@ -141,9 +209,8 @@ def get_zernike_coefficients(
     wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]
 
     rg = RayGrid(opm, f=field_index, wl=wavelength_nm, foc=0, num_rays=num_rays)
-    grid = rg.grid.copy()
-    central_wvl = opm['optical_spec']['wvls'].central_wvl
-    grid[2] *= 1e6 * central_wvl / wavelength_nm  # MM unit bug + wavelength correction
+
+    grid = _compute_exit_pupil_grid(rg, opm, wavelength_nm)
 
     # Compute RMS and PV from valid OPD points
     opd_valid = grid[2][~np.isnan(grid[2])]

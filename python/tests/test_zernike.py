@@ -366,14 +366,53 @@ class TestGetZernikeCoefficients:
         )
 
     def test_coefficients_are_unnormalized(self, cooke_triplet):
-        """On-axis d-line coefficients should match ATMOS (unnormalized)."""
+        """On-axis d-line coefficients should match known values (unnormalized)."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
         coeffs = result['coefficients']
-        # Piston ≈ 0.568 (ATMOS reference)
-        assert abs(coeffs[0] - 0.568) < 0.05, f"Z1 piston = {coeffs[0]}, expected ~0.568"
-        # Defocus ≈ 0.788 (ATMOS reference)
-        assert abs(coeffs[3] - 0.788) < 0.05, f"Z4 defocus = {coeffs[3]}, expected ~0.788"
+        # On-axis: exit pupil ≈ entrance pupil, values should be close to previous
+        assert abs(coeffs[0] - 0.568) < 0.1, f"Z1 piston = {coeffs[0]}, expected ~0.568"
+        assert abs(coeffs[3] - 0.788) < 0.1, f"Z4 defocus = {coeffs[3]}, expected ~0.788"
+
+    def test_exit_pupil_coords_off_axis_z12(self, cooke_triplet):
+        """Full-field: Z12 (secondary astigmatism) should be large with exit pupil coords.
+
+        With entrance pupil coords Z12 ≈ 0.396; with exit pupil coords Z12 ≈ 0.765.
+        OSLO reference: Z12 ≈ 0.820.
+        """
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
+        coeffs = result['coefficients']
+        # Exit pupil fitting should give Z12 > 0.5 (entrance pupil gives ~0.396)
+        assert abs(coeffs[11]) > 0.5, (
+            f"Z12 = {coeffs[11]}, expected > 0.5 with exit pupil coordinates"
+        )
+
+    def test_exit_pupil_coords_off_axis_z7_coma(self, cooke_triplet):
+        """Full-field: Z7 (coma Y) should increase with exit pupil coords.
+
+        Entrance pupil: Z7 ≈ +0.243, Exit pupil: Z7 ≈ +0.312, OSLO: Z7 ≈ +0.327.
+        """
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
+        coeffs = result['coefficients']
+        # Z7 should be > 0.28 with exit pupil coords (entrance pupil gives ~0.243)
+        assert abs(coeffs[6]) > 0.28, (
+            f"Z7 = {coeffs[6]}, expected > 0.28 with exit pupil coordinates"
+        )
+
+    def test_exit_pupil_coords_off_axis_z11_spherical(self, cooke_triplet):
+        """Full-field: Z11 (primary spherical) magnitude should increase with exit pupil coords.
+
+        Entrance pupil: Z11 ≈ -0.499, Exit pupil: Z11 ≈ -0.714, OSLO: Z11 ≈ -0.775.
+        """
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
+        coeffs = result['coefficients']
+        # Z11 should have |Z11| > 0.6 with exit pupil coords (entrance pupil gives ~0.499)
+        assert abs(coeffs[10]) > 0.6, (
+            f"Z11 = {coeffs[10]}, expected |Z11| > 0.6 with exit pupil coordinates"
+        )
 
     def test_rms_normalized_key_exists(self, cooke_triplet):
         """rms_normalized_coefficients key exists and is list[float]."""
