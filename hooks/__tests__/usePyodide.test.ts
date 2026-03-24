@@ -4,7 +4,6 @@ import { renderHook, waitFor } from "@testing-library/react";
 const mockInit = jest.fn().mockResolvedValue(undefined);
 const mockProxy = {
   init: mockInit,
-  setOpticalSurfaces: jest.fn().mockResolvedValue(undefined),
   getFirstOrderData: jest.fn().mockResolvedValue({ efl: 100 }),
   plotLensLayout: jest.fn().mockResolvedValue("base64-layout"),
   plotRayFan: jest.fn().mockResolvedValue("base64-rayfan"),
@@ -51,7 +50,7 @@ describe("usePyodide", () => {
       expect(result.current.isReady).toBe(true);
     });
     expect(result.current.proxy).toBeDefined();
-    expect(result.current.proxy!.setOpticalSurfaces).toBeDefined();
+    expect(result.current.proxy!.getFirstOrderData).toBeDefined();
     expect(result.current.proxy!.plotLensLayout).toBeDefined();
   });
 

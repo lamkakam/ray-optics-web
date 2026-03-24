@@ -1,5 +1,5 @@
 import Ajv from "ajv";
-import type { ImportedLensData } from "@/lib/opticalModel";
+import type { OpticalModel } from "@/lib/opticalModel";
 
 const ajv = new Ajv();
 
@@ -124,6 +124,6 @@ const importedLensDataSchema = {
   },
 };
 
-const validateImportedLensData = ajv.compile<ImportedLensData>(importedLensDataSchema);
+const validateImportedLensData = ajv.compile<OpticalModel>(importedLensDataSchema);
 
 export { validateImportedLensData };

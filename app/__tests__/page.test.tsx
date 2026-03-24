@@ -3,7 +3,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
 import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
-import type { SetAutoApertureFlag } from "@/lib/apertureFlag";
 import type { Theme } from "@/lib/theme";
 import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 
@@ -21,16 +20,15 @@ jest.mock("@/hooks/useScreenBreakpoint", () => ({
 }));
 
 // Mock usePyodide
-const mockSetOpticalSurfaces: jest.Mock<Promise<void>, [OpticalModel, SetAutoApertureFlag]> = jest.fn().mockResolvedValue(undefined);
-const mockGetFirstOrderData: jest.Mock<Promise<Record<string, number>>, []> = jest
+const mockGetFirstOrderData: jest.Mock<Promise<Record<string, number>>, [OpticalModel]> = jest
   .fn()
   .mockResolvedValue({ efl: 100, ffl: -80, bfl: 90 });
-const mockPlotLensLayout: jest.Mock<Promise<string>, []> = jest.fn().mockResolvedValue("base64-layout");
-const mockPlotRayFan: jest.Mock<Promise<string>, [number]> = jest.fn().mockResolvedValue("base64-rayfan");
-const mockPlotOpdFan: jest.Mock<Promise<string>, [number]> = jest.fn().mockResolvedValue("base64-opdfan");
-const mockPlotSpotDiagram: jest.Mock<Promise<string>, [number]> = jest.fn().mockResolvedValue("base64-spot");
-const mockPlotSurfaceBySurface3rdOrderAberr: jest.Mock<Promise<string>, []> = jest.fn().mockResolvedValue("base64-3rdorder");
-const mockGet3rdOrderSeidelData: jest.Mock<Promise<SeidelData>, []> = jest.fn().mockResolvedValue({
+const mockPlotLensLayout: jest.Mock<Promise<string>, [OpticalModel]> = jest.fn().mockResolvedValue("base64-layout");
+const mockPlotRayFan: jest.Mock<Promise<string>, [OpticalModel, number]> = jest.fn().mockResolvedValue("base64-rayfan");
+const mockPlotOpdFan: jest.Mock<Promise<string>, [OpticalModel, number]> = jest.fn().mockResolvedValue("base64-opdfan");
+const mockPlotSpotDiagram: jest.Mock<Promise<string>, [OpticalModel, number]> = jest.fn().mockResolvedValue("base64-spot");
+const mockPlotSurfaceBySurface3rdOrderAberr: jest.Mock<Promise<string>, [OpticalModel]> = jest.fn().mockResolvedValue("base64-3rdorder");
+const mockGet3rdOrderSeidelData: jest.Mock<Promise<SeidelData>, [OpticalModel]> = jest.fn().mockResolvedValue({
   surfaceBySurface: {
     aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
     surfaceLabels: ["S1", "sum"],
@@ -43,7 +41,6 @@ const mockGet3rdOrderSeidelData: jest.Mock<Promise<SeidelData>, []> = jest.fn().
 
 const mockProxy = {
   init: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
-  setOpticalSurfaces: mockSetOpticalSurfaces,
   getFirstOrderData: mockGetFirstOrderData,
   plotLensLayout: mockPlotLensLayout,
   plotRayFan: mockPlotRayFan,
@@ -51,7 +48,7 @@ const mockProxy = {
   plotSpotDiagram: mockPlotSpotDiagram,
   plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
-  getZernikeCoefficients: jest.fn<Promise<Record<string, unknown>>, [number, number, number?]>().mockResolvedValue({}),
+  getZernikeCoefficients: jest.fn<Promise<Record<string, unknown>>, [OpticalModel, number, number, number?]>().mockResolvedValue({}),
 } satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
 jest.mock("@/hooks/usePyodide", () => ({
@@ -123,7 +120,7 @@ describe("Home page", () => {
     ).toBeInTheDocument();
   });
 
-  it("calls worker APIs in correct order when Update System is clicked", async () => {
+  it("calls worker APIs when Update System is clicked", async () => {
     render(<Home />);
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     const btn = screen.getByRole("button", { name: "Update System" });
@@ -131,23 +128,17 @@ describe("Home page", () => {
     await userEvent.click(btn);
 
     await waitFor(() => {
-      expect(mockSetOpticalSurfaces).toHaveBeenCalledTimes(1);
-      expect(mockSetOpticalSurfaces).toHaveBeenCalledWith(
-        expect.anything(),
-        "manualAperture",
-      );
-    });
-
-    // After setOpticalSurfaces, the parallel calls happen
-    await waitFor(() => {
       expect(mockGetFirstOrderData).toHaveBeenCalledTimes(1);
+      expect(mockGetFirstOrderData).toHaveBeenCalledWith(
+        expect.objectContaining({ setAutoAperture: "manualAperture" }),
+      );
       expect(mockPlotLensLayout).toHaveBeenCalledTimes(1);
       expect(mockPlotRayFan).toHaveBeenCalledTimes(1);
     });
   });
 
   it("shows error modal on worker error and hides it on OK", async () => {
-    mockSetOpticalSurfaces.mockRejectedValueOnce(new Error("bad input"));
+    mockGetFirstOrderData.mockRejectedValueOnce(new Error("bad input"));
     render(<Home />);
 
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
@@ -345,8 +336,15 @@ describe("Home page", () => {
 
   // --- surfaceBySurface3rdOrder plot type tests ---
 
-  it("calls plotSurfaceBySurface3rdOrderAberr when plot type changes to surfaceBySurface3rdOrder", async () => {
+  it("calls plotSurfaceBySurface3rdOrderAberr when plot type changes after a commit", async () => {
     render(<Home />);
+
+    // First commit a model so committedOpticalModel is set
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
+    await userEvent.click(screen.getByRole("button", { name: "Update System" }));
+    await waitFor(() => expect(mockGetFirstOrderData).toHaveBeenCalledTimes(1));
+    jest.clearAllMocks();
+
     const plotTypeSelect = screen.getByLabelText("Plot type");
     await userEvent.selectOptions(plotTypeSelect, "surfaceBySurface3rdOrder");
     await waitFor(() => {
@@ -361,7 +359,7 @@ describe("Home page", () => {
     // First click Update System so we have field options from committed specs
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
-    await waitFor(() => expect(mockSetOpticalSurfaces).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockGetFirstOrderData).toHaveBeenCalledTimes(1));
 
     // Switch to surfaceBySurface3rdOrder
     const plotTypeSelect = screen.getByLabelText("Plot type");
@@ -381,18 +379,15 @@ describe("Home page", () => {
   it("calls plotSurfaceBySurface3rdOrderAberr on Update System when that plot type is selected", async () => {
     render(<Home />);
 
-    // Switch to surfaceBySurface3rdOrder
+    // Switch to surfaceBySurface3rdOrder before committing
     const plotTypeSelect = screen.getByLabelText("Plot type");
     await userEvent.selectOptions(plotTypeSelect, "surfaceBySurface3rdOrder");
-    await waitFor(() => expect(mockPlotSurfaceBySurface3rdOrderAberr).toHaveBeenCalledTimes(1));
-
-    jest.clearAllMocks();
 
     // Navigate to Prescription tab and click Update System
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => {
-      expect(mockSetOpticalSurfaces).toHaveBeenCalledTimes(1);
+      expect(mockGetFirstOrderData).toHaveBeenCalledTimes(1);
       expect(mockPlotSurfaceBySurface3rdOrderAberr).toHaveBeenCalledTimes(1);
     });
     expect(mockPlotRayFan).not.toHaveBeenCalled();

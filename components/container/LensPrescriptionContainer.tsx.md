@@ -10,7 +10,7 @@ Container that owns the toolbar (Update System, Load Config, Download Config, Ex
 |------------|------|-------------|
 | `store` | `StoreApi<LensEditorState>` | Zustand store instance for lens editor state (rows, modal open/close, autoAperture) |
 | `getOpticalModel` | `() => OpticalModel` | Returns the current optical model snapshot for export |
-| `onImportJson` | `(data: ImportedLensData) => void` | Applied after the user confirms import of a JSON config file |
+| `onImportJson` | `(data: OpticalModel) => void` | Applied after the user confirms import of a JSON config file |
 | `onUpdateSystem` | `() => void` | Triggers optical system computation (bound to `handleSubmit` in the page) |
 | `isUpdateSystemDisabled` | `boolean` | Disables the Update System button while Pyodide is loading or computing |
 
@@ -18,7 +18,7 @@ Container that owns the toolbar (Update System, Load Config, Download Config, Ex
 
 - `pythonScriptOpen: boolean` — controls `PythonScriptModal`.
 - `importErrorOpen: boolean` — controls the import error `ErrorModal`.
-- `pendingImportData: ImportedLensData | undefined` — holds parsed JSON awaiting confirmation.
+- `pendingImportData: OpticalModel | undefined` — holds parsed JSON awaiting confirmation.
 - `fileInputRef: React.RefObject<HTMLInputElement>` — hidden file input for JSON import.
 
 ## Key Behaviors

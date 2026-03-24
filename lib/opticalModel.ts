@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import type { SetAutoApertureFlag } from "./apertureFlag";
 export type { SetAutoApertureFlag };
-export type ImportedLensData = { setAutoAperture: SetAutoApertureFlag } & OpticalModel;
 
 
 /** Optical system specifications. */
@@ -61,6 +60,7 @@ export interface Surfaces {
 
 /** Complete optical model returned from the worker. */
 export interface OpticalModel extends Surfaces {
+  setAutoAperture: SetAutoApertureFlag;
   specs: OpticalSpecs;
 }
 

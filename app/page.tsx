@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { createStore } from "zustand";
-import type { OpticalSpecs, OpticalModel, ImportedLensData, SeidelData } from "@/lib/opticalModel";
+import type { OpticalSpecs, OpticalModel, SeidelData } from "@/lib/opticalModel";
 import type { Theme } from "@/lib/theme";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
@@ -62,6 +62,7 @@ export default function Home() {
   const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(
     () => specsStore.getState().toOpticalSpecs()
   );
+  const [committedOpticalModel, setCommittedOpticalModel] = useState<OpticalModel | undefined>();
   const [layoutImage, setLayoutImage] = useState<string | undefined>();
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [plotImage, setPlotImage] = useState<string | undefined>();
@@ -126,46 +127,44 @@ export default function Home() {
   const handleFetchZernikeData = useCallback(
     async (fieldIndex: number, wvlIndex: number): Promise<ZernikeData> => {
       if (!proxy) throw new Error("Pyodide not ready");
-      return proxy.getZernikeCoefficients(fieldIndex, wvlIndex, NUM_NOLL_TERMS);
+      if (!committedOpticalModel) throw new Error("No optical model computed yet");
+      return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, NUM_NOLL_TERMS);
     },
-    [proxy],
+    [proxy, committedOpticalModel],
   );
 
   const getPlotFunction = useCallback(
-    (plotType: PlotType): ((fieldIndex: number) => Promise<string>) | undefined => {
-      if (!proxy) return undefined;
+    (plotType: PlotType, model?: OpticalModel): ((fieldIndex: number) => Promise<string>) | undefined => {
+      const m = model ?? committedOpticalModel;
+      if (!proxy || !m) return undefined;
       switch (plotType) {
         case "rayFan":
-          return (fi) => proxy.plotRayFan(fi);
+          return (fi) => proxy.plotRayFan(m, fi);
         case "opdFan":
-          return (fi) => proxy.plotOpdFan(fi);
+          return (fi) => proxy.plotOpdFan(m, fi);
         case "spotDiagram":
-          return (fi) => proxy.plotSpotDiagram(fi);
+          return (fi) => proxy.plotSpotDiagram(m, fi);
         case "surfaceBySurface3rdOrder":
-          return (_fi) => proxy.plotSurfaceBySurface3rdOrderAberr();
+          return (_fi) => proxy.plotSurfaceBySurface3rdOrderAberr(m);
       }
     },
-    [proxy]
+    [proxy, committedOpticalModel]
   );
 
   const handleSubmit = useCallback(async () => {
     if (!proxy) return;
 
+    const autoAperture = lensStore.getState().autoAperture;
+    const setAutoAperture = autoAperture ? "autoAperture" as const : "manualAperture" as const;
     const specs = specsStore.getState().toOpticalSpecs();
     const surfacesData = gridRowsToSurfaces(lensStore.getState().rows);
-    const model = { specs, ...surfacesData };
+    const model: OpticalModel = { setAutoAperture, specs, ...surfacesData };
 
     setComputing(true);
     setLayoutLoading(true);
     setPlotLoading(true);
 
     try {
-      // Step 1: setOpticalSurfaces MUST complete first
-      const autoAperture = lensStore.getState().autoAperture;
-      const apertureFlag = autoAperture ? "autoAperture" as const : "manualAperture" as const;
-      await proxy.setOpticalSurfaces(model, apertureFlag);
-
-      // Step 2: parallel calls
       const clampedFieldIndex = Math.min(
         selectedFieldIndex,
         specs.field.fields.length - 1
@@ -173,12 +172,12 @@ export default function Home() {
       if (clampedFieldIndex !== selectedFieldIndex) {
         setSelectedFieldIndex(clampedFieldIndex);
       }
-      const plotFn = getPlotFunction(selectedPlotType);
+      const plotFn = getPlotFunction(selectedPlotType, model);
       const [fod, layout, plot, seidel] = await Promise.all([
-        proxy.getFirstOrderData(),
-        proxy.plotLensLayout(),
+        proxy.getFirstOrderData(model),
+        proxy.plotLensLayout(model),
         plotFn ? plotFn(clampedFieldIndex) : Promise.resolve(undefined),
-        proxy.get3rdOrderSeidelData(),
+        proxy.get3rdOrderSeidelData(model),
       ]);
 
       setFirstOrderData(fod);
@@ -186,6 +185,7 @@ export default function Home() {
       setPlotImage(plot);
       setSeidelData(seidel);
       setCommittedSpecs(specs);
+      setCommittedOpticalModel(model);
     } catch (err) {
       console.log("Update System failed:", err);
       setErrorModalOpen(true);
@@ -253,12 +253,14 @@ export default function Home() {
   );
 
   const getOpticalModel = useCallback((): OpticalModel => {
+    const autoAperture = lensStore.getState().autoAperture;
+    const setAutoAperture = autoAperture ? "autoAperture" as const : "manualAperture" as const;
     const specs = specsStore.getState().toOpticalSpecs();
     const surfaces = gridRowsToSurfaces(lensStore.getState().rows);
-    return { specs, ...surfaces };
+    return { setAutoAperture, specs, ...surfaces };
   }, [specsStore, lensStore]);
 
-  const handleImportJson = useCallback((data: ImportedLensData) => {
+  const handleImportJson = useCallback((data: OpticalModel) => {
     specsStore.getState().loadFromSpecs(data.specs);
     lensStore.getState().setRows(surfacesToGridRows(data));
     lensStore.getState().setAutoAperture(data.setAutoAperture === "autoAperture");
