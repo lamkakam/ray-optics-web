@@ -42,7 +42,7 @@ Return shape:
 | `surfaceLabels` | Index of the `to_pkg` DataFrame (list of surface labels including `'sum'`) |
 | `data` | Transposed values as a nested list (`to_pkg.T.values.tolist()`) |
 
-- `wavefront` conversion: `wvl` is in nm; divides by `1e-6` to convert `central_wvl` from nm to mm before passing to `seidel_to_wavefront`.
+- `wavefront` conversion: `opm.nm_to_sys_units(central_wvl)` converts the central wavelength from nm to system units before passing to `seidel_to_wavefront`.
 - `transverse`, `wavefront`, `curvature` are pandas Series/DataFrame; `.to_dict()` is called before returning.
 
 ## Key Conventions

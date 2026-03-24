@@ -9,6 +9,8 @@ export async function waitForPyodide(page: Page): Promise<void> {
   await page
     .getByText("Initializing Ray Optics")
     .waitFor({ state: "hidden", timeout: PYODIDE_TIMEOUT });
+  // Update System button lives in the Prescription tab
+  await page.getByRole("tab", { name: "Prescription" }).click();
   const updateBtn = page.locator('button[aria-label="Update System"]');
   await expect(updateBtn).toBeEnabled({ timeout: 5_000 });
 }

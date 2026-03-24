@@ -92,15 +92,6 @@ export default function Home() {
     []
   );
 
-  const handleExampleConfirm = useCallback(() => {
-    if (!pendingExample) return;
-    const system = ExampleSystems[pendingExample];
-    if (!system) return;
-    specsStore.getState().loadFromSpecs(system.specs);
-    lensStore.getState().setRows(surfacesToGridRows(system));
-    setPendingExample(undefined);
-  }, [pendingExample, specsStore, lensStore]);
-
   const handleExampleCancel = useCallback(() => {
     setPendingExample(undefined);
     if (exampleSelectRef.current) {
@@ -210,6 +201,16 @@ export default function Home() {
     }
   }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedPlotType, getPlotFunction]);
 
+  const handleExampleConfirm = useCallback(() => {
+    if (!pendingExample) return;
+    const system = ExampleSystems[pendingExample];
+    if (!system) return;
+    specsStore.getState().loadFromSpecs(system.specs);
+    lensStore.getState().setRows(surfacesToGridRows(system));
+    setPendingExample(undefined);
+    void handleSubmit();
+  }, [pendingExample, specsStore, lensStore, handleSubmit]);
+
   const handleFieldChange = useCallback(
     async (fieldIndex: number) => {
       setSelectedFieldIndex(fieldIndex);
@@ -273,10 +274,18 @@ export default function Home() {
       {
         id: "prescription",
         label: "Prescription",
-        content: <LensPrescriptionContainer store={lensStore} getOpticalModel={getOpticalModel} onImportJson={handleImportJson} />,
+        content: (
+          <LensPrescriptionContainer
+            store={lensStore}
+            getOpticalModel={getOpticalModel}
+            onImportJson={handleImportJson}
+            onUpdateSystem={handleSubmit}
+            isUpdateSystemDisabled={!isReady || computing}
+          />
+        ),
       },
     ],
-    [specsStore, lensStore, getOpticalModel, handleImportJson]
+    [specsStore, lensStore, getOpticalModel, handleImportJson, handleSubmit, isReady, computing]
   );
 
   const errorModal = (
@@ -366,21 +375,6 @@ export default function Home() {
     </Tooltip>
   );
 
-  const updateSystemButton = (
-    <Tooltip text="Compute and update the optical system" position="bottom">
-      <Button
-        variant="primary"
-        size="sm"
-        className={isLG ? undefined : "mb-2"}
-        disabled={!isReady || computing}
-        onClick={handleSubmit}
-        aria-label="Update System"
-      >
-        Update System
-      </Button>
-    </Tooltip>
-  );
-
   const seidelButton = seidelData && (
     <div className={isLG ? undefined : "mb-2"}>
       <Tooltip text="View 3rd-order Seidel aberration coefficients" position="bottom">
@@ -437,7 +431,6 @@ export default function Home() {
       <header className="flex h-12 shrink-0 items-center gap-4 border-gray-200 px-4 dark:border-gray-700">
         <Header level={1}>Ray Optics Web</Header>
         {exampleSystemDropdown}
-        {updateSystemButton}
         {seidelButton}
         {zernikeButton}
         <span className="ml-auto flex items-center gap-2">
@@ -480,7 +473,6 @@ export default function Home() {
           </span>
         </div>
         {exampleSystemDropdown}
-        {updateSystemButton}
         {seidelButton}
         {zernikeButton}
         <div className="flex flex-wrap gap-2">

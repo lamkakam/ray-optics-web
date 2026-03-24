@@ -39,7 +39,7 @@ Plots tangential and sagittal transverse ray fans for field index `fi` (zero-ind
 
 Plots tangential and sagittal OPD (optical path difference) fans for field index `fi` (zero-indexed).
 
-- Defines a local `_opd_abr` callback that calls `wave_abr_full_calc` and converts the result from mm to waves (`opd_val / wvl * 1e6`; `wvl` is in nm, `opd_val` in mm).
+- Defines a local `_opd_abr` callback that calls `wave_abr_full_calc` and converts the result from system units to waves (`opd_val / opm.nm_to_sys_units(wvl)`; `wvl` is in nm, `opd_val` in system units).
 - Layout identical to `plot_ray_fan` (1×2 subplot, 8×4 inches, per-wavelength curves, shared legend).
 - Y-axis label is `"waves"`.
 
@@ -67,7 +67,7 @@ Plots a grouped bar chart of per-surface third-order Seidel aberration coefficie
 - Field index `fi` is zero-indexed across all functions that accept it.
 - All functions end by calling `_fig_to_base64(fig)`, which also closes the figure via `plt.close(fig)`.
 - The `_ray_abr` and `_opd_abr` callbacks return `None` for failed ray traces (`ray_pkg[mc.ray] is None`); `trace_fan` skips `None` returns.
-- OPD unit conversion: `opd_val` from `wave_abr_full_calc` is in mm; `wvl` is in nm → multiply by `1e6` to get waves.
+- OPD unit conversion: `opd_val` from `wave_abr_full_calc` is in system units; divide by `opm.nm_to_sys_units(wvl)` to get waves.
 
 ## Usages
 

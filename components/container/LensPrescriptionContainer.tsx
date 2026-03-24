@@ -23,12 +23,16 @@ interface LensPrescriptionContainerProps {
   readonly store: StoreApi<LensEditorState>;
   readonly getOpticalModel: () => OpticalModel;
   readonly onImportJson: (data: ImportedLensData) => void;
+  readonly onUpdateSystem: () => void;
+  readonly isUpdateSystemDisabled: boolean;
 }
 
 export function LensPrescriptionContainer({
   store,
   getOpticalModel,
   onImportJson,
+  onUpdateSystem,
+  isUpdateSystemDisabled,
 }: LensPrescriptionContainerProps) {
   const screenSize = useScreenBreakpoint();
   const buttonSize = screenSize === "screenSM" ? "xs" : "sm";
@@ -115,6 +119,9 @@ export function LensPrescriptionContainer({
       />
 
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
+        <Tooltip text="Compute and update the optical system" position="top-start" portal>
+          <Button variant="primary" size={buttonSize} disabled={isUpdateSystemDisabled} onClick={onUpdateSystem} aria-label="Update System">Update System</Button>
+        </Tooltip>
         <Tooltip text="Load a previously downloaded config" position="top-start" portal>
           <Button variant="primary" size={buttonSize} onClick={handleImportClick} aria-label="Load Config">Load Config</Button>
         </Tooltip>

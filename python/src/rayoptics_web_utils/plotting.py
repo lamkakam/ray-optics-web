@@ -60,8 +60,8 @@ def plot_opd_fan(fi: int, opm: OpticalModel) -> str:
         if ray_pkg[mc.ray] is not None:
             fod = opm['analysis_results']['parax_data'].fod
             opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg, fld.chief_ray, fld.ref_sphere)
-            # wvl is in the unit of nm but opd_val is in mm
-            return opd_val / wvl * 1e6
+            # opd_val is in system units (mm); convert to waves
+            return opd_val / opm.nm_to_sys_units(wvl)
         return None
 
     fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))

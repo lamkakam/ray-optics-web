@@ -30,7 +30,7 @@ def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel
         'data': to_pkg.T.values.tolist(),
     }
     transverse = seidel_to_transverse_aberration(seidel_sum, fod.n_img, fod.img_na)
-    wavefront = seidel_to_wavefront(seidel_sum, wvls.central_wvl * 1e-6)  # convert to mm
+    wavefront = seidel_to_wavefront(seidel_sum, opm.nm_to_sys_units(wvls.central_wvl))
     curvature = seidel_to_field_curv(seidel_sum, fod.n_img, fod.opt_inv)
     return {
         'surfaceBySurface': surface_by_surface,

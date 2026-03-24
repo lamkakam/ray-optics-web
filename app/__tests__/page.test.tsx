@@ -115,8 +115,9 @@ describe("Home page", () => {
 
   // --- New tests for submit button and worker integration ---
 
-  it("renders an Update System button in the header", () => {
+  it("renders an Update System button in the Prescription tab toolbar", async () => {
     render(<Home />);
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     expect(
       screen.getByRole("button", { name: "Update System" })
     ).toBeInTheDocument();
@@ -124,6 +125,7 @@ describe("Home page", () => {
 
   it("calls worker APIs in correct order when Update System is clicked", async () => {
     render(<Home />);
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     const btn = screen.getByRole("button", { name: "Update System" });
 
     await userEvent.click(btn);
@@ -148,6 +150,7 @@ describe("Home page", () => {
     mockSetOpticalSurfaces.mockRejectedValueOnce(new Error("bad input"));
     render(<Home />);
 
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(
       screen.getByRole("button", { name: "Update System" })
     );
@@ -175,16 +178,10 @@ describe("Home page", () => {
 
   // --- Example system selector tests ---
 
-  it("renders an Example Systems select to the left of Update System", () => {
+  it("renders an Example Systems select in the header", () => {
     render(<Home />);
     const select = screen.getByLabelText("Example system");
-    const updateBtn = screen.getByRole("button", { name: "Update System" });
     expect(select).toBeInTheDocument();
-    // Select should come before the button in DOM order
-    expect(
-      select.compareDocumentPosition(updateBtn) &
-      Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
   });
 
   it("starts with no example selected and shows a placeholder option", () => {
@@ -333,8 +330,9 @@ describe("Home page", () => {
 
   // --- Tooltip tests ---
 
-  it("Update System button has a tooltip with correct text", () => {
+  it("Update System button has a tooltip with correct text", async () => {
     render(<Home />);
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     const tooltips = screen.getAllByRole("tooltip");
     expect(tooltips.some((t) => t.textContent === "Compute and update the optical system")).toBe(true);
   });
@@ -361,6 +359,7 @@ describe("Home page", () => {
     render(<Home />);
 
     // First click Update System so we have field options from committed specs
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => expect(mockSetOpticalSurfaces).toHaveBeenCalledTimes(1));
 
@@ -389,7 +388,8 @@ describe("Home page", () => {
 
     jest.clearAllMocks();
 
-    // Click Update System
+    // Navigate to Prescription tab and click Update System
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => {
       expect(mockSetOpticalSurfaces).toHaveBeenCalledTimes(1);
@@ -434,6 +434,7 @@ describe("Home page", () => {
 
   it("'3rd Order Seidel Aberr.' button appears after Update System succeeds", async () => {
     render(<Home />);
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })).toBeInTheDocument();
@@ -442,6 +443,7 @@ describe("Home page", () => {
 
   it("calls get3rdOrderSeidelData alongside getFirstOrderData on submit", async () => {
     render(<Home />);
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => {
       expect(mockGet3rdOrderSeidelData).toHaveBeenCalledTimes(1);
@@ -451,6 +453,7 @@ describe("Home page", () => {
 
   it("clicking '3rd Order Seidel Aberr.' button opens the Seidel dialog", async () => {
     render(<Home />);
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })).toBeInTheDocument());
 
@@ -461,6 +464,7 @@ describe("Home page", () => {
 
   it("clicking Ok inside the Seidel modal closes it", async () => {
     render(<Home />);
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })).toBeInTheDocument());
 

@@ -60,7 +60,7 @@ sm  = opm['seq_model']
 osp = opm['optical_spec']
 pm  = opm['parax_model']
 
-opm.system_spec.dimensions = 'MM'
+opm.system_spec.dimensions = 'mm'
 
 osp['pupil'] = PupilSpec(osp, key=['${pupilSpace}', '${pupilType}'], value=${pupilValue})
 osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"})
