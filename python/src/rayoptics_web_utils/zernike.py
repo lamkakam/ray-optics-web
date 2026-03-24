@@ -154,7 +154,7 @@ def _compute_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
     # Get OPD from rg.grid (already computed by RayGrid) with unit correction
     opd_grid = rg.grid.copy()
     central_wvl = opm['optical_spec']['wvls'].central_wvl
-    opd_grid[2] *= 1e6 * central_wvl / wavelength_nm
+    opd_grid[2] *= central_wvl / wavelength_nm
 
     exit_px = np.full((n_rows, n_cols), np.nan)
     exit_py = np.full((n_rows, n_cols), np.nan)

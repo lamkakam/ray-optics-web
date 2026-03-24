@@ -22,8 +22,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 - **Noll ordering**: 1-based index j. See `docs/wavefront_and_zernike_analysis.md` for the full table.
 - **Normalization**: `coefficients` are unnormalized (no `sqrt(n+1)` or `sqrt(2(n+1))` factors), matching ATMOS/OSLO convention. `rms_normalized_coefficients` divide each by the Noll normalization factor (see below).
 - **OPD units**: all coefficients and WFE values are in **waves at the traced wavelength**.
-- **MM unit bug**: `RayGrid` OPD is multiplied by `1e6` to correct for the mm/nm mismatch when `dimensions='MM'`.
-- **Wavelength correction**: `RayGrid` internally divides by `central_wvl` for all wavelengths. An additional factor of `central_wvl / traced_wvl` converts OPD to waves at the traced wavelength.
+- **Wavelength correction**: `RayGrid.focus_wavefront` internally uses `1/opm.nm_to_sys_units(central_wvl)`, so `rg.grid[2]` is already in waves at the central wavelength. An additional factor of `central_wvl / wavelength_nm` converts to waves at the traced wavelength.
 - **Noll sign convention**: even j → positive m (cosine), odd j → negative m (sine).
 - **Exit pupil coordinates**: Zernike fitting uses exit pupil coordinates computed via EIC (Equally Inclined Chord) expansion points, not entrance pupil coordinates from `RayGrid.grid`. This matches the convention used by OSLO and other commercial optics software. For each ray, `_compute_exit_pupil_grid` computes the EIC expansion point at the exit pupil and normalizes by `fod.exp_radius`.
 - **NaN handling**: vignetted rays produce NaN in the OPD grid; these are filtered before fitting.

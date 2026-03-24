@@ -22,7 +22,7 @@ def cooke_triplet():
     opm = OpticalModel()
     osp = opm['optical_spec']
     sm = opm['seq_model']
-    opm.system_spec.dimensions = 'MM'
+    opm.system_spec.dimensions = 'mm'
     osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)
     osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0, 0.707, 1], is_relative=True)
     osp['wvls'] = WvlSpec([(486.133, 1), (587.562, 2), (656.273, 1)], ref_wl=1)
