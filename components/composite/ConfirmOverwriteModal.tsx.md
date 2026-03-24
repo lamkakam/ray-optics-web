@@ -25,6 +25,7 @@ interface ConfirmOverwriteModalProps {
 ## Key Behaviors
 
 - Stateless — purely presentational. Structurally identical to `ConfirmImportModal` but with different copy.
+- The parent (`app/page.tsx` `handleExampleConfirm`) is responsible for triggering the optical system computation after loading; clicking "Load" also initiates `handleSubmit` automatically.
 
 ## Usages
 

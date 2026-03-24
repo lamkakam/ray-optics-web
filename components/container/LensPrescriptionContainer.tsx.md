@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container that owns the toolbar (Load Config, Download Config, Export Python Script, semi-diameter toggle) and orchestrates all modals for the lens prescription editor. Bridges the `lensEditorStore` to `LensPrescriptionGrid` and its associated modals.
+Container that owns the toolbar (Update System, Load Config, Download Config, Export Python Script, semi-diameter toggle) and orchestrates all modals for the lens prescription editor. Bridges the `lensEditorStore` to `LensPrescriptionGrid` and its associated modals.
 
 ## Injected Dependencies
 
@@ -11,6 +11,8 @@ Container that owns the toolbar (Load Config, Download Config, Export Python Scr
 | `store` | `StoreApi<LensEditorState>` | Zustand store instance for lens editor state (rows, modal open/close, autoAperture) |
 | `getOpticalModel` | `() => OpticalModel` | Returns the current optical model snapshot for export |
 | `onImportJson` | `(data: ImportedLensData) => void` | Applied after the user confirms import of a JSON config file |
+| `onUpdateSystem` | `() => void` | Triggers optical system computation (bound to `handleSubmit` in the page) |
+| `isUpdateSystemDisabled` | `boolean` | Disables the Update System button while Pyodide is loading or computing |
 
 ## Internal State
 
