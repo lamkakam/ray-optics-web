@@ -42,7 +42,7 @@ describe("_getFirstOrderData", () => {
       return JSON.stringify({ efl: 200, bfl: 100 });
     }, allSphericalOpticalModel);
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_first_order_data(opm))");
+    expect(pythonScript).toContain("json.dumps(get_first_order_data(_build_opm()))");
     expect(result).toMatchObject({ efl: 200, bfl: 100 });
   });
 });
@@ -57,7 +57,7 @@ describe("_plotLensLayout", () => {
       return mockBase64;
     }, allSphericalOpticalModel);
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_lens_layout(opm)");
+    expect(pythonScript).toContain("plot_lens_layout(_build_opm())");
     expect(result).toBe(mockBase64);
   });
 });
@@ -72,7 +72,7 @@ describe("_plotRayFan", () => {
       return mockBase64;
     }, allSphericalOpticalModel, 1);
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_ray_fan(1, opm)");
+    expect(pythonScript).toContain("plot_ray_fan(1, _build_opm())");
     expect(result).toBe(mockBase64);
   });
 
@@ -82,7 +82,7 @@ describe("_plotRayFan", () => {
       pythonScript = code;
       return "";
     }, allSphericalOpticalModel, 0);
-    expect(pythonScript).toContain("plot_ray_fan(0, opm)");
+    expect(pythonScript).toContain("plot_ray_fan(0, _build_opm())");
   });
 });
 
@@ -96,7 +96,7 @@ describe("_plotOpdFan", () => {
       return mockBase64;
     }, allSphericalOpticalModel, 2);
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_opd_fan(2, opm)");
+    expect(pythonScript).toContain("plot_opd_fan(2, _build_opm())");
     expect(result).toBe(mockBase64);
   });
 
@@ -106,7 +106,7 @@ describe("_plotOpdFan", () => {
       pythonScript = code;
       return "";
     }, allSphericalOpticalModel, 0);
-    expect(pythonScript).toContain("plot_opd_fan(0, opm)");
+    expect(pythonScript).toContain("plot_opd_fan(0, _build_opm())");
   });
 });
 
@@ -120,7 +120,7 @@ describe("_plotSpotDiagram", () => {
       return mockBase64;
     }, allSphericalOpticalModel, 1);
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_spot_diagram(1, opm)");
+    expect(pythonScript).toContain("plot_spot_diagram(1, _build_opm())");
     expect(result).toBe(mockBase64);
   });
 
@@ -130,7 +130,7 @@ describe("_plotSpotDiagram", () => {
       pythonScript = code;
       return "";
     }, allSphericalOpticalModel, 0);
-    expect(pythonScript).toContain("plot_spot_diagram(0, opm)");
+    expect(pythonScript).toContain("plot_spot_diagram(0, _build_opm())");
   });
 });
 
@@ -144,7 +144,7 @@ describe("_plotSurfaceBySurface3rdOrderAberr", () => {
       return mockBase64;
     }, allSphericalOpticalModel);
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_surface_by_surface_3rd_order_aberr(opm)");
+    expect(pythonScript).toContain("plot_surface_by_surface_3rd_order_aberr(_build_opm())");
     expect(result).toBe(mockBase64);
   });
 });
@@ -168,7 +168,7 @@ describe("_get3rdOrderSeidelData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel);
     expect(capturedCode).toContain("opm = OpticalModel()");
-    expect(capturedCode).toContain("json.dumps(get_3rd_order_seidel_data(opm))");
+    expect(capturedCode).toContain("json.dumps(get_3rd_order_seidel_data(_build_opm()))");
     expect(result).toMatchObject(mockData);
   });
 });

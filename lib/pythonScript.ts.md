@@ -9,7 +9,7 @@ Builds the Python source code string that reconstructs the definition of an opti
 ```ts
 export function buildOpticalModelScript(opticalModel: OpticalModel): string;
 
-export function buildScript(opticalModel: OpticalModel, computation: string): string;
+export function buildScript(opticalModel: OpticalModel, computation: (opm: string) => string): string;
 
 export function buildExportScript(opticalModel: OpticalModel): string;
 ```
@@ -41,7 +41,17 @@ export function buildExportScript(opticalModel: OpticalModel): string;
 
 ### `buildScript(model, computation)`
 
-Combines the model-build script with a computation snippet into a single Python string suitable for a single `runPythonAsync` call. The computation is appended after `opm.update_model()` / `apply_paraxial_vignetting`. The last expression in the combined script is the return value of `runPythonAsync`.
+Combines the model-build script with a computation into a single Python string suitable for a single `runPythonAsync` call. The model-build code is wrapped in a `def _build_opm():` function so that `opm`, `sm`, `osp`, and `pm` are local variables rather than globals. `buildScript` calls `computation("_build_opm()")`, injecting the expression token so the computation can reference the model inline without hardcoding the function name. Example output:
+
+```python
+def _build_opm():
+    opm = OpticalModel()
+    ...
+    return opm
+plot_lens_layout(_build_opm())
+```
+
+The last expression in the combined script is the return value of `runPythonAsync`.
 
 ### `buildExportScript(model)`
 

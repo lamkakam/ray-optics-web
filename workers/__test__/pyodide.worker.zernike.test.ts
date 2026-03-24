@@ -36,7 +36,7 @@ describe("_getZernikeCoefficients", () => {
     }, testModel, 0, 1, 56);
     expect(capturedCode).toContain("opm = OpticalModel()");
     expect(capturedCode).toContain("from rayoptics_web_utils.zernike import get_zernike_coefficients");
-    expect(capturedCode).toContain("get_zernike_coefficients(opm, 0, 1, num_terms=56)");
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, num_terms=56)");
     expect(capturedCode).toContain("json.dumps");
     expect(result).toMatchObject(mockData);
   });
@@ -57,7 +57,7 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 2, 0, 22);
-    expect(capturedCode).toContain("get_zernike_coefficients(opm, 2, 0, num_terms=22)");
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, num_terms=22)");
   });
 
   it("defaults numTerms to 56 when not provided", async () => {

@@ -157,16 +157,25 @@ describe("buildOpticalModelScript", () => {
 });
 
 describe("buildScript", () => {
-  it("should combine the model script and computation", () => {
-    const script = buildScript(baseModel, "json.dumps(get_first_order_data(opm))");
-    expect(script).toContain("opm = OpticalModel()");
-    expect(script).toContain("json.dumps(get_first_order_data(opm))");
+  it("should wrap model build in def _build_opm() and inject the opm expression into the callback", () => {
+    const script = buildScript(baseModel, (opm) => `json.dumps(get_first_order_data(${opm}))`);
+    expect(script).toContain("def _build_opm():");
+    expect(script).toContain("    return opm");
+    expect(script).toContain("    opm = OpticalModel()");
+    expect(script).toContain("json.dumps(get_first_order_data(_build_opm()))");
   });
 
-  it("should put computation after the model script", () => {
-    const script = buildScript(baseModel, "result = 42");
-    const modelIdx = script.indexOf("opm.update_model()");
-    const computeIdx = script.indexOf("result = 42");
-    expect(computeIdx).toBeGreaterThan(modelIdx);
+  it("should put computation after the function definition", () => {
+    const script = buildScript(baseModel, (opm) => `result = fn(${opm})`);
+    const funcIdx = script.indexOf("def _build_opm():");
+    const computeIdx = script.indexOf("result = fn(");
+    expect(computeIdx).toBeGreaterThan(funcIdx);
+  });
+
+  it("should not have a bare opm assignment in global scope", () => {
+    const script = buildScript(baseModel, (opm) => `compute(${opm})`);
+    const lines = script.split('\n');
+    const bareOpmAssignment = lines.filter(line => /^opm\s*=/.test(line));
+    expect(bareOpmAssignment).toHaveLength(0);
   });
 });

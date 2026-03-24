@@ -74,17 +74,17 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 
 Each public function has a corresponding `_*` variant that accepts `runPython` as an explicit first argument instead of relying on the singleton. This enables unit tests to inject a mock `runPython` without loading Pyodide.
 
-Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)` to produce a combined Python script (model-build + computation) and runs it in a single `runPython` call.
+Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)` to produce a combined Python script (model-build wrapped in `def _build_opm():` + computation using `_build_opm()`) and runs it in a single `runPython` call.
 
 - `_init(runPython, wheelUrl)` — full package installation sequence.
-- `_getFirstOrderData(runPython, model)` — runs `buildScript(model, "json.dumps(get_first_order_data(opm))")`.
-- `_plotLensLayout(runPython, model)` — runs `buildScript(model, "plot_lens_layout(opm)")`.
-- `_plotRayFan(runPython, model, fieldIndex)` — runs `buildScript(model, "plot_ray_fan(fieldIndex, opm)")`.
-- `_plotOpdFan(runPython, model, fieldIndex)` — runs `buildScript(model, "plot_opd_fan(fieldIndex, opm)")`.
-- `_plotSpotDiagram(runPython, model, fieldIndex)` — runs `buildScript(model, "plot_spot_diagram(fieldIndex, opm)")`.
-- `_plotSurfaceBySurface3rdOrderAberr(runPython, model)` — runs `buildScript(model, "plot_surface_by_surface_3rd_order_aberr(opm)")`.
-- `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, "json.dumps(get_3rd_order_seidel_data(opm))")`.
-- `_getZernikeCoefficients(runPython, model, fi, wi, n?)` — runs `buildScript(model, ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56.
+- `_getFirstOrderData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_first_order_data(${opm}))\`)`.
+- `_plotLensLayout(runPython, model)` — runs `buildScript(model, (opm) => \`plot_lens_layout(${opm})\`)`.
+- `_plotRayFan(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_ray_fan(${fieldIndex}, ${opm})\`)`.
+- `_plotOpdFan(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_opd_fan(${fieldIndex}, ${opm})\`)`.
+- `_plotSpotDiagram(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_spot_diagram(${fieldIndex}, ${opm})\`)`.
+- `_plotSurfaceBySurface3rdOrderAberr(runPython, model)` — runs `buildScript(model, (opm) => \`plot_surface_by_surface_3rd_order_aberr(${opm})\`)`.
+- `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
+- `_getZernikeCoefficients(runPython, model, fi, wi, n?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56.
 - `_resetPyodideForTesting()` — sets `pyodide = null` to allow `init()` to be re-exercised in tests.
 
 ## Key Conventions

@@ -76,8 +76,17 @@ opm.update_model()
 apply_paraxial_vignetting(opm)`;
 }
 
-export function buildScript(opticalModel: OpticalModel, computation: string): string {
-  return `${buildOpticalModelScript(opticalModel)}\n${computation}`;
+export function buildScript(
+  opticalModel: OpticalModel,
+  computation: (opm: string) => string,
+): string {
+  const modelScript = buildOpticalModelScript(opticalModel);
+  const indented = modelScript
+    .split('\n')
+    .map(line => (line.length > 0 ? '    ' + line : line))
+    .join('\n');
+  const opmExpr = '_build_opm()';
+  return `def _build_opm():\n${indented}\n    return opm\n${computation(opmExpr)}`;
 }
 
 export function buildExportScript(opticalModel: OpticalModel) {
