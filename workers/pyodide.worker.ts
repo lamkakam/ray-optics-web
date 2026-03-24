@@ -1,8 +1,7 @@
 import { expose } from "comlink";
 import { type OpticalModel, type SeidelData } from "../lib/opticalModel";
 import { type ZernikeData } from "../lib/zernikeData";
-import { type SetAutoApertureFlag } from "../lib/apertureFlag";
-import { buildOpticalModelScript } from "../lib/pythonScript";
+import { buildScript } from "../lib/pythonScript";
 
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
@@ -97,105 +96,93 @@ function requirePyodide(): (code: string) => Promise<unknown> {
 }
 
 
-// export for testing
-export async function _setOpticalSurfaces(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag, runPython: (code: string) => Promise<unknown>): Promise<void> {
-  await runPython(
-    buildOpticalModelScript(opticalModel, setAutoAperture),
-  );
-}
+// ─── Injectable variants for testing ─────────────────────────────────────────
 
-
-/** ONLY USE AFTER setting the optical surfaces */
-export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>): Promise<Record<string, number>> {
-  const json = (await runPython("json.dumps(get_first_order_data(opm))")) as string;
+export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<Record<string, number>> {
+  const json = (await runPython(buildScript(opticalModel, (opm) => `json.dumps(get_first_order_data(${opm}))`))) as string;
   return JSON.parse(json);
 }
 
-
-// ─── Plot Functions (injectable for testing) ─────────────────────────────────
-
-export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>): Promise<string> {
-  return (await runPython("plot_lens_layout(opm)")) as string;
+export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<string> {
+  return (await runPython(buildScript(opticalModel, (opm) => `plot_lens_layout(${opm})`))) as string;
 }
 
-export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`plot_ray_fan(${fieldIndex}, opm)`)) as string;
+export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
+  return (await runPython(buildScript(opticalModel, (opm) => `plot_ray_fan(${fieldIndex}, ${opm})`))) as string;
 }
 
-export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`plot_opd_fan(${fieldIndex}, opm)`)) as string;
+export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
+  return (await runPython(buildScript(opticalModel, (opm) => `plot_opd_fan(${fieldIndex}, ${opm})`))) as string;
 }
 
-export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, fieldIndex: number): Promise<string> {
-  return (await runPython(`plot_spot_diagram(${fieldIndex}, opm)`)) as string;
+export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
+  return (await runPython(buildScript(opticalModel, (opm) => `plot_spot_diagram(${fieldIndex}, ${opm})`))) as string;
 }
 
-export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: string) => Promise<unknown>): Promise<string> {
-  return (await runPython("plot_surface_by_surface_3rd_order_aberr(opm)")) as string;
+export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<string> {
+  return (await runPython(buildScript(opticalModel, (opm) => `plot_surface_by_surface_3rd_order_aberr(${opm})`))) as string;
 }
 
-export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>): Promise<SeidelData> {
-  const json = (await runPython("json.dumps(get_3rd_order_seidel_data(opm))")) as string;
+export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData> {
+  const json = (await runPython(buildScript(opticalModel, (opm) => `json.dumps(get_3rd_order_seidel_data(${opm}))`))) as string;
   return JSON.parse(json) as SeidelData;
-}
-
-
-// Expose for Components
-export async function setOpticalSurfaces(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag): Promise<void> {
-  await _setOpticalSurfaces(opticalModel, setAutoAperture, requirePyodide());
-}
-
-export async function getFirstOrderData(): Promise<Record<string, number>> {
-  return await _getFirstOrderData(requirePyodide());
-}
-
-export async function plotLensLayout(): Promise<string> {
-  return await _plotLensLayout(requirePyodide());
-}
-
-export async function plotRayFan(fieldIndex: number): Promise<string> {
-  return await _plotRayFan(requirePyodide(), fieldIndex);
-}
-
-export async function plotOpdFan(fieldIndex: number): Promise<string> {
-  return await _plotOpdFan(requirePyodide(), fieldIndex);
-}
-
-export async function plotSpotDiagram(fieldIndex: number): Promise<string> {
-  return await _plotSpotDiagram(requirePyodide(), fieldIndex);
-}
-
-export async function plotSurfaceBySurface3rdOrderAberr(): Promise<string> {
-  return await _plotSurfaceBySurface3rdOrderAberr(requirePyodide());
-}
-
-export async function get3rdOrderSeidelData(): Promise<SeidelData> {
-  return await _get3rdOrderSeidelData(requirePyodide());
 }
 
 export async function _getZernikeCoefficients(
   runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
   fieldIndex: number,
   wvlIndex: number,
   numTerms: number = 56,
 ): Promise<ZernikeData> {
   const json = (await runPython(
-    `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(opm, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}))`
+    buildScript(opticalModel, (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}))`)
   )) as string;
   return JSON.parse(json) as ZernikeData;
 }
 
+
+// ─── Public API (exposed via Comlink) ─────────────────────────────────────────
+
+export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>> {
+  return await _getFirstOrderData(requirePyodide(), opticalModel);
+}
+
+export async function plotLensLayout(opticalModel: OpticalModel): Promise<string> {
+  return await _plotLensLayout(requirePyodide(), opticalModel);
+}
+
+export async function plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
+  return await _plotRayFan(requirePyodide(), opticalModel, fieldIndex);
+}
+
+export async function plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
+  return await _plotOpdFan(requirePyodide(), opticalModel, fieldIndex);
+}
+
+export async function plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
+  return await _plotSpotDiagram(requirePyodide(), opticalModel, fieldIndex);
+}
+
+export async function plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string> {
+  return await _plotSurfaceBySurface3rdOrderAberr(requirePyodide(), opticalModel);
+}
+
+export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData> {
+  return await _get3rdOrderSeidelData(requirePyodide(), opticalModel);
+}
+
 export async function getZernikeCoefficients(
+  opticalModel: OpticalModel,
   fieldIndex: number,
   wvlIndex: number,
   numTerms?: number,
 ): Promise<ZernikeData> {
-  return await _getZernikeCoefficients(requirePyodide(), fieldIndex, wvlIndex, numTerms);
+  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, numTerms);
 }
 
 expose({
   init,
-  setOpticalSurfaces,
   getFirstOrderData,
   plotLensLayout,
   plotRayFan,

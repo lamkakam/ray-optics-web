@@ -6,7 +6,7 @@ import { LensPrescriptionContainer } from "@/components/container/LensPrescripti
 import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { IMAGE_ROW_ID } from "@/lib/gridTypes";
-import type { Surfaces, OpticalModel, ImportedLensData } from "@/lib/opticalModel";
+import type { Surfaces, OpticalModel } from "@/lib/opticalModel";
 
 jest.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
@@ -42,6 +42,7 @@ function createTestStore() {
 }
 
 const testOpticalModel: OpticalModel = {
+  setAutoAperture: "manualAperture",
   ...testSurfaces,
   specs: {
     pupil: { space: "object", type: "epd", value: 25 },
@@ -283,7 +284,7 @@ describe("LensPrescriptionContainer", () => {
   it("shows confirmation modal when valid JSON file is selected (not direct call)", async () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
 
-    const validData: ImportedLensData = {
+    const validData: OpticalModel = {
       setAutoAperture: "autoAperture",
       specs: testOpticalModel.specs,
       object: testOpticalModel.object,
@@ -305,7 +306,7 @@ describe("LensPrescriptionContainer", () => {
   it("does not call onImportJson if user cancels the import confirmation", async () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
 
-    const validData: ImportedLensData = {
+    const validData: OpticalModel = {
       setAutoAperture: "autoAperture",
       specs: testOpticalModel.specs,
       object: testOpticalModel.object,
@@ -327,7 +328,7 @@ describe("LensPrescriptionContainer", () => {
   it("calls onImportJson after user confirms import", async () => {
     render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
 
-    const validData: ImportedLensData = {
+    const validData: OpticalModel = {
       setAutoAperture: "autoAperture",
       specs: testOpticalModel.specs,
       object: testOpticalModel.object,

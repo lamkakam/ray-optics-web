@@ -1,10 +1,8 @@
 
 import type { OpticalModel } from "./opticalModel";
-import type { SetAutoApertureFlag } from "./apertureFlag";
-export type { SetAutoApertureFlag };
 
-export function buildOpticalModelScript(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag): string {
-  const { specs, surfaces, object, image } = opticalModel;
+export function buildOpticalModelScript(opticalModel: OpticalModel): string {
+  const { setAutoAperture, specs, surfaces, object, image } = opticalModel;
   const {
     pupil: { space: pupilSpace, type: pupilType, value: pupilValue },
     field: { space: fieldSpace, type: fieldType, maxField, fields, isRelative: isFieldRelative },
@@ -78,7 +76,20 @@ opm.update_model()
 apply_paraxial_vignetting(opm)`;
 }
 
-export function buildExportScript(opticalModel: OpticalModel, setAutoAperture: SetAutoApertureFlag) {
+export function buildScript(
+  opticalModel: OpticalModel,
+  computation: (opm: string) => string,
+): string {
+  const modelScript = buildOpticalModelScript(opticalModel);
+  const indented = modelScript
+    .split('\n')
+    .map(line => (line.length > 0 ? '    ' + line : line))
+    .join('\n');
+  const opmExpr = '_build_opm()';
+  return `def _build_opm():\n${indented}\n    return opm\n${computation(opmExpr)}`;
+}
+
+export function buildExportScript(opticalModel: OpticalModel) {
   const scriptForImporting = `
 isdark = False
 from rayoptics.environment import *
@@ -91,7 +102,7 @@ caf2 = create_glass(caf2_url, "rindexinfo")
 `;
 
   return `${scriptForImporting}
-${buildOpticalModelScript(opticalModel, setAutoAperture)}
+${buildOpticalModelScript(opticalModel)}
 
 sm.list_model()
 pm.first_order_data()

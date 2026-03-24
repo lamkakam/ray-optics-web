@@ -21,6 +21,7 @@ const commonWavelengthConfig: OpticalModel["specs"]["wavelengths"] = {
 //    6:   -20.494200      41.2365       air             1      8.3321
 //  Img:     0.000000      0.00000                       1      18.217
 const SasianTriplet: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
     field: {
@@ -96,6 +97,7 @@ const SasianTriplet: OpticalModel = {
 
 // Design from https://www.telescope-optics.net/reflecting.htm
 const ReflectorWithOpticalWindow: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 200 },
     field: {
@@ -166,6 +168,7 @@ const ReflectorWithOpticalWindow: OpticalModel = {
 
 // from https://www.telescope-optics.net/early%20telescopes.htm
 const herschelReflector: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 1200 },
     field: {
@@ -202,6 +205,7 @@ const herschelReflector: OpticalModel = {
 
 // from https://www.telescope-optics.net/early%20telescopes.htm
 const mikeJonesImprovedHerschelReflector: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 1220 },
     field: {
@@ -349,6 +353,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
 
 // from https://www.telescope-optics.net/miscellaneous_optics.htm
 const tiltedHoughton: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 150 },
     field: {
@@ -464,6 +469,7 @@ const tiltedHoughton: OpticalModel = {
 
 // from https://www.telescope-optics.net/ATM_telescopes.htm
 const quadSchiefspiegler: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 318 },
     field: {
@@ -546,6 +552,7 @@ const quadSchiefspiegler: OpticalModel = {
 
 // from https://www.telescope-optics.net/ATM_telescopes.htm
 const clydeBoneJrMersenne: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 762 },
     field: {
@@ -689,6 +696,7 @@ const clydeBoneJrMersenne: OpticalModel = {
 
 // Design from https://telescope-optics.net/schmidt_camera_aberrations.htm
 const schmidtCamera: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 200 },
     field: {
@@ -737,6 +745,7 @@ const schmidtCamera: OpticalModel = {
 
 // Example #57 at https://www.telescope-optics.net/commercial_telescopes.htm
 const orthoAPO: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 130 },
     field: {
@@ -806,6 +815,7 @@ const orthoAPO: OpticalModel = {
 
 // Example #27 at https://www.telescope-optics.net/commercial_telescopes.htm
 const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 130 },
     field: {
@@ -863,6 +873,7 @@ const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
 
 // derived from https://telescope-optics.net/achromats.htm
 const fraunhoferAchromat: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 120 },
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
@@ -881,6 +892,7 @@ const fraunhoferAchromat: OpticalModel = {
 
 // derived from https://telescope-optics.net/achromats.htm
 const fraunhoferAchromatFast: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 120 },
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
@@ -899,6 +911,7 @@ const fraunhoferAchromatFast: OpticalModel = {
 
 // Example #19 at https://www.telescope-optics.net/commercial_telescopes.htm
 const edDoublet: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 120 },
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
@@ -916,6 +929,7 @@ const edDoublet: OpticalModel = {
 
 // 11.24 at https://telescope-optics.net/miscellaneous_optics.htm
 const petzvalAPO: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 140 },
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
@@ -937,6 +951,7 @@ const petzvalAPO: OpticalModel = {
 
 // derived from 11.24 at https://telescope-optics.net/miscellaneous_optics.htm
 const petzvalAPORearLensesRemoved: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: petzvalAPO.specs,
   object: petzvalAPO.object,
   image: petzvalAPO.image,
@@ -948,6 +963,7 @@ const petzvalAPORearLensesRemoved: OpticalModel = {
 
 
 const tripletAPOWithSingletMeniscusLens: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 86 },
     field: { space: "image", type: "height", maxField: 21.6, fields: [0, 0.3, 0.5, 0.707, 0.85, 1], isRelative: true },
@@ -1030,6 +1046,7 @@ const tripletAPOWithSingletMeniscusLens: OpticalModel = {
 // modified eyepiece design by Imaizumi M. US#5,557,464 (1996)
 // this modified config is from https://telescope-optics.net/eyepiece_raytrace.htm
 const modifiedImaizumiEyepieceReversed: OpticalModel = {
+  setAutoAperture: "autoAperture",
   specs: {
     // this is the exit pupil of the eyepiece
     // because it's reversed tracing, the space is "object" not "image".

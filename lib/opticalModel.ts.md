@@ -5,8 +5,7 @@
 Defines all core TypeScript domain types for the optical model, including system specifications, surfaces, and aberration data. This is the single source of truth for types shared across the worker, hooks, and UI.
 
 ## Exports
-- `OpticalModel`: interface for all information (system specs and info of all surfaces) needed for RayOptics.
-- `ImportedLensData`: the shape to be validated by `lib/importSchema.ts` for JSON config file uploaded by users.
+- `OpticalModel`: interface for all information (system specs, surfaces, and aperture flag) needed for RayOptics. Includes `setAutoAperture: SetAutoApertureFlag`.
 - `SeidelData`: the shape of data from Rayoptics via the Pyodide worker for 3rd order Seidel aberrations.
 - `AberrationTypeToLabel`: interface for mapping keys in of `transverse`, `wavefront` and `curvature` of 3rd order Seidel aberrations data to labels for UI components.
 
@@ -18,6 +17,7 @@ Defines all core TypeScript domain types for the optical model, including system
 - **`medium: "CaF2"`** is a special-cased medium.
 - `manufacturer` is always `""` when `medium` is `"air"` or `"REFL"`.
 - `OpticalModel` extends `Surfaces`, so all surface data is directly on the model object.
+- `setAutoAperture: "autoAperture"` tells RayOptics to recompute semi-diameters; `"manualAperture"` preserves them.
 
 ## Edge Cases / Error Handling
 
@@ -28,4 +28,4 @@ Defines all core TypeScript domain types for the optical model, including system
 ## Usages
 
 - Imported by virtually every module and UI components.
-- `ImportedLensData` is the shape validated by `lib/importSchema.ts`.
+- `OpticalModel` is the shape validated by `lib/importSchema.ts` for JSON config files uploaded by users.

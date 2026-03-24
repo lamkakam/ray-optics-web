@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback } from "react";
 import { useStore, type StoreApi } from "zustand";
 import { type LensEditorState } from "@/store/lensEditorStore";
 import { type GridRow } from "@/lib/gridTypes";
-import { type OpticalModel, type ImportedLensData } from "@/lib/opticalModel";
+import { type OpticalModel } from "@/lib/opticalModel";
 import { buildExportScript } from "@/lib/pythonScript";
 import { validateImportedLensData } from "@/lib/importSchema";
 import { Button } from "@/components/micro/Button";
@@ -22,7 +22,7 @@ import { ConfirmImportModal } from "@/components/composite/ConfirmImportModal";
 interface LensPrescriptionContainerProps {
   readonly store: StoreApi<LensEditorState>;
   readonly getOpticalModel: () => OpticalModel;
-  readonly onImportJson: (data: ImportedLensData) => void;
+  readonly onImportJson: (data: OpticalModel) => void;
   readonly onUpdateSystem: () => void;
   readonly isUpdateSystemDisabled: boolean;
 }
@@ -43,7 +43,7 @@ export function LensPrescriptionContainer({
   const decenterModal = useStore(store, (s) => s.decenterModal);
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
   const [importErrorOpen, setImportErrorOpen] = useState(false);
-  const [pendingImportData, setPendingImportData] = useState<ImportedLensData | undefined>();
+  const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Stable callbacks — use store.getState() so they never change reference,
@@ -63,9 +63,7 @@ export function LensPrescriptionContainer({
   const decenterRow = rows.find((r) => r.id === decenterModal.rowId);
 
   const handleExport = () => {
-    const model = getOpticalModel();
-    const data: ImportedLensData = { setAutoAperture: autoAperture ? "autoAperture" : "manualAperture", ...model };
-    const json = JSON.stringify(data, undefined, 2);
+    const json = JSON.stringify(getOpticalModel(), undefined, 2);
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -215,7 +213,7 @@ export function LensPrescriptionContainer({
 
       <PythonScriptModal
         isOpen={pythonScriptOpen}
-        script={pythonScriptOpen ? buildExportScript(getOpticalModel(), "manualAperture") : ""}
+        script={pythonScriptOpen ? buildExportScript(getOpticalModel()) : ""}
         onClose={() => setPythonScriptOpen(false)}
       />
 

@@ -4,20 +4,18 @@ import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
 import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
 import type { ZernikeData } from "@/lib/zernikeData";
-import type { SetAutoApertureFlag } from "@/lib/apertureFlag";
 import { createPyodideWorker } from "./createPyodideWorker";
 
 export interface PyodideWorkerAPI {
   init(): Promise<void>;
-  setOpticalSurfaces(model: OpticalModel, setAutoAperture: SetAutoApertureFlag): Promise<void>;
-  getFirstOrderData(): Promise<Record<string, number>>;
-  plotLensLayout(): Promise<string>;
-  plotRayFan(fieldIndex: number): Promise<string>;
-  plotOpdFan(fieldIndex: number): Promise<string>;
-  plotSpotDiagram(fieldIndex: number): Promise<string>;
-  plotSurfaceBySurface3rdOrderAberr(): Promise<string>;
-  get3rdOrderSeidelData(): Promise<SeidelData>;
-  getZernikeCoefficients(fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>;
+  getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
+  plotLensLayout(opticalModel: OpticalModel): Promise<string>;
+  plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string>;
+  get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
+  getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>;
 }
 
 // Singleton state — shared across all hook instances
