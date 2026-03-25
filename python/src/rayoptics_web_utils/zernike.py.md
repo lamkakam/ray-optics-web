@@ -14,7 +14,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 | `noll_norm_factor` | `(n: int, m: int) -> float` | Noll normalization factor N_n^m = sqrt((2 - δ_{m,0})(n + 1)) |
 | `unnormalized_to_rms_normalized` | `(coeffs: list[float], num_terms: int) -> list[float]` | Convert unnormalized coefficients to RMS-normalized (divide by N_n^m) |
 | `fit_zernike` | `(opd_grid: NDArray, num_terms: int = 22) -> NDArray` | Least-squares fit of Zernike polynomials to a (3, N, N) OPD grid |
-| `_compute_exit_pupil_grid` | `(rg, opm, wavelength_nm: float) -> NDArray` | Build (3, N, N) grid with exit pupil coords (EIC-based) and corrected OPD |
+| `_extract_exit_pupil_grid` | `(rg, opm, wavelength_nm: float) -> NDArray` | Extract pre-computed exit pupil coords from RayGrid's `upd_grid` and build (3, N, N) grid with corrected OPD |
 | `get_zernike_coefficients` | `(opm, field_index, wvl_index, num_terms=22, num_rays=64) -> dict` | High-level: compute Zernike coefficients for a field/wavelength |
 
 ## Conventions
@@ -24,7 +24,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 - **OPD units**: all coefficients and WFE values are in **waves at the traced wavelength**.
 - **Wavelength correction**: `RayGrid.focus_wavefront` internally uses `1/opm.nm_to_sys_units(central_wvl)`, so `rg.grid[2]` is already in waves at the central wavelength. An additional factor of `central_wvl / wavelength_nm` converts to waves at the traced wavelength.
 - **Noll sign convention**: even j → positive m (cosine), odd j → negative m (sine).
-- **Exit pupil coordinates**: Zernike fitting uses exit pupil coordinates computed via EIC (Equally Inclined Chord) expansion points, not entrance pupil coordinates from `RayGrid.grid`. This matches the convention used by OSLO and other commercial optics software. For each ray, `_compute_exit_pupil_grid` computes the EIC expansion point at the exit pupil and normalizes by `fod.exp_radius`.
+- **Exit pupil coordinates**: Zernike fitting uses exit pupil coordinates extracted from `RayGrid.grid_pkg[1]` (the `upd_grid`), where `wave_abr_pre_calc_finite_pup` already computes `p_coord` (the EIC expansion point relative to the chief ray's exit pupil point). `_extract_exit_pupil_grid` normalizes by `fod.exp_radius`. This matches the convention used by OSLO and other commercial optics software.
 - **NaN handling**: vignetted rays produce NaN in the OPD grid; these are filtered before fitting.
 - **Pupil mask**: only points with rho ≤ 1.0 are used in the fit.
 
@@ -76,15 +76,12 @@ OPD = -n_obj·e1 - ray_op + n_img·ekp + cr_op - n_img·ep
 
 The reference sphere is centered at the chief ray image point (`foc=0` → chief ray intersection with the image surface) and passes through the chief ray's exit pupil EIC expansion point.
 
-### Exit Pupil Coordinate Computation
+### Exit Pupil Coordinate Extraction
 
-`_compute_exit_pupil_grid` computes exit pupil coordinates for each ray using:
+`_extract_exit_pupil_grid` reads pre-computed exit pupil coordinates from `RayGrid.grid_pkg[1]` (the `upd_grid`). During `trace_wavefront`, rayoptics calls `wave_abr_pre_calc_finite_pup` for each ray, which computes and returns `(pre_opd, p_coord, b4_pt, b4_dir)`. The `p_coord` is the ray's EIC expansion point relative to the chief ray's exit pupil point — identical to what was previously computed manually.
 
-1. `transform_after_surface(ifc, ray_seg)` — apply decentration to get ray coords in the exit pupil reference frame
-2. `eic_distance(ray, chief_ray)` — EIC distance at the last physical surface (`k = -2`)
-3. `eic_exp_pt = b4_pt - (ekp - cr_exp_dist) * b4_dir` — the ray's EIC expansion point
-4. `p_coord = eic_exp_pt - cr_exp_pt` — relative to the chief ray's exit pupil point
-5. Normalize by `fod.exp_radius` (paraxial exit pupil radius)
+For finite pupil systems: `upd_grid[i][j]` is a 4-tuple; `p_coord = entry[1]`, normalized by `fod.exp_radius`.
+For infinite ref sphere (telecentric): `upd_grid[i][j]` is a 6-tuple; falls back to entrance pupil coordinates from `rg.grid`.
 
 ### Known Convention Differences vs OSLO
 
@@ -97,8 +94,6 @@ The reference sphere is centered at the chief ray image point (`foc=0` → chief
 - `numpy` (array math, `linalg.lstsq`)
 - `math` (factorials for radial polynomial)
 - `rayoptics.raytr.analyses.RayGrid` (only in `get_zernike_coefficients`)
-- `rayoptics.raytr.waveabr.eic_distance`, `transform_after_surface` (exit pupil coordinate computation)
-- `rayoptics.optical.model_constants` (ray segment indexing: `mc.p`, `mc.d`)
 
 ## Lazy Import
 
