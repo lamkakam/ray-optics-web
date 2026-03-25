@@ -32,7 +32,7 @@ interface ZernikeTermsModalProps {
 |-------|------|-------------|
 | `selectedFieldIndex` | `number` | Currently selected field index (reset to 0 on each open) |
 | `selectedWvlIndex` | `number` | Currently selected wavelength index (reset to 0 on each open) |
-| `selectedOrdering` | `ZernikeOrdering` | "noll" or "fringe" (reset to "noll" on each open) |
+| `selectedOrdering` | `ZernikeOrdering` | "noll" or "fringe" (reset to "fringe" on each open) |
 | `data` | `ZernikeData \| undefined` | Fetched Zernike data |
 | `loading` | `boolean` | Whether a fetch is in progress |
 | `prevIsOpen` | `boolean` | Tracks open transition (false→true) |
@@ -40,7 +40,7 @@ interface ZernikeTermsModalProps {
 
 ## Key Behaviors
 
-- On `isOpen` transition false→true: resets field index, wavelength index, and ordering to 0/"noll", then triggers a data fetch.
+- On `isOpen` transition false→true: resets field index, wavelength index, and ordering to 0/"fringe", then triggers a data fetch.
 - On any dropdown change (field, wavelength, ordering): fetches data with the new selection.
 - Race condition guard: uses a request counter ref to discard stale results from prior fetches.
 - Renders Zernike terms in a scrollable table; row count and index scheme depend on ordering:

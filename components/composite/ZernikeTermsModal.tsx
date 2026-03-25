@@ -20,8 +20,8 @@ import {
 } from "@/lib/zernikeData";
 
 const ORDERING_OPTIONS: SelectOption[] = [
-  { value: "noll", label: "Noll" },
   { value: "fringe", label: "Fringe" },
+  { value: "noll", label: "Noll" },
 ];
 
 interface ZernikeTermsModalProps {
@@ -41,7 +41,7 @@ export function ZernikeTermsModal({
 }: ZernikeTermsModalProps) {
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
   const [selectedWvlIndex, setSelectedWvlIndex] = useState(0);
-  const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("noll");
+  const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("fringe");
   const [data, setData] = useState<ZernikeData | undefined>();
   const [loading, setLoading] = useState(false);
   const requestCounter = useRef(0);
@@ -55,7 +55,7 @@ export function ZernikeTermsModal({
     setOpenCount((c) => c + 1);
     setSelectedFieldIndex(0);
     setSelectedWvlIndex(0);
-    setSelectedOrdering("noll");
+    setSelectedOrdering("fringe");
   }
   if (!isOpen && prevIsOpen) {
     setPrevIsOpen(false);
@@ -78,7 +78,7 @@ export function ZernikeTermsModal({
 
   useEffect(() => {
     if (openCount > 0) {
-      fetchData(0, 0, "noll"); // eslint-disable-line react-hooks/set-state-in-effect
+      fetchData(0, 0, "fringe"); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [openCount, fetchData]);
 

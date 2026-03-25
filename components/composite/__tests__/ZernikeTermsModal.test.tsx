@@ -71,33 +71,33 @@ describe("ZernikeTermsModal", () => {
     expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
   });
 
-  it("calls onFetchData(0, 0, 'noll') on open", async () => {
+  it("calls onFetchData(0, 0, 'fringe') on open", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll");
+      expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
     });
   });
 
-  it("renders table column headers (Noll ordering by default)", async () => {
+  it("renders table column headers (Fringe ordering by default)", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(onFetchData).toHaveBeenCalled());
-    expect(screen.getByRole("columnheader", { name: "Noll j" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Fringe j" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Notation" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Classical Name" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Non-normalized Term" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "RMS Normalized Term (waves)" })).toBeInTheDocument();
   });
 
-  it("renders 56 data rows in the table", async () => {
+  it("renders NUM_FRINGE_TERMS data rows in the table (fringe by default)", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(onFetchData).toHaveBeenCalled());
     const table = screen.getByRole("table");
     const rows = within(table).getAllByRole("row");
-    // 1 header row + 56 data rows
-    expect(rows.length).toBe(NUM_NOLL_TERMS + 1);
+    // 1 header row + NUM_FRINGE_TERMS data rows
+    expect(rows.length).toBe(NUM_FRINGE_TERMS + 1);
   });
 
   it("shows P-V WFE, RMS WFE, and Strehl ratio in summary", async () => {
@@ -115,24 +115,24 @@ describe("ZernikeTermsModal", () => {
   it("dropdown changes call onFetchData with new indices and current ordering", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll"));
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe"));
 
     const fieldSelect = screen.getByLabelText("Field");
     await userEvent.selectOptions(fieldSelect, "2");
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(2, 0, "noll");
+      expect(onFetchData).toHaveBeenCalledWith(2, 0, "fringe");
     });
   });
 
   it("wavelength dropdown change calls onFetchData with new wavelength index and current ordering", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll"));
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe"));
 
     const wvlSelect = screen.getByLabelText("Wavelength");
     await userEvent.selectOptions(wvlSelect, "2");
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 2, "noll");
+      expect(onFetchData).toHaveBeenCalledWith(0, 2, "fringe");
     });
   });
 
@@ -196,7 +196,7 @@ describe("ZernikeTermsModal", () => {
     // Open the modal
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />);
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll");
+      expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
     });
 
     // Close and reopen
@@ -204,7 +204,7 @@ describe("ZernikeTermsModal", () => {
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={false} />);
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />);
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll");
+      expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
     });
   });
 
@@ -213,111 +213,111 @@ describe("ZernikeTermsModal", () => {
     expect(screen.getByLabelText("Ordering")).toBeInTheDocument();
   });
 
-  it("selecting Fringe ordering calls onFetchData with fringe", async () => {
+  it("selecting Noll ordering calls onFetchData with noll", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll"));
-
-    const orderingSelect = screen.getByLabelText("Ordering");
-    await userEvent.selectOptions(orderingSelect, "fringe");
-    await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
-    });
-  });
-
-  it("when Fringe ordering selected, table header shows 'Fringe j'", async () => {
-    const fringeData: ZernikeData = {
-      ...mockZernikeData,
-      coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.001),
-      rms_normalized_coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.0005),
-      num_terms: NUM_FRINGE_TERMS,
-    };
-    // First call returns noll-sized data (on open), subsequent calls return fringe-sized data
-    const onFetchData = jest.fn()
-      .mockResolvedValueOnce(mockZernikeData)
-      .mockResolvedValue(fringeData);
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
-
-    const orderingSelect = screen.getByLabelText("Ordering");
-    await userEvent.selectOptions(orderingSelect, "fringe");
-    await waitFor(() => {
-      expect(screen.getByRole("columnheader", { name: "Fringe j" })).toBeInTheDocument();
-    });
-    expect(screen.queryByRole("columnheader", { name: "Noll j" })).not.toBeInTheDocument();
-  });
-
-  it("when Fringe ordering selected, table has NUM_FRINGE_TERMS rows", async () => {
-    const fringeData: ZernikeData = {
-      ...mockZernikeData,
-      coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.001),
-      rms_normalized_coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.0005),
-      num_terms: NUM_FRINGE_TERMS,
-    };
-    // First call returns noll-sized data (on open), subsequent calls return fringe-sized data
-    const onFetchData = jest.fn()
-      .mockResolvedValueOnce(mockZernikeData)
-      .mockResolvedValue(fringeData);
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
-
-    const orderingSelect = screen.getByLabelText("Ordering");
-    await userEvent.selectOptions(orderingSelect, "fringe");
     await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe"));
+
+    const orderingSelect = screen.getByLabelText("Ordering");
+    await userEvent.selectOptions(orderingSelect, "noll");
+    await waitFor(() => {
+      expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll");
+    });
+  });
+
+  it("when Noll ordering selected, table header shows 'Noll j'", async () => {
+    const fringeData: ZernikeData = {
+      ...mockZernikeData,
+      coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.001),
+      rms_normalized_coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.0005),
+      num_terms: NUM_FRINGE_TERMS,
+    };
+    // First call returns fringe-sized data (on open), subsequent calls return noll-sized data
+    const onFetchData = jest.fn()
+      .mockResolvedValueOnce(fringeData)
+      .mockResolvedValue(mockZernikeData);
+    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+
+    const orderingSelect = screen.getByLabelText("Ordering");
+    await userEvent.selectOptions(orderingSelect, "noll");
+    await waitFor(() => {
+      expect(screen.getByRole("columnheader", { name: "Noll j" })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("columnheader", { name: "Fringe j" })).not.toBeInTheDocument();
+  });
+
+  it("when Noll ordering selected, table has NUM_NOLL_TERMS rows", async () => {
+    const fringeData: ZernikeData = {
+      ...mockZernikeData,
+      coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.001),
+      rms_normalized_coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.0005),
+      num_terms: NUM_FRINGE_TERMS,
+    };
+    // First call returns fringe-sized data (on open), subsequent calls return noll-sized data
+    const onFetchData = jest.fn()
+      .mockResolvedValueOnce(fringeData)
+      .mockResolvedValue(mockZernikeData);
+    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+
+    const orderingSelect = screen.getByLabelText("Ordering");
+    await userEvent.selectOptions(orderingSelect, "noll");
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll"));
 
     const table = screen.getByRole("table");
     const rows = within(table).getAllByRole("row");
-    // 1 header row + NUM_FRINGE_TERMS data rows
-    expect(rows.length).toBe(NUM_FRINGE_TERMS + 1);
+    // 1 header row + NUM_NOLL_TERMS data rows
+    expect(rows.length).toBe(NUM_NOLL_TERMS + 1);
   });
 
-  it("does not crash when switching back to Noll while stale Fringe data (37 coefficients) is still in state", async () => {
+  it("does not crash when switching back to Fringe while stale Noll data (56 coefficients) is still in state", async () => {
     const fringeData: ZernikeData = {
       ...mockZernikeData,
       coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.001),
       rms_normalized_coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.0005),
       num_terms: NUM_FRINGE_TERMS,
     };
-    // Open with Noll data, switch to Fringe (returns fringe data), then switch back to Noll
-    // but block the third fetch so stale Fringe data remains while numTerms=56
+    // Open with Fringe data, switch to Noll (returns noll data), then switch back to Fringe
+    // but block the third fetch so stale Noll data remains while numTerms=37
     const onFetchData = jest.fn()
-      .mockResolvedValueOnce(mockZernikeData)  // initial open
-      .mockResolvedValueOnce(fringeData)        // switch to Fringe
-      .mockReturnValue(new Promise(() => {}));  // switch back to Noll — never resolves
+      .mockResolvedValueOnce(fringeData)        // initial open
+      .mockResolvedValueOnce(mockZernikeData)   // switch to Noll
+      .mockReturnValue(new Promise(() => {}));   // switch back to Fringe — never resolves
 
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     const orderingSelect = screen.getByLabelText("Ordering");
-    await userEvent.selectOptions(orderingSelect, "fringe");
-    await waitFor(() => expect(screen.getByRole("columnheader", { name: "Fringe j" })).toBeInTheDocument());
-
-    // Switch back to Noll — stale Fringe data (37 coefficients) stays, numTerms becomes 56
     await userEvent.selectOptions(orderingSelect, "noll");
+    await waitFor(() => expect(screen.getByRole("columnheader", { name: "Noll j" })).toBeInTheDocument());
+
+    // Switch back to Fringe — stale Noll data (56 coefficients) stays, numTerms becomes 37
+    await userEvent.selectOptions(orderingSelect, "fringe");
 
     // Must not throw; table still renders (with stale data clamped to 37 rows) + loading mask
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByTestId("loading-mask")).toBeInTheDocument();
   });
 
-  it("re-open resets ordering to noll", async () => {
+  it("re-open resets ordering to fringe", async () => {
     const onFetchData = createMockFetchData();
     const { rerender } = render(
       <ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />
     );
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
-    // Switch to Fringe
+    // Switch to Noll
     const orderingSelect = screen.getByLabelText("Ordering");
-    await userEvent.selectOptions(orderingSelect, "fringe");
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe"));
+    await userEvent.selectOptions(orderingSelect, "noll");
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll"));
 
     // Close and reopen
     onFetchData.mockClear();
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={false} />);
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />);
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll");
+      expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
     });
   });
 });
