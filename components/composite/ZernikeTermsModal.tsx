@@ -120,7 +120,7 @@ export function ZernikeTermsModal({
 
   const rows = useMemo(() => {
     if (!data) return [];
-    return Array.from({ length: numTerms }, (_, i) => {
+    return Array.from({ length: Math.min(numTerms, data.coefficients.length) }, (_, i) => {
       const j = i + 1;
       const [n, m] = toNm(j);
       return [
