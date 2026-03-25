@@ -78,7 +78,7 @@ export async function init(): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.1-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.2-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
   } catch (err) {
