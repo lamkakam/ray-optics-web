@@ -6,6 +6,17 @@ import pytest
 from rayoptics_web_utils.setup import init
 
 
+def _noll_forward(n: int, m: int) -> int:
+    """Maple Noll(n, m): compute Noll index j from (n, m)."""
+    base = n * (n + 1) // 2 + abs(m)
+    if m >= 0 and n % 4 in (2, 3):
+        return base + 1
+    elif m <= 0 and n % 4 in (0, 1):
+        return base + 1
+    else:
+        return base
+
+
 @pytest.fixture(scope="module", autouse=True)
 def setup_env():
     """Run init() once before all tests in this module."""
@@ -17,7 +28,7 @@ def cooke_triplet():
     """Build a configured Cooke Triplet (Sasian Triplet) optical model."""
     from rayoptics.environment import OpticalModel
     from rayoptics.raytr.opticalspec import PupilSpec, FieldSpec, WvlSpec
-    from rayoptics.raytr.trace import apply_paraxial_vignetting
+    from rayoptics.raytr.vigcalc import set_vig
 
     opm = OpticalModel()
     osp = opm['optical_spec']
@@ -38,7 +49,7 @@ def cooke_triplet():
     sm.add_surface([-20.4942, 41.2365, "air"], sd=8.3321)
     sm.ifcs[-1].profile.r = 0
     opm.update_model()
-    apply_paraxial_vignetting(opm)
+    set_vig(opm)
     return opm
 
 
@@ -72,6 +83,15 @@ class TestNollToNm:
     def test_known_conversions(self, j, expected):
         from rayoptics_web_utils.zernike import noll_to_nm
         assert noll_to_nm(j) == expected
+
+    def test_round_trip_via_maple_formula(self):
+        from rayoptics_web_utils.zernike import noll_to_nm
+        for j in range(1, 231):  # covers n=0..20
+            n, m = noll_to_nm(j)
+            assert _noll_forward(n, m) == j, (
+                f"Round-trip failed for j={j}: noll_to_nm→({n},{m}), "
+                f"Noll({n},{m})={_noll_forward(n, m)}"
+            )
 
 
 class TestZernikeRadial:
@@ -440,3 +460,265 @@ class TestGetZernikeCoefficients:
             assert abs(reconstructed - coeffs[j - 1]) < 1e-10, (
                 f"Z{j}: rms*N = {reconstructed}, coeff = {coeffs[j-1]}"
             )
+
+    def test_raygrid_called_with_check_apertures_and_apply_vignetting(self, cooke_triplet):
+        """RayGrid must be created with check_apertures=True and apply_vignetting=True."""
+        from unittest.mock import patch
+        from rayoptics.raytr.analyses import RayGrid as RealRayGrid
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        captured_kwargs: dict = {}
+
+        def capturing_raygrid(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return RealRayGrid(*args, **kwargs)
+
+        with patch('rayoptics.raytr.analyses.RayGrid', side_effect=capturing_raygrid):
+            get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+
+        assert captured_kwargs.get('check_apertures') is True, (
+            f"Expected check_apertures=True, got {captured_kwargs.get('check_apertures')}"
+        )
+        assert captured_kwargs.get('apply_vignetting') is True, (
+            f"Expected apply_vignetting=True, got {captured_kwargs.get('apply_vignetting')}"
+        )
+
+
+class TestFringeToNm:
+    """Test Fringe (University of Arizona) index to (n, m) conversion."""
+
+    @pytest.mark.parametrize("j, expected", [
+        (1,  (0,  0)),
+        (2,  (1, +1)),
+        (3,  (1, -1)),
+        (4,  (2,  0)),
+        (5,  (2, +2)),
+        (6,  (2, -2)),
+        (7,  (3, +1)),
+        (8,  (3, -1)),
+        (9,  (4,  0)),
+        (10, (3, +3)),
+        (11, (3, -3)),
+        (12, (4, +2)),
+        (13, (4, -2)),
+        (14, (5, +1)),
+        (15, (5, -1)),
+        (16, (6,  0)),
+        (17, (4, +4)),
+        (18, (4, -4)),
+        (19, (5, +3)),
+        (20, (5, -3)),
+        (21, (6, +2)),
+        (22, (6, -2)),
+        (23, (7, +1)),
+        (24, (7, -1)),
+        (25, (8,  0)),
+        (26, (5, +5)),
+        (27, (5, -5)),
+        (28, (6, +4)),
+    ])
+    def test_known_conversions(self, j, expected):
+        from rayoptics_web_utils.zernike import fringe_to_nm
+        assert fringe_to_nm(j) == expected
+
+    def test_roundtrip_via_fringe_formula(self):
+        """Round-trip: nm_to_fringe (Wikipedia formula) → fringe_to_nm must recover (n, m).
+
+        j = (1 + (n + |m|) / 2)^2 − 2|m| + floor((1 − sgn(m)) / 2)
+        """
+        from rayoptics_web_utils.zernike import fringe_to_nm
+
+        def nm_to_fringe(n: int, m: int) -> int:
+            m_abs = abs(m)
+            sgn_m = (1 if m > 0 else -1) if m != 0 else 0
+            return (1 + (n + m_abs) // 2) ** 2 - 2 * m_abs + (1 - sgn_m) // 2
+
+        for n in range(9):  # radial orders 0–8
+            for m in range(-n, n + 1):
+                if (n - abs(m)) % 2 != 0:
+                    continue
+                j = nm_to_fringe(n, m)
+                assert fringe_to_nm(j) == (n, m), (
+                    f"Round-trip failed for (n={n}, m={m}): "
+                    f"nm_to_fringe={j}, fringe_to_nm({j})={fringe_to_nm(j)}"
+                )
+
+
+class TestZernikeFringe:
+    """Test zernike_fringe polynomial evaluation."""
+
+    def test_j1_piston_is_one_everywhere(self):
+        from rayoptics_web_utils.zernike import zernike_fringe
+        rho = np.array([0.0, 0.5, 1.0])
+        theta = np.array([0.0, np.pi / 4, np.pi])
+        result = zernike_fringe(1, rho, theta)
+        np.testing.assert_allclose(result, 1.0)
+
+    def test_j4_defocus_matches_noll_j4(self):
+        """Fringe j=4 and Noll j=4 both map to (2,0): polynomials must be identical."""
+        from rayoptics_web_utils.zernike import zernike_fringe, zernike_noll
+        N = 30
+        x = np.linspace(-1, 1, N)
+        xx, yy = np.meshgrid(x, x)
+        rho = np.sqrt(xx**2 + yy**2).ravel()
+        theta = np.arctan2(yy, xx).ravel()
+        mask = rho <= 1.0
+        np.testing.assert_allclose(
+            zernike_fringe(4, rho[mask], theta[mask]),
+            zernike_noll(4, rho[mask], theta[mask]),
+        )
+
+    def test_j5_cos_astigmatism_differs_from_noll_j5_sin(self):
+        """Fringe j=5=(2,+2) cos-astig != Noll j=5=(2,-2) sin-astig."""
+        from rayoptics_web_utils.zernike import zernike_fringe, zernike_noll
+        rho = np.array([0.7, 0.7])
+        theta = np.array([np.pi / 4, np.pi / 6])
+        fringe_vals = zernike_fringe(5, rho, theta)
+        noll_vals = zernike_noll(5, rho, theta)
+        assert not np.allclose(fringe_vals, noll_vals), (
+            "Fringe j=5 and Noll j=5 should evaluate to different polynomials"
+        )
+
+    def test_j9_primary_spherical_matches_noll_j11(self):
+        """Fringe j=9=(4,0) and Noll j=11=(4,0) map to the same polynomial."""
+        from rayoptics_web_utils.zernike import zernike_fringe, zernike_noll
+        N = 30
+        x = np.linspace(-1, 1, N)
+        xx, yy = np.meshgrid(x, x)
+        rho = np.sqrt(xx**2 + yy**2).ravel()
+        theta = np.arctan2(yy, xx).ravel()
+        mask = rho <= 1.0
+        np.testing.assert_allclose(
+            zernike_fringe(9, rho[mask], theta[mask]),
+            zernike_noll(11, rho[mask], theta[mask]),
+        )
+
+
+class TestFitZernikeFringeOrdering:
+    """Test fit_zernike with ordering='fringe'."""
+
+    def _make_grid(self, opd_func, N=65):
+        x = np.linspace(-1, 1, N)
+        xx, yy = np.meshgrid(x, x)
+        rho = np.sqrt(xx**2 + yy**2)
+        theta = np.arctan2(yy, xx)
+        opd = opd_func(rho, theta)
+        opd[rho > 1.0] = np.nan
+        return np.array([xx, yy, opd])
+
+    def test_pure_defocus_recovered_at_fringe_j4(self):
+        """Pure defocus (Fringe j=4 = Noll j=4) should appear at index 3."""
+        from rayoptics_web_utils.zernike import fit_zernike, zernike_fringe
+        coeff = 1.5
+        grid = self._make_grid(lambda r, t: coeff * zernike_fringe(4, r, t))
+        coeffs = fit_zernike(grid, num_terms=16, ordering='fringe')
+        assert abs(coeffs[3] - coeff) < 0.01, f"Fringe Z4={coeffs[3]}, expected {coeff}"
+        for j in range(16):
+            if j != 3:
+                assert abs(coeffs[j]) < 0.05, f"Fringe Z{j+1}={coeffs[j]}, expected ~0"
+
+    def test_pure_cos_astigmatism_recovered_at_fringe_j5(self):
+        """Pure (2,+2) cos-astigmatism should appear at Fringe j=5 (index 4), not j=6."""
+        from rayoptics_web_utils.zernike import fit_zernike, zernike_fringe
+        coeff = 1.0
+        grid = self._make_grid(lambda r, t: coeff * zernike_fringe(5, r, t))
+        coeffs = fit_zernike(grid, num_terms=16, ordering='fringe')
+        assert abs(coeffs[4] - coeff) < 0.01, f"Fringe Z5={coeffs[4]}, expected {coeff}"
+        assert abs(coeffs[5]) < 0.05, f"Fringe Z6={coeffs[5]}, expected ~0"
+
+    def test_noll_default_ordering_unchanged(self):
+        """fit_zernike without ordering= arg still behaves as Noll."""
+        from rayoptics_web_utils.zernike import fit_zernike, zernike_noll
+        N = 65
+        x = np.linspace(-1, 1, N)
+        xx, yy = np.meshgrid(x, x)
+        rho = np.sqrt(xx**2 + yy**2)
+        theta = np.arctan2(yy, xx)
+        opd = 1.5 * zernike_noll(4, rho, theta)
+        opd[rho > 1.0] = np.nan
+        grid = np.array([xx, yy, opd])
+        coeffs = fit_zernike(grid, num_terms=11)
+        assert abs(coeffs[3] - 1.5) < 0.01, f"Noll Z4={coeffs[3]}, expected 1.5"
+
+
+class TestUnnormalizedToRmsNormalizedFringe:
+    """Test unnormalized_to_rms_normalized with ordering='fringe'."""
+
+    def test_defocus_j4_same_for_both_orderings(self):
+        """Fringe j=4 and Noll j=4 both map to (2,0): norm factor is identical."""
+        from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
+        coeffs = [0.0, 0.0, 0.0, 1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        fringe_rms = unnormalized_to_rms_normalized(coeffs, 11, ordering='fringe')
+        noll_rms = unnormalized_to_rms_normalized(coeffs, 11, ordering='noll')
+        assert abs(fringe_rms[3] - noll_rms[3]) < 1e-12
+
+    def test_j9_gives_different_norm_factor_fringe_vs_noll(self):
+        """Fringe j=9=(4,0) N=sqrt(5); Noll j=9=(3,-3) N=sqrt(8). Results differ."""
+        import math
+        from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
+        coeffs = [0.0] * 11
+        coeffs[8] = 1.0  # j=9, index 8
+        fringe_rms = unnormalized_to_rms_normalized(coeffs, 11, ordering='fringe')
+        noll_rms = unnormalized_to_rms_normalized(coeffs, 11, ordering='noll')
+        assert abs(fringe_rms[8] - 1.0 / math.sqrt(5)) < 1e-12
+        assert abs(noll_rms[8] - 1.0 / math.sqrt(8)) < 1e-12
+        assert abs(fringe_rms[8] - noll_rms[8]) > 0.01
+
+    def test_noll_default_unchanged(self):
+        """Calling without ordering= produces same result as ordering='noll'."""
+        from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
+        coeffs = [0.0, 0.0, 0.0, 1.5, 0.0]
+        result_default = unnormalized_to_rms_normalized(coeffs, 5)
+        result_noll = unnormalized_to_rms_normalized(coeffs, 5, ordering='noll')
+        assert result_default == result_noll
+
+
+class TestGetZernikeCoefficientsFringeOrdering:
+    """Integration tests for get_zernike_coefficients with ordering='fringe'."""
+
+    def test_returns_ordering_key_fringe(self, cooke_triplet):
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(
+            cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
+        )
+        assert result.get('ordering') == 'fringe'
+
+    def test_default_ordering_is_noll(self, cooke_triplet):
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        assert result.get('ordering') == 'noll'
+
+    def test_on_axis_fringe_j4_approx_noll_j4_defocus(self, cooke_triplet):
+        """Both orderings share j=4=(2,0); values must be near-identical on-axis."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        fringe = get_zernike_coefficients(
+            cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
+        )
+        noll = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        assert abs(fringe['coefficients'][3] - noll['coefficients'][3]) < 0.05
+
+    def test_on_axis_fringe_j9_approx_noll_j11_primary_spherical(self, cooke_triplet):
+        """Fringe j=9=(4,0) and Noll j=11=(4,0): same polynomial, coefficients agree."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        fringe = get_zernike_coefficients(
+            cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
+        )
+        noll = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        assert abs(fringe['coefficients'][8] - noll['coefficients'][10]) < 0.05
+
+    def test_off_axis_fringe_j5_differs_from_noll_j5(self, cooke_triplet):
+        """Fringe j=5=(2,+2) vs Noll j=5=(2,-2): different astigmatism components."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        fringe = get_zernike_coefficients(
+            cooke_triplet, field_index=1, wvl_index=1, ordering='fringe'
+        )
+        noll = get_zernike_coefficients(cooke_triplet, field_index=1, wvl_index=1)
+        assert abs(fringe['coefficients'][4] - noll['coefficients'][4]) > 0.05
+
+    def test_json_serializable_fringe(self, cooke_triplet):
+        import json
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(
+            cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
+        )
+        assert isinstance(json.dumps(result), str)

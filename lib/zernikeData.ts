@@ -9,7 +9,11 @@ export interface ZernikeData {
   readonly wavelength_nm: number;
 }
 
+export type ZernikeOrdering = "noll" | "fringe";
+
 export const NUM_NOLL_TERMS = 56;
+
+export const NUM_FRINGE_TERMS = 37;
 
 /**
  * Convert Noll index j (1-based) to radial order n and azimuthal frequency m.
@@ -39,6 +43,26 @@ export function nollToNm(j: number): [number, number] {
 }
 
 /**
+ * Convert Fringe (University of Arizona) index j (1-based) to (n, m).
+ * Port of the Python fringe_to_nm function.
+ *
+ * Groups by c = (n + |m|) / 2. Group c has 2c+1 terms; cumulative
+ * count through group c is (c+1)². Within each group, |m| descending,
+ * cos (+m) before sin (−m), m=0 last.
+ */
+export function fringeToNm(j: number): [number, number] {
+  let c = 0;
+  while ((c + 1) ** 2 < j) c++;
+  const pos = j - c * c; // 1-based position within group c
+  if (pos === 2 * c + 1) return [2 * c, 0];
+  const pairIdx = Math.floor((pos - 1) / 2);
+  const mAbs = c - pairIdx;
+  const n = 2 * c - mAbs;
+  const sign = (pos - 1) % 2 === 0 ? 1 : -1;
+  return [n, sign * mAbs];
+}
+
+/**
  * Returns MathJax-compatible LaTeX notation for a Zernike polynomial.
  */
 export function zernikeNotation(n: number, m: number): string {
@@ -46,63 +70,73 @@ export function zernikeNotation(n: number, m: number): string {
 }
 
 /**
- * Classical names for Noll-ordered Zernike terms j=1..56.
+ * Classical names for Zernike terms keyed by "(n,m)" string.
+ * Covers all 56 Noll-ordered terms (n=0..10).
+ * Naming convention: m>0 (cos term) → "X" suffix; m<0 (sin term) → "Y" suffix; m=0 → no suffix.
  */
-export const NOLL_CLASSICAL_NAMES: Record<number, string> = {
-  1: "Piston",
-  2: "Tilt X",
-  3: "Tilt Y",
-  4: "Defocus",
-  5: "Oblique Astigmatism",
-  6: "Vertical Astigmatism",
-  7: "Vertical Coma",
-  8: "Horizontal Coma",
-  9: "Vertical Trefoil",
-  10: "Oblique Trefoil",
-  11: "Primary Spherical",
-  12: "Vertical Secondary Astigmatism",
-  13: "Oblique Secondary Astigmatism",
-  14: "Vertical Quadrafoil",
-  15: "Oblique Quadrafoil",
-  16: "Secondary Coma X",
-  17: "Secondary Coma Y",
-  18: "Secondary Trefoil X",
-  19: "Secondary Trefoil Y",
-  20: "Pentafoil X",
-  21: "Pentafoil Y",
-  22: "Secondary Spherical",
-  23: "Tertiary Astigmatism Y",
-  24: "Tertiary Astigmatism X",
-  25: "Secondary Quadrafoil Y",
-  26: "Secondary Quadrafoil X",
-  27: "Hexafoil Y",
-  28: "Hexafoil X",
-  29: "Tertiary Coma Y",
-  30: "Tertiary Coma X",
-  31: "Tertiary Trefoil Y",
-  32: "Tertiary Trefoil X",
-  33: "Secondary Pentafoil Y",
-  34: "Secondary Pentafoil X",
-  35: "Heptafoil Y",
-  36: "Heptafoil X",
-  37: "Tertiary Spherical",
-  38: "Quaternary Astigmatism X",
-  39: "Quaternary Astigmatism Y",
-  40: "Tertiary Quadrafoil X",
-  41: "Tertiary Quadrafoil Y",
-  42: "Secondary Hexafoil X",
-  43: "Secondary Hexafoil Y",
-  44: "Octafoil X",
-  45: "Octafoil Y",
-  46: "Quaternary Coma X",
-  47: "Quaternary Coma Y",
-  48: "Quaternary Trefoil X",
-  49: "Quaternary Trefoil Y",
-  50: "Tertiary Pentafoil X",
-  51: "Tertiary Pentafoil Y",
-  52: "Secondary Heptafoil X",
-  53: "Secondary Heptafoil Y",
-  54: "Nonafoil X",
-  55: "Nonafoil Y",
-  56: "Quaternary Spherical",
+export const CLASSICAL_NAMES: Record<string, string> = {
+  "0,0": "Piston",
+  "1,1": "Tilt X",
+  "1,-1": "Tilt Y",
+  "2,0": "Defocus",
+  "2,-2": "Oblique Astigmatism",
+  "2,2": "Vertical Astigmatism",
+  "3,-1": "Vertical Coma",
+  "3,1": "Horizontal Coma",
+  "3,-3": "Vertical Trefoil",
+  "3,3": "Oblique Trefoil",
+  "4,0": "Primary Spherical",
+  "4,2": "Vertical Secondary Astigmatism",
+  "4,-2": "Oblique Secondary Astigmatism",
+  "4,4": "Vertical Quadrafoil",
+  "4,-4": "Oblique Quadrafoil",
+  "5,1": "Secondary Coma X",
+  "5,-1": "Secondary Coma Y",
+  "5,3": "Secondary Trefoil X",
+  "5,-3": "Secondary Trefoil Y",
+  "5,5": "Pentafoil X",
+  "5,-5": "Pentafoil Y",
+  "6,0": "Secondary Spherical",
+  "6,-2": "Tertiary Astigmatism Y",
+  "6,2": "Tertiary Astigmatism X",
+  "6,-4": "Secondary Quadrafoil Y",
+  "6,4": "Secondary Quadrafoil X",
+  "6,-6": "Hexafoil Y",
+  "6,6": "Hexafoil X",
+  "7,-1": "Tertiary Coma Y",
+  "7,1": "Tertiary Coma X",
+  "7,-3": "Tertiary Trefoil Y",
+  "7,3": "Tertiary Trefoil X",
+  "7,-5": "Secondary Pentafoil Y",
+  "7,5": "Secondary Pentafoil X",
+  "7,-7": "Heptafoil Y",
+  "7,7": "Heptafoil X",
+  "8,0": "Tertiary Spherical",
+  "8,2": "Quaternary Astigmatism X",
+  "8,-2": "Quaternary Astigmatism Y",
+  "8,4": "Tertiary Quadrafoil X",
+  "8,-4": "Tertiary Quadrafoil Y",
+  "8,6": "Secondary Hexafoil X",
+  "8,-6": "Secondary Hexafoil Y",
+  "8,8": "Octafoil X",
+  "8,-8": "Octafoil Y",
+  "9,1": "Quaternary Coma X",
+  "9,-1": "Quaternary Coma Y",
+  "9,3": "Quaternary Trefoil X",
+  "9,-3": "Quaternary Trefoil Y",
+  "9,5": "Tertiary Pentafoil X",
+  "9,-5": "Tertiary Pentafoil Y",
+  "9,7": "Secondary Heptafoil X",
+  "9,-7": "Secondary Heptafoil Y",
+  "9,9": "Nonafoil X",
+  "9,-9": "Nonafoil Y",
+  "10,0": "Quaternary Spherical",
 };
+
+/**
+ * Returns the classical name for a Zernike polynomial by (n, m).
+ * Returns empty string if no classical name is defined.
+ */
+export function classicalName(n: number, m: number): string {
+  return CLASSICAL_NAMES[`${n},${m}`] ?? "";
+}

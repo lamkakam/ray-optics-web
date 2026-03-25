@@ -1,6 +1,6 @@
 import { expose } from "comlink";
 import { type OpticalModel, type SeidelData } from "../lib/opticalModel";
-import { type ZernikeData } from "../lib/zernikeData";
+import { type ZernikeData, type ZernikeOrdering } from "../lib/zernikeData";
 import { buildScript } from "../lib/pythonScript";
 
 declare function importScripts(...urls: string[]): void;
@@ -49,7 +49,7 @@ caf2 = _rwu_init_result['caf2']
 
 import json
 from rayoptics.environment import *
-from rayoptics.raytr.trace import apply_paraxial_vignetting
+from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 
 from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data
@@ -78,7 +78,7 @@ export async function init(): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.2-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.3-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
   } catch (err) {
@@ -133,10 +133,11 @@ export async function _getZernikeCoefficients(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wvlIndex: number,
-  numTerms: number = 56,
+  numTerms: number = 37,
+  ordering: ZernikeOrdering = "noll",
 ): Promise<ZernikeData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}))`)
+    buildScript(opticalModel, (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}, ordering='${ordering}'))`)
   )) as string;
   return JSON.parse(json) as ZernikeData;
 }
@@ -177,8 +178,9 @@ export async function getZernikeCoefficients(
   fieldIndex: number,
   wvlIndex: number,
   numTerms?: number,
+  ordering?: ZernikeOrdering,
 ): Promise<ZernikeData> {
-  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, numTerms);
+  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, numTerms, ordering);
 }
 
 expose({

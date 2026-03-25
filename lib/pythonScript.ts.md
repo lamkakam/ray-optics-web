@@ -35,7 +35,7 @@ export function buildExportScript(opticalModel: OpticalModel): string;
    - If `label === "Stop"`, emits `sm.set_stop()`.
 7. Sets `sm.ifcs[-1].profile.r` to the image surface curvature radius.
 8. If the image surface has `decenter`, emits `sm.ifcs[-1].decenter = DecenterData(...)`.
-9. Calls `opm.update_model()` then `apply_paraxial_vignetting(opm)`.
+9. Calls `opm.update_model()` then `set_vig(opm)`.
 
 > **Warning**: The indentation and whitespace in the template literal are intentional — do not reformat them. Python is whitespace-sensitive.
 
@@ -58,7 +58,7 @@ The last expression in the combined script is the return value of `runPythonAsyn
 Returns a string with:
 > **Warning**: Not for execution inside the Pyodide worker. This script is intended for copy-paste into a Jupyter / RayOptics notebook environment.
 
-1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.trace`, `rayoptics.elem.surface`, and `opticalglass.rindexinfo`. Also creates a `caf2` glass object from `refractiveindex.info`.
+1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface`, and `opticalglass.rindexinfo`. Also creates a `caf2` glass object from `refractiveindex.info`.
 2. The full output of `buildOpticalModelScript(model)`.
 3. Calls to `sm.list_model()`, `pm.first_order_data()`, and `plt.figure(FigureClass=InteractiveLayout, ...)`.
 

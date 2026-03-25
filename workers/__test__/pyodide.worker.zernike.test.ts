@@ -1,5 +1,6 @@
 import { describe, it, expect } from "@jest/globals";
 import { _getZernikeCoefficients } from "../pyodide.worker";
+import type { ZernikeOrdering } from "../../lib/zernikeData";
 import type { OpticalModel } from "../../lib/opticalModel";
 
 const testModel: OpticalModel = {
@@ -36,7 +37,7 @@ describe("_getZernikeCoefficients", () => {
     }, testModel, 0, 1, 56);
     expect(capturedCode).toContain("opm = OpticalModel()");
     expect(capturedCode).toContain("from rayoptics_web_utils.zernike import get_zernike_coefficients");
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, num_terms=56)");
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, num_terms=56, ordering='noll')");
     expect(capturedCode).toContain("json.dumps");
     expect(result).toMatchObject(mockData);
   });
@@ -57,17 +58,17 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 2, 0, 22);
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, num_terms=22)");
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, num_terms=22, ordering='noll')");
   });
 
-  it("defaults numTerms to 56 when not provided", async () => {
+  it("defaults numTerms to 37 when not provided", async () => {
     const mockData = {
       coefficients: [],
       rms_normalized_coefficients: [],
       rms_wfe: 0,
       pv_wfe: 0,
       strehl_ratio: 1.0,
-      num_terms: 56,
+      num_terms: 37,
       field_index: 0,
       wavelength_nm: 587.0,
     };
@@ -76,6 +77,45 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 0, 0);
-    expect(capturedCode).toContain("num_terms=56");
+    expect(capturedCode).toContain("num_terms=37");
+  });
+
+  it("defaults ordering to noll when not provided", async () => {
+    const mockData = {
+      coefficients: [],
+      rms_normalized_coefficients: [],
+      rms_wfe: 0,
+      pv_wfe: 0,
+      strehl_ratio: 1.0,
+      num_terms: 37,
+      field_index: 0,
+      wavelength_nm: 587.0,
+    };
+    let capturedCode = "";
+    await _getZernikeCoefficients(async (code) => {
+      capturedCode = code;
+      return JSON.stringify(mockData);
+    }, testModel, 0, 0);
+    expect(capturedCode).toContain("ordering='noll'");
+  });
+
+  it("passes ordering=fringe to Python when specified", async () => {
+    const mockData = {
+      coefficients: [],
+      rms_normalized_coefficients: [],
+      rms_wfe: 0,
+      pv_wfe: 0,
+      strehl_ratio: 1.0,
+      num_terms: 37,
+      field_index: 0,
+      wavelength_nm: 587.0,
+    };
+    const ordering: ZernikeOrdering = "fringe";
+    let capturedCode = "";
+    await _getZernikeCoefficients(async (code) => {
+      capturedCode = code;
+      return JSON.stringify(mockData);
+    }, testModel, 0, 0, 37, ordering);
+    expect(capturedCode).toContain("ordering='fringe'");
   });
 });
