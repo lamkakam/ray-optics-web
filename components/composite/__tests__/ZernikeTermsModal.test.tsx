@@ -300,6 +300,31 @@ describe("ZernikeTermsModal", () => {
     expect(screen.getByTestId("loading-mask")).toBeInTheDocument();
   });
 
+  it("after switching to Noll, row 5 notation reflects Noll j=5 (n=2,m=-2), not Fringe j=5 (n=2,m=2)", async () => {
+    const fringeData: ZernikeData = {
+      ...mockZernikeData,
+      coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.001),
+      rms_normalized_coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.0005),
+      num_terms: NUM_FRINGE_TERMS,
+    };
+    const onFetchData = jest.fn()
+      .mockResolvedValueOnce(fringeData)
+      .mockResolvedValue(mockZernikeData);
+
+    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+
+    const orderingSelect = screen.getByLabelText("Ordering");
+    await userEvent.selectOptions(orderingSelect, "noll");
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll"));
+
+    // Noll j=5 → n=2, m=-2 → \(Z_{2}^{-2}\)
+    // Fringe j=5 → n=2, m=2 → \(Z_{2}^{2}\)
+    const table = screen.getByRole("table");
+    const dataRows = within(table).getAllByRole("row").slice(1);
+    expect(dataRows[4].textContent).toContain("\\(Z_{2}^{-2}\\)");
+  });
+
   it("re-open resets ordering to fringe", async () => {
     const onFetchData = createMockFetchData();
     const { rerender } = render(
