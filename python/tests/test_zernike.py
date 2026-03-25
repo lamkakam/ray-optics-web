@@ -501,6 +501,28 @@ class TestFringeToNm:
         from rayoptics_web_utils.zernike import fringe_to_nm
         assert fringe_to_nm(j) == expected
 
+    def test_roundtrip_via_fringe_formula(self):
+        """Round-trip: nm_to_fringe (Wikipedia formula) → fringe_to_nm must recover (n, m).
+
+        j = (1 + (n + |m|) / 2)^2 − 2|m| + floor((1 − sgn(m)) / 2)
+        """
+        from rayoptics_web_utils.zernike import fringe_to_nm
+
+        def nm_to_fringe(n: int, m: int) -> int:
+            m_abs = abs(m)
+            sgn_m = (1 if m > 0 else -1) if m != 0 else 0
+            return (1 + (n + m_abs) // 2) ** 2 - 2 * m_abs + (1 - sgn_m) // 2
+
+        for n in range(9):  # radial orders 0–8
+            for m in range(-n, n + 1):
+                if (n - abs(m)) % 2 != 0:
+                    continue
+                j = nm_to_fringe(n, m)
+                assert fringe_to_nm(j) == (n, m), (
+                    f"Round-trip failed for (n={n}, m={m}): "
+                    f"nm_to_fringe={j}, fringe_to_nm({j})={fringe_to_nm(j)}"
+                )
+
 
 class TestZernikeFringe:
     """Test zernike_fringe polynomial evaluation."""
