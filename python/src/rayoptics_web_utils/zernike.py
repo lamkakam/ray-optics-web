@@ -166,7 +166,10 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
 
     Extracts pre-computed exit pupil coordinates from RayGrid's upd_grid
     (populated by wave_abr_pre_calc during trace_wavefront), then normalizes
-    by the paraxial exit pupil radius.
+    by the maximum extent of exit pupil coordinates (data-driven radius).
+
+    This avoids using the paraxial exit pupil radius, which can be very
+    wrong for tilted/decentered systems.
 
     Args:
         rg: RayGrid instance (already traced).
@@ -176,9 +179,6 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
     Returns:
         (3, N, N) array: [0]=exit_pupil_x, [1]=exit_pupil_y, [2]=OPD in waves.
     """
-    fod = opm['analysis_results']['parax_data'].fod
-    exp_radius = fod.exp_radius
-
     _, upd_grid = rg.grid_pkg
     n_rows = len(upd_grid)
     n_cols = len(upd_grid[0])
@@ -187,8 +187,10 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
     central_wvl = opm['optical_spec']['wvls'].central_wvl
     opd_grid[2] *= central_wvl / wavelength_nm
 
-    exit_px = np.full((n_rows, n_cols), np.nan)
-    exit_py = np.full((n_rows, n_cols), np.nan)
+    # First pass: collect raw exit pupil coordinates to determine radius
+    exit_px_raw = np.full((n_rows, n_cols), np.nan)
+    exit_py_raw = np.full((n_rows, n_cols), np.nan)
+    has_finite_pupil = False
 
     for i in range(n_rows):
         for j in range(n_cols):
@@ -198,12 +200,30 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
             if len(entry) == 4:
                 # Finite pupil: (pre_opd, p_coord, b4_pt, b4_dir)
                 p_coord = entry[1]
-                exit_px[i, j] = p_coord[0] / exp_radius
-                exit_py[i, j] = p_coord[1] / exp_radius
+                exit_px_raw[i, j] = p_coord[0]
+                exit_py_raw[i, j] = p_coord[1]
+                has_finite_pupil = True
             else:
                 # Infinite ref sphere (telecentric): use entrance pupil coords
-                exit_px[i, j] = rg.grid[0][i, j]
-                exit_py[i, j] = rg.grid[1][i, j]
+                exit_px_raw[i, j] = rg.grid[0][i, j]
+                exit_py_raw[i, j] = rg.grid[1][i, j]
+
+    if has_finite_pupil:
+        # Compute normalization radius from the data itself
+        valid_mask = ~np.isnan(exit_px_raw) & ~np.isnan(exit_py_raw)
+        rho_raw = np.sqrt(exit_px_raw[valid_mask]**2 + exit_py_raw[valid_mask]**2)
+        if len(rho_raw) > 0 and np.max(rho_raw) > 1e-14:
+            exp_radius = float(np.max(rho_raw))
+        else:
+            fod = opm['analysis_results']['parax_data'].fod
+            exp_radius = abs(fod.exp_radius)
+
+        exit_px = exit_px_raw / exp_radius
+        exit_py = exit_py_raw / exp_radius
+    else:
+        # Telecentric case: coordinates are already normalized
+        exit_px = exit_px_raw
+        exit_py = exit_py_raw
 
     return np.array([exit_px, exit_py, opd_grid[2]])
 

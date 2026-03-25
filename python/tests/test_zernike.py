@@ -722,3 +722,134 @@ class TestGetZernikeCoefficientsFringeOrdering:
             cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
         )
         assert isinstance(json.dumps(result), str)
+
+
+@pytest.fixture(scope="module")
+def tilted_houghton():
+    """Build a Tilted Houghton-Herschel system with decentered/bent surfaces.
+
+    Based on the prescription from lib/exampleSystems.ts (tiltedHoughton).
+    This is a well-corrected tilted reflector (~0.13 waves P-V at 546nm on-axis).
+    """
+    from rayoptics.environment import OpticalModel
+    from rayoptics.raytr.opticalspec import PupilSpec, FieldSpec, WvlSpec
+    from rayoptics.elem.surface import DecenterData
+
+    opm = OpticalModel()
+    osp = opm['optical_spec']
+    sm = opm['seq_model']
+    opm.system_spec.dimensions = 'mm'
+    osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=150)
+    osp['fov'] = FieldSpec(
+        osp, key=['object', 'angle'], value=-0.5,
+        flds=[0, 0.707, 1], is_relative=True,
+    )
+    osp['wvls'] = WvlSpec(
+        [(435.835, 0.035), (486.133, 0.18), (546.073, 0.98),
+         (656.273, 0.075), (706.519, 0.0028)],
+        ref_wl=2,
+    )
+    opm.radius_mode = True
+    sm.do_apertures = False
+
+    # Object distance
+    sm.gaps[0].thi = 1e10
+
+    # S1: Stop, R=2022, t=11.2, N-BK7
+    sm.add_surface([2022, 11.2, 'N-BK7', 'Schott'], sd=75)
+    sm.set_stop()
+
+    # S2: flat, t=10.5, air
+    sm.add_surface([0, 10.5, 'air'], sd=74.922466)
+
+    # S3: R=-2022, t=9.9, N-BK7, "dec and return" alpha=5.4
+    dec_s3 = DecenterData('dec and return')
+    dec_s3.euler[0] = 5.4
+    dec_s3.update()
+    sm.add_surface([-2022, 9.9, 'N-BK7', 'Schott'], sd=74.812074)
+    sm.ifcs[sm.cur_surface].decenter = dec_s3
+
+    # S4: flat, t=1140, air, "dec and return" alpha=5.4, offsetY=1.5
+    dec_s4 = DecenterData('dec and return')
+    dec_s4.euler[0] = 5.4
+    dec_s4.dec[1] = 1.5
+    dec_s4.update()
+    sm.add_surface([0, 1140, 'air'], sd=74.868647)
+    sm.ifcs[sm.cur_surface].decenter = dec_s4
+
+    # S5: R=-2404.5, t=-1050, REFL, "bend" alpha=3
+    dec_s5 = DecenterData('bend')
+    dec_s5.euler[0] = 3.0
+    dec_s5.update()
+    sm.add_surface([-2404.5, -1050, 'REFL'], sd=84.762317)
+    sm.ifcs[sm.cur_surface].decenter = dec_s5
+
+    # S6: flat, t=153.195342, REFL, "bend" alpha=-48
+    dec_s6 = DecenterData('bend')
+    dec_s6.euler[0] = -48.0
+    dec_s6.update()
+    sm.add_surface([0, 153.195342, 'REFL'], sd=19.846683)
+    sm.ifcs[sm.cur_surface].decenter = dec_s6
+
+    # Image surface: R=2600, "bend" alpha=5.66
+    dec_img = DecenterData('bend')
+    dec_img.euler[0] = 5.66
+    dec_img.update()
+    sm.ifcs[-1].profile.cv = 1.0 / 2600.0
+    sm.ifcs[-1].decenter = dec_img
+
+    opm.update_model()
+    return opm
+
+
+class TestTiltedSystemZernike:
+    """Tests for Zernike analysis on tilted Houghton-Herschel system.
+
+    The tilted Houghton-Herschel is a well-corrected system (~0.13 waves P-V
+    at 546nm on-axis). These tests verify that Zernike coefficients are
+    reasonable and bounded, catching the paraxial exp_radius blowup bug.
+    """
+
+    def test_on_axis_pv_wfe_reasonable(self, tilted_houghton):
+        """P-V WFE should be < 1 wave (known ~0.13 waves at 546nm)."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(
+            tilted_houghton, field_index=0, wvl_index=2,
+        )
+        assert result['pv_wfe'] < 1.0, (
+            f"P-V WFE = {result['pv_wfe']} waves, expected < 1.0"
+        )
+
+    def test_on_axis_rms_wfe_reasonable(self, tilted_houghton):
+        """RMS WFE should be < 0.5 waves (known ~0.055 waves)."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(
+            tilted_houghton, field_index=0, wvl_index=2,
+        )
+        assert result['rms_wfe'] < 0.5, (
+            f"RMS WFE = {result['rms_wfe']} waves, expected < 0.5"
+        )
+
+    def test_on_axis_zernike_coefficients_bounded(self, tilted_houghton):
+        """All Zernike coefficients should have |value| < 10 waves.
+
+        Catches the blowup bug where coefficients reach Z1=-65066.
+        """
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(
+            tilted_houghton, field_index=0, wvl_index=2,
+        )
+        for j, c in enumerate(result['coefficients'], 1):
+            assert abs(c) < 10.0, (
+                f"Z{j} = {c}, expected |value| < 10 waves"
+            )
+
+    def test_on_axis_strehl_ratio_high(self, tilted_houghton):
+        """Strehl > 0.9 (known ~0.97, proving the system is well-corrected)."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(
+            tilted_houghton, field_index=0, wvl_index=2,
+        )
+        assert result['strehl_ratio'] > 0.9, (
+            f"Strehl = {result['strehl_ratio']}, expected > 0.9"
+        )
