@@ -25,6 +25,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 - **Wavelength correction**: `RayGrid.focus_wavefront` internally uses `1/opm.nm_to_sys_units(central_wvl)`, so `rg.grid[2]` is already in waves at the central wavelength. An additional factor of `central_wvl / wavelength_nm` converts to waves at the traced wavelength.
 - **Noll sign convention**: even j → positive m (cosine), odd j → negative m (sine).
 - **Exit pupil coordinates**: Zernike fitting uses exit pupil coordinates extracted from `RayGrid.grid_pkg[1]` (the `upd_grid`), where `wave_abr_pre_calc_finite_pup` already computes `p_coord` (the EIC expansion point relative to the chief ray's exit pupil point). `_extract_exit_pupil_grid` normalizes by `fod.exp_radius`. This matches the convention used by OSLO and other commercial optics software.
+- **Vignetting**: `RayGrid` is created with `apply_vignetting=True` so vignetted rays (those that don't reach the image plane at off-axis fields) are excluded from the OPD grid. `check_apertures=True` (already the default) ensures rays blocked by apertures are clipped. Both are set explicitly for clarity.
 - **NaN handling**: vignetted rays produce NaN in the OPD grid; these are filtered before fitting.
 - **Pupil mask**: only points with rho ≤ 1.0 are used in the fit.
 

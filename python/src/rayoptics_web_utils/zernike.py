@@ -190,7 +190,15 @@ def get_zernike_coefficients(
 
     wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]
 
-    rg = RayGrid(opm, f=field_index, wl=wavelength_nm, foc=0, num_rays=num_rays)
+    rg = RayGrid(
+        opm,
+        f=field_index,
+        wl=wavelength_nm,
+        foc=0,
+        num_rays=num_rays,
+        check_apertures=True,
+        apply_vignetting=True,
+    )
 
     grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)
 
