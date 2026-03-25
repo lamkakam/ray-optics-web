@@ -6,6 +6,17 @@ import pytest
 from rayoptics_web_utils.setup import init
 
 
+def _noll_forward(n: int, m: int) -> int:
+    """Maple Noll(n, m): compute Noll index j from (n, m)."""
+    base = n * (n + 1) // 2 + abs(m)
+    if m >= 0 and n % 4 in (2, 3):
+        return base + 1
+    elif m <= 0 and n % 4 in (0, 1):
+        return base + 1
+    else:
+        return base
+
+
 @pytest.fixture(scope="module", autouse=True)
 def setup_env():
     """Run init() once before all tests in this module."""
@@ -72,6 +83,15 @@ class TestNollToNm:
     def test_known_conversions(self, j, expected):
         from rayoptics_web_utils.zernike import noll_to_nm
         assert noll_to_nm(j) == expected
+
+    def test_round_trip_via_maple_formula(self):
+        from rayoptics_web_utils.zernike import noll_to_nm
+        for j in range(1, 231):  # covers n=0..20
+            n, m = noll_to_nm(j)
+            assert _noll_forward(n, m) == j, (
+                f"Round-trip failed for j={j}: noll_to_nm→({n},{m}), "
+                f"Noll({n},{m})={_noll_forward(n, m)}"
+            )
 
 
 class TestZernikeRadial:
