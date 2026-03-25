@@ -1,6 +1,6 @@
 import { expose } from "comlink";
 import { type OpticalModel, type SeidelData } from "../lib/opticalModel";
-import { type ZernikeData } from "../lib/zernikeData";
+import { type ZernikeData, type ZernikeOrdering } from "../lib/zernikeData";
 import { buildScript } from "../lib/pythonScript";
 
 declare function importScripts(...urls: string[]): void;
@@ -133,10 +133,11 @@ export async function _getZernikeCoefficients(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wvlIndex: number,
-  numTerms: number = 56,
+  numTerms: number = 37,
+  ordering: ZernikeOrdering = "noll",
 ): Promise<ZernikeData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}))`)
+    buildScript(opticalModel, (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}, ordering='${ordering}'))`)
   )) as string;
   return JSON.parse(json) as ZernikeData;
 }
@@ -177,8 +178,9 @@ export async function getZernikeCoefficients(
   fieldIndex: number,
   wvlIndex: number,
   numTerms?: number,
+  ordering?: ZernikeOrdering,
 ): Promise<ZernikeData> {
-  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, numTerms);
+  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, numTerms, ordering);
 }
 
 expose({

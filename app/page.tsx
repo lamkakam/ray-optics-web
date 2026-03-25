@@ -29,8 +29,8 @@ import { SettingsModal } from "@/components/composite/SettingsModal";
 import { PrivacyPolicyModal } from "@/components/composite/PrivacyPolicyModal";
 import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
 import { ZernikeTermsModal } from "@/components/composite/ZernikeTermsModal";
-import type { ZernikeData } from "@/lib/zernikeData";
-import { NUM_NOLL_TERMS } from "@/lib/zernikeData";
+import type { ZernikeData, ZernikeOrdering } from "@/lib/zernikeData";
+import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/lib/zernikeData";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
 import { useTheme } from "@/components/ThemeProvider";
@@ -125,10 +125,11 @@ export default function Home() {
   }, [committedSpecs.wavelengths.weights]);
 
   const handleFetchZernikeData = useCallback(
-    async (fieldIndex: number, wvlIndex: number): Promise<ZernikeData> => {
+    async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering): Promise<ZernikeData> => {
       if (!proxy) throw new Error("Pyodide not ready");
       if (!committedOpticalModel) throw new Error("No optical model computed yet");
-      return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, NUM_NOLL_TERMS);
+      const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
+      return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, numTerms, ordering);
     },
     [proxy, committedOpticalModel],
   );

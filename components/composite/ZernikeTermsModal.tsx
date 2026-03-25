@@ -10,17 +10,25 @@ import { Paragraph } from "@/components/micro/Paragraph";
 import { LoadingMask } from "@/components/micro/LoadingMask";
 import {
   type ZernikeData,
+  type ZernikeOrdering,
   NUM_NOLL_TERMS,
+  NUM_FRINGE_TERMS,
   nollToNm,
+  fringeToNm,
   zernikeNotation,
-  NOLL_CLASSICAL_NAMES,
+  classicalName,
 } from "@/lib/zernikeData";
+
+const ORDERING_OPTIONS: SelectOption[] = [
+  { value: "noll", label: "Noll" },
+  { value: "fringe", label: "Fringe" },
+];
 
 interface ZernikeTermsModalProps {
   readonly isOpen: boolean;
   readonly fieldOptions: readonly SelectOption[];
   readonly wavelengthOptions: readonly SelectOption[];
-  readonly onFetchData: (fieldIndex: number, wvlIndex: number) => Promise<ZernikeData>;
+  readonly onFetchData: (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => Promise<ZernikeData>;
   readonly onClose: () => void;
 }
 
@@ -33,6 +41,7 @@ export function ZernikeTermsModal({
 }: ZernikeTermsModalProps) {
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
   const [selectedWvlIndex, setSelectedWvlIndex] = useState(0);
+  const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("noll");
   const [data, setData] = useState<ZernikeData | undefined>();
   const [loading, setLoading] = useState(false);
   const requestCounter = useRef(0);
@@ -46,17 +55,18 @@ export function ZernikeTermsModal({
     setOpenCount((c) => c + 1);
     setSelectedFieldIndex(0);
     setSelectedWvlIndex(0);
+    setSelectedOrdering("noll");
   }
   if (!isOpen && prevIsOpen) {
     setPrevIsOpen(false);
   }
 
   const fetchData = useCallback(
-    (fieldIndex: number, wvlIndex: number) => {
+    (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => {
       requestCounter.current += 1;
       const requestId = requestCounter.current;
       setLoading(true);
-      onFetchData(fieldIndex, wvlIndex).then((result) => {
+      onFetchData(fieldIndex, wvlIndex, ordering).then((result) => {
         if (requestCounter.current === requestId) {
           setData(result);
           setLoading(false);
@@ -68,7 +78,7 @@ export function ZernikeTermsModal({
 
   useEffect(() => {
     if (openCount > 0) {
-      fetchData(0, 0); // eslint-disable-line react-hooks/set-state-in-effect
+      fetchData(0, 0, "noll"); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [openCount, fetchData]);
 
@@ -76,46 +86,59 @@ export function ZernikeTermsModal({
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const idx = Number(e.target.value);
       setSelectedFieldIndex(idx);
-      fetchData(idx, selectedWvlIndex);
+      fetchData(idx, selectedWvlIndex, selectedOrdering);
     },
-    [fetchData, selectedWvlIndex],
+    [fetchData, selectedWvlIndex, selectedOrdering],
   );
 
   const handleWvlChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const idx = Number(e.target.value);
       setSelectedWvlIndex(idx);
-      fetchData(selectedFieldIndex, idx);
+      fetchData(selectedFieldIndex, idx, selectedOrdering);
     },
-    [fetchData, selectedFieldIndex],
+    [fetchData, selectedFieldIndex, selectedOrdering],
   );
 
+  const handleOrderingChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const ord = e.target.value as ZernikeOrdering;
+      setSelectedOrdering(ord);
+      fetchData(selectedFieldIndex, selectedWvlIndex, ord);
+    },
+    [fetchData, selectedFieldIndex, selectedWvlIndex],
+  );
+
+  const numTerms = selectedOrdering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
+  const toNm = selectedOrdering === "noll" ? nollToNm : fringeToNm;
+  const firstColHeader = selectedOrdering === "noll" ? "Noll j" : "Fringe j";
+
   const headers = useMemo(
-    () => ["Noll j", "Notation", "Classical Name", "Non-normalized Term", "RMS Normalized Term (waves)"],
-    [],
+    () => [firstColHeader, "Notation", "Classical Name", "Non-normalized Term", "RMS Normalized Term (waves)"],
+    [firstColHeader],
   );
 
   const rows = useMemo(() => {
     if (!data) return [];
-    return Array.from({ length: NUM_NOLL_TERMS }, (_, i) => {
+    return Array.from({ length: numTerms }, (_, i) => {
       const j = i + 1;
-      const [n, m] = nollToNm(j);
+      const [n, m] = toNm(j);
       return [
         String(j),
         <MathJax key={j} inline>{zernikeNotation(n, m)}</MathJax>,
-        NOLL_CLASSICAL_NAMES[j] ?? "",
+        classicalName(n, m),
         data.coefficients[i].toFixed(6),
         data.rms_normalized_coefficients[i].toFixed(6),
       ];
     });
-  }, [data]);
+  }, [data, numTerms, toNm]);
 
   if (!isOpen) return null;
 
   return (
     <MathJaxContext>
       <Modal isOpen={isOpen} title="Zernike Terms" titleId="zernike-modal-title" size="4xl">
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-2">
           <div className="flex items-center gap-2">
             <Label htmlFor="zernike-field-select">Field</Label>
             <Select
@@ -133,6 +156,18 @@ export function ZernikeTermsModal({
               options={wavelengthOptions as SelectOption[]}
               value={selectedWvlIndex}
               onChange={handleWvlChange}
+              type="compact"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="zernike-ordering-select">Ordering</Label>
+            <Select
+              id="zernike-ordering-select"
+              options={ORDERING_OPTIONS}
+              value={selectedOrdering}
+              onChange={handleOrderingChange}
               type="compact"
             />
           </div>

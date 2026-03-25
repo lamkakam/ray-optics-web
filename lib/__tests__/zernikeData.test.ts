@@ -1,10 +1,13 @@
 import {
   nollToNm,
-  NOLL_CLASSICAL_NAMES,
+  fringeToNm,
+  CLASSICAL_NAMES,
+  classicalName,
   zernikeNotation,
   NUM_NOLL_TERMS,
+  NUM_FRINGE_TERMS,
 } from "../zernikeData";
-import type { ZernikeData } from "../zernikeData";
+import type { ZernikeData, ZernikeOrdering } from "../zernikeData";
 
 describe("nollToNm", () => {
   it("returns (0, 0) for j=1 (Piston)", () => {
@@ -52,57 +55,103 @@ describe("nollToNm", () => {
   });
 });
 
-describe("NOLL_CLASSICAL_NAMES", () => {
-  it("has entries for j=1 through j=56", () => {
+describe("CLASSICAL_NAMES and classicalName", () => {
+  it("has entries for all 56 Noll (n,m) pairs", () => {
     for (let j = 1; j <= NUM_NOLL_TERMS; j++) {
-      expect(NOLL_CLASSICAL_NAMES[j]).toBeDefined();
-      expect(typeof NOLL_CLASSICAL_NAMES[j]).toBe("string");
-      expect(NOLL_CLASSICAL_NAMES[j].length).toBeGreaterThan(0);
+      const [n, m] = nollToNm(j);
+      expect(CLASSICAL_NAMES[`${n},${m}`]).toBeDefined();
+      expect(typeof CLASSICAL_NAMES[`${n},${m}`]).toBe("string");
+      expect(CLASSICAL_NAMES[`${n},${m}`].length).toBeGreaterThan(0);
     }
   });
 
-  it("maps j=1 to Piston", () => {
-    expect(NOLL_CLASSICAL_NAMES[1]).toBe("Piston");
+  it("classicalName(0, 0) returns Piston", () => {
+    expect(classicalName(0, 0)).toBe("Piston");
   });
 
-  it("maps j=4 to Defocus", () => {
-    expect(NOLL_CLASSICAL_NAMES[4]).toBe("Defocus");
+  it("classicalName(2, 0) returns Defocus", () => {
+    expect(classicalName(2, 0)).toBe("Defocus");
   });
 
-  it("maps j=7 to Vertical Coma", () => {
-    expect(NOLL_CLASSICAL_NAMES[7]).toBe("Vertical Coma");
+  it("classicalName(3, -1) returns Vertical Coma", () => {
+    expect(classicalName(3, -1)).toBe("Vertical Coma");
   });
 
-  it("maps j=8 to Horizontal Coma", () => {
-    expect(NOLL_CLASSICAL_NAMES[8]).toBe("Horizontal Coma");
+  it("classicalName(3, 1) returns Horizontal Coma", () => {
+    expect(classicalName(3, 1)).toBe("Horizontal Coma");
   });
 
-  it("maps j=2 to Tilt X (m>0, cos term)", () => {
-    expect(NOLL_CLASSICAL_NAMES[2]).toBe("Tilt X");
+  it("classicalName(1, 1) returns Tilt X (m>0, cos term)", () => {
+    expect(classicalName(1, 1)).toBe("Tilt X");
   });
 
-  it("maps j=3 to Tilt Y (m<0, sin term)", () => {
-    expect(NOLL_CLASSICAL_NAMES[3]).toBe("Tilt Y");
+  it("classicalName(1, -1) returns Tilt Y (m<0, sin term)", () => {
+    expect(classicalName(1, -1)).toBe("Tilt Y");
   });
 
-  it("maps j=6 to Vertical Astigmatism", () => {
-    expect(NOLL_CLASSICAL_NAMES[6]).toBe("Vertical Astigmatism");
+  it("classicalName(2, 2) returns Vertical Astigmatism", () => {
+    expect(classicalName(2, 2)).toBe("Vertical Astigmatism");
   });
 
-  it("maps j=16 to Secondary Coma X (m>0, cos term)", () => {
-    expect(NOLL_CLASSICAL_NAMES[16]).toBe("Secondary Coma X");
+  it("classicalName(5, 1) returns Secondary Coma X (m>0, cos term)", () => {
+    expect(classicalName(5, 1)).toBe("Secondary Coma X");
   });
 
-  it("maps j=17 to Secondary Coma Y (m<0, sin term)", () => {
-    expect(NOLL_CLASSICAL_NAMES[17]).toBe("Secondary Coma Y");
+  it("classicalName(5, -1) returns Secondary Coma Y (m<0, sin term)", () => {
+    expect(classicalName(5, -1)).toBe("Secondary Coma Y");
   });
 
-  it("maps j=37 to Tertiary Spherical", () => {
-    expect(NOLL_CLASSICAL_NAMES[37]).toBe("Tertiary Spherical");
+  it("classicalName(8, 0) returns Tertiary Spherical", () => {
+    expect(classicalName(8, 0)).toBe("Tertiary Spherical");
   });
 
-  it("maps j=56 to Quaternary Spherical", () => {
-    expect(NOLL_CLASSICAL_NAMES[56]).toBe("Quaternary Spherical");
+  it("classicalName(10, 0) returns Quaternary Spherical", () => {
+    expect(classicalName(10, 0)).toBe("Quaternary Spherical");
+  });
+
+  it("classicalName returns empty string for unknown (n,m)", () => {
+    expect(classicalName(99, 1)).toBe("");
+  });
+});
+
+describe("fringeToNm", () => {
+  it("returns [0, 0] for j=1 (Piston)", () => {
+    expect(fringeToNm(1)).toEqual([0, 0]);
+  });
+
+  it("returns [1, 1] for j=2", () => {
+    expect(fringeToNm(2)).toEqual([1, 1]);
+  });
+
+  it("returns [1, -1] for j=3", () => {
+    expect(fringeToNm(3)).toEqual([1, -1]);
+  });
+
+  it("returns [2, 0] for j=4", () => {
+    expect(fringeToNm(4)).toEqual([2, 0]);
+  });
+
+  it("returns [2, 2] for j=5 (differs from Noll j=5 which is [2,-2])", () => {
+    expect(fringeToNm(5)).toEqual([2, 2]);
+  });
+
+  it("returns [4, 0] for j=9 (differs from Noll j=9 which is [3,-3])", () => {
+    expect(fringeToNm(9)).toEqual([4, 0]);
+  });
+});
+
+describe("NUM_FRINGE_TERMS", () => {
+  it("equals 37", () => {
+    expect(NUM_FRINGE_TERMS).toBe(37);
+  });
+});
+
+describe("ZernikeOrdering type", () => {
+  it("accepts noll and fringe values", () => {
+    const noll: ZernikeOrdering = "noll";
+    const fringe: ZernikeOrdering = "fringe";
+    expect(noll).toBe("noll");
+    expect(fringe).toBe("fringe");
   });
 });
 
