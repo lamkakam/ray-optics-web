@@ -15,6 +15,11 @@ _LAZY_IMPORTS = {
     'plot_opd_fan': 'rayoptics_web_utils.plotting',
     'plot_spot_diagram': 'rayoptics_web_utils.plotting',
     'plot_surface_by_surface_3rd_order_aberr': 'rayoptics_web_utils.plotting',
+    # focusing
+    'focus_by_mono_rms_spot': 'rayoptics_web_utils.focusing',
+    'focus_by_mono_strehl':    'rayoptics_web_utils.focusing',
+    'focus_by_poly_rms_spot':  'rayoptics_web_utils.focusing',
+    'focus_by_poly_strehl':    'rayoptics_web_utils.focusing',
 }
 
 
