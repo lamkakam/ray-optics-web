@@ -271,6 +271,35 @@ describe("ZernikeTermsModal", () => {
     expect(rows.length).toBe(NUM_FRINGE_TERMS + 1);
   });
 
+  it("does not crash when switching back to Noll while stale Fringe data (37 coefficients) is still in state", async () => {
+    const fringeData: ZernikeData = {
+      ...mockZernikeData,
+      coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.001),
+      rms_normalized_coefficients: Array.from({ length: NUM_FRINGE_TERMS }, (_, i) => (i + 1) * 0.0005),
+      num_terms: NUM_FRINGE_TERMS,
+    };
+    // Open with Noll data, switch to Fringe (returns fringe data), then switch back to Noll
+    // but block the third fetch so stale Fringe data remains while numTerms=56
+    const onFetchData = jest.fn()
+      .mockResolvedValueOnce(mockZernikeData)  // initial open
+      .mockResolvedValueOnce(fringeData)        // switch to Fringe
+      .mockReturnValue(new Promise(() => {}));  // switch back to Noll — never resolves
+
+    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+
+    const orderingSelect = screen.getByLabelText("Ordering");
+    await userEvent.selectOptions(orderingSelect, "fringe");
+    await waitFor(() => expect(screen.getByRole("columnheader", { name: "Fringe j" })).toBeInTheDocument());
+
+    // Switch back to Noll — stale Fringe data (37 coefficients) stays, numTerms becomes 56
+    await userEvent.selectOptions(orderingSelect, "noll");
+
+    // Must not throw; table still renders (with stale data clamped to 37 rows) + loading mask
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByTestId("loading-mask")).toBeInTheDocument();
+  });
+
   it("re-open resets ordering to noll", async () => {
     const onFetchData = createMockFetchData();
     const { rerender } = render(
