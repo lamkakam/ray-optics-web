@@ -125,7 +125,7 @@ export function ZernikeTermsModal({
       const [n, m] = toNm(j);
       return [
         String(j),
-        <MathJax key={j} inline>{zernikeNotation(n, m)}</MathJax>,
+        <MathJax key={`${n}-${m}`} inline>{zernikeNotation(n, m)}</MathJax>,
         classicalName(n, m),
         data.coefficients[i].toFixed(6),
         data.rms_normalized_coefficients[i].toFixed(6),
