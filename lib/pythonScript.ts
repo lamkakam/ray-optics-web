@@ -73,7 +73,7 @@ sm.ifcs[-1].profile.r = ${imageCurvatureRadius}
 ${imageDecenterCommands}
 
 opm.update_model()
-apply_paraxial_vignetting(opm)`;
+set_vig(opm)`;
 }
 
 export function buildScript(
@@ -93,7 +93,7 @@ export function buildExportScript(opticalModel: OpticalModel) {
   const scriptForImporting = `
 isdark = False
 from rayoptics.environment import *
-from rayoptics.raytr.trace import apply_paraxial_vignetting
+from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 from opticalglass.rindexinfo import create_material
 

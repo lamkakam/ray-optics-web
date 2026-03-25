@@ -49,7 +49,7 @@ caf2 = _rwu_init_result['caf2']
 
 import json
 from rayoptics.environment import *
-from rayoptics.raytr.trace import apply_paraxial_vignetting
+from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 
 from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data

@@ -17,7 +17,7 @@ def cooke_triplet():
     """Build a configured Cooke Triplet (Sasian Triplet) optical model."""
     from rayoptics.environment import OpticalModel
     from rayoptics.raytr.opticalspec import PupilSpec, FieldSpec, WvlSpec
-    from rayoptics.raytr.trace import apply_paraxial_vignetting
+    from rayoptics.raytr.vigcalc import set_vig
 
     opm = OpticalModel()
     osp = opm['optical_spec']
@@ -38,7 +38,7 @@ def cooke_triplet():
     sm.add_surface([-20.4942, 41.2365, "air"], sd=8.3321)
     sm.ifcs[-1].profile.r = 0
     opm.update_model()
-    apply_paraxial_vignetting(opm)
+    set_vig(opm)
     return opm
 
 

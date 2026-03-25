@@ -154,6 +154,12 @@ describe("buildOpticalModelScript", () => {
     const script = buildOpticalModelScript(baseModel);
     expect(script).toContain("opm.update_model()");
   });
+
+  it("should call set_vig(opm) for real ray tracing vignetting", () => {
+    const script = buildOpticalModelScript(baseModel);
+    expect(script).toContain("set_vig(opm)");
+    expect(script).not.toContain("apply_paraxial_vignetting");
+  });
 });
 
 describe("buildScript", () => {
