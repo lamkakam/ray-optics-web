@@ -56,7 +56,7 @@ def _spot_fn(p, wi, ray_pkg, fld, wvl, foc):
 # ---------------------------------------------------------------------------
 
 def _compute_mono_rms_spot(opm, fi_list: list[int], num_rays: int) -> float:
-    """Compute mean monochromatic RMS spot radius over given field indices."""
+    """Compute quadratic mean of per-field monochromatic RMS spot radii over given field indices."""
     sm = opm['seq_model']
     osp = opm['optical_spec']
     central_wvl = osp['wvls'].central_wvl
@@ -77,11 +77,11 @@ def _compute_mono_rms_spot(opm, fi_list: list[int], num_rays: int) -> float:
         rms = float(np.sqrt(np.mean(xs**2 + ys**2)))
         rms_values.append(rms)
 
-    return float(np.mean(rms_values))
+    return float(np.sqrt(np.mean(np.array(rms_values)**2)))
 
 
 def _compute_poly_rms_spot(opm, fi_list: list[int], num_rays: int) -> float:
-    """Compute mean polychromatic (spectrally weighted) RMS spot radius."""
+    """Compute quadratic mean of per-field polychromatic (spectrally weighted) RMS spot radii."""
     sm = opm['seq_model']
     osp = opm['optical_spec']
     spectral_wts = osp['wvls'].spectral_wts
@@ -107,10 +107,10 @@ def _compute_poly_rms_spot(opm, fi_list: list[int], num_rays: int) -> float:
             wl_weights.append(w)
 
         total_w = sum(wl_weights)
-        weighted_rms = sum(r * w for r, w in zip(wl_rms_values, wl_weights)) / total_w
+        weighted_rms = np.sqrt(sum(r**2 * w for r, w in zip(wl_rms_values, wl_weights)) / total_w)
         field_rms_values.append(weighted_rms)
 
-    return float(np.mean(field_rms_values))
+    return float(np.sqrt(np.mean(np.array(field_rms_values)**2)))
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@ def _opd_wfe(opd_grid: np.ndarray) -> float:
 
 
 def _compute_mono_wfe(opm, fi_list: list[int], num_rays: int) -> float:
-    """Mean monochromatic RMS WFE over given field indices (smooth focusing objective)."""
+    """Quadratic mean of per-field monochromatic RMS WFE over given field indices (smooth focusing objective)."""
     from rayoptics.raytr.analyses import RayGrid
 
     osp = opm['optical_spec']
@@ -148,11 +148,11 @@ def _compute_mono_wfe(opm, fi_list: list[int], num_rays: int) -> float:
         grid = _extract_exit_pupil_grid(rg, opm, central_wvl)
         wfe_values.append(_opd_wfe(grid[2]))
 
-    return float(np.mean(wfe_values))
+    return float(np.sqrt(np.mean(np.array(wfe_values)**2)))
 
 
 def _compute_poly_wfe(opm, fi_list: list[int], num_rays: int) -> float:
-    """Mean polychromatic (spectrally weighted) RMS WFE (smooth focusing objective)."""
+    """Quadratic mean of per-field polychromatic (spectrally weighted) RMS WFE (smooth focusing objective)."""
     from rayoptics.raytr.analyses import RayGrid
 
     osp = opm['optical_spec']
@@ -174,10 +174,10 @@ def _compute_poly_wfe(opm, fi_list: list[int], num_rays: int) -> float:
             wl_weights.append(w)
 
         total_w = sum(wl_weights)
-        weighted_wfe = sum(e * w for e, w in zip(wl_wfe, wl_weights)) / total_w
+        weighted_wfe = np.sqrt(sum(e**2 * w for e, w in zip(wl_wfe, wl_weights)) / total_w)
         field_wfe_values.append(weighted_wfe)
 
-    return float(np.mean(field_wfe_values))
+    return float(np.sqrt(np.mean(np.array(field_wfe_values)**2)))
 
 
 def _compute_mono_strehl(opm, fi_list: list[int], num_rays: int) -> float:

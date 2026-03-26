@@ -54,6 +54,18 @@ return {'delta_thi': result.x, 'metric_value': <final metric>}
 `delta_thi` in the return value is always relative to `thi_0` (the value of `sm.gaps[-1].thi`
 at call time), consistent with callers and existing tests.
 
+## RMS aggregation across fields
+
+Per-field RMS values are combined using the **quadratic mean** (`sqrt(mean(x²))`), not the
+arithmetic mean. This correctly preserves the energy interpretation: arithmetic mean of RMS
+values underestimates the true combined RMS when values differ across fields.
+
+The spectral weighting within `_compute_poly_*` functions also uses quadratic weighting:
+`sqrt(sum(r² * w) / total_w)` rather than `sum(r * w) / total_w`.
+
+Strehl values (in `_compute_mono_strehl` and `_compute_poly_strehl`) use **arithmetic mean**
+over fields — this is standard practice for Strehl ratios and is unchanged.
+
 ## Strehl optimization note
 
 The exact Strehl formula `|mean(exp(i·2π·W))|²` produces a sinc-squared landscape
@@ -69,11 +81,11 @@ The Strehl-based functions therefore:
 | `_get_paraxial_bfl(opm)` | `float` (mm) | all 4 (BFL-centering) |
 | `_resolve_field_indices(opm, field_indices)` | `list[int]` | all 4 |
 | `_spot_fn(p, wi, ray_pkg, fld, wvl, foc)` | `ndarray \| None` | RMS spot helpers |
-| `_compute_mono_rms_spot(opm, fi_list, num_rays)` | `float` (mm) | `focus_by_mono_rms_spot` |
-| `_compute_poly_rms_spot(opm, fi_list, num_rays)` | `float` (mm) | `focus_by_poly_rms_spot` |
+| `_compute_mono_rms_spot(opm, fi_list, num_rays)` | `float` (mm) — quadratic mean over fields | `focus_by_mono_rms_spot` |
+| `_compute_poly_rms_spot(opm, fi_list, num_rays)` | `float` (mm) — quadratic mean over fields of spectrally weighted RMS | `focus_by_poly_rms_spot` |
 | `_opd_wfe(opd_grid)` | `float` (waves, std) | WFE helpers |
-| `_compute_mono_wfe(opm, fi_list, num_rays)` | `float` (waves) | `focus_by_mono_strehl` objective |
-| `_compute_poly_wfe(opm, fi_list, num_rays)` | `float` (waves) | `focus_by_poly_strehl` objective |
+| `_compute_mono_wfe(opm, fi_list, num_rays)` | `float` (waves) — quadratic mean over fields | `focus_by_mono_strehl` objective |
+| `_compute_poly_wfe(opm, fi_list, num_rays)` | `float` (waves) — quadratic mean over fields of spectrally weighted WFE | `focus_by_poly_strehl` objective |
 | `_compute_mono_strehl(opm, fi_list, num_rays)` | `float` ∈ [0,1] | `focus_by_mono_strehl` reporting + tests |
 | `_compute_poly_strehl(opm, fi_list, num_rays)` | `float` ∈ [0,1] | `focus_by_poly_strehl` reporting + tests |
 

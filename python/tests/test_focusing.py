@@ -1,6 +1,7 @@
 """Tests for rayoptics_web_utils.focusing module."""
 
 import json
+import numpy as np
 import pytest
 from rayoptics_web_utils.setup import init
 
@@ -262,6 +263,68 @@ class TestFocusingFromLargeDefocus:
         bfl = float(opm['analysis_results']['parax_data'].fod.bfl)
         focus_by_poly_strehl(opm)
         assert abs(sm.gaps[-1].thi - bfl) < 1.0
+
+
+class TestRmsAggregationUsesQuadraticMean:
+    """Tests that multi-field RMS aggregation uses quadratic mean (not arithmetic mean)."""
+
+    def test_mono_rms_spot_multi_field_is_quadratic_mean(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.focusing import _compute_mono_rms_spot
+        opm = fresh_cooke_triplet
+        v0 = _compute_mono_rms_spot(opm, [0], num_rays=21)
+        v1 = _compute_mono_rms_spot(opm, [1], num_rays=21)
+        v2 = _compute_mono_rms_spot(opm, [2], num_rays=21)
+        expected_quadratic = float(np.sqrt(np.mean(np.array([v0, v1, v2])**2)))
+        expected_arithmetic = float(np.mean([v0, v1, v2]))
+        result = _compute_mono_rms_spot(opm, [0, 1, 2], num_rays=21)
+        assert result == pytest.approx(expected_quadratic, rel=1e-6)
+        assert result != pytest.approx(expected_arithmetic, rel=1e-6)
+
+    def test_poly_rms_spot_multi_field_is_quadratic_mean(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.focusing import _compute_poly_rms_spot
+        opm = fresh_cooke_triplet
+        v0 = _compute_poly_rms_spot(opm, [0], num_rays=21)
+        v1 = _compute_poly_rms_spot(opm, [1], num_rays=21)
+        v2 = _compute_poly_rms_spot(opm, [2], num_rays=21)
+        expected_quadratic = float(np.sqrt(np.mean(np.array([v0, v1, v2])**2)))
+        expected_arithmetic = float(np.mean([v0, v1, v2]))
+        result = _compute_poly_rms_spot(opm, [0, 1, 2], num_rays=21)
+        assert result == pytest.approx(expected_quadratic, rel=1e-6)
+        assert result != pytest.approx(expected_arithmetic, rel=1e-6)
+
+    def test_mono_wfe_multi_field_is_quadratic_mean(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.focusing import _compute_mono_wfe
+        opm = fresh_cooke_triplet
+        v0 = _compute_mono_wfe(opm, [0], num_rays=21)
+        v1 = _compute_mono_wfe(opm, [1], num_rays=21)
+        v2 = _compute_mono_wfe(opm, [2], num_rays=21)
+        expected_quadratic = float(np.sqrt(np.mean(np.array([v0, v1, v2])**2)))
+        expected_arithmetic = float(np.mean([v0, v1, v2]))
+        result = _compute_mono_wfe(opm, [0, 1, 2], num_rays=21)
+        assert result == pytest.approx(expected_quadratic, rel=1e-6)
+        assert result != pytest.approx(expected_arithmetic, rel=1e-6)
+
+    def test_poly_wfe_multi_field_is_quadratic_mean(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.focusing import _compute_poly_wfe
+        opm = fresh_cooke_triplet
+        v0 = _compute_poly_wfe(opm, [0], num_rays=21)
+        v1 = _compute_poly_wfe(opm, [1], num_rays=21)
+        v2 = _compute_poly_wfe(opm, [2], num_rays=21)
+        expected_quadratic = float(np.sqrt(np.mean(np.array([v0, v1, v2])**2)))
+        expected_arithmetic = float(np.mean([v0, v1, v2]))
+        result = _compute_poly_wfe(opm, [0, 1, 2], num_rays=21)
+        assert result == pytest.approx(expected_quadratic, rel=1e-6)
+        assert result != pytest.approx(expected_arithmetic, rel=1e-6)
+
+    def test_mono_strehl_multi_field_is_arithmetic_mean(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.focusing import _compute_mono_strehl
+        opm = fresh_cooke_triplet
+        v0 = _compute_mono_strehl(opm, [0], num_rays=21)
+        v1 = _compute_mono_strehl(opm, [1], num_rays=21)
+        v2 = _compute_mono_strehl(opm, [2], num_rays=21)
+        expected_arithmetic = float(np.mean([v0, v1, v2]))
+        result = _compute_mono_strehl(opm, [0, 1, 2], num_rays=21)
+        assert result == pytest.approx(expected_arithmetic, rel=1e-6)
 
 
 class TestFocusingEdgeCases:
