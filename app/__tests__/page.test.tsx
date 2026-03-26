@@ -495,7 +495,7 @@ describe("Home page", () => {
 
     it("example system dropdown has a max-width constraint on large screens", () => {
       render(<Home />);
-      const dropdown = screen.getByLabelText("Example system");
+      const dropdown = screen.getByLabelText("Example system").closest("div");
       expect(dropdown).toHaveClass("max-w-xs");
     });
   });
