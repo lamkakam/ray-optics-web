@@ -11,6 +11,7 @@ import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorS
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurerContainer";
 import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
+import { FocusingContainer } from "@/components/container/FocusingContainer";
 import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
 import {
   AnalysisPlotView,
@@ -287,8 +288,24 @@ export default function Home() {
           />
         ),
       },
+      {
+        id: "focusing",
+        label: "Focusing",
+        content: (
+          <FocusingContainer
+            lensStore={lensStore}
+            specsStore={specsStore}
+            proxy={proxy}
+            isReady={isReady}
+            computing={computing}
+            getOpticalModel={getOpticalModel}
+            onUpdateSystem={handleSubmit}
+            onError={() => setErrorModalOpen(true)}
+          />
+        ),
+      },
     ],
-    [specsStore, lensStore, getOpticalModel, handleImportJson, handleSubmit, isReady, computing]
+    [specsStore, lensStore, getOpticalModel, handleImportJson, handleSubmit, isReady, computing, proxy]
   );
 
   const errorModal = (

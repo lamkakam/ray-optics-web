@@ -1,5 +1,5 @@
 import { expose } from "comlink";
-import { type OpticalModel, type SeidelData } from "../lib/opticalModel";
+import { type OpticalModel, type SeidelData, type FocusingResult } from "../lib/opticalModel";
 import { type ZernikeData, type ZernikeOrdering } from "../lib/zernikeData";
 import { buildScript } from "../lib/pythonScript";
 
@@ -54,6 +54,7 @@ from rayoptics.elem.surface import DecenterData
 
 from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data
 from rayoptics_web_utils.plotting import plot_lens_layout, plot_ray_fan, plot_opd_fan, plot_spot_diagram, plot_surface_by_surface_3rd_order_aberr
+from rayoptics_web_utils.focusing import focus_by_mono_rms_spot, focus_by_mono_strehl, focus_by_poly_rms_spot, focus_by_poly_strehl
 `);
 }
 
@@ -78,7 +79,7 @@ export async function init(): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.4-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.5-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
   } catch (err) {
@@ -143,6 +144,51 @@ export async function _getZernikeCoefficients(
 }
 
 
+export async function _focusByMonoRmsSpot(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<FocusingResult> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(focus_by_mono_rms_spot(${opm}, field_indices=[${fieldIndex}]))`)
+  )) as string;
+  return JSON.parse(json) as FocusingResult;
+}
+
+export async function _focusByMonoStrehl(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<FocusingResult> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(focus_by_mono_strehl(${opm}, field_indices=[${fieldIndex}]))`)
+  )) as string;
+  return JSON.parse(json) as FocusingResult;
+}
+
+export async function _focusByPolyRmsSpot(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<FocusingResult> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(focus_by_poly_rms_spot(${opm}, field_indices=[${fieldIndex}]))`)
+  )) as string;
+  return JSON.parse(json) as FocusingResult;
+}
+
+export async function _focusByPolyStrehl(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<FocusingResult> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(focus_by_poly_strehl(${opm}, field_indices=[${fieldIndex}]))`)
+  )) as string;
+  return JSON.parse(json) as FocusingResult;
+}
+
+
 // ─── Public API (exposed via Comlink) ─────────────────────────────────────────
 
 export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>> {
@@ -183,6 +229,22 @@ export async function getZernikeCoefficients(
   return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, numTerms, ordering);
 }
 
+export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
+  return await _focusByMonoRmsSpot(requirePyodide(), opticalModel, fieldIndex);
+}
+
+export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
+  return await _focusByMonoStrehl(requirePyodide(), opticalModel, fieldIndex);
+}
+
+export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
+  return await _focusByPolyRmsSpot(requirePyodide(), opticalModel, fieldIndex);
+}
+
+export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
+  return await _focusByPolyStrehl(requirePyodide(), opticalModel, fieldIndex);
+}
+
 expose({
   init,
   getFirstOrderData,
@@ -193,4 +255,8 @@ expose({
   plotSurfaceBySurface3rdOrderAberr,
   get3rdOrderSeidelData,
   getZernikeCoefficients,
+  focusByMonoRmsSpot,
+  focusByMonoStrehl,
+  focusByPolyRmsSpot,
+  focusByPolyStrehl,
 });

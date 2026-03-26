@@ -78,6 +78,11 @@ export interface SeidelData {
   curvature: Record<string, number>;   // TCV, SCV, PCV
 }
 
+export interface FocusingResult {
+  delta_thi: number;
+  metric_value: number;
+}
+
 export interface AberrationTypeToLabel extends Record<string, ReactNode> {
   TSA: ReactNode;
   TCO: ReactNode;
