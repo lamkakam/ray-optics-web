@@ -18,6 +18,10 @@ interface PyodideWorkerAPI {
   plotSurfaceBySurface3rdOrderAberr(): Promise<string>;
   get3rdOrderSeidelData(): Promise<SeidelData>;
   getZernikeCoefficients(fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>;
+  focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
 }
 ```
 

@@ -49,6 +49,10 @@ const mockProxy = {
   plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
   getZernikeCoefficients: jest.fn<Promise<Record<string, unknown>>, [OpticalModel, number, number, number?]>().mockResolvedValue({}),
+  focusByMonoRmsSpot: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
+  focusByMonoStrehl: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
+  focusByPolyRmsSpot: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
+  focusByPolyStrehl: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
 } satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
 jest.mock("@/hooks/usePyodide", () => ({

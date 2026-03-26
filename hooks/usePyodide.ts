@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
-import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
+import type { OpticalModel, SeidelData, FocusingResult } from "@/lib/opticalModel";
 import type { ZernikeData, ZernikeOrdering } from "@/lib/zernikeData";
 import { createPyodideWorker } from "./createPyodideWorker";
 
@@ -16,6 +16,10 @@ export interface PyodideWorkerAPI {
   plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string>;
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
   getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
+  focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
 }
 
 // Singleton state — shared across all hook instances

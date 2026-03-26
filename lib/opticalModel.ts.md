@@ -7,6 +7,7 @@ Defines all core TypeScript domain types for the optical model, including system
 ## Exports
 - `OpticalModel`: interface for all information (system specs, surfaces, and aperture flag) needed for RayOptics. Includes `setAutoAperture: SetAutoApertureFlag`.
 - `SeidelData`: the shape of data from Rayoptics via the Pyodide worker for 3rd order Seidel aberrations.
+- `FocusingResult`: `{ delta_thi: number; metric_value: number }` — result returned by the 4 focusing functions in the worker.
 - `AberrationTypeToLabel`: interface for mapping keys in of `transverse`, `wavefront` and `curvature` of 3rd order Seidel aberrations data to labels for UI components.
 
 
