@@ -170,4 +170,36 @@ describe("Select", () => {
     render(<Select options={OPTIONS} aria-label="test" ref={ref} />);
     expect(ref.current).toBeInstanceOf(HTMLSelectElement);
   });
+
+  it("applies appearance-none to default variant", () => {
+    render(<Select options={OPTIONS} aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    expectClasses(el, cx.select.style.appearanceReset);
+  });
+
+  it("applies appearance-none to compact variant", () => {
+    render(<Select options={OPTIONS} type="compact" aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    expectClasses(el, cx.select.style.appearanceReset);
+  });
+
+  it("applies custom arrow right-padding to default variant", () => {
+    render(<Select options={OPTIONS} aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    expectClasses(el, cx.select.size.customArrowPadding);
+  });
+
+  it("applies custom arrow right-padding to compact variant", () => {
+    render(<Select options={OPTIONS} type="compact" aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    expectClasses(el, cx.select.size.customArrowPadding);
+  });
+
+  it("renders a wrapper div with relative and w-full classes", () => {
+    render(<Select options={OPTIONS} aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    const wrapper = el.parentElement!;
+    expect(wrapper).toHaveClass("relative");
+    expect(wrapper).toHaveClass("w-full");
+  });
 });

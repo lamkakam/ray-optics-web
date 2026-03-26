@@ -122,6 +122,7 @@ export const componentTokens = {
       compactWidth: "w-full",
       defaultWidth: "w-full",
       focusRingWidth: g.size.focusRingWidth,
+      customArrowPadding: "pr-8",
     },
     style: {
       compactBorderStyle: "border",
@@ -133,6 +134,7 @@ export const componentTokens = {
       transitionStyle: "transition",
       opacity: g.style.opacity,
       cursor: g.style.cursor,
+      appearanceReset: "appearance-none",
     },
   },
 
