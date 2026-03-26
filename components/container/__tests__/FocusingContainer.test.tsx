@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { FocusingContainer } from "@/components/container/FocusingContainer";
 import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
+import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { surfacesToGridRows } from "@/lib/gridTransform";
-import type { OpticalModel, OpticalSpecs } from "@/lib/opticalModel";
+import type { OpticalModel } from "@/lib/opticalModel";
 import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 
 const testSurfaces = {
@@ -31,23 +32,32 @@ const testSurfaces = {
   ],
 };
 
-const committedSpecs: OpticalSpecs = {
-  pupil: { space: "object", type: "epd", value: 25 },
-  field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
-  wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
-};
+function createTestSpecsStore() {
+  const store = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+  store.getState().setField({
+    space: "object",
+    type: "angle",
+    maxField: 20,
+    relativeFields: [0, 0.7, 1],
+  });
+  return store;
+}
 
-const testOpticalModel: OpticalModel = {
-  setAutoAperture: "manualAperture",
-  ...testSurfaces,
-  specs: committedSpecs,
-};
-
-function createTestStore() {
+function createTestLensStore() {
   const store = createStore<LensEditorState>(createLensEditorSlice);
   store.getState().setRows(surfacesToGridRows(testSurfaces));
   return store;
 }
+
+const testOpticalModel: OpticalModel = {
+  setAutoAperture: "manualAperture",
+  ...testSurfaces,
+  specs: {
+    pupil: { space: "object", type: "epd", value: 25 },
+    field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
+    wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
+  },
+};
 
 const focusingResult = { delta_thi: 0.5, metric_value: 0.01 };
 
@@ -76,14 +86,15 @@ describe("FocusingContainer", () => {
   });
 
   it("renders FocusingPanel (smoke test)", () => {
-    const store = createTestStore();
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
     render(
       <FocusingContainer
-        lensStore={store}
+        lensStore={lensStore}
+        specsStore={specsStore}
         proxy={makeMockProxy()}
         isReady={true}
         computing={false}
-        committedSpecs={committedSpecs}
         getOpticalModel={() => testOpticalModel}
         onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
         onError={jest.fn()}
@@ -93,14 +104,15 @@ describe("FocusingContainer", () => {
   });
 
   it("Focus button is disabled when isReady=false", () => {
-    const store = createTestStore();
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
     render(
       <FocusingContainer
-        lensStore={store}
+        lensStore={lensStore}
+        specsStore={specsStore}
         proxy={undefined}
         isReady={false}
         computing={false}
-        committedSpecs={committedSpecs}
         getOpticalModel={() => testOpticalModel}
         onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
         onError={jest.fn()}
@@ -110,14 +122,15 @@ describe("FocusingContainer", () => {
   });
 
   it("Focus button is disabled when computing=true", () => {
-    const store = createTestStore();
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
     render(
       <FocusingContainer
-        lensStore={store}
+        lensStore={lensStore}
+        specsStore={specsStore}
         proxy={makeMockProxy()}
         isReady={true}
         computing={true}
-        committedSpecs={committedSpecs}
         getOpticalModel={() => testOpticalModel}
         onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
         onError={jest.fn()}
@@ -127,16 +140,17 @@ describe("FocusingContainer", () => {
   });
 
   it("calls focusByMonoRmsSpot by default (mono + rmsSpot)", async () => {
-    const store = createTestStore();
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
     const proxy = makeMockProxy();
     const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
     render(
       <FocusingContainer
-        lensStore={store}
+        lensStore={lensStore}
+        specsStore={specsStore}
         proxy={proxy}
         isReady={true}
         computing={false}
-        committedSpecs={committedSpecs}
         getOpticalModel={() => testOpticalModel}
         onUpdateSystem={onUpdateSystem}
         onError={jest.fn()}
@@ -147,16 +161,17 @@ describe("FocusingContainer", () => {
   });
 
   it("calls onUpdateSystem after updating the store", async () => {
-    const store = createTestStore();
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
     const proxy = makeMockProxy();
     const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
     render(
       <FocusingContainer
-        lensStore={store}
+        lensStore={lensStore}
+        specsStore={specsStore}
         proxy={proxy}
         isReady={true}
         computing={false}
-        committedSpecs={committedSpecs}
         getOpticalModel={() => testOpticalModel}
         onUpdateSystem={onUpdateSystem}
         onError={jest.fn()}
@@ -167,16 +182,17 @@ describe("FocusingContainer", () => {
   });
 
   it("updates last surface thickness by delta_thi after focusing", async () => {
-    const store = createTestStore();
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
     const proxy = makeMockProxy();
     const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
     render(
       <FocusingContainer
-        lensStore={store}
+        lensStore={lensStore}
+        specsStore={specsStore}
         proxy={proxy}
         isReady={true}
         computing={false}
-        committedSpecs={committedSpecs}
         getOpticalModel={() => testOpticalModel}
         onUpdateSystem={onUpdateSystem}
         onError={jest.fn()}
@@ -186,7 +202,7 @@ describe("FocusingContainer", () => {
     await waitFor(() => expect(onUpdateSystem).toHaveBeenCalled());
 
     // Last surface was thickness=41.2365, delta_thi=0.5 → 41.7365
-    const rows = store.getState().rows;
+    const rows = lensStore.getState().rows;
     const lastSurface = [...rows].reverse().find((r) => r.kind === "surface");
     expect(lastSurface).toBeDefined();
     if (lastSurface && lastSurface.kind === "surface") {
@@ -195,18 +211,19 @@ describe("FocusingContainer", () => {
   });
 
   it("calls onError when proxy throws", async () => {
-    const store = createTestStore();
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
     const onError = jest.fn();
     const proxy = makeMockProxy({
       focusByMonoRmsSpot: jest.fn().mockRejectedValue(new Error("fail")),
     });
     render(
       <FocusingContainer
-        lensStore={store}
+        lensStore={lensStore}
+        specsStore={specsStore}
         proxy={proxy}
         isReady={true}
         computing={false}
-        committedSpecs={committedSpecs}
         getOpticalModel={() => testOpticalModel}
         onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
         onError={onError}
@@ -217,7 +234,8 @@ describe("FocusingContainer", () => {
   });
 
   it("shows LoadingOverlay while focusing", async () => {
-    const store = createTestStore();
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
     let resolveProxy!: () => void;
     const slowProxy = makeMockProxy({
       focusByMonoRmsSpot: jest.fn().mockImplementation(
@@ -229,11 +247,11 @@ describe("FocusingContainer", () => {
     const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
     render(
       <FocusingContainer
-        lensStore={store}
+        lensStore={lensStore}
+        specsStore={specsStore}
         proxy={slowProxy}
         isReady={true}
         computing={false}
-        committedSpecs={committedSpecs}
         getOpticalModel={() => testOpticalModel}
         onUpdateSystem={onUpdateSystem}
         onError={jest.fn()}
@@ -243,5 +261,55 @@ describe("FocusingContainer", () => {
     expect(screen.getByText("Focusing…")).toBeInTheDocument();
     resolveProxy();
     await waitFor(() => expect(screen.queryByText("Focusing…")).not.toBeInTheDocument());
+  });
+
+  it("field dropdown options sync with specsStore even before commit", async () => {
+    const lensStore = createTestLensStore();
+    const specsStore = createTestSpecsStore();
+    const { rerender } = render(
+      <FocusingContainer
+        lensStore={lensStore}
+        specsStore={specsStore}
+        proxy={makeMockProxy()}
+        isReady={true}
+        computing={false}
+        getOpticalModel={() => testOpticalModel}
+        onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+        onError={jest.fn()}
+      />
+    );
+
+    // Initial: maxField=20, fields=[0, 0.7, 1] → options "0.00°", "14.0°", "20.0°"
+    expect(screen.getByRole("option", { name: "0.00°" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "14.0°" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "20.0°" })).toBeInTheDocument();
+
+    // Update specsStore without committing
+    specsStore.getState().setField({
+      space: "object",
+      type: "angle",
+      maxField: 30,
+      relativeFields: [0, 1],
+    });
+
+    // Force re-render to pick up store changes
+    rerender(
+      <FocusingContainer
+        lensStore={lensStore}
+        specsStore={specsStore}
+        proxy={makeMockProxy()}
+        isReady={true}
+        computing={false}
+        getOpticalModel={() => testOpticalModel}
+        onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+        onError={jest.fn()}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("option", { name: "0.00°" })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "30.0°" })).toBeInTheDocument();
+      expect(screen.queryByRole("option", { name: "14.0°" })).not.toBeInTheDocument();
+    });
   });
 });

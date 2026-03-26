@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useStore } from "zustand";
 import type { StoreApi } from "zustand";
 import type { LensEditorState } from "@/store/lensEditorStore";
-import type { OpticalSpecs, OpticalModel } from "@/lib/opticalModel";
+import type { SpecsConfigurerState } from "@/store/specsConfigurerStore";
+import type { OpticalModel } from "@/lib/opticalModel";
 import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 import { FocusingPanel } from "@/components/composite/FocusingPanel";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
@@ -13,10 +15,10 @@ type Metric = "rmsSpot" | "wavefront";
 
 interface FocusingContainerProps {
   readonly lensStore: StoreApi<LensEditorState>;
+  readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly computing: boolean;
-  readonly committedSpecs: OpticalSpecs;
   readonly getOpticalModel: () => OpticalModel;
   readonly onUpdateSystem: () => Promise<void>;
   readonly onError: () => void;
@@ -24,10 +26,10 @@ interface FocusingContainerProps {
 
 export function FocusingContainer({
   lensStore,
+  specsStore,
   proxy,
   isReady,
   computing,
-  committedSpecs,
   getOpticalModel,
   onUpdateSystem,
   onError,
@@ -37,14 +39,17 @@ export function FocusingContainer({
   const [fieldIndex, setFieldIndex] = useState(0);
   const [focusing, setFocusing] = useState(false);
 
+  const relativeFields = useStore(specsStore, (s) => s.relativeFields);
+  const maxField = useStore(specsStore, (s) => s.maxField);
+  const fieldType = useStore(specsStore, (s) => s.fieldType);
+
   const fieldOptions = useMemo(() => {
-    const { fields, maxField, type } = committedSpecs.field;
-    const unit = type === "angle" ? "°" : " mm";
-    return fields.map((rf, i) => ({
+    const unit = fieldType === "angle" ? "°" : " mm";
+    return relativeFields.map((rf, i) => ({
       label: `${(rf * maxField).toPrecision(3)}${unit}`,
       value: i,
     }));
-  }, [committedSpecs.field]);
+  }, [relativeFields, maxField, fieldType]);
 
   const handleFocus = async () => {
     if (!proxy) return;

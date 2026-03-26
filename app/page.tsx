@@ -294,10 +294,10 @@ export default function Home() {
         content: (
           <FocusingContainer
             lensStore={lensStore}
+            specsStore={specsStore}
             proxy={proxy}
             isReady={isReady}
             computing={computing}
-            committedSpecs={committedSpecs}
             getOpticalModel={getOpticalModel}
             onUpdateSystem={handleSubmit}
             onError={() => setErrorModalOpen(true)}
@@ -305,7 +305,7 @@ export default function Home() {
         ),
       },
     ],
-    [specsStore, lensStore, getOpticalModel, handleImportJson, handleSubmit, isReady, computing, proxy, committedSpecs]
+    [specsStore, lensStore, getOpticalModel, handleImportJson, handleSubmit, isReady, computing, proxy]
   );
 
   const errorModal = (
