@@ -11,7 +11,7 @@ interface DecenterCellProps {
 
 export function DecenterCell({ isDecenterSet, onOpenModal }: DecenterCellProps) {
   return (
-    <Tooltip text="Click to open settings for Tilt and Decenter" position="top" portal>
+    <Tooltip text="Click to open settings for Tilt and Decenter" position="top" portal noTouch>
       <SetButton isSet={isDecenterSet} aria-label="Edit decenter and tilt" onClick={onOpenModal} />
     </Tooltip>
   );

@@ -144,11 +144,14 @@ describe("Select", () => {
     expect(screen.getByRole("combobox")).toHaveValue("c");
   });
 
-  it("merges extra className", () => {
-    render(<Select options={OPTIONS} aria-label="test" className="mb-2 w-full" />);
-    const el = screen.getByRole("combobox");
-    expect(el).toHaveClass("mb-2");
-    expect(el).toHaveClass("w-full");
+  it("merges extra className onto wrapper div", () => {
+    render(<Select options={OPTIONS} aria-label="test" className="mb-2 max-w-xs" />);
+    const wrapper = screen.getByRole("combobox").parentElement!;
+    expect(wrapper).toHaveClass("mb-2");
+    expect(wrapper).toHaveClass("max-w-xs");
+    // select itself should not have these classes
+    expect(screen.getByRole("combobox")).not.toHaveClass("mb-2");
+    expect(screen.getByRole("combobox")).not.toHaveClass("max-w-xs");
   });
 
   it("handles numeric option values", () => {
@@ -169,5 +172,37 @@ describe("Select", () => {
     const ref = createRef<HTMLSelectElement>();
     render(<Select options={OPTIONS} aria-label="test" ref={ref} />);
     expect(ref.current).toBeInstanceOf(HTMLSelectElement);
+  });
+
+  it("applies appearance-none to default variant", () => {
+    render(<Select options={OPTIONS} aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    expectClasses(el, cx.select.style.appearanceReset);
+  });
+
+  it("applies appearance-none to compact variant", () => {
+    render(<Select options={OPTIONS} type="compact" aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    expectClasses(el, cx.select.style.appearanceReset);
+  });
+
+  it("applies custom arrow right-padding to default variant", () => {
+    render(<Select options={OPTIONS} aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    expectClasses(el, cx.select.size.customArrowPadding);
+  });
+
+  it("applies custom arrow right-padding to compact variant", () => {
+    render(<Select options={OPTIONS} type="compact" aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    expectClasses(el, cx.select.size.customArrowPadding);
+  });
+
+  it("renders a wrapper div with relative and w-full classes", () => {
+    render(<Select options={OPTIONS} aria-label="test" />);
+    const el = screen.getByRole("combobox");
+    const wrapper = el.parentElement!;
+    expect(wrapper).toHaveClass("relative");
+    expect(wrapper).toHaveClass("w-full");
   });
 });

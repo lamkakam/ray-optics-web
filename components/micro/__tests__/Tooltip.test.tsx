@@ -91,6 +91,28 @@ describe("Tooltip", () => {
     expect(tip).not.toHaveClass("-translate-x-1/2");
   });
 
+  describe("noTouch prop", () => {
+    it("when noTouch is set, wrapper span has touch-action: none style", () => {
+      const { container } = render(
+        <Tooltip text="Help text" noTouch>
+          <button>Click me</button>
+        </Tooltip>,
+      );
+      const wrapper = container.firstChild as HTMLElement;
+      expect(wrapper.style.touchAction).toBe("none");
+    });
+
+    it("when noTouch is not set, wrapper span does not have touch-action: none style", () => {
+      const { container } = render(
+        <Tooltip text="Help text">
+          <button>Click me</button>
+        </Tooltip>,
+      );
+      const wrapper = container.firstChild as HTMLElement;
+      expect(wrapper.style.touchAction).not.toBe("none");
+    });
+  });
+
   describe("portal mode", () => {
     it("renders tooltip text in the document when portal is true", () => {
       render(

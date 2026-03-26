@@ -370,7 +370,7 @@ export default function Home() {
   const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
 
   const privacyPolicyButton = (
-    <Tooltip text="Privacy Policy" position="bottom">
+    <Tooltip text="Privacy Policy" position="bottom" noTouch>
       <Button
         variant="secondary"
         size="sm"
@@ -383,7 +383,7 @@ export default function Home() {
   );
 
   const settingButton = (
-    <Tooltip text="Settings" position="bottom">
+    <Tooltip text="Settings" position="bottom" noTouch>
       <Button
         variant="secondary"
         size="sm"
@@ -397,7 +397,7 @@ export default function Home() {
 
   const seidelButton = seidelData && (
     <div className={isLG ? undefined : "mb-2"}>
-      <Tooltip text="View 3rd-order Seidel aberration coefficients" position="bottom">
+      <Tooltip text="View 3rd-order Seidel aberration coefficients" position="bottom" noTouch>
         <Button variant="secondary" size="sm" aria-label="3rd Order Seidel Aberrations" onClick={() => setSeidelModalOpen(true)}>
           3rd Order Seidel Aberr.
         </Button>
@@ -415,7 +415,7 @@ export default function Home() {
 
   const zernikeButton = seidelData && (
     <div className={isLG ? undefined : "mb-2"}>
-      <Tooltip text="View Zernike polynomial coefficients" position="bottom">
+      <Tooltip text="View Zernike polynomial coefficients" position="bottom" noTouch>
         <Button variant="secondary" size="sm" aria-label="Zernike Terms" onClick={() => setZernikeModalOpen(true)}>
           Zernike Terms
         </Button>

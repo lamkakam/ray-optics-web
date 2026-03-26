@@ -20,7 +20,7 @@ export function GridRowButtons({
   return (
     <span className="flex items-center gap-2">
       {onAdd !== undefined && (
-        <Tooltip text={addLabel} portal>
+        <Tooltip text={addLabel} portal noTouch>
           <Button
             variant="secondary"
             size="sm"
@@ -35,7 +35,7 @@ export function GridRowButtons({
         </Tooltip>
       )}
       {onDelete !== undefined && (
-        <Tooltip text={deleteLabel} portal>
+        <Tooltip text={deleteLabel} portal noTouch>
           <Button
             variant="secondary"
             size="sm"

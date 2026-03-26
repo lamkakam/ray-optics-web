@@ -8,6 +8,7 @@ interface TooltipProps {
   readonly children: React.ReactNode;
   readonly position?: "top" | "bottom" | "top-start" | "start" | "no-transform";
   readonly portal?: boolean;
+  readonly noTouch?: boolean;
 }
 
 const baseClasses = clsx(
@@ -39,7 +40,7 @@ const portalBaseClasses = clsx(
 );
 
 
-export function Tooltip({ text, children, position = "top", portal = false }: TooltipProps) {
+export function Tooltip({ text, children, position = "top", portal = false, noTouch }: TooltipProps) {
   const triggerRef = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
@@ -83,6 +84,7 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
       <span
         ref={triggerRef}
         className="relative inline-flex"
+        style={noTouch ? { touchAction: "none" } : undefined}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={() => setVisible(false)}
       >
@@ -100,7 +102,7 @@ export function Tooltip({ text, children, position = "top", portal = false }: To
             : "";
 
   return (
-    <span className="group relative inline-flex">
+    <span className="group relative inline-flex" style={noTouch ? { touchAction: "none" } : undefined}>
       {children}
       <span
         role="tooltip"
