@@ -117,23 +117,23 @@ export function LensPrescriptionContainer({
       />
 
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
-        <Tooltip text="Compute and update the optical system" position="top-start" portal>
+        <Tooltip text="Compute and update the optical system" position="top-start" portal noTouch>
           <Button variant="primary" size={buttonSize} disabled={isUpdateSystemDisabled} onClick={onUpdateSystem} aria-label="Update System">Update System</Button>
         </Tooltip>
-        <Tooltip text="Load a previously downloaded config" position="top-start" portal>
+        <Tooltip text="Load a previously downloaded config" position="top-start" portal noTouch>
           <Button variant="primary" size={buttonSize} onClick={handleImportClick} aria-label="Load Config">Load Config</Button>
         </Tooltip>
-        <Tooltip text="Download current config as JSON" portal>
+        <Tooltip text="Download current config as JSON" portal noTouch>
           <Button variant="primary" size={buttonSize} onClick={handleExport} aria-label="Download Config">Download Config</Button>
         </Tooltip>
-        <Tooltip text="Generate a Python script" portal>
+        <Tooltip text="Generate a Python script" portal noTouch>
           <Button variant="secondary" size={buttonSize} onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
         </Tooltip>
       </div>
 
       <div className="mt-2 mb-2 flex items-center gap-2">
         <Label htmlFor="auto-aperture-toggle">Semi-diameter</Label>
-        <Tooltip text={autoAperture ? "Click to toggle off Auto semi-diameter" : "Click to toggle on Auto semi-diameter"}>
+        <Tooltip text={autoAperture ? "Click to toggle off Auto semi-diameter" : "Click to toggle on Auto semi-diameter"} noTouch>
           <Button
             id="auto-aperture-toggle"
             variant="secondary"

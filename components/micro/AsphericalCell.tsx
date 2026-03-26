@@ -11,7 +11,7 @@ interface AsphericalCellProps {
 
 export function AsphericalCell({ isAspherical, onOpenModal }: AsphericalCellProps) {
   return (
-    <Tooltip text="Click to set aspherical parameters" position="top" portal>
+    <Tooltip text="Click to set aspherical parameters" position="top" portal noTouch>
       <SetButton isSet={isAspherical} aria-label="Edit aspherical parameters" onClick={onOpenModal} />
     </Tooltip>
   );

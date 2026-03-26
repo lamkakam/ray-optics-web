@@ -10,7 +10,7 @@ interface MediumCellProps {
 
 export function MediumCell({ medium, onOpenModal }: MediumCellProps) {
   return (
-    <Tooltip text="Click to set medium or glass" position="top" portal>
+    <Tooltip text="Click to set medium or glass" position="top" portal noTouch>
       <button
         type="button"
         aria-label="Edit medium"

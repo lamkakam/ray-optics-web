@@ -12,6 +12,7 @@ interface TooltipProps {
   children: React.ReactNode;
   position?: "top" | "bottom" | "top-start" | "start" | "no-transform";
   portal?: boolean;
+  noTouch?: boolean;
 }
 ```
 
@@ -23,6 +24,7 @@ interface TooltipProps {
 | `children` | `React.ReactNode` | Yes | Trigger element |
 | `position` | `string` | No | Placement relative to trigger. Defaults to `"top"` |
 | `portal` | `boolean` | No | When `true`, renders via `createPortal` using fixed positioning. Required inside AG Grid cells. Defaults to `false` |
+| `noTouch` | `boolean` | No | When `true`, applies `touch-action: none` inline style to the wrapper span to suppress tooltip display on touch devices. Defaults to `false` |
 
 ## Internal State
 
@@ -34,6 +36,7 @@ interface TooltipProps {
 - **Non-portal mode**: uses CSS `group-hover:opacity-100` on an absolutely positioned `<span>`.
 - **Portal mode**: attaches `onMouseEnter`/`onMouseLeave` listeners, measures the trigger rect via `getBoundingClientRect`, and renders a fixed `<span>` at those coordinates.
 - `portal` must be `true` when the tooltip is rendered inside any element with `overflow: hidden` (e.g. AG Grid rows).
+- **`noTouch` mode**: applies `style={{ touchAction: "none" }}` to the wrapper span, preventing touch events from triggering tooltip display on touchscreen devices. Should be set on any `<Tooltip>` that wraps a clickable element (button, toggle, etc.).
 
 ## Usages
 

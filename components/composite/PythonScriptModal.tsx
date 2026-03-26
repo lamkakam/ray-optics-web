@@ -29,7 +29,7 @@ export function PythonScriptModal({ isOpen, script, onClose }: PythonScriptModal
           <pre className="text-xs font-mono whitespace-pre w-full"><code>{script}</code></pre>
         </div>
         <div className="absolute right-6 top-6">
-          <Tooltip text="Copy to clipboard" portal>
+          <Tooltip text="Copy to clipboard" portal noTouch>
             <Button variant="floating" aria-label="Copy to clipboard" onClick={handleCopy}>
               {copied ? "Copied!" : "Copy"}
             </Button>
