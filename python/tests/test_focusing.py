@@ -219,6 +219,51 @@ class TestFocusByPolyStrehl:
         assert bounds[0] <= result['delta_thi'] <= bounds[1]
 
 
+class TestFocusingFromLargeDefocus:
+    """Tests that focusing functions escape local minima when thi is far from BFL."""
+
+    def test_mono_rms_spot_escapes_large_defocus(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.focusing import focus_by_mono_rms_spot
+        opm = fresh_cooke_triplet
+        sm = opm['seq_model']
+        # Defocus by +20mm (well outside default ±5mm bounds)
+        sm.gaps[-1].thi += 20.0
+        opm.update_model()
+        bfl = float(opm['analysis_results']['parax_data'].fod.bfl)
+        focus_by_mono_rms_spot(opm)
+        assert abs(sm.gaps[-1].thi - bfl) < 1.0
+
+    def test_mono_strehl_escapes_large_defocus(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.focusing import focus_by_mono_strehl
+        opm = fresh_cooke_triplet
+        sm = opm['seq_model']
+        sm.gaps[-1].thi += 20.0
+        opm.update_model()
+        bfl = float(opm['analysis_results']['parax_data'].fod.bfl)
+        focus_by_mono_strehl(opm)
+        assert abs(sm.gaps[-1].thi - bfl) < 1.0
+
+    def test_poly_rms_spot_escapes_large_defocus(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.focusing import focus_by_poly_rms_spot
+        opm = fresh_cooke_triplet
+        sm = opm['seq_model']
+        sm.gaps[-1].thi += 20.0
+        opm.update_model()
+        bfl = float(opm['analysis_results']['parax_data'].fod.bfl)
+        focus_by_poly_rms_spot(opm)
+        assert abs(sm.gaps[-1].thi - bfl) < 1.0
+
+    def test_poly_strehl_escapes_large_defocus(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.focusing import focus_by_poly_strehl
+        opm = fresh_cooke_triplet
+        sm = opm['seq_model']
+        sm.gaps[-1].thi += 20.0
+        opm.update_model()
+        bfl = float(opm['analysis_results']['parax_data'].fod.bfl)
+        focus_by_poly_strehl(opm)
+        assert abs(sm.gaps[-1].thi - bfl) < 1.0
+
+
 class TestFocusingEdgeCases:
     """Edge case tests for focusing functions."""
 

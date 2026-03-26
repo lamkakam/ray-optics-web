@@ -26,6 +26,11 @@ import rayoptics.optical.model_constants as mc
 from rayoptics_web_utils.zernike import _extract_exit_pupil_grid, _monochromatic_strehl
 
 
+def _get_paraxial_bfl(opm) -> float:
+    """Return paraxial back focal length from first-order data."""
+    return float(opm['analysis_results']['parax_data'].fod.bfl)
+
+
 def _resolve_field_indices(opm, field_indices: list[int] | None) -> list[int]:
     """Return field indices to use; defaults to all fields."""
     if field_indices is not None:
@@ -260,13 +265,16 @@ def focus_by_mono_rms_spot(
     sm = opm['seq_model']
     thi_0 = sm.gaps[-1].thi
     fi_list = _resolve_field_indices(opm, field_indices)
+    bfl = _get_paraxial_bfl(opm)
+    initial_delta = bfl - thi_0
+    centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
 
     def objective(delta: float) -> float:
         sm.gaps[-1].thi = thi_0 + delta
         opm.update_model()
         return _compute_mono_rms_spot(opm, fi_list, num_rays)
 
-    result = minimize_scalar(objective, bounds=bounds, method='bounded')
+    result = minimize_scalar(objective, bounds=centered_bounds, method='bounded')
     sm.gaps[-1].thi = thi_0 + result.x
     opm.update_model()
     metric = _compute_mono_rms_spot(opm, fi_list, num_rays)
@@ -299,13 +307,16 @@ def focus_by_mono_strehl(
     sm = opm['seq_model']
     thi_0 = sm.gaps[-1].thi
     fi_list = _resolve_field_indices(opm, field_indices)
+    bfl = _get_paraxial_bfl(opm)
+    initial_delta = bfl - thi_0
+    centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
 
     def objective(delta: float) -> float:
         sm.gaps[-1].thi = thi_0 + delta
         opm.update_model()
         return _compute_mono_wfe(opm, fi_list, num_rays)  # minimize WFE (smooth)
 
-    result = minimize_scalar(objective, bounds=bounds, method='bounded')
+    result = minimize_scalar(objective, bounds=centered_bounds, method='bounded')
     sm.gaps[-1].thi = thi_0 + result.x
     opm.update_model()
     metric = _compute_mono_strehl(opm, fi_list, num_rays)  # report true Strehl
@@ -334,13 +345,16 @@ def focus_by_poly_rms_spot(
     sm = opm['seq_model']
     thi_0 = sm.gaps[-1].thi
     fi_list = _resolve_field_indices(opm, field_indices)
+    bfl = _get_paraxial_bfl(opm)
+    initial_delta = bfl - thi_0
+    centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
 
     def objective(delta: float) -> float:
         sm.gaps[-1].thi = thi_0 + delta
         opm.update_model()
         return _compute_poly_rms_spot(opm, fi_list, num_rays)
 
-    result = minimize_scalar(objective, bounds=bounds, method='bounded')
+    result = minimize_scalar(objective, bounds=centered_bounds, method='bounded')
     sm.gaps[-1].thi = thi_0 + result.x
     opm.update_model()
     metric = _compute_poly_rms_spot(opm, fi_list, num_rays)
@@ -374,13 +388,16 @@ def focus_by_poly_strehl(
     sm = opm['seq_model']
     thi_0 = sm.gaps[-1].thi
     fi_list = _resolve_field_indices(opm, field_indices)
+    bfl = _get_paraxial_bfl(opm)
+    initial_delta = bfl - thi_0
+    centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
 
     def objective(delta: float) -> float:
         sm.gaps[-1].thi = thi_0 + delta
         opm.update_model()
         return _compute_poly_wfe(opm, fi_list, num_rays)  # minimize WFE (smooth)
 
-    result = minimize_scalar(objective, bounds=bounds, method='bounded')
+    result = minimize_scalar(objective, bounds=centered_bounds, method='bounded')
     sm.gaps[-1].thi = thi_0 + result.x
     opm.update_model()
     metric = _compute_poly_strehl(opm, fi_list, num_rays)  # report true Strehl

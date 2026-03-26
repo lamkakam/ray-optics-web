@@ -25,26 +25,34 @@ All return `{'delta_thi': float, 'metric_value': float}`:
 | `opm` | `OpticalModel` | — | Mutated in place |
 | `field_indices` | `list[int] \| None` | `None` | Field indices; `None` = all fields |
 | `num_rays` | `int` | `21` | RayGrid / trace_grid resolution |
-| `bounds` | `tuple[float, float]` | `(-5.0, 5.0)` | Search range for `delta_thi` (mm) relative to current gap |
+| `bounds` | `tuple[float, float]` | `(-5.0, 5.0)` | Half-window around paraxial BFL for the `delta_thi` search (mm) |
 
 ## Algorithm
 
-All four use `scipy.optimize.minimize_scalar(method='bounded')`.
+All four use `scipy.optimize.minimize_scalar(method='bounded')`. The search window is
+**centered on the paraxial BFL** (not on `thi_0`) so the optimizer reaches the true focus
+even when the current image plane is far from focus.
 
 ```python
 sm = opm['seq_model']
 thi_0 = sm.gaps[-1].thi
+bfl = _get_paraxial_bfl(opm)          # paraxial back focal length
+initial_delta = bfl - thi_0           # shift from current thi to paraxial focus
+centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
 
 def objective(delta):
     sm.gaps[-1].thi = thi_0 + delta
     opm.update_model()
     return <metric or -metric>
 
-result = minimize_scalar(objective, bounds=bounds, method='bounded')
+result = minimize_scalar(objective, bounds=centered_bounds, method='bounded')
 sm.gaps[-1].thi = thi_0 + result.x
 opm.update_model()
 return {'delta_thi': result.x, 'metric_value': <final metric>}
 ```
+
+`delta_thi` in the return value is always relative to `thi_0` (the value of `sm.gaps[-1].thi`
+at call time), consistent with callers and existing tests.
 
 ## Strehl optimization note
 
@@ -58,6 +66,7 @@ The Strehl-based functions therefore:
 
 | Function | Returns | Used by |
 |---|---|---|
+| `_get_paraxial_bfl(opm)` | `float` (mm) | all 4 (BFL-centering) |
 | `_resolve_field_indices(opm, field_indices)` | `list[int]` | all 4 |
 | `_spot_fn(p, wi, ray_pkg, fld, wvl, foc)` | `ndarray \| None` | RMS spot helpers |
 | `_compute_mono_rms_spot(opm, fi_list, num_rays)` | `float` (mm) | `focus_by_mono_rms_spot` |
