@@ -59,7 +59,7 @@ interface ZernikeTermsModalProps {
 - Row 1: Field + Wavelength dropdowns in a flex row
 - Row 2: Ordering dropdown (below Field+Wavelength)
 - `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
-- Scrollable table area (`max-h-[60vh] overflow-y-auto`)
+- Scrollable table area (`max-h-[calc(90dvh-20rem)] overflow-y-auto`) — viewport-relative height reserves ~20rem for static overhead (title, dropdowns, summary, button, padding), preventing double scrollbar when the modal approaches the `90dvh` cap
 - Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
   - First column header is "Noll j" or "Fringe j" depending on ordering
 - Summary: P-V WFE, RMS WFE, Strehl ratio
