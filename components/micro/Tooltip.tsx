@@ -44,9 +44,14 @@ export function Tooltip({ text, children, position = "top", portal = false, noTo
   const triggerRef = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const isTouchingRef = useRef(false);
 
   if (portal) {
     const handleMouseEnter = () => {
+      if (noTouch && isTouchingRef.current) {
+        isTouchingRef.current = false;
+        return;
+      }
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
         const y =
@@ -85,8 +90,9 @@ export function Tooltip({ text, children, position = "top", portal = false, noTo
         ref={triggerRef}
         className="relative inline-flex"
         style={noTouch ? { touchAction: "none" } : undefined}
+        onTouchStart={noTouch ? () => { isTouchingRef.current = true; } : undefined}
         onMouseEnter={handleMouseEnter}
-        onMouseLeave={() => setVisible(false)}
+        onMouseLeave={() => { isTouchingRef.current = false; setVisible(false); }}
       >
         {children}
         {createPortal(tooltipElement, document.body)}
