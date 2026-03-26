@@ -322,11 +322,27 @@ class TestGetZernikeCoefficients:
         assert result['rms_wfe'] > 0
         assert result['pv_wfe'] >= result['rms_wfe']
 
-    def test_on_axis_rms_approx(self, cooke_triplet):
-        """On-axis RMS ≈ 0.73 waves (from spec, within ±0.1)."""
+    def test_rms_wfe_excludes_piston(self, cooke_triplet):
+        """rms_wfe must not include piston contribution.
+
+        On-axis Cooke Triplet has Z1 piston ≈ 0.568 waves.
+        rms_wfe including piston ≈ 0.73 waves.
+        rms_wfe excluding piston must be significantly smaller.
+        """
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
-        assert abs(result['rms_wfe'] - 0.73) < 0.1, f"RMS = {result['rms_wfe']}, expected ~0.73"
+        piston = result['coefficients'][0]
+        assert abs(piston) > 0.3, f"Expected significant piston, got {piston}"
+        # With piston included, rms ≈ 0.73. Without piston it must be lower.
+        assert result['rms_wfe'] < 0.65, (
+            f"rms_wfe = {result['rms_wfe']} still includes piston contribution"
+        )
+
+    def test_on_axis_rms_approx(self, cooke_triplet):
+        """On-axis RMS ≈ 0.46 waves (piston-excluded, within ±0.1)."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        assert abs(result['rms_wfe'] - 0.46) < 0.1, f"RMS = {result['rms_wfe']}, expected ~0.46"
 
     def test_strehl_ratio_in_result(self, cooke_triplet):
         """strehl_ratio key exists and is a float."""

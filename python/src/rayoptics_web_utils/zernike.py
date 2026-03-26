@@ -269,13 +269,18 @@ def get_zernike_coefficients(
 
     grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)
 
-    # Compute RMS and PV from valid OPD points
-    opd_valid = grid[2][~np.isnan(grid[2])]
-    rms_wfe = float(np.sqrt(np.mean(opd_valid**2)))
-    pv_wfe = float(np.max(opd_valid) - np.min(opd_valid))
-
+    # Fit Zernike first to get piston coefficient
     coeffs = fit_zernike(grid, num_terms=num_terms, ordering=ordering)
     coeffs_list = [float(c) for c in coeffs]
+
+    # Compute RMS and PV on pupil-domain OPD (rho ≤ 1.0), excluding piston
+    px = grid[0].ravel()
+    py = grid[1].ravel()
+    opd_flat = grid[2].ravel()
+    valid_mask = ~np.isnan(opd_flat) & (px**2 + py**2 <= 1.0)
+    opd_pupil = opd_flat[valid_mask] - coeffs_list[0]  # subtract piston
+    rms_wfe = float(np.sqrt(np.mean(opd_pupil**2)))
+    pv_wfe = float(np.max(opd_pupil) - np.min(opd_pupil))
     rms_normalized = unnormalized_to_rms_normalized(coeffs_list, num_terms, ordering=ordering)
     strehl_ratio = _monochromatic_strehl(grid[2])
 

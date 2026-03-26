@@ -38,8 +38,8 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 |-----|------|-------------|
 | `coefficients` | `list[float]` | Unnormalized Zernike coefficients in waves, ordered by j=1..num_terms in the requested ordering |
 | `rms_normalized_coefficients` | `list[float]` | RMS-normalized Zernike coefficients, ordered by j=1..num_terms. Each value directly gives the RMS contribution of that term. |
-| `rms_wfe` | `float` | RMS wavefront error in waves |
-| `pv_wfe` | `float` | Peak-to-valley WFE in waves |
+| `rms_wfe` | `float` | RMS wavefront error in waves (piston-excluded; computed on rho ≤ 1.0 pupil after subtracting Z1 piston) |
+| `pv_wfe` | `float` | Peak-to-valley WFE in waves (piston-excluded; computed on rho ≤ 1.0 pupil after subtracting Z1 piston) |
 | `strehl_ratio` | `float` | Monochromatic Strehl ratio (0–1), computed as \|mean(exp(i·2π·W))\|² |
 | `num_terms` | `int` | Number of Zernike terms fitted |
 | `field_index` | `int` | Field index used |
