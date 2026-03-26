@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Tooltip } from "../Tooltip";
 
@@ -187,6 +187,36 @@ describe("Tooltip", () => {
       await user.hover(screen.getByRole("button", { name: "Trigger" }));
       expect(screen.getByRole("tooltip")).not.toHaveStyle({ transform: "translate(-50%, -100%)" });
       expect(screen.getByRole("tooltip")).not.toHaveStyle({ transform: "translateX(-50%)" });
+    });
+
+    describe("portal mode with noTouch", () => {
+      it("does not show tooltip when touchstart precedes mouseenter", () => {
+        render(
+          <Tooltip text="Portal tip" portal noTouch>
+            <button>Trigger</button>
+          </Tooltip>,
+        );
+        const wrapper = screen.getByRole("button").parentElement!;
+        fireEvent.touchStart(wrapper);
+        fireEvent.mouseEnter(wrapper);
+        expect(screen.getByRole("tooltip")).toHaveClass("opacity-0");
+      });
+
+      it("still shows tooltip on plain mouse hover after a prior touch interaction", () => {
+        render(
+          <Tooltip text="Portal tip" portal noTouch>
+            <button>Trigger</button>
+          </Tooltip>,
+        );
+        const wrapper = screen.getByRole("button").parentElement!;
+        // Simulate touch sequence (should be suppressed)
+        fireEvent.touchStart(wrapper);
+        fireEvent.mouseEnter(wrapper);
+        fireEvent.mouseLeave(wrapper);
+        // Simulate plain mouse hover
+        fireEvent.mouseEnter(wrapper);
+        expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
+      });
     });
   });
 });
