@@ -1,5 +1,5 @@
 ---
-name: optics
+name: optics-conventions
 description: Conventions for optics design software (Zemax-style) about coordinate systems, radius of curvature, thickness
 ---
 
