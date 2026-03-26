@@ -177,7 +177,7 @@ export function ZernikeTermsModal({
 
         {data && (
           <div className="relative">
-            <div className="max-h-[60vh] overflow-y-auto">
+            <div data-testid="zernike-table-scroll" className="max-h-[calc(90dvh-20rem)] overflow-y-auto">
               <Table headers={headers} rows={rows} />
             </div>
             <div className="flex gap-6 mt-4">

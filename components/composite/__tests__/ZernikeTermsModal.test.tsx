@@ -325,6 +325,15 @@ describe("ZernikeTermsModal", () => {
     expect(dataRows[4].textContent).toContain("\\(Z_{2}^{-2}\\)");
   });
 
+  it("table scroll container uses viewport-relative height (not fixed 60vh)", async () => {
+    const onFetchData = createMockFetchData();
+    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+    const scrollContainer = screen.getByTestId("zernike-table-scroll");
+    expect(scrollContainer.className).not.toContain("60vh");
+    expect(scrollContainer.className).toContain("90dvh");
+  });
+
   it("re-open resets ordering to fringe", async () => {
     const onFetchData = createMockFetchData();
     const { rerender } = render(
