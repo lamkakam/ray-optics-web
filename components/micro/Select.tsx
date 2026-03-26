@@ -48,11 +48,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       cx.select.style.cursor,
       cx.select.style.appearanceReset,
       cx.select.size.customArrowPadding,
-      className,
     );
 
     return (
-      <div className="relative w-full">
+      <div className={clsx("relative w-full", className)}>
         <select
           ref={ref}
           className={selectClassName}

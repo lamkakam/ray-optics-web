@@ -29,5 +29,6 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 - Implemented as `React.forwardRef` so it can be used inside AG Grid cell editors and third-party wrappers. The `ref` forwards to `<HTMLSelectElement>`, not the wrapper div.
 - `disabled:opacity-50` and `disabled:cursor-not-allowed` are applied via style tokens.
 - `appearance-none` is applied to both variants to strip native OS select rendering. This fixes iOS Safari's compact/pill-shaped appearance that ignores custom Tailwind styles.
-- The `<select>` is wrapped in `<div className="relative w-full">` so a custom SVG chevron arrow can be absolutely positioned at the right edge, replacing the native OS dropdown indicator.
+- The `<select>` is wrapped in a `<div>` with `relative w-full` plus any `className` passed via props. Width/spacing constraints (e.g. `max-w-xs`) are applied to the wrapper `<div>`, not the inner `<select>`. This ensures the SVG chevron arrow is always positioned relative to the visible control boundary and stays within bounds.
+- The inner `<select>` always has `w-full` so it fills the wrapper regardless of the wrapper's width constraint.
 

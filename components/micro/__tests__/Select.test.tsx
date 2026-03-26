@@ -144,11 +144,14 @@ describe("Select", () => {
     expect(screen.getByRole("combobox")).toHaveValue("c");
   });
 
-  it("merges extra className", () => {
-    render(<Select options={OPTIONS} aria-label="test" className="mb-2 w-full" />);
-    const el = screen.getByRole("combobox");
-    expect(el).toHaveClass("mb-2");
-    expect(el).toHaveClass("w-full");
+  it("merges extra className onto wrapper div", () => {
+    render(<Select options={OPTIONS} aria-label="test" className="mb-2 max-w-xs" />);
+    const wrapper = screen.getByRole("combobox").parentElement!;
+    expect(wrapper).toHaveClass("mb-2");
+    expect(wrapper).toHaveClass("max-w-xs");
+    // select itself should not have these classes
+    expect(screen.getByRole("combobox")).not.toHaveClass("mb-2");
+    expect(screen.getByRole("combobox")).not.toHaveClass("max-w-xs");
   });
 
   it("handles numeric option values", () => {

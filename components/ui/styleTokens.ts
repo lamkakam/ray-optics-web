@@ -89,11 +89,11 @@ export const componentTokens = {
     size: {
       horizontalPadding: "px-3",
       verticalPadding: "py-2",
-      fontSize: "text-sm/[16.8px]",
+      fontSize: "text-sm",
       defaultWidth: "w-full",
       compactHorizontalPadding: "px-2",
       compactVerticalPadding: "py-1.5",
-      compactFontSize: "text-sm/[16.8px]",
+      compactFontSize: "text-sm",
       compactWidth: "w-full",
       focusRingWidth: g.size.focusRingWidth,
     },
