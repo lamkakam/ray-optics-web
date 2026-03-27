@@ -235,7 +235,7 @@ def plot_diffraction_psf(
         apply_vignetting=True,
     )
 
-    data = calc_psf(np.transpose(pupil_grid.grid[2]))
+    data = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, max_dims)
     
     _, delta_xp = calc_psf_scaling(
         pupil_grid,
@@ -249,7 +249,7 @@ def plot_diffraction_psf(
     ax.yaxis.set_ticks_position('left')
 
     hmap = ax.imshow(
-        calc_psf(data, num_rays, max_dims),
+        data,
         origin='lower',
         cmap='RdBu_r',
         norm=LogNorm(vmin=5e-4),
