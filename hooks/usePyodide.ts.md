@@ -9,15 +9,17 @@ Initialise the singleton Pyodide web worker and expose a typed Comlink proxy to 
 ```ts
 interface PyodideWorkerAPI {
   init(): Promise<void>;
-  setOpticalSurfaces(model: OpticalModel, setAutoAperture: SetAutoApertureFlag): Promise<void>;
-  getFirstOrderData(): Promise<Record<string, number>>;
-  plotLensLayout(): Promise<string>;
-  plotRayFan(fieldIndex: number): Promise<string>;
-  plotOpdFan(fieldIndex: number): Promise<string>;
-  plotSpotDiagram(fieldIndex: number): Promise<string>;
-  plotSurfaceBySurface3rdOrderAberr(): Promise<string>;
-  get3rdOrderSeidelData(): Promise<SeidelData>;
-  getZernikeCoefficients(fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>;
+  getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
+  plotLensLayout(opticalModel: OpticalModel): Promise<string>;
+  plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string>;
+  plotWavefrontMap(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
+  plotGeoPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
+  plotDiffractionPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
+  get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
+  getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>;
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;

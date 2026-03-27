@@ -15,11 +15,20 @@ describe("AnalysisPlotView", () => {
     { label: "20.0°", value: 2 },
   ];
 
+  const wavelengthOptions = [
+    { label: "486.1nm", value: 0 },
+    { label: "587.6nm", value: 1 },
+    { label: "656.3nm", value: 2 },
+  ];
+
   const defaultProps = {
     fieldOptions,
+    wavelengthOptions,
     selectedFieldIndex: 0,
+    selectedWavelengthIndex: 0,
     selectedPlotType: "rayFan" as const,
     onFieldChange: jest.fn(),
+    onWavelengthChange: jest.fn(),
     onPlotTypeChange: jest.fn(),
   };
 
@@ -37,7 +46,7 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByText("20.0°")).toBeInTheDocument();
   });
 
-  it("renders plot type selector with four options", () => {
+  it("renders plot type selector with all seven options", () => {
     render(<AnalysisPlotView {...defaultProps} />);
     const select = screen.getByLabelText("Plot type");
     expect(select).toBeInTheDocument();
@@ -45,6 +54,9 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByText("OPD Fan")).toBeInTheDocument();
     expect(screen.getByText("Spot Diagram")).toBeInTheDocument();
     expect(screen.getByText("Surface by Surface 3rd Order Aberr.")).toBeInTheDocument();
+    expect(screen.getByText("Wavefront Map")).toBeInTheDocument();
+    expect(screen.getByText("Geometric PSF")).toBeInTheDocument();
+    expect(screen.getByText("Diffraction PSF")).toBeInTheDocument();
   });
 
   it("field selector is enabled when selectedPlotType is rayFan", () => {
@@ -132,6 +144,66 @@ describe("AnalysisPlotView", () => {
       render(<AnalysisPlotView {...defaultProps} plotImageBase64="xyz789" autoHeight />);
       const img = screen.getByRole("img", { name: "Analysis plot" });
       expect(img).not.toHaveClass("max-h-full");
+    });
+  });
+
+  describe("wavelength selector", () => {
+    it("does not render wavelength selector for non-wavelength-dependent plot types", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="rayFan" />);
+      expect(screen.queryByLabelText("Wavelength")).not.toBeInTheDocument();
+    });
+
+    it("renders wavelength selector when selectedPlotType is wavefrontMap", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
+      expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
+    });
+
+    it("renders wavelength selector when selectedPlotType is geoPSF", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="geoPSF" />);
+      expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
+    });
+
+    it("renders wavelength selector when selectedPlotType is diffractionPSF", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionPSF" />);
+      expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
+    });
+
+    it("renders wavelength options correctly", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
+      expect(screen.getByText("486.1nm")).toBeInTheDocument();
+      expect(screen.getByText("587.6nm")).toBeInTheDocument();
+      expect(screen.getByText("656.3nm")).toBeInTheDocument();
+    });
+
+    it("calls onWavelengthChange when wavelength is changed", async () => {
+      const onWavelengthChange = jest.fn();
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="wavefrontMap"
+          onWavelengthChange={onWavelengthChange}
+        />
+      );
+      const select = screen.getByLabelText("Wavelength");
+      await userEvent.selectOptions(select, "2");
+      expect(onWavelengthChange).toHaveBeenCalledWith(2);
+    });
+  });
+
+  describe("new wavelength-dependent plot types", () => {
+    it("field selector is enabled for wavefrontMap", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
+      expect(screen.getByLabelText("Field")).not.toBeDisabled();
+    });
+
+    it("field selector is enabled for geoPSF", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="geoPSF" />);
+      expect(screen.getByLabelText("Field")).not.toBeDisabled();
+    });
+
+    it("field selector is enabled for diffractionPSF", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionPSF" />);
+      expect(screen.getByLabelText("Field")).not.toBeDisabled();
     });
   });
 });
