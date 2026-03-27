@@ -6,17 +6,28 @@ import { Select, type SelectOption } from "@/components/micro/Select";
 import { Paragraph } from "@/components/micro/Paragraph";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 
-export type PlotType = "rayFan" | "opdFan" | "spotDiagram" | "surfaceBySurface3rdOrder";
+export type PlotType = "rayFan"
+  | "opdFan"
+  | "spotDiagram"
+  | "surfaceBySurface3rdOrder"
+  | "wavefrontMap"
+  | "geoPSF"
+  | "diffractionPSF"
+;
 
 type FieldOption = SelectOption & { readonly value: number };
+type WavelengthOption = FieldOption;
 
 interface AnalysisPlotViewProps {
   readonly fieldOptions: readonly FieldOption[];
+  readonly wavelengthOptions: readonly WavelengthOption[];
   readonly selectedFieldIndex: number;
+  readonly selectedWavelengthIndex: number;
   readonly selectedPlotType: PlotType;
   readonly plotImageBase64?: string;
   readonly loading?: boolean;
   readonly onFieldChange: (fieldIndex: number) => void;
+  readonly onWavelengthChange: (wavelengthIndex: number) => void;
   readonly onPlotTypeChange: (plotType: PlotType) => void;
   readonly autoHeight?: boolean;
 }
@@ -24,13 +35,45 @@ interface AnalysisPlotViewProps {
 export interface PlotTypeConfig {
   readonly label: string;
   readonly fieldDependent: boolean;
+  readonly wavelengthDependent?: boolean;
 }
 
 export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
-  rayFan:                   { label: "Ray Fan",                             fieldDependent: true  },
-  opdFan:                   { label: "OPD Fan",                             fieldDependent: true  },
-  spotDiagram:              { label: "Spot Diagram",                        fieldDependent: true  },
-  surfaceBySurface3rdOrder: { label: "Surface by Surface 3rd Order Aberr.", fieldDependent: false },
+  rayFan: {
+    label: "Ray Fan",
+    fieldDependent: true,
+    wavelengthDependent: false,
+  },
+  opdFan:{
+    label: "OPD Fan",
+    fieldDependent: true,
+    wavelengthDependent: false,
+  },
+  spotDiagram:{
+    label: "Spot Diagram",
+    fieldDependent: true,
+    wavelengthDependent: false,
+  },
+  surfaceBySurface3rdOrder: {
+    label: "Surface by Surface 3rd Order Aberr.",
+    fieldDependent: false,
+    wavelengthDependent: false,
+  },
+  wavefrontMap: {
+    label: "Wavefront Map",
+    fieldDependent: true,
+    wavelengthDependent: true,
+  },
+  geoPSF: {
+    label: "Geometric PSF",
+    fieldDependent: true,
+    wavelengthDependent: true,
+  },
+  diffractionPSF: {
+    label: "Diffraction PSF",
+    fieldDependent: true,
+    wavelengthDependent: true,
+  },
 };
 
 const PLOT_TYPE_OPTIONS: SelectOption[] = (Object.keys(PLOT_TYPE_CONFIG) as PlotType[]).map(
@@ -39,11 +82,14 @@ const PLOT_TYPE_OPTIONS: SelectOption[] = (Object.keys(PLOT_TYPE_CONFIG) as Plot
 
 export function AnalysisPlotView({
   fieldOptions,
+  wavelengthOptions,
   selectedFieldIndex,
+  selectedWavelengthIndex,
   selectedPlotType,
   plotImageBase64,
   loading,
   onFieldChange,
+  onWavelengthChange,
   onPlotTypeChange,
   autoHeight,
 }: AnalysisPlotViewProps) {
@@ -68,6 +114,23 @@ export function AnalysisPlotView({
             onChange={(e) => onFieldChange(Number(e.target.value))}
           />
         </div>
+        {
+          PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent && (
+            <div className="flex-1">
+              <Label htmlFor="analysis-wavelength-select">
+                Wavelength
+              </Label>
+              <Select
+                id="analysis-wavelength-select"
+                aria-label="Wavelength"
+                options={wavelengthOptions}
+                value={selectedWavelengthIndex}
+                type={selectType}
+                onChange={(e) => onWavelengthChange(Number(e.target.value))}
+              />
+            </div>
+          )
+        }
         <div className="flex-1">
           <Label htmlFor="analysis-plot-type-select">
             Plot type
