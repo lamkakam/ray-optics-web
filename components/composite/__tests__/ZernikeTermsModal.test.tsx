@@ -58,17 +58,20 @@ describe("ZernikeTermsModal", () => {
   it("renders a dialog when isOpen is true", async () => {
     render(<ZernikeTermsModal {...defaultProps} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await act(async () => {});
   });
 
   it("renders the title 'Zernike Terms'", async () => {
     render(<ZernikeTermsModal {...defaultProps} />);
     expect(screen.getByText("Zernike Terms")).toBeInTheDocument();
+    await act(async () => {});
   });
 
   it("renders Field and Wavelength dropdowns with labels", async () => {
     render(<ZernikeTermsModal {...defaultProps} />);
     expect(screen.getByLabelText("Field")).toBeInTheDocument();
     expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
+    await act(async () => {});
   });
 
   it("calls onFetchData(0, 0, 'fringe') on open", async () => {
@@ -123,6 +126,7 @@ describe("ZernikeTermsModal", () => {
     await waitFor(() => {
       expect(onFetchData).toHaveBeenCalledWith(2, 0, "fringe");
     });
+    await act(async () => {});
   });
 
   it("wavelength dropdown change calls onFetchData with new wavelength index and current ordering", async () => {
@@ -135,6 +139,7 @@ describe("ZernikeTermsModal", () => {
     await waitFor(() => {
       expect(onFetchData).toHaveBeenCalledWith(0, 2, "fringe");
     });
+    await act(async () => {});
   });
 
   it("shows loading indicator while fetching", async () => {
@@ -185,6 +190,7 @@ describe("ZernikeTermsModal", () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} onClose={onClose} />);
     await waitFor(() => expect(onFetchData).toHaveBeenCalled());
+    await act(async () => {});
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -209,11 +215,13 @@ describe("ZernikeTermsModal", () => {
     await waitFor(() => {
       expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
     });
+    await act(async () => {});
   });
 
   it("renders Ordering dropdown with label", async () => {
     render(<ZernikeTermsModal {...defaultProps} />);
     expect(screen.getByLabelText("Ordering")).toBeInTheDocument();
+    await act(async () => {});
   });
 
   it("selecting Noll ordering calls onFetchData with noll", async () => {
@@ -226,6 +234,7 @@ describe("ZernikeTermsModal", () => {
     await waitFor(() => {
       expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll");
     });
+    await act(async () => {});
   });
 
   it("when Noll ordering selected, table header shows 'Noll j'", async () => {
@@ -356,5 +365,6 @@ describe("ZernikeTermsModal", () => {
     await waitFor(() => {
       expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
     });
+    await act(async () => {});
   });
 });
