@@ -213,7 +213,6 @@ export function LensPrescriptionGrid({
           rowData={rows}
           columnDefs={columnDefs}
           defaultColDef={{ sortable: false, suppressMovable: true }}
-          rowSelection="single"
           domLayout="autoHeight"
           getRowId={(params) => params.data.id}
         />
