@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Tooltip } from "../Tooltip";
 
@@ -197,8 +197,10 @@ describe("Tooltip", () => {
           </Tooltip>,
         );
         const wrapper = screen.getByRole("button").parentElement!;
-        fireEvent.touchStart(wrapper);
-        fireEvent.mouseEnter(wrapper);
+        act(() => {
+          fireEvent.touchStart(wrapper);
+          fireEvent.mouseEnter(wrapper);
+        });
         expect(screen.getByRole("tooltip")).toHaveClass("opacity-0");
       });
 
@@ -209,12 +211,14 @@ describe("Tooltip", () => {
           </Tooltip>,
         );
         const wrapper = screen.getByRole("button").parentElement!;
-        // Simulate touch sequence (should be suppressed)
-        fireEvent.touchStart(wrapper);
-        fireEvent.mouseEnter(wrapper);
-        fireEvent.mouseLeave(wrapper);
-        // Simulate plain mouse hover
-        fireEvent.mouseEnter(wrapper);
+        act(() => {
+          // Simulate touch sequence (should be suppressed)
+          fireEvent.touchStart(wrapper);
+          fireEvent.mouseEnter(wrapper);
+          fireEvent.mouseLeave(wrapper);
+          // Simulate plain mouse hover
+          fireEvent.mouseEnter(wrapper);
+        });
         expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
       });
     });
