@@ -1,4 +1,4 @@
-# `python/src/rayoptics_web_utils/setup.py`
+# `python/src/rayoptics_web_utils/env/env.py`
 
 ## Purpose
 

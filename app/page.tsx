@@ -69,6 +69,7 @@ export default function Home() {
   const [plotImage, setPlotImage] = useState<string | undefined>();
   const [plotLoading, setPlotLoading] = useState(false);
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
+  const [selectedWavelengthIndex, setSelectedWavelengthIndex] = useState(0);
   const [selectedPlotType, setSelectedPlotType] = useState<PlotType>("rayFan");
   const [firstOrderData, setFirstOrderData] = useState<
     Record<string, number> | undefined
@@ -136,18 +137,24 @@ export default function Home() {
   );
 
   const getPlotFunction = useCallback(
-    (plotType: PlotType, model?: OpticalModel): ((fieldIndex: number) => Promise<string>) | undefined => {
+    (plotType: PlotType, model?: OpticalModel): ((fieldIndex: number, wavelenthIndex: number) => Promise<string>) | undefined => {
       const m = model ?? committedOpticalModel;
       if (!proxy || !m) return undefined;
       switch (plotType) {
         case "rayFan":
-          return (fi) => proxy.plotRayFan(m, fi);
+          return (fi, _) => proxy.plotRayFan(m, fi);
         case "opdFan":
-          return (fi) => proxy.plotOpdFan(m, fi);
+          return (fi, _) => proxy.plotOpdFan(m, fi);
         case "spotDiagram":
-          return (fi) => proxy.plotSpotDiagram(m, fi);
+          return (fi, _) => proxy.plotSpotDiagram(m, fi);
         case "surfaceBySurface3rdOrder":
-          return (_fi) => proxy.plotSurfaceBySurface3rdOrderAberr(m);
+          return (_, __) => proxy.plotSurfaceBySurface3rdOrderAberr(m);
+        case "wavefrontMap":
+          return (fi, wi) => proxy.plotWavefrontMap(m, fi, wi);
+        case "geoPSF":
+          return (fi, wi) => proxy.plotGeoPSF(m, fi, wi);
+        case "diffractionPSF":
+          return (fi, wi) => proxy.plotDiffractionPSF(m, fi, wi);
       }
     },
     [proxy, committedOpticalModel]
@@ -174,11 +181,20 @@ export default function Home() {
       if (clampedFieldIndex !== selectedFieldIndex) {
         setSelectedFieldIndex(clampedFieldIndex);
       }
+
+      const clampedWavelengthIndex = Math.min(
+        selectedWavelengthIndex,
+        specs.wavelengths.weights.length - 1
+      );
+      if (clampedWavelengthIndex !== selectedWavelengthIndex) {
+        setSelectedWavelengthIndex(clampedWavelengthIndex);
+      }
+
       const plotFn = getPlotFunction(selectedPlotType, model);
       const [fod, layout, plot, seidel] = await Promise.all([
         proxy.getFirstOrderData(model),
         proxy.plotLensLayout(model),
-        plotFn ? plotFn(clampedFieldIndex) : Promise.resolve(undefined),
+        plotFn ? plotFn(clampedFieldIndex, clampedWavelengthIndex) : Promise.resolve(undefined),
         proxy.get3rdOrderSeidelData(model),
       ]);
 
@@ -201,7 +217,7 @@ export default function Home() {
         exampleSelectRef.current.value = "";
       }
     }
-  }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedPlotType, getPlotFunction]);
+  }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, getPlotFunction]);
 
   const handleExampleConfirm = useCallback(() => {
     if (!pendingExample) return;
@@ -213,26 +229,33 @@ export default function Home() {
     void handleSubmit();
   }, [pendingExample, specsStore, lensStore, handleSubmit]);
 
-  const handleFieldChange = useCallback(
-    async (fieldIndex: number) => {
-      setSelectedFieldIndex(fieldIndex);
-      if (!proxy) return;
-      if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
-      setPlotLoading(true);
-      try {
-        const plotFn = getPlotFunction(selectedPlotType);
-        if (plotFn) {
-          const plot = await plotFn(fieldIndex);
-          setPlotImage(plot);
+  const fieldWavelengthHOF = useCallback((kind: "field" | "wavelength") => async (value: number) => {
+    if (kind === "field") {
+      setSelectedFieldIndex(value);
+    } else {
+      setSelectedWavelengthIndex(value);
+    }
+    if (!proxy) return;
+    if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
+    setPlotLoading(true);
+    try {
+      const plotFn = getPlotFunction(selectedPlotType);
+      if (plotFn) {
+        let plot: string;
+        if (kind === "field") {
+          plot = await plotFn(value, selectedWavelengthIndex);
+        } else {
+          plot = await plotFn(selectedFieldIndex, value);
         }
-      } catch {
-        setErrorModalOpen(true);
-      } finally {
-        setPlotLoading(false);
+        setPlotImage(plot);
       }
-    },
-    [proxy, selectedPlotType, getPlotFunction]
-  );
+    } catch (err) {
+      console.log(`${kind} update failed:`, err);
+      setErrorModalOpen(true);
+    } finally {
+      setPlotLoading(false);
+    }
+  }, [proxy, selectedPlotType, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]);
 
   const handlePlotTypeChange = useCallback(
     async (plotType: PlotType) => {
@@ -242,16 +265,17 @@ export default function Home() {
       try {
         const plotFn = getPlotFunction(plotType);
         if (plotFn) {
-          const plot = await plotFn(selectedFieldIndex);
+          const plot = await plotFn(selectedFieldIndex, selectedWavelengthIndex);
           setPlotImage(plot);
         }
-      } catch {
+      } catch (err) {
+        console.log("Plot type change failed:", err);
         setErrorModalOpen(true);
       } finally {
         setPlotLoading(false);
       }
     },
-    [proxy, selectedFieldIndex, getPlotFunction]
+    [proxy, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]
   );
 
   const getOpticalModel = useCallback((): OpticalModel => {
@@ -356,11 +380,14 @@ export default function Home() {
   const analysisPlotView = (
     <AnalysisPlotView
       fieldOptions={fieldOptions}
+      wavelengthOptions={wavelengthOptions}
       selectedFieldIndex={selectedFieldIndex}
+      selectedWavelengthIndex={selectedWavelengthIndex}
       selectedPlotType={selectedPlotType}
       plotImageBase64={plotImage}
       loading={plotLoading}
-      onFieldChange={handleFieldChange}
+      onFieldChange={fieldWavelengthHOF("field")}
+      onWavelengthChange={fieldWavelengthHOF("wavelength")}
       onPlotTypeChange={handlePlotTypeChange}
       autoHeight={!isLG}
     />

@@ -253,19 +253,11 @@ def get_zernike_coefficients(
         dict with keys: coefficients, rms_normalized_coefficients, rms_wfe, pv_wfe,
         strehl_ratio, num_terms, field_index, wavelength_nm, ordering.
     """
-    from rayoptics.raytr.analyses import RayGrid
+    from rayoptics_web_utils.raygrid import make_ray_grid
 
     wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]
 
-    rg = RayGrid(
-        opm,
-        f=field_index,
-        wl=wavelength_nm,
-        foc=0,
-        num_rays=num_rays,
-        check_apertures=True,
-        apply_vignetting=True,
-    )
+    rg = make_ray_grid(opm, fi=field_index, wavelength_nm=wavelength_nm, num_rays=num_rays)
 
     grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)
 

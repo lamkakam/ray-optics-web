@@ -1,4 +1,4 @@
-# `python/src/rayoptics_web_utils/focusing.py`
+# `python/src/rayoptics_web_utils/focusing/focusing.py`
 
 ## Purpose
 
@@ -92,6 +92,6 @@ The Strehl-based functions therefore:
 ## Dependencies
 
 - `scipy.optimize.minimize_scalar` — bounded 1D optimizer
-- `rayoptics.raytr.analyses.RayGrid` — for wavefront tracing
-- `rayoptics_web_utils.zernike._extract_exit_pupil_grid` — exit pupil OPD grid
-- `rayoptics_web_utils.zernike._monochromatic_strehl` — true Strehl formula
+- `rayoptics_web_utils.raygrid.make_ray_grid` — RayGrid factory (replaces direct `RayGrid(...)` calls)
+- `rayoptics_web_utils.zernike.zernike._extract_exit_pupil_grid` — exit pupil OPD grid
+- `rayoptics_web_utils.zernike.zernike._monochromatic_strehl` — true Strehl formula

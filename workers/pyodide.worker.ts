@@ -53,7 +53,16 @@ from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 
 from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data
-from rayoptics_web_utils.plotting import plot_lens_layout, plot_ray_fan, plot_opd_fan, plot_spot_diagram, plot_surface_by_surface_3rd_order_aberr
+from rayoptics_web_utils.plotting import (
+    plot_lens_layout,
+    plot_ray_fan,
+    plot_opd_fan,
+    plot_spot_diagram,
+    plot_surface_by_surface_3rd_order_aberr,
+    plot_wavefront_map,
+    plot_geo_psf,
+    plot_diffraction_psf,
+)
 from rayoptics_web_utils.focusing import focus_by_mono_rms_spot, focus_by_mono_strehl, focus_by_poly_rms_spot, focus_by_poly_strehl
 `);
 }
@@ -79,7 +88,7 @@ export async function init(): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.6-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.7-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
   } catch (err) {
@@ -127,6 +136,42 @@ export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: strin
 export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData> {
   const json = (await runPython(buildScript(opticalModel, (opm) => `json.dumps(get_3rd_order_seidel_data(${opm}))`))) as string;
   return JSON.parse(json) as SeidelData;
+}
+
+export async function _plotWavefrontMap(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 64,
+): Promise<string> {
+  return (await runPython(buildScript(opticalModel, (opm) => `plot_wavefront_map(${fieldIndex}, ${wavelengthIndex}, ${opm}, num_rays=${numRays})`))) as string;
+}
+
+export async function _plotGeoPSF(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 64,
+): Promise<string> {
+  return (await runPython(buildScript(opticalModel, (opm) => `plot_geo_psf(${fieldIndex}, ${wavelengthIndex}, ${opm}, num_rays=${numRays})`))) as string;
+}
+
+export async function _plotDiffractionPSF(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 64,
+  maxDims: number = 256,
+): Promise<string> {
+  return (await runPython(
+    buildScript(
+      opticalModel, 
+      (opm) => `plot_diffraction_psf(${fieldIndex}, ${wavelengthIndex}, ${opm}, num_rays=${numRays}, max_dims=${maxDims})`,
+    ),
+  )) as string;
 }
 
 export async function _getZernikeCoefficients(
@@ -215,6 +260,35 @@ export async function plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalMod
   return await _plotSurfaceBySurface3rdOrderAberr(requirePyodide(), opticalModel);
 }
 
+export async function plotWavefrontMap(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 128,
+): Promise<string> {
+  return await _plotWavefrontMap(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
+}
+
+export async function plotGeoPSF(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 128,
+): Promise<string> {
+  return await _plotGeoPSF(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
+}
+
+export async function plotDiffractionPSF(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 128,
+  maxDims: number = 256,
+): Promise<string> {
+  return await _plotDiffractionPSF(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays, maxDims);
+}
+
+
 export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData> {
   return await _get3rdOrderSeidelData(requirePyodide(), opticalModel);
 }
@@ -253,6 +327,9 @@ expose({
   plotOpdFan,
   plotSpotDiagram,
   plotSurfaceBySurface3rdOrderAberr,
+  plotWavefrontMap,
+  plotGeoPSF,
+  plotDiffractionPSF,
   get3rdOrderSeidelData,
   getZernikeCoefficients,
   focusByMonoRmsSpot,

@@ -1,4 +1,4 @@
-# `python/src/rayoptics_web_utils/_utils.py`
+# `python/src/rayoptics_web_utils/utils/utils.py`
 
 ## Purpose
 
@@ -31,7 +31,7 @@ Returns a human-readable wavelength label for matplotlib legend annotations.
 
 ## Key Conventions
 
-- Leading underscores on both the module name (`_utils`) and all symbols signal that nothing here is part of the public API.
+- Module was renamed from `_utils.py` to `utils/utils.py`; the leading underscores on exported symbols remain to signal they are not part of the public API.
 - `_fig_to_base64` always calls `plt.close(fig)` before returning to prevent matplotlib figure accumulation in long-running Pyodide sessions.
 - `dpi=150` is the default resolution; callers may override for higher or lower quality output.
 

@@ -1,4 +1,4 @@
-# `python/src/rayoptics_web_utils/analysis.py`
+# `python/src/rayoptics_web_utils/analysis/analysis.py`
 
 ## Purpose
 

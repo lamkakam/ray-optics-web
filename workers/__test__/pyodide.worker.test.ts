@@ -11,6 +11,9 @@ import {
   _plotSpotDiagram,
   _plotSurfaceBySurface3rdOrderAberr,
   _get3rdOrderSeidelData,
+  _plotWavefrontMap,
+  _plotGeoPSF,
+  _plotDiffractionPSF,
 } from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
@@ -150,6 +153,105 @@ describe("_plotSurfaceBySurface3rdOrderAberr", () => {
 });
 
 
+describe("_plotWavefrontMap", () => {
+  it("should build the model script and call plot_wavefront_map with field and wavelength index", async () => {
+    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+    let pythonScript = "";
+    const result = await _plotWavefrontMap(async (code) => {
+      pythonScript = code;
+      return mockBase64;
+    }, allSphericalOpticalModel, 1, 2);
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("plot_wavefront_map(1, 2, _build_opm(), num_rays=64)");
+    expect(result).toBe(mockBase64);
+  });
+
+  it("should pass field index 0 and wavelength index 0 correctly", async () => {
+    let pythonScript = "";
+    await _plotWavefrontMap(async (code) => {
+      pythonScript = code;
+      return "";
+    }, allSphericalOpticalModel, 0, 0);
+    expect(pythonScript).toContain("plot_wavefront_map(0, 0, _build_opm(), num_rays=64)");
+  });
+
+  it("should use custom numRays when provided", async () => {
+    let pythonScript = "";
+    await _plotWavefrontMap(async (code) => {
+      pythonScript = code;
+      return "";
+    }, allSphericalOpticalModel, 0, 1, 32);
+    expect(pythonScript).toContain("plot_wavefront_map(0, 1, _build_opm(), num_rays=32)");
+  });
+});
+
+
+describe("_plotGeoPSF", () => {
+  it("should build the model script and call plot_geo_psf with field and wavelength index", async () => {
+    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+    let pythonScript = "";
+    const result = await _plotGeoPSF(async (code) => {
+      pythonScript = code;
+      return mockBase64;
+    }, allSphericalOpticalModel, 2, 1);
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("plot_geo_psf(2, 1, _build_opm(), num_rays=64)");
+    expect(result).toBe(mockBase64);
+  });
+
+  it("should pass field index 0 and wavelength index 0 correctly", async () => {
+    let pythonScript = "";
+    await _plotGeoPSF(async (code) => {
+      pythonScript = code;
+      return "";
+    }, allSphericalOpticalModel, 0, 0);
+    expect(pythonScript).toContain("plot_geo_psf(0, 0, _build_opm(), num_rays=64)");
+  });
+
+  it("should use custom numRays when provided", async () => {
+    let pythonScript = "";
+    await _plotGeoPSF(async (code) => {
+      pythonScript = code;
+      return "";
+    }, allSphericalOpticalModel, 1, 2, 32);
+    expect(pythonScript).toContain("plot_geo_psf(1, 2, _build_opm(), num_rays=32)");
+  });
+});
+
+
+describe("_plotDiffractionPSF", () => {
+  it("should build the model script and call plot_diffraction_psf with field and wavelength index", async () => {
+    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+    let pythonScript = "";
+    const result = await _plotDiffractionPSF(async (code) => {
+      pythonScript = code;
+      return mockBase64;
+    }, allSphericalOpticalModel, 1, 0);
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("plot_diffraction_psf(1, 0, _build_opm(), num_rays=64, max_dims=256)");
+    expect(result).toBe(mockBase64);
+  });
+
+  it("should pass field index 0 and wavelength index 0 correctly", async () => {
+    let pythonScript = "";
+    await _plotDiffractionPSF(async (code) => {
+      pythonScript = code;
+      return "";
+    }, allSphericalOpticalModel, 0, 0);
+    expect(pythonScript).toContain("plot_diffraction_psf(0, 0, _build_opm(), num_rays=64, max_dims=256)");
+  });
+
+  it("should use custom numRays and maxDims when provided", async () => {
+    let pythonScript = "";
+    await _plotDiffractionPSF(async (code) => {
+      pythonScript = code;
+      return "";
+    }, allSphericalOpticalModel, 2, 1, 32, 128);
+    expect(pythonScript).toContain("plot_diffraction_psf(2, 1, _build_opm(), num_rays=32, max_dims=128)");
+  });
+});
+
+
 describe("_get3rdOrderSeidelData", () => {
   it("should build the model script, call json.dumps(get_3rd_order_seidel_data(opm)) and return parsed SeidelData", async () => {
     const mockData = {
@@ -192,7 +294,14 @@ describe("_init", () => {
 
     // Import analysis and plotting functions
     expect(allCode).toContain("from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data");
-    expect(allCode).toContain("from rayoptics_web_utils.plotting import plot_lens_layout, plot_ray_fan, plot_opd_fan, plot_spot_diagram, plot_surface_by_surface_3rd_order_aberr");
+    expect(allCode).toContain("plot_lens_layout,");
+    expect(allCode).toContain("plot_ray_fan,");
+    expect(allCode).toContain("plot_opd_fan,");
+    expect(allCode).toContain("plot_spot_diagram,");
+    expect(allCode).toContain("plot_surface_by_surface_3rd_order_aberr,");
+    expect(allCode).toContain("plot_wavefront_map,");
+    expect(allCode).toContain("plot_geo_psf,");
+    expect(allCode).toContain("plot_diffraction_psf,");
   });
 
   it("should install rayoptics and opticalglass", async () => {

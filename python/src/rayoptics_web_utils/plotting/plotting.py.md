@@ -1,4 +1,4 @@
-# `python/src/rayoptics_web_utils/plotting.py`
+# `python/src/rayoptics_web_utils/plotting/plotting.py`
 
 ## Purpose
 
@@ -68,6 +68,8 @@ Plots a grouped bar chart of per-surface third-order Seidel aberration coefficie
 - All functions end by calling `_fig_to_base64(fig)`, which also closes the figure via `plt.close(fig)`.
 - The `_ray_abr` and `_opd_abr` callbacks return `None` for failed ray traces (`ray_pkg[mc.ray] is None`); `trace_fan` skips `None` returns.
 - OPD unit conversion: `opd_val` from `wave_abr_full_calc` is in system units; divide by `opm.nm_to_sys_units(wvl)` to get waves.
+- `plot_wavefront_map` and `plot_diffraction_psf` use `make_ray_grid` from `rayoptics_web_utils.raygrid` instead of constructing `RayGrid` directly.
+- `_fig_to_base64` and `_get_wvl_lbl` are imported from `rayoptics_web_utils.utils`.
 
 ## Usages
 

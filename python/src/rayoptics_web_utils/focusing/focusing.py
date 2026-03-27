@@ -23,7 +23,7 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 
 import rayoptics.optical.model_constants as mc
-from rayoptics_web_utils.zernike import _extract_exit_pupil_grid, _monochromatic_strehl
+from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid, _monochromatic_strehl
 
 
 def _get_paraxial_bfl(opm) -> float:
@@ -134,17 +134,14 @@ def _opd_wfe(opd_grid: np.ndarray) -> float:
 
 def _compute_mono_wfe(opm, fi_list: list[int], num_rays: int) -> float:
     """Quadratic mean of per-field monochromatic RMS WFE over given field indices (smooth focusing objective)."""
-    from rayoptics.raytr.analyses import RayGrid
+    from rayoptics_web_utils.raygrid import make_ray_grid
 
     osp = opm['optical_spec']
     central_wvl = osp['wvls'].central_wvl
 
     wfe_values = []
     for fi in fi_list:
-        rg = RayGrid(
-            opm, f=fi, wl=central_wvl, foc=0,
-            num_rays=num_rays, check_apertures=True, apply_vignetting=True
-        )
+        rg = make_ray_grid(opm, fi=fi, wavelength_nm=central_wvl, num_rays=num_rays)
         grid = _extract_exit_pupil_grid(rg, opm, central_wvl)
         wfe_values.append(_opd_wfe(grid[2]))
 
@@ -153,7 +150,7 @@ def _compute_mono_wfe(opm, fi_list: list[int], num_rays: int) -> float:
 
 def _compute_poly_wfe(opm, fi_list: list[int], num_rays: int) -> float:
     """Quadratic mean of per-field polychromatic (spectrally weighted) RMS WFE (smooth focusing objective)."""
-    from rayoptics.raytr.analyses import RayGrid
+    from rayoptics_web_utils.raygrid import make_ray_grid
 
     osp = opm['optical_spec']
     wavelengths = osp['wvls'].wavelengths
@@ -165,10 +162,7 @@ def _compute_poly_wfe(opm, fi_list: list[int], num_rays: int) -> float:
         wl_weights = []
         for wi, wvl in enumerate(wavelengths):
             w = spectral_wts[wi] if wi < len(spectral_wts) else 1.0
-            rg = RayGrid(
-                opm, f=fi, wl=wvl, foc=0,
-                num_rays=num_rays, check_apertures=True, apply_vignetting=True
-            )
+            rg = make_ray_grid(opm, fi=fi, wavelength_nm=wvl, num_rays=num_rays)
             grid = _extract_exit_pupil_grid(rg, opm, wvl)
             wl_wfe.append(_opd_wfe(grid[2]))
             wl_weights.append(w)
@@ -186,17 +180,14 @@ def _compute_mono_strehl(opm, fi_list: list[int], num_rays: int) -> float:
     Returns the true Strehl: |mean(exp(i·2π·W))|² over valid pupil points.
     This is used for reporting; the optimization objective uses _compute_mono_wfe.
     """
-    from rayoptics.raytr.analyses import RayGrid
+    from rayoptics_web_utils.raygrid import make_ray_grid
 
     osp = opm['optical_spec']
     central_wvl = osp['wvls'].central_wvl
 
     strehl_values = []
     for fi in fi_list:
-        rg = RayGrid(
-            opm, f=fi, wl=central_wvl, foc=0,
-            num_rays=num_rays, check_apertures=True, apply_vignetting=True
-        )
+        rg = make_ray_grid(opm, fi=fi, wavelength_nm=central_wvl, num_rays=num_rays)
         grid = _extract_exit_pupil_grid(rg, opm, central_wvl)
         s = _monochromatic_strehl(grid[2])
         strehl_values.append(s)
@@ -211,7 +202,7 @@ def _compute_poly_strehl(opm, fi_list: list[int], num_rays: int) -> float:
     wavelengths and averaged over fields. Used for reporting; the optimization
     objective uses _compute_poly_wfe.
     """
-    from rayoptics.raytr.analyses import RayGrid
+    from rayoptics_web_utils.raygrid import make_ray_grid
 
     osp = opm['optical_spec']
     wavelengths = osp['wvls'].wavelengths
@@ -223,10 +214,7 @@ def _compute_poly_strehl(opm, fi_list: list[int], num_rays: int) -> float:
         wl_weights = []
         for wi, wvl in enumerate(wavelengths):
             w = spectral_wts[wi] if wi < len(spectral_wts) else 1.0
-            rg = RayGrid(
-                opm, f=fi, wl=wvl, foc=0,
-                num_rays=num_rays, check_apertures=True, apply_vignetting=True
-            )
+            rg = make_ray_grid(opm, fi=fi, wavelength_nm=wvl, num_rays=num_rays)
             grid = _extract_exit_pupil_grid(rg, opm, wvl)
             s = _monochromatic_strehl(grid[2])
             wl_strehl.append(s)

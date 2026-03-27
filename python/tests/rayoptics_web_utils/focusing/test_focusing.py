@@ -3,13 +3,6 @@
 import json
 import numpy as np
 import pytest
-from rayoptics_web_utils.setup import init
-
-
-@pytest.fixture(scope="module", autouse=True)
-def setup_env():
-    """Run init() once before all tests in this module."""
-    init()
 
 
 @pytest.fixture

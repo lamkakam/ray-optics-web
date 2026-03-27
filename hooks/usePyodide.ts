@@ -14,6 +14,9 @@ export interface PyodideWorkerAPI {
   plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
   plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
   plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string>;
+  plotWavefrontMap(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
+  plotGeoPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
+  plotDiffractionPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
   getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;

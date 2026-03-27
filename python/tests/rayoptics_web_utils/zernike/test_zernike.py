@@ -3,7 +3,6 @@
 import json
 import numpy as np
 import pytest
-from rayoptics_web_utils.setup import init
 
 
 def _noll_forward(n: int, m: int) -> int:
@@ -17,39 +16,81 @@ def _noll_forward(n: int, m: int) -> int:
         return base
 
 
-@pytest.fixture(scope="module", autouse=True)
-def setup_env():
-    """Run init() once before all tests in this module."""
-    init()
-
-
 @pytest.fixture(scope="module")
-def cooke_triplet():
-    """Build a configured Cooke Triplet (Sasian Triplet) optical model."""
+def tilted_houghton():
+    """Build a Tilted Houghton-Herschel system with decentered/bent surfaces.
+
+    Based on the prescription from lib/exampleSystems.ts (tiltedHoughton).
+    This is a well-corrected tilted reflector (~0.13 waves P-V at 546nm on-axis).
+    """
     from rayoptics.environment import OpticalModel
     from rayoptics.raytr.opticalspec import PupilSpec, FieldSpec, WvlSpec
-    from rayoptics.raytr.vigcalc import set_vig
+    from rayoptics.elem.surface import DecenterData
 
     opm = OpticalModel()
     osp = opm['optical_spec']
     sm = opm['seq_model']
     opm.system_spec.dimensions = 'mm'
-    osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)
-    osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0, 0.707, 1], is_relative=True)
-    osp['wvls'] = WvlSpec([(486.133, 1), (587.562, 2), (656.273, 1)], ref_wl=1)
+    osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=150)
+    osp['fov'] = FieldSpec(
+        osp, key=['object', 'angle'], value=-0.5,
+        flds=[0, 0.707, 1], is_relative=True,
+    )
+    osp['wvls'] = WvlSpec(
+        [(435.835, 0.035), (486.133, 0.18), (546.073, 0.98),
+         (656.273, 0.075), (706.519, 0.0028)],
+        ref_wl=2,
+    )
     opm.radius_mode = True
     sm.do_apertures = False
-    sm.gaps[0].thi = 10000000000
-    sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"], sd=10.009)
-    sm.add_surface([7331.288, 5.86, "air"], sd=8.9482)
-    sm.add_surface([-24.456, 0.975, "N-SF5", "Schott"], sd=4.7919)
+
+    # Object distance
+    sm.gaps[0].thi = 1e10
+
+    # S1: Stop, R=2022, t=11.2, N-BK7
+    sm.add_surface([2022, 11.2, 'N-BK7', 'Schott'], sd=75)
     sm.set_stop()
-    sm.add_surface([21.896, 4.822, "air"], sd=4.7761)
-    sm.add_surface([86.759, 3.127, "N-LAK9", "Schott"], sd=8.0217)
-    sm.add_surface([-20.4942, 41.2365, "air"], sd=8.3321)
-    sm.ifcs[-1].profile.r = 0
+
+    # S2: flat, t=10.5, air
+    sm.add_surface([0, 10.5, 'air'], sd=74.922466)
+
+    # S3: R=-2022, t=9.9, N-BK7, "dec and return" alpha=5.4
+    dec_s3 = DecenterData('dec and return')
+    dec_s3.euler[0] = 5.4
+    dec_s3.update()
+    sm.add_surface([-2022, 9.9, 'N-BK7', 'Schott'], sd=74.812074)
+    sm.ifcs[sm.cur_surface].decenter = dec_s3
+
+    # S4: flat, t=1140, air, "dec and return" alpha=5.4, offsetY=1.5
+    dec_s4 = DecenterData('dec and return')
+    dec_s4.euler[0] = 5.4
+    dec_s4.dec[1] = 1.5
+    dec_s4.update()
+    sm.add_surface([0, 1140, 'air'], sd=74.868647)
+    sm.ifcs[sm.cur_surface].decenter = dec_s4
+
+    # S5: R=-2404.5, t=-1050, REFL, "bend" alpha=3
+    dec_s5 = DecenterData('bend')
+    dec_s5.euler[0] = 3.0
+    dec_s5.update()
+    sm.add_surface([-2404.5, -1050, 'REFL'], sd=84.762317)
+    sm.ifcs[sm.cur_surface].decenter = dec_s5
+
+    # S6: flat, t=153.195342, REFL, "bend" alpha=-48
+    dec_s6 = DecenterData('bend')
+    dec_s6.euler[0] = -48.0
+    dec_s6.update()
+    sm.add_surface([0, 153.195342, 'REFL'], sd=19.846683)
+    sm.ifcs[sm.cur_surface].decenter = dec_s6
+
+    # Image surface: R=2600, "bend" alpha=5.66
+    dec_img = DecenterData('bend')
+    dec_img.euler[0] = 5.66
+    dec_img.update()
+    sm.ifcs[-1].profile.cv = 1.0 / 2600.0
+    sm.ifcs[-1].decenter = dec_img
+
     opm.update_model()
-    set_vig(opm)
     return opm
 
 
@@ -376,14 +417,7 @@ class TestGetZernikeCoefficients:
         )
 
     def test_wavelength_correction(self, cooke_triplet):
-        """Coefficients should be in waves at the traced wavelength, not central.
-
-        RayGrid internally divides OPD by central_wvl. The correction factor
-        central_wvl/traced_wvl converts to waves at the traced wavelength.
-        For d-line (central=traced), factor=1. For F-line, factor≈1.209.
-        We verify by checking that Z11_F * λ_F and Z11_C * λ_C bracket Z11_d * λ_d
-        (the physical OPD in nm is approximately similar across wavelengths).
-        """
+        """Coefficients should be in waves at the traced wavelength, not central."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         f_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=0)
         d_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
@@ -392,8 +426,6 @@ class TestGetZernikeCoefficients:
         phys_f = abs(f_line['coefficients'][10]) * f_line['wavelength_nm']
         phys_d = abs(d_line['coefficients'][10]) * d_line['wavelength_nm']
         phys_c = abs(c_line['coefficients'][10]) * c_line['wavelength_nm']
-        # Without wavelength correction, phys_f would be ~48nm and phys_d ~100nm (2x off)
-        # With correction, all three should be within ~2x of each other
         assert 0.3 < phys_f / phys_d < 3.0, f"phys F/d = {phys_f/phys_d}, expected ~similar"
         assert 0.3 < phys_c / phys_d < 3.0, f"phys C/d = {phys_c/phys_d}, expected ~similar"
         # Verify F-line Z11 ≈ 0.118 (known corrected value)
@@ -406,46 +438,32 @@ class TestGetZernikeCoefficients:
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
         coeffs = result['coefficients']
-        # On-axis: exit pupil ≈ entrance pupil, values should be close to previous
         assert abs(coeffs[0] - 0.568) < 0.1, f"Z1 piston = {coeffs[0]}, expected ~0.568"
         assert abs(coeffs[3] - 0.788) < 0.1, f"Z4 defocus = {coeffs[3]}, expected ~0.788"
 
     def test_exit_pupil_coords_off_axis_z12(self, cooke_triplet):
-        """Full-field: Z12 (secondary astigmatism) should be large with exit pupil coords.
-
-        With entrance pupil coords Z12 ≈ 0.396; with exit pupil coords Z12 ≈ 0.765.
-        OSLO reference: Z12 ≈ 0.820.
-        """
+        """Full-field: Z12 (secondary astigmatism) should be large with exit pupil coords."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
         coeffs = result['coefficients']
-        # Exit pupil fitting should give Z12 > 0.5 (entrance pupil gives ~0.396)
         assert abs(coeffs[11]) > 0.5, (
             f"Z12 = {coeffs[11]}, expected > 0.5 with exit pupil coordinates"
         )
 
     def test_exit_pupil_coords_off_axis_z7_coma(self, cooke_triplet):
-        """Full-field: Z7 (coma Y) should increase with exit pupil coords.
-
-        Entrance pupil: Z7 ≈ +0.243, Exit pupil: Z7 ≈ +0.312, OSLO: Z7 ≈ +0.327.
-        """
+        """Full-field: Z7 (coma Y) should increase with exit pupil coords."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
         coeffs = result['coefficients']
-        # Z7 should be > 0.28 with exit pupil coords (entrance pupil gives ~0.243)
         assert abs(coeffs[6]) > 0.28, (
             f"Z7 = {coeffs[6]}, expected > 0.28 with exit pupil coordinates"
         )
 
     def test_exit_pupil_coords_off_axis_z11_spherical(self, cooke_triplet):
-        """Full-field: Z11 (primary spherical) magnitude should increase with exit pupil coords.
-
-        Entrance pupil: Z11 ≈ -0.499, Exit pupil: Z11 ≈ -0.714, OSLO: Z11 ≈ -0.775.
-        """
+        """Full-field: Z11 (primary spherical) magnitude should increase with exit pupil coords."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
         coeffs = result['coefficients']
-        # Z11 should have |Z11| > 0.6 with exit pupil coords (entrance pupil gives ~0.499)
         assert abs(coeffs[10]) > 0.6, (
             f"Z11 = {coeffs[10]}, expected |Z11| > 0.6 with exit pupil coordinates"
         )
@@ -538,10 +556,7 @@ class TestFringeToNm:
         assert fringe_to_nm(j) == expected
 
     def test_roundtrip_via_fringe_formula(self):
-        """Round-trip: nm_to_fringe (Wikipedia formula) → fringe_to_nm must recover (n, m).
-
-        j = (1 + (n + |m|) / 2)^2 − 2|m| + floor((1 − sgn(m)) / 2)
-        """
+        """Round-trip: nm_to_fringe (Wikipedia formula) → fringe_to_nm must recover (n, m)."""
         from rayoptics_web_utils.zernike import fringe_to_nm
 
         def nm_to_fringe(n: int, m: int) -> int:
@@ -732,7 +747,6 @@ class TestGetZernikeCoefficientsFringeOrdering:
         assert abs(fringe['coefficients'][4] - noll['coefficients'][4]) > 0.05
 
     def test_json_serializable_fringe(self, cooke_triplet):
-        import json
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(
             cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
@@ -740,91 +754,8 @@ class TestGetZernikeCoefficientsFringeOrdering:
         assert isinstance(json.dumps(result), str)
 
 
-@pytest.fixture(scope="module")
-def tilted_houghton():
-    """Build a Tilted Houghton-Herschel system with decentered/bent surfaces.
-
-    Based on the prescription from lib/exampleSystems.ts (tiltedHoughton).
-    This is a well-corrected tilted reflector (~0.13 waves P-V at 546nm on-axis).
-    """
-    from rayoptics.environment import OpticalModel
-    from rayoptics.raytr.opticalspec import PupilSpec, FieldSpec, WvlSpec
-    from rayoptics.elem.surface import DecenterData
-
-    opm = OpticalModel()
-    osp = opm['optical_spec']
-    sm = opm['seq_model']
-    opm.system_spec.dimensions = 'mm'
-    osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=150)
-    osp['fov'] = FieldSpec(
-        osp, key=['object', 'angle'], value=-0.5,
-        flds=[0, 0.707, 1], is_relative=True,
-    )
-    osp['wvls'] = WvlSpec(
-        [(435.835, 0.035), (486.133, 0.18), (546.073, 0.98),
-         (656.273, 0.075), (706.519, 0.0028)],
-        ref_wl=2,
-    )
-    opm.radius_mode = True
-    sm.do_apertures = False
-
-    # Object distance
-    sm.gaps[0].thi = 1e10
-
-    # S1: Stop, R=2022, t=11.2, N-BK7
-    sm.add_surface([2022, 11.2, 'N-BK7', 'Schott'], sd=75)
-    sm.set_stop()
-
-    # S2: flat, t=10.5, air
-    sm.add_surface([0, 10.5, 'air'], sd=74.922466)
-
-    # S3: R=-2022, t=9.9, N-BK7, "dec and return" alpha=5.4
-    dec_s3 = DecenterData('dec and return')
-    dec_s3.euler[0] = 5.4
-    dec_s3.update()
-    sm.add_surface([-2022, 9.9, 'N-BK7', 'Schott'], sd=74.812074)
-    sm.ifcs[sm.cur_surface].decenter = dec_s3
-
-    # S4: flat, t=1140, air, "dec and return" alpha=5.4, offsetY=1.5
-    dec_s4 = DecenterData('dec and return')
-    dec_s4.euler[0] = 5.4
-    dec_s4.dec[1] = 1.5
-    dec_s4.update()
-    sm.add_surface([0, 1140, 'air'], sd=74.868647)
-    sm.ifcs[sm.cur_surface].decenter = dec_s4
-
-    # S5: R=-2404.5, t=-1050, REFL, "bend" alpha=3
-    dec_s5 = DecenterData('bend')
-    dec_s5.euler[0] = 3.0
-    dec_s5.update()
-    sm.add_surface([-2404.5, -1050, 'REFL'], sd=84.762317)
-    sm.ifcs[sm.cur_surface].decenter = dec_s5
-
-    # S6: flat, t=153.195342, REFL, "bend" alpha=-48
-    dec_s6 = DecenterData('bend')
-    dec_s6.euler[0] = -48.0
-    dec_s6.update()
-    sm.add_surface([0, 153.195342, 'REFL'], sd=19.846683)
-    sm.ifcs[sm.cur_surface].decenter = dec_s6
-
-    # Image surface: R=2600, "bend" alpha=5.66
-    dec_img = DecenterData('bend')
-    dec_img.euler[0] = 5.66
-    dec_img.update()
-    sm.ifcs[-1].profile.cv = 1.0 / 2600.0
-    sm.ifcs[-1].decenter = dec_img
-
-    opm.update_model()
-    return opm
-
-
 class TestTiltedSystemZernike:
-    """Tests for Zernike analysis on tilted Houghton-Herschel system.
-
-    The tilted Houghton-Herschel is a well-corrected system (~0.13 waves P-V
-    at 546nm on-axis). These tests verify that Zernike coefficients are
-    reasonable and bounded, catching the paraxial exp_radius blowup bug.
-    """
+    """Tests for Zernike analysis on tilted Houghton-Herschel system."""
 
     def test_on_axis_pv_wfe_reasonable(self, tilted_houghton):
         """P-V WFE should be < 1 wave (known ~0.13 waves at 546nm)."""
@@ -847,10 +778,7 @@ class TestTiltedSystemZernike:
         )
 
     def test_on_axis_zernike_coefficients_bounded(self, tilted_houghton):
-        """All Zernike coefficients should have |value| < 10 waves.
-
-        Catches the blowup bug where coefficients reach Z1=-65066.
-        """
+        """All Zernike coefficients should have |value| < 10 waves."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(
             tilted_houghton, field_index=0, wvl_index=2,
