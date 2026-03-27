@@ -164,7 +164,11 @@ def plot_wavefront_map(fi: int, wvl_index: int, opm: OpticalModel, num_rays: int
     fig, ax = plt.subplots(figsize=(5, 5))
     hmap = ax.imshow(np.transpose(opd_masked), origin='lower',
                      vmin=-max_val, vmax=max_val, cmap='RdBu_r')
-    fig.colorbar(hmap, ax=ax, label='waves')
+    
+    colorbar = fig.colorbar(hmap, ax=ax, label='waves')
+    colorbar.formatter.set_powerlimits((-2, 2))
+    colorbar.formatter.set_useMathText(True)
+    
     ax.set_aspect('equal')
     ax.tick_params(labelbottom=False, labelleft=False)
     ax.set_title('Wavefront Map')
