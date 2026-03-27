@@ -11,7 +11,7 @@ def setup_env():
     """Run init() once before all tests in this module."""
     init()
 
-
+# TODO: this fixture is duplicated in other tests; consider moving to a shared conftest.py
 @pytest.fixture
 def fresh_cooke_triplet():
     """Build a fresh Cooke Triplet optical model (function-scoped to avoid mutation)."""
