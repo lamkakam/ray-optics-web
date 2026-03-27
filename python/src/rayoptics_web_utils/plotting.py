@@ -160,15 +160,16 @@ def plot_wavefront_map(fi: int, wvl_index: int, opm: OpticalModel, num_rays: int
     valid = opd[~np.isnan(opd)]
     max_val = float(max(np.nanmax(valid), -np.nanmin(valid))) if valid.size > 0 else 1.0
     opd_masked = np.ma.masked_invalid(opd)
+    data = np.transpose(opd_masked)
 
     fig, ax = plt.subplots(figsize=(5, 5))
-    hmap = ax.imshow(np.transpose(opd_masked), origin='lower',
+    hmap = ax.imshow(data, origin='lower',
                      vmin=-max_val, vmax=max_val, cmap='RdBu_r')
     
     colorbar = fig.colorbar(hmap, ax=ax, label='waves')
     colorbar.formatter.set_powerlimits((-2, 2))
     colorbar.formatter.set_useMathText(True)
-    
+
     ax.set_aspect('equal')
     ax.tick_params(labelbottom=False, labelleft=False)
     ax.set_title('Wavefront Map')
@@ -233,6 +234,8 @@ def plot_diffraction_psf(
         check_apertures=True,
         apply_vignetting=True,
     )
+
+    data = calc_psf(np.transpose(pupil_grid.grid[2]))
     
     _, delta_xp = calc_psf_scaling(
         pupil_grid,
@@ -246,7 +249,7 @@ def plot_diffraction_psf(
     ax.yaxis.set_ticks_position('left')
 
     hmap = ax.imshow(
-        calc_psf(pupil_grid.grid[2], num_rays, max_dims),
+        calc_psf(data, num_rays, max_dims),
         origin='lower',
         cmap='RdBu_r',
         norm=LogNorm(vmin=5e-4),

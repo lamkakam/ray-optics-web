@@ -264,7 +264,7 @@ export async function plotWavefrontMap(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wavelengthIndex: number,
-  numRays: number = 64,
+  numRays: number = 128,
 ): Promise<string> {
   return await _plotWavefrontMap(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
 }
@@ -273,7 +273,7 @@ export async function plotGeoPSF(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wavelengthIndex: number,
-  numRays: number = 64,
+  numRays: number = 128,
 ): Promise<string> {
   return await _plotGeoPSF(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
 }
@@ -282,7 +282,7 @@ export async function plotDiffractionPSF(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wavelengthIndex: number,
-  numRays: number = 64,
+  numRays: number = 128,
   maxDims: number = 256,
 ): Promise<string> {
   return await _plotDiffractionPSF(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays, maxDims);
