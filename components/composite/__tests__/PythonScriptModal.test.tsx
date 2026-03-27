@@ -104,7 +104,7 @@ describe("PythonScriptModal", () => {
     );
     const btn = screen.getByRole("button", { name: "Copy to clipboard" });
     // Fire mouseEnter on the Tooltip's span wrapper (direct parent of the button)
-    fireEvent.mouseEnter(btn.parentElement!);
+    act(() => { fireEvent.mouseEnter(btn.parentElement!); });
     expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
   });
 

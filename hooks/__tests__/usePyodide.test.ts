@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 
 // Mock proxy methods
 const mockInit = jest.fn().mockResolvedValue(undefined);
@@ -28,10 +28,11 @@ beforeEach(() => {
 });
 
 describe("usePyodide", () => {
-  it("returns isReady=false initially", () => {
+  it("returns isReady=false initially", async () => {
     const { result } = renderHook(() => usePyodide());
     expect(result.current.isReady).toBe(false);
     expect(result.current.error).toBeUndefined();
+    await act(async () => {}); // flush setIsReady(true) microtask
   });
 
   it("calls init and sets isReady=true after mount", async () => {
