@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { FocusingContainer } from "@/components/container/FocusingContainer";
@@ -285,11 +285,13 @@ describe("FocusingContainer", () => {
     expect(screen.getByRole("option", { name: "20.0°" })).toBeInTheDocument();
 
     // Update specsStore without committing
-    specsStore.getState().setField({
-      space: "object",
-      type: "angle",
-      maxField: 30,
-      relativeFields: [0, 1],
+    act(() => {
+      specsStore.getState().setField({
+        space: "object",
+        type: "angle",
+        maxField: 30,
+        relativeFields: [0, 1],
+      });
     });
 
     // Force re-render to pick up store changes

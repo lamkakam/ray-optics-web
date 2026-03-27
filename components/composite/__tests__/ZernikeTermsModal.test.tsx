@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ZernikeTermsModal } from "@/components/composite/ZernikeTermsModal";
 import type { ZernikeData } from "@/lib/zernikeData";
@@ -77,12 +77,13 @@ describe("ZernikeTermsModal", () => {
     await waitFor(() => {
       expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
     });
+    await act(async () => {}); // flush pending .then() state updates
   });
 
   it("renders table column headers (Fringe ordering by default)", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(onFetchData).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     expect(screen.getByRole("columnheader", { name: "Fringe j" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Notation" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Classical Name" })).toBeInTheDocument();
@@ -93,7 +94,7 @@ describe("ZernikeTermsModal", () => {
   it("renders NUM_FRINGE_TERMS data rows in the table (fringe by default)", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(onFetchData).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     const table = screen.getByRole("table");
     const rows = within(table).getAllByRole("row");
     // 1 header row + NUM_FRINGE_TERMS data rows
@@ -103,7 +104,7 @@ describe("ZernikeTermsModal", () => {
   it("shows P-V WFE, RMS WFE, and Strehl ratio in summary", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(onFetchData).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     expect(screen.getByText(/P-V WFE/)).toBeInTheDocument();
     expect(screen.getByText(/RMS WFE/)).toBeInTheDocument();
     expect(screen.getByText(/Strehl Ratio/)).toBeInTheDocument();
@@ -115,7 +116,7 @@ describe("ZernikeTermsModal", () => {
   it("dropdown changes call onFetchData with new indices and current ordering", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe"));
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     const fieldSelect = screen.getByLabelText("Field");
     await userEvent.selectOptions(fieldSelect, "2");
@@ -127,7 +128,7 @@ describe("ZernikeTermsModal", () => {
   it("wavelength dropdown change calls onFetchData with new wavelength index and current ordering", async () => {
     const onFetchData = createMockFetchData();
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe"));
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     const wvlSelect = screen.getByLabelText("Wavelength");
     await userEvent.selectOptions(wvlSelect, "2");
@@ -158,7 +159,9 @@ describe("ZernikeTermsModal", () => {
     render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
 
     // Resolve the first fetch so data is populated
-    resolveFirst(mockZernikeData);
+    await act(async () => {
+      resolveFirst(mockZernikeData);
+    });
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     // Trigger a re-fetch via dropdown change
