@@ -1,42 +1,5 @@
 """Tests for rayoptics_web_utils.plotting module."""
 
-import pytest
-from rayoptics_web_utils.setup import init
-
-
-@pytest.fixture(scope="module", autouse=True)
-def setup_env():
-    """Run init() once before all tests in this module."""
-    init()
-
-# TODO: this fixture is duplicated in other tests; consider moving to a shared conftest.py
-@pytest.fixture(scope="module")
-def cooke_triplet():
-    """Build a configured Cooke Triplet optical model."""
-    from rayoptics.environment import OpticalModel
-    from rayoptics.raytr.opticalspec import PupilSpec, FieldSpec, WvlSpec
-
-    opm = OpticalModel()
-    osp = opm['optical_spec']
-    sm = opm['seq_model']
-    opm.system_spec.dimensions = 'mm'
-    osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)
-    osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0, 0.707, 1], is_relative=True)
-    osp['wvls'] = WvlSpec([(486.133, 1), (587.562, 2), (656.273, 1)], ref_wl=1)
-    opm.radius_mode = True
-    sm.do_apertures = False
-    sm.gaps[0].thi = 10000000000
-    sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"], sd=10.009)
-    sm.add_surface([7331.288, 5.86, "air"], sd=8.9482)
-    sm.add_surface([-24.456, 0.975, "N-SF5", "Schott"], sd=4.7919)
-    sm.set_stop()
-    sm.add_surface([21.896, 4.822, "air"], sd=4.7761)
-    sm.add_surface([86.759, 3.127, "N-LAK9", "Schott"], sd=8.0217)
-    sm.add_surface([-20.4942, 41.2365, "air"], sd=8.3321)
-    sm.ifcs[-1].profile.r = 0
-    opm.update_model()
-    return opm
-
 
 class TestPlotFunctionSignatures:
     """Verify that all plotting functions accept the expected parameters."""
@@ -99,48 +62,6 @@ class TestPlotFunctionSignatures:
         assert sig.parameters['max_dims'].default == 256
 
 
-class TestFigToBase64:
-    """Tests for the _fig_to_base64 helper."""
-
-    def test_returns_base64_string(self):
-        import matplotlib.pyplot as plt
-        from rayoptics_web_utils._utils import _fig_to_base64
-        fig, ax = plt.subplots()
-        ax.plot([0, 1], [0, 1])
-        result = _fig_to_base64(fig)
-        assert isinstance(result, str)
-        # Should be valid base64 — starts with PNG header in base64
-        assert result.startswith('iVBOR')
-
-
-class TestGetWvlLbl:
-    """Tests for the _get_wvl_lbl helper."""
-
-    def test_returns_wavelength_string(self):
-        from rayoptics_web_utils._utils import _get_wvl_lbl
-
-        class MockWvls:
-            wavelengths = [656.3, 587.0, 486.1]
-
-        class MockOptSpec:
-            def __getitem__(self, key):
-                if key == 'wvls':
-                    return MockWvls()
-                raise KeyError(key)
-
-        class MockOpm:
-            def __getitem__(self, key):
-                if key == 'optical_spec':
-                    return MockOptSpec()
-                raise KeyError(key)
-
-        result = _get_wvl_lbl(MockOpm(), 0)
-        assert result == '656.3nm'
-
-        result = _get_wvl_lbl(MockOpm(), 1)
-        assert result == '587.0nm'
-
-
 class TestPlotWavefrontMap:
     """Tests for the plot_wavefront_map function."""
 
@@ -152,6 +73,7 @@ class TestPlotWavefrontMap:
                 assert isinstance(result, str)
                 assert result.startswith('iVBOR')
 
+
 class TestPlotGeoPSF:
     """Tests for the plot_geo_psf function."""
 
@@ -162,6 +84,7 @@ class TestPlotGeoPSF:
                 result = plot_geo_psf(fi=fi, wvl_index=wvl_index, opm=cooke_triplet, num_rays=21)
                 assert isinstance(result, str)
                 assert result.startswith('iVBOR')
+
 
 class TestPlotDiffractionPSF:
     """Tests for the plot_diffraction_psf function."""

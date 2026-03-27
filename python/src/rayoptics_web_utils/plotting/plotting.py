@@ -6,7 +6,6 @@ from matplotlib.colors import PowerNorm, LogNorm
 import rayoptics.optical.model_constants as mc
 from rayoptics.raytr.waveabr import wave_abr_full_calc
 from rayoptics.raytr.analyses import (
-    RayGrid,
     RayList,
     calc_psf,
     calc_psf_scaling,
@@ -18,7 +17,8 @@ from rayoptics.environment import (
     compute_third_order,
 )
 
-from rayoptics_web_utils._utils import _fig_to_base64, _get_wvl_lbl
+from rayoptics_web_utils.utils import _fig_to_base64, _get_wvl_lbl
+from rayoptics_web_utils.raygrid import make_ray_grid
 
 
 def plot_lens_layout(opm: OpticalModel) -> str:
@@ -141,15 +141,7 @@ def plot_wavefront_map(fi: int, wvl_index: int, opm: OpticalModel, num_rays: int
     wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]
 
     # Trace at central wavelength
-    rg = RayGrid(
-        opm,
-        f=fi,
-        wl=wavelength_nm,
-        foc=0,
-        num_rays=num_rays,
-        check_apertures=True,
-        apply_vignetting=True,
-    )
+    rg = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
 
     opd_grid = rg.grid.copy()
     central_wvl = opm['optical_spec']['wvls'].central_wvl
@@ -225,15 +217,7 @@ def plot_diffraction_psf(
     """Plot diffraction PSF for a given field index and a wavelength index, returning base64 PNG."""
     wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]
 
-    pupil_grid = RayGrid(
-        opm,
-        f=fi,
-        wl=wavelength_nm,
-        foc=0,
-        num_rays=num_rays,
-        check_apertures=True,
-        apply_vignetting=True,
-    )
+    pupil_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
 
     data = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, max_dims)
     

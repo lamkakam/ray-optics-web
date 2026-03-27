@@ -1,7 +1,6 @@
-"""Tests for rayoptics_web_utils.setup module."""
+"""Tests for rayoptics_web_utils.env module."""
 
 import sys
-import pytest
 
 
 class TestInit:
@@ -9,7 +8,7 @@ class TestInit:
 
     def test_init_stubs_pyside6_modules(self):
         """init() should stub PySide6 and related modules in sys.modules."""
-        from rayoptics_web_utils.setup import init
+        from rayoptics_web_utils.env import init
         init()
         stubbed = [
             'PySide6', 'PySide6.QtWidgets', 'PySide6.QtCore',
@@ -21,7 +20,7 @@ class TestInit:
 
     def test_init_stubs_rayoptics_qtgui(self):
         """init() should stub rayoptics.qtgui and rayoptics.qtgui.guiappcmds."""
-        from rayoptics_web_utils.setup import init
+        from rayoptics_web_utils.env import init
         init()
         assert 'rayoptics.qtgui' in sys.modules
         assert 'rayoptics.qtgui.guiappcmds' in sys.modules
@@ -30,7 +29,7 @@ class TestInit:
 
     def test_init_returns_dict_with_caf2(self):
         """init() should return a dict containing a 'caf2' key."""
-        from rayoptics_web_utils.setup import init
+        from rayoptics_web_utils.env import init
         result = init()
         assert isinstance(result, dict)
         assert 'caf2' in result
@@ -38,7 +37,7 @@ class TestInit:
 
     def test_init_sets_matplotlib_backend(self):
         """init() should set the matplotlib backend to Agg."""
-        from rayoptics_web_utils.setup import init
+        from rayoptics_web_utils.env import init
         init()
         import matplotlib
         assert matplotlib.get_backend() == 'Agg'
