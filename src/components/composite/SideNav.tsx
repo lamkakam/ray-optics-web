@@ -24,6 +24,7 @@ export function SideNav({ isOpen, isLG, currentView, onClose, onNavigate }: Side
   return (
     <nav
       aria-label="Side navigation"
+      aria-hidden={!isOpen}
       className={`transition-transform duration-200 ease-out will-change-transform absolute top-0 left-0 h-full z-40 flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-xl ${isLG ? "w-[33vw]" : "w-[50vw]"} ${isOpen ? "translate-x-0" : "-translate-x-full"}`}
     >
       <div className="flex justify-end p-2">

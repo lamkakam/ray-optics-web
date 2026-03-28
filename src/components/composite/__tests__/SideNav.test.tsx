@@ -18,8 +18,8 @@ describe("SideNav", () => {
   });
 
   it("is in the DOM with -translate-x-full when closed", () => {
-    render(<SideNav {...defaultProps} isOpen={false} />);
-    const nav = screen.getByRole("navigation", { name: "Side navigation" });
+    const { container } = render(<SideNav {...defaultProps} isOpen={false} />);
+    const nav = container.querySelector('nav[aria-label="Side navigation"]');
     expect(nav).toBeInTheDocument();
     expect(nav).toHaveClass("-translate-x-full");
   });

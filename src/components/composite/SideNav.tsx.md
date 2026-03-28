@@ -14,7 +14,8 @@ Collapsible side navigation panel toggled by the hamburger button in the header.
 
 ## Behaviour
 - Always rendered in the DOM — never returns `null`
-- `<nav aria-label="Side navigation">` positioned `absolute top-0 left-0 h-full z-40`
+- `<nav aria-label="Side navigation" aria-hidden={!isOpen}>` positioned `absolute top-0 left-0 h-full z-40`
+- `aria-hidden="true"` when closed — hides from accessibility tree (screen readers, `queryByRole`)
 - Background: `bg-white dark:bg-gray-900`, `border-r`, `shadow-xl`
 - Slide animation: `transition-transform duration-200 ease-out will-change-transform`; `translate-x-0` when open, `-translate-x-full` when closed
 - Parent container must have `overflow-hidden` to clip the off-screen nav
