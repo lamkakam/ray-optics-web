@@ -1,20 +1,14 @@
 "use client";
 
 import React from "react";
-import { Modal } from "@/components/micro/Modal";
-import { Button } from "@/components/micro/Button";
+import { Header } from "@/components/micro/Header";
 import { Paragraph } from "@/components/micro/Paragraph";
 
-interface PrivacyPolicyModalProps {
-  readonly isOpen: boolean;
-  readonly onClose: () => void;
-}
-
-export function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyModalProps) {
+export function PrivacyPolicyView() {
   return (
-    <Modal isOpen={isOpen} title="Privacy Policy" size="lg">
-      <div className="overflow-y-auto max-h-96 pr-1 mb-6">
-        <div className="space-y-4">
+    <div className="p-6 overflow-y-auto">
+      <Header level={2} className="mb-4">Privacy Policy</Header>
+      <div className="space-y-4">
         <section>
           <Paragraph variant="subheading" className="mb-1">Overview</Paragraph>
           <Paragraph>
@@ -47,6 +41,7 @@ export function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyModalProps)
             and PyPI for details on how they handle this data.
           </Paragraph>
         </section>
+
         <section>
           <Paragraph variant="subheading" className="mb-1">We may make changes to these terms</Paragraph>
           <Paragraph>
@@ -54,14 +49,7 @@ export function PrivacyPolicyModal({ isOpen, onClose }: PrivacyPolicyModalProps)
             please check these terms to ensure you understand the terms that apply at that time.
           </Paragraph>
         </section>
-        </div>
       </div>
-
-      <div className="flex justify-end">
-        <Button variant="primary" onClick={onClose} aria-label="Close">
-          Close
-        </Button>
-      </div>
-    </Modal>
+    </div>
   );
 }

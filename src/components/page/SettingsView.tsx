@@ -2,15 +2,12 @@
 
 import React from "react";
 import type { Theme } from "@/lib/theme";
-import { Modal } from "@/components/micro/Modal";
-import { Button } from "@/components/micro/Button";
+import { Header } from "@/components/micro/Header";
 import { Select } from "@/components/micro/Select";
 
-interface SettingsModalProps {
-  readonly isOpen: boolean;
+interface SettingsViewProps {
   readonly theme: Theme;
   readonly onThemeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  readonly onClose: () => void;
 }
 
 const themeOptions: { value: Theme; label: string }[] = [
@@ -18,26 +15,23 @@ const themeOptions: { value: Theme; label: string }[] = [
   { value: "dark", label: "Dark" },
 ];
 
-export function SettingsModal({ isOpen, theme, onThemeChange, onClose }: SettingsModalProps) {
+export function SettingsView({ theme, onThemeChange }: SettingsViewProps) {
   return (
-    <Modal isOpen={isOpen} title="Settings">
+    <div className="p-6">
+      <Header level={2} className="mb-4">Settings</Header>
       <div className="mb-6">
-        <label htmlFor="theme-select" className="block text-sm font-medium mb-2">
+        <label htmlFor="settings-theme-select" className="block text-sm font-medium mb-2">
           Theme
         </label>
         <Select
-          id="theme-select"
+          id="settings-theme-select"
           aria-label="Theme"
           options={themeOptions}
           value={theme}
           onChange={onThemeChange}
+          className="max-w-[12em]"
         />
       </div>
-      <div className="flex justify-end">
-        <Button variant="primary" onClick={onClose}>
-          Ok
-        </Button>
-      </div>
-    </Modal>
+    </div>
   );
 }

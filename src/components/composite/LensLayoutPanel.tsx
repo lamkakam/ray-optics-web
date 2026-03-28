@@ -12,7 +12,7 @@ export function LensLayoutPanel({
   loading,
 }: LensLayoutPanelProps) {
   return (
-    <div className="relative flex h-full w-full flex-col items-center justify-center">
+    <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
       {imageBase64 ? (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element -- base64 data URI, not optimizable by next/image */}

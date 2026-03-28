@@ -176,10 +176,17 @@ describe("Home page", () => {
 
   // --- Example system selector tests ---
 
-  it("renders an Example Systems select in the header", () => {
+  it("renders an Example Systems select", () => {
     render(<Home />);
     const select = screen.getByLabelText("Example system");
     expect(select).toBeInTheDocument();
+  });
+
+  it("example system dropdown is below the header, not inside it", () => {
+    render(<Home />);
+    const header = document.querySelector("header");
+    const select = screen.getByLabelText("Example system");
+    expect(header).not.toContainElement(select);
   });
 
   it("starts with no example selected and shows a placeholder option", () => {
@@ -264,68 +271,6 @@ describe("Home page", () => {
     expect(screen.queryByDisplayValue("12.5")).not.toBeInTheDocument();
   });
 
-  // --- Settings modal tests ---
-
-  it("renders a settings button in the header", () => {
-    render(<Home />);
-    expect(
-      screen.getByRole("button", { name: "Settings" })
-    ).toBeInTheDocument();
-  });
-
-  it("opens settings modal when settings button is clicked", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-  });
-
-  it("settings modal has title 'Settings'", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent("Settings");
-  });
-
-  it("settings modal contains a theme select", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(screen.getByLabelText("Theme")).toBeInTheDocument();
-  });
-
-  it("settings modal contains an Ok button", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(screen.getByRole("button", { name: "Ok" })).toBeInTheDocument();
-  });
-
-  it("settings modal closes when Ok is clicked", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Ok" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("theme select defaults to current theme", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    const themeSelect = screen.getByLabelText("Theme") as HTMLSelectElement;
-    expect(themeSelect.value).toBe("light");
-  });
-
-  it("selecting a different theme option calls toggleTheme", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    await userEvent.selectOptions(screen.getByLabelText("Theme"), "dark");
-    expect(mockToggleTheme).toHaveBeenCalledTimes(1);
-  });
-
-  it("selecting the same theme option does not call toggleTheme", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    await userEvent.selectOptions(screen.getByLabelText("Theme"), "light");
-    expect(mockToggleTheme).not.toHaveBeenCalled();
-  });
-
   // --- Tooltip tests ---
 
   it("Update System button has a tooltip with correct text", async () => {
@@ -335,10 +280,48 @@ describe("Home page", () => {
     expect(tooltips.some((t) => t.textContent === "Compute and update the optical system")).toBe(true);
   });
 
-  it("Settings button has a tooltip with correct text", () => {
+  // --- Side nav / hamburger tests ---
+
+  it("renders hamburger button in the header", () => {
     render(<Home />);
-    const tooltips = screen.getAllByRole("tooltip");
-    expect(tooltips.some((t) => t.textContent === "Settings")).toBe(true);
+    expect(screen.getByRole("button", { name: "Open navigation" })).toBeInTheDocument();
+  });
+
+  it("clicking hamburger opens side nav", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    expect(screen.getByRole("navigation", { name: "Side navigation" })).toBeInTheDocument();
+  });
+
+  it("clicking hamburger again closes side nav", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    expect(screen.getByRole("navigation", { name: "Side navigation" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    expect(screen.queryByRole("navigation", { name: "Side navigation" })).not.toBeInTheDocument();
+  });
+
+  it("clicking Settings in side nav shows settings view (no dialog)", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    await userEvent.click(screen.getByRole("link", { name: "Settings" }));
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("clicking Privacy Policy in side nav shows privacy view (no dialog)", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    await userEvent.click(screen.getByRole("link", { name: "Privacy Policy" }));
+    expect(screen.getByRole("heading", { name: "Privacy Policy" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("clicking About in side nav shows about view", async () => {
+    render(<Home />);
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+    await userEvent.click(screen.getByRole("link", { name: "About" }));
+    expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument();
   });
 
   // --- surfaceBySurface3rdOrder plot type tests ---
@@ -400,33 +383,6 @@ describe("Home page", () => {
     expect(mockPlotRayFan).not.toHaveBeenCalled();
   });
 
-  // --- Privacy Policy modal tests ---
-
-  it("renders a Privacy Policy button in the header", () => {
-    render(<Home />);
-    expect(
-      screen.getByRole("button", { name: "Privacy Policy" })
-    ).toBeInTheDocument();
-  });
-
-  it("opens privacy policy modal when Privacy Policy button is clicked", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Privacy Policy" }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-  });
-
-  it("privacy policy modal has title 'Privacy Policy'", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Privacy Policy" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent("Privacy Policy");
-  });
-
-  it("privacy policy modal closes when Close is clicked", async () => {
-    render(<Home />);
-    await userEvent.click(screen.getByRole("button", { name: "Privacy Policy" }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Close" }));
-  });
   // --- 3rd Order Seidel Aberr. button and modal tests ---
 
   it("'3rd Order Seidel Aberr.' button not present before Update System", () => {

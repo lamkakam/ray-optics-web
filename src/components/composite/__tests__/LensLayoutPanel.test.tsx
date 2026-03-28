@@ -3,6 +3,11 @@ import { render, screen } from "@testing-library/react";
 import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
 
 describe("LensLayoutPanel", () => {
+  it("root div has overflow-hidden to prevent content bleeding over BottomDrawer on short viewports", () => {
+    const { container } = render(<LensLayoutPanel />);
+    expect(container.firstChild).toHaveClass("overflow-hidden");
+  });
+
   it("renders a placeholder when imageBase64 is undefined and not loading", () => {
     render(<LensLayoutPanel />);
     expect(

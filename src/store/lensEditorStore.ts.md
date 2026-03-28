@@ -21,6 +21,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 | `asphericalModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `decenterModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `committedOpticalModel` | `OpticalModel \| undefined` | `undefined` |
+| `firstOrderData` | `Record<string, number> \| undefined` | `undefined` |
 
 ## Actions
 
@@ -34,6 +35,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `openAsphericalModal(rowId)` / `closeAsphericalModal()` — open/close the aspherical coefficients modal.
 - `openDecenterModal(rowId)` / `closeDecenterModal()` — open/close the surface decenter modal.
 - `setCommittedOpticalModel(model)` — stores the last successfully submitted `OpticalModel` snapshot. Used by `AnalysisPlotContainer` and other consumers that need the most recently committed model.
+- `setFirstOrderData(data)` — sets or clears the first-order optical data (e.g. EFL, f-number) returned by `proxy.getFirstOrderData`. Populated after each successful submit.
 
 ## Key Conventions
 
