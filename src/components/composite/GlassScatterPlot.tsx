@@ -102,8 +102,8 @@ function InnerPlot({
 
           const yDomain = [yMin - yPad, yMax + yPad];
           const yRange = yDomain[1] - yDomain[0];
-          const visYMax = yDomain[1] - ty / sy / innerHeight * yRange;
-          const visYMin = yDomain[1] - (ty / sy - innerHeight / sy) / innerHeight * yRange;
+          const visYMax = yDomain[1] + ty / sy / innerHeight * yRange;
+          const visYMin = yDomain[1] - (innerHeight / sy - ty / sy) / innerHeight * yRange;
 
           const axisXScale = scaleLinear<number>({
             domain: [visXMin, visXMax],

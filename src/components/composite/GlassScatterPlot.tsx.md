@@ -21,6 +21,7 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 - `data-testid="glass-point"` on each circle for test selection
 - Circle radius: 4 (default), 6 + stroke (selected)
 - x-axis domain reversed (high Abbe number on left, low on right — standard glass map convention)
+- y-axis: lower position = lower refractive index (standard orientation). `visYMin`/`visYMax` derived from zoom transform so that the axis labels track the zoom-transformed data range correctly.
 - Margins: `{ top: 20, right: 20, bottom: 50, left: 60 }`
 
 ## Key Notes

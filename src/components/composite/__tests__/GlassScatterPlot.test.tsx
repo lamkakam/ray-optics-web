@@ -59,4 +59,34 @@ describe("GlassScatterPlot", () => {
     render(<GlassScatterPlot {...defaultProps} />);
     expect(screen.getByText("Nd")).toBeInTheDocument();
   });
+
+  it("y-axis tick values are in ascending order from bottom to top (lower position = lower nd)", () => {
+    const { container } = render(<GlassScatterPlot {...defaultProps} />);
+
+    const axisLeft = container.querySelector(".visx-axis-left");
+    expect(axisLeft).not.toBeNull();
+
+    const ticks = axisLeft!.querySelectorAll(".visx-axis-tick");
+    expect(ticks.length).toBeGreaterThan(1);
+
+    const tickData = Array.from(ticks).map((tick) => {
+      const textEl = tick.querySelector("text");
+      const value = parseFloat(textEl?.textContent ?? "0");
+      // visx renders each tick's y-position in the text element's y attribute
+      const yPos = parseFloat(textEl?.getAttribute("y") ?? "0");
+      return { value, yPos };
+    });
+
+    // Lower nd value → higher SVG y coordinate (appears lower on screen)
+    const sorted = [...tickData].sort((a, b) => a.value - b.value);
+    for (let i = 0; i < sorted.length - 1; i++) {
+      expect(sorted[i].yPos).toBeGreaterThan(sorted[i + 1].yPos);
+    }
+
+    // Range must cover the data (points have nd 1.5168 and 1.62); forced min=1.4, max=2.0
+    const values = tickData.map((t) => t.value);
+    expect(Math.min(...values)).toBeLessThan(1.5); // ~1.4 lower bound
+    expect(Math.max(...values)).toBeGreaterThan(1.9); // ~2.0 upper bound
+    expect(Math.max(...values)).toBeLessThan(2.2); // not in buggy 2.x-2.9 range
+  });
 });
