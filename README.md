@@ -57,7 +57,10 @@ This project is not affiliated with, endorsed by, or in any way officially conne
 npm install
 
 # Initialize the venv for the internal Python package and install deps for the development
-bash ./scripts/init-python-venv.sh
+bash scripts/init-python-venv.sh
+
+# Activate the venv of the internal Python package
+source scripts/activate-venv.sh
 
 # Build the wheel of rayoptics_web_utils and then run dev server (http://localhost:3000)
 npm run dev
@@ -72,7 +75,7 @@ npm run lint
 npm run test
 
 # Unit tests for the internal Python package
-bash ./scripts/run-python-tests.sh
+bash scripts/run-python-tests.sh
 
 # E2E tests (Playwright)
 npm run test:e2e
