@@ -92,6 +92,23 @@ describe("Layout", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("SM layout: outer container has h-screen so SideNav (h-full) spans full viewport", () => {
+    mockScreenSize.value = "screenSM";
+    const { container } = render(<Layout {...defaultProps} />);
+    const outerDiv = container.firstChild as HTMLElement;
+    expect(outerDiv).toHaveClass("h-screen");
+  });
+
+  it("SM layout: inner container has flex-1 and min-h-0 so SideNav inherits full height", () => {
+    mockScreenSize.value = "screenSM";
+    const { container } = render(<Layout {...defaultProps} />);
+    const outerDiv = container.firstChild as HTMLElement;
+    // Second child of outer div is the inner content wrapper (after <header>)
+    const innerDiv = outerDiv.children[1] as HTMLElement;
+    expect(innerDiv).toHaveClass("flex-1");
+    expect(innerDiv).toHaveClass("min-h-0");
+  });
+
   it("renders errorModal node", () => {
     render(
       <Layout {...defaultProps} errorModal={<div role="dialog">error</div>} />

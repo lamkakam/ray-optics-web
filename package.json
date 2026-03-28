@@ -1,6 +1,7 @@
 {
   "name": "ray-optics-web",
-  "version": "0.3.0",
+  "version": "0.3.1",
+  "license": "BSD-3-Clause",
   "private": true,
   "scripts": {
     "predev": "bash scripts/build-python-wheel.sh",
