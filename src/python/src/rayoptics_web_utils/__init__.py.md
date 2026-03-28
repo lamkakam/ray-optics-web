@@ -7,8 +7,15 @@ Package entry point. Eagerly imports `init` from `env/env.py` (safe — no rayop
 ## Key Conventions
 
 - `analysis`, `plotting`, and `focusing` subpackages import rayoptics at module level; lazy loading defers these imports until after `init()` has stubbed the unavailable Qt modules.
+- `glass` subpackage has **no** rayoptics dependency → imported eagerly at module level.
 - `__getattr__` raises `AttributeError` for unknown names, preserving standard Python module behaviour.
 - Lazy import paths point to the concrete module file (e.g. `rayoptics_web_utils.analysis.analysis`) rather than the subpackage to avoid triggering subpackage `__init__.py` imports before `init()` runs.
+
+## Eagerly-loaded symbols
+
+| Symbol | Module |
+|---|---|
+| `get_glass_catalog_data`, `get_all_glass_catalogs_data` | `rayoptics_web_utils.glass.glass` |
 
 ## Lazy-loaded symbols
 
