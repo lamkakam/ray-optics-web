@@ -2,18 +2,18 @@
 
 ## Purpose
 
-One-time setup of the local Python development environment at `python/.venv`. This venv is used for running the internal package's test suite and for editable development of `rayoptics_web_utils`.
+One-time setup of the local Python development environment at `src/python/.venv`. This venv is used for running the internal package's test suite and for editable development of `rayoptics_web_utils`.
 
 ## Behavior (step-by-step)
 
-1. Resolves `python/` relative to the script's own location.
-2. If `python/.venv/` does not exist, creates a new virtual environment with `python3 -m venv .venv`.
+1. Resolves `src/python/` relative to the script's own location.
+2. If `src/python/.venv/` does not exist, creates a new virtual environment with `python3 -m venv .venv`.
 3. Upgrades `pip` inside the venv.
 4. Installs `pytest` into the venv.
 5. Installs the package in editable mode (`pip install -e .`), making local source changes immediately visible without rebuilding.
 6. Prints the activation command on success:
    ```
-   source python/.venv/bin/activate
+   source src/python/.venv/bin/activate
    ```
 
 ## Preconditions
@@ -23,7 +23,7 @@ One-time setup of the local Python development environment at `python/.venv`. Th
 
 ## Output / Side-effects
 
-- Creates (or reuses) `python/.venv/`.
+- Creates (or reuses) `src/python/.venv/`.
 - Installs `pytest` and the editable package into the venv.
 - Does **not** build or publish the wheel — use `build-python-wheel.sh` for that.
 
@@ -38,7 +38,7 @@ Run **once** during initial project setup (documented in `CLAUDE.md` under *Deve
 After the script completes, activate the venv for interactive use:
 
 ```bash
-source python/.venv/bin/activate
+source src/python/.venv/bin/activate
 ```
 
 ## Integration

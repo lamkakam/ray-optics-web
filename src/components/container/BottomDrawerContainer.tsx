@@ -1,0 +1,80 @@
+"use client";
+
+import React, { useMemo } from "react";
+import type { StoreApi } from "zustand";
+import type { LensEditorState } from "@/store/lensEditorStore";
+import type { SpecsConfigurerState } from "@/store/specsConfigurerStore";
+import type { OpticalModel } from "@/lib/opticalModel";
+import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import { BottomDrawer } from "@/components/composite/BottomDrawer";
+import { SpecsConfigurerContainer } from "./SpecsConfigurerContainer";
+import { LensPrescriptionContainer } from "./LensPrescriptionContainer";
+import { FocusingContainer } from "./FocusingContainer";
+
+interface BottomDrawerContainerProps {
+  readonly specsStore: StoreApi<SpecsConfigurerState>;
+  readonly lensStore: StoreApi<LensEditorState>;
+  readonly getOpticalModel: () => OpticalModel;
+  readonly onImportJson: (data: OpticalModel) => void;
+  readonly onUpdateSystem: () => Promise<void>;
+  readonly isReady: boolean;
+  readonly computing: boolean;
+  readonly proxy: PyodideWorkerAPI | undefined;
+  readonly onError: () => void;
+  readonly draggable: boolean;
+}
+
+export function BottomDrawerContainer({
+  specsStore,
+  lensStore,
+  getOpticalModel,
+  onImportJson,
+  onUpdateSystem,
+  isReady,
+  computing,
+  proxy,
+  onError,
+  draggable,
+}: BottomDrawerContainerProps) {
+  const tabs = useMemo(
+    () => [
+      {
+        id: "specs",
+        label: "System Specs",
+        content: <SpecsConfigurerContainer store={specsStore} />,
+      },
+      {
+        id: "prescription",
+        label: "Prescription",
+        content: (
+          <LensPrescriptionContainer
+            store={lensStore}
+            getOpticalModel={getOpticalModel}
+            onImportJson={onImportJson}
+            onUpdateSystem={onUpdateSystem}
+            isUpdateSystemDisabled={!isReady || computing}
+          />
+        ),
+      },
+      {
+        id: "focusing",
+        label: "Focusing",
+        content: (
+          <FocusingContainer
+            lensStore={lensStore}
+            specsStore={specsStore}
+            proxy={proxy}
+            isReady={isReady}
+            computing={computing}
+            getOpticalModel={getOpticalModel}
+            onUpdateSystem={onUpdateSystem}
+            onError={onError}
+          />
+        ),
+      },
+    ],
+    [specsStore, lensStore, getOpticalModel, onImportJson, onUpdateSystem, isReady, computing, proxy, onError]
+  );
+
+  return <BottomDrawer tabs={tabs} draggable={draggable} />;
+}

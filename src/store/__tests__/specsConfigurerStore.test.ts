@@ -144,6 +144,133 @@ describe("specsConfigurerStore", () => {
     });
   });
 
+  describe("committedSpecs", () => {
+    it("initial value equals OpticalSpecs from default form state", () => {
+      const store = makeStore();
+      const committed = store.getState().committedSpecs;
+      expect(committed).toEqual({
+        pupil: { space: "object", type: "epd", value: 0.5 },
+        field: { space: "object", type: "height", maxField: 0, fields: [0], isRelative: true },
+        wavelengths: { weights: [[546.073, 1]], referenceIndex: 0 },
+      });
+    });
+
+    it("setCommittedSpecs updates committedSpecs", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs);
+      expect(store.getState().committedSpecs).toEqual(sampleSpecs);
+    });
+
+    it("getFieldOptions returns angle labels after setCommittedSpecs", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs);
+      expect(store.getState().getFieldOptions()).toEqual([
+        { label: "0.00°", value: 0 },
+        { label: "14.0°", value: 1 },
+        { label: "20.0°", value: 2 },
+      ]);
+    });
+
+    it("getFieldOptions returns height labels for height type", () => {
+      const store = makeStore();
+      const heightSpecs: OpticalSpecs = {
+        pupil: { space: "object", type: "epd", value: 25 },
+        field: { space: "object", type: "height", maxField: 10, fields: [0, 0.5, 1], isRelative: true },
+        wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
+      };
+      store.getState().setCommittedSpecs(heightSpecs);
+      expect(store.getState().getFieldOptions()).toEqual([
+        { label: "0.00 mm", value: 0 },
+        { label: "5.00 mm", value: 1 },
+        { label: "10.0 mm", value: 2 },
+      ]);
+    });
+
+    it("getWavelengthOptions returns wavelength labels", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs);
+      expect(store.getState().getWavelengthOptions()).toEqual([
+        { label: "486.133 nm", value: 0 },
+        { label: "587.562 nm", value: 1 },
+        { label: "656.273 nm", value: 2 },
+      ]);
+    });
+
+    it("getters are independent from loadFromSpecs (form state)", () => {
+      const store = makeStore();
+      // loadFromSpecs changes form state but NOT committedSpecs
+      store.getState().loadFromSpecs(sampleSpecs);
+      // committedSpecs is still the initial default
+      const committed = store.getState().committedSpecs;
+      expect(committed.field.type).toBe("height");
+      expect(committed.field.maxField).toBe(0);
+      // getFieldOptions still reflects initial committedSpecs, not loaded form state
+      expect(store.getState().getFieldOptions()).toEqual([
+        { label: "0.00 mm", value: 0 },
+      ]);
+    });
+  });
+
+  describe("clampFieldIndex", () => {
+    it("returns index unchanged when in range", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 fields
+      expect(store.getState().clampFieldIndex(1)).toBe(1);
+    });
+
+    it("clamps index to last field when index exceeds count", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 fields (indices 0,1,2)
+      expect(store.getState().clampFieldIndex(5)).toBe(2);
+    });
+
+    it("handles single-field edge case (returns 0)", () => {
+      const store = makeStore();
+      // default committedSpecs has 1 field
+      expect(store.getState().clampFieldIndex(3)).toBe(0);
+    });
+
+    it("uses provided newSpecs over committedSpecs when supplied", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 fields
+      const twoFieldSpecs: OpticalSpecs = {
+        ...sampleSpecs,
+        field: { ...sampleSpecs.field, fields: [0, 1] },
+      };
+      expect(store.getState().clampFieldIndex(5, twoFieldSpecs)).toBe(1);
+    });
+  });
+
+  describe("clampWavelengthIndex", () => {
+    it("returns index unchanged when in range", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 wavelengths
+      expect(store.getState().clampWavelengthIndex(2)).toBe(2);
+    });
+
+    it("clamps index to last wavelength when index exceeds count", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 wavelengths (indices 0,1,2)
+      expect(store.getState().clampWavelengthIndex(5)).toBe(2);
+    });
+
+    it("handles single-wavelength edge case (returns 0)", () => {
+      const store = makeStore();
+      // default committedSpecs has 1 wavelength
+      expect(store.getState().clampWavelengthIndex(3)).toBe(0);
+    });
+
+    it("uses provided newSpecs over committedSpecs when supplied", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 wavelengths
+      const twoWlSpecs: OpticalSpecs = {
+        ...sampleSpecs,
+        wavelengths: { weights: [[486.133, 1], [587.562, 1]], referenceIndex: 0 },
+      };
+      expect(store.getState().clampWavelengthIndex(5, twoWlSpecs)).toBe(1);
+    });
+  });
+
   describe("modal toggles", () => {
     it("opens and closes field modal", () => {
       const store = makeStore();

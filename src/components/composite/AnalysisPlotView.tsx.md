@@ -74,4 +74,4 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 
 ## Usages
 
-- Used in the analysis panel of the main page.
+- Rendered by `components/container/AnalysisPlotContainer`. The container reads all 5 state props from `store/analysisPlotStore`, derives `fieldOptions` and `wavelengthOptions` from `committedSpecs`, and supplies the three async handlers (`onFieldChange`, `onWavelengthChange`, `onPlotTypeChange`).

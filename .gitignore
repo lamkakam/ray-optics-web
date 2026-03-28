@@ -33,9 +33,9 @@ test-results/
 playwright-report/
 
 # Python
-python/.venv/
-python/src/*.egg-info/
-python/build/
+src/python/.venv/
+src/python/src/*.egg-info/
+src/python/build/
 *.whl
 __pycache__/
 *.pyc

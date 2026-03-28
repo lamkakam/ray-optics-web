@@ -23,6 +23,7 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 | `relativeFields` | `number[]` | `[0]` |
 | `wavelengthWeights` | `WavelengthWeights` | `[[546.073, 1]]` (Note: `546.073` (e-line wavelength) is imported from `lib/fraunhoferLines`) |
 | `referenceIndex` | `ReferenceIndex` | `0` |
+| `committedSpecs` | `OpticalSpecs` | mirrors default form state (epd 0.5, height field maxField 0, e-line wavelength) |
 | `fieldModalOpen` | `boolean` | `false` |
 | `wavelengthModalOpen` | `boolean` | `false` |
 
@@ -34,7 +35,12 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 - `openFieldModal()` / `closeFieldModal()` — toggle `fieldModalOpen`.
 - `openWavelengthModal()` / `closeWavelengthModal()` — toggle `wavelengthModalOpen`.
 - `toOpticalSpecs()` — builds and returns an `OpticalSpecs` object from current state; `field.isRelative` is always `true`.
-- `loadFromSpecs(specs)` — populates all state fields from an `OpticalSpecs` object (used when loading a model).
+- `loadFromSpecs(specs)` — populates all form state fields from an `OpticalSpecs` object (used when loading a model); does NOT update `committedSpecs`.
+- `setCommittedSpecs(specs)` — stores a committed snapshot of `OpticalSpecs`; called after a successful submit in `page.tsx`.
+- `getFieldOptions()` — derives `{ label, value }[]` from `committedSpecs.field`; unit is `°` for angle, ` mm` for height.
+- `getWavelengthOptions()` — derives `{ label, value }[]` from `committedSpecs.wavelengths.weights`.
+- `clampFieldIndex(index, newSpecs?)` — clamps `index` to the last valid field index in `newSpecs` (if provided) or `committedSpecs`. Returns `Math.min(index, fields.length - 1)`.
+- `clampWavelengthIndex(index, newSpecs?)` — clamps `index` to the last valid wavelength index in `newSpecs` (if provided) or `committedSpecs`. Returns `Math.min(index, weights.length - 1)`.
 
 ## Key Conventions
 

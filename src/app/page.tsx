@@ -1,30 +1,25 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { createStore } from "zustand";
-import type { OpticalSpecs, OpticalModel, SeidelData } from "@/lib/opticalModel";
+import { createStore, useStore } from "zustand";
+import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
 import type { Theme } from "@/lib/theme";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { ExampleSystems } from "@/lib/exampleSystems";
 import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
-import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurerContainer";
-import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
-import { FocusingContainer } from "@/components/container/FocusingContainer";
+import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
 import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
-import {
-  AnalysisPlotView,
-  PLOT_TYPE_CONFIG,
-  type PlotType,
-} from "@/components/composite/AnalysisPlotView";
+import { AnalysisPlotContainer } from "@/components/container/AnalysisPlotContainer";
+import { buildPlotFn } from "@/lib/plotFunctions";
+import { BottomDrawerContainer } from "@/components/container/BottomDrawerContainer";
 import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { Button } from "@/components/micro/Button";
 import { Tooltip } from "@/components/micro/Tooltip";
 import { Header } from "@/components/micro/Header";
 import { Select } from "@/components/micro/Select";
-import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteModal";
 import { SettingsModal } from "@/components/composite/SettingsModal";
 import { PrivacyPolicyModal } from "@/components/composite/PrivacyPolicyModal";
@@ -60,17 +55,17 @@ export default function Home() {
     []
   );
 
-  const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(
-    () => specsStore.getState().toOpticalSpecs()
+  const analysisPlotStore = useMemo(
+    () => createStore<AnalysisPlotState>(createAnalysisPlotSlice),
+    []
   );
-  const [committedOpticalModel, setCommittedOpticalModel] = useState<OpticalModel | undefined>();
+
+  const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
+  const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
+  const selectedPlotType = useStore(analysisPlotStore, (s) => s.selectedPlotType);
+
   const [layoutImage, setLayoutImage] = useState<string | undefined>();
   const [layoutLoading, setLayoutLoading] = useState(false);
-  const [plotImage, setPlotImage] = useState<string | undefined>();
-  const [plotLoading, setPlotLoading] = useState(false);
-  const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
-  const [selectedWavelengthIndex, setSelectedWavelengthIndex] = useState(0);
-  const [selectedPlotType, setSelectedPlotType] = useState<PlotType>("rayFan");
   const [firstOrderData, setFirstOrderData] = useState<
     Record<string, number> | undefined
   >();
@@ -110,54 +105,15 @@ export default function Home() {
       }
     };
 
-  const fieldOptions = useMemo(() => {
-    const { fields, maxField, type } = committedSpecs.field;
-    const unit = type === "angle" ? "°" : " mm";
-    return fields.map((rf, i) => ({
-      label: `${(rf * maxField).toPrecision(3)}${unit}`,
-      value: i,
-    }));
-  }, [committedSpecs.field]);
-
-  const wavelengthOptions = useMemo(() => {
-    return committedSpecs.wavelengths.weights.map(([wl], i) => ({
-      label: `${wl} nm`,
-      value: i,
-    }));
-  }, [committedSpecs.wavelengths.weights]);
-
   const handleFetchZernikeData = useCallback(
     async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering): Promise<ZernikeData> => {
       if (!proxy) throw new Error("Pyodide not ready");
+      const committedOpticalModel = lensStore.getState().committedOpticalModel;
       if (!committedOpticalModel) throw new Error("No optical model computed yet");
       const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
       return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, numTerms, ordering);
     },
-    [proxy, committedOpticalModel],
-  );
-
-  const getPlotFunction = useCallback(
-    (plotType: PlotType, model?: OpticalModel): ((fieldIndex: number, wavelenthIndex: number) => Promise<string>) | undefined => {
-      const m = model ?? committedOpticalModel;
-      if (!proxy || !m) return undefined;
-      switch (plotType) {
-        case "rayFan":
-          return (fi, _) => proxy.plotRayFan(m, fi);
-        case "opdFan":
-          return (fi, _) => proxy.plotOpdFan(m, fi);
-        case "spotDiagram":
-          return (fi, _) => proxy.plotSpotDiagram(m, fi);
-        case "surfaceBySurface3rdOrder":
-          return (_, __) => proxy.plotSurfaceBySurface3rdOrderAberr(m);
-        case "wavefrontMap":
-          return (fi, wi) => proxy.plotWavefrontMap(m, fi, wi);
-        case "geoPSF":
-          return (fi, wi) => proxy.plotGeoPSF(m, fi, wi);
-        case "diffractionPSF":
-          return (fi, wi) => proxy.plotDiffractionPSF(m, fi, wi);
-      }
-    },
-    [proxy, committedOpticalModel]
+    [proxy, lensStore],
   );
 
   const handleSubmit = useCallback(async () => {
@@ -171,26 +127,15 @@ export default function Home() {
 
     setComputing(true);
     setLayoutLoading(true);
-    setPlotLoading(true);
+    analysisPlotStore.getState().setPlotLoading(true);
 
     try {
-      const clampedFieldIndex = Math.min(
-        selectedFieldIndex,
-        specs.field.fields.length - 1
-      );
-      if (clampedFieldIndex !== selectedFieldIndex) {
-        setSelectedFieldIndex(clampedFieldIndex);
-      }
+      const clampedFieldIndex = specsStore.getState().clampFieldIndex(selectedFieldIndex, specs);
+      const clampedWavelengthIndex = specsStore.getState().clampWavelengthIndex(selectedWavelengthIndex, specs);
+      analysisPlotStore.getState().setSelectedFieldIndex(clampedFieldIndex, specs.field.fields.length);
+      analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex, specs.wavelengths.weights.length);
 
-      const clampedWavelengthIndex = Math.min(
-        selectedWavelengthIndex,
-        specs.wavelengths.weights.length - 1
-      );
-      if (clampedWavelengthIndex !== selectedWavelengthIndex) {
-        setSelectedWavelengthIndex(clampedWavelengthIndex);
-      }
-
-      const plotFn = getPlotFunction(selectedPlotType, model);
+      const plotFn = buildPlotFn(selectedPlotType, proxy, model);
       const [fod, layout, plot, seidel] = await Promise.all([
         proxy.getFirstOrderData(model),
         proxy.plotLensLayout(model),
@@ -200,24 +145,24 @@ export default function Home() {
 
       setFirstOrderData(fod);
       setLayoutImage(layout);
-      setPlotImage(plot);
+      analysisPlotStore.getState().setPlotImage(plot);
       setSeidelData(seidel);
-      setCommittedSpecs(specs);
-      setCommittedOpticalModel(model);
+      specsStore.getState().setCommittedSpecs(specs);
+      lensStore.getState().setCommittedOpticalModel(model);
     } catch (err) {
       console.log("Update System failed:", err);
       setErrorModalOpen(true);
     } finally {
       setComputing(false);
       setLayoutLoading(false);
-      setPlotLoading(false);
+      analysisPlotStore.getState().setPlotLoading(false);
 
       // Reset example selection dropdown
       if (exampleSelectRef.current) {
         exampleSelectRef.current.value = "";
       }
     }
-  }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, getPlotFunction]);
+  }, [proxy, specsStore, lensStore, analysisPlotStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType]);
 
   const handleExampleConfirm = useCallback(() => {
     if (!pendingExample) return;
@@ -228,55 +173,6 @@ export default function Home() {
     setPendingExample(undefined);
     void handleSubmit();
   }, [pendingExample, specsStore, lensStore, handleSubmit]);
-
-  const fieldWavelengthHOF = useCallback((kind: "field" | "wavelength") => async (value: number) => {
-    if (kind === "field") {
-      setSelectedFieldIndex(value);
-    } else {
-      setSelectedWavelengthIndex(value);
-    }
-    if (!proxy) return;
-    if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
-    setPlotLoading(true);
-    try {
-      const plotFn = getPlotFunction(selectedPlotType);
-      if (plotFn) {
-        let plot: string;
-        if (kind === "field") {
-          plot = await plotFn(value, selectedWavelengthIndex);
-        } else {
-          plot = await plotFn(selectedFieldIndex, value);
-        }
-        setPlotImage(plot);
-      }
-    } catch (err) {
-      console.log(`${kind} update failed:`, err);
-      setErrorModalOpen(true);
-    } finally {
-      setPlotLoading(false);
-    }
-  }, [proxy, selectedPlotType, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]);
-
-  const handlePlotTypeChange = useCallback(
-    async (plotType: PlotType) => {
-      setSelectedPlotType(plotType);
-      if (!proxy) return;
-      setPlotLoading(true);
-      try {
-        const plotFn = getPlotFunction(plotType);
-        if (plotFn) {
-          const plot = await plotFn(selectedFieldIndex, selectedWavelengthIndex);
-          setPlotImage(plot);
-        }
-      } catch (err) {
-        console.log("Plot type change failed:", err);
-        setErrorModalOpen(true);
-      } finally {
-        setPlotLoading(false);
-      }
-    },
-    [proxy, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]
-  );
 
   const getOpticalModel = useCallback((): OpticalModel => {
     const autoAperture = lensStore.getState().autoAperture;
@@ -291,46 +187,6 @@ export default function Home() {
     lensStore.getState().setRows(surfacesToGridRows(data));
     lensStore.getState().setAutoAperture(data.setAutoAperture === "autoAperture");
   }, [specsStore, lensStore]);
-
-  const drawerTabs = useMemo(
-    () => [
-      {
-        id: "specs",
-        label: "System Specs",
-        content: <SpecsConfigurerContainer store={specsStore} />,
-      },
-      {
-        id: "prescription",
-        label: "Prescription",
-        content: (
-          <LensPrescriptionContainer
-            store={lensStore}
-            getOpticalModel={getOpticalModel}
-            onImportJson={handleImportJson}
-            onUpdateSystem={handleSubmit}
-            isUpdateSystemDisabled={!isReady || computing}
-          />
-        ),
-      },
-      {
-        id: "focusing",
-        label: "Focusing",
-        content: (
-          <FocusingContainer
-            lensStore={lensStore}
-            specsStore={specsStore}
-            proxy={proxy}
-            isReady={isReady}
-            computing={computing}
-            getOpticalModel={getOpticalModel}
-            onUpdateSystem={handleSubmit}
-            onError={() => setErrorModalOpen(true)}
-          />
-        ),
-      },
-    ],
-    [specsStore, lensStore, getOpticalModel, handleImportJson, handleSubmit, isReady, computing, proxy]
-  );
 
   const errorModal = (
     <ErrorModal
@@ -377,18 +233,13 @@ export default function Home() {
     />
   );
 
-  const analysisPlotView = (
-    <AnalysisPlotView
-      fieldOptions={fieldOptions}
-      wavelengthOptions={wavelengthOptions}
-      selectedFieldIndex={selectedFieldIndex}
-      selectedWavelengthIndex={selectedWavelengthIndex}
-      selectedPlotType={selectedPlotType}
-      plotImageBase64={plotImage}
-      loading={plotLoading}
-      onFieldChange={fieldWavelengthHOF("field")}
-      onWavelengthChange={fieldWavelengthHOF("wavelength")}
-      onPlotTypeChange={handlePlotTypeChange}
+  const analysisPlotContainer = (
+    <AnalysisPlotContainer
+      store={analysisPlotStore}
+      proxy={proxy}
+      lensStore={lensStore}
+      specsStore={specsStore}
+      onError={() => setErrorModalOpen(true)}
       autoHeight={!isLG}
     />
   );
@@ -453,8 +304,8 @@ export default function Home() {
   const zernikeModalNode = seidelData && (
     <ZernikeTermsModal
       isOpen={zernikeModalOpen}
-      fieldOptions={fieldOptions}
-      wavelengthOptions={wavelengthOptions}
+      fieldOptions={specsStore.getState().getFieldOptions()}
+      wavelengthOptions={specsStore.getState().getWavelengthOptions()}
       onFetchData={handleFetchZernikeData}
       onClose={() => setZernikeModalOpen(false)}
     />
@@ -495,11 +346,22 @@ export default function Home() {
           {lensLayoutPanel}
         </div>
         <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
-          {analysisPlotView}
+          {analysisPlotContainer}
         </div>
       </div>
 
-      <BottomDrawer tabs={drawerTabs} draggable={true} />
+      <BottomDrawerContainer
+        specsStore={specsStore}
+        lensStore={lensStore}
+        getOpticalModel={getOpticalModel}
+        onImportJson={handleImportJson}
+        onUpdateSystem={handleSubmit}
+        isReady={isReady}
+        computing={computing}
+        proxy={proxy}
+        onError={() => setErrorModalOpen(true)}
+        draggable={true}
+      />
       {confirmOverwriteModalNode}
       {errorModal}
       {settingsModalNode}
@@ -532,11 +394,22 @@ export default function Home() {
           {lensLayoutPanel}
         </div>
         <div data-testid="analysis-plot-container" className="w-full px-2 py-3 border-t border-gray-200 dark:border-gray-700">
-          {analysisPlotView}
+          {analysisPlotContainer}
         </div>
       </div>
 
-      <BottomDrawer tabs={drawerTabs} draggable={false} />
+      <BottomDrawerContainer
+        specsStore={specsStore}
+        lensStore={lensStore}
+        getOpticalModel={getOpticalModel}
+        onImportJson={handleImportJson}
+        onUpdateSystem={handleSubmit}
+        isReady={isReady}
+        computing={computing}
+        proxy={proxy}
+        onError={() => setErrorModalOpen(true)}
+        draggable={false}
+      />
       {confirmOverwriteModalNode}
       {errorModal}
       {settingsModalNode}
