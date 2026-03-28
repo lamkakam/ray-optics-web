@@ -24,8 +24,10 @@ This project is not affiliated with, endorsed by, or in any way officially conne
   - Reflective surfaces (mirrors)
   - Semi-diameter of each surface: can be set automatically or manually
 - **Lens layout** — PNG diagram of the optical system
-- **Analysis plots** — ray fan, OPD fan, spot diagram, surface-by-surface 3rd-order Seidel aberration breakdown
+- **Analysis plots** — ray fan, OPD fan, spot diagram, surface-by-surface 3rd-order Seidel aberration breakdown, wavefront map, geometric PSF, diffraction PSF
 - **3rd-order Seidel aberrations** — surface-by-surface breakdown, transverse ray aberrations, wavefront aberrations (in waves of reference wavelength set in System Specs), field curvature
+- **Zernike wavefront analysis** — Strehl ratio, Zernike polynomial terms (Fringe and Noll ordering up to quaternary spherical)
+- **Focusing** — optimize image surface position by minimizing monochromatic/polychromatic spot size/wavefront error
 - **First-order properties** — EFL, BFD, image height, f/#, NA at object and image space
 - **Import / export** JSON configuration files for this web app
 
@@ -57,7 +59,10 @@ This project is not affiliated with, endorsed by, or in any way officially conne
 npm install
 
 # Initialize the venv for the internal Python package and install deps for the development
-bash ./scripts/init-python-venv.sh
+bash scripts/init-python-venv.sh
+
+# Activate the venv of the internal Python package
+source scripts/activate-venv.sh
 
 # Build the wheel of rayoptics_web_utils and then run dev server (http://localhost:3000)
 npm run dev
@@ -72,7 +77,7 @@ npm run lint
 npm run test
 
 # Unit tests for the internal Python package
-bash ./scripts/run-python-tests.sh
+bash scripts/run-python-tests.sh
 
 # E2E tests (Playwright)
 npm run test:e2e
