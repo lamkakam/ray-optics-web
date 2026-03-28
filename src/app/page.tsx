@@ -9,21 +9,16 @@ import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorS
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
 import { ErrorModal } from "@/components/micro/ErrorModal";
-import { Button } from "@/components/micro/Button";
-import { Header } from "@/components/micro/Header";
-import { SideNav } from "@/components/composite/SideNav";
 import { SettingsView } from "@/components/composite/SettingsView";
 import { PrivacyPolicyView } from "@/components/composite/PrivacyPolicyView";
 import { AboutView } from "@/components/composite/AboutView";
-import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
 import { useTheme } from "@/components/ThemeProvider";
 import { LensEditor } from "@/components/page/LensEditor";
+import { Layout } from "@/components/layout/Layout";
 
 export default function Home() {
   const { proxy, isReady } = usePyodide();
-  const screenSize = useScreenBreakpoint();
-  const isLG = screenSize === "screenLG";
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -50,7 +45,6 @@ export default function Home() {
   );
 
   const [errorModalOpen, setErrorModalOpen] = useState(false);
-  const [sideNavOpen, setSideNavOpen] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>("home");
 
   const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -74,27 +68,6 @@ export default function Home() {
     />
   );
 
-  const hamburgerButton = (
-    <Button
-      variant="secondary"
-      size="sm"
-      aria-label="Open navigation"
-      onClick={() => setSideNavOpen((prev) => !prev)}
-    >
-      ☰
-    </Button>
-  );
-
-  const sideNavNode = (
-    <SideNav
-      isOpen={sideNavOpen}
-      isLG={isLG}
-      currentView={currentView}
-      onClose={() => setSideNavOpen(false)}
-      onNavigate={(view) => { setCurrentView(view); setSideNavOpen(false); }}
-    />
-  );
-
   const lensEditor = (
     <LensEditor
       specsStore={specsStore}
@@ -106,61 +79,19 @@ export default function Home() {
     />
   );
 
-  const layoutLG: React.ReactNode = (
-    <div className="flex flex-col h-screen">
-      <header className="shrink-0 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex h-12 items-center gap-4 px-4">
-          {hamburgerButton}
-          <Header level={1}>Ray Optics Web</Header>
-        </div>
-      </header>
-
-      <div className="relative flex-1 flex flex-col min-h-0">
-        {sideNavNode}
-
-        {currentView === "home" && lensEditor}
-
-        {currentView === "settings" && (
-          <SettingsView theme={theme} onThemeChange={handleThemeChange} />
-        )}
-
-        {currentView === "privacy-policy" && <PrivacyPolicyView />}
-
-        {currentView === "about" && <AboutView />}
-      </div>
-
-      {errorModal}
-      {initOverlayNode}
-    </div>
+  return (
+    <Layout
+      currentView={currentView}
+      onNavigate={(view) => setCurrentView(view)}
+      errorModal={errorModal}
+      initOverlayNode={initOverlayNode}
+    >
+      {currentView === "home" && lensEditor}
+      {currentView === "settings" && (
+        <SettingsView theme={theme} onThemeChange={handleThemeChange} />
+      )}
+      {currentView === "privacy-policy" && <PrivacyPolicyView />}
+      {currentView === "about" && <AboutView />}
+    </Layout>
   );
-
-  const layoutSM: React.ReactNode = (
-    <div className="flex flex-col">
-      <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
-        <div className="flex items-center">
-          {hamburgerButton}
-          <Header level={1} className="ml-2">Ray Optics Web</Header>
-        </div>
-      </header>
-
-      <div className="relative flex flex-col">
-        {sideNavNode}
-
-        {currentView === "home" && lensEditor}
-
-        {currentView === "settings" && (
-          <SettingsView theme={theme} onThemeChange={handleThemeChange} />
-        )}
-
-        {currentView === "privacy-policy" && <PrivacyPolicyView />}
-
-        {currentView === "about" && <AboutView />}
-      </div>
-
-      {errorModal}
-      {initOverlayNode}
-    </div>
-  );
-
-  return isLG ? layoutLG : layoutSM;
 }

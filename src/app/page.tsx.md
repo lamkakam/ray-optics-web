@@ -1,12 +1,11 @@
 # page.tsx
 
 ## Purpose
-Root page component (`"use client"`). Owns stores, Pyodide hook, theme, navigation state, and view routing. Delegates home-view content to `LensEditor`.
+Root page component (`"use client"`). Owns stores, Pyodide hook, theme, and view routing. Delegates layout chrome to `Layout` and home-view content to `LensEditor`.
 
 ## State
 | State | Type | Description |
 |-------|------|-------------|
-| `sideNavOpen` | `boolean` | Whether the side nav panel is open |
 | `currentView` | `AppView` | Active view: `'home'`, `'settings'`, `'privacy-policy'`, `'about'` |
 | `errorModalOpen` | `boolean` | Error modal visibility |
 
@@ -16,30 +15,27 @@ Root page component (`"use client"`). Owns stores, Pyodide hook, theme, navigati
 - `analysisPlotStore` — `AnalysisPlotState` (zustand)
 
 ## Navigation
-- Hamburger button (`aria-label="Open navigation"`) toggles `sideNavOpen`
-- `SideNav` calls `onNavigate(view)` → sets `currentView`, closes side nav
+- `Layout` owns hamburger/side-nav open state and screen-size detection
+- `onNavigate` callback sets `currentView`
 - No URL changes (state-based routing)
 
-## Layouts
-
-### LG (`layoutLG`)
-- Header: 1 row (`h-12`): hamburger + app title
-- Below header: `relative flex-1` container holding `SideNav` + content
-  - `currentView === 'home'`: `<LensEditor>` (see `src/components/page/LensEditor.tsx`)
-  - `currentView === 'settings'`: `SettingsView`
-  - `currentView === 'privacy-policy'`: `PrivacyPolicyView`
-  - `currentView === 'about'`: `AboutView`
-- `ErrorModal`, `LoadingOverlay`
-
-### SM (`layoutSM`)
-- Header: hamburger + title row only
-- `relative flex flex-col` container holding `SideNav` + content views
-  - `currentView === 'home'`: `<LensEditor>` (see `src/components/page/LensEditor.tsx`)
-  - Other views same as LG
-- `ErrorModal`, `LoadingOverlay`
+## Rendered structure
+```tsx
+<Layout currentView onNavigate errorModal initOverlayNode>
+  {currentView === "home" && <LensEditor .../>}
+  {currentView === "settings" && <SettingsView .../>}
+  {currentView === "privacy-policy" && <PrivacyPolicyView />}
+  {currentView === "about" && <AboutView />}
+</Layout>
+```
 
 ## Removed (vs. previous version)
-- All lens editor state (`layoutImage`, `layoutLoading`, `firstOrderData`, `computing`, `seidelData`, `seidelModalOpen`, `zernikeModalOpen`, `pendingExample`) — moved to `LensEditor`
-- All lens editor callbacks — moved to `LensEditor`
-- `ConfirmOverwriteModal`, `SeidelAberrModal`, `ZernikeTermsModal` JSX — moved to `LensEditor`
-- `isLG` no longer passed as prop; `LensEditor` calls `useScreenBreakpoint()` internally
+- `sideNavOpen` state — moved to `Layout`
+- `isLG` variable — moved to `Layout`
+- `hamburgerButton` JSX — moved to `Layout`
+- `sideNavNode` JSX — moved to `Layout`
+- `layoutLG` / `layoutSM` JSX variables — replaced by `<Layout>`
+- `useScreenBreakpoint` import — moved to `Layout`
+- `SideNav` import — moved to `Layout`
+- `Button` import — moved to `Layout`
+- `Header` import — moved to `Layout`
