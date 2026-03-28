@@ -28,7 +28,7 @@ Composite layout shell component (`"use client"`). Owns hamburger/side-nav open 
 ```
 <div className="flex flex-col h-screen">
   <header> h-12 row: hamburger + <Header level={1}>Ray Optics Web</Header> </header>
-  <div className="relative flex-1 flex flex-col min-h-0">
+  <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
     <SideNav isLG={true} ... />
     {children}
   </div>
@@ -41,7 +41,7 @@ Composite layout shell component (`"use client"`). Owns hamburger/side-nav open 
 ```
 <div className="flex flex-col">
   <header> py-2 row: hamburger + <Header level={1} className="ml-2">Ray Optics Web</Header> </header>
-  <div className="relative flex flex-col">
+  <div className="relative flex flex-col overflow-hidden">
     <SideNav isLG={false} ... />
     {children}
   </div>

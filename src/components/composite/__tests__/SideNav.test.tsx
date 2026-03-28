@@ -17,9 +17,24 @@ describe("SideNav", () => {
     jest.clearAllMocks();
   });
 
-  it("returns null when closed", () => {
-    const { container } = render(<SideNav {...defaultProps} isOpen={false} />);
-    expect(container.firstChild).toBeNull();
+  it("is in the DOM with -translate-x-full when closed", () => {
+    render(<SideNav {...defaultProps} isOpen={false} />);
+    const nav = screen.getByRole("navigation", { name: "Side navigation" });
+    expect(nav).toBeInTheDocument();
+    expect(nav).toHaveClass("-translate-x-full");
+  });
+
+  it("has translate-x-0 when open", () => {
+    render(<SideNav {...defaultProps} isOpen={true} />);
+    const nav = screen.getByRole("navigation", { name: "Side navigation" });
+    expect(nav).toHaveClass("translate-x-0");
+  });
+
+  it("has transition-transform and duration-200 classes for animation", () => {
+    render(<SideNav {...defaultProps} />);
+    const nav = screen.getByRole("navigation", { name: "Side navigation" });
+    expect(nav).toHaveClass("transition-transform");
+    expect(nav).toHaveClass("duration-200");
   });
 
   it("shows nav with items when open", () => {

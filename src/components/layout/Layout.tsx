@@ -60,7 +60,7 @@ export function Layout({
           </div>
         </header>
 
-        <div className="relative flex-1 flex flex-col min-h-0">
+        <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
           {sideNavNode}
           {children}
         </div>
@@ -80,7 +80,7 @@ export function Layout({
         </div>
       </header>
 
-      <div className="relative flex flex-col">
+      <div className="relative flex flex-col overflow-hidden">
         {sideNavNode}
         {children}
       </div>
