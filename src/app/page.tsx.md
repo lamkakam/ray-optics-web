@@ -31,18 +31,23 @@ Root page component (`"use client"`). Owns all top-level state and wires togethe
 ## Layouts
 
 ### LG (`layoutLG`)
-- Header: 2 rows
-  - Row 1 (`h-12`): hamburger + app title
-  - Row 2 (`pb-2`): example system dropdown + Seidel/Zernike buttons
+- Header: 1 row (`h-12`): hamburger + app title
 - Below header: `relative flex-1` container holding `SideNav` + content
-  - `currentView === 'home'`: first-order chips + lens/analysis panels + `BottomDrawerContainer`
+  - `currentView === 'home'`:
+    - Controls row (no bottom border): example system dropdown + Seidel/Zernike buttons
+    - First-order chips row (has bottom border)
+    - Lens layout + analysis panels
+    - `BottomDrawerContainer`
   - `currentView === 'settings'`: `SettingsView`
   - `currentView === 'privacy-policy'`: `PrivacyPolicyView`
   - `currentView === 'about'`: `AboutView`
 
 ### SM (`layoutSM`)
-- Header: hamburger + title row, then example dropdown + Seidel/Zernike buttons + first-order chips
+- Header: hamburger + title row only
 - `relative flex flex-col` container holding `SideNav` + content views
+  - `currentView === 'home'`:
+    - Controls section: example dropdown + Seidel/Zernike buttons + first-order chips
+    - Lens layout + analysis panels
 - `BottomDrawerContainer` rendered only when `currentView === 'home'`
 
 ## Removed (vs. previous version)

@@ -25,9 +25,10 @@ describe("SideNav", () => {
   it("shows nav with items when open", () => {
     render(<SideNav {...defaultProps} />);
     expect(screen.getByRole("navigation", { name: "Side navigation" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Privacy Policy" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "About" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Lens Editor" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Privacy Policy" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "About" })).toBeInTheDocument();
   });
 
   it("close button calls onClose", async () => {
@@ -37,24 +38,31 @@ describe("SideNav", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("Lens Editor item calls onNavigate with 'home'", async () => {
+    const onNavigate = jest.fn();
+    render(<SideNav {...defaultProps} onNavigate={onNavigate} />);
+    await userEvent.click(screen.getByRole("link", { name: "Lens Editor" }));
+    expect(onNavigate).toHaveBeenCalledWith("home");
+  });
+
   it("Settings item calls onNavigate with 'settings'", async () => {
     const onNavigate = jest.fn();
     render(<SideNav {...defaultProps} onNavigate={onNavigate} />);
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    await userEvent.click(screen.getByRole("link", { name: "Settings" }));
     expect(onNavigate).toHaveBeenCalledWith("settings");
   });
 
   it("Privacy Policy item calls onNavigate with 'privacy-policy'", async () => {
     const onNavigate = jest.fn();
     render(<SideNav {...defaultProps} onNavigate={onNavigate} />);
-    await userEvent.click(screen.getByRole("button", { name: "Privacy Policy" }));
+    await userEvent.click(screen.getByRole("link", { name: "Privacy Policy" }));
     expect(onNavigate).toHaveBeenCalledWith("privacy-policy");
   });
 
   it("About item calls onNavigate with 'about'", async () => {
     const onNavigate = jest.fn();
     render(<SideNav {...defaultProps} onNavigate={onNavigate} />);
-    await userEvent.click(screen.getByRole("button", { name: "About" }));
+    await userEvent.click(screen.getByRole("link", { name: "About" }));
     expect(onNavigate).toHaveBeenCalledWith("about");
   });
 
@@ -72,13 +80,13 @@ describe("SideNav", () => {
 
   it("active item has aria-current='page'", () => {
     render(<SideNav {...defaultProps} currentView="settings" />);
-    const settingsBtn = screen.getByRole("button", { name: "Settings" });
-    expect(settingsBtn).toHaveAttribute("aria-current", "page");
+    const settingsLink = screen.getByRole("link", { name: "Settings" });
+    expect(settingsLink).toHaveAttribute("aria-current", "page");
   });
 
   it("inactive items do not have aria-current", () => {
     render(<SideNav {...defaultProps} currentView="settings" />);
-    const privacyBtn = screen.getByRole("button", { name: "Privacy Policy" });
-    expect(privacyBtn).not.toHaveAttribute("aria-current");
+    const privacyLink = screen.getByRole("link", { name: "Privacy Policy" });
+    expect(privacyLink).not.toHaveAttribute("aria-current");
   });
 });

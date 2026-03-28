@@ -257,6 +257,27 @@ export const componentTokens = {
     },
   },
 
+  navLink: {
+    color: {
+      activeBgColor: "bg-blue-50 dark:bg-gray-700",
+      activeTextColor: "text-blue-700 dark:text-blue-400",
+      inactiveTextColor: "text-gray-700 dark:text-gray-300",
+      inactiveHoverBgColor: "hover:bg-gray-100 dark:hover:bg-gray-800",
+    },
+    size: {
+      horizontalPadding: "px-3",
+      verticalPadding: "py-2",
+      fontSize: "text-sm",
+    },
+    style: {
+      display: "block",
+      borderRadius: "rounded-lg",
+      fontWeight: "font-medium",
+      transition: "transition-colors",
+      cursor: "cursor-pointer",
+    },
+  },
+
   overlay: {
     color: {
       backdropBgColor: g.color.backdropBgColor,

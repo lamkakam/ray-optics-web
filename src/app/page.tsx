@@ -312,11 +312,6 @@ export default function Home() {
           {hamburgerButton}
           <Header level={1}>Ray Optics Web</Header>
         </div>
-        <div className="flex items-center gap-4 px-4 pb-2">
-          {exampleSystemDropdown}
-          {seidelButton}
-          {zernikeButton}
-        </div>
       </header>
 
       <div className="relative flex-1 flex flex-col min-h-0">
@@ -324,6 +319,11 @@ export default function Home() {
 
         {currentView === "home" && (
           <>
+            <div className="flex shrink-0 items-center gap-4 px-4 py-2">
+              {exampleSystemDropdown}
+              {seidelButton}
+              {zernikeButton}
+            </div>
             <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
               {firstOrderChips}
             </div>
@@ -372,15 +372,9 @@ export default function Home() {
   const layoutSM: React.ReactNode = (
     <div className="flex flex-col">
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
-        <div className="flex items-center mb-2">
+        <div className="flex items-center">
           {hamburgerButton}
           <Header level={1} className="ml-2">Ray Optics Web</Header>
-        </div>
-        {exampleSystemDropdown}
-        {seidelButton}
-        {zernikeButton}
-        <div className="flex flex-wrap gap-2">
-          {firstOrderChips}
         </div>
       </header>
 
@@ -389,6 +383,14 @@ export default function Home() {
 
         {currentView === "home" && (
           <>
+            <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+              {exampleSystemDropdown}
+              {seidelButton}
+              {zernikeButton}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {firstOrderChips}
+              </div>
+            </div>
             <div data-testid="lens-layout-container" className="w-full px-2 py-3">
               {lensLayoutPanel}
             </div>

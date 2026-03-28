@@ -176,10 +176,17 @@ describe("Home page", () => {
 
   // --- Example system selector tests ---
 
-  it("renders an Example Systems select in the header", () => {
+  it("renders an Example Systems select", () => {
     render(<Home />);
     const select = screen.getByLabelText("Example system");
     expect(select).toBeInTheDocument();
+  });
+
+  it("example system dropdown is below the header, not inside it", () => {
+    render(<Home />);
+    const header = document.querySelector("header");
+    const select = screen.getByLabelText("Example system");
+    expect(header).not.toContainElement(select);
   });
 
   it("starts with no example selected and shows a placeholder option", () => {
@@ -297,7 +304,7 @@ describe("Home page", () => {
   it("clicking Settings in side nav shows settings view (no dialog)", async () => {
     render(<Home />);
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
+    await userEvent.click(screen.getByRole("link", { name: "Settings" }));
     expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -305,7 +312,7 @@ describe("Home page", () => {
   it("clicking Privacy Policy in side nav shows privacy view (no dialog)", async () => {
     render(<Home />);
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    await userEvent.click(screen.getByRole("button", { name: "Privacy Policy" }));
+    await userEvent.click(screen.getByRole("link", { name: "Privacy Policy" }));
     expect(screen.getByRole("heading", { name: "Privacy Policy" })).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -313,7 +320,7 @@ describe("Home page", () => {
   it("clicking About in side nav shows about view", async () => {
     render(<Home />);
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    await userEvent.click(screen.getByRole("button", { name: "About" }));
+    await userEvent.click(screen.getByRole("link", { name: "About" }));
     expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument();
   });
 
