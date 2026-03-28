@@ -14,11 +14,8 @@ import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurer
 import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
 import { FocusingContainer } from "@/components/container/FocusingContainer";
 import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
-import {
-  AnalysisPlotView,
-  PLOT_TYPE_CONFIG,
-  type PlotType,
-} from "@/components/composite/AnalysisPlotView";
+import { AnalysisPlotContainer } from "@/components/container/AnalysisPlotContainer";
+import type { PlotType } from "@/components/composite/AnalysisPlotView";
 import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { Button } from "@/components/micro/Button";
@@ -66,8 +63,6 @@ export default function Home() {
     []
   );
 
-  const plotImage = useStore(analysisPlotStore, (s) => s.plotImage);
-  const plotLoading = useStore(analysisPlotStore, (s) => s.plotLoading);
   const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
   const selectedPlotType = useStore(analysisPlotStore, (s) => s.selectedPlotType);
@@ -144,7 +139,7 @@ export default function Home() {
   );
 
   const getPlotFunction = useCallback(
-    (plotType: PlotType, model?: OpticalModel): ((fieldIndex: number, wavelenthIndex: number) => Promise<string>) | undefined => {
+    (plotType: PlotType, model?: OpticalModel): ((fieldIndex: number, wavelengthIndex: number) => Promise<string>) | undefined => {
       const m = model ?? committedOpticalModel;
       if (!proxy || !m) return undefined;
       switch (plotType) {
@@ -235,55 +230,6 @@ export default function Home() {
     setPendingExample(undefined);
     void handleSubmit();
   }, [pendingExample, specsStore, lensStore, handleSubmit]);
-
-  const fieldWavelengthHOF = useCallback((kind: "field" | "wavelength") => async (value: number) => {
-    if (kind === "field") {
-      analysisPlotStore.getState().setSelectedFieldIndex(value);
-    } else {
-      analysisPlotStore.getState().setSelectedWavelengthIndex(value);
-    }
-    if (!proxy) return;
-    if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
-    analysisPlotStore.getState().setPlotLoading(true);
-    try {
-      const plotFn = getPlotFunction(selectedPlotType);
-      if (plotFn) {
-        let plot: string;
-        if (kind === "field") {
-          plot = await plotFn(value, selectedWavelengthIndex);
-        } else {
-          plot = await plotFn(selectedFieldIndex, value);
-        }
-        analysisPlotStore.getState().setPlotImage(plot);
-      }
-    } catch (err) {
-      console.log(`${kind} update failed:`, err);
-      setErrorModalOpen(true);
-    } finally {
-      analysisPlotStore.getState().setPlotLoading(false);
-    }
-  }, [proxy, analysisPlotStore, selectedPlotType, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]);
-
-  const handlePlotTypeChange = useCallback(
-    async (plotType: PlotType) => {
-      analysisPlotStore.getState().setSelectedPlotType(plotType);
-      if (!proxy) return;
-      analysisPlotStore.getState().setPlotLoading(true);
-      try {
-        const plotFn = getPlotFunction(plotType);
-        if (plotFn) {
-          const plot = await plotFn(selectedFieldIndex, selectedWavelengthIndex);
-          analysisPlotStore.getState().setPlotImage(plot);
-        }
-      } catch (err) {
-        console.log("Plot type change failed:", err);
-        setErrorModalOpen(true);
-      } finally {
-        analysisPlotStore.getState().setPlotLoading(false);
-      }
-    },
-    [proxy, analysisPlotStore, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]
-  );
 
   const getOpticalModel = useCallback((): OpticalModel => {
     const autoAperture = lensStore.getState().autoAperture;
@@ -384,18 +330,13 @@ export default function Home() {
     />
   );
 
-  const analysisPlotView = (
-    <AnalysisPlotView
-      fieldOptions={fieldOptions}
-      wavelengthOptions={wavelengthOptions}
-      selectedFieldIndex={selectedFieldIndex}
-      selectedWavelengthIndex={selectedWavelengthIndex}
-      selectedPlotType={selectedPlotType}
-      plotImageBase64={plotImage}
-      loading={plotLoading}
-      onFieldChange={fieldWavelengthHOF("field")}
-      onWavelengthChange={fieldWavelengthHOF("wavelength")}
-      onPlotTypeChange={handlePlotTypeChange}
+  const analysisPlotContainer = (
+    <AnalysisPlotContainer
+      store={analysisPlotStore}
+      proxy={proxy}
+      committedOpticalModel={committedOpticalModel}
+      committedSpecs={committedSpecs}
+      onError={() => setErrorModalOpen(true)}
       autoHeight={!isLG}
     />
   );
@@ -502,7 +443,7 @@ export default function Home() {
           {lensLayoutPanel}
         </div>
         <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
-          {analysisPlotView}
+          {analysisPlotContainer}
         </div>
       </div>
 
@@ -539,7 +480,7 @@ export default function Home() {
           {lensLayoutPanel}
         </div>
         <div data-testid="analysis-plot-container" className="w-full px-2 py-3 border-t border-gray-200 dark:border-gray-700">
-          {analysisPlotView}
+          {analysisPlotContainer}
         </div>
       </div>
 
