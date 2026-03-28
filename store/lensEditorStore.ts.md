@@ -20,6 +20,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 | `mediumModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `asphericalModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `decenterModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
+| `committedOpticalModel` | `OpticalModel \| undefined` | `undefined` |
 
 ## Actions
 
@@ -32,6 +33,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `openMediumModal(rowId)` / `closeMediumModal()` — open/close the glass medium picker modal, storing the target row id.
 - `openAsphericalModal(rowId)` / `closeAsphericalModal()` — open/close the aspherical coefficients modal.
 - `openDecenterModal(rowId)` / `closeDecenterModal()` — open/close the surface decenter modal.
+- `setCommittedOpticalModel(model)` — stores the last successfully submitted `OpticalModel` snapshot. Used by `AnalysisPlotContainer` and other consumers that need the most recently committed model.
 
 ## Key Conventions
 
@@ -44,6 +46,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `create`, `StateCreator` from `zustand`.
 - `GridRow`, `OBJECT_ROW_ID`, `IMAGE_ROW_ID` from `lib/gridTypes`.
 - `generateRowId` from `lib/gridTransform`.
+- `OpticalModel` from `lib/opticalModel`.
 
 ## Usages
 

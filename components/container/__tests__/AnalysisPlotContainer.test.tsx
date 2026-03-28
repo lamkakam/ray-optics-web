@@ -5,6 +5,7 @@ import { createStore, type StoreApi } from "zustand";
 import { AnalysisPlotContainer } from "@/components/container/AnalysisPlotContainer";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
+import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
 import type { OpticalModel, OpticalSpecs } from "@/lib/opticalModel";
 import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 
@@ -62,6 +63,12 @@ function makeSpecsStore(specs: OpticalSpecs): StoreApi<SpecsConfigurerState> {
   return store;
 }
 
+function makeLensStore(model: OpticalModel): StoreApi<LensEditorState> {
+  const store = createStore<LensEditorState>(createLensEditorSlice);
+  store.getState().setCommittedOpticalModel(model);
+  return store;
+}
+
 describe("AnalysisPlotContainer", () => {
   let store: StoreApi<AnalysisPlotState>;
 
@@ -75,7 +82,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={makeMockProxy()}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />
@@ -89,7 +96,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={makeMockProxy()}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />
@@ -105,7 +112,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={makeMockProxy()}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecsHeight)}
         onError={jest.fn()}
       />
@@ -123,7 +130,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={makeMockProxy()}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />
@@ -140,7 +147,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={proxy}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />
@@ -165,7 +172,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={proxy}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />
@@ -185,7 +192,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={proxy}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />
@@ -203,7 +210,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={proxy}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />
@@ -223,7 +230,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={proxy}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />
@@ -242,7 +249,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={undefined}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />
@@ -265,7 +272,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={proxy}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={onError}
       />
@@ -285,7 +292,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={proxy}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={onError}
       />
@@ -304,7 +311,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={proxy}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={onError}
       />
@@ -322,7 +329,7 @@ describe("AnalysisPlotContainer", () => {
       <AnalysisPlotContainer
         store={store}
         proxy={proxy}
-        committedOpticalModel={testModel}
+        lensStore={makeLensStore(testModel)}
         specsStore={makeSpecsStore(testSpecs)}
         onError={jest.fn()}
       />

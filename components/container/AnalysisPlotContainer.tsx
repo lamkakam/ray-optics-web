@@ -7,6 +7,7 @@ import type { OpticalModel } from "@/lib/opticalModel";
 import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/store/analysisPlotStore";
 import type { SpecsConfigurerState } from "@/store/specsConfigurerStore";
+import type { LensEditorState } from "@/store/lensEditorStore";
 import {
   AnalysisPlotView,
   PLOT_TYPE_CONFIG,
@@ -16,7 +17,7 @@ import {
 interface AnalysisPlotContainerProps {
   readonly store: StoreApi<AnalysisPlotState>;
   readonly proxy: PyodideWorkerAPI | undefined;
-  readonly committedOpticalModel: OpticalModel | undefined;
+  readonly lensStore: StoreApi<LensEditorState>;
   readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly onError: () => void;
   readonly autoHeight?: boolean;
@@ -25,11 +26,12 @@ interface AnalysisPlotContainerProps {
 export function AnalysisPlotContainer({
   store,
   proxy,
-  committedOpticalModel,
+  lensStore,
   specsStore,
   onError,
   autoHeight,
 }: AnalysisPlotContainerProps) {
+  const committedOpticalModel = useStore(lensStore, (s) => s.committedOpticalModel);
   const plotImage = useStore(store, (s) => s.plotImage);
   const plotLoading = useStore(store, (s) => s.plotLoading);
   const selectedFieldIndex = useStore(store, (s) => s.selectedFieldIndex);

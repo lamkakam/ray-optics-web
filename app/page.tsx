@@ -10,19 +10,16 @@ import { ExampleSystems } from "@/lib/exampleSystems";
 import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
-import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurerContainer";
-import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
-import { FocusingContainer } from "@/components/container/FocusingContainer";
 import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
 import { AnalysisPlotContainer } from "@/components/container/AnalysisPlotContainer";
 import type { PlotType } from "@/components/composite/AnalysisPlotView";
+import { BottomDrawerContainer } from "@/components/container/BottomDrawerContainer";
 import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { Button } from "@/components/micro/Button";
 import { Tooltip } from "@/components/micro/Tooltip";
 import { Header } from "@/components/micro/Header";
 import { Select } from "@/components/micro/Select";
-import { BottomDrawer } from "@/components/composite/BottomDrawer";
 import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteModal";
 import { SettingsModal } from "@/components/composite/SettingsModal";
 import { PrivacyPolicyModal } from "@/components/composite/PrivacyPolicyModal";
@@ -67,7 +64,6 @@ export default function Home() {
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
   const selectedPlotType = useStore(analysisPlotStore, (s) => s.selectedPlotType);
 
-  const [committedOpticalModel, setCommittedOpticalModel] = useState<OpticalModel | undefined>();
   const [layoutImage, setLayoutImage] = useState<string | undefined>();
   const [layoutLoading, setLayoutLoading] = useState(false);
   const [firstOrderData, setFirstOrderData] = useState<
@@ -112,16 +108,17 @@ export default function Home() {
   const handleFetchZernikeData = useCallback(
     async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering): Promise<ZernikeData> => {
       if (!proxy) throw new Error("Pyodide not ready");
+      const committedOpticalModel = lensStore.getState().committedOpticalModel;
       if (!committedOpticalModel) throw new Error("No optical model computed yet");
       const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
       return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, numTerms, ordering);
     },
-    [proxy, committedOpticalModel],
+    [proxy, lensStore],
   );
 
   const getPlotFunction = useCallback(
     (plotType: PlotType, model?: OpticalModel): ((fieldIndex: number, wavelengthIndex: number) => Promise<string>) | undefined => {
-      const m = model ?? committedOpticalModel;
+      const m = model ?? lensStore.getState().committedOpticalModel;
       if (!proxy || !m) return undefined;
       switch (plotType) {
         case "rayFan":
@@ -140,7 +137,7 @@ export default function Home() {
           return (fi, wi) => proxy.plotDiffractionPSF(m, fi, wi);
       }
     },
-    [proxy, committedOpticalModel]
+    [proxy, lensStore]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -186,7 +183,7 @@ export default function Home() {
       analysisPlotStore.getState().setPlotImage(plot);
       setSeidelData(seidel);
       specsStore.getState().setCommittedSpecs(specs);
-      setCommittedOpticalModel(model);
+      lensStore.getState().setCommittedOpticalModel(model);
     } catch (err) {
       console.log("Update System failed:", err);
       setErrorModalOpen(true);
@@ -225,46 +222,6 @@ export default function Home() {
     lensStore.getState().setRows(surfacesToGridRows(data));
     lensStore.getState().setAutoAperture(data.setAutoAperture === "autoAperture");
   }, [specsStore, lensStore]);
-
-  const drawerTabs = useMemo(
-    () => [
-      {
-        id: "specs",
-        label: "System Specs",
-        content: <SpecsConfigurerContainer store={specsStore} />,
-      },
-      {
-        id: "prescription",
-        label: "Prescription",
-        content: (
-          <LensPrescriptionContainer
-            store={lensStore}
-            getOpticalModel={getOpticalModel}
-            onImportJson={handleImportJson}
-            onUpdateSystem={handleSubmit}
-            isUpdateSystemDisabled={!isReady || computing}
-          />
-        ),
-      },
-      {
-        id: "focusing",
-        label: "Focusing",
-        content: (
-          <FocusingContainer
-            lensStore={lensStore}
-            specsStore={specsStore}
-            proxy={proxy}
-            isReady={isReady}
-            computing={computing}
-            getOpticalModel={getOpticalModel}
-            onUpdateSystem={handleSubmit}
-            onError={() => setErrorModalOpen(true)}
-          />
-        ),
-      },
-    ],
-    [specsStore, lensStore, getOpticalModel, handleImportJson, handleSubmit, isReady, computing, proxy]
-  );
 
   const errorModal = (
     <ErrorModal
@@ -315,7 +272,7 @@ export default function Home() {
     <AnalysisPlotContainer
       store={analysisPlotStore}
       proxy={proxy}
-      committedOpticalModel={committedOpticalModel}
+      lensStore={lensStore}
       specsStore={specsStore}
       onError={() => setErrorModalOpen(true)}
       autoHeight={!isLG}
@@ -428,7 +385,18 @@ export default function Home() {
         </div>
       </div>
 
-      <BottomDrawer tabs={drawerTabs} draggable={true} />
+      <BottomDrawerContainer
+        specsStore={specsStore}
+        lensStore={lensStore}
+        getOpticalModel={getOpticalModel}
+        onImportJson={handleImportJson}
+        onUpdateSystem={handleSubmit}
+        isReady={isReady}
+        computing={computing}
+        proxy={proxy}
+        onError={() => setErrorModalOpen(true)}
+        draggable={true}
+      />
       {confirmOverwriteModalNode}
       {errorModal}
       {settingsModalNode}
@@ -465,7 +433,18 @@ export default function Home() {
         </div>
       </div>
 
-      <BottomDrawer tabs={drawerTabs} draggable={false} />
+      <BottomDrawerContainer
+        specsStore={specsStore}
+        lensStore={lensStore}
+        getOpticalModel={getOpticalModel}
+        onImportJson={handleImportJson}
+        onUpdateSystem={handleSubmit}
+        isReady={isReady}
+        computing={computing}
+        proxy={proxy}
+        onError={() => setErrorModalOpen(true)}
+        draggable={false}
+      />
       {confirmOverwriteModalNode}
       {errorModal}
       {settingsModalNode}

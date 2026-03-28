@@ -10,7 +10,7 @@ Container component that owns all analysis-plot logic: derives field/wavelength 
 interface AnalysisPlotContainerProps {
   store: StoreApi<AnalysisPlotState>;
   proxy: PyodideWorkerAPI | undefined;
-  committedOpticalModel: OpticalModel | undefined;
+  lensStore: StoreApi<LensEditorState>;
   specsStore: StoreApi<SpecsConfigurerState>;
   onError: () => void;
   autoHeight?: boolean;
@@ -21,7 +21,7 @@ interface AnalysisPlotContainerProps {
 |---|---|---|---|
 | `store` | `StoreApi<AnalysisPlotState>` | Yes | Zustand store for analysis-plot state (plotImage, plotLoading, selected indices, selectedPlotType) |
 | `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy; handlers no-op if `undefined` |
-| `committedOpticalModel` | `OpticalModel \| undefined` | Yes | The last committed optical model; plot functions no-op if `undefined` |
+| `lensStore` | `StoreApi<LensEditorState>` | Yes | Lens editor store; `committedOpticalModel` is subscribed to obtain the last committed model |
 | `specsStore` | `StoreApi<SpecsConfigurerState>` | Yes | Specs configurer store; `committedSpecs` is subscribed to trigger re-renders; `getFieldOptions()` and `getWavelengthOptions()` are called to derive select options |
 | `onError` | `() => void` | Yes | Called when any async plot call throws |
 | `autoHeight` | `boolean` | No | Forwarded to `AnalysisPlotView` |
@@ -30,6 +30,8 @@ interface AnalysisPlotContainerProps {
 
 All five analysis-plot state fields are read from `store` via `useStore(store, selector)`:
 - `plotImage`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
+
+`committedOpticalModel` is read from `lensStore` via `useStore(lensStore, (s) => s.committedOpticalModel)`.
 
 `committedSpecs` is subscribed from `specsStore` via `useStore(specsStore, (s) => s.committedSpecs)` (return value unused — subscription only) to trigger re-renders when the committed specs change.
 
@@ -74,4 +76,4 @@ Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and ca
 
 ## Usages
 
-- Used in `app/page.tsx` replacing the inline `AnalysisPlotView` node. `page.tsx` creates `analysisPlotStore` and `specsStore` and passes them along with `proxy`, `committedOpticalModel`, `onError`, and `autoHeight`.
+- Used in `app/page.tsx`. `page.tsx` creates `analysisPlotStore`, `specsStore`, and `lensStore` and passes them along with `proxy`, `onError`, and `autoHeight`.

@@ -2,6 +2,7 @@ import { create, type StateCreator } from "zustand";
 import type { GridRow } from "@/lib/gridTypes";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/lib/gridTypes";
 import { generateRowId } from "@/lib/gridTransform";
+import type { OpticalModel } from "@/lib/opticalModel";
 
 interface ModalState {
   open: boolean;
@@ -15,6 +16,7 @@ export interface LensEditorState {
   mediumModal: ModalState;
   asphericalModal: ModalState;
   decenterModal: ModalState;
+  committedOpticalModel: OpticalModel | undefined;
 
   setRows: (rows: GridRow[]) => void;
   updateRow: (id: string, patch: Partial<GridRow>) => void;
@@ -28,6 +30,7 @@ export interface LensEditorState {
   closeAsphericalModal: () => void;
   openDecenterModal: (rowId: string) => void;
   closeDecenterModal: () => void;
+  setCommittedOpticalModel: (model: OpticalModel) => void;
 }
 
 const DEFAULT_ROWS: GridRow[] = [
@@ -42,6 +45,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   mediumModal: { open: false, rowId: "" },
   asphericalModal: { open: false, rowId: "" },
   decenterModal: { open: false, rowId: "" },
+  committedOpticalModel: undefined,
 
   setRows: (rows) => set({ rows }),
 
@@ -108,6 +112,8 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
   closeDecenterModal: () =>
     set({ decenterModal: { open: false, rowId: "" } }),
+
+  setCommittedOpticalModel: (model) => set({ committedOpticalModel: model }),
 });
 
 export const useLensEditorStore = create<LensEditorState>(createLensEditorSlice);

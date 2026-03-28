@@ -4,6 +4,21 @@ import {
   type LensEditorState,
 } from "@/store/lensEditorStore";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/lib/gridTypes";
+import type { OpticalModel, OpticalSpecs } from "@/lib/opticalModel";
+
+const testSpecs: OpticalSpecs = {
+  pupil: { space: "object", type: "epd", value: 25 },
+  field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
+  wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
+};
+
+const testModel: OpticalModel = {
+  setAutoAperture: "manualAperture",
+  object: { distance: 1e10 },
+  image: { curvatureRadius: 0 },
+  surfaces: [],
+  specs: testSpecs,
+};
 
 function makeStore() {
   return createStore<LensEditorState>(createLensEditorSlice);
@@ -224,6 +239,27 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
       store.getState().deleteRow("nonexistent");
       expect(store.getState().rows).toHaveLength(4);
+    });
+  });
+
+  describe("committedOpticalModel", () => {
+    it("is undefined by default", () => {
+      const store = makeStore();
+      expect(store.getState().committedOpticalModel).toBeUndefined();
+    });
+
+    it("setCommittedOpticalModel stores the model", () => {
+      const store = makeStore();
+      store.getState().setCommittedOpticalModel(testModel);
+      expect(store.getState().committedOpticalModel).toEqual(testModel);
+    });
+
+    it("setCommittedOpticalModel can be called multiple times to overwrite", () => {
+      const store = makeStore();
+      store.getState().setCommittedOpticalModel(testModel);
+      const updatedModel: OpticalModel = { ...testModel, setAutoAperture: "autoAperture" };
+      store.getState().setCommittedOpticalModel(updatedModel);
+      expect(store.getState().committedOpticalModel).toEqual(updatedModel);
     });
   });
 
