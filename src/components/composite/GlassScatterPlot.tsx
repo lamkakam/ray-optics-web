@@ -4,6 +4,7 @@ import React, { useCallback } from "react";
 import { ParentSize } from "@visx/responsive";
 import { scaleLinear } from "@visx/scale";
 import { AxisBottom, AxisLeft } from "@visx/axis";
+import { GridRows, GridColumns } from "@visx/grid";
 import { Zoom } from "@visx/zoom";
 import { Group } from "@visx/group";
 import { useTooltip, Tooltip } from "@visx/tooltip";
@@ -118,6 +119,17 @@ function InnerPlot({
             range: [innerHeight, 0],
           });
 
+          // Crosshair: find selected point in points array
+          const selectedPoint = selectedGlass
+            ? points.find(
+                (p) =>
+                  p.glassName === selectedGlass.glassName &&
+                  p.catalogName === selectedGlass.catalogName
+              )
+            : undefined;
+          const crosshairX = selectedPoint !== undefined ? axisXScale(selectedPoint.x) : undefined;
+          const crosshairY = selectedPoint !== undefined ? axisYScale(selectedPoint.y) : undefined;
+
           return (
             <svg width={width} height={height}>
               <defs>
@@ -160,8 +172,25 @@ function InnerPlot({
                   style={{ cursor: zoom.isDragging ? "grabbing" : "grab" }}
                 />
 
-                {/* Data points */}
+                {/* Grid lines and data points (clipped) */}
                 <g clipPath={`url(#${clipId})`}>
+                  {/* Grid lines – use axis scales so they align with ticks */}
+                  <GridRows
+                    scale={axisYScale}
+                    width={innerWidth}
+                    numTicks={6}
+                    stroke="currentColor"
+                    strokeOpacity={0.12}
+                  />
+                  <GridColumns
+                    scale={axisXScale}
+                    height={innerHeight}
+                    numTicks={8}
+                    stroke="currentColor"
+                    strokeOpacity={0.12}
+                  />
+
+                  {/* Data points */}
                   <g transform={zoom.toString()}>
                     {points.map((point) => {
                       const cx = xScale(point.x);
@@ -190,10 +219,49 @@ function InnerPlot({
                             });
                           }}
                           onMouseLeave={hideTooltip}
+                          onTouchStart={(e) => {
+                            const touch = e.touches[0];
+                            if (touch) {
+                              showTooltip({
+                                tooltipData: point,
+                                tooltipLeft: touch.clientX,
+                                tooltipTop: touch.clientY,
+                              });
+                            }
+                            handlePointClick(point);
+                          }}
                         />
                       );
                     })}
                   </g>
+
+                  {/* Crosshair lines for selected glass */}
+                  {crosshairX !== undefined && crosshairY !== undefined && (
+                    <>
+                      <line
+                        data-testid="crosshair-h"
+                        x1={0}
+                        x2={innerWidth}
+                        y1={crosshairY}
+                        y2={crosshairY}
+                        stroke="var(--crosshair-stroke)"
+                        strokeWidth={1}
+                        strokeDasharray="5 4"
+                        pointerEvents="none"
+                      />
+                      <line
+                        data-testid="crosshair-v"
+                        x1={crosshairX}
+                        x2={crosshairX}
+                        y1={0}
+                        y2={innerHeight}
+                        stroke="var(--crosshair-stroke)"
+                        strokeWidth={1}
+                        strokeDasharray="5 4"
+                        pointerEvents="none"
+                      />
+                    </>
+                  )}
                 </g>
 
                 {/* Axes (outside zoom group for fixed positioning) */}

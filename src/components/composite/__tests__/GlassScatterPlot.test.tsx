@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GlassScatterPlot } from "@/components/composite/GlassScatterPlot";
 import type { PlotPoint, SelectedGlass } from "@/lib/glassMap";
@@ -128,5 +128,63 @@ describe("GlassScatterPlot", () => {
     const axisLeft = container.querySelector(".visx-axis-left");
     const firstTickText = axisLeft?.querySelector(".visx-axis-tick text");
     expect(firstTickText?.getAttribute("fill")).toBe("currentColor");
+  });
+
+  it("renders grid rows", () => {
+    const { container } = render(<GlassScatterPlot {...defaultProps} />);
+    expect(container.querySelector(".visx-rows")).toBeInTheDocument();
+  });
+
+  it("renders grid columns", () => {
+    const { container } = render(<GlassScatterPlot {...defaultProps} />);
+    expect(container.querySelector(".visx-columns")).toBeInTheDocument();
+  });
+
+  it("shows tooltip with glass name on mouse hover", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+    const circles = screen.getAllByTestId("glass-point");
+    fireEvent.mouseEnter(circles[0]);
+    expect(screen.getByText("N-BK7")).toBeInTheDocument();
+  });
+
+  it("shows tooltip with glass name on touch start", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+    const circles = screen.getAllByTestId("glass-point");
+    fireEvent.touchStart(circles[0], { touches: [{ clientX: 100, clientY: 100 }] });
+    expect(screen.getByText("N-BK7")).toBeInTheDocument();
+  });
+
+  it("renders crosshair lines when a glass is selected", () => {
+    const selectedGlass: SelectedGlass = {
+      catalogName: "Schott",
+      glassName: "N-BK7",
+      data: glassData,
+    };
+    const { container } = render(
+      <GlassScatterPlot {...defaultProps} selectedGlass={selectedGlass} />
+    );
+    expect(container.querySelector("[data-testid='crosshair-h']")).toBeInTheDocument();
+    expect(container.querySelector("[data-testid='crosshair-v']")).toBeInTheDocument();
+  });
+
+  it("does not render crosshair lines when no glass is selected", () => {
+    const { container } = render(<GlassScatterPlot {...defaultProps} />);
+    expect(container.querySelector("[data-testid='crosshair-h']")).not.toBeInTheDocument();
+    expect(container.querySelector("[data-testid='crosshair-v']")).not.toBeInTheDocument();
+  });
+
+  it("crosshair lines have dashed stroke", () => {
+    const selectedGlass: SelectedGlass = {
+      catalogName: "Schott",
+      glassName: "N-BK7",
+      data: glassData,
+    };
+    const { container } = render(
+      <GlassScatterPlot {...defaultProps} selectedGlass={selectedGlass} />
+    );
+    const hLine = container.querySelector("[data-testid='crosshair-h']");
+    const vLine = container.querySelector("[data-testid='crosshair-v']");
+    expect(hLine?.getAttribute("stroke-dasharray")).toBeTruthy();
+    expect(vLine?.getAttribute("stroke-dasharray")).toBeTruthy();
   });
 });
