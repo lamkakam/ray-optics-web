@@ -29,6 +29,7 @@ export function SettingsView({ theme, onThemeChange }: SettingsViewProps) {
           options={themeOptions}
           value={theme}
           onChange={onThemeChange}
+          className="max-w-[12em]"
         />
       </div>
     </div>

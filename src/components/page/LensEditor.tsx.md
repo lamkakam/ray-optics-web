@@ -41,14 +41,14 @@ Read reactively via `useStore`:
 ## Layout
 
 ### LG (`isLG === true`)
-- Controls row: example dropdown + Seidel/Zernike buttons
-- First-order chips row (border-bottom)
+- Controls row: example dropdown + Seidel/Zernike buttons; `border-b` applied here when `firstOrderData` is undefined
+- First-order chips row (border-bottom) — only rendered when `firstOrderData` is defined
 - Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%)
 - BottomDrawerContainer (`draggable={true}`)
 - ConfirmOverwriteModal, SeidelAberrModal, ZernikeTermsModal
 
 ### SM (`isLG === false`)
-- Controls section: dropdown + Seidel/Zernike buttons + first-order chips
+- Controls section: dropdown + Seidel/Zernike buttons + first-order chips (chips wrapper only renders when `firstOrderData` is defined; dropdown `mb-2` only applied when `seidelData` or `firstOrderData` is present)
 - `data-testid="lens-layout-container"` wrapping LensLayoutPanel
 - `data-testid="analysis-plot-container"` wrapping AnalysisPlotContainer
 - BottomDrawerContainer (`draggable={false}`)

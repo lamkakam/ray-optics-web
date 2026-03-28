@@ -322,6 +322,18 @@ describe("LensEditor", () => {
     );
   });
 
+  it("SM: first-order chips not rendered when firstOrderData is undefined", () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+    renderLensEditor();
+    expect(screen.queryByTestId("first-order-chips-mock")).not.toBeInTheDocument();
+  });
+
+  it("LG: first-order chips not rendered when firstOrderData is undefined", () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
+    renderLensEditor();
+    expect(screen.queryByTestId("first-order-chips-mock")).not.toBeInTheDocument();
+  });
+
   it("onImportJson loads data into stores", async () => {
     const { lensStore } = renderLensEditor();
     const user = userEvent.setup();

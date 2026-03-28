@@ -170,7 +170,7 @@ export function LensEditor({
       options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
       defaultValue=""
       onChange={handleExampleChange}
-      className={isLG ? "max-w-xs" : "mb-2 w-full"}
+      className={isLG ? "max-w-xs" : `w-full${seidelData ?? firstOrderData ? " mb-2" : ""}`}
     />
   );
 
@@ -264,14 +264,16 @@ export function LensEditor({
 
   const lgContent = (
     <>
-      <div className="flex shrink-0 items-center gap-4 px-4 py-2">
+      <div className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}>
         {exampleSystemDropdown}
         {seidelButton}
         {zernikeButton}
       </div>
-      <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-        {firstOrderChips}
-      </div>
+      {firstOrderData && (
+        <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+          {firstOrderChips}
+        </div>
+      )}
 
       <div className="flex min-h-0 flex-1 flex-row">
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
@@ -295,9 +297,11 @@ export function LensEditor({
         {exampleSystemDropdown}
         {seidelButton}
         {zernikeButton}
-        <div className="flex flex-wrap gap-2 mt-2">
-          {firstOrderChips}
-        </div>
+        {firstOrderData && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {firstOrderChips}
+          </div>
+        )}
       </div>
       <div data-testid="lens-layout-container" className="w-full px-2 py-3">
         {lensLayoutPanel}

@@ -31,4 +31,10 @@ describe("SettingsView", () => {
     await userEvent.selectOptions(screen.getByLabelText("Theme"), "dark");
     expect(onThemeChange).toHaveBeenCalledTimes(1);
   });
+
+  it("theme select wrapper has a max-width class to prevent oversized dropdown", () => {
+    render(<SettingsView {...defaultProps} />);
+    const select = screen.getByLabelText("Theme");
+    expect(select.parentElement).toHaveClass("max-w-[12em]");
+  });
 });
