@@ -2,22 +2,22 @@
 
 ## Purpose
 
-Run the `rayoptics_web_utils` package test suite using the pytest installation inside `python/.venv`.
+Run the `rayoptics_web_utils` package test suite using the pytest installation inside `src/python/.venv`.
 
 ## Behavior (step-by-step)
 
-1. Resolves `python/` relative to the script's own location.
-2. Checks that `python/.venv/` exists. If not, prints an error and exits with code `1`:
+1. Resolves `src/python/` relative to the script's own location.
+2. Checks that `src/python/.venv/` exists. If not, prints an error and exits with code `1`:
    ```
-   Error: virtual environment not found at python/.venv
+   Error: virtual environment not found at src/python/.venv
    Run scripts/init-python-venv.sh first.
    ```
-3. `cd` into `python/`.
+3. `cd` into `src/python/`.
 4. Executes `.venv/bin/pytest tests/`, forwarding all extra arguments (`$@`) directly to pytest.
 
 ## Preconditions
 
-- `python/.venv` must exist and contain pytest.
+- `src/python/.venv` must exist and contain pytest.
 - Run `bash scripts/init-python-venv.sh` once before using this script.
 
 ## Usage

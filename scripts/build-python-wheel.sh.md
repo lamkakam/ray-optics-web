@@ -6,10 +6,10 @@ Build the `rayoptics_web_utils` Python package as a wheel and place it in `publi
 
 ## Behavior (step-by-step)
 
-1. `cd` into `python/` (resolved relative to the script's own location — safe to call from any working directory).
-2. If `python/.venv/bin/python3` does not exist, create a new virtual environment with `python3 -m venv .venv`.
+1. `cd` into `src/python/` (resolved relative to the script's own location — safe to call from any working directory).
+2. If `src/python/.venv/bin/python3` does not exist, create a new virtual environment with `python3 -m venv .venv`.
 3. Install the `build` tool into the venv quietly (`pip install --quiet build`).
-4. Run `python -m build --wheel --outdir ../public/` — outputs a `.whl` file directly into `public/`.
+4. Run `python -m build --wheel --outdir ../../public/` — outputs a `.whl` file directly into `public/`.
 
 ## Preconditions
 
@@ -19,8 +19,8 @@ Build the `rayoptics_web_utils` Python package as a wheel and place it in `publi
 ## Output / Side-effects
 
 - A `.whl` file is created (or overwritten) inside `public/`, e.g. `public/rayoptics_web_utils-<version>-py3-none-any.whl`.
-- A `.venv` is created inside `python/` if one did not already exist.
-- No changes are made to the development venv managed by `init-python-venv.sh` (both scripts manage `python/.venv`, but this script only installs the `build` tool into it).
+- A `.venv` is created inside `src/python/` if one did not already exist.
+- No changes are made to the development venv managed by `init-python-venv.sh` (both scripts manage `src/python/.venv`, but this script only installs the `build` tool into it).
 
 ## Usage
 

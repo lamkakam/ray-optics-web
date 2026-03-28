@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PYTHON_DIR="$SCRIPT_DIR/../python"
+PYTHON_DIR="$SCRIPT_DIR/../src/python"
 
 cd "$PYTHON_DIR"
 
@@ -18,4 +18,4 @@ echo "Installing dependencies..."
 
 echo ""
 echo "Done. Activate with:"
-echo "  source python/.venv/bin/activate"
+echo "  source src/python/.venv/bin/activate"

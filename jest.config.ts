@@ -11,15 +11,15 @@ const config: Config = {
     ],
   },
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/$1",
-    "^comlink$": "<rootDir>/__mocks__/comlink.ts",
-    "^pyodide$": "<rootDir>/__mocks__/pyodide.ts",
-    "^ag-grid-react$": "<rootDir>/__mocks__/ag-grid-react.tsx",
-    "^ag-grid-community$": "<rootDir>/__mocks__/ag-grid-community.ts",
-    "^ag-grid-community/styles/.*$": "<rootDir>/__mocks__/ag-grid-community.ts",
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^comlink$": "<rootDir>/src/__mocks__/comlink.ts",
+    "^pyodide$": "<rootDir>/src/__mocks__/pyodide.ts",
+    "^ag-grid-react$": "<rootDir>/src/__mocks__/ag-grid-react.tsx",
+    "^ag-grid-community$": "<rootDir>/src/__mocks__/ag-grid-community.ts",
+    "^ag-grid-community/styles/.*$": "<rootDir>/src/__mocks__/ag-grid-community.ts",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
-  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/", "<rootDir>/e2e/"],
+  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/", "<rootDir>/src/e2e/"],
 };
 
 export default config;

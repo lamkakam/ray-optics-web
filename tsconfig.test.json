@@ -10,6 +10,6 @@
   "exclude": [
     "node_modules",
     ".next",
-    "e2e/**"
+    "src/e2e/**"
   ]
 }
