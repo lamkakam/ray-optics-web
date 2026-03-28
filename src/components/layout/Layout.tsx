@@ -72,7 +72,7 @@ export function Layout({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col h-screen">
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
         <div className="flex items-center">
           {hamburgerButton}
@@ -80,7 +80,7 @@ export function Layout({
         </div>
       </header>
 
-      <div className="relative flex flex-col overflow-hidden">
+      <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
         {sideNavNode}
         {children}
       </div>

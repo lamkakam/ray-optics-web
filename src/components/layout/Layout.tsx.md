@@ -39,9 +39,9 @@ Composite layout shell component (`"use client"`). Owns hamburger/side-nav open 
 
 ### SM (`isLG === false`)
 ```
-<div className="flex flex-col">
+<div className="flex flex-col h-screen">
   <header> py-2 row: hamburger + <Header level={1} className="ml-2">Ray Optics Web</Header> </header>
-  <div className="relative flex flex-col overflow-hidden">
+  <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
     <SideNav isLG={false} ... />
     {children}
   </div>
