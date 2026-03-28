@@ -4,6 +4,7 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from "react"
 import { createStore, useStore } from "zustand";
 import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
 import type { Theme } from "@/lib/theme";
+import type { AppView } from "@/lib/appView";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { ExampleSystems } from "@/lib/exampleSystems";
@@ -17,14 +18,16 @@ import { BottomDrawerContainer } from "@/components/container/BottomDrawerContai
 import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { Button } from "@/components/micro/Button";
-import { Tooltip } from "@/components/micro/Tooltip";
 import { Header } from "@/components/micro/Header";
 import { Select } from "@/components/micro/Select";
+import { Tooltip } from "@/components/micro/Tooltip";
 import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteModal";
-import { SettingsModal } from "@/components/composite/SettingsModal";
-import { PrivacyPolicyModal } from "@/components/composite/PrivacyPolicyModal";
 import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
 import { ZernikeTermsModal } from "@/components/composite/ZernikeTermsModal";
+import { SideNav } from "@/components/composite/SideNav";
+import { SettingsView } from "@/components/composite/SettingsView";
+import { PrivacyPolicyView } from "@/components/composite/PrivacyPolicyView";
+import { AboutView } from "@/components/composite/AboutView";
 import type { ZernikeData, ZernikeOrdering } from "@/lib/zernikeData";
 import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/lib/zernikeData";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
@@ -71,8 +74,8 @@ export default function Home() {
   >();
   const [computing, setComputing] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
-  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
-  const [privacyPolicyModalOpen, setPrivacyPolicyModalOpen] = useState(false);
+  const [sideNavOpen, setSideNavOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<AppView>("home");
   const [seidelData, setSeidelData] = useState<SeidelData | undefined>();
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
@@ -210,22 +213,6 @@ export default function Home() {
     />
   );
 
-  const settingsModalNode = (
-    <SettingsModal
-      isOpen={settingsModalOpen}
-      theme={theme}
-      onThemeChange={handleThemeChange}
-      onClose={() => setSettingsModalOpen(false)}
-    />
-  );
-
-  const privacyPolicyModalNode = (
-    <PrivacyPolicyModal
-      isOpen={privacyPolicyModalOpen}
-      onClose={() => setPrivacyPolicyModalOpen(false)}
-    />
-  );
-
   const lensLayoutPanel = (
     <LensLayoutPanel
       imageBase64={layoutImage}
@@ -244,34 +231,7 @@ export default function Home() {
     />
   );
 
-
   const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
-
-  const privacyPolicyButton = (
-    <Tooltip text="Privacy Policy" position="bottom" noTouch>
-      <Button
-        variant="secondary"
-        size="sm"
-        aria-label="Privacy Policy"
-        onClick={() => setPrivacyPolicyModalOpen(true)}
-      >
-        🔒
-      </Button>
-    </Tooltip>
-  );
-
-  const settingButton = (
-    <Tooltip text="Settings" position="bottom" noTouch>
-      <Button
-        variant="secondary"
-        size="sm"
-        aria-label="Settings"
-        onClick={() => setSettingsModalOpen(true)}
-      >
-        ⚙
-      </Button>
-    </Tooltip>
-  );
 
   const seidelButton = seidelData && (
     <div className={isLG ? undefined : "mb-2"}>
@@ -324,62 +284,97 @@ export default function Home() {
     />
   );
 
+  const hamburgerButton = (
+    <Button
+      variant="secondary"
+      size="sm"
+      aria-label="Open navigation"
+      onClick={() => setSideNavOpen((prev) => !prev)}
+    >
+      ☰
+    </Button>
+  );
+
+  const sideNavNode = (
+    <SideNav
+      isOpen={sideNavOpen}
+      isLG={isLG}
+      currentView={currentView}
+      onClose={() => setSideNavOpen(false)}
+      onNavigate={(view) => { setCurrentView(view); setSideNavOpen(false); }}
+    />
+  );
+
   const layoutLG: React.ReactNode = (
     <div className="flex flex-col h-screen">
-      <header className="flex h-12 shrink-0 items-center gap-4 border-gray-200 px-4 dark:border-gray-700">
-        <Header level={1}>Ray Optics Web</Header>
-        {exampleSystemDropdown}
-        {seidelButton}
-        {zernikeButton}
-        <span className="ml-auto flex items-center gap-2">
-          {privacyPolicyButton}
-          {settingButton}
-        </span>
+      <header className="shrink-0 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex h-12 items-center gap-4 px-4">
+          {hamburgerButton}
+          <Header level={1}>Ray Optics Web</Header>
+        </div>
+        <div className="flex items-center gap-4 px-4 pb-2">
+          {exampleSystemDropdown}
+          {seidelButton}
+          {zernikeButton}
+        </div>
       </header>
 
-      <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-        {firstOrderChips}
+      <div className="relative flex-1 flex flex-col min-h-0">
+        {sideNavNode}
+
+        {currentView === "home" && (
+          <>
+            <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+              {firstOrderChips}
+            </div>
+
+            <div className="flex min-h-0 flex-1 flex-row">
+              <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
+                {lensLayoutPanel}
+              </div>
+              <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
+                {analysisPlotContainer}
+              </div>
+            </div>
+
+            <BottomDrawerContainer
+              specsStore={specsStore}
+              lensStore={lensStore}
+              getOpticalModel={getOpticalModel}
+              onImportJson={handleImportJson}
+              onUpdateSystem={handleSubmit}
+              isReady={isReady}
+              computing={computing}
+              proxy={proxy}
+              onError={() => setErrorModalOpen(true)}
+              draggable={true}
+            />
+          </>
+        )}
+
+        {currentView === "settings" && (
+          <SettingsView theme={theme} onThemeChange={handleThemeChange} />
+        )}
+
+        {currentView === "privacy-policy" && <PrivacyPolicyView />}
+
+        {currentView === "about" && <AboutView />}
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-row">
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
-          {lensLayoutPanel}
-        </div>
-        <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
-          {analysisPlotContainer}
-        </div>
-      </div>
-
-      <BottomDrawerContainer
-        specsStore={specsStore}
-        lensStore={lensStore}
-        getOpticalModel={getOpticalModel}
-        onImportJson={handleImportJson}
-        onUpdateSystem={handleSubmit}
-        isReady={isReady}
-        computing={computing}
-        proxy={proxy}
-        onError={() => setErrorModalOpen(true)}
-        draggable={true}
-      />
       {confirmOverwriteModalNode}
       {errorModal}
-      {settingsModalNode}
       {seidelModalNode}
       {zernikeModalNode}
       {initOverlayNode}
-    </div >
+    </div>
   );
 
   const layoutSM: React.ReactNode = (
     <div className="flex flex-col">
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
         <div className="flex items-center mb-2">
-          <Header level={1}>Ray Optics Web</Header>
-          <span className="ml-auto flex items-center gap-2">
-            {privacyPolicyButton}
-            {settingButton}
-          </span>
+          {hamburgerButton}
+          <Header level={1} className="ml-2">Ray Optics Web</Header>
         </div>
         {exampleSystemDropdown}
         {seidelButton}
@@ -389,35 +384,50 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex flex-col">
-        <div data-testid="lens-layout-container" className="w-full px-2 py-3">
-          {lensLayoutPanel}
-        </div>
-        <div data-testid="analysis-plot-container" className="w-full px-2 py-3 border-t border-gray-200 dark:border-gray-700">
-          {analysisPlotContainer}
-        </div>
+      <div className="relative flex flex-col">
+        {sideNavNode}
+
+        {currentView === "home" && (
+          <>
+            <div data-testid="lens-layout-container" className="w-full px-2 py-3">
+              {lensLayoutPanel}
+            </div>
+            <div data-testid="analysis-plot-container" className="w-full px-2 py-3 border-t border-gray-200 dark:border-gray-700">
+              {analysisPlotContainer}
+            </div>
+          </>
+        )}
+
+        {currentView === "settings" && (
+          <SettingsView theme={theme} onThemeChange={handleThemeChange} />
+        )}
+
+        {currentView === "privacy-policy" && <PrivacyPolicyView />}
+
+        {currentView === "about" && <AboutView />}
       </div>
 
-      <BottomDrawerContainer
-        specsStore={specsStore}
-        lensStore={lensStore}
-        getOpticalModel={getOpticalModel}
-        onImportJson={handleImportJson}
-        onUpdateSystem={handleSubmit}
-        isReady={isReady}
-        computing={computing}
-        proxy={proxy}
-        onError={() => setErrorModalOpen(true)}
-        draggable={false}
-      />
+      {currentView === "home" && (
+        <BottomDrawerContainer
+          specsStore={specsStore}
+          lensStore={lensStore}
+          getOpticalModel={getOpticalModel}
+          onImportJson={handleImportJson}
+          onUpdateSystem={handleSubmit}
+          isReady={isReady}
+          computing={computing}
+          proxy={proxy}
+          onError={() => setErrorModalOpen(true)}
+          draggable={false}
+        />
+      )}
+
       {confirmOverwriteModalNode}
       {errorModal}
-      {settingsModalNode}
-      {privacyPolicyModalNode}
       {seidelModalNode}
       {zernikeModalNode}
       {initOverlayNode}
-    </div >
+    </div>
   );
 
   return isLG ? layoutLG : layoutSM;
