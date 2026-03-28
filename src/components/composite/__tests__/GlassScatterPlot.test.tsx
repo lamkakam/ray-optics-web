@@ -61,7 +61,7 @@ describe("GlassScatterPlot", () => {
   });
 
   it("y-axis tick values are in ascending order from bottom to top (lower position = lower nd)", () => {
-    const { container } = render(<GlassScatterPlot {...defaultProps} />);
+    const { container } = render(<GlassScatterPlot {...defaultProps} yDomainMin={1.4} yDomainMax={2.0} />);
 
     const axisLeft = container.querySelector(".visx-axis-left");
     expect(axisLeft).not.toBeNull();
@@ -88,5 +88,45 @@ describe("GlassScatterPlot", () => {
     expect(Math.min(...values)).toBeLessThan(1.5); // ~1.4 lower bound
     expect(Math.max(...values)).toBeGreaterThan(1.9); // ~2.0 upper bound
     expect(Math.max(...values)).toBeLessThan(2.2); // not in buggy 2.x-2.9 range
+  });
+
+  it("y-axis tick max is not forced to 2.0 when no yDomainMax prop is given (partial dispersion data)", () => {
+    const pdPoints: PlotPoint[] = [
+      { x: 64.17, y: 0.5349, catalogName: "Schott", glassName: "N-BK7", data: glassData },
+      { x: 36.43, y: 0.5828, catalogName: "Schott", glassName: "N-F2", data: { ...glassData, refractiveIndexD: 1.62, abbeNumberD: 36.43 } },
+    ];
+    const { container } = render(<GlassScatterPlot {...defaultProps} points={pdPoints} />);
+    const axisLeft = container.querySelector(".visx-axis-left");
+    expect(axisLeft).not.toBeNull();
+    const ticks = axisLeft!.querySelectorAll(".visx-axis-tick");
+    const values = Array.from(ticks).map((t) => parseFloat(t.querySelector("text")?.textContent ?? "0"));
+    expect(Math.max(...values)).toBeLessThan(0.9);
+  });
+
+  it("y-axis with yDomainMin and yDomainMax respects the forced bounds", () => {
+    const { container } = render(
+      <GlassScatterPlot {...defaultProps} yDomainMin={1.4} yDomainMax={2.0} />
+    );
+    const axisLeft = container.querySelector(".visx-axis-left");
+    expect(axisLeft).not.toBeNull();
+    const ticks = axisLeft!.querySelectorAll(".visx-axis-tick");
+    const values = Array.from(ticks).map((t) => parseFloat(t.querySelector("text")?.textContent ?? "0"));
+    expect(Math.min(...values)).toBeLessThan(1.5);
+    expect(Math.max(...values)).toBeGreaterThan(1.9);
+  });
+
+  it("axis line and tick strokes use currentColor for dark mode support", () => {
+    const { container } = render(<GlassScatterPlot {...defaultProps} />);
+    const axisBottom = container.querySelector(".visx-axis-bottom");
+    const axisLeft = container.querySelector(".visx-axis-left");
+    expect(axisBottom?.querySelector(".visx-axis-line")?.getAttribute("stroke")).toBe("currentColor");
+    expect(axisLeft?.querySelector(".visx-axis-line")?.getAttribute("stroke")).toBe("currentColor");
+  });
+
+  it("axis tick labels use currentColor fill for dark mode support", () => {
+    const { container } = render(<GlassScatterPlot {...defaultProps} />);
+    const axisLeft = container.querySelector(".visx-axis-left");
+    const firstTickText = axisLeft?.querySelector(".visx-axis-tick text");
+    expect(firstTickText?.getAttribute("fill")).toBe("currentColor");
   });
 });

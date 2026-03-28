@@ -16,6 +16,8 @@ interface GlassScatterPlotProps {
   readonly xAxisLabel: string;
   readonly yAxisLabel: string;
   readonly onPointClick: (glass: SelectedGlass) => void;
+  readonly yDomainMin?: number;
+  readonly yDomainMax?: number;
 }
 
 const MARGIN = { top: 20, right: 20, bottom: 50, left: 60 };
@@ -31,6 +33,8 @@ function InnerPlot({
   xAxisLabel,
   yAxisLabel,
   onPointClick,
+  yDomainMin,
+  yDomainMax,
   width,
   height,
 }: InnerPlotProps) {
@@ -44,8 +48,8 @@ function InnerPlot({
   const yValues = points.map((p) => p.y);
   const xMin = Math.min(...xValues, 0);
   const xMax = Math.max(...xValues, 100);
-  const yMin = Math.min(...yValues, 1.4);
-  const yMax = Math.max(...yValues, 2.0);
+  const yMin = yDomainMin !== undefined ? Math.min(...yValues, yDomainMin) : Math.min(...yValues);
+  const yMax = yDomainMax !== undefined ? Math.max(...yValues, yDomainMax) : Math.max(...yValues);
   const xPad = (xMax - xMin) * 0.05;
   const yPad = (yMax - yMin) * 0.05;
 
@@ -193,8 +197,21 @@ function InnerPlot({
                 </g>
 
                 {/* Axes (outside zoom group for fixed positioning) */}
-                <AxisBottom top={innerHeight} scale={axisXScale} numTicks={8} />
-                <AxisLeft scale={axisYScale} numTicks={6} />
+                <AxisBottom
+                  top={innerHeight}
+                  scale={axisXScale}
+                  numTicks={8}
+                  stroke="currentColor"
+                  tickStroke="currentColor"
+                  tickLabelProps={{ fill: "currentColor", fontSize: 10, textAnchor: "middle" }}
+                />
+                <AxisLeft
+                  scale={axisYScale}
+                  numTicks={6}
+                  stroke="currentColor"
+                  tickStroke="currentColor"
+                  tickLabelProps={{ fill: "currentColor", fontSize: 10, textAnchor: "end" }}
+                />
               </Group>
             </svg>
           );

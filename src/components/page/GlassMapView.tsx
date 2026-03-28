@@ -112,6 +112,8 @@ export function GlassMapView({ store, proxy, isReady }: GlassMapViewProps) {
           xAxisLabel={xLabel}
           yAxisLabel={yLabel}
           onPointClick={handlePointClick}
+          yDomainMin={plotType === "refractiveIndex" ? 1.4 : undefined}
+          yDomainMax={plotType === "refractiveIndex" ? 2.0 : undefined}
         />
       </div>
       {/* Controls + detail */}

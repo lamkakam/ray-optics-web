@@ -11,17 +11,20 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 | `xAxisLabel` | `string` | Label for x-axis (e.g. "Vd") |
 | `yAxisLabel` | `string` | Label for y-axis (e.g. "Nd") |
 | `onPointClick` | `(glass: SelectedGlass) => void` | Called when a circle is clicked |
+| `yDomainMin` | `number \| undefined` | Optional forced minimum for y-axis domain (e.g. `1.4` for refractive index plots) |
+| `yDomainMax` | `number \| undefined` | Optional forced maximum for y-axis domain (e.g. `2.0` for refractive index plots) |
 
 ## Implementation
 - `@visx/responsive` `<ParentSize>` fills container; renders `InnerPlot` when width/height > 0
 - `@visx/zoom` `<Zoom>` wraps SVG; `zoom.transformMatrix` drives zoom/pan
 - Circles placed inside `<g transform={zoom.toString()}>` under `<clipPath>` on data area
-- Axes (`@visx/axis` `<AxisBottom>` + `<AxisLeft>`) outside zoom group with derived visible domain from transform matrix
+- Axes (`@visx/axis` `<AxisBottom>` + `<AxisLeft>`) outside zoom group with derived visible domain from transform matrix; use `stroke="currentColor"`, `tickStroke="currentColor"`, and `tickLabelProps={{ fill: "currentColor" }}` for dark mode support
 - Hover tooltip via `@visx/tooltip` `useTooltip<PlotPoint>()`
 - `data-testid="glass-point"` on each circle for test selection
 - Circle radius: 4 (default), 6 + stroke (selected)
 - x-axis domain reversed (high Abbe number on left, low on right — standard glass map convention)
-- y-axis: lower position = lower refractive index (standard orientation). `visYMin`/`visYMax` derived from zoom transform so that the axis labels track the zoom-transformed data range correctly.
+- y-axis: lower position = lower value (standard orientation). `visYMin`/`visYMax` derived from zoom transform so that the axis labels track the zoom-transformed data range correctly.
+- y-axis domain: data-driven by default; `yDomainMin`/`yDomainMax` props optionally enforce bounds (e.g. 1.4–2.0 for refractive index, omitted for partial dispersion where the tight data range should govern the axis)
 - Margins: `{ top: 20, right: 20, bottom: 50, left: 60 }`
 
 ## Key Notes
