@@ -26,6 +26,12 @@ export interface SpecsConfigurerState {
   wavelengthWeights: WavelengthWeights;
   referenceIndex: ReferenceIndex;
 
+  // Committed specs (snapshot of last submitted form state)
+  committedSpecs: OpticalSpecs;
+  setCommittedSpecs: (specs: OpticalSpecs) => void;
+  getFieldOptions: () => { label: string; value: number }[];
+  getWavelengthOptions: () => { label: string; value: number }[];
+
   // Modal state
   fieldModalOpen: boolean;
   wavelengthModalOpen: boolean;
@@ -72,6 +78,30 @@ export const createSpecsConfigurerSlice: StateCreator<SpecsConfigurerState> = (
   // Wavelength defaults
   wavelengthWeights: [[lookupWavelength("e"), 1]],
   referenceIndex: 0,
+
+  // Committed specs defaults (mirrors default form state above)
+  committedSpecs: {
+    pupil: { space: "object", type: "epd", value: 0.5 },
+    field: { space: "object", type: "height", maxField: 0, fields: [0], isRelative: true },
+    wavelengths: { weights: [[lookupWavelength("e"), 1]], referenceIndex: 0 },
+  },
+
+  setCommittedSpecs: (specs) => set({ committedSpecs: specs }),
+
+  getFieldOptions: () => {
+    const { fields, maxField, type } = get().committedSpecs.field;
+    const unit = type === "angle" ? "°" : " mm";
+    return fields.map((rf, i) => ({
+      label: `${(rf * maxField).toPrecision(3)}${unit}`,
+      value: i,
+    }));
+  },
+
+  getWavelengthOptions: () =>
+    get().committedSpecs.wavelengths.weights.map(([wl], i) => ({
+      label: `${wl} nm`,
+      value: i,
+    })),
 
   // Modal state
   fieldModalOpen: false,

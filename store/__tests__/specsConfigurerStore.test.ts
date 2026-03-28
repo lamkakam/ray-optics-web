@@ -144,6 +144,73 @@ describe("specsConfigurerStore", () => {
     });
   });
 
+  describe("committedSpecs", () => {
+    it("initial value equals OpticalSpecs from default form state", () => {
+      const store = makeStore();
+      const committed = store.getState().committedSpecs;
+      expect(committed).toEqual({
+        pupil: { space: "object", type: "epd", value: 0.5 },
+        field: { space: "object", type: "height", maxField: 0, fields: [0], isRelative: true },
+        wavelengths: { weights: [[546.073, 1]], referenceIndex: 0 },
+      });
+    });
+
+    it("setCommittedSpecs updates committedSpecs", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs);
+      expect(store.getState().committedSpecs).toEqual(sampleSpecs);
+    });
+
+    it("getFieldOptions returns angle labels after setCommittedSpecs", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs);
+      expect(store.getState().getFieldOptions()).toEqual([
+        { label: "0.00°", value: 0 },
+        { label: "14.0°", value: 1 },
+        { label: "20.0°", value: 2 },
+      ]);
+    });
+
+    it("getFieldOptions returns height labels for height type", () => {
+      const store = makeStore();
+      const heightSpecs: OpticalSpecs = {
+        pupil: { space: "object", type: "epd", value: 25 },
+        field: { space: "object", type: "height", maxField: 10, fields: [0, 0.5, 1], isRelative: true },
+        wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
+      };
+      store.getState().setCommittedSpecs(heightSpecs);
+      expect(store.getState().getFieldOptions()).toEqual([
+        { label: "0.00 mm", value: 0 },
+        { label: "5.00 mm", value: 1 },
+        { label: "10.0 mm", value: 2 },
+      ]);
+    });
+
+    it("getWavelengthOptions returns wavelength labels", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs);
+      expect(store.getState().getWavelengthOptions()).toEqual([
+        { label: "486.133 nm", value: 0 },
+        { label: "587.562 nm", value: 1 },
+        { label: "656.273 nm", value: 2 },
+      ]);
+    });
+
+    it("getters are independent from loadFromSpecs (form state)", () => {
+      const store = makeStore();
+      // loadFromSpecs changes form state but NOT committedSpecs
+      store.getState().loadFromSpecs(sampleSpecs);
+      // committedSpecs is still the initial default
+      const committed = store.getState().committedSpecs;
+      expect(committed.field.type).toBe("height");
+      expect(committed.field.maxField).toBe(0);
+      // getFieldOptions still reflects initial committedSpecs, not loaded form state
+      expect(store.getState().getFieldOptions()).toEqual([
+        { label: "0.00 mm", value: 0 },
+      ]);
+    });
+  });
+
   describe("modal toggles", () => {
     it("opens and closes field modal", () => {
       const store = makeStore();

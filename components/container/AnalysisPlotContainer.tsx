@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { useStore } from "zustand";
 import type { StoreApi } from "zustand";
-import type { OpticalModel, OpticalSpecs } from "@/lib/opticalModel";
+import type { OpticalModel } from "@/lib/opticalModel";
 import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/store/analysisPlotStore";
+import type { SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import {
   AnalysisPlotView,
   PLOT_TYPE_CONFIG,
@@ -16,7 +17,7 @@ interface AnalysisPlotContainerProps {
   readonly store: StoreApi<AnalysisPlotState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly committedOpticalModel: OpticalModel | undefined;
-  readonly committedSpecs: OpticalSpecs;
+  readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly onError: () => void;
   readonly autoHeight?: boolean;
 }
@@ -25,7 +26,7 @@ export function AnalysisPlotContainer({
   store,
   proxy,
   committedOpticalModel,
-  committedSpecs,
+  specsStore,
   onError,
   autoHeight,
 }: AnalysisPlotContainerProps) {
@@ -35,21 +36,9 @@ export function AnalysisPlotContainer({
   const selectedWavelengthIndex = useStore(store, (s) => s.selectedWavelengthIndex);
   const selectedPlotType = useStore(store, (s) => s.selectedPlotType);
 
-  const fieldOptions = useMemo(() => {
-    const { fields, maxField, type } = committedSpecs.field;
-    const unit = type === "angle" ? "°" : " mm";
-    return fields.map((rf, i) => ({
-      label: `${(rf * maxField).toPrecision(3)}${unit}`,
-      value: i,
-    }));
-  }, [committedSpecs.field]);
-
-  const wavelengthOptions = useMemo(() => {
-    return committedSpecs.wavelengths.weights.map(([wl], i) => ({
-      label: `${wl} nm`,
-      value: i,
-    }));
-  }, [committedSpecs.wavelengths.weights]);
+  useStore(specsStore, (s) => s.committedSpecs);
+  const fieldOptions = specsStore.getState().getFieldOptions();
+  const wavelengthOptions = specsStore.getState().getWavelengthOptions();
 
   const getPlotFunction = useCallback(
     (plotType: PlotType, model?: OpticalModel): ((fieldIndex: number, wavelengthIndex: number) => Promise<string>) | undefined => {

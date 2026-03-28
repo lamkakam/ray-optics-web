@@ -11,7 +11,7 @@ interface AnalysisPlotContainerProps {
   store: StoreApi<AnalysisPlotState>;
   proxy: PyodideWorkerAPI | undefined;
   committedOpticalModel: OpticalModel | undefined;
-  committedSpecs: OpticalSpecs;
+  specsStore: StoreApi<SpecsConfigurerState>;
   onError: () => void;
   autoHeight?: boolean;
 }
@@ -22,19 +22,21 @@ interface AnalysisPlotContainerProps {
 | `store` | `StoreApi<AnalysisPlotState>` | Yes | Zustand store for analysis-plot state (plotImage, plotLoading, selected indices, selectedPlotType) |
 | `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy; handlers no-op if `undefined` |
 | `committedOpticalModel` | `OpticalModel \| undefined` | Yes | The last committed optical model; plot functions no-op if `undefined` |
-| `committedSpecs` | `OpticalSpecs` | Yes | Used to derive field and wavelength select options |
+| `specsStore` | `StoreApi<SpecsConfigurerState>` | Yes | Specs configurer store; `committedSpecs` is subscribed to trigger re-renders; `getFieldOptions()` and `getWavelengthOptions()` are called to derive select options |
 | `onError` | `() => void` | Yes | Called when any async plot call throws |
 | `autoHeight` | `boolean` | No | Forwarded to `AnalysisPlotView` |
 
 ## State
 
-All five state fields are read from `store` via `useStore(store, selector)`:
+All five analysis-plot state fields are read from `store` via `useStore(store, selector)`:
 - `plotImage`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
+
+`committedSpecs` is subscribed from `specsStore` via `useStore(specsStore, (s) => s.committedSpecs)` (return value unused — subscription only) to trigger re-renders when the committed specs change.
 
 ## Derived Data
 
-- **`fieldOptions`** — derived from `committedSpecs.field` (`fields`, `maxField`, `type`). Unit is `°` for `"angle"`, ` mm` for `"height"`.
-- **`wavelengthOptions`** — derived from `committedSpecs.wavelengths.weights`.
+- **`fieldOptions`** — obtained by calling `specsStore.getState().getFieldOptions()` directly in the render body (re-evaluated on each render triggered by `committedSpecs` change). Unit is `°` for `"angle"`, ` mm` for `"height"`.
+- **`wavelengthOptions`** — obtained by calling `specsStore.getState().getWavelengthOptions()` directly in the render body.
 
 ## Internal Logic
 
@@ -72,4 +74,4 @@ Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and ca
 
 ## Usages
 
-- Used in `app/page.tsx` replacing the inline `AnalysisPlotView` node. `page.tsx` creates `analysisPlotStore` and passes it along with `proxy`, `committedOpticalModel`, `committedSpecs`, `onError`, and `autoHeight`.
+- Used in `app/page.tsx` replacing the inline `AnalysisPlotView` node. `page.tsx` creates `analysisPlotStore` and `specsStore` and passes them along with `proxy`, `committedOpticalModel`, `onError`, and `autoHeight`.

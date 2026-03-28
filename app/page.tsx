@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { createStore, useStore } from "zustand";
-import type { OpticalSpecs, OpticalModel, SeidelData } from "@/lib/opticalModel";
+import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
 import type { Theme } from "@/lib/theme";
 import { usePyodide } from "@/hooks/usePyodide";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
@@ -67,9 +67,6 @@ export default function Home() {
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
   const selectedPlotType = useStore(analysisPlotStore, (s) => s.selectedPlotType);
 
-  const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(
-    () => specsStore.getState().toOpticalSpecs()
-  );
   const [committedOpticalModel, setCommittedOpticalModel] = useState<OpticalModel | undefined>();
   const [layoutImage, setLayoutImage] = useState<string | undefined>();
   const [layoutLoading, setLayoutLoading] = useState(false);
@@ -111,22 +108,6 @@ export default function Home() {
         setTheme(selected);
       }
     };
-
-  const fieldOptions = useMemo(() => {
-    const { fields, maxField, type } = committedSpecs.field;
-    const unit = type === "angle" ? "°" : " mm";
-    return fields.map((rf, i) => ({
-      label: `${(rf * maxField).toPrecision(3)}${unit}`,
-      value: i,
-    }));
-  }, [committedSpecs.field]);
-
-  const wavelengthOptions = useMemo(() => {
-    return committedSpecs.wavelengths.weights.map(([wl], i) => ({
-      label: `${wl} nm`,
-      value: i,
-    }));
-  }, [committedSpecs.wavelengths.weights]);
 
   const handleFetchZernikeData = useCallback(
     async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering): Promise<ZernikeData> => {
@@ -204,7 +185,7 @@ export default function Home() {
       setLayoutImage(layout);
       analysisPlotStore.getState().setPlotImage(plot);
       setSeidelData(seidel);
-      setCommittedSpecs(specs);
+      specsStore.getState().setCommittedSpecs(specs);
       setCommittedOpticalModel(model);
     } catch (err) {
       console.log("Update System failed:", err);
@@ -335,7 +316,7 @@ export default function Home() {
       store={analysisPlotStore}
       proxy={proxy}
       committedOpticalModel={committedOpticalModel}
-      committedSpecs={committedSpecs}
+      specsStore={specsStore}
       onError={() => setErrorModalOpen(true)}
       autoHeight={!isLG}
     />
@@ -401,8 +382,8 @@ export default function Home() {
   const zernikeModalNode = seidelData && (
     <ZernikeTermsModal
       isOpen={zernikeModalOpen}
-      fieldOptions={fieldOptions}
-      wavelengthOptions={wavelengthOptions}
+      fieldOptions={specsStore.getState().getFieldOptions()}
+      wavelengthOptions={specsStore.getState().getWavelengthOptions()}
       onFetchData={handleFetchZernikeData}
       onClose={() => setZernikeModalOpen(false)}
     />
