@@ -8,6 +8,7 @@ import { usePyodide } from "@/hooks/usePyodide";
 import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
+import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/store/lensLayoutImageStore";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { SettingsView } from "@/components/composite/SettingsView";
 import { PrivacyPolicyView } from "@/components/composite/PrivacyPolicyView";
@@ -44,6 +45,11 @@ export default function Home() {
     []
   );
 
+  const lensLayoutImageStore = useMemo(
+    () => createStore<LensLayoutImageState>(createLensLayoutImageSlice),
+    []
+  );
+
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>("home");
 
@@ -73,6 +79,7 @@ export default function Home() {
       specsStore={specsStore}
       lensStore={lensStore}
       analysisPlotStore={analysisPlotStore}
+      lensLayoutImageStore={lensLayoutImageStore}
       proxy={proxy}
       isReady={isReady}
       onError={() => setErrorModalOpen(true)}

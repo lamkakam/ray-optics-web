@@ -282,4 +282,24 @@ describe("lensEditorStore", () => {
       expect(store.getState().autoAperture).toBe(false);
     });
   });
+
+  describe("firstOrderData", () => {
+    it("is undefined by default", () => {
+      const store = makeStore();
+      expect(store.getState().firstOrderData).toBeUndefined();
+    });
+
+    it("setFirstOrderData stores the value", () => {
+      const store = makeStore();
+      store.getState().setFirstOrderData({ efl: 100, fno: 4 });
+      expect(store.getState().firstOrderData).toEqual({ efl: 100, fno: 4 });
+    });
+
+    it("setFirstOrderData clears with undefined", () => {
+      const store = makeStore();
+      store.getState().setFirstOrderData({ efl: 100 });
+      store.getState().setFirstOrderData(undefined);
+      expect(store.getState().firstOrderData).toBeUndefined();
+    });
+  });
 });

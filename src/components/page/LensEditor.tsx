@@ -13,6 +13,7 @@ import { buildPlotFn } from "@/lib/plotFunctions";
 import type { LensEditorState } from "@/store/lensEditorStore";
 import type { SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import type { AnalysisPlotState } from "@/store/analysisPlotStore";
+import type { LensLayoutImageState } from "@/store/lensLayoutImageStore";
 import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
 import { AnalysisPlotContainer } from "@/components/container/AnalysisPlotContainer";
 import { BottomDrawerContainer } from "@/components/container/BottomDrawerContainer";
@@ -28,6 +29,7 @@ export interface LensEditorProps {
   readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly lensStore: StoreApi<LensEditorState>;
   readonly analysisPlotStore: StoreApi<AnalysisPlotState>;
+  readonly lensLayoutImageStore: StoreApi<LensLayoutImageState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly onError: () => void;
@@ -37,6 +39,7 @@ export function LensEditor({
   specsStore,
   lensStore,
   analysisPlotStore,
+  lensLayoutImageStore,
   proxy,
   isReady,
   onError,
@@ -48,11 +51,9 @@ export function LensEditor({
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
   const selectedPlotType = useStore(analysisPlotStore, (s) => s.selectedPlotType);
 
-  const [layoutImage, setLayoutImage] = useState<string | undefined>();
-  const [layoutLoading, setLayoutLoading] = useState(false);
-  const [firstOrderData, setFirstOrderData] = useState<
-    Record<string, number> | undefined
-  >();
+  const layoutImage = useStore(lensLayoutImageStore, (s) => s.layoutImage);
+  const layoutLoading = useStore(lensLayoutImageStore, (s) => s.layoutLoading);
+  const firstOrderData = useStore(lensStore, (s) => s.firstOrderData);
   const [computing, setComputing] = useState(false);
   const [seidelData, setSeidelData] = useState<SeidelData | undefined>();
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
@@ -99,7 +100,7 @@ export function LensEditor({
     const model: OpticalModel = { setAutoAperture, specs, ...surfacesData };
 
     setComputing(true);
-    setLayoutLoading(true);
+    lensLayoutImageStore.getState().setLayoutLoading(true);
     analysisPlotStore.getState().setPlotLoading(true);
 
     try {
@@ -116,8 +117,8 @@ export function LensEditor({
         proxy.get3rdOrderSeidelData(model),
       ]);
 
-      setFirstOrderData(fod);
-      setLayoutImage(layout);
+      lensStore.getState().setFirstOrderData(fod);
+      lensLayoutImageStore.getState().setLayoutImage(layout);
       analysisPlotStore.getState().setPlotImage(plot);
       setSeidelData(seidel);
       specsStore.getState().setCommittedSpecs(specs);
@@ -127,14 +128,14 @@ export function LensEditor({
       onError();
     } finally {
       setComputing(false);
-      setLayoutLoading(false);
+      lensLayoutImageStore.getState().setLayoutLoading(false);
       analysisPlotStore.getState().setPlotLoading(false);
 
       if (exampleSelectRef.current) {
         exampleSelectRef.current.value = "";
       }
     }
-  }, [proxy, specsStore, lensStore, analysisPlotStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError]);
+  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError]);
 
   const handleExampleConfirm = useCallback(() => {
     if (!pendingExample) return;

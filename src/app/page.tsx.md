@@ -13,6 +13,7 @@ Root page component (`"use client"`). Owns stores, Pyodide hook, theme, and view
 - `specsStore` — `SpecsConfigurerState` (zustand)
 - `lensStore` — `LensEditorState` (zustand)
 - `analysisPlotStore` — `AnalysisPlotState` (zustand)
+- `lensLayoutImageStore` — `LensLayoutImageState` (zustand)
 
 ## Navigation
 - `Layout` owns hamburger/side-nav open state and screen-size detection

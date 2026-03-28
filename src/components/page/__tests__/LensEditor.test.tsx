@@ -7,6 +7,7 @@ import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
+import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/store/lensLayoutImageStore";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 
 jest.mock("@/hooks/useScreenBreakpoint", () => ({
@@ -128,7 +129,8 @@ function makeStores() {
   const specsStore = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
   const analysisPlotStore = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
-  return { specsStore, lensStore, analysisPlotStore };
+  const lensLayoutImageStore = createStore<LensLayoutImageState>(createLensLayoutImageSlice);
+  return { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore };
 }
 
 function makeProxy(): PyodideWorkerAPI {
@@ -159,7 +161,7 @@ function renderLensEditor(overrides?: {
 }) {
   // Lazy import to allow mock override before render
   const { LensEditor } = require("@/components/page/LensEditor") as typeof import("@/components/page/LensEditor");
-  const { specsStore, lensStore, analysisPlotStore } = makeStores();
+  const { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore } = makeStores();
   const proxy = overrides && "proxy" in overrides ? overrides.proxy : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
   render(
@@ -167,12 +169,13 @@ function renderLensEditor(overrides?: {
       specsStore={specsStore}
       lensStore={lensStore}
       analysisPlotStore={analysisPlotStore}
+      lensLayoutImageStore={lensLayoutImageStore}
       proxy={proxy}
       isReady={overrides?.isReady ?? true}
       onError={onError}
     />
   );
-  return { proxy, onError, specsStore, lensStore, analysisPlotStore };
+  return { proxy, onError, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore };
 }
 
 beforeEach(() => {

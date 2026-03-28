@@ -9,6 +9,7 @@ Page-level component (`"use client"`). Owns the home-view lens editor workflow: 
 | `specsStore` | `StoreApi<SpecsConfigurerState>` | Zustand store for optical specs |
 | `lensStore` | `StoreApi<LensEditorState>` | Zustand store for lens prescription |
 | `analysisPlotStore` | `StoreApi<AnalysisPlotState>` | Zustand store for analysis plot |
+| `lensLayoutImageStore` | `StoreApi<LensLayoutImageState>` | Zustand store for lens layout image/loading |
 | `proxy` | `PyodideWorkerAPI \| undefined` | Pyodide worker proxy (undefined until ready) |
 | `isReady` | `boolean` | Whether Pyodide is initialised |
 | `onError` | `() => void` | Called on submit error; opens page-level error modal |
@@ -16,9 +17,6 @@ Page-level component (`"use client"`). Owns the home-view lens editor workflow: 
 ## State
 | State | Type | Description |
 |-------|------|-------------|
-| `layoutImage` | `string \| undefined` | Base64 lens layout SVG |
-| `layoutLoading` | `boolean` | Lens layout loading flag |
-| `firstOrderData` | `Record<string, number> \| undefined` | First-order optical data |
 | `computing` | `boolean` | Submit in-progress flag |
 | `seidelData` | `SeidelData \| undefined` | 3rd-order Seidel data (populated after submit) |
 | `seidelModalOpen` | `boolean` | Seidel modal visibility |
@@ -26,10 +24,10 @@ Page-level component (`"use client"`). Owns the home-view lens editor workflow: 
 | `pendingExample` | `string \| undefined` | Name of example system pending confirmation |
 
 ## Derived Store State
-Read reactively from `analysisPlotStore` via `useStore`:
-- `selectedFieldIndex`
-- `selectedWavelengthIndex`
-- `selectedPlotType`
+Read reactively via `useStore`:
+- From `analysisPlotStore`: `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
+- From `lensLayoutImageStore`: `layoutImage`, `layoutLoading`
+- From `lensStore`: `firstOrderData`
 
 ## Callbacks
 - `handleExampleChange` — sets `pendingExample` when a dropdown option is selected
