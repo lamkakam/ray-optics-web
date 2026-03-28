@@ -1,22 +1,14 @@
 # page.tsx
 
 ## Purpose
-Root page component (`"use client"`). Owns all top-level state and wires together the optical model workflow, side navigation, and view routing.
+Root page component (`"use client"`). Owns stores, Pyodide hook, theme, navigation state, and view routing. Delegates home-view content to `LensEditor`.
 
 ## State
 | State | Type | Description |
 |-------|------|-------------|
 | `sideNavOpen` | `boolean` | Whether the side nav panel is open |
 | `currentView` | `AppView` | Active view: `'home'`, `'settings'`, `'privacy-policy'`, `'about'` |
-| `layoutImage` | `string \| undefined` | Base64 lens layout SVG |
-| `layoutLoading` | `boolean` | Lens layout loading flag |
-| `firstOrderData` | `Record<string, number> \| undefined` | First-order optical data |
-| `computing` | `boolean` | Submit in-progress flag |
 | `errorModalOpen` | `boolean` | Error modal visibility |
-| `seidelData` | `SeidelData \| undefined` | 3rd-order Seidel data (populated after submit) |
-| `seidelModalOpen` | `boolean` | Seidel modal visibility |
-| `zernikeModalOpen` | `boolean` | Zernike modal visibility |
-| `pendingExample` | `string \| undefined` | Name of example system pending confirmation |
 
 ## Stores
 - `specsStore` — `SpecsConfigurerState` (zustand)
@@ -33,24 +25,21 @@ Root page component (`"use client"`). Owns all top-level state and wires togethe
 ### LG (`layoutLG`)
 - Header: 1 row (`h-12`): hamburger + app title
 - Below header: `relative flex-1` container holding `SideNav` + content
-  - `currentView === 'home'`:
-    - Controls row (no bottom border): example system dropdown + Seidel/Zernike buttons
-    - First-order chips row (has bottom border)
-    - Lens layout + analysis panels
-    - `BottomDrawerContainer`
+  - `currentView === 'home'`: `<LensEditor>` (see `src/components/page/LensEditor.tsx`)
   - `currentView === 'settings'`: `SettingsView`
   - `currentView === 'privacy-policy'`: `PrivacyPolicyView`
   - `currentView === 'about'`: `AboutView`
+- `ErrorModal`, `LoadingOverlay`
 
 ### SM (`layoutSM`)
 - Header: hamburger + title row only
 - `relative flex flex-col` container holding `SideNav` + content views
-  - `currentView === 'home'`:
-    - Controls section: example dropdown + Seidel/Zernike buttons + first-order chips
-    - Lens layout + analysis panels
-- `BottomDrawerContainer` rendered only when `currentView === 'home'`
+  - `currentView === 'home'`: `<LensEditor>` (see `src/components/page/LensEditor.tsx`)
+  - Other views same as LG
+- `ErrorModal`, `LoadingOverlay`
 
 ## Removed (vs. previous version)
-- `settingsModalOpen`, `privacyPolicyModalOpen` state
-- `SettingsModal`, `PrivacyPolicyModal` JSX nodes
-- Privacy Policy and Settings header buttons
+- All lens editor state (`layoutImage`, `layoutLoading`, `firstOrderData`, `computing`, `seidelData`, `seidelModalOpen`, `zernikeModalOpen`, `pendingExample`) — moved to `LensEditor`
+- All lens editor callbacks — moved to `LensEditor`
+- `ConfirmOverwriteModal`, `SeidelAberrModal`, `ZernikeTermsModal` JSX — moved to `LensEditor`
+- `isLG` no longer passed as prop; `LensEditor` calls `useScreenBreakpoint()` internally
