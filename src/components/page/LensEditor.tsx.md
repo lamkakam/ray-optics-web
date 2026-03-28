@@ -43,7 +43,7 @@ Read reactively via `useStore`:
 ### LG (`isLG === true`)
 - Controls row: example dropdown + Seidel/Zernike buttons; `border-b` applied here when `firstOrderData` is undefined
 - First-order chips row (border-bottom) — only rendered when `firstOrderData` is defined
-- Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%)
+- Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%); the analysis panel wrapper has `overflow-hidden` (`data-testid="lg-analysis-plot-panel"`) to prevent content from bleeding over the BottomDrawer when viewport height is small
 - BottomDrawerContainer (`draggable={true}`)
 - ConfirmOverwriteModal, SeidelAberrModal, ZernikeTermsModal
 

@@ -279,7 +279,7 @@ export function LensEditor({
         <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden p-4 w-[65%]">
           {lensLayoutPanel}
         </div>
-        <div className="flex flex-1 flex-col min-h-0 p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
+        <div data-testid="lg-analysis-plot-panel" className="flex flex-1 flex-col min-h-0 overflow-hidden p-4 border-l border-gray-200 dark:border-gray-700 w-[35%]">
           {analysisPlotContainer}
         </div>
       </div>

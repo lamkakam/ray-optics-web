@@ -305,6 +305,12 @@ describe("LensEditor", () => {
     expect(screen.getByTestId("zernike-modal")).toBeInTheDocument();
   });
 
+  it("LG: analysis plot panel has overflow-hidden to prevent content bleeding over BottomDrawer", () => {
+    renderLensEditor();
+    const panel = screen.getByTestId("lg-analysis-plot-panel");
+    expect(panel).toHaveClass("overflow-hidden");
+  });
+
   it("LG: BottomDrawerContainer receives draggable={true}", () => {
     renderLensEditor();
     expect(screen.getByTestId("bottom-drawer-container")).toHaveAttribute(
