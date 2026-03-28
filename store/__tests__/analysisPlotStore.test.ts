@@ -80,6 +80,24 @@ describe("analysisPlotStore", () => {
       store.getState().setSelectedFieldIndex(0);
       expect(store.getState().selectedFieldIndex).toBe(0);
     });
+
+    it("sets index as-is when maxCount is omitted", () => {
+      const store = makeStore();
+      store.getState().setSelectedFieldIndex(10);
+      expect(store.getState().selectedFieldIndex).toBe(10);
+    });
+
+    it("sets index unchanged when maxCount is provided and index < maxCount", () => {
+      const store = makeStore();
+      store.getState().setSelectedFieldIndex(1, 3);
+      expect(store.getState().selectedFieldIndex).toBe(1);
+    });
+
+    it("clamps to maxCount - 1 when index >= maxCount", () => {
+      const store = makeStore();
+      store.getState().setSelectedFieldIndex(5, 3);
+      expect(store.getState().selectedFieldIndex).toBe(2);
+    });
   });
 
   describe("setSelectedWavelengthIndex", () => {
@@ -94,6 +112,24 @@ describe("analysisPlotStore", () => {
       store.getState().setSelectedWavelengthIndex(1);
       store.getState().setSelectedWavelengthIndex(0);
       expect(store.getState().selectedWavelengthIndex).toBe(0);
+    });
+
+    it("sets index as-is when maxCount is omitted", () => {
+      const store = makeStore();
+      store.getState().setSelectedWavelengthIndex(10);
+      expect(store.getState().selectedWavelengthIndex).toBe(10);
+    });
+
+    it("sets index unchanged when maxCount is provided and index < maxCount", () => {
+      const store = makeStore();
+      store.getState().setSelectedWavelengthIndex(2, 3);
+      expect(store.getState().selectedWavelengthIndex).toBe(2);
+    });
+
+    it("clamps to maxCount - 1 when index >= maxCount", () => {
+      const store = makeStore();
+      store.getState().setSelectedWavelengthIndex(5, 3);
+      expect(store.getState().selectedWavelengthIndex).toBe(2);
     });
   });
 

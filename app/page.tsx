@@ -12,7 +12,7 @@ import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/s
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
 import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
 import { AnalysisPlotContainer } from "@/components/container/AnalysisPlotContainer";
-import type { PlotType } from "@/components/composite/AnalysisPlotView";
+import { buildPlotFn } from "@/lib/plotFunctions";
 import { BottomDrawerContainer } from "@/components/container/BottomDrawerContainer";
 import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
 import { ErrorModal } from "@/components/micro/ErrorModal";
@@ -116,30 +116,6 @@ export default function Home() {
     [proxy, lensStore],
   );
 
-  const getPlotFunction = useCallback(
-    (plotType: PlotType, model?: OpticalModel): ((fieldIndex: number, wavelengthIndex: number) => Promise<string>) | undefined => {
-      const m = model ?? lensStore.getState().committedOpticalModel;
-      if (!proxy || !m) return undefined;
-      switch (plotType) {
-        case "rayFan":
-          return (fi, _) => proxy.plotRayFan(m, fi);
-        case "opdFan":
-          return (fi, _) => proxy.plotOpdFan(m, fi);
-        case "spotDiagram":
-          return (fi, _) => proxy.plotSpotDiagram(m, fi);
-        case "surfaceBySurface3rdOrder":
-          return (_, __) => proxy.plotSurfaceBySurface3rdOrderAberr(m);
-        case "wavefrontMap":
-          return (fi, wi) => proxy.plotWavefrontMap(m, fi, wi);
-        case "geoPSF":
-          return (fi, wi) => proxy.plotGeoPSF(m, fi, wi);
-        case "diffractionPSF":
-          return (fi, wi) => proxy.plotDiffractionPSF(m, fi, wi);
-      }
-    },
-    [proxy, lensStore]
-  );
-
   const handleSubmit = useCallback(async () => {
     if (!proxy) return;
 
@@ -154,23 +130,12 @@ export default function Home() {
     analysisPlotStore.getState().setPlotLoading(true);
 
     try {
-      const clampedFieldIndex = Math.min(
-        selectedFieldIndex,
-        specs.field.fields.length - 1
-      );
-      if (clampedFieldIndex !== selectedFieldIndex) {
-        analysisPlotStore.getState().setSelectedFieldIndex(clampedFieldIndex);
-      }
+      const clampedFieldIndex = specsStore.getState().clampFieldIndex(selectedFieldIndex, specs);
+      const clampedWavelengthIndex = specsStore.getState().clampWavelengthIndex(selectedWavelengthIndex, specs);
+      analysisPlotStore.getState().setSelectedFieldIndex(clampedFieldIndex, specs.field.fields.length);
+      analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex, specs.wavelengths.weights.length);
 
-      const clampedWavelengthIndex = Math.min(
-        selectedWavelengthIndex,
-        specs.wavelengths.weights.length - 1
-      );
-      if (clampedWavelengthIndex !== selectedWavelengthIndex) {
-        analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex);
-      }
-
-      const plotFn = getPlotFunction(selectedPlotType, model);
+      const plotFn = buildPlotFn(selectedPlotType, proxy, model);
       const [fod, layout, plot, seidel] = await Promise.all([
         proxy.getFirstOrderData(model),
         proxy.plotLensLayout(model),
@@ -197,7 +162,7 @@ export default function Home() {
         exampleSelectRef.current.value = "";
       }
     }
-  }, [proxy, specsStore, lensStore, analysisPlotStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, getPlotFunction]);
+  }, [proxy, specsStore, lensStore, analysisPlotStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType]);
 
   const handleExampleConfirm = useCallback(() => {
     if (!pendingExample) return;

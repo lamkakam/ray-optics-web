@@ -39,6 +39,8 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 - `setCommittedSpecs(specs)` — stores a committed snapshot of `OpticalSpecs`; called after a successful submit in `page.tsx`.
 - `getFieldOptions()` — derives `{ label, value }[]` from `committedSpecs.field`; unit is `°` for angle, ` mm` for height.
 - `getWavelengthOptions()` — derives `{ label, value }[]` from `committedSpecs.wavelengths.weights`.
+- `clampFieldIndex(index, newSpecs?)` — clamps `index` to the last valid field index in `newSpecs` (if provided) or `committedSpecs`. Returns `Math.min(index, fields.length - 1)`.
+- `clampWavelengthIndex(index, newSpecs?)` — clamps `index` to the last valid wavelength index in `newSpecs` (if provided) or `committedSpecs`. Returns `Math.min(index, weights.length - 1)`.
 
 ## Key Conventions
 

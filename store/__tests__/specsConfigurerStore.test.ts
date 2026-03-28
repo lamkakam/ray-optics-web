@@ -211,6 +211,66 @@ describe("specsConfigurerStore", () => {
     });
   });
 
+  describe("clampFieldIndex", () => {
+    it("returns index unchanged when in range", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 fields
+      expect(store.getState().clampFieldIndex(1)).toBe(1);
+    });
+
+    it("clamps index to last field when index exceeds count", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 fields (indices 0,1,2)
+      expect(store.getState().clampFieldIndex(5)).toBe(2);
+    });
+
+    it("handles single-field edge case (returns 0)", () => {
+      const store = makeStore();
+      // default committedSpecs has 1 field
+      expect(store.getState().clampFieldIndex(3)).toBe(0);
+    });
+
+    it("uses provided newSpecs over committedSpecs when supplied", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 fields
+      const twoFieldSpecs: OpticalSpecs = {
+        ...sampleSpecs,
+        field: { ...sampleSpecs.field, fields: [0, 1] },
+      };
+      expect(store.getState().clampFieldIndex(5, twoFieldSpecs)).toBe(1);
+    });
+  });
+
+  describe("clampWavelengthIndex", () => {
+    it("returns index unchanged when in range", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 wavelengths
+      expect(store.getState().clampWavelengthIndex(2)).toBe(2);
+    });
+
+    it("clamps index to last wavelength when index exceeds count", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 wavelengths (indices 0,1,2)
+      expect(store.getState().clampWavelengthIndex(5)).toBe(2);
+    });
+
+    it("handles single-wavelength edge case (returns 0)", () => {
+      const store = makeStore();
+      // default committedSpecs has 1 wavelength
+      expect(store.getState().clampWavelengthIndex(3)).toBe(0);
+    });
+
+    it("uses provided newSpecs over committedSpecs when supplied", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs(sampleSpecs); // 3 wavelengths
+      const twoWlSpecs: OpticalSpecs = {
+        ...sampleSpecs,
+        wavelengths: { weights: [[486.133, 1], [587.562, 1]], referenceIndex: 0 },
+      };
+      expect(store.getState().clampWavelengthIndex(5, twoWlSpecs)).toBe(1);
+    });
+  });
+
   describe("modal toggles", () => {
     it("opens and closes field modal", () => {
       const store = makeStore();

@@ -24,8 +24,8 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 - `setPlotImage(image)` — sets or clears the base64 PNG plot image.
 - `setPlotLoading(loading)` — sets the loading flag.
-- `setSelectedFieldIndex(index)` — sets the active field index.
-- `setSelectedWavelengthIndex(index)` — sets the active wavelength index.
+- `setSelectedFieldIndex(index, maxCount?)` — sets the active field index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
+- `setSelectedWavelengthIndex(index, maxCount?)` — sets the active wavelength index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
 - `setSelectedPlotType(plotType)` — sets the active plot type.
 
 ## Dependencies

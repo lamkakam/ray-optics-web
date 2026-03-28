@@ -32,6 +32,10 @@ export interface SpecsConfigurerState {
   getFieldOptions: () => { label: string; value: number }[];
   getWavelengthOptions: () => { label: string; value: number }[];
 
+  // Clamping helpers
+  clampFieldIndex: (index: number, newSpecs?: OpticalSpecs) => number;
+  clampWavelengthIndex: (index: number, newSpecs?: OpticalSpecs) => number;
+
   // Modal state
   fieldModalOpen: boolean;
   wavelengthModalOpen: boolean;
@@ -87,6 +91,15 @@ export const createSpecsConfigurerSlice: StateCreator<SpecsConfigurerState> = (
   },
 
   setCommittedSpecs: (specs) => set({ committedSpecs: specs }),
+
+  clampFieldIndex: (index, newSpecs) => {
+    const specs = newSpecs ?? get().committedSpecs;
+    return Math.min(index, specs.field.fields.length - 1);
+  },
+  clampWavelengthIndex: (index, newSpecs) => {
+    const specs = newSpecs ?? get().committedSpecs;
+    return Math.min(index, specs.wavelengths.weights.length - 1);
+  },
 
   getFieldOptions: () => {
     const { fields, maxField, type } = get().committedSpecs.field;

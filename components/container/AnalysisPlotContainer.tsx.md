@@ -42,19 +42,7 @@ All five analysis-plot state fields are read from `store` via `useStore(store, s
 
 ## Internal Logic
 
-### `getPlotFunction(plotType, model?)`
-
-Maps a `PlotType` to a `(fieldIndex, wavelengthIndex) => Promise<string>` function using the proxy and committed model. Returns `undefined` when `proxy` or model is missing.
-
-| PlotType | Proxy call |
-|---|---|
-| `rayFan` | `proxy.plotRayFan(model, fi)` |
-| `opdFan` | `proxy.plotOpdFan(model, fi)` |
-| `spotDiagram` | `proxy.plotSpotDiagram(model, fi)` |
-| `surfaceBySurface3rdOrder` | `proxy.plotSurfaceBySurface3rdOrderAberr(model)` |
-| `wavefrontMap` | `proxy.plotWavefrontMap(model, fi, wi)` |
-| `geoPSF` | `proxy.plotGeoPSF(model, fi, wi)` |
-| `diffractionPSF` | `proxy.plotDiffractionPSF(model, fi, wi)` |
+Plot functions are obtained via `buildPlotFn(plotType, proxy, committedOpticalModel)` from `@/lib/plotFunctions`. This returns a `(fieldIndex, wavelengthIndex) => Promise<string>` function, or `undefined` when `proxy` or `committedOpticalModel` is missing.
 
 ### `handleFieldChange(value)`
 
