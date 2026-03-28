@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SettingsView } from "@/components/composite/SettingsView";
+import { SettingsView } from "@/components/page/SettingsView";
 
 describe("SettingsView", () => {
   const defaultProps = {

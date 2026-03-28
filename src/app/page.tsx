@@ -10,9 +10,9 @@ import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/s
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/store/lensLayoutImageStore";
 import { ErrorModal } from "@/components/micro/ErrorModal";
-import { SettingsView } from "@/components/composite/SettingsView";
-import { PrivacyPolicyView } from "@/components/composite/PrivacyPolicyView";
-import { AboutView } from "@/components/composite/AboutView";
+import { SettingsView } from "@/components/page/SettingsView";
+import { PrivacyPolicyView } from "@/components/page/PrivacyPolicyView";
+import { AboutView } from "@/components/page/AboutView";
 import { LoadingOverlay } from "@/components/micro/LoadingOverlay";
 import { useTheme } from "@/components/ThemeProvider";
 import { LensEditor } from "@/components/page/LensEditor";

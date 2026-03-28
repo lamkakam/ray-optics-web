@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { AboutView } from "@/components/composite/AboutView";
+import { AboutView } from "@/components/page/AboutView";
 
 describe("AboutView", () => {
   it("renders heading 'About'", () => {
