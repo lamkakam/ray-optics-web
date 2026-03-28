@@ -1,1 +1,1 @@
-export type AppView = 'home' | 'settings' | 'privacy-policy' | 'about';
+export type AppView = 'home' | 'glass-map' | 'settings' | 'privacy-policy' | 'about';

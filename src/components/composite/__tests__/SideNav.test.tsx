@@ -41,9 +41,17 @@ describe("SideNav", () => {
     render(<SideNav {...defaultProps} />);
     expect(screen.getByRole("navigation", { name: "Side navigation" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Lens Editor" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Glass Map" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Privacy Policy" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "About" })).toBeInTheDocument();
+  });
+
+  it("Glass Map item calls onNavigate with 'glass-map'", async () => {
+    const onNavigate = jest.fn();
+    render(<SideNav {...defaultProps} onNavigate={onNavigate} />);
+    await userEvent.click(screen.getByRole("link", { name: "Glass Map" }));
+    expect(onNavigate).toHaveBeenCalledWith("glass-map");
   });
 
   it("close button calls onClose", async () => {

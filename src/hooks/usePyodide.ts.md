@@ -24,6 +24,7 @@ interface PyodideWorkerAPI {
   focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
 }
 ```
 

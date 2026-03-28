@@ -9,6 +9,8 @@ import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorS
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/store/lensLayoutImageStore";
+import { createGlassMapSlice, type GlassMapStore } from "@/store/glassMapStore";
+import { GlassMapView } from "@/components/page/GlassMapView";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { SettingsView } from "@/components/page/SettingsView";
 import { PrivacyPolicyView } from "@/components/page/PrivacyPolicyView";
@@ -47,6 +49,11 @@ export default function Home() {
 
   const lensLayoutImageStore = useMemo(
     () => createStore<LensLayoutImageState>(createLensLayoutImageSlice),
+    []
+  );
+
+  const glassMapStore = useMemo(
+    () => createStore<GlassMapStore>(createGlassMapSlice),
     []
   );
 
@@ -96,6 +103,9 @@ export default function Home() {
       {currentView === "home" && lensEditor}
       {currentView === "settings" && (
         <SettingsView theme={theme} onThemeChange={handleThemeChange} />
+      )}
+      {currentView === "glass-map" && (
+        <GlassMapView store={glassMapStore} proxy={proxy} isReady={isReady} />
       )}
       {currentView === "privacy-policy" && <PrivacyPolicyView />}
       {currentView === "about" && <AboutView />}

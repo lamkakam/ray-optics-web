@@ -56,6 +56,7 @@ const mockProxy = {
   focusByMonoStrehl: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
   focusByPolyRmsSpot: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
   focusByPolyStrehl: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
+  getAllGlassCatalogsData: jest.fn().mockResolvedValue({}),
 } satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
 jest.mock("@/hooks/usePyodide", () => ({

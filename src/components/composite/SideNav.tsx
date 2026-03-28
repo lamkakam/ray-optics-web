@@ -15,6 +15,7 @@ interface SideNavProps {
 
 const NAV_ITEMS: { view: AppView; label: string }[] = [
   { view: "home", label: "Lens Editor" },
+  { view: "glass-map", label: "Glass Map" },
   { view: "settings", label: "Settings" },
   { view: "privacy-policy", label: "Privacy Policy" },
   { view: "about", label: "About" },
