@@ -74,4 +74,4 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 
 ## Usages
 
-- Used in the analysis panel of the main page.
+- Used in the analysis panel of `app/page.tsx`. The 5 state props (`selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`, `plotImageBase64`, `loading`) are read from `store/analysisPlotStore` via `useStore(analysisPlotStore, selector)`. Handlers (`onFieldChange`, `onWavelengthChange`, `onPlotTypeChange`) dispatch actions via `analysisPlotStore.getState().setXxx(...)`.

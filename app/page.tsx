@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { createStore } from "zustand";
+import { createStore, useStore } from "zustand";
 import type { OpticalSpecs, OpticalModel, SeidelData } from "@/lib/opticalModel";
 import type { Theme } from "@/lib/theme";
 import { usePyodide } from "@/hooks/usePyodide";
@@ -9,6 +9,7 @@ import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
 import { ExampleSystems } from "@/lib/exampleSystems";
 import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorStore";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
+import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
 import { SpecsConfigurerContainer } from "@/components/container/SpecsConfigurerContainer";
 import { LensPrescriptionContainer } from "@/components/container/LensPrescriptionContainer";
 import { FocusingContainer } from "@/components/container/FocusingContainer";
@@ -60,17 +61,23 @@ export default function Home() {
     []
   );
 
+  const analysisPlotStore = useMemo(
+    () => createStore<AnalysisPlotState>(createAnalysisPlotSlice),
+    []
+  );
+
+  const plotImage = useStore(analysisPlotStore, (s) => s.plotImage);
+  const plotLoading = useStore(analysisPlotStore, (s) => s.plotLoading);
+  const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
+  const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
+  const selectedPlotType = useStore(analysisPlotStore, (s) => s.selectedPlotType);
+
   const [committedSpecs, setCommittedSpecs] = useState<OpticalSpecs>(
     () => specsStore.getState().toOpticalSpecs()
   );
   const [committedOpticalModel, setCommittedOpticalModel] = useState<OpticalModel | undefined>();
   const [layoutImage, setLayoutImage] = useState<string | undefined>();
   const [layoutLoading, setLayoutLoading] = useState(false);
-  const [plotImage, setPlotImage] = useState<string | undefined>();
-  const [plotLoading, setPlotLoading] = useState(false);
-  const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
-  const [selectedWavelengthIndex, setSelectedWavelengthIndex] = useState(0);
-  const [selectedPlotType, setSelectedPlotType] = useState<PlotType>("rayFan");
   const [firstOrderData, setFirstOrderData] = useState<
     Record<string, number> | undefined
   >();
@@ -171,7 +178,7 @@ export default function Home() {
 
     setComputing(true);
     setLayoutLoading(true);
-    setPlotLoading(true);
+    analysisPlotStore.getState().setPlotLoading(true);
 
     try {
       const clampedFieldIndex = Math.min(
@@ -179,7 +186,7 @@ export default function Home() {
         specs.field.fields.length - 1
       );
       if (clampedFieldIndex !== selectedFieldIndex) {
-        setSelectedFieldIndex(clampedFieldIndex);
+        analysisPlotStore.getState().setSelectedFieldIndex(clampedFieldIndex);
       }
 
       const clampedWavelengthIndex = Math.min(
@@ -187,7 +194,7 @@ export default function Home() {
         specs.wavelengths.weights.length - 1
       );
       if (clampedWavelengthIndex !== selectedWavelengthIndex) {
-        setSelectedWavelengthIndex(clampedWavelengthIndex);
+        analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex);
       }
 
       const plotFn = getPlotFunction(selectedPlotType, model);
@@ -200,7 +207,7 @@ export default function Home() {
 
       setFirstOrderData(fod);
       setLayoutImage(layout);
-      setPlotImage(plot);
+      analysisPlotStore.getState().setPlotImage(plot);
       setSeidelData(seidel);
       setCommittedSpecs(specs);
       setCommittedOpticalModel(model);
@@ -210,14 +217,14 @@ export default function Home() {
     } finally {
       setComputing(false);
       setLayoutLoading(false);
-      setPlotLoading(false);
+      analysisPlotStore.getState().setPlotLoading(false);
 
       // Reset example selection dropdown
       if (exampleSelectRef.current) {
         exampleSelectRef.current.value = "";
       }
     }
-  }, [proxy, specsStore, lensStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, getPlotFunction]);
+  }, [proxy, specsStore, lensStore, analysisPlotStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, getPlotFunction]);
 
   const handleExampleConfirm = useCallback(() => {
     if (!pendingExample) return;
@@ -231,13 +238,13 @@ export default function Home() {
 
   const fieldWavelengthHOF = useCallback((kind: "field" | "wavelength") => async (value: number) => {
     if (kind === "field") {
-      setSelectedFieldIndex(value);
+      analysisPlotStore.getState().setSelectedFieldIndex(value);
     } else {
-      setSelectedWavelengthIndex(value);
+      analysisPlotStore.getState().setSelectedWavelengthIndex(value);
     }
     if (!proxy) return;
     if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
-    setPlotLoading(true);
+    analysisPlotStore.getState().setPlotLoading(true);
     try {
       const plotFn = getPlotFunction(selectedPlotType);
       if (plotFn) {
@@ -247,35 +254,35 @@ export default function Home() {
         } else {
           plot = await plotFn(selectedFieldIndex, value);
         }
-        setPlotImage(plot);
+        analysisPlotStore.getState().setPlotImage(plot);
       }
     } catch (err) {
       console.log(`${kind} update failed:`, err);
       setErrorModalOpen(true);
     } finally {
-      setPlotLoading(false);
+      analysisPlotStore.getState().setPlotLoading(false);
     }
-  }, [proxy, selectedPlotType, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]);
+  }, [proxy, analysisPlotStore, selectedPlotType, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]);
 
   const handlePlotTypeChange = useCallback(
     async (plotType: PlotType) => {
-      setSelectedPlotType(plotType);
+      analysisPlotStore.getState().setSelectedPlotType(plotType);
       if (!proxy) return;
-      setPlotLoading(true);
+      analysisPlotStore.getState().setPlotLoading(true);
       try {
         const plotFn = getPlotFunction(plotType);
         if (plotFn) {
           const plot = await plotFn(selectedFieldIndex, selectedWavelengthIndex);
-          setPlotImage(plot);
+          analysisPlotStore.getState().setPlotImage(plot);
         }
       } catch (err) {
         console.log("Plot type change failed:", err);
         setErrorModalOpen(true);
       } finally {
-        setPlotLoading(false);
+        analysisPlotStore.getState().setPlotLoading(false);
       }
     },
-    [proxy, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]
+    [proxy, analysisPlotStore, selectedFieldIndex, selectedWavelengthIndex, getPlotFunction]
   );
 
   const getOpticalModel = useCallback((): OpticalModel => {
