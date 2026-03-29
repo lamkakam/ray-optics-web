@@ -198,6 +198,13 @@ describe("LensEditor", () => {
     expect(screen.getByTestId("analysis-plot-container")).toBeInTheDocument();
   });
 
+  it("SM: scroll container has overflow-y-auto so content is scrollable on small screens", () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+    renderLensEditor();
+    const wrapper = screen.getByTestId("sm-scroll-container");
+    expect(wrapper).toHaveClass("overflow-y-auto");
+  });
+
   it("ConfirmOverwriteModal is closed initially", () => {
     renderLensEditor();
     expect(screen.queryByTestId("confirm-overwrite-modal")).not.toBeInTheDocument();
