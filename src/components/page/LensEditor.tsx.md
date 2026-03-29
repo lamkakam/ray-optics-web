@@ -28,6 +28,7 @@ Read reactively via `useStore`:
 - From `analysisPlotStore`: `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
 - From `lensLayoutImageStore`: `layoutImage`, `layoutLoading`
 - From `analysisDataStore`: `firstOrderData`, `seidelData`
+- From `lensStore`: `committedOpticalModel`
 
 ## Callbacks
 - `handleExampleChange` — sets `pendingExample` when a dropdown option is selected
@@ -41,7 +42,7 @@ Read reactively via `useStore`:
 ## Layout
 
 ### LG (`isLG === true`)
-- Controls row: example dropdown + Seidel/Zernike buttons; `border-b` applied here when `firstOrderData` is undefined
+- Controls row: example dropdown + Seidel/Zernike buttons; `border-b` applied here when `firstOrderData` is undefined. `seidelButton` is guarded by `seidelData`; `zernikeButton` is guarded by `committedOpticalModel` (not `seidelData`)
 - First-order chips row (border-bottom) — only rendered when `firstOrderData` is defined
 - Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%); the analysis panel wrapper has `overflow-hidden` (`data-testid="lg-analysis-plot-panel"`) to prevent content from bleeding over the BottomDrawer when viewport height is small
 - BottomDrawerContainer (`draggable={true}`)

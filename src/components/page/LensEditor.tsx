@@ -58,6 +58,7 @@ export function LensEditor({
   const layoutLoading = useStore(lensLayoutImageStore, (s) => s.layoutLoading);
   const firstOrderData = useStore(analysisDataStore, (s) => s.firstOrderData);
   const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
+  const committedOpticalModel = useStore(lensStore, (s) => s.committedOpticalModel);
   const [computing, setComputing] = useState(false);
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
@@ -192,7 +193,7 @@ export function LensEditor({
     </div>
   );
 
-  const zernikeButton = seidelData && (
+  const zernikeButton = committedOpticalModel && (
     <div className={isLG ? undefined : "mb-2"}>
       <Tooltip text="View Zernike polynomial coefficients" position="bottom" noTouch>
         <Button
@@ -255,7 +256,7 @@ export function LensEditor({
     />
   );
 
-  const zernikeModal = seidelData && (
+  const zernikeModal = committedOpticalModel && (
     <ZernikeTermsModal
       isOpen={zernikeModalOpen}
       fieldOptions={specsStore.getState().getFieldOptions()}
