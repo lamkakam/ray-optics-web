@@ -73,4 +73,15 @@ describe("RadioInput", () => {
       expect(radio.name).toBe("my-group");
     });
   });
+
+  it("renders labelNode as visual content when provided, keeping label as aria-label", () => {
+    const options: ReadonlyArray<{ value: Fruit; label: string; labelNode?: React.ReactNode }> = [
+      { value: "apple", label: "Apple", labelNode: <span data-testid="custom-apple">🍎 Custom</span> },
+      { value: "banana", label: "Banana" },
+    ];
+    render(<RadioInput {...defaultProps} options={options} />);
+    expect(screen.getByTestId("custom-apple")).toBeInTheDocument();
+    expect(screen.queryByText("Apple")).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Apple" })).toBeInTheDocument();
+  });
 });

@@ -1,7 +1,12 @@
 import React from "react";
 import { componentTokens as cx } from "@/components/ui/styleTokens";
 
-export type RadioOption<T extends string> = { value: T; label: string };
+export type RadioOption<T extends string> = {
+  value: T;
+  label: string;
+  /** Optional React node rendered as the visual label. When provided, replaces the plain `label` text. The `label` string is always used as `aria-label`. */
+  labelNode?: React.ReactNode;
+};
 
 interface RadioInputProps<T extends string> {
   readonly name: string;
@@ -38,7 +43,7 @@ export function RadioInput<T extends string>({
               onChange={() => onChange(opt.value)}
               className="accent-blue-600"
             />
-            {opt.label}
+            {opt.labelNode ?? opt.label}
           </label>
         ))}
       </div>
