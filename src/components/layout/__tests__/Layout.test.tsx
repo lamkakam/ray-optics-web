@@ -92,11 +92,20 @@ describe("Layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("SM layout: outer container has h-screen so SideNav (h-full) spans full viewport", () => {
+  it("SM layout: outer container has h-full (not h-screen) so layout fills the locked html/body height", () => {
     mockScreenSize.value = "screenSM";
     const { container } = render(<Layout {...defaultProps} />);
     const outerDiv = container.firstChild as HTMLElement;
-    expect(outerDiv).toHaveClass("h-screen");
+    expect(outerDiv).toHaveClass("h-full");
+    expect(outerDiv).not.toHaveClass("h-screen");
+  });
+
+  it("LG layout: outer container has h-full (not h-screen) so layout fills the locked html/body height", () => {
+    mockScreenSize.value = "screenLG";
+    const { container } = render(<Layout {...defaultProps} />);
+    const outerDiv = container.firstChild as HTMLElement;
+    expect(outerDiv).toHaveClass("h-full");
+    expect(outerDiv).not.toHaveClass("h-screen");
   });
 
   it("SM layout: inner container has flex-1 and min-h-0 so SideNav inherits full height", () => {

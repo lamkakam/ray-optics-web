@@ -2,6 +2,15 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Lock document height to prevent iOS Safari address-bar animation from
+   resizing the viewport and causing the header to jump. The app is
+   full-screen and never needs document-level scrolling. */
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 :root {
   transition: background-color 0.3s ease, color 0.3s ease;
   --crosshair-stroke: #4b5563;
