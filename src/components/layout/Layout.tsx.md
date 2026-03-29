@@ -26,7 +26,7 @@ Composite layout shell component (`"use client"`). Owns hamburger/side-nav open 
 
 ### LG (`isLG === true`)
 ```
-<div className="flex flex-col h-screen">
+<div className="flex flex-col h-full">
   <header> h-12 row: hamburger + <Header level={1}>Ray Optics Web</Header> </header>
   <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
     <SideNav isLG={true} ... />
@@ -39,7 +39,7 @@ Composite layout shell component (`"use client"`). Owns hamburger/side-nav open 
 
 ### SM (`isLG === false`)
 ```
-<div className="flex flex-col h-screen">
+<div className="flex flex-col h-full">
   <header> py-2 row: hamburger + <Header level={1} className="ml-2">Ray Optics Web</Header> </header>
   <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
     <SideNav isLG={false} ... />
@@ -49,3 +49,6 @@ Composite layout shell component (`"use client"`). Owns hamburger/side-nav open 
   {initOverlayNode}
 </div>
 ```
+
+## iOS Safari height note
+`globals.css` sets `html, body { height: 100%; overflow: hidden; }`. This locks the document so it can never scroll. Without this, `h-screen` (`100vh`) on iOS Safari equals the "large viewport height" (address bar hidden), causing the layout to overflow when the address bar is visible. The resulting micro-scroll triggers the address bar to animate in/out, resizing the viewport and making the header jump. The `h-full` on the outer div fills the locked `body` height instead.
