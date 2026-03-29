@@ -17,7 +17,6 @@ export interface LensEditorState {
   asphericalModal: ModalState;
   decenterModal: ModalState;
   committedOpticalModel: OpticalModel | undefined;
-  firstOrderData: Record<string, number> | undefined;
 
   setRows: (rows: GridRow[]) => void;
   updateRow: (id: string, patch: Partial<GridRow>) => void;
@@ -32,7 +31,6 @@ export interface LensEditorState {
   openDecenterModal: (rowId: string) => void;
   closeDecenterModal: () => void;
   setCommittedOpticalModel: (model: OpticalModel) => void;
-  setFirstOrderData: (data: Record<string, number> | undefined) => void;
 }
 
 const DEFAULT_ROWS: GridRow[] = [
@@ -48,7 +46,6 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   asphericalModal: { open: false, rowId: "" },
   decenterModal: { open: false, rowId: "" },
   committedOpticalModel: undefined,
-  firstOrderData: undefined,
 
   setRows: (rows) => set({ rows }),
 
@@ -117,7 +114,6 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
     set({ decenterModal: { open: false, rowId: "" } }),
 
   setCommittedOpticalModel: (model) => set({ committedOpticalModel: model }),
-  setFirstOrderData: (data) => set({ firstOrderData: data }),
 });
 
 export const useLensEditorStore = create<LensEditorState>(createLensEditorSlice);
