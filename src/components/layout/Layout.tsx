@@ -52,7 +52,7 @@ export function Layout({
 
   if (isLG) {
     return (
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col h-full">
         <header className="shrink-0 border-b border-gray-200 dark:border-gray-700">
           <div className="flex h-12 items-center gap-4 px-4">
             {hamburgerButton}
@@ -72,7 +72,7 @@ export function Layout({
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-full">
       <header className="shrink-0 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
         <div className="flex items-center">
           {hamburgerButton}
