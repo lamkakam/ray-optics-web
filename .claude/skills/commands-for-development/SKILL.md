@@ -8,7 +8,7 @@ description: Bash commands for development, testing, building, and serving ray-o
 ### Install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
 ### Initialize the venv for the local Python package and install deps for the development:

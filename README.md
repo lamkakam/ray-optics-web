@@ -56,7 +56,7 @@ This project is not affiliated with, endorsed by, or in any way officially conne
 
 ```bash
 # Install dependencies
-npm install
+npm ci
 
 # Initialize the venv for the internal Python package and install deps for the development
 bash scripts/init-python-venv.sh
