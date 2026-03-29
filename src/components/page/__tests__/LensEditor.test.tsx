@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
@@ -8,6 +8,7 @@ import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorS
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/store/lensLayoutImageStore";
+import { createAnalysisDataSlice, type AnalysisDataState } from "@/store/analysisDataStore";
 import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
 
 jest.mock("@/hooks/useScreenBreakpoint", () => ({
@@ -130,7 +131,8 @@ function makeStores() {
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
   const analysisPlotStore = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
   const lensLayoutImageStore = createStore<LensLayoutImageState>(createLensLayoutImageSlice);
-  return { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore };
+  const analysisDataStore = createStore<AnalysisDataState>(createAnalysisDataSlice);
+  return { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore };
 }
 
 function makeProxy(): PyodideWorkerAPI {
@@ -161,7 +163,7 @@ function renderLensEditor(overrides?: {
 }) {
   // Lazy import to allow mock override before render
   const { LensEditor } = require("@/components/page/LensEditor") as typeof import("@/components/page/LensEditor");
-  const { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore } = makeStores();
+  const { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore } = makeStores();
   const proxy = overrides && "proxy" in overrides ? overrides.proxy : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
   render(
@@ -170,12 +172,13 @@ function renderLensEditor(overrides?: {
       lensStore={lensStore}
       analysisPlotStore={analysisPlotStore}
       lensLayoutImageStore={lensLayoutImageStore}
+      analysisDataStore={analysisDataStore}
       proxy={proxy}
       isReady={overrides?.isReady ?? true}
       onError={onError}
     />
   );
-  return { proxy, onError, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore };
+  return { proxy, onError, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore };
 }
 
 beforeEach(() => {
@@ -345,6 +348,26 @@ describe("LensEditor", () => {
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
     renderLensEditor();
     expect(screen.queryByTestId("first-order-chips-mock")).not.toBeInTheDocument();
+  });
+
+  it("Zernike button absent before any commit", () => {
+    renderLensEditor();
+    expect(
+      screen.queryByRole("button", { name: "Zernike Terms" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("Zernike button present when committedOpticalModel is set even without seidelData", () => {
+    const { lensStore } = renderLensEditor();
+    act(() => {
+      lensStore.getState().setCommittedOpticalModel(testImportModel);
+    });
+    // Zernike button should appear — it only requires a committed model
+    expect(screen.getByRole("button", { name: "Zernike Terms" })).toBeInTheDocument();
+    // Seidel button must NOT appear — it legitimately depends on seidelData
+    expect(
+      screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" })
+    ).not.toBeInTheDocument();
   });
 
   it("onImportJson loads data into stores", async () => {

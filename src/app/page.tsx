@@ -11,6 +11,7 @@ import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysi
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/store/lensLayoutImageStore";
 import { createGlassMapSlice, type GlassMapStore } from "@/store/glassMapStore";
 import { GlassMapView } from "@/components/page/GlassMapView";
+import { createAnalysisDataSlice, type AnalysisDataState } from "@/store/analysisDataStore";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { SettingsView } from "@/components/page/SettingsView";
 import { PrivacyPolicyView } from "@/components/page/PrivacyPolicyView";
@@ -57,6 +58,11 @@ export default function Home() {
     []
   );
 
+  const analysisDataStore = useMemo(
+    () => createStore<AnalysisDataState>(createAnalysisDataSlice),
+    []
+  );
+
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>("home");
 
@@ -87,6 +93,7 @@ export default function Home() {
       lensStore={lensStore}
       analysisPlotStore={analysisPlotStore}
       lensLayoutImageStore={lensLayoutImageStore}
+      analysisDataStore={analysisDataStore}
       proxy={proxy}
       isReady={isReady}
       onError={() => setErrorModalOpen(true)}

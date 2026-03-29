@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { useStore, type StoreApi } from "zustand";
-import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
+import type { OpticalModel } from "@/lib/opticalModel";
 import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 import type { ZernikeData, ZernikeOrdering } from "@/lib/zernikeData";
 import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/lib/zernikeData";
@@ -14,6 +14,7 @@ import type { LensEditorState } from "@/store/lensEditorStore";
 import type { SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import type { AnalysisPlotState } from "@/store/analysisPlotStore";
 import type { LensLayoutImageState } from "@/store/lensLayoutImageStore";
+import type { AnalysisDataState } from "@/store/analysisDataStore";
 import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
 import { AnalysisPlotContainer } from "@/components/container/AnalysisPlotContainer";
 import { BottomDrawerContainer } from "@/components/container/BottomDrawerContainer";
@@ -30,6 +31,7 @@ export interface LensEditorProps {
   readonly lensStore: StoreApi<LensEditorState>;
   readonly analysisPlotStore: StoreApi<AnalysisPlotState>;
   readonly lensLayoutImageStore: StoreApi<LensLayoutImageState>;
+  readonly analysisDataStore: StoreApi<AnalysisDataState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly onError: () => void;
@@ -40,6 +42,7 @@ export function LensEditor({
   lensStore,
   analysisPlotStore,
   lensLayoutImageStore,
+  analysisDataStore,
   proxy,
   isReady,
   onError,
@@ -53,9 +56,10 @@ export function LensEditor({
 
   const layoutImage = useStore(lensLayoutImageStore, (s) => s.layoutImage);
   const layoutLoading = useStore(lensLayoutImageStore, (s) => s.layoutLoading);
-  const firstOrderData = useStore(lensStore, (s) => s.firstOrderData);
+  const firstOrderData = useStore(analysisDataStore, (s) => s.firstOrderData);
+  const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
+  const committedOpticalModel = useStore(lensStore, (s) => s.committedOpticalModel);
   const [computing, setComputing] = useState(false);
-  const [seidelData, setSeidelData] = useState<SeidelData | undefined>();
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
   const [pendingExample, setPendingExample] = useState<string | undefined>();
@@ -117,10 +121,10 @@ export function LensEditor({
         proxy.get3rdOrderSeidelData(model),
       ]);
 
-      lensStore.getState().setFirstOrderData(fod);
+      analysisDataStore.getState().setFirstOrderData(fod);
       lensLayoutImageStore.getState().setLayoutImage(layout);
       analysisPlotStore.getState().setPlotImage(plot);
-      setSeidelData(seidel);
+      analysisDataStore.getState().setSeidelData(seidel);
       specsStore.getState().setCommittedSpecs(specs);
       lensStore.getState().setCommittedOpticalModel(model);
     } catch (err) {
@@ -135,7 +139,7 @@ export function LensEditor({
         exampleSelectRef.current.value = "";
       }
     }
-  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError]);
+  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError]);
 
   const handleExampleConfirm = useCallback(() => {
     if (!pendingExample) return;
@@ -189,7 +193,7 @@ export function LensEditor({
     </div>
   );
 
-  const zernikeButton = seidelData && (
+  const zernikeButton = committedOpticalModel && (
     <div className={isLG ? undefined : "mb-2"}>
       <Tooltip text="View Zernike polynomial coefficients" position="bottom" noTouch>
         <Button
@@ -252,7 +256,7 @@ export function LensEditor({
     />
   );
 
-  const zernikeModal = seidelData && (
+  const zernikeModal = committedOpticalModel && (
     <ZernikeTermsModal
       isOpen={zernikeModalOpen}
       fieldOptions={specsStore.getState().getFieldOptions()}
