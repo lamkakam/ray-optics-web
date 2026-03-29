@@ -17,4 +17,5 @@ Displays details for the currently selected glass point. Shows a placeholder whe
   - P_{F,e} (if defined)
 - All property labels are rendered via `MathJax inline` for proper subscript notation (e.g. `\(N_d\)`, `\(P_{g,F}\)`).
 - The component is wrapped in `<MathJaxContext>` from `better-react-mathjax`.
-- Each label `<td>` has `data-testid="label-{key}"` (e.g. `label-Nd`, `label-P_g_F`) for testing.
+- Each label cell contains a `<span data-testid="label-{key}">` (e.g. `label-Nd`, `label-P_g_F`) for testing.
+- Property table is rendered using the `Table` micro-component (`headers={[]}`, rows are `[labelSpan, value]` pairs).

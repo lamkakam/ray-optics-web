@@ -3,6 +3,7 @@
 import React from "react";
 import { MathJaxContext, MathJax } from "better-react-mathjax";
 import type { SelectedGlass } from "@/lib/glassMap";
+import { Table } from "@/components/micro/Table";
 
 interface GlassDetailPanelProps {
   readonly selectedGlass: SelectedGlass | undefined;
@@ -39,6 +40,11 @@ export function GlassDetailPanel({ selectedGlass }: GlassDetailPanelProps) {
     rows.push({ key: "P_F_e", label: <MathJax inline>{`\\(P_{F,e}\\)`}</MathJax>, value: String(partialDispersions.P_F_e) });
   }
 
+  const tableRows = rows.map(({ key, label, value }) => [
+    <span key="label" data-testid={`label-${key}`}>{label}</span>,
+    value,
+  ] as const);
+
   return (
     <MathJaxContext>
       <div className="p-4">
@@ -48,16 +54,7 @@ export function GlassDetailPanel({ selectedGlass }: GlassDetailPanelProps) {
           </span>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">{glassName}</h3>
         </div>
-        <table className="text-sm w-full">
-          <tbody>
-            {rows.map(({ key, label, value }) => (
-              <tr key={key} className="border-b border-gray-100 dark:border-gray-800">
-                <td data-testid={`label-${key}`} className="py-1 pr-4 text-gray-500 dark:text-gray-400 font-medium">{label}</td>
-                <td className="py-1 text-gray-900 dark:text-white">{value}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table headers={[]} rows={tableRows} />
       </div>
     </MathJaxContext>
   );
