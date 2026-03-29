@@ -9,6 +9,7 @@ import { createLensEditorSlice, type LensEditorState } from "@/store/lensEditorS
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/store/specsConfigurerStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/store/analysisPlotStore";
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/store/lensLayoutImageStore";
+import { createAnalysisDataSlice, type AnalysisDataState } from "@/store/analysisDataStore";
 import { ErrorModal } from "@/components/micro/ErrorModal";
 import { SettingsView } from "@/components/page/SettingsView";
 import { PrivacyPolicyView } from "@/components/page/PrivacyPolicyView";
@@ -50,6 +51,11 @@ export default function Home() {
     []
   );
 
+  const analysisDataStore = useMemo(
+    () => createStore<AnalysisDataState>(createAnalysisDataSlice),
+    []
+  );
+
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>("home");
 
@@ -80,6 +86,7 @@ export default function Home() {
       lensStore={lensStore}
       analysisPlotStore={analysisPlotStore}
       lensLayoutImageStore={lensLayoutImageStore}
+      analysisDataStore={analysisDataStore}
       proxy={proxy}
       isReady={isReady}
       onError={() => setErrorModalOpen(true)}

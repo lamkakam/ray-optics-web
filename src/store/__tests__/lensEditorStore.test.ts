@@ -6,6 +6,7 @@ import {
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/lib/gridTypes";
 import type { OpticalModel, OpticalSpecs } from "@/lib/opticalModel";
 
+
 const testSpecs: OpticalSpecs = {
   pupil: { space: "object", type: "epd", value: 25 },
   field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
@@ -283,23 +284,4 @@ describe("lensEditorStore", () => {
     });
   });
 
-  describe("firstOrderData", () => {
-    it("is undefined by default", () => {
-      const store = makeStore();
-      expect(store.getState().firstOrderData).toBeUndefined();
-    });
-
-    it("setFirstOrderData stores the value", () => {
-      const store = makeStore();
-      store.getState().setFirstOrderData({ efl: 100, fno: 4 });
-      expect(store.getState().firstOrderData).toEqual({ efl: 100, fno: 4 });
-    });
-
-    it("setFirstOrderData clears with undefined", () => {
-      const store = makeStore();
-      store.getState().setFirstOrderData({ efl: 100 });
-      store.getState().setFirstOrderData(undefined);
-      expect(store.getState().firstOrderData).toBeUndefined();
-    });
-  });
 });
