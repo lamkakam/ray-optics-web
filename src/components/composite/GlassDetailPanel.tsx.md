@@ -11,7 +11,10 @@ Displays details for the currently selected glass point. Shows a placeholder whe
 ## Behavior
 - When `selectedGlass` is `undefined`: renders "Select a glass point on the chart to see details."
 - When `selectedGlass` is set: renders catalog name, glass name, and a property table with:
-  - Nd, Ne, Vd, Ve
-  - P_g,F (if defined)
-  - P_F,d (if defined)
-  - P_F,e (if defined)
+  - N_d, N_e, V_d, V_e
+  - P_{g,F} (if defined)
+  - P_{F,d} (if defined)
+  - P_{F,e} (if defined)
+- All property labels are rendered via `MathJax inline` for proper subscript notation (e.g. `\(N_d\)`, `\(P_{g,F}\)`).
+- The component is wrapped in `<MathJaxContext>` from `better-react-mathjax`.
+- Each label `<td>` has `data-testid="label-{key}"` (e.g. `label-Nd`, `label-P_g_F`) for testing.

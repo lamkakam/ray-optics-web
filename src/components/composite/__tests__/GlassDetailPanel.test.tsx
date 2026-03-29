@@ -61,4 +61,11 @@ describe("GlassDetailPanel", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
     expect(screen.getByText("0.5349")).toBeInTheDocument();
   });
+
+  it("renders label cells with data-testid for all properties", () => {
+    render(<GlassDetailPanel selectedGlass={selectedGlass} />);
+    for (const key of ["Nd", "Ne", "Vd", "Ve", "P_g_F", "P_F_d", "P_F_e"]) {
+      expect(screen.getByTestId(`label-${key}`)).toBeInTheDocument();
+    }
+  });
 });
