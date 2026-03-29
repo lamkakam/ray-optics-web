@@ -5,10 +5,18 @@
 :root {
   transition: background-color 0.3s ease, color 0.3s ease;
   --crosshair-stroke: #4b5563;
+  --tooltip-bg: #ffffff;
+  --tooltip-fg: #111827;
+  --tooltip-border: #e5e7eb;
+  --tooltip-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .dark {
   --crosshair-stroke: #9ca3af;
+  --tooltip-bg: #1f2937;
+  --tooltip-fg: #f9fafb;
+  --tooltip-border: #374151;
+  --tooltip-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes modal-enter {

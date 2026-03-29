@@ -212,22 +212,21 @@ function InnerPlot({
                           style={{ cursor: "pointer" }}
                           onClick={() => handlePointClick(point)}
                           onMouseEnter={(e) => {
+                            const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
                             showTooltip({
                               tooltipData: point,
-                              tooltipLeft: e.clientX,
-                              tooltipTop: e.clientY,
+                              tooltipLeft: rect.right + 8,
+                              tooltipTop: rect.top,
                             });
                           }}
                           onMouseLeave={hideTooltip}
                           onTouchStart={(e) => {
-                            const touch = e.touches[0];
-                            if (touch) {
-                              showTooltip({
-                                tooltipData: point,
-                                tooltipLeft: touch.clientX,
-                                tooltipTop: touch.clientY,
-                              });
-                            }
+                            const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
+                            showTooltip({
+                              tooltipData: point,
+                              tooltipLeft: rect.right + 8,
+                              tooltipTop: rect.top,
+                            });
                             handlePointClick(point);
                           }}
                         />
@@ -286,11 +285,25 @@ function InnerPlot({
         }}
       </Zoom>
       {tooltipOpen && tooltipData && (
-        <Tooltip left={tooltipLeft} top={tooltipTop} style={{ pointerEvents: "none" }}>
-          <div className="text-xs">
-            <div className="font-bold">{tooltipData.glassName}</div>
-            <div className="text-gray-500">{tooltipData.catalogName}</div>
-          </div>
+        <Tooltip
+          left={tooltipLeft}
+          top={tooltipTop}
+          style={{
+            pointerEvents: "none",
+            position: "fixed",
+            zIndex: 1000,
+            backgroundColor: "var(--tooltip-bg)",
+            color: "var(--tooltip-fg)",
+            border: "1px solid var(--tooltip-border)",
+            borderRadius: "6px",
+            padding: "6px 10px",
+            boxShadow: "var(--tooltip-shadow)",
+            fontSize: "12px",
+            lineHeight: "1.5",
+          }}
+        >
+          <div className="font-semibold">{tooltipData.glassName}</div>
+          <div style={{ color: "var(--tooltip-fg)", opacity: 0.6 }}>{tooltipData.catalogName}</div>
         </Tooltip>
       )}
     </div>
