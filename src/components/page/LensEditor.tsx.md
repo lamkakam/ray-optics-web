@@ -48,6 +48,7 @@ Read reactively via `useStore`:
 - ConfirmOverwriteModal, SeidelAberrModal, ZernikeTermsModal
 
 ### SM (`isLG === false`)
+- Outer scroll wrapper: `data-testid="sm-scroll-container"` with `flex-1 min-h-0 overflow-y-auto flex flex-col` — makes all content scrollable on small screens
 - Controls section: dropdown + Seidel/Zernike buttons + first-order chips (chips wrapper only renders when `firstOrderData` is defined; dropdown `mb-2` only applied when `seidelData` or `firstOrderData` is present)
 - `data-testid="lens-layout-container"` wrapping LensLayoutPanel
 - `data-testid="analysis-plot-container"` wrapping AnalysisPlotContainer
