@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MathJaxContext, MathJax } from "better-react-mathjax";
+import { MathJax } from "better-react-mathjax";
 import type { SelectedGlass } from "@/lib/glassMap";
 import { Table } from "@/components/micro/Table";
 
@@ -46,16 +46,14 @@ export function GlassDetailPanel({ selectedGlass }: GlassDetailPanelProps) {
   ] as const);
 
   return (
-    <MathJaxContext>
-      <div className="p-4">
-        <div className="mb-2">
-          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            {catalogName}
-          </span>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{glassName}</h3>
-        </div>
-        <Table headers={[]} rows={tableRows} />
+    <div className="p-4">
+      <div className="mb-2">
+        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          {catalogName}
+        </span>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{glassName}</h3>
       </div>
-    </MathJaxContext>
+      <Table headers={[]} rows={tableRows} />
+    </div>
   );
 }

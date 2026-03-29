@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
+import { MathJaxContext } from "better-react-mathjax";
 import { useStore } from "zustand";
 import type { StoreApi } from "zustand";
 import { GlassScatterPlot } from "@/components/composite/GlassScatterPlot";
@@ -117,19 +118,21 @@ export function GlassMapView({ store, proxy, isReady }: GlassMapViewProps) {
         />
       </div>
       {/* Controls + detail */}
-      <div className="lg:w-[40%] overflow-y-auto border-l border-gray-200 dark:border-gray-700 flex flex-col">
-        <GlassMapControls
-          plotType={plotType}
-          abbeLine={abbeLine}
-          partialDispersionType={partialDispersionType}
-          enabledCatalogs={enabledCatalogs}
-          onPlotTypeChange={setPlotType}
-          onAbbeLineChange={setAbbeLine}
-          onPartialDispersionTypeChange={setPartialDispersionType}
-          onToggleCatalog={toggleCatalog}
-        />
-        <GlassDetailPanel selectedGlass={selectedGlass} />
-      </div>
+      <MathJaxContext>
+        <div className="lg:w-[40%] overflow-y-auto border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          <GlassMapControls
+            plotType={plotType}
+            abbeLine={abbeLine}
+            partialDispersionType={partialDispersionType}
+            enabledCatalogs={enabledCatalogs}
+            onPlotTypeChange={setPlotType}
+            onAbbeLineChange={setAbbeLine}
+            onPartialDispersionTypeChange={setPartialDispersionType}
+            onToggleCatalog={toggleCatalog}
+          />
+          <GlassDetailPanel selectedGlass={selectedGlass} />
+        </div>
+      </MathJaxContext>
     </div>
   );
 }

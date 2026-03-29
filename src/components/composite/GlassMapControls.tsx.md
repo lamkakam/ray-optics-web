@@ -22,4 +22,4 @@ Pure presentational component that renders all filter/selector controls for the 
 4. **Catalogs** — checkbox per catalog with colored dot indicator using `CATALOG_COLOR_MAP`
 
 ## MathJax
-The component wraps its content in `<MathJaxContext>` from `better-react-mathjax`. `RadioOption.labelNode` is used for visually rich labels (subscript notation) while `RadioOption.label` preserves plain-text `aria-label` for accessibility. Axis labels in the scatter plot are not affected (they remain plain strings rendered in SVG).
+The component uses `<MathJax inline>` from `better-react-mathjax` for visually rich labels (subscript notation). `RadioOption.labelNode` carries the MathJax node while `RadioOption.label` preserves plain-text `aria-label` for accessibility. **The component does not own a `MathJaxContext`** — the context is provided by the parent (`GlassMapView`). Axis labels in the scatter plot are not affected (they remain plain strings rendered in SVG).

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MathJaxContext, MathJax } from "better-react-mathjax";
+import { MathJax } from "better-react-mathjax";
 import { CATALOG_NAMES, CATALOG_COLOR_MAP } from "@/lib/glassMap";
 import type { AbbeLine, CatalogName, GlassMapPlotType, PartialDispersionType } from "@/lib/glassMap";
 import { RadioInput } from "@/components/micro/RadioInput";
@@ -45,58 +45,56 @@ export function GlassMapControls({
   onToggleCatalog,
 }: GlassMapControlsProps) {
   return (
-    <MathJaxContext>
-      <div className="p-4 flex flex-col gap-4">
+    <div className="p-4 flex flex-col gap-4">
+      <RadioInput
+        name="plotType"
+        label="Plot Type"
+        options={PLOT_TYPE_OPTIONS}
+        value={plotType}
+        onChange={onPlotTypeChange}
+      />
+
+      <RadioInput
+        name="abbeLine"
+        label="Centre Wavelength"
+        options={ABBE_LINE_OPTIONS}
+        value={abbeLine}
+        onChange={onAbbeLineChange}
+      />
+
+      {plotType === "partialDispersion" && (
         <RadioInput
-          name="plotType"
-          label="Plot Type"
-          options={PLOT_TYPE_OPTIONS}
-          value={plotType}
-          onChange={onPlotTypeChange}
+          name="partialDispersionType"
+          label="Partial Dispersion"
+          options={PARTIAL_DISPERSION_OPTIONS}
+          value={partialDispersionType}
+          onChange={onPartialDispersionTypeChange}
         />
+      )}
 
-        <RadioInput
-          name="abbeLine"
-          label="Centre Wavelength"
-          options={ABBE_LINE_OPTIONS}
-          value={abbeLine}
-          onChange={onAbbeLineChange}
-        />
-
-        {plotType === "partialDispersion" && (
-          <RadioInput
-            name="partialDispersionType"
-            label="Partial Dispersion"
-            options={PARTIAL_DISPERSION_OPTIONS}
-            value={partialDispersionType}
-            onChange={onPartialDispersionTypeChange}
-          />
-        )}
-
-        {/* Catalog filter */}
-        <fieldset>
-          <legend className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
-            Catalogs
-          </legend>
-          <div className="flex flex-col gap-1">
-            {CATALOG_NAMES.map((name) => (
-              <label key={name} className="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={enabledCatalogs[name]}
-                  onChange={() => onToggleCatalog(name)}
-                  aria-label={name}
-                />
-                <span
-                  className="inline-block w-3 h-3 rounded-full"
-                  style={{ backgroundColor: CATALOG_COLOR_MAP[name] }}
-                />
-                {name}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      </div>
-    </MathJaxContext>
+      {/* Catalog filter */}
+      <fieldset>
+        <legend className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+          Catalogs
+        </legend>
+        <div className="flex flex-col gap-1">
+          {CATALOG_NAMES.map((name) => (
+            <label key={name} className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={enabledCatalogs[name]}
+                onChange={() => onToggleCatalog(name)}
+                aria-label={name}
+              />
+              <span
+                className="inline-block w-3 h-3 rounded-full"
+                style={{ backgroundColor: CATALOG_COLOR_MAP[name] }}
+              />
+              {name}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    </div>
   );
 }

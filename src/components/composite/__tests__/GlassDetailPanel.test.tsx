@@ -3,6 +3,13 @@ import { render, screen } from "@testing-library/react";
 import { GlassDetailPanel } from "@/components/composite/GlassDetailPanel";
 import type { SelectedGlass } from "@/lib/glassMap";
 
+jest.mock("better-react-mathjax", () => ({
+  MathJaxContext: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mathjax-context">{children}</div>
+  ),
+  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
+
 const selectedGlass: SelectedGlass = {
   catalogName: "Schott",
   glassName: "N-BK7",
@@ -67,5 +74,10 @@ describe("GlassDetailPanel", () => {
     for (const key of ["Nd", "Ne", "Vd", "Ve", "P_g_F", "P_F_d", "P_F_e"]) {
       expect(screen.getByTestId(`label-${key}`)).toBeInTheDocument();
     }
+  });
+
+  it("does not wrap its content in its own MathJaxContext when glass is selected", () => {
+    render(<GlassDetailPanel selectedGlass={selectedGlass} />);
+    expect(screen.queryByTestId("mathjax-context")).not.toBeInTheDocument();
   });
 });

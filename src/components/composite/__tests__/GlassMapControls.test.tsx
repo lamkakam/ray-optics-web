@@ -3,6 +3,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GlassMapControls } from "@/components/composite/GlassMapControls";
 import type { CatalogName } from "@/lib/glassMap";
+
+jest.mock("better-react-mathjax", () => ({
+  MathJaxContext: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mathjax-context">{children}</div>
+  ),
+  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
 import { CATALOG_NAMES } from "@/lib/glassMap";
 
 const allEnabled: Record<CatalogName, boolean> = {
@@ -117,5 +124,10 @@ describe("GlassMapControls", () => {
     render(<GlassMapControls {...defaultProps} />);
     await userEvent.click(screen.getByRole("checkbox", { name: "Schott" }));
     expect(defaultProps.onToggleCatalog).toHaveBeenCalledWith("Schott");
+  });
+
+  it("does not wrap its content in its own MathJaxContext", () => {
+    render(<GlassMapControls {...defaultProps} />);
+    expect(screen.queryByTestId("mathjax-context")).not.toBeInTheDocument();
   });
 });
