@@ -75,6 +75,21 @@ class TestGetCaF2Data:
         # CaF2 has very low dispersion, Vd ≈ 95
         assert abs(caf2_data["abbe_number_d"] - 95.0) < 5.0
 
+    def test_dispersion_coeffs_order_is_B1_B2_B3_C1_C2_C3(self, caf2_data):
+        # dispersion_coeffs = [B1, B2, B3, C1, C2, C3]
+        # C values are raw resonance wavelengths in μm (NOT pre-squared)
+        # per refractiveindex.info formula 1:
+        #   n²−1 = B1·λ²/(λ²−C1²) + B2·λ²/(λ²−C2²) + B3·λ²/(λ²−C3²)
+        coeffs = caf2_data["dispersion_coeffs"]
+        B1, B2, B3, C1, C2, C3 = coeffs
+        assert abs(B1 - 0.5675888) < 1e-6
+        assert abs(B2 - 0.4710914) < 1e-6
+        assert abs(B3 - 3.8484723) < 1e-6
+        # raw resonance wavelengths (not squared)
+        assert abs(C1 - 0.050263605) < 1e-7
+        assert abs(C2 - 0.1003909) < 1e-6
+        assert abs(C3 - 34.649040) < 1e-4
+
 
 class TestGetSpecialMaterialsData:
     """Tests for get_special_materials_data()."""

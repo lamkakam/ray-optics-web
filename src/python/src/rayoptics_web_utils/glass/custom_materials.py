@@ -15,9 +15,12 @@ def _sellmeier3T(dispersion_coeffs: list[float], wavelengthInMicron: float) -> f
     if len(dispersion_coeffs) != 6:
         raise ValueError(f"Expected 6 dispersion coefficients for Sellmeier3T, got {len(dispersion_coeffs)}")
 
+    # dispersion_coeffs = [B1, B2, B3, C1, C2, C3]
+    # C values are raw resonance wavelengths in μm (not squared).
+    # Formula: n² − 1 = B1·λ²/(λ²−C1²) + B2·λ²/(λ²−C2²) + B3·λ²/(λ²−C3²)
     B1, B2, B3, C1, C2, C3 = dispersion_coeffs
     x = wavelengthInMicron
-    return (1 + B1 / (1 - C1 / x**2) + B2 / (1 - C2 / x**2) + B3 / (1 - C3 / x**2)) ** 0.5
+    return (1 + B1 / (1 - C1**2 / x**2) + B2 / (1 - C2**2 / x**2) + B3 / (1 - C3**2 / x**2)) ** 0.5
 
 
 # mapping the equation type defined by https://refractiveindex.info/ to the actual dispersion equation function
@@ -36,12 +39,11 @@ def _get_caf2_data() -> dict:
     coeffs_str = caf2.yaml_data['DATA'][0]['coefficients']
 
     # refractiveindex.info formula 1 stores coefficients as:
-    # n0 B1 c1 B2 c2 B3 c3  (n0 is constant term, typically 0 — drop it)
-    # where ci is the resonance wavelength in μm (not squared).
-    # _sellmeier3T expects Ci = ci² (in μm²), so square the c values.
+    # n0 B1 C1 B2 C2 B3 C3  (n0 is constant term, typically 0 — drop it)
+    # Ci are raw resonance wavelengths in μm (not squared).
     raw = [float(x) for x in coeffs_str.split()][1:]
-    B1, c1, B2, c2, B3, c3 = raw
-    dispersion_coeffs = [B1, B2, B3, c1**2, c2**2, c3**2]
+    B1, C1, B2, C2, B3, C3 = raw
+    dispersion_coeffs = [B1, B2, B3, C1, C2, C3]
 
     dispersion_fn = _map_equation_name_to_dispersion_equation[equation_type]
 
