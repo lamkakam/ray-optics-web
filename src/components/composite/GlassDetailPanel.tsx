@@ -24,8 +24,8 @@ export function GlassDetailPanel({ selectedGlass }: GlassDetailPanelProps) {
   const { refractiveIndexD, refractiveIndexE, abbeNumberD, abbeNumberE, partialDispersions } = data;
 
   const rows: Row[] = [
-    { key: "Nd", label: <MathJax inline>{`\\(N_d\\)`}</MathJax>, value: refractiveIndexD.toFixed(5) },
-    { key: "Ne", label: <MathJax inline>{`\\(N_e\\)`}</MathJax>, value: refractiveIndexE.toFixed(5) },
+    { key: "Nd", label: <MathJax inline>{`\\(n_d\\)`}</MathJax>, value: refractiveIndexD.toFixed(5) },
+    { key: "Ne", label: <MathJax inline>{`\\(n_e\\)`}</MathJax>, value: refractiveIndexE.toFixed(5) },
     { key: "Vd", label: <MathJax inline>{`\\(V_d\\)`}</MathJax>, value: abbeNumberD.toFixed(2) },
     { key: "Ve", label: <MathJax inline>{`\\(V_e\\)`}</MathJax>, value: abbeNumberE.toFixed(2) },
   ];
