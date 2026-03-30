@@ -10,6 +10,8 @@ const mockRawData: RawAllGlassCatalogsData = {
       abbe_number_d: 64.17,
       abbe_number_e: 63.96,
       partial_dispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+      dispersion_coeff_kind: 'Sellmeier3T' as const,
+      dispersion_coeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
     },
   },
   CDGM: {},

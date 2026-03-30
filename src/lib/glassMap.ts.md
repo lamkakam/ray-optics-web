@@ -11,11 +11,14 @@ Types, constants, and pure helper functions for the Glass Map feature.
 
 ### Types
 - `CatalogName` — union of the 6 catalog name strings
+- `DispersionCoeffKind` — `'Schott2x6' | 'Sellmeier3T'`
 - `GlassData` — normalized glass properties (camelCase):
   - `refractiveIndexD`, `refractiveIndexE` — refractive index at d/e lines
   - `abbeNumberD`, `abbeNumberE` — Abbe number at d/e lines
   - `partialDispersions` — required `P_F_e`, `P_F_d`, `P_g_F` (all always present)
-- `RawGlassData` — snake_case mirror from Python API
+  - `dispersionCoeffKind` — `DispersionCoeffKind` (`'Schott2x6'` or `'Sellmeier3T'`)
+  - `dispersionCoeffs` — readonly array of dispersion coefficients: 8 terms for `'Schott2x6'`, 6 terms for `'Sellmeier3T'`
+- `RawGlassData` — snake_case mirror from Python API (includes `dispersion_coeff_kind`, `dispersion_coeffs`)
 - `AllGlassCatalogsData` — `Record<CatalogName, Record<string, GlassData>>`
 - `RawAllGlassCatalogsData` — `Record<string, Record<string, RawGlassData>>`
 - `AbbeNumCenterLine` — `'d' | 'e'`

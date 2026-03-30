@@ -11,6 +11,8 @@ const mockGlassData = {
   abbeNumberD: 64.17,
   abbeNumberE: 63.96,
   partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+  dispersionCoeffKind: 'Sellmeier3T' as const,
+  dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
 };
 
 const mockCatalogsData: AllGlassCatalogsData = {
