@@ -14,6 +14,87 @@ REQUIRED_KEYS = {
 PARTIAL_DISPERSION_KEYS = {"P_F_e", "P_F_d", "P_g_F"}
 
 
+class TestGlassDispersionCoeffDedicatedForSchottDispersionEquation:
+    """Tests to verify the dipsersion coefficient data format for all catalogs that use the Schott dispersion equation (CDGM, Hoya, Sumita)."""
+
+    # Note: CDGM used Schott dispersion equation in the past but switched to Sellmeier in 2024
+    # The data from `opticalglass` for CDGM glasses still uses the old Schott coefficients, so
+    # so we test them here to verify that the data is present and correctly formatted.
+    def test_glass(self) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+
+        catalogs = ['CDGM', 'Hoya', 'Sumita']
+        for catalog_name in catalogs:
+            catalog = glass_catalogs[catalog_name]
+            glass_names = catalog.get_glass_names()
+            for glass_name in glass_names:
+                data = catalog.glass_data(glass_name)
+                assert "dispersion coefficients" in data, f"{catalog_name}/{glass_name} missing 'dispersion coefficients'"
+                assert "A0" in data["dispersion coefficients"], f"{catalog_name}/{glass_name} missing A0 in dispersion coefficients"
+                assert "A1" in data["dispersion coefficients"], f"{catalog_name}/{glass_name} missing A1 in dispersion coefficients"
+                assert "A2" in data["dispersion coefficients"], f"{catalog_name}/{glass_name} missing A2 in dispersion coefficients"
+                assert "A3" in data["dispersion coefficients"], f"{catalog_name}/{glass_name} missing A3 in dispersion coefficients"
+                assert "A4" in data["dispersion coefficients"], f"{catalog_name}/{glass_name} missing A4 in dispersion coefficients"
+                assert "A5" in data["dispersion coefficients"], f"{catalog_name}/{glass_name} missing A5 in dispersion coefficients"
+
+    def test_hikari_glasses(self) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+        
+        catalog = glass_catalogs['Hikari']
+        glass_names = catalog.get_glass_names()
+        for glass_name in glass_names:
+            data = catalog.glass_data(glass_name)
+            assert "dispersion coefficients" in data, f"Hikari/{glass_name} missing 'dispersion coefficients'"
+            assert "A0" in data["dispersion coefficients"], f"Hikari/{glass_name} missing A0 in dispersion coefficients"
+            assert "A1･λ^2" in data["dispersion coefficients"], f"Hikari/{glass_name} missing A1･λ^2 in dispersion coefficients"
+            assert "A2･λ^4" in data["dispersion coefficients"], f"Hikari/{glass_name} missing A2･λ^4 in dispersion coefficients"
+            assert "A3/λ^2" in data["dispersion coefficients"], f"Hikari/{glass_name} missing A3/λ^2 in dispersion coefficients"
+            assert "A4/λ^4" in data["dispersion coefficients"], f"Hikari/{glass_name} missing A4/λ^4 in dispersion coefficients"
+            assert "A5/λ^6" in data["dispersion coefficients"], f"Hikari/{glass_name} missing A5/λ^6 in dispersion coefficients"
+            assert "A6/λ^8" in data["dispersion coefficients"], f"Hikari/{glass_name} missing A6/λ^8 in dispersion coefficients"
+            assert "A7/λ^10" in data["dispersion coefficients"], f"Hikari/{glass_name} missing A7/λ^10 in dispersion coefficients"
+            assert "A8/λ^12" in data["dispersion coefficients"], f"Hikari/{glass_name} missing A8/λ^12 in dispersion coefficients"
+
+
+
+class TestGlassDispersionCoeffDedicatedForSellmeierDispersionEquation:
+    """Tests to verify the dipsersion coefficient data format for all catalogs that use the Sellmeier dispersion equation (Ohara, Schott)."""
+    
+    def test_ohara_glasses(self) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+        
+        catalog = glass_catalogs['Ohara']
+        glass_names = catalog.get_glass_names()
+        for glass_name in glass_names:
+            data = catalog.glass_data(glass_name)
+            assert "dispersion coefficients" in data, f"Ohara/{glass_name} missing 'dispersion coefficients'"
+            assert "A1" in data["dispersion coefficients"], f"Ohara/{glass_name} missing A1 in dispersion coefficients"
+            assert "A2" in data["dispersion coefficients"], f"Ohara/{glass_name} missing A2 in dispersion coefficients"
+            assert "A3" in data["dispersion coefficients"], f"Ohara/{glass_name} missing A3 in dispersion coefficients"
+            assert "B1" in data["dispersion coefficients"], f"Ohara/{glass_name} missing B1 in dispersion coefficients"
+            assert "B2" in data["dispersion coefficients"], f"Ohara/{glass_name} missing B2 in dispersion coefficients"
+            assert "B3" in data["dispersion coefficients"], f"Ohara/{glass_name} missing B3 in dispersion coefficients"
+    
+    def test_schott_glasses(self) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+        
+        catalog = glass_catalogs['Schott']
+        glass_names = catalog.get_glass_names()
+        for glass_name in glass_names:
+            data = catalog.glass_data(glass_name)
+            assert "dispersion coefficients" in data, f"Schott/{glass_name} missing 'dispersion coefficients'"
+            assert "B1" in data["dispersion coefficients"], f"Schott/{glass_name} missing B1 in dispersion coefficients"
+            assert "B2" in data["dispersion coefficients"], f"Schott/{glass_name} missing B2 in dispersion coefficients"
+            assert "B3" in data["dispersion coefficients"], f"Schott/{glass_name} missing B3 in dispersion coefficients"
+            assert "C1" in data["dispersion coefficients"], f"Schott/{glass_name} missing C1 in dispersion coefficients"
+            assert "C2" in data["dispersion coefficients"], f"Schott/{glass_name} missing C2 in dispersion coefficients"
+            assert "C3" in data["dispersion coefficients"], f"Schott/{glass_name} missing C3 in dispersion coefficients"
+
+
 class TestGetGlassCatalogData:
     """Tests for get_glass_catalog_data()."""
 
