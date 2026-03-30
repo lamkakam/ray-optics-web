@@ -3,17 +3,17 @@
 import React from "react";
 import { MathJax } from "better-react-mathjax";
 import { CATALOG_NAMES, CATALOG_COLOR_MAP } from "@/lib/glassMap";
-import type { AbbeLine, CatalogName, GlassMapPlotType, PartialDispersionType } from "@/lib/glassMap";
+import type { AbbeNumCenterLine, CatalogName, GlassMapPlotType, PartialDispersionType } from "@/lib/glassMap";
 import { RadioInput } from "@/components/micro/RadioInput";
 import type { RadioOption } from "@/components/micro/RadioInput";
 
 interface GlassMapControlsProps {
   readonly plotType: GlassMapPlotType;
-  readonly abbeLine: AbbeLine;
+  readonly abbeNumCenterLine: AbbeNumCenterLine;
   readonly partialDispersionType: PartialDispersionType;
   readonly enabledCatalogs: Record<CatalogName, boolean>;
   readonly onPlotTypeChange: (t: GlassMapPlotType) => void;
-  readonly onAbbeLineChange: (l: AbbeLine) => void;
+  readonly onAbbeNumCenterLineChange: (l: AbbeNumCenterLine) => void;
   readonly onPartialDispersionTypeChange: (t: PartialDispersionType) => void;
   readonly onToggleCatalog: (name: CatalogName) => void;
 }
@@ -23,7 +23,7 @@ const PLOT_TYPE_OPTIONS: ReadonlyArray<RadioOption<GlassMapPlotType>> = [
   { value: "partialDispersion", label: "Partial Dispersion" },
 ];
 
-const ABBE_LINE_OPTIONS: ReadonlyArray<RadioOption<AbbeLine>> = [
+const ABBE_LINE_OPTIONS: ReadonlyArray<RadioOption<AbbeNumCenterLine>> = [
   { value: "d", label: "d", labelNode: <MathJax inline>{`\\(d\\)`}</MathJax> },
   { value: "e", label: "e", labelNode: <MathJax inline>{`\\(e\\)`}</MathJax> },
 ];
@@ -36,11 +36,11 @@ const PARTIAL_DISPERSION_OPTIONS: ReadonlyArray<RadioOption<PartialDispersionTyp
 
 export function GlassMapControls({
   plotType,
-  abbeLine,
+  abbeNumCenterLine,
   partialDispersionType,
   enabledCatalogs,
   onPlotTypeChange,
-  onAbbeLineChange,
+  onAbbeNumCenterLineChange,
   onPartialDispersionTypeChange,
   onToggleCatalog,
 }: GlassMapControlsProps) {
@@ -58,8 +58,8 @@ export function GlassMapControls({
         name="abbeLine"
         label="Centre Wavelength"
         options={ABBE_LINE_OPTIONS}
-        value={abbeLine}
-        onChange={onAbbeLineChange}
+        value={abbeNumCenterLine}
+        onChange={onAbbeNumCenterLineChange}
       />
 
       {plotType === "partialDispersion" && (

@@ -14,7 +14,7 @@ Page-level container for the Glass Map feature. Fetches glass catalog data from 
 - Fetches data via `proxy.getAllGlassCatalogsData()` on mount when `isReady=true` and `catalogsData` is not yet set
 - Normalizes raw data using `normalizeAllCatalogsData()`, stores in `GlassMapStore`
 - Computes `PlotPoint[]` via `computePlotPoints()` (memoized)
-- Derives axis labels from `plotType`, `abbeLine`, `partialDispersionType`
+- Derives axis labels from `plotType`, `abbeNumCenterLine`, `partialDispersionType`
 
 ## Layout
 - **Loading state** (`!isReady || dataLoading`): centered loading message
@@ -24,7 +24,7 @@ Page-level container for the Glass Map feature. Fetches glass catalog data from 
   - Right: overflow-y-auto (lg: 40%) — `GlassMapControls` + `GlassDetailPanel`
 
 ## Axis Label Logic
-| plotType | abbeLine | xLabel | yLabel |
+| plotType | abbeNumCenterLine | xLabel | yLabel |
 |---|---|---|---|
 | refractiveIndex | d | Vd | Nd |
 | refractiveIndex | e | Ve | Ne |

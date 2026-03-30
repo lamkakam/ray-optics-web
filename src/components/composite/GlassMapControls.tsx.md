@@ -7,11 +7,11 @@ Pure presentational component that renders all filter/selector controls for the 
 | Prop | Type | Description |
 |------|------|-------------|
 | `plotType` | `GlassMapPlotType` | Currently selected plot type |
-| `abbeLine` | `AbbeLine` | Selected spectral line (`'d'` or `'e'`) |
+| `abbeNumCenterLine` | `AbbeNumCenterLine` | Selected spectral line (`'d'` or `'e'`) |
 | `partialDispersionType` | `PartialDispersionType` | Selected partial dispersion (`'P_F_d'`, `'P_F_e'`, `'P_g_F'`) |
 | `enabledCatalogs` | `Record<CatalogName, boolean>` | Per-catalog enabled state |
 | `onPlotTypeChange` | `(t: GlassMapPlotType) => void` | Called when plot type radio changes |
-| `onAbbeLineChange` | `(l: AbbeLine) => void` | Called when d/e radio changes |
+| `onAbbeNumCenterLineChange` | `(l: AbbeNumCenterLine) => void` | Called when d/e radio changes |
 | `onPartialDispersionTypeChange` | `(t: PartialDispersionType) => void` | Called when PD type radio changes |
 | `onToggleCatalog` | `(name: CatalogName) => void` | Called when a catalog checkbox changes |
 

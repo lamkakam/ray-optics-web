@@ -48,9 +48,9 @@ describe("glassMapStore initial state", () => {
     expect(store.getState().plotType).toBe("refractiveIndex");
   });
 
-  it("abbeLine is d", () => {
+  it("abbeNumCenterLine is d", () => {
     const store = makeStore();
-    expect(store.getState().abbeLine).toBe("d");
+    expect(store.getState().abbeNumCenterLine).toBe("d");
   });
 
   it("partialDispersionType is P_g_F", () => {
@@ -107,10 +107,10 @@ describe("glassMapStore actions", () => {
     expect(store.getState().plotType).toBe("partialDispersion");
   });
 
-  it("setAbbeLine sets e", () => {
+  it("setAbbeNumCenterLine sets e", () => {
     const store = makeStore();
-    store.getState().setAbbeLine("e");
-    expect(store.getState().abbeLine).toBe("e");
+    store.getState().setAbbeNumCenterLine("e");
+    expect(store.getState().abbeNumCenterLine).toBe("e");
   });
 
   it("setPartialDispersionType sets P_F_d", () => {

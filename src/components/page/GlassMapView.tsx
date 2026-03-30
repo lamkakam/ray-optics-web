@@ -20,12 +20,12 @@ interface GlassMapViewProps {
 
 function axisLabels(
   plotType: GlassMapStore["plotType"],
-  abbeLine: GlassMapStore["abbeLine"],
+  abbeNumCenterLine: GlassMapStore["abbeNumCenterLine"],
   partialDispersionType: GlassMapStore["partialDispersionType"]
 ): { xLabel: string; yLabel: string } {
-  const xLabel = abbeLine === "d" ? "Vd" : "Ve";
+  const xLabel = abbeNumCenterLine === "d" ? "Vd" : "Ve";
   if (plotType === "refractiveIndex") {
-    return { xLabel, yLabel: abbeLine === "d" ? "Nd" : "Ne" };
+    return { xLabel, yLabel: abbeNumCenterLine === "d" ? "Nd" : "Ne" };
   }
   const yLabelMap: Record<GlassMapStore["partialDispersionType"], string> = {
     P_F_d: "P_F,d",
@@ -40,7 +40,7 @@ export function GlassMapView({ store, proxy, isReady }: GlassMapViewProps) {
   const dataLoading = useStore(store, (s) => s.dataLoading);
   const dataError = useStore(store, (s) => s.dataError);
   const plotType = useStore(store, (s) => s.plotType);
-  const abbeLine = useStore(store, (s) => s.abbeLine);
+  const abbeNumCenterLine = useStore(store, (s) => s.abbeNumCenterLine);
   const partialDispersionType = useStore(store, (s) => s.partialDispersionType);
   const enabledCatalogs = useStore(store, (s) => s.enabledCatalogs);
   const selectedGlass = useStore(store, (s) => s.selectedGlass);
@@ -50,7 +50,7 @@ export function GlassMapView({ store, proxy, isReady }: GlassMapViewProps) {
     setDataLoading,
     setDataError,
     setPlotType,
-    setAbbeLine,
+    setAbbeNumCenterLine,
     setPartialDispersionType,
     toggleCatalog,
     setSelectedGlass,
@@ -76,12 +76,12 @@ export function GlassMapView({ store, proxy, isReady }: GlassMapViewProps) {
   const points = useMemo(
     () =>
       catalogsData
-        ? computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeLine, partialDispersionType)
+        ? computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType)
         : [],
-    [catalogsData, enabledCatalogs, plotType, abbeLine, partialDispersionType]
+    [catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType]
   );
 
-  const { xLabel, yLabel } = axisLabels(plotType, abbeLine, partialDispersionType);
+  const { xLabel, yLabel } = axisLabels(plotType, abbeNumCenterLine, partialDispersionType);
 
   const handlePointClick = (glass: SelectedGlass) => {
     setSelectedGlass(glass);
@@ -122,11 +122,11 @@ export function GlassMapView({ store, proxy, isReady }: GlassMapViewProps) {
         <div className="lg:w-[40%] overflow-y-auto border-l border-gray-200 dark:border-gray-700 flex flex-col">
           <GlassMapControls
             plotType={plotType}
-            abbeLine={abbeLine}
+            abbeNumCenterLine={abbeNumCenterLine}
             partialDispersionType={partialDispersionType}
             enabledCatalogs={enabledCatalogs}
             onPlotTypeChange={setPlotType}
-            onAbbeLineChange={setAbbeLine}
+            onAbbeNumCenterLineChange={setAbbeNumCenterLine}
             onPartialDispersionTypeChange={setPartialDispersionType}
             onToggleCatalog={toggleCatalog}
           />

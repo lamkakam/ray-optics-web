@@ -10,7 +10,7 @@ Zustand store slice for the Glass Map page state.
 | `dataLoading` | `boolean` | `false` | True while fetching from worker |
 | `dataError` | `string \| undefined` | `undefined` | Error message if loading fails |
 | `plotType` | `GlassMapPlotType` | `'refractiveIndex'` | Which plot type to display |
-| `abbeLine` | `AbbeLine` | `'d'` | d or e spectral line for Abbe number axis |
+| `abbeNumCenterLine` | `AbbeNumCenterLine` | `'d'` | d or e spectral line for Abbe number axis |
 | `partialDispersionType` | `PartialDispersionType` | `'P_g_F'` | Which partial dispersion for y-axis |
 | `enabledCatalogs` | `Record<CatalogName, boolean>` | all `true` | Per-catalog visibility filter |
 | `selectedGlass` | `SelectedGlass \| undefined` | `undefined` | Currently clicked/selected glass |
@@ -22,7 +22,7 @@ Zustand store slice for the Glass Map page state.
 | `setDataLoading(v)` | Set loading flag |
 | `setDataError(e)` | Set/clear error string |
 | `setPlotType(t)` | Switch between refractiveIndex / partialDispersion |
-| `setAbbeLine(l)` | Switch d/e spectral line |
+| `setAbbeNumCenterLine(l)` | Switch d/e spectral line |
 | `setPartialDispersionType(t)` | Switch P_F_d / P_F_e / P_g_F |
 | `toggleCatalog(name)` | Toggle a single catalog's enabled state |
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |

@@ -2,7 +2,7 @@ import { type StateCreator } from "zustand";
 import {
   CATALOG_NAMES,
   type AllGlassCatalogsData,
-  type AbbeLine,
+  type AbbeNumCenterLine,
   type CatalogName,
   type GlassMapPlotType,
   type PartialDispersionType,
@@ -14,7 +14,7 @@ export interface GlassMapState {
   dataLoading: boolean;
   dataError: string | undefined;
   plotType: GlassMapPlotType;
-  abbeLine: AbbeLine;
+  abbeNumCenterLine: AbbeNumCenterLine;
   partialDispersionType: PartialDispersionType;
   enabledCatalogs: Record<CatalogName, boolean>;
   selectedGlass: SelectedGlass | undefined;
@@ -25,7 +25,7 @@ export interface GlassMapActions {
   setDataLoading(v: boolean): void;
   setDataError(e: string | undefined): void;
   setPlotType(t: GlassMapPlotType): void;
-  setAbbeLine(l: AbbeLine): void;
+  setAbbeNumCenterLine(l: AbbeNumCenterLine): void;
   setPartialDispersionType(t: PartialDispersionType): void;
   toggleCatalog(name: CatalogName): void;
   setSelectedGlass(glass: SelectedGlass | undefined): void;
@@ -42,7 +42,7 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
   dataLoading: false,
   dataError: undefined,
   plotType: 'refractiveIndex',
-  abbeLine: 'd',
+  abbeNumCenterLine: 'd',
   partialDispersionType: 'P_g_F',
   enabledCatalogs: { ...allEnabled },
   selectedGlass: undefined,
@@ -51,7 +51,7 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
   setDataLoading: (v) => set({ dataLoading: v }),
   setDataError: (e) => set({ dataError: e }),
   setPlotType: (t) => set({ plotType: t }),
-  setAbbeLine: (l) => set({ abbeLine: l }),
+  setAbbeNumCenterLine: (l) => set({ abbeNumCenterLine: l }),
   setPartialDispersionType: (t) => set({ partialDispersionType: t }),
   toggleCatalog: (name) =>
     set((state) => ({

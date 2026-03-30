@@ -19,7 +19,7 @@ Types, constants, and pure helper functions for the Glass Map feature.
 - `RawGlassData` — snake_case mirror from Python API
 - `AllGlassCatalogsData` — `Record<CatalogName, Record<string, GlassData>>`
 - `RawAllGlassCatalogsData` — `Record<string, Record<string, RawGlassData>>`
-- `AbbeLine` — `'d' | 'e'`
+- `AbbeNumCenterLine` — `'d' | 'e'`
 - `PartialDispersionType` — `'P_F_d' | 'P_F_e' | 'P_g_F'`
 - `GlassMapPlotType` — `'refractiveIndex' | 'partialDispersion'`
 - `SelectedGlass` — `{ catalogName, glassName, data }`
@@ -34,9 +34,9 @@ Converts snake_case Python API response to camelCase TypeScript types.
 Iterates over all 6 known catalog names and normalizes each glass entry.
 Gracefully handles missing catalogs (returns empty object for them).
 
-#### `computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeLine, partialDispersionType): PlotPoint[]`
+#### `computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType): PlotPoint[]`
 Computes scatter plot points based on current filter/axis settings:
 - Skips disabled catalogs
-- x-axis: `abbeNumberD` when `abbeLine='d'`, else `abbeNumberE`
+- x-axis: `abbeNumberD` when `abbeNumCenterLine='d'`, else `abbeNumberE`
 - y-axis (refractiveIndex): `refractiveIndexD` or `refractiveIndexE`
 - y-axis (partialDispersion): `partialDispersions[partialDispersionType]`, excludes points where value is `undefined`

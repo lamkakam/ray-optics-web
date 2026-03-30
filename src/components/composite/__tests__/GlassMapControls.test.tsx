@@ -23,11 +23,11 @@ const allEnabled: Record<CatalogName, boolean> = {
 
 const defaultProps = {
   plotType: "refractiveIndex" as const,
-  abbeLine: "d" as const,
+  abbeNumCenterLine: "d" as const,
   partialDispersionType: "P_g_F" as const,
   enabledCatalogs: allEnabled,
   onPlotTypeChange: jest.fn(),
-  onAbbeLineChange: jest.fn(),
+  onAbbeNumCenterLineChange: jest.fn(),
   onPartialDispersionTypeChange: jest.fn(),
   onToggleCatalog: jest.fn(),
 };
@@ -74,15 +74,15 @@ describe("GlassMapControls", () => {
     expect(screen.getByRole("radio", { name: /\bd\b/i })).toBeChecked();
   });
 
-  it("e radio is checked when abbeLine=e", () => {
-    render(<GlassMapControls {...defaultProps} abbeLine="e" />);
+  it("e radio is checked when abbeNumCenterLine=e", () => {
+    render(<GlassMapControls {...defaultProps} abbeNumCenterLine="e" />);
     expect(screen.getByRole("radio", { name: /\be\b/i })).toBeChecked();
   });
 
-  it("calls onAbbeLineChange with e when e radio clicked", async () => {
+  it("calls onAbbeNumCenterLineChange with e when e radio clicked", async () => {
     render(<GlassMapControls {...defaultProps} />);
     await userEvent.click(screen.getByRole("radio", { name: /\be\b/i }));
-    expect(defaultProps.onAbbeLineChange).toHaveBeenCalledWith("e");
+    expect(defaultProps.onAbbeNumCenterLineChange).toHaveBeenCalledWith("e");
   });
 
   it("shows partial dispersion type selector when plotType=partialDispersion", () => {

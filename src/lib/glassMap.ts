@@ -30,7 +30,7 @@ export interface RawGlassData {
 export type AllGlassCatalogsData = Record<CatalogName, Record<string, GlassData>>;
 export type RawAllGlassCatalogsData = Record<string, Record<string, RawGlassData>>;
 
-export type AbbeLine = 'd' | 'e';
+export type AbbeNumCenterLine = 'd' | 'e';
 export type PartialDispersionType = 'P_F_d' | 'P_F_e' | 'P_g_F';
 export type GlassMapPlotType = 'refractiveIndex' | 'partialDispersion';
 
@@ -89,7 +89,7 @@ export function computePlotPoints(
   catalogsData: AllGlassCatalogsData,
   enabledCatalogs: Record<CatalogName, boolean>,
   plotType: GlassMapPlotType,
-  abbeLine: AbbeLine,
+  abbeNumCenterLine: AbbeNumCenterLine,
   partialDispersionType: PartialDispersionType,
 ): PlotPoint[] {
   const points: PlotPoint[] = [];
@@ -98,11 +98,11 @@ export function computePlotPoints(
     if (!enabledCatalogs[catalogName]) continue;
     const catalog = catalogsData[catalogName];
     for (const [glassName, data] of Object.entries(catalog)) {
-      const x = abbeLine === 'd' ? data.abbeNumberD : data.abbeNumberE;
+      const x = abbeNumCenterLine === 'd' ? data.abbeNumberD : data.abbeNumberE;
       let y: number | undefined;
 
       if (plotType === 'refractiveIndex') {
-        y = abbeLine === 'd' ? data.refractiveIndexD : data.refractiveIndexE;
+        y = abbeNumCenterLine === 'd' ? data.refractiveIndexD : data.refractiveIndexE;
       } else {
         y = data.partialDispersions[partialDispersionType];
       }
