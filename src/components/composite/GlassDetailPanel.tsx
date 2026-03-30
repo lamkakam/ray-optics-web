@@ -24,20 +24,20 @@ export function GlassDetailPanel({ selectedGlass }: GlassDetailPanelProps) {
   const { refractiveIndexD, refractiveIndexE, abbeNumberD, abbeNumberE, partialDispersions } = data;
 
   const rows: Row[] = [
-    { key: "Nd", label: <MathJax inline>{`\\(N_d\\)`}</MathJax>, value: String(refractiveIndexD) },
-    { key: "Ne", label: <MathJax inline>{`\\(N_e\\)`}</MathJax>, value: String(refractiveIndexE) },
-    { key: "Vd", label: <MathJax inline>{`\\(V_d\\)`}</MathJax>, value: String(abbeNumberD) },
-    { key: "Ve", label: <MathJax inline>{`\\(V_e\\)`}</MathJax>, value: String(abbeNumberE) },
+    { key: "Nd", label: <MathJax inline>{`\\(N_d\\)`}</MathJax>, value: refractiveIndexD.toFixed(5) },
+    { key: "Ne", label: <MathJax inline>{`\\(N_e\\)`}</MathJax>, value: refractiveIndexE.toFixed(5) },
+    { key: "Vd", label: <MathJax inline>{`\\(V_d\\)`}</MathJax>, value: abbeNumberD.toFixed(2) },
+    { key: "Ve", label: <MathJax inline>{`\\(V_e\\)`}</MathJax>, value: abbeNumberE.toFixed(2) },
   ];
 
   if (partialDispersions.P_g_F !== undefined) {
-    rows.push({ key: "P_g_F", label: <MathJax inline>{`\\(P_{g,F}\\)`}</MathJax>, value: String(partialDispersions.P_g_F) });
+    rows.push({ key: "P_g_F", label: <MathJax inline>{`\\(P_{g,F}\\)`}</MathJax>, value: partialDispersions.P_g_F.toFixed(4) });
   }
   if (partialDispersions.P_F_d !== undefined) {
-    rows.push({ key: "P_F_d", label: <MathJax inline>{`\\(P_{F,d}\\)`}</MathJax>, value: String(partialDispersions.P_F_d) });
+    rows.push({ key: "P_F_d", label: <MathJax inline>{`\\(P_{F,d}\\)`}</MathJax>, value: partialDispersions.P_F_d.toFixed(4) });
   }
   if (partialDispersions.P_F_e !== undefined) {
-    rows.push({ key: "P_F_e", label: <MathJax inline>{`\\(P_{F,e}\\)`}</MathJax>, value: String(partialDispersions.P_F_e) });
+    rows.push({ key: "P_F_e", label: <MathJax inline>{`\\(P_{F,e}\\)`}</MathJax>, value: partialDispersions.P_F_e.toFixed(4) });
   }
 
   const tableRows = rows.map(({ key, label, value }) => [

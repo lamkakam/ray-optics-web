@@ -15,6 +15,7 @@ Displays details for the currently selected glass point. Shows a placeholder whe
   - P_{g,F} (if defined)
   - P_{F,d} (if defined)
   - P_{F,e} (if defined)
+- Numeric formatting: refractive indices (N_d, N_e) to **5 decimal places**, Abbe numbers (V_d, V_e) to **2 decimal places**, partial dispersions to **4 decimal places**.
 - All property labels are rendered via `MathJax inline` for proper subscript notation (e.g. `\(N_d\)`, `\(P_{g,F}\)`).
 - **The component does not own a `MathJaxContext`** — the context is provided by the parent (`GlassMapView`).
 - Each label cell contains a `<span data-testid="label-{key}">` (e.g. `label-Nd`, `label-P_g_F`) for testing.

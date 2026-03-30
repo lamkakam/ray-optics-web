@@ -44,29 +44,39 @@ describe("GlassDetailPanel", () => {
     expect(screen.getByText("N-BK7")).toBeInTheDocument();
   });
 
-  it("renders Nd value", () => {
+  it("renders Nd value to 5 decimal places", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
-    expect(screen.getByText("1.5168")).toBeInTheDocument();
+    expect(screen.getByText("1.51680")).toBeInTheDocument();
   });
 
-  it("renders Ne value", () => {
+  it("renders Ne value to 5 decimal places", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
-    expect(screen.getByText("1.519")).toBeInTheDocument();
+    expect(screen.getByText("1.51900")).toBeInTheDocument();
   });
 
-  it("renders Vd value", () => {
+  it("renders Vd value to 2 decimal places", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
     expect(screen.getByText("64.17")).toBeInTheDocument();
   });
 
-  it("renders Ve value", () => {
+  it("renders Ve value to 2 decimal places", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
     expect(screen.getByText("63.96")).toBeInTheDocument();
   });
 
-  it("renders P_g_F value", () => {
+  it("renders P_g_F value to 4 decimal places", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
     expect(screen.getByText("0.5349")).toBeInTheDocument();
+  });
+
+  it("renders P_F_d value to 4 decimal places", () => {
+    render(<GlassDetailPanel selectedGlass={selectedGlass} />);
+    expect(screen.getByText("0.4100")).toBeInTheDocument();
+  });
+
+  it("renders P_F_e value to 4 decimal places", () => {
+    render(<GlassDetailPanel selectedGlass={selectedGlass} />);
+    expect(screen.getByText("0.4000")).toBeInTheDocument();
   });
 
   it("renders label cells with data-testid for all properties", () => {
