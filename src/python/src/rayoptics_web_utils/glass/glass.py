@@ -41,8 +41,73 @@ def _partial_dispersions(data: pd.Series) -> dict[str, float] | None:
         "P_g_F": (ng - nF) / denom,
     }
 
+def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, float]:
+    """Return a dict with 'dispersion_coeffs_kind' and 'dispersion_coeffs' keys, where
+    'dispersion_coeffs_kind' is a string indicating the type of dispersion coefficients
+    (e.g. "Schott2x6", "Sellmeier3T"), and
+    'dispersion_coeffs' is a list of floats.
+    Raises ValueError if catalog is unsupported.
+    """
 
-def _build_glass_entry(data: pd.Series) -> dict | None:
+    def schott2x4() -> dict[str, float]:
+        keys= ["A0", "A1", "A2", "A3", "A4", "A5"]
+        dispersion_coeffs = []
+        for key in keys:
+            dispersion_coeffs.append(float(data["dispersion coefficients"][key]))
+
+            # pad to 6 coeffs to match with schott2x6 used by Hikari
+            for _ in range(6 - len(keys)):
+                dispersion_coeffs.append(0.0)
+
+        return {
+            "dispersion_coeffs_kind": "Schott2x6",
+            "dispersion_coeffs": dispersion_coeffs,
+        }
+
+    def hikari() -> dict[str, float]:
+        keys = ["A0", "A1･λ^2", "A2･λ^4", "A3/λ^2", "A4/λ^4", "A5/λ^6", "A6/λ^8", "A7/λ^10", "A8/λ^12"]
+        dispersion_coeffs = []
+        for key in keys:
+            unparsed_coeff = data["dispersion coefficients"][key]
+            if unparsed_coeff == "-":
+                parsed_coeff = 0.0
+            else:
+                parsed_coeff = float(unparsed_coeff)
+            dispersion_coeffs.append(parsed_coeff)
+        return {
+            "dispersion_coeffs_kind": "Schott2x6",
+            "dispersion_coeffs": dispersion_coeffs,
+        }
+    
+    def sellmeier3t(catalog_name: str) -> dict[str, float]:
+        if catalog_name == "Schott":
+            keys = ["B1", "B2", "B3", "C1", "C2", "C3"]
+        elif catalog_name == "Ohara":
+            keys = ["A1", "A2", "A3", "B1", "B2", "B3"]
+        else:
+            raise ValueError(f"Unsupported catalog for Sellmeier3T: {catalog_name}")
+
+        dispersion_coeffs = []
+        for key in keys:
+            dispersion_coeffs.append(float(data["dispersion coefficients"][key]))
+        return {
+            "dispersion_coeffs_kind": "Sellmeier3T",
+            "dispersion_coeffs": dispersion_coeffs,
+        }
+    
+    match catalog_name:
+        case "CDGM" | "Hoya" |"Sumita":
+            return schott2x4()
+        case "Hikari":
+            return hikari()
+        case "Schott" | "Ohara":
+            return sellmeier3t(catalog_name)
+        case _:
+            raise ValueError(f"Unsupported catalog: {catalog_name}")
+        
+
+
+def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict | None:
     """Build a single glass dict from a glass_data() Series. Returns None if nd, ne, vd, ve, or any partial dispersion is missing."""
     nd = _safe_float(data, ("refractive indices", "d"))
     if nd is None:
@@ -64,12 +129,16 @@ def _build_glass_entry(data: pd.Series) -> dict | None:
     if partial_dispersions is None:
         return None
 
+    dispersion_coeff_data = _get_dispersion_coefficients(catalog_name, data)
+
     return {
         "refractive_index_d": nd,
         "refractive_index_e": ne,
         "abbe_number_d": vd,
         "abbe_number_e": ve,
         "partial_dispersions": partial_dispersions,
+        "dispersion_coeff_kind": dispersion_coeff_data["dispersion_coeffs_kind"],
+        "dispersion_coeffs": dispersion_coeff_data["dispersion_coeffs"],
     }
 
 
@@ -82,7 +151,7 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
     result: dict[str, dict] = {}
     for name in catalog.get_glass_names():
         data = catalog.glass_data(name)
-        entry = _build_glass_entry(data)
+        entry = _build_glass_entry(catalog_name, data)
         if entry is not None:
             result[str(name)] = entry
     return result

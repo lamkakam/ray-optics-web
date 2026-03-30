@@ -11,6 +11,8 @@ REQUIRED_KEYS = {
     "abbe_number_d",
     "abbe_number_e",
     "partial_dispersions",
+    "dispersion_coeff_kind",
+    "dispersion_coeffs",
 }
 PARTIAL_DISPERSION_KEYS = {"P_F_e", "P_F_d", "P_g_F"}
 
@@ -206,6 +208,32 @@ class TestGetGlassCatalogData:
                 )
                 assert math.isfinite(v), (
                     f"{catalog_name}/{glass_name}: partial dispersion {k}={v} not finite"
+                )
+    @pytest.mark.parametrize("catalog_name", CATALOG_NAMES)
+    def test_dispersion_coeffs_has_kind_and_coeffs_with_finite_values(
+        self, catalog_name: str
+    ) -> None:
+        from rayoptics_web_utils.glass.glass import get_glass_catalog_data
+
+        result = get_glass_catalog_data(catalog_name)
+        for glass_name, entry in result.items():
+            assert "dispersion_coeff_kind" in entry, f"{catalog_name}/{glass_name} missing 'dispersion_coeff_kind'"
+            assert "dispersion_coeffs" in entry, f"{catalog_name}/{glass_name} missing 'dispersion_coeffs'"
+            
+            coeff_kind = entry["dispersion_coeff_kind"]
+            assert isinstance(coeff_kind, str), f"{catalog_name}/{glass_name}: dispersion_coeff_kind not string"
+            assert coeff_kind in {"Schott2x6", "Sellmeier3T"}, (
+                f"{catalog_name}/{glass_name}: dispersion_coeff_kind {coeff_kind} not in expected values"
+            )
+
+            coeffs = entry["dispersion_coeffs"]
+            assert isinstance(coeffs, list), f"{catalog_name}/{glass_name}: dispersion_coeffs not list"
+            for i, coeff in enumerate(coeffs):
+                assert isinstance(coeff, float), (
+                    f"{catalog_name}/{glass_name}: dispersion coefficient {i} not float"
+                )
+                assert math.isfinite(coeff), (
+                    f"{catalog_name}/{glass_name}: dispersion coefficient {i}={coeff} not finite"
                 )
 
 
