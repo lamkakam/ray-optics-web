@@ -1,40 +1,27 @@
 """Glass catalog data extraction from opticalglass."""
-
 from __future__ import annotations
-
-import math
-
 import pandas as pd
 
 
-def _safe_float(data: pd.Series, key: tuple) -> float | None:
-    """Return float value for key, or None if key is missing or NaN."""
-    try:
-        val = data[key]
-    except KeyError:
-        return None
-    if val is None:
-        return None
-    try:
-        f = float(val)
-    except (TypeError, ValueError):
-        return None
-    return None if math.isnan(f) else f
+def _partial_dispersions(data: pd.Series) -> dict[str, float]:
+    """
+    Compute P_F_e, P_F_d, P_g_F from refractive index lines. Returns 0.0 if any cannot be computed.
+    Return type:
+    {
+        "P_F_e": float,
+        "P_F_d": float,
+        "P_g_F": float,
+    }
+    """
+    nF = data["refractive indices"]["F"]
+    ne = data["refractive indices"]["e"]
+    nd = data["refractive indices"]["d"]
+    nC = data["refractive indices"]["C"]
+    ng = data["refractive indices"]["g"]
 
-
-def _partial_dispersions(data: pd.Series) -> dict[str, float] | None:
-    """Compute P_F_e, P_F_d, P_g_F from refractive index lines. Returns None if any cannot be computed."""
-    nF = _safe_float(data, ("refractive indices", "F"))
-    ne = _safe_float(data, ("refractive indices", "e"))
-    nd = _safe_float(data, ("refractive indices", "d"))
-    nC = _safe_float(data, ("refractive indices", "C"))
-    ng = _safe_float(data, ("refractive indices", "g"))
-
-    if nF is None or ne is None or nd is None or nC is None or ng is None:
-        return None
     denom = nF - nC
     if denom == 0.0:
-        return None
+        return 0.0
     return {
         "P_F_e": (nF - ne) / denom,
         "P_F_d": (nF - nd) / denom,
@@ -42,10 +29,13 @@ def _partial_dispersions(data: pd.Series) -> dict[str, float] | None:
     }
 
 def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, float]:
-    """Return a dict with 'dispersion_coeffs_kind' and 'dispersion_coeffs' keys, where
-    'dispersion_coeffs_kind' is a string indicating the type of dispersion coefficients
-    (e.g. "Schott2x6", "Sellmeier3T"), and
-    'dispersion_coeffs' is a list of floats.
+    """
+    Return type:
+    {
+        "dispersion_coeffs_kind": str, # "Schott2x6" or "Sellmeier3T"
+        "dispersion_coeffs": list[float],
+    }
+
     Raises ValueError if catalog is unsupported.
     """
 
@@ -107,28 +97,27 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
         
 
 
-def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict | None:
-    """Build a single glass dict from a glass_data() Series. Returns None if nd, ne, vd, ve, or any partial dispersion is missing."""
-    nd = _safe_float(data, ("refractive indices", "d"))
-    if nd is None:
-        nd = _safe_float(data, ("refractive index", "d"))
+def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | dict[str, float] | list[float]]:
+    """
+    Build a single glass dict from a glass_data() Series.
+    Return type:
+    {
+        "refractive_index_d": float,
+        "refractive_index_e": float,
+        "abbe_number_d": float,
+        "abbe_number_e": float,
+        "partial_dispersions": dict[str, float],
+        "dispersion_coeff_kind": str,
+        "dispersion_coeffs": list[float],
+    }
+    """
+    nd = data["refractive indices"]["d"]
+    ne = data["refractive indices"]["e"]
 
-    ne = _safe_float(data, ("refractive indices", "e"))
-    if ne is None:
-        ne = _safe_float(data, ("refractive index", "e"))
-
-    if nd is None or ne is None:
-        return None
-
-    vd = _safe_float(data, ("abbe number", "vd"))
-    ve = _safe_float(data, ("abbe number", "ve"))
-    if vd is None or ve is None:
-        return None
+    vd = data["abbe number"]["vd"]
+    ve = data["abbe number"]["ve"]
 
     partial_dispersions = _partial_dispersions(data)
-    if partial_dispersions is None:
-        return None
-
     dispersion_coeff_data = _get_dispersion_coefficients(catalog_name, data)
 
     return {
@@ -152,8 +141,7 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
     for name in catalog.get_glass_names():
         data = catalog.glass_data(name)
         entry = _build_glass_entry(catalog_name, data)
-        if entry is not None:
-            result[str(name)] = entry
+        result[str(name)] = entry
     return result
 
 

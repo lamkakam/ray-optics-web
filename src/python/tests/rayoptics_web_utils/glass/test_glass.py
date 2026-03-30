@@ -18,9 +18,9 @@ PARTIAL_DISPERSION_KEYS = {"P_F_e", "P_F_d", "P_g_F"}
 
 
 @pytest.fixture(scope="module")
-def assert_dispersion_coeff_value():
+def assert_dispersion_coeff_value() -> None:
     """Fixture to assert that dispersion coefficients are not NaN."""
-    def _assert_dispersion_coeff_not_nan(data: pd.Series ,catalog_name: str, glass_name: str, coeff_name: str) -> None:
+    def _assert_dispersion_coeff_not_nan(data: pd.Series, catalog_name: str, glass_name: str, coeff_name: str) -> None:
         assert coeff_name in data["dispersion coefficients"], f"{catalog_name}/{glass_name} missing {coeff_name} in dispersion coefficients"
         
         if catalog_name != "Hikari" or (catalog_name == "Hikari" and data["dispersion coefficients"][coeff_name] != "-"):
@@ -37,8 +37,24 @@ def assert_dispersion_coeff_value():
     return _assert_dispersion_coeff_not_nan
 
 
+@pytest.fixture(scope="module")
+def assert_numerical_data_valid() -> None:
+    """"Fixture to assert numerical values are valid."""
+    def _assert(data: pd.Series, attr: str, glass_name: str, sub_attr: str) -> None:
+            assert sub_attr in data[attr], f"{glass_name} missing '{sub_attr}' in '{attr}'"
+            try:
+                parsed_value = float(data[attr][sub_attr])
+            except (ValueError):
+                assert False, f"{glass_name} has non-numeric value for '{sub_attr}' in '{attr}'"
+
+            assert math.isnan(parsed_value) is False, (
+                f"{glass_name} has NaN for dispersion coefficient {sub_attr} in {attr}"
+            )
+    return _assert
+
+
 class TestGlassDispersionCoeffDedicatedForSchottDispersionEquation:
-    """Tests to verify the dipsersion coefficient data format for all catalogs that use the Schott dispersion equation (CDGM, Hoya, Sumita)."""
+    """Tests to verify the dipsersion coefficient data format for all catalogs from opticalglass that use the Schott dispersion equation (CDGM, Hoya, Sumita)."""
 
     # Note: CDGM used Schott dispersion equation in the past but switched to Sellmeier in 2024
     # The data from `opticalglass` for CDGM glasses still uses the old Schott coefficients, so
@@ -89,7 +105,7 @@ class TestGlassDispersionCoeffDedicatedForSchottDispersionEquation:
 
 
 class TestGlassDispersionCoeffDedicatedForSellmeierDispersionEquation:
-    """Tests to verify the dipsersion coefficient data format for all catalogs that use the Sellmeier dispersion equation (Ohara, Schott)."""
+    """Tests to verify the dipsersion coefficient data format for all catalogs from opticalglass that use the Sellmeier dispersion equation (Ohara, Schott)."""
     
     # Sellmeier3T
     # n^2 - 1 = A1*λ^2/(λ^2-B1) + A2*λ^2/(λ^2-B2) + A3*λ^2/(λ^2-B3)
@@ -130,6 +146,42 @@ class TestGlassDispersionCoeffDedicatedForSellmeierDispersionEquation:
             assert_dispersion_coeff_value(data, catalog_name, glass_name, "C1")
             assert_dispersion_coeff_value(data, catalog_name, glass_name, "C2")
             assert_dispersion_coeff_value(data, catalog_name, glass_name, "C3")
+
+
+class TestGlassRefractiveIndexData:
+    """Tests to verify that the refractive index data for all catalogs from opticalglass is valid."""
+
+    def test_refractive_indices_valid(self, assert_numerical_data_valid) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+
+        for catalog_name in CATALOG_NAMES:
+            catalog = glass_catalogs[catalog_name]
+            glass_names = catalog.get_glass_names()
+            for glass_name in glass_names:
+                data = catalog.glass_data(glass_name)
+
+                assert "refractive indices" in data, f"{catalog_name}/{glass_name} missing 'refractive indices'"
+                refractive_indices_lines = ["C", "d", "e", "F", "g"]
+                for line in refractive_indices_lines:
+                    assert_numerical_data_valid(data, "refractive indices", glass_name, line)
+
+class TestGlassAbbeNumberData:
+    """Tests to verify that the Abbe number data for all catalogs from opticalglass is valid."""
+
+    def test_abbe_numbers_valid(self, assert_numerical_data_valid) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+
+        for catalog_name in CATALOG_NAMES:
+            catalog = glass_catalogs[catalog_name]
+            glass_names = catalog.get_glass_names()
+            for glass_name in glass_names:
+                data = catalog.glass_data(glass_name)
+
+                assert "abbe number" in data, f"{catalog_name}/{glass_name} missing 'abbe number'"
+                assert_numerical_data_valid(data, "abbe number", glass_name, "vd")
+                assert_numerical_data_valid(data, "abbe number", glass_name, "ve")
 
 
 class TestGetGlassCatalogData:
