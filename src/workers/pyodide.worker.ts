@@ -2,6 +2,7 @@ import { expose } from "comlink";
 import { type OpticalModel, type SeidelData, type FocusingResult } from "../lib/opticalModel";
 import { type ZernikeData, type ZernikeOrdering } from "../lib/zernikeData";
 import { buildScript } from "../lib/pythonScript";
+import { type RawAllGlassCatalogsData } from "../lib/glassMap";
 
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
@@ -64,6 +65,7 @@ from rayoptics_web_utils.plotting import (
     plot_diffraction_psf,
 )
 from rayoptics_web_utils.focusing import focus_by_mono_rms_spot, focus_by_mono_strehl, focus_by_poly_rms_spot, focus_by_poly_strehl
+from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
 `);
 }
 
@@ -88,7 +90,7 @@ export async function init(): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.7-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.8-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
   } catch (err) {
@@ -233,6 +235,13 @@ export async function _focusByPolyStrehl(
   return JSON.parse(json) as FocusingResult;
 }
 
+export async function _getAllGlassCatalogsData(
+  runPython: (code: string) => Promise<unknown>
+): Promise<RawAllGlassCatalogsData> {
+  const json = (await runPython(`json.dumps(get_all_glass_catalogs_data())`)) as string;
+  return JSON.parse(json) as RawAllGlassCatalogsData;
+}
+
 
 // ─── Public API (exposed via Comlink) ─────────────────────────────────────────
 
@@ -319,6 +328,10 @@ export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: 
   return await _focusByPolyStrehl(requirePyodide(), opticalModel, fieldIndex);
 }
 
+export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData> {
+  return await _getAllGlassCatalogsData(requirePyodide());
+}
+
 expose({
   init,
   getFirstOrderData,
@@ -336,4 +349,5 @@ expose({
   focusByMonoStrehl,
   focusByPolyRmsSpot,
   focusByPolyStrehl,
+  getAllGlassCatalogsData,
 });

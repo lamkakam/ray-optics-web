@@ -1,6 +1,6 @@
 {
   "name": "ray-optics-web",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "license": "BSD-3-Clause",
   "private": true,
   "scripts": {
@@ -15,6 +15,17 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@visx/axis": "4.0.1-alpha.0",
+    "@visx/event": "4.0.1-alpha.0",
+    "@visx/grid": "4.0.1-alpha.0",
+    "@visx/group": "4.0.1-alpha.0",
+    "@visx/legend": "4.0.1-alpha.0",
+    "@visx/responsive": "4.0.1-alpha.0",
+    "@visx/scale": "4.0.1-alpha.0",
+    "@visx/shape": "4.0.1-alpha.0",
+    "@visx/tooltip": "4.0.1-alpha.0",
+    "@visx/zoom": "4.0.1-alpha.0",
     "ag-grid-community": "^35.1.0",
     "ag-grid-react": "^35.1.0",
     "ajv": "^8.18.0",

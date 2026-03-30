@@ -17,6 +17,7 @@ const config: Config = {
     "^ag-grid-react$": "<rootDir>/src/__mocks__/ag-grid-react.tsx",
     "^ag-grid-community$": "<rootDir>/src/__mocks__/ag-grid-community.ts",
     "^ag-grid-community/styles/.*$": "<rootDir>/src/__mocks__/ag-grid-community.ts",
+    "^@visx/responsive$": "<rootDir>/src/__mocks__/@visx/responsive.tsx",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/", "<rootDir>/src/e2e/"],

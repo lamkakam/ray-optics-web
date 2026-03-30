@@ -4,6 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
 import type { SeidelData } from "@/lib/opticalModel";
 
+jest.mock("better-react-mathjax", () => ({
+  MathJaxContext: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mathjax-context">{children}</div>
+  ),
+  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
+
 jest.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
 }));
@@ -152,5 +159,10 @@ describe("SeidelAberrModal", () => {
     render(<SeidelAberrModal {...defaultProps} onClose={onClose} />);
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not wrap its content in its own MathJaxContext", () => {
+    render(<SeidelAberrModal {...defaultProps} />);
+    expect(screen.queryByTestId("mathjax-context")).not.toBeInTheDocument();
   });
 });

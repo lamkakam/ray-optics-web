@@ -27,6 +27,7 @@ export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex:
 export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
+export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>
 ```
 
 ### Injectable Variants (for testing)
@@ -48,6 +49,7 @@ export async function _focusByMonoRmsSpot(runPython: (code: string) => Promise<u
 export async function _focusByMonoStrehl(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _focusByPolyRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _focusByPolyStrehl(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
+export async function _getAllGlassCatalogsData(runPython: (code: string) => Promise<unknown>): Promise<RawAllGlassCatalogsData>
 export function _resetPyodideForTesting(): void
 ```
 
@@ -66,7 +68,7 @@ export function _resetPyodideForTesting(): void
 
 1. Installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
 2. Installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
-3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2` glass object, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, and `rayoptics_web_utils.focusing`.
+3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2` glass object, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, and `rayoptics_web_utils.glass.glass`.
 
 ## Public API
 
@@ -90,6 +92,7 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `focusByMonoStrehl(model, fieldIndex)` | Focuses by maximizing monochromatic Strehl ratio. Returns `FocusingResult`. |
 | `focusByPolyRmsSpot(model, fieldIndex)` | Focuses by minimizing polychromatic RMS spot radius. Returns `FocusingResult`. |
 | `focusByPolyStrehl(model, fieldIndex)` | Focuses by maximizing polychromatic Strehl ratio. Returns `FocusingResult`. |
+| `getAllGlassCatalogsData()` | Returns raw glass catalog data for all 6 catalogs as `RawAllGlassCatalogsData`. No optical model required. |
 
 ## Injectable Variants (for testing)
 
@@ -132,6 +135,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `lib/opticalModel` — `OpticalModel`, `SeidelData` (types only).
 - `lib/zernikeData` — `ZernikeData` (type only).
 - `lib/pythonScript` — `buildScript` (generates the combined model-build + computation Python script).
+- `lib/glassMap` — `RawAllGlassCatalogsData` (type only).
 
 ## Usages
 

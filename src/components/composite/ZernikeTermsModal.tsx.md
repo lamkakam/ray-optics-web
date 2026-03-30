@@ -48,7 +48,7 @@ interface ZernikeTermsModalProps {
   - Fringe: `NUM_FRINGE_TERMS` (37) rows, first column "Fringe j", uses `fringeToNm(j)`
 - Each row shows: j index, Z notation (MathJax), classical name via `classicalName(n, m)`, unnormalized coefficient, RMS-normalized coefficient.
 - Summary section displays P-V WFE, RMS WFE, and Strehl ratio.
-- Wraps in `MathJaxContext` for inline LaTeX rendering of Zernike notation.
+- Uses `<MathJax>` for Zernike notation; context provided by ancestor (`page.tsx`).
 - **Loading states**:
   - Initial load (`loading && !data`): shows "Loading…" text, no table.
   - Re-fetch (`loading && data`): shows `<LoadingMask>` overlaid on the existing table (stale data stays visible behind the mask).

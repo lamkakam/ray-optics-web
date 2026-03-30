@@ -1,5 +1,12 @@
 import "@testing-library/jest-dom";
 
+// Mock ResizeObserver (not available in jsdom, required by @visx/responsive)
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // Mock importScripts (only available in Web Workers, not in jsdom)
 (global as unknown as Record<string, unknown>).importScripts = jest.fn();
 

@@ -6,6 +6,13 @@ import type { ZernikeData } from "@/lib/zernikeData";
 import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/lib/zernikeData";
 import type { SelectOption } from "@/components/micro/Select";
 
+jest.mock("better-react-mathjax", () => ({
+  MathJaxContext: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mathjax-context">{children}</div>
+  ),
+  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
+
 jest.mock("@/components/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
 }));
@@ -344,6 +351,12 @@ describe("ZernikeTermsModal", () => {
     const scrollContainer = screen.getByTestId("zernike-table-scroll");
     expect(scrollContainer.className).not.toContain("60vh");
     expect(scrollContainer.className).toContain("90dvh");
+  });
+
+  it("does not wrap its content in its own MathJaxContext", async () => {
+    render(<ZernikeTermsModal {...defaultProps} />);
+    await act(async () => {});
+    expect(screen.queryByTestId("mathjax-context")).not.toBeInTheDocument();
   });
 
   it("re-open resets ordering to fringe", async () => {

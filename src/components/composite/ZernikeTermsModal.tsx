@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { MathJaxContext, MathJax } from "better-react-mathjax";
+import { MathJax } from "better-react-mathjax";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
 import { Table } from "@/components/micro/Table";
@@ -136,8 +136,7 @@ export function ZernikeTermsModal({
   if (!isOpen) return null;
 
   return (
-    <MathJaxContext>
-      <Modal isOpen={isOpen} title="Zernike Terms" titleId="zernike-modal-title" size="4xl">
+    <Modal isOpen={isOpen} title="Zernike Terms" titleId="zernike-modal-title" size="4xl">
         <div className="flex items-center gap-4 mb-2">
           <div className="flex items-center gap-2">
             <Label htmlFor="zernike-field-select">Field</Label>
@@ -199,6 +198,5 @@ export function ZernikeTermsModal({
           <Button variant="primary" onClick={onClose}>Ok</Button>
         </div>
       </Modal>
-    </MathJaxContext>
   );
 }

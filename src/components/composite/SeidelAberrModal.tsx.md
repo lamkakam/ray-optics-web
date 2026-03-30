@@ -27,7 +27,7 @@ interface SeidelAberrModalProps {
 - Table data for all four tabs is derived with `useMemo` to avoid recomputing on unrelated renders.
 - Aberration type keys (e.g. `"TSA"`, `"W040"`) are mapped to human-readable labels via `ABERRATION_TYPE_TO_LABEL`.
 - Field Curvature tab includes a Curvature Radius column (reciprocal of value; `"Infinite"` when value is 0).
-- Wraps the entire modal in `MathJaxContext` for the inline LaTeX disclaimer.
+- Uses `<MathJax inline>` for LaTeX rendering; `MathJaxContext` is provided by the ancestor (`page.tsx`).
 
 ## Usages
 

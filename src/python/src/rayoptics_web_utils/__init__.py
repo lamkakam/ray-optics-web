@@ -2,6 +2,12 @@
 
 from rayoptics_web_utils.env import init  # safe — no rayoptics imports at top level
 
+# Eager imports: opticalglass has no rayoptics dependency, safe to import immediately
+from rayoptics_web_utils.glass.glass import (  # noqa: E402
+    get_glass_catalog_data,
+    get_all_glass_catalogs_data,
+)
+
 # Lazy imports for modules that depend on rayoptics (must be imported after init())
 _LAZY_IMPORTS = {
     # analysis

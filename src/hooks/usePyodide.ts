@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
 import type { OpticalModel, SeidelData, FocusingResult } from "@/lib/opticalModel";
 import type { ZernikeData, ZernikeOrdering } from "@/lib/zernikeData";
+import type { RawAllGlassCatalogsData } from "@/lib/glassMap";
 import { createPyodideWorker } from "./createPyodideWorker";
 
 export interface PyodideWorkerAPI {
@@ -23,6 +24,7 @@ export interface PyodideWorkerAPI {
   focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
 }
 
 // Singleton state — shared across all hook instances
