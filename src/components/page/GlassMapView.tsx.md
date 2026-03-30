@@ -17,8 +17,8 @@ Page-level container for the Glass Map feature. Fetches glass catalog data from 
 - Derives axis labels from `plotType`, `abbeNumCenterLine`, `partialDispersionType`
 
 ## Layout
-- **Loading state** (`!isReady || dataLoading`): centered loading message
-- **Error state** (`dataError`): centered red error message
+- **Error state** (`dataError`): centered red error message (checked first, so a fetch failure always surfaces even when `catalogsData` is still `undefined`)
+- **Loading state** (`!isReady || dataLoading || catalogsData === undefined`): centered loading message
 - **Loaded**: `flex-col lg:flex-row h-full`
   - Left: flex-1 (lg: 60%) — `GlassScatterPlot`
   - Right: overflow-y-auto (lg: 40%) — `GlassMapControls` + `GlassDetailPanel`

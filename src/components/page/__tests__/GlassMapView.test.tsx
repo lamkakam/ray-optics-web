@@ -67,6 +67,14 @@ describe("GlassMapView", () => {
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
+  it("shows loading indicator on first render when isReady=true but catalogsData not yet fetched", () => {
+    const proxy = makeProxy();
+    const store = makeStore();
+    // catalogsData is undefined in the initial store state
+    render(<GlassMapView store={store} proxy={proxy} isReady={true} />);
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  });
+
   it("calls getAllGlassCatalogsData on mount when isReady=true", async () => {
     const proxy = makeProxy();
     const store = makeStore();

@@ -86,18 +86,18 @@ export function GlassMapView({ store, proxy, isReady }: GlassMapViewProps) {
     setSelectedGlass(glass);
   };
 
-  if (!isReady || dataLoading) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-        Loading glass catalog data…
-      </div>
-    );
-  }
-
   if (dataError) {
     return (
       <div className="flex items-center justify-center h-full text-red-500">
         {dataError}
+      </div>
+    );
+  }
+
+  if (!isReady || dataLoading || catalogsData === undefined) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+        Loading glass catalog data…
       </div>
     );
   }
