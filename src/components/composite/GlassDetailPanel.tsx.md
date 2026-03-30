@@ -12,9 +12,9 @@ Displays details for the currently selected glass point. Shows a placeholder whe
 - When `selectedGlass` is `undefined`: renders "Select a glass point on the chart to see details."
 - When `selectedGlass` is set: renders catalog name, glass name, and a property table with:
   - N_d, N_e, V_d, V_e
-  - P_{g,F} (if defined)
-  - P_{F,d} (if defined)
-  - P_{F,e} (if defined)
+  - P_{g,F}
+  - P_{F,d}
+  - P_{F,e}
 - Numeric formatting: refractive indices (N_d, N_e) to **5 decimal places**, Abbe numbers (V_d, V_e) to **2 decimal places**, partial dispersions to **4 decimal places**.
 - All property labels are rendered via `MathJax inline` for proper subscript notation (e.g. `\(N_d\)`, `\(P_{g,F}\)`).
 - **The component does not own a `MathJaxContext`** — the context is provided by the parent (`GlassMapView`).

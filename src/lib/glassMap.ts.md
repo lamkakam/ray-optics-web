@@ -14,8 +14,7 @@ Types, constants, and pure helper functions for the Glass Map feature.
 - `GlassData` — normalized glass properties (camelCase):
   - `refractiveIndexD`, `refractiveIndexE` — refractive index at d/e lines
   - `abbeNumberD`, `abbeNumberE` — Abbe number at d/e lines
-  - `dispersionCoefficients` — map of coefficient name to value
-  - `partialDispersions` — optional `P_F_e`, `P_F_d`, `P_g_F`
+  - `partialDispersions` — required `P_F_e`, `P_F_d`, `P_g_F` (all always present)
 - `RawGlassData` — snake_case mirror from Python API
 - `AllGlassCatalogsData` — `Record<CatalogName, Record<string, GlassData>>`
 - `RawAllGlassCatalogsData` — `Record<string, Record<string, RawGlassData>>`
@@ -39,4 +38,4 @@ Computes scatter plot points based on current filter/axis settings:
 - Skips disabled catalogs
 - x-axis: `abbeNumberD` when `abbeNumCenterLine='d'`, else `abbeNumberE`
 - y-axis (refractiveIndex): `refractiveIndexD` or `refractiveIndexE`
-- y-axis (partialDispersion): `partialDispersions[partialDispersionType]`, excludes points where value is `undefined`
+- y-axis (partialDispersion): `partialDispersions[partialDispersionType]`

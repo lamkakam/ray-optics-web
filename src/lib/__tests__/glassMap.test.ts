@@ -17,7 +17,6 @@ const rawGlass: RawGlassData = {
   refractive_index_e: 1.5190,
   abbe_number_d: 64.17,
   abbe_number_e: 63.96,
-  dispersion_coefficients: { A0: 2.0, A1: -0.01 },
   partial_dispersions: { P_F_e: 0.4, P_F_d: 0.41, P_g_F: 0.5349 },
 };
 
@@ -59,11 +58,6 @@ describe("normalizeGlassData", () => {
     expect(result.abbeNumberE).toBe(63.96);
   });
 
-  it("maps dispersion_coefficients", () => {
-    const result = normalizeGlassData(rawGlass);
-    expect(result.dispersionCoefficients).toEqual({ A0: 2.0, A1: -0.01 });
-  });
-
   it("maps partial_dispersions", () => {
     const result = normalizeGlassData(rawGlass);
     expect(result.partialDispersions.P_F_e).toBe(0.4);
@@ -71,12 +65,6 @@ describe("normalizeGlassData", () => {
     expect(result.partialDispersions.P_g_F).toBe(0.5349);
   });
 
-  it("handles missing partial dispersions", () => {
-    const raw: RawGlassData = { ...rawGlass, partial_dispersions: {} };
-    const result = normalizeGlassData(raw);
-    expect(result.partialDispersions.P_F_e).toBeUndefined();
-    expect(result.partialDispersions.P_g_F).toBeUndefined();
-  });
 });
 
 describe("normalizeAllCatalogsData", () => {
@@ -100,7 +88,6 @@ describe("computePlotPoints", () => {
         refractiveIndexE: 1.519,
         abbeNumberD: 64.17,
         abbeNumberE: 63.96,
-        dispersionCoefficients: {},
         partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
       },
     },
@@ -113,8 +100,7 @@ describe("computePlotPoints", () => {
         refractiveIndexE: 1.519,
         abbeNumberD: 64.17,
         abbeNumberE: 63.96,
-        dispersionCoefficients: {},
-        partialDispersions: { P_g_F: 0.5349 },
+        partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
       },
     },
     Sumita: {},
@@ -157,13 +143,6 @@ describe("computePlotPoints", () => {
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(64.17);
     expect(bk7.y).toBe(0.41);
-  });
-
-  it("excludes points where partial dispersion is undefined", () => {
-    // N-BK7 only has P_g_F, so P_F_d is undefined → excluded
-    const points = computePlotPoints(catalogsData, allEnabled, "partialDispersion", "d", "P_F_d");
-    const nbk7 = points.find((p) => p.glassName === "N-BK7");
-    expect(nbk7).toBeUndefined();
   });
 
   it("excludes disabled catalog", () => {

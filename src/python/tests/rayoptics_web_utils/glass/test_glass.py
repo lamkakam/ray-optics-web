@@ -9,7 +9,6 @@ REQUIRED_KEYS = {
     "refractive_index_e",
     "abbe_number_d",
     "abbe_number_e",
-    "dispersion_coefficients",
     "partial_dispersions",
 }
 PARTIAL_DISPERSION_KEYS = {"P_F_e", "P_F_d", "P_g_F"}
@@ -72,29 +71,6 @@ class TestGetGlassCatalogData:
             assert isinstance(ve, float), f"{catalog_name}/{glass_name}: ve not float"
             assert vd > 0.0, f"{catalog_name}/{glass_name}: vd={vd} <= 0"
             assert ve > 0.0, f"{catalog_name}/{glass_name}: ve={ve} <= 0"
-
-    @pytest.mark.parametrize("catalog_name", CATALOG_NAMES)
-    def test_dispersion_coefficients_is_nonempty_str_float_dict(
-        self, catalog_name: str
-    ) -> None:
-        from rayoptics_web_utils.glass.glass import get_glass_catalog_data
-
-        result = get_glass_catalog_data(catalog_name)
-        for glass_name, entry in result.items():
-            coeffs = entry["dispersion_coefficients"]
-            assert isinstance(coeffs, dict), (
-                f"{catalog_name}/{glass_name}: dispersion_coefficients not dict"
-            )
-            assert len(coeffs) > 0, (
-                f"{catalog_name}/{glass_name}: dispersion_coefficients empty"
-            )
-            for k, v in coeffs.items():
-                assert isinstance(k, str), (
-                    f"{catalog_name}/{glass_name}: coeff key {k!r} not str"
-                )
-                assert isinstance(v, float), (
-                    f"{catalog_name}/{glass_name}: coeff value for {k!r} not float"
-                )
 
     @pytest.mark.parametrize("catalog_name", CATALOG_NAMES)
     def test_partial_dispersions_has_required_keys_with_finite_values(

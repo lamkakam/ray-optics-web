@@ -6,11 +6,10 @@ export interface GlassData {
   readonly refractiveIndexE: number;
   readonly abbeNumberD: number;
   readonly abbeNumberE: number;
-  readonly dispersionCoefficients: Record<string, number>;
   readonly partialDispersions: {
-    readonly P_F_e?: number;
-    readonly P_F_d?: number;
-    readonly P_g_F?: number;
+    readonly P_F_e: number;
+    readonly P_F_d: number;
+    readonly P_g_F: number;
   };
 }
 
@@ -19,11 +18,10 @@ export interface RawGlassData {
   readonly refractive_index_e: number;
   readonly abbe_number_d: number;
   readonly abbe_number_e: number;
-  readonly dispersion_coefficients: Record<string, number>;
   readonly partial_dispersions: {
-    readonly P_F_e?: number;
-    readonly P_F_d?: number;
-    readonly P_g_F?: number;
+    readonly P_F_e: number;
+    readonly P_F_d: number;
+    readonly P_g_F: number;
   };
 }
 
@@ -63,7 +61,6 @@ export function normalizeGlassData(raw: RawGlassData): GlassData {
     refractiveIndexE: raw.refractive_index_e,
     abbeNumberD: raw.abbe_number_d,
     abbeNumberE: raw.abbe_number_e,
-    dispersionCoefficients: raw.dispersion_coefficients,
     partialDispersions: {
       P_F_e: raw.partial_dispersions.P_F_e,
       P_F_d: raw.partial_dispersions.P_F_d,

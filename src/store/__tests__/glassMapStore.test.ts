@@ -10,8 +10,7 @@ const mockGlassData = {
   refractiveIndexE: 1.5190,
   abbeNumberD: 64.17,
   abbeNumberE: 63.96,
-  dispersionCoefficients: {},
-  partialDispersions: { P_g_F: 0.5349 },
+  partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
 };
 
 const mockCatalogsData: AllGlassCatalogsData = {

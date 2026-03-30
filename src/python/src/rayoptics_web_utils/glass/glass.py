@@ -22,56 +22,28 @@ def _safe_float(data: pd.Series, key: tuple) -> float | None:
     return None if math.isnan(f) else f
 
 
-def _dispersion_coefficients(data: pd.Series) -> dict[str, float]:
-    """Extract all ('dispersion coefficients', name) pairs, skipping NaN and Apow keys."""
-    result: dict[str, float] = {}
-    for key, val in data.items():
-        if not isinstance(key, tuple) or len(key) != 2:
-            continue
-        category, name = key
-        if not isinstance(category, str) or "dispersion coefficients" not in category:
-            continue
-        if not isinstance(name, str):
-            continue
-        # Skip Hoya Apow exponent columns
-        if name.endswith("pow"):
-            continue
-        try:
-            f = float(val)
-        except (TypeError, ValueError):
-            continue
-        if math.isnan(f):
-            continue
-        result[name] = f
-    return result
-
-
-def _partial_dispersions(data: pd.Series) -> dict[str, float]:
-    """Compute P_F_e, P_F_d, P_g_F from refractive index lines."""
+def _partial_dispersions(data: pd.Series) -> dict[str, float] | None:
+    """Compute P_F_e, P_F_d, P_g_F from refractive index lines. Returns None if any cannot be computed."""
     nF = _safe_float(data, ("refractive indices", "F"))
     ne = _safe_float(data, ("refractive indices", "e"))
     nd = _safe_float(data, ("refractive indices", "d"))
     nC = _safe_float(data, ("refractive indices", "C"))
     ng = _safe_float(data, ("refractive indices", "g"))
 
-    result: dict[str, float] = {}
-    if nF is not None and ne is not None and nC is not None:
-        denom = nF - nC
-        if denom != 0.0:
-            result["P_F_e"] = (nF - ne) / denom
-    if nF is not None and nd is not None and nC is not None:
-        denom = nF - nC
-        if denom != 0.0:
-            result["P_F_d"] = (nF - nd) / denom
-    if ng is not None and nF is not None and nC is not None:
-        denom = nF - nC
-        if denom != 0.0:
-            result["P_g_F"] = (ng - nF) / denom
-    return result
+    if nF is None or ne is None or nd is None or nC is None or ng is None:
+        return None
+    denom = nF - nC
+    if denom == 0.0:
+        return None
+    return {
+        "P_F_e": (nF - ne) / denom,
+        "P_F_d": (nF - nd) / denom,
+        "P_g_F": (ng - nF) / denom,
+    }
 
 
 def _build_glass_entry(data: pd.Series) -> dict | None:
-    """Build a single glass dict from a glass_data() Series. Returns None if nd or ne missing."""
+    """Build a single glass dict from a glass_data() Series. Returns None if nd, ne, vd, ve, or any partial dispersion is missing."""
     nd = _safe_float(data, ("refractive indices", "d"))
     if nd is None:
         nd = _safe_float(data, ("refractive index", "d"))
@@ -88,13 +60,16 @@ def _build_glass_entry(data: pd.Series) -> dict | None:
     if vd is None or ve is None:
         return None
 
+    partial_dispersions = _partial_dispersions(data)
+    if partial_dispersions is None:
+        return None
+
     return {
         "refractive_index_d": nd,
         "refractive_index_e": ne,
         "abbe_number_d": vd,
         "abbe_number_e": ve,
-        "dispersion_coefficients": _dispersion_coefficients(data),
-        "partial_dispersions": _partial_dispersions(data),
+        "partial_dispersions": partial_dispersions,
     }
 
 
