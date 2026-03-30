@@ -28,7 +28,7 @@ def _partial_dispersions(data: pd.Series) -> dict[str, float]:
         "P_g_F": (ng - nF) / denom,
     }
 
-def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, float]:
+def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, str | list[float]]:
     """
     Return type:
     {
@@ -39,7 +39,7 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
     Raises ValueError if catalog is unsupported.
     """
 
-    def schott2x4() -> dict[str, float]:
+    def schott2x4() -> dict[str, str | list[float]]:
         keys= ["A0", "A1", "A2", "A3", "A4", "A5"]
         dispersion_coeffs = []
         for key in keys:
@@ -54,7 +54,7 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
             "dispersion_coeffs": dispersion_coeffs,
         }
 
-    def hikari() -> dict[str, float]:
+    def hikari() -> dict[str, str | list[float]]:
         keys = ["A0", "A1･λ^2", "A2･λ^4", "A3/λ^2", "A4/λ^4", "A5/λ^6", "A6/λ^8", "A7/λ^10", "A8/λ^12"]
         dispersion_coeffs = []
         for key in keys:
@@ -69,7 +69,7 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
             "dispersion_coeffs": dispersion_coeffs,
         }
     
-    def sellmeier3t(catalog_name: str) -> dict[str, float]:
+    def sellmeier3t(catalog_name: str) -> dict[str, str | list[float]]:
         if catalog_name == "Schott":
             keys = ["B1", "B2", "B3", "C1", "C2", "C3"]
         elif catalog_name == "Ohara":
@@ -107,7 +107,7 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
         "abbe_number_d": float,
         "abbe_number_e": float,
         "partial_dispersions": dict[str, float],
-        "dispersion_coeff_kind": str,
+        "dispersion_coeff_kind": str, # "Schott2x6" or "Sellmeier3T"
         "dispersion_coeffs": list[float],
     }
     """
