@@ -116,33 +116,13 @@ describe("GlassMapView", () => {
     });
   });
 
-  it("renders exactly one MathJaxContext even when a glass is selected", async () => {
-    // Both child components previously had their own MathJaxContext, causing
-    // "Typesetting failed: Cannot read properties of null (reading 'nextSibling')"
-    // when rendered together. GlassMapView must provide a single shared context.
+  it("does not render its own MathJaxContext (context is provided by parent)", async () => {
     const proxy = makeProxy();
     const store = makeStore();
     render(<GlassMapView store={store} proxy={proxy} isReady={true} />);
     await waitFor(() => {
       expect(screen.getByText(/select a glass/i)).toBeInTheDocument();
     });
-    // Select a glass to trigger GlassDetailPanel to render MathJax content
-    act(() => {
-      store.getState().setSelectedGlass({
-        catalogName: "Schott",
-        glassName: "N-BK7",
-        data: {
-          refractiveIndexD: 1.5168,
-          refractiveIndexE: 1.519,
-          abbeNumberD: 64.17,
-          abbeNumberE: 63.96,
-          dispersionCoefficients: {},
-          partialDispersions: { P_g_F: 0.5349 },
-        },
-      });
-    });
-    await waitFor(() => {
-      expect(screen.getAllByTestId("mathjax-context")).toHaveLength(1);
-    });
+    expect(screen.queryByTestId("mathjax-context")).not.toBeInTheDocument();
   });
 });

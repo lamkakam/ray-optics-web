@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { MathJaxContext, MathJax } from "better-react-mathjax";
+import { MathJax } from "better-react-mathjax";
 import { Button } from "@/components/micro/Button";
 import { Modal } from "@/components/micro/Modal";
 import { Table } from "@/components/micro/Table";
@@ -115,21 +115,19 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
   );
 
   return (
-    <MathJaxContext>
-      <Modal isOpen={isOpen} title="3rd Order Seidel Aberrations" titleId="seidel-modal-title" size="4xl">
-        <Paragraph className="mb-4">
-          Note: Third-order Seidel aberration approximation only captures the effect of
-          higher-order aspheric surface up to the 4th order
-          ({" "}<MathJax inline>{`\\(r^{4}\\)`}</MathJax>{" "} and its term {" "}<MathJax inline>{`\\(a_{4}\\)`}</MathJax>).
-          The effect of higher-order polynomial terms
-          such as {" "}<MathJax inline>{`\\(a_{6}, a_{8}\\)`}</MathJax>{" "} or higher
-          is outside the scope of this approximation.
-        </Paragraph>
-        <Tabs tabs={tabs} panelClassName="h-72 overflow-y-auto" />
-        <div className="flex justify-end pt-4">
-          <Button variant="primary" onClick={onClose}>Ok</Button>
-        </div>
-      </Modal>
-    </MathJaxContext>
+    <Modal isOpen={isOpen} title="3rd Order Seidel Aberrations" titleId="seidel-modal-title" size="4xl">
+      <Paragraph className="mb-4">
+        Note: Third-order Seidel aberration approximation only captures the effect of
+        higher-order aspheric surface up to the 4th order
+        ({" "}<MathJax inline>{`\\(r^{4}\\)`}</MathJax>{" "} and its term {" "}<MathJax inline>{`\\(a_{4}\\)`}</MathJax>).
+        The effect of higher-order polynomial terms
+        such as {" "}<MathJax inline>{`\\(a_{6}, a_{8}\\)`}</MathJax>{" "} or higher
+        is outside the scope of this approximation.
+      </Paragraph>
+      <Tabs tabs={tabs} panelClassName="h-72 overflow-y-auto" />
+      <div className="flex justify-end pt-4">
+        <Button variant="primary" onClick={onClose}>Ok</Button>
+      </div>
+    </Modal>
   );
 }

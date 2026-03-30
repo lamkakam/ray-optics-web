@@ -20,14 +20,20 @@ Root page component (`"use client"`). Owns stores, Pyodide hook, theme, and view
 - `onNavigate` callback sets `currentView`
 - No URL changes (state-based routing)
 
+## MathJax
+A single `<MathJaxContext>` from `better-react-mathjax` wraps the entire app at this level. All child components (`GlassDetailPanel`, `SeidelAberrModal`, `ZernikeTermsModal`, `AsphericalModal`, etc.) can use `<MathJax>` without owning their own context, preventing the "Typesetting failed: Cannot read properties of null (reading 'nextSibling')" crash caused by multiple simultaneous `MathJaxContext` instances.
+
 ## Rendered structure
 ```tsx
-<Layout currentView onNavigate errorModal initOverlayNode>
-  {currentView === "home" && <LensEditor .../>}
-  {currentView === "settings" && <SettingsView .../>}
-  {currentView === "privacy-policy" && <PrivacyPolicyView />}
-  {currentView === "about" && <AboutView />}
-</Layout>
+<MathJaxContext>
+  <Layout currentView onNavigate errorModal initOverlayNode>
+    {currentView === "home" && <LensEditor .../>}
+    {currentView === "settings" && <SettingsView .../>}
+    {currentView === "glass-map" && <GlassMapView .../>}
+    {currentView === "privacy-policy" && <PrivacyPolicyView />}
+    {currentView === "about" && <AboutView />}
+  </Layout>
+</MathJaxContext>
 ```
 
 ## Removed (vs. previous version)

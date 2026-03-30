@@ -32,7 +32,7 @@ Page-level container for the Glass Map feature. Fetches glass catalog data from 
 | partialDispersion | e | Ve | P_F,d / P_F,e / P_g,F |
 
 ## MathJax
-A single `<MathJaxContext>` from `better-react-mathjax` wraps the controls+detail panel (right column), shared by both `GlassMapControls` and `GlassDetailPanel`. This prevents the "Typesetting failed: Cannot read properties of null (reading 'nextSibling')" crash that occurred when each child component owned its own `MathJaxContext` simultaneously.
+MathJax context is provided by the parent (`page.tsx`). This component does not own a `MathJaxContext`.
 
 ## Children
 - `GlassScatterPlot` — scatter plot with zoom/pan

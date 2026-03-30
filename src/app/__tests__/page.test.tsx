@@ -6,6 +6,11 @@ import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
 import type { Theme } from "@/lib/theme";
 import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 
+jest.mock("better-react-mathjax", () => ({
+  MathJaxContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
+
 // Mock useTheme
 const mockToggleTheme: jest.Mock<void, [Theme]> = jest.fn();
 jest.mock("@/components/ThemeProvider", () => ({

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { MathJaxContext } from "better-react-mathjax";
 import { createStore } from "zustand";
 import type { Theme } from "@/lib/theme";
 import type { AppView } from "@/lib/appView";
@@ -101,21 +102,23 @@ export default function Home() {
   );
 
   return (
-    <Layout
-      currentView={currentView}
-      onNavigate={(view) => setCurrentView(view)}
-      errorModal={errorModal}
-      initOverlayNode={initOverlayNode}
-    >
-      {currentView === "home" && lensEditor}
-      {currentView === "settings" && (
-        <SettingsView theme={theme} onThemeChange={handleThemeChange} />
-      )}
-      {currentView === "glass-map" && (
-        <GlassMapView store={glassMapStore} proxy={proxy} isReady={isReady} />
-      )}
-      {currentView === "privacy-policy" && <PrivacyPolicyView />}
-      {currentView === "about" && <AboutView />}
-    </Layout>
+    <MathJaxContext>
+      <Layout
+        currentView={currentView}
+        onNavigate={(view) => setCurrentView(view)}
+        errorModal={errorModal}
+        initOverlayNode={initOverlayNode}
+      >
+        {currentView === "home" && lensEditor}
+        {currentView === "settings" && (
+          <SettingsView theme={theme} onThemeChange={handleThemeChange} />
+        )}
+        {currentView === "glass-map" && (
+          <GlassMapView store={glassMapStore} proxy={proxy} isReady={isReady} />
+        )}
+        {currentView === "privacy-policy" && <PrivacyPolicyView />}
+        {currentView === "about" && <AboutView />}
+      </Layout>
+    </MathJaxContext>
   );
 }

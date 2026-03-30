@@ -3,6 +3,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AsphericalModal } from "@/components/composite/AsphericalModal";
 
+jest.mock("better-react-mathjax", () => ({
+  MathJaxContext: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mathjax-context">{children}</div>
+  ),
+  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
+
 describe("AsphericalModal", () => {
   const defaultProps = {
     isOpen: true,
@@ -159,6 +166,11 @@ describe("AsphericalModal", () => {
 
     await userEvent.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(0);
+  });
+
+  it("does not wrap its content in its own MathJaxContext", () => {
+    render(<AsphericalModal {...defaultProps} />);
+    expect(screen.queryByTestId("mathjax-context")).not.toBeInTheDocument();
   });
 
   it("truncates trailing zeros from coefficients on confirm", async () => {

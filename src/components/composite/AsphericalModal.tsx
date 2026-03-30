@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { MathJaxContext, MathJax } from "better-react-mathjax";
+import { MathJax } from "better-react-mathjax";
 import { Button } from "@/components/micro/Button";
 import { Input } from "@/components/micro/Input";
 import { Label } from "@/components/micro/Label";
@@ -119,8 +119,7 @@ export function AsphericalModal({
   };
 
   return (
-    <MathJaxContext>
-      <Modal isOpen={isOpen} title="Aspherical Parameters" titleId="aspherical-modal-title" size="md">
+    <Modal isOpen={isOpen} title="Aspherical Parameters" titleId="aspherical-modal-title" size="md">
         {/* ── Conic constant + Type (2-col grid) ── */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
@@ -187,6 +186,5 @@ export function AsphericalModal({
           <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
         </div>
       </Modal>
-    </MathJaxContext>
   );
 }

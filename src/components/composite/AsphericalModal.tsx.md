@@ -43,7 +43,7 @@ type AsphericalType = "Conical" | "EvenAspherical";
 - Coefficient inputs are only shown when type is `"EvenAspherical"`.
 - On confirm, trailing zero coefficients are stripped (`truncateTrailingZeros`); Conical type produces an empty coefficients array.
 - Coefficients array is padded to length 10 on initialization.
-- Wraps in `MathJaxContext` for the sag formula and coefficient labels.
+- Uses `<MathJax>` for the sag formula and coefficient labels; `MathJaxContext` is provided by the ancestor (`page.tsx`).
 
 ## Usages
 
