@@ -116,9 +116,9 @@ export async function setMedium(
   await row.getByRole("button", { name: "Edit medium" }).click();
   const modal = page.getByRole("dialog", { name: "Select Medium" });
   await modal.waitFor({ state: "visible", timeout: 3_000 });
-  await page.getByLabel("Manufacturer").selectOption(manufacturer);
-  await page.getByLabel("Glass").selectOption(glass);
-  await page.getByRole("button", { name: "Confirm" }).click();
+  await modal.getByLabel("Manufacturer").selectOption(manufacturer);
+  await modal.getByLabel("Glass").selectOption(glass);
+  await modal.getByRole("button", { name: "Confirm" }).click();
   await modal.waitFor({ state: "hidden", timeout: 5_000 });
 }
 
