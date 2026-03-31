@@ -35,14 +35,3 @@ A single `<MathJaxContext>` from `better-react-mathjax` wraps the entire app at 
   </Layout>
 </MathJaxContext>
 ```
-
-## Removed (vs. previous version)
-- `sideNavOpen` state — moved to `Layout`
-- `isLG` variable — moved to `Layout`
-- `hamburgerButton` JSX — moved to `Layout`
-- `sideNavNode` JSX — moved to `Layout`
-- `layoutLG` / `layoutSM` JSX variables — replaced by `<Layout>`
-- `useScreenBreakpoint` import — moved to `Layout`
-- `SideNav` import — moved to `Layout`
-- `Button` import — moved to `Layout`
-- `Header` import — moved to `Layout`
