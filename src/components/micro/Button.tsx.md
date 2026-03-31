@@ -33,4 +33,31 @@ type ButtonProps =
 
 ## Usages
 
-- Used by almost every interactive element in the app.
+```tsx
+// Primary button
+<Button variant="primary" size="md" onClick={handleSubmit}>
+  Submit
+</Button>
+
+// Secondary button in a tooltip
+<Tooltip text="Insert row">
+  <Button variant="secondary" size="sm" onClick={onAdd}>
+    +
+  </Button>
+</Tooltip>
+
+// Floating button (top-right overlay)
+<Button variant="floating" onClick={onClose}>
+  ✕
+</Button>
+
+// Danger button for destructive actions
+<Button variant="danger" size="sm">
+  Delete
+</Button>
+
+// Toggle button for state indication
+<Button variant="toggle" className="w-full text-left" onClick={onOpenModal}>
+  {fieldSummary}
+</Button>
+```

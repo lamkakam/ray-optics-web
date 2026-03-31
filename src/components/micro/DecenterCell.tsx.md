@@ -27,4 +27,37 @@ interface DecenterCellProps {
 
 ## Usages
 
-- Used as a `cellRenderer` in `LensPrescriptionGrid`.
+```tsx
+// AG Grid column definition for Tilt & Decenter
+{
+  headerName: "Tilt & Decenter",
+  field: "decenter",
+  width: 120,
+  cellRenderer: (params) => (
+    <DecenterCell
+      isDecenterSet={!!params.data.decenterConfig}
+      onOpenModal={() => openDecenterModal(params.rowIndex)}
+    />
+  ),
+}
+
+// In grid configuration
+<AgGridReact
+  columnDefs={[
+    // ... other columns
+    {
+      headerName: "Decenter",
+      cellRenderer: DecenterCellRenderer,
+    },
+  ]}
+  rowData={surfaceData}
+/>
+
+// Cell renderer function
+const DecenterCellRenderer = (params) => (
+  <DecenterCell
+    isDecenterSet={params.data.hasDecenter}
+    onOpenModal={() => setSelectedSurface(params.rowIndex)}
+  />
+);
+```

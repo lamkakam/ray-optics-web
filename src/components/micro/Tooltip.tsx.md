@@ -41,4 +41,42 @@ interface TooltipProps {
 
 ## Usages
 
-- Used for wrapping buttons and inputables.
+```tsx
+// Tooltip over a grid control button
+<Tooltip text="Insert row" portal noTouch>
+  <Button
+    variant="secondary"
+    size="sm"
+    onClick={onAdd}
+    aria-label="Insert row"
+  >
+    +
+  </Button>
+</Tooltip>
+
+// Tooltip with custom position
+<Tooltip text="Click to configure field settings" position="top-start" noTouch>
+  <Button
+    variant="toggle"
+    className="w-full text-left"
+    onClick={onOpenFieldModal}
+  >
+    {fieldSummary}
+  </Button>
+</Tooltip>
+
+// Portal mode for use inside overflow-hidden containers
+<Tooltip text="Select medium" portal noTouch>
+  <Button
+    variant="secondary"
+    onClick={onOpenModal}
+  >
+    {mediumName}
+  </Button>
+</Tooltip>
+
+// Tooltip without portal (standard group-hover mode)
+<Tooltip text="Hover for more info">
+  <span className="cursor-help">Info</span>
+</Tooltip>
+```

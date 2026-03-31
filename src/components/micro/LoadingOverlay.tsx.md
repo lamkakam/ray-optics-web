@@ -27,4 +27,38 @@ interface LoadingOverlayProps {
 
 ## Usages
 
-- Mounted by the page-level component to block interaction while the Pyodide worker initialises.
+```tsx
+// Show during Pyodide initialization
+const initOverlayNode = !isReady && (
+  <LoadingOverlay
+    title="Initializing Ray Optics"
+    contents="Loading Pyodide and installing packages…"
+  />
+);
+
+<Layout>
+  {initOverlayNode}
+  {/* Page content */}
+</Layout>
+
+// Custom content with progress details
+<LoadingOverlay
+  title="Building Lens Model"
+  contents={
+    <div className="space-y-2">
+      <p>Tracing rays...</p>
+      <div className="w-32 h-2 bg-gray-300 rounded">
+        <div className="h-full bg-blue-500 rounded" style={{ width: `${progress}%` }} />
+      </div>
+    </div>
+  }
+/>
+
+// Show during heavy computation
+{isCalculating && (
+  <LoadingOverlay
+    title="Calculating Aberrations"
+    contents="Analyzing optical system..."
+  />
+)}
+```

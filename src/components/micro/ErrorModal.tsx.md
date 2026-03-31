@@ -28,4 +28,40 @@ interface ErrorModalProps {
 
 ## Usages
 
-- Used in `LensPrescriptionContainer` to report JSON import validation failures.
+```tsx
+// Basic error modal with default message
+const [errorOpen, setErrorOpen] = useState(false);
+
+<ErrorModal
+  isOpen={errorOpen}
+  onClose={() => setErrorOpen(false)}
+/>
+
+// Error modal with custom message
+<ErrorModal
+  isOpen={errorOpen}
+  onClose={() => setErrorOpen(false)}
+  message="Failed to import lens file: Invalid JSON format"
+/>
+
+// Usage in page-level component
+const errorModal = (
+  <ErrorModal
+    isOpen={errorModalOpen}
+    onClose={() => setErrorModalOpen(false)}
+  />
+);
+
+<Layout errorModal={errorModal}>
+  {/* Page content */}
+</Layout>
+
+// Triggered by validation error
+try {
+  const parsed = JSON.parse(importedData);
+  // ... validation ...
+} catch (error) {
+  setErrorMessage(error.message);
+  setErrorOpen(true);
+}
+```

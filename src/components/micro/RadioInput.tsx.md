@@ -37,4 +37,41 @@ Uses Tailwind CSS. Label text color uses `cx.label.color.textColor`.
 
 ## Usages
 
-Used by `FocusingPanel` for the chromaticity and metric radio groups.
+```tsx
+// Chromaticity options
+<RadioInput
+  name="chromaticity"
+  label="Chromaticity"
+  options={[
+    { value: "mono", label: "Monochromatic" },
+    { value: "poly", label: "Polychromatic" },
+  ]}
+  value={chromaticity}
+  onChange={onChromaticityChange}
+  disabled={isCalculating}
+/>
+
+// Metric selection with custom labelNode for rich content
+<RadioInput
+  name="metric"
+  label="Metric"
+  options={[
+    { value: "rmsSpot", label: "Minimize RMS Spot Radius" },
+    { value: "wavefront", label: "Minimize Wavefront Error" },
+  ]}
+  value={metric}
+  onChange={onMetricChange}
+/>
+
+// Radio group with MathJax content
+<RadioInput
+  name="aberration"
+  label="Aberration Type"
+  options={[
+    { value: "spherical", label: "Spherical", labelNode: <MathJax>{`\\(SA\\)`}</MathJax> },
+    { value: "coma", label: "Coma", labelNode: <MathJax>{`\\(Coma\\)`}</MathJax> },
+  ]}
+  value={selectedAberration}
+  onChange={onAberrationChange}
+/>
+```

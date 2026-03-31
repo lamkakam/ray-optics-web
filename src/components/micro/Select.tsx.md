@@ -32,3 +32,41 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 - The `<select>` is wrapped in a `<div>` with `relative w-full` plus any `className` passed via props. Width/spacing constraints (e.g. `max-w-xs`) are applied to the wrapper `<div>`, not the inner `<select>`. This ensures the SVG chevron arrow is always positioned relative to the visible control boundary and stays within bounds.
 - The inner `<select>` always has `w-full` so it fills the wrapper regardless of the wrapper's width constraint.
 
+## Usages
+
+```tsx
+// Basic dropdown with aperture types
+<Select
+  aria-label="System aperture type"
+  options={APERTURE_OPTIONS}
+  value={currentDropdownValue}
+  onChange={handleDropdownChange}
+/>
+
+// Compact variant for dense layouts
+<Select
+  type="compact"
+  aria-label="Field"
+  options={fieldOptions}
+  value={selectedFieldIndex}
+  onChange={(e) => onFieldChange(Number(e.target.value))}
+/>
+
+// With placeholder
+<Select
+  aria-label="Glass"
+  options={glassOptions}
+  value={selectedGlass}
+  placeholder="Select glass..."
+  onChange={handleChange}
+/>
+
+// Disabled state
+<Select
+  aria-label="Plot type"
+  options={PLOT_TYPE_OPTIONS}
+  value={selectedPlotType}
+  disabled={fieldDisabled}
+  onChange={handleChange}
+/>
+```

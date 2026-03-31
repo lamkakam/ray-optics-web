@@ -17,4 +17,31 @@ interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
 
 ## Usages
 
-- Used above every `Input` and `Select` field.
+```tsx
+// Label paired with Select
+<div>
+  <Label htmlFor="manufacturer-select">
+    Manufacturer
+  </Label>
+  <Select
+    id="manufacturer-select"
+    aria-label="Manufacturer"
+    options={manufacturerOptions}
+    value={selectedManufacturer}
+    onChange={handleChange}
+  />
+</div>
+
+// Label paired with Input
+<div>
+  <Label htmlFor="aperture-value">
+    Aperture Value
+  </Label>
+  <Input
+    id="aperture-value"
+    type="text"
+    value={value}
+    onChange={handleChange}
+  />
+</div>
+```

@@ -27,4 +27,31 @@ interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
 
 ## Usages
 
-- Used throughout the app for body copy, form captions, placeholder states and modal descriptions.
+```tsx
+// Placeholder text while loading
+{loading ? (
+  <Paragraph variant="placeholder">
+    Loading plot...
+  </Paragraph>
+) : null}
+
+// Body text for description
+<Paragraph variant="body">
+  Enter the system aperture and field specifications.
+</Paragraph>
+
+// Caption below a control
+<Paragraph variant="caption">
+  Values in millimeters
+</Paragraph>
+
+// Subheading for a section
+<Paragraph variant="subheading">
+  Advanced Settings
+</Paragraph>
+
+// Empty state message
+<Paragraph variant="placeholder">
+  No data available
+</Paragraph>
+```

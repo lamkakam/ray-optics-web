@@ -27,4 +27,29 @@ interface HeaderProps extends React.HTMLAttributes<HTMLHeadingElement> {
 
 ## Usages
 
-- Used in `Modal` (level 2 for the dialog title), `SpecsConfigurerPanel` (level 3 for section headings).
+```tsx
+// Page title (h1)
+<Header level={1}>
+  Ray Optics Web
+</Header>
+
+// Modal title (h2)
+<Modal isOpen={isOpen} title="Select Medium">
+  {/* Title is rendered as h2 internally */}
+</Modal>
+
+// Section heading (h3)
+<div>
+  <Header level={3} className="mb-2">
+    System Aperture
+  </Header>
+  <div className="space-y-2">
+    {/* Form controls */}
+  </div>
+</div>
+
+// Subsection heading (h4)
+<Header level={4}>
+  Advanced Options
+</Header>
+```
