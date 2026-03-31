@@ -8,9 +8,9 @@ description: Frontend coding standard for React + TypeScript + Tailwind CSS
 - A component should have less than 15 props. If it has more, it should be divided into smaller components.
 
 ## Component Structure
-- Micro components: Minimal components, not relying on other React components. Single responsibility.
-- Composite components: Composed with micro-components.
-- Container components: Containers for state management and logics.
+- primitives (in `src/shared/components/primitives/`): Minimal components, not relying on other React components. Single responsibility.
+- features (in `src/features/<feature-name>/components`): Composed with micro-components and with business logic.
+- layout (in `src/shared/components/layout/`): Handling the overall layout of a page.
 
 ## Styling
 - Use Tailwind CSS. Define and reuse theme variables for unified look and feel.
