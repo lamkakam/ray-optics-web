@@ -39,4 +39,41 @@ The module-level default is `"screenLG"`. The usage of `useLayoutEffect` is to a
 
 ## Usages
 
-Used by layout/container components that need to conditionally render different UI variants (e.g. mobile vs desktop) based on viewport width. Pass the returned value as a prop to child components rather than calling the hook inside them, to keep children testable without a browser environment.
+```tsx
+"use client";
+
+import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
+
+export function ResponsiveLayout() {
+  const screenSize = useScreenBreakpoint();
+
+  return (
+    <div>
+      {screenSize === "screenLG" ? (
+        <div className="flex gap-8">
+          <Sidebar />
+          <MainContent />
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <MainContent />
+          <Sidebar />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Better: pass breakpoint to children as a prop for testability
+export function PageContainer() {
+  const screenSize = useScreenBreakpoint();
+
+  return <MainLayout screenSize={screenSize} />;
+}
+
+interface MainLayoutProps {
+  screenSize: "screenSM" | "screenLG";
+}
+```
+
+This keeps child components testable without a real browser environment.

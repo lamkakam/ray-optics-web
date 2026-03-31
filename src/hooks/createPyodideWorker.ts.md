@@ -24,4 +24,14 @@ The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bund
 
 ## Usages
 
-Called exclusively by `usePyodide.ts` to create the singleton worker. In tests, this module is replaced with a mock that returns a fake worker, avoiding `import.meta.url` and Pyodide initialisation overhead.
+Called exclusively by `usePyodide.ts` to create the singleton worker:
+
+```ts
+import { createPyodideWorker } from "@/hooks/createPyodideWorker";
+
+// Inside usePyodide.ts
+const worker = createPyodideWorker();
+const proxy = wrap<PyodideWorkerAPI>(worker);
+```
+
+**In tests**, this module is replaced with a mock that returns a fake worker, avoiding `import.meta.url` and Pyodide initialisation overhead.

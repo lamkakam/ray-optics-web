@@ -42,5 +42,52 @@ type ZernikeOrdering = "noll" | "fringe";
 
 ## Usages
 
+```ts
+import {
+  nollToNm,
+  fringeToNm,
+  zernikeNotation,
+  classicalName,
+  NUM_NOLL_TERMS,
+} from "@/lib/zernikeData";
+import type { ZernikeData } from "@/lib/zernikeData";
+
+// Fetch from worker
+const zernikeData: ZernikeData = await proxy.getZernikeCoefficients(
+  model,
+  fieldIndex,
+  wavelengthIndex,
+  56 // numTerms
+);
+
+// Render terms in a modal
+function renderZernikeTable() {
+  return (
+    <table>
+      <tbody>
+        {zernikeData.coefficients.map((coeff, index) => {
+          const [n, m] = nollToNm(index + 1); // 1-based
+          const name = classicalName(n, m);
+          const notation = zernikeNotation(n, m);
+
+          return (
+            <tr key={index}>
+              <td>{notation}</td>
+              <td>{name || "—"}</td>
+              <td>{coeff.toFixed(4)}</td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+// RMS and peak-valley wavefront
+console.log("RMS WFE:", zernikeData.rms_wfe);
+console.log("P-V WFE:", zernikeData.pv_wfe);
+console.log("Strehl Ratio:", zernikeData.strehl_ratio);
+```
+
 - `ZernikeData` is the return type of `getZernikeCoefficients` in the worker API.
-- `nollToNm`, `fringeToNm`, `zernikeNotation`, and `classicalName` are used by `ZernikeTermsModal` to render the Zernike coefficient table for both Noll and Fringe orderings.
+- Utility functions are used by `ZernikeTermsModal` to render coefficient tables.

@@ -56,4 +56,46 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 
 ## Usages
 
-Composed into the combined app store alongside other slices. Form components receive the relevant state fields and action callbacks as props via dependency injection rather than calling the store hook directly, to keep them testable.
+```tsx
+"use client";
+
+import { useStore } from "zustand";
+import { createStore } from "@/store/createStore";
+import type { SpecsConfigurerState } from "@/store/specsConfigurerStore";
+import { createSpecsConfigurerSlice } from "@/store/specsConfigurerStore";
+
+export default function SpecsConfigurerPage() {
+  // Create the store once
+  const specsStore = useMemo(
+    () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
+    []
+  );
+
+  // Read state
+  const pupilValue = useStore(specsStore, (s) => s.pupilValue);
+  const maxField = useStore(specsStore, (s) => s.maxField);
+
+  // Dispatch actions
+  const handleApertureChange = (value: number) => {
+    specsStore.getState().setAperture({ pupilValue: value });
+  };
+
+  const handleSubmit = () => {
+    const specs = specsStore.getState().toOpticalSpecs();
+    console.log("Submitting specs:", specs);
+  };
+
+  return (
+    <div>
+      <input
+        type="number"
+        value={pupilValue}
+        onChange={(e) => handleApertureChange(parseFloat(e.target.value))}
+      />
+      <button onClick={handleSubmit}>Submit</button>
+    </div>
+  );
+}
+```
+
+Form components receive state slices and actions as props via DI to keep them testable.

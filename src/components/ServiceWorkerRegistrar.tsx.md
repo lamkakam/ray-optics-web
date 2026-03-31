@@ -12,4 +12,23 @@ Headless client component that triggers service worker registration on mount by 
 
 ## Usages
 
-- Mounted once in `app/layout.tsx` (or the root page).
+```tsx
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+
+// In app/layout.tsx
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html>
+      <body>
+        {/* Register service worker on mount */}
+        <ServiceWorkerRegistrar />
+        {children}
+      </body>
+    </html>
+  );
+}
+```

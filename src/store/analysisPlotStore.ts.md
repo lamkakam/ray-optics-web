@@ -35,4 +35,39 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 ## Usages
 
-- `app/page.tsx` — creates an instance via `createStore<AnalysisPlotState>(createAnalysisPlotSlice)` inside `useMemo`, reads state via `useStore(analysisPlotStore, selector)`, and dispatches actions via `analysisPlotStore.getState().setXxx(...)`.
+```tsx
+"use client";
+
+import { useStore } from "zustand";
+import { createStore } from "@/store/createStore";
+import type { AnalysisPlotState } from "@/store/analysisPlotStore";
+import { createAnalysisPlotSlice } from "@/store/analysisPlotStore";
+import { AnalysisPlotView } from "@/components/composite/AnalysisPlotView";
+
+export default function LensEditorPage() {
+  // Create the store once via useMemo (singleton per render)
+  const analysisPlotStore = useMemo(
+    () => createStore<AnalysisPlotState>(createAnalysisPlotSlice),
+    []
+  );
+
+  // Select a piece of state
+  const plotImage = useStore(analysisPlotStore, (s) => s.plotImage);
+  const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
+
+  // Dispatch an action
+  const handleFieldChange = (index: number) => {
+    analysisPlotStore.getState().setSelectedFieldIndex(index);
+  };
+
+  return (
+    <div>
+      <AnalysisPlotView
+        plotImage={plotImage}
+        selectedFieldIndex={selectedFieldIndex}
+        onFieldChange={handleFieldChange}
+      />
+    </div>
+  );
+}
+```

@@ -52,5 +52,44 @@ Convenience wrapper around `PLOT_FUNCTION_BUILDERS`. Returns `undefined` if `pro
 
 ## Usages
 
-- `app/page.tsx` — called in `handleSubmit` to obtain the plot function for the initial render after "Update System".
-- `components/container/AnalysisPlotContainer.tsx` — called in `handleFieldChange`, `handleWavelengthChange`, and `handlePlotTypeChange`.
+```tsx
+import { buildPlotFn } from "@/lib/plotFunctions";
+import type { PlotType } from "@/components/composite/AnalysisPlotView";
+
+// In a plot rendering component
+function AnalysisPlotView({
+  plotType,
+  proxy,
+  model,
+}: {
+  plotType: PlotType;
+  proxy: PyodideWorkerAPI | undefined;
+  model: OpticalModel | undefined;
+}) {
+  const [image, setImage] = useState<string>();
+
+  // Build the appropriate plot function
+  const plotFn = buildPlotFn(plotType, proxy, model);
+
+  const handleRenderPlot = async () => {
+    if (!plotFn) {
+      console.log("Worker not ready or invalid inputs");
+      return;
+    }
+
+    // Call the plot function with field and wavelength indices
+    const base64Image = await plotFn(0, 0);
+    setImage(base64Image);
+  };
+
+  return (
+    <div>
+      <button onClick={handleRenderPlot}>Render {plotType}</button>
+      {image && <img src={`data:image/png;base64,${image}`} />}
+    </div>
+  );
+}
+```
+
+- Used in `app/page.tsx` to obtain plot function after "Update System".
+- Used in `AnalysisPlotContainer.tsx` when field/wavelength/plot-type changes.

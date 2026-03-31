@@ -71,5 +71,25 @@ Returns a string with:
 
 ## Usages
 
-- `buildScript` is called by all `_*` injectable functions in `workers/pyodide.worker.ts` to produce the combined model + computation Python script.
-- `buildExportScript` is called by a UI action (e.g. "Export to notebook") to produce a copyable Python snippet.
+```ts
+import { buildScript, buildExportScript, buildOpticalModelScript } from "@/lib/pythonScript";
+import type { OpticalModel } from "@/lib/opticalModel";
+
+// Inside worker: build model + computation in one script
+const computation = (opm: string) => `
+  first_order = get_first_order_data(${opm})
+  json.dumps(first_order)
+`;
+const script = buildScript(model, computation);
+const result = await pyodide.runPythonAsync(script); // Returns first-order data
+
+// Export to notebook: generate a copyable Python snippet
+const notebookScript = buildExportScript(model);
+console.log(notebookScript); // Can be copied to Jupyter notebook
+
+// Build just the model definition (used internally)
+const modelDef = buildOpticalModelScript(model);
+```
+
+- `buildScript` is called by `workers/pyodide.worker.ts` to produce combined model + computation Python code.
+- `buildExportScript` is called by "Export to notebook" UI action to generate copyable snippets.

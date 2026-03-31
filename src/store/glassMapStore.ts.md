@@ -30,3 +30,63 @@ Zustand store slice for the Glass Map page state.
 ## Export
 - `createGlassMapSlice: StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice)`
 - `GlassMapStore = GlassMapState & GlassMapActions`
+
+## Usages
+
+```tsx
+"use client";
+
+import { useStore } from "zustand";
+import { createStore } from "@/store/createStore";
+import type { GlassMapStore } from "@/store/glassMapStore";
+import { createGlassMapSlice } from "@/store/glassMapStore";
+import { GlassScatterPlot } from "@/components/composite/GlassScatterPlot";
+
+export default function GlassMapPage() {
+  const { proxy, isReady } = usePyodide();
+
+  // Create the store once
+  const glassMapStore = useMemo(
+    () => createStore<GlassMapStore>(createGlassMapSlice),
+    []
+  );
+
+  // Read state
+  const plotType = useStore(glassMapStore, (s) => s.plotType);
+  const catalogsData = useStore(glassMapStore, (s) => s.catalogsData);
+  const dataLoading = useStore(glassMapStore, (s) => s.dataLoading);
+
+  // Load catalog data on mount
+  useEffect(() => {
+    if (!isReady || !proxy) return;
+
+    glassMapStore.getState().setDataLoading(true);
+    proxy
+      .getAllGlassCatalogsData()
+      .then((data) => {
+        glassMapStore.getState().setCatalogsData(data);
+      })
+      .catch((err) => {
+        glassMapStore.getState().setDataError(err.message);
+      })
+      .finally(() => {
+        glassMapStore.getState().setDataLoading(false);
+      });
+  }, [isReady, proxy]);
+
+  return (
+    <div>
+      {dataLoading && <p>Loading catalogs...</p>}
+      {catalogsData && (
+        <GlassScatterPlot
+          data={catalogsData}
+          plotType={plotType}
+          onPlotTypeChange={(type) =>
+            glassMapStore.getState().setPlotType(type)
+          }
+        />
+      )}
+    </div>
+  );
+}
+```
