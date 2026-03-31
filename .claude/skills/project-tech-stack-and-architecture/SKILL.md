@@ -14,7 +14,7 @@ description: Project tech stack, architecture, known issues and gotchas for ray-
 | Styling | Tailwind CSS |
 | Python runtime | Pyodide v0.27.7 |
 | Worker communication | Comlink |
-| Internal Python package | in `<project-root>/python/` |
+| Internal Python package | in `<project-root>/src/python/` |
 | Package manager | npm |
 
 

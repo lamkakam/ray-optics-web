@@ -13,7 +13,7 @@
 </meta_rules>
 <safety_rules>
   <rule_1>
-    Before working on files under `python/`, always use venv by running `source <project-root>/python/.venv/bin/activate`. Always check with `which pip`, `which pip3`, `which python` and `which python3` to ensure you are using the venv before running any Python script
+    Before working on files under `python/`, always use venv by running `source <project-root>/src/python/.venv/bin/activate`. Always check with `which pip`, `which pip3`, `which python` and `which python3` to ensure you are using the venv before running any Python script
   </rule_1>
 </safety_rules>
 <behavioral_rules>

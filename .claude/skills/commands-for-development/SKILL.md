@@ -14,7 +14,7 @@ npm ci
 ### Initialize the venv for the local Python package and install deps for the development:
 
 ```bash
-bash ./scripts/init-python-venv.sh
+bash <project-root>/scripts/init-python-venv.sh
 ```
 
 ### Build the wheel of local rayoptics_web_utils and then run dev server (http://localhost:3000):
@@ -44,7 +44,7 @@ npm run test
 ### Unit tests for the internal Python package:
 
 ```bash
-bash ./scripts/run-python-tests.sh
+bash <project-root>/scripts/run-python-tests.sh
 ```
 
 ### E2E tests (Playwright):
