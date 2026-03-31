@@ -12,7 +12,7 @@ const mockProxy = {
 };
 
 // Mock createPyodideWorker (avoids import.meta.url)
-jest.mock("@/hooks/createPyodideWorker", () => ({
+jest.mock("@/workers/createPyodideWorker", () => ({
   createPyodideWorker: jest.fn(() => ({ terminate: jest.fn() })),
 }));
 

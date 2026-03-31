@@ -1,8 +1,8 @@
 import { expose } from "comlink";
-import { type OpticalModel, type SeidelData, type FocusingResult } from "../lib/opticalModel";
-import { type ZernikeData, type ZernikeOrdering } from "../lib/zernikeData";
-import { buildScript } from "../lib/pythonScript";
-import { type RawAllGlassCatalogsData } from "../lib/glassMap";
+import { type OpticalModel, type SeidelData, type FocusingResult } from "@/shared/lib/types/opticalModel";
+import { type ZernikeData, type ZernikeOrdering } from "@/shared/lib/types/zernikeData";
+import { buildScript } from "@/shared/lib/utils/pythonScript";
+import { type RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
 
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(opts: { indexURL: string }): Promise<any>;

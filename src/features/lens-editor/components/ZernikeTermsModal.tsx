@@ -1,0 +1,202 @@
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { MathJax } from "better-react-mathjax";
+import { Button } from "@/shared/components/primitives/Button";
+import { Modal } from "@/shared/components/primitives/Modal";
+import { Table } from "@/shared/components/primitives/Table";
+import { Label } from "@/shared/components/primitives/Label";
+import { Select } from "@/shared/components/primitives/Select";
+import type { SelectOption } from "@/shared/components/primitives/Select";
+import { Paragraph } from "@/shared/components/primitives/Paragraph";
+import { LoadingMask } from "@/shared/components/primitives/LoadingMask";
+import {
+  type ZernikeData,
+  type ZernikeOrdering,
+  NUM_NOLL_TERMS,
+  NUM_FRINGE_TERMS,
+  nollToNm,
+  fringeToNm,
+  zernikeNotation,
+  classicalName,
+} from "@/shared/lib/types/zernikeData";
+
+const ORDERING_OPTIONS: SelectOption[] = [
+  { value: "fringe", label: "Fringe" },
+  { value: "noll", label: "Noll" },
+];
+
+interface ZernikeTermsModalProps {
+  readonly isOpen: boolean;
+  readonly fieldOptions: readonly SelectOption[];
+  readonly wavelengthOptions: readonly SelectOption[];
+  readonly onFetchData: (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => Promise<ZernikeData>;
+  readonly onClose: () => void;
+}
+
+export function ZernikeTermsModal({
+  isOpen,
+  fieldOptions,
+  wavelengthOptions,
+  onFetchData,
+  onClose,
+}: ZernikeTermsModalProps) {
+  const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
+  const [selectedWvlIndex, setSelectedWvlIndex] = useState(0);
+  const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("fringe");
+  const [data, setData] = useState<ZernikeData | undefined>();
+  const [loading, setLoading] = useState(false);
+  const requestCounter = useRef(0);
+
+  // Track open transitions: prevIsOpen as state enables render-phase detection
+  const [prevIsOpen, setPrevIsOpen] = useState(false);
+  const [openCount, setOpenCount] = useState(0);
+
+  if (isOpen && !prevIsOpen) {
+    setPrevIsOpen(true);
+    setOpenCount((c) => c + 1);
+    setSelectedFieldIndex(0);
+    setSelectedWvlIndex(0);
+    setSelectedOrdering("fringe");
+  }
+  if (!isOpen && prevIsOpen) {
+    setPrevIsOpen(false);
+  }
+
+  const fetchData = useCallback(
+    (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => {
+      requestCounter.current += 1;
+      const requestId = requestCounter.current;
+      setLoading(true);
+      onFetchData(fieldIndex, wvlIndex, ordering).then((result) => {
+        if (requestCounter.current === requestId) {
+          setData(result);
+          setLoading(false);
+        }
+      });
+    },
+    [onFetchData],
+  );
+
+  useEffect(() => {
+    if (openCount > 0) {
+      fetchData(0, 0, "fringe"); // eslint-disable-line react-hooks/set-state-in-effect
+    }
+  }, [openCount, fetchData]);
+
+  const handleFieldChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const idx = Number(e.target.value);
+      setSelectedFieldIndex(idx);
+      fetchData(idx, selectedWvlIndex, selectedOrdering);
+    },
+    [fetchData, selectedWvlIndex, selectedOrdering],
+  );
+
+  const handleWvlChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const idx = Number(e.target.value);
+      setSelectedWvlIndex(idx);
+      fetchData(selectedFieldIndex, idx, selectedOrdering);
+    },
+    [fetchData, selectedFieldIndex, selectedOrdering],
+  );
+
+  const handleOrderingChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const ord = e.target.value as ZernikeOrdering;
+      setSelectedOrdering(ord);
+      fetchData(selectedFieldIndex, selectedWvlIndex, ord);
+    },
+    [fetchData, selectedFieldIndex, selectedWvlIndex],
+  );
+
+  const numTerms = selectedOrdering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
+  const toNm = selectedOrdering === "noll" ? nollToNm : fringeToNm;
+  const firstColHeader = selectedOrdering === "noll" ? "Noll j" : "Fringe j";
+
+  const headers = useMemo(
+    () => [firstColHeader, "Notation", "Classical Name", "Non-normalized Term", "RMS Normalized Term (waves)"],
+    [firstColHeader],
+  );
+
+  const rows = useMemo(() => {
+    if (!data) return [];
+    return Array.from({ length: Math.min(numTerms, data.coefficients.length) }, (_, i) => {
+      const j = i + 1;
+      const [n, m] = toNm(j);
+      return [
+        String(j),
+        <MathJax key={`${n}-${m}`} inline>{zernikeNotation(n, m)}</MathJax>,
+        classicalName(n, m),
+        data.coefficients[i].toFixed(6),
+        data.rms_normalized_coefficients[i].toFixed(6),
+      ];
+    });
+  }, [data, numTerms, toNm]);
+
+  if (!isOpen) return null;
+
+  return (
+    <Modal isOpen={isOpen} title="Zernike Terms" titleId="zernike-modal-title" size="4xl">
+        <div className="flex items-center gap-4 mb-2">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="zernike-field-select">Field</Label>
+            <Select
+              id="zernike-field-select"
+              options={fieldOptions as SelectOption[]}
+              value={selectedFieldIndex}
+              onChange={handleFieldChange}
+              type="compact"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="zernike-wvl-select">Wavelength</Label>
+            <Select
+              id="zernike-wvl-select"
+              options={wavelengthOptions as SelectOption[]}
+              value={selectedWvlIndex}
+              onChange={handleWvlChange}
+              type="compact"
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <Label htmlFor="zernike-ordering-select">Ordering</Label>
+            <Select
+              id="zernike-ordering-select"
+              options={ORDERING_OPTIONS}
+              value={selectedOrdering}
+              onChange={handleOrderingChange}
+              type="compact"
+            />
+          </div>
+        </div>
+
+        {loading && !data && <Paragraph>Loading…</Paragraph>}
+
+        {data && (
+          <div className="relative">
+            <div data-testid="zernike-table-scroll" className="max-h-[calc(90dvh-20rem)] overflow-y-auto">
+              <Table headers={headers} rows={rows} />
+            </div>
+            <div className="flex gap-6 mt-4">
+              <Paragraph>
+                <strong>P-V WFE:</strong> {data.pv_wfe.toFixed(4)} waves
+              </Paragraph>
+              <Paragraph>
+                <strong>RMS WFE:</strong> {data.rms_wfe.toFixed(4)} waves
+              </Paragraph>
+              <Paragraph>
+                <strong>Strehl Ratio:</strong> {data.strehl_ratio.toFixed(4)}
+              </Paragraph>
+            </div>
+            {loading && <LoadingMask />}
+          </div>
+        )}
+
+        <div className="flex justify-end pt-4">
+          <Button variant="primary" onClick={onClose}>Ok</Button>
+        </div>
+      </Modal>
+  );
+}

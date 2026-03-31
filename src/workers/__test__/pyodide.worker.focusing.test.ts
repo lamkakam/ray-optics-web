@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@jest/globals";
-import { type OpticalModel } from "../../lib/opticalModel";
+import { type OpticalModel } from "@/shared/lib/types/opticalModel";
 import {
   _focusByMonoRmsSpot,
   _focusByMonoStrehl,

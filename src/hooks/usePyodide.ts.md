@@ -52,10 +52,10 @@ interface PyodideWorkerAPI {
 
 - `createPyodideWorker` — function that creates the `Worker` instance.
 - `comlink.wrap` — wraps the worker as a typed async proxy.
-- `OpticalModel` — imported from `lib/opticalModel` (type only).
-- `SeidelData` — imported from `lib/opticalModel` (type only).
-- `ZernikeData` — imported from `lib/zernikeData` (type only).
-- `SetAutoApertureFlag` — imported from `lib/apertureFlag` (type only).
+- `OpticalModel` — imported from `shared/lib/types/opticalModel` (type only).
+- `SeidelData` — imported from `shared/lib/types/opticalModel` (type only).
+- `ZernikeData` — imported from `shared/lib/types/zernikeData` (type only).
+- `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
 
 ## Edge Cases / Error Handling
 

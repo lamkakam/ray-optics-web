@@ -1,0 +1,101 @@
+import type { ReactNode } from "react";
+import type { SetAutoApertureFlag } from "@/shared/lib/utils/apertureFlag";
+export type { SetAutoApertureFlag };
+
+
+/** Optical system specifications. */
+export interface OpticalSpecs {
+  pupil: {
+    space: "object" | "image"; // whether the value is defined over object or image space
+    type: "epd" | "f/#" | "NA"; // match with rayoptics PupilSpec
+    value: number;
+  };
+  field: {
+    space: "object" | "image";
+    type: "angle" | "height";
+    maxField: number; // must be absolute number
+    fields: number[];
+    isRelative: boolean; // if true, the fields are relative to maxField
+  };
+  wavelengths: {
+    weights: [number, number][]; // [wavelength in nm, weight][]
+    referenceIndex: number;
+  };
+}
+
+export type DecenterConfig = {
+  coordinateSystemStrategy: "bend" | "dec and return" | "decenter" | "reverse";
+  alpha: number,
+  beta: number,
+  gamma: number,
+  offsetX: number,
+  offsetY: number,
+};
+
+/** Represents a single optical surface in the sequential model. */
+export interface Surface {
+  label: "Default" | "Stop";
+  curvatureRadius: number; // 0 means flat (infinite radius).
+  thickness: number;
+  medium: string; // can be "air" or "REFL"
+  manufacturer: string; // if medium is "air" or "REFL", manufacturer is ""
+  semiDiameter: number;
+  aspherical?: {
+    conicConstant: number;
+    polynomialCoefficients?: number[]; // length <= 10
+  };
+  decenter?: DecenterConfig,
+}
+
+export interface Surfaces {
+  object: {
+    distance: number,
+  },
+  image: {
+    curvatureRadius: number, // 0 means flat (infinite radius)
+    decenter?: DecenterConfig,
+  },
+  surfaces: Surface[];
+}
+
+/** Complete optical model returned from the worker. */
+export interface OpticalModel extends Surfaces {
+  setAutoAperture: SetAutoApertureFlag;
+  specs: OpticalSpecs;
+}
+
+
+export interface SeidelSurfaceBySurfaceData {
+  aberrTypes: string[];    // ['S-I', 'S-II', 'S-III', 'S-IV', 'S-V']
+  surfaceLabels: string[];  // surface labels + 'sum'
+  data: number[][];   // 5 × N matrix (row = aberration type, col = surface)
+}
+
+export interface SeidelData {
+  surfaceBySurface: SeidelSurfaceBySurfaceData;
+  transverse: Record<string, number>;  // TSA, TCO, TAS, SAS, PTB, DST
+  wavefront: Record<string, number>;   // W040, W131, W222, W220, W311
+  curvature: Record<string, number>;   // TCV, SCV, PCV
+}
+
+export interface FocusingResult {
+  delta_thi: number;
+  metric_value: number;
+}
+
+export interface AberrationTypeToLabel extends Record<string, ReactNode> {
+  TSA: ReactNode;
+  TCO: ReactNode;
+  TAS: ReactNode;
+  SAS: ReactNode;
+  PTB: ReactNode;
+  DST: ReactNode;
+  W040: ReactNode;
+  W131: ReactNode;
+  W222: ReactNode;
+  W220: ReactNode;
+  W311: ReactNode;
+  TCV: ReactNode;
+  SCV: ReactNode;
+  PCV: ReactNode;
+}

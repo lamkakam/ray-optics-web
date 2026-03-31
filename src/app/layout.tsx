@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import ServiceWorkerRegistrar from "@/shared/components/providers/ServiceWorkerRegistrar";
+import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Ray Optics Web",

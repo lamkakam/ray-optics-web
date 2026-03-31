@@ -1,6 +1,6 @@
 import { describe, it, expect } from "@jest/globals";
 import { _getAllGlassCatalogsData } from "../pyodide.worker";
-import type { RawAllGlassCatalogsData } from "../../lib/glassMap";
+import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
 
 const mockRawData: RawAllGlassCatalogsData = {
   Schott: {
