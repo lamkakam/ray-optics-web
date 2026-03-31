@@ -39,21 +39,21 @@ ray-optics-web/
 │   │       ├── index.md
 │   │       └── rayoptics_web_utils/  # Internal Python package (rayoptics_web_utils)
 │   │           ├── index.md
-│   │           ├── analysis/
+│   │           ├── analysis/          # Spot diagram, wavefront, Zernike, Seidel aberrations
 │   │           │   └── index.md
-│   │           ├── env/
+│   │           ├── env/               # Environment and configuration management
 │   │           │   └── index.md
-│   │           ├── focusing/
+│   │           ├── focusing/          # Lens optimization algorithms
 │   │           │   └── index.md
-│   │           ├── glass/
+│   │           ├── glass/             # Glass material data and selection
 │   │           │   └── index.md
-│   │           ├── plotting/
+│   │           ├── plotting/          # Matplotlib visualization utilities
 │   │           │   └── index.md
-│   │           ├── raygrid/
+│   │           ├── raygrid/           # Ray grid generation and sampling
 │   │           │   └── index.md
-│   │           ├── utils/
+│   │           ├── utils/             # General utility functions
 │   │           │   └── index.md
-│   │           └── zernike/
+│   │           └── zernike/           # Zernike polynomial computation
 │   │               └── index.md
 │   └── [index.md](../../src/index.md)
 ├── scripts/                      # Build and setup shell scripts
