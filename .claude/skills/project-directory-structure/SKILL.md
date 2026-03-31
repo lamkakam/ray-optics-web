@@ -55,7 +55,7 @@ ray-optics-web/
 │   │           │   └── index.md
 │   │           └── zernike/           # Zernike polynomial computation
 │   │               └── index.md
-│   └── [index.md](../../src/index.md)
+│   └── index.md
 ├── scripts/                      # Build and setup shell scripts
 ├── docs/                         # Supplemental documentation
 └── public/                       # Static assets (service worker, built wheel)
