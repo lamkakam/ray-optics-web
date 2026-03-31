@@ -28,3 +28,16 @@ interface AsphericalCellProps {
 ## Usages
 
 - Used as a `cellRenderer` in `LensPrescriptionGrid`.
+
+### Example
+
+```tsx
+<AsphericalCell
+  isAspherical={params.data.aspherical !== undefined}
+  onOpenModal={() => onOpenAsphericalModal(params.data.id)}
+/>
+```
+
+This example shows typical usage within AG Grid's `cellRenderer` in the "Asph." column of the lens prescription grid, where:
+- `isAspherical` indicates whether the surface has aspherical data configured
+- `onOpenModal` is called when the user clicks to open the aspherical parameters editor modal
