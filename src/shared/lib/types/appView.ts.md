@@ -1,4 +1,4 @@
-# appView.ts
+# `shared/lib/types/appView.ts`
 
 ## Purpose
 Defines the `AppView` discriminated union type used for state-based in-app routing in `page.tsx`.
@@ -19,10 +19,10 @@ type AppView = 'home' | 'glass-map' | 'settings' | 'privacy-policy' | 'about';
 ## Usage
 
 ```tsx
-import type { AppView } from "@/lib/appView";
-import { HomePage } from "@/features/lens-editor/LensEditor";
-import { GlassMapView } from "@/features/glass-map/GlassMapView";
-import { SettingsView } from "@/app/pages/SettingsView";
+import type { AppView } from "@/shared/lib/types/appView";
+import { HomePage } from "@/components/views/HomePage";
+import { GlassMapView } from "@/components/views/GlassMapView";
+import { SettingsView } from "@/components/views/SettingsView";
 
 // In page.tsx
 export default function Page() {

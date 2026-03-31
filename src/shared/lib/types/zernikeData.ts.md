@@ -1,4 +1,4 @@
-# `lib/zernikeData.ts`
+# `shared/lib/types/zernikeData.ts`
 
 ## Purpose
 
@@ -49,8 +49,8 @@ import {
   zernikeNotation,
   classicalName,
   NUM_NOLL_TERMS,
-} from "@/lib/zernikeData";
-import type { ZernikeData } from "@/lib/zernikeData";
+} from "@/shared/lib/types/zernikeData";
+import type { ZernikeData } from "@/shared/lib/types/zernikeData";
 
 // Fetch from worker
 const zernikeData: ZernikeData = await proxy.getZernikeCoefficients(

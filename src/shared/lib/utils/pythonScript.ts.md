@@ -1,4 +1,4 @@
-# `lib/pythonScript.ts`
+# `shared/lib/utils/pythonScript.ts`
 
 ## Purpose
 
@@ -72,8 +72,8 @@ Returns a string with:
 ## Usages
 
 ```ts
-import { buildScript, buildExportScript, buildOpticalModelScript } from "@/lib/pythonScript";
-import type { OpticalModel } from "@/lib/opticalModel";
+import { buildScript, buildExportScript, buildOpticalModelScript } from "@/shared/lib/utils/pythonScript";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 // Inside worker: build model + computation in one script
 const computation = (opm: string) => `

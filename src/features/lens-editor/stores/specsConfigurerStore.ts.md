@@ -1,4 +1,4 @@
-# `store/specsConfigurerStore.ts`
+# `features/lens-editor/stores/specsConfigurerStore.ts`
 
 ## Purpose
 
@@ -21,7 +21,7 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 | `fieldType` | `FieldType` | `"height"` |
 | `maxField` | `number` | `0` |
 | `relativeFields` | `number[]` | `[0]` |
-| `wavelengthWeights` | `WavelengthWeights` | `[[546.073, 1]]` (Note: `546.073` (e-line wavelength) is imported from `lib/fraunhoferLines`) |
+| `wavelengthWeights` | `WavelengthWeights` | `[[546.073, 1]]` (Note: `546.073` (e-line wavelength) is imported from `@/shared/lib/data/fraunhoferLines`) |
 | `referenceIndex` | `ReferenceIndex` | `0` |
 | `committedSpecs` | `OpticalSpecs` | mirrors default form state (epd 0.5, height field maxField 0, e-line wavelength) |
 | `fieldModalOpen` | `boolean` | `false` |
@@ -51,8 +51,8 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 ## Dependencies
 
 - `StateCreator` from `zustand` (type only).
-- `OpticalSpecs` from `lib/opticalModel` (type only).
-- `lookupWavelength` from `lib/fraunhoferLines` — used to seed the default e-line wavelength.
+- `OpticalSpecs` from `@/shared/lib/types/opticalModel` (type only).
+- `lookupWavelength` from `@/shared/lib/data/fraunhoferLines` — used to seed the default e-line wavelength.
 
 ## Usages
 
@@ -60,9 +60,9 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 "use client";
 
 import { useStore } from "zustand";
-import { createStore } from "@/store/createStore";
-import type { SpecsConfigurerState } from "@/store/specsConfigurerStore";
-import { createSpecsConfigurerSlice } from "@/store/specsConfigurerStore";
+import { createStore } from "createStore from "zustand";
+import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { createSpecsConfigurerSlice } from "@/features/lens-editor/stores/specsConfigurerStore";
 
 export default function SpecsConfigurerPage() {
   // Create the store once

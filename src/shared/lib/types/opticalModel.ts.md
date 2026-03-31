@@ -1,4 +1,4 @@
-# `lib/opticalModel.ts`
+# `shared/lib/types/opticalModel.ts`
 
 ## Purpose
 
@@ -29,7 +29,7 @@ Defines all core TypeScript domain types for the optical model, including system
 ## Usages
 
 ```ts
-import type { OpticalModel, OpticalSpecs, Surface } from "@/lib/opticalModel";
+import type { OpticalModel, OpticalSpecs, Surface } from "@/shared/lib/types/opticalModel";
 
 // Creating a new optical model
 const model: OpticalModel = {

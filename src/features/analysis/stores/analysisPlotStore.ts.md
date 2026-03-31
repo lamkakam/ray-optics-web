@@ -1,4 +1,4 @@
-# `store/analysisPlotStore.ts`
+# `features/analysis/stores/analysisPlotStore.ts`
 
 ## Purpose
 
@@ -39,9 +39,9 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 "use client";
 
 import { useStore } from "zustand";
-import { createStore } from "@/store/createStore";
-import type { AnalysisPlotState } from "@/store/analysisPlotStore";
-import { createAnalysisPlotSlice } from "@/store/analysisPlotStore";
+import { createStore } from "createStore from "zustand";
+import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
+import { createAnalysisPlotSlice } from "@/features/analysis/stores/analysisPlotStore";
 import { AnalysisPlotView } from "@/features/analysis/components/AnalysisPlotView";
 
 export default function LensEditorPage() {

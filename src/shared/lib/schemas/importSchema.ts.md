@@ -1,4 +1,4 @@
-# `lib/importSchema.ts`
+# `shared/lib/schemas/importSchema.ts`
 
 ## Purpose
 
@@ -28,7 +28,7 @@ When validation fails, `validateOpticalModel.errors` is set to an array of AJV `
 ## Dependencies
 
 - `ajv` — JSON Schema validator
-- `lib/opticalModel.ts` — `OpticalModel` (type-only, used as AJV generic parameter)
+- `shared/lib/types/opticalModel.ts` — `OpticalModel` (type-only, used as AJV generic parameter)
 
 ## Edge Cases / Error Handling
 
@@ -39,7 +39,7 @@ When validation fails, `validateOpticalModel.errors` is set to an array of AJV `
 ## Usages
 
 ```tsx
-import { validateOpticalModel } from "@/lib/importSchema";
+import { validateOpticalModel } from "@/shared/lib/schemas/importSchema";
 
 function handleFileUpload(jsonData: unknown) {
   // Validate before using

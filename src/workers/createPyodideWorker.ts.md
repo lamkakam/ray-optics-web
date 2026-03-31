@@ -1,4 +1,4 @@
-# `hooks/createPyodideWorker.ts`
+# `workers/createPyodideWorker.ts`
 
 ## Purpose
 
@@ -12,7 +12,7 @@ Returns a new `Worker` instance backed by `workers/pyodide.worker.ts`.
 Constructs the worker using the Next.js-required pattern:
 
 ```ts
-new Worker(new URL("../workers/pyodide.worker.ts", import.meta.url))
+new Worker(new URL("./pyodide.worker.ts", import.meta.url))
 ```
 
 The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bundler uses it to locate and bundle the worker script correctly. DO NOT USE string paths.
@@ -27,7 +27,7 @@ The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bund
 Called exclusively by `usePyodide.ts` to create the singleton worker:
 
 ```ts
-import { createPyodideWorker } from "@/hooks/createPyodideWorker";
+import { createPyodideWorker } from "@/workers/createPyodideWorker";
 
 // Inside usePyodide.ts
 const worker = createPyodideWorker();

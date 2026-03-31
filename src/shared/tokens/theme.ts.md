@@ -1,4 +1,4 @@
-# `lib/theme.ts`
+# `shared/tokens/theme.ts`
 
 ## Purpose
 
@@ -13,8 +13,8 @@ export type Theme = "light" | "dark";
 ## Usages
 
 ```tsx
-import type { Theme } from "@/lib/theme";
-import { useTheme } from "@/shared/components/providers/ThemeProvider";
+import type { Theme } from "@/shared/tokens/theme";
+import { useTheme } from "@/components/ThemeProvider";
 
 // In a container component
 export function ThemedPanel() {

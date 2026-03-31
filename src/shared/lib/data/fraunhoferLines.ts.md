@@ -1,4 +1,4 @@
-# `lib/fraunhoferLines.ts`
+# `shared/lib/data/fraunhoferLines.ts`
 
 ## Purpose
 
@@ -17,7 +17,7 @@ Provides the canonical set of Fraunhofer spectral lines used in optical design, 
 ## Usages
 
 ```ts
-import { FRAUNHOFER_LINES, lookupWavelength } from "@/lib/fraunhoferLines";
+import { FRAUNHOFER_LINES, lookupWavelength } from "@/shared/lib/data/fraunhoferLines";
 
 // Look up a specific wavelength
 const eLineWavelength = lookupWavelength("e"); // 546.073 nm

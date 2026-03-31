@@ -1,4 +1,4 @@
-# `store/lensEditorStore.ts`
+# `features/lens-editor/stores/lensEditorStore.ts`
 
 ## Purpose
 
@@ -44,9 +44,9 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 ## Dependencies
 
 - `create`, `StateCreator` from `zustand`.
-- `GridRow`, `OBJECT_ROW_ID`, `IMAGE_ROW_ID` from `lib/gridTypes`.
-- `generateRowId` from `lib/gridTransform`.
-- `OpticalModel` from `lib/opticalModel`.
+- `GridRow`, `OBJECT_ROW_ID`, `IMAGE_ROW_ID` from `@/shared/lib/types/gridTypes`.
+- `generateRowId` from `@/shared/lib/utils/gridTransform`.
+- `OpticalModel` from `@/shared/lib/types/opticalModel`.
 
 ## Usages
 
@@ -54,10 +54,10 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 "use client";
 
 import { useStore } from "zustand";
-import { createStore } from "@/store/createStore";
-import type { LensEditorState } from "@/store/lensEditorStore";
-import { createLensEditorSlice } from "@/store/lensEditorStore";
-import { LensPrescriptionGrid } from "@/features/lens-editor/components/LensPrescriptionGrid";
+import { createStore } from "createStore from "zustand";
+import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
+import { createLensEditorSlice } from "@/features/lens-editor/stores/lensEditorStore";
+import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
 
 export default function LensEditorPage() {
   // Create the store once

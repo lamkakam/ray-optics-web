@@ -1,4 +1,4 @@
-# glassMap.ts — Spec
+# `shared/lib/types/glassMap.ts`
 
 ## Purpose
 Types, constants, and pure helper functions for the Glass Map feature.
@@ -51,8 +51,8 @@ import {
   CATALOG_COLOR_MAP,
   normalizeAllCatalogsData,
   computePlotPoints,
-} from "@/lib/glassMap";
-import type { AllGlassCatalogsData } from "@/lib/glassMap";
+} from "@/shared/lib/types/glassMap";
+import type { AllGlassCatalogsData } from "@/shared/lib/types/glassMap";
 
 // Load and normalize glass catalogs from worker
 const rawData = await proxy.getAllGlassCatalogsData();

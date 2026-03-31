@@ -1,4 +1,4 @@
-# `lib/gridTransform.ts`
+# `shared/lib/utils/gridTransform.ts`
 
 ## Purpose
 
@@ -47,8 +47,8 @@ Returns a unique string of the form `"row-surface-N"` where `N` is a module-leve
 
 ## Dependencies
 
-- `lib/opticalModel.ts` — `Surfaces`, `Surface` (type-only imports)
-- `lib/gridTypes.ts` — `OBJECT_ROW_ID`, `IMAGE_ROW_ID`, `GridRow`
+- `shared/lib/types/opticalModel.ts` — `Surfaces`, `Surface` (type-only imports)
+- `shared/lib/types/gridTypes.ts` — `OBJECT_ROW_ID`, `IMAGE_ROW_ID`, `GridRow`
 
 ## Edge Cases / Error Handling
 
@@ -59,8 +59,8 @@ Returns a unique string of the form `"row-surface-N"` where `N` is a module-leve
 ## Usages
 
 ```ts
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
-import type { OpticalModel, Surfaces } from "@/lib/opticalModel";
+import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
+import type { OpticalModel, Surfaces } from "@/shared/lib/types/opticalModel";
 
 // Convert model to AG Grid rows when loading
 const surfaces: Surfaces = model;

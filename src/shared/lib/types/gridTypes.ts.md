@@ -1,4 +1,4 @@
-# `lib/gridTypes.ts`
+# `shared/lib/types/gridTypes.ts`
 
 ## Purpose
 
@@ -34,7 +34,7 @@ Defines the type used to represent rows in the LensEditor AG Grid, covering the 
 ## Usages
 
 ```tsx
-import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/lib/gridTypes";
+import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/types/gridTypes";
 
 // Using constants for stable row identification
 function handleSelectRow(rowId: string) {

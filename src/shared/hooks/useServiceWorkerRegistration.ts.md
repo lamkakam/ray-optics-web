@@ -1,4 +1,4 @@
-# `hooks/useServiceWorkerRegistration.ts`
+# `shared/hooks/useServiceWorkerRegistration.ts`
 
 ## Purpose
 
@@ -65,7 +65,7 @@ export default function RootLayout({
 ```tsx
 "use client";
 
-import { useServiceWorkerRegistration } from "@/hooks/useServiceWorkerRegistration";
+import { useServiceWorkerRegistration } from "@/shared/hooks/useServiceWorkerRegistration";
 
 export function AppRoot() {
   useServiceWorkerRegistration(); // Runs once on mount
@@ -77,7 +77,7 @@ export function AppRoot() {
 **3. Standalone async function (outside React):**
 
 ```ts
-import { registerServiceWorker } from "@/hooks/useServiceWorkerRegistration";
+import { registerServiceWorker } from "@/shared/hooks/useServiceWorkerRegistration";
 
 async function setupApp() {
   await registerServiceWorker();

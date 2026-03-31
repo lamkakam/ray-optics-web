@@ -1,4 +1,4 @@
-# `lib/apertureFlag.ts`
+# `shared/lib/utils/apertureFlag.ts`
 
 ## Purpose
 
@@ -16,8 +16,8 @@ Defines the type controlling whether RayOptics computes apertures automatically 
 ## Usages
 
 ```ts
-import type { SetAutoApertureFlag } from "@/lib/apertureFlag";
-import type { OpticalModel } from "@/lib/opticalModel";
+import type { SetAutoApertureFlag } from "@/shared/lib/utils/apertureFlag";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 // Create model with auto-computed apertures
 const model: OpticalModel = {

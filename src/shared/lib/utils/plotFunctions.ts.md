@@ -1,4 +1,4 @@
-# `lib/plotFunctions.ts`
+# `shared/lib/utils/plotFunctions.ts`
 
 ## Purpose
 
@@ -47,13 +47,13 @@ Convenience wrapper around `PLOT_FUNCTION_BUILDERS`. Returns `undefined` if `pro
 ## Dependencies
 
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`
-- `OpticalModel` (type-only) from `@/lib/opticalModel`
+- `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
 - `PyodideWorkerAPI` (type-only) from `@/hooks/usePyodide`
 
 ## Usages
 
 ```tsx
-import { buildPlotFn } from "@/lib/plotFunctions";
+import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
 
 // In a plot rendering component

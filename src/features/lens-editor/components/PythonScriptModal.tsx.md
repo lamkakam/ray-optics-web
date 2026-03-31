@@ -36,7 +36,7 @@ interface PythonScriptModalProps {
 
 ```tsx
 import { PythonScriptModal } from "@/features/lens-editor/components/PythonScriptModal";
-import { buildExportScript } from "@/lib/pythonScript";
+import { buildExportScript } from "@/shared/lib/utils/pythonScript";
 
 // In a container component
 const [pythonScriptOpen, setPythonScriptOpen] = useState(false);

@@ -1,4 +1,4 @@
-# `hooks/useScreenBreakpoint.ts`
+# `shared/hooks/useScreenBreakpoint.ts`
 
 ## Purpose
 
@@ -42,7 +42,7 @@ The module-level default is `"screenLG"`. The usage of `useLayoutEffect` is to a
 ```tsx
 "use client";
 
-import { useScreenBreakpoint } from "@/hooks/useScreenBreakpoint";
+import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
 export function ResponsiveLayout() {
   const screenSize = useScreenBreakpoint();

@@ -1,4 +1,4 @@
-# `hooks/useAgGridTheme.ts`
+# `shared/hooks/useAgGridTheme.ts`
 
 ## Purpose
 
@@ -37,7 +37,7 @@ The return type is the opaque theme object accepted by AG Grid's `theme` prop.
 "use client";
 
 import { AgGridReact } from "ag-grid-react";
-import { useAgGridTheme } from "@/hooks/useAgGridTheme";
+import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 
 export function DataGrid() {
   const agTheme = useAgGridTheme();

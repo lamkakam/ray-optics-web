@@ -1,4 +1,4 @@
-# `store/lensLayoutImageStore.ts`
+# `features/analysis/stores/lensLayoutImageStore.ts`
 
 ## Purpose
 
@@ -32,10 +32,10 @@ Zustand store for managing the lens layout image and its loading state. Holds th
 "use client";
 
 import { useStore } from "zustand";
-import { createStore } from "@/store/createStore";
-import type { LensLayoutImageState } from "@/store/lensLayoutImageStore";
-import { createLensLayoutImageSlice } from "@/store/lensLayoutImageStore";
-import { LensLayoutPanel } from "@/features/lens-editor/components/LensLayoutPanel";
+import { createStore } from "createStore from "zustand";
+import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
+import { createLensLayoutImageSlice } from "@/features/analysis/stores/lensLayoutImageStore";
+import { LensLayoutView } from "@/components/LensLayoutView";
 
 export default function LensEditorPage() {
   // Create the store once
@@ -57,7 +57,7 @@ export default function LensEditorPage() {
     <div>
       {layoutLoading && <p>Loading layout...</p>}
       {layoutImage && (
-        <LensLayoutPanel
+        <LensLayoutView
           image={layoutImage}
           onImageChange={handleSetImage}
         />

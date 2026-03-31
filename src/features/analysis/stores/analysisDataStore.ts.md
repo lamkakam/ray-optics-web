@@ -1,4 +1,4 @@
-# `store/analysisDataStore.ts`
+# `features/analysis/stores/analysisDataStore.ts`
 
 ## Purpose
 
@@ -25,7 +25,7 @@ Zustand store for analysis results computed after each successful submit. Holds 
 ## Dependencies
 
 - `create`, `StateCreator` from `zustand`.
-- `SeidelData` from `lib/opticalModel`.
+- `SeidelData` from `@/shared/lib/types/opticalModel`.
 
 ## Usages
 
@@ -33,10 +33,10 @@ Zustand store for analysis results computed after each successful submit. Holds 
 "use client";
 
 import { useStore } from "zustand";
-import { createStore } from "@/store/createStore";
-import type { AnalysisDataState } from "@/store/analysisDataStore";
-import { createAnalysisDataSlice } from "@/store/analysisDataStore";
-import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrModal";
+import { createStore } from "createStore from "zustand";
+import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
+import { createAnalysisDataSlice } from "@/features/analysis/stores/analysisDataStore";
+import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
 
 export default function LensEditorPage() {
   // Create the store once

@@ -1,4 +1,4 @@
-# `lib/swCachePolicy.ts`
+# `shared/lib/config/swCachePolicy.ts`
 
 ## Purpose
 
@@ -36,7 +36,7 @@ None.
 ## Usages
 
 ```ts
-import { shouldCache } from "@/lib/swCachePolicy";
+import { shouldCache } from "@/shared/lib/config/swCachePolicy";
 import { cacheFirst, networkFirst } from "serwist";
 
 // In the service worker (app/sw.ts)

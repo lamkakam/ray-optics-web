@@ -1,4 +1,4 @@
-# glassMapStore.ts — Spec
+# `features/glass-map/stores/glassMapStore.ts`
 
 ## Purpose
 Zustand store slice for the Glass Map page state.
@@ -37,10 +37,10 @@ Zustand store slice for the Glass Map page state.
 "use client";
 
 import { useStore } from "zustand";
-import { createStore } from "@/store/createStore";
-import type { GlassMapStore } from "@/store/glassMapStore";
-import { createGlassMapSlice } from "@/store/glassMapStore";
-import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
+import { createStore } from "createStore from "zustand";
+import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
+import { createGlassMapSlice } from "@/features/glass-map/stores/glassMapStore";
+import { GlassScatterPlot } from "@/components/composite/GlassScatterPlot";
 
 export default function GlassMapPage() {
   const { proxy, isReady } = usePyodide();

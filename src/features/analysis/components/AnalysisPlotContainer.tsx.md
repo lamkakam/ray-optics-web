@@ -42,7 +42,7 @@ All five analysis-plot state fields are read from `store` via `useStore(store, s
 
 ## Internal Logic
 
-Plot functions are obtained via `buildPlotFn(plotType, proxy, committedOpticalModel)` from `@/lib/plotFunctions`. This returns a `(fieldIndex, wavelengthIndex) => Promise<string>` function, or `undefined` when `proxy` or `committedOpticalModel` is missing.
+Plot functions are obtained via `buildPlotFn(plotType, proxy, committedOpticalModel)` from `@/shared/lib/utils/plotFunctions`. This returns a `(fieldIndex, wavelengthIndex) => Promise<string>` function, or `undefined` when `proxy` or `committedOpticalModel` is missing.
 
 ### `handleFieldChange(value)`
 

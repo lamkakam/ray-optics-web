@@ -1,4 +1,4 @@
-# `lib/exampleSystems.ts`
+# `shared/lib/data/exampleSystems.ts`
 
 ## Purpose
 
@@ -20,8 +20,8 @@ Keys are of the form `"N: <name>"` where `N` is the 1-based index of the system 
 ## Usages
 
 ```tsx
-import ExampleSystems from "@/lib/exampleSystems";
-import { surfacesToGridRows } from "@/lib/gridTransform";
+import ExampleSystems from "@/shared/lib/data/exampleSystems";
+import { surfacesToGridRows } from "@/shared/lib/utils/gridTransform";
 
 // In a system selector dropdown
 function SystemSelector() {
