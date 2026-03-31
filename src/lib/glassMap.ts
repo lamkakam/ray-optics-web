@@ -1,5 +1,7 @@
-export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita'] as const;
+export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special'] as const;
 export type CatalogName = typeof CATALOG_NAMES[number];
+
+export type DispersionCoeffKind = 'Schott2x6' | 'Sellmeier3T';
 
 export interface GlassData {
   readonly refractiveIndexD: number;
@@ -11,6 +13,8 @@ export interface GlassData {
     readonly P_F_d: number;
     readonly P_g_F: number;
   };
+  readonly dispersionCoeffKind: DispersionCoeffKind;
+  readonly dispersionCoeffs: readonly number[];
 }
 
 export interface RawGlassData {
@@ -23,6 +27,8 @@ export interface RawGlassData {
     readonly P_F_d: number;
     readonly P_g_F: number;
   };
+  readonly dispersion_coeff_kind: DispersionCoeffKind;
+  readonly dispersion_coeffs: readonly number[];
 }
 
 export type AllGlassCatalogsData = Record<CatalogName, Record<string, GlassData>>;
@@ -53,6 +59,7 @@ export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {
   Ohara: '#ef4444',
   Schott: '#8b5cf6',
   Sumita: '#ec4899',
+  Special: '#f97316',
 };
 
 export function normalizeGlassData(raw: RawGlassData): GlassData {
@@ -66,6 +73,8 @@ export function normalizeGlassData(raw: RawGlassData): GlassData {
       P_F_d: raw.partial_dispersions.P_F_d,
       P_g_F: raw.partial_dispersions.P_g_F,
     },
+    dispersionCoeffKind: raw.dispersion_coeff_kind,
+    dispersionCoeffs: raw.dispersion_coeffs,
   };
 }
 

@@ -6,16 +6,19 @@ Types, constants, and pure helper functions for the Glass Map feature.
 ## Exports
 
 ### Constants
-- `CATALOG_NAMES` — readonly tuple of 6 catalog names: `['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita']`
-- `CATALOG_COLOR_MAP` — maps each `CatalogName` to a hex color string for scatter plot rendering
+- `CATALOG_NAMES` — readonly tuple of 7 catalog names: `['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special']`
+- `CATALOG_COLOR_MAP` — maps each `CatalogName` to a hex color string for scatter plot rendering (`Special` → `#f97316` orange)
 
 ### Types
-- `CatalogName` — union of the 6 catalog name strings
+- `CatalogName` — union of the 7 catalog name strings
+- `DispersionCoeffKind` — `'Schott2x6' | 'Sellmeier3T'`
 - `GlassData` — normalized glass properties (camelCase):
   - `refractiveIndexD`, `refractiveIndexE` — refractive index at d/e lines
   - `abbeNumberD`, `abbeNumberE` — Abbe number at d/e lines
   - `partialDispersions` — required `P_F_e`, `P_F_d`, `P_g_F` (all always present)
-- `RawGlassData` — snake_case mirror from Python API
+  - `dispersionCoeffKind` — `DispersionCoeffKind` (`'Schott2x6'` or `'Sellmeier3T'`)
+  - `dispersionCoeffs` — readonly array of dispersion coefficients: 8 terms for `'Schott2x6'`, 6 terms for `'Sellmeier3T'`
+- `RawGlassData` — snake_case mirror from Python API (includes `dispersion_coeff_kind`, `dispersion_coeffs`)
 - `AllGlassCatalogsData` — `Record<CatalogName, Record<string, GlassData>>`
 - `RawAllGlassCatalogsData` — `Record<string, Record<string, RawGlassData>>`
 - `AbbeNumCenterLine` — `'d' | 'e'`
@@ -30,7 +33,7 @@ Types, constants, and pure helper functions for the Glass Map feature.
 Converts snake_case Python API response to camelCase TypeScript types.
 
 #### `normalizeAllCatalogsData(raw: RawAllGlassCatalogsData): AllGlassCatalogsData`
-Iterates over all 6 known catalog names and normalizes each glass entry.
+Iterates over all 7 known catalog names and normalizes each glass entry.
 Gracefully handles missing catalogs (returns empty object for them).
 
 #### `computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType): PlotPoint[]`

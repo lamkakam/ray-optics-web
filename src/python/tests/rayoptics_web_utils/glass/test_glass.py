@@ -1,6 +1,7 @@
 """Tests for rayoptics_web_utils.glass module."""
 
 import math
+import pandas as pd
 import pytest
 
 CATALOG_NAMES = ["CDGM", "Hikari", "Hoya", "Ohara", "Schott", "Sumita"]
@@ -10,8 +11,177 @@ REQUIRED_KEYS = {
     "abbe_number_d",
     "abbe_number_e",
     "partial_dispersions",
+    "dispersion_coeff_kind",
+    "dispersion_coeffs",
 }
 PARTIAL_DISPERSION_KEYS = {"P_F_e", "P_F_d", "P_g_F"}
+
+
+@pytest.fixture(scope="module")
+def assert_dispersion_coeff_value() -> None:
+    """Fixture to assert that dispersion coefficients are not NaN."""
+    def _assert_dispersion_coeff_not_nan(data: pd.Series, catalog_name: str, glass_name: str, coeff_name: str) -> None:
+        assert coeff_name in data["dispersion coefficients"], f"{catalog_name}/{glass_name} missing {coeff_name} in dispersion coefficients"
+        
+        if catalog_name != "Hikari" or (catalog_name == "Hikari" and data["dispersion coefficients"][coeff_name] != "-"):
+            try:
+                coeff_value = float(data["dispersion coefficients"][coeff_name])
+            except (ValueError):
+                assert False, (
+                    f"{catalog_name}/{glass_name} has non-numeric value for {coeff_name} in dispersion coefficients"
+                )
+
+            assert math.isnan(coeff_value) is False, (
+                f"{catalog_name}/{glass_name} has NaN for dispersion coefficient {coeff_name}"
+            )
+    return _assert_dispersion_coeff_not_nan
+
+
+@pytest.fixture(scope="module")
+def assert_numerical_data_valid() -> None:
+    """"Fixture to assert numerical values are valid."""
+    def _assert(data: pd.Series, attr: str, glass_name: str, sub_attr: str) -> None:
+            assert sub_attr in data[attr], f"{glass_name} missing '{sub_attr}' in '{attr}'"
+            try:
+                parsed_value = float(data[attr][sub_attr])
+            except (ValueError):
+                assert False, f"{glass_name} has non-numeric value for '{sub_attr}' in '{attr}'"
+
+            assert math.isnan(parsed_value) is False, (
+                f"{glass_name} has NaN for dispersion coefficient {sub_attr} in {attr}"
+            )
+    return _assert
+
+
+class TestGlassDispersionCoeffDedicatedForSchottDispersionEquation:
+    """Tests to verify the dipsersion coefficient data format for all catalogs from opticalglass that use the Schott dispersion equation (CDGM, Hoya, Sumita)."""
+
+    # Note: CDGM used Schott dispersion equation in the past but switched to Sellmeier in 2024
+    # The data from `opticalglass` for CDGM glasses still uses the old Schott coefficients, so
+    # so we test them here to verify that the data is present and correctly formatted.
+    #
+    # Schott2x4
+    def test_glass(self, assert_dispersion_coeff_value) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+
+        catalogs = ['CDGM', 'Hoya', 'Sumita']
+        for catalog_name in catalogs:
+            catalog = glass_catalogs[catalog_name]
+            glass_names = catalog.get_glass_names()
+            for glass_name in glass_names:
+                data = catalog.glass_data(glass_name)
+                assert "dispersion coefficients" in data, f"{catalog_name}/{glass_name} missing 'dispersion coefficients'"
+
+                assert_dispersion_coeff_value(data, catalog_name, glass_name, "A0")
+                assert_dispersion_coeff_value(data, catalog_name, glass_name, "A1")
+                assert_dispersion_coeff_value(data, catalog_name, glass_name, "A2")
+                assert_dispersion_coeff_value(data, catalog_name, glass_name, "A3")
+                assert_dispersion_coeff_value(data, catalog_name, glass_name, "A4")
+                assert_dispersion_coeff_value(data, catalog_name, glass_name, "A5")
+
+    # Schott2x6
+    def test_hikari_glasses(self, assert_dispersion_coeff_value) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+
+        catalog = glass_catalogs['Hikari']
+        glass_names = catalog.get_glass_names()
+        for glass_name in glass_names:
+            data = catalog.glass_data(glass_name)
+            assert "dispersion coefficients" in data, f"Hikari/{glass_name} missing 'dispersion coefficients'"
+
+            catalog_name = "Hikari"
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A0")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A1･λ^2")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A2･λ^4")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A3/λ^2")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A4/λ^4")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A5/λ^6")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A6/λ^8")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A7/λ^10")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A8/λ^12")
+
+
+
+class TestGlassDispersionCoeffDedicatedForSellmeierDispersionEquation:
+    """Tests to verify the dipsersion coefficient data format for all catalogs from opticalglass that use the Sellmeier dispersion equation (Ohara, Schott)."""
+    
+    # Sellmeier3T
+    # n^2 - 1 = A1*λ^2/(λ^2-B1) + A2*λ^2/(λ^2-B2) + A3*λ^2/(λ^2-B3)
+    def test_ohara_glasses(self, assert_dispersion_coeff_value) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+        
+        catalog = glass_catalogs['Ohara']
+        glass_names = catalog.get_glass_names()
+        for glass_name in glass_names:
+            data = catalog.glass_data(glass_name)
+            assert "dispersion coefficients" in data, f"Ohara/{glass_name} missing 'dispersion coefficients'"
+
+            catalog_name = "Ohara"
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A1")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A2")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "A3")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "B1")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "B2")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "B3")
+    
+    # Sellmeier3T
+    # n^2 - 1 = B1*λ^2/(λ^2-C1) + B2*λ^2/(λ^2-C2) + B3*λ^2/(λ^2-C3)
+    def test_schott_glasses(self, assert_dispersion_coeff_value) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+        
+        catalog = glass_catalogs['Schott']
+        glass_names = catalog.get_glass_names()
+        for glass_name in glass_names:
+            data = catalog.glass_data(glass_name)
+            assert "dispersion coefficients" in data, f"Schott/{glass_name} missing 'dispersion coefficients'"
+
+            catalog_name = "Schott"
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "B1")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "B2")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "B3")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "C1")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "C2")
+            assert_dispersion_coeff_value(data, catalog_name, glass_name, "C3")
+
+
+class TestGlassRefractiveIndexData:
+    """Tests to verify that the refractive index data for all catalogs from opticalglass is valid."""
+
+    def test_refractive_indices_valid(self, assert_numerical_data_valid) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+
+        for catalog_name in CATALOG_NAMES:
+            catalog = glass_catalogs[catalog_name]
+            glass_names = catalog.get_glass_names()
+            for glass_name in glass_names:
+                data = catalog.glass_data(glass_name)
+
+                assert "refractive indices" in data, f"{catalog_name}/{glass_name} missing 'refractive indices'"
+                refractive_indices_lines = ["C", "d", "e", "F", "g"]
+                for line in refractive_indices_lines:
+                    assert_numerical_data_valid(data, "refractive indices", glass_name, line)
+
+class TestGlassAbbeNumberData:
+    """Tests to verify that the Abbe number data for all catalogs from opticalglass is valid."""
+
+    def test_abbe_numbers_valid(self, assert_numerical_data_valid) -> None:
+        from opticalglass.glassfactory import fill_catalog_list
+        glass_catalogs = fill_catalog_list()
+
+        for catalog_name in CATALOG_NAMES:
+            catalog = glass_catalogs[catalog_name]
+            glass_names = catalog.get_glass_names()
+            for glass_name in glass_names:
+                data = catalog.glass_data(glass_name)
+
+                assert "abbe number" in data, f"{catalog_name}/{glass_name} missing 'abbe number'"
+                assert_numerical_data_valid(data, "abbe number", glass_name, "vd")
+                assert_numerical_data_valid(data, "abbe number", glass_name, "ve")
 
 
 class TestGetGlassCatalogData:
@@ -91,6 +261,32 @@ class TestGetGlassCatalogData:
                 assert math.isfinite(v), (
                     f"{catalog_name}/{glass_name}: partial dispersion {k}={v} not finite"
                 )
+    @pytest.mark.parametrize("catalog_name", CATALOG_NAMES)
+    def test_dispersion_coeffs_has_kind_and_coeffs_with_finite_values(
+        self, catalog_name: str
+    ) -> None:
+        from rayoptics_web_utils.glass.glass import get_glass_catalog_data
+
+        result = get_glass_catalog_data(catalog_name)
+        for glass_name, entry in result.items():
+            assert "dispersion_coeff_kind" in entry, f"{catalog_name}/{glass_name} missing 'dispersion_coeff_kind'"
+            assert "dispersion_coeffs" in entry, f"{catalog_name}/{glass_name} missing 'dispersion_coeffs'"
+            
+            coeff_kind = entry["dispersion_coeff_kind"]
+            assert isinstance(coeff_kind, str), f"{catalog_name}/{glass_name}: dispersion_coeff_kind not string"
+            assert coeff_kind in {"Schott2x6", "Sellmeier3T"}, (
+                f"{catalog_name}/{glass_name}: dispersion_coeff_kind {coeff_kind} not in expected values"
+            )
+
+            coeffs = entry["dispersion_coeffs"]
+            assert isinstance(coeffs, list), f"{catalog_name}/{glass_name}: dispersion_coeffs not list"
+            for i, coeff in enumerate(coeffs):
+                assert isinstance(coeff, float), (
+                    f"{catalog_name}/{glass_name}: dispersion coefficient {i} not float"
+                )
+                assert math.isfinite(coeff), (
+                    f"{catalog_name}/{glass_name}: dispersion coefficient {i}={coeff} not finite"
+                )
 
 
 class TestGetAllGlassCatalogsData:
@@ -101,7 +297,15 @@ class TestGetAllGlassCatalogsData:
 
         result = get_all_glass_catalogs_data()
         assert isinstance(result, dict)
-        assert set(result.keys()) == set(CATALOG_NAMES)
+        assert set(result.keys()) == set(CATALOG_NAMES) | {"Special"}
+
+    def test_special_catalog_contains_caf2_with_required_keys(self) -> None:
+        from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
+
+        result = get_all_glass_catalogs_data()
+        assert "Special" in result
+        assert "CaF2" in result["Special"]
+        assert REQUIRED_KEYS == set(result["Special"]["CaF2"].keys())
 
     @pytest.mark.parametrize("catalog_name", CATALOG_NAMES)
     def test_each_catalog_value_matches_single_catalog_contract(

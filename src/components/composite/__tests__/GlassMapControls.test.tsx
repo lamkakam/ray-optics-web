@@ -19,6 +19,7 @@ const allEnabled: Record<CatalogName, boolean> = {
   Ohara: true,
   Schott: true,
   Sumita: true,
+  Special: true,
 };
 
 const defaultProps = {

@@ -18,6 +18,8 @@ const rawGlass: RawGlassData = {
   abbe_number_d: 64.17,
   abbe_number_e: 63.96,
   partial_dispersions: { P_F_e: 0.4, P_F_d: 0.41, P_g_F: 0.5349 },
+  dispersion_coeff_kind: 'Sellmeier3T',
+  dispersion_coeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
 };
 
 const rawCatalogsData: RawAllGlassCatalogsData = {
@@ -27,17 +29,19 @@ const rawCatalogsData: RawAllGlassCatalogsData = {
   Ohara: {},
   Schott: { "N-BK7": rawGlass },
   Sumita: {},
+  Special: {},
 };
 
 describe("CATALOG_NAMES", () => {
-  it("contains all 6 catalog names", () => {
+  it("contains all 7 catalog names", () => {
     expect(CATALOG_NAMES).toContain("CDGM");
     expect(CATALOG_NAMES).toContain("Hikari");
     expect(CATALOG_NAMES).toContain("Hoya");
     expect(CATALOG_NAMES).toContain("Ohara");
     expect(CATALOG_NAMES).toContain("Schott");
     expect(CATALOG_NAMES).toContain("Sumita");
-    expect(CATALOG_NAMES.length).toBe(6);
+    expect(CATALOG_NAMES).toContain("Special");
+    expect(CATALOG_NAMES.length).toBe(7);
   });
 });
 
@@ -65,6 +69,12 @@ describe("normalizeGlassData", () => {
     expect(result.partialDispersions.P_g_F).toBe(0.5349);
   });
 
+  it("maps dispersion_coeff_kind and dispersion_coeffs", () => {
+    const result = normalizeGlassData(rawGlass);
+    expect(result.dispersionCoeffKind).toBe('Sellmeier3T');
+    expect(result.dispersionCoeffs).toEqual([1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653]);
+  });
+
 });
 
 describe("normalizeAllCatalogsData", () => {
@@ -89,6 +99,8 @@ describe("computePlotPoints", () => {
         abbeNumberD: 64.17,
         abbeNumberE: 63.96,
         partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+        dispersionCoeffKind: 'Schott2x6',
+        dispersionCoeffs: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
       },
     },
     Hikari: {},
@@ -101,9 +113,12 @@ describe("computePlotPoints", () => {
         abbeNumberD: 64.17,
         abbeNumberE: 63.96,
         partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+        dispersionCoeffKind: 'Sellmeier3T',
+        dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
       },
     },
     Sumita: {},
+    Special: {},
   };
 
   const allEnabled: Record<CatalogName, boolean> = {
@@ -113,6 +128,7 @@ describe("computePlotPoints", () => {
     Ohara: true,
     Schott: true,
     Sumita: true,
+    Special: true,
   };
 
   it("returns points for refractiveIndex/d: x=Vd, y=Nd", () => {
@@ -154,7 +170,7 @@ describe("computePlotPoints", () => {
 
   it("returns empty array when all catalogs disabled", () => {
     const allDisabled: Record<CatalogName, boolean> = {
-      CDGM: false, Hikari: false, Hoya: false, Ohara: false, Schott: false, Sumita: false,
+      CDGM: false, Hikari: false, Hoya: false, Ohara: false, Schott: false, Sumita: false, Special: false,
     };
     const points = computePlotPoints(catalogsData, allDisabled, "refractiveIndex", "d", "P_g_F");
     expect(points).toHaveLength(0);
