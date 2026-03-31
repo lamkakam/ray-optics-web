@@ -11,3 +11,10 @@ None.
 2. **Third-Party CDNs** — lists `cdn.jsdelivr.net`, `files.pythonhosted.org`, `pypi.org`
 3. **IP Addresses** — explains IP exposure to CDNs
 4. **We may make changes to these terms** — update notice
+
+## Usages
+
+```tsx
+// In app/page.tsx
+{currentView === "privacy-policy" && <PrivacyPolicyView />}
+```

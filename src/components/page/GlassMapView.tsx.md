@@ -38,3 +38,18 @@ MathJax context is provided by the parent (`page.tsx`). This component does not 
 - `GlassScatterPlot` — scatter plot with zoom/pan
 - `GlassMapControls` — filter/selector controls (uses MathJax from parent context)
 - `GlassDetailPanel` — selected glass details (uses MathJax from parent context)
+
+## Usages
+
+```tsx
+// In app/page.tsx
+const glassMapStore = useMemo(
+  () => createStore<GlassMapStore>(createGlassMapSlice),
+  []
+);
+
+// Rendered conditionally:
+{currentView === "glass-map" && (
+  <GlassMapView store={glassMapStore} proxy={proxy} isReady={isReady} />
+)}
+```
