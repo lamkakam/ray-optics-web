@@ -54,3 +54,37 @@ Returns `{"Special": {"CaF2": glass_entry}}`.
 
 - Vd = (nd − 1) / (nF − nC)
 - Ve = (ne − 1) / (nF − nC)
+
+## Usages
+
+### `get_special_materials_data`
+
+Called by `glass.py` to include custom materials (CaF2) in the glass catalog data:
+
+```python
+from rayoptics_web_utils.glass.custom_materials import get_special_materials_data
+
+special_data = get_special_materials_data()
+# Returns: {
+#   "Special": {
+#     "CaF2": {
+#       "refractive_index_d": 1.4338,
+#       "abbe_number_d": 95.1,
+#       ...
+#     }
+#   }
+# }
+```
+
+### `_get_caf2_data`
+
+Internal function used to load and parse CaF2 material data from bundled YAML:
+
+```python
+from rayoptics_web_utils.glass.custom_materials import _get_caf2_data
+
+caf2_entry = _get_caf2_data()
+# Returns: {"refractive_index_d": 1.4338, "abbe_number_d": 95.1, ...}
+```
+
+**Note:** `get_special_materials_data` is the public API, called from `glass.py` to supplement the standard opticalglass catalogs. The "Special" catalog containing CaF2 is merged with the standard catalogs by `get_all_glass_catalogs_data()` and transmitted to the frontend as part of the glass map feature.
