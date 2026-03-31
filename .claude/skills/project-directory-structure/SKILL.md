@@ -5,6 +5,9 @@ description: Project directory structure for ray-optics-web
 
 ## Project Structure
 
+- Access the `index.md` under each directory for brief explanations of the purpose and contents of that directory.
+
+
 ```
 ray-optics-web/
 ├── .claude/                      # Claude Code configuration and skills
