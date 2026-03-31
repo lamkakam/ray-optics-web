@@ -1,4 +1,4 @@
-# `components/micro/Header.tsx`
+# `shared/components/primitives/Header.tsx`
 
 ## Purpose
 

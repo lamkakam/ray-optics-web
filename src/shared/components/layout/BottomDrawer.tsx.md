@@ -1,4 +1,4 @@
-# `components/composite/BottomDrawer.tsx`
+# `shared/components/layout/BottomDrawer.tsx`
 
 ## Purpose
 
@@ -37,7 +37,7 @@ interface BottomDrawerProps {
 ## Usages
 
 ```tsx
-import { BottomDrawer } from "@/components/composite/BottomDrawer";
+import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";
 
 // In a container component (e.g., BottomDrawerContainer)
 const tabs = useMemo(

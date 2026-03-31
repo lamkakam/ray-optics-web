@@ -1,4 +1,4 @@
-# `components/micro/Label.tsx`
+# `shared/components/primitives/Label.tsx`
 
 ## Purpose
 

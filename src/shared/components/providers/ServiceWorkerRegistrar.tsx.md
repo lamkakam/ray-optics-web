@@ -1,4 +1,4 @@
-# `components/ServiceWorkerRegistrar.tsx`
+# `shared/components/providers/ServiceWorkerRegistrar.tsx`
 
 ## Purpose
 
@@ -13,7 +13,7 @@ Headless client component that triggers service worker registration on mount by 
 ## Usages
 
 ```tsx
-import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+import ServiceWorkerRegistrar from "@/shared/components/providers/ServiceWorkerRegistrar";
 
 // In app/layout.tsx
 export default function RootLayout({

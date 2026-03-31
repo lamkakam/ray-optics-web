@@ -1,4 +1,4 @@
-# `components/composite/ZernikeTermsModal.tsx`
+# `features/lens-editor/components/ZernikeTermsModal.tsx`
 
 ## Purpose
 
@@ -69,7 +69,7 @@ interface ZernikeTermsModalProps {
 ## Usages
 
 ```tsx
-import { ZernikeTermsModal, type ZernikeOrdering } from "@/components/composite/ZernikeTermsModal";
+import { ZernikeTermsModal, type ZernikeOrdering } from "@/features/lens-editor/components/ZernikeTermsModal";
 
 // In a page component (e.g., LensEditor)
 const [zernikeModalOpen, setZernikeModalOpen] = useState(false);

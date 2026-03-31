@@ -1,4 +1,4 @@
-# `components/composite/DecenterModal.tsx`
+# `features/lens-editor/components/DecenterModal.tsx`
 
 ## Purpose
 
@@ -41,7 +41,7 @@ type DecenterType = DecenterConfig;  // from lib/opticalModel
 ## Usages
 
 ```tsx
-import { DecenterModal, type DecenterType } from "@/components/composite/DecenterModal";
+import { DecenterModal, type DecenterType } from "@/features/lens-editor/components/DecenterModal";
 
 // In a container component (e.g., LensPrescriptionContainer)
 const decenterRow = rows.find((r) => r.id === decenterModal.rowId);

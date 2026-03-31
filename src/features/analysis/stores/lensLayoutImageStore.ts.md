@@ -35,7 +35,7 @@ import { useStore } from "zustand";
 import { createStore } from "@/store/createStore";
 import type { LensLayoutImageState } from "@/store/lensLayoutImageStore";
 import { createLensLayoutImageSlice } from "@/store/lensLayoutImageStore";
-import { LensLayoutView } from "@/components/LensLayoutView";
+import { LensLayoutPanel } from "@/features/lens-editor/components/LensLayoutPanel";
 
 export default function LensEditorPage() {
   // Create the store once
@@ -57,7 +57,7 @@ export default function LensEditorPage() {
     <div>
       {layoutLoading && <p>Loading layout...</p>}
       {layoutImage && (
-        <LensLayoutView
+        <LensLayoutPanel
           image={layoutImage}
           onImageChange={handleSetImage}
         />

@@ -1,4 +1,4 @@
-# `components/micro/Chip.tsx`
+# `shared/components/primitives/Chip.tsx`
 
 ## Purpose
 

@@ -1,4 +1,4 @@
-# `components/composite/LensPrescriptionGrid.tsx`
+# `features/lens-editor/components/LensPrescriptionGrid.tsx`
 
 ## Purpose
 
@@ -42,7 +42,7 @@ interface LensPrescriptionGridProps {
 ## Usages
 
 ```tsx
-import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
+import { LensPrescriptionGrid } from "@/features/lens-editor/components/LensPrescriptionGrid";
 
 // In a container component (e.g., LensPrescriptionContainer)
 const rows = useStore(store, (s) => s.rows);

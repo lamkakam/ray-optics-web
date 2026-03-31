@@ -1,4 +1,4 @@
-# `components/composite/FieldConfigModal.tsx`
+# `features/lens-editor/components/FieldConfigModal.tsx`
 
 ## Purpose
 
@@ -45,7 +45,7 @@ interface FieldConfigModalProps {
 ## Usages
 
 ```tsx
-import { FieldConfigModal } from "@/components/composite/FieldConfigModal";
+import { FieldConfigModal } from "@/features/lens-editor/components/FieldConfigModal";
 
 // In a container component (e.g., SpecsConfigurerContainer)
 const fieldSpace = useStore(store, (s) => s.fieldSpace);

@@ -1,4 +1,4 @@
-# `components/micro/Table.tsx`
+# `shared/components/primitives/Table.tsx`
 
 ## Purpose
 

@@ -1,4 +1,4 @@
-# `components/composite/WavelengthConfigModal.tsx`
+# `features/lens-editor/components/WavelengthConfigModal.tsx`
 
 ## Purpose
 
@@ -41,7 +41,7 @@ interface WavelengthConfigModalProps {
 ## Usages
 
 ```tsx
-import { WavelengthConfigModal } from "@/components/composite/WavelengthConfigModal";
+import { WavelengthConfigModal } from "@/features/lens-editor/components/WavelengthConfigModal";
 
 // In a container component (e.g., SpecsConfigurerContainer)
 const wavelengthWeights = useStore(store, (s) => s.wavelengthWeights);

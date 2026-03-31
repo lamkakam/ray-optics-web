@@ -1,4 +1,4 @@
-# `components/container/BottomDrawerContainer.tsx`
+# `features/lens-editor/components/BottomDrawerContainer.tsx`
 
 ## Purpose
 

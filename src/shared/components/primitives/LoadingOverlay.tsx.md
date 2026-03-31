@@ -1,4 +1,4 @@
-# `components/micro/LoadingOverlay.tsx`
+# `shared/components/primitives/LoadingOverlay.tsx`
 
 ## Purpose
 

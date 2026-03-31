@@ -42,7 +42,7 @@ Register the Pyodide service worker (file at`public/pyodide-sw.js`) so that the 
 **1. Via the `ServiceWorkerRegistrar` component (recommended):**
 
 ```tsx
-import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+import ServiceWorkerRegistrar from "@/shared/components/providers/ServiceWorkerRegistrar";
 
 export default function RootLayout({
   children,

@@ -1,4 +1,4 @@
-# `components/composite/MediumSelectorModal.tsx`
+# `features/lens-editor/components/MediumSelectorModal.tsx`
 
 ## Purpose
 
@@ -41,7 +41,7 @@ interface MediumSelectorModalProps {
 ## Usages
 
 ```tsx
-import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
+import { MediumSelectorModal } from "@/features/lens-editor/components/MediumSelectorModal";
 
 // In a container component (e.g., LensPrescriptionContainer)
 const mediumRow = rows.find((r) => r.id === mediumModal.rowId);

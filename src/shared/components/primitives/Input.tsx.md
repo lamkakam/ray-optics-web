@@ -1,4 +1,4 @@
-# `components/micro/Input.tsx`
+# `shared/components/primitives/Input.tsx`
 
 ## Purpose
 

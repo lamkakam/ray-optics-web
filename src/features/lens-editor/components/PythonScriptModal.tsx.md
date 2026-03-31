@@ -1,4 +1,4 @@
-# `components/composite/PythonScriptModal.tsx`
+# `features/lens-editor/components/PythonScriptModal.tsx`
 
 ## Purpose
 
@@ -35,7 +35,7 @@ interface PythonScriptModalProps {
 ## Usages
 
 ```tsx
-import { PythonScriptModal } from "@/components/composite/PythonScriptModal";
+import { PythonScriptModal } from "@/features/lens-editor/components/PythonScriptModal";
 import { buildExportScript } from "@/lib/pythonScript";
 
 // In a container component

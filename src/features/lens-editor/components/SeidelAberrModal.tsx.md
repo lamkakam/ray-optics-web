@@ -1,4 +1,4 @@
-# `components/composite/SeidelAberrModal.tsx`
+# `features/lens-editor/components/SeidelAberrModal.tsx`
 
 ## Purpose
 
@@ -32,7 +32,7 @@ interface SeidelAberrModalProps {
 ## Usages
 
 ```tsx
-import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
+import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrModal";
 
 // In a page component (e.g., LensEditor)
 const seidelData = useStore(analysisDataStore, (s) => s.seidelData);

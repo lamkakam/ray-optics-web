@@ -1,4 +1,4 @@
-# `components/composite/ConfirmOverwriteModal.tsx`
+# `features/lens-editor/components/ConfirmOverwriteModal.tsx`
 
 ## Purpose
 
@@ -30,7 +30,7 @@ interface ConfirmOverwriteModalProps {
 ## Usages
 
 ```tsx
-import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteModal";
+import { ConfirmOverwriteModal } from "@/features/lens-editor/components/ConfirmOverwriteModal";
 
 // In a page component (e.g., LensEditor)
 const [pendingExample, setPendingExample] = useState<string | undefined>();

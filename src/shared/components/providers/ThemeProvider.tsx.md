@@ -1,4 +1,4 @@
-# `components/ThemeProvider.tsx`
+# `shared/components/providers/ThemeProvider.tsx`
 
 ## Purpose
 
@@ -26,7 +26,7 @@ export function useTheme(): { theme: Theme; setTheme: (newTheme: Theme) => void 
 **1. Wrap the root layout:**
 
 ```tsx
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
 
 export default function RootLayout({
   children,
@@ -48,7 +48,7 @@ export default function RootLayout({
 ```tsx
 "use client";
 
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();

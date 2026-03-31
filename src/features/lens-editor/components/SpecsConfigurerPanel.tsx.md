@@ -1,4 +1,4 @@
-# `components/composite/SpecsConfigurerPanel.tsx`
+# `features/lens-editor/components/SpecsConfigurerPanel.tsx`
 
 ## Purpose
 
@@ -44,7 +44,7 @@ interface SpecsConfigurerPanelProps {
 ## Usages
 
 ```tsx
-import { SpecsConfigurerPanel } from "@/components/composite/SpecsConfigurerPanel";
+import { SpecsConfigurerPanel } from "@/features/lens-editor/components/SpecsConfigurerPanel";
 
 // In a container component (e.g., SpecsConfigurerContainer)
 const pupilSpace = useStore(store, (s) => s.pupilSpace);

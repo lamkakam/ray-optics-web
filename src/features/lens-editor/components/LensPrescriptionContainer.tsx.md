@@ -1,4 +1,4 @@
-# `components/container/LensPrescriptionContainer.tsx`
+# `features/lens-editor/components/LensPrescriptionContainer.tsx`
 
 ## Purpose
 

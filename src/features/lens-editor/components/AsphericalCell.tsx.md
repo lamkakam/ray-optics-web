@@ -1,4 +1,4 @@
-# `components/micro/AsphericalCell.tsx`
+# `features/lens-editor/components/AsphericalCell.tsx`
 
 ## Purpose
 

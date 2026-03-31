@@ -1,4 +1,4 @@
-# `components/micro/Tooltip.tsx`
+# `shared/components/primitives/Tooltip.tsx`
 
 ## Purpose
 

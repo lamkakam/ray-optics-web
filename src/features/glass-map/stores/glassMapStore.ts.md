@@ -40,7 +40,7 @@ import { useStore } from "zustand";
 import { createStore } from "@/store/createStore";
 import type { GlassMapStore } from "@/store/glassMapStore";
 import { createGlassMapSlice } from "@/store/glassMapStore";
-import { GlassScatterPlot } from "@/components/composite/GlassScatterPlot";
+import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
 
 export default function GlassMapPage() {
   const { proxy, isReady } = usePyodide();

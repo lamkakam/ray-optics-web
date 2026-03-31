@@ -1,4 +1,4 @@
-# `components/container/FocusingContainer.tsx`
+# `features/lens-editor/components/FocusingContainer.tsx`
 
 ## Purpose
 

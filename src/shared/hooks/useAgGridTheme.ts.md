@@ -23,7 +23,7 @@ The return type is the opaque theme object accepted by AG Grid's `theme` prop.
 ## Dependencies
 
 - `useMemo` from React.
-- `useTheme` from `@/components/ThemeProvider`.
+- `useTheme` from `@/shared/components/providers/ThemeProvider`.
 - `themeQuartz`, `colorSchemeDark`, `colorSchemeLight` from `ag-grid-community`.
 
 ## Edge Cases / Error Handling

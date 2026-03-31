@@ -1,4 +1,4 @@
-# `components/micro/Button.tsx`
+# `shared/components/primitives/Button.tsx`
 
 ## Purpose
 

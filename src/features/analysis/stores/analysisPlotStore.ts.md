@@ -31,7 +31,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 ## Dependencies
 
 - `create`, `StateCreator` from `zustand`.
-- `PlotType` (type-only) from `@/components/composite/AnalysisPlotView`.
+- `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`.
 
 ## Usages
 
@@ -42,7 +42,7 @@ import { useStore } from "zustand";
 import { createStore } from "@/store/createStore";
 import type { AnalysisPlotState } from "@/store/analysisPlotStore";
 import { createAnalysisPlotSlice } from "@/store/analysisPlotStore";
-import { AnalysisPlotView } from "@/components/composite/AnalysisPlotView";
+import { AnalysisPlotView } from "@/features/analysis/components/AnalysisPlotView";
 
 export default function LensEditorPage() {
   // Create the store once via useMemo (singleton per render)

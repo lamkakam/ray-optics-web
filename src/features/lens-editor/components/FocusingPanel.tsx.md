@@ -1,4 +1,4 @@
-# `components/composite/FocusingPanel.tsx`
+# `features/lens-editor/components/FocusingPanel.tsx`
 
 ## Purpose
 
@@ -32,7 +32,7 @@ All inputs and the button are disabled when `disabled=true`.
 ## Usages
 
 ```tsx
-import { FocusingPanel } from "@/components/composite/FocusingPanel";
+import { FocusingPanel } from "@/features/lens-editor/components/FocusingPanel";
 
 // In a container component (e.g., FocusingContainer)
 const [chromaticity, setChromaticity] = useState<"mono" | "poly">("mono");

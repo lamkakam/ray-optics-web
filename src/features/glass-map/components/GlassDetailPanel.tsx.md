@@ -1,4 +1,4 @@
-# GlassDetailPanel.tsx
+# `features/glass-map/components/GlassDetailPanel.tsx`
 
 ## Purpose
 Displays details for the currently selected glass point. Shows a placeholder when no glass is selected.
@@ -24,7 +24,7 @@ Displays details for the currently selected glass point. Shows a placeholder whe
 ## Usages
 
 ```tsx
-import { GlassDetailPanel } from "@/components/composite/GlassDetailPanel";
+import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
 
 // In a page component (e.g., GlassMapView)
 const selectedGlass = useStore(store, (s) => s.selectedGlass);

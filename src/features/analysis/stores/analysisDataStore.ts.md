@@ -36,7 +36,7 @@ import { useStore } from "zustand";
 import { createStore } from "@/store/createStore";
 import type { AnalysisDataState } from "@/store/analysisDataStore";
 import { createAnalysisDataSlice } from "@/store/analysisDataStore";
-import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
+import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrModal";
 
 export default function LensEditorPage() {
   // Create the store once

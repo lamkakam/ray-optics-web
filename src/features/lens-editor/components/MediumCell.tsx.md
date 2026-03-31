@@ -1,4 +1,4 @@
-# `components/micro/MediumCell.tsx`
+# `features/lens-editor/components/MediumCell.tsx`
 
 ## Purpose
 

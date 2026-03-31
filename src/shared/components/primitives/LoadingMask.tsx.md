@@ -1,4 +1,4 @@
-# `components/micro/LoadingMask.tsx`
+# `shared/components/primitives/LoadingMask.tsx`
 
 ## Purpose
 

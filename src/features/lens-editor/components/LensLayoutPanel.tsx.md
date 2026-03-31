@@ -1,4 +1,4 @@
-# `components/composite/LensLayoutPanel.tsx`
+# `features/lens-editor/components/LensLayoutPanel.tsx`
 
 ## Purpose
 
@@ -29,7 +29,7 @@ interface LensLayoutPanelProps {
 ## Usages
 
 ```tsx
-import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
+import { LensLayoutPanel } from "@/features/lens-editor/components/LensLayoutPanel";
 
 // In a page or container component (e.g., LensEditor)
 const layoutImage = useStore(analysisDataStore, (s) => s.layoutImage);

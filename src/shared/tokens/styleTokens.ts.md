@@ -1,4 +1,4 @@
-# `components/ui/styleTokens.ts`
+# `shared/tokens/styleTokens.ts`
 
 ## Purpose
 
@@ -28,7 +28,7 @@ A private `globalTokens` object holds reusable primitives (e.g. `primaryColor`, 
 
 - All values are literal Tailwind class strings (no dynamic generation).
 - Dark mode variants are included inline: e.g. `"bg-gray-100 dark:bg-gray-800"`.
-- Components import via `import { componentTokens as cx } from "@/components/ui/styleTokens"` and destructure the relevant sub-object.
+- Components import via `import { componentTokens as cx } from "@/shared/tokens/styleTokens"` and destructure the relevant sub-object.
 - `overlay` tokens have `z-[200]` — the highest z-index in the stack, above `Modal`'s `z-50`.
 
 ## Usages

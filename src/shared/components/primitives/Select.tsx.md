@@ -1,4 +1,4 @@
-# `components/micro/Select.tsx`
+# `shared/components/primitives/Select.tsx`
 
 ## Purpose
 

@@ -1,4 +1,4 @@
-# `components/composite/FirstOrderChips.tsx`
+# `features/lens-editor/components/FirstOrderChips.tsx`
 
 ## Purpose
 
@@ -27,7 +27,7 @@ interface FirstOrderChipsProps {
 ## Usages
 
 ```tsx
-import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
+import { FirstOrderChips } from "@/features/lens-editor/components/FirstOrderChips";
 
 // In a page component (e.g., LensEditor)
 const firstOrderData = useStore(analysisDataStore, (s) => s.firstOrderData);

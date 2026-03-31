@@ -1,4 +1,4 @@
-# `components/micro/ErrorModal.tsx`
+# `shared/components/primitives/ErrorModal.tsx`
 
 ## Purpose
 

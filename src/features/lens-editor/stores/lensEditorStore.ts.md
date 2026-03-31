@@ -57,7 +57,7 @@ import { useStore } from "zustand";
 import { createStore } from "@/store/createStore";
 import type { LensEditorState } from "@/store/lensEditorStore";
 import { createLensEditorSlice } from "@/store/lensEditorStore";
-import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
+import { LensPrescriptionGrid } from "@/features/lens-editor/components/LensPrescriptionGrid";
 
 export default function LensEditorPage() {
   // Create the store once

@@ -1,4 +1,4 @@
-# `components/micro/DecenterCell.tsx`
+# `features/lens-editor/components/DecenterCell.tsx`
 
 ## Purpose
 

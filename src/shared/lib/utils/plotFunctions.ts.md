@@ -46,7 +46,7 @@ Convenience wrapper around `PLOT_FUNCTION_BUILDERS`. Returns `undefined` if `pro
 
 ## Dependencies
 
-- `PlotType` (type-only) from `@/components/composite/AnalysisPlotView`
+- `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`
 - `OpticalModel` (type-only) from `@/lib/opticalModel`
 - `PyodideWorkerAPI` (type-only) from `@/hooks/usePyodide`
 
@@ -54,7 +54,7 @@ Convenience wrapper around `PLOT_FUNCTION_BUILDERS`. Returns `undefined` if `pro
 
 ```tsx
 import { buildPlotFn } from "@/lib/plotFunctions";
-import type { PlotType } from "@/components/composite/AnalysisPlotView";
+import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
 
 // In a plot rendering component
 function AnalysisPlotView({

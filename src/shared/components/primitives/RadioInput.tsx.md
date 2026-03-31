@@ -1,4 +1,4 @@
-# `components/micro/RadioInput.tsx`
+# `shared/components/primitives/RadioInput.tsx`
 
 ## Purpose
 

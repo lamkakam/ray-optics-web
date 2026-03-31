@@ -1,4 +1,4 @@
-# `components/micro/Modal.tsx`
+# `shared/components/primitives/Modal.tsx`
 
 ## Purpose
 

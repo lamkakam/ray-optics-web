@@ -1,4 +1,4 @@
-# `components/micro/SetButton.tsx`
+# `shared/components/primitives/SetButton.tsx`
 
 ## Purpose
 

@@ -1,4 +1,4 @@
-# `components/composite/ConfirmImportModal.tsx`
+# `features/lens-editor/components/ConfirmImportModal.tsx`
 
 ## Purpose
 
@@ -29,7 +29,7 @@ interface ConfirmImportModalProps {
 ## Usages
 
 ```tsx
-import { ConfirmImportModal } from "@/components/composite/ConfirmImportModal";
+import { ConfirmImportModal } from "@/features/lens-editor/components/ConfirmImportModal";
 
 // In a container component
 const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();

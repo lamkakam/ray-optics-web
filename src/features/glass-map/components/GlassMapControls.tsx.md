@@ -1,4 +1,4 @@
-# GlassMapControls.tsx
+# `features/glass-map/components/GlassMapControls.tsx`
 
 ## Purpose
 Pure presentational component that renders all filter/selector controls for the Glass Map page. No store access — all state and callbacks are passed as props.
@@ -27,7 +27,7 @@ The component uses `<MathJax inline>` from `better-react-mathjax` for visually r
 ## Usages
 
 ```tsx
-import { GlassMapControls } from "@/components/composite/GlassMapControls";
+import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";
 
 // In a page component (e.g., GlassMapView)
 const plotType = useStore(store, (s) => s.plotType);

@@ -1,4 +1,4 @@
-# `components/composite/AnalysisPlotView.tsx`
+# `features/analysis/components/AnalysisPlotView.tsx`
 
 ## Purpose
 
@@ -75,7 +75,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 ## Usages
 
 ```tsx
-import { AnalysisPlotView, PLOT_TYPE_CONFIG, type PlotType } from "@/components/composite/AnalysisPlotView";
+import { AnalysisPlotView, PLOT_TYPE_CONFIG, type PlotType } from "@/features/analysis/components/AnalysisPlotView";
 
 // In a container component (e.g., AnalysisPlotContainer)
 const handleFieldChange = useCallback(async (value: number) => {

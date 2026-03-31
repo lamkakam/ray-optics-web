@@ -1,4 +1,4 @@
-# `components/container/AnalysisPlotContainer.tsx`
+# `features/analysis/components/AnalysisPlotContainer.tsx`
 
 ## Purpose
 

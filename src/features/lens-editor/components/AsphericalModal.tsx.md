@@ -1,4 +1,4 @@
-# `components/composite/AsphericalModal.tsx`
+# `features/lens-editor/components/AsphericalModal.tsx`
 
 ## Purpose
 
@@ -48,7 +48,7 @@ type AsphericalType = "Conical" | "EvenAspherical";
 ## Usages
 
 ```tsx
-import { AsphericalModal, type AsphericalType } from "@/components/composite/AsphericalModal";
+import { AsphericalModal, type AsphericalType } from "@/features/lens-editor/components/AsphericalModal";
 
 // In a container component (e.g., LensPrescriptionContainer)
 const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);

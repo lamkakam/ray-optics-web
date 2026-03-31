@@ -14,7 +14,7 @@ export type Theme = "light" | "dark";
 
 ```tsx
 import type { Theme } from "@/lib/theme";
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
 
 // In a container component
 export function ThemedPanel() {

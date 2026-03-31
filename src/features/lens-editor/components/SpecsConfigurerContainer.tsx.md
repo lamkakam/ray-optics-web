@@ -1,4 +1,4 @@
-# `components/container/SpecsConfigurerContainer.tsx`
+# `features/lens-editor/components/SpecsConfigurerContainer.tsx`
 
 ## Purpose
 

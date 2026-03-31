@@ -1,4 +1,4 @@
-# `components/composite/GridRowButtons.tsx`
+# `features/lens-editor/components/GridRowButtons.tsx`
 
 ## Purpose
 
@@ -33,7 +33,7 @@ interface GridRowButtonsProps {
 ## Usages
 
 ```tsx
-import { GridRowButtons } from "@/components/composite/GridRowButtons";
+import { GridRowButtons } from "@/features/lens-editor/components/GridRowButtons";
 
 // In an AG Grid cellRenderer
 const columnDefs = [

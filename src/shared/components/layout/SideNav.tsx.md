@@ -37,7 +37,7 @@ Collapsible side navigation panel toggled by the hamburger button in the header.
 ## Usages
 
 ```tsx
-import { SideNav } from "@/components/composite/SideNav";
+import { SideNav } from "@/shared/components/layout/SideNav";
 
 // In a layout component (e.g., Layout)
 const [sideNavOpen, setSideNavOpen] = useState(false);

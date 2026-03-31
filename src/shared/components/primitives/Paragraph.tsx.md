@@ -1,4 +1,4 @@
-# `components/micro/Paragraph.tsx`
+# `shared/components/primitives/Paragraph.tsx`
 
 ## Purpose
 

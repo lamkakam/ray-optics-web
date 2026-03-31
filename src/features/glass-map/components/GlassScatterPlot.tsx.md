@@ -1,4 +1,4 @@
-# GlassScatterPlot.tsx
+# `features/glass-map/components/GlassScatterPlot.tsx`
 
 ## Purpose
 Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders all `PlotPoint` entries as colored circles, supports zoom/pan via mouse wheel and drag, shows grid lines on both axes, shows a tooltip on hover (mouse) or touch, and draws crosshair lines for the selected glass.
@@ -51,7 +51,7 @@ CSS variables in `globals.css`:
 ## Usages
 
 ```tsx
-import { GlassScatterPlot } from "@/components/composite/GlassScatterPlot";
+import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
 
 // In a page component (e.g., GlassMapView)
 const points = useMemo(

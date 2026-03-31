@@ -20,9 +20,9 @@ type AppView = 'home' | 'glass-map' | 'settings' | 'privacy-policy' | 'about';
 
 ```tsx
 import type { AppView } from "@/lib/appView";
-import { HomePage } from "@/components/views/HomePage";
-import { GlassMapView } from "@/components/views/GlassMapView";
-import { SettingsView } from "@/components/views/SettingsView";
+import { HomePage } from "@/features/lens-editor/LensEditor";
+import { GlassMapView } from "@/features/glass-map/GlassMapView";
+import { SettingsView } from "@/app/pages/SettingsView";
 
 // In page.tsx
 export default function Page() {
