@@ -22,6 +22,7 @@ const mockCatalogsData: AllGlassCatalogsData = {
   Ohara: {},
   Schott: {},
   Sumita: {},
+  Special: {},
 };
 
 function makeStore() {
@@ -68,6 +69,7 @@ describe("glassMapStore initial state", () => {
     expect(enabled.Ohara).toBe(true);
     expect(enabled.Schott).toBe(true);
     expect(enabled.Sumita).toBe(true);
+    expect(enabled.Special).toBe(true);
   });
 
   it("selectedGlass is undefined", () => {

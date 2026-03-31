@@ -1,4 +1,4 @@
-export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita'] as const;
+export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special'] as const;
 export type CatalogName = typeof CATALOG_NAMES[number];
 
 export type DispersionCoeffKind = 'Schott2x6' | 'Sellmeier3T';
@@ -59,6 +59,7 @@ export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {
   Ohara: '#ef4444',
   Schott: '#8b5cf6',
   Sumita: '#ec4899',
+  Special: '#f97316',
 };
 
 export function normalizeGlassData(raw: RawGlassData): GlassData {

@@ -146,6 +146,9 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
 
 
 def get_all_glass_catalogs_data() -> dict[str, dict[str, dict]]:
-    """Return {catalog_name: {glass_name: glass_dict}} for all 6 catalogs."""
+    """Return {catalog_name: {glass_name: glass_dict}} for all 6 catalogs + Special materials."""
+    from .custom_materials import get_special_materials_data
     catalog_names = ["CDGM", "Hikari", "Hoya", "Ohara", "Schott", "Sumita"]
-    return {name: get_glass_catalog_data(name) for name in catalog_names}
+    result = {name: get_glass_catalog_data(name) for name in catalog_names}
+    result.update(get_special_materials_data())
+    return result

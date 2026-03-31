@@ -297,7 +297,15 @@ class TestGetAllGlassCatalogsData:
 
         result = get_all_glass_catalogs_data()
         assert isinstance(result, dict)
-        assert set(result.keys()) == set(CATALOG_NAMES)
+        assert set(result.keys()) == set(CATALOG_NAMES) | {"Special"}
+
+    def test_special_catalog_contains_caf2_with_required_keys(self) -> None:
+        from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
+
+        result = get_all_glass_catalogs_data()
+        assert "Special" in result
+        assert "CaF2" in result["Special"]
+        assert REQUIRED_KEYS == set(result["Special"]["CaF2"].keys())
 
     @pytest.mark.parametrize("catalog_name", CATALOG_NAMES)
     def test_each_catalog_value_matches_single_catalog_contract(

@@ -40,7 +40,7 @@ Returns `{glass_name: glass_dict}` for all valid glasses in the named catalog. C
 
 ### `get_all_glass_catalogs_data() -> dict[str, dict[str, dict]]`
 
-Returns data for all 6 catalogs: CDGM, Hikari, Hoya, Ohara, Schott, Sumita.
+Returns data for all 6 opticalglass catalogs (CDGM, Hikari, Hoya, Ohara, Schott, Sumita) plus the `"Special"` catalog from `custom_materials.get_special_materials_data()` (contains CaF2). Total: 7 catalog keys.
 
 ## Output Schema (per glass)
 The value for the attribute `"dispersion_coeff_kind"` is either `"Schott2x6"` or `"Sellmeier3T"`
@@ -78,6 +78,7 @@ The value for the attribute `"dispersion_coeff_kind"` is either `"Schott2x6"` or
 | Ohara    | 134                |
 | Schott   | 123                |
 | Sumita   | 134                |
+| Special  | 1 (CaF2)           |
 
 ## Usages
 

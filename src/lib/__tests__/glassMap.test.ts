@@ -29,17 +29,19 @@ const rawCatalogsData: RawAllGlassCatalogsData = {
   Ohara: {},
   Schott: { "N-BK7": rawGlass },
   Sumita: {},
+  Special: {},
 };
 
 describe("CATALOG_NAMES", () => {
-  it("contains all 6 catalog names", () => {
+  it("contains all 7 catalog names", () => {
     expect(CATALOG_NAMES).toContain("CDGM");
     expect(CATALOG_NAMES).toContain("Hikari");
     expect(CATALOG_NAMES).toContain("Hoya");
     expect(CATALOG_NAMES).toContain("Ohara");
     expect(CATALOG_NAMES).toContain("Schott");
     expect(CATALOG_NAMES).toContain("Sumita");
-    expect(CATALOG_NAMES.length).toBe(6);
+    expect(CATALOG_NAMES).toContain("Special");
+    expect(CATALOG_NAMES.length).toBe(7);
   });
 });
 
@@ -116,6 +118,7 @@ describe("computePlotPoints", () => {
       },
     },
     Sumita: {},
+    Special: {},
   };
 
   const allEnabled: Record<CatalogName, boolean> = {
@@ -125,6 +128,7 @@ describe("computePlotPoints", () => {
     Ohara: true,
     Schott: true,
     Sumita: true,
+    Special: true,
   };
 
   it("returns points for refractiveIndex/d: x=Vd, y=Nd", () => {
@@ -166,7 +170,7 @@ describe("computePlotPoints", () => {
 
   it("returns empty array when all catalogs disabled", () => {
     const allDisabled: Record<CatalogName, boolean> = {
-      CDGM: false, Hikari: false, Hoya: false, Ohara: false, Schott: false, Sumita: false,
+      CDGM: false, Hikari: false, Hoya: false, Ohara: false, Schott: false, Sumita: false, Special: false,
     };
     const points = computePlotPoints(catalogsData, allDisabled, "refractiveIndex", "d", "P_g_F");
     expect(points).toHaveLength(0);
