@@ -43,4 +43,39 @@ interface SpecsConfigurerPanelProps {
 
 ## Usages
 
-- To be rendered by `SpecsConfigurerContainer`.
+```tsx
+import { SpecsConfigurerPanel } from "@/components/composite/SpecsConfigurerPanel";
+
+// In a container component (e.g., SpecsConfigurerContainer)
+const pupilSpace = useStore(store, (s) => s.pupilSpace);
+const pupilType = useStore(store, (s) => s.pupilType);
+const pupilValue = useStore(store, (s) => s.pupilValue);
+const fieldSpace = useStore(store, (s) => s.fieldSpace);
+const fieldType = useStore(store, (s) => s.fieldType);
+const maxField = useStore(store, (s) => s.maxField);
+const relativeFields = useStore(store, (s) => s.relativeFields);
+const wavelengthWeights = useStore(store, (s) => s.wavelengthWeights);
+
+const fieldSummary = `${relativeFields.length} field${relativeFields.length !== 1 ? "s" : ""}, ${maxField}${fieldType === "angle" ? "°" : "mm"} max`;
+const wavelengthSummary = `${wavelengthWeights.length} wavelength${wavelengthWeights.length !== 1 ? "s" : ""}`;
+
+const handleApertureChange = useCallback(
+  (patch: { pupilSpace?: PupilSpace; pupilType?: PupilType; pupilValue?: number }) => {
+    store.getState().setAperture(patch);
+  },
+  [store]
+);
+
+return (
+  <SpecsConfigurerPanel
+    pupilSpace={pupilSpace}
+    pupilType={pupilType}
+    pupilValue={pupilValue}
+    fieldSummary={fieldSummary}
+    wavelengthSummary={wavelengthSummary}
+    onApertureChange={handleApertureChange}
+    onOpenFieldModal={() => store.getState().openFieldModal()}
+    onOpenWavelengthModal={() => store.getState().openWavelengthModal()}
+  />
+);
+```

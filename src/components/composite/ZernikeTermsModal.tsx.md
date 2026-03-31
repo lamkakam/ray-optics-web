@@ -68,4 +68,32 @@ interface ZernikeTermsModalProps {
 
 ## Usages
 
-- Opened from the main page toolbar ("Zernike Terms" button), conditional on `seidelData` being available (same guard as the Seidel button).
+```tsx
+import { ZernikeTermsModal, type ZernikeOrdering } from "@/components/composite/ZernikeTermsModal";
+
+// In a page component (e.g., LensEditor)
+const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
+
+const handleFetchZernikeData = useCallback(
+  async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => {
+    if (!proxy) throw new Error("Pyodide not ready");
+    const committedOpticalModel = lensStore.getState().committedOpticalModel;
+    if (!committedOpticalModel) throw new Error("No optical model computed yet");
+    const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
+    return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, numTerms, ordering);
+  },
+  [proxy, lensStore]
+);
+
+return (
+  <>
+    <ZernikeTermsModal
+      isOpen={zernikeModalOpen}
+      fieldOptions={specsStore.getState().getFieldOptions()}
+      wavelengthOptions={specsStore.getState().getWavelengthOptions()}
+      onFetchData={handleFetchZernikeData}
+      onClose={() => setZernikeModalOpen(false)}
+    />
+  </>
+);
+```

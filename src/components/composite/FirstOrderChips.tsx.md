@@ -26,4 +26,22 @@ interface FirstOrderChipsProps {
 
 ## Usages
 
-- Displayed in the page toolbar or header area alongside the "Update System" button.
+```tsx
+import { FirstOrderChips } from "@/components/composite/FirstOrderChips";
+
+// In a page component (e.g., LensEditor)
+const firstOrderData = useStore(analysisDataStore, (s) => s.firstOrderData);
+
+const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
+
+return (
+  <div>
+    {/* In toolbar or header section */}
+    {firstOrderData && (
+      <div className="flex items-center gap-2">
+        {firstOrderChips}
+      </div>
+    )}
+  </div>
+);
+```

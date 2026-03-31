@@ -33,3 +33,34 @@ Collapsible side navigation panel toggled by the hamburger button in the header.
 | Settings | `'settings'` |
 | Privacy Policy | `'privacy-policy'` |
 | About | `'about'` |
+
+## Usages
+
+```tsx
+import { SideNav } from "@/components/composite/SideNav";
+
+// In a layout component (e.g., Layout)
+const [sideNavOpen, setSideNavOpen] = useState(false);
+const screenSize = useScreenBreakpoint();
+const isLG = screenSize === "screenLG";
+
+const sideNavNode = (
+  <SideNav
+    isOpen={sideNavOpen}
+    isLG={isLG}
+    currentView={currentView}
+    onClose={() => setSideNavOpen(false)}
+    onNavigate={(view) => {
+      onNavigate(view);
+      setSideNavOpen(false);
+    }}
+  />
+);
+
+return (
+  <div className="relative flex-1 overflow-hidden">
+    {sideNavNode}
+    {children}
+  </div>
+);
+```

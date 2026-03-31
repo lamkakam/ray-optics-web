@@ -23,3 +23,31 @@ Pure presentational component that renders all filter/selector controls for the 
 
 ## MathJax
 The component uses `<MathJax inline>` from `better-react-mathjax` for visually rich labels (subscript notation). `RadioOption.labelNode` carries the MathJax node while `RadioOption.label` preserves plain-text `aria-label` for accessibility. **The component does not own a `MathJaxContext`** — the context is provided by the parent (`GlassMapView`). Axis labels in the scatter plot are not affected (they remain plain strings rendered in SVG).
+
+## Usages
+
+```tsx
+import { GlassMapControls } from "@/components/composite/GlassMapControls";
+
+// In a page component (e.g., GlassMapView)
+const plotType = useStore(store, (s) => s.plotType);
+const abbeNumCenterLine = useStore(store, (s) => s.abbeNumCenterLine);
+const partialDispersionType = useStore(store, (s) => s.partialDispersionType);
+const enabledCatalogs = useStore(store, (s) => s.enabledCatalogs);
+const { setPlotType, setAbbeNumCenterLine, setPartialDispersionType, toggleCatalog } = store.getState();
+
+return (
+  <div className="flex flex-col gap-4 p-4">
+    <GlassMapControls
+      plotType={plotType}
+      abbeNumCenterLine={abbeNumCenterLine}
+      partialDispersionType={partialDispersionType}
+      enabledCatalogs={enabledCatalogs}
+      onPlotTypeChange={setPlotType}
+      onAbbeNumCenterLineChange={setAbbeNumCenterLine}
+      onPartialDispersionTypeChange={setPartialDispersionType}
+      onToggleCatalog={toggleCatalog}
+    />
+  </div>
+);
+```

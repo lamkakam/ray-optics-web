@@ -34,4 +34,28 @@ interface PythonScriptModalProps {
 
 ## Usages
 
-- Opened from the "Export Python Script" toolbar button.
+```tsx
+import { PythonScriptModal } from "@/components/composite/PythonScriptModal";
+import { buildExportScript } from "@/lib/pythonScript";
+
+// In a container component
+const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
+
+return (
+  <>
+    <Button
+      variant="secondary"
+      size={buttonSize}
+      onClick={() => setPythonScriptOpen(true)}
+    >
+      Export Python Script
+    </Button>
+
+    <PythonScriptModal
+      isOpen={pythonScriptOpen}
+      script={pythonScriptOpen ? buildExportScript(getOpticalModel()) : ""}
+      onClose={() => setPythonScriptOpen(false)}
+    />
+  </>
+);
+```

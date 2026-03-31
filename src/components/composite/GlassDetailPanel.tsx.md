@@ -20,3 +20,18 @@ Displays details for the currently selected glass point. Shows a placeholder whe
 - **The component does not own a `MathJaxContext`** — the context is provided by the parent (`GlassMapView`).
 - Each label cell contains a `<span data-testid="label-{key}">` (e.g. `label-Nd`, `label-P_g_F`) for testing.
 - Property table is rendered using the `Table` micro-component (`headers={[]}`, rows are `[labelSpan, value]` pairs).
+
+## Usages
+
+```tsx
+import { GlassDetailPanel } from "@/components/composite/GlassDetailPanel";
+
+// In a page component (e.g., GlassMapView)
+const selectedGlass = useStore(store, (s) => s.selectedGlass);
+
+return (
+  <div>
+    <GlassDetailPanel selectedGlass={selectedGlass} />
+  </div>
+);
+```

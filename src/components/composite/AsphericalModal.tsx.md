@@ -47,4 +47,30 @@ type AsphericalType = "Conical" | "EvenAspherical";
 
 ## Usages
 
-- Opened from `AsphericalCell` in the lens prescription grid.
+```tsx
+import { AsphericalModal, type AsphericalType } from "@/components/composite/AsphericalModal";
+
+// In a container component (e.g., LensPrescriptionContainer)
+const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);
+
+return (
+  <>
+    <AsphericalModal
+      key={asphericalModal.open ? asphericalModal.rowId : "aspherical-closed"}
+      isOpen={asphericalModal.open}
+      initialConicConstant={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.conicConstant ?? 0) : 0}
+      initialType={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.type ?? "Conical") : "Conical"}
+      initialCoefficients={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.polynomialCoefficients ?? []) : []}
+      onConfirm={(aspherical) => {
+        store.getState().updateRow(asphericalModal.rowId, { aspherical });
+        store.getState().closeAsphericalModal();
+      }}
+      onClose={() => store.getState().closeAsphericalModal()}
+      onRemove={() => {
+        store.getState().updateRow(asphericalModal.rowId, { aspherical: undefined });
+        store.getState().closeAsphericalModal();
+      }}
+    />
+  </>
+);
+```

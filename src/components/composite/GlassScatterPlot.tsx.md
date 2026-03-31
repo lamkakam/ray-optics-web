@@ -47,3 +47,36 @@ CSS variables in `globals.css`:
 - `@visx/responsive` requires `ResizeObserver` — mocked in test environment via `jest.setup.ts`
 - Module-level mock `src/__mocks__/@visx/responsive.tsx` provides fixed 800×600 size in tests
 - Crosshair lines are not rendered when the selected glass is not found in the current `points` array (e.g. its catalog is disabled)
+
+## Usages
+
+```tsx
+import { GlassScatterPlot } from "@/components/composite/GlassScatterPlot";
+
+// In a page component (e.g., GlassMapView)
+const points = useMemo(
+  () =>
+    catalogsData
+      ? computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType)
+      : [],
+  [catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType]
+);
+
+const { xLabel, yLabel } = axisLabels(plotType, abbeNumCenterLine, partialDispersionType);
+
+const handlePointClick = (glass: SelectedGlass) => {
+  setSelectedGlass(glass);
+};
+
+return (
+  <GlassScatterPlot
+    points={points}
+    selectedGlass={selectedGlass}
+    xAxisLabel={xLabel}
+    yAxisLabel={yLabel}
+    onPointClick={handlePointClick}
+    yDomainMin={plotType === "refractiveIndex" ? 1.4 : undefined}
+    yDomainMax={plotType === "refractiveIndex" ? 2.0 : undefined}
+  />
+);
+```

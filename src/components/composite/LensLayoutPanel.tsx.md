@@ -28,4 +28,21 @@ interface LensLayoutPanelProps {
 
 ## Usages
 
-- Used in the lens layout tab of the main page via a container or page assembly component.
+```tsx
+import { LensLayoutPanel } from "@/components/composite/LensLayoutPanel";
+
+// In a page or container component (e.g., LensEditor)
+const layoutImage = useStore(analysisDataStore, (s) => s.layoutImage);
+const layoutLoading = useStore(analysisDataStore, (s) => s.layoutLoading);
+
+const lensLayoutPanel = (
+  <LensLayoutPanel imageBase64={layoutImage} loading={layoutLoading} />
+);
+
+return (
+  <div>
+    {/* Render in tabs or drawer */}
+    {lensLayoutPanel}
+  </div>
+);
+```

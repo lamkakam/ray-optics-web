@@ -32,4 +32,25 @@ interface GridRowButtonsProps {
 
 ## Usages
 
-- Used in multiple ag-grid instances as the action column renderer.
+```tsx
+import { GridRowButtons } from "@/components/composite/GridRowButtons";
+
+// In an AG Grid cellRenderer
+const columnDefs = [
+  {
+    headerName: "",
+    field: "kind",
+    width: 100,
+    cellRenderer: (params: { data: GridRow }) => {
+      const { kind, id } = params.data;
+      return (
+        <GridRowButtons
+          onAdd={kind !== "image" ? () => onAddRowAfter(id) : undefined}
+          onDelete={kind === "surface" ? () => onDeleteRow(id) : undefined}
+        />
+      );
+    },
+  },
+  // ... other columns
+];
+```

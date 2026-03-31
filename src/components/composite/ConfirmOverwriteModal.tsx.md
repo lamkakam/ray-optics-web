@@ -29,4 +29,32 @@ interface ConfirmOverwriteModalProps {
 
 ## Usages
 
-- Shown when the user selects an example system from the example picker, before applying the DEMO model.
+```tsx
+import { ConfirmOverwriteModal } from "@/components/composite/ConfirmOverwriteModal";
+
+// In a page component (e.g., LensEditor)
+const [pendingExample, setPendingExample] = useState<string | undefined>();
+
+const handleExampleConfirm = useCallback(() => {
+  if (!pendingExample) return;
+  const system = ExampleSystems[pendingExample];
+  specsStore.getState().loadExampleSystem(system.specs);
+  lensStore.getState().loadExampleSystem(system.opticalModel);
+  setPendingExample(undefined);
+  handleSubmit(); // Trigger system update
+}, [pendingExample, specsStore, lensStore, handleSubmit]);
+
+const handleExampleCancel = useCallback(() => {
+  setPendingExample(undefined);
+}, []);
+
+return (
+  <>
+    <ConfirmOverwriteModal
+      isOpen={pendingExample !== undefined}
+      onConfirm={handleExampleConfirm}
+      onCancel={handleExampleCancel}
+    />
+  </>
+);
+```
