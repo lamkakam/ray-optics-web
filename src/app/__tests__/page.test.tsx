@@ -2,8 +2,8 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
-import type { OpticalModel, SeidelData } from "@/lib/opticalModel";
-import type { Theme } from "@/lib/theme";
+import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
+import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
 
 jest.mock("better-react-mathjax", () => ({
@@ -13,14 +13,14 @@ jest.mock("better-react-mathjax", () => ({
 
 // Mock useTheme
 const mockToggleTheme: jest.Mock<void, [Theme]> = jest.fn();
-jest.mock("@/components/ThemeProvider", () => ({
+jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: mockToggleTheme }),
 }));
 
 // Mock useScreenBreakpoint (default: screenSM, overridable per describe)
-import type { ScreenSize } from "@/hooks/useScreenBreakpoint";
+import type { ScreenSize } from "@/shared/hooks/useScreenBreakpoint";
 const mockScreenSize = { value: "screenSM" as ScreenSize };
-jest.mock("@/hooks/useScreenBreakpoint", () => ({
+jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: () => mockScreenSize.value,
 }));
 

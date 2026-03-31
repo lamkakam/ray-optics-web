@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
-import type { OpticalModel, SeidelData, FocusingResult } from "@/lib/opticalModel";
-import type { ZernikeData, ZernikeOrdering } from "@/lib/zernikeData";
-import type { RawAllGlassCatalogsData } from "@/lib/glassMap";
-import { createPyodideWorker } from "./createPyodideWorker";
+import type { OpticalModel, SeidelData, FocusingResult } from "@/shared/lib/types/opticalModel";
+import type { ZernikeData, ZernikeOrdering } from "@/shared/lib/types/zernikeData";
+import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
+import { createPyodideWorker } from "@/workers/createPyodideWorker";
 
 export interface PyodideWorkerAPI {
   init(): Promise<void>;

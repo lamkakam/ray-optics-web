@@ -13,81 +13,102 @@ ray-optics-web/
 ├── .claude/                      # Claude Code configuration and skills
 ├── .github/                      # GitHub workflows and templates
 ├── src/                          # All application source code
-│   ├── app/                      # Next.js App Router pages
-│   │   ├── __tests__/            # Tests for app pages
-│   │   └── index.md
-│   ├── components/               # React UI components
-│   │   ├── __tests__/            # Tests for components
-│   │   ├── index.md
-│   │   ├── micro/                # Minimal, single-responsibility components
-│   │   │   ├── __tests__/        # Tests for micro-components
-│   │   │   └── index.md
-│   │   ├── composite/            # Composed with micro-components
-│   │   │   ├── __tests__/        # Tests for composite components
-│   │   │   └── index.md
-│   │   ├── container/            # Containers for state management and logic
-│   │   │   ├── __tests__/        # Tests for container components
-│   │   │   └── index.md
-│   │   ├── layout/               # Layout components
-│   │   │   ├── __tests__/        # Tests for layout components
-│   │   │   └── index.md
-│   │   ├── page/                 # Page-level components
+│   ├── app/                      # Next.js App Router (thin routing shell)
+│   │   ├── pages/                # Static informational page components
 │   │   │   ├── __tests__/        # Tests for page components
 │   │   │   └── index.md
-│   │   └── ui/                   # UI primitive components
-│   │       ├── __tests__/        # Tests for UI components
-│   │       └── index.md
-│   ├── store/                    # Zustand global state stores
-│   │   ├── __tests__/            # Tests for stores
+│   │   ├── __tests__/            # Tests for app routes
 │   │   └── index.md
-│   ├── workers/                  # Web Workers
-│   │   ├── __tests__/            # Tests for workers
+│   │
+│   ├── features/                 # Domain feature modules (co-located by feature)
+│   │   ├── lens-editor/          # Main lens design workflow
+│   │   │   ├── components/       # Composite + container + domain-cell components
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
+│   │   │   ├── stores/           # lensEditorStore, specsConfigurerStore
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
+│   │   │   ├── __tests__/        # Tests for LensEditor page
+│   │   │   ├── LensEditor.tsx    # Page-level entry point
+│   │   │   └── index.md
+│   │   ├── analysis/             # Analysis plots and aberrations
+│   │   │   ├── components/       # AnalysisPlotView, AnalysisPlotContainer
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
+│   │   │   ├── stores/           # analysisDataStore, analysisPlotStore, lensLayoutImageStore
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
+│   │   │   └── index.md
+│   │   ├── glass-map/            # Interactive Abbe diagram
+│   │   │   ├── components/       # GlassScatterPlot, GlassDetailPanel, GlassMapControls
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
+│   │   │   ├── stores/           # glassMapStore
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
+│   │   │   ├── __tests__/        # Tests for GlassMapView page
+│   │   │   ├── GlassMapView.tsx  # Page-level entry point
+│   │   │   └── index.md
+│   │   └── index.md
+│   │
+│   ├── shared/                   # Code shared across all features
+│   │   ├── components/
+│   │   │   ├── primitives/       # Generic UI primitives (Button, Input, Modal, etc.)
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
+│   │   │   ├── layout/           # Layout.tsx, SideNav, BottomDrawer
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
+│   │   │   └── providers/        # ThemeProvider, ServiceWorkerRegistrar
+│   │   │       └── index.md
+│   │   ├── tokens/               # styleTokens.ts, theme.ts (design system constants)
+│   │   │   └── index.md
+│   │   ├── hooks/                # useAgGridTheme, useScreenBreakpoint, useServiceWorkerRegistration
+│   │   │   ├── __tests__/
+│   │   │   └── index.md
+│   │   └── lib/
+│   │       ├── types/            # opticalModel, gridTypes, appView, glassMap, zernikeData
+│   │       │   ├── __tests__/
+│   │       │   └── index.md
+│   │       ├── data/             # fraunhoferLines, exampleSystems
+│   │       │   ├── __tests__/
+│   │       │   └── index.md
+│   │       ├── utils/            # gridTransform, plotFunctions, pythonScript, apertureFlag
+│   │       │   ├── __tests__/
+│   │       │   └── index.md
+│   │       ├── schemas/          # importSchema (Zod/AJV validation)
+│   │       │   └── index.md
+│   │       └── config/           # swCachePolicy
+│   │           ├── __tests__/
+│   │           └── index.md
+│   │
+│   ├── hooks/                    # usePyodide (worker lifecycle hook — app-wide)
+│   │   ├── __tests__/
+│   │   └── index.md
+│   ├── workers/                  # Web Workers + factory
+│   │   ├── __test__/             # Tests for workers
 │   │   ├── index.md
-│   │   └── pyodide.worker.ts     # Web Worker: Pyodide init + rayoptics API
-│   ├── hooks/                    # React hooks (usePyodide, useAgGridTheme, etc.)
-│   │   ├── __tests__/            # Tests for hooks
-│   │   └── index.md
-│   ├── lib/                      # TypeScript types and utilities
-│   │   ├── __tests__/            # Tests for lib utilities
-│   │   └── index.md
-│   ├── python/                   # Python utilities and modules
-│   │   ├── tests/            # Tests for Python modules
+│   │   ├── pyodide.worker.ts     # Pyodide Web Worker: init + rayoptics API
+│   │   └── createPyodideWorker.ts # Worker factory (Comlink wrap)
+│   ├── python/                   # Internal Python package (rayoptics_web_utils)
+│   │   ├── tests/
 │   │   ├── index.md
 │   │   └── src/
-│   │       ├── __tests__/        # Tests for src utilities
-│   │       ├── index.md
-│   │       └── rayoptics_web_utils/  # Internal Python package (rayoptics_web_utils)
-│   │           ├── __tests__/            # Tests for rayoptics_web_utils
-│   │           ├── index.md
-│   │           ├── analysis/          # Spot diagram, wavefront, Zernike, Seidel aberrations
-│   │           │   ├── __tests__/     # Tests for analysis module
-│   │           │   └── index.md
-│   │           ├── env/               # Environment and configuration management
-│   │           │   ├── __tests__/     # Tests for env module
-│   │           │   └── index.md
-│   │           ├── focusing/          # Lens optimization algorithms
-│   │           │   ├── __tests__/     # Tests for focusing module
-│   │           │   └── index.md
-│   │           ├── glass/             # Glass material data and selection
-│   │           │   ├── __tests__/     # Tests for glass module
-│   │           │   └── index.md
-│   │           ├── plotting/          # Matplotlib visualization utilities
-│   │           │   ├── __tests__/     # Tests for plotting module
-│   │           │   └── index.md
-│   │           ├── raygrid/           # Ray grid generation and sampling
-│   │           │   ├── __tests__/     # Tests for raygrid module
-│   │           │   └── index.md
-│   │           ├── utils/             # General utility functions
-│   │           │   ├── __tests__/     # Tests for utils module
-│   │           │   └── index.md
-│   │           └── zernike/           # Zernike polynomial computation
-│   │               ├── __tests__/     # Tests for zernike module
-│   │               └── index.md
-│   ├── __mocks__/                # Jest mocks (Comlink, Pyodide, etc.)
+│   │       └── rayoptics_web_utils/
+│   │           ├── analysis/     # Spot diagram, wavefront, Zernike, Seidel
+│   │           ├── env/          # Environment and configuration
+│   │           ├── focusing/     # Lens optimisation algorithms
+│   │           ├── glass/        # Glass material data and selection
+│   │           ├── plotting/     # Matplotlib visualisation utilities
+│   │           ├── raygrid/      # Ray grid generation and sampling
+│   │           ├── utils/        # General utilities
+│   │           └── zernike/      # Zernike polynomial computation
+│   ├── data/                     # Static data files (glass catalogs, etc.)
+│   ├── __mocks__/                # Jest mocks (Comlink, Pyodide, ag-grid, visx)
 │   │   └── index.md
-│   ├── __tests__/                # Jest unit and integration tests
+│   ├── __tests__/                # Top-level smoke tests
 │   │   └── index.md
-│   ├── e2e/                      # End-to-end tests
+│   ├── e2e/                      # Playwright end-to-end tests
 │   │   └── index.md
 │   └── index.md
 ├── scripts/                      # Build and setup shell scripts
