@@ -50,4 +50,61 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 
 ## Usages
 
-Used by the lens editor container component. Grid row components and modal components receive relevant state slices and action callbacks as props via dependency injection.
+```tsx
+"use client";
+
+import { useStore } from "zustand";
+import { createStore } from "@/store/createStore";
+import type { LensEditorState } from "@/store/lensEditorStore";
+import { createLensEditorSlice } from "@/store/lensEditorStore";
+import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
+
+export default function LensEditorPage() {
+  // Create the store once
+  const lensEditorStore = useMemo(
+    () => createStore<LensEditorState>(createLensEditorSlice),
+    []
+  );
+
+  // Read state
+  const rows = useStore(lensEditorStore, (s) => s.rows);
+  const selectedRowId = useStore(lensEditorStore, (s) => s.selectedRowId);
+  const autoAperture = useStore(lensEditorStore, (s) => s.autoAperture);
+
+  // Dispatch actions
+  const handleSelectRow = (rowId: string) => {
+    lensEditorStore.getState().setSelectedRowId(rowId);
+  };
+
+  const handleAddRow = (afterRowId: string) => {
+    lensEditorStore.getState().addRowAfter(afterRowId);
+  };
+
+  const handleDeleteRow = (rowId: string) => {
+    lensEditorStore.getState().deleteRow(rowId);
+  };
+
+  return (
+    <div>
+      <label>
+        <input
+          type="checkbox"
+          checked={autoAperture}
+          onChange={(e) =>
+            lensEditorStore.getState().setAutoAperture(e.target.checked)
+          }
+        />
+        Auto Aperture
+      </label>
+
+      <LensPrescriptionGrid
+        rows={rows}
+        selectedRowId={selectedRowId}
+        onSelectRow={handleSelectRow}
+        onAddRow={handleAddRow}
+        onDeleteRow={handleDeleteRow}
+      />
+    </div>
+  );
+}
+```

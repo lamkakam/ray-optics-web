@@ -35,4 +35,40 @@ None.
 
 ## Usages
 
-Called from `app/sw.ts` (the Serwist service worker entry point) inside a fetch handler to decide whether to apply a cache-first strategy. Keeping the logic in `lib/` rather than inline in `sw.ts` makes it unit-testable without a service worker environment.
+```ts
+import { shouldCache } from "@/lib/swCachePolicy";
+import { cacheFirst, networkFirst } from "serwist";
+
+// In the service worker (app/sw.ts)
+export default defaultHandler;
+
+self.addEventListener("fetch", (event: FetchEvent) => {
+  const { request } = event;
+  const shouldCacheUrl = shouldCache(
+    request.url,
+    self.location.origin // Pass the current origin
+  );
+
+  if (shouldCacheUrl) {
+    // Cache-first strategy for Pyodide/wheels
+    event.respondWith(cacheFirst().handle(request));
+  } else {
+    // Network-first for everything else
+    event.respondWith(networkFirst().handle(request));
+  }
+});
+
+// In unit tests
+test("caches Pyodide bundle from CDN", () => {
+  const url = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js";
+  expect(shouldCache(url)).toBe(true);
+});
+
+test("caches local wheels from same origin", () => {
+  const origin = "https://example.com";
+  const wheelUrl = "https://example.com/wheels/rayoptics_web_utils.whl";
+  expect(shouldCache(wheelUrl, origin)).toBe(true);
+});
+```
+
+Called from `app/sw.ts` (Serwist entry point) in a fetch handler to decide cache strategy. Kept in `lib/` for unit testability.

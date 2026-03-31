@@ -26,4 +26,41 @@ interface MediumCellProps {
 
 ## Usages
 
-- Used as a `cellRenderer` in `LensPrescriptionGrid`.
+```tsx
+// AG Grid column definition for Medium
+{
+  headerName: "Medium",
+  field: "medium",
+  width: 120,
+  cellRenderer: (params) => (
+    <MediumCell
+      medium={params.data.medium}
+      onOpenModal={() => openMediumModal(params.rowIndex)}
+    />
+  ),
+}
+
+// In grid configuration
+<AgGridReact
+  columnDefs={[
+    {
+      headerName: "Material",
+      field: "medium",
+      cellRenderer: MediumCellRenderer,
+    },
+    // ... other columns
+  ]}
+  rowData={surfaceData}
+/>
+
+// Cell renderer function
+const MediumCellRenderer = (params) => (
+  <MediumCell
+    medium={params.data.medium}
+    onOpenModal={() => {
+      setSelectedSurfaceIndex(params.rowIndex);
+      setMediumModalOpen(true);
+    }}
+  />
+);
+```

@@ -27,4 +27,37 @@ interface TableProps {
 
 ## Usages
 
-- Used for displaying simple tabulated data.
+```tsx
+// Optical aberration metrics table
+<Table
+  headers={["Name", "Value", "Status"]}
+  rows={[
+    ["Spherical Aberration", "0.100000", <Chip>Low</Chip>],
+    ["Coma", 0.2, <Chip>Medium</Chip>],
+    ["Astigmatism", "0.050000", <Chip>Low</Chip>],
+  ]}
+/>
+
+// First-order data table
+const firstOrderData = [
+  ["EFL", "100.00 mm"],
+  ["BFL", "95.45 mm"],
+  ["f/#", "4.0"],
+  ["Image Height", "21.6 mm"],
+];
+
+<Table
+  headers={["Parameter", "Value"]}
+  rows={firstOrderData}
+/>
+
+// Mix of different cell types
+<Table
+  headers={["Parameter", "Value", "Unit"]}
+  rows={[
+    ["Focal Length", 100, "mm"],
+    ["Aperture", "f/4", "—"],
+    ["Field of View", 20, "°"],
+  ]}
+/>
+```

@@ -41,4 +41,34 @@ interface LensPrescriptionGridProps {
 
 ## Usages
 
-- To be rendered by `LensPrescriptionContainer`.
+```tsx
+import { LensPrescriptionGrid } from "@/components/composite/LensPrescriptionGrid";
+
+// In a container component (e.g., LensPrescriptionContainer)
+const rows = useStore(store, (s) => s.rows);
+
+const handleRowChange = useCallback(
+  (id: string, patch: Partial<GridRow>) => store.getState().updateRow(id, patch),
+  [store]
+);
+
+const handleOpenMediumModal = useCallback(
+  (rowId: string) => store.getState().openMediumModal(rowId),
+  [store]
+);
+
+return (
+  <>
+    <LensPrescriptionGrid
+      rows={rows}
+      onRowChange={handleRowChange}
+      onOpenMediumModal={handleOpenMediumModal}
+      onOpenAsphericalModal={handleOpenAsphericalModal}
+      onOpenDecenterModal={handleOpenDecenterModal}
+      onAddRowAfter={handleAddRowAfter}
+      onDeleteRow={handleDeleteRow}
+      semiDiameterReadonly={autoAperture}
+    />
+  </>
+);
+```

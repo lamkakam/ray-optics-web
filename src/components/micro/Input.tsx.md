@@ -25,4 +25,28 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 
 ## Usages
 
-- Used for numeric and text inputs.
+```tsx
+// Text input for aperture value
+<Input
+  type="text"
+  aria-label="Aperture value"
+  value={valueStr}
+  onChange={(e) => setValueStr(e.target.value)}
+  onBlur={handleValueBlur}
+/>
+
+// Numeric input with default variant
+<Input
+  type="number"
+  placeholder="Enter value"
+  min="0"
+  max="100"
+/>
+
+// Compact variant for space-constrained layouts
+<Input
+  variant="compact"
+  type="text"
+  placeholder="Search..."
+/>
+```

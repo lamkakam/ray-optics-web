@@ -40,4 +40,25 @@ interface MediumSelectorModalProps {
 
 ## Usages
 
-- Opened from `MediumCell` in the lens prescription grid.
+```tsx
+import { MediumSelectorModal } from "@/components/composite/MediumSelectorModal";
+
+// In a container component (e.g., LensPrescriptionContainer)
+const mediumRow = rows.find((r) => r.id === mediumModal.rowId);
+
+return (
+  <>
+    <MediumSelectorModal
+      key={mediumModal.open ? mediumModal.rowId : "medium-closed"}
+      isOpen={mediumModal.open}
+      initialMedium={mediumRow?.kind === "surface" ? mediumRow.medium : "air"}
+      initialManufacturer={mediumRow?.kind === "surface" ? mediumRow.manufacturer : ""}
+      onConfirm={(medium, manufacturer) => {
+        store.getState().updateRow(mediumModal.rowId, { medium, manufacturer });
+        store.getState().closeMediumModal();
+      }}
+      onClose={() => store.getState().closeMediumModal()}
+    />
+  </>
+);
+```

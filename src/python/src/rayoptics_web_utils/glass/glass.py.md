@@ -82,5 +82,46 @@ The value for the attribute `"dispersion_coeff_kind"` is either `"Schott2x6"` or
 
 ## Usages
 
+### `get_all_glass_catalogs_data`
+
+Called from the Pyodide worker to load all optical glass catalog data for the glass map feature:
+
+```python
+from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
+
+all_catalogs = get_all_glass_catalogs_data()
+# Returns: {
+#   "CDGM": {"D-ZK1": {...}, "D-PK3": {...}, ...},
+#   "Hikari": {"A5": {...}, "A3": {...}, ...},
+#   "Hoya": {"FC5": {...}, "E-FDS6": {...}, ...},
+#   "Ohara": {"S-BAH3": {...}, ...},
+#   "Schott": {"BK7": {...}, "FK51": {...}, ...},
+#   "Sumita": {"K-BaK4": {...}, ...},
+#   "Special": {"CaF2": {...}}
+# }
+json_result = json.dumps(all_catalogs)
+```
+
+### `get_glass_catalog_data`
+
+Query a single optical glass catalog by name:
+
+```python
+from rayoptics_web_utils.glass.glass import get_glass_catalog_data
+
+schott_catalog = get_glass_catalog_data("Schott")
+# Returns: {"BK7": {...}, "SF5": {...}, ...}
+
+bk7_data = schott_catalog["BK7"]
+# Returns: {
+#   "refractive_index_d": 1.5168,
+#   "abbe_number_d": 64.17,
+#   "partial_dispersions": {...},
+#   "dispersion_coeff_kind": "Sellmeier3T",
+#   "dispersion_coeffs": [...]
+# }
+```
+
 - Exported eagerly from `rayoptics_web_utils.__init__` as `get_glass_catalog_data` and `get_all_glass_catalogs_data`.
-- Intended for use by the Pyodide worker to power the glass map feature on the frontend.
+- Called from the Pyodide worker (`workers/pyodide.worker.ts`) to populate the glass map feature on the frontend.
+- All data is JSON-serializable and transmitted as plain dicts (no live pyproxy objects).

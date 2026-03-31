@@ -44,4 +44,40 @@ interface FieldConfigModalProps {
 
 ## Usages
 
-- Opened from `SpecsConfigurerPanel`.
+```tsx
+import { FieldConfigModal } from "@/components/composite/FieldConfigModal";
+
+// In a container component (e.g., SpecsConfigurerContainer)
+const fieldSpace = useStore(store, (s) => s.fieldSpace);
+const fieldType = useStore(store, (s) => s.fieldType);
+const maxField = useStore(store, (s) => s.maxField);
+const relativeFields = useStore(store, (s) => s.relativeFields);
+const fieldModalOpen = useStore(store, (s) => s.fieldModalOpen);
+
+const handleFieldApply = useCallback(
+  (result: {
+    space: FieldSpace;
+    type: FieldType;
+    maxField: number;
+    relativeFields: number[];
+  }) => {
+    store.getState().setField(result);
+    store.getState().closeFieldModal();
+  },
+  [store]
+);
+
+return (
+  <>
+    <FieldConfigModal
+      isOpen={fieldModalOpen}
+      initialSpace={fieldSpace}
+      initialType={fieldType}
+      initialMaxField={maxField}
+      initialRelativeFields={relativeFields}
+      onApply={handleFieldApply}
+      onClose={() => store.getState().closeFieldModal()}
+    />
+  </>
+);
+```

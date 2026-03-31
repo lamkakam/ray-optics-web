@@ -31,4 +31,31 @@ interface SeidelAberrModalProps {
 
 ## Usages
 
-- Opened from the main page toolbar or analysis panel.
+```tsx
+import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
+
+// In a page component (e.g., LensEditor)
+const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
+const [seidelModalOpen, setSeidelModalOpen] = useState(false);
+
+const seidelModal = seidelData && (
+  <SeidelAberrModal
+    isOpen={seidelModalOpen}
+    data={seidelData}
+    onClose={() => setSeidelModalOpen(false)}
+  />
+);
+
+return (
+  <div>
+    {/* Toolbar button */}
+    {seidelData && (
+      <Button onClick={() => setSeidelModalOpen(true)}>
+        Seidel Aberrations
+      </Button>
+    )}
+
+    {seidelModal}
+  </div>
+);
+```

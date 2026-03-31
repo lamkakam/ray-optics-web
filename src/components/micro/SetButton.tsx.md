@@ -32,4 +32,32 @@ interface SetButtonProps {
 
 ## Usages
 
-- Used in custom cell editors for ag-grid instance(s).
+```tsx
+// Cell renderer for Tilt & Decenter column
+const DecenterCellRenderer = ({ isDecenterSet, onOpenModal }) => (
+  <Tooltip text="Configure tilt and decenter" portal noTouch>
+    <SetButton
+      isSet={isDecenterSet}
+      onClick={onOpenModal}
+      aria-label="Tilt and decenter settings"
+    />
+  </Tooltip>
+);
+
+// Cell renderer with custom labels
+<SetButton
+  isSet={hasAspherics}
+  onClick={onEditAspherics}
+  aria-label="Aspheric surface definition"
+  setLabel="Edit"
+  unsetLabel="Add"
+/>
+
+// Usage in AG Grid column definition
+{
+  headerName: "Decenter",
+  field: "decenter",
+  cellRenderer: DecenterCellRenderer,
+  width: 80,
+}
+```

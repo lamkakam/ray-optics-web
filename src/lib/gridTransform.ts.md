@@ -58,5 +58,26 @@ Returns a unique string of the form `"row-surface-N"` where `N` is a module-leve
 
 ## Usages
 
-- `surfacesToGridRows` is called when loading a model into the LensEditor to populate the AG Grid.
-- `gridRowsToSurfaces` is called when the user commits an edit, to reconstruct the `Surfaces` object before dispatching to the Pyodide worker.
+```ts
+import { surfacesToGridRows, gridRowsToSurfaces } from "@/lib/gridTransform";
+import type { OpticalModel, Surfaces } from "@/lib/opticalModel";
+
+// Convert model to AG Grid rows when loading
+const surfaces: Surfaces = model;
+const gridRows = surfacesToGridRows(surfaces);
+lensEditorStore.getState().setRows(gridRows);
+
+// Convert grid rows back to surfaces when user submits
+const editedRows = lensEditorStore.getState().rows;
+const editedSurfaces = gridRowsToSurfaces(editedRows);
+
+// Create updated model and send to worker
+const updatedModel: OpticalModel = {
+  ...model,
+  ...editedSurfaces,
+};
+const result = await proxy.getFirstOrderData(updatedModel);
+```
+
+- `surfacesToGridRows` is called when loading a model into the LensEditor.
+- `gridRowsToSurfaces` is called when the user commits an edit before dispatching to the Pyodide worker.

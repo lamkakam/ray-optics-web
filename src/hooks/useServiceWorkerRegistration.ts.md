@@ -39,4 +39,48 @@ Register the Pyodide service worker (file at`public/pyodide-sw.js`) so that the 
 
 ## Usages
 
-Called once at the app root (e.g. in `app/layout.tsx` or the top-level page component) to set up caching early in the page lifecycle. No return value or state is exposed — callers do not need to react to registration success or failure.
+**1. Via the `ServiceWorkerRegistrar` component (recommended):**
+
+```tsx
+import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html>
+      <body>
+        <ServiceWorkerRegistrar />
+        {children}
+      </body>
+    </html>
+  );
+}
+```
+
+**2. Directly in a component:**
+
+```tsx
+"use client";
+
+import { useServiceWorkerRegistration } from "@/hooks/useServiceWorkerRegistration";
+
+export function AppRoot() {
+  useServiceWorkerRegistration(); // Runs once on mount
+
+  return <div>{/* app content */}</div>;
+}
+```
+
+**3. Standalone async function (outside React):**
+
+```ts
+import { registerServiceWorker } from "@/hooks/useServiceWorkerRegistration";
+
+async function setupApp() {
+  await registerServiceWorker();
+  // Service worker is now registered
+}
+```

@@ -22,3 +22,49 @@ Micro-component for SPA-style navigation links. Renders a styled `<a href="#">` 
 - Renders an `<a>` element with `href="#"` and `role="link"`
 - Calls `e.preventDefault()` before invoking `onClick` to prevent URL navigation
 - Active/inactive state is controlled entirely via the `active` prop
+
+## Usages
+
+```tsx
+// Navigation link in SideNav
+{NAV_ITEMS.map(({ view, label }) => (
+  <NavLink
+    key={view}
+    active={currentView === view}
+    aria-label={label}
+    aria-current={currentView === view ? "page" : undefined}
+    onClick={() => onNavigate(view)}
+  >
+    {label}
+  </NavLink>
+))}
+
+// Active and inactive states
+<div className="space-y-2">
+  <NavLink
+    active={currentPage === "home"}
+    aria-label="Home"
+    aria-current={currentPage === "home" ? "page" : undefined}
+    onClick={() => setCurrentPage("home")}
+  >
+    Home
+  </NavLink>
+  <NavLink
+    active={currentPage === "settings"}
+    aria-label="Settings"
+    onClick={() => setCurrentPage("settings")}
+  >
+    Settings
+  </NavLink>
+</div>
+
+// With custom className
+<NavLink
+  active={isActive}
+  onClick={handleClick}
+  className="mx-2"
+  aria-label="Custom link"
+>
+  Custom Link
+</NavLink>
+```

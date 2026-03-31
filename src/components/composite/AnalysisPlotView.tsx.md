@@ -74,4 +74,41 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 
 ## Usages
 
-- Rendered by `components/container/AnalysisPlotContainer`. The container reads all 5 state props from `store/analysisPlotStore`, derives `fieldOptions` and `wavelengthOptions` from `committedSpecs`, and supplies the three async handlers (`onFieldChange`, `onWavelengthChange`, `onPlotTypeChange`).
+```tsx
+import { AnalysisPlotView, PLOT_TYPE_CONFIG, type PlotType } from "@/components/composite/AnalysisPlotView";
+
+// In a container component (e.g., AnalysisPlotContainer)
+const handleFieldChange = useCallback(async (value: number) => {
+  store.getState().setSelectedFieldIndex(value);
+  if (!proxy) return;
+  if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
+  store.getState().setPlotLoading(true);
+  try {
+    const plotFn = buildPlotFn(selectedPlotType, proxy, committedOpticalModel);
+    if (plotFn) {
+      const plot = await plotFn(value, selectedWavelengthIndex);
+      store.getState().setPlotImage(plot);
+    }
+  } catch {
+    onError();
+  } finally {
+    store.getState().setPlotLoading(false);
+  }
+}, [proxy, store, selectedPlotType, selectedWavelengthIndex, committedOpticalModel, onError]);
+
+return (
+  <AnalysisPlotView
+    fieldOptions={fieldOptions}
+    wavelengthOptions={wavelengthOptions}
+    selectedFieldIndex={selectedFieldIndex}
+    selectedWavelengthIndex={selectedWavelengthIndex}
+    selectedPlotType={selectedPlotType}
+    plotImageBase64={plotImage}
+    loading={plotLoading}
+    onFieldChange={handleFieldChange}
+    onWavelengthChange={handleWavelengthChange}
+    onPlotTypeChange={handlePlotTypeChange}
+    autoHeight={autoHeight}
+  />
+);
+```

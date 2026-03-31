@@ -73,4 +73,59 @@ Plots a grouped bar chart of per-surface third-order Seidel aberration coefficie
 
 ## Usages
 
-- Imported in the Pyodide web worker (`workers/pyodide.worker.ts`)
+All plotting functions are called from the Pyodide worker (`workers/pyodide.worker.ts`) and return base64-encoded PNG strings for transmission to the frontend.
+
+### `plot_lens_layout`
+
+Renders the optical system cross-section with ray traces:
+
+```python
+from rayoptics_web_utils.plotting import plot_lens_layout
+
+png_base64 = plot_lens_layout(opm)
+# Returns: "iVBORw0KGgoAAAANS..." (base64-encoded PNG string)
+```
+
+### `plot_ray_fan`, `plot_opd_fan`, `plot_spot_diagram`
+
+Render aberration plots for a specific field index:
+
+```python
+from rayoptics_web_utils.plotting import plot_ray_fan, plot_opd_fan, plot_spot_diagram
+
+field_index = 0  # Zero-indexed field
+ray_fan_png = plot_ray_fan(field_index, opm)
+opd_fan_png = plot_opd_fan(field_index, opm)
+spot_diagram_png = plot_spot_diagram(field_index, opm)
+# Each returns: "iVBORw0KGgoAAAANS..." (base64-encoded PNG string)
+```
+
+### `plot_surface_by_surface_3rd_order_aberr`
+
+Renders per-surface Seidel aberration bar chart:
+
+```python
+from rayoptics_web_utils.plotting import plot_surface_by_surface_3rd_order_aberr
+
+aberr_png = plot_surface_by_surface_3rd_order_aberr(opm)
+# Returns: "iVBORw0KGgoAAAANS..." (base64-encoded PNG string)
+```
+
+### `plot_wavefront_map`, `plot_geo_psf`, `plot_diffraction_psf`
+
+Render wavefront and PSF analysis plots for a specific field and wavelength:
+
+```python
+from rayoptics_web_utils.plotting import plot_wavefront_map, plot_geo_psf, plot_diffraction_psf
+
+field_index = 0
+wavelength_index = 0
+num_rays = 128
+
+wavefront_png = plot_wavefront_map(field_index, wavelength_index, opm, num_rays=num_rays)
+geo_psf_png = plot_geo_psf(field_index, wavelength_index, opm, num_rays=num_rays)
+diffr_psf_png = plot_diffraction_psf(field_index, wavelength_index, opm, num_rays=num_rays, max_dims=256)
+# Each returns: "iVBORw0KGgoAAAANS..." (base64-encoded PNG string)
+```
+
+All functions are imported and exposed via Comlink RPC in the Pyodide web worker.

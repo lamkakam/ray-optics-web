@@ -33,4 +33,29 @@ The return type is the opaque theme object accepted by AG Grid's `theme` prop.
 
 ## Usages
 
-Used by components that render AG Grid tables (e.g. the surface data editor). Pass the returned theme object directly to AG Grid's `theme` prop.
+```tsx
+"use client";
+
+import { AgGridReact } from "ag-grid-react";
+import { useAgGridTheme } from "@/hooks/useAgGridTheme";
+
+export function DataGrid() {
+  const agTheme = useAgGridTheme();
+
+  return (
+    <AgGridReact
+      columnDefs={[
+        { field: "name" },
+        { field: "age" },
+      ]}
+      rowData={[
+        { name: "Alice", age: 30 },
+        { name: "Bob", age: 25 },
+      ]}
+      theme={agTheme}
+    />
+  );
+}
+```
+
+The theme automatically responds to light/dark mode changes from `ThemeProvider`.

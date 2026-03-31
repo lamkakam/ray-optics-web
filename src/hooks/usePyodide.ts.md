@@ -66,4 +66,51 @@ interface PyodideWorkerAPI {
 
 ## Usages
 
-Used by container components (e.g. the main page container) that coordinate calls to the worker. Components should receive `proxy`, `isReady`, and `error` as props via dependency injection rather than calling this hook directly, to keep them testable without a real worker.
+**1. In a page container component (via DI pattern):**
+
+```tsx
+"use client";
+
+import { usePyodide } from "@/hooks/usePyodide";
+import { LensEditor } from "@/components/LensEditor";
+
+export default function Page() {
+  const { proxy, isReady, error } = usePyodide();
+
+  if (!isReady && !error) {
+    return <div>Loading Pyodide...</div>;
+  }
+
+  if (error) {
+    return <div>Failed to initialize: {error}</div>;
+  }
+
+  // Pass the proxy to child components via DI
+  return <LensEditor pyodideProxy={proxy} />;
+}
+```
+
+**2. In a child component (receives proxy as prop):**
+
+```tsx
+interface LensEditorProps {
+  pyodideProxy: PyodideWorkerAPI | undefined;
+}
+
+export function LensEditor({ pyodideProxy }: LensEditorProps) {
+  const handleComputeAnalysis = async () => {
+    if (!pyodideProxy) return;
+
+    const firstOrderData = await pyodideProxy.getFirstOrderData(opticalModel);
+    console.log("First-order data:", firstOrderData);
+  };
+
+  return (
+    <button onClick={handleComputeAnalysis}>
+      Compute Analysis
+    </button>
+  );
+}
+```
+
+This pattern keeps child components testable without requiring a real Pyodide worker.

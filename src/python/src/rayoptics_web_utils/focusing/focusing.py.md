@@ -95,3 +95,41 @@ The Strehl-based functions therefore:
 - `rayoptics_web_utils.raygrid.make_ray_grid` — RayGrid factory (replaces direct `RayGrid(...)` calls)
 - `rayoptics_web_utils.zernike.zernike._extract_exit_pupil_grid` — exit pupil OPD grid
 - `rayoptics_web_utils.zernike.zernike._monochromatic_strehl` — true Strehl formula
+
+## Usages
+
+All four focusing functions are called from the Pyodide worker (`workers/pyodide.worker.ts`) and mutate the optical model's image distance in place.
+
+### `focus_by_mono_rms_spot` / `focus_by_mono_strehl`
+
+Optimize image distance using monochromatic RMS spot radius or Strehl ratio:
+
+```python
+from rayoptics_web_utils.focusing import focus_by_mono_rms_spot, focus_by_mono_strehl
+
+field_index = 0
+result = focus_by_mono_rms_spot(opm, field_indices=[field_index])
+# Returns: {"delta_thi": 0.5, "metric_value": 0.05}
+# opm['seq_model'].gaps[-1].thi has been updated by delta_thi
+
+strehl_result = focus_by_mono_strehl(opm, field_indices=[field_index])
+# Returns: {"delta_thi": 0.48, "metric_value": 0.92}  # Strehl ∈ [0, 1]
+```
+
+### `focus_by_poly_rms_spot` / `focus_by_poly_strehl`
+
+Optimize image distance using polychromatic (spectrally-weighted) metrics:
+
+```python
+from rayoptics_web_utils.focusing import focus_by_poly_rms_spot, focus_by_poly_strehl
+
+field_index = 0
+poly_result = focus_by_poly_rms_spot(opm, field_indices=[field_index])
+# Returns: {"delta_thi": 0.52, "metric_value": 0.06}
+# RMS aggregated across all wavelengths via quadratic mean
+
+strehl_poly = focus_by_poly_strehl(opm, field_indices=[field_index])
+# Returns: {"delta_thi": 0.50, "metric_value": 0.90}  # Strehl averaged across wavelengths
+```
+
+All functions permanently modify `opm['seq_model'].gaps[-1].thi` and update the optical model. Used for autofocus features in the frontend.

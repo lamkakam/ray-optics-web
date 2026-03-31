@@ -38,4 +38,30 @@ Returns a human-readable wavelength label for matplotlib legend annotations.
 
 ## Usages
 
-- Imported in the Pyodide web worker (`workers/pyodide.worker.ts`)
+### `_fig_to_base64`
+
+Internal helper used by all plotting functions to convert matplotlib figures to base64-encoded PNG strings:
+
+```python
+from rayoptics_web_utils.utils import _fig_to_base64
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.plot([1, 2, 3], [1, 2, 3])
+png_base64 = _fig_to_base64(fig, dpi=150)
+# Returns: "iVBORw0KGgoAAAANS..." (base64-encoded PNG string)
+# fig is automatically closed after encoding
+```
+
+### `_get_wvl_lbl`
+
+Internal helper used by plotting functions to format wavelength labels for matplotlib legend annotations:
+
+```python
+from rayoptics_web_utils.utils import _get_wvl_lbl
+
+wvl_label = _get_wvl_lbl(opm, 0)
+# Returns: "550nm" or similar, suitable for legend text
+```
+
+**Note:** Both functions are internal (prefixed with `_`) and not part of the public API. They are imported and used within the `plotting` module for rendering matplotlib figures to PNG strings suitable for transmission to the frontend.

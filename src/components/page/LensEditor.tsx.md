@@ -59,3 +59,24 @@ Read reactively via `useStore`:
 ## Notes
 - `onError` delegates to `page.tsx`'s `ErrorModal` — the error modal itself is NOT rendered here
 - `zernikeModal` renders `specsStore.getState().getFieldOptions()` as a snapshot (non-reactive) — intentional
+
+## Usages
+
+```tsx
+// In app/page.tsx
+const lensEditor = (
+  <LensEditor
+    specsStore={specsStore}
+    lensStore={lensStore}
+    analysisPlotStore={analysisPlotStore}
+    lensLayoutImageStore={lensLayoutImageStore}
+    analysisDataStore={analysisDataStore}
+    proxy={proxy}
+    isReady={isReady}
+    onError={() => setErrorModalOpen(true)}
+  />
+);
+
+// Then rendered conditionally:
+{currentView === "home" && lensEditor}
+```

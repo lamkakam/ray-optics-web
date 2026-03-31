@@ -14,3 +14,20 @@ Full-page settings view shown when `currentView === 'settings'` in `page.tsx`. C
 - Renders a `<Select aria-label="Theme">` bound to `theme` / `onThemeChange`; wrapper capped at `max-w-[12em]` to prevent oversized dropdown
 - Theme options: `light`, `dark`
 - No Ok/Close button — navigation is handled by the side nav
+
+## Usages
+
+```tsx
+// In app/page.tsx
+const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const selected = e.target.value as Theme;
+  if (selected !== theme) {
+    setTheme(selected);
+  }
+};
+
+// Rendered conditionally:
+{currentView === "settings" && (
+  <SettingsView theme={theme} onThemeChange={handleThemeChange} />
+)}
+```

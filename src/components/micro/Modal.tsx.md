@@ -39,4 +39,44 @@ interface ModalProps {
 
 ## Usages
 
-- Used by every modal.
+```tsx
+// Basic modal for selecting a medium
+<Modal
+  isOpen={isOpen}
+  title="Select Medium"
+  titleId="medium-modal-title"
+  size="md"
+  onBackdropClick={onClose}
+>
+  <div className="space-y-4 mb-4">
+    <div>
+      <Label htmlFor="manufacturer-select">
+        Manufacturer
+      </Label>
+      <Select
+        id="manufacturer-select"
+        options={manufacturers}
+        value={selectedManufacturer}
+        onChange={handleManufacturerChange}
+      />
+    </div>
+  </div>
+  <div className="flex gap-2 justify-end">
+    <Button variant="secondary" onClick={onClose}>
+      Cancel
+    </Button>
+    <Button variant="primary" onClick={onConfirm}>
+      Confirm
+    </Button>
+  </div>
+</Modal>
+
+// Larger modal with scrollable content
+<Modal
+  isOpen={isOpen}
+  title="Advanced Settings"
+  size="4xl"
+>
+  {/* Scrollable content */}
+</Modal>
+```

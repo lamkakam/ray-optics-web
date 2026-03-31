@@ -40,4 +40,31 @@ interface WavelengthConfigModalProps {
 
 ## Usages
 
-- Opened from `SpecsConfigurerPanel`.
+```tsx
+import { WavelengthConfigModal } from "@/components/composite/WavelengthConfigModal";
+
+// In a container component (e.g., SpecsConfigurerContainer)
+const wavelengthWeights = useStore(store, (s) => s.wavelengthWeights);
+const referenceIndex = useStore(store, (s) => s.referenceIndex);
+const wavelengthModalOpen = useStore(store, (s) => s.wavelengthModalOpen);
+
+const handleWavelengthApply = useCallback(
+  (result: { weights: WavelengthWeights; referenceIndex: ReferenceIndex }) => {
+    store.getState().setWavelengths(result);
+    store.getState().closeWavelengthModal();
+  },
+  [store]
+);
+
+return (
+  <>
+    <WavelengthConfigModal
+      isOpen={wavelengthModalOpen}
+      initialWeights={wavelengthWeights}
+      initialReferenceIndex={referenceIndex}
+      onApply={handleWavelengthApply}
+      onClose={() => store.getState().closeWavelengthModal()}
+    />
+  </>
+);
+```

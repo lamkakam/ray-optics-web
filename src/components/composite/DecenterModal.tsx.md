@@ -40,4 +40,28 @@ type DecenterType = DecenterConfig;  // from lib/opticalModel
 
 ## Usages
 
-- Opened from `DecenterCell` in the lens prescription grid.
+```tsx
+import { DecenterModal, type DecenterType } from "@/components/composite/DecenterModal";
+
+// In a container component (e.g., LensPrescriptionContainer)
+const decenterRow = rows.find((r) => r.id === decenterModal.rowId);
+
+return (
+  <>
+    <DecenterModal
+      key={decenterModal.open ? decenterModal.rowId : "decenter-closed"}
+      isOpen={decenterModal.open}
+      initialDecenter={decenterRow?.kind !== "object" ? decenterRow?.decenter : undefined}
+      onConfirm={(decenter: DecenterType) => {
+        store.getState().updateRow(decenterModal.rowId, { decenter });
+        store.getState().closeDecenterModal();
+      }}
+      onClose={() => store.getState().closeDecenterModal()}
+      onRemove={() => {
+        store.getState().updateRow(decenterModal.rowId, { decenter: undefined });
+        store.getState().closeDecenterModal();
+      }}
+    />
+  </>
+);
+```

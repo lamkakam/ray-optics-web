@@ -28,5 +28,28 @@ Defines all core TypeScript domain types for the optical model, including system
 
 ## Usages
 
-- Imported by virtually every module and UI components.
-- `OpticalModel` is the shape validated by `lib/importSchema.ts` for JSON config files uploaded by users.
+```ts
+import type { OpticalModel, OpticalSpecs, Surface } from "@/lib/opticalModel";
+
+// Creating a new optical model
+const model: OpticalModel = {
+  specs: {
+    pupil: { space: "object", type: "epd", value: 25 },
+    field: { space: "object", type: "height", fields: [0, 14, 20], isRelative: true },
+    wavelengths: { weights: [[546.073, 1]], referenceIndex: 0 },
+  },
+  object: { distance: 1e10 },
+  surfaces: [
+    { curvatureRadius: 50, thickness: 10, medium: "BK7", manufacturer: "Schott" },
+    { curvatureRadius: -50, thickness: 5, medium: "air" },
+  ],
+  image: { curvatureRadius: 0 },
+  setAutoAperture: "autoAperture",
+};
+
+// Passing to Pyodide worker
+const firstOrderData = await proxy.getFirstOrderData(model);
+const layoutImage = await proxy.plotLensLayout(model);
+```
+
+Imported by virtually every module. Types are validated by `lib/importSchema.ts` for uploaded files.

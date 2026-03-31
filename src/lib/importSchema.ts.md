@@ -38,4 +38,30 @@ When validation fails, `validateOpticalModel.errors` is set to an array of AJV `
 
 ## Usages
 
-Called when a user imports a lens JSON file (e.g. in a file-upload handler) before passing the data to the Zustand store or Pyodide worker. Callers should check the return value and display `validateOpticalModel.errors` to the user on failure.
+```tsx
+import { validateOpticalModel } from "@/lib/importSchema";
+
+function handleFileUpload(jsonData: unknown) {
+  // Validate before using
+  if (!validateOpticalModel(jsonData)) {
+    // Show validation errors to user
+    const errors = validateOpticalModel.errors;
+    console.error("Invalid model:", errors);
+    alert(`Import failed: ${errors?.map(e => e.message).join(", ")}`);
+    return;
+  }
+
+  // jsonData is now type-checked as OpticalModel
+  lensEditorStore.getState().setRows(surfacesToGridRows(jsonData));
+  specsStore.getState().loadFromSpecs(jsonData.specs);
+}
+
+// Example: File input handler
+async function handleImport(file: File) {
+  const text = await file.text();
+  const data = JSON.parse(text);
+  handleFileUpload(data);
+}
+```
+
+Called when a user imports a lens JSON file before passing to Zustand store or Pyodide worker. Check return value and display `.errors` on failure.

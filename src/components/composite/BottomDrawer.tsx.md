@@ -36,4 +36,30 @@ interface BottomDrawerProps {
 
 ## Usages
 
-- Used in the main page layout to host the lens prescription and specs configurer tabs.
+```tsx
+import { BottomDrawer } from "@/components/composite/BottomDrawer";
+
+// In a container component (e.g., BottomDrawerContainer)
+const tabs = useMemo(
+  () => [
+    {
+      id: "specs",
+      label: "System Specs",
+      content: <SpecsConfigurerContainer store={specsStore} />,
+    },
+    {
+      id: "prescription",
+      label: "Prescription",
+      content: <LensPrescriptionContainer store={lensStore} {...props} />,
+    },
+    {
+      id: "focusing",
+      label: "Focusing",
+      content: <FocusingContainer {...focusingProps} />,
+    },
+  ],
+  [specsStore, lensStore, getOpticalModel, onImportJson, onUpdateSystem, isReady, computing, proxy, onError]
+);
+
+return <BottomDrawer tabs={tabs} draggable={draggable} />;
+```

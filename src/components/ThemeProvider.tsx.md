@@ -23,4 +23,40 @@ export function useTheme(): { theme: Theme; setTheme: (newTheme: Theme) => void 
 
 ## Usages
 
-- Wraps the root layout in `app/layout.tsx`. Consumed by UI components and UI-related hooks.
+**1. Wrap the root layout:**
+
+```tsx
+import { ThemeProvider } from "@/components/ThemeProvider";
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <ThemeProvider>
+      <html>
+        <body>{children}</body>
+      </html>
+    </ThemeProvider>
+  );
+}
+```
+
+**2. Consume theme in a component:**
+
+```tsx
+"use client";
+
+import { useTheme } from "@/components/ThemeProvider";
+
+export function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+      Toggle Theme: {theme}
+    </button>
+  );
+}
+```

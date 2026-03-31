@@ -139,4 +139,42 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 
 ## Usages
 
-- Instantiated as a singleton web worker by `hooks/usePyodide.ts` via a Comlink proxy.
+The worker is accessed via the `usePyodide` hook (see `hooks/usePyodide.ts.md`):
+
+```tsx
+"use client";
+
+import { usePyodide } from "@/hooks/usePyodide";
+import type { OpticalModel } from "@/lib/opticalModel";
+
+export function AnalysisPanel({ opticalModel }: { opticalModel: OpticalModel }) {
+  const { proxy, isReady, error } = usePyodide();
+
+  const handleComputeLayout = async () => {
+    if (!proxy) return;
+
+    // Call a worker function
+    const layoutBase64 = await proxy.plotLensLayout(opticalModel);
+    console.log("Lens layout image:", layoutBase64);
+
+    // Get first-order data
+    const firstOrder = await proxy.getFirstOrderData(opticalModel);
+    console.log("EFL:", firstOrder.EFL);
+
+    // Get Seidel aberrations
+    const seidel = await proxy.get3rdOrderSeidelData(opticalModel);
+    console.log("Seidel data:", seidel);
+  };
+
+  if (!isReady) return <div>Loading Pyodide...</div>;
+  if (error) return <div>Error: {error}</div>;
+
+  return (
+    <button onClick={handleComputeLayout}>
+      Compute Analysis
+    </button>
+  );
+}
+```
+
+The worker is instantiated as a singleton by `hooks/usePyodide.ts` via Comlink RPC.

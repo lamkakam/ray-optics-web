@@ -39,3 +39,38 @@ interface TabsProps {
 - Tab buttons carry `role="tab"`, `aria-selected`, and `aria-label`.
 - The content area carries `role="tabpanel"`.
 - Tab bar scrolls horizontally when tabs overflow.
+
+## Usages
+
+```tsx
+// Analysis results tabs in BottomDrawer
+const tabs = [
+  {
+    id: "ray-fan",
+    label: "Ray Fan",
+    content: <RayFanPlot data={plotData} />,
+  },
+  {
+    id: "spot-diagram",
+    label: "Spot Diagram",
+    content: <SpotDiagramPlot data={plotData} />,
+  },
+  {
+    id: "wavefront",
+    label: "Wavefront",
+    content: <WavefrontPlot data={plotData} />,
+  },
+];
+
+<Tabs
+  tabs={tabs}
+  actions={<collapseButton />}
+  showPanel={true}
+/>
+
+// Tabs with custom panel styling
+<Tabs
+  tabs={configTabs}
+  panelClassName="p-6 bg-gray-50"
+/>
+```

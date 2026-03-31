@@ -129,3 +129,49 @@ For infinite ref sphere (telecentric): `upd_grid[i][j]` is a 6-tuple; uses entra
 ## Lazy Import
 
 Registered in `__init__.py` via `_LAZY_IMPORTS['get_zernike_coefficients']` so it is only imported after `init()` stubs Qt modules.
+
+## Usages
+
+### `get_zernike_coefficients`
+
+Called from the Pyodide worker to compute Zernike polynomial coefficients for wavefront analysis:
+
+```python
+from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+field_index = 0
+wavelength_index = 0
+num_terms = 37
+ordering = "noll"
+
+zern_data = get_zernike_coefficients(
+    opm,
+    field_index,
+    wavelength_index,
+    num_terms=num_terms,
+    ordering=ordering
+)
+# Returns: {
+#   "coefficients": [c1, c2, c3, ...],            # unnormalized, in waves
+#   "rms_normalized_coefficients": [c1_rms, ...], # RMS-normalized
+#   "rms_wfe": 0.045,                              # RMS wavefront error in waves
+#   "pv_wfe": 0.128,                               # Peak-to-valley WFE in waves
+#   "strehl_ratio": 0.87,                          # Monochromatic Strehl ∈ [0, 1]
+#   "num_terms": 37,
+#   "field_index": 0,
+#   "wavelength_nm": 550.0,
+#   "ordering": "noll"
+# }
+json_result = json.dumps(zern_data)
+```
+
+### Helper functions
+
+Internal functions used by the module:
+
+- `fit_zernike(opd_grid, num_terms=22, ordering="noll")` — fit Zernike polynomials to an OPD grid
+- `_extract_exit_pupil_grid(rg, opm, wavelength_nm)` — extract OPD grid from RayGrid data
+- `noll_to_nm(j)` — convert Noll index j (1-based) to (n, m) radial order and frequency
+- `fringe_to_nm(j)` — convert Fringe index j to (n, m)
+
+All functions are called from the Pyodide worker (`workers/pyodide.worker.ts`) and exposed via Comlink RPC to the frontend for wavefront analysis visualization.

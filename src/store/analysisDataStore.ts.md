@@ -29,4 +29,45 @@ Zustand store for analysis results computed after each successful submit. Holds 
 
 ## Usages
 
-Used by `LensEditor` (reads and writes both fields after submit) and any future consumers that need analysis result data.
+```tsx
+"use client";
+
+import { useStore } from "zustand";
+import { createStore } from "@/store/createStore";
+import type { AnalysisDataState } from "@/store/analysisDataStore";
+import { createAnalysisDataSlice } from "@/store/analysisDataStore";
+import { SeidelAberrModal } from "@/components/composite/SeidelAberrModal";
+
+export default function LensEditorPage() {
+  // Create the store once
+  const analysisDataStore = useMemo(
+    () => createStore<AnalysisDataState>(createAnalysisDataSlice),
+    []
+  );
+
+  // Read state
+  const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
+  const firstOrderData = useStore(analysisDataStore, (s) => s.firstOrderData);
+
+  // After a successful submit, populate the data
+  const handleSubmit = async (model: OpticalModel) => {
+    const seidel = await proxy.get3rdOrderSeidelData(model);
+    const firstOrder = await proxy.getFirstOrderData(model);
+
+    analysisDataStore.getState().setSeidelData(seidel);
+    analysisDataStore.getState().setFirstOrderData(firstOrder);
+  };
+
+  return (
+    <div>
+      {seidelData && <SeidelAberrModal seidelData={seidelData} />}
+      {firstOrderData && (
+        <div>
+          <p>EFL: {firstOrderData.EFL}</p>
+          <p>f/#: {firstOrderData["f/"]}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+```

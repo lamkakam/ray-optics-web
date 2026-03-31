@@ -42,3 +42,59 @@ Computes scatter plot points based on current filter/axis settings:
 - x-axis: `abbeNumberD` when `abbeNumCenterLine='d'`, else `abbeNumberE`
 - y-axis (refractiveIndex): `refractiveIndexD` or `refractiveIndexE`
 - y-axis (partialDispersion): `partialDispersions[partialDispersionType]`
+
+## Usages
+
+```tsx
+import {
+  CATALOG_NAMES,
+  CATALOG_COLOR_MAP,
+  normalizeAllCatalogsData,
+  computePlotPoints,
+} from "@/lib/glassMap";
+import type { AllGlassCatalogsData } from "@/lib/glassMap";
+
+// Load and normalize glass catalogs from worker
+const rawData = await proxy.getAllGlassCatalogsData();
+const catalogsData = normalizeAllCatalogsData(rawData);
+glassMapStore.getState().setCatalogsData(catalogsData);
+
+// Render glass map plot
+function GlassMapPlot({
+  catalogsData,
+  enabledCatalogs,
+  plotType,
+}: {
+  catalogsData: AllGlassCatalogsData;
+  enabledCatalogs: Record<CatalogName, boolean>;
+  plotType: GlassMapPlotType;
+}) {
+  // Compute plot points based on current settings
+  const plotPoints = computePlotPoints(
+    catalogsData,
+    enabledCatalogs,
+    plotType,
+    "d", // abbeNumCenterLine
+    "P_g_F" // partialDispersionType
+  );
+
+  return (
+    <ScatterPlot
+      data={plotPoints}
+      colorMap={CATALOG_COLOR_MAP}
+      xLabel="Abbe Number"
+      yLabel={plotType === "refractiveIndex" ? "Refractive Index" : "Partial Dispersion"}
+    />
+  );
+}
+
+// Use catalog names in UI
+<div>
+  {CATALOG_NAMES.map((catalog) => (
+    <label key={catalog}>
+      <input type="checkbox" defaultChecked />
+      {catalog}
+    </label>
+  ))}
+</div>
+```

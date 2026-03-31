@@ -28,4 +28,26 @@ interface ConfirmImportModalProps {
 
 ## Usages
 
-- Shown after a valid JSON file is parsed but before applying it.
+```tsx
+import { ConfirmImportModal } from "@/components/composite/ConfirmImportModal";
+
+// In a container component
+const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
+
+const handleConfirmImport = () => {
+  if (pendingImportData) onImportJson(pendingImportData);
+  setPendingImportData(undefined);
+};
+
+const handleCancelImport = () => setPendingImportData(undefined);
+
+return (
+  <>
+    <ConfirmImportModal
+      isOpen={pendingImportData !== undefined}
+      onConfirm={handleConfirmImport}
+      onCancel={handleCancelImport}
+    />
+  </>
+);
+```

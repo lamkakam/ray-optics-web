@@ -53,4 +53,28 @@ Return shape:
 
 ## Usages
 
-- Imported in the Pyodide web worker (`workers/pyodide.worker.ts`)
+### `get_first_order_data`
+
+Called from the Pyodide worker to extract paraxial data for a single optical model:
+
+```python
+from rayoptics_web_utils.analysis import get_first_order_data
+
+fod_data = get_first_order_data(opm)
+# Returns: {"efl": 99.8, "bfl": 45.2, ...} as JSON-serialisable dict
+json_result = json.dumps(fod_data)
+```
+
+### `get_3rd_order_seidel_data`
+
+Called from the Pyodide worker to extract third-order aberration data for analysis and visualization:
+
+```python
+from rayoptics_web_utils.analysis import get_3rd_order_seidel_data
+
+seidel_data = get_3rd_order_seidel_data(opm)
+# Returns: {"surfaceBySurface": {...}, "transverse": {...}, "wavefront": {...}, "curvature": {...}}
+json_result = json.dumps(seidel_data)
+```
+
+Both functions are imported in the Pyodide web worker (`workers/pyodide.worker.ts`) and exposed via Comlink RPC to the frontend.
