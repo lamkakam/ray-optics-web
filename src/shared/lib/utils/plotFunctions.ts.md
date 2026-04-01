@@ -48,7 +48,7 @@ Convenience wrapper around `PLOT_FUNCTION_BUILDERS`. Returns `undefined` if `pro
 
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`
 - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
-- `PyodideWorkerAPI` (type-only) from `@/hooks/usePyodide`
+- `PyodideWorkerAPI` (type-only) from `@/shared/hooks/usePyodide`
 
 ## Usages
 

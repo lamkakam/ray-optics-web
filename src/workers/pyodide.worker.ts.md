@@ -144,7 +144,7 @@ The worker is accessed via the `usePyodide` hook (see `hooks/usePyodide.ts.md`):
 ```tsx
 "use client";
 
-import { usePyodide } from "@/hooks/usePyodide";
+import { usePyodide } from "@/shared/hooks/usePyodide";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 export function AnalysisPanel({ opticalModel }: { opticalModel: OpticalModel }) {

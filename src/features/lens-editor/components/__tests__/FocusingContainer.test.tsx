@@ -7,7 +7,7 @@ import { createLensEditorSlice, type LensEditorState } from "@/features/lens-edi
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import { surfacesToGridRows } from "@/shared/lib/utils/gridTransform";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 const testSurfaces = {
   object: { distance: 1e10 },

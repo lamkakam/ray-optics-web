@@ -7,7 +7,7 @@ import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPl
 import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";
 import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
 import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { SelectedGlass } from "@/shared/lib/types/glassMap";
 import { normalizeAllCatalogsData, computePlotPoints } from "@/shared/lib/types/glassMap";
 

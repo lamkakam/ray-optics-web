@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useMemo, useRef } from "react";
 import { useStore, type StoreApi } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData, ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/shared/lib/types/zernikeData";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";

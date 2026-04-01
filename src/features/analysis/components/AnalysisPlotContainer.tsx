@@ -3,7 +3,7 @@
 import React, { useCallback } from "react";
 import { useStore } from "zustand";
 import type { StoreApi } from "zustand";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";

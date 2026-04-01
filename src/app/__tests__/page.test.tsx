@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
 import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -64,7 +64,7 @@ const mockProxy = {
   getAllGlassCatalogsData: jest.fn().mockResolvedValue({}),
 } satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
-jest.mock("@/hooks/usePyodide", () => ({
+jest.mock("@/shared/hooks/usePyodide", () => ({
   usePyodide: () => ({
     proxy: mockProxy,
     isReady: true,

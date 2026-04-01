@@ -6,7 +6,7 @@ import type { StoreApi } from "zustand";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { FocusingPanel } from "@/features/lens-editor/components/FocusingPanel";
 import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
 
