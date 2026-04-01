@@ -47,7 +47,7 @@ interface FieldConfigModalProps {
 ```tsx
 import { FieldConfigModal } from "@/features/lens-editor/components/FieldConfigModal";
 
-// In a container component (e.g., SpecsConfigurerContainer)
+// In a container component (e.g., SpecsConfiguratorContainer)
 const fieldSpace = useStore(store, (s) => s.fieldSpace);
 const fieldType = useStore(store, (s) => s.fieldType);
 const maxField = useStore(store, (s) => s.maxField);

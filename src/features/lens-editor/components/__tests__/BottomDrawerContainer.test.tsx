@@ -4,14 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { BottomDrawerContainer } from "@/features/lens-editor/components/BottomDrawerContainer";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 
 // Mock child containers to avoid complex deps
-jest.mock("@/features/lens-editor/components/SpecsConfigurerContainer", () => ({
-  SpecsConfigurerContainer: () => <div data-testid="specs-content">Specs Content</div>,
+jest.mock("@/features/lens-editor/components/SpecsConfiguratorContainer", () => ({
+  SpecsConfiguratorContainer: () => <div data-testid="specs-content">Specs Content</div>,
 }));
 
 jest.mock("@/features/lens-editor/components/LensPrescriptionContainer", () => ({
@@ -42,7 +42,7 @@ const testModel: OpticalModel = {
 };
 
 function makeStores() {
-  const specsStore = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+  const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
   return { specsStore, lensStore };
 }

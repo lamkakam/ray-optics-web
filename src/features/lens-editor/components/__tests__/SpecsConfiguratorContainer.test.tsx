@@ -3,8 +3,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
-import { SpecsConfigurerContainer } from "@/features/lens-editor/components/SpecsConfigurerContainer";
-import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { SpecsConfiguratorContainer } from "@/features/lens-editor/components/SpecsConfiguratorContainer";
+import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
 
 // Mock useTheme — default to light
@@ -32,7 +32,7 @@ const testSpecs: OpticalSpecs = {
 };
 
 function createTestStore() {
-  const store = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+  const store = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   store.getState().loadFromSpecs(testSpecs);
   return store;
 }
@@ -42,14 +42,14 @@ function renderWithContext() {
   return (
     render(
       <SpecsConfiguratorStoreContext.Provider value={store}>
-        <SpecsConfigurerContainer />
+        <SpecsConfiguratorContainer />
       </SpecsConfiguratorStoreContext.Provider>
     )
   );
 }
 
 
-describe("SpecsConfigurerContainer", () => {
+describe("SpecsConfiguratorContainer", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -111,7 +111,7 @@ describe("SpecsConfigurerContainer", () => {
     const store = createTestStore();
     render(
       <SpecsConfiguratorStoreContext.Provider value={store}>
-        <SpecsConfigurerContainer />
+        <SpecsConfiguratorContainer />
       </SpecsConfiguratorStoreContext.Provider>
     );
 

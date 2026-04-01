@@ -6,7 +6,7 @@ Page-level component (`"use client"`). Owns the home-view lens editor workflow: 
 ## Props
 | Prop | Type | Description |
 |------|------|-------------|
-| `specsStore` | `StoreApi<SpecsConfigurerState>` | Zustand store for optical specs |
+| `specsStore` | `StoreApi<SpecsConfiguratorState>` | Zustand store for optical specs |
 | `analysisPlotStore` | `StoreApi<AnalysisPlotState>` | Zustand store for analysis plot |
 | `lensLayoutImageStore` | `StoreApi<LensLayoutImageState>` | Zustand store for lens layout image/loading |
 | `analysisDataStore` | `StoreApi<AnalysisDataState>` | Zustand store for seidel and first-order data |

@@ -1,8 +1,8 @@
-# `features/lens-editor/components/SpecsConfigurerContainer.tsx`
+# `features/lens-editor/components/SpecsConfiguratorContainer.tsx`
 
 ## Purpose
 
-Container that connects the `specsConfigurerStore` to `SpecsConfigurerPanel` and its two config modals (`FieldConfigModal`, `WavelengthConfigModal`). Derives human-readable summaries for field and wavelength.
+Container that connects the `specsConfiguratorStore` to `SpecsConfiguratorPanel` and its two config modals (`FieldConfigModal`, `WavelengthConfigModal`). Derives human-readable summaries for field and wavelength.
 
 ## Injected Dependencies
 Imperative access to specs actions is via `useSpecsConfiguratorStore()` (stable, non-reactive). For reactive states, use `useSpecsConfiguratorStore` with Zustand's `useStore`.

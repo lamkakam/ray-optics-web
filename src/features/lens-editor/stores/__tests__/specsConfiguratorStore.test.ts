@@ -1,12 +1,12 @@
 import { createStore } from "zustand/vanilla";
 import {
-  createSpecsConfigurerSlice,
-  type SpecsConfigurerState,
-} from "@/features/lens-editor/stores/specsConfigurerStore";
+  createSpecsConfiguratorSlice,
+  type SpecsConfiguratorState,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
 import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
 
 function makeStore() {
-  return createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+  return createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
 }
 
 const sampleSpecs: OpticalSpecs = {
@@ -28,7 +28,7 @@ const sampleSpecs: OpticalSpecs = {
   },
 };
 
-describe("specsConfigurerStore", () => {
+describe("specsConfiguratorStore", () => {
   describe("loadFromSpecs", () => {
     it("populates all aperture fields", () => {
       const store = makeStore();

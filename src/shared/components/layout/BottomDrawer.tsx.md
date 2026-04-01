@@ -45,7 +45,7 @@ const tabs = useMemo(
     {
       id: "specs",
       label: "System Specs",
-      content: <SpecsConfigurerContainer />,
+      content: <SpecsConfiguratorContainer />,
     },
     {
       id: "prescription",

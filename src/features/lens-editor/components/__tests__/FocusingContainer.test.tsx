@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { FocusingContainer } from "@/features/lens-editor/components/FocusingContainer";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { surfacesToGridRows } from "@/shared/lib/utils/gridTransform";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -35,7 +35,7 @@ const testSurfaces = {
 };
 
 function createTestSpecsStore() {
-  const store = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+  const store = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   store.getState().setField({
     space: "object",
     type: "angle",

@@ -43,7 +43,7 @@ interface WavelengthConfigModalProps {
 ```tsx
 import { WavelengthConfigModal } from "@/features/lens-editor/components/WavelengthConfigModal";
 
-// In a container component (e.g., SpecsConfigurerContainer)
+// In a container component (e.g., SpecsConfiguratorContainer)
 const wavelengthWeights = useStore(store, (s) => s.wavelengthWeights);
 const referenceIndex = useStore(store, (s) => s.referenceIndex);
 const wavelengthModalOpen = useStore(store, (s) => s.wavelengthModalOpen);

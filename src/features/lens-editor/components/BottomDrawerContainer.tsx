@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";
-import { SpecsConfigurerContainer } from "./SpecsConfigurerContainer";
+import { SpecsConfiguratorContainer } from "./SpecsConfiguratorContainer";
 import { LensPrescriptionContainer } from "./LensPrescriptionContainer";
 import { FocusingContainer } from "./FocusingContainer";
 
@@ -34,7 +34,7 @@ export function BottomDrawerContainer({
       {
         id: "specs",
         label: "System Specs",
-        content: <SpecsConfigurerContainer />,
+        content: <SpecsConfiguratorContainer />,
       },
       {
         id: "prescription",

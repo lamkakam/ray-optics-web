@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
 import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPlotContainer";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -58,8 +58,8 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
   } as unknown as PyodideWorkerAPI;
 }
 
-function makeSpecsStore(specs: OpticalSpecs): StoreApi<SpecsConfigurerState> {
-  const store = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+function makeSpecsStore(specs: OpticalSpecs): StoreApi<SpecsConfiguratorState> {
+  const store = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   store.getState().loadFromSpecs(specs);
   store.getState().setCommittedSpecs(specs);
   return store;

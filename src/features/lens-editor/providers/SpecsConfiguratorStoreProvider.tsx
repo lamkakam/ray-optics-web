@@ -2,9 +2,9 @@
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { createStore, type StoreApi } from 'zustand';
-import { createSpecsConfigurerSlice, type SpecsConfigurerState } from '@/features/lens-editor/stores/specsConfigurerStore';
+import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from '@/features/lens-editor/stores/specsConfiguratorStore';
 
-type ContextValue = StoreApi<SpecsConfigurerState> | undefined;
+type ContextValue = StoreApi<SpecsConfiguratorState> | undefined;
 
 export const SpecsConfiguratorStoreContext = createContext<ContextValue>(undefined);
 
@@ -16,7 +16,7 @@ export const SpecsConfiguratorStoreProvider: React.FC<SpecsConfiguratorStoreProv
   const [store, setStore] = useState<ContextValue>(undefined);
 
   if (store === undefined) {
-    setStore(createStore<SpecsConfigurerState>(createSpecsConfigurerSlice));
+    setStore(createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice));
   }
 
   return (
@@ -26,7 +26,7 @@ export const SpecsConfiguratorStoreProvider: React.FC<SpecsConfiguratorStoreProv
   );
 };
 
-export const useSpecsConfiguratorStore = (): StoreApi<SpecsConfigurerState> => {
+export const useSpecsConfiguratorStore = (): StoreApi<SpecsConfiguratorState> => {
   const store = useContext(SpecsConfiguratorStoreContext);
   if (store === undefined) {
     throw new Error('`useSpecsConfiguratorStore` must be used within `SpecsConfiguratorStoreProvider`');

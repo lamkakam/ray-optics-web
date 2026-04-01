@@ -8,7 +8,7 @@ Container component that composes the three drawer tabs (System Specs, Prescript
 
 ```ts
 interface BottomDrawerContainerProps {
-  specsStore: StoreApi<SpecsConfigurerState>;
+  specsStore: StoreApi<SpecsConfiguratorState>;
   getOpticalModel: () => OpticalModel;
   onImportJson: (data: OpticalModel) => void;
   onUpdateSystem: () => Promise<void>;
@@ -36,7 +36,7 @@ interface BottomDrawerContainerProps {
 ## Internal Logic
 
 Builds a `tabs` array via `useMemo` containing:
-1. **System Specs** — `<SpecsConfigurerContainer />`
+1. **System Specs** — `<SpecsConfiguratorContainer />`
 2. **Prescription** — `<LensPrescriptionContainer .../>` with `isUpdateSystemDisabled={!isReady || computing}`
 3. **Focusing** — `<FocusingContainer .../>`
 

@@ -1,4 +1,4 @@
-# `features/lens-editor/components/SpecsConfigurerPanel.tsx`
+# `features/lens-editor/components/SpecsConfiguratorPanel.tsx`
 
 ## Purpose
 
@@ -7,7 +7,7 @@ Presentational panel for editing optical system specifications: system aperture 
 ## Props
 
 ```ts
-interface SpecsConfigurerPanelProps {
+interface SpecsConfiguratorPanelProps {
   pupilSpace: PupilSpace;
   pupilType: PupilType;
   pupilValue: number;
@@ -44,9 +44,9 @@ interface SpecsConfigurerPanelProps {
 ## Usages
 
 ```tsx
-import { SpecsConfigurerPanel } from "@/features/lens-editor/components/SpecsConfigurerPanel";
+import { SpecsConfiguratorPanel } from "@/features/lens-editor/components/SpecsConfiguratorPanel";
 
-// In a container component (e.g., SpecsConfigurerContainer)
+// In a container component (e.g., SpecsConfiguratorContainer)
 const pupilSpace = useStore(store, (s) => s.pupilSpace);
 const pupilType = useStore(store, (s) => s.pupilType);
 const pupilValue = useStore(store, (s) => s.pupilValue);
@@ -67,7 +67,7 @@ const handleApertureChange = useCallback(
 );
 
 return (
-  <SpecsConfigurerPanel
+  <SpecsConfiguratorPanel
     pupilSpace={pupilSpace}
     pupilType={pupilType}
     pupilValue={pupilValue}

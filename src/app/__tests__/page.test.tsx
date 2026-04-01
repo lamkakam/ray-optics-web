@@ -112,9 +112,9 @@ describe("Home page", () => {
     expect(screen.getByRole("tab", { name: "Prescription" })).toBeInTheDocument();
   });
 
-  it("shows SpecsConfigurerContainer content in System Specs tab", () => {
+  it("shows SpecsConfiguratorContainer content in System Specs tab", () => {
     renderHome();
-    // System Aperture is rendered by SpecsConfigurerPanel
+    // System Aperture is rendered by SpecsConfiguratorPanel
     expect(screen.getByText("System Aperture")).toBeInTheDocument();
   });
 

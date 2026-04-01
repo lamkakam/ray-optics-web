@@ -25,7 +25,7 @@ ray-optics-web/
 │   │   │   ├── components/       # Composite + container + domain-cell components
 │   │   │   │   ├── __tests__/
 │   │   │   │   └── index.md
-│   │   │   ├── stores/           # lensEditorStore, specsConfigurerStore
+│   │   │   ├── stores/           # lensEditorStore, specsConfiguratorStore
 │   │   │   │   ├── __tests__/
 │   │   │   │   └── index.md
 │   │   │   ├── __tests__/        # Tests for LensEditor page

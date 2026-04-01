@@ -5,7 +5,7 @@ import { createStore } from "zustand";
 import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
@@ -129,7 +129,7 @@ const mockSeidelData: SeidelData = {
 };
 
 function makeStores() {
-  const specsStore = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+  const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
   const analysisPlotStore = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
   const lensLayoutImageStore = createStore<LensLayoutImageState>(createLensLayoutImageSlice);

@@ -10,7 +10,7 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
-import type { FieldSpace, FieldType } from "@/features/lens-editor/stores/specsConfigurerStore";
+import type { FieldSpace, FieldType } from "@/features/lens-editor/stores/specsConfiguratorStore";
 
 interface FieldRow {
   readonly id: string;

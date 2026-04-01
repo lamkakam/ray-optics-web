@@ -1,4 +1,4 @@
-# `features/lens-editor/stores/specsConfigurerStore.ts`
+# `features/lens-editor/stores/specsConfiguratorStore.ts`
 
 ## Purpose
 
@@ -7,8 +7,8 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 ## Exports
 
 - `PupilSpace`, `PupilType`, `FieldSpace`, `FieldType`, `WavelengthWeights`, `ReferenceIndex` — type aliases derived from `OpticalSpecs` for use in form components.
-- `SpecsConfigurerState` — interface describing all state fields and actions.
-- `createSpecsConfigurerSlice` — `StateCreator<SpecsConfigurerState>` to be composed into a combined store.
+- `SpecsConfiguratorState` — interface describing all state fields and actions.
+- `createSpecsConfiguratorSlice` — `StateCreator<SpecsConfiguratorState>` to be composed into a combined store.
 
 ## State
 
@@ -61,13 +61,13 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 
 import { useStore } from "zustand";
 import { createStore } from "createStore from "zustand";
-import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
-import { createSpecsConfigurerSlice } from "@/features/lens-editor/stores/specsConfigurerStore";
+import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
+import { createSpecsConfiguratorSlice } from "@/features/lens-editor/stores/specsConfiguratorStore";
 
-export default function SpecsConfigurerPage() {
+export default function SpecsConfiguratorPage() {
   // Create the store once
   const specsStore = useMemo(
-    () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
+    () => createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice),
     []
   );
 

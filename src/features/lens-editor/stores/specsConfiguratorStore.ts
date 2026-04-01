@@ -10,7 +10,7 @@ export type FieldType = OpticalSpecs["field"]["type"];
 export type WavelengthWeights = OpticalSpecs["wavelengths"]["weights"];
 export type ReferenceIndex = OpticalSpecs["wavelengths"]["referenceIndex"];
 
-export interface SpecsConfigurerState {
+export interface SpecsConfiguratorState {
   // Aperture
   pupilSpace: PupilSpace;
   pupilType: PupilType;
@@ -64,7 +64,7 @@ export interface SpecsConfigurerState {
   loadFromSpecs: (specs: OpticalSpecs) => void;
 }
 
-export const createSpecsConfigurerSlice: StateCreator<SpecsConfigurerState> = (
+export const createSpecsConfiguratorSlice: StateCreator<SpecsConfiguratorState> = (
   set,
   get
 ) => ({

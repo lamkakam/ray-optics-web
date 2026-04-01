@@ -11,7 +11,7 @@ interface AnalysisPlotContainerProps {
   store: StoreApi<AnalysisPlotState>;
   proxy: PyodideWorkerAPI | undefined;
   lensStore: StoreApi<LensEditorState>;
-  specsStore: StoreApi<SpecsConfigurerState>;
+  specsStore: StoreApi<SpecsConfiguratorState>;
   onError: () => void;
   autoHeight?: boolean;
 }
