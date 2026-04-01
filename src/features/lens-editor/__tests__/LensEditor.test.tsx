@@ -10,6 +10,7 @@ import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/anal
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
+import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
@@ -167,16 +168,17 @@ function renderLensEditor(overrides?: {
   const proxy = overrides && "proxy" in overrides ? overrides.proxy : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
   render(
-    <LensEditor
-      specsStore={specsStore}
-      lensStore={lensStore}
-      analysisPlotStore={analysisPlotStore}
-      lensLayoutImageStore={lensLayoutImageStore}
-      analysisDataStore={analysisDataStore}
-      proxy={proxy}
-      isReady={overrides?.isReady ?? true}
-      onError={onError}
-    />
+    <LensEditorStoreContext.Provider value={lensStore}>
+      <LensEditor
+        specsStore={specsStore}
+        analysisPlotStore={analysisPlotStore}
+        lensLayoutImageStore={lensLayoutImageStore}
+        analysisDataStore={analysisDataStore}
+        proxy={proxy}
+        isReady={overrides?.isReady ?? true}
+        onError={onError}
+      />
+    </LensEditorStoreContext.Provider>
   );
   return { proxy, onError, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore };
 }

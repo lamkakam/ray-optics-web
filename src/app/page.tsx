@@ -6,7 +6,6 @@ import { createStore } from "zustand";
 import type { Theme } from "@/shared/tokens/theme";
 import type { AppView } from "@/shared/lib/types/appView";
 import { usePyodide } from "@/shared/hooks/usePyodide";
-import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
@@ -36,11 +35,6 @@ export default function Home() {
 
   const specsStore = useMemo(
     () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
-    []
-  );
-
-  const lensStore = useMemo(
-    () => createStore<LensEditorState>(createLensEditorSlice),
     []
   );
 
@@ -91,7 +85,6 @@ export default function Home() {
   const lensEditor = (
     <LensEditor
       specsStore={specsStore}
-      lensStore={lensStore}
       analysisPlotStore={analysisPlotStore}
       lensLayoutImageStore={lensLayoutImageStore}
       analysisDataStore={analysisDataStore}

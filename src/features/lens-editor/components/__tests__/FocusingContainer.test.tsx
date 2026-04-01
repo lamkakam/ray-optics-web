@@ -8,6 +8,7 @@ import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/feature
 import { surfacesToGridRows } from "@/shared/lib/utils/gridTransform";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 
 const testSurfaces = {
   object: { distance: 1e10 },
@@ -89,16 +90,17 @@ describe("FocusingContainer", () => {
     const lensStore = createTestLensStore();
     const specsStore = createTestSpecsStore();
     render(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={makeMockProxy()}
-        isReady={true}
-        computing={false}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
-        onError={jest.fn()}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={makeMockProxy()}
+          isReady={true}
+          computing={false}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+          onError={jest.fn()}
+        />
+      </LensEditorStoreContext.Provider>
     );
     expect(screen.getByRole("button", { name: "Focus" })).toBeInTheDocument();
   });
@@ -107,16 +109,17 @@ describe("FocusingContainer", () => {
     const lensStore = createTestLensStore();
     const specsStore = createTestSpecsStore();
     render(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={undefined}
-        isReady={false}
-        computing={false}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
-        onError={jest.fn()}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={undefined}
+          isReady={false}
+          computing={false}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+          onError={jest.fn()}
+        />
+      </LensEditorStoreContext.Provider>
     );
     expect(screen.getByRole("button", { name: "Focus" })).toBeDisabled();
   });
@@ -125,16 +128,17 @@ describe("FocusingContainer", () => {
     const lensStore = createTestLensStore();
     const specsStore = createTestSpecsStore();
     render(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={makeMockProxy()}
-        isReady={true}
-        computing={true}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
-        onError={jest.fn()}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={makeMockProxy()}
+          isReady={true}
+          computing={true}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+          onError={jest.fn()}
+        />
+      </LensEditorStoreContext.Provider>
     );
     expect(screen.getByRole("button", { name: "Focus" })).toBeDisabled();
   });
@@ -145,16 +149,17 @@ describe("FocusingContainer", () => {
     const proxy = makeMockProxy();
     const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
     render(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={proxy}
-        isReady={true}
-        computing={false}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={onUpdateSystem}
-        onError={jest.fn()}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={proxy}
+          isReady={true}
+          computing={false}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={onUpdateSystem}
+          onError={jest.fn()}
+        />
+      </LensEditorStoreContext.Provider>
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     await waitFor(() => expect(proxy.focusByMonoRmsSpot).toHaveBeenCalledWith(testOpticalModel, 0));
@@ -166,16 +171,17 @@ describe("FocusingContainer", () => {
     const proxy = makeMockProxy();
     const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
     render(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={proxy}
-        isReady={true}
-        computing={false}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={onUpdateSystem}
-        onError={jest.fn()}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={proxy}
+          isReady={true}
+          computing={false}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={onUpdateSystem}
+          onError={jest.fn()}
+        />
+      </LensEditorStoreContext.Provider>
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     await waitFor(() => expect(onUpdateSystem).toHaveBeenCalledTimes(1));
@@ -187,16 +193,17 @@ describe("FocusingContainer", () => {
     const proxy = makeMockProxy();
     const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
     render(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={proxy}
-        isReady={true}
-        computing={false}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={onUpdateSystem}
-        onError={jest.fn()}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={proxy}
+          isReady={true}
+          computing={false}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={onUpdateSystem}
+          onError={jest.fn()}
+        />
+      </LensEditorStoreContext.Provider>
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     await waitFor(() => expect(onUpdateSystem).toHaveBeenCalled());
@@ -218,16 +225,17 @@ describe("FocusingContainer", () => {
       focusByMonoRmsSpot: jest.fn().mockRejectedValue(new Error("fail")),
     });
     render(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={proxy}
-        isReady={true}
-        computing={false}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
-        onError={onError}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={proxy}
+          isReady={true}
+          computing={false}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+          onError={onError}
+        />
+      </LensEditorStoreContext.Provider>
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
@@ -246,16 +254,17 @@ describe("FocusingContainer", () => {
     });
     const onUpdateSystem = jest.fn().mockResolvedValue(undefined);
     render(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={slowProxy}
-        isReady={true}
-        computing={false}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={onUpdateSystem}
-        onError={jest.fn()}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={slowProxy}
+          isReady={true}
+          computing={false}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={onUpdateSystem}
+          onError={jest.fn()}
+        />
+      </LensEditorStoreContext.Provider>
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     expect(screen.getByText("Focusing…")).toBeInTheDocument();
@@ -267,16 +276,17 @@ describe("FocusingContainer", () => {
     const lensStore = createTestLensStore();
     const specsStore = createTestSpecsStore();
     const { rerender } = render(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={makeMockProxy()}
-        isReady={true}
-        computing={false}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
-        onError={jest.fn()}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={makeMockProxy()}
+          isReady={true}
+          computing={false}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+          onError={jest.fn()}
+        />
+      </LensEditorStoreContext.Provider>
     );
 
     // Initial: maxField=20, fields=[0, 0.7, 1] → options "0.00°", "14.0°", "20.0°"
@@ -296,16 +306,17 @@ describe("FocusingContainer", () => {
 
     // Force re-render to pick up store changes
     rerender(
-      <FocusingContainer
-        lensStore={lensStore}
-        specsStore={specsStore}
-        proxy={makeMockProxy()}
-        isReady={true}
-        computing={false}
-        getOpticalModel={() => testOpticalModel}
-        onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
-        onError={jest.fn()}
-      />
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <FocusingContainer
+          specsStore={specsStore}
+          proxy={makeMockProxy()}
+          isReady={true}
+          computing={false}
+          getOpticalModel={() => testOpticalModel}
+          onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
+          onError={jest.fn()}
+        />
+      </LensEditorStoreContext.Provider>
     );
 
     await waitFor(() => {

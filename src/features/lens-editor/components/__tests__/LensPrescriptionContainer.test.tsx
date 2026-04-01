@@ -7,6 +7,7 @@ import { createLensEditorSlice, type LensEditorState } from "@/features/lens-edi
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
 import { IMAGE_ROW_ID } from "@/shared/lib/types/gridTypes";
 import type { Surfaces, OpticalModel } from "@/shared/lib/types/opticalModel";
+import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
@@ -57,30 +58,46 @@ function getOpticalModel(): OpticalModel {
 
 const onImportJson = jest.fn();
 
+function renderLPC(store: ReturnType<typeof createTestStore> = createTestStore()) {
+  return {
+    ...render(
+      <LensEditorStoreContext.Provider value={store}>
+        <LensPrescriptionContainer
+          getOpticalModel={getOpticalModel}
+          onImportJson={onImportJson}
+          onUpdateSystem={jest.fn()}
+          isUpdateSystemDisabled={false}
+        />
+      </LensEditorStoreContext.Provider>
+    ),
+    store,
+  };
+}
+
 describe("LensPrescriptionContainer", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("renders the grid", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
   it("renders Download Config button", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     const btn = screen.getByText("Download Config");
     expect(btn).toBeInTheDocument();
   });
 
   it("renders rows from store (object + 2 surfaces + image)", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
     expect(rows).toHaveLength(4);
   });
 
   it("adds a row when '+' is clicked on a surface row", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     const addButtons = screen.getAllByRole("button", { name: "Insert row" });
 
     await userEvent.click(addButtons[1]); // '+' on first surface row
@@ -90,7 +107,7 @@ describe("LensPrescriptionContainer", () => {
   });
 
   it("deletes a row when '-' is clicked on a surface row", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     const deleteButtons = screen.getAllByRole("button", { name: "Delete row" });
 
     await userEvent.click(deleteButtons[0]); // '-' on first surface row
@@ -100,16 +117,14 @@ describe("LensPrescriptionContainer", () => {
   });
 
   it("store reflects current surfaces", () => {
-    const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    const { store } = renderLPC();
     const surfaces = gridRowsToSurfaces(store.getState().rows);
     expect(surfaces.surfaces).toHaveLength(2);
     expect(surfaces.surfaces[0].curvatureRadius).toBe(50);
   });
 
   it("renders DecenterModal when decenterModal is open", () => {
-    const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    const { store } = renderLPC();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     act(() => {
@@ -123,8 +138,7 @@ describe("LensPrescriptionContainer", () => {
   });
 
   it("closes DecenterModal when Cancel is clicked", async () => {
-    const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    const { store } = renderLPC();
 
     act(() => {
       const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
@@ -137,8 +151,7 @@ describe("LensPrescriptionContainer", () => {
   });
 
   it("saves decenter data and closes modal when Confirm is clicked", async () => {
-    const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    const { store } = renderLPC();
     const surfaceRow = store.getState().rows.find((r) => r.kind === "surface")!;
 
     act(() => {
@@ -159,7 +172,7 @@ describe("LensPrescriptionContainer", () => {
       decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
     });
 
-    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC(store);
 
     act(() => {
       store.getState().openDecenterModal(rowId);
@@ -173,8 +186,7 @@ describe("LensPrescriptionContainer", () => {
 
   // --- Image row decenter ---
   it("renders DecenterModal when decenterModal is open for image row", () => {
-    const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    const { store } = renderLPC();
 
     act(() => {
       store.getState().openDecenterModal(IMAGE_ROW_ID);
@@ -190,7 +202,7 @@ describe("LensPrescriptionContainer", () => {
     store.getState().updateRow(IMAGE_ROW_ID, {
       decenter: { coordinateSystemStrategy: "decenter", alpha: 1.5, beta: 0, gamma: 0, offsetX: 0.1, offsetY: 0.2 },
     });
-    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC(store);
 
     act(() => {
       store.getState().openDecenterModal(IMAGE_ROW_ID);
@@ -201,8 +213,7 @@ describe("LensPrescriptionContainer", () => {
   });
 
   it("saves decenter on image row when Confirm is clicked", async () => {
-    const store = createTestStore();
-    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    const { store } = renderLPC();
 
     act(() => {
       store.getState().openDecenterModal(IMAGE_ROW_ID);
@@ -219,7 +230,7 @@ describe("LensPrescriptionContainer", () => {
     store.getState().updateRow(IMAGE_ROW_ID, {
       decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 5, gamma: 0, offsetX: 1, offsetY: 0 },
     });
-    render(<LensPrescriptionContainer store={store} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC(store);
 
     act(() => {
       store.getState().openDecenterModal(IMAGE_ROW_ID);
@@ -233,19 +244,19 @@ describe("LensPrescriptionContainer", () => {
 
   // --- Export Python Script ---
   it("renders 'Export Python Script' button", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     expect(screen.getByRole("button", { name: "Export Python Script" })).toBeInTheDocument();
   });
 
   it("clicking 'Export Python Script' opens a dialog with title 'Python Script'", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     await userEvent.click(screen.getByRole("button", { name: "Export Python Script" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Python Script")).toBeInTheDocument();
   });
 
   it("clicking OK in the Python Script dialog closes it", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     await userEvent.click(screen.getByRole("button", { name: "Export Python Script" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
@@ -254,21 +265,21 @@ describe("LensPrescriptionContainer", () => {
 
   // --- Auto-aperture toggle ---
   it("renders toggle button with 'Manual' text and visible 'Semi-diameter' label initially", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     expect(screen.getByText("Semi-diameter")).toBeInTheDocument();
     const toggle = screen.getByRole("button", { name: "Semi-diameter" });
     expect(toggle).toHaveTextContent("Manual");
   });
 
   it("clicking toggle changes text to 'Auto'", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     const toggle = screen.getByRole("button", { name: "Semi-diameter" });
     await userEvent.click(toggle);
     expect(toggle).toHaveTextContent("Auto");
   });
 
   it("clicking toggle twice reverts to 'Manual'", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     const toggle = screen.getByRole("button", { name: "Semi-diameter" });
     await userEvent.click(toggle);
     await userEvent.click(toggle);
@@ -277,12 +288,12 @@ describe("LensPrescriptionContainer", () => {
 
   // --- Load Config / Save Config ---
   it("renders Load Config button", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     expect(screen.getByRole("button", { name: "Load Config" })).toBeInTheDocument();
   });
 
   it("shows confirmation modal when valid JSON file is selected (not direct call)", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
 
     const validData: OpticalModel = {
       setAutoAperture: "autoAperture",
@@ -304,7 +315,7 @@ describe("LensPrescriptionContainer", () => {
   });
 
   it("does not call onImportJson if user cancels the import confirmation", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
 
     const validData: OpticalModel = {
       setAutoAperture: "autoAperture",
@@ -326,7 +337,7 @@ describe("LensPrescriptionContainer", () => {
   });
 
   it("calls onImportJson after user confirms import", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
 
     const validData: OpticalModel = {
       setAutoAperture: "autoAperture",
@@ -348,7 +359,7 @@ describe("LensPrescriptionContainer", () => {
   });
 
   it("shows error dialog when invalid JSON file is selected", async () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
 
     const file = new File(['{"invalid": true}'], "bad.json", { type: "application/json" });
 
@@ -362,19 +373,19 @@ describe("LensPrescriptionContainer", () => {
   // --- Toolbar tooltip tests ---
 
   it("Load Config button has a tooltip with correct text", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     const tooltips = screen.getAllByRole("tooltip");
     expect(tooltips.some((t) => t.textContent === "Load a previously downloaded config")).toBe(true);
   });
 
   it("Download Config button has a tooltip with correct text", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     const tooltips = screen.getAllByRole("tooltip");
     expect(tooltips.some((t) => t.textContent === "Download current config as JSON")).toBe(true);
   });
 
   it("Export Python Script button has a tooltip with correct text", () => {
-    render(<LensPrescriptionContainer store={createTestStore()} getOpticalModel={getOpticalModel} onImportJson={onImportJson} onUpdateSystem={jest.fn()} isUpdateSystemDisabled={false} />);
+    renderLPC();
     const tooltips = screen.getAllByRole("tooltip");
     expect(tooltips.some((t) => t.textContent === "Generate a Python script")).toBe(true);
   });

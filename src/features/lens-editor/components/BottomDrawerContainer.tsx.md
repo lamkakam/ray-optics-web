@@ -9,7 +9,6 @@ Container component that composes the three drawer tabs (System Specs, Prescript
 ```ts
 interface BottomDrawerContainerProps {
   specsStore: StoreApi<SpecsConfigurerState>;
-  lensStore: StoreApi<LensEditorState>;
   getOpticalModel: () => OpticalModel;
   onImportJson: (data: OpticalModel) => void;
   onUpdateSystem: () => Promise<void>;
@@ -21,10 +20,11 @@ interface BottomDrawerContainerProps {
 }
 ```
 
+`LensPrescriptionContainer` and `FocusingContainer` access the lens store via `LensEditorStoreContext` (no prop needed).
+
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `specsStore` | `StoreApi<SpecsConfigurerState>` | Yes | Passed to `SpecsConfigurerContainer` and `FocusingContainer` |
-| `lensStore` | `StoreApi<LensEditorState>` | Yes | Passed to `LensPrescriptionContainer` and `FocusingContainer` |
 | `getOpticalModel` | `() => OpticalModel` | Yes | Callback to build the current optical model from store state |
 | `onImportJson` | `(data: OpticalModel) => void` | Yes | Called when user imports a JSON lens file |
 | `onUpdateSystem` | `() => Promise<void>` | Yes | Triggers a full system update (submit) |

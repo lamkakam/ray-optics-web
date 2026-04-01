@@ -10,10 +10,10 @@ Root page component (`"use client"`). Owns stores, Pyodide hook, theme, and view
 | `errorModalOpen` | `boolean` | Error modal visibility |
 
 ## Stores
-- `specsStore` — `SpecsConfigurerState` (zustand)
-- `lensStore` — `LensEditorState` (zustand)
-- `analysisPlotStore` — `AnalysisPlotState` (zustand)
-- `lensLayoutImageStore` — `LensLayoutImageState` (zustand)
+- `specsStore` — `SpecsConfigurerState` (zustand, created here)
+- `analysisPlotStore` — `AnalysisPlotState` (zustand, created here)
+- `lensLayoutImageStore` — `LensLayoutImageState` (zustand, created here)
+- `lensStore` — `LensEditorState` (provided by `LensEditorStoreProvider` in `layout.tsx`; not created here)
 
 ## Navigation
 - `Layout` owns hamburger/side-nav open state and screen-size detection

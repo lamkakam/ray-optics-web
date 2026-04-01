@@ -7,7 +7,6 @@ Page-level component (`"use client"`). Owns the home-view lens editor workflow: 
 | Prop | Type | Description |
 |------|------|-------------|
 | `specsStore` | `StoreApi<SpecsConfigurerState>` | Zustand store for optical specs |
-| `lensStore` | `StoreApi<LensEditorState>` | Zustand store for lens prescription |
 | `analysisPlotStore` | `StoreApi<AnalysisPlotState>` | Zustand store for analysis plot |
 | `lensLayoutImageStore` | `StoreApi<LensLayoutImageState>` | Zustand store for lens layout image/loading |
 | `analysisDataStore` | `StoreApi<AnalysisDataState>` | Zustand store for seidel and first-order data |
@@ -24,20 +23,22 @@ Page-level component (`"use client"`). Owns the home-view lens editor workflow: 
 | `pendingExample` | `string \| undefined` | Name of example system pending confirmation |
 
 ## Derived Store State
-Read reactively via `useStore`:
+Read reactively via `useStore` / `useLensEditorStore`:
 - From `analysisPlotStore`: `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
 - From `lensLayoutImageStore`: `layoutImage`, `layoutLoading`
 - From `analysisDataStore`: `firstOrderData`, `seidelData`
-- From `lensStore`: `committedOpticalModel`
+- From `LensEditorStoreContext` (via `useLensEditorStore`): `committedOpticalModel`
+
+Imperative access to lens state is via `const lensStoreApi = useLensEditorStoreApi()` (stable, non-reactive).
 
 ## Callbacks
 - `handleExampleChange` — sets `pendingExample` when a dropdown option is selected
 - `handleExampleCancel` — clears `pendingExample`, resets dropdown
 - `handleExampleConfirm` — loads example into stores, calls `handleSubmit`
 - `handleSubmit` — builds OpticalModel, calls proxy, updates all state; calls `onError()` on failure
-- `handleFetchZernikeData` — fetches Zernike coefficients for ZernikeTermsModal
-- `getOpticalModel` — builds current OpticalModel from stores (for BottomDrawerContainer)
-- `handleImportJson` — loads imported OpticalModel into stores
+- `handleFetchZernikeData` — fetches Zernike coefficients for ZernikeTermsModal; uses `lensStoreApi.getState()` for non-reactive access
+- `getOpticalModel` — builds current OpticalModel from stores (for BottomDrawerContainer); uses `lensStoreApi.getState()`
+- `handleImportJson` — loads imported OpticalModel into stores via `lensStoreApi.getState()`
 
 ## Layout
 
@@ -63,11 +64,10 @@ Read reactively via `useStore`:
 ## Usages
 
 ```tsx
-// In app/page.tsx
+// In app/page.tsx (lensStore comes from LensEditorStoreProvider in layout.tsx)
 const lensEditor = (
   <LensEditor
     specsStore={specsStore}
-    lensStore={lensStore}
     analysisPlotStore={analysisPlotStore}
     lensLayoutImageStore={lensLayoutImageStore}
     analysisDataStore={analysisDataStore}

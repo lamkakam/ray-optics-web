@@ -7,6 +7,7 @@ import { createLensEditorSlice, type LensEditorState } from "@/features/lens-edi
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 
 // Mock child containers to avoid complex deps
 jest.mock("@/features/lens-editor/components/SpecsConfigurerContainer", () => ({
@@ -70,18 +71,19 @@ function makeProxy(): PyodideWorkerAPI {
 function renderContainer(draggable: boolean) {
   const { specsStore, lensStore } = makeStores();
   return render(
-    <BottomDrawerContainer
-      specsStore={specsStore}
-      lensStore={lensStore}
-      getOpticalModel={() => testModel}
-      onImportJson={jest.fn()}
-      onUpdateSystem={jest.fn()}
-      isReady={true}
-      computing={false}
-      proxy={makeProxy()}
-      onError={jest.fn()}
-      draggable={draggable}
-    />
+    <LensEditorStoreContext.Provider value={lensStore}>
+      <BottomDrawerContainer
+        specsStore={specsStore}
+        getOpticalModel={() => testModel}
+        onImportJson={jest.fn()}
+        onUpdateSystem={jest.fn()}
+        isReady={true}
+        computing={false}
+        proxy={makeProxy()}
+        onError={jest.fn()}
+        draggable={draggable}
+      />
+    </LensEditorStoreContext.Provider>
   );
 }
 

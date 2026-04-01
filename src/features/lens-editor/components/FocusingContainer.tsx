@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useStore } from "zustand";
-import type { StoreApi } from "zustand";
-import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
+import { useStore, type StoreApi } from "zustand";
+import { useLensEditorStoreApi } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -14,7 +13,6 @@ type Chromaticity = "mono" | "poly";
 type Metric = "rmsSpot" | "wavefront";
 
 interface FocusingContainerProps {
-  readonly lensStore: StoreApi<LensEditorState>;
   readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
@@ -25,7 +23,6 @@ interface FocusingContainerProps {
 }
 
 export function FocusingContainer({
-  lensStore,
   specsStore,
   proxy,
   isReady,
@@ -34,6 +31,7 @@ export function FocusingContainer({
   onUpdateSystem,
   onError,
 }: FocusingContainerProps) {
+  const lensStoreApi = useLensEditorStoreApi();
   const [chromaticity, setChromaticity] = useState<Chromaticity>("mono");
   const [metric, setMetric] = useState<Metric>("rmsSpot");
   const [fieldIndex, setFieldIndex] = useState(0);
@@ -67,10 +65,10 @@ export function FocusingContainer({
         result = await proxy.focusByPolyStrehl(model, fieldIndex);
       }
 
-      const rows = lensStore.getState().rows;
+      const rows = lensStoreApi.getState().rows;
       const lastSurface = [...rows].reverse().find((r) => r.kind === "surface");
       if (lastSurface && lastSurface.kind === "surface") {
-        lensStore.getState().updateRow(lastSurface.id, {
+        lensStoreApi.getState().updateRow(lastSurface.id, {
           thickness: lastSurface.thickness + result.delta_thi,
         });
       }

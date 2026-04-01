@@ -10,7 +10,7 @@ import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
 import { ExampleSystems } from "@/shared/lib/data/exampleSystems";
 import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
-import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
+import { useLensEditorStore, useLensEditorStoreApi } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
@@ -28,7 +28,6 @@ import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTerm
 
 export interface LensEditorProps {
   readonly specsStore: StoreApi<SpecsConfigurerState>;
-  readonly lensStore: StoreApi<LensEditorState>;
   readonly analysisPlotStore: StoreApi<AnalysisPlotState>;
   readonly lensLayoutImageStore: StoreApi<LensLayoutImageState>;
   readonly analysisDataStore: StoreApi<AnalysisDataState>;
@@ -39,7 +38,6 @@ export interface LensEditorProps {
 
 export function LensEditor({
   specsStore,
-  lensStore,
   analysisPlotStore,
   lensLayoutImageStore,
   analysisDataStore,
@@ -49,6 +47,7 @@ export function LensEditor({
 }: LensEditorProps) {
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
+  const lensStoreApi = useLensEditorStoreApi();
 
   const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
@@ -58,7 +57,7 @@ export function LensEditor({
   const layoutLoading = useStore(lensLayoutImageStore, (s) => s.layoutLoading);
   const firstOrderData = useStore(analysisDataStore, (s) => s.firstOrderData);
   const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
-  const committedOpticalModel = useStore(lensStore, (s) => s.committedOpticalModel);
+  const committedOpticalModel = useLensEditorStore((s) => s.committedOpticalModel);
   const [computing, setComputing] = useState(false);
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
@@ -86,21 +85,21 @@ export function LensEditor({
   const handleFetchZernikeData = useCallback(
     async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering): Promise<ZernikeData> => {
       if (!proxy) throw new Error("Pyodide not ready");
-      const committedOpticalModel = lensStore.getState().committedOpticalModel;
+      const committedOpticalModel = lensStoreApi.getState().committedOpticalModel;
       if (!committedOpticalModel) throw new Error("No optical model computed yet");
       const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
       return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, numTerms, ordering);
     },
-    [proxy, lensStore]
+    [proxy, lensStoreApi]
   );
 
   const handleSubmit = useCallback(async () => {
     if (!proxy) return;
 
-    const autoAperture = lensStore.getState().autoAperture;
+    const autoAperture = lensStoreApi.getState().autoAperture;
     const setAutoAperture = autoAperture ? "autoAperture" as const : "manualAperture" as const;
     const specs = specsStore.getState().toOpticalSpecs();
-    const surfacesData = gridRowsToSurfaces(lensStore.getState().rows);
+    const surfacesData = gridRowsToSurfaces(lensStoreApi.getState().rows);
     const model: OpticalModel = { setAutoAperture, specs, ...surfacesData };
 
     setComputing(true);
@@ -126,7 +125,7 @@ export function LensEditor({
       analysisPlotStore.getState().setPlotImage(plot);
       analysisDataStore.getState().setSeidelData(seidel);
       specsStore.getState().setCommittedSpecs(specs);
-      lensStore.getState().setCommittedOpticalModel(model);
+      lensStoreApi.getState().setCommittedOpticalModel(model);
     } catch (err) {
       console.log("Update System failed:", err);
       onError();
@@ -139,31 +138,31 @@ export function LensEditor({
         exampleSelectRef.current.value = "";
       }
     }
-  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError]);
+  }, [proxy, specsStore, lensStoreApi, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError]);
 
   const handleExampleConfirm = useCallback(() => {
     if (!pendingExample) return;
     const system = ExampleSystems[pendingExample];
     if (!system) return;
     specsStore.getState().loadFromSpecs(system.specs);
-    lensStore.getState().setRows(surfacesToGridRows(system));
+    lensStoreApi.getState().setRows(surfacesToGridRows(system));
     setPendingExample(undefined);
     void handleSubmit();
-  }, [pendingExample, specsStore, lensStore, handleSubmit]);
+  }, [pendingExample, specsStore, lensStoreApi, handleSubmit]);
 
   const getOpticalModel = useCallback((): OpticalModel => {
-    const autoAperture = lensStore.getState().autoAperture;
+    const autoAperture = lensStoreApi.getState().autoAperture;
     const setAutoAperture = autoAperture ? "autoAperture" as const : "manualAperture" as const;
     const specs = specsStore.getState().toOpticalSpecs();
-    const surfaces = gridRowsToSurfaces(lensStore.getState().rows);
+    const surfaces = gridRowsToSurfaces(lensStoreApi.getState().rows);
     return { setAutoAperture, specs, ...surfaces };
-  }, [specsStore, lensStore]);
+  }, [specsStore, lensStoreApi]);
 
   const handleImportJson = useCallback((data: OpticalModel) => {
     specsStore.getState().loadFromSpecs(data.specs);
-    lensStore.getState().setRows(surfacesToGridRows(data));
-    lensStore.getState().setAutoAperture(data.setAutoAperture === "autoAperture");
-  }, [specsStore, lensStore]);
+    lensStoreApi.getState().setRows(surfacesToGridRows(data));
+    lensStoreApi.getState().setAutoAperture(data.setAutoAperture === "autoAperture");
+  }, [specsStore, lensStoreApi]);
 
   const exampleSystemDropdown = (
     <Select
@@ -218,7 +217,7 @@ export function LensEditor({
     <AnalysisPlotContainer
       store={analysisPlotStore}
       proxy={proxy}
-      lensStore={lensStore}
+      lensStore={lensStoreApi}
       specsStore={specsStore}
       onError={onError}
       autoHeight={!isLG}
@@ -228,7 +227,6 @@ export function LensEditor({
   const bottomDrawer = (
     <BottomDrawerContainer
       specsStore={specsStore}
-      lensStore={lensStore}
       getOpticalModel={getOpticalModel}
       onImportJson={handleImportJson}
       onUpdateSystem={handleSubmit}
