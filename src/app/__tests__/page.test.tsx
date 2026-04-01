@@ -2,9 +2,17 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
+import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+
+const renderHome = () =>
+  render(
+    <LensEditorStoreProvider>
+      <Home />
+    </LensEditorStoreProvider>
+  );
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -78,44 +86,44 @@ describe("Home page", () => {
   });
 
   it("renders the header with title", () => {
-    render(<Home />);
+    renderHome();
     expect(screen.getByText("Ray Optics Web")).toBeInTheDocument();
   });
 
   it("renders the analysis panel with field and plot type selectors", () => {
-    render(<Home />);
+    renderHome();
     expect(screen.getByLabelText("Field")).toBeInTheDocument();
     expect(screen.getByLabelText("Plot type")).toBeInTheDocument();
   });
 
   it("renders field options from default specs initially", () => {
-    render(<Home />);
+    renderHome();
     const fieldSelect = screen.getByLabelText("Field");
     // Default specs: fields [0], maxField = 0, type = height
     expect(fieldSelect).toContainHTML("0.00 mm");
   });
 
   it("renders the bottom drawer with System Specs and Prescription tabs", () => {
-    render(<Home />);
+    renderHome();
     expect(screen.getByRole("tab", { name: "System Specs" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Prescription" })).toBeInTheDocument();
   });
 
   it("shows SpecsConfigurerContainer content in System Specs tab", () => {
-    render(<Home />);
+    renderHome();
     // System Aperture is rendered by SpecsConfigurerPanel
     expect(screen.getByText("System Aperture")).toBeInTheDocument();
   });
 
   it("switches to Prescription tab and shows LensPrescriptionContainer", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     // The Download Config button is in LensPrescriptionContainer
     expect(screen.getByText("Download Config")).toBeInTheDocument();
   });
 
   it("registers a beforeunload handler that calls preventDefault", () => {
-    render(<Home />);
+    renderHome();
     const spy = jest.spyOn(Event.prototype, "preventDefault");
     const event = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(event);
@@ -126,7 +134,7 @@ describe("Home page", () => {
   // --- New tests for submit button and worker integration ---
 
   it("renders an Update System button in the Prescription tab toolbar", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     expect(
       screen.getByRole("button", { name: "Update System" })
@@ -134,7 +142,7 @@ describe("Home page", () => {
   });
 
   it("calls worker APIs when Update System is clicked", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     const btn = screen.getByRole("button", { name: "Update System" });
 
@@ -152,7 +160,7 @@ describe("Home page", () => {
 
   it("shows error modal on worker error and hides it on OK", async () => {
     mockGetFirstOrderData.mockRejectedValueOnce(new Error("bad input"));
-    render(<Home />);
+    renderHome();
 
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(
@@ -175,7 +183,7 @@ describe("Home page", () => {
 
   it("field dropdown reflects committedSpecs, not draft edits", () => {
     // Initially renders with default specs (no example loaded)
-    render(<Home />);
+    renderHome();
     const fieldSelect = screen.getByLabelText("Field");
     expect(fieldSelect).toContainHTML("0.00 mm");
   });
@@ -183,20 +191,20 @@ describe("Home page", () => {
   // --- Example system selector tests ---
 
   it("renders an Example Systems select", () => {
-    render(<Home />);
+    renderHome();
     const select = screen.getByLabelText("Example system");
     expect(select).toBeInTheDocument();
   });
 
   it("example system dropdown is below the header, not inside it", () => {
-    render(<Home />);
+    renderHome();
     const header = document.querySelector("header");
     const select = screen.getByLabelText("Example system");
     expect(header).not.toContainElement(select);
   });
 
   it("starts with no example selected and shows a placeholder option", () => {
-    render(<Home />);
+    renderHome();
     const select = screen.getByLabelText("Example system") as HTMLSelectElement;
     // The first selected option should be the placeholder
     expect(select.value).toBe("");
@@ -205,7 +213,7 @@ describe("Home page", () => {
   });
 
   it("lists all example systems as options", () => {
-    render(<Home />);
+    renderHome();
     const select = screen.getByLabelText("Example system");
     const options = Array.from(
       (select as HTMLSelectElement).options
@@ -215,7 +223,7 @@ describe("Home page", () => {
   });
 
   it("shows confirmation modal when selecting an example system", async () => {
-    render(<Home />);
+    renderHome();
     const select = screen.getByLabelText("Example system");
 
     await userEvent.selectOptions(select, "1: Sasian Triplet");
@@ -232,7 +240,7 @@ describe("Home page", () => {
   });
 
   it("loads example system when user confirms in the modal", async () => {
-    render(<Home />);
+    renderHome();
     const select = screen.getByLabelText("Example system");
 
     await userEvent.selectOptions(select, "1: Sasian Triplet");
@@ -252,14 +260,14 @@ describe("Home page", () => {
   });
 
   it("does not render a drag handle on small screens (screenSM default in JSDOM)", () => {
-    render(<Home />);
+    renderHome();
     expect(
       screen.queryByRole("separator", { name: "Resize drawer" })
     ).not.toBeInTheDocument();
   });
 
   it("does not load example system when user cancels in the modal", async () => {
-    render(<Home />);
+    renderHome();
     const select = screen.getByLabelText("Example system") as HTMLSelectElement;
 
     await userEvent.selectOptions(select, "1: Sasian Triplet");
@@ -280,7 +288,7 @@ describe("Home page", () => {
   // --- Tooltip tests ---
 
   it("Update System button has a tooltip with correct text", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     const tooltips = screen.getAllByRole("tooltip");
     expect(tooltips.some((t) => t.textContent === "Compute and update the optical system")).toBe(true);
@@ -289,18 +297,18 @@ describe("Home page", () => {
   // --- Side nav / hamburger tests ---
 
   it("renders hamburger button in the header", () => {
-    render(<Home />);
+    renderHome();
     expect(screen.getByRole("button", { name: "Open navigation" })).toBeInTheDocument();
   });
 
   it("clicking hamburger opens side nav", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     expect(screen.getByRole("navigation", { name: "Side navigation" })).toBeInTheDocument();
   });
 
   it("clicking hamburger again closes side nav", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     expect(screen.getByRole("navigation", { name: "Side navigation" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
@@ -308,7 +316,7 @@ describe("Home page", () => {
   });
 
   it("clicking Settings in side nav shows settings view (no dialog)", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     await userEvent.click(screen.getByRole("link", { name: "Settings" }));
     expect(screen.getByRole("heading", { name: "Settings" })).toBeInTheDocument();
@@ -316,7 +324,7 @@ describe("Home page", () => {
   });
 
   it("clicking Privacy Policy in side nav shows privacy view (no dialog)", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     await userEvent.click(screen.getByRole("link", { name: "Privacy Policy" }));
     expect(screen.getByRole("heading", { name: "Privacy Policy" })).toBeInTheDocument();
@@ -324,7 +332,7 @@ describe("Home page", () => {
   });
 
   it("clicking About in side nav shows about view", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
     await userEvent.click(screen.getByRole("link", { name: "About" }));
     expect(screen.getByRole("heading", { name: "About" })).toBeInTheDocument();
@@ -333,7 +341,7 @@ describe("Home page", () => {
   // --- surfaceBySurface3rdOrder plot type tests ---
 
   it("calls plotSurfaceBySurface3rdOrderAberr when plot type changes after a commit", async () => {
-    render(<Home />);
+    renderHome();
 
     // First commit a model so committedOpticalModel is set
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
@@ -350,7 +358,7 @@ describe("Home page", () => {
   });
 
   it("does not re-call plotSurfaceBySurface3rdOrderAberr when field changes while surfaceBySurface3rdOrder is selected", async () => {
-    render(<Home />);
+    renderHome();
 
     // First click Update System so we have field options from committed specs
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
@@ -373,7 +381,7 @@ describe("Home page", () => {
   });
 
   it("calls plotSurfaceBySurface3rdOrderAberr on Update System when that plot type is selected", async () => {
-    render(<Home />);
+    renderHome();
 
     // Switch to surfaceBySurface3rdOrder before committing
     const plotTypeSelect = screen.getByLabelText("Plot type");
@@ -392,12 +400,12 @@ describe("Home page", () => {
   // --- 3rd Order Seidel Aberr. button and modal tests ---
 
   it("'3rd Order Seidel Aberr.' button not present before Update System", () => {
-    render(<Home />);
+    renderHome();
     expect(screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" })).not.toBeInTheDocument();
   });
 
   it("'3rd Order Seidel Aberr.' button appears after Update System succeeds", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => {
@@ -406,7 +414,7 @@ describe("Home page", () => {
   });
 
   it("calls get3rdOrderSeidelData alongside getFirstOrderData on submit", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => {
@@ -416,7 +424,7 @@ describe("Home page", () => {
   });
 
   it("clicking '3rd Order Seidel Aberr.' button opens the Seidel dialog", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })).toBeInTheDocument());
@@ -427,7 +435,7 @@ describe("Home page", () => {
   });
 
   it("clicking Ok inside the Seidel modal closes it", async () => {
-    render(<Home />);
+    renderHome();
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
     await userEvent.click(screen.getByRole("button", { name: "Update System" }));
     await waitFor(() => expect(screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })).toBeInTheDocument());
@@ -442,13 +450,13 @@ describe("Home page", () => {
 
   describe("small screen layout containers", () => {
     it("lens-layout-container has class w-full on small screens", () => {
-      render(<Home />);
+      renderHome();
       const container = screen.getByTestId("lens-layout-container");
       expect(container).toHaveClass("w-full");
     });
 
     it("analysis-plot-container has class w-full on small screens", () => {
-      render(<Home />);
+      renderHome();
       const container = screen.getByTestId("analysis-plot-container");
       expect(container).toHaveClass("w-full");
     });
@@ -459,7 +467,7 @@ describe("Home page", () => {
     afterEach(() => { mockScreenSize.value = "screenSM"; });
 
     it("example system dropdown has a max-width constraint on large screens", () => {
-      render(<Home />);
+      renderHome();
       const dropdown = screen.getByLabelText("Example system").closest("div");
       expect(dropdown).toHaveClass("max-w-xs");
     });

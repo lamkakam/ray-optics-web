@@ -13,7 +13,7 @@ Root page component (`"use client"`). Owns stores, Pyodide hook, theme, and view
 - `specsStore` — `SpecsConfigurerState` (zustand, created here)
 - `analysisPlotStore` — `AnalysisPlotState` (zustand, created here)
 - `lensLayoutImageStore` — `LensLayoutImageState` (zustand, created here)
-- `lensStore` — `LensEditorState` (provided by `LensEditorStoreProvider` in `layout.tsx`; not created here)
+- `lensStore` — `LensEditorState` (provided by `LensEditorStoreProvider` in `layout.tsx`; not created here — tests must wrap `<Home />` in `<LensEditorStoreProvider>` since layout.tsx is not rendered by Jest)
 
 ## Navigation
 - `Layout` owns hamburger/side-nav open state and screen-size detection
