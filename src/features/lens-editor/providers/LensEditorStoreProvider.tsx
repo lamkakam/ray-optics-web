@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
-import { createStore, type StoreApi, useStore as useZustandStore } from 'zustand';
+import { createStore, type StoreApi } from 'zustand';
 import { createLensEditorSlice, type LensEditorState } from '@/features/lens-editor/stores/lensEditorStore';
 
 type ContextValue = StoreApi<LensEditorState> | undefined;
@@ -26,18 +26,10 @@ export const LensEditorStoreProvider: React.FC<LensEditorStoreProviderProps> = (
   );
 };
 
-export const useLensEditorStore = <T,>(selector: (state: LensEditorState) => T): T => {
+export const useLensEditorStore = (): StoreApi<LensEditorState> => {
   const store = useContext(LensEditorStoreContext);
   if (store === undefined) {
     throw new Error('`useLensEditorStore` must be used within `LensEditorStoreProvider`');
-  }
-  return useZustandStore(store, selector);
-};
-
-export const useLensEditorStoreApi = (): StoreApi<LensEditorState> => {
-  const store = useContext(LensEditorStoreContext);
-  if (store === undefined) {
-    throw new Error('`useLensEditorStoreApi` must be used within `LensEditorStoreProvider`');
   }
   return store;
 };

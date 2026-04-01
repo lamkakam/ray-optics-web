@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useStore, type StoreApi } from "zustand";
-import { useLensEditorStoreApi } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -31,7 +31,7 @@ export function FocusingContainer({
   onUpdateSystem,
   onError,
 }: FocusingContainerProps) {
-  const lensStoreApi = useLensEditorStoreApi();
+  const lensStoreApi = useLensEditorStore();
   const [chromaticity, setChromaticity] = useState<Chromaticity>("mono");
   const [metric, setMetric] = useState<Metric>("rmsSpot");
   const [fieldIndex, setFieldIndex] = useState(0);

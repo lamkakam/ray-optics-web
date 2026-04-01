@@ -16,38 +16,36 @@ Raw context object. Use only in tests to supply a pre-built store directly via `
 ```tsx
 <LensEditorStoreProvider>{children}</LensEditorStoreProvider>
 ```
-Creates the store once (via `useState`) and supplies it to all descendants.
+Creates the store once (singleton) and supplies it to all descendants.
 
 ### `useLensEditorStore`
 ```ts
-const useLensEditorStore = <T,>(selector: (state: LensEditorState) => T): T
-```
-Reactive selector hook. Re-renders the calling component whenever the selected slice changes. Must be called inside `LensEditorStoreProvider`.
-
-### `useLensEditorStoreApi`
-```ts
 const useLensEditorStoreApi = (): StoreApi<LensEditorState>
 ```
-Returns the raw `StoreApi` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. Must be called inside `LensEditorStoreProvider`.
+Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `LensEditorStoreProvider`.
 
 ## Usage
 
+In `app/layout.tsx` — mount the provider once:
 ```tsx
-// app/layout.tsx — mount the provider once
 <ThemeProvider>
   <LensEditorStoreProvider>
     {children}
   </LensEditorStoreProvider>
 </ThemeProvider>
+```
 
-// Inside any lens-editor component — reactive read
-const rows = useLensEditorStore((s) => s.rows);
+Inside any lens-editor component — imperative access:
+```tsx
+import { useStore } from "zustand";
+// ...
+const lensStore = useLensEditorStore();
+const rows = useStore(lenStore, (s) => s.rows);
+lensStore.getState().updateRow(id, patch);
+```
 
-// Inside any lens-editor component — imperative access
-const lensStoreApi = useLensEditorStoreApi();
-lensStoreApi.getState().updateRow(id, patch);
-
-// In tests — inject a pre-built store
+In tests — inject a pre-built store:
+```tsx
 render(
   <LensEditorStoreContext.Provider value={store}>
     <MyComponent />
