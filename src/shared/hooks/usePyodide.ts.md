@@ -1,4 +1,4 @@
-# `hooks/usePyodide.ts`
+# `shared/hooks/usePyodide.ts`
 
 ## Purpose
 
