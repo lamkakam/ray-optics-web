@@ -20,9 +20,7 @@ interface AnalysisPlotContainerProps {
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `store` | `StoreApi<AnalysisPlotState>` | Yes | Zustand store for analysis-plot state (plotImage, plotLoading, selected indices, selectedPlotType) |
-| `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy; handlers no-op if `undefined` |
-| `lensStore` | `StoreApi<LensEditorState>` | Yes | Lens editor store; `committedOpticalModel` is subscribed to obtain the last committed model |
-| `specsStore` | `StoreApi<SpecsConfigurerState>` | Yes | Specs configurer store; `committedSpecs` is subscribed to trigger re-renders; `getFieldOptions()` and `getWavelengthOptions()` are called to derive select options |
+| `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy; handlers no-op if `undefined` |`getWavelengthOptions()` are called to derive select options |
 | `onError` | `() => void` | Yes | Called when any async plot call throws |
 | `autoHeight` | `boolean` | No | Forwarded to `AnalysisPlotView` |
 
@@ -31,9 +29,9 @@ interface AnalysisPlotContainerProps {
 All five analysis-plot state fields are read from `store` via `useStore(store, selector)`:
 - `plotImage`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
 
-`committedOpticalModel` is read from `lensStore` via `useStore(lensStore, (s) => s.committedOpticalModel)`.
+`committedOpticalModel` is read from `lensStore` via `useLensEditorStore` and `useStore(lensStore, (s) => s.committedOpticalModel)`.
 
-`committedSpecs` is subscribed from `specsStore` via `useStore(specsStore, (s) => s.committedSpecs)` (return value unused — subscription only) to trigger re-renders when the committed specs change.
+`committedSpecs` is subscribed from `specsStore` via `useSpecsConfiguratorStore` and `useStore(specsStore, (s) => s.committedSpecs)` (return value unused — subscription only) to trigger re-renders when the committed specs change.
 
 ## Derived Data
 
