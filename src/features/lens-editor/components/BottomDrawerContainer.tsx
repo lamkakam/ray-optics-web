@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useMemo } from "react";
-import type { StoreApi } from "zustand";
-import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";
@@ -11,7 +9,6 @@ import { LensPrescriptionContainer } from "./LensPrescriptionContainer";
 import { FocusingContainer } from "./FocusingContainer";
 
 interface BottomDrawerContainerProps {
-  readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly getOpticalModel: () => OpticalModel;
   readonly onImportJson: (data: OpticalModel) => void;
   readonly onUpdateSystem: () => Promise<void>;
@@ -23,7 +20,6 @@ interface BottomDrawerContainerProps {
 }
 
 export function BottomDrawerContainer({
-  specsStore,
   getOpticalModel,
   onImportJson,
   onUpdateSystem,
@@ -57,7 +53,6 @@ export function BottomDrawerContainer({
         label: "Focusing",
         content: (
           <FocusingContainer
-            specsStore={specsStore}
             proxy={proxy}
             isReady={isReady}
             computing={computing}
@@ -68,7 +63,7 @@ export function BottomDrawerContainer({
         ),
       },
     ],
-    [specsStore, getOpticalModel, onImportJson, onUpdateSystem, isReady, computing, proxy, onError]
+    [getOpticalModel, onImportJson, onUpdateSystem, isReady, computing, proxy, onError]
   );
 
   return <BottomDrawer tabs={tabs} draggable={draggable} />;

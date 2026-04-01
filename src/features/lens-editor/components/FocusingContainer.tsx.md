@@ -8,8 +8,6 @@ Container for the Focusing tab in the bottom drawer. Manages focusing strategy s
 
 ```ts
 interface FocusingContainerProps {
-  readonly lensStore: StoreApi<LensEditorState>;
-  readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly computing: boolean;
@@ -42,7 +40,7 @@ interface FocusingContainerProps {
 
 The `disabled` prop passed to `FocusingPanel` is `!isReady || computing || focusing`.
 
-`fieldOptions` are derived reactively from `specsStore` via `useStore` (subscribes to `relativeFields`, `maxField`, `fieldType`). This means the Field dropdown updates immediately when field configuration changes in `specsStore`, even before the user clicks "Update System".
+`fieldOptions` are derived reactively from `useSpecsConfiguratorStore` and Zustand's `useStore` (subscribes to `relativeFields`, `maxField`, `fieldType`). This means the Field dropdown updates immediately when field configuration changes in `specsStore`, even before the user clicks "Update System".
 
 ## Rendering
 

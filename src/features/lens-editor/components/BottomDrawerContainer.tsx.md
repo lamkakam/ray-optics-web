@@ -24,7 +24,6 @@ interface BottomDrawerContainerProps {
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
-| `specsStore` | `StoreApi<SpecsConfigurerState>` | Yes | Passed to `SpecsConfigurerContainer` and `FocusingContainer` |
 | `getOpticalModel` | `() => OpticalModel` | Yes | Callback to build the current optical model from store state |
 | `onImportJson` | `(data: OpticalModel) => void` | Yes | Called when user imports a JSON lens file |
 | `onUpdateSystem` | `() => Promise<void>` | Yes | Triggers a full system update (submit) |
@@ -37,7 +36,7 @@ interface BottomDrawerContainerProps {
 ## Internal Logic
 
 Builds a `tabs` array via `useMemo` containing:
-1. **System Specs** — `<SpecsConfigurerContainer store={specsStore} />`
+1. **System Specs** — `<SpecsConfigurerContainer />`
 2. **Prescription** — `<LensPrescriptionContainer .../>` with `isUpdateSystemDisabled={!isReady || computing}`
 3. **Focusing** — `<FocusingContainer .../>`
 

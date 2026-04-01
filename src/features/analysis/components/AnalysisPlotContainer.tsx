@@ -5,8 +5,8 @@ import { useStore } from "zustand";
 import type { StoreApi } from "zustand";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
-import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
+import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
+import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
 import {
   AnalysisPlotView,
@@ -17,8 +17,6 @@ import {
 interface AnalysisPlotContainerProps {
   readonly store: StoreApi<AnalysisPlotState>;
   readonly proxy: PyodideWorkerAPI | undefined;
-  readonly lensStore: StoreApi<LensEditorState>;
-  readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly onError: () => void;
   readonly autoHeight?: boolean;
 }
@@ -26,11 +24,10 @@ interface AnalysisPlotContainerProps {
 export function AnalysisPlotContainer({
   store,
   proxy,
-  lensStore,
-  specsStore,
   onError,
   autoHeight,
 }: AnalysisPlotContainerProps) {
+  const lensStore = useLensEditorStore();
   const committedOpticalModel = useStore(lensStore, (s) => s.committedOpticalModel);
   const plotImage = useStore(store, (s) => s.plotImage);
   const plotLoading = useStore(store, (s) => s.plotLoading);
@@ -38,6 +35,7 @@ export function AnalysisPlotContainer({
   const selectedWavelengthIndex = useStore(store, (s) => s.selectedWavelengthIndex);
   const selectedPlotType = useStore(store, (s) => s.selectedPlotType);
 
+  const specsStore = useSpecsConfiguratorStore();
   useStore(specsStore, (s) => s.committedSpecs);
   const fieldOptions = specsStore.getState().getFieldOptions();
   const wavelengthOptions = specsStore.getState().getWavelengthOptions();

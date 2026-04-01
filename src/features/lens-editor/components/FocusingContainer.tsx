@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { useStore, type StoreApi } from "zustand";
+import { useStore } from "zustand";
+import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
-import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { FocusingPanel } from "@/features/lens-editor/components/FocusingPanel";
@@ -13,7 +13,6 @@ type Chromaticity = "mono" | "poly";
 type Metric = "rmsSpot" | "wavefront";
 
 interface FocusingContainerProps {
-  readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly computing: boolean;
@@ -23,7 +22,6 @@ interface FocusingContainerProps {
 }
 
 export function FocusingContainer({
-  specsStore,
   proxy,
   isReady,
   computing,
@@ -31,12 +29,13 @@ export function FocusingContainer({
   onUpdateSystem,
   onError,
 }: FocusingContainerProps) {
-  const lensStoreApi = useLensEditorStore();
+  const lensStore = useLensEditorStore();
   const [chromaticity, setChromaticity] = useState<Chromaticity>("mono");
   const [metric, setMetric] = useState<Metric>("rmsSpot");
   const [fieldIndex, setFieldIndex] = useState(0);
   const [focusing, setFocusing] = useState(false);
 
+  const specsStore = useSpecsConfiguratorStore();
   const relativeFields = useStore(specsStore, (s) => s.relativeFields);
   const maxField = useStore(specsStore, (s) => s.maxField);
   const fieldType = useStore(specsStore, (s) => s.fieldType);
@@ -65,10 +64,10 @@ export function FocusingContainer({
         result = await proxy.focusByPolyStrehl(model, fieldIndex);
       }
 
-      const rows = lensStoreApi.getState().rows;
+      const rows = lensStore.getState().rows;
       const lastSurface = [...rows].reverse().find((r) => r.kind === "surface");
       if (lastSurface && lastSurface.kind === "surface") {
-        lensStoreApi.getState().updateRow(lastSurface.id, {
+        lensStore.getState().updateRow(lastSurface.id, {
           thickness: lastSurface.thickness + result.delta_thi,
         });
       }

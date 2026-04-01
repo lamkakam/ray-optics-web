@@ -12,7 +12,6 @@ import { ExampleSystems } from "@/shared/lib/data/exampleSystems";
 import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
-import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
@@ -217,8 +216,6 @@ export function LensEditor({
     <AnalysisPlotContainer
       store={analysisPlotStore}
       proxy={proxy}
-      lensStore={lensStore}
-      specsStore={specsStore}
       onError={onError}
       autoHeight={!isLG}
     />
@@ -226,7 +223,6 @@ export function LensEditor({
 
   const bottomDrawer = (
     <BottomDrawerContainer
-      specsStore={specsStore}
       getOpticalModel={getOpticalModel}
       onImportJson={handleImportJson}
       onUpdateSystem={handleSubmit}
