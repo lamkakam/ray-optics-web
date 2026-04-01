@@ -63,7 +63,7 @@ ray-optics-web/
 │   │   │       └── index.md
 │   │   ├── tokens/               # styleTokens.ts, theme.ts (design system constants)
 │   │   │   └── index.md
-│   │   ├── hooks/                # useAgGridTheme, useScreenBreakpoint, useServiceWorkerRegistration
+│   │   ├── hooks/                # useAgGridTheme, useScreenBreakpoint, useServiceWorkerRegistration, usePyodide
 │   │   │   ├── __tests__/
 │   │   │   └── index.md
 │   │   └── lib/
@@ -82,9 +82,6 @@ ray-optics-web/
 │   │           ├── __tests__/
 │   │           └── index.md
 │   │
-│   ├── hooks/                    # usePyodide (worker lifecycle hook — app-wide)
-│   │   ├── __tests__/
-│   │   └── index.md
 │   ├── workers/                  # Web Workers + factory
 │   │   ├── __test__/             # Tests for workers
 │   │   ├── index.md

@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { createStore } from "zustand/vanilla";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
 import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
 
 jest.mock("better-react-mathjax", () => ({

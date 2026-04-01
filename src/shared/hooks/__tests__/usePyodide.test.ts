@@ -20,7 +20,7 @@ jest.mock("comlink", () => ({
   wrap: jest.fn(() => mockProxy),
 }));
 
-import { usePyodide, _resetSingleton } from "@/hooks/usePyodide";
+import { usePyodide, _resetSingleton } from "@/shared/hooks/usePyodide";
 
 beforeEach(() => {
   jest.clearAllMocks();

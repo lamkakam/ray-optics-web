@@ -6,7 +6,7 @@ import { BottomDrawerContainer } from "@/features/lens-editor/components/BottomD
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 // Mock child containers to avoid complex deps
 jest.mock("@/features/lens-editor/components/SpecsConfigurerContainer", () => ({

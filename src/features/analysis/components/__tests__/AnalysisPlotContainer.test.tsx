@@ -7,7 +7,7 @@ import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/anal
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 // Mock useScreenBreakpoint (AnalysisPlotView uses it)
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({

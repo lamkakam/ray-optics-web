@@ -1,6 +1,6 @@
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 export type PlotFn = (fieldIndex: number, wavelengthIndex: number) => Promise<string>;
 

@@ -1,6 +1,6 @@
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { PyodideWorkerAPI } from "@/hooks/usePyodide";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { buildPlotFn, PLOT_FUNCTION_BUILDERS } from "@/shared/lib/utils/plotFunctions";
 
 const ALL_PLOT_TYPES: PlotType[] = [

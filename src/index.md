@@ -28,7 +28,7 @@ All application source code for ray-optics-web.
 
 ## Worker & Runtime
 
-- [hooks/usePyodide.ts](./hooks/usePyodide.ts.md) — Hook to initialise and access the Pyodide worker
+- [shared/hooks/usePyodide.ts](./shared/hooks/usePyodide.ts.md) — Hook to initialise and access the Pyodide worker
 - [workers/](./workers/index.md) — Pyodide Web Worker + factory
 
 ## Tests & Mocks
