@@ -27,9 +27,9 @@ Read reactively via `useStore` / `useLensEditorStore`:
 - From `analysisPlotStore`: `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
 - From `lensLayoutImageStore`: `layoutImage`, `layoutLoading`
 - From `analysisDataStore`: `firstOrderData`, `seidelData`
-- From `LensEditorStoreContext` (via `useLensEditorStore`): `committedOpticalModel`
+- From `LensEditorStoreContext` (via `useLensEditorStore` and Zustand's `useStore`): `committedOpticalModel`
 
-Imperative access to lens state is via `const lensStoreApi = useLensEditorStoreApi()` (stable, non-reactive).
+Imperative access to lens actions is via `const lensStore = useLensEditorStore()` (stable, non-reactive). For reactive states, use `useLensEditorStore` with Zustand's `useStore`.
 
 ## Callbacks
 - `handleExampleChange` — sets `pendingExample` when a dropdown option is selected

@@ -7,8 +7,7 @@ Container that owns the toolbar (Update System, Load Config, Download Config, Ex
 ## Injected Dependencies
 
 Lens store state is consumed via `LensEditorStoreContext`:
-- `useLensEditorStore(selector)` — reactive reads (`rows`, `autoAperture`, modal states)
-- `useLensEditorStoreApi()` — imperative access (callbacks use `store.getState().*`)
+- `useLensEditorStore()` — imperative access (callbacks use `store.getState().*`). For reactive reads (`rows`, `autoAperture`, modal states), use it with Zustand's `useStore`.
 
 | Dependency | Type | Description |
 |------------|------|-------------|
@@ -26,7 +25,7 @@ Lens store state is consumed via `LensEditorStoreContext`:
 
 ## Key Behaviors
 
-- All grid callbacks (`handleRowChange`, `handleOpenMediumModal`, etc.) are wrapped in `useCallback` with `[store]` dependency where `store = useLensEditorStoreApi()` — accessing `store.getState()` directly prevents grid column def recreation.
+- All grid callbacks (`handleRowChange`, `handleOpenMediumModal`, etc.) are wrapped in `useCallback` with `[store]` dependency where `store = useLensEditorStore()` — accessing `store.getState()` directly prevents grid column def recreation.
 - File import validates the parsed JSON via `validateImportedLensData`; invalid files trigger `ErrorModal` instead of `ConfirmImportModal`.
 - The `MediumSelectorModal`, `AsphericalModal`, and `DecenterModal` each use a `key` prop that changes when the modal opens for a different row, ensuring local state is reset.
 - `PythonScriptModal` receives an empty string for `script` when closed, generating the script only when open.

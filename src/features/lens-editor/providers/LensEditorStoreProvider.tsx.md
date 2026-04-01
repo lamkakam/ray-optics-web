@@ -20,7 +20,7 @@ Creates the store once (singleton) and supplies it to all descendants.
 
 ### `useLensEditorStore`
 ```ts
-const useLensEditorStoreApi = (): StoreApi<LensEditorState>
+const useLensEditorStore = (): StoreApi<LensEditorState>
 ```
 Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `LensEditorStoreProvider`.
 

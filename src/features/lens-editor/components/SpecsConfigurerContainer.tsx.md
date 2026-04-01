@@ -5,10 +5,7 @@
 Container that connects the `specsConfigurerStore` to `SpecsConfigurerPanel` and its two config modals (`FieldConfigModal`, `WavelengthConfigModal`). Derives human-readable summaries for field and wavelength.
 
 ## Injected Dependencies
-
-| Dependency | Type | Description |
-|------------|------|-------------|
-| `store` | `StoreApi<SpecsConfigurerState>` | Zustand store instance for system specs (aperture, field, wavelength) |
+Imperative access to specs actions is via `useSpecsConfiguratorStore()` (stable, non-reactive). For reactive states, use `useSpecsConfiguratorStore` with Zustand's `useStore`.
 
 ## Key Behaviors
 
