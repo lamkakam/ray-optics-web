@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
+import { SpecsConfiguratorStoreProvider } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
@@ -9,9 +10,11 @@ import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 const renderHome = () =>
   render(
-    <LensEditorStoreProvider>
-      <Home />
-    </LensEditorStoreProvider>
+    <SpecsConfiguratorStoreProvider>
+      <LensEditorStoreProvider>
+        <Home />
+      </LensEditorStoreProvider>
+    </SpecsConfiguratorStoreProvider>
   );
 
 jest.mock("better-react-mathjax", () => ({

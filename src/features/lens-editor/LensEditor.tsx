@@ -10,6 +10,7 @@ import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
 import { ExampleSystems } from "@/shared/lib/data/exampleSystems";
 import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
+import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
@@ -27,7 +28,6 @@ import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrM
 import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
 
 export interface LensEditorProps {
-  readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly analysisPlotStore: StoreApi<AnalysisPlotState>;
   readonly lensLayoutImageStore: StoreApi<LensLayoutImageState>;
   readonly analysisDataStore: StoreApi<AnalysisDataState>;
@@ -37,7 +37,6 @@ export interface LensEditorProps {
 }
 
 export function LensEditor({
-  specsStore,
   analysisPlotStore,
   lensLayoutImageStore,
   analysisDataStore,
@@ -48,6 +47,7 @@ export function LensEditor({
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
   const lensStore = useLensEditorStore();
+  const specsStore = useSpecsConfiguratorStore();
 
   const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);

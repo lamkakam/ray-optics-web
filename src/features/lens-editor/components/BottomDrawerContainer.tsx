@@ -38,7 +38,7 @@ export function BottomDrawerContainer({
       {
         id: "specs",
         label: "System Specs",
-        content: <SpecsConfigurerContainer store={specsStore} />,
+        content: <SpecsConfigurerContainer />,
       },
       {
         id: "prescription",

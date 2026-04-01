@@ -3,6 +3,7 @@ import "./globals.css";
 import ServiceWorkerRegistrar from "@/shared/components/providers/ServiceWorkerRegistrar";
 import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
 import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { SpecsConfiguratorStoreProvider } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 
 export const metadata: Metadata = {
   title: "Ray Optics Web",
@@ -18,10 +19,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
         <ThemeProvider>
-          <LensEditorStoreProvider>
-            <ServiceWorkerRegistrar />
-            {children}
-          </LensEditorStoreProvider>
+          <ServiceWorkerRegistrar />
+          <SpecsConfiguratorStoreProvider>
+            <LensEditorStoreProvider>
+              {children}
+            </LensEditorStoreProvider>
+          </SpecsConfiguratorStoreProvider>
         </ThemeProvider>
       </body>
     </html>

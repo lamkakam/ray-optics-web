@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
+import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { SpecsConfigurerContainer } from "@/features/lens-editor/components/SpecsConfigurerContainer";
 import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
 import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
@@ -36,6 +37,18 @@ function createTestStore() {
   return store;
 }
 
+function renderWithContext() {
+  const store = createTestStore();
+  return (
+    render(
+      <SpecsConfiguratorStoreContext.Provider value={store}>
+        <SpecsConfigurerContainer />
+      </SpecsConfiguratorStoreContext.Provider>
+    )
+  );
+}
+
+
 describe("SpecsConfigurerContainer", () => {
 
   beforeEach(() => {
@@ -43,34 +56,34 @@ describe("SpecsConfigurerContainer", () => {
   });
 
   it("renders the panel with System Aperture section", () => {
-    render(<SpecsConfigurerContainer store={createTestStore()} />);
+    renderWithContext();
     expect(screen.getByText("System Aperture")).toBeInTheDocument();
   });
 
   it("renders the panel with Field section", () => {
-    render(<SpecsConfigurerContainer store={createTestStore()} />);
+    renderWithContext();
     expect(screen.getByText("Field")).toBeInTheDocument();
   });
 
   it("renders the panel with Wavelengths section", () => {
-    render(<SpecsConfigurerContainer store={createTestStore()} />);
+    renderWithContext();
     expect(screen.getByText("Wavelengths")).toBeInTheDocument();
   });
 
   it("initializes aperture dropdown from store", () => {
-    render(<SpecsConfigurerContainer store={createTestStore()} />);
+    renderWithContext();
     const dropdown = screen.getByLabelText("System aperture type") as HTMLSelectElement;
     expect(dropdown.value).toBe("object:epd");
   });
 
   it("initializes aperture value from store", () => {
-    render(<SpecsConfigurerContainer store={createTestStore()} />);
+    renderWithContext();
     const input = screen.getByLabelText("Aperture value") as HTMLInputElement;
     expect(input.value).toBe("25");
   });
 
   it("opens field modal when field button is clicked", async () => {
-    render(<SpecsConfigurerContainer store={createTestStore()} />);
+    renderWithContext();
     const btn = screen.getByRole("button", { name: /field/i });
 
     await userEvent.click(btn);
@@ -78,7 +91,7 @@ describe("SpecsConfigurerContainer", () => {
   });
 
   it("closes field modal when Cancel is clicked", async () => {
-    render(<SpecsConfigurerContainer store={createTestStore()} />);
+    renderWithContext();
     const btn = screen.getByRole("button", { name: /field/i });
     await userEvent.click(btn);
 
@@ -87,7 +100,7 @@ describe("SpecsConfigurerContainer", () => {
   });
 
   it("opens wavelength modal when wavelength button is clicked", async () => {
-    render(<SpecsConfigurerContainer store={createTestStore()} />);
+    renderWithContext();
     const btn = screen.getByRole("button", { name: /wavelength/i });
 
     await userEvent.click(btn);
@@ -96,7 +109,11 @@ describe("SpecsConfigurerContainer", () => {
 
   it("store reflects changes after user edits aperture value", async () => {
     const store = createTestStore();
-    render(<SpecsConfigurerContainer store={store} />);
+    render(
+      <SpecsConfiguratorStoreContext.Provider value={store}>
+        <SpecsConfigurerContainer />
+      </SpecsConfiguratorStoreContext.Provider>
+    );
 
     const input = screen.getByLabelText("Aperture value") as HTMLInputElement;
     await userEvent.clear(input);

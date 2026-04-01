@@ -33,11 +33,6 @@ export default function Home() {
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  const specsStore = useMemo(
-    () => createStore<SpecsConfigurerState>(createSpecsConfigurerSlice),
-    []
-  );
-
   const analysisPlotStore = useMemo(
     () => createStore<AnalysisPlotState>(createAnalysisPlotSlice),
     []
@@ -84,7 +79,6 @@ export default function Home() {
 
   const lensEditor = (
     <LensEditor
-      specsStore={specsStore}
       analysisPlotStore={analysisPlotStore}
       lensLayoutImageStore={lensLayoutImageStore}
       analysisDataStore={analysisDataStore}

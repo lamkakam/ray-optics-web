@@ -11,17 +11,13 @@ import {
   type WavelengthWeights,
   type ReferenceIndex,
 } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { SpecsConfigurerPanel } from "@/features/lens-editor/components/SpecsConfigurerPanel";
 import { FieldConfigModal } from "@/features/lens-editor/components/FieldConfigModal";
 import { WavelengthConfigModal } from "@/features/lens-editor/components/WavelengthConfigModal";
 
-interface SpecsConfigurerContainerProps {
-  readonly store: StoreApi<SpecsConfigurerState>;
-}
-
-export function SpecsConfigurerContainer({
-  store,
-}: SpecsConfigurerContainerProps) {
+export function SpecsConfigurerContainer() {
+  const store= useSpecsConfiguratorStore();
 
   const pupilSpace = useStore(store, (s) => s.pupilSpace);
   const pupilType = useStore(store, (s) => s.pupilType);
