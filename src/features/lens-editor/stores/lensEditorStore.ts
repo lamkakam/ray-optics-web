@@ -1,4 +1,4 @@
-import { create, type StateCreator } from "zustand";
+import { type StateCreator } from "zustand";
 import type { GridRow } from "@/shared/lib/types/gridTypes";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/shared/lib/types/gridTypes";
 import { generateRowId } from "@/shared/lib/utils/gridTransform";
@@ -116,4 +116,4 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   setCommittedOpticalModel: (model) => set({ committedOpticalModel: model }),
 });
 
-export const useLensEditorStore = create<LensEditorState>(createLensEditorSlice);
+// export const useLensEditorStore = create<LensEditorState>(createLensEditorSlice);
