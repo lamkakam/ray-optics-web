@@ -13,5 +13,3 @@ export const createLensLayoutImageSlice: StateCreator<LensLayoutImageState> = (s
   setLayoutImage: (image) => set({ layoutImage: image }),
   setLayoutLoading: (loading) => set({ layoutLoading: loading }),
 });
-
-export const useLensLayoutImageStore = create<LensLayoutImageState>(createLensLayoutImageSlice);

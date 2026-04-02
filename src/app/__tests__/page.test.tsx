@@ -6,6 +6,7 @@ import { SpecsConfiguratorStoreProvider } from "@/features/lens-editor/providers
 import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { AnalysisDataStoreProvider } from "@/features/analysis/providers/AnalysisDataStoreProvider";
+import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -16,7 +17,9 @@ const renderHome = () =>
       <LensEditorStoreProvider>
         <AnalysisPlotStoreProvider>
           <AnalysisDataStoreProvider>
-            <Home />
+            <LensLayoutImageStoreProvider>
+              <Home />
+            </LensLayoutImageStoreProvider>
           </AnalysisDataStoreProvider>
         </AnalysisPlotStoreProvider>
       </LensEditorStoreProvider>

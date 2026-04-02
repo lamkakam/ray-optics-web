@@ -6,6 +6,7 @@ import { SpecsConfiguratorStoreProvider } from "@/features/lens-editor/providers
 import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { AnalysisDataStoreProvider } from "@/features/analysis/providers/AnalysisDataStoreProvider";
+import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 
 export const metadata: Metadata = {
   title: "Ray Optics Web",
@@ -26,7 +27,9 @@ export default function RootLayout({
             <LensEditorStoreProvider>
               <AnalysisPlotStoreProvider>
                 <AnalysisDataStoreProvider>
-                  {children}
+                  <LensLayoutImageStoreProvider>
+                    {children}
+                  </LensLayoutImageStoreProvider>
                 </AnalysisDataStoreProvider>
               </AnalysisPlotStoreProvider>
             </LensEditorStoreProvider>

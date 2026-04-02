@@ -1,17 +1,13 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { MathJaxContext } from "better-react-mathjax";
 import { createStore } from "zustand";
 import type { Theme } from "@/shared/tokens/theme";
 import type { AppView } from "@/shared/lib/types/appView";
 import { usePyodide } from "@/shared/hooks/usePyodide";
-import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
-import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { SettingsView } from "@/app/pages/SettingsView";
 import { PrivacyPolicyView } from "@/app/pages/PrivacyPolicyView";
@@ -33,18 +29,8 @@ export default function Home() {
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
 
-  const lensLayoutImageStore = useMemo(
-    () => createStore<LensLayoutImageState>(createLensLayoutImageSlice),
-    []
-  );
-
   const glassMapStore = useMemo(
     () => createStore<GlassMapStore>(createGlassMapSlice),
-    []
-  );
-
-  const analysisDataStore = useMemo(
-    () => createStore<AnalysisDataState>(createAnalysisDataSlice),
     []
   );
 
@@ -74,7 +60,6 @@ export default function Home() {
 
   const lensEditor = (
     <LensEditor
-      lensLayoutImageStore={lensLayoutImageStore}
       proxy={proxy}
       isReady={isReady}
       onError={() => setErrorModalOpen(true)}

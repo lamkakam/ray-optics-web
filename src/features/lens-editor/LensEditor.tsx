@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useRef } from "react";
-import { useStore, type StoreApi } from "zustand";
+import { useStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData, ZernikeOrdering } from "@/shared/lib/types/zernikeData";
@@ -14,8 +14,7 @@ import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/Spec
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisDataStoreProvider";
-import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
-import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
+import { useLensLayoutImageStore } from "../analysis/providers/LensLayoutImageStoreProvider";
 import { LensLayoutPanel } from "@/features/lens-editor/components/LensLayoutPanel";
 import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPlotContainer";
 import { BottomDrawerContainer } from "@/features/lens-editor/components/BottomDrawerContainer";
@@ -28,14 +27,12 @@ import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrM
 import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
 
 export interface LensEditorProps {
-  readonly lensLayoutImageStore: StoreApi<LensLayoutImageState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly onError: () => void;
 }
 
 export function LensEditor({
-  lensLayoutImageStore,
   proxy,
   isReady,
   onError,
@@ -46,6 +43,7 @@ export function LensEditor({
   const specsStore = useSpecsConfiguratorStore();
   const analysisPlotStore = useAnalysisPlotStore();
   const analysisDataStore = useAnalysisDataStore();
+  const lensLayoutImageStore = useLensLayoutImageStore();
 
   const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
