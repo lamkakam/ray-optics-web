@@ -33,5 +33,5 @@
 
 - When including link to any GitHub page, always use the domain name `redirect.github.com`. Never use the domain name of `github.com`
 
-- End your commit message with "Co-Authored-By: <company-name> <model-name> with an email address "no-reply@<domain-name>" for auditing purpose
+- End your commit message with "Co-Authored-By: <model-name-with-precise-version-number> with an email address "no-reply@<domain-name>" for auditing purpose
 
