@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 ## Project Overview
 
@@ -32,4 +32,6 @@
 - Make the modules loosely coupled (eg. use DI)
 
 - When including link to any GitHub page, always use the domain name `redirect.github.com`. Never use the domain name of `github.com`
+
+- End your commit message with "Co-Authored-By: <company-name> <model-name> with an email address "no-reply@<domain-name>" for auditing purpose
 
