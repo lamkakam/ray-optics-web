@@ -115,5 +115,3 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
   setCommittedOpticalModel: (model) => set({ committedOpticalModel: model }),
 });
-
-// export const useLensEditorStore = create<LensEditorState>(createLensEditorSlice);
