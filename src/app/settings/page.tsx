@@ -2,20 +2,25 @@
 
 import React from "react";
 import type { Theme } from "@/shared/tokens/theme";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { Header } from "@/shared/components/primitives/Header";
 import { Select } from "@/shared/components/primitives/Select";
-
-interface SettingsViewProps {
-  readonly theme: Theme;
-  readonly onThemeChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-}
 
 const themeOptions: { value: Theme; label: string }[] = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
 ];
 
-export function SettingsView({ theme, onThemeChange }: SettingsViewProps) {
+export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
+
+  const handleThemeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedTheme = event.target.value as Theme;
+    if (selectedTheme !== theme) {
+      setTheme(selectedTheme);
+    }
+  };
+
   return (
     <div className="p-6">
       <Header level={2} className="mb-4">Settings</Header>
@@ -28,7 +33,7 @@ export function SettingsView({ theme, onThemeChange }: SettingsViewProps) {
           aria-label="Theme"
           options={themeOptions}
           value={theme}
-          onChange={onThemeChange}
+          onChange={handleThemeChange}
           className="max-w-[12em]"
         />
       </div>

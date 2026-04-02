@@ -6,13 +6,13 @@ import { usePyodide } from "@/shared/hooks/usePyodide";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
 import { Layout } from "@/shared/components/layout/Layout";
-import { AppShellProvider } from "@/app/(app-shell)/AppShellContext";
+import { AppShellProvider } from "@/app/AppShellContext";
 
-interface AppShellLayoutProps {
+interface AppShellProps {
   readonly children: React.ReactNode;
 }
 
-export default function AppShellLayout({ children }: AppShellLayoutProps) {
+export default function AppShell({ children }: AppShellProps) {
   const { proxy, isReady } = usePyodide();
   const [errorModalOpen, setErrorModalOpen] = useState(false);
 

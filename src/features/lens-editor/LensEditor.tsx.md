@@ -54,13 +54,13 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 - ConfirmOverwriteModal, SeidelAberrModal, ZernikeTermsModal
 
 ## Notes
-- `onError` delegates to `app/(app-shell)/layout.tsx`, which owns the shared `ErrorModal`
+- `onError` delegates to `app/AppShell.tsx`, which owns the shared `ErrorModal`
 - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
 
 ## Usages
 
 ```tsx
-// In app/(app-shell)/page.tsx
+// In app/page.tsx
 const lensEditor = (
   <LensEditor
     proxy={proxy}

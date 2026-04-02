@@ -48,6 +48,6 @@ Composite client layout shell. Owns hamburger/side-nav open state and screen-siz
 ## Usages
 
 ```tsx
-// In app/(app-shell)/layout.tsx
+// In app/AppShell.tsx
 <Layout>{children}</Layout>
 ```

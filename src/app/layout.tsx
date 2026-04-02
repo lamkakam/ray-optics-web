@@ -8,6 +8,7 @@ import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/Analysi
 import { AnalysisDataStoreProvider } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import AppShell from "@/app/AppShell";
 
 export const metadata: Metadata = {
   title: "Ray Optics Web",
@@ -30,7 +31,7 @@ export default function RootLayout({
                 <AnalysisDataStoreProvider>
                   <LensLayoutImageStoreProvider>
                     <GlassMapStoreProvider>
-                      {children}
+                      <AppShell>{children}</AppShell>
                     </GlassMapStoreProvider>
                   </LensLayoutImageStoreProvider>
                 </AnalysisDataStoreProvider>
@@ -42,4 +43,3 @@ export default function RootLayout({
     </html>
   );
 }
-

@@ -1,10 +1,10 @@
-# `app/(app-shell)/layout.tsx`
+# `app/AppShell.tsx`
 
 ## Purpose
-Client layout for the main interactive route group. Owns the shared runtime shell that must persist across App Router pages: Pyodide initialization, global error modal, loading overlay, `MathJaxContext`, and the common app chrome.
+Client wrapper for the shared runtime shell. Owns the Pyodide initialization, global error modal, loading overlay, `MathJaxContext`, and common app chrome for all routed pages.
 
 ## Responsibilities
-- Calls `usePyodide()` once for the route group
+- Calls `usePyodide()` once for the app tree
 - Registers the `beforeunload` guard once
 - Provides `proxy`, `isReady`, and `openErrorModal` through `AppShellProvider`
 - Renders the shared `Layout` shell around route content
@@ -22,5 +22,5 @@ Client layout for the main interactive route group. Owns the shared runtime shel
 ```
 
 ## Notes
-- This layout is a route-group layout, so its URL segment is omitted from the public routes.
-- The root `app/layout.tsx` remains the server layout for metadata and global providers.
+- `app/layout.tsx` remains the server layout for metadata and global providers.
+- This replaces the former route-group shell so the public URLs remain unchanged after flattening the routes.

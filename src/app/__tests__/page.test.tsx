@@ -1,12 +1,12 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import HomePage from "@/app/(app-shell)/page";
-import AppShellLayout from "@/app/(app-shell)/layout";
-import GlassMapPage from "@/app/(app-shell)/glass-map/page";
-import SettingsPage from "@/app/(app-shell)/settings/page";
-import PrivacyPolicyPage from "@/app/(app-shell)/privacy-policy/page";
-import AboutPage from "@/app/(app-shell)/about/page";
+import HomePage from "@/app/page";
+import AppShell from "@/app/AppShell";
+import GlassMapPage from "@/app/glass-map/page";
+import SettingsPage from "@/app/settings/page";
+import PrivacyPolicyPage from "@/app/privacy-policy/page";
+import AboutPage from "@/app/about/page";
 import { SpecsConfiguratorStoreProvider } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -147,7 +147,7 @@ function renderWithStores(node: React.ReactNode) {
 }
 
 function renderInAppShell(node: React.ReactNode) {
-  return renderWithStores(<AppShellLayout>{node}</AppShellLayout>);
+  return renderWithStores(<AppShell>{node}</AppShell>);
 }
 
 describe("app shell routes", () => {

@@ -1,7 +1,7 @@
-# `app/(app-shell)/glass-map/page.tsx`
+# `app/glass-map/page.tsx`
 
 ## Purpose
-Glass Map route page (`/glass-map`) for the App Router shell.
+Glass Map route page (`/glass-map`).
 
 ## Behaviour
 - Reads `proxy` and `isReady` from `useAppShell()`

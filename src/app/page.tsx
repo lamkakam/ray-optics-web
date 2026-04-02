@@ -2,7 +2,7 @@
 
 import React from "react";
 import { LensEditor } from "@/features/lens-editor/LensEditor";
-import { useAppShell } from "@/app/(app-shell)/AppShellContext";
+import { useAppShell } from "@/app/AppShellContext";
 
 export default function HomePage() {
   const { proxy, isReady, openErrorModal } = useAppShell();
