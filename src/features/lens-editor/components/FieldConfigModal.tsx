@@ -215,15 +215,15 @@ export function FieldConfigModal({
         </AgGridProvider>
 
         <div className="mt-4 flex items-start gap-3">
-          <Input
+          <input
             id="field-wide-angle"
             type="checkbox"
             aria-label="Use wide angle mode for more robust ray aiming"
             checked={isWideAngle}
             onChange={(e) => setIsWideAngle(e.target.checked)}
-            className="mt-0.5 h-4 w-4"
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600"
           />
-          <Label htmlFor="field-wide-angle" className="mb-0 leading-5">
+          <Label htmlFor="field-wide-angle" className="mb-0 flex-1 text-left leading-5">
             Use wide angle mode for more robust ray aiming
           </Label>
         </div>

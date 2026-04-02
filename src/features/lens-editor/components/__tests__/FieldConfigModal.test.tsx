@@ -205,6 +205,20 @@ describe("FieldConfigModal", () => {
     ).toBeChecked();
   });
 
+  it("renders a compact checkbox with a left-aligned label", () => {
+    render(<FieldConfigModal {...defaultProps} />);
+
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Use wide angle mode for more robust ray aiming",
+    });
+    const label = screen.getByText("Use wide angle mode for more robust ray aiming");
+
+    expect(checkbox).toHaveClass("w-4");
+    expect(checkbox).toHaveClass("shrink-0");
+    expect(checkbox).not.toHaveClass("w-full");
+    expect(label).toHaveClass("text-left");
+  });
+
   it("hides add buttons when at 10 rows", () => {
     const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
     render(<FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />);
