@@ -1,7 +1,7 @@
 # PrivacyPolicyView.tsx
 
 ## Purpose
-Full-page privacy policy view shown when `currentView === 'privacy-policy'` in `page.tsx`. Contains the same content as the former `PrivacyPolicyModal` but rendered inline (no modal wrapper).
+Full-page privacy policy view rendered by the `/privacy-policy` App Router page. Contains the same content as the former `PrivacyPolicyModal` but rendered inline (no modal wrapper).
 
 ## Props
 None.
@@ -15,6 +15,6 @@ None.
 ## Usages
 
 ```tsx
-// In app/page.tsx
-{currentView === "privacy-policy" && <PrivacyPolicyView />}
+// In app/(app-shell)/privacy-policy/page.tsx
+<PrivacyPolicyView />
 ```

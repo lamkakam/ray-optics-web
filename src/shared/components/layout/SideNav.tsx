@@ -1,27 +1,28 @@
 "use client";
 
 import React from "react";
-import type { AppView } from "@/shared/lib/types/appView";
+import { useSelectedLayoutSegment } from "next/navigation";
 import { Button } from "@/shared/components/primitives/Button";
 import { NavLink } from "@/shared/components/primitives/NavLink";
 
 interface SideNavProps {
   readonly isOpen: boolean;
   readonly isLG: boolean;
-  readonly currentView: AppView;
   readonly onClose: () => void;
-  readonly onNavigate: (view: AppView) => void;
 }
 
-const NAV_ITEMS: { view: AppView; label: string }[] = [
-  { view: "home", label: "Lens Editor" },
-  { view: "glass-map", label: "Glass Map" },
-  { view: "settings", label: "Settings" },
-  { view: "privacy-policy", label: "Privacy Policy" },
-  { view: "about", label: "About" },
-];
+const NAV_ITEMS = [
+  { segment: null, href: "/", label: "Lens Editor" },
+  { segment: "glass-map", href: "/glass-map", label: "Glass Map" },
+  { segment: "settings", href: "/settings", label: "Settings" },
+  { segment: "privacy-policy", href: "/privacy-policy", label: "Privacy Policy" },
+  { segment: "about", href: "/about", label: "About" },
+] as const;
 
-export function SideNav({ isOpen, isLG, currentView, onClose, onNavigate }: SideNavProps) {
+export function SideNav({ isOpen, isLG, onClose }: SideNavProps) {
+  const selectedSegment = useSelectedLayoutSegment();
+  const activeSegment = selectedSegment ?? null;
+
   return (
     <nav
       aria-label="Side navigation"
@@ -34,17 +35,21 @@ export function SideNav({ isOpen, isLG, currentView, onClose, onNavigate }: Side
         </Button>
       </div>
       <div className="flex flex-col gap-1 px-2">
-        {NAV_ITEMS.map(({ view, label }) => (
-          <NavLink
-            key={view}
-            active={currentView === view}
-            aria-label={label}
-            aria-current={currentView === view ? "page" : undefined}
-            onClick={() => onNavigate(view)}
-          >
-            {label}
-          </NavLink>
-        ))}
+        {NAV_ITEMS.map(({ segment, href, label }) => {
+          const isActive = activeSegment === segment;
+          return (
+            <NavLink
+              key={href}
+              href={href}
+              active={isActive}
+              aria-label={label}
+              aria-current={isActive ? "page" : undefined}
+              onClick={onClose}
+            >
+              {label}
+            </NavLink>
+          );
+        })}
       </div>
     </nav>
   );

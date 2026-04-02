@@ -17,6 +17,8 @@ build/
 *.pem
 .DS_Store
 .vscode/
+.codex/
+.codex
 
 # debug
 npm-debug.log*

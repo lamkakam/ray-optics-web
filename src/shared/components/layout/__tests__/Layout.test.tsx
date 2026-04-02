@@ -2,7 +2,6 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Layout } from "@/shared/components/layout/Layout";
-import type { AppView } from "@/shared/lib/types/appView";
 
 // Mock useScreenBreakpoint (default: screenSM)
 import type { ScreenSize } from "@/shared/hooks/useScreenBreakpoint";
@@ -15,23 +14,19 @@ jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
 jest.mock("@/shared/components/layout/SideNav", () => ({
   SideNav: ({
     isOpen,
-    onNavigate,
+    onClose,
   }: {
     isOpen: boolean;
-    onNavigate: (view: AppView) => void;
+    onClose: () => void;
   }) =>
     isOpen ? (
       <nav aria-label="Side navigation">
-        <button onClick={() => onNavigate("settings")}>Settings</button>
+        <button onClick={onClose}>Close navigation</button>
       </nav>
     ) : null,
 }));
 
 const defaultProps = {
-  currentView: "home" as AppView,
-  onNavigate: jest.fn(),
-  errorModal: null,
-  initOverlayNode: null,
   children: <div>child content</div>,
 };
 
@@ -81,12 +76,10 @@ describe("Layout", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("onNavigate is called and side nav closes when a nav link is clicked", async () => {
-    const onNavigate = jest.fn();
-    render(<Layout {...defaultProps} onNavigate={onNavigate} />);
+  it("side nav closes when its close handler is triggered", async () => {
+    render(<Layout {...defaultProps} />);
     await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
-    await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    expect(onNavigate).toHaveBeenCalledWith("settings");
+    await userEvent.click(screen.getByRole("button", { name: "Close navigation" }));
     expect(
       screen.queryByRole("navigation", { name: "Side navigation" })
     ).not.toBeInTheDocument();
@@ -116,23 +109,5 @@ describe("Layout", () => {
     const innerDiv = outerDiv.children[1] as HTMLElement;
     expect(innerDiv).toHaveClass("flex-1");
     expect(innerDiv).toHaveClass("min-h-0");
-  });
-
-  it("renders errorModal node", () => {
-    render(
-      <Layout {...defaultProps} errorModal={<div role="dialog">error</div>} />
-    );
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText("error")).toBeInTheDocument();
-  });
-
-  it("renders initOverlayNode", () => {
-    render(
-      <Layout
-        {...defaultProps}
-        initOverlayNode={<div data-testid="loading-overlay">loading</div>}
-      />
-    );
-    expect(screen.getByTestId("loading-overlay")).toBeInTheDocument();
   });
 });

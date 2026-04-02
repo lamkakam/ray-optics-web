@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
-import { useStore, type StoreApi } from "zustand";
-import { type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
+import { useStore } from "zustand";
+import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { type GridRow } from "@/shared/lib/types/gridTypes";
 import { type OpticalModel } from "@/shared/lib/types/opticalModel";
 import { buildExportScript } from "@/shared/lib/utils/pythonScript";
@@ -20,7 +20,6 @@ import { PythonScriptModal } from "@/features/lens-editor/components/PythonScrip
 import { ConfirmImportModal } from "@/features/lens-editor/components/ConfirmImportModal";
 
 interface LensPrescriptionContainerProps {
-  readonly store: StoreApi<LensEditorState>;
   readonly getOpticalModel: () => OpticalModel;
   readonly onImportJson: (data: OpticalModel) => void;
   readonly onUpdateSystem: () => void;
@@ -28,7 +27,6 @@ interface LensPrescriptionContainerProps {
 }
 
 export function LensPrescriptionContainer({
-  store,
   getOpticalModel,
   onImportJson,
   onUpdateSystem,
@@ -36,6 +34,7 @@ export function LensPrescriptionContainer({
 }: LensPrescriptionContainerProps) {
   const screenSize = useScreenBreakpoint();
   const buttonSize = screenSize === "screenSM" ? "xs" : "sm";
+  const store = useLensEditorStore();
   const rows = useStore(store, (s) => s.rows);
   const autoAperture = useStore(store, (s) => s.autoAperture);
   const mediumModal = useStore(store, (s) => s.mediumModal);

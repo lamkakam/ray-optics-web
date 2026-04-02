@@ -3,25 +3,21 @@
 import React, { useCallback } from "react";
 import { useStore, type StoreApi } from "zustand";
 import {
-  type SpecsConfigurerState,
+  type SpecsConfiguratorState,
   type PupilSpace,
   type PupilType,
   type FieldSpace,
   type FieldType,
   type WavelengthWeights,
   type ReferenceIndex,
-} from "@/features/lens-editor/stores/specsConfigurerStore";
-import { SpecsConfigurerPanel } from "@/features/lens-editor/components/SpecsConfigurerPanel";
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
+import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
+import { SpecsConfiguratorPanel } from "@/features/lens-editor/components/SpecsConfiguratorPanel";
 import { FieldConfigModal } from "@/features/lens-editor/components/FieldConfigModal";
 import { WavelengthConfigModal } from "@/features/lens-editor/components/WavelengthConfigModal";
 
-interface SpecsConfigurerContainerProps {
-  readonly store: StoreApi<SpecsConfigurerState>;
-}
-
-export function SpecsConfigurerContainer({
-  store,
-}: SpecsConfigurerContainerProps) {
+export function SpecsConfiguratorContainer() {
+  const store= useSpecsConfiguratorStore();
 
   const pupilSpace = useStore(store, (s) => s.pupilSpace);
   const pupilType = useStore(store, (s) => s.pupilType);
@@ -72,7 +68,7 @@ export function SpecsConfigurerContainer({
 
   return (
     <div>
-      <SpecsConfigurerPanel
+      <SpecsConfiguratorPanel
         pupilSpace={pupilSpace}
         pupilType={pupilType}
         pupilValue={pupilValue}

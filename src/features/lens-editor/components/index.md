@@ -15,7 +15,7 @@ All components (composite + container + domain cells) for the lens editor featur
 
 ## Specs & Configuration
 
-- [SpecsConfigurerPanel.tsx](./SpecsConfigurerPanel.tsx.md) — UI for setting optical specs (pupil, field, wavelengths)
+- [SpecsConfiguratorPanel.tsx](./SpecsConfiguratorPanel.tsx.md) — UI for setting optical specs (pupil, field, wavelengths)
 - [FirstOrderChips.tsx](./FirstOrderChips.tsx.md) — Chips showing first-order optical data (EFL, F#, BFL, etc.)
 - [FocusingPanel.tsx](./FocusingPanel.tsx.md) — Controls for focusing algorithms and best-focus thickness
 
@@ -39,6 +39,6 @@ All components (composite + container + domain cells) for the lens editor featur
 ## Containers
 
 - [LensPrescriptionContainer.tsx](./LensPrescriptionContainer.tsx.md) — Manages lens prescription grid state and surface updates
-- [SpecsConfigurerContainer.tsx](./SpecsConfigurerContainer.tsx.md) — Manages optical specs configuration state
+- [SpecsConfiguratorContainer.tsx](./SpecsConfiguratorContainer.tsx.md) — Manages optical specs configuration state
 - [FocusingContainer.tsx](./FocusingContainer.tsx.md) — Manages focusing algorithm execution
 - [BottomDrawerContainer.tsx](./BottomDrawerContainer.tsx.md) — Manages bottom drawer open/close state

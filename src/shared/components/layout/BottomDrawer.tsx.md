@@ -45,12 +45,12 @@ const tabs = useMemo(
     {
       id: "specs",
       label: "System Specs",
-      content: <SpecsConfigurerContainer store={specsStore} />,
+      content: <SpecsConfiguratorContainer />,
     },
     {
       id: "prescription",
       label: "Prescription",
-      content: <LensPrescriptionContainer store={lensStore} {...props} />,
+      content: <LensPrescriptionContainer {...props} />,
     },
     {
       id: "focusing",
@@ -58,7 +58,7 @@ const tabs = useMemo(
       content: <FocusingContainer {...focusingProps} />,
     },
   ],
-  [specsStore, lensStore, getOpticalModel, onImportJson, onUpdateSystem, isReady, computing, proxy, onError]
+  [getOpticalModel, onImportJson, onUpdateSystem, isReady, computing, proxy, onError]
 );
 
 return <BottomDrawer tabs={tabs} draggable={draggable} />;

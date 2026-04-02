@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useRef } from "react";
-import { useStore, type StoreApi } from "zustand";
+import { useStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData, ZernikeOrdering } from "@/shared/lib/types/zernikeData";
@@ -10,11 +10,11 @@ import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
 import { ExampleSystems } from "@/shared/lib/data/exampleSystems";
 import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
-import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
-import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
-import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
+import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
+import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
+import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisDataStoreProvider";
+import { useLensLayoutImageStore } from "../analysis/providers/LensLayoutImageStoreProvider";
 import { LensLayoutPanel } from "@/features/lens-editor/components/LensLayoutPanel";
 import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPlotContainer";
 import { BottomDrawerContainer } from "@/features/lens-editor/components/BottomDrawerContainer";
@@ -27,28 +27,23 @@ import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrM
 import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
 
 export interface LensEditorProps {
-  readonly specsStore: StoreApi<SpecsConfigurerState>;
-  readonly lensStore: StoreApi<LensEditorState>;
-  readonly analysisPlotStore: StoreApi<AnalysisPlotState>;
-  readonly lensLayoutImageStore: StoreApi<LensLayoutImageState>;
-  readonly analysisDataStore: StoreApi<AnalysisDataState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly onError: () => void;
 }
 
 export function LensEditor({
-  specsStore,
-  lensStore,
-  analysisPlotStore,
-  lensLayoutImageStore,
-  analysisDataStore,
   proxy,
   isReady,
   onError,
 }: LensEditorProps) {
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
+  const lensStore = useLensEditorStore();
+  const specsStore = useSpecsConfiguratorStore();
+  const analysisPlotStore = useAnalysisPlotStore();
+  const analysisDataStore = useAnalysisDataStore();
+  const lensLayoutImageStore = useLensLayoutImageStore();
 
   const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
@@ -216,10 +211,7 @@ export function LensEditor({
 
   const analysisPlotContainer = (
     <AnalysisPlotContainer
-      store={analysisPlotStore}
       proxy={proxy}
-      lensStore={lensStore}
-      specsStore={specsStore}
       onError={onError}
       autoHeight={!isLG}
     />
@@ -227,8 +219,6 @@ export function LensEditor({
 
   const bottomDrawer = (
     <BottomDrawerContainer
-      specsStore={specsStore}
-      lensStore={lensStore}
       getOpticalModel={getOpticalModel}
       onImportJson={handleImportJson}
       onUpdateSystem={handleSubmit}

@@ -25,7 +25,7 @@ ray-optics-web/
 │   │   │   ├── components/       # Composite + container + domain-cell components
 │   │   │   │   ├── __tests__/
 │   │   │   │   └── index.md
-│   │   │   ├── stores/           # lensEditorStore, specsConfigurerStore
+│   │   │   ├── stores/           # lensEditorStore, specsConfiguratorStore
 │   │   │   │   ├── __tests__/
 │   │   │   │   └── index.md
 │   │   │   ├── __tests__/        # Tests for LensEditor page
@@ -44,6 +44,9 @@ ray-optics-web/
 │   │   │   │   ├── __tests__/
 │   │   │   │   └── index.md
 │   │   │   ├── stores/           # glassMapStore
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
+│   │   │   ├── providers/        # GlassMapStoreProvider (context provider for glass map store)
 │   │   │   │   ├── __tests__/
 │   │   │   │   └── index.md
 │   │   │   ├── __tests__/        # Tests for GlassMapView page

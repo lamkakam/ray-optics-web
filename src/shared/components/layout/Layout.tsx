@@ -1,27 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import type { AppView } from "@/shared/lib/types/appView";
 import { Button } from "@/shared/components/primitives/Button";
 import { Header } from "@/shared/components/primitives/Header";
 import { SideNav } from "@/shared/components/layout/SideNav";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
 interface LayoutProps {
-  readonly currentView: AppView;
-  readonly onNavigate: (view: AppView) => void;
-  readonly errorModal: React.ReactNode;
-  readonly initOverlayNode: React.ReactNode;
   readonly children: React.ReactNode;
 }
 
-export function Layout({
-  currentView,
-  onNavigate,
-  errorModal,
-  initOverlayNode,
-  children,
-}: LayoutProps) {
+export function Layout({ children }: LayoutProps) {
   const [sideNavOpen, setSideNavOpen] = useState(false);
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
@@ -41,12 +30,7 @@ export function Layout({
     <SideNav
       isOpen={sideNavOpen}
       isLG={isLG}
-      currentView={currentView}
       onClose={() => setSideNavOpen(false)}
-      onNavigate={(view) => {
-        onNavigate(view);
-        setSideNavOpen(false);
-      }}
     />
   );
 
@@ -64,9 +48,6 @@ export function Layout({
           {sideNavNode}
           {children}
         </div>
-
-        {errorModal}
-        {initOverlayNode}
       </div>
     );
   }
@@ -84,9 +65,6 @@ export function Layout({
         {sideNavNode}
         {children}
       </div>
-
-      {errorModal}
-      {initOverlayNode}
     </div>
   );
 }

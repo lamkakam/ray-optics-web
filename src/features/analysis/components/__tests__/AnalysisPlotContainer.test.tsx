@@ -4,10 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
 import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPlotContainer";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
+import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { AnalysisPlotStoreContext } from "../../providers/AnalysisPlotStoreProvider";
 
 // Mock useScreenBreakpoint (AnalysisPlotView uses it)
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
@@ -56,8 +59,8 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
   } as unknown as PyodideWorkerAPI;
 }
 
-function makeSpecsStore(specs: OpticalSpecs): StoreApi<SpecsConfigurerState> {
-  const store = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+function makeSpecsStore(specs: OpticalSpecs): StoreApi<SpecsConfiguratorState> {
+  const store = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   store.getState().loadFromSpecs(specs);
   store.getState().setCommittedSpecs(specs);
   return store;
@@ -69,6 +72,29 @@ function makeLensStore(model: OpticalModel): StoreApi<LensEditorState> {
   return store;
 }
 
+function renderComponent(
+  testSpecs: OpticalSpecs,
+  testModel: OpticalModel,
+  store: StoreApi<AnalysisPlotState>,
+  mockProxy?: PyodideWorkerAPI,
+  onError = jest.fn(),
+) {
+  return (
+    render(
+      <SpecsConfiguratorStoreContext.Provider value={makeSpecsStore(testSpecs)}>
+        <LensEditorStoreContext.Provider value={makeLensStore(testModel)}>
+          <AnalysisPlotStoreContext.Provider value={store}>
+            <AnalysisPlotContainer
+              proxy={mockProxy}
+              onError={onError}
+            />
+          </AnalysisPlotStoreContext.Provider>
+        </LensEditorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>
+    )
+  );
+}
+
 describe("AnalysisPlotContainer", () => {
   let store: StoreApi<AnalysisPlotState>;
 
@@ -78,29 +104,13 @@ describe("AnalysisPlotContainer", () => {
   });
 
   it("renders AnalysisPlotView (smoke test)", () => {
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={makeMockProxy()}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, makeMockProxy());
     expect(screen.getByLabelText("Field")).toBeInTheDocument();
     expect(screen.getByLabelText("Plot type")).toBeInTheDocument();
   });
 
   it("derives fieldOptions from committedSpecs with angle type", () => {
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={makeMockProxy()}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, makeMockProxy());
     const fieldSelect = screen.getByLabelText("Field") as HTMLSelectElement;
     expect(fieldSelect).toContainHTML("0.00°");
     expect(fieldSelect).toContainHTML("14.0°");
@@ -108,15 +118,7 @@ describe("AnalysisPlotContainer", () => {
   });
 
   it("derives fieldOptions from committedSpecs with height type", () => {
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={makeMockProxy()}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecsHeight)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecsHeight, testModel, store, makeMockProxy());
     const fieldSelect = screen.getByLabelText("Field") as HTMLSelectElement;
     expect(fieldSelect).toContainHTML("0.00 mm");
     expect(fieldSelect).toContainHTML("5.00 mm");
@@ -126,15 +128,7 @@ describe("AnalysisPlotContainer", () => {
   it("derives wavelengthOptions from committedSpecs", async () => {
     // Switch to wavefrontMap so wavelength select is visible
     store.getState().setSelectedPlotType("wavefrontMap");
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={makeMockProxy()}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, makeMockProxy());
     const wlSelect = screen.getByLabelText("Wavelength") as HTMLSelectElement;
     expect(wlSelect).toContainHTML("486.1 nm");
     expect(wlSelect).toContainHTML("587.6 nm");
@@ -143,15 +137,7 @@ describe("AnalysisPlotContainer", () => {
 
   it("handleFieldChange: updates selectedFieldIndex in store and calls proxy plot fn", async () => {
     const proxy = makeMockProxy();
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={proxy}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, proxy);
     const fieldSelect = screen.getByLabelText("Field");
     await userEvent.selectOptions(fieldSelect, "1");
 
@@ -168,15 +154,7 @@ describe("AnalysisPlotContainer", () => {
         () => new Promise<string>((resolve) => { resolveProxy = resolve; })
       ),
     });
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={proxy}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, proxy);
     const fieldSelect = screen.getByLabelText("Field");
     void userEvent.selectOptions(fieldSelect, "1");
 
@@ -188,15 +166,7 @@ describe("AnalysisPlotContainer", () => {
   it("handleFieldChange: no-op for plot call when fieldDependent === false", async () => {
     store.getState().setSelectedPlotType("surfaceBySurface3rdOrder");
     const proxy = makeMockProxy();
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={proxy}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, proxy);
     // field select is disabled for surfaceBySurface3rdOrder — just verify it's disabled
     const fieldSelect = screen.getByLabelText("Field");
     expect(fieldSelect).toBeDisabled();
@@ -206,15 +176,7 @@ describe("AnalysisPlotContainer", () => {
   it("handleWavelengthChange: updates selectedWavelengthIndex and calls proxy plot fn", async () => {
     store.getState().setSelectedPlotType("wavefrontMap");
     const proxy = makeMockProxy();
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={proxy}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, proxy);
     const wlSelect = screen.getByLabelText("Wavelength");
     await userEvent.selectOptions(wlSelect, "2");
 
@@ -226,15 +188,7 @@ describe("AnalysisPlotContainer", () => {
 
   it("handlePlotTypeChange: updates selectedPlotType and calls correct proxy fn", async () => {
     const proxy = makeMockProxy();
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={proxy}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, proxy);
     const plotTypeSelect = screen.getByLabelText("Plot type");
     await userEvent.selectOptions(plotTypeSelect, "spotDiagram");
 
@@ -245,15 +199,7 @@ describe("AnalysisPlotContainer", () => {
   });
 
   it("handlePlotTypeChange: no-op when proxy is undefined", async () => {
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={undefined}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, undefined);
     const plotTypeSelect = screen.getByLabelText("Plot type");
     await userEvent.selectOptions(plotTypeSelect, "opdFan");
 
@@ -268,15 +214,7 @@ describe("AnalysisPlotContainer", () => {
     const proxy = makeMockProxy({
       plotRayFan: jest.fn().mockRejectedValue(new Error("fail")),
     });
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={proxy}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={onError}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, proxy, onError);
     const fieldSelect = screen.getByLabelText("Field");
     await userEvent.selectOptions(fieldSelect, "1");
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
@@ -288,15 +226,7 @@ describe("AnalysisPlotContainer", () => {
     const proxy = makeMockProxy({
       plotWavefrontMap: jest.fn().mockRejectedValue(new Error("fail")),
     });
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={proxy}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={onError}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, proxy, onError);
     const wlSelect = screen.getByLabelText("Wavelength");
     await userEvent.selectOptions(wlSelect, "2");
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
@@ -307,15 +237,7 @@ describe("AnalysisPlotContainer", () => {
     const proxy = makeMockProxy({
       plotSpotDiagram: jest.fn().mockRejectedValue(new Error("fail")),
     });
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={proxy}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={onError}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, proxy, onError);
     const plotTypeSelect = screen.getByLabelText("Plot type");
     await userEvent.selectOptions(plotTypeSelect, "spotDiagram");
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
@@ -325,15 +247,7 @@ describe("AnalysisPlotContainer", () => {
     const proxy = makeMockProxy({
       plotRayFan: jest.fn().mockRejectedValue(new Error("fail")),
     });
-    render(
-      <AnalysisPlotContainer
-        store={store}
-        proxy={proxy}
-        lensStore={makeLensStore(testModel)}
-        specsStore={makeSpecsStore(testSpecs)}
-        onError={jest.fn()}
-      />
-    );
+    renderComponent(testSpecs, testModel, store, proxy);
     const fieldSelect = screen.getByLabelText("Field");
     await userEvent.selectOptions(fieldSelect, "1");
     await waitFor(() => expect(store.getState().plotLoading).toBe(false));

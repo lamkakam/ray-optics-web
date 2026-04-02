@@ -5,11 +5,16 @@ import { createStore } from "zustand";
 import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { createSpecsConfigurerSlice, type SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
+import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
+import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { AnalysisPlotStoreContext } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
+import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
+import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
@@ -127,7 +132,7 @@ const mockSeidelData: SeidelData = {
 };
 
 function makeStores() {
-  const specsStore = createStore<SpecsConfigurerState>(createSpecsConfigurerSlice);
+  const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
   const analysisPlotStore = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
   const lensLayoutImageStore = createStore<LensLayoutImageState>(createLensLayoutImageSlice);
@@ -167,16 +172,21 @@ function renderLensEditor(overrides?: {
   const proxy = overrides && "proxy" in overrides ? overrides.proxy : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
   render(
-    <LensEditor
-      specsStore={specsStore}
-      lensStore={lensStore}
-      analysisPlotStore={analysisPlotStore}
-      lensLayoutImageStore={lensLayoutImageStore}
-      analysisDataStore={analysisDataStore}
-      proxy={proxy}
-      isReady={overrides?.isReady ?? true}
-      onError={onError}
-    />
+    <SpecsConfiguratorStoreContext.Provider value={specsStore}>
+      <LensEditorStoreContext.Provider value={lensStore}>
+        <AnalysisPlotStoreContext.Provider value={analysisPlotStore}>
+          <AnalysisDataStoreContext value={analysisDataStore}>
+            <LensLayoutImageStoreContext value={lensLayoutImageStore}>
+              <LensEditor
+                proxy={proxy}
+                isReady={overrides?.isReady ?? true}
+                onError={onError}
+              />
+            </LensLayoutImageStoreContext>
+          </AnalysisDataStoreContext>
+        </AnalysisPlotStoreContext.Provider>
+      </LensEditorStoreContext.Provider>
+    </SpecsConfiguratorStoreContext.Provider>
   );
   return { proxy, onError, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore };
 }

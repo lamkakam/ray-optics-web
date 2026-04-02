@@ -2,9 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import { useStore } from "zustand";
-import type { StoreApi } from "zustand";
-import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { SpecsConfigurerState } from "@/features/lens-editor/stores/specsConfigurerStore";
+import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
+import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { FocusingPanel } from "@/features/lens-editor/components/FocusingPanel";
@@ -14,8 +13,6 @@ type Chromaticity = "mono" | "poly";
 type Metric = "rmsSpot" | "wavefront";
 
 interface FocusingContainerProps {
-  readonly lensStore: StoreApi<LensEditorState>;
-  readonly specsStore: StoreApi<SpecsConfigurerState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly computing: boolean;
@@ -25,8 +22,6 @@ interface FocusingContainerProps {
 }
 
 export function FocusingContainer({
-  lensStore,
-  specsStore,
   proxy,
   isReady,
   computing,
@@ -34,11 +29,13 @@ export function FocusingContainer({
   onUpdateSystem,
   onError,
 }: FocusingContainerProps) {
+  const lensStore = useLensEditorStore();
   const [chromaticity, setChromaticity] = useState<Chromaticity>("mono");
   const [metric, setMetric] = useState<Metric>("rmsSpot");
   const [fieldIndex, setFieldIndex] = useState(0);
   const [focusing, setFocusing] = useState(false);
 
+  const specsStore = useSpecsConfiguratorStore();
   const relativeFields = useStore(specsStore, (s) => s.relativeFields);
   const maxField = useStore(specsStore, (s) => s.maxField);
   const fieldType = useStore(specsStore, (s) => s.fieldType);

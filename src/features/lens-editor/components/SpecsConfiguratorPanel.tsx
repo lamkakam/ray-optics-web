@@ -4,7 +4,7 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Select } from "@/shared/components/primitives/Select";
 import { Input } from "@/shared/components/primitives/Input";
 import { Header } from "@/shared/components/primitives/Header";
-import type { PupilSpace, PupilType } from "@/features/lens-editor/stores/specsConfigurerStore";
+import type { PupilSpace, PupilType } from "@/features/lens-editor/stores/specsConfiguratorStore";
 
 interface AperturePatch {
   readonly pupilSpace?: PupilSpace;
@@ -12,7 +12,7 @@ interface AperturePatch {
   readonly pupilValue?: number;
 }
 
-interface SpecsConfigurerPanelProps {
+interface SpecsConfiguratorPanelProps {
   readonly pupilSpace: PupilSpace;
   readonly pupilType: PupilType;
   readonly pupilValue: number;
@@ -34,7 +34,7 @@ const APERTURE_OPTIONS: readonly {
     { label: "Object Space NA", value: "object:NA", pupilSpace: "object", pupilType: "NA" },
   ];
 
-export function SpecsConfigurerPanel({
+export function SpecsConfiguratorPanel({
   pupilSpace,
   pupilType,
   pupilValue,
@@ -43,7 +43,7 @@ export function SpecsConfigurerPanel({
   onApertureChange,
   onOpenFieldModal,
   onOpenWavelengthModal,
-}: SpecsConfigurerPanelProps) {
+}: SpecsConfiguratorPanelProps) {
   const [valueStr, setValueStr] = useState(String(pupilValue));
 
   useEffect(() => {

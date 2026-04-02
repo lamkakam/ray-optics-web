@@ -6,11 +6,11 @@ Page-level container for the Glass Map feature. Fetches glass catalog data from 
 ## Props
 | Prop | Type | Description |
 |------|------|-------------|
-| `store` | `StoreApi<GlassMapStore>` | Zustand store instance (injected from parent) |
 | `proxy` | `PyodideWorkerAPI \| undefined` | Worker proxy for data fetching |
 | `isReady` | `boolean` | Whether the Pyodide worker is ready |
 
 ## Behavior
+- Obtains the `GlassMapStore` via `useGlassMapStore()` (provided by `GlassMapStoreProvider` in `layout.tsx`)
 - Fetches data via `proxy.getAllGlassCatalogsData()` on mount when `isReady=true` and `catalogsData` is not yet set
 - Normalizes raw data using `normalizeAllCatalogsData()`, stores in `GlassMapStore`
 - Computes `PlotPoint[]` via `computePlotPoints()` (memoized)
@@ -41,15 +41,27 @@ MathJax context is provided by the parent (`page.tsx`). This component does not 
 
 ## Usages
 
+`GlassMapStoreProvider` is mounted in `app/layout.tsx`:
 ```tsx
-// In app/page.tsx
-const glassMapStore = useMemo(
-  () => createStore<GlassMapStore>(createGlassMapSlice),
-  []
-);
+<LensLayoutImageStoreProvider>
+  <GlassMapStoreProvider>
+    {children}
+  </GlassMapStoreProvider>
+</LensLayoutImageStoreProvider>
+```
 
-// Rendered conditionally:
+In `app/page.tsx` — rendered conditionally (no store prop needed):
+```tsx
 {currentView === "glass-map" && (
-  <GlassMapView store={glassMapStore} proxy={proxy} isReady={isReady} />
+  <GlassMapView proxy={proxy} isReady={isReady} />
 )}
+```
+
+In tests — inject store via context:
+```tsx
+render(
+  <GlassMapStoreContext.Provider value={store}>
+    <GlassMapView proxy={proxy} isReady={isReady} />
+  </GlassMapStoreContext.Provider>
+);
 ```
