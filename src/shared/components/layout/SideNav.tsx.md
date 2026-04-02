@@ -1,16 +1,14 @@
 # SideNav.tsx
 
 ## Purpose
-Collapsible side navigation panel toggled by the hamburger button in the header. Allows navigation between `AppView` states without URL changes.
+Collapsible side navigation panel toggled by the hamburger button in the header. Uses Next.js App Router links for route navigation and highlights the active route from the current layout segment.
 
 ## Props
 | Prop | Type | Description |
 |------|------|-------------|
 | `isOpen` | `boolean` | When `false`, nav is translated off-screen (`-translate-x-full`); always in DOM |
 | `isLG` | `boolean` | Determines width: `w-[33vw]` on LG, `w-[50vw]` on SM |
-| `currentView` | `AppView` | Active view; used for `aria-current` and active styling |
 | `onClose` | `() => void` | Called when the ✕ close button is clicked |
-| `onNavigate` | `(view: AppView) => void` | Called when a nav item is clicked |
 
 ## Behaviour
 - Always rendered in the DOM — never returns `null`
@@ -20,19 +18,20 @@ Collapsible side navigation panel toggled by the hamburger button in the header.
 - Slide animation: `transition-transform duration-200 ease-out will-change-transform`; `translate-x-0` when open, `-translate-x-full` when closed
 - Parent container must have `overflow-hidden` to clip the off-screen nav
 - Close button (`aria-label="Close navigation"`) is right-aligned at the top
-- Nav items rendered as `<NavLink>` micro-component
+- Uses `useSelectedLayoutSegment()` to determine the active route
+- Nav items rendered as `<NavLink>` links
   - Active item: `active={true}` + `aria-current="page"`
-  - Inactive items: `active={false}`
+  - Root route (`/`) is active when the selected segment is `null`
 - No outside-click-to-close handler (intentional)
 
 ## Nav Items
-| Label | View key |
+| Label | Href |
 |-------|----------|
-| Lens Editor | `'home'` |
-| Glass Map | `'glass-map'` |
-| Settings | `'settings'` |
-| Privacy Policy | `'privacy-policy'` |
-| About | `'about'` |
+| Lens Editor | `/` |
+| Glass Map | `/glass-map` |
+| Settings | `/settings` |
+| Privacy Policy | `/privacy-policy` |
+| About | `/about` |
 
 ## Usages
 
@@ -48,12 +47,7 @@ const sideNavNode = (
   <SideNav
     isOpen={sideNavOpen}
     isLG={isLG}
-    currentView={currentView}
     onClose={() => setSideNavOpen(false)}
-    onNavigate={(view) => {
-      onNavigate(view);
-      setSideNavOpen(false);
-    }}
   />
 );
 

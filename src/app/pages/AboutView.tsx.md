@@ -1,7 +1,7 @@
 # AboutView.tsx
 
 ## Purpose
-Full-page about view shown when `currentView === 'about'` in `page.tsx`.
+Full-page about view rendered by the `/about` App Router page.
 
 ## Props
 None.
@@ -15,6 +15,6 @@ None.
 ## Usages
 
 ```tsx
-// In app/page.tsx
-{currentView === "about" && <AboutView />}
+// In app/(app-shell)/about/page.tsx
+<AboutView />
 ```

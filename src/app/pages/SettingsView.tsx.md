@@ -1,7 +1,7 @@
 # SettingsView.tsx
 
 ## Purpose
-Full-page settings view shown when `currentView === 'settings'` in `page.tsx`. Contains the same theme selector as the former `SettingsModal` but rendered inline (no modal wrapper).
+Full-page settings view rendered by the `/settings` App Router page. Contains the same theme selector as the former `SettingsModal` but rendered inline (no modal wrapper).
 
 ## Props
 | Prop | Type | Description |
@@ -18,16 +18,6 @@ Full-page settings view shown when `currentView === 'settings'` in `page.tsx`. C
 ## Usages
 
 ```tsx
-// In app/page.tsx
-const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-  const selected = e.target.value as Theme;
-  if (selected !== theme) {
-    setTheme(selected);
-  }
-};
-
-// Rendered conditionally:
-{currentView === "settings" && (
-  <SettingsView theme={theme} onThemeChange={handleThemeChange} />
-)}
+// In app/(app-shell)/settings/page.tsx
+<SettingsView theme={theme} onThemeChange={handleThemeChange} />
 ```
