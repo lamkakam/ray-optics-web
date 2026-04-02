@@ -1087,6 +1087,182 @@ const modifiedImaizumiEyepieceReversed: OpticalModel = {
 } as const;
 
 
+const fishEyeLens: OpticalModel = {
+  setAutoAperture: "autoAperture",
+  specs: {
+    pupil: {
+      space: "object",
+      type: "epd",
+      value: 0.25
+    },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 90,
+      fields: [0, 0.707, 1],
+      "isRelative": true,
+      "isWideAngle": true,
+    },
+    wavelengths: {
+      weights: [
+        [486.133, 1],
+        [546.073, 2],
+        [656.273, 1],
+      ],
+      "referenceIndex": 1
+    },
+  },
+  object: { distance: 1e10 },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 4.7745,
+      thickness: 0.1299,
+      medium: "1.713",
+      manufacturer: "53.9",
+      semiDiameter: 2,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0.8821,
+      thickness: 0.5688,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0.88,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 1.6822,
+      thickness: 0.0938,
+      medium: "1.618",
+      manufacturer: "63.3",
+      semiDiameter: 0.95,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0.8064,
+      thickness: 0.3313,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0.725,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 1.6265,
+      thickness: 0.4838,
+      medium: "1.595",
+      manufacturer: "39.2",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -0.7284,
+      thickness: 0.0938,
+      medium: "1.623",
+      manufacturer: "56.9",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 8.3331,
+      thickness: 0.05,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 7.6334,
+      thickness: 0.1875,
+      medium: "1.805",
+      manufacturer: "40.9",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0.0806,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0.0938,
+      medium: "1.581",
+      manufacturer: "41",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0.1413,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Stop",
+      curvatureRadius: 0,
+      thickness: 0.1,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0.284,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -2.8724,
+      thickness: 0.05,
+      medium: "1.713",
+      manufacturer: "53.2",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 2.8034,
+      thickness: 0.25,
+      medium: "1.64",
+      manufacturer: "60",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -1.1513,
+      thickness: 0.0063,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 3.2583,
+      thickness: 0.2919,
+      medium: "1.488",
+      manufacturer: "70.1",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -0.8827,
+      thickness: 0.0913,
+      medium: "1.805",
+      manufacturer: "25.4",
+      semiDiameter: 0.6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -1.7116,
+      thickness: 2.8885085903779517,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0.6,
+    },
+  ]
+};
+
+
 const list: Record<string, OpticalModel> = {
   "Sasian Triplet": SasianTriplet,
   "Newtonian Reflector with Optical Window": ReflectorWithOpticalWindow,
@@ -1105,6 +1281,7 @@ const list: Record<string, OpticalModel> = {
   "APO Petzval 140mm f/7 (but with rear lenses removed)": petzvalAPORearLensesRemoved,
   "Flatfield Quadruplet APO 86mm f/7 (Triplet with Singlet Meniscus Lens)": tripletAPOWithSingletMeniscusLens,
   "Reversed Tracing of Modified Imaizumi M. 80deg AFoV Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
+  "Fisheye Lens Example": fishEyeLens,
 } as const;
 
 export const ExampleSystems: { [x: string]: OpticalModel } = Object.keys(list).reduce((acc, name, idx) => ({

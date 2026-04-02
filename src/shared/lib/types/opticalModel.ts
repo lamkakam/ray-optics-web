@@ -17,7 +17,7 @@ export interface OpticalSpecs {
     fields: number[];
     isRelative: boolean; // if true, the fields are relative to maxField
     // if true, a more robust built-in ray aiming method is used to determine the centre of the stop
-    // for wide-angled field
+    // for the chief ray in a wide-angled field
     isWideAngle?: boolean; 
   };
   wavelengths: {
