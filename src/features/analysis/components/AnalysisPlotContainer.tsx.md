@@ -8,10 +8,7 @@ Container component that owns all analysis-plot logic: derives field/wavelength 
 
 ```ts
 interface AnalysisPlotContainerProps {
-  store: StoreApi<AnalysisPlotState>;
   proxy: PyodideWorkerAPI | undefined;
-  lensStore: StoreApi<LensEditorState>;
-  specsStore: StoreApi<SpecsConfiguratorState>;
   onError: () => void;
   autoHeight?: boolean;
 }
@@ -19,15 +16,14 @@ interface AnalysisPlotContainerProps {
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
-| `store` | `StoreApi<AnalysisPlotState>` | Yes | Zustand store for analysis-plot state (plotImage, plotLoading, selected indices, selectedPlotType) |
 | `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy; handlers no-op if `undefined` |`getWavelengthOptions()` are called to derive select options |
 | `onError` | `() => void` | Yes | Called when any async plot call throws |
 | `autoHeight` | `boolean` | No | Forwarded to `AnalysisPlotView` |
 
 ## State
 
-All five analysis-plot state fields are read from `store` via `useStore(store, selector)`:
-- `plotImage`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
+All five analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
+- `plotImage`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
 
 `committedOpticalModel` is read from `lensStore` via `useLensEditorStore` and `useStore(lensStore, (s) => s.committedOpticalModel)`.
 

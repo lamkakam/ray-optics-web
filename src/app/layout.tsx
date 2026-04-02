@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ServiceWorkerRegistrar from "@/shared/components/providers/ServiceWorkerRegistrar";
 import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
-import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { SpecsConfiguratorStoreProvider } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
+import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 
 export const metadata: Metadata = {
   title: "Ray Optics Web",
@@ -22,7 +23,9 @@ export default function RootLayout({
           <ServiceWorkerRegistrar />
           <SpecsConfiguratorStoreProvider>
             <LensEditorStoreProvider>
-              {children}
+              <AnalysisPlotStoreProvider>
+                {children}
+              </AnalysisPlotStoreProvider>
             </LensEditorStoreProvider>
           </SpecsConfiguratorStoreProvider>
         </ThemeProvider>

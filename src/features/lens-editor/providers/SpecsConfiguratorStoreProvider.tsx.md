@@ -40,8 +40,8 @@ Inside any Specs Configurator component — imperative access:
 import { useStore } from "zustand";
 // ...
 const specsConfiguratorStore = useSpecsConfiguratorStore();
-const rows = useStore(specsConfiguratorStore, (s) => s.rows);
-specsConfiguratorStore.getState().updateRow(id, patch);
+const fieldSpace = useStore(specsConfiguratorStore, (s) => s.fieldSpace);
+specsConfiguratorStore.getState().setField(field);
 ```
 
 In tests — inject a pre-built store:

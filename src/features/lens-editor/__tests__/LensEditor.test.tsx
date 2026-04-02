@@ -12,6 +12,7 @@ import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/anal
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { AnalysisPlotStoreContext } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
@@ -171,14 +172,15 @@ function renderLensEditor(overrides?: {
   render(
     <SpecsConfiguratorStoreContext.Provider value={specsStore}>
       <LensEditorStoreContext.Provider value={lensStore}>
-        <LensEditor
-          analysisPlotStore={analysisPlotStore}
-          lensLayoutImageStore={lensLayoutImageStore}
-          analysisDataStore={analysisDataStore}
-          proxy={proxy}
-          isReady={overrides?.isReady ?? true}
-          onError={onError}
-        />
+        <AnalysisPlotStoreContext.Provider value={analysisPlotStore}>
+          <LensEditor
+            lensLayoutImageStore={lensLayoutImageStore}
+            analysisDataStore={analysisDataStore}
+            proxy={proxy}
+            isReady={overrides?.isReady ?? true}
+            onError={onError}
+          />
+        </AnalysisPlotStoreContext.Provider>
       </LensEditorStoreContext.Provider>
     </SpecsConfiguratorStoreContext.Provider>
   );

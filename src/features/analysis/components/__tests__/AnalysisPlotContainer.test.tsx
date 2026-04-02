@@ -10,6 +10,7 @@ import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { AnalysisPlotStoreContext } from "../../providers/AnalysisPlotStoreProvider";
 
 // Mock useScreenBreakpoint (AnalysisPlotView uses it)
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
@@ -82,11 +83,12 @@ function renderComponent(
     render(
       <SpecsConfiguratorStoreContext.Provider value={makeSpecsStore(testSpecs)}>
         <LensEditorStoreContext.Provider value={makeLensStore(testModel)}>
-          <AnalysisPlotContainer
-            store={store}
-            proxy={mockProxy}
-            onError={onError}
-          />
+          <AnalysisPlotStoreContext.Provider value={store}>
+            <AnalysisPlotContainer
+              proxy={mockProxy}
+              onError={onError}
+            />
+          </AnalysisPlotStoreContext.Provider>
         </LensEditorStoreContext.Provider>
       </SpecsConfiguratorStoreContext.Provider>
     )

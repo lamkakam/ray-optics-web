@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import Home from "@/app/page";
 import { SpecsConfiguratorStoreProvider } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/AnalysisPlotStoreProvider"; 
 import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -12,7 +13,9 @@ const renderHome = () =>
   render(
     <SpecsConfiguratorStoreProvider>
       <LensEditorStoreProvider>
-        <Home />
+        <AnalysisPlotStoreProvider>
+          <Home />
+        </AnalysisPlotStoreProvider>
       </LensEditorStoreProvider>
     </SpecsConfiguratorStoreProvider>
   );

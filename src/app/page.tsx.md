@@ -10,7 +10,6 @@ Root page component (`"use client"`). Owns stores, Pyodide hook, theme, and view
 | `errorModalOpen` | `boolean` | Error modal visibility |
 
 ## Stores
-- `analysisPlotStore` — `AnalysisPlotState` (zustand, created here)
 - `lensLayoutImageStore` — `LensLayoutImageState` (zustand, created here)
 
 ## Navigation

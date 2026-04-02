@@ -12,7 +12,7 @@ import { ExampleSystems } from "@/shared/lib/data/exampleSystems";
 import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
-import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
+import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import { LensLayoutPanel } from "@/features/lens-editor/components/LensLayoutPanel";
@@ -27,7 +27,6 @@ import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrM
 import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
 
 export interface LensEditorProps {
-  readonly analysisPlotStore: StoreApi<AnalysisPlotState>;
   readonly lensLayoutImageStore: StoreApi<LensLayoutImageState>;
   readonly analysisDataStore: StoreApi<AnalysisDataState>;
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -36,7 +35,6 @@ export interface LensEditorProps {
 }
 
 export function LensEditor({
-  analysisPlotStore,
   lensLayoutImageStore,
   analysisDataStore,
   proxy,
@@ -47,6 +45,7 @@ export function LensEditor({
   const isLG = screenSize === "screenLG";
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
+  const analysisPlotStore = useAnalysisPlotStore();
 
   const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);
@@ -214,7 +213,6 @@ export function LensEditor({
 
   const analysisPlotContainer = (
     <AnalysisPlotContainer
-      store={analysisPlotStore}
       proxy={proxy}
       onError={onError}
       autoHeight={!isLG}
