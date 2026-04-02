@@ -1,11 +1,43 @@
 
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
+const builtInSpecialMaterial = new Set<string>([
+  "air",
+  "REFL",
+]);
+
+// the value(s) refer to the Python variable(s) defined in `init()` in rayoptics-web-utils
+const nonBuiltInSpecialMaterial = new Map<string, string>([
+  ["CaF2", "caf2"],
+]);
+
+
+function formattedMedium(medium: string, glassManufacturer: string): { medium: string | number, glassManufacturer: string | number } {
+  const refractiveIdxForModalGlass = parseFloat(medium);
+  if (!Number.isNaN(refractiveIdxForModalGlass)) {
+    // model glass
+    const abbeNumber = parseFloat(glassManufacturer);
+    
+    return {
+      medium: refractiveIdxForModalGlass,
+      glassManufacturer: !Number.isNaN(abbeNumber) ? `, ${abbeNumber}` : "",
+    };
+  }
+
+  // real medium or glass
+  return {
+    medium: nonBuiltInSpecialMaterial.get(medium) ?? JSON.stringify(medium),
+    glassManufacturer: builtInSpecialMaterial.has(medium) || nonBuiltInSpecialMaterial.has(medium)
+      ? ""
+      : `, ${JSON.stringify(glassManufacturer)}`,
+  };
+}
+
 export function buildOpticalModelScript(opticalModel: OpticalModel): string {
   const { setAutoAperture, specs, surfaces, object, image } = opticalModel;
   const {
     pupil: { space: pupilSpace, type: pupilType, value: pupilValue },
-    field: { space: fieldSpace, type: fieldType, maxField, fields, isRelative: isFieldRelative },
+    field: { space: fieldSpace, type: fieldType, maxField, fields, isRelative: isFieldRelative, isWideAngle: isFieldWideAngle },
     wavelengths: { weights, referenceIndex: refWavelengthIdx }
   } = specs;
 
@@ -16,8 +48,7 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
     const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter } = surface;
     // common surface
     const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
-    const glassManufacturer = medium === "air" || medium === "REFL" || medium === "CaF2" ? "" : `, ${JSON.stringify(manufacturer)}`;
-    const mediumOption = medium === "CaF2" ? "caf2" : JSON.stringify(medium);
+    const { medium: mediumOption, glassManufacturer } = formattedMedium(medium, manufacturer);
     const setStop = label === "Stop" ? "\nsm.set_stop()" : "";
 
     let asphericalCommands = "";
@@ -50,6 +81,7 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
   }
 
   const doApertureFlag = setAutoAperture === "autoAperture" ? "True" : "False";
+  const isWideAngleFlag = isFieldWideAngle === true ? ", is_wide_angle=True" : "";
 
   // WARNING: DON'T TOUCH THE FORMATTING BELOW
   return `
@@ -61,7 +93,7 @@ pm  = opm['parax_model']
 opm.system_spec.dimensions = 'mm'
 
 osp['pupil'] = PupilSpec(osp, key=['${pupilSpace}', '${pupilType}'], value=${pupilValue})
-osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"})
+osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"}${isWideAngleFlag})
 osp['wvls'] = WvlSpec([${formattedWeights}], ref_wl=${refWavelengthIdx})
 
 opm.radius_mode = True

@@ -41,6 +41,7 @@ function createTestSpecsStore() {
     type: "angle",
     maxField: 20,
     relativeFields: [0, 0.7, 1],
+    isWideAngle: false,
   });
   return store;
 }
@@ -311,6 +312,7 @@ describe("FocusingContainer", () => {
         type: "angle",
         maxField: 30,
         relativeFields: [0, 1],
+        isWideAngle: false,
       });
     });
 

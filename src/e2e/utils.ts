@@ -117,7 +117,7 @@ export async function setMedium(
   const modal = page.getByRole("dialog", { name: "Select Medium" });
   await modal.waitFor({ state: "visible", timeout: 3_000 });
   await modal.getByLabel("Manufacturer").selectOption(manufacturer);
-  await modal.getByLabel("Glass").selectOption(glass);
+  await modal.getByLabel("Glass", { exact: true }).selectOption(glass);
   await modal.getByRole("button", { name: "Confirm" }).click();
   await modal.waitFor({ state: "hidden", timeout: 5_000 });
 }

@@ -150,6 +150,30 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("sm.add_surface([30, 1.1, caf2], sd=10)");
   });
 
+  it("should set a model glass surface without manufacturer when medium is numeric and manufacturer is empty", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "1.42", manufacturer: "", semiDiameter: 10 },
+        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+      ],
+    };
+    const script = buildOpticalModelScript(model);
+    expect(script).toContain("sm.add_surface([30, 1.1, 1.42], sd=10)");
+  });
+
+  it("should set a model glass surface with abbe number when medium and manufacturer are numeric", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "1.42", manufacturer: "84.1", semiDiameter: 10 },
+        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+      ],
+    };
+    const script = buildOpticalModelScript(model);
+    expect(script).toContain("sm.add_surface([30, 1.1, 1.42, 84.1], sd=10)");
+  });
+
   it("should call opm.update_model()", () => {
     const script = buildOpticalModelScript(baseModel);
     expect(script).toContain("opm.update_model()");
@@ -159,6 +183,18 @@ describe("buildOpticalModelScript", () => {
     const script = buildOpticalModelScript(baseModel);
     expect(script).toContain("set_vig(opm)");
     expect(script).not.toContain("apply_paraxial_vignetting");
+  });
+
+  it("should set the flag `is_wide_angle` to be True if the attribute of isWideAngle is true in field", () => {
+    const opticalModel = {
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: { ...baseModel.specs.field, isWideAngle: true }
+      },
+    };
+    const script = buildOpticalModelScript(opticalModel);
+    expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True, is_wide_angle=True)");
   });
 });
 

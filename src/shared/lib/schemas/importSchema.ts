@@ -79,6 +79,7 @@ const importedLensDataSchema = {
             maxField: { type: "number" },
             fields: { type: "array", items: { type: "number" } },
             isRelative: { type: "boolean" },
+            isWideAngle: { type: "boolean" },
           },
         },
         wavelengths: {

@@ -22,6 +22,7 @@ interface FieldConfigResult {
   readonly type: FieldType;
   readonly maxField: number;
   readonly relativeFields: number[];
+  readonly isWideAngle: boolean;
 }
 
 interface FieldConfigModalProps {
@@ -30,6 +31,7 @@ interface FieldConfigModalProps {
   readonly initialType: FieldType;
   readonly initialMaxField: number;
   readonly initialRelativeFields: readonly number[];
+  readonly initialIsWideAngle: boolean;
   readonly onApply: (result: FieldConfigResult) => void;
   readonly onClose: () => void;
 }
@@ -51,6 +53,7 @@ export function FieldConfigModal({
   initialType,
   initialMaxField,
   initialRelativeFields,
+  initialIsWideAngle,
   onApply,
   onClose,
 }: FieldConfigModalProps) {
@@ -60,6 +63,7 @@ export function FieldConfigModal({
   const [fieldType, setFieldType] = useState(initialType);
   const [maxFieldStr, setMaxFieldStr] = useState(String(initialMaxField));
   const [rows, setRows] = useState<FieldRow[]>(() => fieldsToRows(initialRelativeFields));
+  const [isWideAngle, setIsWideAngle] = useState(initialIsWideAngle);
 
   // Reset draft state when modal opens (reset-on-open pattern: syncing local draft state with props)
   useEffect(() => {
@@ -68,8 +72,9 @@ export function FieldConfigModal({
       setFieldType(initialType);
       setMaxFieldStr(String(initialMaxField));
       setRows(fieldsToRows(initialRelativeFields));
+      setIsWideAngle(initialIsWideAngle);
     }
-  }, [isOpen, initialSpace, initialType, initialMaxField, initialRelativeFields]);
+  }, [isOpen, initialSpace, initialType, initialMaxField, initialRelativeFields, initialIsWideAngle]);
 
 
 
@@ -107,6 +112,7 @@ export function FieldConfigModal({
       type: fieldType,
       maxField: isNaN(maxField) ? 0 : maxField,
       relativeFields: rows.map((r) => r.value),
+      isWideAngle,
     });
   };
 
@@ -207,6 +213,20 @@ export function FieldConfigModal({
             getRowId={(params: { data: Record<string, unknown> }) => (params.data as unknown as FieldRow).id}
           />
         </AgGridProvider>
+
+        <div className="mt-4 flex items-start gap-3">
+          <input
+            id="field-wide-angle"
+            type="checkbox"
+            aria-label="Use wide angle mode for more robust ray aiming"
+            checked={isWideAngle}
+            onChange={(e) => setIsWideAngle(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600"
+          />
+          <Label htmlFor="field-wide-angle" className="mb-0 flex-1 text-left leading-5">
+            Use wide angle mode for more robust ray aiming
+          </Label>
+        </div>
       </div>
 
       <div className="flex items-center justify-end gap-3 pt-4">

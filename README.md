@@ -133,6 +133,7 @@ The bundled example optical systems are derived or adapted from the following so
 - **APO Doublet (S-FPL53/N-ZK7) 120mm f/7.5** (Example #19) — [telescope-optics.net: Commercial telescopes](https://www.telescope-optics.net/commercial_telescopes.htm)
 - **APO Petzval 140mm f/7** (Design 11.24, and variant with rear lenses removed) — [telescope-optics.net: Miscellaneous optics](https://www.telescope-optics.net/miscellaneous_optics.htm)
 - **Reverse Raytraced Imaizumi M. Eyepiece (modified)** — eyepiece design by Imaizumi M., US Patent 5,557,464 (1996); modified configuration from [telescope-optics.net: Eyepiece raytrace](https://www.telescope-optics.net/eyepiece_raytrace.htm)
+- **Fisheye Lens Example** - [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/157#discussioncomment-11589178)
 
 ## License
 

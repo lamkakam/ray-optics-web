@@ -26,6 +26,7 @@ export function SpecsConfiguratorContainer() {
   const fieldType = useStore(store, (s) => s.fieldType);
   const maxField = useStore(store, (s) => s.maxField);
   const relativeFields = useStore(store, (s) => s.relativeFields);
+  const isWideAngle = useStore(store, (s) => s.isWideAngle);
   const wavelengthWeights = useStore(store, (s) => s.wavelengthWeights);
   const referenceIndex = useStore(store, (s) => s.referenceIndex);
   const fieldModalOpen = useStore(store, (s) => s.fieldModalOpen);
@@ -51,6 +52,7 @@ export function SpecsConfiguratorContainer() {
       type: FieldType;
       maxField: number;
       relativeFields: number[];
+      isWideAngle: boolean;
     }) => {
       store.getState().setField(result);
       store.getState().closeFieldModal();
@@ -85,6 +87,7 @@ export function SpecsConfiguratorContainer() {
         initialType={fieldType}
         initialMaxField={maxField}
         initialRelativeFields={relativeFields}
+        initialIsWideAngle={isWideAngle}
         onApply={handleFieldApply}
         onClose={() => store.getState().closeFieldModal()}
       />

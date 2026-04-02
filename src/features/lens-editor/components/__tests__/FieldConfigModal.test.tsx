@@ -14,6 +14,7 @@ const defaultProps = {
   initialType: "angle" as const,
   initialMaxField: 20,
   initialRelativeFields: [0, 0.7, 1],
+  initialIsWideAngle: false,
   onApply: jest.fn(),
   onClose: jest.fn(),
 };
@@ -152,6 +153,7 @@ describe("FieldConfigModal", () => {
       type: "angle",
       maxField: 20,
       relativeFields: [0, 0.7, 1],
+      isWideAngle: false,
     });
   });
 
@@ -176,6 +178,47 @@ describe("FieldConfigModal", () => {
     expect(screen.getByText("Maximum 10 relative fields")).toBeInTheDocument();
   });
 
+  it("renders wide angle checkbox underneath the grid", () => {
+    render(<FieldConfigModal {...defaultProps} />);
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Use wide angle mode for more robust ray aiming",
+      })
+    ).toBeInTheDocument();
+  });
+
+  it("wide angle checkbox is unchecked by default", () => {
+    render(<FieldConfigModal {...defaultProps} />);
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Use wide angle mode for more robust ray aiming",
+      })
+    ).not.toBeChecked();
+  });
+
+  it("wide angle checkbox reflects initialIsWideAngle", () => {
+    render(<FieldConfigModal {...defaultProps} initialIsWideAngle />);
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Use wide angle mode for more robust ray aiming",
+      })
+    ).toBeChecked();
+  });
+
+  it("renders a compact checkbox with a left-aligned label", () => {
+    render(<FieldConfigModal {...defaultProps} />);
+
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Use wide angle mode for more robust ray aiming",
+    });
+    const label = screen.getByText("Use wide angle mode for more robust ray aiming");
+
+    expect(checkbox).toHaveClass("w-4");
+    expect(checkbox).toHaveClass("shrink-0");
+    expect(checkbox).not.toHaveClass("w-full");
+    expect(label).toHaveClass("text-left");
+  });
+
   it("hides add buttons when at 10 rows", () => {
     const tenFields = Array.from({ length: 10 }, (_, i) => i * 0.1);
     render(<FieldConfigModal {...defaultProps} initialRelativeFields={tenFields} />);
@@ -195,6 +238,45 @@ describe("FieldConfigModal", () => {
     addBtns.forEach((btn) => {
       expect(btn).toHaveStyle({ visibility: "visible" });
     });
+  });
+
+  it("calls onApply with current wide angle state", async () => {
+    const onApply = jest.fn();
+    render(<FieldConfigModal {...defaultProps} onApply={onApply} />);
+
+    await userEvent.click(
+      screen.getByRole("checkbox", {
+        name: "Use wide angle mode for more robust ray aiming",
+      })
+    );
+    await userEvent.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith({
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      relativeFields: [0, 0.7, 1],
+      isWideAngle: true,
+    });
+  });
+
+  it("resets wide angle checkbox from props when modal reopens", async () => {
+    const { rerender } = render(<FieldConfigModal {...defaultProps} />);
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Use wide angle mode for more robust ray aiming",
+    });
+
+    await userEvent.click(checkbox);
+    expect(checkbox).toBeChecked();
+
+    rerender(<FieldConfigModal {...defaultProps} isOpen={false} initialIsWideAngle={false} />);
+    rerender(<FieldConfigModal {...defaultProps} isOpen initialIsWideAngle={false} />);
+
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Use wide angle mode for more robust ray aiming",
+      })
+    ).not.toBeChecked();
   });
 
   it("sets initial dropdown values from props", () => {
