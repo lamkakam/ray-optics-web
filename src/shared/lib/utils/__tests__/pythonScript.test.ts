@@ -150,6 +150,30 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("sm.add_surface([30, 1.1, caf2], sd=10)");
   });
 
+  it("should set a model glass surface without manufacturer when medium is numeric and manufacturer is empty", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "1.42", manufacturer: "", semiDiameter: 10 },
+        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+      ],
+    };
+    const script = buildOpticalModelScript(model);
+    expect(script).toContain("sm.add_surface([30, 1.1, 1.42], sd=10)");
+  });
+
+  it("should set a model glass surface with abbe number when medium and manufacturer are numeric", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "1.42", manufacturer: "84.1", semiDiameter: 10 },
+        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+      ],
+    };
+    const script = buildOpticalModelScript(model);
+    expect(script).toContain("sm.add_surface([30, 1.1, 1.42, 84.1], sd=10)");
+  });
+
   it("should call opm.update_model()", () => {
     const script = buildOpticalModelScript(baseModel);
     expect(script).toContain("opm.update_model()");

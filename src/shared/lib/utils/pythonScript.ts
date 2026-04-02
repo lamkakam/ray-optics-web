@@ -12,7 +12,7 @@ const nonBuiltInSpecialMaterial = new Map<string, string>([
 ]);
 
 
-function formattedMedium(medium: string, glassManufacturer: string): { medium: string | number, glassManufacturer: string | number | undefined } {
+function formattedMedium(medium: string, glassManufacturer: string): { medium: string | number, glassManufacturer: string | number } {
   const refractiveIdxForModalGlass = parseFloat(medium);
   if (!Number.isNaN(refractiveIdxForModalGlass)) {
     // model glass
@@ -20,7 +20,7 @@ function formattedMedium(medium: string, glassManufacturer: string): { medium: s
     
     return {
       medium: refractiveIdxForModalGlass,
-      glassManufacturer: !Number.isNaN(abbeNumber) ? abbeNumber : undefined,
+      glassManufacturer: !Number.isNaN(abbeNumber) ? `, ${abbeNumber}` : "",
     };
   }
 
