@@ -10,3 +10,4 @@ Interactive Abbe diagram (glass map) feature for exploring optical glass materia
 
 - [components/](./components/index.md) — Scatter plot, detail panel, and controls
 - [stores/](./stores/index.md) — Zustand store for glass map state
+- [providers/](./providers/index.md) — React context provider for the glass map store

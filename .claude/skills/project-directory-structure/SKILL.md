@@ -46,6 +46,9 @@ ray-optics-web/
 │   │   │   ├── stores/           # glassMapStore
 │   │   │   │   ├── __tests__/
 │   │   │   │   └── index.md
+│   │   │   ├── providers/        # GlassMapStoreProvider (context provider for glass map store)
+│   │   │   │   ├── __tests__/
+│   │   │   │   └── index.md
 │   │   │   ├── __tests__/        # Tests for GlassMapView page
 │   │   │   ├── GlassMapView.tsx  # Page-level entry point
 │   │   │   └── index.md

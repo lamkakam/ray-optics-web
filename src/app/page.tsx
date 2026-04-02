@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { MathJaxContext } from "better-react-mathjax";
-import { createStore } from "zustand";
 import type { Theme } from "@/shared/tokens/theme";
 import type { AppView } from "@/shared/lib/types/appView";
 import { usePyodide } from "@/shared/hooks/usePyodide";
-import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { SettingsView } from "@/app/pages/SettingsView";
@@ -28,11 +26,6 @@ export default function Home() {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
-
-  const glassMapStore = useMemo(
-    () => createStore<GlassMapStore>(createGlassMapSlice),
-    []
-  );
 
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>("home");
@@ -79,7 +72,7 @@ export default function Home() {
           <SettingsView theme={theme} onThemeChange={handleThemeChange} />
         )}
         {currentView === "glass-map" && (
-          <GlassMapView store={glassMapStore} proxy={proxy} isReady={isReady} />
+          <GlassMapView proxy={proxy} isReady={isReady} />
         )}
         {currentView === "privacy-policy" && <PrivacyPolicyView />}
         {currentView === "about" && <AboutView />}

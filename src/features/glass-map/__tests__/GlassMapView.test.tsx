@@ -2,6 +2,7 @@ import React, { act } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { createStore } from "zustand/vanilla";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
+import { GlassMapStoreContext } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
@@ -59,27 +60,35 @@ function makeStore() {
   return createStore<GlassMapStore>(createGlassMapSlice);
 }
 
+function renderWithStore(
+  ui: React.ReactElement,
+  store = makeStore()
+) {
+  return render(
+    <GlassMapStoreContext.Provider value={store}>
+      {ui}
+    </GlassMapStoreContext.Provider>
+  );
+}
+
 beforeEach(() => jest.clearAllMocks());
 
 describe("GlassMapView", () => {
   it("shows loading indicator when isReady=false", () => {
-    const store = makeStore();
-    render(<GlassMapView store={store} proxy={undefined} isReady={false} />);
+    renderWithStore(<GlassMapView proxy={undefined} isReady={false} />);
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
   it("shows loading indicator on first render when isReady=true but catalogsData not yet fetched", () => {
     const proxy = makeProxy();
-    const store = makeStore();
     // catalogsData is undefined in the initial store state
-    render(<GlassMapView store={store} proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
   it("calls getAllGlassCatalogsData on mount when isReady=true", async () => {
     const proxy = makeProxy();
-    const store = makeStore();
-    render(<GlassMapView store={store} proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
     await waitFor(() => {
       expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
     });
@@ -91,7 +100,7 @@ describe("GlassMapView", () => {
     // pre-populate store
     const { normalizeAllCatalogsData } = await import("@/shared/lib/types/glassMap");
     store.getState().setCatalogsData(normalizeAllCatalogsData(rawData));
-    render(<GlassMapView store={store} proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, store);
     await new Promise((r) => setTimeout(r, 50));
     expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
@@ -100,8 +109,7 @@ describe("GlassMapView", () => {
     const proxy = makeProxy({
       getAllGlassCatalogsData: jest.fn().mockRejectedValue(new Error("Network error")),
     });
-    const store = makeStore();
-    render(<GlassMapView store={store} proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
     await waitFor(() => {
       expect(screen.getByText(/network error/i)).toBeInTheDocument();
     });
@@ -109,8 +117,7 @@ describe("GlassMapView", () => {
 
   it("renders GlassMapControls after data loads", async () => {
     const proxy = makeProxy();
-    const store = makeStore();
-    render(<GlassMapView store={store} proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
     await waitFor(() => {
       expect(screen.getByRole("radio", { name: /refractive index/i })).toBeInTheDocument();
     });
@@ -118,8 +125,7 @@ describe("GlassMapView", () => {
 
   it("renders GlassDetailPanel after data loads", async () => {
     const proxy = makeProxy();
-    const store = makeStore();
-    render(<GlassMapView store={store} proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
     await waitFor(() => {
       expect(screen.getByText(/select a glass/i)).toBeInTheDocument();
     });
@@ -127,8 +133,7 @@ describe("GlassMapView", () => {
 
   it("does not render its own MathJaxContext (context is provided by parent)", async () => {
     const proxy = makeProxy();
-    const store = makeStore();
-    render(<GlassMapView store={store} proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
     await waitFor(() => {
       expect(screen.getByText(/select a glass/i)).toBeInTheDocument();
     });

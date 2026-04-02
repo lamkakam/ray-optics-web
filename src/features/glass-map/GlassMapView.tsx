@@ -2,17 +2,16 @@
 
 import React, { useEffect, useMemo } from "react";
 import { useStore } from "zustand";
-import type { StoreApi } from "zustand";
 import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
 import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";
 import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
 import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
+import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { SelectedGlass } from "@/shared/lib/types/glassMap";
 import { normalizeAllCatalogsData, computePlotPoints } from "@/shared/lib/types/glassMap";
 
 interface GlassMapViewProps {
-  readonly store: StoreApi<GlassMapStore>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
 }
@@ -34,7 +33,8 @@ function axisLabels(
   return { xLabel, yLabel: yLabelMap[partialDispersionType] };
 }
 
-export function GlassMapView({ store, proxy, isReady }: GlassMapViewProps) {
+export function GlassMapView({ proxy, isReady }: GlassMapViewProps) {
+  const store = useGlassMapStore();
   const catalogsData = useStore(store, (s) => s.catalogsData);
   const dataLoading = useStore(store, (s) => s.dataLoading);
   const dataError = useStore(store, (s) => s.dataError);
