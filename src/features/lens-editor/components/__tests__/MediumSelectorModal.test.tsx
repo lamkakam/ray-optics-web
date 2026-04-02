@@ -46,6 +46,7 @@ describe("MediumSelectorModal", () => {
     render(<MediumSelectorModal {...defaultProps} />);
     const select = screen.getByLabelText("Manufacturer");
     expect(select).toBeInTheDocument();
+    expect(screen.getByLabelText("Use model glass")).not.toBeChecked();
 
     const options = Array.from(
       (select as HTMLSelectElement).options
@@ -100,6 +101,95 @@ describe("MediumSelectorModal", () => {
     await userEvent.click(screen.getByText("Confirm"));
 
     expect(onConfirm).toHaveBeenCalledWith("REFL", "");
+  });
+
+  it("replaces dropdowns with model-glass controls when Use model glass is checked", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+
+    expect(screen.queryByLabelText("Manufacturer")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Glass")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Single refractive index")).not.toBeChecked();
+    expect(screen.getByLabelText("Refractive index at d-line")).toBeInTheDocument();
+    expect(screen.getByLabelText("Abbe Number")).toBeInTheDocument();
+  });
+
+  it("clears and hides Abbe Number when Single refractive index is checked", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    await userEvent.type(screen.getByLabelText("Abbe Number"), "64.1");
+    await userEvent.click(screen.getByLabelText("Single refractive index"));
+
+    expect(screen.getByLabelText("Single refractive index")).toBeChecked();
+    expect(screen.queryByLabelText("Abbe Number")).not.toBeInTheDocument();
+  });
+
+  it("shows an empty Abbe Number input again when Single refractive index is unchecked", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    await userEvent.type(screen.getByLabelText("Abbe Number"), "64.1");
+    await userEvent.click(screen.getByLabelText("Single refractive index"));
+    await userEvent.click(screen.getByLabelText("Single refractive index"));
+
+    expect(screen.getByLabelText("Abbe Number")).toHaveValue("");
+  });
+
+  it("calls onConfirm with refractive index and Abbe number in model-glass mode", async () => {
+    const onConfirm = jest.fn();
+    render(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    await userEvent.type(screen.getByLabelText("Refractive index at d-line"), "1.5168");
+    await userEvent.type(screen.getByLabelText("Abbe Number"), "64.17");
+    await userEvent.click(screen.getByText("Confirm"));
+
+    expect(onConfirm).toHaveBeenCalledWith("1.5168", "64.17");
+  });
+
+  it("calls onConfirm with empty manufacturer in single-index mode", async () => {
+    const onConfirm = jest.fn();
+    render(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    await userEvent.type(screen.getByLabelText("Refractive index at d-line"), "1.458");
+    await userEvent.type(screen.getByLabelText("Abbe Number"), "67.8");
+    await userEvent.click(screen.getByLabelText("Single refractive index"));
+    await userEvent.click(screen.getByText("Confirm"));
+
+    expect(onConfirm).toHaveBeenCalledWith("1.458", "");
+  });
+
+  it("auto-detects numeric initial values as model glass", () => {
+    render(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialMedium="1.62"
+        initialManufacturer="36.3"
+      />
+    );
+
+    expect(screen.getByLabelText("Use model glass")).toBeChecked();
+    expect(screen.getByLabelText("Refractive index at d-line")).toHaveValue("1.62");
+    expect(screen.getByLabelText("Abbe Number")).toHaveValue("36.3");
+    expect(screen.getByLabelText("Single refractive index")).not.toBeChecked();
+  });
+
+  it("auto-enables single-index mode when initial manufacturer is not numeric", () => {
+    render(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialMedium="1.62"
+        initialManufacturer=""
+      />
+    );
+
+    expect(screen.getByLabelText("Use model glass")).toBeChecked();
+    expect(screen.getByLabelText("Single refractive index")).toBeChecked();
+    expect(screen.getByLabelText("Refractive index at d-line")).toHaveValue("1.62");
+    expect(screen.queryByLabelText("Abbe Number")).not.toBeInTheDocument();
   });
 
   it("calls onClose when Cancel is clicked", async () => {
