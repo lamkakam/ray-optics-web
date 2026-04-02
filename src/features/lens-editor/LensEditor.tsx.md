@@ -6,10 +6,6 @@ Page-level component (`"use client"`). Owns the home-view lens editor workflow: 
 ## Props
 | Prop | Type | Description |
 |------|------|-------------|
-| `specsStore` | `StoreApi<SpecsConfiguratorState>` | Zustand store for optical specs |
-| `analysisPlotStore` | `StoreApi<AnalysisPlotState>` | Zustand store for analysis plot |
-| `lensLayoutImageStore` | `StoreApi<LensLayoutImageState>` | Zustand store for lens layout image/loading |
-| `analysisDataStore` | `StoreApi<AnalysisDataState>` | Zustand store for seidel and first-order data |
 | `proxy` | `PyodideWorkerAPI \| undefined` | Pyodide worker proxy (undefined until ready) |
 | `isReady` | `boolean` | Whether Pyodide is initialised |
 | `onError` | `() => void` | Called on submit error; opens page-level error modal |
@@ -24,21 +20,21 @@ Page-level component (`"use client"`). Owns the home-view lens editor workflow: 
 
 ## Derived Store State
 Read reactively via `useStore` / `useLensEditorStore`:
-- From `analysisPlotStore`: `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
-- From `lensLayoutImageStore`: `layoutImage`, `layoutLoading`
-- From `analysisDataStore`: `firstOrderData`, `seidelData`
-- From `LensEditorStoreContext` (via `useLensEditorStore` and Zustand's `useStore`): `committedOpticalModel`
+- From `useAnalysisPlotStore()`: `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
+- From `useLensLayoutImageStore()`: `layoutImage`, `layoutLoading`
+- From `useAnalysisDataStore()`: `firstOrderData`, `seidelData`
+- From `useLensEditorStore()`: `committedOpticalModel`
 
-Imperative access to lens actions is via `const lensStore = useLensEditorStore()` (stable, non-reactive). For reactive states, use `useLensEditorStore` with Zustand's `useStore`.
+Imperative access to actions is via the provider hooks (`useLensEditorStore`, `useSpecsConfiguratorStore`, `useAnalysisPlotStore`, `useAnalysisDataStore`, `useLensLayoutImageStore`) and then `store.getState()`.
 
 ## Callbacks
 - `handleExampleChange` — sets `pendingExample` when a dropdown option is selected
 - `handleExampleCancel` — clears `pendingExample`, resets dropdown
 - `handleExampleConfirm` — loads example into stores, calls `handleSubmit`
 - `handleSubmit` — builds OpticalModel, calls proxy, updates all state; calls `onError()` on failure
-- `handleFetchZernikeData` — fetches Zernike coefficients for ZernikeTermsModal; uses `lensStoreApi.getState()` for non-reactive access
-- `getOpticalModel` — builds current OpticalModel from stores (for BottomDrawerContainer); uses `lensStoreApi.getState()`
-- `handleImportJson` — loads imported OpticalModel into stores via `lensStoreApi.getState()`
+- `handleFetchZernikeData` — fetches Zernike coefficients for `ZernikeTermsModal` from the committed optical model
+- `getOpticalModel` — builds the current `OpticalModel` snapshot from the provider-backed stores
+- `handleImportJson` — loads an imported `OpticalModel` into the specs and lens-editor stores
 
 ## Layout
 
@@ -58,25 +54,18 @@ Imperative access to lens actions is via `const lensStore = useLensEditorStore()
 - ConfirmOverwriteModal, SeidelAberrModal, ZernikeTermsModal
 
 ## Notes
-- `onError` delegates to `page.tsx`'s `ErrorModal` — the error modal itself is NOT rendered here
-- `zernikeModal` renders `specsStore.getState().getFieldOptions()` as a snapshot (non-reactive) — intentional
+- `onError` delegates to `app/(app-shell)/layout.tsx`, which owns the shared `ErrorModal`
+- `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
 
 ## Usages
 
 ```tsx
-// In app/page.tsx (lensStore comes from LensEditorStoreProvider in layout.tsx)
+// In app/(app-shell)/page.tsx
 const lensEditor = (
   <LensEditor
-    specsStore={specsStore}
-    analysisPlotStore={analysisPlotStore}
-    lensLayoutImageStore={lensLayoutImageStore}
-    analysisDataStore={analysisDataStore}
     proxy={proxy}
     isReady={isReady}
     onError={() => setErrorModalOpen(true)}
   />
 );
-
-// Then rendered conditionally:
-{currentView === "home" && lensEditor}
 ```

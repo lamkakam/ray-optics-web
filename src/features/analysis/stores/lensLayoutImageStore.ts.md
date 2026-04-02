@@ -7,8 +7,7 @@ Zustand store for managing the lens layout image and its loading state. Holds th
 ## Exports
 
 - `LensLayoutImageState` — interface describing all state fields and actions.
-- `createLensLayoutImageSlice` — `StateCreator<LensLayoutImageState>` for composition and DI (used in `page.tsx` via `createStore`).
-- `useLensLayoutImageStore` — concrete Zustand store created from the slice (ready-to-use hook for standalone use).
+- `createLensLayoutImageSlice` — `StateCreator<LensLayoutImageState>` for composition into the provider-backed store.
 
 ## State
 
@@ -24,45 +23,25 @@ Zustand store for managing the lens layout image and its loading state. Holds th
 
 ## Dependencies
 
-- `create`, `StateCreator` from `zustand`.
+- `StateCreator` from `zustand`.
 
 ## Usages
 
 ```tsx
-"use client";
-
 import { useStore } from "zustand";
-import { createStore } from "createStore from "zustand";
-import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
-import { createLensLayoutImageSlice } from "@/features/analysis/stores/lensLayoutImageStore";
-import { LensLayoutView } from "@/components/LensLayoutView";
+import { useLensLayoutImageStore } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 
-export default function LensEditorPage() {
-  // Create the store once
-  const lensLayoutStore = useMemo(
-    () => createStore<LensLayoutImageState>(createLensLayoutImageSlice),
-    []
-  );
+function LensLayoutSection() {
+  const store = useLensLayoutImageStore();
+  const layoutImage = useStore(store, (s) => s.layoutImage);
+  const layoutLoading = useStore(store, (s) => s.layoutLoading);
 
-  // Read state
-  const layoutImage = useStore(lensLayoutStore, (s) => s.layoutImage);
-  const layoutLoading = useStore(lensLayoutStore, (s) => s.layoutLoading);
+  if (layoutLoading && !layoutImage) {
+    return <p>Loading layout...</p>;
+  }
 
-  // Dispatch actions
-  const handleSetImage = (base64Image: string) => {
-    lensLayoutStore.getState().setLayoutImage(base64Image);
-  };
-
-  return (
-    <div>
-      {layoutLoading && <p>Loading layout...</p>}
-      {layoutImage && (
-        <LensLayoutView
-          image={layoutImage}
-          onImageChange={handleSetImage}
-        />
-      )}
-    </div>
-  );
+  return layoutImage ? (
+    <img src={`data:image/png;base64,${layoutImage}`} alt="Lens layout" />
+  ) : null;
 }
 ```

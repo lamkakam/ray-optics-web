@@ -16,7 +16,7 @@ interface AnalysisPlotContainerProps {
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
-| `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy; handlers no-op if `undefined` |`getWavelengthOptions()` are called to derive select options |
+| `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy; handlers no-op if `undefined` |
 | `onError` | `() => void` | Yes | Called when any async plot call throws |
 | `autoHeight` | `boolean` | No | Forwarded to `AnalysisPlotView` |
 
@@ -58,4 +58,4 @@ Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and ca
 
 ## Usages
 
-- Used in `app/page.tsx`. `page.tsx` creates `analysisPlotStore`, `specsStore`, and `lensStore` and passes them along with `proxy`, `onError`, and `autoHeight`.
+- Used in `LensEditor.tsx`. The container pulls the relevant stores from their providers and only receives `proxy`, `onError`, and `autoHeight` as props.

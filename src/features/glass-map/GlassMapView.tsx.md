@@ -32,7 +32,7 @@ Page-level container for the Glass Map feature. Fetches glass catalog data from 
 | partialDispersion | e | Ve | P_F,d / P_F,e / P_g,F |
 
 ## MathJax
-MathJax context is provided by the parent (`page.tsx`). This component does not own a `MathJaxContext`.
+MathJax context is provided by `app/(app-shell)/layout.tsx`. This component does not own a `MathJaxContext`.
 
 ## Children
 - `GlassScatterPlot` — scatter plot with zoom/pan
@@ -50,11 +50,9 @@ MathJax context is provided by the parent (`page.tsx`). This component does not 
 </LensLayoutImageStoreProvider>
 ```
 
-In `app/page.tsx` — rendered conditionally (no store prop needed):
+In `app/(app-shell)/glass-map/page.tsx`:
 ```tsx
-{currentView === "glass-map" && (
-  <GlassMapView proxy={proxy} isReady={isReady} />
-)}
+<GlassMapView proxy={proxy} isReady={isReady} />
 ```
 
 In tests — inject store via context:
