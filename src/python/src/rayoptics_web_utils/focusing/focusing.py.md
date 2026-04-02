@@ -25,19 +25,20 @@ All return `{'delta_thi': float, 'metric_value': float}`:
 | `opm` | `OpticalModel` | — | Mutated in place |
 | `field_indices` | `list[int] \| None` | `None` | Field indices; `None` = all fields |
 | `num_rays` | `int` | `21` | RayGrid / trace_grid resolution |
-| `bounds` | `tuple[float, float]` | `(-5.0, 5.0)` | Half-window around paraxial BFL for the `delta_thi` search (mm) |
+| `bounds` | `tuple[float, float]` | `(-5.0, 5.0)` | Half-window around the paraxial image distance for the `delta_thi` search (mm) |
 
 ## Algorithm
 
 All four use `scipy.optimize.minimize_scalar(method='bounded')`. The search window is
-**centered on the paraxial BFL** (not on `thi_0`) so the optimizer reaches the true focus
-even when the current image plane is far from focus.
+**centered on the paraxial image distance** for the current conjugates (not on `thi_0`) so
+the optimizer reaches the true focus for both infinite- and finite-conjugate systems even
+when the current image plane is far from focus.
 
 ```python
 sm = opm['seq_model']
 thi_0 = sm.gaps[-1].thi
-bfl = _get_paraxial_bfl(opm)          # paraxial back focal length
-initial_delta = bfl - thi_0           # shift from current thi to paraxial focus
+img_dist = _get_paraxial_image_distance(opm)  # paraxial image distance
+initial_delta = img_dist - thi_0      # shift from current thi to paraxial focus
 centered_bounds = (initial_delta + bounds[0], initial_delta + bounds[1])
 
 def objective(delta):
@@ -78,7 +79,7 @@ The Strehl-based functions therefore:
 
 | Function | Returns | Used by |
 |---|---|---|
-| `_get_paraxial_bfl(opm)` | `float` (mm) | all 4 (BFL-centering) |
+| `_get_paraxial_image_distance(opm)` | `float` (mm) | all 4 (image-distance centering) |
 | `_resolve_field_indices(opm, field_indices)` | `list[int]` | all 4 |
 | `_spot_fn(p, wi, ray_pkg, fld, wvl, foc)` | `ndarray \| None` | RMS spot helpers |
 | `_compute_mono_rms_spot(opm, fi_list, num_rays)` | `float` (mm) — quadratic mean over fields | `focus_by_mono_rms_spot` |
