@@ -13,11 +13,16 @@ ray-optics-web/
 ├── .claude/                      # Claude Code configuration and skills
 ├── .github/                      # GitHub workflows and templates
 ├── src/                          # All application source code
-│   ├── app/                      # Next.js App Router (thin routing shell)
-│   │   ├── pages/                # Static informational page components
-│   │   │   ├── __tests__/        # Tests for page components
-│   │   │   └── index.md
-│   │   ├── __tests__/            # Tests for app routes
+│   ├── app/                      # Next.js App Router pages, layouts, and app shell
+│   │   ├── about/               # `/about` route
+│   │   ├── glass-map/           # `/glass-map` route
+│   │   ├── privacy-policy/      # `/privacy-policy` route
+│   │   ├── settings/            # `/settings` route
+│   │   ├── __tests__/           # Tests for app routes and page modules
+│   │   ├── AppShell.tsx         # Shared client shell around routed content
+│   │   ├── AppShellContext.tsx  # Shared Pyodide/shell context for routed pages
+│   │   ├── layout.tsx           # Root App Router layout
+│   │   ├── page.tsx             # `/` route
 │   │   └── index.md
 │   │
 │   ├── features/                 # Domain feature modules (co-located by feature)
