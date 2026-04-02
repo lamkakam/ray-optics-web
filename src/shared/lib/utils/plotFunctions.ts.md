@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Shared utility that maps `PlotType` values to Pyodide worker proxy calls. Eliminates duplication between `app/page.tsx` and `AnalysisPlotContainer.tsx`.
+Shared utility that maps `PlotType` values to Pyodide worker proxy calls. Eliminates duplication between `LensEditor.tsx` and `AnalysisPlotContainer.tsx`.
 
 ## Exports
 
@@ -91,5 +91,5 @@ function AnalysisPlotView({
 }
 ```
 
-- Used in `app/page.tsx` to obtain plot function after "Update System".
+- Used in `LensEditor.tsx` after "Update System" completes.
 - Used in `AnalysisPlotContainer.tsx` when field/wavelength/plot-type changes.

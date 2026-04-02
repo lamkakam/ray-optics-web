@@ -25,7 +25,7 @@ interface ConfirmOverwriteModalProps {
 ## Key Behaviors
 
 - Stateless — purely presentational. Structurally identical to `ConfirmImportModal` but with different copy.
-- The parent (`app/page.tsx` `handleExampleConfirm`) is responsible for triggering the optical system computation after loading; clicking "Load" also initiates `handleSubmit` automatically.
+- The parent (`LensEditor.tsx` `handleExampleConfirm`) is responsible for loading the example into the stores and then triggering `handleSubmit`.
 
 ## Usages
 
@@ -38,10 +38,10 @@ const [pendingExample, setPendingExample] = useState<string | undefined>();
 const handleExampleConfirm = useCallback(() => {
   if (!pendingExample) return;
   const system = ExampleSystems[pendingExample];
-  specsStore.getState().loadExampleSystem(system.specs);
-  lensStore.getState().loadExampleSystem(system.opticalModel);
+  specsStore.getState().loadFromSpecs(system.specs);
+  lensStore.getState().setRows(surfacesToGridRows(system));
   setPendingExample(undefined);
-  handleSubmit(); // Trigger system update
+  void handleSubmit();
 }, [pendingExample, specsStore, lensStore, handleSubmit]);
 
 const handleExampleCancel = useCallback(() => {

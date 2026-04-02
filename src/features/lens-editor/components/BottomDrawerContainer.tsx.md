@@ -8,7 +8,6 @@ Container component that composes the three drawer tabs (System Specs, Prescript
 
 ```ts
 interface BottomDrawerContainerProps {
-  specsStore: StoreApi<SpecsConfiguratorState>;
   getOpticalModel: () => OpticalModel;
   onImportJson: (data: OpticalModel) => void;
   onUpdateSystem: () => Promise<void>;
@@ -20,7 +19,7 @@ interface BottomDrawerContainerProps {
 }
 ```
 
-`LensPrescriptionContainer` and `FocusingContainer` access the lens store via `LensEditorStoreContext` (no prop needed).
+`SpecsConfiguratorContainer`, `LensPrescriptionContainer`, and `FocusingContainer` read their stores through the provider hooks, so this container only forwards the callbacks and worker state they still need.
 
 | Prop | Type | Required | Description |
 |---|---|---|---|
@@ -44,4 +43,4 @@ Renders `<BottomDrawer tabs={tabs} draggable={draggable} />`.
 
 ## Usages
 
-Used in `app/page.tsx` (twice: once with `draggable={true}` for LG layout, once with `draggable={false}` for SM layout) replacing the inlined `drawerTabs` useMemo and `<BottomDrawer>` calls.
+Used in `LensEditor.tsx` for both LG and SM layouts, with `draggable` toggled by breakpoint.

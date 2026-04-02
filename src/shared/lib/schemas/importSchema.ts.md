@@ -7,17 +7,17 @@ Compiles an AJV JSON Schema validator for `OpticalModel` and exports it for use 
 ## Exports
 
 ```ts
-export { validateOpticalModel };
+export { validateImportedLensData };
 // type: ValidateFunction<OpticalModel> (AJV compiled validator)
 ```
 
-`validateOpticalModel` is an AJV compiled validator function with the signature:
+`validateImportedLensData` is an AJV compiled validator function with the signature:
 
 ```ts
 (data: unknown) => data is OpticalModel
 ```
 
-When validation fails, `validateOpticalModel.errors` is set to an array of AJV `ErrorObject`s.
+When validation fails, `validateImportedLensData.errors` is set to an array of AJV `ErrorObject`s.
 
 ## Behavior
 
@@ -39,13 +39,13 @@ When validation fails, `validateOpticalModel.errors` is set to an array of AJV `
 ## Usages
 
 ```tsx
-import { validateOpticalModel } from "@/shared/lib/schemas/importSchema";
+import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
 
 function handleFileUpload(jsonData: unknown) {
   // Validate before using
-  if (!validateOpticalModel(jsonData)) {
+  if (!validateImportedLensData(jsonData)) {
     // Show validation errors to user
-    const errors = validateOpticalModel.errors;
+    const errors = validateImportedLensData.errors;
     console.error("Invalid model:", errors);
     alert(`Import failed: ${errors?.map(e => e.message).join(", ")}`);
     return;

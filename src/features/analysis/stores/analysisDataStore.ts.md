@@ -8,7 +8,6 @@ Zustand store for analysis results computed after each successful submit. Holds 
 
 - `AnalysisDataState` — interface describing all state fields and actions.
 - `createAnalysisDataSlice` — `StateCreator<AnalysisDataState>` for composition.
-- `useAnalysisDataStore` — concrete Zustand store created from the slice (ready-to-use hook).
 
 ## State
 

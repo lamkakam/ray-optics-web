@@ -30,10 +30,13 @@ interface LensLayoutPanelProps {
 
 ```tsx
 import { LensLayoutPanel } from "@/features/lens-editor/components/LensLayoutPanel";
+import { useLensLayoutImageStore } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
+import { useStore } from "zustand";
 
 // In a page or container component (e.g., LensEditor)
-const layoutImage = useStore(analysisDataStore, (s) => s.layoutImage);
-const layoutLoading = useStore(analysisDataStore, (s) => s.layoutLoading);
+const store = useLensLayoutImageStore();
+const layoutImage = useStore(store, (s) => s.layoutImage);
+const layoutLoading = useStore(store, (s) => s.layoutLoading);
 
 const lensLayoutPanel = (
   <LensLayoutPanel imageBase64={layoutImage} loading={layoutLoading} />

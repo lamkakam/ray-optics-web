@@ -7,8 +7,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 ## Exports
 
 - `AnalysisPlotState` — interface describing all state fields and actions.
-- `createAnalysisPlotSlice` — `StateCreator<AnalysisPlotState>` for composition and DI (used in `page.tsx` via `createStore`).
-- `useAnalysisPlotStore` — concrete Zustand store created from the slice (ready-to-use hook for standalone use).
+- `createAnalysisPlotSlice` — `StateCreator<AnalysisPlotState>` for composition into the provider-backed store.
 
 ## State
 
@@ -32,4 +31,3 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 - `create`, `StateCreator` from `zustand`.
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`.
-

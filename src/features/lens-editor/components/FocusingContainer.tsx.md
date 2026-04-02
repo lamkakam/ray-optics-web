@@ -53,4 +53,4 @@ The `disabled` prop passed to `FocusingPanel` is `!isReady || computing || focus
 
 ## Usages
 
-Instantiated in `app/page.tsx` as a tab in `BottomDrawer`.
+Instantiated in `BottomDrawerContainer.tsx` as the "Focusing" tab content.
