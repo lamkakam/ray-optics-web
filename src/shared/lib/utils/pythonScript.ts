@@ -37,7 +37,7 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
   const { setAutoAperture, specs, surfaces, object, image } = opticalModel;
   const {
     pupil: { space: pupilSpace, type: pupilType, value: pupilValue },
-    field: { space: fieldSpace, type: fieldType, maxField, fields, isRelative: isFieldRelative },
+    field: { space: fieldSpace, type: fieldType, maxField, fields, isRelative: isFieldRelative, isWideAngle: isFieldWideAngle },
     wavelengths: { weights, referenceIndex: refWavelengthIdx }
   } = specs;
 
@@ -81,6 +81,7 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
   }
 
   const doApertureFlag = setAutoAperture === "autoAperture" ? "True" : "False";
+  const isWideAngleFlag = isFieldWideAngle === true ? ", is_wide_angle=True" : "";
 
   // WARNING: DON'T TOUCH THE FORMATTING BELOW
   return `
@@ -92,7 +93,7 @@ pm  = opm['parax_model']
 opm.system_spec.dimensions = 'mm'
 
 osp['pupil'] = PupilSpec(osp, key=['${pupilSpace}', '${pupilType}'], value=${pupilValue})
-osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"})
+osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"}${isWideAngleFlag})
 osp['wvls'] = WvlSpec([${formattedWeights}], ref_wl=${refWavelengthIdx})
 
 opm.radius_mode = True

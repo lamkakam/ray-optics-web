@@ -184,6 +184,18 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("set_vig(opm)");
     expect(script).not.toContain("apply_paraxial_vignetting");
   });
+
+  it("should set the flag `is_wide_angle` to be True if the attribute of isWideAngle is true in field", () => {
+    const opticalModel = {
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: { ...baseModel.specs.field, isWideAngle: true }
+      },
+    };
+    const script = buildOpticalModelScript(opticalModel);
+    expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True, is_wide_angle=True)");
+  });
 });
 
 describe("buildScript", () => {
