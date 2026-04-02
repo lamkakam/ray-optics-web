@@ -1,25 +1,25 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { PrivacyPolicyView } from "@/app/pages/PrivacyPolicyView";
+import PrivacyPolicyPage from "@/app/privacy-policy/page";
 
-describe("PrivacyPolicyView", () => {
+describe("PrivacyPolicyPage", () => {
   it("renders heading 'Privacy Policy'", () => {
-    render(<PrivacyPolicyView />);
+    render(<PrivacyPolicyPage />);
     expect(screen.getByRole("heading", { name: "Privacy Policy" })).toBeInTheDocument();
   });
 
   it("mentions jsdelivr CDN", () => {
-    render(<PrivacyPolicyView />);
+    render(<PrivacyPolicyPage />);
     expect(screen.getByText(/cdn\.jsdelivr\.net/i)).toBeInTheDocument();
   });
 
   it("mentions pythonhosted CDN", () => {
-    render(<PrivacyPolicyView />);
+    render(<PrivacyPolicyPage />);
     expect(screen.getByText(/files\.pythonhosted\.org/i)).toBeInTheDocument();
   });
 
   it("mentions pypi CDN", () => {
-    render(<PrivacyPolicyView />);
+    render(<PrivacyPolicyPage />);
     expect(screen.getByText(/pypi\.org/i)).toBeInTheDocument();
   });
 });

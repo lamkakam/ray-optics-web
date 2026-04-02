@@ -1,10 +1,8 @@
-"use client";
-
 import React from "react";
 import { Header } from "@/shared/components/primitives/Header";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-export function PrivacyPolicyView() {
+export default function PrivacyPolicyPage() {
   return (
     <div className="p-6 overflow-y-auto">
       <Header level={2} className="mb-4">Privacy Policy</Header>
@@ -26,9 +24,9 @@ export function PrivacyPolicyView() {
             served from a local browser cache (via a Service Worker) on subsequent visits.
           </Paragraph>
           <ul className="list-disc list-inside space-y-1">
-            <li><code>cdn.jsdelivr.net</code> — Pyodide WebAssembly runtime and standard libraries</li>
-            <li><code>files.pythonhosted.org</code> — RayOptics and its Python dependencies (wheel files)</li>
-            <li><code>pypi.org</code> — PyPI package metadata used to resolve RayOptics dependencies</li>
+            <li><code>cdn.jsdelivr.net</code> - Pyodide WebAssembly runtime and standard libraries</li>
+            <li><code>files.pythonhosted.org</code> - RayOptics and its Python dependencies (wheel files)</li>
+            <li><code>pypi.org</code> - PyPI package metadata used to resolve RayOptics dependencies</li>
           </ul>
         </section>
 

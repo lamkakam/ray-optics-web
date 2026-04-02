@@ -5,7 +5,6 @@ All application source code for ray-optics-web.
 ## App Shell
 
 - [app/](./app/index.md) — Next.js App Router pages and configuration
-- [app/pages/](./app/pages/index.md) — Static informational page components (About, Settings, Privacy)
 
 ## Feature Modules
 

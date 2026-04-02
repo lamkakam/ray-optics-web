@@ -1,10 +1,8 @@
-"use client";
-
 import React from "react";
 import { Header } from "@/shared/components/primitives/Header";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-export function AboutView() {
+export default function AboutPage() {
   return (
     <div className="p-6">
       <Header level={2} className="mb-4">About</Header>
@@ -15,7 +13,7 @@ export function AboutView() {
           in your browser via Pyodide (Python compiled to WebAssembly).
         </Paragraph>
         <Paragraph>
-          No data is sent to any server — all computation happens locally in your browser.
+          No data is sent to any server - all computation happens locally in your browser.
         </Paragraph>
       </div>
     </div>
