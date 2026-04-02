@@ -49,6 +49,8 @@ interface MediumSelectorModalProps {
 - If `initialMedium` parses to a float, the modal auto-enters model-glass mode and seeds the refractive-index input with the original `initialMedium` string.
 - If `initialManufacturer` also parses to a float, the modal seeds the Abbe Number input and leaves `Single refractive index` unchecked.
 - If `initialMedium` is numeric but `initialManufacturer` is not, the modal starts in model-glass mode with `Single refractive index` checked.
+- On blur, `Refractive index at d-line` is normalized to a positive numeric string; parse failure, `NaN`, zero, or negative values reset it to `"1.0"`.
+- On blur, `Abbe Number` is normalized to either a numeric string or the empty string; parse failure or `NaN` resets it to `""`.
 - In model-glass mode, `onConfirm` passes `(refractiveIndexAtDLine, abbeNumber)` or `(refractiveIndexAtDLine, "")` when `Single refractive index` is checked.
 - Uses `key` prop at the call site (in `LensPrescriptionContainer`) to reset state when the modal re-opens for a different row.
 

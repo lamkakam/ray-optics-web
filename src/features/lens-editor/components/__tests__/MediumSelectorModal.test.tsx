@@ -149,6 +149,83 @@ describe("MediumSelectorModal", () => {
     expect(onConfirm).toHaveBeenCalledWith("1.5168", "64.17");
   });
 
+  it("normalizes an invalid refractive index to 1.0 on blur", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
+
+    await userEvent.clear(refractiveIndexInput);
+    await userEvent.type(refractiveIndexInput, "abc");
+    await userEvent.tab();
+
+    expect(refractiveIndexInput).toHaveValue("1.0");
+  });
+
+  it("normalizes a non-positive refractive index to 1.0 on blur", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
+
+    await userEvent.clear(refractiveIndexInput);
+    await userEvent.type(refractiveIndexInput, "-2");
+    await userEvent.tab();
+
+    expect(refractiveIndexInput).toHaveValue("1.0");
+  });
+
+  it("preserves a valid positive refractive index on blur", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
+
+    await userEvent.clear(refractiveIndexInput);
+    await userEvent.type(refractiveIndexInput, "1.5168");
+    await userEvent.tab();
+
+    expect(refractiveIndexInput).toHaveValue("1.5168");
+  });
+
+  it("normalizes an invalid Abbe number to an empty string on blur", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    const abbeNumberInput = screen.getByLabelText("Abbe Number");
+
+    await userEvent.clear(abbeNumberInput);
+    await userEvent.type(abbeNumberInput, "abc");
+    await userEvent.tab();
+
+    expect(abbeNumberInput).toHaveValue("");
+  });
+
+  it("preserves an empty Abbe number on blur", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    const abbeNumberInput = screen.getByLabelText("Abbe Number");
+
+    await userEvent.clear(abbeNumberInput);
+    await userEvent.tab();
+
+    expect(abbeNumberInput).toHaveValue("");
+  });
+
+  it("preserves a valid numeric Abbe number on blur", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    const abbeNumberInput = screen.getByLabelText("Abbe Number");
+
+    await userEvent.clear(abbeNumberInput);
+    await userEvent.type(abbeNumberInput, "64.17");
+    await userEvent.tab();
+
+    expect(abbeNumberInput).toHaveValue("64.17");
+  });
+
   it("calls onConfirm with empty manufacturer in single-index mode", async () => {
     const onConfirm = jest.fn();
     render(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);

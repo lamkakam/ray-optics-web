@@ -27,6 +27,21 @@ function isNumericString(value: string): boolean {
   return !Number.isNaN(parseFloat(value));
 }
 
+function normalizePositiveNumericString(value: string): string {
+  const parsed = parseFloat(value.trim());
+  return Number.isFinite(parsed) && parsed > 0 ? value.trim() : "1.0";
+}
+
+function normalizeNumericOrEmptyString(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed === "") {
+    return "";
+  }
+
+  const parsed = parseFloat(trimmed);
+  return Number.isFinite(parsed) ? trimmed : "";
+}
+
 export function MediumSelectorModal({
   isOpen,
   initialMedium,
@@ -136,6 +151,7 @@ export function MediumSelectorModal({
                 aria-label="Refractive index at d-line"
                 value={refractiveIndexAtDLine}
                 onChange={(e) => setRefractiveIndexAtDLine(e.target.value)}
+                onBlur={(e) => setRefractiveIndexAtDLine(normalizePositiveNumericString(e.target.value))}
               />
             </div>
 
@@ -149,6 +165,7 @@ export function MediumSelectorModal({
                   aria-label="Abbe Number"
                   value={abbeNumber}
                   onChange={(e) => setAbbeNumber(e.target.value)}
+                  onBlur={(e) => setAbbeNumber(normalizeNumericOrEmptyString(e.target.value))}
                 />
               </div>
             )}
