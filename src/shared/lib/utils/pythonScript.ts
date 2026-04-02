@@ -1,6 +1,38 @@
 
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
+const builtInSpecialMaterial = new Set<string>([
+  "air",
+  "REFL",
+]);
+
+// the value(s) refer to the Python variable(s) defined in `init()` in rayoptics-web-utils
+const nonBuiltInSpecialMaterial = new Map<string, string>([
+  ["CaF2", "caf2"],
+]);
+
+
+function formattedMedium(medium: string, glassManufacturer: string): { medium: string | number, glassManufacturer: string | number | undefined } {
+  const refractiveIdxForModalGlass = parseFloat(medium);
+  if (!Number.isNaN(refractiveIdxForModalGlass)) {
+    // model glass
+    const abbeNumber = parseFloat(glassManufacturer);
+    
+    return {
+      medium: refractiveIdxForModalGlass,
+      glassManufacturer: !Number.isNaN(abbeNumber) ? abbeNumber : undefined,
+    };
+  }
+
+  // real medium or glass
+  return {
+    medium: nonBuiltInSpecialMaterial.get(medium) ?? JSON.stringify(medium),
+    glassManufacturer: builtInSpecialMaterial.has(medium) || nonBuiltInSpecialMaterial.has(medium)
+      ? ""
+      : `, ${JSON.stringify(glassManufacturer)}`,
+  };
+}
+
 export function buildOpticalModelScript(opticalModel: OpticalModel): string {
   const { setAutoAperture, specs, surfaces, object, image } = opticalModel;
   const {
@@ -16,8 +48,7 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
     const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter } = surface;
     // common surface
     const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
-    const glassManufacturer = medium === "air" || medium === "REFL" || medium === "CaF2" ? "" : `, ${JSON.stringify(manufacturer)}`;
-    const mediumOption = medium === "CaF2" ? "caf2" : JSON.stringify(medium);
+    const { medium: mediumOption, glassManufacturer } = formattedMedium(medium, manufacturer);
     const setStop = label === "Stop" ? "\nsm.set_stop()" : "";
 
     let asphericalCommands = "";
