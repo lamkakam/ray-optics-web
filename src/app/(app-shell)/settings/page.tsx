@@ -3,7 +3,7 @@
 import React from "react";
 import type { Theme } from "@/shared/tokens/theme";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
-import { SettingsView } from "@/app/pages/SettingsView";
+import { SettingsView } from "@/app/SettingsView";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();

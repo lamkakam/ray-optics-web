@@ -1,5 +1,5 @@
 import React from "react";
-import { PrivacyPolicyView } from "@/app/pages/PrivacyPolicyView";
+import { PrivacyPolicyView } from "@/app/PrivacyPolicyView";
 
 export default function PrivacyPolicyPage() {
   return <PrivacyPolicyView />;

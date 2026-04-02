@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { PrivacyPolicyView } from "@/app/pages/PrivacyPolicyView";
+import { PrivacyPolicyView } from "@/app/PrivacyPolicyView";
 
 describe("PrivacyPolicyView", () => {
   it("renders heading 'Privacy Policy'", () => {
