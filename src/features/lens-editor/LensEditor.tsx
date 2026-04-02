@@ -13,6 +13,7 @@ import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
+import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import { LensLayoutPanel } from "@/features/lens-editor/components/LensLayoutPanel";
@@ -28,7 +29,6 @@ import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTerm
 
 export interface LensEditorProps {
   readonly lensLayoutImageStore: StoreApi<LensLayoutImageState>;
-  readonly analysisDataStore: StoreApi<AnalysisDataState>;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly onError: () => void;
@@ -36,7 +36,6 @@ export interface LensEditorProps {
 
 export function LensEditor({
   lensLayoutImageStore,
-  analysisDataStore,
   proxy,
   isReady,
   onError,
@@ -46,6 +45,7 @@ export function LensEditor({
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
   const analysisPlotStore = useAnalysisPlotStore();
+  const analysisDataStore = useAnalysisDataStore();
 
   const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);

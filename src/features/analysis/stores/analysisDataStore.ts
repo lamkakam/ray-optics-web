@@ -1,4 +1,4 @@
-import { create, type StateCreator } from "zustand";
+import { type StateCreator } from "zustand";
 import type { SeidelData } from "@/shared/lib/types/opticalModel";
 
 export interface AnalysisDataState {
@@ -17,4 +17,3 @@ export const createAnalysisDataSlice: StateCreator<AnalysisDataState> = (set) =>
   setFirstOrderData: (data) => set({ firstOrderData: data }),
 });
 
-export const useAnalysisDataStore = create<AnalysisDataState>(createAnalysisDataSlice);

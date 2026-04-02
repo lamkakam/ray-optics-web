@@ -1,4 +1,4 @@
-import { create, type StateCreator } from "zustand";
+import { type StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
 
 export interface AnalysisPlotState {
@@ -30,5 +30,3 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     set({ selectedWavelengthIndex: maxCount !== undefined ? Math.min(index, maxCount - 1) : index }),
   setSelectedPlotType: (plotType) => set({ selectedPlotType: plotType }),
 });
-
-export const useAnalysisPlotStore = create<AnalysisPlotState>(createAnalysisPlotSlice);

@@ -75,7 +75,6 @@ export default function Home() {
   const lensEditor = (
     <LensEditor
       lensLayoutImageStore={lensLayoutImageStore}
-      analysisDataStore={analysisDataStore}
       proxy={proxy}
       isReady={isReady}
       onError={() => setErrorModalOpen(true)}
