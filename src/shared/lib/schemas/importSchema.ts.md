@@ -22,6 +22,7 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 ## Behavior
 
 - The validator enforces the full nested structure of `OpticalModel`.
+- `specs.field.isWideAngle` is accepted as an optional boolean to support wide-angle ray-aiming mode while preserving compatibility with older imported files.
 
 - **`additionalProperties: false`** is set on every schema object — any unknown key causes validation failure.
 
@@ -33,6 +34,7 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 ## Edge Cases / Error Handling
 
 - Returns `false` and populates `.errors` for any structural mismatch, unknown property, or type error.
+- `specs.field.isWideAngle` may be omitted, but if present it must be a boolean.
 - `additionalProperties: false` means evolved schemas (extra fields added by newer app versions) will fail validation against old validators; schema versioning should be considered if the format changes.
 - The AJV instance and compiled validator are module singletons — compilation happens once at import time, not per call.
 

@@ -21,6 +21,7 @@ export interface SpecsConfiguratorState {
   fieldType: FieldType;
   maxField: number;
   relativeFields: number[];
+  isWideAngle: boolean;
 
   // Wavelengths
   wavelengthWeights: WavelengthWeights;
@@ -51,6 +52,7 @@ export interface SpecsConfiguratorState {
     type: FieldType;
     maxField: number;
     relativeFields: number[];
+    isWideAngle: boolean;
   }) => void;
   setWavelengths: (wl: {
     weights: WavelengthWeights;
@@ -78,6 +80,7 @@ export const createSpecsConfiguratorSlice: StateCreator<SpecsConfiguratorState> 
   fieldType: "height",
   maxField: 0,
   relativeFields: [0],
+  isWideAngle: false,
 
   // Wavelength defaults
   wavelengthWeights: [[lookupWavelength("e"), 1]],
@@ -86,7 +89,7 @@ export const createSpecsConfiguratorSlice: StateCreator<SpecsConfiguratorState> 
   // Committed specs defaults (mirrors default form state above)
   committedSpecs: {
     pupil: { space: "object", type: "epd", value: 0.5 },
-    field: { space: "object", type: "height", maxField: 0, fields: [0], isRelative: true },
+    field: { space: "object", type: "height", maxField: 0, fields: [0], isRelative: true, isWideAngle: false },
     wavelengths: { weights: [[lookupWavelength("e"), 1]], referenceIndex: 0 },
   },
 
@@ -133,6 +136,7 @@ export const createSpecsConfiguratorSlice: StateCreator<SpecsConfiguratorState> 
       fieldType: field.type,
       maxField: field.maxField,
       relativeFields: field.relativeFields,
+      isWideAngle: field.isWideAngle,
     }),
 
   setWavelengths: (wl) =>
@@ -160,6 +164,7 @@ export const createSpecsConfiguratorSlice: StateCreator<SpecsConfiguratorState> 
         maxField: s.maxField,
         fields: s.relativeFields,
         isRelative: true,
+        isWideAngle: s.isWideAngle,
       },
       wavelengths: {
         weights: s.wavelengthWeights,
@@ -177,6 +182,7 @@ export const createSpecsConfiguratorSlice: StateCreator<SpecsConfiguratorState> 
       fieldType: specs.field.type,
       maxField: specs.field.maxField,
       relativeFields: specs.field.fields,
+      isWideAngle: specs.field.isWideAngle ?? false,
       wavelengthWeights: specs.wavelengths.weights,
       referenceIndex: specs.wavelengths.referenceIndex,
     }),

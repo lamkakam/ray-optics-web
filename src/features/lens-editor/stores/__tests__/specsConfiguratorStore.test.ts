@@ -17,6 +17,7 @@ const sampleSpecs: OpticalSpecs = {
     maxField: 20,
     fields: [0, 0.7, 1],
     isRelative: true,
+    isWideAngle: true,
   },
   wavelengths: {
     weights: [
@@ -47,6 +48,23 @@ describe("specsConfiguratorStore", () => {
       expect(s.fieldType).toBe("angle");
       expect(s.maxField).toBe(20);
       expect(s.relativeFields).toEqual([0, 0.7, 1]);
+      expect(s.isWideAngle).toBe(true);
+    });
+
+    it("defaults isWideAngle to false when omitted from imported specs", () => {
+      const store = makeStore();
+      store.getState().loadFromSpecs({
+        ...sampleSpecs,
+        field: {
+          space: "object",
+          type: "angle",
+          maxField: 20,
+          fields: [0, 0.7, 1],
+          isRelative: true,
+        },
+      });
+
+      expect(store.getState().isWideAngle).toBe(false);
     });
 
     it("populates all wavelength fields", () => {
@@ -103,12 +121,14 @@ describe("specsConfiguratorStore", () => {
         type: "height",
         maxField: 10,
         relativeFields: [0, 0.5, 1],
+        isWideAngle: true,
       });
       const s = store.getState();
       expect(s.fieldSpace).toBe("image");
       expect(s.fieldType).toBe("height");
       expect(s.maxField).toBe(10);
       expect(s.relativeFields).toEqual([0, 0.5, 1]);
+      expect(s.isWideAngle).toBe(true);
     });
   });
 
@@ -150,7 +170,7 @@ describe("specsConfiguratorStore", () => {
       const committed = store.getState().committedSpecs;
       expect(committed).toEqual({
         pupil: { space: "object", type: "epd", value: 0.5 },
-        field: { space: "object", type: "height", maxField: 0, fields: [0], isRelative: true },
+        field: { space: "object", type: "height", maxField: 0, fields: [0], isRelative: true, isWideAngle: false },
         wavelengths: { weights: [[546.073, 1]], referenceIndex: 0 },
       });
     });
@@ -175,7 +195,7 @@ describe("specsConfiguratorStore", () => {
       const store = makeStore();
       const heightSpecs: OpticalSpecs = {
         pupil: { space: "object", type: "epd", value: 25 },
-        field: { space: "object", type: "height", maxField: 10, fields: [0, 0.5, 1], isRelative: true },
+        field: { space: "object", type: "height", maxField: 10, fields: [0, 0.5, 1], isRelative: true, isWideAngle: false },
         wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
       };
       store.getState().setCommittedSpecs(heightSpecs);

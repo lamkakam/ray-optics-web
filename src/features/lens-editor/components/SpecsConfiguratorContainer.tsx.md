@@ -11,6 +11,7 @@ Imperative access to specs actions is via `useSpecsConfiguratorStore()` (stable,
 
 - Subscribes to all relevant store slices individually with `useStore(store, selector)` for granular reactivity.
 - Computes `fieldSummary` (e.g. `"3 fields, 20° max"`) and `wavelengthSummary` (e.g. `"3 wavelengths"`) inline.
+- Subscribes to `isWideAngle` and passes it into `FieldConfigModal` so the modal can round-trip the wide-angle checkbox through store state.
 - All store mutation callbacks (`handleApertureChange`, `handleFieldApply`, `handleWavelengthApply`) are wrapped in `useCallback` with `[store]` dependency and call `store.getState().<action>` to avoid stale closures.
 - Modal open/close is driven by `fieldModalOpen` and `wavelengthModalOpen` state from the store.
 

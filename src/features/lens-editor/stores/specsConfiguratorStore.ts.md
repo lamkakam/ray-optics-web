@@ -21,6 +21,7 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 | `fieldType` | `FieldType` | `"height"` |
 | `maxField` | `number` | `0` |
 | `relativeFields` | `number[]` | `[0]` |
+| `isWideAngle` | `boolean` | `false` |
 | `wavelengthWeights` | `WavelengthWeights` | `[[546.073, 1]]` (Note: `546.073` (e-line wavelength) is imported from `@/shared/lib/data/fraunhoferLines`) |
 | `referenceIndex` | `ReferenceIndex` | `0` |
 | `committedSpecs` | `OpticalSpecs` | mirrors default form state (epd 0.5, height field maxField 0, e-line wavelength) |
@@ -30,12 +31,12 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 ## Actions
 
 - `setAperture(patch)` — partial update for `pupilSpace`, `pupilType`, `pupilValue`; omitted keys are preserved.
-- `setField(field)` — replaces all four field properties atomically.
+- `setField(field)` — replaces all field properties atomically, including `isWideAngle`.
 - `setWavelengths(wl)` — replaces `wavelengthWeights` and `referenceIndex` atomically.
 - `openFieldModal()` / `closeFieldModal()` — toggle `fieldModalOpen`.
 - `openWavelengthModal()` / `closeWavelengthModal()` — toggle `wavelengthModalOpen`.
-- `toOpticalSpecs()` — builds and returns an `OpticalSpecs` object from current state; `field.isRelative` is always `true`.
-- `loadFromSpecs(specs)` — populates all form state fields from an `OpticalSpecs` object (used when loading a model); does NOT update `committedSpecs`.
+- `toOpticalSpecs()` — builds and returns an `OpticalSpecs` object from current state; `field.isRelative` is always `true`, and `field.isWideAngle` is always emitted as a boolean.
+- `loadFromSpecs(specs)` — populates all form state fields from an `OpticalSpecs` object (used when loading a model); does NOT update `committedSpecs`. Missing `field.isWideAngle` defaults to `false`.
 - `setCommittedSpecs(specs)` — stores a committed snapshot of `OpticalSpecs`; called after a successful submit in `page.tsx`.
 - `getFieldOptions()` — derives `{ label, value }[]` from `committedSpecs.field`; unit is `°` for angle, ` mm` for height.
 - `getWavelengthOptions()` — derives `{ label, value }[]` from `committedSpecs.wavelengths.weights`.
@@ -45,6 +46,7 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 ## Key Conventions
 
 - `relativeFields` maps to `OpticalSpecs.field.fields`; `isRelative` is hardcoded to `true` in `toOpticalSpecs`.
+- `isWideAngle` maps to `OpticalSpecs.field.isWideAngle` and is normalized to `false` when absent in imported data.
 - `wavelengthWeights` is an array of `[wavelength_nm, weight]` tuples.
 - `referenceIndex` is a zero-based index into `wavelengthWeights`; callers must keep it in range.
 
