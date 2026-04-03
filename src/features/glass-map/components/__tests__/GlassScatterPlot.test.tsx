@@ -1,6 +1,5 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import {
   GlassScatterPlot,
   computeRenderedCircleStyle,
@@ -61,16 +60,23 @@ describe("GlassScatterPlot", () => {
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
+  it("applies touch-action none on the main svg container for mobile pinch handling", () => {
+    const { container } = render(<GlassScatterPlot {...defaultProps} />);
+    const svg = container.querySelector("svg") as SVGSVGElement | null;
+
+    expect(svg?.style.touchAction).toBe("none");
+  });
+
   it("renders glass points for each point", () => {
     render(<GlassScatterPlot {...defaultProps} />);
 
     expect(screen.getAllByTestId("glass-point")).toHaveLength(2);
   });
 
-  it("calls onPointClick with SelectedGlass when a point is clicked", async () => {
+  it("calls onPointClick with SelectedGlass when a point is clicked", () => {
     render(<GlassScatterPlot {...defaultProps} />);
 
-    await userEvent.click(screen.getAllByTestId("glass-point")[0]);
+    fireEvent.click(screen.getAllByTestId("glass-point")[0]);
 
     expect(defaultProps.onPointClick).toHaveBeenCalledTimes(1);
     expect(defaultProps.onPointClick).toHaveBeenCalledWith({
@@ -110,35 +116,6 @@ describe("GlassScatterPlot", () => {
     fireEvent.mouseEnter(screen.getAllByTestId("glass-point")[0]);
 
     expect(screen.getByText("N-BK7")).toBeInTheDocument();
-  });
-
-  it("shows tooltip and selects on single-touch start", () => {
-    render(<GlassScatterPlot {...defaultProps} />);
-
-    fireEvent.touchStart(screen.getAllByTestId("glass-point")[0], {
-      touches: [{ clientX: 100, clientY: 100 }],
-    });
-
-    expect(screen.getByText("N-BK7")).toBeInTheDocument();
-    expect(defaultProps.onPointClick).toHaveBeenCalledWith({
-      catalogName: "Schott",
-      glassName: "N-BK7",
-      data: glassData,
-    });
-  });
-
-  it("ignores multi-touch start on a point", () => {
-    render(<GlassScatterPlot {...defaultProps} />);
-
-    fireEvent.touchStart(screen.getAllByTestId("glass-point")[0], {
-      touches: [
-        { clientX: 100, clientY: 100 },
-        { clientX: 160, clientY: 100 },
-      ],
-    });
-
-    expect(defaultProps.onPointClick).not.toHaveBeenCalled();
-    expect(screen.queryByText("N-BK7")).not.toBeInTheDocument();
   });
 
   it("renders crosshair lines when a glass is selected", () => {

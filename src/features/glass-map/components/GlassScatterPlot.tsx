@@ -129,7 +129,7 @@ function InnerPlot({
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <Zoom<SVGRectElement>
+      <Zoom<SVGSVGElement>
         // Use the plot-area rect as the gesture target so wheel/pinch coordinates are plot-local.
         // This keeps the existing zoom math aligned with the inner chart, not the outer SVG margin box.
         width={innerWidth}
@@ -178,7 +178,12 @@ function InnerPlot({
           const crosshairY = selectedPoint !== undefined ? axisYScale(selectedPoint.y) : undefined;
 
           return (
-            <svg width={width} height={height}>
+            <svg
+              width={width}
+              height={height}
+              ref={zoom.containerRef}
+              style={{ touchAction: "none" }}
+            >
               <defs>
                 <clipPath id={clipId}>
                   <rect x={0} y={0} width={innerWidth} height={innerHeight} />
@@ -207,7 +212,6 @@ function InnerPlot({
                 </text>
 
                 <rect
-                  ref={zoom.containerRef}
                   data-testid="glass-scatter-interaction-surface"
                   width={innerWidth}
                   height={innerHeight}

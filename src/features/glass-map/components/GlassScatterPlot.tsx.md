@@ -17,8 +17,9 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 ## Implementation
 - `@visx/responsive` `<ParentSize>` fills container; renders `InnerPlot` when width/height > 0
 - `@visx/zoom` `<Zoom>` wraps SVG; `zoom.transformMatrix` drives zoom/pan
+- The main `<svg>` is the gesture owner via `zoom.containerRef` and `touchAction="none"`, matching the official VisX pattern more closely and preventing mobile Safari from falling back to page pinch-zoom
 - The plot-area interaction rect (`data-testid="glass-scatter-interaction-surface"`) is the single interaction target
-- `zoom.containerRef` is attached directly to that rect, so `@visx/zoom` / `@use-gesture` own wheel and pinch handling with plot-local coordinates
+- `@visx/zoom` / `@use-gesture` own wheel and pinch handling through the SVG container, while the inner rect still handles direct drag start/move/end events for panning
 - Pan uses the same direct handlers as the official VisX example: `onTouchStart/onTouchMove/onTouchEnd` and `onMouseDown/onMouseMove/onMouseUp` call `zoom.dragStart`, `zoom.dragMove`, and `zoom.dragEnd`
 - `onMouseLeave` ends an active drag to avoid leaving the component stuck in a dragging state
 - Circles are rendered at zoom-adjusted screen coordinates under the clip path, rather than inside a scaled parent `<g>`, so point positions follow zoom/pan while dot size stays constant on screen
@@ -62,6 +63,7 @@ CSS variables in `globals.css`:
 - `@visx/responsive` requires `ResizeObserver` — mocked in test environment via `jest.setup.ts`
 - Module-level mock `src/__mocks__/@visx/responsive.tsx` provides fixed 800×600 size in tests
 - `@visx/axis` uses `@visx/text`, which relies on SVG text measurement APIs such as `getComputedTextLength()` in tests
+- Touch gesture behavior from `@use-gesture` is not modeled reliably in jsdom for SVG bubbling paths, so tests focus on the SVG gesture container contract rather than synthetic pinch execution
 - Crosshair lines are not rendered when the selected glass is not found in the current `points` array (e.g. its catalog is disabled)
 
 ## Usages
