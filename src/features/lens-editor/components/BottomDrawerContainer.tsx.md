@@ -41,7 +41,11 @@ Builds a `tabs` array via `useMemo` containing:
 
 Reads `activeBottomDrawerTabId` from the lens editor Zustand store and passes it to `BottomDrawer` as a controlled tab value. On tab change, writes the selected tab id back into `setActiveBottomDrawerTabId`, allowing Lens Editor to restore the previously selected drawer tab after navigation.
 
-Renders `<BottomDrawer tabs={tabs} draggable={draggable} activeTabId={...} onTabChange={...} />`.
+Reads `bottomDrawerHeight` from the lens editor store via `lensStore.getState()` and forwards it to `BottomDrawer` as `initialHeight`. This is a persistence snapshot rather than a reactive subscription, so drag-resize updates do not cause the container to re-render while the drawer is mounted.
+
+Passes `onHeightCommit={(height) => lensStore.getState().setBottomDrawerHeight(height)}` so the most recent settled drawer height is restored after the Lens Editor route remounts.
+
+Renders `<BottomDrawer tabs={tabs} draggable={draggable} activeTabId={...} onTabChange={...} initialHeight={...} onHeightCommit={...} />`.
 
 ## Usages
 

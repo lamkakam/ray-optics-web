@@ -10,6 +10,8 @@ interface BottomDrawerProps {
   readonly draggable?: boolean;
   readonly activeTabId?: string;
   readonly onTabChange?: (tabId: string) => void;
+  readonly initialHeight?: number;
+  readonly onHeightCommit?: (height: number) => void;
 }
 
 const SNAP_COLLAPSED = 48;
@@ -20,30 +22,54 @@ function getDefaultOpenHeight(): number {
   return Math.round(window.innerHeight * DEFAULT_OPEN_HEIGHT_RATIO);
 }
 
+function isCollapsedHeight(height: number): boolean {
+  return height <= SNAP_COLLAPSED + 10;
+}
+
 export function BottomDrawer({
   tabs,
   draggable = true,
   activeTabId,
   onTabChange,
+  initialHeight,
+  onHeightCommit,
 }: BottomDrawerProps) {
-  const [height, setHeight] = useState(300);
-
-  useEffect(() => {
-    setHeight(getDefaultOpenHeight()); // eslint-disable-line react-hooks/set-state-in-effect -- syncing with browser viewport API
-  }, []);
-  const [collapsed, setCollapsed] = useState(false);
+  const resolvedInitialHeight = initialHeight ?? 300;
+  const resolvedInitialCollapsed = isCollapsedHeight(resolvedInitialHeight);
+  const [height, setHeight] = useState(resolvedInitialHeight);
+  const [collapsed, setCollapsed] = useState(resolvedInitialCollapsed);
   const dragging = useRef(false);
   const startY = useRef(0);
   const startHeight = useRef(0);
+  const heightRef = useRef(resolvedInitialHeight);
+  const collapsedRef = useRef(resolvedInitialCollapsed);
+
+  useEffect(() => {
+    if (initialHeight !== undefined) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      const defaultHeight = getDefaultOpenHeight();
+      heightRef.current = defaultHeight;
+      collapsedRef.current = false;
+      setHeight(defaultHeight);
+      setCollapsed(false);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [initialHeight]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       dragging.current = true;
       startY.current = e.clientY;
-      startHeight.current = collapsed ? SNAP_COLLAPSED : height;
+      startHeight.current = collapsedRef.current ? SNAP_COLLAPSED : heightRef.current;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [height, collapsed]
+    []
   );
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
@@ -53,24 +79,36 @@ export function BottomDrawer({
       SNAP_COLLAPSED,
       Math.min(startHeight.current + delta, window.innerHeight * MAX_HEIGHT_RATIO)
     );
-    setHeight(Math.round(newHeight));
-    setCollapsed(newHeight <= SNAP_COLLAPSED + 10);
+    const roundedHeight = Math.round(newHeight);
+    const nextCollapsed = isCollapsedHeight(newHeight);
+    heightRef.current = roundedHeight;
+    collapsedRef.current = nextCollapsed;
+    setHeight(roundedHeight);
+    setCollapsed(nextCollapsed);
   }, []);
 
   const handlePointerUp = useCallback(() => {
     if (!dragging.current) return;
     dragging.current = false;
-  }, []);
+    onHeightCommit?.(collapsedRef.current ? SNAP_COLLAPSED : heightRef.current);
+  }, [onHeightCommit]);
 
   const toggleCollapse = useCallback(() => {
     if (collapsed) {
-      setHeight(getDefaultOpenHeight());
+      const defaultHeight = getDefaultOpenHeight();
+      heightRef.current = defaultHeight;
+      collapsedRef.current = false;
+      setHeight(defaultHeight);
       setCollapsed(false);
+      onHeightCommit?.(defaultHeight);
     } else {
+      heightRef.current = SNAP_COLLAPSED;
+      collapsedRef.current = true;
       setHeight(SNAP_COLLAPSED);
       setCollapsed(true);
+      onHeightCommit?.(SNAP_COLLAPSED);
     }
-  }, [collapsed]);
+  }, [collapsed, onHeightCommit]);
 
   if (!draggable) {
     return (

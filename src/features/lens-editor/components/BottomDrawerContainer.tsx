@@ -33,6 +33,7 @@ export function BottomDrawerContainer({
 }: BottomDrawerContainerProps) {
   const lensStore = useLensEditorStore();
   const activeBottomDrawerTabId = useStore(lensStore, (state) => state.activeBottomDrawerTabId);
+  const initialBottomDrawerHeight = lensStore.getState().bottomDrawerHeight;
   const tabs = useMemo(
     () => [
       {
@@ -76,6 +77,8 @@ export function BottomDrawerContainer({
       draggable={draggable}
       activeTabId={activeBottomDrawerTabId}
       onTabChange={(tabId) => lensStore.getState().setActiveBottomDrawerTabId(tabId)}
+      initialHeight={initialBottomDrawerHeight}
+      onHeightCommit={(height) => lensStore.getState().setBottomDrawerHeight(height)}
     />
   );
 }

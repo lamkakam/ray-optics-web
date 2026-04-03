@@ -148,6 +148,37 @@ describe("BottomDrawer", () => {
     });
   });
 
+  it("uses the provided initial height on first render", () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+        initialHeight={512}
+      />
+    );
+
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+
+    expect(drawer).toHaveStyle({ height: "512px" });
+  });
+
+  it("starts collapsed when the provided initial height is collapsed", () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+        initialHeight={48}
+      />
+    );
+
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+
+    expect(drawer).toHaveStyle({ height: "48px" });
+    expect(screen.queryByText("content")).not.toBeInTheDocument();
+  });
+
   it("keeps the dragged height after pointer release instead of snapping", async () => {
     render(
       <BottomDrawer
@@ -179,6 +210,42 @@ describe("BottomDrawer", () => {
     fireEvent.pointerUp(handle, { pointerId: 1 });
 
     expect(drawer).toHaveStyle({ height: "500px" });
+  });
+
+  it("commits the dragged height only after pointer release", async () => {
+    const onHeightCommit = jest.fn();
+
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+        onHeightCommit={onHeightCommit}
+      />
+    );
+
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    mockPointerCapture(handle);
+
+    await waitFor(() => {
+      const drawer = getDrawerRoot(handle);
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+
+    fireEvent.pointerDown(handle, {
+      clientY: 700,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(handle, {
+      clientY: 600,
+      pointerId: 1,
+    });
+
+    expect(onHeightCommit).not.toHaveBeenCalled();
+
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(onHeightCommit).toHaveBeenCalledWith(500);
   });
 
   it("collapses when dragged down to the minimum height", async () => {
@@ -239,6 +306,28 @@ describe("BottomDrawer", () => {
 
     await user.click(toggleButton);
     expect(drawer).toHaveStyle({ height: "400px" });
+  });
+
+  it("commits the collapsed and restored heights when toggled", async () => {
+    const onHeightCommit = jest.fn();
+    const user = userEvent.setup();
+
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+        onHeightCommit={onHeightCommit}
+      />
+    );
+
+    const toggleButton = screen.getByRole("button", { name: "Toggle drawer" });
+
+    await user.click(toggleButton);
+    await user.click(toggleButton);
+
+    expect(onHeightCommit).toHaveBeenNthCalledWith(1, 48);
+    expect(onHeightCommit).toHaveBeenNthCalledWith(2, 400);
   });
 });
 

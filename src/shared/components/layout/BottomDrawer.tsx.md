@@ -12,6 +12,8 @@ interface BottomDrawerProps {
   draggable?: boolean;
   activeTabId?: string;
   onTabChange?: (tabId: string) => void;
+  initialHeight?: number;
+  onHeightCommit?: (height: number) => void;
 }
 ```
 
@@ -23,10 +25,12 @@ interface BottomDrawerProps {
 | `draggable` | `boolean` | No | Enables drag-resize and collapse toggle. Defaults to `true` |
 | `activeTabId` | `string` | No | Optional controlled active tab id forwarded to `Tabs` |
 | `onTabChange` | `(tabId: string) => void` | No | Optional tab click callback forwarded to `Tabs` |
+| `initialHeight` | `number` | No | Optional persisted drawer height in pixels used for the first render |
+| `onHeightCommit` | `(height: number) => void` | No | Optional callback invoked when the drawer height is committed after resize settles or collapse/expand toggles |
 
 ## Internal State
 
-- `height: number` — current drawer height in pixels; initialized to `window.innerHeight * 0.4` via `useEffect`.
+- `height: number` — current drawer height in pixels; initialized on first render from `initialHeight` or `window.innerHeight * 0.4`.
 - `collapsed: boolean` — whether the drawer is currently collapsed to its minimum height.
 - `dragging: React.MutableRefObject<boolean>` — pointer capture flag.
 - `startY / startHeight: React.MutableRefObject<number>` — drag start coordinates.
@@ -35,12 +39,13 @@ interface BottomDrawerProps {
 
 - Pointer events use `setPointerCapture` to track drag outside the handle element.
 - While dragging, the drawer height updates continuously within a bounded range of 48px to 85% of the viewport height.
-- On pointer-up, dragging stops without snapping to preset heights.
+- On pointer-up, dragging stops without snapping to preset heights and commits the final height through `onHeightCommit`.
 - Dragging close to the minimum height collapses the drawer and hides the active tab panel.
 - Collapse toggle button is injected into `Tabs`'s `actions` slot.
-- Expanding from the collapsed state restores the default open height of `window.innerHeight * 0.4`.
+- Expanding from the collapsed state restores the default open height of `window.innerHeight * 0.4` and commits that height through `onHeightCommit`.
 - When `draggable = false`, renders a simpler non-resizable bordered container.
 - Tab selection can be either uncontrolled or externally controlled through the forwarded `activeTabId` / `onTabChange` props.
+- `initialHeight` values at or below the collapsed threshold (`48 + 10`) start the drawer in the collapsed state on the first render.
 
 ## Usages
 

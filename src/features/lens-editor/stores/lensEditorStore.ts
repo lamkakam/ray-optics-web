@@ -14,6 +14,7 @@ export interface LensEditorState {
   selectedRowId: string | undefined;
   autoAperture: boolean;
   activeBottomDrawerTabId: string;
+  bottomDrawerHeight: number | undefined;
   mediumModal: ModalState;
   asphericalModal: ModalState;
   decenterModal: ModalState;
@@ -26,6 +27,7 @@ export interface LensEditorState {
   setSelectedRowId: (id: string | undefined) => void;
   setAutoAperture: (value: boolean) => void;
   setActiveBottomDrawerTabId: (id: string) => void;
+  setBottomDrawerHeight: (height: number) => void;
   openMediumModal: (rowId: string) => void;
   closeMediumModal: () => void;
   openAsphericalModal: (rowId: string) => void;
@@ -45,6 +47,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   selectedRowId: undefined,
   autoAperture: false,
   activeBottomDrawerTabId: "specs",
+  bottomDrawerHeight: undefined,
   mediumModal: { open: false, rowId: "" },
   asphericalModal: { open: false, rowId: "" },
   decenterModal: { open: false, rowId: "" },
@@ -99,6 +102,8 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   setAutoAperture: (value) => set({ autoAperture: value }),
 
   setActiveBottomDrawerTabId: (id) => set({ activeBottomDrawerTabId: id }),
+
+  setBottomDrawerHeight: (height) => set({ bottomDrawerHeight: height }),
 
   openMediumModal: (rowId) =>
     set({ mediumModal: { open: true, rowId } }),

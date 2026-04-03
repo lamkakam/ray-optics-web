@@ -66,6 +66,11 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       expect(store.getState().activeBottomDrawerTabId).toBe("specs");
     });
+
+    it("defaults the bottom drawer height to undefined", () => {
+      const store = makeStore();
+      expect(store.getState().bottomDrawerHeight).toBeUndefined();
+    });
   });
 
   describe("setRows", () => {
@@ -123,6 +128,14 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       store.getState().setActiveBottomDrawerTabId("focusing");
       expect(store.getState().activeBottomDrawerTabId).toBe("focusing");
+    });
+  });
+
+  describe("bottomDrawerHeight", () => {
+    it("updates the bottom drawer height", () => {
+      const store = makeStore();
+      store.getState().setBottomDrawerHeight(512);
+      expect(store.getState().bottomDrawerHeight).toBe(512);
     });
   });
 
