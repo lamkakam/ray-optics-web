@@ -311,6 +311,7 @@ describe("BottomDrawer", () => {
   it("commits the collapsed and restored heights when toggled", async () => {
     const onHeightCommit = jest.fn();
     const user = userEvent.setup();
+    const expectedOpenHeight = Math.round(window.innerHeight * 0.4);
 
     render(
       <BottomDrawer
@@ -321,13 +322,19 @@ describe("BottomDrawer", () => {
       />
     );
 
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
     const toggleButton = screen.getByRole("button", { name: "Toggle drawer" });
 
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: `${expectedOpenHeight}px` });
+    });
+
     await user.click(toggleButton);
     await user.click(toggleButton);
 
+    expect(onHeightCommit).toHaveBeenCalledTimes(2);
     expect(onHeightCommit).toHaveBeenNthCalledWith(1, 48);
-    expect(onHeightCommit).toHaveBeenNthCalledWith(2, 400);
+    expect(onHeightCommit).toHaveBeenNthCalledWith(2, expectedOpenHeight);
   });
 });
 
