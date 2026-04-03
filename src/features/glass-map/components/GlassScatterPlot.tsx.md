@@ -1,7 +1,7 @@
 # `features/glass-map/components/GlassScatterPlot.tsx`
 
 ## Purpose
-Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders all `PlotPoint` entries as colored circles, supports zoom/pan via mouse wheel and drag, shows grid lines on both axes, shows a tooltip on hover (mouse) or touch, and draws crosshair lines for the selected glass.
+Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders all `PlotPoint` entries as colored circles, supports zoom/pan via mouse wheel, drag, and touch pinch, shows grid lines on both axes, shows a tooltip on hover (mouse) or single-touch tap, and draws crosshair lines for the selected glass.
 
 ## Props
 | Prop | Type | Description |
@@ -17,14 +17,26 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 ## Implementation
 - `@visx/responsive` `<ParentSize>` fills container; renders `InnerPlot` when width/height > 0
 - `@visx/zoom` `<Zoom>` wraps SVG; `zoom.transformMatrix` drives zoom/pan
-- Wheel zoom is attached by binding `zoom.containerRef` to the transparent interaction rect, allowing `@visx/zoom` to install its own non-passive wheel listener and avoid passive-listener `preventDefault()` console warnings
+- A wrapper `div` (`data-testid="glass-scatter-touch-surface"`) owns touch gesture handling for the whole plot area with `touch-action: none`, so drag/pinch still work when touches begin on circles or grid lines rather than only on the background rect
+- Mouse wheel zoom is attached to the transparent interaction rect (`data-testid="glass-scatter-interaction-surface"`) through a native `wheel` listener registered with `{ passive: false }`, so `zoom.handleWheel()` can safely call `preventDefault()` without browser passive-listener warnings
+- Desktop pan uses pointer events on the interaction rect for non-touch pointers: `pointerdown` starts `zoom.dragStart`, captures the pointer, `pointermove` forwards to `zoom.dragMove`, and `pointerup` / `pointercancel` / `lostpointercapture` end with `zoom.dragEnd`
+- Touch pan/pinch uses wrapper-relative gesture math and applies transforms through `zoom.setTranslate()` and `zoom.scale()`
+- While a desktop drag is active, the component temporarily sets `document.body.style.userSelect = "none"` and prevents `selectstart` at the document level so moving outside the plot cannot highlight surrounding text
 - Circles are rendered at zoom-adjusted screen coordinates under the clip path, rather than inside a scaled parent `<g>`, so point positions follow zoom/pan while dot size stays constant on screen
 - Axes (`@visx/axis` `<AxisBottom>` + `<AxisLeft>`) outside zoom group with derived visible domain from transform matrix; use `stroke="currentColor"`, `tickStroke="currentColor"`, and `tickLabelProps={{ fill: "currentColor" }}` for dark mode support
 - Grid lines (`@visx/grid` `<GridRows>` + `<GridColumns>`) use `axisYScale`/`axisXScale` (zoom-aware), clipped to inner area, `stroke="currentColor"` with `strokeOpacity={0.12}`
 - Hover tooltip via `@visx/tooltip` `useTooltip<PlotPoint>()`; shows glass name and catalog name with solid background card (CSS variables `--tooltip-bg`, `--tooltip-fg`, `--tooltip-border`, `--tooltip-shadow` defined in `globals.css` for light/dark mode)
-- Touch tooltip via `onTouchStart` on circles; calls `showTooltip` and also fires `handlePointClick`
+- Touch tooltip via `onTouchStart` on circles; single-touch only, calls `showTooltip` and also fires `handlePointClick`
+- Multi-touch `onTouchStart` on a point is ignored so pinch-zoom does not accidentally select a glass or show a tooltip
 - Tooltip uses `position: fixed` (viewport-relative) to avoid container-offset issues from `<Zoom>`'s internal `<div class="visx-zoom-g">` wrapper
 - Tooltip coordinates come from `e.currentTarget.getBoundingClientRect()` on the circle element: `left = rect.right + 8`, `top = rect.top`; this correctly accounts for SVG zoom transforms
+- Touch interactions:
+  - single-finger drag pans the plot
+  - two-finger pinch zooms the plot
+  - single-touch tap on a point selects it and shows the tooltip
+- Desktop interactions:
+  - mouse/pen drag keeps panning even after the pointer leaves the plot because the interaction surface owns the pointer capture until release/cancel
+  - text selection outside the chart is suppressed only while that drag is active
 - Crosshair lines: when `selectedGlass` is set and its matching `PlotPoint` is found in `points`, two dashed `<line>` elements are rendered inside the clip group at `axisXScale(point.x)` (vertical) and `axisYScale(point.y)` (horizontal); stroke uses CSS variable `--crosshair-stroke` (defined in `globals.css`)
 - `data-testid="glass-point"` on each circle for test selection
 - `data-testid="crosshair-h"` / `data-testid="crosshair-v"` on crosshair lines for test selection
@@ -36,6 +48,9 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 
 ## Internal Helpers
 - `computeRenderedCircleStyle()` converts base plot coordinates into zoomed screen coordinates while keeping the circle radius and selected stroke width fixed in screen space
+- `getTouchDistance()` computes the distance between two touches for pinch scaling
+- `getTouchMidpoint()` computes the midpoint between two touches for pinch origin
+- `getPlotRelativePoint()` converts viewport touch coordinates into plot-local coordinates using the plot wrapper bounds and chart margins
 
 ## Tooltip Theming
 CSS variables in `globals.css`:
