@@ -33,6 +33,25 @@ const defaultProps = {
 beforeEach(() => jest.clearAllMocks());
 
 describe("GlassScatterPlot", () => {
+  it("registers a non-passive wheel listener for zoom interactions", () => {
+    const addEventListenerSpy = jest.spyOn(Element.prototype, "addEventListener");
+
+    render(<GlassScatterPlot {...defaultProps} />);
+
+    const wheelListenerCall = addEventListenerSpy.mock.calls.find(
+      ([type, , options]) =>
+        type === "wheel" &&
+        typeof options === "object" &&
+        options !== null &&
+        "passive" in options &&
+        options.passive === false
+    );
+
+    expect(wheelListenerCall).toBeDefined();
+
+    addEventListenerSpy.mockRestore();
+  });
+
   it("keeps the apparent circle size constant while zooming by only moving screen coordinates", () => {
     expect(
       computeRenderedCircleStyle({
