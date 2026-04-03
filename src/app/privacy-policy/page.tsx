@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Header } from "@/shared/components/primitives/Header";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
