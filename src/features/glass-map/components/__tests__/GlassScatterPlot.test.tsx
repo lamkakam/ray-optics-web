@@ -2,6 +2,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import {
   GlassScatterPlot,
+  computePinchDelta,
   computeRenderedCircleStyle,
 } from "@/features/glass-map/components/GlassScatterPlot";
 import type { PlotPoint, SelectedGlass } from "@/shared/lib/types/glassMap";
@@ -166,6 +167,28 @@ describe("GlassScatterPlot", () => {
       cy: 350,
       r: 6,
       strokeWidth: 1.5,
+    });
+  });
+
+  it("uses damped pinch zoom steps instead of the visx default step size", () => {
+    expect(
+      computePinchDelta({
+        offset: [120, 0],
+        lastOffset: [100, 0],
+      })
+    ).toEqual({
+      scaleX: 1.03,
+      scaleY: 1.03,
+    });
+
+    expect(
+      computePinchDelta({
+        offset: [80, 0],
+        lastOffset: [100, 0],
+      })
+    ).toEqual({
+      scaleX: 0.97,
+      scaleY: 0.97,
     });
   });
 

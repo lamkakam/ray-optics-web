@@ -17,6 +17,7 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 ## Implementation
 - `@visx/responsive` `<ParentSize>` fills container; renders `InnerPlot` when width/height > 0
 - `@visx/zoom` `<Zoom>` wraps SVG; `zoom.transformMatrix` drives zoom/pan
+- `<Zoom>` uses a custom `pinchDelta` override so touch pinch updates apply damped `1.03` / `0.97` scale steps instead of the package default `1.1` / `0.9`, reducing pinch sensitivity on iPhone/mobile Safari
 - The main `<svg>` is the gesture owner via `zoom.containerRef` and `touchAction="none"`, matching the official VisX pattern more closely and preventing mobile Safari from falling back to page pinch-zoom
 - The plot-area interaction rect (`data-testid="glass-scatter-interaction-surface"`) is the single interaction target
 - `@visx/zoom` / `@use-gesture` own wheel and pinch handling through the SVG container, while the inner rect still handles direct drag start/move/end events for panning
@@ -48,6 +49,7 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 
 ## Internal Helpers
 - `computeRenderedCircleStyle()` converts base plot coordinates into zoomed screen coordinates while keeping the circle radius and selected stroke width fixed in screen space
+- `computePinchDelta()` translates VisX pinch state into damped zoom scale factors for touch pinch gestures
 
 ## Tooltip Theming
 CSS variables in `globals.css`:

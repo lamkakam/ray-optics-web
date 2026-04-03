@@ -47,8 +47,28 @@ interface RenderedCircleStyle {
   readonly strokeWidth: number;
 }
 
+interface PinchDeltaState {
+  readonly offset: readonly [number, number];
+  readonly lastOffset: readonly [number, number];
+}
+
+const PINCH_ZOOM_IN_SCALE = 1.03;
+const PINCH_ZOOM_OUT_SCALE = 0.97;
+
 function isSingleTouchEvent(event: React.TouchEvent<SVGCircleElement>): boolean {
   return event.touches.length === 1;
+}
+
+export function computePinchDelta({ offset, lastOffset }: PinchDeltaState) {
+  const [currentScaleOffset] = offset;
+  const [previousScaleOffset] = lastOffset;
+  const pinchDirection = currentScaleOffset - previousScaleOffset;
+  const scale = pinchDirection < 0 ? PINCH_ZOOM_OUT_SCALE : PINCH_ZOOM_IN_SCALE;
+
+  return {
+    scaleX: scale,
+    scaleY: scale,
+  };
 }
 
 export function computeRenderedCircleStyle({
@@ -138,6 +158,7 @@ function InnerPlot({
         scaleXMax={40}
         scaleYMin={0.2}
         scaleYMax={40}
+        pinchDelta={computePinchDelta}
         initialTransformMatrix={initialTransform}
       >
         {(zoom) => {
