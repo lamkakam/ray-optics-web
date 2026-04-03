@@ -33,6 +33,34 @@ def fresh_cooke_triplet():
     return opm
 
 
+@pytest.fixture
+def fresh_finite_conjugate_cooke_triplet():
+    """Build a fresh finite-conjugate Cooke Triplet optical model."""
+    from rayoptics.environment import OpticalModel
+    from rayoptics.raytr.opticalspec import PupilSpec, FieldSpec, WvlSpec
+
+    opm = OpticalModel()
+    osp = opm['optical_spec']
+    sm = opm['seq_model']
+    opm.system_spec.dimensions = 'mm'
+    osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)
+    osp['fov'] = FieldSpec(osp, key=['object', 'height'], value=5, flds=[0], is_relative=False)
+    osp['wvls'] = WvlSpec([(486.133, 1), (587.562, 2), (656.273, 1)], ref_wl=1)
+    opm.radius_mode = True
+    sm.do_apertures = False
+    sm.gaps[0].thi = 100.0
+    sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"], sd=10.009)
+    sm.add_surface([7331.288, 5.86, "air"], sd=8.9482)
+    sm.add_surface([-24.456, 0.975, "N-SF5", "Schott"], sd=4.7919)
+    sm.set_stop()
+    sm.add_surface([21.896, 4.822, "air"], sd=4.7761)
+    sm.add_surface([86.759, 3.127, "N-LAK9", "Schott"], sd=8.0217)
+    sm.add_surface([-20.4942, 41.2365, "air"], sd=8.3321)
+    sm.ifcs[-1].profile.r = 0
+    opm.update_model()
+    return opm
+
+
 class TestFocusByMonoRmsSpot:
     """Tests for focus_by_mono_rms_spot()."""
 
@@ -256,6 +284,38 @@ class TestFocusingFromLargeDefocus:
         bfl = float(opm['analysis_results']['parax_data'].fod.bfl)
         focus_by_poly_strehl(opm)
         assert abs(sm.gaps[-1].thi - bfl) < 1.0
+
+
+class TestFiniteConjugateFocusing:
+    """Tests that focusing centers on the paraxial image distance for finite objects."""
+
+    def test_mono_rms_spot_reaches_paraxial_image_distance(self, fresh_finite_conjugate_cooke_triplet):
+        from rayoptics_web_utils.focusing import focus_by_mono_rms_spot
+
+        opm = fresh_finite_conjugate_cooke_triplet
+        sm = opm['seq_model']
+        target = float(opm['analysis_results']['parax_data'].fod.img_dist)
+
+        focus_by_mono_rms_spot(opm, field_indices=[0])
+
+        assert abs(sm.gaps[-1].thi - target) < 1.0
+
+    def test_mono_strehl_reaches_paraxial_image_distance(self, fresh_finite_conjugate_cooke_triplet):
+        from rayoptics_web_utils.focusing import focus_by_mono_strehl
+
+        opm = fresh_finite_conjugate_cooke_triplet
+        sm = opm['seq_model']
+        target = float(opm['analysis_results']['parax_data'].fod.img_dist)
+
+        focus_by_mono_strehl(opm, field_indices=[0])
+
+        assert abs(sm.gaps[-1].thi - target) < 1.0
+
+    def test_paraxial_image_distance_matches_bfl_for_infinite_object(self, fresh_cooke_triplet):
+        opm = fresh_cooke_triplet
+        fod = opm['analysis_results']['parax_data'].fod
+
+        assert abs(float(fod.img_dist) - float(fod.bfl)) < 1.0
 
 
 class TestRmsAggregationUsesQuadraticMean:
