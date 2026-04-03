@@ -4,6 +4,9 @@ import userEvent from "@testing-library/user-event";
 import {
   GlassScatterPlot,
   computeRenderedCircleStyle,
+  getPlotRelativePoint,
+  getTouchDistance,
+  getTouchMidpoint,
 } from "@/features/glass-map/components/GlassScatterPlot";
 import type { PlotPoint, SelectedGlass } from "@/shared/lib/types/glassMap";
 
@@ -33,23 +36,13 @@ const defaultProps = {
 beforeEach(() => jest.clearAllMocks());
 
 describe("GlassScatterPlot", () => {
-  it("registers a non-passive wheel listener for zoom interactions", () => {
-    const addEventListenerSpy = jest.spyOn(Element.prototype, "addEventListener");
-
+  it("renders a touch gesture surface for pan and pinch interactions", () => {
     render(<GlassScatterPlot {...defaultProps} />);
 
-    const wheelListenerCall = addEventListenerSpy.mock.calls.find(
-      ([type, , options]) =>
-        type === "wheel" &&
-        typeof options === "object" &&
-        options !== null &&
-        "passive" in options &&
-        options.passive === false
-    );
+    const touchSurface = screen.getByTestId("glass-scatter-touch-surface");
 
-    expect(wheelListenerCall).toBeDefined();
-
-    addEventListenerSpy.mockRestore();
+    expect(touchSurface).toBeInTheDocument();
+    expect(touchSurface.style.touchAction).toBe("none");
   });
 
   it("sets touch-action none on the drag interaction surface", () => {
@@ -88,6 +81,33 @@ describe("GlassScatterPlot", () => {
       r: 6,
       strokeWidth: 1.5,
     });
+  });
+
+  it("computes touch distance for pinch scaling", () => {
+    expect(
+      getTouchDistance([
+        { clientX: 10, clientY: 20 },
+        { clientX: 40, clientY: 60 },
+      ])
+    ).toBe(50);
+  });
+
+  it("computes the touch midpoint for pinch origin", () => {
+    expect(
+      getTouchMidpoint([
+        { clientX: 10, clientY: 20 },
+        { clientX: 50, clientY: 80 },
+      ])
+    ).toEqual({ clientX: 30, clientY: 50 });
+  });
+
+  it("converts client coordinates into plot-relative points", () => {
+    expect(
+      getPlotRelativePoint(
+        { clientX: 220, clientY: 180 },
+        { left: 100, top: 50 }
+      )
+    ).toEqual({ x: 60, y: 110 });
   });
 
   it("renders an SVG element", () => {

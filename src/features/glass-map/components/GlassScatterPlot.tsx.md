@@ -17,9 +17,9 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 ## Implementation
 - `@visx/responsive` `<ParentSize>` fills container; renders `InnerPlot` when width/height > 0
 - `@visx/zoom` `<Zoom>` wraps SVG; `zoom.transformMatrix` drives zoom/pan
-- Wheel zoom is attached by binding `zoom.containerRef` to the transparent interaction rect, allowing `@visx/zoom` to install its own non-passive wheel listener and avoid passive-listener `preventDefault()` console warnings
-- The transparent zoom interaction rect explicitly sets `touch-action: none` so touch drag and pinch gestures are handled by `@visx/zoom` instead of default browser panning/zooming; it also exposes `data-testid="glass-scatter-interaction-surface"` for regression tests
-- Pan/zoom gesture handling is owned by `@visx/zoom` through `zoom.containerRef` following the visx zoom interaction model; the component does not attach a separate manual drag lifecycle to the interaction surface
+- A wrapper `div` (`data-testid="glass-scatter-touch-surface"`) owns touch gesture handling for the whole plot area with `touch-action: none`, so drag/pinch still work when touches begin on circles or grid lines rather than only on the background rect
+- Mouse drag and mouse wheel zoom remain attached to the transparent interaction rect (`data-testid="glass-scatter-interaction-surface"`) using `zoom.dragStart` / `zoom.dragMove` / `zoom.dragEnd` and `zoom.handleWheel`
+- Touch pan/pinch uses wrapper-relative gesture math and applies transforms through `zoom.setTranslate()` and `zoom.scale()`
 - Circles are rendered at zoom-adjusted screen coordinates under the clip path, rather than inside a scaled parent `<g>`, so point positions follow zoom/pan while dot size stays constant on screen
 - Axes (`@visx/axis` `<AxisBottom>` + `<AxisLeft>`) outside zoom group with derived visible domain from transform matrix; use `stroke="currentColor"`, `tickStroke="currentColor"`, and `tickLabelProps={{ fill: "currentColor" }}` for dark mode support
 - Grid lines (`@visx/grid` `<GridRows>` + `<GridColumns>`) use `axisYScale`/`axisXScale` (zoom-aware), clipped to inner area, `stroke="currentColor"` with `strokeOpacity={0.12}`
@@ -43,6 +43,9 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 
 ## Internal Helpers
 - `computeRenderedCircleStyle()` converts base plot coordinates into zoomed screen coordinates while keeping the circle radius and selected stroke width fixed in screen space
+- `getTouchDistance()` computes the distance between two touches for pinch scaling
+- `getTouchMidpoint()` computes the midpoint between two touches for pinch origin
+- `getPlotRelativePoint()` converts viewport touch coordinates into plot-local coordinates using the plot wrapper bounds and chart margins
 
 ## Tooltip Theming
 CSS variables in `globals.css`:
