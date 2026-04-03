@@ -25,6 +25,7 @@ Zustand store slice for the Glass Map page state.
 | `setAbbeNumCenterLine(l)` | Switch d/e spectral line |
 | `setPartialDispersionType(t)` | Switch P_F_d / P_F_e / P_g_F |
 | `toggleCatalog(name)` | Toggle a single catalog's enabled state |
+| `enableCatalog(name)` | Force a single catalog to enabled=true without toggling others |
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |
 
 ## Export

@@ -40,6 +40,9 @@ interface MediumSelectorModalProps {
 - When manufacturer changes to `"Special"`, medium resets to `"air"`.
 - When manufacturer changes to a catalog, the first glass in the list is selected if the current selection is not in the new catalog.
 - `onConfirm` passes an empty string for manufacturer when `"Special"` is selected.
+- When `Use model glass` is unchecked and a catalog glass is selected, an inline `View in glass map` link appears below the glass dropdown.
+- The glass-map link targets `/glass-map` with query params `source=medium-selector`, `catalog=<manufacturer>`, and `glass=<medium>`.
+- The glass-map link is hidden for `"Special"` media and for model-glass mode.
 - A `Use model glass` checkbox appears above the catalog controls and defaults to unchecked for non-numeric initial values.
 - When `Use model glass` is checked, the manufacturer and glass dropdowns are replaced by:
   - a `Single refractive index` checkbox

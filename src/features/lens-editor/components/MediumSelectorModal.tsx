@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
+import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
@@ -68,6 +69,19 @@ export function MediumSelectorModal({
     ? SPECIAL_MEDIA
     : (glassCatalogs as Record<string, string[]>)[manufacturer] ?? [];
   const showAbbeNumber = useModelGlass && !singleRefractiveIndex;
+  const glassMapHref = (() => {
+    if (useModelGlass || isSpecial || medium === "") {
+      return undefined;
+    }
+
+    const params = new URLSearchParams({
+      source: "medium-selector",
+      catalog: manufacturer,
+      glass: medium,
+    });
+
+    return `/glass-map?${params.toString()}`;
+  })();
 
   return (
     <Modal isOpen={isOpen} title="Select Medium" titleId="medium-modal-title" size="md">
@@ -120,6 +134,13 @@ export function MediumSelectorModal({
                 value={medium}
                 onChange={(e) => setMedium(e.target.value)}
               />
+              {glassMapHref && (
+                <div className="mt-2">
+                  <InlineLink href={glassMapHref} aria-label="View in glass map">
+                    View in glass map
+                  </InlineLink>
+                </div>
+              )}
             </div>
           </>
         )}

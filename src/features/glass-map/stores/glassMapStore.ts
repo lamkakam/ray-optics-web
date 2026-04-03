@@ -28,6 +28,7 @@ export interface GlassMapActions {
   setAbbeNumCenterLine(l: AbbeNumCenterLine): void;
   setPartialDispersionType(t: PartialDispersionType): void;
   toggleCatalog(name: CatalogName): void;
+  enableCatalog(name: CatalogName): void;
   setSelectedGlass(glass: SelectedGlass | undefined): void;
 }
 
@@ -58,6 +59,13 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
       enabledCatalogs: {
         ...state.enabledCatalogs,
         [name]: !state.enabledCatalogs[name],
+      },
+    })),
+  enableCatalog: (name) =>
+    set((state) => ({
+      enabledCatalogs: {
+        ...state.enabledCatalogs,
+        [name]: true,
       },
     })),
   setSelectedGlass: (glass) => set({ selectedGlass: glass }),

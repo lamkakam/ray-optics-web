@@ -14,6 +14,20 @@ jest.mock("better-react-mathjax", () => ({
   MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 }));
 
+jest.mock("next/link", () => {
+  return function MockLink({
+    href,
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    );
+  };
+});
+
 const rawData: RawAllGlassCatalogsData = {
   Schott: {
     "N-BK7": {
@@ -138,5 +152,93 @@ describe("GlassMapView", () => {
       expect(screen.getByText(/select a glass/i)).toBeInTheDocument();
     });
     expect(screen.queryByTestId("mathjax-context")).not.toBeInTheDocument();
+  });
+
+  it("auto-selects a requested glass after data loads", async () => {
+    const proxy = makeProxy();
+    renderWithStore(
+      <GlassMapView
+        proxy={proxy}
+        isReady={true}
+        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+    });
+  });
+
+  it("re-enables the requested catalog when restoring a selected glass", async () => {
+    const proxy = makeProxy();
+    const store = makeStore();
+    act(() => {
+      store.getState().toggleCatalog("Schott");
+    });
+
+    renderWithStore(
+      <GlassMapView
+        proxy={proxy}
+        isReady={true}
+        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+      />,
+      store,
+    );
+
+    await waitFor(() => {
+      expect(store.getState().enabledCatalogs.Schott).toBe(true);
+    });
+  });
+
+  it("does not overwrite the current selection when the requested glass is missing", async () => {
+    const proxy = makeProxy();
+    const store = makeStore();
+    const { normalizeAllCatalogsData } = await import("@/shared/lib/types/glassMap");
+
+    act(() => {
+      store.getState().setCatalogsData(normalizeAllCatalogsData(rawData));
+      store.getState().setSelectedGlass({
+        catalogName: "Schott",
+        glassName: "N-BK7",
+        data: normalizeAllCatalogsData(rawData).Schott["N-BK7"],
+      });
+    });
+
+    renderWithStore(
+      <GlassMapView
+        proxy={proxy}
+        isReady={true}
+        routeIntent={{ source: "medium-selector", catalog: "Ohara", glass: "Missing" }}
+      />,
+      store,
+    );
+
+    expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+  });
+
+  it("renders a back-to-lens-editor link when opened from MediumSelectorModal", async () => {
+    const proxy = makeProxy();
+    renderWithStore(
+      <GlassMapView
+        proxy={proxy}
+        isReady={true}
+        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: "Back to lens editor" })).toHaveAttribute("href", "/");
+    });
+  });
+
+  it("does not render a back link without MediumSelectorModal route intent", async () => {
+    const proxy = makeProxy();
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/select a glass/i)).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("link", { name: "Back to lens editor" })).not.toBeInTheDocument();
   });
 });

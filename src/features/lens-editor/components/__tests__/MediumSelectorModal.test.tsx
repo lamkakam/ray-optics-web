@@ -3,6 +3,20 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MediumSelectorModal } from "@/features/lens-editor/components/MediumSelectorModal";
 
+jest.mock("next/link", () => {
+  return function MockLink({
+    href,
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    );
+  };
+});
+
 jest.mock("@/data/glass-catalogs.json", () => ({
   Schott: ["N-BK7", "N-SF6"],
   Ohara: ["S-FPL51"],
@@ -86,6 +100,48 @@ describe("MediumSelectorModal", () => {
     ).map((o) => o.value);
     expect(options).toContain("N-BK7");
     expect(options).toContain("N-SF6");
+  });
+
+  it("renders a glass map link for a selected catalog glass", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-BK7");
+
+    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+      "href",
+      "/glass-map?source=medium-selector&catalog=Schott&glass=N-BK7",
+    );
+  });
+
+  it("updates the glass map link when the selected manufacturer and glass change", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Ohara");
+
+    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+      "href",
+      "/glass-map?source=medium-selector&catalog=Ohara&glass=S-FPL51",
+    );
+  });
+
+  it("does not render the glass map link for Special media", () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+  });
+
+  it("hides the glass map link when Use model glass is checked", async () => {
+    render(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    expect(screen.getByRole("link", { name: "View in glass map" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+
+    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
   });
 
   it("calls onConfirm with selected medium and manufacturer", async () => {
