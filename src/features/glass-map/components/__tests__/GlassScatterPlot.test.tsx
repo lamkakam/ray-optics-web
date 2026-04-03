@@ -1,7 +1,10 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
+import {
+  GlassScatterPlot,
+  computeRenderedCircleStyle,
+} from "@/features/glass-map/components/GlassScatterPlot";
 import type { PlotPoint, SelectedGlass } from "@/shared/lib/types/glassMap";
 
 const glassData = {
@@ -30,6 +33,36 @@ const defaultProps = {
 beforeEach(() => jest.clearAllMocks());
 
 describe("GlassScatterPlot", () => {
+  it("keeps the apparent circle size constant while zooming by only moving screen coordinates", () => {
+    expect(
+      computeRenderedCircleStyle({
+        cx: 120,
+        cy: 180,
+        isSelected: false,
+        transformMatrix: { scaleX: 2, scaleY: 2, translateX: 30, translateY: -10 },
+      })
+    ).toEqual({
+      cx: 270,
+      cy: 350,
+      r: 4,
+      strokeWidth: 0,
+    });
+
+    expect(
+      computeRenderedCircleStyle({
+        cx: 120,
+        cy: 180,
+        isSelected: true,
+        transformMatrix: { scaleX: 2, scaleY: 2, translateX: 30, translateY: -10 },
+      })
+    ).toEqual({
+      cx: 270,
+      cy: 350,
+      r: 6,
+      strokeWidth: 1.5,
+    });
+  });
+
   it("renders an SVG element", () => {
     const { container } = render(<GlassScatterPlot {...defaultProps} />);
     expect(container.querySelector("svg")).toBeInTheDocument();

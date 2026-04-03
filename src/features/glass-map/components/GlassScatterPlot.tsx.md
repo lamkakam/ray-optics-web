@@ -17,7 +17,7 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 ## Implementation
 - `@visx/responsive` `<ParentSize>` fills container; renders `InnerPlot` when width/height > 0
 - `@visx/zoom` `<Zoom>` wraps SVG; `zoom.transformMatrix` drives zoom/pan
-- Circles placed inside `<g transform={zoom.toString()}>` under `<clipPath>` on data area
+- Circles are rendered at zoom-adjusted screen coordinates under the clip path, rather than inside a scaled parent `<g>`, so point positions follow zoom/pan while dot size stays constant on screen
 - Axes (`@visx/axis` `<AxisBottom>` + `<AxisLeft>`) outside zoom group with derived visible domain from transform matrix; use `stroke="currentColor"`, `tickStroke="currentColor"`, and `tickLabelProps={{ fill: "currentColor" }}` for dark mode support
 - Grid lines (`@visx/grid` `<GridRows>` + `<GridColumns>`) use `axisYScale`/`axisXScale` (zoom-aware), clipped to inner area, `stroke="currentColor"` with `strokeOpacity={0.12}`
 - Hover tooltip via `@visx/tooltip` `useTooltip<PlotPoint>()`; shows glass name and catalog name with solid background card (CSS variables `--tooltip-bg`, `--tooltip-fg`, `--tooltip-border`, `--tooltip-shadow` defined in `globals.css` for light/dark mode)
@@ -27,11 +27,14 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 - Crosshair lines: when `selectedGlass` is set and its matching `PlotPoint` is found in `points`, two dashed `<line>` elements are rendered inside the clip group at `axisXScale(point.x)` (vertical) and `axisYScale(point.y)` (horizontal); stroke uses CSS variable `--crosshair-stroke` (defined in `globals.css`)
 - `data-testid="glass-point"` on each circle for test selection
 - `data-testid="crosshair-h"` / `data-testid="crosshair-v"` on crosshair lines for test selection
-- Circle radius: 4 (default), 6 + stroke (selected)
+- Circle radius: 4 (default), 6 + stroke (selected); during zoom, points are re-positioned in screen coordinates while radius and stroke width remain fixed so the apparent size stays constant
 - x-axis domain reversed (high Abbe number on left, low on right — standard glass map convention)
 - y-axis: lower position = lower value (standard orientation). `visYMin`/`visYMax` derived from zoom transform so that the axis labels track the zoom-transformed data range correctly.
 - y-axis domain: data-driven by default; `yDomainMin`/`yDomainMax` props optionally enforce bounds (e.g. 1.4–2.0 for refractive index, omitted for partial dispersion where the tight data range should govern the axis)
 - Margins: `{ top: 20, right: 20, bottom: 50, left: 60 }`
+
+## Internal Helpers
+- `computeRenderedCircleStyle()` converts base plot coordinates into zoomed screen coordinates while keeping the circle radius and selected stroke width fixed in screen space
 
 ## Tooltip Theming
 CSS variables in `globals.css`:
