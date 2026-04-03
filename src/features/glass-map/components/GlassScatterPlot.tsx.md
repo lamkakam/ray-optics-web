@@ -17,11 +17,13 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 ## Implementation
 - `@visx/responsive` `<ParentSize>` fills container; renders `InnerPlot` when width/height > 0
 - `@visx/zoom` `<Zoom>` wraps SVG; `zoom.transformMatrix` drives zoom/pan
-- A wrapper `div` (`data-testid="glass-scatter-touch-surface"`) owns touch gesture handling for the whole plot area with `touch-action: none`, so drag/pinch still work when touches begin on circles or grid lines rather than only on the background rect
-- Mouse wheel zoom is attached to the transparent interaction rect (`data-testid="glass-scatter-interaction-surface"`) through a native `wheel` listener registered with `{ passive: false }`, so `zoom.handleWheel()` can safely call `preventDefault()` without browser passive-listener warnings
-- Desktop pan uses pointer events on the interaction rect for non-touch pointers: `pointerdown` starts `zoom.dragStart`, captures the pointer, `pointermove` forwards to `zoom.dragMove`, and `pointerup` / `pointercancel` / `lostpointercapture` end with `zoom.dragEnd`
-- Touch pan/pinch uses wrapper-relative gesture math and applies transforms through `zoom.setTranslate()` and `zoom.scale()`
-- While a desktop drag is active, the component temporarily sets `document.body.style.userSelect = "none"` and prevents `selectstart` at the document level so moving outside the plot cannot highlight surrounding text
+- `<Zoom>` uses a custom `pinchDelta` override so touch pinch updates apply damped `1.03` / `0.97` scale steps instead of the package default `1.1` / `0.9`, reducing pinch sensitivity on iPhone/mobile Safari
+- The main `<svg>` is the gesture owner via `zoom.containerRef` and `touchAction="none"`, matching the official VisX pattern more closely and preventing mobile Safari from falling back to page pinch-zoom
+- The plot-area interaction rect (`data-testid="glass-scatter-interaction-surface"`) is the single interaction target
+- `@visx/zoom` / `@use-gesture` own wheel and pinch handling through the SVG container, while the inner rect still handles direct drag start/move/end events for panning
+- Pan uses direct handlers on the interaction rect: mouse events always call `zoom.dragStart`, `zoom.dragMove`, and `zoom.dragEnd`, while touch events only forward single-touch gestures to drag handling
+- When a second touch is added, the interaction rect ends any active drag immediately so pinch-zoom can start without the plot jumping from a stale pan translation
+- `onMouseLeave` ends an active drag to avoid leaving the component stuck in a dragging state
 - Circles are rendered at zoom-adjusted screen coordinates under the clip path, rather than inside a scaled parent `<g>`, so point positions follow zoom/pan while dot size stays constant on screen
 - Axes (`@visx/axis` `<AxisBottom>` + `<AxisLeft>`) outside zoom group with derived visible domain from transform matrix; use `stroke="currentColor"`, `tickStroke="currentColor"`, and `tickLabelProps={{ fill: "currentColor" }}` for dark mode support
 - Grid lines (`@visx/grid` `<GridRows>` + `<GridColumns>`) use `axisYScale`/`axisXScale` (zoom-aware), clipped to inner area, `stroke="currentColor"` with `strokeOpacity={0.12}`
@@ -33,10 +35,11 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 - Touch interactions:
   - single-finger drag pans the plot
   - two-finger pinch zooms the plot
+  - transitioning from one finger to two fingers cancels the pan drag before pinch scaling begins
   - single-touch tap on a point selects it and shows the tooltip
 - Desktop interactions:
-  - mouse/pen drag keeps panning even after the pointer leaves the plot because the interaction surface owns the pointer capture until release/cancel
-  - text selection outside the chart is suppressed only while that drag is active
+  - mouse drag pans via `zoom.dragStart` / `zoom.dragMove` / `zoom.dragEnd`
+  - leaving the plot ends an active drag
 - Crosshair lines: when `selectedGlass` is set and its matching `PlotPoint` is found in `points`, two dashed `<line>` elements are rendered inside the clip group at `axisXScale(point.x)` (vertical) and `axisYScale(point.y)` (horizontal); stroke uses CSS variable `--crosshair-stroke` (defined in `globals.css`)
 - `data-testid="glass-point"` on each circle for test selection
 - `data-testid="crosshair-h"` / `data-testid="crosshair-v"` on crosshair lines for test selection
@@ -48,9 +51,8 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 
 ## Internal Helpers
 - `computeRenderedCircleStyle()` converts base plot coordinates into zoomed screen coordinates while keeping the circle radius and selected stroke width fixed in screen space
-- `getTouchDistance()` computes the distance between two touches for pinch scaling
-- `getTouchMidpoint()` computes the midpoint between two touches for pinch origin
-- `getPlotRelativePoint()` converts viewport touch coordinates into plot-local coordinates using the plot wrapper bounds and chart margins
+- `computePinchDelta()` translates VisX pinch state into damped zoom scale factors for touch pinch gestures
+- `isSingleTouchGesture()` centralizes the one-finger guard shared by point taps and plot pan touch handling
 
 ## Tooltip Theming
 CSS variables in `globals.css`:
@@ -65,6 +67,8 @@ CSS variables in `globals.css`:
 ## Key Notes
 - `@visx/responsive` requires `ResizeObserver` — mocked in test environment via `jest.setup.ts`
 - Module-level mock `src/__mocks__/@visx/responsive.tsx` provides fixed 800×600 size in tests
+- `@visx/axis` uses `@visx/text`, which relies on SVG text measurement APIs such as `getComputedTextLength()` in tests
+- Touch gesture behavior from `@use-gesture` is not modeled reliably in jsdom for SVG bubbling paths, so tests focus on the SVG gesture container contract rather than synthetic pinch execution
 - Crosshair lines are not rendered when the selected glass is not found in the current `points` array (e.g. its catalog is disabled)
 
 ## Usages
