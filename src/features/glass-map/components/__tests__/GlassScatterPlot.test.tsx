@@ -215,6 +215,35 @@ describe("GlassScatterPlot", () => {
     expect(screen.getByText("N-BK7")).toBeInTheDocument();
   });
 
+  it("selects a glass on single-touch start", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+    const circles = screen.getAllByTestId("glass-point");
+
+    fireEvent.touchStart(circles[0], { touches: [{ clientX: 100, clientY: 100 }] });
+
+    expect(defaultProps.onPointClick).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onPointClick).toHaveBeenCalledWith({
+      catalogName: "Schott",
+      glassName: "N-BK7",
+      data: glassData,
+    });
+  });
+
+  it("does not select a glass or show tooltip on multi-touch start", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+    const circles = screen.getAllByTestId("glass-point");
+
+    fireEvent.touchStart(circles[0], {
+      touches: [
+        { clientX: 100, clientY: 100 },
+        { clientX: 160, clientY: 100 },
+      ],
+    });
+
+    expect(defaultProps.onPointClick).not.toHaveBeenCalled();
+    expect(screen.queryByText("N-BK7")).not.toBeInTheDocument();
+  });
+
   it("renders crosshair lines when a glass is selected", () => {
     const selectedGlass: SelectedGlass = {
       catalogName: "Schott",

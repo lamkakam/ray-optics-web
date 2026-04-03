@@ -47,6 +47,10 @@ interface RenderedCircleStyle {
   readonly strokeWidth: number;
 }
 
+function isSingleTouchEvent(event: React.TouchEvent<SVGCircleElement>): boolean {
+  return event.touches.length === 1;
+}
+
 export function computeRenderedCircleStyle({
   cx,
   cy,
@@ -214,10 +218,6 @@ function InnerPlot({
                   width={innerWidth}
                   height={innerHeight}
                   fill="transparent"
-                  onMouseDown={zoom.dragStart}
-                  onMouseMove={zoom.dragMove}
-                  onMouseUp={zoom.dragEnd}
-                  onMouseLeave={zoom.dragEnd}
                   style={{
                     cursor: zoom.isDragging ? "grabbing" : "grab",
                   }}
@@ -281,6 +281,9 @@ function InnerPlot({
                         }}
                         onMouseLeave={hideTooltip}
                         onTouchStart={(e) => {
+                          if (!isSingleTouchEvent(e)) {
+                            return;
+                          }
                           const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
                           showTooltip({
                             tooltipData: point,
