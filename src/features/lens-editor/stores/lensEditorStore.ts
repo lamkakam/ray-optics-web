@@ -9,6 +9,12 @@ interface ModalState {
   rowId: string;
 }
 
+interface PendingMediumSelection {
+  rowId: string;
+  medium: string;
+  manufacturer: string;
+}
+
 export interface LensEditorState {
   rows: GridRow[];
   selectedRowId: string | undefined;
@@ -16,6 +22,7 @@ export interface LensEditorState {
   activeBottomDrawerTabId: string;
   bottomDrawerHeight: number | undefined;
   mediumModal: ModalState;
+  pendingMediumSelection: PendingMediumSelection | undefined;
   asphericalModal: ModalState;
   decenterModal: ModalState;
   committedOpticalModel: OpticalModel | undefined;
@@ -29,6 +36,8 @@ export interface LensEditorState {
   setActiveBottomDrawerTabId: (id: string) => void;
   setBottomDrawerHeight: (height: number) => void;
   openMediumModal: (rowId: string) => void;
+  updatePendingMediumSelection: (patch: Pick<PendingMediumSelection, "medium" | "manufacturer">) => void;
+  commitPendingMediumSelection: (selection?: Pick<PendingMediumSelection, "medium" | "manufacturer">) => void;
   closeMediumModal: () => void;
   openAsphericalModal: (rowId: string) => void;
   closeAsphericalModal: () => void;
@@ -42,6 +51,19 @@ const DEFAULT_ROWS: GridRow[] = [
   { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
 ];
 
+function derivePendingMediumSelection(rows: GridRow[], rowId: string): PendingMediumSelection | undefined {
+  const row = rows.find((item) => item.id === rowId);
+  if (row?.kind !== "surface") {
+    return undefined;
+  }
+
+  return {
+    rowId,
+    medium: row.medium,
+    manufacturer: row.manufacturer,
+  };
+}
+
 export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) => ({
   rows: DEFAULT_ROWS,
   selectedRowId: undefined,
@@ -49,6 +71,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   activeBottomDrawerTabId: "specs",
   bottomDrawerHeight: undefined,
   mediumModal: { open: false, rowId: "" },
+  pendingMediumSelection: undefined,
   asphericalModal: { open: false, rowId: "" },
   decenterModal: { open: false, rowId: "" },
   committedOpticalModel: undefined,
@@ -106,10 +129,71 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   setBottomDrawerHeight: (height) => set({ bottomDrawerHeight: height }),
 
   openMediumModal: (rowId) =>
-    set({ mediumModal: { open: true, rowId } }),
+    set((state) => ({
+      mediumModal: { open: true, rowId },
+      pendingMediumSelection: derivePendingMediumSelection(state.rows, rowId),
+    })),
+
+  updatePendingMediumSelection: (patch) =>
+    set((state) => {
+      if (state.pendingMediumSelection === undefined) {
+        return state;
+      }
+
+      return {
+        pendingMediumSelection: {
+          ...state.pendingMediumSelection,
+          ...patch,
+        },
+      };
+    }),
+
+  commitPendingMediumSelection: (selection) => {
+    const pendingSelection = get().pendingMediumSelection;
+    if (pendingSelection === undefined) {
+      if (selection === undefined) {
+        get().closeMediumModal();
+        return;
+      }
+
+      const rowId = get().mediumModal.rowId;
+      if (rowId !== "") {
+        get().updateRow(rowId, {
+          medium: selection.medium,
+          manufacturer: selection.manufacturer,
+        });
+      }
+      set({
+        mediumModal: { open: false, rowId: "" },
+        pendingMediumSelection: undefined,
+      });
+      return;
+    }
+
+    const confirmedSelection = selection ?? {
+      medium: pendingSelection.medium,
+      manufacturer: pendingSelection.manufacturer,
+    };
+    if (pendingSelection.rowId === "") {
+      get().closeMediumModal();
+      return;
+    }
+
+    get().updateRow(pendingSelection.rowId, {
+      medium: confirmedSelection.medium,
+      manufacturer: confirmedSelection.manufacturer,
+    });
+    set({
+      mediumModal: { open: false, rowId: "" },
+      pendingMediumSelection: undefined,
+    });
+  },
 
   closeMediumModal: () =>
-    set({ mediumModal: { open: false, rowId: "" } }),
+    set({
+      mediumModal: { open: false, rowId: "" },
+      pendingMediumSelection: undefined,
+    }),
 
   openAsphericalModal: (rowId) =>
     set({ asphericalModal: { open: true, rowId } }),

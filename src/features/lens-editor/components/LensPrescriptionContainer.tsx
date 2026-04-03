@@ -38,6 +38,7 @@ export function LensPrescriptionContainer({
   const rows = useStore(store, (s) => s.rows);
   const autoAperture = useStore(store, (s) => s.autoAperture);
   const mediumModal = useStore(store, (s) => s.mediumModal);
+  const pendingMediumSelection = useStore(store, (s) => s.pendingMediumSelection);
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
   const decenterModal = useStore(store, (s) => s.decenterModal);
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
@@ -161,9 +162,18 @@ export function LensPrescriptionContainer({
         isOpen={mediumModal.open}
         initialMedium={mediumRow?.kind === "surface" ? mediumRow.medium : "air"}
         initialManufacturer={mediumRow?.kind === "surface" ? mediumRow.manufacturer : ""}
+        selectedMedium={pendingMediumSelection?.medium}
+        selectedManufacturer={
+          pendingMediumSelection?.manufacturer === "" ? "Special" : pendingMediumSelection?.manufacturer
+        }
+        onSelectionChange={(medium, manufacturer) => {
+          store.getState().updatePendingMediumSelection({
+            medium,
+            manufacturer: manufacturer === "Special" ? "" : manufacturer,
+          });
+        }}
         onConfirm={(medium, manufacturer) => {
-          store.getState().updateRow(mediumModal.rowId, { medium, manufacturer });
-          store.getState().closeMediumModal();
+          store.getState().commitPendingMediumSelection({ medium, manufacturer });
         }}
         onClose={() => store.getState().closeMediumModal()}
       />

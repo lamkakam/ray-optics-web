@@ -34,7 +34,7 @@ function makeTestRows(): GridRow[] {
       label: "Default",
       curvatureRadius: 50,
       thickness: 5,
-      medium: "BK7",
+      medium: "N-BK7",
       manufacturer: "Schott",
       semiDiameter: 10,
     },
@@ -142,14 +142,21 @@ describe("lensEditorStore", () => {
   describe("modal toggles", () => {
     it("opens and closes medium modal", () => {
       const store = makeStore();
+      store.getState().setRows(makeTestRows());
       store.getState().openMediumModal("s1");
       expect(store.getState().mediumModal).toEqual({
         open: true,
         rowId: "s1",
       });
+      expect(store.getState().pendingMediumSelection).toEqual({
+        rowId: "s1",
+        medium: "N-BK7",
+        manufacturer: "Schott",
+      });
 
       store.getState().closeMediumModal();
       expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
+      expect(store.getState().pendingMediumSelection).toBeUndefined();
     });
 
     it("opens and closes aspherical modal", () => {
@@ -233,6 +240,64 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
       store.getState().addRowAfter("nonexistent");
       expect(store.getState().rows).toHaveLength(4);
+    });
+  });
+
+  describe("pendingMediumSelection", () => {
+    it("updates pending medium selection without mutating the confirmed row", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().openMediumModal("s1");
+
+      store.getState().updatePendingMediumSelection({
+        medium: "N-SF6",
+        manufacturer: "Schott",
+      });
+
+      expect(store.getState().pendingMediumSelection).toEqual({
+        rowId: "s1",
+        medium: "N-SF6",
+        manufacturer: "Schott",
+      });
+      const row = store.getState().rows.find((item) => item.id === "s1");
+      expect(row?.kind === "surface" ? row.medium : undefined).toBe("N-BK7");
+    });
+
+    it("commits pending medium selection into the confirmed row and clears draft state", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().openMediumModal("s1");
+      store.getState().updatePendingMediumSelection({
+        medium: "N-SF6",
+        manufacturer: "Schott",
+      });
+
+      store.getState().commitPendingMediumSelection();
+
+      const row = store.getState().rows.find((item) => item.id === "s1");
+      expect(row?.kind === "surface" ? row.medium : undefined).toBe("N-SF6");
+      expect(row?.kind === "surface" ? row.manufacturer : undefined).toBe("Schott");
+      expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
+      expect(store.getState().pendingMediumSelection).toBeUndefined();
+    });
+
+    it("re-seeds pending medium selection from confirmed values after cancel", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().openMediumModal("s1");
+      store.getState().updatePendingMediumSelection({
+        medium: "N-SF6",
+        manufacturer: "Schott",
+      });
+
+      store.getState().closeMediumModal();
+      store.getState().openMediumModal("s1");
+
+      expect(store.getState().pendingMediumSelection).toEqual({
+        rowId: "s1",
+        medium: "N-BK7",
+        manufacturer: "Schott",
+      });
     });
   });
 

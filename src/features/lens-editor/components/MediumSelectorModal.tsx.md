@@ -11,6 +11,9 @@ interface MediumSelectorModalProps {
   isOpen: boolean;
   initialMedium: string;
   initialManufacturer: string;
+  selectedMedium?: string;
+  selectedManufacturer?: string;
+  onSelectionChange?: (medium: string, manufacturer: string) => void;
   onConfirm: (medium: string, manufacturer: string) => void;
   onClose: () => void;
 }
@@ -23,6 +26,9 @@ interface MediumSelectorModalProps {
 | `isOpen` | `boolean` | Yes | Controls modal visibility |
 | `initialMedium` | `string` | Yes | Pre-selected medium on open |
 | `initialManufacturer` | `string` | Yes | Pre-selected manufacturer on open; empty string or `"air"` maps to `"Special"` |
+| `selectedMedium` | `string \| undefined` | No | Controlled catalog-glass medium value used when the parent persists an unconfirmed draft |
+| `selectedManufacturer` | `string \| undefined` | No | Controlled catalog-glass manufacturer value used with `selectedMedium` |
+| `onSelectionChange` | `(medium, manufacturer) => void` | No | Called whenever the catalog-glass draft changes |
 | `onConfirm` | `(medium, manufacturer) => void` | Yes | Called with the selected medium and manufacturer (empty string for Special) |
 | `onClose` | `() => void` | Yes | Cancel / close callback |
 
@@ -39,6 +45,8 @@ interface MediumSelectorModalProps {
 
 - When manufacturer changes to `"Special"`, medium resets to `"air"`.
 - When manufacturer changes to a catalog, the first glass in the list is selected if the current selection is not in the new catalog.
+- When `selectedMedium` / `selectedManufacturer` are provided, the catalog-glass dropdowns are controlled by the parent so unconfirmed choices can survive route changes.
+- `onSelectionChange` fires for catalog-glass changes and reports `"Special"` for the special manufacturer option.
 - `onConfirm` passes an empty string for manufacturer when `"Special"` is selected.
 - When `Use model glass` is unchecked and a catalog glass is selected, an inline `View in glass map` link appears below the glass dropdown.
 - The glass-map link targets `/glass-map` with query params `source=medium-selector`, `catalog=<manufacturer>`, and `glass=<medium>`.
