@@ -4,6 +4,7 @@ import React from "react";
 import { MathJax } from "better-react-mathjax";
 import { CATALOG_NAMES, CATALOG_COLOR_MAP } from "@/shared/lib/types/glassMap";
 import type { AbbeNumCenterLine, CatalogName, GlassMapPlotType, PartialDispersionType } from "@/shared/lib/types/glassMap";
+import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
 import { RadioInput } from "@/shared/components/primitives/RadioInput";
 import type { RadioOption } from "@/shared/components/primitives/RadioInput";
 
@@ -79,19 +80,21 @@ export function GlassMapControls({
         </legend>
         <div className="flex flex-col gap-1">
           {CATALOG_NAMES.map((name) => (
-            <label key={name} className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={enabledCatalogs[name]}
-                onChange={() => onToggleCatalog(name)}
-                aria-label={name}
-              />
-              <span
-                className="inline-block w-3 h-3 rounded-full"
-                style={{ backgroundColor: CATALOG_COLOR_MAP[name] }}
-              />
-              {name}
-            </label>
+            <CheckboxInput
+              key={name}
+              id={`catalog-${name}`}
+              ariaLabel={name}
+              checked={enabledCatalogs[name]}
+              label={name}
+              onChange={() => onToggleCatalog(name)}
+              contentBeforeLabel={(
+                <span
+                  data-testid={`catalog-dot-${name}`}
+                  className="inline-block w-3 h-3 rounded-full"
+                  style={{ backgroundColor: CATALOG_COLOR_MAP[name] }}
+                />
+              )}
+            />
           ))}
         </div>
       </fieldset>

@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";
 import type { CatalogName } from "@/shared/lib/types/glassMap";
+import { CATALOG_COLOR_MAP } from "@/shared/lib/types/glassMap";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
@@ -125,6 +126,12 @@ describe("GlassMapControls", () => {
     render(<GlassMapControls {...defaultProps} />);
     await userEvent.click(screen.getByRole("checkbox", { name: "Schott" }));
     expect(defaultProps.onToggleCatalog).toHaveBeenCalledWith("Schott");
+  });
+
+  it("renders the colored dot next to each catalog checkbox", () => {
+    render(<GlassMapControls {...defaultProps} />);
+    const dot = screen.getByTestId("catalog-dot-Schott");
+    expect(dot).toHaveStyle({ backgroundColor: CATALOG_COLOR_MAP.Schott });
   });
 
   it("does not wrap its content in its own MathJaxContext", () => {

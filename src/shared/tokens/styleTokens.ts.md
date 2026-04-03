@@ -16,19 +16,21 @@ Tokens are organized as:
 
 ```
 componentTokens
-  .<component>       // button, input, select, modal, header, label, chip, tooltip, tab, text, overlay
+  .global            // selected references to shared global tokens
+  .<component>       // button, checkbox, input, select, modal, header, label, chip, tooltip, tab, text, overlay
     .color           // text, background, border, focus-ring colors
     .size            // padding, font-size, width, margin tokens
     .style           // border-radius, font-weight, opacity, cursor, z-index tokens
 ```
 
-A private `globalTokens` object holds reusable primitives (e.g. `primaryColor`, `inputBorder`, `surfaceBg`). Component tokens reference these via a local alias `g`.
+A private `globalTokens` object holds reusable primitives (e.g. `primaryColor`, `inputBorder`, `surfaceBg`, shared hover classes). Component tokens reference these via a local alias `g`.
 
 ## Key Conventions
 
 - All values are literal Tailwind class strings (no dynamic generation).
 - Dark mode variants are included inline: e.g. `"bg-gray-100 dark:bg-gray-800"`.
 - Components import via `import { componentTokens as cx } from "@/shared/tokens/styleTokens"` and destructure the relevant sub-object.
+- `button.color.toggleHoverBgColor` and `checkbox.color.hoverBgColor` both reference the same promoted global hover token.
 - `overlay` tokens have `z-[200]` — the highest z-index in the stack, above `Modal`'s `z-50`.
 
 ## Usages

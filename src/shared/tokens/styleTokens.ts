@@ -19,6 +19,7 @@ const globalTokens = {
     surfaceBg: "bg-gray-100 dark:bg-gray-800",
     reverseSurfaceBg: "bg-gray-800 dark:bg-gray-100",
     focusRingColor: "focus:ring-blue-500",
+    toggleHoverBgColor: "hover:bg-blue-50 dark:hover:bg-gray-700",
     backdropBgColor: "bg-black/50",
     overlayPanelBgColor: "bg-white dark:bg-gray-900",
   },
@@ -37,6 +38,12 @@ const globalTokens = {
 const g = globalTokens;
 
 export const componentTokens = {
+  global: {
+    color: {
+      toggleHoverBgColor: g.color.toggleHoverBgColor,
+    },
+  },
+
   button: {
     color: {
       primaryBgColor: g.color.primaryColor,
@@ -52,7 +59,7 @@ export const componentTokens = {
       toggleBorderColor: g.color.inputBorder,
       toggleBgColor: "dark:bg-gray-800",
       toggleTextColor: g.color.secondaryText,
-      toggleHoverBgColor: "hover:bg-blue-50 dark:hover:bg-gray-700",
+      toggleHoverBgColor: g.color.toggleHoverBgColor,
       floatingBorderColor: g.color.inputBorder,
       floatingBgColor: "bg-white/80 dark:bg-gray-800/80",
       floatingTextColor: "text-gray-600 dark:text-gray-300",
@@ -190,6 +197,31 @@ export const componentTokens = {
     },
   },
 
+  checkbox: {
+    color: {
+      hoverBgColor: g.color.toggleHoverBgColor,
+      labelTextColor: g.color.secondaryText,
+      borderColor: g.color.inputBorder,
+      checkedColor: "text-blue-600",
+      focusRingColor: g.color.focusRingColor,
+    },
+    size: {
+      gap: "gap-2",
+      wrapperPaddingX: "px-2",
+      wrapperPaddingY: "py-1",
+      boxHeight: "h-4",
+      boxWidth: "w-4",
+      focusRingWidth: g.size.focusRingWidth,
+    },
+    style: {
+      wrapperBorderRadius: "rounded-lg",
+      transition: "transition",
+      cursor: "cursor-pointer",
+      shrink: "shrink-0",
+      borderRadius: "rounded",
+    },
+  },
+
   chip: {
     color: {
       borderColor: g.color.defaultBorder,
@@ -296,4 +328,3 @@ export const componentTokens = {
     },
   },
 } as const;
-
