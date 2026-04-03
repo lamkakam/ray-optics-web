@@ -52,6 +52,14 @@ describe("GlassScatterPlot", () => {
     addEventListenerSpy.mockRestore();
   });
 
+  it("sets touch-action none on the drag interaction surface", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+
+    const interactionSurface = screen.getByTestId("glass-scatter-interaction-surface");
+
+    expect(interactionSurface.style.touchAction).toBe("none");
+  });
+
   it("keeps the apparent circle size constant while zooming by only moving screen coordinates", () => {
     expect(
       computeRenderedCircleStyle({

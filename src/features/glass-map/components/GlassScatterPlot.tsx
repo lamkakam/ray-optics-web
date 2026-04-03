@@ -202,7 +202,15 @@ function InnerPlot({
 
                 {/* Zoom interaction rect */}
                 <rect
-                  ref={zoom.containerRef as React.Ref<SVGRectElement>}
+                  ref={(node) => {
+                    (
+                      zoom.containerRef as React.MutableRefObject<SVGRectElement | null>
+                    ).current = node;
+                    if (node !== null) {
+                      node.style.touchAction = "none";
+                    }
+                  }}
+                  data-testid="glass-scatter-interaction-surface"
                   width={innerWidth}
                   height={innerHeight}
                   fill="transparent"
@@ -210,7 +218,9 @@ function InnerPlot({
                   onMouseMove={zoom.dragMove}
                   onMouseUp={zoom.dragEnd}
                   onMouseLeave={zoom.dragEnd}
-                  style={{ cursor: zoom.isDragging ? "grabbing" : "grab" }}
+                  style={{
+                    cursor: zoom.isDragging ? "grabbing" : "grab",
+                  }}
                 />
 
                 {/* Grid lines and data points (clipped) */}
