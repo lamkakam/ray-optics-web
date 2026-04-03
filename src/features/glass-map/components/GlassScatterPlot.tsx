@@ -22,6 +22,47 @@ interface GlassScatterPlotProps {
 }
 
 const MARGIN = { top: 20, right: 20, bottom: 50, left: 60 };
+const DEFAULT_POINT_RADIUS = 4;
+const SELECTED_POINT_RADIUS = 6;
+const SELECTED_POINT_STROKE_WIDTH = 1.5;
+
+interface ZoomTransformMatrix {
+  readonly scaleX: number;
+  readonly scaleY: number;
+  readonly translateX: number;
+  readonly translateY: number;
+}
+
+interface ComputeRenderedCircleStyleArgs {
+  readonly cx: number;
+  readonly cy: number;
+  readonly isSelected: boolean;
+  readonly transformMatrix: ZoomTransformMatrix;
+}
+
+interface RenderedCircleStyle {
+  readonly cx: number;
+  readonly cy: number;
+  readonly r: number;
+  readonly strokeWidth: number;
+}
+
+export function computeRenderedCircleStyle({
+  cx,
+  cy,
+  isSelected,
+  transformMatrix,
+}: ComputeRenderedCircleStyleArgs): RenderedCircleStyle {
+  const baseRadius = isSelected ? SELECTED_POINT_RADIUS : DEFAULT_POINT_RADIUS;
+  const baseStrokeWidth = isSelected ? SELECTED_POINT_STROKE_WIDTH : 0;
+
+  return {
+    cx: cx * transformMatrix.scaleX + transformMatrix.translateX,
+    cy: cy * transformMatrix.scaleY + transformMatrix.translateY,
+    r: baseRadius,
+    strokeWidth: baseStrokeWidth,
+  };
+}
 
 interface InnerPlotProps extends GlassScatterPlotProps {
   readonly width: number;
@@ -191,48 +232,56 @@ function InnerPlot({
                   />
 
                   {/* Data points */}
-                  <g transform={zoom.toString()}>
-                    {points.map((point) => {
-                      const cx = xScale(point.x);
-                      const cy = yScale(point.y);
-                      const isSelected =
-                        selectedGlass?.glassName === point.glassName &&
-                        selectedGlass?.catalogName === point.catalogName;
-                      return (
-                        <circle
-                          key={`${point.catalogName}-${point.glassName}`}
-                          data-testid="glass-point"
-                          cx={cx}
-                          cy={cy}
-                          r={isSelected ? 6 : 4}
-                          fill={CATALOG_COLOR_MAP[point.catalogName]}
-                          stroke={isSelected ? "#000" : "none"}
-                          strokeWidth={isSelected ? 1.5 : 0}
-                          opacity={0.8}
-                          style={{ cursor: "pointer" }}
-                          onClick={() => handlePointClick(point)}
-                          onMouseEnter={(e) => {
-                            const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
-                            showTooltip({
-                              tooltipData: point,
-                              tooltipLeft: rect.right + 8,
-                              tooltipTop: rect.top,
-                            });
-                          }}
-                          onMouseLeave={hideTooltip}
-                          onTouchStart={(e) => {
-                            const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
-                            showTooltip({
-                              tooltipData: point,
-                              tooltipLeft: rect.right + 8,
-                              tooltipTop: rect.top,
-                            });
-                            handlePointClick(point);
-                          }}
-                        />
-                      );
-                    })}
-                  </g>
+                  {points.map((point) => {
+                    const isSelected =
+                      selectedGlass?.glassName === point.glassName &&
+                      selectedGlass?.catalogName === point.catalogName;
+                    const circleStyle = computeRenderedCircleStyle({
+                      cx: xScale(point.x),
+                      cy: yScale(point.y),
+                      isSelected,
+                      transformMatrix: {
+                        scaleX: sx,
+                        scaleY: sy,
+                        translateX: tx,
+                        translateY: ty,
+                      },
+                    });
+
+                    return (
+                      <circle
+                        key={`${point.catalogName}-${point.glassName}`}
+                        data-testid="glass-point"
+                        cx={circleStyle.cx}
+                        cy={circleStyle.cy}
+                        r={circleStyle.r}
+                        fill={CATALOG_COLOR_MAP[point.catalogName]}
+                        stroke={isSelected ? "#000" : "none"}
+                        strokeWidth={circleStyle.strokeWidth}
+                        opacity={0.8}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => handlePointClick(point)}
+                        onMouseEnter={(e) => {
+                          const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
+                          showTooltip({
+                            tooltipData: point,
+                            tooltipLeft: rect.right + 8,
+                            tooltipTop: rect.top,
+                          });
+                        }}
+                        onMouseLeave={hideTooltip}
+                        onTouchStart={(e) => {
+                          const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
+                          showTooltip({
+                            tooltipData: point,
+                            tooltipLeft: rect.right + 8,
+                            tooltipTop: rect.top,
+                          });
+                          handlePointClick(point);
+                        }}
+                      />
+                    );
+                  })}
 
                   {/* Crosshair lines for selected glass */}
                   {crosshairX !== undefined && crosshairY !== undefined && (
