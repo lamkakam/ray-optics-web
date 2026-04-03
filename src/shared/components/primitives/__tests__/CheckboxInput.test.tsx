@@ -107,10 +107,4 @@ describe("CheckboxInput", () => {
       })
     ).toBeInTheDocument();
   });
-
-  it("reuses the global hover token through button and checkbox tokens", () => {
-    expect(cx.global.color.toggleHoverBgColor).toBe("hover:bg-blue-50 dark:hover:bg-gray-700");
-    expect(cx.button.color.toggleHoverBgColor).toBe(cx.global.color.toggleHoverBgColor);
-    expect(cx.checkbox.color.hoverBgColor).toBe(cx.global.color.toggleHoverBgColor);
-  });
 });

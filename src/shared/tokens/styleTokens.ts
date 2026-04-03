@@ -38,12 +38,6 @@ const globalTokens = {
 const g = globalTokens;
 
 export const componentTokens = {
-  global: {
-    color: {
-      toggleHoverBgColor: g.color.toggleHoverBgColor,
-    },
-  },
-
   button: {
     color: {
       primaryBgColor: g.color.primaryColor,
