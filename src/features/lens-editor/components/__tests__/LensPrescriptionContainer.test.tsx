@@ -9,6 +9,20 @@ import { IMAGE_ROW_ID } from "@/shared/lib/types/gridTypes";
 import type { Surfaces, OpticalModel } from "@/shared/lib/types/opticalModel";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 
+jest.mock("next/link", () => {
+  return function MockLink({
+    href,
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & { readonly href: string }) {
+    return (
+      <a href={href} {...props}>
+        {children}
+      </a>
+    );
+  };
+});
+
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
 }));
@@ -21,7 +35,7 @@ const testSurfaces: Surfaces = {
       label: "Default",
       curvatureRadius: 50,
       thickness: 5,
-      medium: "BK7",
+      medium: "N-BK7",
       manufacturer: "Schott",
       semiDiameter: 10,
     },
@@ -223,6 +237,56 @@ describe("LensPrescriptionContainer", () => {
     expect(store.getState().decenterModal.open).toBe(false);
     const imageRow = store.getState().rows.find((r) => r.kind === "image");
     expect(imageRow?.kind === "image" && imageRow.decenter).toBeDefined();
+  });
+
+  it("keeps the unconfirmed glass selection after a remount while the medium modal stays open", async () => {
+    const { store, unmount } = renderLPC();
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    if (surfaceRow?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+
+    act(() => {
+      store.getState().openMediumModal(surfaceRow.id);
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+      "href",
+      "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
+    );
+    expect(surfaceRow.medium).toBe("N-BK7");
+
+    unmount();
+    renderLPC(store);
+
+    expect(screen.getByLabelText("Glass")).toHaveValue("N-SF6");
+    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+      "href",
+      "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
+    );
+    const reloadedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
+    expect(reloadedRow?.kind === "surface" ? reloadedRow.medium : undefined).toBe("N-BK7");
+  });
+
+  it("commits the pending glass selection when MediumSelectorModal confirm is clicked", async () => {
+    const { store } = renderLPC();
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    if (surfaceRow?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+
+    act(() => {
+      store.getState().openMediumModal(surfaceRow.id);
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const updatedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
+    expect(updatedRow?.kind === "surface" ? updatedRow.medium : undefined).toBe("N-SF6");
+    expect(store.getState().pendingMediumSelection).toBeUndefined();
+    expect(store.getState().mediumModal.open).toBe(false);
   });
 
   it("removes decenter from image row when Remove Decenter is clicked", async () => {

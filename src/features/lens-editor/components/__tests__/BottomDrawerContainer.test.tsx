@@ -1,7 +1,7 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createStore } from "zustand";
+import { createStore, type StoreApi } from "zustand";
 import { BottomDrawerContainer } from "@/features/lens-editor/components/BottomDrawerContainer";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
@@ -68,10 +68,11 @@ function makeProxy(): PyodideWorkerAPI {
   } as unknown as PyodideWorkerAPI;
 }
 
-function renderContainer(draggable: boolean) {
-  const { specsStore, lensStore } = makeStores();
+function renderContainer(draggable: boolean, lensStore?: StoreApi<LensEditorState>) {
+  const stores = makeStores();
+  const resolvedLensStore = lensStore ?? stores.lensStore;
   return render(
-    <LensEditorStoreContext.Provider value={lensStore}>
+    <LensEditorStoreContext.Provider value={resolvedLensStore}>
       <BottomDrawerContainer
         getOpticalModel={() => testModel}
         onImportJson={jest.fn()}
@@ -87,6 +88,19 @@ function renderContainer(draggable: boolean) {
 }
 
 describe("BottomDrawerContainer", () => {
+  beforeEach(() => {
+    Object.defineProperty(window, "innerHeight", {
+      configurable: true,
+      writable: true,
+      value: 1000,
+    });
+    Object.defineProperty(window, "PointerEvent", {
+      configurable: true,
+      writable: true,
+      value: MouseEvent,
+    });
+  });
+
   it("renders all three drawer tab labels", () => {
     renderContainer(true);
     expect(screen.getByRole("tab", { name: "System Specs" })).toBeInTheDocument();
@@ -109,5 +123,77 @@ describe("BottomDrawerContainer", () => {
     const tab = screen.getByRole("tab", { name: "Prescription" });
     await userEvent.click(tab);
     expect(screen.getByTestId("prescription-content")).toBeInTheDocument();
+  });
+
+  it("stores the active tab id in the lens editor slice when tabs change", async () => {
+    const lensStore = createStore<LensEditorState>(createLensEditorSlice);
+    renderContainer(true, lensStore);
+
+    await userEvent.click(screen.getByRole("tab", { name: "Focusing" }));
+
+    expect(lensStore.getState().activeBottomDrawerTabId).toBe("focusing");
+  });
+
+  it("restores the previously active tab after remounting with the same lens store", async () => {
+    const lensStore = createStore<LensEditorState>(createLensEditorSlice);
+    const user = userEvent.setup();
+    const initialRender = renderContainer(true, lensStore);
+
+    await user.click(screen.getByRole("tab", { name: "Prescription" }));
+    expect(screen.getByTestId("prescription-content")).toBeInTheDocument();
+
+    initialRender.unmount();
+    renderContainer(true, lensStore);
+
+    expect(screen.getByTestId("prescription-content")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Prescription" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("stores the committed drawer height in the lens editor slice", async () => {
+    const lensStore = createStore<LensEditorState>(createLensEditorSlice);
+    renderContainer(true, lensStore);
+
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    Object.defineProperty(handle, "setPointerCapture", {
+      configurable: true,
+      value: jest.fn(),
+    });
+
+    await waitFor(() => {
+      const drawer = handle.parentElement;
+      expect(drawer).not.toBeNull();
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+
+    fireEvent.pointerDown(handle, { clientY: 700, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientY: 500, pointerId: 1 });
+
+    expect(lensStore.getState().bottomDrawerHeight).toBeUndefined();
+
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(lensStore.getState().bottomDrawerHeight).toBe(600);
+  });
+
+  it("restores the previously committed drawer height after remounting with the same lens store", async () => {
+    const lensStore = createStore<LensEditorState>(createLensEditorSlice);
+    lensStore.getState().setBottomDrawerHeight(560);
+
+    const initialRender = renderContainer(true, lensStore);
+
+    await waitFor(() => {
+      const handle = screen.getByRole("separator", { name: "Resize drawer" });
+      const drawer = handle.parentElement;
+      expect(drawer).not.toBeNull();
+      expect(drawer).toHaveStyle({ height: "560px" });
+    });
+
+    initialRender.unmount();
+    renderContainer(true, lensStore);
+
+    const remountedHandle = screen.getByRole("separator", { name: "Resize drawer" });
+    const remountedDrawer = remountedHandle.parentElement;
+    expect(remountedDrawer).not.toBeNull();
+    expect(remountedDrawer).toHaveStyle({ height: "560px" });
   });
 });

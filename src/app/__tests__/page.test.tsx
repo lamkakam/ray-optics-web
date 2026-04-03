@@ -19,9 +19,11 @@ import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData } from "@/shared/lib/types/zernikeData";
 
 let mockSelectedSegment: string | null = null;
+let mockSearchParams = new URLSearchParams();
 
 jest.mock("next/navigation", () => ({
   useSelectedLayoutSegment: () => mockSelectedSegment,
+  useSearchParams: () => mockSearchParams,
 }));
 
 jest.mock("next/link", () => {
@@ -154,6 +156,7 @@ describe("app shell routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSelectedSegment = null;
+    mockSearchParams = new URLSearchParams();
     mockUsePyodide.mockReturnValue({
       proxy: mockProxy,
       isReady: true,
@@ -204,6 +207,16 @@ describe("app shell routes", () => {
 
     await waitFor(() => {
       expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("passes MediumSelectorModal route intent from search params into the glass map page", async () => {
+    mockSearchParams = new URLSearchParams("source=medium-selector&catalog=Schott&glass=N-BK7");
+
+    renderInAppShell(<GlassMapPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: "Back to lens editor" })).toHaveAttribute("href", "/");
     });
   });
 

@@ -18,6 +18,8 @@ interface TabsProps {
   actions?: React.ReactNode;
   showPanel?: boolean;
   panelClassName?: string;
+  activeTabId?: string;
+  onTabChange?: (tabId: string) => void;
 }
 ```
 
@@ -29,16 +31,20 @@ interface TabsProps {
 | `actions` | `React.ReactNode` | No | Extra element rendered at the far-right of the tab bar (e.g. collapse button) |
 | `showPanel` | `boolean` | No | When `false` the content panel is hidden. Defaults to `true` |
 | `panelClassName` | `string` | No | Applied to the `role="tabpanel"` div |
+| `activeTabId` | `string` | No | Controlled active tab id. When omitted, `Tabs` manages its own internal selection state |
+| `onTabChange` | `(tabId: string) => void` | No | Called whenever the user clicks a tab, in both controlled and uncontrolled modes |
 
 ## Internal State
 
-- `activeTab: string` — id of the currently selected tab, initialized to `tabs[0]?.id`.
+- `internalActiveTabId: string` — uncontrolled active tab id, initialized to `tabs[0]?.id`.
 
 ## Key Behaviors
 
 - Tab buttons carry `role="tab"`, `aria-selected`, and `aria-label`.
 - The content area carries `role="tabpanel"`.
 - Tab bar scrolls horizontally when tabs overflow.
+- In controlled mode, `activeTabId` decides the selected tab and clicks only emit `onTabChange`.
+- If `activeTabId` or the uncontrolled state points to a tab id that is no longer present, `Tabs` safely falls back to the first tab in `tabs`.
 
 ## Usages
 

@@ -15,10 +15,32 @@ interface TabsProps {
   readonly actions?: React.ReactNode;
   readonly showPanel?: boolean;
   readonly panelClassName?: string;
+  readonly activeTabId?: string;
+  readonly onTabChange?: (tabId: string) => void;
 }
 
-export function Tabs({ tabs, actions, showPanel = true, panelClassName }: TabsProps) {
-  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
+export function Tabs({
+  tabs,
+  actions,
+  showPanel = true,
+  panelClassName,
+  activeTabId,
+  onTabChange,
+}: TabsProps) {
+  const [internalActiveTabId, setInternalActiveTabId] = useState(tabs[0]?.id ?? "");
+  const resolvedActiveTabId = tabs.some((tab) => tab.id === activeTabId)
+    ? activeTabId
+    : undefined;
+  const activeTab = resolvedActiveTabId ?? (
+    tabs.some((tab) => tab.id === internalActiveTabId) ? internalActiveTabId : tabs[0]?.id ?? ""
+  );
+
+  const handleTabClick = (tabId: string) => {
+    if (resolvedActiveTabId === undefined) {
+      setInternalActiveTabId(tabId);
+    }
+    onTabChange?.(tabId);
+  };
 
   return (
     <>
@@ -36,7 +58,7 @@ export function Tabs({ tabs, actions, showPanel = true, panelClassName }: TabsPr
                   ? [cx.tab.color.activeBgColor, cx.tab.color.activeTextColor]
                   : [cx.tab.color.inactiveTextColor, cx.tab.color.inactiveHoverTextColor],
               )}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabClick(tab.id)}
             >
               {tab.label}
             </button>

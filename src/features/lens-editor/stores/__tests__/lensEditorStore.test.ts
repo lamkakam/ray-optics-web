@@ -34,7 +34,7 @@ function makeTestRows(): GridRow[] {
       label: "Default",
       curvatureRadius: 50,
       thickness: 5,
-      medium: "BK7",
+      medium: "N-BK7",
       manufacturer: "Schott",
       semiDiameter: 10,
     },
@@ -60,6 +60,16 @@ describe("lensEditorStore", () => {
       expect(rows).toHaveLength(2);
       expect(rows[0]).toMatchObject({ id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 });
       expect(rows[1]).toMatchObject({ id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 });
+    });
+
+    it('defaults the active bottom drawer tab to "specs"', () => {
+      const store = makeStore();
+      expect(store.getState().activeBottomDrawerTabId).toBe("specs");
+    });
+
+    it("defaults the bottom drawer height to undefined", () => {
+      const store = makeStore();
+      expect(store.getState().bottomDrawerHeight).toBeUndefined();
     });
   });
 
@@ -113,17 +123,40 @@ describe("lensEditorStore", () => {
     });
   });
 
+  describe("activeBottomDrawerTabId", () => {
+    it("updates the active bottom drawer tab id", () => {
+      const store = makeStore();
+      store.getState().setActiveBottomDrawerTabId("focusing");
+      expect(store.getState().activeBottomDrawerTabId).toBe("focusing");
+    });
+  });
+
+  describe("bottomDrawerHeight", () => {
+    it("updates the bottom drawer height", () => {
+      const store = makeStore();
+      store.getState().setBottomDrawerHeight(512);
+      expect(store.getState().bottomDrawerHeight).toBe(512);
+    });
+  });
+
   describe("modal toggles", () => {
     it("opens and closes medium modal", () => {
       const store = makeStore();
+      store.getState().setRows(makeTestRows());
       store.getState().openMediumModal("s1");
       expect(store.getState().mediumModal).toEqual({
         open: true,
         rowId: "s1",
       });
+      expect(store.getState().pendingMediumSelection).toEqual({
+        rowId: "s1",
+        medium: "N-BK7",
+        manufacturer: "Schott",
+      });
 
       store.getState().closeMediumModal();
       expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
+      expect(store.getState().pendingMediumSelection).toBeUndefined();
     });
 
     it("opens and closes aspherical modal", () => {
@@ -207,6 +240,64 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
       store.getState().addRowAfter("nonexistent");
       expect(store.getState().rows).toHaveLength(4);
+    });
+  });
+
+  describe("pendingMediumSelection", () => {
+    it("updates pending medium selection without mutating the confirmed row", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().openMediumModal("s1");
+
+      store.getState().updatePendingMediumSelection({
+        medium: "N-SF6",
+        manufacturer: "Schott",
+      });
+
+      expect(store.getState().pendingMediumSelection).toEqual({
+        rowId: "s1",
+        medium: "N-SF6",
+        manufacturer: "Schott",
+      });
+      const row = store.getState().rows.find((item) => item.id === "s1");
+      expect(row?.kind === "surface" ? row.medium : undefined).toBe("N-BK7");
+    });
+
+    it("commits pending medium selection into the confirmed row and clears draft state", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().openMediumModal("s1");
+      store.getState().updatePendingMediumSelection({
+        medium: "N-SF6",
+        manufacturer: "Schott",
+      });
+
+      store.getState().commitPendingMediumSelection();
+
+      const row = store.getState().rows.find((item) => item.id === "s1");
+      expect(row?.kind === "surface" ? row.medium : undefined).toBe("N-SF6");
+      expect(row?.kind === "surface" ? row.manufacturer : undefined).toBe("Schott");
+      expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
+      expect(store.getState().pendingMediumSelection).toBeUndefined();
+    });
+
+    it("re-seeds pending medium selection from confirmed values after cancel", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().openMediumModal("s1");
+      store.getState().updatePendingMediumSelection({
+        medium: "N-SF6",
+        manufacturer: "Schott",
+      });
+
+      store.getState().closeMediumModal();
+      store.getState().openMediumModal("s1");
+
+      expect(store.getState().pendingMediumSelection).toEqual({
+        rowId: "s1",
+        medium: "N-BK7",
+        manufacturer: "Schott",
+      });
     });
   });
 

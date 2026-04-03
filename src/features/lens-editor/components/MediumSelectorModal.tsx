@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
+import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
@@ -15,6 +16,9 @@ interface MediumSelectorModalProps {
   readonly isOpen: boolean;
   readonly initialMedium: string;
   readonly initialManufacturer: string;
+  readonly selectedMedium?: string;
+  readonly selectedManufacturer?: string;
+  readonly onSelectionChange?: (medium: string, manufacturer: string) => void;
   readonly onConfirm: (medium: string, manufacturer: string) => void;
   readonly onClose: () => void;
 }
@@ -46,14 +50,17 @@ export function MediumSelectorModal({
   isOpen,
   initialMedium,
   initialManufacturer,
+  selectedMedium,
+  selectedManufacturer,
+  onSelectionChange,
   onConfirm,
   onClose,
 }: MediumSelectorModalProps) {
   const initialUseModelGlass = isNumericString(initialMedium);
   const initialHasAbbeNumber = isNumericString(initialManufacturer);
   const initialMfr = isSpecialMedium(initialManufacturer) ? "Special" : initialManufacturer;
-  const [manufacturer, setManufacturer] = useState(initialMfr);
-  const [medium, setMedium] = useState(initialMedium);
+  const [localManufacturer, setLocalManufacturer] = useState(initialMfr);
+  const [localMedium, setLocalMedium] = useState(initialMedium);
   const [useModelGlass, setUseModelGlass] = useState(initialUseModelGlass);
   const [singleRefractiveIndex, setSingleRefractiveIndex] = useState(
     initialUseModelGlass && !initialHasAbbeNumber,
@@ -62,12 +69,34 @@ export function MediumSelectorModal({
     initialUseModelGlass ? initialMedium : "",
   );
   const [abbeNumber, setAbbeNumber] = useState(initialHasAbbeNumber ? initialManufacturer : "");
+  const manufacturer = selectedManufacturer ?? localManufacturer;
+  const medium = selectedMedium ?? localMedium;
 
   const isSpecial = manufacturer === "Special";
   const mediaOptions = isSpecial
     ? SPECIAL_MEDIA
     : (glassCatalogs as Record<string, string[]>)[manufacturer] ?? [];
   const showAbbeNumber = useModelGlass && !singleRefractiveIndex;
+
+  const updateCatalogSelection = (nextMedium: string, nextManufacturer: string) => {
+    setLocalMedium(nextMedium);
+    setLocalManufacturer(nextManufacturer);
+    onSelectionChange?.(nextMedium, nextManufacturer);
+  };
+
+  const glassMapHref = (() => {
+    if (useModelGlass || isSpecial || medium === "") {
+      return undefined;
+    }
+
+    const params = new URLSearchParams({
+      source: "medium-selector",
+      catalog: manufacturer,
+      glass: medium,
+    });
+
+    return `/glass-map?${params.toString()}`;
+  })();
 
   return (
     <Modal isOpen={isOpen} title="Select Medium" titleId="medium-modal-title" size="md">
@@ -96,14 +125,14 @@ export function MediumSelectorModal({
                 value={manufacturer}
                 onChange={(e) => {
                   const newMfr = e.target.value;
-                  setManufacturer(newMfr);
                   if (newMfr === "Special") {
-                    setMedium("air");
+                    updateCatalogSelection("air", newMfr);
                   } else {
                     const list = (glassCatalogs as Record<string, string[]>)[newMfr] ?? [];
-                    if (list.length > 0 && !list.includes(medium)) {
-                      setMedium(list[0]);
-                    }
+                    const nextMedium = list.length > 0 && !list.includes(medium)
+                      ? list[0]
+                      : medium;
+                    updateCatalogSelection(nextMedium, newMfr);
                   }
                 }}
               />
@@ -118,8 +147,15 @@ export function MediumSelectorModal({
                 aria-label="Glass"
                 options={mediaOptions.map((g) => ({ value: g, label: g }))}
                 value={medium}
-                onChange={(e) => setMedium(e.target.value)}
+                onChange={(e) => updateCatalogSelection(e.target.value, manufacturer)}
               />
+              {glassMapHref && (
+                <div className="mt-2">
+                  <InlineLink href={glassMapHref} aria-label="View in glass map">
+                    View in glass map
+                  </InlineLink>
+                </div>
+              )}
             </div>
           </>
         )}

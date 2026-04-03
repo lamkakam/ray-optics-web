@@ -30,6 +30,28 @@ describe("Tabs", () => {
     expect(screen.queryByText("Alpha content")).not.toBeInTheDocument();
   });
 
+  it("renders the controlled active tab when activeTabId is provided", () => {
+    render(<Tabs tabs={TABS} activeTabId="c" />);
+    expect(screen.getByText("Gamma content")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Gamma" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("calls onTabChange in controlled mode when a different tab is clicked", async () => {
+    const onTabChange = jest.fn();
+    render(<Tabs tabs={TABS} activeTabId="a" onTabChange={onTabChange} />);
+
+    await userEvent.click(screen.getByRole("tab", { name: "Beta" }));
+
+    expect(onTabChange).toHaveBeenCalledWith("b");
+    expect(screen.getByText("Alpha content")).toBeInTheDocument();
+  });
+
+  it("falls back to the first tab when controlled activeTabId does not exist", () => {
+    render(<Tabs tabs={TABS} activeTabId="missing" />);
+    expect(screen.getByText("Alpha content")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Alpha" })).toHaveAttribute("aria-selected", "true");
+  });
+
   it("active tab has aria-selected=true, others aria-selected=false", () => {
     render(<Tabs tabs={TABS} />);
     expect(screen.getByRole("tab", { name: "Alpha" })).toHaveAttribute("aria-selected", "true");

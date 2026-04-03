@@ -7,13 +7,21 @@ import { GlassMapControls } from "@/features/glass-map/components/GlassMapContro
 import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
 import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { SelectedGlass } from "@/shared/lib/types/glassMap";
+import { CATALOG_NAMES, type CatalogName, type SelectedGlass } from "@/shared/lib/types/glassMap";
 import { normalizeAllCatalogsData, computePlotPoints } from "@/shared/lib/types/glassMap";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
+  readonly routeIntent?: GlassMapRouteIntent;
+}
+
+export interface GlassMapRouteIntent {
+  readonly source: "medium-selector";
+  readonly catalog: string;
+  readonly glass: string;
 }
 
 function axisLabels(
@@ -33,7 +41,11 @@ function axisLabels(
   return { xLabel, yLabel: yLabelMap[partialDispersionType] };
 }
 
-export function GlassMapView({ proxy, isReady }: GlassMapViewProps) {
+function isCatalogName(value: string): value is CatalogName {
+  return CATALOG_NAMES.includes(value as CatalogName);
+}
+
+export function GlassMapView({ proxy, isReady, routeIntent }: GlassMapViewProps) {
   const store = useGlassMapStore();
   const catalogsData = useStore(store, (s) => s.catalogsData);
   const dataLoading = useStore(store, (s) => s.dataLoading);
@@ -52,6 +64,7 @@ export function GlassMapView({ proxy, isReady }: GlassMapViewProps) {
     setAbbeNumCenterLine,
     setPartialDispersionType,
     toggleCatalog,
+    enableCatalog,
     setSelectedGlass,
   } = store.getState();
 
@@ -71,6 +84,30 @@ export function GlassMapView({ proxy, isReady }: GlassMapViewProps) {
         setDataLoading(false);
       });
   }, [isReady, proxy, catalogsData, setCatalogsData, setDataLoading, setDataError]);
+
+  useEffect(() => {
+    if (catalogsData === undefined || routeIntent?.source !== "medium-selector") {
+      return;
+    }
+
+    if (!isCatalogName(routeIntent.catalog)) {
+      return;
+    }
+
+    const catalog = catalogsData[routeIntent.catalog];
+    const data = catalog[routeIntent.glass];
+
+    if (data === undefined) {
+      return;
+    }
+
+    enableCatalog(routeIntent.catalog);
+    setSelectedGlass({
+      catalogName: routeIntent.catalog,
+      glassName: routeIntent.glass,
+      data,
+    });
+  }, [catalogsData, enableCatalog, routeIntent, setSelectedGlass]);
 
   const points = useMemo(
     () =>
@@ -118,6 +155,13 @@ export function GlassMapView({ proxy, isReady }: GlassMapViewProps) {
       </div>
       {/* Controls + detail */}
       <div className="lg:w-[40%] overflow-y-auto border-l border-gray-200 dark:border-gray-700 flex flex-col">
+        {routeIntent?.source === "medium-selector" && (
+          <div className="px-4 pt-4">
+            <InlineLink href="/" aria-label="Back to lens editor">
+              Back to lens editor
+            </InlineLink>
+          </div>
+        )}
         <GlassMapControls
           plotType={plotType}
           abbeNumCenterLine={abbeNumCenterLine}

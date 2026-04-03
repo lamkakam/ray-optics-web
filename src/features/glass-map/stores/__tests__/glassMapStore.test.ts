@@ -158,4 +158,13 @@ describe("glassMapStore actions", () => {
     store.getState().setSelectedGlass(undefined);
     expect(store.getState().selectedGlass).toBeUndefined();
   });
+
+  it("enableCatalog turns a disabled catalog back on", () => {
+    const store = makeStore();
+    store.getState().toggleCatalog("Schott");
+
+    store.getState().enableCatalog("Schott");
+
+    expect(store.getState().enabledCatalogs.Schott).toBe(true);
+  });
 });

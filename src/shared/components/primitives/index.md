@@ -8,6 +8,7 @@ Generic, single-responsibility UI primitives. These are the base building blocks
 - [Chip.tsx](./Chip.tsx.md) — Small, compact tag/badge component
 - [ErrorModal.tsx](./ErrorModal.tsx.md) — Modal for displaying error messages
 - [Header.tsx](./Header.tsx.md) — Top navigation header
+- [InlineLink.tsx](./InlineLink.tsx.md) — Inline text-style navigation link
 - [Input.tsx](./Input.tsx.md) — Styled text input field
 - [Label.tsx](./Label.tsx.md) — Form label for inputs
 - [LoadingMask.tsx](./LoadingMask.tsx.md) — Mask component for loading states
