@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ParentSize } from "@visx/responsive";
 import { scaleLinear } from "@visx/scale";
 import { AxisBottom, AxisLeft } from "@visx/axis";
@@ -140,6 +140,9 @@ function InnerPlot({
 }: InnerPlotProps) {
   const touchSurfaceRef = useRef<HTMLDivElement | null>(null);
   const touchGestureRef = useRef<TouchGestureState | undefined>(undefined);
+  const activePointerIdRef = useRef<number | undefined>(undefined);
+  const previousUserSelectRef = useRef<string>("");
+  const [isDesktopDragging, setIsDesktopDragging] = useState(false);
   const innerWidth = Math.max(0, width - MARGIN.left - MARGIN.right);
   const innerHeight = Math.max(0, height - MARGIN.top - MARGIN.bottom);
 
@@ -192,6 +195,35 @@ function InnerPlot({
     return { left: rect.left, top: rect.top };
   }, []);
 
+  useEffect(() => {
+    if (isDesktopDragging) {
+      previousUserSelectRef.current = document.body.style.userSelect;
+      document.body.style.userSelect = "none";
+    } else {
+      document.body.style.userSelect = previousUserSelectRef.current;
+    }
+
+    return () => {
+      document.body.style.userSelect = previousUserSelectRef.current;
+    };
+  }, [isDesktopDragging]);
+
+  useEffect(() => {
+    if (!isDesktopDragging) {
+      return undefined;
+    }
+
+    const handleSelectStart = (event: Event) => {
+      event.preventDefault();
+    };
+
+    document.addEventListener("selectstart", handleSelectStart, true);
+
+    return () => {
+      document.removeEventListener("selectstart", handleSelectStart, true);
+    };
+  }, [isDesktopDragging]);
+
   return (
     <div
       ref={touchSurfaceRef}
@@ -208,6 +240,74 @@ function InnerPlot({
         initialTransformMatrix={initialTransform}
       >
         {(zoom) => {
+          const endDesktopDrag = (
+            event?: React.PointerEvent<SVGRectElement> | React.SyntheticEvent<SVGRectElement>
+          ) => {
+            const currentTarget = event?.currentTarget;
+
+            if (
+              currentTarget !== undefined &&
+              activePointerIdRef.current !== undefined &&
+              typeof currentTarget.releasePointerCapture === "function"
+            ) {
+              try {
+                currentTarget.releasePointerCapture(activePointerIdRef.current);
+              } catch {
+                // Ignore release errors if capture has already been cleared by the browser.
+              }
+            }
+
+            activePointerIdRef.current = undefined;
+            setIsDesktopDragging(false);
+            zoom.dragEnd();
+          };
+
+          const handlePointerDown = (event: React.PointerEvent<SVGRectElement>) => {
+            if (event.pointerType === "touch") {
+              return;
+            }
+
+            event.preventDefault();
+            activePointerIdRef.current = event.pointerId;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            setIsDesktopDragging(true);
+            zoom.dragStart(event);
+          };
+
+          const handlePointerMove = (event: React.PointerEvent<SVGRectElement>) => {
+            if (
+              activePointerIdRef.current === undefined ||
+              activePointerIdRef.current !== event.pointerId
+            ) {
+              return;
+            }
+
+            zoom.dragMove(event);
+          };
+
+          const handlePointerUp = (event: React.PointerEvent<SVGRectElement>) => {
+            if (activePointerIdRef.current !== event.pointerId) {
+              return;
+            }
+
+            endDesktopDrag(event);
+          };
+
+          const handlePointerCancel = (event: React.PointerEvent<SVGRectElement>) => {
+            if (activePointerIdRef.current !== event.pointerId) {
+              return;
+            }
+
+            endDesktopDrag(event);
+          };
+
+          const handleLostPointerCapture = (event: React.PointerEvent<SVGRectElement>) => {
+            if (activePointerIdRef.current !== event.pointerId) {
+              return;
+            }
+
+            endDesktopDrag(event);
+          };
           const beginPanTouch = (touch: ClientTouchPoint) => {
             const bounds = getSurfaceBounds();
             if (bounds === undefined) {
@@ -378,13 +478,14 @@ function InnerPlot({
                     width={innerWidth}
                     height={innerHeight}
                     fill="transparent"
-                    onMouseDown={zoom.dragStart}
-                    onMouseMove={zoom.dragMove}
-                    onMouseUp={zoom.dragEnd}
-                    onMouseLeave={zoom.dragEnd}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerCancel}
+                    onLostPointerCapture={handleLostPointerCapture}
                     onWheel={zoom.handleWheel}
                     style={{
-                      cursor: zoom.isDragging ? "grabbing" : "grab",
+                      cursor: isDesktopDragging ? "grabbing" : "grab",
                       touchAction: "none",
                     }}
                   />

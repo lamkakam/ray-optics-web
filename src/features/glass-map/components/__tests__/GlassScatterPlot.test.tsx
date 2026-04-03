@@ -33,7 +33,26 @@ const defaultProps = {
   onPointClick: jest.fn(),
 };
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  class MockPointerEvent extends MouseEvent {
+    pointerId: number;
+    pointerType: string;
+
+    constructor(type: string, props: MouseEventInit & { pointerId?: number; pointerType?: string } = {}) {
+      super(type, props);
+      this.pointerId = props.pointerId ?? 0;
+      this.pointerType = props.pointerType ?? "";
+    }
+  }
+
+  Object.defineProperty(window, "PointerEvent", {
+    configurable: true,
+    writable: true,
+    value: MockPointerEvent,
+  });
+  document.body.style.userSelect = "";
+});
 
 describe("GlassScatterPlot", () => {
   it("renders a touch gesture surface for pan and pinch interactions", () => {
@@ -51,6 +70,103 @@ describe("GlassScatterPlot", () => {
     const interactionSurface = screen.getByTestId("glass-scatter-interaction-surface");
 
     expect(interactionSurface.style.touchAction).toBe("none");
+  });
+
+  it("captures the pointer and suppresses text selection during desktop drag", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+
+    const interactionSurface = screen.getByTestId("glass-scatter-interaction-surface");
+    const setPointerCapture = jest.fn();
+
+    Object.defineProperty(interactionSurface, "setPointerCapture", {
+      configurable: true,
+      value: setPointerCapture,
+    });
+
+    fireEvent.pointerDown(interactionSurface, {
+      clientX: 140,
+      clientY: 180,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    expect(setPointerCapture).toHaveBeenCalledWith(1);
+    expect(document.body.style.userSelect).toBe("none");
+
+    const selectStartEvent = new Event("selectstart", {
+      bubbles: true,
+      cancelable: true,
+    });
+
+    expect(interactionSurface.dispatchEvent(selectStartEvent)).toBe(false);
+  });
+
+  it("keeps desktop drag active until pointer release even after leaving the plot", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+
+    const interactionSurface = screen.getByTestId("glass-scatter-interaction-surface");
+    const releasePointerCapture = jest.fn();
+
+    Object.defineProperty(interactionSurface, "setPointerCapture", {
+      configurable: true,
+      value: jest.fn(),
+    });
+    Object.defineProperty(interactionSurface, "releasePointerCapture", {
+      configurable: true,
+      value: releasePointerCapture,
+    });
+
+    fireEvent.pointerDown(interactionSurface, {
+      clientX: 140,
+      clientY: 180,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    expect(interactionSurface).toHaveStyle({ cursor: "grabbing" });
+
+    fireEvent.pointerLeave(interactionSurface, {
+      clientX: 145,
+      clientY: 185,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    expect(interactionSurface).toHaveStyle({ cursor: "grabbing" });
+
+    fireEvent.pointerUp(interactionSurface, {
+      clientX: 180,
+      clientY: 210,
+      pointerId: 1,
+      pointerType: "mouse",
+    });
+
+    expect(interactionSurface).toHaveStyle({ cursor: "grab" });
+    expect(releasePointerCapture).toHaveBeenCalledWith(1);
+    expect(document.body.style.userSelect).toBe("");
+  });
+
+  it("does not start the desktop pointer drag path for touch pointers", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+
+    const interactionSurface = screen.getByTestId("glass-scatter-interaction-surface");
+    const setPointerCapture = jest.fn();
+
+    Object.defineProperty(interactionSurface, "setPointerCapture", {
+      configurable: true,
+      value: setPointerCapture,
+    });
+
+    fireEvent.pointerDown(interactionSurface, {
+      clientX: 140,
+      clientY: 180,
+      pointerId: 1,
+      pointerType: "touch",
+    });
+
+    expect(setPointerCapture).not.toHaveBeenCalled();
+    expect(interactionSurface).toHaveStyle({ cursor: "grab" });
+    expect(document.body.style.userSelect).toBe("");
   });
 
   it("keeps the apparent circle size constant while zooming by only moving screen coordinates", () => {
