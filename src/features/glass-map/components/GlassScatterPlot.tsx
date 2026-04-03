@@ -202,10 +202,10 @@ function InnerPlot({
 
                 {/* Zoom interaction rect */}
                 <rect
+                  ref={zoom.containerRef as React.Ref<SVGRectElement>}
                   width={innerWidth}
                   height={innerHeight}
                   fill="transparent"
-                  onWheel={zoom.handleWheel}
                   onMouseDown={zoom.dragStart}
                   onMouseMove={zoom.dragMove}
                   onMouseUp={zoom.dragEnd}
