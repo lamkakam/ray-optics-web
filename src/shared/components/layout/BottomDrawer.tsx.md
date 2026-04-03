@@ -10,6 +10,8 @@ Resizable bottom panel that houses tabbed content. Supports pointer-based drag-t
 interface BottomDrawerProps {
   tabs: readonly TabItem[];
   draggable?: boolean;
+  activeTabId?: string;
+  onTabChange?: (tabId: string) => void;
 }
 ```
 
@@ -19,6 +21,8 @@ interface BottomDrawerProps {
 |------|------|----------|-------------|
 | `tabs` | `readonly TabItem[]` | Yes | Tab definitions passed directly to `Tabs` |
 | `draggable` | `boolean` | No | Enables drag-resize and collapse toggle. Defaults to `true` |
+| `activeTabId` | `string` | No | Optional controlled active tab id forwarded to `Tabs` |
+| `onTabChange` | `(tabId: string) => void` | No | Optional tab click callback forwarded to `Tabs` |
 
 ## Internal State
 
@@ -36,6 +40,7 @@ interface BottomDrawerProps {
 - Collapse toggle button is injected into `Tabs`'s `actions` slot.
 - Expanding from the collapsed state restores the default open height of `window.innerHeight * 0.4`.
 - When `draggable = false`, renders a simpler non-resizable bordered container.
+- Tab selection can be either uncontrolled or externally controlled through the forwarded `activeTabId` / `onTabChange` props.
 
 ## Usages
 

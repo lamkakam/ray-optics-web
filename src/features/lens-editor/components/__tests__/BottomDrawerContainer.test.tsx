@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createStore } from "zustand";
+import { createStore, type StoreApi } from "zustand";
 import { BottomDrawerContainer } from "@/features/lens-editor/components/BottomDrawerContainer";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
@@ -68,10 +68,11 @@ function makeProxy(): PyodideWorkerAPI {
   } as unknown as PyodideWorkerAPI;
 }
 
-function renderContainer(draggable: boolean) {
-  const { specsStore, lensStore } = makeStores();
+function renderContainer(draggable: boolean, lensStore?: StoreApi<LensEditorState>) {
+  const stores = makeStores();
+  const resolvedLensStore = lensStore ?? stores.lensStore;
   return render(
-    <LensEditorStoreContext.Provider value={lensStore}>
+    <LensEditorStoreContext.Provider value={resolvedLensStore}>
       <BottomDrawerContainer
         getOpticalModel={() => testModel}
         onImportJson={jest.fn()}
@@ -109,5 +110,29 @@ describe("BottomDrawerContainer", () => {
     const tab = screen.getByRole("tab", { name: "Prescription" });
     await userEvent.click(tab);
     expect(screen.getByTestId("prescription-content")).toBeInTheDocument();
+  });
+
+  it("stores the active tab id in the lens editor slice when tabs change", async () => {
+    const lensStore = createStore<LensEditorState>(createLensEditorSlice);
+    renderContainer(true, lensStore);
+
+    await userEvent.click(screen.getByRole("tab", { name: "Focusing" }));
+
+    expect(lensStore.getState().activeBottomDrawerTabId).toBe("focusing");
+  });
+
+  it("restores the previously active tab after remounting with the same lens store", async () => {
+    const lensStore = createStore<LensEditorState>(createLensEditorSlice);
+    const user = userEvent.setup();
+    const initialRender = renderContainer(true, lensStore);
+
+    await user.click(screen.getByRole("tab", { name: "Prescription" }));
+    expect(screen.getByTestId("prescription-content")).toBeInTheDocument();
+
+    initialRender.unmount();
+    renderContainer(true, lensStore);
+
+    expect(screen.getByTestId("prescription-content")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Prescription" })).toHaveAttribute("aria-selected", "true");
   });
 });

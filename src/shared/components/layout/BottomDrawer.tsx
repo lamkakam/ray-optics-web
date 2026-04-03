@@ -8,6 +8,8 @@ export type { TabItem };
 interface BottomDrawerProps {
   readonly tabs: readonly TabItem[];
   readonly draggable?: boolean;
+  readonly activeTabId?: string;
+  readonly onTabChange?: (tabId: string) => void;
 }
 
 const SNAP_COLLAPSED = 48;
@@ -18,7 +20,12 @@ function getDefaultOpenHeight(): number {
   return Math.round(window.innerHeight * DEFAULT_OPEN_HEIGHT_RATIO);
 }
 
-export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
+export function BottomDrawer({
+  tabs,
+  draggable = true,
+  activeTabId,
+  onTabChange,
+}: BottomDrawerProps) {
   const [height, setHeight] = useState(300);
 
   useEffect(() => {
@@ -68,7 +75,12 @@ export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
   if (!draggable) {
     return (
       <div className="flex flex-col border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-        <Tabs tabs={tabs} panelClassName="p-3" />
+        <Tabs
+          tabs={tabs}
+          panelClassName="p-3"
+          activeTabId={activeTabId}
+          onTabChange={onTabChange}
+        />
       </div>
     );
   }
@@ -104,6 +116,8 @@ export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
         }
         showPanel={!collapsed}
         panelClassName="flex-1 overflow-auto p-3"
+        activeTabId={activeTabId}
+        onTabChange={onTabChange}
       />
     </div>
   );

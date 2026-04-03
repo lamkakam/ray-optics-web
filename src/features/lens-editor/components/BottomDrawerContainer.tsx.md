@@ -39,7 +39,9 @@ Builds a `tabs` array via `useMemo` containing:
 2. **Prescription** — `<LensPrescriptionContainer .../>` with `isUpdateSystemDisabled={!isReady || computing}`
 3. **Focusing** — `<FocusingContainer .../>`
 
-Renders `<BottomDrawer tabs={tabs} draggable={draggable} />`.
+Reads `activeBottomDrawerTabId` from the lens editor Zustand store and passes it to `BottomDrawer` as a controlled tab value. On tab change, writes the selected tab id back into `setActiveBottomDrawerTabId`, allowing Lens Editor to restore the previously selected drawer tab after navigation.
+
+Renders `<BottomDrawer tabs={tabs} draggable={draggable} activeTabId={...} onTabChange={...} />`.
 
 ## Usages
 

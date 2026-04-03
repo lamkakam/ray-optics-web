@@ -76,6 +76,40 @@ describe("BottomDrawer", () => {
     expect(screen.getByText("Prescription content")).toBeInTheDocument();
   });
 
+  it("renders the controlled active tab content", () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
+          { id: "prescription", label: "Prescription", content: <div>Prescription content</div> },
+        ]}
+        activeTabId="prescription"
+      />
+    );
+
+    expect(screen.getByText("Prescription content")).toBeInTheDocument();
+  });
+
+  it("calls onTabChange when a tab is clicked in controlled mode", async () => {
+    const onTabChange = jest.fn();
+
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
+          { id: "prescription", label: "Prescription", content: <div>Prescription content</div> },
+        ]}
+        activeTabId="specs"
+        onTabChange={onTabChange}
+      />
+    );
+
+    await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
+
+    expect(onTabChange).toHaveBeenCalledWith("prescription");
+    expect(screen.getByText("Specs content")).toBeInTheDocument();
+  });
+
   it("renders a drag handle", () => {
     render(
       <BottomDrawer
@@ -232,6 +266,11 @@ describe("BottomDrawer with draggable=false", () => {
   it("switches tab content when another tab is clicked", async () => {
     render(<BottomDrawer tabs={tabs} draggable={false} />);
     await userEvent.click(screen.getByRole("tab", { name: "Prescription" }));
+    expect(screen.getByText("Prescription content")).toBeInTheDocument();
+  });
+
+  it("respects controlled tab selection in non-draggable mode", () => {
+    render(<BottomDrawer tabs={tabs} draggable={false} activeTabId="prescription" />);
     expect(screen.getByText("Prescription content")).toBeInTheDocument();
   });
 });

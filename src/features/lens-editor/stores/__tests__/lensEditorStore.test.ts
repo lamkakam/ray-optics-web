@@ -61,6 +61,11 @@ describe("lensEditorStore", () => {
       expect(rows[0]).toMatchObject({ id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 });
       expect(rows[1]).toMatchObject({ id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 });
     });
+
+    it('defaults the active bottom drawer tab to "specs"', () => {
+      const store = makeStore();
+      expect(store.getState().activeBottomDrawerTabId).toBe("specs");
+    });
   });
 
   describe("setRows", () => {
@@ -110,6 +115,14 @@ describe("lensEditorStore", () => {
       store.getState().setSelectedRowId("s1");
       store.getState().setSelectedRowId(undefined);
       expect(store.getState().selectedRowId).toBeUndefined();
+    });
+  });
+
+  describe("activeBottomDrawerTabId", () => {
+    it("updates the active bottom drawer tab id", () => {
+      const store = makeStore();
+      store.getState().setActiveBottomDrawerTabId("focusing");
+      expect(store.getState().activeBottomDrawerTabId).toBe("focusing");
     });
   });
 

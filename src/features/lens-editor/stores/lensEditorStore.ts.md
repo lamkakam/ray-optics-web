@@ -16,6 +16,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 | `rows` | `GridRow[]` | `[OBJECT_ROW, IMAGE_ROW]` |
 | `selectedRowId` | `string \| undefined` | `undefined` |
 | `autoAperture` | `boolean` | `false` |
+| `activeBottomDrawerTabId` | `string` | `"specs"` |
 | `mediumModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `asphericalModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `decenterModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
@@ -29,6 +30,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `deleteRow(id)` — removes the surface row with the given id; no-op for object/image rows. Clears `selectedRowId` if it matches the deleted row.
 - `setSelectedRowId(id)` — sets or clears the selected row.
 - `setAutoAperture(value)` — sets the auto-aperture flag.
+- `setActiveBottomDrawerTabId(id)` — records the currently selected Lens Editor bottom-drawer tab so the same tab can be restored after navigating away and back.
 - `openMediumModal(rowId)` / `closeMediumModal()` — open/close the glass medium picker modal, storing the target row id.
 - `openAsphericalModal(rowId)` / `closeAsphericalModal()` — open/close the aspherical coefficients modal.
 - `openDecenterModal(rowId)` / `closeDecenterModal()` — open/close the surface decenter modal.
@@ -39,6 +41,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - Object and image rows (`kind === "object"` / `kind === "image"`) cannot be deleted or added after (image guard in `addRowAfter`).
 - New rows inserted by `addRowAfter` are seeded with `generateRowId()` and default surface values: flat (`curvatureRadius: 0`), zero thickness, `"air"` medium, `semiDiameter: 1`.
 - Modal `rowId` is reset to `""` on close.
+- `activeBottomDrawerTabId` is feature-owned UI state. It defaults to `"specs"` and persists as long as the root store provider remains mounted.
 
 ## Dependencies
 
