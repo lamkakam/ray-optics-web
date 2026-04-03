@@ -18,7 +18,7 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 - `@visx/responsive` `<ParentSize>` fills container; renders `InnerPlot` when width/height > 0
 - `@visx/zoom` `<Zoom>` wraps SVG; `zoom.transformMatrix` drives zoom/pan
 - A wrapper `div` (`data-testid="glass-scatter-touch-surface"`) owns touch gesture handling for the whole plot area with `touch-action: none`, so drag/pinch still work when touches begin on circles or grid lines rather than only on the background rect
-- Mouse wheel zoom remains attached to the transparent interaction rect (`data-testid="glass-scatter-interaction-surface"`) using `zoom.handleWheel`
+- Mouse wheel zoom is attached to the transparent interaction rect (`data-testid="glass-scatter-interaction-surface"`) through a native `wheel` listener registered with `{ passive: false }`, so `zoom.handleWheel()` can safely call `preventDefault()` without browser passive-listener warnings
 - Desktop pan uses pointer events on the interaction rect for non-touch pointers: `pointerdown` starts `zoom.dragStart`, captures the pointer, `pointermove` forwards to `zoom.dragMove`, and `pointerup` / `pointercancel` / `lostpointercapture` end with `zoom.dragEnd`
 - Touch pan/pinch uses wrapper-relative gesture math and applies transforms through `zoom.setTranslate()` and `zoom.scale()`
 - While a desktop drag is active, the component temporarily sets `document.body.style.userSelect = "none"` and prevents `selectstart` at the document level so moving outside the plot cannot highlight surrounding text

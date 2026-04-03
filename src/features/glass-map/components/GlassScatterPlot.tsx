@@ -127,6 +127,64 @@ interface InnerPlotProps extends GlassScatterPlotProps {
   readonly height: number;
 }
 
+interface InteractionSurfaceProps {
+  readonly width: number;
+  readonly height: number;
+  readonly isDesktopDragging: boolean;
+  readonly onPointerDown: (event: React.PointerEvent<SVGRectElement>) => void;
+  readonly onPointerMove: (event: React.PointerEvent<SVGRectElement>) => void;
+  readonly onPointerUp: (event: React.PointerEvent<SVGRectElement>) => void;
+  readonly onPointerCancel: (event: React.PointerEvent<SVGRectElement>) => void;
+  readonly onLostPointerCapture: (event: React.PointerEvent<SVGRectElement>) => void;
+  readonly onWheel: (event: WheelEvent) => void;
+}
+
+function InteractionSurface({
+  width,
+  height,
+  isDesktopDragging,
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+  onPointerCancel,
+  onLostPointerCapture,
+  onWheel,
+}: InteractionSurfaceProps) {
+  const rectRef = useRef<SVGRectElement | null>(null);
+
+  useEffect(() => {
+    const rect = rectRef.current;
+    if (rect === null) {
+      return undefined;
+    }
+
+    rect.addEventListener("wheel", onWheel, { passive: false });
+
+    return () => {
+      rect.removeEventListener("wheel", onWheel);
+    };
+  }, [onWheel]);
+
+  return (
+    <rect
+      ref={rectRef}
+      data-testid="glass-scatter-interaction-surface"
+      width={width}
+      height={height}
+      fill="transparent"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onLostPointerCapture={onLostPointerCapture}
+      style={{
+        cursor: isDesktopDragging ? "grabbing" : "grab",
+        touchAction: "none",
+      }}
+    />
+  );
+}
+
 function InnerPlot({
   points,
   selectedGlass,
@@ -473,21 +531,16 @@ function InnerPlot({
                   </text>
 
                   {/* Zoom interaction rect */}
-                  <rect
-                    data-testid="glass-scatter-interaction-surface"
+                  <InteractionSurface
                     width={innerWidth}
                     height={innerHeight}
-                    fill="transparent"
+                    isDesktopDragging={isDesktopDragging}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
                     onPointerCancel={handlePointerCancel}
                     onLostPointerCapture={handleLostPointerCapture}
                     onWheel={zoom.handleWheel}
-                    style={{
-                      cursor: isDesktopDragging ? "grabbing" : "grab",
-                      touchAction: "none",
-                    }}
                   />
 
                   {/* Grid lines and data points (clipped) */}

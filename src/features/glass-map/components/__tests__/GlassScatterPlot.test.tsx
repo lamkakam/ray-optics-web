@@ -72,6 +72,25 @@ describe("GlassScatterPlot", () => {
     expect(interactionSurface.style.touchAction).toBe("none");
   });
 
+  it("registers wheel zoom with a non-passive native listener", () => {
+    const addEventListenerSpy = jest.spyOn(Element.prototype, "addEventListener");
+
+    render(<GlassScatterPlot {...defaultProps} />);
+
+    const wheelRegistrations = addEventListenerSpy.mock.calls.filter(
+      ([type, , options]) =>
+        type === "wheel" &&
+        typeof options === "object" &&
+        options !== null &&
+        "passive" in options
+    );
+
+    expect(wheelRegistrations.length).toBeGreaterThan(0);
+    expect(wheelRegistrations.some(([, , options]) => (options as AddEventListenerOptions).passive === false)).toBe(true);
+
+    addEventListenerSpy.mockRestore();
+  });
+
   it("captures the pointer and suppresses text selection during desktop drag", () => {
     render(<GlassScatterPlot {...defaultProps} />);
 
