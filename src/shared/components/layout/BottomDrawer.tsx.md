@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Resizable bottom panel that houses tabbed content. Supports pointer-based drag-to-resize with snap points at collapsed (48px), half (40% vh), and expanded (70% vh) heights. Can also run in non-draggable mode for simple layouts.
+Resizable bottom panel that houses tabbed content. Supports pointer-based drag-to-resize with a continuous height between collapsed (48px) and a viewport-based maximum (85vh). Can also run in non-draggable mode for simple layouts.
 
 ## Props
 
@@ -23,15 +23,18 @@ interface BottomDrawerProps {
 ## Internal State
 
 - `height: number` — current drawer height in pixels; initialized to `window.innerHeight * 0.4` via `useEffect`.
-- `collapsed: boolean` — whether the drawer is snapped to its minimum height.
+- `collapsed: boolean` — whether the drawer is currently collapsed to its minimum height.
 - `dragging: React.MutableRefObject<boolean>` — pointer capture flag.
 - `startY / startHeight: React.MutableRefObject<number>` — drag start coordinates.
 
 ## Key Behaviors
 
 - Pointer events use `setPointerCapture` to track drag outside the handle element.
-- On pointer-up, height snaps to the nearest of three snap points based on the fraction of viewport height.
+- While dragging, the drawer height updates continuously within a bounded range of 48px to 85% of the viewport height.
+- On pointer-up, dragging stops without snapping to preset heights.
+- Dragging close to the minimum height collapses the drawer and hides the active tab panel.
 - Collapse toggle button is injected into `Tabs`'s `actions` slot.
+- Expanding from the collapsed state restores the default open height of `window.innerHeight * 0.4`.
 - When `draggable = false`, renders a simpler non-resizable bordered container.
 
 ## Usages

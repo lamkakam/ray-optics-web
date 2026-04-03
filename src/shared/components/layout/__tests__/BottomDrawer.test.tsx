@@ -1,9 +1,43 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";
 
+const DEFAULT_WINDOW_HEIGHT = 1000;
+
+function setupWindowHeight(height: number = DEFAULT_WINDOW_HEIGHT) {
+  Object.defineProperty(window, "innerHeight", {
+    configurable: true,
+    writable: true,
+    value: height,
+  });
+}
+
+function getDrawerRoot(handle: HTMLElement): HTMLElement {
+  const drawerRoot = handle.parentElement;
+  if (!drawerRoot) {
+    throw new Error("Expected drawer root element");
+  }
+  return drawerRoot;
+}
+
+function mockPointerCapture(element: HTMLElement) {
+  Object.defineProperty(element, "setPointerCapture", {
+    configurable: true,
+    value: jest.fn(),
+  });
+}
+
 describe("BottomDrawer", () => {
+  beforeEach(() => {
+    setupWindowHeight();
+    Object.defineProperty(window, "PointerEvent", {
+      configurable: true,
+      writable: true,
+      value: MouseEvent,
+    });
+  });
+
   it("renders with tabs", () => {
     render(
       <BottomDrawer
@@ -62,6 +96,115 @@ describe("BottomDrawer", () => {
       />
     );
     expect(screen.getByRole("button", { name: "Toggle drawer" })).toBeInTheDocument();
+  });
+
+  it("initializes to the default open height", async () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+      />
+    );
+
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+  });
+
+  it("keeps the dragged height after pointer release instead of snapping", async () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+      />
+    );
+
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    const drawer = getDrawerRoot(handle);
+    mockPointerCapture(handle);
+
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+
+    fireEvent.pointerDown(handle, {
+      clientY: 700,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(handle, {
+      clientY: 600,
+      pointerId: 1,
+    });
+
+    expect(drawer).toHaveStyle({ height: "500px" });
+
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(drawer).toHaveStyle({ height: "500px" });
+  });
+
+  it("collapses when dragged down to the minimum height", async () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+      />
+    );
+
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    const drawer = getDrawerRoot(handle);
+    mockPointerCapture(handle);
+
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+
+    fireEvent.pointerDown(handle, {
+      clientY: 500,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(handle, {
+      clientY: 200,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(handle, {
+      clientY: 1300,
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(drawer).toHaveStyle({ height: "48px" });
+    expect(screen.queryByText("content")).not.toBeInTheDocument();
+  });
+
+  it("restores the default open height after collapsing with the toggle button", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+      />
+    );
+
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const toggleButton = screen.getByRole("button", { name: "Toggle drawer" });
+
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+
+    await user.click(toggleButton);
+    expect(drawer).toHaveStyle({ height: "48px" });
+
+    await user.click(toggleButton);
+    expect(drawer).toHaveStyle({ height: "400px" });
   });
 });
 

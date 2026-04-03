@@ -11,14 +11,18 @@ interface BottomDrawerProps {
 }
 
 const SNAP_COLLAPSED = 48;
-const SNAP_HALF = 0.4;
-const SNAP_EXPANDED = 0.7;
+const DEFAULT_OPEN_HEIGHT_RATIO = 0.4;
+const MAX_HEIGHT_RATIO = 0.85;
+
+function getDefaultOpenHeight(): number {
+  return Math.round(window.innerHeight * DEFAULT_OPEN_HEIGHT_RATIO);
+}
 
 export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
   const [height, setHeight] = useState(300);
 
   useEffect(() => {
-    setHeight(Math.round(window.innerHeight * SNAP_HALF)); // eslint-disable-line react-hooks/set-state-in-effect -- syncing with browser viewport API
+    setHeight(getDefaultOpenHeight()); // eslint-disable-line react-hooks/set-state-in-effect -- syncing with browser viewport API
   }, []);
   const [collapsed, setCollapsed] = useState(false);
   const dragging = useRef(false);
@@ -40,7 +44,7 @@ export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
     const delta = startY.current - e.clientY;
     const newHeight = Math.max(
       SNAP_COLLAPSED,
-      Math.min(startHeight.current + delta, window.innerHeight * 0.85)
+      Math.min(startHeight.current + delta, window.innerHeight * MAX_HEIGHT_RATIO)
     );
     setHeight(Math.round(newHeight));
     setCollapsed(newHeight <= SNAP_COLLAPSED + 10);
@@ -49,24 +53,11 @@ export function BottomDrawer({ tabs, draggable = true }: BottomDrawerProps) {
   const handlePointerUp = useCallback(() => {
     if (!dragging.current) return;
     dragging.current = false;
-    // snap to nearest
-    const vh = window.innerHeight;
-    const ratio = height / vh;
-    if (ratio < 0.15) {
-      setHeight(SNAP_COLLAPSED);
-      setCollapsed(true);
-    } else if (ratio < 0.55) {
-      setHeight(Math.round(vh * SNAP_HALF));
-      setCollapsed(false);
-    } else {
-      setHeight(Math.round(vh * SNAP_EXPANDED));
-      setCollapsed(false);
-    }
-  }, [height]);
+  }, []);
 
   const toggleCollapse = useCallback(() => {
     if (collapsed) {
-      setHeight(Math.round(window.innerHeight * SNAP_HALF));
+      setHeight(getDefaultOpenHeight());
       setCollapsed(false);
     } else {
       setHeight(SNAP_COLLAPSED);
