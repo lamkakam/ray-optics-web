@@ -4,6 +4,7 @@ import {
   GlassScatterPlot,
   computePinchDelta,
   computeRenderedCircleStyle,
+  isSingleTouchGesture,
 } from "@/features/glass-map/components/GlassScatterPlot";
 import type { PlotPoint, SelectedGlass } from "@/shared/lib/types/glassMap";
 
@@ -190,6 +191,12 @@ describe("GlassScatterPlot", () => {
       scaleX: 0.97,
       scaleY: 0.97,
     });
+  });
+
+  it("treats only one-finger touch gestures as drag interactions", () => {
+    expect(isSingleTouchGesture(1)).toBe(true);
+    expect(isSingleTouchGesture(2)).toBe(false);
+    expect(isSingleTouchGesture(3)).toBe(false);
   });
 
   it("respects explicit y-domain bounds for refractive-index plots", () => {

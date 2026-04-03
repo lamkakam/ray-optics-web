@@ -21,7 +21,8 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 - The main `<svg>` is the gesture owner via `zoom.containerRef` and `touchAction="none"`, matching the official VisX pattern more closely and preventing mobile Safari from falling back to page pinch-zoom
 - The plot-area interaction rect (`data-testid="glass-scatter-interaction-surface"`) is the single interaction target
 - `@visx/zoom` / `@use-gesture` own wheel and pinch handling through the SVG container, while the inner rect still handles direct drag start/move/end events for panning
-- Pan uses the same direct handlers as the official VisX example: `onTouchStart/onTouchMove/onTouchEnd` and `onMouseDown/onMouseMove/onMouseUp` call `zoom.dragStart`, `zoom.dragMove`, and `zoom.dragEnd`
+- Pan uses direct handlers on the interaction rect: mouse events always call `zoom.dragStart`, `zoom.dragMove`, and `zoom.dragEnd`, while touch events only forward single-touch gestures to drag handling
+- When a second touch is added, the interaction rect ends any active drag immediately so pinch-zoom can start without the plot jumping from a stale pan translation
 - `onMouseLeave` ends an active drag to avoid leaving the component stuck in a dragging state
 - Circles are rendered at zoom-adjusted screen coordinates under the clip path, rather than inside a scaled parent `<g>`, so point positions follow zoom/pan while dot size stays constant on screen
 - Axes (`@visx/axis` `<AxisBottom>` + `<AxisLeft>`) outside zoom group with derived visible domain from transform matrix; use `stroke="currentColor"`, `tickStroke="currentColor"`, and `tickLabelProps={{ fill: "currentColor" }}` for dark mode support
@@ -34,6 +35,7 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 - Touch interactions:
   - single-finger drag pans the plot
   - two-finger pinch zooms the plot
+  - transitioning from one finger to two fingers cancels the pan drag before pinch scaling begins
   - single-touch tap on a point selects it and shows the tooltip
 - Desktop interactions:
   - mouse drag pans via `zoom.dragStart` / `zoom.dragMove` / `zoom.dragEnd`
@@ -50,6 +52,7 @@ Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders
 ## Internal Helpers
 - `computeRenderedCircleStyle()` converts base plot coordinates into zoomed screen coordinates while keeping the circle radius and selected stroke width fixed in screen space
 - `computePinchDelta()` translates VisX pinch state into damped zoom scale factors for touch pinch gestures
+- `isSingleTouchGesture()` centralizes the one-finger guard shared by point taps and plot pan touch handling
 
 ## Tooltip Theming
 CSS variables in `globals.css`:

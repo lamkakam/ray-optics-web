@@ -55,8 +55,8 @@ interface PinchDeltaState {
 const PINCH_ZOOM_IN_SCALE = 1.03;
 const PINCH_ZOOM_OUT_SCALE = 0.97;
 
-function isSingleTouchEvent(event: React.TouchEvent<SVGCircleElement>): boolean {
-  return event.touches.length === 1;
+export function isSingleTouchGesture(touchCount: number): boolean {
+  return touchCount === 1;
 }
 
 export function computePinchDelta({ offset, lastOffset }: PinchDeltaState) {
@@ -198,6 +198,28 @@ function InnerPlot({
           const crosshairX = selectedPoint !== undefined ? axisXScale(selectedPoint.x) : undefined;
           const crosshairY = selectedPoint !== undefined ? axisYScale(selectedPoint.y) : undefined;
 
+          const handlePlotTouchStart = (event: React.TouchEvent<SVGRectElement>) => {
+            if (isSingleTouchGesture(event.touches.length)) {
+              zoom.dragStart(event);
+              return;
+            }
+
+            if (zoom.isDragging) {
+              zoom.dragEnd();
+            }
+          };
+
+          const handlePlotTouchMove = (event: React.TouchEvent<SVGRectElement>) => {
+            if (isSingleTouchGesture(event.touches.length)) {
+              zoom.dragMove(event);
+              return;
+            }
+
+            if (zoom.isDragging) {
+              zoom.dragEnd();
+            }
+          };
+
           return (
             <svg
               width={width}
@@ -237,8 +259,8 @@ function InnerPlot({
                   width={innerWidth}
                   height={innerHeight}
                   fill="transparent"
-                  onTouchStart={zoom.dragStart}
-                  onTouchMove={zoom.dragMove}
+                  onTouchStart={handlePlotTouchStart}
+                  onTouchMove={handlePlotTouchMove}
                   onTouchEnd={zoom.dragEnd}
                   onTouchCancel={zoom.dragEnd}
                   onMouseDown={zoom.dragStart}
@@ -313,7 +335,7 @@ function InnerPlot({
                         }}
                         onMouseLeave={hideTooltip}
                         onTouchStart={(e) => {
-                          if (!isSingleTouchEvent(e)) {
+                          if (!isSingleTouchGesture(e.touches.length)) {
                             return;
                           }
                           const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
