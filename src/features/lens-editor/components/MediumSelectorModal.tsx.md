@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. Provides manufacturer and glass dropdowns populated from the bundled `glass-catalogs.json` data file, plus a model-glass mode for refractive-index and Abbe-number entry.
+Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. Manufacturer and glass dropdowns are populated from the app-wide `GlassCatalogProvider`, which uses the same Pyodide-backed catalog source as the glass map.
 
 ## Props
 
@@ -40,17 +40,21 @@ interface MediumSelectorModalProps {
 - `singleRefractiveIndex: boolean` — whether the model glass should omit Abbe number.
 - `refractiveIndexAtDLine: string` — model-glass refractive index input.
 - `abbeNumber: string` — model-glass Abbe-number input.
+- `catalogs / error / isLoaded` — injected from `useGlassCatalogs()`.
 
 ## Key Behaviors
 
 - When manufacturer changes to `"Special"`, medium resets to `"air"`.
-- When manufacturer changes to a catalog, the first glass in the list is selected if the current selection is not in the new catalog.
+- Manufacturer options come from loaded provider catalogs with `"Special"` prefixed and empty catalogs omitted.
+- The `"Special"` glass list combines built-in non-glass media (`"air"`, `"REFL"`) with provider-backed special glasses such as `"CaF2"`.
+- When manufacturer changes to a catalog, the first glass in that provider-backed list is selected if the current selection is not in the new catalog.
 - When `selectedMedium` / `selectedManufacturer` are provided, the catalog-glass dropdowns are controlled by the parent so unconfirmed choices can survive route changes.
 - `onSelectionChange` fires for catalog-glass changes and reports `"Special"` for the special manufacturer option.
 - `onConfirm` passes an empty string for manufacturer when `"Special"` is selected.
 - When `Use model glass` is unchecked and a catalog glass is selected, an inline `View in glass map` link appears below the glass dropdown.
 - The glass-map link targets `/glass-map` with query params `source=medium-selector`, `catalog=<manufacturer>`, and `glass=<medium>`.
 - The glass-map link is hidden for `"Special"` media and for model-glass mode.
+- If catalog data is still loading or failed, the modal shows a status message and disables the manufacturer/glass selects instead of assuming static bundled data.
 - A shared compact `CheckboxInput` labelled `Use model glass` appears above the catalog controls and defaults to unchecked for non-numeric initial values.
 - When `Use model glass` is checked, the manufacturer and glass dropdowns are replaced by:
   - a `Single refractive index` checkbox rendered with the shared checkbox primitive

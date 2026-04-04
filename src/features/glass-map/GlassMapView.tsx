@@ -7,11 +7,11 @@ import { GlassMapControls } from "@/features/glass-map/components/GlassMapContro
 import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
 import type { GlassMapRouteIntent, GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
-import { readGlassCatalogs } from "@/features/glass-map/glassCatalogsResource";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { CatalogName, SelectedGlass } from "@/shared/lib/types/glassMap";
 import { computePlotPoints } from "@/shared/lib/types/glassMap";
+import { readGlassCatalogs } from "@/shared/lib/data/glassCatalogsResource";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;

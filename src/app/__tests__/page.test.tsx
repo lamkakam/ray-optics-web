@@ -230,7 +230,7 @@ describe("app shell routes", () => {
     renderInAppShell(<HomePage />);
 
     expect(screen.getByText("Initializing Ray Optics")).toBeInTheDocument();
-    expect(screen.getByText("Loading Pyodide and installing packages…")).toBeInTheDocument();
+    expect(screen.getByText("Loading Pyodide, installing packages, and preloading glass catalogs…")).toBeInTheDocument();
   });
 
   it("registers a beforeunload handler from the shared shell", () => {
@@ -250,7 +250,30 @@ describe("app shell routes", () => {
     expect(screen.getByRole("tab", { name: "System Specs" })).toBeInTheDocument();
   });
 
+  it("preloads glass catalog data while rendering the home route", async () => {
+    renderInAppShell(<HomePage />);
+
+    await waitFor(() => {
+      expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("renders the glass map on the glass-map route", async () => {
+    renderInAppShell(<GlassMapPage />);
+
+    await waitFor(() => {
+      expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("does not refetch glass catalog data when opening glass map after home preload", async () => {
+    const { unmount } = renderInAppShell(<HomePage />);
+
+    await waitFor(() => {
+      expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
     renderInAppShell(<GlassMapPage />);
 
     await waitFor(() => {
