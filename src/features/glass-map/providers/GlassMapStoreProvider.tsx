@@ -14,15 +14,13 @@ export const GlassMapStoreContext = createContext<ContextValue>(undefined);
 
 export interface GlassMapStoreProviderProps {
   readonly children: ReactNode;
-  readonly initialRouteIntent?: GlassMapRouteIntent;
 }
 
 export const GlassMapStoreProvider: React.FC<GlassMapStoreProviderProps> = ({
   children,
-  initialRouteIntent,
 }) => {
   const [store] = useState(() =>
-    createStore<GlassMapStore>(createGlassMapSlice(initialRouteIntent))
+    createStore<GlassMapStore>(createGlassMapSlice())
   );
 
   return (

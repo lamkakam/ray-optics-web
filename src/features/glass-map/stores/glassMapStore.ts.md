@@ -30,6 +30,7 @@ interface GlassMapRouteIntent {
 | `setCatalogsData(data)` | Store loaded catalog data; if a valid pending route intent exists, also enables that catalog and selects the requested glass before clearing the pending intent |
 | `setDataLoading(v)` | Set loading flag |
 | `setDataError(e)` | Set/clear error string |
+| `setRouteIntent(routeIntent)` | Apply or queue a route intent against the persistent store; if catalog data is already loaded, selection is restored immediately |
 | `setPlotType(t)` | Switch between refractiveIndex / partialDispersion |
 | `setAbbeNumCenterLine(l)` | Switch d/e spectral line |
 | `setPartialDispersionType(t)` | Switch P_F_d / P_F_e / P_g_F |
@@ -38,7 +39,7 @@ interface GlassMapRouteIntent {
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |
 
 ## Export
-- `createGlassMapSlice(initialRouteIntent?): StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice(initialRouteIntent))`
+- `createGlassMapSlice(initialRouteIntent?): StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice())` for the app-wide persistent store; `initialRouteIntent` remains optional for tests
 - `GlassMapStore = GlassMapState & GlassMapActions`
 
 ## Usages

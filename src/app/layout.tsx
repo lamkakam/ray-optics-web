@@ -7,6 +7,7 @@ import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEd
 import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { AnalysisDataStoreProvider } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
+import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import AppShell from "@/app/AppShell";
 
 export const metadata: Metadata = {
@@ -29,7 +30,9 @@ export default function RootLayout({
               <AnalysisPlotStoreProvider>
                 <AnalysisDataStoreProvider>
                   <LensLayoutImageStoreProvider>
-                    <AppShell>{children}</AppShell>
+                    <GlassMapStoreProvider>
+                      <AppShell>{children}</AppShell>
+                    </GlassMapStoreProvider>
                   </LensLayoutImageStoreProvider>
                 </AnalysisDataStoreProvider>
               </AnalysisPlotStoreProvider>

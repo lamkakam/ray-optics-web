@@ -1,10 +1,10 @@
 "use client";
 
-import React, { Suspense, useMemo } from "react";
+import React, { Suspense, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
-import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import type { GlassMapRouteIntent } from "@/features/glass-map/stores/glassMapStore";
+import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useAppShell } from "@/app/AppShellContext";
 
 interface GlassMapPageContentProps {
@@ -19,15 +19,14 @@ function GlassMapPageBody({
 }: GlassMapPageContentProps & {
   readonly routeIntent?: GlassMapRouteIntent;
 }) {
-  const storeKey = routeIntent
-    ? `${routeIntent.source}:${routeIntent.catalog}:${routeIntent.glass}`
-    : "glass-map-default";
+  const store = useGlassMapStore();
+  const { setRouteIntent } = store.getState();
 
-  return (
-    <GlassMapStoreProvider key={storeKey} initialRouteIntent={routeIntent}>
-      <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />
-    </GlassMapStoreProvider>
-  );
+  useEffect(() => {
+    setRouteIntent(routeIntent);
+  }, [routeIntent, setRouteIntent]);
+
+  return <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />;
 }
 
 function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {

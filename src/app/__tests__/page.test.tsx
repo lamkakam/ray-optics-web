@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useStore } from "zustand";
 import HomePage from "@/app/page";
 import AppShell from "@/app/AppShell";
 import GlassMapPage from "@/app/glass-map/page";
@@ -13,6 +14,7 @@ import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/Analysi
 import { AnalysisDataStoreProvider } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -152,6 +154,50 @@ function renderInAppShell(node: React.ReactNode) {
   return renderWithStores(<AppShell>{node}</AppShell>);
 }
 
+function StoreProbe() {
+  const store = useGlassMapStore();
+  const selectedGlass = useStore(store, (s) => s.selectedGlass);
+  return <div data-testid="selected-glass-name">{selectedGlass?.glassName ?? "none"}</div>;
+}
+
+function RouteSwitchHarness() {
+  const [route, setRoute] = useState<"glass" | "settings">("glass");
+  const store = useGlassMapStore();
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() =>
+          store.getState().setSelectedGlass({
+            catalogName: "Schott",
+            glassName: "N-BK7",
+            data: {
+              refractiveIndexD: 1.5168,
+              refractiveIndexE: 1.519,
+              abbeNumberD: 64.17,
+              abbeNumberE: 63.96,
+              partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+              dispersionCoeffKind: "Sellmeier3T",
+              dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+            },
+          })
+        }
+      >
+        Set glass
+      </button>
+      <button
+        type="button"
+        onClick={() => setRoute((current) => (current === "glass" ? "settings" : "glass"))}
+      >
+        Toggle route
+      </button>
+      <StoreProbe />
+      {route === "glass" ? <GlassMapPage /> : <div>Settings route</div>}
+    </>
+  );
+}
+
 describe("app shell routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -230,6 +276,21 @@ describe("app shell routes", () => {
 
     expect(() => renderInAppShell(<GlassMapPage />)).not.toThrow();
     expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
+  });
+
+  it("retains glass-map store state across route switches", async () => {
+    renderInAppShell(<RouteSwitchHarness />);
+
+    expect(screen.getByTestId("selected-glass-name")).toHaveTextContent("none");
+    await userEvent.click(screen.getByRole("button", { name: "Set glass" }));
+    expect(screen.getByTestId("selected-glass-name")).toHaveTextContent("N-BK7");
+
+    await userEvent.click(screen.getByRole("button", { name: "Toggle route" }));
+    expect(screen.getByText("Settings route")).toBeInTheDocument();
+    expect(screen.getByTestId("selected-glass-name")).toHaveTextContent("N-BK7");
+
+    await userEvent.click(screen.getByRole("button", { name: "Toggle route" }));
+    expect(screen.getByTestId("selected-glass-name")).toHaveTextContent("N-BK7");
   });
 
   it("renders the settings route content", () => {

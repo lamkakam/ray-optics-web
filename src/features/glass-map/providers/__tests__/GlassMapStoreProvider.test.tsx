@@ -54,14 +54,10 @@ describe("GlassMapStoreProvider", () => {
     expect(result.current).toBe(store);
   });
 
-  it("applies the initial route intent when catalog data is committed", async () => {
+  it("applies a route intent when catalog data is committed", async () => {
     const { result } = renderHook(() => useGlassMapStore(), {
       wrapper: ({ children }) => (
-        <GlassMapStoreProvider
-          initialRouteIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
-        >
-          {children}
-        </GlassMapStoreProvider>
+        <GlassMapStoreProvider>{children}</GlassMapStoreProvider>
       ),
     });
 
@@ -84,6 +80,14 @@ describe("GlassMapStoreProvider", () => {
       Ohara: {},
       Sumita: {},
     };
+
+    act(() => {
+      result.current.getState().setRouteIntent({
+        source: "medium-selector",
+        catalog: "Schott",
+        glass: "N-BK7",
+      });
+    });
 
     act(() => {
       result.current.getState().setCatalogsData(normalizeAllCatalogsData(rawData));

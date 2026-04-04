@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provides a single `StoreApi<GlassMapStore>` instance to the glass-map subtree via React context. The provider creates the store once per mount and can seed it with an initial route intent.
+Provides a single `StoreApi<GlassMapStore>` instance to the app tree via React context. The provider creates the store once per mount so glass-map state persists across route switches.
 
 ## Exports
 
@@ -14,7 +14,7 @@ Raw context object. Use only in tests to supply a pre-built store directly via `
 
 ### `GlassMapStoreProvider`
 ```tsx
-<GlassMapStoreProvider initialRouteIntent={routeIntent}>{children}</GlassMapStoreProvider>
+<GlassMapStoreProvider>{children}</GlassMapStoreProvider>
 ```
 Creates the store once per provider mount and supplies it to descendants.
 
@@ -24,20 +24,15 @@ const useGlassMapStore = (): StoreApi<GlassMapStore>
 ```
 Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `GlassMapStoreProvider`.
 
-## Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `children` | `ReactNode` | Provider subtree |
-| `initialRouteIntent` | `GlassMapRouteIntent \| undefined` | Optional one-time route intent passed into `createGlassMapSlice(initialRouteIntent)` |
-
 ## Usage
 
-In `app/glass-map/page.tsx` — mount the provider around the page view:
+In `app/layout.tsx` — mount the provider once:
 ```tsx
-<GlassMapStoreProvider key={storeKey} initialRouteIntent={routeIntent}>
-  <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />
-</GlassMapStoreProvider>
+<LensLayoutImageStoreProvider>
+  <GlassMapStoreProvider>
+    <AppShell>{children}</AppShell>
+  </GlassMapStoreProvider>
+</LensLayoutImageStoreProvider>
 ```
 
 Inside `GlassMapView` — access the store:

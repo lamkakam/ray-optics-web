@@ -31,6 +31,7 @@ export interface GlassMapActions {
   setCatalogsData(data: AllGlassCatalogsData): void;
   setDataLoading(v: boolean): void;
   setDataError(e: string | undefined): void;
+  setRouteIntent(routeIntent: GlassMapRouteIntent | undefined): void;
   setPlotType(t: GlassMapPlotType): void;
   setAbbeNumCenterLine(l: AbbeNumCenterLine): void;
   setPartialDispersionType(t: PartialDispersionType): void;
@@ -101,6 +102,39 @@ export const createGlassMapSlice =
     }),
   setDataLoading: (v) => set({ dataLoading: v }),
   setDataError: (e) => set({ dataError: e }),
+  setRouteIntent: (routeIntent) =>
+    set((state) => {
+      if (routeIntent === undefined) {
+        return { pendingRouteIntent: undefined };
+      }
+
+      if (
+        state.catalogsData === undefined ||
+        !isCatalogName(routeIntent.catalog)
+      ) {
+        return { pendingRouteIntent: routeIntent };
+      }
+
+      const catalog = state.catalogsData[routeIntent.catalog];
+      const selectedGlassData = catalog[routeIntent.glass];
+
+      if (selectedGlassData === undefined) {
+        return { pendingRouteIntent: undefined };
+      }
+
+      return {
+        enabledCatalogs: {
+          ...state.enabledCatalogs,
+          [routeIntent.catalog]: true,
+        },
+        selectedGlass: {
+          catalogName: routeIntent.catalog,
+          glassName: routeIntent.glass,
+          data: selectedGlassData,
+        },
+        pendingRouteIntent: undefined,
+      };
+    }),
   setPlotType: (t) => set({ plotType: t }),
   setAbbeNumCenterLine: (l) => set({ abbeNumCenterLine: l }),
   setPartialDispersionType: (t) => set({ partialDispersionType: t }),

@@ -104,6 +104,19 @@ describe("glassMapStore actions", () => {
     expect(store.getState().dataError).toBeUndefined();
   });
 
+  it("setRouteIntent stores a pending route intent before catalog data loads", () => {
+    const store = makeStore();
+    const routeIntent = {
+      source: "medium-selector" as const,
+      catalog: "Schott",
+      glass: "N-BK7",
+    };
+
+    store.getState().setRouteIntent(routeIntent);
+
+    expect(store.getState().pendingRouteIntent).toEqual(routeIntent);
+  });
+
   it("setPlotType sets partialDispersion", () => {
     const store = makeStore();
     store.getState().setPlotType("partialDispersion");
