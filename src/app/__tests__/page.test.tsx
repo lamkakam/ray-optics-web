@@ -15,6 +15,7 @@ import { AnalysisDataStoreProvider } from "@/features/analysis/providers/Analysi
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/glassCatalogsResource";
 import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -201,6 +202,7 @@ function RouteSwitchHarness() {
 describe("app shell routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    _resetGlassCatalogsResourceForTest();
     mockSelectedSegment = null;
     mockSearchParams = new URLSearchParams();
     mockUsePyodide.mockReturnValue({

@@ -4,7 +4,6 @@ import { createContext, type ReactNode, useContext, useState } from 'react';
 import { createStore, type StoreApi } from 'zustand';
 import {
   createGlassMapSlice,
-  type GlassMapRouteIntent,
   type GlassMapStore,
 } from '@/features/glass-map/stores/glassMapStore';
 
@@ -20,7 +19,7 @@ export const GlassMapStoreProvider: React.FC<GlassMapStoreProviderProps> = ({
   children,
 }) => {
   const [store] = useState(() =>
-    createStore<GlassMapStore>(createGlassMapSlice())
+    createStore<GlassMapStore>(createGlassMapSlice)
   );
 
   return (

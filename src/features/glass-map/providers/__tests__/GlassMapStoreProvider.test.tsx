@@ -43,7 +43,7 @@ describe("GlassMapStoreProvider", () => {
   });
 
   it("direct GlassMapStoreContext.Provider injection works (for other test files)", () => {
-    const store = createStore<GlassMapStore>(createGlassMapSlice());
+    const store = createStore<GlassMapStore>(createGlassMapSlice);
     const { result } = renderHook(() => useGlassMapStore(), {
       wrapper: ({ children }) => (
         <GlassMapStoreContext.Provider value={store}>
@@ -53,47 +53,17 @@ describe("GlassMapStoreProvider", () => {
     });
     expect(result.current).toBe(store);
   });
-
-  it("applies a route intent when catalog data is committed", async () => {
+  it("exposes only persistent UI state actions", () => {
     const { result } = renderHook(() => useGlassMapStore(), {
       wrapper: ({ children }) => (
         <GlassMapStoreProvider>{children}</GlassMapStoreProvider>
       ),
     });
 
-    const { normalizeAllCatalogsData } = await import("@/shared/lib/types/glassMap");
-    const rawData = {
-      Schott: {
-        "N-BK7": {
-          refractive_index_d: 1.5168,
-          refractive_index_e: 1.519,
-          abbe_number_d: 64.17,
-          abbe_number_e: 63.96,
-          partial_dispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
-          dispersion_coeff_kind: "Sellmeier3T" as const,
-          dispersion_coeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
-        },
-      },
-      CDGM: {},
-      Hikari: {},
-      Hoya: {},
-      Ohara: {},
-      Sumita: {},
-    };
-
-    act(() => {
-      result.current.getState().setRouteIntent({
-        source: "medium-selector",
-        catalog: "Schott",
-        glass: "N-BK7",
-      });
-    });
-
-    act(() => {
-      result.current.getState().setCatalogsData(normalizeAllCatalogsData(rawData));
-    });
-
-    expect(result.current.getState().enabledCatalogs.Schott).toBe(true);
-    expect(result.current.getState().selectedGlass?.glassName).toBe("N-BK7");
+    expect(result.current.getState().setPlotType).toBeDefined();
+    expect(result.current.getState().toggleCatalog).toBeDefined();
+    expect(result.current.getState().setSelectedGlass).toBeDefined();
+    expect((result.current.getState() as unknown as Record<string, unknown>).setRouteIntent).toBeUndefined();
+    expect((result.current.getState() as unknown as Record<string, unknown>).setCatalogsData).toBeUndefined();
   });
 });

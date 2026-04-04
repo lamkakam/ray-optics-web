@@ -1,7 +1,7 @@
 # GlassMapView.tsx
 
 ## Purpose
-Page-level container for the Glass Map feature. Fetches glass catalog data from the Pyodide worker, computes plot points, and orchestrates the three child components.
+Page-level container for the Glass Map feature. Reads glass catalog data through a Suspense resource, computes plot points, and orchestrates the three child components.
 
 ## Props
 | Prop | Type | Description |
@@ -20,17 +20,19 @@ interface GlassMapRouteIntent {
 
 ## Behavior
 - Obtains the `GlassMapStore` via `useGlassMapStore()` (provided by `GlassMapStoreProvider` in `app/glass-map/page.tsx`)
-- Fetches data via `proxy.getAllGlassCatalogsData()` on mount when `isReady=true` and `catalogsData` is not yet set
-- Normalizes raw data using `normalizeAllCatalogsData()`, stores in `GlassMapStore`
-- Computes `PlotPoint[]` via `computePlotPoints()` (memoized)
+- Returns a loading placeholder until `isReady=true` and `proxy` is available
+- Reads normalized catalog data via `readGlassCatalogs(proxy)`; loading is handled by Suspense and deduplicated per worker proxy
+- Computes `PlotPoint[]` via `computePlotPoints()`
 - Derives axis labels from `plotType`, `abbeNumCenterLine`, `partialDispersionType`
-- `routeIntent` is display-only in this component; selection restoration is handled by the store/provider during `setCatalogsData`
+- Treats `routeIntent` as a render-time override instead of synchronizing it into the store
+- If `routeIntent` resolves to a valid glass, that glass is shown initially and its catalog is forced visible in the controls
+- The route-intent override is dismissed after user interaction with the plot controls or plot selection, after which the persistent store state is authoritative again
 - When `routeIntent.source === "medium-selector"`, the back link is shown above the controls panel
 - Renders a `Back to lens editor` inline link above the controls panel when opened from `MediumSelectorModal`
 
 ## Layout
-- **Error state** (`dataError`): centered red error message (checked first, so a fetch failure always surfaces even when `catalogsData` is still `undefined`)
-- **Loading state** (`!isReady || dataLoading || catalogsData === undefined`): centered loading message
+- **Error state** (`readGlassCatalogs(proxy).error`): centered red error message
+- **Loading state** (`!isReady || !proxy` in this component, or Suspense fallback while the resource promise is pending): centered loading message
 - **Loaded**: `flex-col lg:flex-row h-full`
   - Left: flex-1 (lg: 60%) — `GlassScatterPlot`
 - Right: overflow-y-auto (lg: 40%) — `GlassMapControls` + `GlassDetailPanel`
@@ -54,23 +56,23 @@ MathJax context is provided by `app/AppShell.tsx`. This component does not own a
 
 ## Usages
 
-`GlassMapStoreProvider` is mounted in `app/glass-map/page.tsx`:
-```tsx
-<GlassMapStoreProvider key={storeKey} initialRouteIntent={routeIntent}>
-  <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />
-</GlassMapStoreProvider>
-```
-
 In `app/glass-map/page.tsx`:
 ```tsx
-<GlassMapView proxy={proxy} isReady={isReady} />
+<GlassMapView
+  key={routeIntentKey}
+  proxy={proxy}
+  isReady={isReady}
+  routeIntent={routeIntent}
+/>
 ```
 
 In tests — inject store via context:
 ```tsx
 render(
   <GlassMapStoreContext.Provider value={store}>
-    <GlassMapView proxy={proxy} isReady={isReady} />
+    <Suspense fallback={<div>Loading glass catalog data…</div>}>
+      <GlassMapView proxy={proxy} isReady={isReady} />
+    </Suspense>
   </GlassMapStoreContext.Provider>
 );
 ```

@@ -1,10 +1,9 @@
 "use client";
 
-import React, { Suspense, useEffect, useMemo } from "react";
+import React, { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
 import type { GlassMapRouteIntent } from "@/features/glass-map/stores/glassMapStore";
-import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useAppShell } from "@/app/AppShellContext";
 
 interface GlassMapPageContentProps {
@@ -12,21 +11,15 @@ interface GlassMapPageContentProps {
   readonly isReady: boolean;
 }
 
-function GlassMapPageBody({
-  proxy,
-  isReady,
-  routeIntent,
-}: GlassMapPageContentProps & {
-  readonly routeIntent?: GlassMapRouteIntent;
-}) {
-  const store = useGlassMapStore();
-  const { setRouteIntent } = store.getState();
-
-  useEffect(() => {
-    setRouteIntent(routeIntent);
-  }, [routeIntent, setRouteIntent]);
-
-  return <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />;
+function GlassMapLoadingFallback({
+  proxy: _proxy,
+  isReady: _isReady,
+}: GlassMapPageContentProps) {
+  return (
+    <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+      Loading glass catalog data…
+    </div>
+  );
 }
 
 function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {
@@ -42,9 +35,19 @@ function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {
 
     return { source, catalog, glass };
   }, [searchParams]);
+  const routeIntentKey = routeIntent === undefined
+    ? "default"
+    : `${routeIntent.source}:${routeIntent.catalog}:${routeIntent.glass}`;
 
   return (
-    <GlassMapPageBody proxy={proxy} isReady={isReady} routeIntent={routeIntent} />
+    <Suspense fallback={<GlassMapLoadingFallback proxy={proxy} isReady={isReady} />}>
+      <GlassMapView
+        key={routeIntentKey}
+        proxy={proxy}
+        isReady={isReady}
+        routeIntent={routeIntent}
+      />
+    </Suspense>
   );
 }
 
@@ -52,7 +55,7 @@ export default function GlassMapPage() {
   const { proxy, isReady } = useAppShell();
 
   return (
-    <Suspense fallback={<GlassMapPageBody proxy={proxy} isReady={isReady} />}>
+    <Suspense fallback={<GlassMapLoadingFallback proxy={proxy} isReady={isReady} />}>
       <GlassMapPageContent proxy={proxy} isReady={isReady} />
     </Suspense>
   );

@@ -22,7 +22,7 @@ Creates the store once per provider mount and supplies it to descendants.
 ```ts
 const useGlassMapStore = (): StoreApi<GlassMapStore>
 ```
-Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `GlassMapStoreProvider`.
+Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `GlassMapStoreProvider`.
 
 ## Usage
 
@@ -41,8 +41,8 @@ import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStorePr
 import { useStore } from "zustand";
 // ...
 const store = useGlassMapStore();
-const catalogsData = useStore(store, (s) => s.catalogsData);
-store.getState().setCatalogsData(data);
+const plotType = useStore(store, (s) => s.plotType);
+store.getState().setPlotType("partialDispersion");
 ```
 
 In tests — inject a pre-built store:

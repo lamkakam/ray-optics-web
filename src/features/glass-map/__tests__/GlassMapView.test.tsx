@@ -1,11 +1,13 @@
-import React, { act } from "react";
+import React, { Suspense, act } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand/vanilla";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
 import { GlassMapStoreContext } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
+import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/glassCatalogsResource";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
@@ -70,10 +72,8 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
   };
 }
 
-function makeStore(
-  initialRouteIntent?: Parameters<typeof createGlassMapSlice>[0]
-) {
-  return createStore<GlassMapStore>(createGlassMapSlice(initialRouteIntent));
+function makeStore() {
+  return createStore<GlassMapStore>(createGlassMapSlice);
 }
 
 function renderWithStore(
@@ -82,12 +82,17 @@ function renderWithStore(
 ) {
   return render(
     <GlassMapStoreContext.Provider value={store}>
-      {ui}
+      <Suspense fallback={<div>Loading glass catalog data…</div>}>
+        {ui}
+      </Suspense>
     </GlassMapStoreContext.Provider>
   );
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  _resetGlassCatalogsResourceForTest();
+});
 
 describe("GlassMapView", () => {
   it("shows loading indicator when isReady=false", () => {
@@ -110,15 +115,32 @@ describe("GlassMapView", () => {
     });
   });
 
-  it("does not call getAllGlassCatalogsData if data already loaded", async () => {
+  it("dedupes getAllGlassCatalogsData in React.StrictMode", async () => {
     const proxy = makeProxy();
-    const store = makeStore();
-    // pre-populate store
-    const { normalizeAllCatalogsData } = await import("@/shared/lib/types/glassMap");
-    store.getState().setCatalogsData(normalizeAllCatalogsData(rawData));
-    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, store);
+    renderWithStore(
+      <React.StrictMode>
+        <GlassMapView proxy={proxy} isReady={true} />
+      </React.StrictMode>
+    );
+
+    await waitFor(() => {
+      expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("does not call getAllGlassCatalogsData again if the resource is already loaded", async () => {
+    const proxy = makeProxy();
+    const { unmount } = renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
+
+    await waitFor(() => {
+      expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
+
     await new Promise((r) => setTimeout(r, 50));
-    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
+    expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
   });
 
   it("shows error message when data loading fails", async () => {
@@ -169,7 +191,7 @@ describe("GlassMapView", () => {
         isReady={true}
         routeIntent={routeIntent}
       />,
-      makeStore(routeIntent),
+      makeStore(),
     );
 
     await waitFor(() => {
@@ -184,7 +206,7 @@ describe("GlassMapView", () => {
       catalog: "Schott",
       glass: "N-BK7",
     };
-    const store = makeStore(routeIntent);
+    const store = makeStore();
     act(() => {
       store.getState().toggleCatalog("Schott");
     });
@@ -199,21 +221,27 @@ describe("GlassMapView", () => {
     );
 
     await waitFor(() => {
-      expect(store.getState().enabledCatalogs.Schott).toBe(true);
+      expect(screen.getByRole("checkbox", { name: "Schott" })).toBeChecked();
     });
   });
 
   it("does not overwrite the current selection when the requested glass is missing", async () => {
     const proxy = makeProxy();
     const store = makeStore();
-    const { normalizeAllCatalogsData } = await import("@/shared/lib/types/glassMap");
 
     act(() => {
-      store.getState().setCatalogsData(normalizeAllCatalogsData(rawData));
       store.getState().setSelectedGlass({
         catalogName: "Schott",
         glassName: "N-BK7",
-        data: normalizeAllCatalogsData(rawData).Schott["N-BK7"],
+        data: {
+          refractiveIndexD: 1.5168,
+          refractiveIndexE: 1.519,
+          abbeNumberD: 64.17,
+          abbeNumberE: 63.96,
+          partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+        },
       });
     });
 
@@ -226,7 +254,9 @@ describe("GlassMapView", () => {
       store,
     );
 
-    expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+    });
   });
 
   it("renders a back-to-lens-editor link when opened from MediumSelectorModal", async () => {
@@ -262,12 +292,6 @@ describe("GlassMapView", () => {
       catalog: "Schott",
       glass: "N-BK7",
     };
-    const store = makeStore(routeIntent);
-    const { normalizeAllCatalogsData } = await import("@/shared/lib/types/glassMap");
-
-    act(() => {
-      store.getState().setCatalogsData(normalizeAllCatalogsData(rawData));
-    });
 
     renderWithStore(
       <GlassMapView
@@ -275,9 +299,66 @@ describe("GlassMapView", () => {
         isReady={true}
         routeIntent={routeIntent}
       />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+    });
+  });
+
+  it("lets user selection override the route-intent selection after interaction", async () => {
+    const proxy = makeProxy({
+      getAllGlassCatalogsData: jest.fn().mockResolvedValue({
+        ...rawData,
+        Schott: {
+          ...rawData.Schott,
+          "N-SF6": {
+            refractive_index_d: 1.80518,
+            refractive_index_e: 1.8163,
+            abbe_number_d: 25.36,
+            abbe_number_e: 25.2,
+            partial_dispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
+            dispersion_coeff_kind: "Sellmeier3T" as const,
+            dispersion_coeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+          },
+        },
+      }),
+    });
+    const store = makeStore();
+
+    renderWithStore(
+      <GlassMapView
+        proxy={proxy}
+        isReady={true}
+        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+      />,
       store,
     );
 
-    expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
+
+    act(() => {
+      store.getState().setSelectedGlass({
+        catalogName: "Schott",
+        glassName: "N-SF6",
+        data: {
+          refractiveIndexD: 1.80518,
+          refractiveIndexE: 1.8163,
+          abbeNumberD: 25.36,
+          abbeNumberE: 25.2,
+          partialDispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "N-SF6" })).toBeInTheDocument();
+    });
   });
 });
