@@ -5,6 +5,7 @@ Generic, single-responsibility UI primitives. These are the base building blocks
 ## Components
 
 - [Button.tsx](./Button.tsx.md) — Themed button with variants (primary, secondary, toggle, danger, floating) and sizes
+- [CheckboxInput.tsx](./CheckboxInput.tsx.md) — Compact labelled checkbox row with shared styling
 - [Chip.tsx](./Chip.tsx.md) — Small, compact tag/badge component
 - [ErrorModal.tsx](./ErrorModal.tsx.md) — Modal for displaying error messages
 - [Header.tsx](./Header.tsx.md) — Top navigation header

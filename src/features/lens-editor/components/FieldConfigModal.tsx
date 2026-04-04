@@ -4,6 +4,7 @@ import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
 import { GridRowButtons } from "@/features/lens-editor/components/GridRowButtons";
 import { Button } from "@/shared/components/primitives/Button";
+import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
@@ -214,18 +215,15 @@ export function FieldConfigModal({
           />
         </AgGridProvider>
 
-        <div className="mt-4 flex items-start gap-3">
-          <input
+        <div className="mt-4">
+          <CheckboxInput
             id="field-wide-angle"
-            type="checkbox"
-            aria-label="Use wide angle mode for more robust ray aiming"
             checked={isWideAngle}
-            onChange={(e) => setIsWideAngle(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600"
+            ariaLabel="Use wide angle mode for more robust ray aiming"
+            label="Use wide angle mode for more robust ray aiming"
+            onChange={setIsWideAngle}
+            labelClassName="mb-0"
           />
-          <Label htmlFor="field-wide-angle" className="mb-0 flex-1 text-left leading-5">
-            Use wide angle mode for more robust ray aiming
-          </Label>
         </div>
       </div>
 

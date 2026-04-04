@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
+import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
 import { Input } from "@/shared/components/primitives/Input";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import { Label } from "@/shared/components/primitives/Label";
@@ -102,15 +103,13 @@ export function MediumSelectorModal({
     <Modal isOpen={isOpen} title="Select Medium" titleId="medium-modal-title" size="md">
       {/* ── Form fields ── */}
       <div className="space-y-4 mb-4">
-        <label className="flex items-center gap-2 text-sm cursor-pointer">
-          <input
-            aria-label="Use model glass"
-            checked={useModelGlass}
-            onChange={(e) => setUseModelGlass(e.target.checked)}
-            type="checkbox"
-          />
-          <span>Use model glass</span>
-        </label>
+        <CheckboxInput
+          id="use-model-glass"
+          ariaLabel="Use model glass"
+          checked={useModelGlass}
+          label="Use model glass"
+          onChange={setUseModelGlass}
+        />
 
         {!useModelGlass && (
           <>
@@ -162,21 +161,18 @@ export function MediumSelectorModal({
 
         {useModelGlass && (
           <>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                aria-label="Single refractive index"
-                checked={singleRefractiveIndex}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setSingleRefractiveIndex(checked);
-                  if (checked) {
-                    setAbbeNumber("");
-                  }
-                }}
-                type="checkbox"
-              />
-              <span>Single refractive index</span>
-            </label>
+            <CheckboxInput
+              id="single-refractive-index"
+              ariaLabel="Single refractive index"
+              checked={singleRefractiveIndex}
+              label="Single refractive index"
+              onChange={(checked) => {
+                setSingleRefractiveIndex(checked);
+                if (checked) {
+                  setAbbeNumber("");
+                }
+              }}
+            />
 
             <div>
               <Label htmlFor="refractive-index-input">

@@ -51,9 +51,9 @@ interface MediumSelectorModalProps {
 - When `Use model glass` is unchecked and a catalog glass is selected, an inline `View in glass map` link appears below the glass dropdown.
 - The glass-map link targets `/glass-map` with query params `source=medium-selector`, `catalog=<manufacturer>`, and `glass=<medium>`.
 - The glass-map link is hidden for `"Special"` media and for model-glass mode.
-- A `Use model glass` checkbox appears above the catalog controls and defaults to unchecked for non-numeric initial values.
+- A shared compact `CheckboxInput` labelled `Use model glass` appears above the catalog controls and defaults to unchecked for non-numeric initial values.
 - When `Use model glass` is checked, the manufacturer and glass dropdowns are replaced by:
-  - a `Single refractive index` checkbox
+  - a `Single refractive index` checkbox rendered with the shared checkbox primitive
   - a `Refractive index at d-line` input
   - an `Abbe Number` input when `Single refractive index` is unchecked
 - When `Single refractive index` is checked, the Abbe Number value is cleared and the Abbe Number input is hidden.

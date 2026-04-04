@@ -42,7 +42,7 @@ interface FieldConfigModalProps {
 - Reset-on-open: all draft state is re-initialized from props when `isOpen` transitions to `true`.
 - Row limit is 10; the add button becomes hidden (not removed) at the limit.
 - The first row cannot be deleted.
-- A compact checkbox below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
+- A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
 - Row ids use a module-level counter for stable AG Grid `getRowId`.
 
 ## Usages
