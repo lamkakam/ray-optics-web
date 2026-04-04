@@ -2,6 +2,10 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MediumSelectorModal } from "@/features/lens-editor/components/MediumSelectorModal";
+import {
+  GlassCatalogContext,
+  type GlassCatalogContextValue,
+} from "@/shared/components/providers/GlassCatalogProvider";
 
 jest.mock("next/link", () => {
   return function MockLink({
@@ -17,11 +21,6 @@ jest.mock("next/link", () => {
   };
 });
 
-jest.mock("@/data/glass-catalogs.json", () => ({
-  Schott: ["N-BK7", "N-SF6"],
-  Ohara: ["S-FPL51"],
-}));
-
 describe("MediumSelectorModal", () => {
   const defaultProps = {
     isOpen: true,
@@ -30,34 +29,99 @@ describe("MediumSelectorModal", () => {
     onConfirm: jest.fn(),
     onClose: jest.fn(),
   };
+  const defaultCatalogContextValue: GlassCatalogContextValue = {
+    catalogs: {
+      CDGM: {},
+      Hikari: {},
+      Hoya: {},
+      Ohara: {
+        "S-FPL51": {
+          refractiveIndexD: 1.497,
+          refractiveIndexE: 1.499,
+          abbeNumberD: 81.6,
+          abbeNumberE: 81.3,
+          partialDispersions: { P_F_d: 0.4, P_F_e: 0.39, P_g_F: 0.53 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+        },
+      },
+      Schott: {
+        "N-BK7": {
+          refractiveIndexD: 1.5168,
+          refractiveIndexE: 1.519,
+          abbeNumberD: 64.17,
+          abbeNumberE: 63.96,
+          partialDispersions: { P_F_d: 0.41, P_F_e: 0.4, P_g_F: 0.5349 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+        },
+        "N-SF6": {
+          refractiveIndexD: 1.80518,
+          refractiveIndexE: 1.8163,
+          abbeNumberD: 25.36,
+          abbeNumberE: 25.2,
+          partialDispersions: { P_F_d: 0.305, P_F_e: 0.298, P_g_F: 0.6439 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+        },
+      },
+      Sumita: {},
+      Special: {
+        CaF2: {
+          refractiveIndexD: 1.4338,
+          refractiveIndexE: 1.437,
+          abbeNumberD: 95.1,
+          abbeNumberE: 94.3,
+          partialDispersions: { P_F_d: 0.702, P_F_e: 0.456, P_g_F: 0.552 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+        },
+      },
+    },
+    error: undefined,
+    isLoaded: true,
+    isLoading: false,
+    preload: jest.fn(),
+  };
+
+  function renderWithCatalogs(
+    ui: React.ReactElement,
+    value: GlassCatalogContextValue = defaultCatalogContextValue,
+  ) {
+    return render(
+      <GlassCatalogContext.Provider value={value}>
+        {ui}
+      </GlassCatalogContext.Provider>
+    );
+  }
 
   it("does not render when isOpen is false", () => {
-    render(<MediumSelectorModal {...defaultProps} isOpen={false} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} isOpen={false} />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renders a dialog when isOpen is true", () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("renders a backdrop overlay behind the dialog", () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
     const backdrop = screen.getByTestId("modal-backdrop");
     expect(backdrop).toBeInTheDocument();
   });
 
   it("does not call onClose when clicking the backdrop overlay", async () => {
     const onClose = jest.fn();
-    render(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
     const backdrop = screen.getByTestId("modal-backdrop");
 
     await userEvent.click(backdrop);
     expect(onClose).toHaveBeenCalledTimes(0);
   });
 
-  it("has a manufacturer dropdown with Special and manufacturers from JSON", () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+  it("has a manufacturer dropdown with Special and manufacturers from provider data", () => {
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
     const select = screen.getByLabelText("Manufacturer");
     expect(select).toBeInTheDocument();
     expect(screen.getByLabelText("Use model glass")).not.toBeChecked();
@@ -68,11 +132,11 @@ describe("MediumSelectorModal", () => {
     expect(options).toContain("Special");
     expect(options).toContain("Schott");
     expect(options).toContain("Ohara");
-    expect(options).toHaveLength(3); // Special + 2 from mock
+    expect(options).toHaveLength(3);
   });
 
   it("shows special options (air, REFL) when Special manufacturer selected", async () => {
-    render(
+    renderWithCatalogs(
       <MediumSelectorModal
         {...defaultProps}
         initialManufacturer=""
@@ -87,10 +151,11 @@ describe("MediumSelectorModal", () => {
     ).map((o) => o.value);
     expect(options).toContain("air");
     expect(options).toContain("REFL");
+    expect(options).toContain("CaF2");
   });
 
   it("shows glass options synchronously when a real manufacturer is selected", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
 
@@ -103,7 +168,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("renders a glass map link for a selected catalog glass", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
     await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-BK7");
@@ -115,7 +180,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("updates the glass map link when the selected manufacturer and glass change", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
     await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
@@ -128,13 +193,13 @@ describe("MediumSelectorModal", () => {
   });
 
   it("does not render the glass map link for Special media", () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
   });
 
   it("hides the glass map link when Use model glass is checked", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
     expect(screen.getByRole("link", { name: "View in glass map" })).toBeInTheDocument();
@@ -146,7 +211,7 @@ describe("MediumSelectorModal", () => {
 
   it("calls onConfirm with selected medium and manufacturer", async () => {
     const onConfirm = jest.fn();
-    render(
+    renderWithCatalogs(
       <MediumSelectorModal
         {...defaultProps}
         onConfirm={onConfirm}
@@ -160,7 +225,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("replaces dropdowns with model-glass controls when Use model glass is checked", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
 
@@ -172,7 +237,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("clears and hides Abbe Number when Single refractive index is checked", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     await userEvent.type(screen.getByLabelText("Abbe Number"), "64.1");
@@ -183,7 +248,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("shows an empty Abbe Number input again when Single refractive index is unchecked", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     await userEvent.type(screen.getByLabelText("Abbe Number"), "64.1");
@@ -195,7 +260,7 @@ describe("MediumSelectorModal", () => {
 
   it("calls onConfirm with refractive index and Abbe number in model-glass mode", async () => {
     const onConfirm = jest.fn();
-    render(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     await userEvent.type(screen.getByLabelText("Refractive index at d-line"), "1.5168");
@@ -206,7 +271,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("normalizes an invalid refractive index to 1.0 on blur", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
@@ -219,7 +284,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("normalizes a non-positive refractive index to 1.0 on blur", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
@@ -232,7 +297,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("preserves a valid positive refractive index on blur", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
@@ -245,7 +310,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("normalizes an invalid Abbe number to an empty string on blur", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     const abbeNumberInput = screen.getByLabelText("Abbe Number");
@@ -258,7 +323,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("preserves an empty Abbe number on blur", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     const abbeNumberInput = screen.getByLabelText("Abbe Number");
@@ -270,7 +335,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("preserves a valid numeric Abbe number on blur", async () => {
-    render(<MediumSelectorModal {...defaultProps} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     const abbeNumberInput = screen.getByLabelText("Abbe Number");
@@ -284,7 +349,7 @@ describe("MediumSelectorModal", () => {
 
   it("calls onConfirm with empty manufacturer in single-index mode", async () => {
     const onConfirm = jest.fn();
-    render(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     await userEvent.type(screen.getByLabelText("Refractive index at d-line"), "1.458");
@@ -296,7 +361,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("auto-detects numeric initial values as model glass", () => {
-    render(
+    renderWithCatalogs(
       <MediumSelectorModal
         {...defaultProps}
         initialMedium="1.62"
@@ -311,7 +376,7 @@ describe("MediumSelectorModal", () => {
   });
 
   it("auto-enables single-index mode when initial manufacturer is not numeric", () => {
-    render(
+    renderWithCatalogs(
       <MediumSelectorModal
         {...defaultProps}
         initialMedium="1.62"
@@ -327,7 +392,7 @@ describe("MediumSelectorModal", () => {
 
   it("calls onClose when Cancel is clicked", async () => {
     const onClose = jest.fn();
-    render(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
 
     await userEvent.click(screen.getByText("Cancel"));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -335,7 +400,7 @@ describe("MediumSelectorModal", () => {
 
   it("does not call onClose when Escape is pressed", async () => {
     const onClose = jest.fn();
-    render(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onClose={onClose} />);
 
     await userEvent.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(0);

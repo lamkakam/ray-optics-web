@@ -8,6 +8,10 @@ import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridT
 import { IMAGE_ROW_ID } from "@/shared/lib/types/gridTypes";
 import type { Surfaces, OpticalModel } from "@/shared/lib/types/opticalModel";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import {
+  GlassCatalogContext,
+  type GlassCatalogContextValue,
+} from "@/shared/components/providers/GlassCatalogProvider";
 
 jest.mock("next/link", () => {
   return function MockLink({
@@ -71,18 +75,73 @@ function getOpticalModel(): OpticalModel {
 }
 
 const onImportJson = jest.fn();
+const glassCatalogContextValue: GlassCatalogContextValue = {
+  catalogs: {
+    CDGM: {},
+    Hikari: {},
+    Hoya: {},
+    Ohara: {},
+    Schott: {
+      "N-BK7": {
+        refractiveIndexD: 1.5168,
+        refractiveIndexE: 1.519,
+        abbeNumberD: 64.17,
+        abbeNumberE: 63.96,
+        partialDispersions: { P_F_d: 0.41, P_F_e: 0.4, P_g_F: 0.5349 },
+        dispersionCoeffKind: "Sellmeier3T",
+        dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+      },
+      "N-SF6": {
+        refractiveIndexD: 1.80518,
+        refractiveIndexE: 1.8163,
+        abbeNumberD: 25.36,
+        abbeNumberE: 25.2,
+        partialDispersions: { P_F_d: 0.305, P_F_e: 0.298, P_g_F: 0.6439 },
+        dispersionCoeffKind: "Sellmeier3T",
+        dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+      },
+      F2: {
+        refractiveIndexD: 1.62,
+        refractiveIndexE: 1.63,
+        abbeNumberD: 36.37,
+        abbeNumberE: 36.1,
+        partialDispersions: { P_F_d: 0.58, P_F_e: 0.57, P_g_F: 0.64 },
+        dispersionCoeffKind: "Sellmeier3T",
+        dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+      },
+    },
+    Sumita: {},
+    Special: {
+      CaF2: {
+        refractiveIndexD: 1.4338,
+        refractiveIndexE: 1.437,
+        abbeNumberD: 95.1,
+        abbeNumberE: 94.3,
+        partialDispersions: { P_F_d: 0.702, P_F_e: 0.456, P_g_F: 0.552 },
+        dispersionCoeffKind: "Sellmeier3T",
+        dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+      },
+    },
+  },
+  error: undefined,
+  isLoaded: true,
+  isLoading: false,
+  preload: jest.fn(),
+};
 
 function renderLPC(store: ReturnType<typeof createTestStore> = createTestStore()) {
   return {
     ...render(
-      <LensEditorStoreContext.Provider value={store}>
-        <LensPrescriptionContainer
-          getOpticalModel={getOpticalModel}
-          onImportJson={onImportJson}
-          onUpdateSystem={jest.fn()}
-          isUpdateSystemDisabled={false}
-        />
-      </LensEditorStoreContext.Provider>
+      <GlassCatalogContext.Provider value={glassCatalogContextValue}>
+        <LensEditorStoreContext.Provider value={store}>
+          <LensPrescriptionContainer
+            getOpticalModel={getOpticalModel}
+            onImportJson={onImportJson}
+            onUpdateSystem={jest.fn()}
+            isUpdateSystemDisabled={false}
+          />
+        </LensEditorStoreContext.Provider>
+      </GlassCatalogContext.Provider>
     ),
     store,
   };

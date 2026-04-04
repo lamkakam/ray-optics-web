@@ -8,10 +8,9 @@ import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
-import glassCatalogs from "@/data/glass-catalogs.json";
+import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 
-const MANUFACTURERS = ["Special", ...Object.keys(glassCatalogs)];
-const SPECIAL_MEDIA = ["air", "REFL", "CaF2"];
+const SPECIAL_MEDIA = ["air", "REFL"];
 
 interface MediumSelectorModalProps {
   readonly isOpen: boolean;
@@ -60,6 +59,7 @@ export function MediumSelectorModal({
   const initialUseModelGlass = isNumericString(initialMedium);
   const initialHasAbbeNumber = isNumericString(initialManufacturer);
   const initialMfr = isSpecialMedium(initialManufacturer) ? "Special" : initialManufacturer;
+  const { catalogs, error, isLoaded } = useGlassCatalogs();
   const [localManufacturer, setLocalManufacturer] = useState(initialMfr);
   const [localMedium, setLocalMedium] = useState(initialMedium);
   const [useModelGlass, setUseModelGlass] = useState(initialUseModelGlass);
@@ -72,12 +72,25 @@ export function MediumSelectorModal({
   const [abbeNumber, setAbbeNumber] = useState(initialHasAbbeNumber ? initialManufacturer : "");
   const manufacturer = selectedManufacturer ?? localManufacturer;
   const medium = selectedMedium ?? localMedium;
+  const catalogLookup = catalogs as Record<string, Record<string, unknown>> | undefined;
+  const getCatalogGlassNames = (catalogName: string): string[] => Object.keys(catalogLookup?.[catalogName] ?? {});
 
+  const manufacturers = [
+    "Special",
+    ...Object.entries(catalogs ?? {})
+      .filter(([catalogName, glasses]) => catalogName !== "Special" && Object.keys(glasses).length > 0)
+      .map(([catalogName]) => catalogName),
+  ];
+  const specialMediaOptions = [
+    ...SPECIAL_MEDIA,
+    ...Object.keys(catalogs?.Special ?? {}),
+  ];
   const isSpecial = manufacturer === "Special";
   const mediaOptions = isSpecial
-    ? SPECIAL_MEDIA
-    : (glassCatalogs as Record<string, string[]>)[manufacturer] ?? [];
+    ? specialMediaOptions
+    : getCatalogGlassNames(manufacturer);
   const showAbbeNumber = useModelGlass && !singleRefractiveIndex;
+  const canSelectCatalogGlass = error === undefined && isLoaded;
 
   const updateCatalogSelection = (nextMedium: string, nextManufacturer: string) => {
     setLocalMedium(nextMedium);
@@ -113,6 +126,11 @@ export function MediumSelectorModal({
 
         {!useModelGlass && (
           <>
+            {!canSelectCatalogGlass && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {error ?? "Loading glass catalog data…"}
+              </p>
+            )}
             <div>
               <Label htmlFor="manufacturer-select">
                 Manufacturer
@@ -120,14 +138,15 @@ export function MediumSelectorModal({
               <Select
                 id="manufacturer-select"
                 aria-label="Manufacturer"
-                options={MANUFACTURERS.map((m) => ({ value: m, label: m }))}
+                options={manufacturers.map((m) => ({ value: m, label: m }))}
                 value={manufacturer}
+                disabled={!canSelectCatalogGlass}
                 onChange={(e) => {
                   const newMfr = e.target.value;
                   if (newMfr === "Special") {
                     updateCatalogSelection("air", newMfr);
                   } else {
-                    const list = (glassCatalogs as Record<string, string[]>)[newMfr] ?? [];
+                    const list = getCatalogGlassNames(newMfr);
                     const nextMedium = list.length > 0 && !list.includes(medium)
                       ? list[0]
                       : medium;
@@ -146,6 +165,7 @@ export function MediumSelectorModal({
                 aria-label="Glass"
                 options={mediaOptions.map((g) => ({ value: g, label: g }))}
                 value={medium}
+                disabled={!canSelectCatalogGlass}
                 onChange={(e) => updateCatalogSelection(e.target.value, manufacturer)}
               />
               {glassMapHref && (
