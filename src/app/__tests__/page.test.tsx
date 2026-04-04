@@ -220,6 +220,18 @@ describe("app shell routes", () => {
     });
   });
 
+  it("renders the glass-map Suspense fallback inside the store provider", () => {
+    const suspensePromise = new Promise<never>(() => {});
+    mockSearchParams = {
+      get: () => {
+        throw suspensePromise;
+      },
+    } as unknown as URLSearchParams;
+
+    expect(() => renderInAppShell(<GlassMapPage />)).not.toThrow();
+    expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
+  });
+
   it("renders the settings route content", () => {
     renderWithStores(<SettingsPage />);
 

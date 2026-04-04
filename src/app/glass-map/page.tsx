@@ -12,6 +12,24 @@ interface GlassMapPageContentProps {
   readonly isReady: boolean;
 }
 
+function GlassMapPageBody({
+  proxy,
+  isReady,
+  routeIntent,
+}: GlassMapPageContentProps & {
+  readonly routeIntent?: GlassMapRouteIntent;
+}) {
+  const storeKey = routeIntent
+    ? `${routeIntent.source}:${routeIntent.catalog}:${routeIntent.glass}`
+    : "glass-map-default";
+
+  return (
+    <GlassMapStoreProvider key={storeKey} initialRouteIntent={routeIntent}>
+      <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />
+    </GlassMapStoreProvider>
+  );
+}
+
 function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {
   const searchParams = useSearchParams();
   const routeIntent = useMemo<GlassMapRouteIntent | undefined>(() => {
@@ -26,14 +44,8 @@ function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {
     return { source, catalog, glass };
   }, [searchParams]);
 
-  const storeKey = routeIntent
-    ? `${routeIntent.source}:${routeIntent.catalog}:${routeIntent.glass}`
-    : "glass-map-default";
-
   return (
-    <GlassMapStoreProvider key={storeKey} initialRouteIntent={routeIntent}>
-      <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />
-    </GlassMapStoreProvider>
+    <GlassMapPageBody proxy={proxy} isReady={isReady} routeIntent={routeIntent} />
   );
 }
 
@@ -41,7 +53,7 @@ export default function GlassMapPage() {
   const { proxy, isReady } = useAppShell();
 
   return (
-    <Suspense fallback={<GlassMapView proxy={proxy} isReady={isReady} />}>
+    <Suspense fallback={<GlassMapPageBody proxy={proxy} isReady={isReady} />}>
       <GlassMapPageContent proxy={proxy} isReady={isReady} />
     </Suspense>
   );
