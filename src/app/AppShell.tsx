@@ -7,6 +7,7 @@ import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
 import { Layout } from "@/shared/components/layout/Layout";
 import { AppShellProvider } from "@/app/AppShellContext";
+import { preloadGlassCatalogs } from "@/features/glass-map/glassCatalogsResource";
 
 interface AppShellProps {
   readonly children: React.ReactNode;
@@ -23,6 +24,14 @@ export default function AppShell({ children }: AppShellProps) {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, []);
+
+  useEffect(() => {
+    if (!isReady || proxy === undefined) {
+      return;
+    }
+
+    void preloadGlassCatalogs(proxy);
+  }, [isReady, proxy]);
 
   const contextValue = useMemo(
     () => ({

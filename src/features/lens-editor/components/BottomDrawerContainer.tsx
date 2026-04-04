@@ -50,6 +50,8 @@ export function BottomDrawerContainer({
             onImportJson={onImportJson}
             onUpdateSystem={onUpdateSystem}
             isUpdateSystemDisabled={!isReady || computing}
+            glassCatalogsProxy={proxy}
+            glassCatalogsReady={isReady}
           />
         ),
       },

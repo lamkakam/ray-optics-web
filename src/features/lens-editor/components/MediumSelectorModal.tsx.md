@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. Provides manufacturer and glass dropdowns populated from the bundled `glass-catalogs.json` data file, plus a model-glass mode for refractive-index and Abbe-number entry.
+Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. Provides manufacturer and glass dropdowns populated from the same worker-backed catalog data used by the glass map, plus a model-glass mode for refractive-index and Abbe-number entry.
 
 ## Props
 
@@ -11,6 +11,8 @@ interface MediumSelectorModalProps {
   isOpen: boolean;
   initialMedium: string;
   initialManufacturer: string;
+  catalogsData: AllGlassCatalogsData | undefined;
+  catalogsError?: string;
   selectedMedium?: string;
   selectedManufacturer?: string;
   onSelectionChange?: (medium: string, manufacturer: string) => void;
@@ -26,6 +28,8 @@ interface MediumSelectorModalProps {
 | `isOpen` | `boolean` | Yes | Controls modal visibility |
 | `initialMedium` | `string` | Yes | Pre-selected medium on open |
 | `initialManufacturer` | `string` | Yes | Pre-selected manufacturer on open; empty string or `"air"` maps to `"Special"` |
+| `catalogsData` | `AllGlassCatalogsData \| undefined` | Yes | Shared worker-backed catalog payload; `undefined` means still loading |
+| `catalogsError` | `string \| undefined` | No | Error text shown instead of catalog selectors when loading failed |
 | `selectedMedium` | `string \| undefined` | No | Controlled catalog-glass medium value used when the parent persists an unconfirmed draft |
 | `selectedManufacturer` | `string \| undefined` | No | Controlled catalog-glass manufacturer value used with `selectedMedium` |
 | `onSelectionChange` | `(medium, manufacturer) => void` | No | Called whenever the catalog-glass draft changes |
@@ -45,6 +49,8 @@ interface MediumSelectorModalProps {
 
 - When manufacturer changes to `"Special"`, medium resets to `"air"`.
 - When manufacturer changes to a catalog, the first glass in the list is selected if the current selection is not in the new catalog.
+- Manufacturer options are derived from non-empty worker-backed catalogs plus a synthetic `"Special"` bucket.
+- The `"Special"` bucket contains UI-only non-glass media (`air`, `REFL`) plus worker-backed special glasses such as `CaF2`.
 - When `selectedMedium` / `selectedManufacturer` are provided, the catalog-glass dropdowns are controlled by the parent so unconfirmed choices can survive route changes.
 - `onSelectionChange` fires for catalog-glass changes and reports `"Special"` for the special manufacturer option.
 - `onConfirm` passes an empty string for manufacturer when `"Special"` is selected.
@@ -63,6 +69,8 @@ interface MediumSelectorModalProps {
 - On blur, `Refractive index at d-line` is normalized to a positive numeric string; parse failure, `NaN`, zero, or negative values reset it to `"1.0"`.
 - On blur, `Abbe Number` is normalized to either a numeric string or the empty string; parse failure or `NaN` resets it to `""`.
 - In model-glass mode, `onConfirm` passes `(refractiveIndexAtDLine, abbeNumber)` or `(refractiveIndexAtDLine, "")` when `Single refractive index` is checked.
+- While `catalogsData` is still loading, the catalog selectors are replaced by a loading message.
+- When `catalogsError` is present, the catalog selectors are replaced by the error text.
 - Uses `key` prop at the call site (in `LensPrescriptionContainer`) to reset state when the modal re-opens for a different row.
 
 ## Usages

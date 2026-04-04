@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MediumSelectorModal } from "@/features/lens-editor/components/MediumSelectorModal";
+import type { AllGlassCatalogsData } from "@/shared/lib/types/glassMap";
 
 jest.mock("next/link", () => {
   return function MockLink({
@@ -17,16 +18,61 @@ jest.mock("next/link", () => {
   };
 });
 
-jest.mock("@/data/glass-catalogs.json", () => ({
-  Schott: ["N-BK7", "N-SF6"],
-  Ohara: ["S-FPL51"],
-}));
+const catalogsData: AllGlassCatalogsData = {
+  CDGM: {},
+  Hikari: {},
+  Hoya: {},
+  Ohara: {
+    "S-FPL51": {
+      refractiveIndexD: 1.497,
+      refractiveIndexE: 1.5,
+      abbeNumberD: 81.6,
+      abbeNumberE: 81,
+      partialDispersions: { P_F_e: 0.4, P_F_d: 0.41, P_g_F: 0.53 },
+      dispersionCoeffKind: "Sellmeier3T",
+      dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+    },
+  },
+  Schott: {
+    "N-BK7": {
+      refractiveIndexD: 1.5168,
+      refractiveIndexE: 1.519,
+      abbeNumberD: 64.17,
+      abbeNumberE: 63.96,
+      partialDispersions: { P_F_e: 0.4, P_F_d: 0.41, P_g_F: 0.53 },
+      dispersionCoeffKind: "Sellmeier3T",
+      dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+    },
+    "N-SF6": {
+      refractiveIndexD: 1.80518,
+      refractiveIndexE: 1.8163,
+      abbeNumberD: 25.36,
+      abbeNumberE: 25.2,
+      partialDispersions: { P_F_e: 0.298, P_F_d: 0.305, P_g_F: 0.6439 },
+      dispersionCoeffKind: "Sellmeier3T",
+      dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+    },
+  },
+  Sumita: {},
+  Special: {
+    CaF2: {
+      refractiveIndexD: 1.4338,
+      refractiveIndexE: 1.436,
+      abbeNumberD: 95,
+      abbeNumberE: 94,
+      partialDispersions: { P_F_e: 0.4, P_F_d: 0.41, P_g_F: 0.53 },
+      dispersionCoeffKind: "Sellmeier3T",
+      dispersionCoeffs: [1, 2, 3, 4, 5, 6],
+    },
+  },
+};
 
 describe("MediumSelectorModal", () => {
   const defaultProps = {
     isOpen: true,
     initialMedium: "air",
     initialManufacturer: "",
+    catalogsData,
     onConfirm: jest.fn(),
     onClose: jest.fn(),
   };
@@ -56,7 +102,7 @@ describe("MediumSelectorModal", () => {
     expect(onClose).toHaveBeenCalledTimes(0);
   });
 
-  it("has a manufacturer dropdown with Special and manufacturers from JSON", () => {
+  it("has a manufacturer dropdown with Special and manufacturers from shared catalog data", () => {
     render(<MediumSelectorModal {...defaultProps} />);
     const select = screen.getByLabelText("Manufacturer");
     expect(select).toBeInTheDocument();
@@ -68,10 +114,10 @@ describe("MediumSelectorModal", () => {
     expect(options).toContain("Special");
     expect(options).toContain("Schott");
     expect(options).toContain("Ohara");
-    expect(options).toHaveLength(3); // Special + 2 from mock
+    expect(options).toHaveLength(3);
   });
 
-  it("shows special options (air, REFL) when Special manufacturer selected", async () => {
+  it("shows special options from shared data plus non-glass media when Special manufacturer selected", async () => {
     render(
       <MediumSelectorModal
         {...defaultProps}
@@ -87,6 +133,21 @@ describe("MediumSelectorModal", () => {
     ).map((o) => o.value);
     expect(options).toContain("air");
     expect(options).toContain("REFL");
+    expect(options).toContain("CaF2");
+  });
+
+  it("shows a loading state when catalogs are still being fetched", () => {
+    render(<MediumSelectorModal {...defaultProps} catalogsData={undefined} />);
+
+    expect(screen.getByText("Loading glass catalog data…")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Manufacturer")).not.toBeInTheDocument();
+  });
+
+  it("shows an error state when catalogs fail to load", () => {
+    render(<MediumSelectorModal {...defaultProps} catalogsData={undefined} catalogsError="Load failed" />);
+
+    expect(screen.getByText("Load failed")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Manufacturer")).not.toBeInTheDocument();
   });
 
   it("shows glass options synchronously when a real manufacturer is selected", async () => {

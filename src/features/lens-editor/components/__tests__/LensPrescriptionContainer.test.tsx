@@ -8,6 +8,8 @@ import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridT
 import { IMAGE_ROW_ID } from "@/shared/lib/types/gridTypes";
 import type { Surfaces, OpticalModel } from "@/shared/lib/types/opticalModel";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/glassCatalogsResource";
 
 jest.mock("next/link", () => {
   return function MockLink({
@@ -72,6 +74,63 @@ function getOpticalModel(): OpticalModel {
 
 const onImportJson = jest.fn();
 
+const mockGlassCatalogsProxy: PyodideWorkerAPI = {
+  init: jest.fn(),
+  getFirstOrderData: jest.fn(),
+  plotLensLayout: jest.fn(),
+  plotRayFan: jest.fn(),
+  plotOpdFan: jest.fn(),
+  plotSpotDiagram: jest.fn(),
+  plotSurfaceBySurface3rdOrderAberr: jest.fn(),
+  plotWavefrontMap: jest.fn(),
+  plotGeoPSF: jest.fn(),
+  plotDiffractionPSF: jest.fn(),
+  get3rdOrderSeidelData: jest.fn(),
+  getZernikeCoefficients: jest.fn(),
+  focusByMonoRmsSpot: jest.fn(),
+  focusByMonoStrehl: jest.fn(),
+  focusByPolyRmsSpot: jest.fn(),
+  focusByPolyStrehl: jest.fn(),
+  getAllGlassCatalogsData: jest.fn().mockResolvedValue({
+    CDGM: {},
+    Hikari: {},
+    Hoya: {},
+    Ohara: {},
+    Schott: {
+      "N-BK7": {
+        refractive_index_d: 1.5168,
+        refractive_index_e: 1.519,
+        abbe_number_d: 64.17,
+        abbe_number_e: 63.96,
+        partial_dispersions: { P_F_e: 0.4, P_F_d: 0.41, P_g_F: 0.53 },
+        dispersion_coeff_kind: "Sellmeier3T",
+        dispersion_coeffs: [1, 2, 3, 4, 5, 6],
+      },
+      "N-SF6": {
+        refractive_index_d: 1.80518,
+        refractive_index_e: 1.8163,
+        abbe_number_d: 25.36,
+        abbe_number_e: 25.2,
+        partial_dispersions: { P_F_e: 0.298, P_F_d: 0.305, P_g_F: 0.6439 },
+        dispersion_coeff_kind: "Sellmeier3T",
+        dispersion_coeffs: [1, 2, 3, 4, 5, 6],
+      },
+    },
+    Sumita: {},
+    Special: {
+      CaF2: {
+        refractive_index_d: 1.4338,
+        refractive_index_e: 1.436,
+        abbe_number_d: 95,
+        abbe_number_e: 94,
+        partial_dispersions: { P_F_e: 0.4, P_F_d: 0.41, P_g_F: 0.53 },
+        dispersion_coeff_kind: "Sellmeier3T",
+        dispersion_coeffs: [1, 2, 3, 4, 5, 6],
+      },
+    },
+  }),
+};
+
 function renderLPC(store: ReturnType<typeof createTestStore> = createTestStore()) {
   return {
     ...render(
@@ -81,6 +140,8 @@ function renderLPC(store: ReturnType<typeof createTestStore> = createTestStore()
           onImportJson={onImportJson}
           onUpdateSystem={jest.fn()}
           isUpdateSystemDisabled={false}
+          glassCatalogsProxy={mockGlassCatalogsProxy}
+          glassCatalogsReady={true}
         />
       </LensEditorStoreContext.Provider>
     ),
@@ -91,6 +152,7 @@ function renderLPC(store: ReturnType<typeof createTestStore> = createTestStore()
 describe("LensPrescriptionContainer", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    _resetGlassCatalogsResourceForTest();
   });
 
   it("renders the grid", () => {
@@ -250,7 +312,7 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openMediumModal(surfaceRow.id);
     });
 
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.selectOptions(await screen.findByLabelText("Glass"), "N-SF6");
     expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
       "href",
       "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
@@ -260,7 +322,7 @@ describe("LensPrescriptionContainer", () => {
     unmount();
     renderLPC(store);
 
-    expect(screen.getByLabelText("Glass")).toHaveValue("N-SF6");
+    expect(await screen.findByLabelText("Glass")).toHaveValue("N-SF6");
     expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
       "href",
       "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
@@ -280,7 +342,7 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openMediumModal(surfaceRow.id);
     });
 
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.selectOptions(await screen.findByLabelText("Glass"), "N-SF6");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     const updatedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);

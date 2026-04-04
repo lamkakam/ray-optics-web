@@ -7,6 +7,7 @@ Client wrapper for the shared runtime shell. Owns the Pyodide initialization, gl
 - Calls `usePyodide()` once for the app tree
 - Registers the `beforeunload` guard once
 - Provides `proxy`, `isReady`, and `openErrorModal` through `AppShellProvider`
+- Starts a background preload of the shared glass catalog resource once Pyodide is ready
 - Renders the shared `Layout` shell around route content
 - Renders `ErrorModal` and `LoadingOverlay` outside the routed content area
 
@@ -24,3 +25,4 @@ Client wrapper for the shared runtime shell. Owns the Pyodide initialization, gl
 ## Notes
 - `app/layout.tsx` remains the server layout for metadata and global providers.
 - This replaces the former route-group shell so the public URLs remain unchanged after flattening the routes.
+- The glass catalog preload is non-blocking: the initial loading overlay still depends only on Pyodide initialization, not catalog completion.

@@ -8,15 +8,15 @@ import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
-import glassCatalogs from "@/data/glass-catalogs.json";
-
-const MANUFACTURERS = ["Special", ...Object.keys(glassCatalogs)];
-const SPECIAL_MEDIA = ["air", "REFL", "CaF2"];
+import type { AllGlassCatalogsData } from "@/shared/lib/types/glassMap";
+import { buildLensEditorGlassCatalogOptions } from "@/shared/lib/utils/glassCatalogs";
 
 interface MediumSelectorModalProps {
   readonly isOpen: boolean;
   readonly initialMedium: string;
   readonly initialManufacturer: string;
+  readonly catalogsData: AllGlassCatalogsData | undefined;
+  readonly catalogsError?: string;
   readonly selectedMedium?: string;
   readonly selectedManufacturer?: string;
   readonly onSelectionChange?: (medium: string, manufacturer: string) => void;
@@ -51,6 +51,8 @@ export function MediumSelectorModal({
   isOpen,
   initialMedium,
   initialManufacturer,
+  catalogsData,
+  catalogsError,
   selectedMedium,
   selectedManufacturer,
   onSelectionChange,
@@ -60,6 +62,9 @@ export function MediumSelectorModal({
   const initialUseModelGlass = isNumericString(initialMedium);
   const initialHasAbbeNumber = isNumericString(initialManufacturer);
   const initialMfr = isSpecialMedium(initialManufacturer) ? "Special" : initialManufacturer;
+  const catalogOptions = catalogsData === undefined
+    ? undefined
+    : buildLensEditorGlassCatalogOptions(catalogsData);
   const [localManufacturer, setLocalManufacturer] = useState(initialMfr);
   const [localMedium, setLocalMedium] = useState(initialMedium);
   const [useModelGlass, setUseModelGlass] = useState(initialUseModelGlass);
@@ -75,8 +80,8 @@ export function MediumSelectorModal({
 
   const isSpecial = manufacturer === "Special";
   const mediaOptions = isSpecial
-    ? SPECIAL_MEDIA
-    : (glassCatalogs as Record<string, string[]>)[manufacturer] ?? [];
+    ? (catalogOptions?.mediaByManufacturer.Special ?? [])
+    : (catalogOptions?.mediaByManufacturer[manufacturer] ?? []);
   const showAbbeNumber = useModelGlass && !singleRefractiveIndex;
 
   const updateCatalogSelection = (nextMedium: string, nextManufacturer: string) => {
@@ -113,49 +118,57 @@ export function MediumSelectorModal({
 
         {!useModelGlass && (
           <>
-            <div>
-              <Label htmlFor="manufacturer-select">
-                Manufacturer
-              </Label>
-              <Select
-                id="manufacturer-select"
-                aria-label="Manufacturer"
-                options={MANUFACTURERS.map((m) => ({ value: m, label: m }))}
-                value={manufacturer}
-                onChange={(e) => {
-                  const newMfr = e.target.value;
-                  if (newMfr === "Special") {
-                    updateCatalogSelection("air", newMfr);
-                  } else {
-                    const list = (glassCatalogs as Record<string, string[]>)[newMfr] ?? [];
-                    const nextMedium = list.length > 0 && !list.includes(medium)
-                      ? list[0]
-                      : medium;
-                    updateCatalogSelection(nextMedium, newMfr);
-                  }
-                }}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="medium-select">
-                Glass
-              </Label>
-              <Select
-                id="medium-select"
-                aria-label="Glass"
-                options={mediaOptions.map((g) => ({ value: g, label: g }))}
-                value={medium}
-                onChange={(e) => updateCatalogSelection(e.target.value, manufacturer)}
-              />
-              {glassMapHref && (
-                <div className="mt-2">
-                  <InlineLink href={glassMapHref} aria-label="View in glass map">
-                    View in glass map
-                  </InlineLink>
+            {catalogsError !== undefined ? (
+              <p className="text-sm text-red-500">{catalogsError}</p>
+            ) : catalogOptions === undefined ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading glass catalog data…</p>
+            ) : (
+              <>
+                <div>
+                  <Label htmlFor="manufacturer-select">
+                    Manufacturer
+                  </Label>
+                  <Select
+                    id="manufacturer-select"
+                    aria-label="Manufacturer"
+                    options={catalogOptions.manufacturers.map((m) => ({ value: m, label: m }))}
+                    value={manufacturer}
+                    onChange={(e) => {
+                      const newMfr = e.target.value;
+                      if (newMfr === "Special") {
+                        updateCatalogSelection("air", newMfr);
+                      } else {
+                        const list = catalogOptions.mediaByManufacturer[newMfr] ?? [];
+                        const nextMedium = list.length > 0 && !list.includes(medium)
+                          ? list[0]
+                          : medium;
+                        updateCatalogSelection(nextMedium, newMfr);
+                      }
+                    }}
+                  />
                 </div>
-              )}
-            </div>
+
+                <div>
+                  <Label htmlFor="medium-select">
+                    Glass
+                  </Label>
+                  <Select
+                    id="medium-select"
+                    aria-label="Glass"
+                    options={mediaOptions.map((g) => ({ value: g, label: g }))}
+                    value={medium}
+                    onChange={(e) => updateCatalogSelection(e.target.value, manufacturer)}
+                  />
+                  {glassMapHref && (
+                    <div className="mt-2">
+                      <InlineLink href={glassMapHref} aria-label="View in glass map">
+                        View in glass map
+                      </InlineLink>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </>
         )}
 

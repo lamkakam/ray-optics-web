@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { type GridRow } from "@/shared/lib/types/gridTypes";
 import { type OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { buildExportScript } from "@/shared/lib/utils/pythonScript";
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
 import { Button } from "@/shared/components/primitives/Button";
@@ -18,12 +19,24 @@ import { AsphericalModal, type AsphericalType } from "@/features/lens-editor/com
 import { DecenterModal, type DecenterType } from "@/features/lens-editor/components/DecenterModal";
 import { PythonScriptModal } from "@/features/lens-editor/components/PythonScriptModal";
 import { ConfirmImportModal } from "@/features/lens-editor/components/ConfirmImportModal";
+import {
+  peekGlassCatalogs,
+  preloadGlassCatalogs,
+  type GlassCatalogsLoadResult,
+} from "@/features/glass-map/glassCatalogsResource";
 
 interface LensPrescriptionContainerProps {
   readonly getOpticalModel: () => OpticalModel;
   readonly onImportJson: (data: OpticalModel) => void;
   readonly onUpdateSystem: () => void;
   readonly isUpdateSystemDisabled: boolean;
+  readonly glassCatalogsProxy: PyodideWorkerAPI | undefined;
+  readonly glassCatalogsReady: boolean;
+}
+
+interface LoadedGlassCatalogsEntry {
+  readonly proxy: PyodideWorkerAPI;
+  readonly result: GlassCatalogsLoadResult | undefined;
 }
 
 export function LensPrescriptionContainer({
@@ -31,6 +44,8 @@ export function LensPrescriptionContainer({
   onImportJson,
   onUpdateSystem,
   isUpdateSystemDisabled,
+  glassCatalogsProxy,
+  glassCatalogsReady,
 }: LensPrescriptionContainerProps) {
   const screenSize = useScreenBreakpoint();
   const buttonSize = screenSize === "screenSM" ? "xs" : "sm";
@@ -44,7 +59,40 @@ export function LensPrescriptionContainer({
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
   const [importErrorOpen, setImportErrorOpen] = useState(false);
   const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
+  const [loadedGlassCatalogsEntry, setLoadedGlassCatalogsEntry] = useState<LoadedGlassCatalogsEntry | undefined>();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cachedGlassCatalogsResult = glassCatalogsReady && glassCatalogsProxy !== undefined
+    ? peekGlassCatalogs(glassCatalogsProxy)
+    : undefined;
+  const glassCatalogsResult = glassCatalogsReady && glassCatalogsProxy !== undefined
+    ? (
+        cachedGlassCatalogsResult
+        ?? (loadedGlassCatalogsEntry?.proxy === glassCatalogsProxy ? loadedGlassCatalogsEntry.result : undefined)
+      )
+    : undefined;
+
+  useEffect(() => {
+    if (!glassCatalogsReady || glassCatalogsProxy === undefined || cachedGlassCatalogsResult !== undefined) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void preloadGlassCatalogs(glassCatalogsProxy).then(() => {
+      if (cancelled) {
+        return;
+      }
+
+      setLoadedGlassCatalogsEntry({
+        proxy: glassCatalogsProxy,
+        result: peekGlassCatalogs(glassCatalogsProxy),
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cachedGlassCatalogsResult, glassCatalogsProxy, glassCatalogsReady]);
 
   // Stable callbacks — use store.getState() so they never change reference,
   // preventing unnecessary columnDefs recreation in LensPrescriptionGrid.
@@ -162,6 +210,8 @@ export function LensPrescriptionContainer({
         isOpen={mediumModal.open}
         initialMedium={mediumRow?.kind === "surface" ? mediumRow.medium : "air"}
         initialManufacturer={mediumRow?.kind === "surface" ? mediumRow.manufacturer : ""}
+        catalogsData={glassCatalogsResult?.data}
+        catalogsError={glassCatalogsResult?.error}
         selectedMedium={pendingMediumSelection?.medium}
         selectedManufacturer={
           pendingMediumSelection?.manufacturer === "" ? "Special" : pendingMediumSelection?.manufacturer

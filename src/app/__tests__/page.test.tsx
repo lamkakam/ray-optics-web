@@ -250,12 +250,36 @@ describe("app shell routes", () => {
     expect(screen.getByRole("tab", { name: "System Specs" })).toBeInTheDocument();
   });
 
+  it("preloads glass catalog data after the app shell becomes ready", async () => {
+    renderInAppShell(<HomePage />);
+
+    await waitFor(() => {
+      expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("renders the glass map on the glass-map route", async () => {
     renderInAppShell(<GlassMapPage />);
 
     await waitFor(() => {
       expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("reuses preloaded glass catalog data when glass map is opened later", async () => {
+    const firstRender = renderInAppShell(<HomePage />);
+
+    await waitFor(() => {
+      expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    });
+
+    firstRender.unmount();
+    renderInAppShell(<GlassMapPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/select a glass/i)).toBeInTheDocument();
+    });
+    expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
   });
 
   it("passes MediumSelectorModal route intent from search params into the glass map page", async () => {

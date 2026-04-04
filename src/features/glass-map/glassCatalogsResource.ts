@@ -6,7 +6,7 @@ import {
   type AllGlassCatalogsData,
 } from "@/shared/lib/types/glassMap";
 
-type GlassCatalogsLoadResult =
+export type GlassCatalogsLoadResult =
   | { readonly data: AllGlassCatalogsData; readonly error: undefined }
   | { readonly data: undefined; readonly error: string };
 
@@ -42,7 +42,7 @@ function createEntry(proxy: PyodideWorkerAPI): GlassCatalogsResourceEntry {
   return entry;
 }
 
-export function readGlassCatalogs(proxy: PyodideWorkerAPI): GlassCatalogsLoadResult {
+function getOrCreateEntry(proxy: PyodideWorkerAPI): GlassCatalogsResourceEntry {
   let entry = resourceCache.get(proxy);
 
   if (entry === undefined) {
@@ -50,11 +50,25 @@ export function readGlassCatalogs(proxy: PyodideWorkerAPI): GlassCatalogsLoadRes
     resourceCache.set(proxy, entry);
   }
 
+  return entry;
+}
+
+export function readGlassCatalogs(proxy: PyodideWorkerAPI): GlassCatalogsLoadResult {
+  const entry = getOrCreateEntry(proxy);
+
   if (entry.result === undefined) {
     throw entry.promise;
   }
 
   return entry.result;
+}
+
+export function preloadGlassCatalogs(proxy: PyodideWorkerAPI): Promise<void> {
+  return getOrCreateEntry(proxy).promise;
+}
+
+export function peekGlassCatalogs(proxy: PyodideWorkerAPI): GlassCatalogsLoadResult | undefined {
+  return resourceCache.get(proxy)?.result;
 }
 
 export function _resetGlassCatalogsResourceForTest(): void {

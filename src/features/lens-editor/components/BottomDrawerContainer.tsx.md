@@ -37,6 +37,7 @@ interface BottomDrawerContainerProps {
 Builds a `tabs` array via `useMemo` containing:
 1. **System Specs** — `<SpecsConfiguratorContainer />`
 2. **Prescription** — `<LensPrescriptionContainer .../>` with `isUpdateSystemDisabled={!isReady || computing}`
+   - also forwards `proxy` and `isReady` as the shared glass-catalog worker inputs for the medium selector
 3. **Focusing** — `<FocusingContainer .../>`
 
 Reads `activeBottomDrawerTabId` from the lens editor Zustand store and passes it to `BottomDrawer` as a controlled tab value. On tab change, writes the selected tab id back into `setActiveBottomDrawerTabId`, allowing Lens Editor to restore the previously selected drawer tab after navigation.
