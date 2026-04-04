@@ -33,7 +33,11 @@ type RadioOption<T extends string> = {
 
 ## Styling
 
-Uses Tailwind CSS. Label text color uses `cx.label.color.textColor`.
+Uses Tailwind CSS.
+
+- Group label text color uses `cx.label.color.textColor`.
+- Each option row uses `componentTokens.radio`, including the shared hover background token reused from `CheckboxInput`.
+- The radio control accent color comes from `componentTokens.radio.color.checkedColor`.
 
 ## Usages
 

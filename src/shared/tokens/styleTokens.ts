@@ -216,6 +216,24 @@ export const componentTokens = {
     },
   },
 
+  radio: {
+    color: {
+      hoverBgColor: g.color.toggleHoverBgColor,
+      labelTextColor: g.color.secondaryText,
+      checkedColor: "accent-blue-600",
+    },
+    size: {
+      gap: "gap-2",
+      wrapperPaddingX: "px-2",
+      wrapperPaddingY: "py-1",
+    },
+    style: {
+      wrapperBorderRadius: "rounded-lg",
+      transition: "transition",
+      cursor: "cursor-pointer",
+    },
+  },
+
   chip: {
     color: {
       borderColor: g.color.defaultBorder,

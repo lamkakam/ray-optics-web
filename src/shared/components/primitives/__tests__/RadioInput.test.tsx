@@ -2,6 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RadioInput } from "@/shared/components/primitives/RadioInput";
+import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 type Fruit = "apple" | "banana" | "cherry";
 
@@ -18,6 +19,18 @@ const defaultProps = {
   value: "apple" as Fruit,
   onChange: jest.fn(),
 };
+
+function splitClasses(str: string): string[] {
+  return str.trim().split(/\s+/).filter(Boolean);
+}
+
+function expectClasses(element: HTMLElement, ...tokenStrings: string[]) {
+  tokenStrings.forEach((token) => {
+    splitClasses(token).forEach((cls) => {
+      expect(element).toHaveClass(cls);
+    });
+  });
+}
 
 describe("RadioInput", () => {
   beforeEach(() => {
@@ -72,6 +85,26 @@ describe("RadioInput", () => {
     radios.forEach((radio) => {
       expect(radio.name).toBe("my-group");
     });
+  });
+
+  it("applies the shared hover token to each option row", () => {
+    render(<RadioInput {...defaultProps} />);
+
+    const appleRadio = screen.getByRole("radio", { name: "Apple" });
+    const optionRow = appleRadio.closest("label");
+
+    expect(optionRow).not.toBeNull();
+    expectClasses(
+      optionRow as HTMLElement,
+      cx.radio.color.hoverBgColor,
+      cx.radio.color.labelTextColor,
+      cx.radio.size.gap,
+      cx.radio.size.wrapperPaddingX,
+      cx.radio.size.wrapperPaddingY,
+      cx.radio.style.wrapperBorderRadius,
+      cx.radio.style.transition,
+      cx.radio.style.cursor,
+    );
   });
 
   it("renders labelNode as visual content when provided, keeping label as aria-label", () => {

@@ -1,6 +1,18 @@
 import React from "react";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+const OPTION_ROW_CLASSES = [
+  "flex items-center text-sm",
+  cx.radio.size.gap,
+  cx.radio.size.wrapperPaddingX,
+  cx.radio.size.wrapperPaddingY,
+  cx.radio.color.hoverBgColor,
+  cx.radio.color.labelTextColor,
+  cx.radio.style.wrapperBorderRadius,
+  cx.radio.style.transition,
+  cx.radio.style.cursor,
+] as const;
+
 export type RadioOption<T extends string> = {
   value: T;
   label: string;
@@ -32,7 +44,7 @@ export function RadioInput<T extends string>({
       </legend>
       <div className="flex flex-col gap-1">
         {options.map((opt) => (
-          <label key={opt.value} className={`flex items-center gap-2 text-sm cursor-pointer ${cx.label.color.textColor}`}>
+          <label key={opt.value} className={OPTION_ROW_CLASSES.join(" ")}>
             <input
               type="radio"
               name={name}
@@ -41,7 +53,7 @@ export function RadioInput<T extends string>({
               disabled={disabled}
               aria-label={opt.label}
               onChange={() => onChange(opt.value)}
-              className="accent-blue-600"
+              className={cx.radio.color.checkedColor}
             />
             {opt.labelNode ?? opt.label}
           </label>
