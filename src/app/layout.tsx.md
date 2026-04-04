@@ -6,8 +6,9 @@ Root server layout for the App Router. Owns metadata, global providers, and the 
 ## Responsibilities
 - Declares the app metadata
 - Imports global CSS
-- Mounts the theme provider, service worker registrar, and shared Zustand-backed store providers once for the entire app
+- Mounts the theme provider, service worker registrar, and shared app-wide Zustand-backed store providers once for the entire app
 - Wraps routed content in `AppShell` so shared client shell behaviour persists across all routes
+- Mounts `GlassMapStoreProvider` at the app root so glass-map UI state persists across route switches
 
 ## Rendered Structure
 ```tsx

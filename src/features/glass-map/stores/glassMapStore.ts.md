@@ -1,26 +1,28 @@
 # `features/glass-map/stores/glassMapStore.ts`
 
 ## Purpose
-Zustand store slice for the Glass Map page state.
+Zustand store slice for persistent Glass Map UI state.
 
 ## State (`GlassMapState`)
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `catalogsData` | `AllGlassCatalogsData \| undefined` | `undefined` | Loaded and normalized glass catalog data |
-| `dataLoading` | `boolean` | `false` | True while fetching from worker |
-| `dataError` | `string \| undefined` | `undefined` | Error message if loading fails |
 | `plotType` | `GlassMapPlotType` | `'refractiveIndex'` | Which plot type to display |
 | `abbeNumCenterLine` | `AbbeNumCenterLine` | `'d'` | d or e spectral line for Abbe number axis |
 | `partialDispersionType` | `PartialDispersionType` | `'P_g_F'` | Which partial dispersion for y-axis |
 | `enabledCatalogs` | `Record<CatalogName, boolean>` | all `true` | Per-catalog visibility filter |
 | `selectedGlass` | `SelectedGlass \| undefined` | `undefined` | Currently clicked/selected glass |
 
+```ts
+interface GlassMapRouteIntent {
+  source: "medium-selector";
+  catalog: string;
+  glass: string;
+}
+```
+
 ## Actions (`GlassMapActions`)
 | Action | Description |
 |--------|-------------|
-| `setCatalogsData(data)` | Store loaded catalog data |
-| `setDataLoading(v)` | Set loading flag |
-| `setDataError(e)` | Set/clear error string |
 | `setPlotType(t)` | Switch between refractiveIndex / partialDispersion |
 | `setAbbeNumCenterLine(l)` | Switch d/e spectral line |
 | `setPartialDispersionType(t)` | Switch P_F_d / P_F_e / P_g_F |
@@ -29,8 +31,9 @@ Zustand store slice for the Glass Map page state.
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |
 
 ## Export
-- `createGlassMapSlice: StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice)`
+- `createGlassMapSlice: StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice)` for the app-wide persistent store
 - `GlassMapStore = GlassMapState & GlassMapActions`
+- `GlassMapRouteIntent` — route-level input type used by `app/glass-map/page.tsx` and `GlassMapView.tsx`, but not stored in zustand
 
 ## Usages
 
@@ -38,56 +41,30 @@ Zustand store slice for the Glass Map page state.
 "use client";
 
 import { useStore } from "zustand";
-import { createStore } from "createStore from "zustand";
+import { createStore } from "zustand";
 import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import { createGlassMapSlice } from "@/features/glass-map/stores/glassMapStore";
-import { GlassScatterPlot } from "@/components/composite/GlassScatterPlot";
+import { readGlassCatalogs } from "@/features/glass-map/glassCatalogsResource";
+import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
 
-export default function GlassMapPage() {
-  const { proxy, isReady } = usePyodide();
+export default function GlassMapView({ proxy }: { proxy: PyodideWorkerAPI }) {
+  const glassMapStore = createStore<GlassMapStore>(createGlassMapSlice);
 
-  // Create the store once
-  const glassMapStore = useMemo(
-    () => createStore<GlassMapStore>(createGlassMapSlice),
-    []
-  );
-
-  // Read state
   const plotType = useStore(glassMapStore, (s) => s.plotType);
-  const catalogsData = useStore(glassMapStore, (s) => s.catalogsData);
-  const dataLoading = useStore(glassMapStore, (s) => s.dataLoading);
+  const catalogsLoadResult = readGlassCatalogs(proxy);
 
-  // Load catalog data on mount
-  useEffect(() => {
-    if (!isReady || !proxy) return;
-
-    glassMapStore.getState().setDataLoading(true);
-    proxy
-      .getAllGlassCatalogsData()
-      .then((data) => {
-        glassMapStore.getState().setCatalogsData(data);
-      })
-      .catch((err) => {
-        glassMapStore.getState().setDataError(err.message);
-      })
-      .finally(() => {
-        glassMapStore.getState().setDataLoading(false);
-      });
-  }, [isReady, proxy]);
+  if (catalogsLoadResult.error !== undefined) {
+    return <p>{catalogsLoadResult.error}</p>;
+  }
 
   return (
-    <div>
-      {dataLoading && <p>Loading catalogs...</p>}
-      {catalogsData && (
-        <GlassScatterPlot
-          data={catalogsData}
-          plotType={plotType}
-          onPlotTypeChange={(type) =>
-            glassMapStore.getState().setPlotType(type)
-          }
-        />
-      )}
-    </div>
+    <GlassScatterPlot
+      points={[]}
+      selectedGlass={undefined}
+      xAxisLabel="Vd"
+      yAxisLabel="Nd"
+      onPointClick={() => undefined}
+    />
   );
 }
 ```

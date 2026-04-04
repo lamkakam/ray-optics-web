@@ -286,4 +286,23 @@ describe("FieldConfigModal", () => {
     expect(spaceDropdown.value).toBe("image");
     expect(typeDropdown.value).toBe("height");
   });
+
+  it("keeps the current draft while open when parent props change", async () => {
+    const { rerender } = render(<FieldConfigModal {...defaultProps} />);
+    const input = screen.getByLabelText("Max field value");
+
+    await userEvent.clear(input);
+    await userEvent.type(input, "45");
+    expect(input).toHaveValue("45");
+
+    rerender(
+      <FieldConfigModal
+        {...defaultProps}
+        initialMaxField={30}
+        initialRelativeFields={[0, 0.5, 1]}
+      />
+    );
+
+    expect(screen.getByLabelText("Max field value")).toHaveValue("45");
+  });
 });

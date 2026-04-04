@@ -30,21 +30,6 @@ function makeStore() {
 }
 
 describe("glassMapStore initial state", () => {
-  it("catalogsData is undefined", () => {
-    const store = makeStore();
-    expect(store.getState().catalogsData).toBeUndefined();
-  });
-
-  it("dataLoading is false", () => {
-    const store = makeStore();
-    expect(store.getState().dataLoading).toBe(false);
-  });
-
-  it("dataError is undefined", () => {
-    const store = makeStore();
-    expect(store.getState().dataError).toBeUndefined();
-  });
-
   it("plotType is refractiveIndex", () => {
     const store = makeStore();
     expect(store.getState().plotType).toBe("refractiveIndex");
@@ -79,31 +64,6 @@ describe("glassMapStore initial state", () => {
 });
 
 describe("glassMapStore actions", () => {
-  it("setCatalogsData sets data", () => {
-    const store = makeStore();
-    store.getState().setCatalogsData(mockCatalogsData);
-    expect(store.getState().catalogsData).toBe(mockCatalogsData);
-  });
-
-  it("setDataLoading sets true", () => {
-    const store = makeStore();
-    store.getState().setDataLoading(true);
-    expect(store.getState().dataLoading).toBe(true);
-  });
-
-  it("setDataError sets error string", () => {
-    const store = makeStore();
-    store.getState().setDataError("Network error");
-    expect(store.getState().dataError).toBe("Network error");
-  });
-
-  it("setDataError clears error with undefined", () => {
-    const store = makeStore();
-    store.getState().setDataError("err");
-    store.getState().setDataError(undefined);
-    expect(store.getState().dataError).toBeUndefined();
-  });
-
   it("setPlotType sets partialDispersion", () => {
     const store = makeStore();
     store.getState().setPlotType("partialDispersion");

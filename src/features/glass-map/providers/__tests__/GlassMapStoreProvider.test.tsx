@@ -1,5 +1,6 @@
 import React from "react";
 import { renderHook } from "@testing-library/react";
+import { act } from "@testing-library/react";
 import { createStore } from "zustand/vanilla";
 import {
   GlassMapStoreProvider,
@@ -51,5 +52,18 @@ describe("GlassMapStoreProvider", () => {
       ),
     });
     expect(result.current).toBe(store);
+  });
+  it("exposes only persistent UI state actions", () => {
+    const { result } = renderHook(() => useGlassMapStore(), {
+      wrapper: ({ children }) => (
+        <GlassMapStoreProvider>{children}</GlassMapStoreProvider>
+      ),
+    });
+
+    expect(result.current.getState().setPlotType).toBeDefined();
+    expect(result.current.getState().toggleCatalog).toBeDefined();
+    expect(result.current.getState().setSelectedGlass).toBeDefined();
+    expect((result.current.getState() as unknown as Record<string, unknown>).setRouteIntent).toBeUndefined();
+    expect((result.current.getState() as unknown as Record<string, unknown>).setCatalogsData).toBeUndefined();
   });
 });

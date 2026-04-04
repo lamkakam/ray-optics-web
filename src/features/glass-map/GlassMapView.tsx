@@ -1,27 +1,22 @@
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useState } from "react";
 import { useStore } from "zustand";
 import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
 import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";
 import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
-import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
+import type { GlassMapRouteIntent, GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { readGlassCatalogs } from "@/features/glass-map/glassCatalogsResource";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { CATALOG_NAMES, type CatalogName, type SelectedGlass } from "@/shared/lib/types/glassMap";
-import { normalizeAllCatalogsData, computePlotPoints } from "@/shared/lib/types/glassMap";
+import type { CatalogName, SelectedGlass } from "@/shared/lib/types/glassMap";
+import { computePlotPoints } from "@/shared/lib/types/glassMap";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly routeIntent?: GlassMapRouteIntent;
-}
-
-export interface GlassMapRouteIntent {
-  readonly source: "medium-selector";
-  readonly catalog: string;
-  readonly glass: string;
 }
 
 function axisLabels(
@@ -41,97 +36,24 @@ function axisLabels(
   return { xLabel, yLabel: yLabelMap[partialDispersionType] };
 }
 
-function isCatalogName(value: string): value is CatalogName {
-  return CATALOG_NAMES.includes(value as CatalogName);
-}
-
 export function GlassMapView({ proxy, isReady, routeIntent }: GlassMapViewProps) {
   const store = useGlassMapStore();
-  const catalogsData = useStore(store, (s) => s.catalogsData);
-  const dataLoading = useStore(store, (s) => s.dataLoading);
-  const dataError = useStore(store, (s) => s.dataError);
   const plotType = useStore(store, (s) => s.plotType);
   const abbeNumCenterLine = useStore(store, (s) => s.abbeNumCenterLine);
   const partialDispersionType = useStore(store, (s) => s.partialDispersionType);
   const enabledCatalogs = useStore(store, (s) => s.enabledCatalogs);
   const selectedGlass = useStore(store, (s) => s.selectedGlass);
+  const [routeIntentDismissed, setRouteIntentDismissed] = useState(false);
 
   const {
-    setCatalogsData,
-    setDataLoading,
-    setDataError,
     setPlotType,
     setAbbeNumCenterLine,
     setPartialDispersionType,
     toggleCatalog,
-    enableCatalog,
     setSelectedGlass,
   } = store.getState();
 
-  // Fetch data on mount when ready and not yet loaded
-  useEffect(() => {
-    if (!isReady || !proxy || catalogsData !== undefined) return;
-    setDataLoading(true);
-    proxy
-      .getAllGlassCatalogsData()
-      .then((raw) => {
-        setCatalogsData(normalizeAllCatalogsData(raw));
-        setDataLoading(false);
-      })
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : "Failed to load glass data";
-        setDataError(message);
-        setDataLoading(false);
-      });
-  }, [isReady, proxy, catalogsData, setCatalogsData, setDataLoading, setDataError]);
-
-  useEffect(() => {
-    if (catalogsData === undefined || routeIntent?.source !== "medium-selector") {
-      return;
-    }
-
-    if (!isCatalogName(routeIntent.catalog)) {
-      return;
-    }
-
-    const catalog = catalogsData[routeIntent.catalog];
-    const data = catalog[routeIntent.glass];
-
-    if (data === undefined) {
-      return;
-    }
-
-    enableCatalog(routeIntent.catalog);
-    setSelectedGlass({
-      catalogName: routeIntent.catalog,
-      glassName: routeIntent.glass,
-      data,
-    });
-  }, [catalogsData, enableCatalog, routeIntent, setSelectedGlass]);
-
-  const points = useMemo(
-    () =>
-      catalogsData
-        ? computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType)
-        : [],
-    [catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType]
-  );
-
-  const { xLabel, yLabel } = axisLabels(plotType, abbeNumCenterLine, partialDispersionType);
-
-  const handlePointClick = (glass: SelectedGlass) => {
-    setSelectedGlass(glass);
-  };
-
-  if (dataError) {
-    return (
-      <div className="flex items-center justify-center h-full text-red-500">
-        {dataError}
-      </div>
-    );
-  }
-
-  if (!isReady || dataLoading || catalogsData === undefined) {
+  if (!isReady || !proxy) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
         Loading glass catalog data…
@@ -139,13 +61,85 @@ export function GlassMapView({ proxy, isReady, routeIntent }: GlassMapViewProps)
     );
   }
 
+  const catalogsLoadResult = readGlassCatalogs(proxy);
+
+  if (catalogsLoadResult.error !== undefined) {
+    return (
+      <div className="flex items-center justify-center h-full text-red-500">
+        {catalogsLoadResult.error}
+      </div>
+    );
+  }
+
+  const catalogsData = catalogsLoadResult.data;
+
+  let routeSelectedGlass: SelectedGlass | undefined;
+  if (routeIntent !== undefined) {
+    const catalogName = routeIntent.catalog as CatalogName;
+    const catalog = catalogsData[catalogName];
+    const glassData = catalog?.[routeIntent.glass];
+
+    if (glassData !== undefined) {
+      routeSelectedGlass = {
+        catalogName,
+        glassName: routeIntent.glass,
+        data: glassData,
+      };
+    }
+  }
+
+  const routeIntentActive = !routeIntentDismissed && routeSelectedGlass !== undefined;
+  const effectiveSelectedGlass = routeIntentActive ? routeSelectedGlass : selectedGlass;
+  const effectiveEnabledCatalogs =
+    !routeIntentActive || routeSelectedGlass === undefined
+      ? enabledCatalogs
+      : {
+          ...enabledCatalogs,
+          [routeSelectedGlass.catalogName]: true,
+        };
+
+  const points = computePlotPoints(
+    catalogsData,
+    effectiveEnabledCatalogs,
+    plotType,
+    abbeNumCenterLine,
+    partialDispersionType
+  );
+
+  const { xLabel, yLabel } = axisLabels(plotType, abbeNumCenterLine, partialDispersionType);
+
+  const handlePointClick = (glass: SelectedGlass) => {
+    setRouteIntentDismissed(true);
+    setSelectedGlass(glass);
+  };
+
+  const handlePlotTypeChange = (value: GlassMapStore["plotType"]) => {
+    setRouteIntentDismissed(true);
+    setPlotType(value);
+  };
+
+  const handleAbbeNumCenterLineChange = (value: GlassMapStore["abbeNumCenterLine"]) => {
+    setRouteIntentDismissed(true);
+    setAbbeNumCenterLine(value);
+  };
+
+  const handlePartialDispersionTypeChange = (value: GlassMapStore["partialDispersionType"]) => {
+    setRouteIntentDismissed(true);
+    setPartialDispersionType(value);
+  };
+
+  const handleToggleCatalog = (name: CatalogName) => {
+    setRouteIntentDismissed(true);
+    toggleCatalog(name);
+  };
+
   return (
     <div className="flex flex-col lg:flex-row h-full overflow-hidden">
       {/* Plot area */}
       <div className="flex-1 lg:w-[60%] min-h-[300px]">
         <GlassScatterPlot
           points={points}
-          selectedGlass={selectedGlass}
+          selectedGlass={effectiveSelectedGlass}
           xAxisLabel={xLabel}
           yAxisLabel={yLabel}
           onPointClick={handlePointClick}
@@ -166,13 +160,13 @@ export function GlassMapView({ proxy, isReady, routeIntent }: GlassMapViewProps)
           plotType={plotType}
           abbeNumCenterLine={abbeNumCenterLine}
           partialDispersionType={partialDispersionType}
-          enabledCatalogs={enabledCatalogs}
-          onPlotTypeChange={setPlotType}
-          onAbbeNumCenterLineChange={setAbbeNumCenterLine}
-          onPartialDispersionTypeChange={setPartialDispersionType}
-          onToggleCatalog={toggleCatalog}
+          enabledCatalogs={effectiveEnabledCatalogs}
+          onPlotTypeChange={handlePlotTypeChange}
+          onAbbeNumCenterLineChange={handleAbbeNumCenterLineChange}
+          onPartialDispersionTypeChange={handlePartialDispersionTypeChange}
+          onToggleCatalog={handleToggleCatalog}
         />
-        <GlassDetailPanel selectedGlass={selectedGlass} />
+        <GlassDetailPanel selectedGlass={effectiveSelectedGlass} />
       </div>
     </div>
   );

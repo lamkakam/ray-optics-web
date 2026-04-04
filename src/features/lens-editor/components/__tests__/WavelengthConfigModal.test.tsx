@@ -241,4 +241,27 @@ describe("WavelengthConfigModal", () => {
       expect.objectContaining({ referenceIndex: 1 })
     );
   });
+
+  it("keeps the current draft while open when parent props change", async () => {
+    const { rerender } = render(<WavelengthConfigModal {...defaultProps} />);
+
+    const radios = screen.getAllByRole("radio") as HTMLInputElement[];
+    await userEvent.click(radios[2]);
+    expect(radios[2].checked).toBe(true);
+
+    rerender(
+      <WavelengthConfigModal
+        {...defaultProps}
+        initialWeights={[
+          [486.133, 1],
+          [587.562, 2],
+          [656.273, 3],
+        ]}
+        initialReferenceIndex={0}
+      />
+    );
+
+    const updatedRadios = screen.getAllByRole("radio") as HTMLInputElement[];
+    expect(updatedRadios[2].checked).toBe(true);
+  });
 });
