@@ -2,22 +2,28 @@
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { createStore, type StoreApi } from 'zustand';
-import { createGlassMapSlice, type GlassMapStore } from '@/features/glass-map/stores/glassMapStore';
+import {
+  createGlassMapSlice,
+  type GlassMapRouteIntent,
+  type GlassMapStore,
+} from '@/features/glass-map/stores/glassMapStore';
 
 type ContextValue = StoreApi<GlassMapStore> | undefined;
 
 export const GlassMapStoreContext = createContext<ContextValue>(undefined);
 
 export interface GlassMapStoreProviderProps {
-  children: ReactNode;
+  readonly children: ReactNode;
+  readonly initialRouteIntent?: GlassMapRouteIntent;
 }
 
-export const GlassMapStoreProvider: React.FC<GlassMapStoreProviderProps> = ({ children }) => {
-  const [store, setStore] = useState<ContextValue>(undefined);
-
-  if (store === undefined) {
-    setStore(createStore<GlassMapStore>(createGlassMapSlice));
-  }
+export const GlassMapStoreProvider: React.FC<GlassMapStoreProviderProps> = ({
+  children,
+  initialRouteIntent,
+}) => {
+  const [store] = useState(() =>
+    createStore<GlassMapStore>(createGlassMapSlice(initialRouteIntent))
+  );
 
   return (
     <GlassMapStoreContext.Provider value={store}>

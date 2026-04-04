@@ -34,7 +34,7 @@ interface SpecsConfiguratorPanelProps {
 
 ## Internal State
 
-- `valueStr: string` — local string draft of `pupilValue`. Synced with `pupilValue` prop via `useEffect`. Committed on `blur` if the string parses to a valid number; reverted otherwise.
+- `ApertureValueInput.valueStr: string` — local string draft of `pupilValue` held by a keyed child input. The child remounts when the committed `pupilValue` changes, so no prop-sync `useEffect` is needed. The draft is committed on `blur` if it parses to a valid number; otherwise it reverts to the last committed value.
 
 ## Key Behaviors
 

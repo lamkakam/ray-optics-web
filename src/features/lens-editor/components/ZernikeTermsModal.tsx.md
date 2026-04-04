@@ -35,12 +35,12 @@ interface ZernikeTermsModalProps {
 | `selectedOrdering` | `ZernikeOrdering` | "noll" or "fringe" (reset to "fringe" on each open) |
 | `data` | `ZernikeData \| undefined` | Fetched Zernike data |
 | `loading` | `boolean` | Whether a fetch is in progress |
-| `prevIsOpen` | `boolean` | Tracks open transition (false→true) |
-| `openCount` | `number` | Increments on each open transition; drives the fetch effect |
+| `requestCounter` | `MutableRefObject<number>` | Monotonic request id used to ignore stale async results |
 
 ## Key Behaviors
 
-- On `isOpen` transition false→true: resets field index, wavelength index, and ordering to 0/"fringe", then triggers a data fetch.
+- Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh inner editor with default selection state (`0`, `0`, `"fringe"`).
+- On mount, fetches data once for `(field=0, wavelength=0, ordering="fringe")`.
 - On any dropdown change (field, wavelength, ordering): fetches data with the new selection.
 - Race condition guard: uses a request counter ref to discard stale results from prior fetches.
 - Renders Zernike terms in a scrollable table; row count and index scheme depend on ordering:

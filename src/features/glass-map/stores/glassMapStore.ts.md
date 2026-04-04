@@ -14,11 +14,20 @@ Zustand store slice for the Glass Map page state.
 | `partialDispersionType` | `PartialDispersionType` | `'P_g_F'` | Which partial dispersion for y-axis |
 | `enabledCatalogs` | `Record<CatalogName, boolean>` | all `true` | Per-catalog visibility filter |
 | `selectedGlass` | `SelectedGlass \| undefined` | `undefined` | Currently clicked/selected glass |
+| `pendingRouteIntent` | `GlassMapRouteIntent \| undefined` | `undefined` | One-time selection intent seeded by the page/provider and consumed when catalog data is committed |
+
+```ts
+interface GlassMapRouteIntent {
+  source: "medium-selector";
+  catalog: string;
+  glass: string;
+}
+```
 
 ## Actions (`GlassMapActions`)
 | Action | Description |
 |--------|-------------|
-| `setCatalogsData(data)` | Store loaded catalog data |
+| `setCatalogsData(data)` | Store loaded catalog data; if a valid pending route intent exists, also enables that catalog and selects the requested glass before clearing the pending intent |
 | `setDataLoading(v)` | Set loading flag |
 | `setDataError(e)` | Set/clear error string |
 | `setPlotType(t)` | Switch between refractiveIndex / partialDispersion |
@@ -29,7 +38,7 @@ Zustand store slice for the Glass Map page state.
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |
 
 ## Export
-- `createGlassMapSlice: StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice)`
+- `createGlassMapSlice(initialRouteIntent?): StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice(initialRouteIntent))`
 - `GlassMapStore = GlassMapState & GlassMapActions`
 
 ## Usages

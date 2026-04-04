@@ -138,6 +138,21 @@ describe("SpecsConfiguratorPanel", () => {
       expect(input).toHaveValue("25.15");
     });
 
+    it("resets the draft when the committed pupil value changes", async () => {
+      const { rerender } = render(
+        <SpecsConfiguratorPanel {...defaultProps} pupilValue={25} />
+      );
+      const input = screen.getByLabelText("Aperture value");
+
+      await userEvent.clear(input);
+      await userEvent.type(input, "33");
+      expect(input).toHaveValue("33");
+
+      rerender(<SpecsConfiguratorPanel {...defaultProps} pupilValue={40} />);
+
+      expect(screen.getByLabelText("Aperture value")).toHaveValue("40");
+    });
+
     it("calls onOpenFieldModal when field button is clicked", async () => {
       const onOpenFieldModal = jest.fn();
       render(<SpecsConfiguratorPanel {...defaultProps} onOpenFieldModal={onOpenFieldModal} />);

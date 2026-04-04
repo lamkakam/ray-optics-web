@@ -34,32 +34,27 @@ interface ZernikeTermsModalProps {
 
 export function ZernikeTermsModal({
   isOpen,
+  ...props
+}: ZernikeTermsModalProps) {
+  if (!isOpen) {
+    return null;
+  }
+
+  return <ZernikeTermsModalContent key="zernike-terms-modal" {...props} />;
+}
+
+function ZernikeTermsModalContent({
   fieldOptions,
   wavelengthOptions,
   onFetchData,
   onClose,
-}: ZernikeTermsModalProps) {
+}: Omit<ZernikeTermsModalProps, "isOpen">) {
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
   const [selectedWvlIndex, setSelectedWvlIndex] = useState(0);
   const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("fringe");
   const [data, setData] = useState<ZernikeData | undefined>();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const requestCounter = useRef(0);
-
-  // Track open transitions: prevIsOpen as state enables render-phase detection
-  const [prevIsOpen, setPrevIsOpen] = useState(false);
-  const [openCount, setOpenCount] = useState(0);
-
-  if (isOpen && !prevIsOpen) {
-    setPrevIsOpen(true);
-    setOpenCount((c) => c + 1);
-    setSelectedFieldIndex(0);
-    setSelectedWvlIndex(0);
-    setSelectedOrdering("fringe");
-  }
-  if (!isOpen && prevIsOpen) {
-    setPrevIsOpen(false);
-  }
 
   const fetchData = useCallback(
     (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => {
@@ -77,10 +72,16 @@ export function ZernikeTermsModal({
   );
 
   useEffect(() => {
-    if (openCount > 0) {
-      fetchData(0, 0, "fringe"); // eslint-disable-line react-hooks/set-state-in-effect
-    }
-  }, [openCount, fetchData]);
+    requestCounter.current += 1;
+    const requestId = requestCounter.current;
+
+    onFetchData(0, 0, "fringe").then((result) => {
+      if (requestCounter.current === requestId) {
+        setData(result);
+        setLoading(false);
+      }
+    });
+  }, [onFetchData]);
 
   const handleFieldChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -133,10 +134,8 @@ export function ZernikeTermsModal({
     });
   }, [data, numTerms, toNm]);
 
-  if (!isOpen) return null;
-
   return (
-    <Modal isOpen={isOpen} title="Zernike Terms" titleId="zernike-modal-title" size="4xl">
+    <Modal isOpen={true} title="Zernike Terms" titleId="zernike-modal-title" size="4xl">
         <div className="flex items-center gap-4 mb-2">
           <div className="flex items-center gap-2">
             <Label htmlFor="zernike-field-select">Field</Label>

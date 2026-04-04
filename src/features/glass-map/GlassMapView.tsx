@@ -5,23 +5,17 @@ import { useStore } from "zustand";
 import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
 import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";
 import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
-import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
+import type { GlassMapRouteIntent, GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { CATALOG_NAMES, type CatalogName, type SelectedGlass } from "@/shared/lib/types/glassMap";
+import type { SelectedGlass } from "@/shared/lib/types/glassMap";
 import { normalizeAllCatalogsData, computePlotPoints } from "@/shared/lib/types/glassMap";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly routeIntent?: GlassMapRouteIntent;
-}
-
-export interface GlassMapRouteIntent {
-  readonly source: "medium-selector";
-  readonly catalog: string;
-  readonly glass: string;
 }
 
 function axisLabels(
@@ -39,10 +33,6 @@ function axisLabels(
     P_g_F: "P_g,F",
   };
   return { xLabel, yLabel: yLabelMap[partialDispersionType] };
-}
-
-function isCatalogName(value: string): value is CatalogName {
-  return CATALOG_NAMES.includes(value as CatalogName);
 }
 
 export function GlassMapView({ proxy, isReady, routeIntent }: GlassMapViewProps) {
@@ -64,7 +54,6 @@ export function GlassMapView({ proxy, isReady, routeIntent }: GlassMapViewProps)
     setAbbeNumCenterLine,
     setPartialDispersionType,
     toggleCatalog,
-    enableCatalog,
     setSelectedGlass,
   } = store.getState();
 
@@ -84,30 +73,6 @@ export function GlassMapView({ proxy, isReady, routeIntent }: GlassMapViewProps)
         setDataLoading(false);
       });
   }, [isReady, proxy, catalogsData, setCatalogsData, setDataLoading, setDataError]);
-
-  useEffect(() => {
-    if (catalogsData === undefined || routeIntent?.source !== "medium-selector") {
-      return;
-    }
-
-    if (!isCatalogName(routeIntent.catalog)) {
-      return;
-    }
-
-    const catalog = catalogsData[routeIntent.catalog];
-    const data = catalog[routeIntent.glass];
-
-    if (data === undefined) {
-      return;
-    }
-
-    enableCatalog(routeIntent.catalog);
-    setSelectedGlass({
-      catalogName: routeIntent.catalog,
-      glassName: routeIntent.glass,
-      data,
-    });
-  }, [catalogsData, enableCatalog, routeIntent, setSelectedGlass]);
 
   const points = useMemo(
     () =>

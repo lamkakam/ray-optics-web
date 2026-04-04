@@ -26,7 +26,7 @@ const mockCatalogsData: AllGlassCatalogsData = {
 };
 
 function makeStore() {
-  return createStore<GlassMapStore>(createGlassMapSlice);
+  return createStore<GlassMapStore>(createGlassMapSlice());
 }
 
 describe("glassMapStore initial state", () => {

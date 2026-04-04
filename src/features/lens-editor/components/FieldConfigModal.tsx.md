@@ -39,7 +39,7 @@ interface FieldConfigModalProps {
 
 ## Key Behaviors
 
-- Reset-on-open: all draft state is re-initialized from props when `isOpen` transitions to `true`.
+- Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh editor subtree whose draft state is initialized from props without a reset `useEffect`.
 - Row limit is 10; the add button becomes hidden (not removed) at the limit.
 - The first row cannot be deleted.
 - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
@@ -52,25 +52,25 @@ const MAX_ROWS = 7;
 
 export function WavelengthConfigModal({
   isOpen,
+  ...props
+}: WavelengthConfigModalProps) {
+  if (!isOpen) {
+    return null;
+  }
+
+  return <WavelengthConfigModalContent key="wavelength-config-modal" {...props} />;
+}
+
+function WavelengthConfigModalContent({
   initialWeights,
   initialReferenceIndex,
   onApply,
   onClose,
-}: WavelengthConfigModalProps) {
+}: Omit<WavelengthConfigModalProps, "isOpen">) {
   const gridTheme = useAgGridTheme();
 
   const [rows, setRows] = useState<WavelengthRow[]>(() => weightsToRows(initialWeights));
-  const [referenceIndex, setReferenceIndex] = useState(initialReferenceIndex);
-
-  // Reset draft state when modal opens (reset-on-open pattern: syncing local draft state with props)
-  useEffect(() => {
-    if (isOpen) {
-      setRows(weightsToRows(initialWeights)); // eslint-disable-line react-hooks/set-state-in-effect
-      setReferenceIndex(initialReferenceIndex);
-    }
-  }, [isOpen, initialWeights, initialReferenceIndex]);
-
-
+  const [referenceIndex, setReferenceIndex] = useState(() => initialReferenceIndex);
 
   const addRow = useCallback((afterId: string) => {
     setRows((prev) => {
@@ -212,7 +212,7 @@ export function WavelengthConfigModal({
   ];
 
   return (
-    <Modal isOpen={isOpen} title="Wavelengths" titleId="wavelength-modal-title" size="4xl">
+    <Modal isOpen={true} title="Wavelengths" titleId="wavelength-modal-title" size="4xl">
       <div className="mb-4" style={{ width: "100%" }}>
         <Paragraph variant="caption">Maximum 7 wavelengths</Paragraph>
         <AgGridProvider modules={[AllCommunityModule]}>

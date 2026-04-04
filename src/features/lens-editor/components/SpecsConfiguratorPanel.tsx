@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { Button } from "@/shared/components/primitives/Button";
 import { Select } from "@/shared/components/primitives/Select";
@@ -44,12 +44,6 @@ export function SpecsConfiguratorPanel({
   onOpenFieldModal,
   onOpenWavelengthModal,
 }: SpecsConfiguratorPanelProps) {
-  const [valueStr, setValueStr] = useState(String(pupilValue));
-
-  useEffect(() => {
-    setValueStr(String(pupilValue));
-  }, [pupilValue]);
-
   const currentDropdownValue = `${pupilSpace}:${pupilType}`;
 
   const handleDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -59,16 +53,6 @@ export function SpecsConfiguratorPanel({
         pupilSpace: option.pupilSpace,
         pupilType: option.pupilType,
       });
-    }
-  };
-
-  const handleValueBlur = () => {
-    const trimmed = valueStr.trim();
-    const parsed = Number(trimmed);
-    if (trimmed !== "" && !isNaN(parsed)) {
-      onApertureChange({ pupilValue: parsed });
-    } else {
-      setValueStr(String(pupilValue));
     }
   };
 
@@ -84,12 +68,10 @@ export function SpecsConfiguratorPanel({
             value={currentDropdownValue}
             onChange={handleDropdownChange}
           />
-          <Input
-            type="text"
-            aria-label="Aperture value"
-            value={valueStr}
-            onChange={(e) => setValueStr(e.target.value)}
-            onBlur={handleValueBlur}
+          <ApertureValueInput
+            key={pupilValue}
+            pupilValue={pupilValue}
+            onCommit={(value) => onApertureChange({ pupilValue: value })}
           />
         </div>
       </section>
@@ -124,5 +106,35 @@ export function SpecsConfiguratorPanel({
         </Tooltip>
       </section>
     </div>
+  );
+}
+
+interface ApertureValueInputProps {
+  readonly pupilValue: number;
+  readonly onCommit: (value: number) => void;
+}
+
+function ApertureValueInput({ pupilValue, onCommit }: ApertureValueInputProps) {
+  const [valueStr, setValueStr] = useState(() => String(pupilValue));
+
+  const handleValueBlur = () => {
+    const trimmed = valueStr.trim();
+    const parsed = Number(trimmed);
+    if (trimmed !== "" && !isNaN(parsed)) {
+      onCommit(parsed);
+      return;
+    }
+
+    setValueStr(String(pupilValue));
+  };
+
+  return (
+    <Input
+      type="text"
+      aria-label="Aperture value"
+      value={valueStr}
+      onChange={(e) => setValueStr(e.target.value)}
+      onBlur={handleValueBlur}
+    />
   );
 }

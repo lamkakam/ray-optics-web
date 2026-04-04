@@ -2,7 +2,9 @@
 
 import React, { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { GlassMapView, type GlassMapRouteIntent } from "@/features/glass-map/GlassMapView";
+import { GlassMapView } from "@/features/glass-map/GlassMapView";
+import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import type { GlassMapRouteIntent } from "@/features/glass-map/stores/glassMapStore";
 import { useAppShell } from "@/app/AppShellContext";
 
 interface GlassMapPageContentProps {
@@ -24,7 +26,15 @@ function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {
     return { source, catalog, glass };
   }, [searchParams]);
 
-  return <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />;
+  const storeKey = routeIntent
+    ? `${routeIntent.source}:${routeIntent.catalog}:${routeIntent.glass}`
+    : "glass-map-default";
+
+  return (
+    <GlassMapStoreProvider key={storeKey} initialRouteIntent={routeIntent}>
+      <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />
+    </GlassMapStoreProvider>
+  );
 }
 
 export default function GlassMapPage() {

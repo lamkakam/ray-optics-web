@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
@@ -50,6 +50,16 @@ const MAX_ROWS = 10;
 
 export function FieldConfigModal({
   isOpen,
+  ...props
+}: FieldConfigModalProps) {
+  if (!isOpen) {
+    return null;
+  }
+
+  return <FieldConfigModalContent key="field-config-modal" {...props} />;
+}
+
+function FieldConfigModalContent({
   initialSpace,
   initialType,
   initialMaxField,
@@ -57,27 +67,14 @@ export function FieldConfigModal({
   initialIsWideAngle,
   onApply,
   onClose,
-}: FieldConfigModalProps) {
+}: Omit<FieldConfigModalProps, "isOpen">) {
   const gridTheme = useAgGridTheme();
 
-  const [space, setSpace] = useState(initialSpace);
-  const [fieldType, setFieldType] = useState(initialType);
-  const [maxFieldStr, setMaxFieldStr] = useState(String(initialMaxField));
+  const [space, setSpace] = useState(() => initialSpace);
+  const [fieldType, setFieldType] = useState(() => initialType);
+  const [maxFieldStr, setMaxFieldStr] = useState(() => String(initialMaxField));
   const [rows, setRows] = useState<FieldRow[]>(() => fieldsToRows(initialRelativeFields));
-  const [isWideAngle, setIsWideAngle] = useState(initialIsWideAngle);
-
-  // Reset draft state when modal opens (reset-on-open pattern: syncing local draft state with props)
-  useEffect(() => {
-    if (isOpen) {
-      setSpace(initialSpace); // eslint-disable-line react-hooks/set-state-in-effect
-      setFieldType(initialType);
-      setMaxFieldStr(String(initialMaxField));
-      setRows(fieldsToRows(initialRelativeFields));
-      setIsWideAngle(initialIsWideAngle);
-    }
-  }, [isOpen, initialSpace, initialType, initialMaxField, initialRelativeFields, initialIsWideAngle]);
-
-
+  const [isWideAngle, setIsWideAngle] = useState(() => initialIsWideAngle);
 
   const addRow = useCallback((afterId: string) => {
     setRows((prev) => {
@@ -158,7 +155,7 @@ export function FieldConfigModal({
   ];
 
   return (
-    <Modal isOpen={isOpen} title="Field" titleId="field-modal-title" size="lg">
+    <Modal isOpen={true} title="Field" titleId="field-modal-title" size="lg">
       <div className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 items-end">
         <div>
           <Label htmlFor="field-space">Field space</Label>

@@ -70,8 +70,10 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
   };
 }
 
-function makeStore() {
-  return createStore<GlassMapStore>(createGlassMapSlice);
+function makeStore(
+  initialRouteIntent?: Parameters<typeof createGlassMapSlice>[0]
+) {
+  return createStore<GlassMapStore>(createGlassMapSlice(initialRouteIntent));
 }
 
 function renderWithStore(
@@ -156,12 +158,18 @@ describe("GlassMapView", () => {
 
   it("auto-selects a requested glass after data loads", async () => {
     const proxy = makeProxy();
+    const routeIntent = {
+      source: "medium-selector" as const,
+      catalog: "Schott",
+      glass: "N-BK7",
+    };
     renderWithStore(
       <GlassMapView
         proxy={proxy}
         isReady={true}
-        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        routeIntent={routeIntent}
       />,
+      makeStore(routeIntent),
     );
 
     await waitFor(() => {
@@ -171,7 +179,12 @@ describe("GlassMapView", () => {
 
   it("re-enables the requested catalog when restoring a selected glass", async () => {
     const proxy = makeProxy();
-    const store = makeStore();
+    const routeIntent = {
+      source: "medium-selector" as const,
+      catalog: "Schott",
+      glass: "N-BK7",
+    };
+    const store = makeStore(routeIntent);
     act(() => {
       store.getState().toggleCatalog("Schott");
     });
@@ -180,7 +193,7 @@ describe("GlassMapView", () => {
       <GlassMapView
         proxy={proxy}
         isReady={true}
-        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        routeIntent={routeIntent}
       />,
       store,
     );
@@ -240,5 +253,31 @@ describe("GlassMapView", () => {
     });
 
     expect(screen.queryByRole("link", { name: "Back to lens editor" })).not.toBeInTheDocument();
+  });
+
+  it("applies route intent from preloaded store data on the first render", async () => {
+    const proxy = makeProxy();
+    const routeIntent = {
+      source: "medium-selector" as const,
+      catalog: "Schott",
+      glass: "N-BK7",
+    };
+    const store = makeStore(routeIntent);
+    const { normalizeAllCatalogsData } = await import("@/shared/lib/types/glassMap");
+
+    act(() => {
+      store.getState().setCatalogsData(normalizeAllCatalogsData(rawData));
+    });
+
+    renderWithStore(
+      <GlassMapView
+        proxy={proxy}
+        isReady={true}
+        routeIntent={routeIntent}
+      />,
+      store,
+    );
+
+    expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
   });
 });

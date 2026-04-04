@@ -18,6 +18,13 @@ export interface GlassMapState {
   partialDispersionType: PartialDispersionType;
   enabledCatalogs: Record<CatalogName, boolean>;
   selectedGlass: SelectedGlass | undefined;
+  pendingRouteIntent: GlassMapRouteIntent | undefined;
+}
+
+export interface GlassMapRouteIntent {
+  readonly source: "medium-selector";
+  readonly catalog: string;
+  readonly glass: string;
 }
 
 export interface GlassMapActions {
@@ -38,17 +45,60 @@ const allEnabled = Object.fromEntries(
   CATALOG_NAMES.map((name) => [name, true])
 ) as Record<CatalogName, boolean>;
 
-export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
-  catalogsData: undefined,
-  dataLoading: false,
-  dataError: undefined,
-  plotType: 'refractiveIndex',
-  abbeNumCenterLine: 'd',
-  partialDispersionType: 'P_g_F',
-  enabledCatalogs: { ...allEnabled },
-  selectedGlass: undefined,
+function isCatalogName(value: string): value is CatalogName {
+  return CATALOG_NAMES.includes(value as CatalogName);
+}
 
-  setCatalogsData: (data) => set({ catalogsData: data }),
+export const createGlassMapSlice =
+  (initialRouteIntent?: GlassMapRouteIntent): StateCreator<GlassMapStore> =>
+  (set) => ({
+    catalogsData: undefined,
+    dataLoading: false,
+    dataError: undefined,
+    plotType: 'refractiveIndex',
+    abbeNumCenterLine: 'd',
+    partialDispersionType: 'P_g_F',
+    enabledCatalogs: { ...allEnabled },
+    selectedGlass: undefined,
+    pendingRouteIntent: initialRouteIntent,
+
+  setCatalogsData: (data) =>
+    set((state) => {
+      const pendingRouteIntent = state.pendingRouteIntent;
+      if (
+        pendingRouteIntent === undefined ||
+        !isCatalogName(pendingRouteIntent.catalog)
+      ) {
+        return {
+          catalogsData: data,
+          pendingRouteIntent: undefined,
+        };
+      }
+
+      const catalog = data[pendingRouteIntent.catalog];
+      const selectedGlassData = catalog[pendingRouteIntent.glass];
+
+      if (selectedGlassData === undefined) {
+        return {
+          catalogsData: data,
+          pendingRouteIntent: undefined,
+        };
+      }
+
+      return {
+        catalogsData: data,
+        enabledCatalogs: {
+          ...state.enabledCatalogs,
+          [pendingRouteIntent.catalog]: true,
+        },
+        selectedGlass: {
+          catalogName: pendingRouteIntent.catalog,
+          glassName: pendingRouteIntent.glass,
+          data: selectedGlassData,
+        },
+        pendingRouteIntent: undefined,
+      };
+    }),
   setDataLoading: (v) => set({ dataLoading: v }),
   setDataError: (e) => set({ dataError: e }),
   setPlotType: (t) => set({ plotType: t }),

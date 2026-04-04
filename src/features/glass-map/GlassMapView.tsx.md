@@ -19,13 +19,13 @@ interface GlassMapRouteIntent {
 ```
 
 ## Behavior
-- Obtains the `GlassMapStore` via `useGlassMapStore()` (provided by `GlassMapStoreProvider` in `layout.tsx`)
+- Obtains the `GlassMapStore` via `useGlassMapStore()` (provided by `GlassMapStoreProvider` in `app/glass-map/page.tsx`)
 - Fetches data via `proxy.getAllGlassCatalogsData()` on mount when `isReady=true` and `catalogsData` is not yet set
 - Normalizes raw data using `normalizeAllCatalogsData()`, stores in `GlassMapStore`
 - Computes `PlotPoint[]` via `computePlotPoints()` (memoized)
 - Derives axis labels from `plotType`, `abbeNumCenterLine`, `partialDispersionType`
-- When `routeIntent.source === "medium-selector"` and the requested catalog/glass exists after data load, forces that catalog visible and restores it as `selectedGlass`
-- If the requested catalog or glass is missing, the current selection is left unchanged
+- `routeIntent` is display-only in this component; selection restoration is handled by the store/provider during `setCatalogsData`
+- When `routeIntent.source === "medium-selector"`, the back link is shown above the controls panel
 - Renders a `Back to lens editor` inline link above the controls panel when opened from `MediumSelectorModal`
 
 ## Layout
@@ -54,13 +54,11 @@ MathJax context is provided by `app/AppShell.tsx`. This component does not own a
 
 ## Usages
 
-`GlassMapStoreProvider` is mounted in `app/layout.tsx`:
+`GlassMapStoreProvider` is mounted in `app/glass-map/page.tsx`:
 ```tsx
-<LensLayoutImageStoreProvider>
-  <GlassMapStoreProvider>
-    {children}
-  </GlassMapStoreProvider>
-</LensLayoutImageStoreProvider>
+<GlassMapStoreProvider key={storeKey} initialRouteIntent={routeIntent}>
+  <GlassMapView proxy={proxy} isReady={isReady} routeIntent={routeIntent} />
+</GlassMapStoreProvider>
 ```
 
 In `app/glass-map/page.tsx`:
