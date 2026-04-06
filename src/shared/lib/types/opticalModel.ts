@@ -57,6 +57,7 @@ type AsphericalConfig =
   | AsphericalConfigConstructor<"XToroid">
   | AsphericalConfigConstructor<"YToroid">;
 
+export type AsphericalType = AsphericalConfig["kind"];
 
 /** Represents a single optical surface in the sequential model. */
 export interface Surface {

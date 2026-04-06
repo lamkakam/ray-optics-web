@@ -389,8 +389,8 @@ describe("LensPrescriptionContainer", () => {
 
     expect(screen.getByLabelText("Type")).toHaveValue("RadialPolynomial");
     expect(screen.getByLabelText("Conic constant")).toHaveValue("-1.25");
-    expect(screen.getByLabelText("a2")).toHaveValue("0.001");
-    expect(screen.getByLabelText("a4")).toHaveValue("0.0002");
+    expect(screen.getByLabelText("radial-a1")).toHaveValue("0.001");
+    expect(screen.getByLabelText("radial-a2")).toHaveValue("0.0002");
   });
 
   it("pre-populates AsphericalModal with existing XToroid data", () => {
@@ -428,8 +428,8 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.type(screen.getByLabelText("Conic constant"), "-0.5");
     await userEvent.clear(screen.getByLabelText("Toroid sweep radius of curvature"));
     await userEvent.type(screen.getByLabelText("Toroid sweep radius of curvature"), "15");
-    await userEvent.clear(screen.getByLabelText("a2"));
-    await userEvent.type(screen.getByLabelText("a2"), "0.001");
+    await userEvent.clear(screen.getByLabelText("x-toroid-a2"));
+    await userEvent.type(screen.getByLabelText("x-toroid-a2"), "0.001");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     const updatedRow = store.getState().rows.find((row) => row.id === rowId);

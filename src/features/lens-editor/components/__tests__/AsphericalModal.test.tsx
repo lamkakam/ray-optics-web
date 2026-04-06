@@ -14,7 +14,7 @@ describe("AsphericalModal", () => {
   const defaultProps = {
     isOpen: true,
     initialConicConstant: 0,
-    initialType: "Conical" as const,
+    initialType: "Conic" as const,
     initialCoefficients: [] as number[],
     initialToricSweepRadiusOfCurvature: 0,
     onConfirm: jest.fn(),
@@ -52,7 +52,7 @@ describe("AsphericalModal", () => {
     expect(screen.getByLabelText("Conic constant")).toBeInTheDocument();
   });
 
-  it("shows type selector with Conical and EvenAspherical", () => {
+  it("shows type selector with Conic and EvenAspherical", () => {
     render(<AsphericalModal {...defaultProps} />);
     const select = screen.getByLabelText("Type");
     expect(select).toBeInTheDocument();
@@ -64,8 +64,8 @@ describe("AsphericalModal", () => {
     expect(options).toEqual(expect.arrayContaining(["Radial Polynomial", "X Toroid", "Y Toroid"]));
   });
 
-  it("does not show coefficient inputs when type is Conical", () => {
-    render(<AsphericalModal {...defaultProps} initialType="Conical" />);
+  it("does not show coefficient inputs when type is Conic", () => {
+    render(<AsphericalModal {...defaultProps} initialType="Conic" />);
     expect(screen.queryByLabelText("a2")).not.toBeInTheDocument();
   });
 
@@ -97,7 +97,7 @@ describe("AsphericalModal", () => {
       />
     );
 
-    expect(screen.getByLabelText("a2")).toBeInTheDocument();
+    expect(screen.getByLabelText("radial-a1")).toBeInTheDocument();
   });
 
   it("shows coefficient inputs when type is XToroid", () => {
@@ -109,7 +109,7 @@ describe("AsphericalModal", () => {
       />
     );
 
-    expect(screen.getByLabelText("a2")).toBeInTheDocument();
+    expect(screen.getByLabelText("x-toroid-a2")).toBeInTheDocument();
   });
 
   it("shows coefficient inputs when type is YToroid", () => {
@@ -121,7 +121,7 @@ describe("AsphericalModal", () => {
       />
     );
 
-    expect(screen.getByLabelText("a2")).toBeInTheDocument();
+    expect(screen.getByLabelText("y-toroid-a2")).toBeInTheDocument();
   });
 
   it("shows toroid sweep radius of curvature input for XToroid with default value 0", () => {
@@ -160,7 +160,7 @@ describe("AsphericalModal", () => {
     expect(screen.queryByLabelText("Toroid sweep radius of curvature")).not.toBeInTheDocument();
   });
 
-  it("calls onConfirm with correct data for Conical", async () => {
+  it("calls onConfirm with correct data for Conic", async () => {
     const onConfirm = jest.fn();
     render(
       <AsphericalModal
@@ -173,7 +173,7 @@ describe("AsphericalModal", () => {
     await userEvent.click(screen.getByText("Confirm"));
     expect(onConfirm).toHaveBeenCalledWith({
       conicConstant: -1.5,
-      type: "Conical",
+      type: "Conic",
       polynomialCoefficients: [],
       toricSweepRadiusOfCurvature: 0,
     });
@@ -196,7 +196,7 @@ describe("AsphericalModal", () => {
 
     expect(onConfirm).toHaveBeenCalledWith({
       conicConstant: -0.5,
-      type: "Conical",
+      type: "Conic",
       polynomialCoefficients: [],
       toricSweepRadiusOfCurvature: 0,
     });
