@@ -182,7 +182,7 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = XToroid(r=23.713, cc=0.1, cr=40, coefs=[0,0.02])");
+    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = XToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])");
   });
 
   it("should set a y toroid surface correctly", () => {
@@ -204,7 +204,7 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = YToroid(r=23.713, cc=0.1, cr=40, coefs=[0,0.02])");
+    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = YToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])");
   });
 
   it("should set a surface with fluorite correctly", () => {
