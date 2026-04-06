@@ -32,6 +32,9 @@ export function buildExportScript(opticalModel: OpticalModel): string;
    - Appends `sd=semiDiameter` when non-zero.
    - If `aspherical.kind === "Conic"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=...)`.
    - If `aspherical.kind === "EvenAspherical"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=..., coefs=[...])`.
+   - If `aspherical.kind === "RadialPolynomial"`, emits `sm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=..., cc=..., coefs=[...])`.
+   - If `aspherical.kind === "XToroid"`, emits `sm.ifcs[sm.cur_surface].profile = XToroid(r=..., cc=..., cr=..., coefs=[...])`.
+   - If `aspherical.kind === "YToroid"`, emits `sm.ifcs[sm.cur_surface].profile = YToroid(r=..., cc=..., cr=..., coefs=[...])`.
    - If `decenter` is set, emits `sm.ifcs[sm.cur_surface].decenter = DecenterData(...)`.
    - If `label === "Stop"`, emits `sm.set_stop()`.
 7. Sets `sm.ifcs[-1].profile.r` to the image surface curvature radius.
@@ -66,7 +69,8 @@ Returns a string with:
 ## Edge Cases / Error Handling
 
 - The argument for semi-diameter is omitted from `sm.add_surface(...)` when `semiDiameter` is falsy (zero) — this lets RayOptics use the default value defined by RayOptics itself.
-- `polynomialCoefficients` is required for `kind: "EvenAspherical"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
+- `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
+- Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.
 - `CaF2` medium is emitted as the bare variable `caf2` (no quotes); `buildExportScript` provides the `caf2` binding in its preamble. Callers using `buildScript` in the worker have `caf2` defined via `_init`.
 - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.
 

@@ -1,5 +1,5 @@
 
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel, AsphericalPolynomialCoeffs } from "@/shared/lib/types/opticalModel";
 
 const builtInSpecialMaterial = new Set<string>([
   "air",
@@ -33,6 +33,10 @@ function formattedMedium(medium: string, glassManufacturer: string): { medium: s
   };
 }
 
+function formattedPolynomialCoeffs(coeffs: AsphericalPolynomialCoeffs) {
+  return JSON.stringify(coeffs);
+}
+
 export function buildOpticalModelScript(opticalModel: OpticalModel): string {
   const { setAutoAperture, specs, surfaces, object, image } = opticalModel;
   const {
@@ -59,8 +63,22 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
         asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
       } else if (kind === "EvenAspherical") {
         const { conicConstant, polynomialCoefficients } = aspherical;
-        const coefsString = JSON.stringify(polynomialCoefficients);
+        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
         asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
+      } else if (kind === "RadialPolynomial") {
+        const { conicConstant, polynomialCoefficients } = aspherical;
+        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
+      } else if (kind === "XToroid") {
+        const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
+        const cr = toricSweepRadiusOfCurvature;
+        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = XToroid(r=${curvatureRadius}, cc=${conicConstant}, cr=${cr}, coefs=${coefsString})`;
+      } else if (kind === "YToroid") {
+        const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
+        const cr = toricSweepRadiusOfCurvature;
+        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = YToroid(r=${curvatureRadius}, cc=${conicConstant}, cr=${cr}, coefs=${coefsString})`;
       }
     }
 

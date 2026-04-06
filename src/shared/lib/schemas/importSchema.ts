@@ -45,6 +45,53 @@ const evenAsphericalSchema = {
   },
 };
 
+const radialPolynomialSchema = {
+  type: "object",
+  required: ["kind", "conicConstant", "polynomialCoefficients"],
+  additionalProperties: false,
+  properties: {
+    kind: { type: "string", const: "RadialPolynomial" },
+    conicConstant: { type: "number" },
+    polynomialCoefficients: {
+      type: "array",
+      items: { type: "number" },
+      maxItems: 10,
+    },
+  },
+};
+
+const xToroidSchema = {
+  type: "object",
+  required: ["kind", "conicConstant", "toricSweepRadiusOfCurvature", "polynomialCoefficients"],
+  additionalProperties: false,
+  properties: {
+    kind: { type: "string", const: "XToroid" },
+    conicConstant: { type: "number" },
+    toricSweepRadiusOfCurvature: { type: "number" },
+    polynomialCoefficients: {
+      type: "array",
+      items: { type: "number" },
+      maxItems: 10,
+    },
+  },
+};
+
+const yToroidSchema = {
+  type: "object",
+  required: ["kind", "conicConstant", "toricSweepRadiusOfCurvature", "polynomialCoefficients"],
+  additionalProperties: false,
+  properties: {
+    kind: { type: "string", const: "YToroid" },
+    conicConstant: { type: "number" },
+    toricSweepRadiusOfCurvature: { type: "number" },
+    polynomialCoefficients: {
+      type: "array",
+      items: { type: "number" },
+      maxItems: 10,
+    },
+  },
+};
+
 const surfaceSchema = {
   type: "object",
   required: ["label", "curvatureRadius", "thickness", "medium", "manufacturer", "semiDiameter"],
@@ -57,7 +104,7 @@ const surfaceSchema = {
     manufacturer: { type: "string" },
     semiDiameter: { type: "number" },
     aspherical: {
-      oneOf: [conicAsphericalSchema, evenAsphericalSchema],
+      oneOf: [conicAsphericalSchema, evenAsphericalSchema, radialPolynomialSchema, xToroidSchema, yToroidSchema],
     },
     decenter: decenterConfigSchema,
   },

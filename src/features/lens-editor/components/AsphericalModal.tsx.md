@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Modal for configuring aspherical surface parameters: conic constant, surface type (Conical or Even Aspherical), and up to 10 polynomial coefficients (a₂ through a₂₀). Renders MathJax equations to label coefficients and explain the sag formula.
+Modal for configuring aspherical surface parameters: conic constant, surface type, up to 10 polynomial coefficients (a₂ through a₂₀), and the toroid sweep radius of curvature for toroidal types. Renders MathJax equations to label coefficients and explain the sag formula.
 
 ## Props
 
@@ -12,17 +12,26 @@ interface AsphericalModalProps {
   initialConicConstant: number;
   initialType: AsphericalType;
   initialCoefficients: number[];
-  onConfirm: (params: { conicConstant: number; type: AsphericalType; polynomialCoefficients: number[] }) => void;
+  initialToricSweepRadiusOfCurvature: number;
+  onConfirm: (params: {
+    conicConstant: number;
+    type: AsphericalType;
+    polynomialCoefficients: number[];
+    toricSweepRadiusOfCurvature: number;
+  }) => void;
   onClose: () => void;
   onRemove: () => void;
 }
 
-type AsphericalType = "Conical" | "EvenAspherical";
+type AsphericalType = "Conical" | "EvenAspherical" | "RadialPolynomial" | "XToroid" | "YToroid";
 ```
 
 The modal keeps these UI-facing labels, while the container maps them to the domain `Surface["aspherical"]` union:
 - `"Conical"` -> `{ kind: "Conic", conicConstant }`
 - `"EvenAspherical"` -> `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
+- `"RadialPolynomial"` -> `{ kind: "RadialPolynomial", conicConstant, polynomialCoefficients }`
+- `"XToroid"` -> `{ kind: "XToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
+- `"YToroid"` -> `{ kind: "YToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
 
 ## Prop Details
 
@@ -32,6 +41,7 @@ The modal keeps these UI-facing labels, while the container maps them to the dom
 | `initialConicConstant` | `number` | Yes | Starting conic constant value |
 | `initialType` | `AsphericalType` | Yes | Surface type on open |
 | `initialCoefficients` | `number[]` | Yes | Polynomial coefficients on open (may be shorter than 10) |
+| `initialToricSweepRadiusOfCurvature` | `number` | Yes | Starting toroid sweep radius of curvature value |
 | `onConfirm` | `(params) => void` | Yes | Called with parsed values on Confirm |
 | `onClose` | `() => void` | Yes | Cancel callback |
 | `onRemove` | `() => void` | Yes | Clears aspherical data for the surface |
@@ -40,12 +50,15 @@ The modal keeps these UI-facing labels, while the container maps them to the dom
 
 - `conicConstantStr: string` — draft string for conic constant input.
 - `type: AsphericalType` — selected type.
+- `toricSweepRadiusOfCurvatureStr: string` — draft string for the toroid sweep radius input.
 - `coefficientStrs: string[]` — draft strings for all 10 coefficient inputs.
 
 ## Key Behaviors
 
-- Coefficient inputs are only shown when type is `"EvenAspherical"`.
+- Coefficient inputs are shown for every non-conic type: `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
+- The toroid sweep radius input is shown only for `"XToroid"` and `"YToroid"`.
 - On confirm, trailing zero coefficients are stripped (`truncateTrailingZeros`); Conical type produces an empty coefficients array.
+- On confirm, toroid sweep radius values that parse to a non-finite number fall back to `0`.
 - Coefficients array is padded to length 10 on initialization.
 - Uses `<MathJax>` for the sag formula and coefficient labels; `MathJaxContext` is provided by the ancestor (`page.tsx`).
 
@@ -63,11 +76,28 @@ return (
       key={asphericalModal.open ? asphericalModal.rowId : "aspherical-closed"}
       isOpen={asphericalModal.open}
       initialConicConstant={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.conicConstant ?? 0) : 0}
-      initialType={asphericalRow?.kind === "surface" && asphericalRow.aspherical?.kind === "EvenAspherical" ? "EvenAspherical" : "Conical"}
-      initialCoefficients={asphericalRow?.kind === "surface" && asphericalRow.aspherical?.kind === "EvenAspherical" ? asphericalRow.aspherical.polynomialCoefficients : []}
+      initialType={getInitialAsphericalType(asphericalRow)}
+      initialCoefficients={getInitialAsphericalCoefficients(asphericalRow)}
+      initialToricSweepRadiusOfCurvature={getInitialToricSweepRadiusOfCurvature(asphericalRow)}
       onConfirm={(params) => {
         const aspherical = params.type === "EvenAspherical"
           ? { kind: "EvenAspherical", conicConstant: params.conicConstant, polynomialCoefficients: params.polynomialCoefficients }
+          : params.type === "RadialPolynomial"
+            ? { kind: "RadialPolynomial", conicConstant: params.conicConstant, polynomialCoefficients: params.polynomialCoefficients }
+            : params.type === "XToroid"
+              ? {
+                  kind: "XToroid",
+                  conicConstant: params.conicConstant,
+                  toricSweepRadiusOfCurvature: params.toricSweepRadiusOfCurvature,
+                  polynomialCoefficients: params.polynomialCoefficients,
+                }
+              : params.type === "YToroid"
+                ? {
+                    kind: "YToroid",
+                    conicConstant: params.conicConstant,
+                    toricSweepRadiusOfCurvature: params.toricSweepRadiusOfCurvature,
+                    polynomialCoefficients: params.polynomialCoefficients,
+                  }
           : { kind: "Conic", conicConstant: params.conicConstant };
         store.getState().updateRow(asphericalModal.rowId, { aspherical });
         store.getState().closeAsphericalModal();

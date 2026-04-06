@@ -35,19 +35,27 @@ export type DecenterConfig = {
   offsetY: number,
 };
 
-type AsphericakConfigMap = {
+export type AsphericalPolynomialCoeffs = number[];
+
+type AsphericalConfigMap = {
   "Conic": { conicConstant: number },
   // length <= 10
-  "EvenAspherical": { conicConstant: number, polynomialCoefficients: number[] },
+  "EvenAspherical": { conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
+  "RadialPolynomial": { conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
+  "XToroid": { toricSweepRadiusOfCurvature: number, conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
+  "YToroid": { toricSweepRadiusOfCurvature: number, conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
 };
 
-type AsphericalConfigConstructor<T extends keyof AsphericakConfigMap> = {
-  [K in keyof AsphericakConfigMap]: { kind: K } & AsphericakConfigMap[K];
+type AsphericalConfigConstructor<T extends keyof AsphericalConfigMap> = {
+  [K in keyof AsphericalConfigMap]: { kind: K } & AsphericalConfigMap[K];
 }[T];
 
 type AsphericalConfig = 
   | AsphericalConfigConstructor<"Conic">
-  | AsphericalConfigConstructor<"EvenAspherical">;
+  | AsphericalConfigConstructor<"EvenAspherical">
+  | AsphericalConfigConstructor<"RadialPolynomial">
+  | AsphericalConfigConstructor<"XToroid">
+  | AsphericalConfigConstructor<"YToroid">;
 
 
 /** Represents a single optical surface in the sequential model. */

@@ -27,6 +27,11 @@ jest.mock("next/link", () => {
   };
 });
 
+jest.mock("better-react-mathjax", () => ({
+  MathJaxContext: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
+}));
+
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
 }));
@@ -363,6 +368,107 @@ describe("LensPrescriptionContainer", () => {
     expect(store.getState().decenterModal.open).toBe(false);
     const imageRow = store.getState().rows.find((r) => r.kind === "image");
     expect(imageRow?.kind === "image" && imageRow.decenter).toBeUndefined();
+  });
+
+  it("pre-populates AsphericalModal with existing RadialPolynomial data", () => {
+    const store = createTestStore();
+    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+    store.getState().updateRow(rowId, {
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: -1.25,
+        polynomialCoefficients: [0.001, 0.0002],
+      },
+    });
+
+    renderLPC(store);
+
+    act(() => {
+      store.getState().openAsphericalModal(rowId);
+    });
+
+    expect(screen.getByLabelText("Type")).toHaveValue("RadialPolynomial");
+    expect(screen.getByLabelText("Conic constant")).toHaveValue("-1.25");
+    expect(screen.getByLabelText("a2")).toHaveValue("0.001");
+    expect(screen.getByLabelText("a4")).toHaveValue("0.0002");
+  });
+
+  it("pre-populates AsphericalModal with existing XToroid data", () => {
+    const store = createTestStore();
+    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+    store.getState().updateRow(rowId, {
+      aspherical: {
+        kind: "XToroid",
+        conicConstant: -0.75,
+        toricSweepRadiusOfCurvature: 42,
+        polynomialCoefficients: [0.001],
+      },
+    });
+
+    renderLPC(store);
+
+    act(() => {
+      store.getState().openAsphericalModal(rowId);
+    });
+
+    expect(screen.getByLabelText("Type")).toHaveValue("XToroid");
+    expect(screen.getByLabelText("Toroid sweep radius of curvature")).toHaveValue("42");
+  });
+
+  it("saves XToroid data to the store when AsphericalModal confirm is clicked", async () => {
+    const { store } = renderLPC();
+    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+
+    act(() => {
+      store.getState().openAsphericalModal(rowId);
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText("Type"), "XToroid");
+    await userEvent.clear(screen.getByLabelText("Conic constant"));
+    await userEvent.type(screen.getByLabelText("Conic constant"), "-0.5");
+    await userEvent.clear(screen.getByLabelText("Toroid sweep radius of curvature"));
+    await userEvent.type(screen.getByLabelText("Toroid sweep radius of curvature"), "15");
+    await userEvent.clear(screen.getByLabelText("a2"));
+    await userEvent.type(screen.getByLabelText("a2"), "0.001");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const updatedRow = store.getState().rows.find((row) => row.id === rowId);
+    expect(updatedRow).toEqual(
+      expect.objectContaining({
+        aspherical: {
+          kind: "XToroid",
+          conicConstant: -0.5,
+          toricSweepRadiusOfCurvature: 15,
+          polynomialCoefficients: [0.001],
+        },
+      })
+    );
+  });
+
+  it("saves YToroid data with invalid toroid sweep radius as 0", async () => {
+    const { store } = renderLPC();
+    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+
+    act(() => {
+      store.getState().openAsphericalModal(rowId);
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText("Type"), "YToroid");
+    await userEvent.clear(screen.getByLabelText("Toroid sweep radius of curvature"));
+    await userEvent.type(screen.getByLabelText("Toroid sweep radius of curvature"), "oops");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const updatedRow = store.getState().rows.find((row) => row.id === rowId);
+    expect(updatedRow).toEqual(
+      expect.objectContaining({
+        aspherical: {
+          kind: "YToroid",
+          conicConstant: 0,
+          toricSweepRadiusOfCurvature: 0,
+          polynomialCoefficients: [],
+        },
+      })
+    );
   });
 
   // --- Export Python Script ---

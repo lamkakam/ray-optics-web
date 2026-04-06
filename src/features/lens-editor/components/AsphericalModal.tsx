@@ -9,7 +9,7 @@ import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-export type AsphericalType = "Conical" | "EvenAspherical";
+export type AsphericalType = "Conical" | "EvenAspherical" | "RadialPolynomial" | "XToroid" | "YToroid";
 
 const COEFFICIENT_NUM = 10;
 const labels = new Array(COEFFICIENT_NUM).fill(0).map((_, idx) => {
@@ -30,10 +30,12 @@ interface AsphericalModalProps {
   readonly initialConicConstant: number;
   readonly initialType: AsphericalType;
   readonly initialCoefficients: number[];
+  readonly initialToricSweepRadiusOfCurvature: number;
   readonly onConfirm: (params: {
     conicConstant: number;
     type: AsphericalType;
     polynomialCoefficients: number[];
+    toricSweepRadiusOfCurvature: number;
   }) => void;
   readonly onClose: () => void;
   readonly onRemove: () => void;
@@ -63,20 +65,29 @@ function parseNumericString(s: string, fallback: number): number {
   return Number.isFinite(v) ? v : fallback;
 }
 
+function supportsPolynomialCoefficients(type: AsphericalType): boolean {
+  return type !== "Conical";
+}
 
-
+function isToroidType(type: AsphericalType): boolean {
+  return type === "XToroid" || type === "YToroid";
+}
 
 export function AsphericalModal({
   isOpen,
   initialConicConstant,
   initialType,
   initialCoefficients,
+  initialToricSweepRadiusOfCurvature,
   onConfirm,
   onClose,
   onRemove,
 }: AsphericalModalProps) {
   const [conicConstantStr, setConicConstantStr] = useState(String(initialConicConstant));
   const [type, setType] = useState<AsphericalType>(initialType);
+  const [toricSweepRadiusOfCurvatureStr, setToricSweepRadiusOfCurvatureStr] = useState(
+    String(initialToricSweepRadiusOfCurvature)
+  );
   const [coefficientStrs, setCoefficientStrs] = useState<string[]>(() =>
     padCoefficients(initialCoefficients)
   );
@@ -102,12 +113,16 @@ export function AsphericalModal({
 
   const handleConfirm = () => {
     const conicConstant = parseNumericString(conicConstantStr, initialConicConstant);
+    const toricSweepRadiusOfCurvature = isToroidType(type)
+      ? parseNumericString(toricSweepRadiusOfCurvatureStr, 0)
+      : 0;
     const coefficients = coefficientStrs.map((s, i) =>
       parseNumericString(s, initialCoefficients[i] ?? 0)
     );
-    const polynomialCoefficients =
-      type === "EvenAspherical" ? truncateTrailingZeros(coefficients) : [];
-    onConfirm({ conicConstant, type, polynomialCoefficients });
+    const polynomialCoefficients = supportsPolynomialCoefficients(type)
+      ? truncateTrailingZeros(coefficients)
+      : [];
+    onConfirm({ conicConstant, type, polynomialCoefficients, toricSweepRadiusOfCurvature });
   };
 
   const updateCoefficient = (index: number, value: string) => {
@@ -133,6 +148,21 @@ export function AsphericalModal({
               value={conicConstantStr}
               onChange={(e) => setConicConstantStr(e.target.value)}
             />
+
+            {isToroidType(type) && (
+              <div className="mt-4">
+                <Label htmlFor="toroid-sweep-radius-of-curvature">
+                  Toroid sweep radius of curvature
+                </Label>
+                <Input
+                  id="toroid-sweep-radius-of-curvature"
+                  aria-label="Toroid sweep radius of curvature"
+                  type="text"
+                  value={toricSweepRadiusOfCurvatureStr}
+                  onChange={(e) => setToricSweepRadiusOfCurvatureStr(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           <div>
@@ -147,13 +177,16 @@ export function AsphericalModal({
               options={[
                 { value: "Conical", label: "Conical" },
                 { value: "EvenAspherical", label: "Even Aspherical" },
+                { value: "RadialPolynomial", label: "Radial Polynomial" },
+                { value: "XToroid", label: "X Toroid" },
+                { value: "YToroid", label: "Y Toroid" },
               ]}
             />
           </div>
         </div>
 
         {/* ── Polynomial coefficients (2-col grid) ── */}
-        {type === "EvenAspherical" && (
+        {supportsPolynomialCoefficients(type) && (
           <div className="mb-4">
             <Paragraph variant="subheading" className="mb-2">
               Even Aspherical Coefficients
