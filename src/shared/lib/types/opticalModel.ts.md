@@ -19,12 +19,15 @@ Defines all core TypeScript domain types for the optical model, including system
 - **`medium: "REFL"`** denotes a reflective surface (mirror).
 - **`medium: "CaF2"`** is a special-cased medium.
 - `manufacturer` is always `""` when `medium` is `"air"` or `"REFL"`.
+- `aspherical` is a discriminated union:
+  - `{ kind: "Conic", conicConstant }`
+  - `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
 - `OpticalModel` extends `Surfaces`, so all surface data is directly on the model object.
 - `setAutoAperture: "autoAperture"` tells RayOptics to recompute semi-diameters; `"manualAperture"` preserves them.
 
 ## Edge Cases / Error Handling
 
-- `polynomialCoefficients` in the aspherical config has a maximum of 10 coefficients.
+- `polynomialCoefficients` is required for `kind: "EvenAspherical"` and has a maximum of 10 coefficients.
 - `fields` in `OpticalSpecs.field` may be absolute or relative values depending on `isRelative`.
 - `referenceIndex` in `wavelengths` is a zero-based index into `weights`; callers must ensure it is in range.
 

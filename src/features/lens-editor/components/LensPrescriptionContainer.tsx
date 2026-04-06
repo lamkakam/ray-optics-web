@@ -26,6 +26,24 @@ interface LensPrescriptionContainerProps {
   readonly isUpdateSystemDisabled: boolean;
 }
 
+function getInitialAsphericalType(asphericalRow: GridRow | undefined): AsphericalType {
+  if (asphericalRow?.kind !== "surface") {
+    return "Conical";
+  }
+
+  return asphericalRow.aspherical?.kind === "EvenAspherical"
+    ? "EvenAspherical"
+    : "Conical";
+}
+
+function getInitialAsphericalCoefficients(asphericalRow: GridRow | undefined): number[] {
+  if (asphericalRow?.kind !== "surface" || asphericalRow.aspherical?.kind !== "EvenAspherical") {
+    return [];
+  }
+
+  return asphericalRow.aspherical.polynomialCoefficients;
+}
+
 export function LensPrescriptionContainer({
   getOpticalModel,
   onImportJson,
@@ -182,19 +200,19 @@ export function LensPrescriptionContainer({
         key={asphericalModal.open ? asphericalModal.rowId : "aspherical-closed"}
         isOpen={asphericalModal.open}
         initialConicConstant={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.conicConstant ?? 0) : 0}
-        initialType={
-          asphericalRow?.kind === "surface" && asphericalRow.aspherical?.polynomialCoefficients?.length
-            ? "EvenAspherical"
-            : "Conical"
-        }
-        initialCoefficients={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.polynomialCoefficients ?? []) : []}
+        initialType={getInitialAsphericalType(asphericalRow)}
+        initialCoefficients={getInitialAsphericalCoefficients(asphericalRow)}
         onConfirm={(params: { conicConstant: number; type: AsphericalType; polynomialCoefficients: number[] }) => {
-          const aspherical = {
-            conicConstant: params.conicConstant,
-            ...(params.polynomialCoefficients.length > 0
-              ? { polynomialCoefficients: params.polynomialCoefficients }
-              : {}),
-          };
+          const aspherical = params.type === "EvenAspherical"
+            ? {
+                kind: "EvenAspherical" as const,
+                conicConstant: params.conicConstant,
+                polynomialCoefficients: params.polynomialCoefficients,
+              }
+            : {
+                kind: "Conic" as const,
+                conicConstant: params.conicConstant,
+              };
           store.getState().updateRow(asphericalModal.rowId, { aspherical });
           store.getState().closeAsphericalModal();
         }}

@@ -144,6 +144,7 @@ const ReflectorWithOpticalWindow: OpticalModel = {
       manufacturer: "",
       semiDiameter: 107.539583,
       aspherical: {
+        kind: "Conic",
         conicConstant: -1,
       },
     },
@@ -241,6 +242,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
       manufacturer: "",
       semiDiameter: 609.6,
       aspherical: {
+        kind: "Conic",
         conicConstant: -1,
       },
       decenter: {
@@ -504,6 +506,7 @@ const quadSchiefspiegler: OpticalModel = {
       manufacturer: "",
       semiDiameter: 159,
       aspherical: {
+        kind: "Conic",
         conicConstant: -0.55,
       },
       decenter: {
@@ -580,6 +583,7 @@ const clydeBoneJrMersenne: OpticalModel = {
       manufacturer: "",
       semiDiameter: 381,
       aspherical: {
+        kind: "Conic",
         conicConstant: -1
       }
     },
@@ -591,6 +595,7 @@ const clydeBoneJrMersenne: OpticalModel = {
       manufacturer: "",
       semiDiameter: 68.583124,
       aspherical: {
+        kind: "Conic",
         conicConstant: -1,
       }
     },
@@ -727,6 +732,7 @@ const schmidtCamera: OpticalModel = {
       manufacturer: "",
       semiDiameter: 100.086210,
       aspherical: {
+        kind: "EvenAspherical",
         conicConstant: 0,
         polynomialCoefficients: [0, 1.795e-9, 6.6e-15, 2.5e-20, 0, 0, 0, 0, 0, 0],
       },
@@ -840,6 +846,7 @@ const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
       manufacturer: "Schott",
       semiDiameter: 65,
       aspherical: {
+        kind: "EvenAspherical",
         conicConstant: 0,
         polynomialCoefficients: [0, 2.696e-10, -2.41e-14, -3.237e-18, 0, 0, 0, 0, 0, 0],
       },

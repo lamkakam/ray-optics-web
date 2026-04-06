@@ -20,6 +20,10 @@ interface AsphericalModalProps {
 type AsphericalType = "Conical" | "EvenAspherical";
 ```
 
+The modal keeps these UI-facing labels, while the container maps them to the domain `Surface["aspherical"]` union:
+- `"Conical"` -> `{ kind: "Conic", conicConstant }`
+- `"EvenAspherical"` -> `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
+
 ## Prop Details
 
 | Prop | Type | Required | Description |
@@ -59,9 +63,12 @@ return (
       key={asphericalModal.open ? asphericalModal.rowId : "aspherical-closed"}
       isOpen={asphericalModal.open}
       initialConicConstant={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.conicConstant ?? 0) : 0}
-      initialType={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.type ?? "Conical") : "Conical"}
-      initialCoefficients={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.polynomialCoefficients ?? []) : []}
-      onConfirm={(aspherical) => {
+      initialType={asphericalRow?.kind === "surface" && asphericalRow.aspherical?.kind === "EvenAspherical" ? "EvenAspherical" : "Conical"}
+      initialCoefficients={asphericalRow?.kind === "surface" && asphericalRow.aspherical?.kind === "EvenAspherical" ? asphericalRow.aspherical.polynomialCoefficients : []}
+      onConfirm={(params) => {
+        const aspherical = params.type === "EvenAspherical"
+          ? { kind: "EvenAspherical", conicConstant: params.conicConstant, polynomialCoefficients: params.polynomialCoefficients }
+          : { kind: "Conic", conicConstant: params.conicConstant };
         store.getState().updateRow(asphericalModal.rowId, { aspherical });
         store.getState().closeAsphericalModal();
       }}

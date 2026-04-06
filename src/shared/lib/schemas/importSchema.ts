@@ -20,6 +20,31 @@ const decenterConfigSchema = {
   },
 };
 
+const conicAsphericalSchema = {
+  type: "object",
+  required: ["kind", "conicConstant"],
+  additionalProperties: false,
+  properties: {
+    kind: { type: "string", const: "Conic" },
+    conicConstant: { type: "number" },
+  },
+};
+
+const evenAsphericalSchema = {
+  type: "object",
+  required: ["kind", "conicConstant", "polynomialCoefficients"],
+  additionalProperties: false,
+  properties: {
+    kind: { type: "string", const: "EvenAspherical" },
+    conicConstant: { type: "number" },
+    polynomialCoefficients: {
+      type: "array",
+      items: { type: "number" },
+      maxItems: 10,
+    },
+  },
+};
+
 const surfaceSchema = {
   type: "object",
   required: ["label", "curvatureRadius", "thickness", "medium", "manufacturer", "semiDiameter"],
@@ -32,17 +57,7 @@ const surfaceSchema = {
     manufacturer: { type: "string" },
     semiDiameter: { type: "number" },
     aspherical: {
-      type: "object",
-      required: ["conicConstant"],
-      additionalProperties: false,
-      properties: {
-        conicConstant: { type: "number" },
-        polynomialCoefficients: {
-          type: "array",
-          items: { type: "number" },
-          maxItems: 10,
-        },
-      },
+      oneOf: [conicAsphericalSchema, evenAsphericalSchema],
     },
     decenter: decenterConfigSchema,
   },

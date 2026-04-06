@@ -112,7 +112,11 @@ describe("buildOpticalModelScript", () => {
         {
           ...baseModel.surfaces[1],
           curvatureRadius: 23.713,
-          aspherical: { conicConstant: 0.1, polynomialCoefficients: [0, 0.02, 0, 0, 0, 0, 0, 0, 0, 0] },
+          aspherical: {
+            kind: "EvenAspherical",
+            conicConstant: 0.1,
+            polynomialCoefficients: [0, 0.02, 0, 0, 0, 0, 0, 0, 0, 0],
+          },
         },
         ...baseModel.surfaces.slice(2),
       ],
@@ -129,7 +133,7 @@ describe("buildOpticalModelScript", () => {
         {
           ...baseModel.surfaces[1],
           curvatureRadius: 23.713,
-          aspherical: { conicConstant: 0.1 },
+          aspherical: { kind: "Conic", conicConstant: 0.1 },
         },
         ...baseModel.surfaces.slice(2),
       ],

@@ -16,6 +16,9 @@ Keys are of the form `"N: <name>"` where `N` is the 1-based index of the system 
 
 - The record is plain data — no lazy loading. All 17 models are in memory at module init time.
 - Keys are not guaranteed stable if new systems are inserted in the middle of `list`; the numeric prefix will shift. UI components should treat keys as opaque strings.
+- Example models with aspherical surfaces use the discriminated domain shape:
+  - `{ kind: "Conic", conicConstant }`
+  - `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
 
 ## Usages
 

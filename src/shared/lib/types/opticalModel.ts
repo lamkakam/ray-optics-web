@@ -35,6 +35,21 @@ export type DecenterConfig = {
   offsetY: number,
 };
 
+type AsphericakConfigMap = {
+  "Conic": { conicConstant: number },
+  // length <= 10
+  "EvenAspherical": { conicConstant: number, polynomialCoefficients: number[] },
+};
+
+type AsphericalConfigConstructor<T extends keyof AsphericakConfigMap> = {
+  [K in keyof AsphericakConfigMap]: { kind: K } & AsphericakConfigMap[K];
+}[T];
+
+type AsphericalConfig = 
+  | AsphericalConfigConstructor<"Conic">
+  | AsphericalConfigConstructor<"EvenAspherical">;
+
+
 /** Represents a single optical surface in the sequential model. */
 export interface Surface {
   label: "Default" | "Stop";
@@ -43,10 +58,7 @@ export interface Surface {
   medium: string; // can be "air" or "REFL"
   manufacturer: string; // if medium is "air" or "REFL", manufacturer is ""
   semiDiameter: number;
-  aspherical?: {
-    conicConstant: number;
-    polynomialCoefficients?: number[]; // length <= 10
-  };
+  aspherical?: AsphericalConfig;
   decenter?: DecenterConfig,
 }
 

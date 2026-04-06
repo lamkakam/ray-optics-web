@@ -53,10 +53,12 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
 
     let asphericalCommands = "";
     if (aspherical !== undefined) {
-      const { conicConstant, polynomialCoefficients } = aspherical;
-      if (polynomialCoefficients === undefined) {
+      const { kind } = aspherical;
+      if (kind === "Conic") {
+        const { conicConstant } = aspherical;
         asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
-      } else {
+      } else if (kind === "EvenAspherical") {
+        const { conicConstant, polynomialCoefficients } = aspherical;
         const coefsString = JSON.stringify(polynomialCoefficients);
         asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
       }

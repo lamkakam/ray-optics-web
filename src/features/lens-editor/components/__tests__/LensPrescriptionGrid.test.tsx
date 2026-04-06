@@ -33,7 +33,7 @@ const testRows: GridRow[] = [
     medium: "F2",
     manufacturer: "Schott",
     semiDiameter: 8,
-    aspherical: { conicConstant: -1.0 },
+    aspherical: { kind: "Conic", conicConstant: -1.0 },
   },
   { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
 ];

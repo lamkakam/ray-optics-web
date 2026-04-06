@@ -30,7 +30,8 @@ export function buildExportScript(opticalModel: OpticalModel): string;
    - Passes `[curvatureRadius, thickness, medium, manufacturer]` (manufacturer omitted for `"air"`, `"REFL"`, `"CaF2"`).
    - Handles `medium = "CaF2"` by emitting the variable name `caf2` (defined in the export script preamble).
    - Appends `sd=semiDiameter` when non-zero.
-   - If `aspherical` is set, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=...[, coefs=[...]])`.
+   - If `aspherical.kind === "Conic"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=...)`.
+   - If `aspherical.kind === "EvenAspherical"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=..., coefs=[...])`.
    - If `decenter` is set, emits `sm.ifcs[sm.cur_surface].decenter = DecenterData(...)`.
    - If `label === "Stop"`, emits `sm.set_stop()`.
 7. Sets `sm.ifcs[-1].profile.r` to the image surface curvature radius.
@@ -65,7 +66,7 @@ Returns a string with:
 ## Edge Cases / Error Handling
 
 - The argument for semi-diameter is omitted from `sm.add_surface(...)` when `semiDiameter` is falsy (zero) — this lets RayOptics use the default value defined by RayOptics itself.
-- `polynomialCoefficients` in the aspherical config is optional; when absent only `r` and `cc` are passed to `EvenPolynomial`. `r` must be the same as the curvature radius defined to the same surface.
+- `polynomialCoefficients` is required for `kind: "EvenAspherical"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
 - `CaF2` medium is emitted as the bare variable `caf2` (no quotes); `buildExportScript` provides the `caf2` binding in its preamble. Callers using `buildScript` in the worker have `caf2` defined via `_init`.
 - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.
 
