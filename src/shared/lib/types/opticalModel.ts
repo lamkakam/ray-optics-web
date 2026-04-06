@@ -35,6 +35,30 @@ export type DecenterConfig = {
   offsetY: number,
 };
 
+export type AsphericalPolynomialCoeffs = number[];
+
+type AsphericalConfigMap = {
+  "Conic": { conicConstant: number },
+  // length <= 10
+  "EvenAspherical": { conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
+  "RadialPolynomial": { conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
+  "XToroid": { toricSweepRadiusOfCurvature: number, conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
+  "YToroid": { toricSweepRadiusOfCurvature: number, conicConstant: number, polynomialCoefficients: AsphericalPolynomialCoeffs },
+};
+
+type AsphericalConfigConstructor<T extends keyof AsphericalConfigMap> = {
+  [K in keyof AsphericalConfigMap]: { kind: K } & AsphericalConfigMap[K];
+}[T];
+
+type AsphericalConfig = 
+  | AsphericalConfigConstructor<"Conic">
+  | AsphericalConfigConstructor<"EvenAspherical">
+  | AsphericalConfigConstructor<"RadialPolynomial">
+  | AsphericalConfigConstructor<"XToroid">
+  | AsphericalConfigConstructor<"YToroid">;
+
+export type AsphericalType = AsphericalConfig["kind"];
+
 /** Represents a single optical surface in the sequential model. */
 export interface Surface {
   label: "Default" | "Stop";
@@ -43,10 +67,7 @@ export interface Surface {
   medium: string; // can be "air" or "REFL"
   manufacturer: string; // if medium is "air" or "REFL", manufacturer is ""
   semiDiameter: number;
-  aspherical?: {
-    conicConstant: number;
-    polynomialCoefficients?: number[]; // length <= 10
-  };
+  aspherical?: AsphericalConfig;
   decenter?: DecenterConfig,
 }
 

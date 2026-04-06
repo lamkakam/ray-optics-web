@@ -1,5 +1,5 @@
 
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel, AsphericalPolynomialCoeffs } from "@/shared/lib/types/opticalModel";
 
 const builtInSpecialMaterial = new Set<string>([
   "air",
@@ -33,6 +33,10 @@ function formattedMedium(medium: string, glassManufacturer: string): { medium: s
   };
 }
 
+function formattedPolynomialCoeffs(coeffs: AsphericalPolynomialCoeffs) {
+  return JSON.stringify(coeffs);
+}
+
 export function buildOpticalModelScript(opticalModel: OpticalModel): string {
   const { setAutoAperture, specs, surfaces, object, image } = opticalModel;
   const {
@@ -53,12 +57,28 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
 
     let asphericalCommands = "";
     if (aspherical !== undefined) {
-      const { conicConstant, polynomialCoefficients } = aspherical;
-      if (polynomialCoefficients === undefined) {
+      const { kind } = aspherical;
+      if (kind === "Conic") {
+        const { conicConstant } = aspherical;
         asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
-      } else {
-        const coefsString = JSON.stringify(polynomialCoefficients);
+      } else if (kind === "EvenAspherical") {
+        const { conicConstant, polynomialCoefficients } = aspherical;
+        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
         asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
+      } else if (kind === "RadialPolynomial") {
+        const { conicConstant, polynomialCoefficients } = aspherical;
+        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
+      } else if (kind === "XToroid") {
+        const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
+        const cr = toricSweepRadiusOfCurvature;
+        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = XToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${cr}, coefs=${coefsString})`;
+      } else if (kind === "YToroid") {
+        const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
+        const cr = toricSweepRadiusOfCurvature;
+        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = YToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${cr}, coefs=${coefsString})`;
       }
     }
 
@@ -127,6 +147,7 @@ isdark = False
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
+from rayoptics.elem.profiles import XToroid, YToroid
 from opticalglass.rindexinfo import create_material
 
 caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'

@@ -217,7 +217,7 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   const asphModal = page.locator('[role="dialog"][aria-labelledby="aspherical-modal-title"]');
   await asphModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(asphModal.getByLabel("Conic constant")).toHaveValue("-1");
-  await expect(asphModal.getByLabel("Type")).toHaveValue("Conical");
+  await expect(asphModal.getByLabel("Type")).toHaveValue("Conic");
   await asphModal.getByRole("button", { name: "Cancel" }).click();
   await asphModal.waitFor({ state: "hidden", timeout: 5_000 });
 

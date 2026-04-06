@@ -29,6 +29,8 @@ Lens store state is consumed via `LensEditorStoreContext`:
 - File import validates the parsed JSON via `validateImportedLensData`; invalid files trigger `ErrorModal` instead of `ConfirmImportModal`.
 - `MediumSelectorModal` is wired to `pendingMediumSelection` in the lens editor store so unconfirmed catalog-glass choices survive route changes and are only written to the row on confirm.
 - The `MediumSelectorModal`, `AsphericalModal`, and `DecenterModal` each use a `key` prop that changes when the modal opens for a different row, ensuring local state is reset.
+- `AsphericalModal` uses UI labels (`"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, `"YToroid"`), while this container maps them to the domain `Surface["aspherical"]` union.
+- `getInitialAsphericalType`, `getInitialAsphericalCoefficients`, and `getInitialToricSweepRadiusOfCurvature` preload modal state from the selected row so toroidal and radial polynomial surfaces reopen with the correct draft values.
 - `PythonScriptModal` receives an empty string for `script` when closed, generating the script only when open.
 - Auto/Manual semi-diameter toggle updates `autoAperture` in the store and passes `semiDiameterReadonly` to the grid.
 

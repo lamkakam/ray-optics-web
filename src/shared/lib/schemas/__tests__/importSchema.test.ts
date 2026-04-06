@@ -75,4 +75,141 @@ describe("validateImportedLensData", () => {
 
     expect(validateImportedLensData(model)).toBe(false);
   });
+
+  it("accepts models with conic aspherical surfaces using kind", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          aspherical: {
+            kind: "Conic",
+            conicConstant: -1,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it("accepts models with even aspherical surfaces using kind", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          aspherical: {
+            kind: "EvenAspherical",
+            conicConstant: 0,
+            polynomialCoefficients: [0.001, 0.0002],
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it("accepts models with radial polynomial aspherical surfaces using kind", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          aspherical: {
+            kind: "RadialPolynomial",
+            conicConstant: 0,
+            polynomialCoefficients: [0.001, 0.0002],
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it("accepts models with x toroid aspherical surfaces using kind", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          aspherical: {
+            kind: "XToroid",
+            conicConstant: 0,
+            toricSweepRadiusOfCurvature: 20,
+            polynomialCoefficients: [0.001, 0.0002],
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it("accepts models with y toroid aspherical surfaces using kind", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          aspherical: {
+            kind: "YToroid",
+            conicConstant: 0,
+            toricSweepRadiusOfCurvature: 20,
+            polynomialCoefficients: [0.001, 0.0002],
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it("rejects legacy aspherical surfaces without kind", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          aspherical: {
+            conicConstant: -1,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
 });

@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback } from "react";
 import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { type GridRow } from "@/shared/lib/types/gridTypes";
-import { type OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel, AsphericalType } from "@/shared/lib/types/opticalModel";
 import { buildExportScript } from "@/shared/lib/utils/pythonScript";
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
 import { Button } from "@/shared/components/primitives/Button";
@@ -14,7 +14,7 @@ import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { LensPrescriptionGrid } from "@/features/lens-editor/components/LensPrescriptionGrid";
 import { MediumSelectorModal } from "@/features/lens-editor/components/MediumSelectorModal";
-import { AsphericalModal, type AsphericalType } from "@/features/lens-editor/components/AsphericalModal";
+import { AsphericalModal } from "@/features/lens-editor/components/AsphericalModal";
 import { DecenterModal, type DecenterType } from "@/features/lens-editor/components/DecenterModal";
 import { PythonScriptModal } from "@/features/lens-editor/components/PythonScriptModal";
 import { ConfirmImportModal } from "@/features/lens-editor/components/ConfirmImportModal";
@@ -24,6 +24,55 @@ interface LensPrescriptionContainerProps {
   readonly onImportJson: (data: OpticalModel) => void;
   readonly onUpdateSystem: () => void;
   readonly isUpdateSystemDisabled: boolean;
+}
+
+function getInitialAsphericalType(asphericalRow: GridRow | undefined): AsphericalType {
+  if (asphericalRow?.kind !== "surface") {
+    return "Conic";
+  }
+
+  switch (asphericalRow.aspherical?.kind) {
+    case "EvenAspherical":
+      return "EvenAspherical";
+    case "RadialPolynomial":
+      return "RadialPolynomial";
+    case "XToroid":
+      return "XToroid";
+    case "YToroid":
+      return "YToroid";
+    default:
+      return "Conic";
+  }
+}
+
+function getInitialAsphericalCoefficients(asphericalRow: GridRow | undefined): number[] {
+  if (asphericalRow?.kind !== "surface") {
+    return [];
+  }
+
+  switch (asphericalRow.aspherical?.kind) {
+    case "EvenAspherical":
+    case "RadialPolynomial":
+    case "XToroid":
+    case "YToroid":
+      return asphericalRow.aspherical.polynomialCoefficients;
+    default:
+      return [];
+  }
+}
+
+function getInitialToricSweepRadiusOfCurvature(asphericalRow: GridRow | undefined): number {
+  if (asphericalRow?.kind !== "surface") {
+    return 0;
+  }
+
+  switch (asphericalRow.aspherical?.kind) {
+    case "XToroid":
+    case "YToroid":
+      return asphericalRow.aspherical.toricSweepRadiusOfCurvature;
+    default:
+      return 0;
+  }
 }
 
 export function LensPrescriptionContainer({
@@ -182,19 +231,45 @@ export function LensPrescriptionContainer({
         key={asphericalModal.open ? asphericalModal.rowId : "aspherical-closed"}
         isOpen={asphericalModal.open}
         initialConicConstant={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.conicConstant ?? 0) : 0}
-        initialType={
-          asphericalRow?.kind === "surface" && asphericalRow.aspherical?.polynomialCoefficients?.length
-            ? "EvenAspherical"
-            : "Conical"
-        }
-        initialCoefficients={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.polynomialCoefficients ?? []) : []}
-        onConfirm={(params: { conicConstant: number; type: AsphericalType; polynomialCoefficients: number[] }) => {
-          const aspherical = {
-            conicConstant: params.conicConstant,
-            ...(params.polynomialCoefficients.length > 0
-              ? { polynomialCoefficients: params.polynomialCoefficients }
-              : {}),
-          };
+        initialType={getInitialAsphericalType(asphericalRow)}
+        initialCoefficients={getInitialAsphericalCoefficients(asphericalRow)}
+        initialToricSweepRadiusOfCurvature={getInitialToricSweepRadiusOfCurvature(asphericalRow)}
+        onConfirm={(params: {
+          conicConstant: number;
+          type: AsphericalType;
+          polynomialCoefficients: number[];
+          toricSweepRadiusOfCurvature: number;
+        }) => {
+          const aspherical = params.type === "EvenAspherical"
+            ? {
+                kind: "EvenAspherical" as const,
+                conicConstant: params.conicConstant,
+                polynomialCoefficients: params.polynomialCoefficients,
+              }
+            : params.type === "RadialPolynomial"
+              ? {
+                  kind: "RadialPolynomial" as const,
+                  conicConstant: params.conicConstant,
+                  polynomialCoefficients: params.polynomialCoefficients,
+                }
+              : params.type === "XToroid"
+                ? {
+                    kind: "XToroid" as const,
+                    conicConstant: params.conicConstant,
+                    toricSweepRadiusOfCurvature: params.toricSweepRadiusOfCurvature,
+                    polynomialCoefficients: params.polynomialCoefficients,
+                  }
+                : params.type === "YToroid"
+                  ? {
+                      kind: "YToroid" as const,
+                      conicConstant: params.conicConstant,
+                      toricSweepRadiusOfCurvature: params.toricSweepRadiusOfCurvature,
+                      polynomialCoefficients: params.polynomialCoefficients,
+                    }
+                  : {
+                      kind: "Conic" as const,
+                      conicConstant: params.conicConstant,
+                    };
           store.getState().updateRow(asphericalModal.rowId, { aspherical });
           store.getState().closeAsphericalModal();
         }}

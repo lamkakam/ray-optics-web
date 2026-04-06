@@ -66,6 +66,7 @@
       "manufacturer": "",
       "semiDiameter": 609.6,
       "aspherical": {
+        "kind": "Conic",
         "conicConstant": -1
       },
       "decenter": {

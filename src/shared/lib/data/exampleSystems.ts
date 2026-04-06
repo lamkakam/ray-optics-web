@@ -144,6 +144,7 @@ const ReflectorWithOpticalWindow: OpticalModel = {
       manufacturer: "",
       semiDiameter: 107.539583,
       aspherical: {
+        kind: "Conic",
         conicConstant: -1,
       },
     },
@@ -241,6 +242,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
       manufacturer: "",
       semiDiameter: 609.6,
       aspherical: {
+        kind: "Conic",
         conicConstant: -1,
       },
       decenter: {
@@ -504,6 +506,7 @@ const quadSchiefspiegler: OpticalModel = {
       manufacturer: "",
       semiDiameter: 159,
       aspherical: {
+        kind: "Conic",
         conicConstant: -0.55,
       },
       decenter: {
@@ -580,6 +583,7 @@ const clydeBoneJrMersenne: OpticalModel = {
       manufacturer: "",
       semiDiameter: 381,
       aspherical: {
+        kind: "Conic",
         conicConstant: -1
       }
     },
@@ -591,6 +595,7 @@ const clydeBoneJrMersenne: OpticalModel = {
       manufacturer: "",
       semiDiameter: 68.583124,
       aspherical: {
+        kind: "Conic",
         conicConstant: -1,
       }
     },
@@ -727,6 +732,7 @@ const schmidtCamera: OpticalModel = {
       manufacturer: "",
       semiDiameter: 100.086210,
       aspherical: {
+        kind: "EvenAspherical",
         conicConstant: 0,
         polynomialCoefficients: [0, 1.795e-9, 6.6e-15, 2.5e-20, 0, 0, 0, 0, 0, 0],
       },
@@ -840,6 +846,7 @@ const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
       manufacturer: "Schott",
       semiDiameter: 65,
       aspherical: {
+        kind: "EvenAspherical",
         conicConstant: 0,
         polynomialCoefficients: [0, 2.696e-10, -2.41e-14, -3.237e-18, 0, 0, 0, 0, 0, 0],
       },
@@ -1262,6 +1269,165 @@ const fishEyeLens: OpticalModel = {
   ]
 };
 
+const cellphoneLensExample: OpticalModel = {
+  setAutoAperture: "autoAperture",
+  specs: {
+    pupil: {
+      space: "image",
+      type: "f/#",
+      value: 3.5,
+    },
+    field: {
+      space: "image",
+      type: "height",
+      maxField: 3.5,
+      fields: [0, 0.7071, 1],
+      isRelative: true,
+      isWideAngle: false,
+    },
+    wavelengths: {
+      weights: [
+        [486.133, 1],
+        [587.562, 2],
+        [656.273, 1],
+      ],
+      referenceIndex: 1,
+    }
+  },
+  object: { distance: 10000000000 },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    {
+      label: "Stop",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0.79358,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 1.962,
+      thickness: 1.19,
+      medium: "1.471",
+      manufacturer: "76.6",
+      semiDiameter: 0.93439,
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: 1.153,
+        polynomialCoefficients: [0, 0, -1.895e-2, 2.426e-2, -5.123e-2, 8.371e-4, 7.850e-3, 4.091e-3, -7.732e-3, -4.265e-3],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: 33.398,
+      thickness: 0.93,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 1.0782,
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: 39.18,
+        polynomialCoefficients: [0, 0, -4.966e-3, -1.434e-2, -6.139e-3, -9.284e-5, 6.438e-3, -5.72e-3, -2.385e-2, 1.108e-2],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: -2.182,
+      thickness: 0.75,
+      medium: "1.603",
+      manufacturer: "27.5",
+      semiDiameter: 1.1289,
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: 1.105,
+        polynomialCoefficients: [0, 0, -4.388e-2, -2.555e-2, 5.16e-2, -4.307e-2, -2.831e-2, 3.162e-2, 4.630e-2, -4.877e-2],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: -6.367,
+      thickness: 0.1,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 1.5270,
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: 2.382,
+        polynomialCoefficients: [0, 0, -1.131e-1, -7.863e-2, 1.094e-1, 6.228e-3, -2.216e-2, -5.89e-3, 4.123e-3, 1.041e-3],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: 5.694,
+      thickness: 0.89,
+      medium: "1.510",
+      manufacturer: "56.2",
+      semiDiameter: 1.8048,
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: -222.1,
+        polynomialCoefficients: [0, 0, -7.876e-2, 7.02e-2, 1.575e-3, -9.958e-3, -7.322e-3, 6.914e-4, 2.54e-3, -7.65e-4],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: 9.162,
+      thickness: 0.16,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 2.3576,
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: 0.9331 - 1,
+        polynomialCoefficients: [0, 0, 9.694e-3, -2.516e-3, -3.606e-3, -2.497e-4, -6.84e-4, -1.414e-4, 2.932e-4, -7.284e-5],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: 1.674,
+      thickness: 0.85,
+      medium: "1.510",
+      manufacturer: "56.2",
+      semiDiameter: 2.4382,
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: -8.617,
+        polynomialCoefficients: [0, 0, 7.429e-2, -6.933e-2, -5.811e-3, 2.396e-3, 2.100e-3, -3.119e-4, -5.552e-5, 7.969e-6],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: 1.509,
+      thickness: 0.7,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 2.8879,
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: -3.707,
+        polynomialCoefficients: [0, 0, 1.767e-3, -4.652e-2, 1.625e-2, -3.522e-3, -7.106e-4, 3.825e-4, 6.271e-5, -2.631e-5],
+      },
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0.4,
+      medium: "1.516",
+      manufacturer: "64.1",
+      semiDiameter: 3.2480,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0.64,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 3.3477,
+    }
+  ]
+};
+
 
 const list: Record<string, OpticalModel> = {
   "Sasian Triplet": SasianTriplet,
@@ -1282,6 +1448,7 @@ const list: Record<string, OpticalModel> = {
   "Flatfield Quadruplet APO 86mm f/7 (Triplet with Singlet Meniscus Lens)": tripletAPOWithSingletMeniscusLens,
   "Reversed Tracing of Modified Imaizumi M. 80deg AFoV Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
   "Fisheye Lens Example": fishEyeLens,
+  "Cell Phone Camera Lens Example US#7,535,658": cellphoneLensExample,
 } as const;
 
 export const ExampleSystems: { [x: string]: OpticalModel } = Object.keys(list).reduce((acc, name, idx) => ({

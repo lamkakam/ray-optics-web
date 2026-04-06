@@ -228,6 +228,7 @@ describe("surfacesToGridRows", () => {
           manufacturer: "",
           semiDiameter: 10,
           aspherical: {
+            kind: "EvenAspherical",
             conicConstant: -1.5,
             polynomialCoefficients: [0.001, 0.0002],
           },
@@ -238,6 +239,7 @@ describe("surfacesToGridRows", () => {
     const surfaceRow = rows[1];
     if (surfaceRow.kind === "surface") {
       expect(surfaceRow.aspherical).toEqual({
+        kind: "EvenAspherical",
         conicConstant: -1.5,
         polynomialCoefficients: [0.001, 0.0002],
       });
@@ -362,6 +364,7 @@ describe("round-trip", () => {
           manufacturer: "",
           semiDiameter: 10,
           aspherical: {
+            kind: "EvenAspherical",
             conicConstant: -1.0,
             polynomialCoefficients: [0.001, 0, 0.0003],
           },

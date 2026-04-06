@@ -112,7 +112,11 @@ describe("buildOpticalModelScript", () => {
         {
           ...baseModel.surfaces[1],
           curvatureRadius: 23.713,
-          aspherical: { conicConstant: 0.1, polynomialCoefficients: [0, 0.02, 0, 0, 0, 0, 0, 0, 0, 0] },
+          aspherical: {
+            kind: "EvenAspherical",
+            conicConstant: 0.1,
+            polynomialCoefficients: [0, 0.02, 0, 0, 0, 0, 0, 0, 0, 0],
+          },
         },
         ...baseModel.surfaces.slice(2),
       ],
@@ -129,13 +133,78 @@ describe("buildOpticalModelScript", () => {
         {
           ...baseModel.surfaces[1],
           curvatureRadius: 23.713,
-          aspherical: { conicConstant: 0.1 },
+          aspherical: { kind: "Conic", conicConstant: 0.1 },
         },
         ...baseModel.surfaces.slice(2),
       ],
     };
     const script = buildOpticalModelScript(model);
     expect(script).toContain("sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=0.1)");
+  });
+
+  it("should set a radial polynomial surface correctly", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        baseModel.surfaces[0],
+        {
+          ...baseModel.surfaces[1],
+          curvatureRadius: 23.713,
+          aspherical: {
+            kind: "RadialPolynomial",
+            conicConstant: 0.1,
+            polynomialCoefficients: [0, 0.02],
+          },
+        },
+        ...baseModel.surfaces.slice(2),
+      ],
+    };
+    const script = buildOpticalModelScript(model);
+    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=23.713, cc=0.1, coefs=[0,0.02])");
+  });
+
+  it("should set an x toroid surface correctly", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        baseModel.surfaces[0],
+        {
+          ...baseModel.surfaces[1],
+          curvatureRadius: 23.713,
+          aspherical: {
+            kind: "XToroid",
+            conicConstant: 0.1,
+            toricSweepRadiusOfCurvature: 40,
+            polynomialCoefficients: [0, 0.02],
+          },
+        },
+        ...baseModel.surfaces.slice(2),
+      ],
+    };
+    const script = buildOpticalModelScript(model);
+    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = XToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])");
+  });
+
+  it("should set a y toroid surface correctly", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        baseModel.surfaces[0],
+        {
+          ...baseModel.surfaces[1],
+          curvatureRadius: 23.713,
+          aspherical: {
+            kind: "YToroid",
+            conicConstant: 0.1,
+            toricSweepRadiusOfCurvature: 40,
+            polynomialCoefficients: [0, 0.02],
+          },
+        },
+        ...baseModel.surfaces.slice(2),
+      ],
+    };
+    const script = buildOpticalModelScript(model);
+    expect(script).toContain("sm.ifcs[sm.cur_surface].profile = YToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])");
   });
 
   it("should set a surface with fluorite correctly", () => {
