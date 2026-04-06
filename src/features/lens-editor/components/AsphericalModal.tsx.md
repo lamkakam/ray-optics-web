@@ -22,12 +22,10 @@ interface AsphericalModalProps {
   onClose: () => void;
   onRemove: () => void;
 }
-
-type AsphericalType = "Conical" | "EvenAspherical" | "RadialPolynomial" | "XToroid" | "YToroid";
 ```
 
 The modal keeps these UI-facing labels, while the container maps them to the domain `Surface["aspherical"]` union:
-- `"Conical"` -> `{ kind: "Conic", conicConstant }`
+- `"Conic"` -> `{ kind: "Conic", conicConstant }`
 - `"EvenAspherical"` -> `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
 - `"RadialPolynomial"` -> `{ kind: "RadialPolynomial", conicConstant, polynomialCoefficients }`
 - `"XToroid"` -> `{ kind: "XToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
@@ -57,7 +55,7 @@ The modal keeps these UI-facing labels, while the container maps them to the dom
 
 - Coefficient inputs are shown for every non-conic type: `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
 - The toroid sweep radius input is shown only for `"XToroid"` and `"YToroid"`.
-- On confirm, trailing zero coefficients are stripped (`truncateTrailingZeros`); Conical type produces an empty coefficients array.
+- On confirm, trailing zero coefficients are stripped (`truncateTrailingZeros`); Conic type produces an empty coefficients array.
 - On confirm, toroid sweep radius values that parse to a non-finite number fall back to `0`.
 - Coefficients array is padded to length 10 on initialization.
 - Uses `<MathJax>` for the sag formula and coefficient labels; `MathJaxContext` is provided by the ancestor (`page.tsx`).
