@@ -52,6 +52,7 @@ import json
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
+from rayoptics.elem.profiles import XToroid, YToroid
 
 from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data
 from rayoptics_web_utils.plotting import (

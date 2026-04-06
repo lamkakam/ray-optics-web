@@ -73,12 +73,12 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
         const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
         const cr = toricSweepRadiusOfCurvature;
         const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = XToroid(r=${curvatureRadius}, cc=${conicConstant}, cr=${cr}, coefs=${coefsString})`;
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = XToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${cr}, coefs=${coefsString})`;
       } else if (kind === "YToroid") {
         const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
         const cr = toricSweepRadiusOfCurvature;
         const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = YToroid(r=${curvatureRadius}, cc=${conicConstant}, cr=${cr}, coefs=${coefsString})`;
+        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = YToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${cr}, coefs=${coefsString})`;
       }
     }
 
