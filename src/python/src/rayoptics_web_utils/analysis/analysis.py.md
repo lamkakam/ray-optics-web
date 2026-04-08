@@ -145,8 +145,9 @@ Returns diffraction PSF image-plane axes and intensity grid for one field and wa
 - All return values must be JSON-serialisable (no numpy arrays, no pyproxy objects).
 - `compute_third_order` returns a pandas DataFrame indexed by surface label; the `'sum'` row is the total across all surfaces.
 - `fod` (first-order data) is accessed via `opm['analysis_results']['parax_data'].fod` for Seidel functions.
-- NaN values in serialized grids are converted to `None` so the return values remain JSON-encodable.
+- NaN values in serialized grids are converted to `None` via `_json_float(...)` / `_json_float_grid(...)` from `rayoptics_web_utils.utils`.
 - Fan data exposes both sagittal and tangential traces explicitly via `Sagittal` and `Tangential`.
+- Unit labels and JSON normalization helpers are imported from `rayoptics_web_utils.utils` rather than being defined in this module.
 
 ## Usages
 

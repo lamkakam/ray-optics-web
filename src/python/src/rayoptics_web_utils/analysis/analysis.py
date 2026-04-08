@@ -16,25 +16,7 @@ from rayoptics.parax.thirdorder import (
 )
 
 from rayoptics_web_utils.raygrid import make_ray_grid
-
-
-def _system_units(opm: OpticalModel) -> str:
-    return opm.system_spec.dimensions
-
-
-def _json_float(value) -> float | None:
-    value = float(value)
-    if np.isnan(value):
-        return None
-    return value
-
-
-def _json_float_list(values) -> list[float]:
-    return [float(value) for value in values]
-
-
-def _json_float_grid(values) -> list[list[float | None]]:
-    return [[_json_float(value) for value in row] for row in values]
+from rayoptics_web_utils.utils import _system_units, _json_float_list, _json_float_grid
 
 
 def get_first_order_data(opm: OpticalModel) -> dict[str, float]:
