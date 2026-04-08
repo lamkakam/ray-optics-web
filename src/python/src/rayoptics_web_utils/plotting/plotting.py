@@ -1,24 +1,24 @@
 """Plotting functions for rayoptics models."""
 
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import PowerNorm, LogNorm
-import rayoptics.optical.model_constants as mc
-from rayoptics.raytr.waveabr import wave_abr_full_calc
-from rayoptics.raytr.analyses import (
-    RayList,
-    calc_psf,
-    calc_psf_scaling,
-)
-from rayoptics.raytr import sampler
 from rayoptics.environment import (
     OpticalModel,
     InteractiveLayout,
-    compute_third_order,
 )
 
 from rayoptics_web_utils.utils import _fig_to_base64, _get_wvl_lbl
-from rayoptics_web_utils.raygrid import make_ray_grid
+from rayoptics_web_utils.analysis import (
+    get_3rd_order_seidel_data,
+    get_ray_fan_data,
+    get_opd_fan_data,
+    get_spot_data,
+    get_wavefront_data,
+    get_geo_psf_data,
+    get_diffraction_psf_data,
+)
 
 
 def plot_lens_layout(opm: OpticalModel) -> str:
@@ -31,28 +31,21 @@ def plot_lens_layout(opm: OpticalModel) -> str:
 
 def plot_ray_fan(fi: int, opm: OpticalModel) -> str:
     """Plot tangential and sagittal ray fan for a given field index."""
-    sm = opm['seq_model']
-
-    def _ray_abr(p, xy, ray_pkg, fld, wvl, foc):
-        if ray_pkg[mc.ray] is not None:
-            image_pt = fld.ref_sphere[0]
-            ray = ray_pkg[mc.ray]
-            dist = foc / ray[-1][mc.d][2]
-            defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-            t_abr = defocused_pt - image_pt
-            return t_abr[xy]
-        return None
-
+    fan_data = get_ray_fan_data(opm, fi)
     fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
-    for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
-        fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_ray_abr, fi, xy)
-        for k in range(len(fans_x)):
-            ax.plot(fans_x[k], fans_y[k], color=colors[k], label=_get_wvl_lbl(opm, k))
+    for key, ax, title in [('Tangential', ax_y, 'Tangential'), ('Sagittal', ax_x, 'Sagittal')]:
+        for entry in fan_data:
+            ax.plot(
+                entry[key]['x'],
+                entry[key]['y'],
+                color=opm['optical_spec']['wvls'].render_colors[entry['wvlIdx']],
+                label=_get_wvl_lbl(opm, entry['wvlIdx']),
+            )
         ax.set_title(title)
         ax.axhline(0, color='black', linewidth=0.5)
         ax.axvline(0, color='black', linewidth=0.5)
         ax.set_xlabel("Pupil Radius (Relative)")
-        ax.set_ylabel("Transverse Aberr. (mm)")
+        ax.set_ylabel(f"Transverse Aberr. ({fan_data[0]['unitY']})")
         ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-3, 3))
     handles, labels = ax_y.get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', ncol=max(len(handles), 1), bbox_to_anchor=(0.5, 0))
@@ -62,26 +55,21 @@ def plot_ray_fan(fi: int, opm: OpticalModel) -> str:
 
 def plot_opd_fan(fi: int, opm: OpticalModel) -> str:
     """Plot tangential and sagittal OPD fan for a given field index."""
-    sm = opm['seq_model']
-
-    def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
-        if ray_pkg[mc.ray] is not None:
-            fod = opm['analysis_results']['parax_data'].fod
-            opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg, fld.chief_ray, fld.ref_sphere)
-            # opd_val is in system units (mm); convert to waves
-            return opd_val / opm.nm_to_sys_units(wvl)
-        return None
-
+    fan_data = get_opd_fan_data(opm, fi)
     fig, (ax_y, ax_x) = plt.subplots(1, 2, figsize=(8, 4))
-    for xy, ax, title in [(1, ax_y, 'Tangential'), (0, ax_x, 'Sagittal')]:
-        fans_x, fans_y, (max_rho, max_val), colors = sm.trace_fan(_opd_abr, fi, xy)
-        for k in range(len(fans_x)):
-            ax.plot(fans_x[k], fans_y[k], color=colors[k], label=_get_wvl_lbl(opm, k))
+    for key, ax, title in [('Tangential', ax_y, 'Tangential'), ('Sagittal', ax_x, 'Sagittal')]:
+        for entry in fan_data:
+            ax.plot(
+                entry[key]['x'],
+                entry[key]['y'],
+                color=opm['optical_spec']['wvls'].render_colors[entry['wvlIdx']],
+                label=_get_wvl_lbl(opm, entry['wvlIdx']),
+            )
         ax.set_title(title)
         ax.axhline(0, color='black', linewidth=0.5)
         ax.axvline(0, color='black', linewidth=0.5)
         ax.set_xlabel("Pupil Radius (Relative)")
-        ax.set_ylabel("waves")
+        ax.set_ylabel(fan_data[0]['unitY'])
         ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-3, 3))
     handles, labels = ax_y.get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center', ncol=max(len(handles), 1), bbox_to_anchor=(0.5, 0))
@@ -91,29 +79,20 @@ def plot_opd_fan(fi: int, opm: OpticalModel) -> str:
 
 def plot_spot_diagram(fi: int, opm: OpticalModel) -> str:
     """Plot spot diagram for a given field index."""
-    sm = opm['seq_model']
-
-    def _spot(p, wi, ray_pkg, fld, wvl, foc):
-        if ray_pkg is not None:
-            image_pt = fld.ref_sphere[0]
-            ray = ray_pkg[mc.ray]
-            dist = foc / ray[-1][mc.d][2]
-            defocused_pt = ray[-1][mc.p] + dist * ray[-1][mc.d]
-            t_abr = defocused_pt - image_pt
-            return np.array([t_abr[0], t_abr[1]])
-        return None
-
+    spot_data = get_spot_data(opm, fi)
     fig, ax = plt.subplots(1, 1, figsize=(5, 5))
     ax.set_aspect('equal')
-    grids, rc = sm.trace_grid(_spot, fi, wl=None, num_rays=21,
-                              form='list', append_if_none=False)
-    for gi, grid in enumerate(grids):
-        x_pts = [pt[0] for pt in grid]
-        y_pts = [pt[1] for pt in grid]
-        ax.scatter(x_pts, y_pts, s=1, color=rc[gi], label=_get_wvl_lbl(opm, gi))
+    for entry in spot_data:
+        ax.scatter(
+            entry['x'],
+            entry['y'],
+            s=1,
+            color=opm['optical_spec']['wvls'].render_colors[entry['wvlIdx']],
+            label=_get_wvl_lbl(opm, entry['wvlIdx']),
+        )
     ax.set_title(f'Field {fi}')
-    ax.set_xlabel("mm")
-    ax.set_ylabel("mm")
+    ax.set_xlabel(spot_data[0]['unitX'])
+    ax.set_ylabel(spot_data[0]['unitY'])
     ax.legend(loc='center', bbox_to_anchor=(0.5, -0.3), ncol=2)
     ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-2, 2))
     fig.tight_layout()
@@ -122,7 +101,8 @@ def plot_spot_diagram(fi: int, opm: OpticalModel) -> str:
 
 def plot_surface_by_surface_3rd_order_aberr(opm: OpticalModel) -> str:
     """Plot surface-by-surface 3rd order aberrations as a bar chart."""
-    to_pkg = compute_third_order(opm)
+    sbs = get_3rd_order_seidel_data(opm)['surfaceBySurface']
+    to_pkg = pd.DataFrame(sbs['data'], index=sbs['aberrTypes'], columns=sbs['surfaceLabels']).T
     fig, ax = plt.subplots()
     ax.set_xlabel('Surface')
     ax.set_ylabel('3rd Order Aberrations')
@@ -136,19 +116,8 @@ def plot_surface_by_surface_3rd_order_aberr(opm: OpticalModel) -> str:
 
 def plot_wavefront_map(fi: int, wvl_index: int, opm: OpticalModel, num_rays: int = 64) -> str:
     """Plot wavefront OPD map for a given field index, returning base64 PNG."""
-    osp = opm['optical_spec']
-    central_wvl = osp['wvls'].central_wvl
-    wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]
-
-    # Trace at central wavelength
-    rg = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
-
-    opd_grid = rg.grid.copy()
-    central_wvl = opm['optical_spec']['wvls'].central_wvl
-    opd_grid[2] *= central_wvl / wavelength_nm
-
-    opd = opd_grid[2]
-
+    wavefront_data = get_wavefront_data(opm, fi, wvl_index, num_rays)
+    opd = np.array(wavefront_data['z'], dtype=float).T
     valid = opd[~np.isnan(opd)]
     max_val = float(max(np.nanmax(valid), -np.nanmin(valid))) if valid.size > 0 else 1.0
     opd_masked = np.ma.masked_invalid(opd)
@@ -158,7 +127,7 @@ def plot_wavefront_map(fi: int, wvl_index: int, opm: OpticalModel, num_rays: int
     hmap = ax.imshow(data, origin='lower',
                      vmin=-max_val, vmax=max_val, cmap='RdBu_r')
     
-    colorbar = fig.colorbar(hmap, ax=ax, label='waves')
+    colorbar = fig.colorbar(hmap, ax=ax, label=wavefront_data['unitZ'])
     colorbar.formatter.set_powerlimits((-2, 2))
     colorbar.formatter.set_useMathText(True)
 
@@ -170,24 +139,9 @@ def plot_wavefront_map(fi: int, wvl_index: int, opm: OpticalModel, num_rays: int
 
 def plot_geo_psf(fi: int, wvl_index: int, opm: OpticalModel, num_rays: int = 64) -> str:
     """Plot geometrical PSF (2-D histogram) for a given field index, returning base64 PNG."""
-    wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]
-
-    r2g = (sampler.create_generator,
-           (sampler.R_2_quasi_random_generator, num_rays ** 2),
-           dict(mapper=sampler.concentric_sample_disk))
-    
-    ray_list = RayList(
-        opm,
-        pupil_gen=r2g,
-        f=fi,
-        wl=wavelength_nm,
-        foc=0,
-        num_rays=num_rays,
-        check_apertures=True,
-        apply_vignetting=True,
-    )
-
-    x_data, y_data = ray_list.ray_abr[0], ray_list.ray_abr[1]
+    psf_data = get_geo_psf_data(opm, fi, wvl_index, num_rays)
+    x_data = psf_data['x']
+    y_data = psf_data['y']
     delta_x = (float(np.nanmax(x_data)) - float(np.nanmin(x_data))) / 2
     delta_y = (float(np.nanmax(y_data)) - float(np.nanmin(y_data))) / 2
     max_delta = max(delta_x, delta_y) if max(delta_x, delta_y) > 0 else 1e-6
@@ -200,8 +154,8 @@ def plot_geo_psf(fi: int, wvl_index: int, opm: OpticalModel, num_rays: int = 64)
     )
     ax.set_facecolor(qmesh.cmap(0))
     ax.set_aspect('equal')
-    ax.set_xlabel('mm')
-    ax.set_ylabel('mm')
+    ax.set_xlabel(psf_data['unitX'])
+    ax.set_ylabel(psf_data['unitY'])
     ax.set_title('Geometrical PSF')
     ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-2, 2))
     fig.tight_layout()
@@ -215,18 +169,9 @@ def plot_diffraction_psf(
         max_dims: int = 256,
     ) -> str:
     """Plot diffraction PSF for a given field index and a wavelength index, returning base64 PNG."""
-    wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]
-
-    pupil_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
-
-    data = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, max_dims)
-    
-    _, delta_xp = calc_psf_scaling(
-        pupil_grid,
-        pupil_grid.num_rays,
-        max_dims,
-    )
-    image_scale = delta_xp * max_dims
+    psf_data = get_diffraction_psf_data(opm, fi, wvl_index, num_rays, max_dims)
+    data = np.array(psf_data['z'], dtype=float)
+    image_scale = max(abs(psf_data['x'][0]), abs(psf_data['x'][-1]))
     fig, ax = plt.subplots(figsize=(5, 5))
     ax.set_xlim(-image_scale, image_scale)
     ax.set_ylim(-image_scale, image_scale)
@@ -246,8 +191,8 @@ def plot_diffraction_psf(
     )
     fig.colorbar(hmap, ax=ax)
     ax.set_aspect('equal')
-    ax.set_xlabel('mm')
-    ax.set_ylabel('mm')
+    ax.set_xlabel(psf_data['unitX'])
+    ax.set_ylabel(psf_data['unitY'])
     ax.set_title('Diffraction PSF')
     ax.ticklabel_format(style='sci', useMathText=True, scilimits=(-2, 2))
     fig.tight_layout()

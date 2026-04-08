@@ -29,8 +29,7 @@ Renders the optical layout (cross-section with ray traces) using `InteractiveLay
 
 Plots tangential and sagittal transverse ray fans for field index `fi` (zero-indexed).
 
-- Defines a local `_ray_abr` callback that computes the transverse aberration at the image plane accounting for defocus.
-- Calls `sm.trace_fan(_ray_abr, fi, xy)` for both tangential (`xy=1`) and sagittal (`xy=0`) fans.
+- Calls `get_ray_fan_data(opm, fi)` from `rayoptics_web_utils.analysis`.
 - Produces a 1×2 subplot figure (8×4 inches); each subplot shows per-wavelength curves.
 - Wavelength labels are produced by `_get_wvl_lbl`.
 - Legend is placed below the figure via `fig.legend(..., loc='lower center')`.
@@ -39,7 +38,7 @@ Plots tangential and sagittal transverse ray fans for field index `fi` (zero-ind
 
 Plots tangential and sagittal OPD (optical path difference) fans for field index `fi` (zero-indexed).
 
-- Defines a local `_opd_abr` callback that calls `wave_abr_full_calc` and converts the result from system units to waves (`opd_val / opm.nm_to_sys_units(wvl)`; `wvl` is in nm, `opd_val` in system units).
+- Calls `get_opd_fan_data(opm, fi)` from `rayoptics_web_utils.analysis`.
 - Layout identical to `plot_ray_fan` (1×2 subplot, 8×4 inches, per-wavelength curves, shared legend).
 - Y-axis label is `"waves"`.
 
@@ -47,8 +46,7 @@ Plots tangential and sagittal OPD (optical path difference) fans for field index
 
 Plots a scatter spot diagram for field index `fi` (zero-indexed).
 
-- Defines a local `_spot` callback returning a 2-element array `[x_abr, y_abr]`.
-- Calls `sm.trace_grid(_spot, fi, wl=None, num_rays=21, form='list', append_if_none=False)`.
+- Calls `get_spot_data(opm, fi)` from `rayoptics_web_utils.analysis`.
 - Plots each wavelength grid as a separate scatter series (point size `s=1`).
 - Single square subplot (5×5 inches) with equal aspect ratio.
 - Y-axis label is `"mm"`.
@@ -57,7 +55,7 @@ Plots a scatter spot diagram for field index `fi` (zero-indexed).
 
 Plots a grouped bar chart of per-surface third-order Seidel aberration coefficients.
 
-- Calls `compute_third_order(opm)` to obtain the DataFrame.
+- Calls `get_3rd_order_seidel_data(opm)['surfaceBySurface']` and rebuilds a DataFrame for plotting.
 - Uses `DataFrame.plot.bar(ax=ax, rot=0)` to produce grouped bars per surface.
 - Y-axis formatted with scientific notation.
 - Field independent — operates on the full optical model.
@@ -66,9 +64,7 @@ Plots a grouped bar chart of per-surface third-order Seidel aberration coefficie
 
 - Field index `fi` is zero-indexed across all functions that accept it.
 - All functions end by calling `_fig_to_base64(fig)`, which also closes the figure via `plt.close(fig)`.
-- The `_ray_abr` and `_opd_abr` callbacks return `None` for failed ray traces (`ray_pkg[mc.ray] is None`); `trace_fan` skips `None` returns.
-- OPD unit conversion: `opd_val` from `wave_abr_full_calc` is in system units; divide by `opm.nm_to_sys_units(wvl)` to get waves.
-- `plot_wavefront_map` and `plot_diffraction_psf` use `make_ray_grid` from `rayoptics_web_utils.raygrid` instead of constructing `RayGrid` directly.
+- Plot-data generation for ray fans, OPD fans, spots, wavefront maps, and PSFs lives in `rayoptics_web_utils.analysis`; this module is responsible only for rendering.
 - `_fig_to_base64` and `_get_wvl_lbl` are imported from `rayoptics_web_utils.utils`.
 
 ## Usages
@@ -129,3 +125,5 @@ diffr_psf_png = plot_diffraction_psf(field_index, wavelength_index, opm, num_ray
 ```
 
 All functions are imported and exposed via Comlink RPC in the Pyodide web worker.
+
+`plot_diffraction_psf(...)` forwards its `max_dims` argument to `get_diffraction_psf_data(...)`, which clamps the effective diffraction PSF grid size to at least `2 * num_rays`.

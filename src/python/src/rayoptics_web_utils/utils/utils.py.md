@@ -9,6 +9,10 @@ Internal helpers shared across the package. Not part of the public API.
 ```python
 def _fig_to_base64(fig: Figure, dpi: int = 150) -> str: ...
 def _get_wvl_lbl(opm: OpticalModel, idx: int) -> str: ...
+def _system_units(opm: OpticalModel) -> str: ...
+def _json_float(value) -> float | None: ...
+def _json_float_list(values) -> list[float]: ...
+def _json_float_grid(values) -> list[list[float | None]]: ...
 ```
 
 ## Function Details
@@ -29,11 +33,28 @@ Returns a human-readable wavelength label for matplotlib legend annotations.
 
 - Reads `opm['optical_spec']['wvls'].wavelengths[idx]` and formats it as `"<value>nm"`.
 
+### `_system_units(opm)`
+
+Returns the configured system dimension string from `opm.system_spec.dimensions`.
+
+### `_json_float(value)`
+
+Converts a numeric-like value to a plain Python float, mapping `NaN` to `None` so the result remains JSON-encodable.
+
+### `_json_float_list(values)`
+
+Converts an iterable of numeric-like values to `list[float]`.
+
+### `_json_float_grid(values)`
+
+Converts a 2-D numeric grid to nested Python lists, mapping `NaN` cells to `None`.
+
 ## Key Conventions
 
 - Module was renamed from `_utils.py` to `utils/utils.py`; the leading underscores on exported symbols remain to signal they are not part of the public API.
 - `_fig_to_base64` always calls `plt.close(fig)` before returning to prevent matplotlib figure accumulation in long-running Pyodide sessions.
 - `dpi=150` is the default resolution; callers may override for higher or lower quality output.
+- JSON-serialization helpers in this module are internal utilities used by analysis functions to return plain Python data structures.
 
 
 ## Usages
@@ -65,3 +86,5 @@ wvl_label = _get_wvl_lbl(opm, 0)
 ```
 
 **Note:** Both functions are internal (prefixed with `_`) and not part of the public API. They are imported and used within the `plotting` module for rendering matplotlib figures to PNG strings suitable for transmission to the frontend.
+
+The JSON helpers are imported by `analysis/analysis.py` to normalize numpy-backed RayOptics outputs into JSON-encodable Python types.
