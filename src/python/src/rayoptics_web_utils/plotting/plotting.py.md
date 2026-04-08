@@ -125,3 +125,5 @@ diffr_psf_png = plot_diffraction_psf(field_index, wavelength_index, opm, num_ray
 ```
 
 All functions are imported and exposed via Comlink RPC in the Pyodide web worker.
+
+`plot_diffraction_psf(...)` forwards its `max_dims` argument to `get_diffraction_psf_data(...)`, which clamps the effective diffraction PSF grid size to at least `2 * num_rays`.

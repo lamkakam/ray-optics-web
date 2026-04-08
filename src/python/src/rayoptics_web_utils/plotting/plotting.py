@@ -169,7 +169,7 @@ def plot_diffraction_psf(
         max_dims: int = 256,
     ) -> str:
     """Plot diffraction PSF for a given field index and a wavelength index, returning base64 PNG."""
-    psf_data = get_diffraction_psf_data(opm, fi, wvl_index, num_rays)
+    psf_data = get_diffraction_psf_data(opm, fi, wvl_index, num_rays, max_dims)
     data = np.array(psf_data['z'], dtype=float)
     image_scale = max(abs(psf_data['x'][0]), abs(psf_data['x'][-1]))
     fig, ax = plt.subplots(figsize=(5, 5))

@@ -251,7 +251,13 @@ def get_geo_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 6
         'unitY': _system_units(opm),
     }
 
-def get_diffraction_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict:
+def get_diffraction_psf_data(
+    opm: OpticalModel,
+    fi: int,
+    wvl_idx: int,
+    num_rays: int = 64,
+    max_dims: int = 256,
+) -> dict:
     """
     Return type: {
         'fieldIdx': int,
@@ -267,13 +273,13 @@ def get_diffraction_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays:
     }
     """
     wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_idx]
-    max_dims = max(256, num_rays)
+    effective_max_dims = max(max_dims, 2 * num_rays)
     pupil_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
 
-    psf = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, max_dims)
-    _, delta_xp = calc_psf_scaling(pupil_grid, pupil_grid.num_rays, max_dims)
-    image_scale = delta_xp * max_dims
-    axis = np.linspace(-image_scale, image_scale, max_dims)
+    psf = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, effective_max_dims)
+    _, delta_xp = calc_psf_scaling(pupil_grid, pupil_grid.num_rays, effective_max_dims)
+    image_scale = delta_xp * effective_max_dims
+    axis = np.linspace(-image_scale, image_scale, effective_max_dims)
 
     return {
         'fieldIdx': fi,

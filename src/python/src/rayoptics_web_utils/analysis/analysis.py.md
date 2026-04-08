@@ -14,7 +14,7 @@ def get_opd_fan_data(opm: OpticalModel, fi: int) -> list[dict]: ...
 def get_spot_data(opm: OpticalModel, fi: int) -> list[dict]: ...
 def get_wavefront_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict: ...
 def get_geo_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict: ...
-def get_diffraction_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict: ...
+def get_diffraction_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64, max_dims: int = 256) -> dict: ...
 ```
 
 ## Function Details
@@ -122,7 +122,7 @@ Returns geometric PSF point-cloud data for one field and wavelength.
 | `unitX` | `str` | `opm.system_spec.dimensions` |
 | `unitY` | `str` | `opm.system_spec.dimensions` |
 
-### `get_diffraction_psf_data(opm, fi, wvl_idx, num_rays=64)`
+### `get_diffraction_psf_data(opm, fi, wvl_idx, num_rays=64, max_dims=256)`
 
 Returns diffraction PSF image-plane axes and intensity grid for one field and wavelength.
 
@@ -138,6 +138,7 @@ Returns diffraction PSF image-plane axes and intensity grid for one field and wa
 | `unitZ` | `str` | `""` |
 
 - Uses `make_ray_grid(...)`, `calc_psf(...)`, and `calc_psf_scaling(...)`.
+- The effective PSF grid size is `max(max_dims, 2 * num_rays)`, so the output axes and intensity grid are never smaller than twice the pupil sampling density.
 - The helper returns JSON-encodable Python data only; it does not call `json.dumps()`.
 
 ## Key Conventions

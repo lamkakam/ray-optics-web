@@ -43,13 +43,14 @@ class TestGetAnalysisPlotDataSignatures:
         assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "num_rays"]
         assert sig.parameters["num_rays"].default == 64
 
-    def test_get_diffraction_psf_data_accepts_opm_fi_wvl_idx_num_rays(self):
+    def test_get_diffraction_psf_data_accepts_opm_fi_wvl_idx_num_rays_and_max_dims(self):
         from rayoptics_web_utils.analysis import get_diffraction_psf_data
         import inspect
 
         sig = inspect.signature(get_diffraction_psf_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "num_rays"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "num_rays", "max_dims"]
         assert sig.parameters["num_rays"].default == 64
+        assert sig.parameters["max_dims"].default == 256
 
 
 class TestGetFirstOrderData:
@@ -254,6 +255,26 @@ class TestGetDiffractionPsfData:
         assert all(isinstance(v, float) for v in result["x"])
         assert all(isinstance(v, float) for v in result["y"])
         assert all(isinstance(value, float) for row in result["z"] for value in row)
+
+    def test_enforces_max_dims_floor_of_two_times_num_rays(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_diffraction_psf_data
+
+        result = get_diffraction_psf_data(cooke_triplet, fi=1, wvl_idx=1, num_rays=16, max_dims=8)
+
+        assert len(result["x"]) == 32
+        assert len(result["y"]) == 32
+        assert len(result["z"]) == 32
+        assert len(result["z"][0]) == 32
+
+    def test_uses_requested_max_dims_when_above_two_times_num_rays(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_diffraction_psf_data
+
+        result = get_diffraction_psf_data(cooke_triplet, fi=1, wvl_idx=1, num_rays=16, max_dims=80)
+
+        assert len(result["x"]) == 80
+        assert len(result["y"]) == 80
+        assert len(result["z"]) == 80
+        assert len(result["z"][0]) == 80
 
     def test_result_is_json_encodable(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_diffraction_psf_data

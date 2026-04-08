@@ -248,8 +248,8 @@ class TestPlottingDelegatesToAnalysis:
 
         captured = {}
 
-        def fake_get_diffraction_psf_data(opm, fi, wvl_idx, num_rays):
-            captured["called_with"] = (opm, fi, wvl_idx, num_rays)
+        def fake_get_diffraction_psf_data(opm, fi, wvl_idx, num_rays, max_dims):
+            captured["called_with"] = (opm, fi, wvl_idx, num_rays, max_dims)
             return {
                 "fieldIdx": fi,
                 "wvlIdx": wvl_idx,
@@ -265,5 +265,5 @@ class TestPlottingDelegatesToAnalysis:
 
         result = plotting.plot_diffraction_psf(fi=1, wvl_index=0, opm=cooke_triplet, num_rays=32, max_dims=128)
 
-        assert captured["called_with"] == (cooke_triplet, 1, 0, 32)
+        assert captured["called_with"] == (cooke_triplet, 1, 0, 32, 128)
         assert result.startswith("iVBOR")
