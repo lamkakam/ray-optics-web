@@ -14,6 +14,7 @@ import {
   _plotWavefrontMap,
   _plotGeoPSF,
   _plotDiffractionPSF,
+  _getDiffractionPSFData,
 } from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
@@ -248,6 +249,34 @@ describe("_plotDiffractionPSF", () => {
       return "";
     }, allSphericalOpticalModel, 2, 1, 32, 128);
     expect(pythonScript).toContain("plot_diffraction_psf(2, 1, _build_opm(), num_rays=32, max_dims=128)");
+  });
+});
+
+describe("_getDiffractionPSFData", () => {
+  it("should build the model script, call json.dumps(get_diffraction_psf_data(...)) and return parsed data", async () => {
+    const mockData = {
+      fieldIdx: 1,
+      wvlIdx: 2,
+      x: [-0.02, 0, 0.02],
+      y: [-0.02, 0, 0.02],
+      z: [
+        [0.001, 0.01, 0.001],
+        [0.01, 1, 0.01],
+        [0.001, 0.01, 0.001],
+      ],
+      unitX: "mm",
+      unitY: "mm",
+      unitZ: "",
+    };
+    let pythonScript = "";
+    const result = await _getDiffractionPSFData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 1, 2);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=64, max_dims=256))");
+    expect(result).toEqual(mockData);
   });
 });
 

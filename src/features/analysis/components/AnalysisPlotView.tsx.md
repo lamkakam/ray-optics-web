@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Displays an analysis plot image alongside plot-type, field, and wavelength selectors. Handles field-dependent vs. field-independent plot types by disabling the field selector when irrelevant, and shows the wavelength selector only for wavelength-dependent plot types.
+Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `diffractionPSF` renders an Apache ECharts v6 canvas scatter plot built from worker-provided axis/grid data. The component handles field-dependent vs. field-independent plot types by disabling the field selector when irrelevant, and shows the wavelength selector only for wavelength-dependent plot types.
 
 ## PlotType
 
@@ -27,6 +27,7 @@ interface AnalysisPlotViewProps {
   selectedWavelengthIndex: number;
   selectedPlotType: PlotType;
   plotImageBase64?: string;
+  diffractionPsfData?: DiffractionPsfData;
   loading?: boolean;
   onFieldChange: (fieldIndex: number) => void;
   onWavelengthChange: (wavelengthIndex: number) => void;
@@ -45,6 +46,7 @@ interface AnalysisPlotViewProps {
 | `selectedWavelengthIndex` | `number` | Yes | Currently selected wavelength index |
 | `selectedPlotType` | `PlotType` | Yes | Currently selected plot type |
 | `plotImageBase64` | `string` | No | Base64 PNG data for the plot image |
+| `diffractionPsfData` | `DiffractionPsfData` | No | Diffraction PSF axis/intensity data used only when `selectedPlotType === "diffractionPSF"` |
 | `loading` | `boolean` | No | Shows "Loading plot..." placeholder when `true` |
 | `onFieldChange` | `(n) => void` | Yes | Called with the new field index |
 | `onWavelengthChange` | `(n) => void` | Yes | Called with the new wavelength index |
@@ -70,7 +72,11 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the field dropdown is disabled for non-field-dependent types.
 - The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
-- Uses a plain `<img>` tag with a data URI (not `next/image`).
+- Non-diffraction plots use a plain `<img>` tag with a data URI (not `next/image`).
+- `diffractionPSF` renders an ECharts canvas chart after a 500ms debounce.
+- The diffraction chart measures its parent container and uses a square plot-area grid (`grid.width === grid.height`) even when the surrounding canvas or parent layout is rectangular.
+- The diffraction chart flattens the worker's `x`/`y`/`z` grid into scatter points `[x, y, log10(max(z, 5e-4))]`.
+- The diffraction chart keeps `xAxis` and `yAxis` on the same symmetric extent, disables tooltips, and colors intensity through a continuous `visualMap` using the fixed 11-color palette.
 
 ## Usages
 
@@ -104,6 +110,7 @@ return (
     selectedWavelengthIndex={selectedWavelengthIndex}
     selectedPlotType={selectedPlotType}
     plotImageBase64={plotImage}
+    diffractionPsfData={diffractionPsfData}
     loading={plotLoading}
     onFieldChange={handleFieldChange}
     onWavelengthChange={handleWavelengthChange}

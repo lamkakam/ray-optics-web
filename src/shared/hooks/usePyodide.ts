@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
-import type { OpticalModel, SeidelData, FocusingResult } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, OpticalModel, SeidelData, FocusingResult } from "@/shared/lib/types/opticalModel";
 import type { ZernikeData, ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
@@ -18,6 +18,7 @@ export interface PyodideWorkerAPI {
   plotWavefrontMap(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
   plotGeoPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
   plotDiffractionPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
+  getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<DiffractionPsfData>;
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
   getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;

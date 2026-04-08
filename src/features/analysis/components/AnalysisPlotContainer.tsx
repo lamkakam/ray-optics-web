@@ -3,6 +3,7 @@
 import React, { useCallback } from "react";
 import { useStore } from "zustand";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -30,6 +31,7 @@ export function AnalysisPlotContainer({
 
   const store = useAnalysisPlotStore();
   const plotImage = useStore(store, (s) => s.plotImage);
+  const diffractionPsfData = useStore(store, (s) => s.diffractionPsfData);
   const plotLoading = useStore(store, (s) => s.plotLoading);
   const selectedFieldIndex = useStore(store, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(store, (s) => s.selectedWavelengthIndex);
@@ -40,15 +42,28 @@ export function AnalysisPlotContainer({
   const fieldOptions = specsStore.getState().getFieldOptions();
   const wavelengthOptions = specsStore.getState().getWavelengthOptions();
 
-  const handleFieldChange = useCallback(async (value: number) => {
-    store.getState().setSelectedFieldIndex(value);
-    if (!proxy) return;
-    if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
+  const loadPlot = useCallback(async (
+    plotType: PlotType,
+    fieldIndex: number,
+    wavelengthIndex: number,
+  ) => {
+    if (!proxy || !committedOpticalModel) return;
+
     store.getState().setPlotLoading(true);
     try {
-      const plotFn = buildPlotFn(selectedPlotType, proxy, committedOpticalModel);
+      if (plotType === "diffractionPSF") {
+        const diffractionData: DiffractionPsfData = await proxy.getDiffractionPSFData(
+          committedOpticalModel,
+          fieldIndex,
+          wavelengthIndex,
+        );
+        store.getState().setDiffractionPsfData(diffractionData);
+        return;
+      }
+
+      const plotFn = buildPlotFn(plotType, proxy, committedOpticalModel);
       if (plotFn) {
-        const plot = await plotFn(value, selectedWavelengthIndex);
+        const plot = await plotFn(fieldIndex, wavelengthIndex);
         store.getState().setPlotImage(plot);
       }
     } catch {
@@ -56,42 +71,27 @@ export function AnalysisPlotContainer({
     } finally {
       store.getState().setPlotLoading(false);
     }
-  }, [proxy, store, selectedPlotType, selectedWavelengthIndex, committedOpticalModel, onError]);
+  }, [proxy, committedOpticalModel, store, onError]);
+
+  const handleFieldChange = useCallback(async (value: number) => {
+    store.getState().setSelectedFieldIndex(value);
+    if (!proxy) return;
+    if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
+    await loadPlot(selectedPlotType, value, selectedWavelengthIndex);
+  }, [proxy, store, selectedPlotType, selectedWavelengthIndex, loadPlot]);
 
   const handleWavelengthChange = useCallback(async (value: number) => {
     store.getState().setSelectedWavelengthIndex(value);
     if (!proxy) return;
     if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
-    store.getState().setPlotLoading(true);
-    try {
-      const plotFn = buildPlotFn(selectedPlotType, proxy, committedOpticalModel);
-      if (plotFn) {
-        const plot = await plotFn(selectedFieldIndex, value);
-        store.getState().setPlotImage(plot);
-      }
-    } catch {
-      onError();
-    } finally {
-      store.getState().setPlotLoading(false);
-    }
-  }, [proxy, store, selectedPlotType, selectedFieldIndex, committedOpticalModel, onError]);
+    await loadPlot(selectedPlotType, selectedFieldIndex, value);
+  }, [proxy, store, selectedPlotType, selectedFieldIndex, loadPlot]);
 
   const handlePlotTypeChange = useCallback(async (plotType: PlotType) => {
     store.getState().setSelectedPlotType(plotType);
     if (!proxy) return;
-    store.getState().setPlotLoading(true);
-    try {
-      const plotFn = buildPlotFn(plotType, proxy, committedOpticalModel);
-      if (plotFn) {
-        const plot = await plotFn(selectedFieldIndex, selectedWavelengthIndex);
-        store.getState().setPlotImage(plot);
-      }
-    } catch {
-      onError();
-    } finally {
-      store.getState().setPlotLoading(false);
-    }
-  }, [proxy, store, selectedFieldIndex, selectedWavelengthIndex, committedOpticalModel, onError]);
+    await loadPlot(plotType, selectedFieldIndex, selectedWavelengthIndex);
+  }, [proxy, store, selectedFieldIndex, selectedWavelengthIndex, loadPlot]);
 
   return (
     <AnalysisPlotView
@@ -101,6 +101,7 @@ export function AnalysisPlotContainer({
       selectedWavelengthIndex={selectedWavelengthIndex}
       selectedPlotType={selectedPlotType}
       plotImageBase64={plotImage}
+      diffractionPsfData={diffractionPsfData}
       loading={plotLoading}
       onFieldChange={handleFieldChange}
       onWavelengthChange={handleWavelengthChange}

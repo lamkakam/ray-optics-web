@@ -21,6 +21,7 @@ export async function plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalMod
 export async function plotWavefrontMap(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
 export async function plotGeoPSF(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
 export async function plotDiffractionPSF(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<string>
+export async function getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
 export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>
 export async function getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>
 export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
@@ -43,6 +44,7 @@ export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: strin
 export async function _plotWavefrontMap(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
 export async function _plotGeoPSF(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
 export async function _plotDiffractionPSF(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<string>
+export async function _getDiffractionPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
 export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData>
 export async function _getZernikeCoefficients(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>
 export async function _focusByMonoRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
@@ -85,7 +87,8 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `plotSurfaceBySurface3rdOrderAberr(model)` | Builds `opm` from model, returns a surface-by-surface Seidel aberration plot. Field independent. |
 | `plotWavefrontMap(model, fi, wi, numRays?)` | Returns a wavefront OPD map for the given field and wavelength index. `numRays` defaults to 64. |
 | `plotGeoPSF(model, fi, wi, numRays?)` | Returns a geometrical PSF (2D histogram) for the given field and wavelength index. `numRays` defaults to 64. |
-| `plotDiffractionPSF(model, fi, wi, numRays?, maxDims?)` | Returns a diffraction PSF for the given field and wavelength index. `numRays` defaults to 64, `maxDims` defaults to 256. |
+| `plotDiffractionPSF(model, fi, wi, numRays?, maxDims?)` | Returns a base64 PNG diffraction PSF for the given field and wavelength index. `numRays` defaults to 64, `maxDims` defaults to 256. |
+| `getDiffractionPSFData(model, fi, wi, numRays?, maxDims?)` | Returns `DiffractionPsfData` for the given field and wavelength index using `json.dumps(get_diffraction_psf_data(...))`. Used by the ECharts Diffraction PSF view. |
 | `get3rdOrderSeidelData(model)` | Builds `opm` from model, returns `SeidelData` with 3rd-order Seidel aberration data. |
 | `getZernikeCoefficients(model, fi, wi, n?)` | Builds `opm` from model, returns `ZernikeData` with Zernike polynomial coefficients. `numTerms` defaults to 56. |
 | `focusByMonoRmsSpot(model, fieldIndex)` | Focuses by minimizing monochromatic RMS spot radius. Returns `FocusingResult` with `delta_thi` and `metric_value`. |
@@ -110,6 +113,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_plotWavefrontMap(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`plot_wavefront_map(${fi}, ${wi}, ${opm}, num_rays=${numRays})\`)`. `numRays` defaults to 64.
 - `_plotGeoPSF(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`plot_geo_psf(${fi}, ${wi}, ${opm}, num_rays=${numRays})\`)`. `numRays` defaults to 64.
 - `_plotDiffractionPSF(runPython, model, fi, wi, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`plot_diffraction_psf(${fi}, ${wi}, ${opm}, num_rays=${numRays}, max_dims=${maxDims})\`)`. `numRays` defaults to 64, `maxDims` defaults to 256.
+- `_getDiffractionPSFData(runPython, model, fi, wi, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}))\`)` and parses the JSON into `DiffractionPsfData`.
 - `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
 - `_getZernikeCoefficients(runPython, model, fi, wi, n?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56.
 - `_resetPyodideForTesting()` — sets `pyodide = null` to allow `init()` to be re-exercised in tests.
@@ -119,7 +123,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **Singleton `pyodide`**: `init()` is a no-op if the singleton is already set.
 - **`requirePyodide()` guard**: All public functions call this helper. It throws `"Pyodide not initialized. Call init() first."` if `pyodide` is `null`.
 - **Stateless**: Each computation function builds `opm` locally from the received `OpticalModel` within a single `runPython` call. No global `opm` state persists between calls.
-- **Plot return type**: All plot functions return a `string` (base64-encoded image).
+- **Plot return type**: Plot image functions return a `string` (base64-encoded image), while `getDiffractionPSFData` returns typed axis/grid data for frontend rendering.
 - **`caf2` global**: Initialized by `_rwu_init()` during `_init`.
 
 ## Edge Cases / Error Handling

@@ -1,14 +1,17 @@
 import { type StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
+import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
 
 export interface AnalysisPlotState {
   plotImage: string | undefined;
+  diffractionPsfData: DiffractionPsfData | undefined;
   plotLoading: boolean;
   selectedFieldIndex: number;
   selectedWavelengthIndex: number;
   selectedPlotType: PlotType;
 
   setPlotImage: (image: string | undefined) => void;
+  setDiffractionPsfData: (data: DiffractionPsfData | undefined) => void;
   setPlotLoading: (loading: boolean) => void;
   setSelectedFieldIndex: (index: number, maxCount?: number) => void;
   setSelectedWavelengthIndex: (index: number, maxCount?: number) => void;
@@ -17,12 +20,14 @@ export interface AnalysisPlotState {
 
 export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) => ({
   plotImage: undefined,
+  diffractionPsfData: undefined,
   plotLoading: false,
   selectedFieldIndex: 0,
   selectedWavelengthIndex: 0,
   selectedPlotType: "rayFan",
 
-  setPlotImage: (image) => set({ plotImage: image }),
+  setPlotImage: (image) => set({ plotImage: image, diffractionPsfData: undefined }),
+  setDiffractionPsfData: (data) => set({ diffractionPsfData: data, plotImage: undefined }),
   setPlotLoading: (loading) => set({ plotLoading: loading }),
   setSelectedFieldIndex: (index, maxCount) =>
     set({ selectedFieldIndex: maxCount !== undefined ? Math.min(index, maxCount - 1) : index }),

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Zustand store for managing the analysis plot panel state. Holds the current plot image, loading flag, selected field/wavelength indices, and selected plot type that drive the `AnalysisPlotView` component.
+Zustand store for managing the analysis plot panel state. Holds the current plot image or diffraction-PSF data payload, the loading flag, selected field/wavelength indices, and selected plot type that drive the `AnalysisPlotView` component.
 
 ## Exports
 
@@ -14,6 +14,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 | Field | Type | Default |
 |---|---|---|
 | `plotImage` | `string \| undefined` | `undefined` |
+| `diffractionPsfData` | `DiffractionPsfData \| undefined` | `undefined` |
 | `plotLoading` | `boolean` | `false` |
 | `selectedFieldIndex` | `number` | `0` |
 | `selectedWavelengthIndex` | `number` | `0` |
@@ -21,7 +22,8 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 ## Actions
 
-- `setPlotImage(image)` — sets or clears the base64 PNG plot image.
+- `setPlotImage(image)` — sets or clears the base64 PNG plot image and clears `diffractionPsfData`.
+- `setDiffractionPsfData(data)` — sets or clears the diffraction PSF chart payload and clears `plotImage`.
 - `setPlotLoading(loading)` — sets the loading flag.
 - `setSelectedFieldIndex(index, maxCount?)` — sets the active field index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
 - `setSelectedWavelengthIndex(index, maxCount?)` — sets the active wavelength index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
@@ -31,3 +33,4 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 - `create`, `StateCreator` from `zustand`.
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`.
+- `DiffractionPsfData` (type-only) from `@/shared/lib/types/opticalModel`.

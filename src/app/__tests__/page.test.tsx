@@ -16,7 +16,7 @@ import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/Lens
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/glassCatalogsResource";
-import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData } from "@/shared/lib/types/zernikeData";
@@ -89,6 +89,22 @@ const mockGet3rdOrderSeidelData: jest.Mock<Promise<SeidelData>, [OpticalModel]> 
     wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
     curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
   });
+const mockGetDiffractionPSFData: jest.Mock<Promise<DiffractionPsfData>, [OpticalModel, number, number]> = jest
+  .fn()
+  .mockResolvedValue({
+    fieldIdx: 0,
+    wvlIdx: 0,
+    x: [-0.02, 0, 0.02],
+    y: [-0.02, 0, 0.02],
+    z: [
+      [0.001, 0.01, 0.001],
+      [0.01, 1, 0.01],
+      [0.001, 0.01, 0.001],
+    ],
+    unitX: "mm",
+    unitY: "mm",
+    unitZ: "",
+  });
 
 const mockProxy = {
   init: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
@@ -101,6 +117,7 @@ const mockProxy = {
   plotWavefrontMap: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-wavefront"),
   plotGeoPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-geopsf"),
   plotDiffractionPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-diffrpsf"),
+  getDiffractionPSFData: mockGetDiffractionPSFData,
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
   getZernikeCoefficients: jest.fn<Promise<ZernikeData>, [OpticalModel, number, number, number?]>().mockResolvedValue({
     coefficients: [],

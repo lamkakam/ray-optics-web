@@ -107,6 +107,17 @@ export interface FocusingResult {
   metric_value: number;
 }
 
+export interface DiffractionPsfData {
+  fieldIdx: number;
+  wvlIdx: number;
+  x: number[];
+  y: number[];
+  z: number[][];
+  unitX: string;
+  unitY: string;
+  unitZ: string;
+}
+
 export interface AberrationTypeToLabel extends Record<string, ReactNode> {
   TSA: ReactNode;
   TCO: ReactNode;

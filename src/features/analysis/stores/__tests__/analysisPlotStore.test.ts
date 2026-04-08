@@ -35,6 +35,11 @@ describe("analysisPlotStore", () => {
       const store = makeStore();
       expect(store.getState().selectedPlotType).toBe("rayFan");
     });
+
+    it("has diffractionPsfData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+    });
   });
 
   describe("setPlotImage", () => {
@@ -49,6 +54,44 @@ describe("analysisPlotStore", () => {
       store.getState().setPlotImage("base64data");
       store.getState().setPlotImage(undefined);
       expect(store.getState().plotImage).toBeUndefined();
+    });
+  });
+
+  describe("setDiffractionPsfData", () => {
+    it("sets diffractionPsfData", () => {
+      const store = makeStore();
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-0.02, 0, 0.02],
+        y: [-0.02, 0, 0.02],
+        z: [
+          [0.001, 0.01, 0.001],
+          [0.01, 1, 0.01],
+          [0.001, 0.01, 0.001],
+        ],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      expect(store.getState().diffractionPsfData).toBeDefined();
+      expect(store.getState().diffractionPsfData?.fieldIdx).toBe(1);
+    });
+
+    it("clears diffractionPsfData with undefined", () => {
+      const store = makeStore();
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setDiffractionPsfData(undefined);
+      expect(store.getState().diffractionPsfData).toBeUndefined();
     });
   });
 

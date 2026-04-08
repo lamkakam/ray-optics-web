@@ -6,11 +6,34 @@ import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPl
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { AnalysisPlotStoreContext } from "../../providers/AnalysisPlotStoreProvider";
+
+jest.mock("echarts/core", () => ({
+  use: jest.fn(),
+  init: jest.fn(() => ({
+    setOption: jest.fn(),
+    dispose: jest.fn(),
+    resize: jest.fn(),
+  })),
+}), { virtual: true });
+
+jest.mock("echarts/charts", () => ({
+  ScatterChart: {},
+}), { virtual: true });
+
+jest.mock("echarts/components", () => ({
+  GridComponent: {},
+  TooltipComponent: {},
+  VisualMapComponent: {},
+}), { virtual: true });
+
+jest.mock("echarts/renderers", () => ({
+  CanvasRenderer: {},
+}), { virtual: true });
 
 // Mock useScreenBreakpoint (AnalysisPlotView uses it)
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
@@ -37,6 +60,21 @@ const testModel: OpticalModel = {
   specs: testSpecs,
 };
 
+const diffractionPsfData: DiffractionPsfData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  x: [-0.02, 0, 0.02],
+  y: [-0.02, 0, 0.02],
+  z: [
+    [0.001, 0.01, 0.001],
+    [0.01, 1, 0.01],
+    [0.001, 0.01, 0.001],
+  ],
+  unitX: "mm",
+  unitY: "mm",
+  unitZ: "",
+};
+
 function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorkerAPI {
   return {
     init: jest.fn(),
@@ -49,6 +87,7 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
     plotWavefrontMap: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-wavefront"),
     plotGeoPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-geopsf"),
     plotDiffractionPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-diffrpsf"),
+    getDiffractionPSFData: jest.fn<Promise<DiffractionPsfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionPsfData),
     get3rdOrderSeidelData: jest.fn(),
     getZernikeCoefficients: jest.fn(),
     focusByMonoRmsSpot: jest.fn(),
@@ -207,6 +246,20 @@ describe("AnalysisPlotContainer", () => {
     expect(store.getState().selectedPlotType).toBe("opdFan");
     // But plotLoading is never set (no async work)
     expect(store.getState().plotLoading).toBe(false);
+  });
+
+  it("handlePlotTypeChange: diffractionPSF fetches data and stores it instead of a PNG", async () => {
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "diffractionPSF");
+
+    expect(store.getState().selectedPlotType).toBe("diffractionPSF");
+    await waitFor(() => {
+      expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(testModel, 0, 0);
+    });
+    expect(store.getState().diffractionPsfData).toEqual(diffractionPsfData);
+    expect(store.getState().plotImage).toBeUndefined();
   });
 
   it("onError called when proxy throws on field change", async () => {

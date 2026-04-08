@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container component that owns all analysis-plot logic: derives field/wavelength select options, maps plot types to worker API calls, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child.
+Container component that owns all analysis-plot logic: derives field/wavelength select options, maps plot types to worker API calls, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds either a base64 image or typed diffraction-PSF grid data depending on the selected plot type.
 
 ## Props
 
@@ -22,8 +22,8 @@ interface AnalysisPlotContainerProps {
 
 ## State
 
-All five analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
-- `plotImage`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
+All six analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
+- `plotImage`, `diffractionPsfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
 
 `committedOpticalModel` is read from `lensStore` via `useLensEditorStore` and `useStore(lensStore, (s) => s.committedOpticalModel)`.
 
@@ -36,25 +36,33 @@ All five analysis-plot state fields (reactive) are read from `useAnalysisPlotSto
 
 ## Internal Logic
 
-Plot functions are obtained via `buildPlotFn(plotType, proxy, committedOpticalModel)` from `@/shared/lib/utils/plotFunctions`. This returns a `(fieldIndex, wavelengthIndex) => Promise<string>` function, or `undefined` when `proxy` or `committedOpticalModel` is missing.
+Most plot functions are obtained via `buildPlotFn(plotType, proxy, committedOpticalModel)` from `@/shared/lib/utils/plotFunctions`. For `diffractionPSF`, the container bypasses the PNG plot path and calls `proxy.getDiffractionPSFData(...)` instead.
+
+### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
+
+Shared async helper used by all three change handlers:
+
+1. Returns immediately when `proxy` or `committedOpticalModel` is missing.
+2. Sets `plotLoading(true)`.
+3. If `plotType === "diffractionPSF"`, calls `proxy.getDiffractionPSFData(committedOpticalModel, fieldIndex, wavelengthIndex)` and stores the result with `setDiffractionPsfData(...)`.
+4. Otherwise resolves `buildPlotFn(...)`, awaits the base64 PNG result, and stores it with `setPlotImage(...)`.
+5. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
 
 ### `handleFieldChange(value)`
 
 1. Updates `selectedFieldIndex` in store.
 2. If `proxy` is undefined or `PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent === false`, returns without plotting.
-3. Sets `plotLoading(true)`, calls `plotFn(value, selectedWavelengthIndex)`, updates `plotImage`.
-4. Sets `plotLoading(false)` in `finally`; calls `onError()` in `catch`.
+3. Delegates to `loadPlot(selectedPlotType, value, selectedWavelengthIndex)`.
 
 ### `handleWavelengthChange(value)`
 
-Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and calls `plotFn(selectedFieldIndex, value)`. Only executes the plot call when `fieldDependent === true` (all wavelength-dependent plot types are also field-dependent).
+Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and delegates to `loadPlot(selectedPlotType, selectedFieldIndex, value)`. Only executes the plot call when `fieldDependent === true` (all wavelength-dependent plot types are also field-dependent).
 
 ### `handlePlotTypeChange(plotType)`
 
 1. Updates `selectedPlotType` in store.
 2. If `proxy` is undefined, returns.
-3. Sets `plotLoading(true)`, calls `plotFn(selectedFieldIndex, selectedWavelengthIndex)`, updates `plotImage`.
-4. Sets `plotLoading(false)` in `finally`; calls `onError()` in `catch`.
+3. Delegates to `loadPlot(plotType, selectedFieldIndex, selectedWavelengthIndex)`.
 
 ## Usages
 

@@ -18,6 +18,7 @@ interface PyodideWorkerAPI {
   plotWavefrontMap(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
   plotGeoPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
   plotDiffractionPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
+  getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<DiffractionPsfData>;
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
   getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>;
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
@@ -54,6 +55,7 @@ interface PyodideWorkerAPI {
 - `comlink.wrap` — wraps the worker as a typed async proxy.
 - `OpticalModel` — imported from `shared/lib/types/opticalModel` (type only).
 - `SeidelData` — imported from `shared/lib/types/opticalModel` (type only).
+- `DiffractionPsfData` — imported from `shared/lib/types/opticalModel` (type only).
 - `ZernikeData` — imported from `shared/lib/types/zernikeData` (type only).
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
 
