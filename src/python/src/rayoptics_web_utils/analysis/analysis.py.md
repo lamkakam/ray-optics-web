@@ -9,6 +9,12 @@ Extracts first-order and third-order Seidel aberration data from a RayOptics `Op
 ```python
 def get_first_order_data(opm: OpticalModel) -> dict[str, float]: ...
 def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[Literal['surfaceBySurface', 'transverse', 'wavefront', 'curvature'], dict]: ...
+def get_ray_fan_data(opm: OpticalModel, fi: int) -> list[dict]: ...
+def get_opd_fan_data(opm: OpticalModel, fi: int) -> list[dict]: ...
+def get_spot_data(opm: OpticalModel, fi: int) -> list[dict]: ...
+def get_wavefront_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict: ...
+def get_geo_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict: ...
+def get_diffraction_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict: ...
 ```
 
 ## Function Details
@@ -45,11 +51,102 @@ Return shape:
 - `wavefront` conversion: `opm.nm_to_sys_units(central_wvl)` converts the central wavelength from nm to system units before passing to `seidel_to_wavefront`.
 - `transverse`, `wavefront`, `curvature` are pandas Series/DataFrame; `.to_dict()` is called before returning.
 
+### `get_ray_fan_data(opm, fi)`
+
+Returns transverse ray-fan data for all wavelengths at field index `fi`.
+
+Each list entry corresponds to one wavelength and contains:
+
+| Field | Type | Description |
+|---|---|---|
+| `fieldIdx` | `int` | Field index used for tracing |
+| `wvlIdx` | `int` | Wavelength index |
+| `Sagittal` | `dict` | Sagittal fan with `x` pupil coordinates and `y` transverse aberration values |
+| `Tangential` | `dict` | Tangential fan with `x` pupil coordinates and `y` transverse aberration values |
+| `unitX` | `str` | `""` (relative pupil coordinate) |
+| `unitY` | `str` | `opm.system_spec.dimensions` |
+
+- Uses the same transverse-aberration callback as `plot_ray_fan`.
+- `Sagittal.x`, `Sagittal.y`, `Tangential.x`, and `Tangential.y` are plain Python `list[float]`.
+
+### `get_opd_fan_data(opm, fi)`
+
+Returns OPD fan data for all wavelengths at field index `fi`.
+
+- Return shape is the same as `get_ray_fan_data`, but `unitY` is `"waves"`.
+- Uses `wave_abr_full_calc(...) / opm.nm_to_sys_units(wvl)` to convert OPD from system units to waves.
+
+### `get_spot_data(opm, fi)`
+
+Returns spot-diagram point clouds for all wavelengths at field index `fi`.
+
+Each list entry contains:
+
+| Field | Type | Description |
+|---|---|---|
+| `fieldIdx` | `int` | Field index used for tracing |
+| `wvlIdx` | `int` | Wavelength index |
+| `x` | `list[float]` | Sagittal/image-plane x coordinates |
+| `y` | `list[float]` | Tangential/image-plane y coordinates |
+| `unitX` | `str` | `opm.system_spec.dimensions` |
+| `unitY` | `str` | `opm.system_spec.dimensions` |
+
+### `get_wavefront_data(opm, fi, wvl_idx, num_rays=64)`
+
+Returns a wavefront map grid for one field and wavelength.
+
+| Field | Type | Description |
+|---|---|---|
+| `fieldIdx` | `int` | Field index |
+| `wvlIdx` | `int` | Wavelength index |
+| `x` | `list[float]` | Relative pupil x-axis sampled from `RayGrid.grid[0, :, 0]` |
+| `y` | `list[float]` | Relative pupil y-axis sampled from `RayGrid.grid[1, 0, :]` |
+| `z` | `list[list[float \| None]]` | Transposed OPD grid in waves; NaN values are converted to `None` |
+| `unitX` | `str` | `""` |
+| `unitY` | `str` | `""` |
+| `unitZ` | `str` | `"waves"` |
+
+- Uses `make_ray_grid(...)`.
+- Preserves the current wavelength-correction behavior by scaling the OPD grid by `central_wvl / wavelength_nm`.
+
+### `get_geo_psf_data(opm, fi, wvl_idx, num_rays=64)`
+
+Returns geometric PSF point-cloud data for one field and wavelength.
+
+| Field | Type | Description |
+|---|---|---|
+| `fieldIdx` | `int` | Field index |
+| `wvlIdx` | `int` | Wavelength index |
+| `x` | `list[float]` | Image-plane x coordinates from `RayList.ray_abr[0]` |
+| `y` | `list[float]` | Image-plane y coordinates from `RayList.ray_abr[1]` |
+| `unitX` | `str` | `opm.system_spec.dimensions` |
+| `unitY` | `str` | `opm.system_spec.dimensions` |
+
+### `get_diffraction_psf_data(opm, fi, wvl_idx, num_rays=64)`
+
+Returns diffraction PSF image-plane axes and intensity grid for one field and wavelength.
+
+| Field | Type | Description |
+|---|---|---|
+| `fieldIdx` | `int` | Field index |
+| `wvlIdx` | `int` | Wavelength index |
+| `x` | `list[float]` | Image-plane x axis in system units |
+| `y` | `list[float]` | Image-plane y axis in system units |
+| `z` | `list[list[float]]` | PSF intensity grid from `calc_psf(...)` |
+| `unitX` | `str` | `opm.system_spec.dimensions` |
+| `unitY` | `str` | `opm.system_spec.dimensions` |
+| `unitZ` | `str` | `""` |
+
+- Uses `make_ray_grid(...)`, `calc_psf(...)`, and `calc_psf_scaling(...)`.
+- The helper returns JSON-encodable Python data only; it does not call `json.dumps()`.
+
 ## Key Conventions
 
 - All return values must be JSON-serialisable (no numpy arrays, no pyproxy objects).
 - `compute_third_order` returns a pandas DataFrame indexed by surface label; the `'sum'` row is the total across all surfaces.
 - `fod` (first-order data) is accessed via `opm['analysis_results']['parax_data'].fod` for Seidel functions.
+- NaN values in serialized grids are converted to `None` so the return values remain JSON-encodable.
+- Fan data exposes both sagittal and tangential traces explicitly via `Sagittal` and `Tangential`.
 
 ## Usages
 
@@ -78,3 +175,5 @@ json_result = json.dumps(seidel_data)
 ```
 
 Both functions are imported in the Pyodide web worker (`workers/pyodide.worker.ts`) and exposed via Comlink RPC to the frontend.
+
+The plot-data helper functions are currently consumed by `plotting/plotting.py` to separate RayOptics data generation from Matplotlib rendering.

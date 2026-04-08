@@ -13,6 +13,12 @@ _LAZY_IMPORTS = {
     # analysis
     'get_first_order_data': 'rayoptics_web_utils.analysis.analysis',
     'get_3rd_order_seidel_data': 'rayoptics_web_utils.analysis.analysis',
+    'get_ray_fan_data': 'rayoptics_web_utils.analysis.analysis',
+    'get_opd_fan_data': 'rayoptics_web_utils.analysis.analysis',
+    'get_spot_data': 'rayoptics_web_utils.analysis.analysis',
+    'get_wavefront_data': 'rayoptics_web_utils.analysis.analysis',
+    'get_geo_psf_data': 'rayoptics_web_utils.analysis.analysis',
+    'get_diffraction_psf_data': 'rayoptics_web_utils.analysis.analysis',
     # zernike
     'get_zernike_coefficients': 'rayoptics_web_utils.zernike.zernike',
     # plotting
