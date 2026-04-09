@@ -1,7 +1,7 @@
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { buildPlotFn, PLOT_FUNCTION_BUILDERS } from "@/shared/lib/utils/plotFunctions";
+import { buildPlotFn, loadAnalysisPlot, PLOT_FUNCTION_BUILDERS } from "@/shared/lib/utils/plotFunctions";
 
 const ALL_PLOT_TYPES: PlotType[] = [
   "rayFan",
@@ -113,5 +113,70 @@ describe("PLOT_FUNCTION_BUILDERS", () => {
     for (const plotType of ALL_PLOT_TYPES) {
       expect(PLOT_FUNCTION_BUILDERS[plotType]).toBeInstanceOf(Function);
     }
+  });
+});
+
+describe("loadAnalysisPlot", () => {
+  it("returns undefined when proxy is undefined", async () => {
+    await expect(loadAnalysisPlot({
+      plotType: "rayFan",
+      proxy: undefined,
+      model: mockModel,
+      fieldIndex: 0,
+      wavelengthIndex: 0,
+    })).resolves.toBeUndefined();
+  });
+
+  it("loads wavefrontMap through getWavefrontData", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "wavefrontMap",
+      proxy,
+      model: mockModel,
+      fieldIndex: 1,
+      wavelengthIndex: 2,
+    });
+
+    expect(proxy.getWavefrontData).toHaveBeenCalledWith(mockModel, 1, 2);
+    expect(proxy.plotWavefrontMap).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      kind: "wavefrontMap",
+      wavefrontMapData: undefined,
+    });
+  });
+
+  it("loads diffractionPSF through getDiffractionPSFData", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "diffractionPSF",
+      proxy,
+      model: mockModel,
+      fieldIndex: 2,
+      wavelengthIndex: 1,
+    });
+
+    expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(mockModel, 2, 1);
+    expect(proxy.plotDiffractionPSF).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      kind: "diffractionPSF",
+      diffractionPsfData: undefined,
+    });
+  });
+
+  it("loads PNG-backed plots through the generic builder path", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "geoPSF",
+      proxy,
+      model: mockModel,
+      fieldIndex: 0,
+      wavelengthIndex: 1,
+    });
+
+    expect(proxy.plotGeoPSF).toHaveBeenCalledWith(mockModel, 0, 1);
+    expect(result).toEqual({
+      kind: "image",
+      image: "geoPSF-result",
+    });
   });
 });

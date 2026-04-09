@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container component that owns all analysis-plot logic: derives field/wavelength select options, maps plot types to worker API calls, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds either a base64 image, typed wavefront-map grid data, or typed diffraction-PSF grid data depending on the selected plot type.
+Container component that owns all analysis-plot logic: derives field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds either a base64 image, typed wavefront-map grid data, or typed diffraction-PSF grid data depending on the selected plot type.
 
 ## Props
 
@@ -36,7 +36,7 @@ All seven analysis-plot state fields (reactive) are read from `useAnalysisPlotSt
 
 ## Internal Logic
 
-Most plot functions are obtained via `buildPlotFn(plotType, proxy, committedOpticalModel)` from `@/shared/lib/utils/plotFunctions`. For `wavefrontMap` and `diffractionPSF`, the container bypasses the PNG plot path and calls typed worker APIs instead.
+All plot loading goes through `loadAnalysisPlot(...)` from `@/shared/lib/utils/plotFunctions`, which centralizes the plot-type to worker-API mapping. This keeps the panel behavior aligned with `LensEditor.tsx` submit handling.
 
 ### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
 
@@ -44,10 +44,11 @@ Shared async helper used by all three change handlers:
 
 1. Returns immediately when `proxy` or `committedOpticalModel` is missing.
 2. Sets `plotLoading(true)`.
-3. If `plotType === "diffractionPSF"`, calls `proxy.getDiffractionPSFData(committedOpticalModel, fieldIndex, wavelengthIndex)` and stores the result with `setDiffractionPsfData(...)`.
-4. If `plotType === "wavefrontMap"`, calls `proxy.getWavefrontData(committedOpticalModel, fieldIndex, wavelengthIndex)` and stores the result with `setWavefrontMapData(...)`.
-5. Otherwise resolves `buildPlotFn(...)`, awaits the base64 PNG result, and stores it with `setPlotImage(...)`.
-6. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
+3. Calls `loadAnalysisPlot({ plotType, proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex })`.
+4. If the result kind is `"diffractionPSF"`, stores the payload with `setDiffractionPsfData(...)`.
+5. If the result kind is `"wavefrontMap"`, stores the payload with `setWavefrontMapData(...)`.
+6. If the result kind is `"image"`, stores the base64 PNG with `setPlotImage(...)`.
+7. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
 
 ### `handleFieldChange(value)`
 

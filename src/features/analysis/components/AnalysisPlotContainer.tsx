@@ -3,11 +3,10 @@
 import React, { useCallback } from "react";
 import { useStore } from "zustand";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { DiffractionPsfData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
-import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
+import { loadAnalysisPlot } from "@/shared/lib/utils/plotFunctions";
 import {
   AnalysisPlotView,
   PLOT_TYPE_CONFIG,
@@ -52,31 +51,26 @@ export function AnalysisPlotContainer({
 
     store.getState().setPlotLoading(true);
     try {
-      if (plotType === "diffractionPSF") {
-        const diffractionData: DiffractionPsfData = await proxy.getDiffractionPSFData(
-          committedOpticalModel,
-          fieldIndex,
-          wavelengthIndex,
-        );
-        store.getState().setDiffractionPsfData(diffractionData);
+      const result = await loadAnalysisPlot({
+        plotType,
+        proxy,
+        model: committedOpticalModel,
+        fieldIndex,
+        wavelengthIndex,
+      });
+      if (!result) return;
+
+      if (result.kind === "diffractionPSF") {
+        store.getState().setDiffractionPsfData(result.diffractionPsfData);
         return;
       }
 
-      if (plotType === "wavefrontMap") {
-        const wavefrontData: WavefrontMapData = await proxy.getWavefrontData(
-          committedOpticalModel,
-          fieldIndex,
-          wavelengthIndex,
-        );
-        store.getState().setWavefrontMapData(wavefrontData);
+      if (result.kind === "wavefrontMap") {
+        store.getState().setWavefrontMapData(result.wavefrontMapData);
         return;
       }
 
-      const plotFn = buildPlotFn(plotType, proxy, committedOpticalModel);
-      if (plotFn) {
-        const plot = await plotFn(fieldIndex, wavelengthIndex);
-        store.getState().setPlotImage(plot);
-      }
+      store.getState().setPlotImage(result.image);
     } catch {
       onError();
     } finally {

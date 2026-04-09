@@ -1,8 +1,20 @@
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, OpticalModel, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 export type PlotFn = (fieldIndex: number, wavelengthIndex: number) => Promise<string>;
+export type AnalysisPlotLoadResult =
+  | { readonly kind: "image"; readonly image: string }
+  | { readonly kind: "wavefrontMap"; readonly wavefrontMapData: WavefrontMapData }
+  | { readonly kind: "diffractionPSF"; readonly diffractionPsfData: DiffractionPsfData };
+
+interface LoadAnalysisPlotParams {
+  readonly plotType: PlotType;
+  readonly proxy: PyodideWorkerAPI | undefined;
+  readonly model: OpticalModel | undefined;
+  readonly fieldIndex: number;
+  readonly wavelengthIndex: number;
+}
 
 export const PLOT_FUNCTION_BUILDERS: Record<
   PlotType,
@@ -26,4 +38,36 @@ export function buildPlotFn(
 ): PlotFn | undefined {
   if (!proxy || !model) return undefined;
   return PLOT_FUNCTION_BUILDERS[plotType](proxy, model);
+}
+
+export async function loadAnalysisPlot({
+  plotType,
+  proxy,
+  model,
+  fieldIndex,
+  wavelengthIndex,
+}: LoadAnalysisPlotParams): Promise<AnalysisPlotLoadResult | undefined> {
+  if (!proxy || !model) return undefined;
+
+  if (plotType === "wavefrontMap") {
+    return {
+      kind: "wavefrontMap",
+      wavefrontMapData: await proxy.getWavefrontData(model, fieldIndex, wavelengthIndex),
+    };
+  }
+
+  if (plotType === "diffractionPSF") {
+    return {
+      kind: "diffractionPSF",
+      diffractionPsfData: await proxy.getDiffractionPSFData(model, fieldIndex, wavelengthIndex),
+    };
+  }
+
+  const plotFn = buildPlotFn(plotType, proxy, model);
+  if (!plotFn) return undefined;
+
+  return {
+    kind: "image",
+    image: await plotFn(fieldIndex, wavelengthIndex),
+  };
 }

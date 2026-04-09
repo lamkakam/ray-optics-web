@@ -2,7 +2,7 @@ import React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
-import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, OpticalModel, SeidelData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
@@ -131,6 +131,36 @@ const mockSeidelData: SeidelData = {
   curvature: { TCV: 0, SCV: 0, PCV: 0 },
 };
 
+const mockWavefrontMapData: WavefrontMapData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  x: [-1, 0, 1],
+  y: [-1, 0, 1],
+  z: [
+    [undefined, 0.1, undefined],
+    [0.2, 0.3, 0.4],
+    [undefined, 0.5, undefined],
+  ],
+  unitX: "",
+  unitY: "",
+  unitZ: "waves",
+};
+
+const mockDiffractionPsfData: DiffractionPsfData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  x: [-0.02, 0, 0.02],
+  y: [-0.02, 0, 0.02],
+  z: [
+    [0.001, 0.01, 0.001],
+    [0.01, 1, 0.01],
+    [0.001, 0.01, 0.001],
+  ],
+  unitX: "mm",
+  unitY: "mm",
+  unitZ: "",
+};
+
 function makeStores() {
   const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
@@ -150,14 +180,17 @@ function makeProxy(): PyodideWorkerAPI {
     plotSpotDiagram: jest.fn().mockResolvedValue("plot-base64"),
     plotSurfaceBySurface3rdOrderAberr: jest.fn().mockResolvedValue("plot-base64"),
     plotWavefrontMap: jest.fn().mockResolvedValue("plot-base64"),
+    getWavefrontData: jest.fn().mockResolvedValue(mockWavefrontMapData),
     plotGeoPSF: jest.fn().mockResolvedValue("plot-base64"),
     plotDiffractionPSF: jest.fn().mockResolvedValue("plot-base64"),
+    getDiffractionPSFData: jest.fn().mockResolvedValue(mockDiffractionPsfData),
     get3rdOrderSeidelData: jest.fn().mockResolvedValue(mockSeidelData),
     getZernikeCoefficients: jest.fn(),
     focusByMonoRmsSpot: jest.fn(),
     focusByMonoStrehl: jest.fn(),
     focusByPolyRmsSpot: jest.fn(),
     focusByPolyStrehl: jest.fn(),
+    getAllGlassCatalogsData: jest.fn(),
   } as unknown as PyodideWorkerAPI;
 }
 
@@ -256,6 +289,82 @@ describe("LensEditor", () => {
     await waitFor(() => expect(proxy!.plotLensLayout).toHaveBeenCalled());
     expect(proxy!.getFirstOrderData).toHaveBeenCalled();
     expect(proxy!.get3rdOrderSeidelData).toHaveBeenCalled();
+  });
+
+  it("Update System uses getWavefrontData instead of requesting a wavefront PNG", async () => {
+    const { proxy, analysisPlotStore } = renderLensEditor();
+    act(() => {
+      analysisPlotStore.getState().setSelectedPlotType("wavefrontMap");
+    });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => {
+      expect(proxy!.getWavefrontData).toHaveBeenCalled();
+    });
+    expect(proxy!.plotWavefrontMap).not.toHaveBeenCalled();
+    expect(analysisPlotStore.getState().wavefrontMapData).toEqual(mockWavefrontMapData);
+    expect(analysisPlotStore.getState().plotImage).toBeUndefined();
+  });
+
+  it("Update System uses getDiffractionPSFData instead of requesting a diffraction PNG", async () => {
+    const { proxy, analysisPlotStore } = renderLensEditor();
+    act(() => {
+      analysisPlotStore.getState().setSelectedPlotType("diffractionPSF");
+    });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => {
+      expect(proxy!.getDiffractionPSFData).toHaveBeenCalled();
+    });
+    expect(proxy!.plotDiffractionPSF).not.toHaveBeenCalled();
+    expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
+    expect(analysisPlotStore.getState().plotImage).toBeUndefined();
+  });
+
+  it("confirming an example uses getWavefrontData when Wavefront Map is already selected", async () => {
+    const { proxy, analysisPlotStore } = renderLensEditor();
+    act(() => {
+      analysisPlotStore.getState().setSelectedPlotType("wavefrontMap");
+    });
+
+    const user = userEvent.setup();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Example system" }),
+      "1: Sasian Triplet"
+    );
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() => {
+      expect(proxy!.getWavefrontData).toHaveBeenCalled();
+    });
+    expect(proxy!.plotWavefrontMap).not.toHaveBeenCalled();
+    expect(analysisPlotStore.getState().wavefrontMapData).toEqual(mockWavefrontMapData);
+    expect(analysisPlotStore.getState().plotImage).toBeUndefined();
+  });
+
+  it("confirming an example uses getDiffractionPSFData when Diffraction PSF is already selected", async () => {
+    const { proxy, analysisPlotStore } = renderLensEditor();
+    act(() => {
+      analysisPlotStore.getState().setSelectedPlotType("diffractionPSF");
+    });
+
+    const user = userEvent.setup();
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Example system" }),
+      "1: Sasian Triplet"
+    );
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() => {
+      expect(proxy!.getDiffractionPSFData).toHaveBeenCalled();
+    });
+    expect(proxy!.plotDiffractionPSF).not.toHaveBeenCalled();
+    expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
+    expect(analysisPlotStore.getState().plotImage).toBeUndefined();
   });
 
   it("submit error path calls onError", async () => {

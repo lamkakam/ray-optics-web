@@ -14,6 +14,17 @@ type PlotFn = (fieldIndex: number, wavelengthIndex: number) => Promise<string>;
 
 A unified function signature for all plot types. `fieldIndex` and `wavelengthIndex` are always passed; implementations that don't need them simply ignore the unused parameter.
 
+### `AnalysisPlotLoadResult`
+
+```ts
+type AnalysisPlotLoadResult =
+  | { kind: "image"; image: string }
+  | { kind: "wavefrontMap"; wavefrontMapData: WavefrontMapData }
+  | { kind: "diffractionPSF"; diffractionPsfData: DiffractionPsfData };
+```
+
+Discriminated result returned by the shared analysis-plot loader. It makes the worker-call branching explicit so callers can store either a base64 PNG or typed chart data without duplicating plot-type conditionals.
+
 ### `PLOT_FUNCTION_BUILDERS`
 
 ```ts
@@ -44,10 +55,37 @@ function buildPlotFn(
 
 Convenience wrapper around `PLOT_FUNCTION_BUILDERS`. Returns `undefined` if `proxy` or `model` is absent; otherwise delegates to the appropriate builder.
 
+### `loadAnalysisPlot`
+
+```ts
+async function loadAnalysisPlot({
+  plotType,
+  proxy,
+  model,
+  fieldIndex,
+  wavelengthIndex,
+}: {
+  plotType: PlotType;
+  proxy: PyodideWorkerAPI | undefined;
+  model: OpticalModel | undefined;
+  fieldIndex: number;
+  wavelengthIndex: number;
+}): Promise<AnalysisPlotLoadResult | undefined>
+```
+
+Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx`.
+
+- Returns `undefined` when `proxy` or `model` is missing.
+- Calls `proxy.getWavefrontData(...)` for `wavefrontMap`.
+- Calls `proxy.getDiffractionPSFData(...)` for `diffractionPSF`.
+- Uses `buildPlotFn(...)` for all PNG-backed plot types and returns `{ kind: "image", image }`.
+- Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
+
 ## Dependencies
 
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`
 - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
+- `DiffractionPsfData` and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`
 - `PyodideWorkerAPI` (type-only) from `@/shared/hooks/usePyodide`
 
 ## Usages
@@ -93,3 +131,4 @@ function AnalysisPlotView({
 
 - Used in `LensEditor.tsx` after "Update System" completes.
 - Used in `AnalysisPlotContainer.tsx` when field/wavelength/plot-type changes.
+- `loadAnalysisPlot(...)` is the preferred API for any code path that needs the correct worker call for every `PlotType`, including typed-data chart modes.
