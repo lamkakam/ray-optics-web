@@ -1,5 +1,6 @@
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { buildRayFanChartOption } from "@/features/analysis/components/rayFanChartOption";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { RayFanData } from "@/shared/lib/types/opticalModel";
 
 describe("buildRayFanChartOption", () => {
@@ -35,7 +36,13 @@ describe("buildRayFanChartOption", () => {
   ];
 
   it("builds tangential and sagittal line series with one shared legend entry per wavelength", () => {
-    const option = buildRayFanChartOption(rayFanData, ["486.1 nm", "587.6 nm", "656.3 nm"], 800, 400);
+    const option = buildRayFanChartOption(
+      rayFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
 
     expect(option.legend?.data).toEqual(["486.1 nm", "656.3 nm"]);
     expect(option.series).toHaveLength(4);
@@ -56,7 +63,13 @@ describe("buildRayFanChartOption", () => {
   });
 
   it("uses a cross axis pointer, hides symbols, and assigns distinct colors per wavelength pair", () => {
-    const option = buildRayFanChartOption(rayFanData, ["486.1 nm", "587.6 nm", "656.3 nm"], 800, 400);
+    const option = buildRayFanChartOption(
+      rayFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
 
     expect(option.tooltip).toEqual({
       trigger: "none",
@@ -72,19 +85,50 @@ describe("buildRayFanChartOption", () => {
   });
 
   it("creates separate subplot titles and axis labels", () => {
-    const option = buildRayFanChartOption(rayFanData, ["486.1 nm", "587.6 nm", "656.3 nm"], 800, 400);
+    const option = buildRayFanChartOption(
+      rayFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
 
     expect(option.title).toEqual([
-      expect.objectContaining({ text: "Tangential" }),
-      expect.objectContaining({ text: "Sagittal" }),
+      expect.objectContaining({
+        text: "Tangential",
+        textStyle: { color: globalTokens.echarts.text.light },
+      }),
+      expect.objectContaining({
+        text: "Sagittal",
+        textStyle: { color: globalTokens.echarts.text.light },
+      }),
     ]);
+    expect(option.legend).toEqual(expect.objectContaining({
+      textStyle: { color: globalTokens.echarts.text.light },
+    }));
     expect(option.xAxis).toEqual([
-      expect.objectContaining({ name: "Pupil Radius (Relative)" }),
-      expect.objectContaining({ name: "Pupil Radius (Relative)" }),
+      expect.objectContaining({
+        name: "Pupil Radius (Relative)",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+        axisLabel: { color: globalTokens.echarts.text.light },
+      }),
+      expect.objectContaining({
+        name: "Pupil Radius (Relative)",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+        axisLabel: { color: globalTokens.echarts.text.light },
+      }),
     ]);
     expect(option.yAxis).toEqual([
-      expect.objectContaining({ name: "Transverse Aberr. (mm)" }),
-      expect.objectContaining({ name: "" }),
+      expect.objectContaining({
+        name: "Transverse Aberr. (mm)",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+        axisLabel: { color: globalTokens.echarts.text.light },
+      }),
+      expect.objectContaining({
+        name: "",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+        axisLabel: { color: globalTokens.echarts.text.light },
+      }),
     ]);
   });
 });

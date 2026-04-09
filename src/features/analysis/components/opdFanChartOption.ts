@@ -115,6 +115,7 @@ export function buildOpdFanChartOption(
   wavelengthLabels: readonly string[],
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 ) {
   const subplotWidth = Math.max(
     0,
@@ -136,17 +137,26 @@ export function buildOpdFanChartOption(
     legend: {
       top: OPD_FAN_LEGEND_TOP,
       data: legendData,
+      textStyle: {
+        color: textColor,
+      },
     },
     title: [
       {
         text: "Tangential",
         top: OPD_FAN_TITLE_TOP,
         left: OPD_FAN_GRID_LEFT + subplotWidth / 2,
+        textStyle: {
+          color: textColor,
+        },
       },
       {
         text: "Sagittal",
         top: OPD_FAN_TITLE_TOP,
         left: OPD_FAN_GRID_LEFT + subplotWidth + OPD_FAN_GRID_GAP + subplotWidth / 2,
+        textStyle: {
+          color: textColor,
+        },
       },
     ],
     grid: [
@@ -172,6 +182,12 @@ export function buildOpdFanChartOption(
         nameLocation: "middle",
         nameGap: 28,
         gridIndex: 0,
+        nameTextStyle: {
+          color: textColor,
+        },
+        axisLabel: {
+          color: textColor,
+        },
       },
       {
         type: "value",
@@ -181,6 +197,12 @@ export function buildOpdFanChartOption(
         nameLocation: "middle",
         nameGap: 28,
         gridIndex: 1,
+        nameTextStyle: {
+          color: textColor,
+        },
+        axisLabel: {
+          color: textColor,
+        },
       },
     ],
     yAxis: [
@@ -192,6 +214,12 @@ export function buildOpdFanChartOption(
         nameLocation: "middle",
         nameGap: 42,
         gridIndex: 0,
+        nameTextStyle: {
+          color: textColor,
+        },
+        axisLabel: {
+          color: textColor,
+        },
       },
       {
         type: "value",
@@ -201,6 +229,12 @@ export function buildOpdFanChartOption(
         nameLocation: "middle",
         nameGap: 42,
         gridIndex: 1,
+        nameTextStyle: {
+          color: textColor,
+        },
+        axisLabel: {
+          color: textColor,
+        },
       },
     ],
     series: opdFanData.flatMap((seriesData, index) => {

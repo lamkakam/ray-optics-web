@@ -12,6 +12,7 @@ function buildSpotDiagramOption(
   wavelengthLabels: readonly string[],
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 )
 ```
 
@@ -20,6 +21,7 @@ function buildSpotDiagramOption(
 - Registers the required ECharts scatter, grid, legend, tooltip, and canvas renderer modules once at module load.
 - Builds one scatter series per wavelength group in `spotDiagramData`.
 - Uses `wavelengthLabels[wvlIdx]` as the series and legend label so the UI shows the actual wavelength value rather than the wavelength index.
+- Applies the caller-provided `textColor` to legend labels, axis names, and axis tick labels so chart chrome follows the active light/dark theme.
 - Parses numeric wavelength values from the labels and maps them to the nearest entry in `ANALYSIS_HEATMAP_COLOR_PALETTE`, using lower wavelengths for cooler colors and higher wavelengths for warmer colors.
 - Falls back to a stable palette index when a series label does not contain a numeric wavelength.
 - Uses symmetric axis extents across both axes based on the largest absolute `x` or `y` value across all wavelength groups.

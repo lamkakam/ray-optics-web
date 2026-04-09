@@ -12,6 +12,7 @@ function buildRayFanChartOption(
   wavelengthLabels: readonly string[],
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 )
 ```
 
@@ -20,6 +21,7 @@ function buildRayFanChartOption(
 - Registers the required ECharts line, grid, legend, title, tooltip, and canvas renderer modules once at module load.
 - Produces two grids with titles `Tangential` and `Sagittal`.
 - Uses one shared legend entry per wavelength; both subplot series for a wavelength share the same label and color.
+- Applies the caller-provided `textColor` to subplot titles, legend labels, axis names, and axis tick labels so chart chrome follows the active light/dark theme.
 - Sets `tooltip.trigger` to `"none"` and `tooltip.axisPointer.type` to `"cross"`.
 - Sets `showSymbol: false` on every line series.
 - Parses numeric wavelengths from UI labels so lower/higher wavelengths map consistently onto `ANALYSIS_HEATMAP_COLOR_PALETTE`.

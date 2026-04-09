@@ -2,6 +2,7 @@ import {
   buildDiffractionPsfOption,
   formatDiffractionPsfIntensity,
 } from "@/features/analysis/components/diffractionPsfChartOption";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
 
 jest.mock("echarts/core", () => ({
@@ -44,7 +45,12 @@ describe("diffractionPsfChartOption", () => {
   });
 
   it("builds the expected scatter option for the diffraction PSF chart", () => {
-    const option = buildDiffractionPsfOption(diffractionPsfData, 400, 400);
+    const option = buildDiffractionPsfOption(
+      diffractionPsfData,
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
 
     expect(option.tooltip).toEqual({
       trigger: "none",
@@ -54,8 +60,12 @@ describe("diffractionPsfChartOption", () => {
     });
     expect(option.xAxis.min).toBe(-0.02);
     expect(option.xAxis.max).toBe("0.020");
+    expect(option.xAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect(option.xAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
     expect(option.yAxis.min).toBe(-0.02);
     expect(option.yAxis.max).toBe("0.020");
+    expect(option.yAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect(option.yAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
     expect(option.grid.width).toBe(option.grid.height);
     expect(option.grid.width).toBe(168);
     expect(option.grid.right).toBe(160);
@@ -66,6 +76,7 @@ describe("diffractionPsfChartOption", () => {
     expect(option.visualMap.min).toBeCloseTo(Math.log10(5e-4));
     expect(option.visualMap.right).toBe(16);
     expect(option.visualMap.top).toBe(16);
+    expect(option.visualMap.textStyle).toEqual({ color: globalTokens.echarts.text.light });
     expect(option.visualMap.formatter(Math.log10(1))).toBe("1.0");
     expect(option.visualMap.formatter(Math.log10(5e-4))).toBe("0.00050");
     expect(option.visualMap.inRange.color).toEqual([
@@ -84,7 +95,12 @@ describe("diffractionPsfChartOption", () => {
   });
 
   it("caps the visual map height when the chart is short", () => {
-    const option = buildDiffractionPsfOption(diffractionPsfData, 600, 96);
+    const option = buildDiffractionPsfOption(
+      diffractionPsfData,
+      600,
+      96,
+      globalTokens.echarts.text.light,
+    );
 
     expect(option.visualMap.itemHeight).toBe(64);
     expect(option.visualMap.itemHeight).toBeLessThanOrEqual(96);

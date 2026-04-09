@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import { buildSpotDiagramOption } from "@/features/analysis/components/spotDiagramChartOption";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { SpotDiagramData } from "@/shared/lib/types/opticalModel";
 
 const SPOT_DIAGRAM_DEBOUNCE_MS = 500;
@@ -16,14 +18,18 @@ export function SpotDiagramChart({
   wavelengthLabels,
   autoHeight,
 }: SpotDiagramChartProps) {
+  const { theme } = useTheme();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(undefined);
   const [chartDimensions, setChartDimensions] = useState<{ width: number; height: number } | undefined>(undefined);
+  const chartTextColor = theme === "dark"
+    ? globalTokens.echarts.text.dark
+    : globalTokens.echarts.text.light;
   const chartOption = useMemo(
     () => chartDimensions === undefined
       ? undefined
-      : buildSpotDiagramOption(spotDiagramData, wavelengthLabels, chartDimensions.width, chartDimensions.height),
-    [chartDimensions, spotDiagramData, wavelengthLabels],
+      : buildSpotDiagramOption(spotDiagramData, wavelengthLabels, chartDimensions.width, chartDimensions.height, chartTextColor),
+    [chartDimensions, chartTextColor, spotDiagramData, wavelengthLabels],
   );
 
   useEffect(() => {

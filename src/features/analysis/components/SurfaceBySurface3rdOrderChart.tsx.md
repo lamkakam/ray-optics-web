@@ -16,6 +16,7 @@ interface SurfaceBySurface3rdOrderChartProps {
 ## Key Behaviors
 
 - Uses `buildSurfaceBySurface3rdOrderChartOption(...)` to translate Seidel surface data into a grouped bar chart.
+- Reads the active app theme via `useTheme()` and passes a resolved light/dark chart text color into `buildSurfaceBySurface3rdOrderChartOption(...)`.
 - Preserves the existing analysis-chart sizing pattern:
   - measures the parent with `ResizeObserver`
   - initializes ECharts lazily

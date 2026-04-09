@@ -7,6 +7,7 @@ Centralized design-token system for Tailwind CSS class strings. Provides a neste
 ## Exports
 
 ```ts
+export const globalTokens: { /* shared Tailwind classes + raw ECharts theme values */ }
 export const componentTokens: { /* nested per-component tokens */ }
 ```
 
@@ -23,11 +24,12 @@ componentTokens
     .style           // border-radius, font-weight, opacity, cursor, z-index tokens
 ```
 
-A private `globalTokens` object holds reusable primitives (e.g. `primaryColor`, `inputBorder`, `surfaceBg`, shared hover classes). Component tokens reference these via a local alias `g`.
+`globalTokens` holds reusable primitives (e.g. `primaryColor`, `inputBorder`, `surfaceBg`, shared hover classes) plus raw ECharts-ready theme values. Component tokens reference these via a local alias `g`.
 
 ## Key Conventions
 
 - All values are literal Tailwind class strings (no dynamic generation).
+- `globalTokens.echarts.text.light` and `.dark` expose raw hex colors for ECharts config objects, where Tailwind class strings are not usable.
 - Dark mode variants are included inline: e.g. `"bg-gray-100 dark:bg-gray-800"`.
 - Components import via `import { componentTokens as cx } from "@/shared/tokens/styleTokens"` and destructure the relevant sub-object.
 - `button.color.toggleHoverBgColor`, `checkbox.color.hoverBgColor`, and `radio.color.hoverBgColor` all reference the same promoted global hover token.

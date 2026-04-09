@@ -1,4 +1,5 @@
 import { buildSurfaceBySurface3rdOrderChartOption } from "@/features/analysis/components/surfaceBySurface3rdOrderChartOption";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
 
 describe("buildSurfaceBySurface3rdOrderChartOption", () => {
@@ -19,9 +20,11 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
       surfaceBySurface3rdOrderData,
       960,
       540,
+      globalTokens.echarts.text.light,
     );
 
     expect(option.legend.data).toEqual(["S-I", "S-II", "S-III", "S-IV", "S-V"]);
+    expect(option.legend.textStyle).toEqual({ color: globalTokens.echarts.text.light });
     expect(option.series).toHaveLength(5);
     expect(option.series.map((series: { name: string }) => series.name)).toEqual([
       "S-I",
@@ -37,6 +40,7 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
       surfaceBySurface3rdOrderData,
       960,
       540,
+      globalTokens.echarts.text.light,
     );
 
     expect(option.tooltip).toMatchObject({
@@ -52,6 +56,7 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
       surfaceBySurface3rdOrderData,
       960,
       540,
+      globalTokens.echarts.text.light,
     );
 
     const formatter = option.tooltip.formatter as (
@@ -97,6 +102,7 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
       surfaceBySurface3rdOrderData,
       960,
       540,
+      globalTokens.echarts.text.light,
     );
 
     expect(
@@ -109,9 +115,12 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
       surfaceBySurface3rdOrderData,
       960,
       540,
+      globalTokens.echarts.text.light,
     );
 
     expect(option.xAxis.data).toEqual(["S1", "S2", "sum"]);
+    expect(option.xAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect(option.xAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
     expect(option.series[0].data).toEqual([0.1, 0.2, 0.3]);
     expect(option.series[4].data).toEqual([1.0, 1.1, 2.1]);
   });
@@ -121,8 +130,12 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
       surfaceBySurface3rdOrderData,
       960,
       540,
+      globalTokens.echarts.text.light,
     );
 
+    expect(option.title.textStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect(option.yAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect(option.yAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
     const formatter = option.yAxis.axisLabel.formatter as (value: number) => string;
 
     expect(formatter(0.1234)).toBe("0.12");

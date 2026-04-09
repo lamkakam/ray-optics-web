@@ -25,6 +25,7 @@ export function buildDiffractionPsfOption(
   diffractionPsfData: DiffractionPsfData,
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 ) {
   let axisExtent = 0;
   let maxClippedIntensity = DIFFRACTION_PSF_MIN_INTENSITY;
@@ -82,6 +83,12 @@ export function buildDiffractionPsfOption(
       name: diffractionPsfData.unitX ? `x (${diffractionPsfData.unitX})` : "x",
       nameLocation: "middle",
       nameGap: 30,
+      nameTextStyle: {
+        color: textColor,
+      },
+      axisLabel: {
+        color: textColor,
+      },
     },
     yAxis: {
       type: "value",
@@ -90,6 +97,12 @@ export function buildDiffractionPsfOption(
       name: diffractionPsfData.unitY ? `y (${diffractionPsfData.unitY})` : "y",
       nameLocation: "middle",
       nameGap: 36,
+      nameTextStyle: {
+        color: textColor,
+      },
+      axisLabel: {
+        color: textColor,
+      },
     },
     visualMap: {
       type: "continuous",
@@ -103,6 +116,9 @@ export function buildDiffractionPsfOption(
       itemWidth: DIFFRACTION_VISUAL_MAP_WIDTH,
       itemHeight: visualMapHeight,
       formatter: formatDiffractionPsfIntensity,
+      textStyle: {
+        color: textColor,
+      },
       inRange: {
         color: ANALYSIS_HEATMAP_COLOR_PALETTE,
       },

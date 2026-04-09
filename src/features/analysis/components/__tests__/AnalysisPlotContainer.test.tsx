@@ -14,6 +14,10 @@ import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEdi
 import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { AnalysisPlotStoreContext } from "../../providers/AnalysisPlotStoreProvider";
 
+jest.mock("@/shared/components/providers/ThemeProvider", () => ({
+  useTheme: jest.fn(() => ({ theme: "light" })),
+}));
+
 jest.mock("echarts/core", () => ({
   use: jest.fn(),
   init: jest.fn(() => ({

@@ -86,6 +86,7 @@ export function buildSpotDiagramOption(
   wavelengthLabels: readonly string[],
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 ) {
   const axisExtent = getAxisExtent(spotDiagramData);
   const maxPlotWidth = chartWidth - SPOT_DIAGRAM_GRID_LEFT - SPOT_DIAGRAM_GRID_RIGHT;
@@ -106,6 +107,9 @@ export function buildSpotDiagramOption(
     legend: {
       top: 12,
       data: legendData,
+      textStyle: {
+        color: textColor,
+      },
     },
     grid: {
       left: SPOT_DIAGRAM_GRID_LEFT + extraHorizontalSpace / 2,
@@ -121,6 +125,12 @@ export function buildSpotDiagramOption(
       name: spotDiagramData[0]?.unitX ? `x (${spotDiagramData[0].unitX})` : "x",
       nameLocation: "middle",
       nameGap: 30,
+      nameTextStyle: {
+        color: textColor,
+      },
+      axisLabel: {
+        color: textColor,
+      },
     },
     yAxis: {
       type: "value",
@@ -129,6 +139,12 @@ export function buildSpotDiagramOption(
       name: spotDiagramData[0]?.unitY ? `y (${spotDiagramData[0].unitY})` : "y",
       nameLocation: "middle",
       nameGap: 36,
+      nameTextStyle: {
+        color: textColor,
+      },
+      axisLabel: {
+        color: textColor,
+      },
     },
     series: spotDiagramData.map((seriesData, index) => ({
       type: "scatter",

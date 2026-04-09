@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import { buildWavefrontMapOption } from "@/features/analysis/components/wavefrontMapChartOption";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { WavefrontMapData } from "@/shared/lib/types/opticalModel";
 
 const WAVEFRONT_MAP_DEBOUNCE_MS = 500;
@@ -14,14 +16,18 @@ export function WavefrontMapChart({
   wavefrontMapData,
   autoHeight,
 }: WavefrontMapChartProps) {
+  const { theme } = useTheme();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(undefined);
   const [chartDimensions, setChartDimensions] = useState<{ width: number; height: number } | undefined>(undefined);
+  const chartTextColor = theme === "dark"
+    ? globalTokens.echarts.text.dark
+    : globalTokens.echarts.text.light;
   const chartOption = useMemo(
     () => chartDimensions === undefined
       ? undefined
-      : buildWavefrontMapOption(wavefrontMapData, chartDimensions.width, chartDimensions.height),
-    [chartDimensions, wavefrontMapData],
+      : buildWavefrontMapOption(wavefrontMapData, chartDimensions.width, chartDimensions.height, chartTextColor),
+    [chartDimensions, chartTextColor, wavefrontMapData],
   );
 
   useEffect(() => {

@@ -115,6 +115,7 @@ export function buildRayFanChartOption(
   wavelengthLabels: readonly string[],
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 ) {
   const subplotWidth = Math.max(
     0,
@@ -137,17 +138,26 @@ export function buildRayFanChartOption(
     legend: {
       top: RAY_FAN_LEGEND_TOP,
       data: legendData,
+      textStyle: {
+        color: textColor,
+      },
     },
     title: [
       {
         text: "Tangential",
         top: RAY_FAN_TITLE_TOP,
         left: RAY_FAN_GRID_LEFT + subplotWidth / 2,
+        textStyle: {
+          color: textColor,
+        },
       },
       {
         text: "Sagittal",
         top: RAY_FAN_TITLE_TOP,
         left: RAY_FAN_GRID_LEFT + subplotWidth + RAY_FAN_GRID_GAP + subplotWidth / 2,
+        textStyle: {
+          color: textColor,
+        },
       },
     ],
     grid: [
@@ -173,6 +183,12 @@ export function buildRayFanChartOption(
         nameLocation: "middle",
         nameGap: 28,
         gridIndex: 0,
+        nameTextStyle: {
+          color: textColor,
+        },
+        axisLabel: {
+          color: textColor,
+        },
       },
       {
         type: "value",
@@ -182,6 +198,12 @@ export function buildRayFanChartOption(
         nameLocation: "middle",
         nameGap: 28,
         gridIndex: 1,
+        nameTextStyle: {
+          color: textColor,
+        },
+        axisLabel: {
+          color: textColor,
+        },
       },
     ],
     yAxis: [
@@ -193,6 +215,12 @@ export function buildRayFanChartOption(
         nameLocation: "middle",
         nameGap: 42,
         gridIndex: 0,
+        nameTextStyle: {
+          color: textColor,
+        },
+        axisLabel: {
+          color: textColor,
+        },
       },
       {
         type: "value",
@@ -202,6 +230,12 @@ export function buildRayFanChartOption(
         nameLocation: "middle",
         nameGap: 42,
         gridIndex: 1,
+        nameTextStyle: {
+          color: textColor,
+        },
+        axisLabel: {
+          color: textColor,
+        },
       },
     ],
     series: rayFanData.flatMap((seriesData, index) => {

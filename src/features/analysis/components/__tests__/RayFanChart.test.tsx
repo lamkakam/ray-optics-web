@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { RayFanChart } from "@/features/analysis/components/RayFanChart";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { RayFanData } from "@/shared/lib/types/opticalModel";
 
 let mockBuildRayFanChartOption: jest.Mock;
@@ -19,6 +20,10 @@ jest.mock("echarts/core", () => ({
 
 jest.mock("@/features/analysis/components/rayFanChartOption", () => ({
   buildRayFanChartOption: (...args: unknown[]) => mockBuildRayFanChartOption(...args),
+}));
+
+jest.mock("@/shared/components/providers/ThemeProvider", () => ({
+  useTheme: jest.fn(() => ({ theme: "light" })),
 }));
 
 describe("RayFanChart", () => {
@@ -84,6 +89,7 @@ describe("RayFanChart", () => {
       ["486.1 nm", "587.6 nm", "656.3 nm"],
       800,
       400,
+      globalTokens.echarts.text.light,
     );
     expect(mockSetOption).toHaveBeenCalled();
   });

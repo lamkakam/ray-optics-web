@@ -11,6 +11,7 @@ function buildGeoPsfOption(
   geoPsfData: GeoPsfData,
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 ): {
   animation: false;
   tooltip: object;
@@ -26,6 +27,7 @@ function buildGeoPsfOption(
 - Registers the required ECharts scatter, grid, tooltip, and canvas renderer modules once at module load.
 - Pairs worker `x` and `y` arrays into scatter points `[x, y]`.
 - Uses a symmetric axis extent across both axes based on the largest absolute `x` or `y` value.
+- Applies the caller-provided `textColor` to axis names and axis tick labels so chart chrome follows the active light/dark theme.
 - Keeps the plot area square by deriving `grid.width` and `grid.height` from the available measured space.
 - Does not include a `visualMap`.
 - Sets `tooltip.trigger` to `"none"` and `axisPointer.type` to `"cross"`.

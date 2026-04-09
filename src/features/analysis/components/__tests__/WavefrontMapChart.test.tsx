@@ -1,7 +1,9 @@
 import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapChart";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
 
 let mockSetOption: jest.Mock;
 let mockDispose: jest.Mock;
@@ -18,6 +20,10 @@ jest.mock("echarts/core", () => ({
 
 jest.mock("@/features/analysis/components/wavefrontMapChartOption", () => ({
   buildWavefrontMapOption: (...args: unknown[]) => mockBuildWavefrontMapOption(...args),
+}));
+
+jest.mock("@/shared/components/providers/ThemeProvider", () => ({
+  useTheme: jest.fn(() => ({ theme: "light" })),
 }));
 
 describe("WavefrontMapChart", () => {
@@ -84,11 +90,29 @@ describe("WavefrontMapChart", () => {
   it("measures the parent and builds a chart option from the measured dimensions", () => {
     render(<WavefrontMapChart wavefrontMapData={wavefrontMapData} />);
 
-    expect(mockBuildWavefrontMapOption).toHaveBeenCalledWith(wavefrontMapData, 400, 400);
+    expect(mockBuildWavefrontMapOption).toHaveBeenCalledWith(
+      wavefrontMapData,
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
     expect(screen.getByTestId("wavefront-map-chart")).toHaveStyle({
       width: "400px",
       height: "400px",
     });
+  });
+
+  it("passes the dark-theme chart text color to the option builder", () => {
+    (useTheme as jest.Mock).mockReturnValue({ theme: "dark" });
+
+    render(<WavefrontMapChart wavefrontMapData={wavefrontMapData} />);
+
+    expect(mockBuildWavefrontMapOption).toHaveBeenCalledWith(
+      wavefrontMapData,
+      400,
+      400,
+      globalTokens.echarts.text.dark,
+    );
   });
 
   it("debounces ECharts rendering by 500ms and resizes after setting the option", () => {

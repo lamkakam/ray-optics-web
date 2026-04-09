@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { OpdFanChart } from "@/features/analysis/components/OpdFanChart";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { OpdFanData } from "@/shared/lib/types/opticalModel";
 
 let mockBuildOpdFanChartOption: jest.Mock;
@@ -19,6 +20,10 @@ jest.mock("echarts/core", () => ({
 
 jest.mock("@/features/analysis/components/opdFanChartOption", () => ({
   buildOpdFanChartOption: (...args: unknown[]) => mockBuildOpdFanChartOption(...args),
+}));
+
+jest.mock("@/shared/components/providers/ThemeProvider", () => ({
+  useTheme: jest.fn(() => ({ theme: "light" })),
 }));
 
 describe("OpdFanChart", () => {
@@ -84,6 +89,7 @@ describe("OpdFanChart", () => {
       ["486.1 nm", "587.6 nm", "656.3 nm"],
       800,
       400,
+      globalTokens.echarts.text.light,
     );
     expect(mockSetOption).toHaveBeenCalled();
   });

@@ -38,6 +38,7 @@ export function buildWavefrontMapOption(
   wavefrontMapData: WavefrontMapData,
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 ) {
   const heatmapData: Array<[number, number, number]> = [];
   let minValue = Number.POSITIVE_INFINITY;
@@ -93,7 +94,11 @@ export function buildWavefrontMapOption(
       nameLocation: "middle",
       nameGap: 30,
       axisLabel: {
+        color: textColor,
         formatter: formatWavefrontAxisTick,
+      },
+      nameTextStyle: {
+        color: textColor,
       },
     },
     yAxis: {
@@ -103,7 +108,11 @@ export function buildWavefrontMapOption(
       nameLocation: "middle",
       nameGap: 40,
       axisLabel: {
+        color: textColor,
         formatter: formatWavefrontAxisTick,
+      },
+      nameTextStyle: {
+        color: textColor,
       },
     },
     visualMap: {
@@ -118,6 +127,9 @@ export function buildWavefrontMapOption(
       itemHeight: visualMapHeight,
       formatter: formatWavefrontValue,
       text: [wavefrontMapData.unitZ, ""],
+      textStyle: {
+        color: textColor,
+      },
       inRange: {
         color: ANALYSIS_HEATMAP_COLOR_PALETTE,
       },

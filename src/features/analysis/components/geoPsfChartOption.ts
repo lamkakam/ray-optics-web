@@ -19,6 +19,7 @@ export function buildGeoPsfOption(
   geoPsfData: GeoPsfData,
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 ) {
   let axisExtent = 0;
   const pointData: number[][] = [];
@@ -59,6 +60,12 @@ export function buildGeoPsfOption(
       name: geoPsfData.unitX ? `x (${geoPsfData.unitX})` : "x",
       nameLocation: "middle",
       nameGap: 30,
+      nameTextStyle: {
+        color: textColor,
+      },
+      axisLabel: {
+        color: textColor,
+      },
     },
     yAxis: {
       type: "value",
@@ -67,6 +74,12 @@ export function buildGeoPsfOption(
       name: geoPsfData.unitY ? `y (${geoPsfData.unitY})` : "y",
       nameLocation: "middle",
       nameGap: 36,
+      nameTextStyle: {
+        color: textColor,
+      },
+      axisLabel: {
+        color: textColor,
+      },
     },
     series: [
       {

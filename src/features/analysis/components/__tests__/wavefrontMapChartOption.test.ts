@@ -1,5 +1,6 @@
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { buildWavefrontMapOption } from "@/features/analysis/components/wavefrontMapChartOption";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { WavefrontMapData } from "@/shared/lib/types/opticalModel";
 
 jest.mock("echarts/core", () => ({
@@ -37,7 +38,7 @@ describe("wavefrontMapChartOption", () => {
   };
 
   it("builds a linear heatmap option for the wavefront map", () => {
-    const option = buildWavefrontMapOption(wavefrontMapData, 400, 400);
+    const option = buildWavefrontMapOption(wavefrontMapData, 400, 400, globalTokens.echarts.text.light);
 
     expect(option.tooltip.axisPointer.type).toBe("cross");
     expect(option.tooltip.axisPointer.label.formatter({
@@ -51,14 +52,19 @@ describe("wavefrontMapChartOption", () => {
     expect(option.xAxis.type).toBe("category");
     expect(option.xAxis.data).toEqual([-1, 0, 1]);
     expect(option.xAxis.name).toBe("x");
+    expect(option.xAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect(option.xAxis.axisLabel.color).toBe(globalTokens.echarts.text.light);
     expect(option.xAxis.axisLabel.formatter(0.1234)).toBe("0.12");
     expect(option.yAxis.type).toBe("category");
     expect(option.yAxis.data).toEqual([-1, 0, 1]);
     expect(option.yAxis.name).toBe("y");
+    expect(option.yAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect(option.yAxis.axisLabel.color).toBe(globalTokens.echarts.text.light);
     expect(option.yAxis.axisLabel.formatter(0.1234)).toBe("0.12");
     expect(option.visualMap.min).toBe(0.1);
     expect(option.visualMap.max).toBe(0.5);
     expect(option.visualMap.inRange.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE);
+    expect(option.visualMap.textStyle).toEqual({ color: globalTokens.echarts.text.light });
     expect(option.visualMap.formatter(0.3)).toBe("0.30");
     expect(option.series[0].type).toBe("heatmap");
     expect(option.series[0].data).toContainEqual([0, 1, 0.2]);
@@ -76,6 +82,7 @@ describe("wavefrontMapChartOption", () => {
       },
       400,
       400,
+      globalTokens.echarts.text.light,
     );
 
     expect(option.xAxis.name).toBe("x (pupil)");
@@ -84,7 +91,7 @@ describe("wavefrontMapChartOption", () => {
   });
 
   it("keeps the plot square inside the available chart area", () => {
-    const option = buildWavefrontMapOption(wavefrontMapData, 600, 300);
+    const option = buildWavefrontMapOption(wavefrontMapData, 600, 300, globalTokens.echarts.text.light);
 
     expect(option.grid.width).toBe(option.grid.height);
   });

@@ -1,6 +1,7 @@
 import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { GeoPsfData } from "@/shared/lib/types/opticalModel";
 
 let mockSetOption: jest.Mock;
@@ -18,6 +19,10 @@ jest.mock("echarts/core", () => ({
 
 jest.mock("@/features/analysis/components/geoPsfChartOption", () => ({
   buildGeoPsfOption: (...args: unknown[]) => mockBuildGeoPsfOption(...args),
+}));
+
+jest.mock("@/shared/components/providers/ThemeProvider", () => ({
+  useTheme: jest.fn(() => ({ theme: "light" })),
 }));
 
 describe("GeoPsfChart", () => {
@@ -78,7 +83,12 @@ describe("GeoPsfChart", () => {
   it("measures the parent and builds a chart option from the measured dimensions", () => {
     render(<GeoPsfChart geoPsfData={geoPsfData} />);
 
-    expect(mockBuildGeoPsfOption).toHaveBeenCalledWith(geoPsfData, 400, 400);
+    expect(mockBuildGeoPsfOption).toHaveBeenCalledWith(
+      geoPsfData,
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
     expect(screen.getByTestId("geo-psf-chart")).toHaveStyle({
       width: "400px",
       height: "400px",

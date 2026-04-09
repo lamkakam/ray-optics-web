@@ -1,6 +1,7 @@
 import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
 
 let mockSetOption: jest.Mock;
@@ -18,6 +19,10 @@ jest.mock("echarts/core", () => ({
 
 jest.mock("@/features/analysis/components/diffractionPsfChartOption", () => ({
   buildDiffractionPsfOption: (...args: unknown[]) => mockBuildDiffractionPsfOption(...args),
+}));
+
+jest.mock("@/shared/components/providers/ThemeProvider", () => ({
+  useTheme: jest.fn(() => ({ theme: "light" })),
 }));
 
 describe("DiffractionPsfChart", () => {
@@ -84,7 +89,12 @@ describe("DiffractionPsfChart", () => {
   it("measures the parent and builds a chart option from the measured dimensions", () => {
     render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
 
-    expect(mockBuildDiffractionPsfOption).toHaveBeenCalledWith(diffractionPsfData, 400, 400);
+    expect(mockBuildDiffractionPsfOption).toHaveBeenCalledWith(
+      diffractionPsfData,
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
     expect(screen.getByTestId("diffraction-psf-chart")).toHaveStyle({
       width: "400px",
       height: "400px",
@@ -110,7 +120,12 @@ describe("DiffractionPsfChart", () => {
       );
     });
 
-    expect(mockBuildDiffractionPsfOption).toHaveBeenLastCalledWith(diffractionPsfData, 600, 400);
+    expect(mockBuildDiffractionPsfOption).toHaveBeenLastCalledWith(
+      diffractionPsfData,
+      600,
+      400,
+      globalTokens.echarts.text.light,
+    );
     expect(chart).toHaveStyle({ width: "600px", height: "400px" });
   });
 
@@ -133,7 +148,12 @@ describe("DiffractionPsfChart", () => {
       );
     });
 
-    expect(mockBuildDiffractionPsfOption).toHaveBeenLastCalledWith(diffractionPsfData, 400, 0);
+    expect(mockBuildDiffractionPsfOption).toHaveBeenLastCalledWith(
+      diffractionPsfData,
+      400,
+      0,
+      globalTokens.echarts.text.light,
+    );
     expect(chart).toHaveStyle({ width: "400px", height: "0px" });
   });
 

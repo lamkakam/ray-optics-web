@@ -19,6 +19,7 @@ interface RayFanChartProps {
 - Initializes an ECharts canvas instance lazily and reuses it until unmount.
 - Debounces `setOption(...)/resize()` by 500ms.
 - Uses parent dimensions via `ResizeObserver`; in `autoHeight` mode the chart height is `max(round(width / 2), 320)`.
+- Reads the active app theme via `useTheme()` and passes a resolved light/dark chart text color into `buildRayFanChartOption(...)`.
 - Disposes the ECharts instance on unmount.
 - Exposes `data-testid="ray-fan-chart"` and `aria-label="Ray fan plot"`.
 

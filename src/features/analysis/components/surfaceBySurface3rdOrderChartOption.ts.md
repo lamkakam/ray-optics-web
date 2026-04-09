@@ -11,6 +11,7 @@ function buildSurfaceBySurface3rdOrderChartOption(
   surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData,
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 )
 ```
 
@@ -28,4 +29,5 @@ function buildSurfaceBySurface3rdOrderChartOption(
   - a custom formatter that renders tooltip numeric values with 2 significant figures
 - Increases the inter-category spacing between grouped bar clusters by setting each bar series `barCategoryGap` to `"60%"`.
 - Formats y-axis tick labels with at most 2 significant figures.
+- Applies the caller-provided `textColor` to the chart title, legend labels, axis names, and axis tick labels so chart chrome follows the active light/dark theme.
 - Does not override series colors, so ECharts’ default palette supplies the distinct legend/series colors.

@@ -1,5 +1,6 @@
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { buildOpdFanChartOption } from "@/features/analysis/components/opdFanChartOption";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { OpdFanData } from "@/shared/lib/types/opticalModel";
 
 describe("buildOpdFanChartOption", () => {
@@ -35,7 +36,13 @@ describe("buildOpdFanChartOption", () => {
   ];
 
   it("builds tangential and sagittal line series with one shared legend entry per wavelength", () => {
-    const option = buildOpdFanChartOption(opdFanData, ["486.1 nm", "587.6 nm", "656.3 nm"], 800, 400);
+    const option = buildOpdFanChartOption(
+      opdFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
 
     expect(option.legend?.data).toEqual(["486.1 nm", "656.3 nm"]);
     expect(option.series).toHaveLength(4);
@@ -56,7 +63,13 @@ describe("buildOpdFanChartOption", () => {
   });
 
   it("uses a cross axis pointer, hides symbols, and assigns distinct colors per wavelength pair", () => {
-    const option = buildOpdFanChartOption(opdFanData, ["486.1 nm", "587.6 nm", "656.3 nm"], 800, 400);
+    const option = buildOpdFanChartOption(
+      opdFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
 
     expect(option.tooltip).toEqual({
       trigger: "none",
@@ -72,19 +85,50 @@ describe("buildOpdFanChartOption", () => {
   });
 
   it("creates separate subplot titles and axis labels", () => {
-    const option = buildOpdFanChartOption(opdFanData, ["486.1 nm", "587.6 nm", "656.3 nm"], 800, 400);
+    const option = buildOpdFanChartOption(
+      opdFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
 
     expect(option.title).toEqual([
-      expect.objectContaining({ text: "Tangential" }),
-      expect.objectContaining({ text: "Sagittal" }),
+      expect.objectContaining({
+        text: "Tangential",
+        textStyle: { color: globalTokens.echarts.text.light },
+      }),
+      expect.objectContaining({
+        text: "Sagittal",
+        textStyle: { color: globalTokens.echarts.text.light },
+      }),
     ]);
+    expect(option.legend).toEqual(expect.objectContaining({
+      textStyle: { color: globalTokens.echarts.text.light },
+    }));
     expect(option.xAxis).toEqual([
-      expect.objectContaining({ name: "Pupil Radius (Relative)" }),
-      expect.objectContaining({ name: "Pupil Radius (Relative)" }),
+      expect.objectContaining({
+        name: "Pupil Radius (Relative)",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+        axisLabel: { color: globalTokens.echarts.text.light },
+      }),
+      expect.objectContaining({
+        name: "Pupil Radius (Relative)",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+        axisLabel: { color: globalTokens.echarts.text.light },
+      }),
     ]);
     expect(option.yAxis).toEqual([
-      expect.objectContaining({ name: "waves" }),
-      expect.objectContaining({ name: "" }),
+      expect.objectContaining({
+        name: "waves",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+        axisLabel: { color: globalTokens.echarts.text.light },
+      }),
+      expect.objectContaining({
+        name: "",
+        nameTextStyle: { color: globalTokens.echarts.text.light },
+        axisLabel: { color: globalTokens.echarts.text.light },
+      }),
     ]);
   });
 
@@ -109,6 +153,7 @@ describe("buildOpdFanChartOption", () => {
       ["486.1 nm"],
       800,
       400,
+      globalTokens.echarts.text.light,
     );
 
     expect(option.xAxis).toEqual([

@@ -17,6 +17,7 @@ interface OpdFanChartProps {
 ## Key Behaviors
 
 - Builds the chart option with `buildOpdFanChartOption(...)`.
+- Reads the active app theme via `useTheme()` and passes a resolved light/dark chart text color into `buildOpdFanChartOption(...)`.
 - Debounces `echarts.init(...)/setOption(...)/resize()` by 500ms.
 - Reuses a single ECharts instance until unmount, then disposes it and clears the ref.
 - In `autoHeight` mode, uses a minimum readable height based on width; otherwise fills the parent height.

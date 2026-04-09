@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import { buildOpdFanChartOption } from "@/features/analysis/components/opdFanChartOption";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { OpdFanData } from "@/shared/lib/types/opticalModel";
 
 const OPD_FAN_DEBOUNCE_MS = 500;
@@ -16,14 +18,18 @@ export function OpdFanChart({
   wavelengthLabels,
   autoHeight,
 }: OpdFanChartProps) {
+  const { theme } = useTheme();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(undefined);
   const [chartDimensions, setChartDimensions] = useState<{ width: number; height: number } | undefined>(undefined);
+  const chartTextColor = theme === "dark"
+    ? globalTokens.echarts.text.dark
+    : globalTokens.echarts.text.light;
   const chartOption = useMemo(
     () => chartDimensions === undefined
       ? undefined
-      : buildOpdFanChartOption(opdFanData, wavelengthLabels, chartDimensions.width, chartDimensions.height),
-    [chartDimensions, opdFanData, wavelengthLabels],
+      : buildOpdFanChartOption(opdFanData, wavelengthLabels, chartDimensions.width, chartDimensions.height, chartTextColor),
+    [chartDimensions, chartTextColor, opdFanData, wavelengthLabels],
   );
 
   useEffect(() => {

@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import { buildSurfaceBySurface3rdOrderChartOption } from "@/features/analysis/components/surfaceBySurface3rdOrderChartOption";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
 
 const SURFACE_BY_SURFACE_3RD_ORDER_DEBOUNCE_MS = 500;
@@ -14,9 +16,13 @@ export function SurfaceBySurface3rdOrderChart({
   surfaceBySurface3rdOrderData,
   autoHeight,
 }: SurfaceBySurface3rdOrderChartProps) {
+  const { theme } = useTheme();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(undefined);
   const [chartDimensions, setChartDimensions] = useState<{ width: number; height: number } | undefined>(undefined);
+  const chartTextColor = theme === "dark"
+    ? globalTokens.echarts.text.dark
+    : globalTokens.echarts.text.light;
   const chartOption = useMemo(
     () => chartDimensions === undefined
       ? undefined
@@ -24,8 +30,9 @@ export function SurfaceBySurface3rdOrderChart({
         surfaceBySurface3rdOrderData,
         chartDimensions.width,
         chartDimensions.height,
+        chartTextColor,
       ),
-    [chartDimensions, surfaceBySurface3rdOrderData],
+    [chartDimensions, chartTextColor, surfaceBySurface3rdOrderData],
   );
 
   useEffect(() => {

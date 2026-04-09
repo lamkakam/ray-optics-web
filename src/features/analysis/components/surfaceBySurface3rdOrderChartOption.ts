@@ -71,6 +71,7 @@ export function buildSurfaceBySurface3rdOrderChartOption(
   surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData,
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 ) {
   return {
     animation: false,
@@ -84,11 +85,17 @@ export function buildSurfaceBySurface3rdOrderChartOption(
     legend: {
       top: SURFACE_BY_SURFACE_LEGEND_TOP,
       data: surfaceBySurface3rdOrderData.aberrTypes,
+      textStyle: {
+        color: textColor,
+      },
     },
     title: {
       text: "Surface by Surface 3rd Order Aberrations",
       top: SURFACE_BY_SURFACE_TITLE_TOP,
       left: chartWidth / 2,
+      textStyle: {
+        color: textColor,
+      },
     },
     grid: {
       top: SURFACE_BY_SURFACE_GRID_TOP,
@@ -105,13 +112,23 @@ export function buildSurfaceBySurface3rdOrderChartOption(
       name: "Surface",
       nameLocation: "middle",
       nameGap: 32,
+      nameTextStyle: {
+        color: textColor,
+      },
+      axisLabel: {
+        color: textColor,
+      },
     },
     yAxis: {
       type: "value",
       name: "3rd Order Aberrations",
       nameLocation: "middle",
       nameGap: 48,
+      nameTextStyle: {
+        color: textColor,
+      },
       axisLabel: {
+        color: textColor,
         formatter: (value: number) => formatToTwoSignificantFigures(value),
       },
     },

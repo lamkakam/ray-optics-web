@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { SpotDiagramChart } from "@/features/analysis/components/SpotDiagramChart";
+import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { SpotDiagramData } from "@/shared/lib/types/opticalModel";
 
 let mockBuildSpotDiagramOption: jest.Mock;
@@ -19,6 +20,10 @@ jest.mock("echarts/core", () => ({
 
 jest.mock("@/features/analysis/components/spotDiagramChartOption", () => ({
   buildSpotDiagramOption: (...args: unknown[]) => mockBuildSpotDiagramOption(...args),
+}));
+
+jest.mock("@/shared/components/providers/ThemeProvider", () => ({
+  useTheme: jest.fn(() => ({ theme: "light" })),
 }));
 
 describe("SpotDiagramChart", () => {
@@ -78,6 +83,7 @@ describe("SpotDiagramChart", () => {
       ["486.1 nm", "587.6 nm", "656.3 nm"],
       400,
       400,
+      globalTokens.echarts.text.light,
     );
     expect(mockSetOption).toHaveBeenCalled();
   });

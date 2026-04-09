@@ -11,6 +11,7 @@ function buildWavefrontMapOption(
   wavefrontMapData: WavefrontMapData,
   chartWidth: number,
   chartHeight: number,
+  textColor: string,
 ): {
   animation: false;
   tooltip: object;
@@ -29,6 +30,7 @@ function buildWavefrontMapOption(
 - Skips `undefined` wavefront cells so missing OPD samples remain blank in the chart.
 - Uses a linear `visualMap` scale directly from the worker values; it does not log-transform the wavefront data.
 - Formats both x- and y-axis tick labels to 2 significant figures.
+- Applies the caller-provided `textColor` to axis names, axis tick labels, and `visualMap` text so chart chrome follows the active light/dark theme.
 - Enables a crosshair `axisPointer` in the tooltip and formats the x/y pointer labels to 2 significant figures.
 - Keeps the plot area square by deriving `grid.width` and `grid.height` from the available measured space.
 - Reuses the shared 11-color analysis heatmap palette.
