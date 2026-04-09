@@ -39,12 +39,23 @@ describe("wavefrontMapChartOption", () => {
   it("builds a linear heatmap option for the wavefront map", () => {
     const option = buildWavefrontMapOption(wavefrontMapData, 400, 400);
 
+    expect(option.tooltip.axisPointer.type).toBe("cross");
+    expect(option.tooltip.axisPointer.label.formatter({
+      axisDimension: "x",
+      value: 0.1234,
+    })).toBe("0.12");
+    expect(option.tooltip.axisPointer.label.formatter({
+      axisDimension: "y",
+      value: 12.34,
+    })).toBe("12");
     expect(option.xAxis.type).toBe("category");
     expect(option.xAxis.data).toEqual([-1, 0, 1]);
     expect(option.xAxis.name).toBe("x");
+    expect(option.xAxis.axisLabel.formatter(0.1234)).toBe("0.12");
     expect(option.yAxis.type).toBe("category");
     expect(option.yAxis.data).toEqual([-1, 0, 1]);
     expect(option.yAxis.name).toBe("y");
+    expect(option.yAxis.axisLabel.formatter(0.1234)).toBe("0.12");
     expect(option.visualMap.min).toBe(0.1);
     expect(option.visualMap.max).toBe(0.5);
     expect(option.visualMap.inRange.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE);

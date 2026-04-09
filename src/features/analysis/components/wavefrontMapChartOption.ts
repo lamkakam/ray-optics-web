@@ -20,6 +20,20 @@ function formatWavefrontValue(value: number): string {
   return value.toFixed(VALUE_PRECISION);
 }
 
+function formatWavefrontAxisTick(value: number): string {
+  return Number(value).toPrecision(VALUE_PRECISION);
+}
+
+function formatWavefrontAxisPointerLabel(params: {
+  axisDimension?: string;
+  value: number;
+}): string {
+  if (params.axisDimension === "x" || params.axisDimension === "y") {
+    return formatWavefrontAxisTick(params.value);
+  }
+  return formatWavefrontValue(params.value);
+}
+
 export function buildWavefrontMapOption(
   wavefrontMapData: WavefrontMapData,
   chartWidth: number,
@@ -57,6 +71,12 @@ export function buildWavefrontMapOption(
     animation: false,
     tooltip: {
       trigger: "item",
+      axisPointer: {
+        type: "cross",
+        label: {
+          formatter: formatWavefrontAxisPointerLabel,
+        },
+      },
       formatter: (params: { data: [number, number, number] }) => formatWavefrontValue(params.data[2]),
     },
     grid: {
@@ -72,6 +92,9 @@ export function buildWavefrontMapOption(
       name: wavefrontMapData.unitX ? `x (${wavefrontMapData.unitX})` : "x",
       nameLocation: "middle",
       nameGap: 30,
+      axisLabel: {
+        formatter: formatWavefrontAxisTick,
+      },
     },
     yAxis: {
       type: "category",
@@ -79,6 +102,9 @@ export function buildWavefrontMapOption(
       name: wavefrontMapData.unitY ? `y (${wavefrontMapData.unitY})` : "y",
       nameLocation: "middle",
       nameGap: 40,
+      axisLabel: {
+        formatter: formatWavefrontAxisTick,
+      },
     },
     visualMap: {
       type: "continuous",
