@@ -143,7 +143,12 @@ function buildDiffractionPsfOption(diffractionPsfData: DiffractionPsfData, chart
 
   return {
     animation: false,
-    tooltip: { show: false },
+    tooltip: {
+      trigger: "none",
+      axisPointer: {
+        type: "cross",
+      },
+    },
     grid: {
       left: DIFFRACTION_GRID_LEFT + extraHorizontalSpace / 2,
       top: DIFFRACTION_GRID_TOP,

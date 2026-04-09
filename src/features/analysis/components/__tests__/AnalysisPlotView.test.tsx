@@ -244,11 +244,16 @@ describe("AnalysisPlotView", () => {
     expect(mockSetOption).toHaveBeenCalledTimes(1);
 
     const option = mockSetOption.mock.calls[0][0];
-    expect(option.tooltip).toEqual({ show: false });
+    expect(option.tooltip).toEqual({
+      trigger: "none",
+      axisPointer: {
+        type: "cross",
+      },
+    });
     expect(option.xAxis.min).toBe(-0.02);
-    expect(option.xAxis.max).toBe(0.02);
+    expect(option.xAxis.max).toBe("0.020");
     expect(option.yAxis.min).toBe(-0.02);
-    expect(option.yAxis.max).toBe(0.02);
+    expect(option.yAxis.max).toBe("0.020");
     expect(option.grid.width).toBe(option.grid.height);
     expect(option.series[0].type).toBe("scatter");
     expect(option.visualMap.min).toBeCloseTo(Math.log10(5e-4));

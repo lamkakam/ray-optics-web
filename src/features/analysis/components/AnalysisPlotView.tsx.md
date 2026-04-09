@@ -76,7 +76,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `diffractionPSF` renders an ECharts canvas chart after a 500ms debounce.
 - The diffraction chart measures its parent container and uses a square plot-area grid (`grid.width === grid.height`) even when the surrounding canvas or parent layout is rectangular.
 - The diffraction chart flattens the worker's `x`/`y`/`z` grid into scatter points `[x, y, log10(max(z, 5e-4))]`.
-- The diffraction chart keeps `xAxis` and `yAxis` on the same symmetric extent, disables tooltips, and colors intensity through a continuous `visualMap` using the fixed 11-color palette.
+- The diffraction chart keeps `xAxis` and `yAxis` on the same symmetric extent, configures `tooltip.trigger = "none"` with a cross `axisPointer`, and colors intensity through a continuous `visualMap` using the fixed 11-color palette.
 
 ## Usages
 
