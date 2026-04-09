@@ -25,11 +25,12 @@ function buildOpdFanChartOption(
 - Parses numeric wavelengths from UI labels so lower/higher wavelengths map consistently onto `ANALYSIS_HEATMAP_COLOR_PALETTE`.
 - Falls back to stable palette ordering when a wavelength label is not numeric.
 - Rounds computed x- and y-axis min/max extents to 2 significant figures before assigning them to both subplots.
+- Labels only the first y-axis with the worker `unitY`; the second subplot omits the duplicate y-axis unit label.
 
 ## Output Shape
 
 - `title`: two subplot titles
 - `grid`: two plotting regions
 - `xAxis`: paired `value` axes labeled `Pupil Radius (Relative)`
-- `yAxis`: paired `value` axes labeled with the worker `unitY`
+- `yAxis`: paired `value` axes, with the first labeled by the worker `unitY` and the second left unlabeled
 - `series`: two line series per wavelength, tangential first then sagittal

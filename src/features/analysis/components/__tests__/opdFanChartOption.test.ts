@@ -84,7 +84,7 @@ describe("buildOpdFanChartOption", () => {
     ]);
     expect(option.yAxis).toEqual([
       expect.objectContaining({ name: "waves" }),
-      expect.objectContaining({ name: "waves" }),
+      expect.objectContaining({ name: "" }),
     ]);
   });
 

@@ -197,7 +197,7 @@ export function buildOpdFanChartOption(
         type: "value",
         min: axisExtents.yMin,
         max: axisExtents.yMax,
-        name: opdFanData[0]?.unitY ?? "waves",
+        name: "",
         nameLocation: "middle",
         nameGap: 42,
         gridIndex: 1,
