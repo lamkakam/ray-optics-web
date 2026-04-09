@@ -31,6 +31,7 @@ function buildDiffractionPsfOption(
 - Uses a symmetric axis extent across both axes based on the largest absolute `x` or `y` value.
 - Keeps the plot area square by deriving `grid.width` and `grid.height` from the available measured space.
 - Reserves right-side layout space for the continuous `visualMap`.
+- Pins the `visualMap` top edge to the diffraction plot top so the legend bar aligns vertically with the scatter plot instead of the overall chart frame.
 - Formats `visualMap` labels back into linear intensity values using 2 significant figures.
 - Caps `visualMap.itemHeight` based on measured chart height so short panels keep the legend inside bounds.
 - Uses the fixed 11-color diffraction PSF palette shared by the view.

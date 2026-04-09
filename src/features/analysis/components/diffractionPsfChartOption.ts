@@ -112,7 +112,7 @@ export function buildDiffractionPsfOption(
       calculable: false,
       orient: "vertical",
       right: DIFFRACTION_RIGHT_PADDING,
-      top: "middle",
+      top: DIFFRACTION_GRID_TOP,
       itemWidth: DIFFRACTION_VISUAL_MAP_WIDTH,
       itemHeight: visualMapHeight,
       formatter: formatDiffractionPsfIntensity,

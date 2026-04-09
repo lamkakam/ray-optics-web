@@ -65,7 +65,7 @@ describe("diffractionPsfChartOption", () => {
     expect(option.series[0].data).toContainEqual([0, 0, 0]);
     expect(option.visualMap.min).toBeCloseTo(Math.log10(5e-4));
     expect(option.visualMap.right).toBe(16);
-    expect(option.visualMap.top).toBe("middle");
+    expect(option.visualMap.top).toBe(16);
     expect(option.visualMap.formatter(Math.log10(1))).toBe("1.0");
     expect(option.visualMap.formatter(Math.log10(5e-4))).toBe("0.00050");
     expect(option.visualMap.inRange.color).toEqual([
@@ -88,5 +88,6 @@ describe("diffractionPsfChartOption", () => {
 
     expect(option.visualMap.itemHeight).toBe(64);
     expect(option.visualMap.itemHeight).toBeLessThanOrEqual(96);
+    expect(option.visualMap.top).toBe(16);
   });
 });
