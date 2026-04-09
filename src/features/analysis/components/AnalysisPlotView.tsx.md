@@ -74,10 +74,10 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
 - Non-diffraction plots use a plain `<img>` tag with a data URI (not `next/image`).
 - `diffractionPSF` renders an ECharts canvas chart after a 500ms debounce.
-- The diffraction chart measures its parent container, keeps a square plot-area grid (`grid.width === grid.height`), and reserves right-side grid space for the `visualMap` using the standard ECharts layout pattern (`grid.right` plus `visualMap.right`).
+- The diffraction chart measures its parent container, keeps a square plot-area grid (`grid.width === grid.height`), reserves right-side grid space for the `visualMap` using the standard ECharts layout pattern (`grid.right` plus `visualMap.right`), and updates its own wrapper height all the way down to `0px` if the available plot area collapses so stale canvas dimensions cannot bleed into adjacent UI.
 - The diffraction chart flattens the worker's `x`/`y`/`z` grid into scatter points `[x, y, log10(max(z, 5e-4))]`.
 - The diffraction chart keeps `xAxis` and `yAxis` on the same symmetric extent, configures `tooltip.trigger = "none"` with a cross `axisPointer`, and colors intensity through a continuous `visualMap` using the fixed 11-color palette.
-- The diffraction chart places the `visualMap` using the standard ECharts pattern with `visualMap.top = "middle"` and reserved `grid.right` space so the color bar and labels sit outside the plot area, and formats `visualMap` labels back into original intensity values using 2 significant figures.
+- The diffraction chart places the `visualMap` using the standard ECharts pattern with `visualMap.top = "middle"` and reserved `grid.right` space so the color bar and labels sit outside the plot area, formats `visualMap` labels back into original intensity values using 2 significant figures, and caps `visualMap.itemHeight` from the measured chart height so the legend stays inside short plot panels.
 
 ## Usages
 

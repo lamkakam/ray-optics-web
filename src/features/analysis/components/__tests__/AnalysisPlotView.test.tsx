@@ -217,6 +217,33 @@ describe("AnalysisPlotView", () => {
     expect(chart).toHaveStyle({ width: "600px", height: "400px" });
   });
 
+  it("shrinks the diffraction PSF chart to zero height when the available plot area collapses", () => {
+    render(
+      <div style={{ width: "400px", height: "400px" }}>
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="diffractionPSF"
+          diffractionPsfData={diffractionPsfData}
+        />
+      </div>
+    );
+
+    const chart = screen.getByTestId("diffraction-psf-chart");
+    const chartParent = chart.parentElement as HTMLDivElement;
+
+    Object.defineProperty(chartParent, "clientWidth", { configurable: true, value: 400 });
+    Object.defineProperty(chartParent, "clientHeight", { configurable: true, value: 0 });
+
+    act(() => {
+      resizeObserverCallback?.(
+        [{ target: chartParent, contentRect: { width: 400, height: 0 } as DOMRectReadOnly }] as unknown as ResizeObserverEntry[],
+        {} as ResizeObserver,
+      );
+    });
+
+    expect(chart).toHaveStyle({ width: "400px", height: "0px" });
+  });
+
   it("debounces diffraction PSF chart rendering by 500ms and uses the expected ECharts option", () => {
     jest.useFakeTimers();
     render(
@@ -276,6 +303,34 @@ describe("AnalysisPlotView", () => {
       "#d73027",
       "#a50026",
     ]);
+  });
+
+  it("caps the diffraction PSF visual map height when the available chart height is short", () => {
+    jest.useFakeTimers();
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get: () => 600,
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+      get: () => 96,
+    });
+
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="diffractionPSF"
+        diffractionPsfData={diffractionPsfData}
+      />
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    const option = mockSetOption.mock.calls[0][0];
+    expect(option.visualMap.itemHeight).toBe(64);
+    expect(option.visualMap.itemHeight).toBeLessThanOrEqual(96);
   });
 
   it("shows loading text when loading is true", () => {

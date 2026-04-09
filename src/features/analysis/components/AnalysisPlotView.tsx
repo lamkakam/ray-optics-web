@@ -32,6 +32,7 @@ const DIFFRACTION_GRID_BOTTOM = 56;
 const DIFFRACTION_GRID_LEFT = 72;
 const DIFFRACTION_GRID_RIGHT = 160;
 const DIFFRACTION_VISUAL_MAP_WIDTH = 20;
+const DIFFRACTION_VISUAL_MAP_MAX_HEIGHT = 152;
 const DIFFRACTION_RIGHT_PADDING = 16;
 const PRECISION = 2;
 
@@ -146,6 +147,13 @@ function buildDiffractionPsfOption(
   const maxPlotHeight = chartHeight - DIFFRACTION_GRID_TOP - DIFFRACTION_GRID_BOTTOM;
   const plotSide = Math.max(0, Math.min(maxPlotWidth, maxPlotHeight));
   const extraHorizontalSpace = Math.max(0, maxPlotWidth - plotSide);
+  const visualMapHeight = Math.max(
+    0,
+    Math.min(
+      DIFFRACTION_VISUAL_MAP_MAX_HEIGHT,
+      chartHeight - (DIFFRACTION_GRID_TOP * 2),
+    ),
+  );
 
   return {
     animation: false,
@@ -188,7 +196,7 @@ function buildDiffractionPsfOption(
       right: DIFFRACTION_RIGHT_PADDING,
       top: "middle",
       itemWidth: DIFFRACTION_VISUAL_MAP_WIDTH,
-      itemHeight: 152,
+      itemHeight: visualMapHeight,
       formatter: formatDiffractionPsfIntensity,
       inRange: {
         color: DIFFRACTION_PSF_COLOR_PALETTE,
@@ -230,16 +238,19 @@ function DiffractionPsfChart({
     const updateChartDimensions = () => {
       const nextWidth = parent.clientWidth;
       const nextHeight = parent.clientHeight;
-      const nextChartHeight = autoHeight || nextHeight <= 0
+      const nextChartHeight = autoHeight
         ? nextWidth
-        : Math.min(nextWidth, nextHeight);
+        : Math.max(0, Math.min(nextWidth, nextHeight));
 
-      if (nextWidth > 0 && nextChartHeight > 0) {
+      if (nextWidth > 0) {
         setChartDimensions({
           width: nextWidth,
           height: nextChartHeight,
         });
+        return;
       }
+
+      setChartDimensions(undefined);
     };
 
     updateChartDimensions();
@@ -289,7 +300,7 @@ function DiffractionPsfChart({
       ref={chartContainerRef}
       data-testid="diffraction-psf-chart"
       aria-label="Diffraction PSF plot"
-      className={autoHeight ? "max-w-full shrink-0" : "max-w-full shrink-0"}
+      className={autoHeight ? "max-w-full shrink-0 overflow-hidden" : "max-w-full shrink-0 overflow-hidden"}
       style={chartDimensions === undefined
         ? undefined
         : { width: `${chartDimensions.width}px`, height: `${chartDimensions.height}px` }}
