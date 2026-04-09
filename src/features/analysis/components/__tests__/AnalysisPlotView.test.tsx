@@ -1,57 +1,25 @@
 import React from "react";
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AnalysisPlotView } from "@/features/analysis/components/AnalysisPlotView";
-import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-
-let mockSetOption: jest.Mock;
-let mockDispose: jest.Mock;
-let mockResize: jest.Mock;
-let mockEchartsInit: jest.Mock;
-let mockResizeObserverObserve: jest.Mock;
-let mockResizeObserverDisconnect: jest.Mock;
-let resizeObserverCallback: ResizeObserverCallback | undefined;
-
-jest.mock("echarts/core", () => ({
-  use: jest.fn(),
-  init: (...args: unknown[]) => mockEchartsInit(...args),
-}), { virtual: true });
-
-jest.mock("echarts/charts", () => ({
-  ScatterChart: {},
-}), { virtual: true });
-
-jest.mock("echarts/components", () => ({
-  GridComponent: {},
-  TooltipComponent: {},
-  VisualMapComponent: {},
-}), { virtual: true });
-
-jest.mock("echarts/renderers", () => ({
-  CanvasRenderer: {},
-}), { virtual: true });
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn(),
 }));
 
-describe("AnalysisPlotView", () => {
-  const diffractionPsfData: DiffractionPsfData = {
-    fieldIdx: 0,
-    wvlIdx: 0,
-    x: [-0.02, 0, 0.02],
-    y: [-0.01, 0, 0.01],
-    z: [
-      [0.0001, 0.001, 0.0001],
-      [0.01, 1, 0.01],
-      [0.0001, 0.001, 0.0001],
-    ],
-    unitX: "mm",
-    unitY: "mm",
-    unitZ: "",
-  };
+const mockDiffractionPsfChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="diffraction-psf-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
 
+jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
+  DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
+}));
+
+describe("AnalysisPlotView", () => {
   const fieldOptions = [
     { label: "0.0°", value: 0 },
     { label: "14.0°", value: 1 },
@@ -77,45 +45,7 @@ describe("AnalysisPlotView", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSetOption = jest.fn();
-    mockDispose = jest.fn();
-    mockResize = jest.fn();
-    mockEchartsInit = jest.fn(() => ({
-      setOption: mockSetOption,
-      dispose: mockDispose,
-      resize: mockResize,
-    }));
-    mockResizeObserverObserve = jest.fn();
-    mockResizeObserverDisconnect = jest.fn();
-    resizeObserverCallback = undefined;
-    class MockResizeObserver implements ResizeObserver {
-      observe = mockResizeObserverObserve;
-      unobserve = jest.fn();
-      disconnect = mockResizeObserverDisconnect;
-
-      constructor(callback: ResizeObserverCallback) {
-        resizeObserverCallback = callback;
-      }
-    }
-
-    Object.defineProperty(window, "ResizeObserver", {
-      configurable: true,
-      writable: true,
-      value: MockResizeObserver,
-    });
-    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
-      configurable: true,
-      get: () => 400,
-    });
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-      configurable: true,
-      get: () => 400,
-    });
     (useScreenBreakpoint as jest.Mock).mockReturnValue("screenLG");
-  });
-
-  afterEach(() => {
-    jest.useRealTimers();
   });
 
   it("renders field selector with correct options", () => {
@@ -184,153 +114,27 @@ describe("AnalysisPlotView", () => {
       <AnalysisPlotView
         {...defaultProps}
         selectedPlotType="diffractionPSF"
-        diffractionPsfData={diffractionPsfData}
+        diffractionPsfData={{
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [-0.02, 0, 0.02],
+          y: [-0.01, 0, 0.01],
+          z: [
+            [0.0001, 0.001, 0.0001],
+            [0.01, 1, 0.01],
+            [0.0001, 0.001, 0.0001],
+          ],
+          unitX: "mm",
+          unitY: "mm",
+          unitZ: "",
+        }}
       />
     );
     expect(screen.getByTestId("diffraction-psf-chart")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
-  });
-
-  it("uses the full available chart width when the parent is wider than tall", () => {
-    render(
-      <div style={{ width: "600px", height: "400px" }}>
-        <AnalysisPlotView
-          {...defaultProps}
-          selectedPlotType="diffractionPSF"
-          diffractionPsfData={diffractionPsfData}
-        />
-      </div>
-    );
-
-    const chart = screen.getByTestId("diffraction-psf-chart");
-    const chartParent = chart.parentElement as HTMLDivElement;
-    Object.defineProperty(chartParent, "clientWidth", { configurable: true, value: 600 });
-    Object.defineProperty(chartParent, "clientHeight", { configurable: true, value: 400 });
-
-    act(() => {
-      resizeObserverCallback?.(
-        [{ target: chartParent, contentRect: { width: 600, height: 400 } as DOMRectReadOnly }] as unknown as ResizeObserverEntry[],
-        {} as ResizeObserver,
-      );
-    });
-
-    expect(chart).toHaveStyle({ width: "600px", height: "400px" });
-  });
-
-  it("shrinks the diffraction PSF chart to zero height when the available plot area collapses", () => {
-    render(
-      <div style={{ width: "400px", height: "400px" }}>
-        <AnalysisPlotView
-          {...defaultProps}
-          selectedPlotType="diffractionPSF"
-          diffractionPsfData={diffractionPsfData}
-        />
-      </div>
-    );
-
-    const chart = screen.getByTestId("diffraction-psf-chart");
-    const chartParent = chart.parentElement as HTMLDivElement;
-
-    Object.defineProperty(chartParent, "clientWidth", { configurable: true, value: 400 });
-    Object.defineProperty(chartParent, "clientHeight", { configurable: true, value: 0 });
-
-    act(() => {
-      resizeObserverCallback?.(
-        [{ target: chartParent, contentRect: { width: 400, height: 0 } as DOMRectReadOnly }] as unknown as ResizeObserverEntry[],
-        {} as ResizeObserver,
-      );
-    });
-
-    expect(chart).toHaveStyle({ width: "400px", height: "0px" });
-  });
-
-  it("debounces diffraction PSF chart rendering by 500ms and uses the expected ECharts option", () => {
-    jest.useFakeTimers();
-    render(
-      <AnalysisPlotView
-        {...defaultProps}
-        selectedPlotType="diffractionPSF"
-        diffractionPsfData={diffractionPsfData}
-      />
-    );
-
-    expect(mockEchartsInit).not.toHaveBeenCalled();
-    act(() => {
-      jest.advanceTimersByTime(499);
-    });
-    expect(mockEchartsInit).not.toHaveBeenCalled();
-    act(() => {
-      jest.advanceTimersByTime(1);
-    });
-
-    expect(mockEchartsInit).toHaveBeenCalledWith(
-      expect.any(HTMLDivElement),
-      undefined,
-      { renderer: "canvas" },
-    );
-    expect(mockSetOption).toHaveBeenCalledTimes(1);
-
-    const option = mockSetOption.mock.calls[0][0];
-    expect(option.tooltip).toEqual({
-      trigger: "none",
-      axisPointer: {
-        type: "cross",
-      },
-    });
-    expect(option.xAxis.min).toBe(-0.02);
-    expect(option.xAxis.max).toBe("0.020");
-    expect(option.yAxis.min).toBe(-0.02);
-    expect(option.yAxis.max).toBe("0.020");
-    expect(option.grid.width).toBe(option.grid.height);
-    expect(option.grid.width).toBe(168);
-    expect(option.grid.right).toBe(160);
-    expect(option.series[0].type).toBe("scatter");
-    expect(option.visualMap.min).toBeCloseTo(Math.log10(5e-4));
-    expect(option.visualMap.right).toBe(16);
-    expect(option.visualMap.top).toBe("middle");
-    expect(option.visualMap.formatter(Math.log10(1))).toBe("1.0");
-    expect(option.visualMap.formatter(Math.log10(5e-4))).toBe("0.00050");
-    expect(option.visualMap.inRange.color).toEqual([
-      "#313695",
-      "#4575b4",
-      "#74add1",
-      "#abd9e9",
-      "#e0f3f8",
-      "#ffffbf",
-      "#fee090",
-      "#fdae61",
-      "#f46d43",
-      "#d73027",
-      "#a50026",
-    ]);
-  });
-
-  it("caps the diffraction PSF visual map height when the available chart height is short", () => {
-    jest.useFakeTimers();
-    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
-      configurable: true,
-      get: () => 600,
-    });
-    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
-      configurable: true,
-      get: () => 96,
-    });
-
-    render(
-      <AnalysisPlotView
-        {...defaultProps}
-        selectedPlotType="diffractionPSF"
-        diffractionPsfData={diffractionPsfData}
-      />
-    );
-
-    act(() => {
-      jest.advanceTimersByTime(500);
-    });
-
-    const option = mockSetOption.mock.calls[0][0];
-    expect(option.visualMap.itemHeight).toBe(64);
-    expect(option.visualMap.itemHeight).toBeLessThanOrEqual(96);
+    expect(mockDiffractionPsfChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+    }));
   });
 
   it("shows loading text when loading is true", () => {
@@ -399,7 +203,22 @@ describe("AnalysisPlotView", () => {
     });
 
     it("renders wavelength selector when selectedPlotType is diffractionPSF", () => {
-      render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionPSF" />);
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="diffractionPSF"
+          diffractionPsfData={{
+            fieldIdx: 0,
+            wvlIdx: 0,
+            x: [0],
+            y: [0],
+            z: [[1]],
+            unitX: "mm",
+            unitY: "mm",
+            unitZ: "",
+          }}
+        />
+      );
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
     });
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `diffractionPSF` renders an Apache ECharts v6 canvas scatter plot built from worker-provided axis/grid data. The component handles field-dependent vs. field-independent plot types by disabling the field selector when irrelevant, and shows the wavelength selector only for wavelength-dependent plot types.
+Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `diffractionPSF` delegates rendering to `DiffractionPsfChart`, which owns the Apache ECharts v6 scatter-plot lifecycle built from worker-provided axis/grid data. The component handles field-dependent vs. field-independent plot types by disabling the field selector when irrelevant, and shows the wavelength selector only for wavelength-dependent plot types.
 
 ## PlotType
 
@@ -73,11 +73,8 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
 - Non-diffraction plots use a plain `<img>` tag with a data URI (not `next/image`).
-- `diffractionPSF` renders an ECharts canvas chart after a 500ms debounce.
-- The diffraction chart measures its parent container, keeps a square plot-area grid (`grid.width === grid.height`), reserves right-side grid space for the `visualMap` using the standard ECharts layout pattern (`grid.right` plus `visualMap.right`), and updates its own wrapper height all the way down to `0px` if the available plot area collapses so stale canvas dimensions cannot bleed into adjacent UI.
-- The diffraction chart flattens the worker's `x`/`y`/`z` grid into scatter points `[x, y, log10(max(z, 5e-4))]`.
-- The diffraction chart keeps `xAxis` and `yAxis` on the same symmetric extent, configures `tooltip.trigger = "none"` with a cross `axisPointer`, and colors intensity through a continuous `visualMap` using the fixed 11-color palette.
-- The diffraction chart places the `visualMap` using the standard ECharts pattern with `visualMap.top = "middle"` and reserved `grid.right` space so the color bar and labels sit outside the plot area, formats `visualMap` labels back into original intensity values using 2 significant figures, and caps `visualMap.itemHeight` from the measured chart height so the legend stays inside short plot panels.
+- `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.
+- `AnalysisPlotView` no longer imports Apache ECharts directly; diffraction-specific measurement, debounce, and option-building logic live in dedicated feature-local modules.
 
 ## Usages
 
