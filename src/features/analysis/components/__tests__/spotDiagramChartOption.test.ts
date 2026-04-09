@@ -30,12 +30,12 @@ describe("buildSpotDiagramOption", () => {
     expect(option.series[0]).toEqual(expect.objectContaining({
       type: "scatter",
       name: "486.1 nm",
-      symbolSize: 3,
+      symbolSize: 5,
     }));
     expect(option.series[1]).toEqual(expect.objectContaining({
       type: "scatter",
       name: "656.3 nm",
-      symbolSize: 3,
+      symbolSize: 5,
     }));
   });
 
