@@ -32,7 +32,7 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     ]);
   });
 
-  it("uses a cross axis pointer tooltip", () => {
+  it("uses a shadow axis pointer tooltip", () => {
     const option = buildSurfaceBySurface3rdOrderChartOption(
       surfaceBySurface3rdOrderData,
       960,
@@ -42,9 +42,66 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     expect(option.tooltip).toMatchObject({
       trigger: "axis",
       axisPointer: {
-        type: "cross",
+        type: "shadow",
       },
     });
+  });
+
+  it("formats tooltip values with 2 significant figures", () => {
+    const option = buildSurfaceBySurface3rdOrderChartOption(
+      surfaceBySurface3rdOrderData,
+      960,
+      540,
+    );
+
+    const formatter = option.tooltip.formatter as (
+      params: Array<{ axisValueLabel: string; seriesName: string; value: number; marker: string }>
+    ) => string;
+
+    expect(
+      formatter([
+        {
+          axisValueLabel: "S1",
+          seriesName: "S-I",
+          value: 0.1234,
+          marker: "<span></span>",
+        },
+        {
+          axisValueLabel: "S1",
+          seriesName: "S-II",
+          value: 987.6,
+          marker: "<span></span>",
+        },
+      ]),
+    ).toContain("0.12");
+    expect(
+      formatter([
+        {
+          axisValueLabel: "S1",
+          seriesName: "S-I",
+          value: 0.1234,
+          marker: "<span></span>",
+        },
+        {
+          axisValueLabel: "S1",
+          seriesName: "S-II",
+          value: 987.6,
+          marker: "<span></span>",
+        },
+      ]),
+    ).toContain("990");
+  });
+
+  it("uses a larger category gap between surface groups", () => {
+    const option = buildSurfaceBySurface3rdOrderChartOption(
+      surfaceBySurface3rdOrderData,
+      960,
+      540,
+    );
+
+    expect(
+      option.series.every((series: { barCategoryGap?: string }) => series.barCategoryGap === "60%"),
+    ).toBe(true);
   });
 
   it("uses surface labels as x-axis categories and row-wise series data", () => {
@@ -57,5 +114,19 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     expect(option.xAxis.data).toEqual(["S1", "S2", "sum"]);
     expect(option.series[0].data).toEqual([0.1, 0.2, 0.3]);
     expect(option.series[4].data).toEqual([1.0, 1.1, 2.1]);
+  });
+
+  it("formats y-axis tick labels with at most 2 significant figures", () => {
+    const option = buildSurfaceBySurface3rdOrderChartOption(
+      surfaceBySurface3rdOrderData,
+      960,
+      540,
+    );
+
+    const formatter = option.yAxis.axisLabel.formatter as (value: number) => string;
+
+    expect(formatter(0.1234)).toBe("0.12");
+    expect(formatter(12.34)).toBe("12");
+    expect(formatter(987.6)).toBe("990");
   });
 });

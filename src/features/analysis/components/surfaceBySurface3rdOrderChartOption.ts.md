@@ -23,12 +23,9 @@ function buildSurfaceBySurface3rdOrderChartOption(
 - Uses the incoming `surfaceLabels` array as the x-axis categories.
 - Builds five bar series from `data[rowIdx]`, matching the row-wise `SeidelSurfaceBySurfaceData` contract.
 - Configures the tooltip with:
-
-```ts
-tooltip: {
-  trigger: "axis",
-  axisPointer: { type: "cross" },
-}
-```
-
+  - `trigger: "axis"`
+  - `axisPointer: { type: "shadow" }`
+  - a custom formatter that renders tooltip numeric values with 2 significant figures
+- Increases the inter-category spacing between grouped bar clusters by setting each bar series `barCategoryGap` to `"60%"`.
+- Formats y-axis tick labels with at most 2 significant figures.
 - Does not override series colors, so ECharts’ default palette supplies the distinct legend/series colors.

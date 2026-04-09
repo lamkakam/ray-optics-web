@@ -12,6 +12,60 @@ const SURFACE_BY_SURFACE_GRID_LEFT = 64;
 const SURFACE_BY_SURFACE_GRID_RIGHT = 28;
 const SURFACE_BY_SURFACE_LEGEND_TOP = 12;
 const SURFACE_BY_SURFACE_TITLE_TOP = 40;
+const SURFACE_BY_SURFACE_BAR_CATEGORY_GAP = "60%";
+
+type TooltipFormatterParam = {
+  readonly axisValueLabel?: string;
+  readonly seriesName?: string;
+  readonly value?: number | string | Array<number | string>;
+  readonly marker?: string;
+};
+
+function formatToTwoSignificantFigures(value: number) {
+  if (!Number.isFinite(value) || value === 0) {
+    return "0";
+  }
+
+  return Number(value.toPrecision(2)).toString();
+}
+
+function formatTooltipValue(value: TooltipFormatterParam["value"]) {
+  if (typeof value === "number") {
+    return formatToTwoSignificantFigures(value);
+  }
+
+  if (typeof value === "string") {
+    const parsedValue = Number(value);
+    return Number.isNaN(parsedValue) ? value : formatToTwoSignificantFigures(parsedValue);
+  }
+
+  if (Array.isArray(value)) {
+    const lastValue = value.at(-1);
+    if (typeof lastValue === "number") {
+      return formatToTwoSignificantFigures(lastValue);
+    }
+
+    if (typeof lastValue === "string") {
+      const parsedValue = Number(lastValue);
+      return Number.isNaN(parsedValue) ? lastValue : formatToTwoSignificantFigures(parsedValue);
+    }
+  }
+
+  return "";
+}
+
+function formatTooltip(params: TooltipFormatterParam | TooltipFormatterParam[]) {
+  const tooltipParams = Array.isArray(params) ? params : [params];
+  const [firstParam] = tooltipParams;
+  const axisValueLabel = firstParam?.axisValueLabel ?? "";
+
+  return [
+    axisValueLabel,
+    ...tooltipParams.map((param) =>
+      `${param.marker ?? ""}${param.seriesName ?? ""}: ${formatTooltipValue(param.value)}`,
+    ),
+  ].join("<br/>");
+}
 
 export function buildSurfaceBySurface3rdOrderChartOption(
   surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData,
@@ -23,8 +77,9 @@ export function buildSurfaceBySurface3rdOrderChartOption(
     tooltip: {
       trigger: "axis",
       axisPointer: {
-        type: "cross",
+        type: "shadow",
       },
+      formatter: formatTooltip,
     },
     legend: {
       top: SURFACE_BY_SURFACE_LEGEND_TOP,
@@ -56,10 +111,14 @@ export function buildSurfaceBySurface3rdOrderChartOption(
       name: "3rd Order Aberrations",
       nameLocation: "middle",
       nameGap: 48,
+      axisLabel: {
+        formatter: (value: number) => formatToTwoSignificantFigures(value),
+      },
     },
     series: surfaceBySurface3rdOrderData.aberrTypes.map((aberrationType, rowIndex) => ({
       type: "bar",
       name: aberrationType,
+      barCategoryGap: SURFACE_BY_SURFACE_BAR_CATEGORY_GAP,
       emphasis: {
         focus: "series",
       },
