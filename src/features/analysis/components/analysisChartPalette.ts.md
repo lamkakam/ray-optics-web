@@ -14,3 +14,4 @@ const ANALYSIS_HEATMAP_COLOR_PALETTE: readonly string[]
 
 - Imported by `wavefrontMapChartOption.ts`.
 - Imported by `diffractionPsfChartOption.ts`.
+- Imported by `spotDiagramChartOption.ts`.

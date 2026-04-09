@@ -2,6 +2,7 @@ import * as echarts from "echarts/core";
 import { ScatterChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import type { SpotDiagramData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([ScatterChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
@@ -13,14 +14,16 @@ const SPOT_DIAGRAM_GRID_RIGHT = 32;
 const SPOT_DIAGRAM_POINT_SIZE = 3;
 const SPOT_DIAGRAM_POINT_OPACITY = 0.8;
 const SPOT_DIAGRAM_PRECISION = 2;
-const SPOT_DIAGRAM_SERIES_COLORS = [
-  "#3b82f6",
-  "#ef4444",
-  "#10b981",
-  "#f59e0b",
-  "#8b5cf6",
-  "#ec4899",
-] as const;
+
+function parseWavelengthLabel(wavelengthLabel: string | undefined): number | undefined {
+  if (wavelengthLabel === undefined) return undefined;
+
+  const matchedValue = wavelengthLabel.match(/-?\d+(?:\.\d+)?/);
+  if (matchedValue === null) return undefined;
+
+  const wavelength = Number.parseFloat(matchedValue[0]);
+  return Number.isFinite(wavelength) ? wavelength : undefined;
+}
 
 function getAxisExtent(spotDiagramData: SpotDiagramData): number {
   let axisExtent = 0;
@@ -41,6 +44,43 @@ function getSeriesLabel(wavelengthLabels: readonly string[], wvlIdx: number): st
   return wavelengthLabels[wvlIdx] ?? `Wavelength ${wvlIdx}`;
 }
 
+function getSeriesColors(
+  spotDiagramData: SpotDiagramData,
+  wavelengthLabels: readonly string[],
+): readonly string[] {
+  const seriesWavelengths = spotDiagramData.map((seriesData) =>
+    parseWavelengthLabel(wavelengthLabels[seriesData.wvlIdx]));
+  const numericWavelengths = seriesWavelengths.filter((wavelength) => wavelength !== undefined);
+
+  if (numericWavelengths.length === 0) {
+    return spotDiagramData.map((_, index) =>
+      ANALYSIS_HEATMAP_COLOR_PALETTE[index % ANALYSIS_HEATMAP_COLOR_PALETTE.length]);
+  }
+
+  const minWavelength = Math.min(...numericWavelengths);
+  const maxWavelength = Math.max(...numericWavelengths);
+  const paletteLastIndex = ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1;
+
+  if (minWavelength === maxWavelength) {
+    const middleColor = ANALYSIS_HEATMAP_COLOR_PALETTE[Math.floor(paletteLastIndex / 2)];
+    return spotDiagramData.map((_, index) =>
+      seriesWavelengths[index] === undefined
+        ? ANALYSIS_HEATMAP_COLOR_PALETTE[index % ANALYSIS_HEATMAP_COLOR_PALETTE.length]
+        : middleColor);
+  }
+
+  return spotDiagramData.map((_, index) => {
+    const wavelength = seriesWavelengths[index];
+    if (wavelength === undefined) {
+      return ANALYSIS_HEATMAP_COLOR_PALETTE[index % ANALYSIS_HEATMAP_COLOR_PALETTE.length];
+    }
+
+    const normalizedPosition = (wavelength - minWavelength) / (maxWavelength - minWavelength);
+    const paletteIndex = Math.round(normalizedPosition * paletteLastIndex);
+    return ANALYSIS_HEATMAP_COLOR_PALETTE[paletteIndex];
+  });
+}
+
 export function buildSpotDiagramOption(
   spotDiagramData: SpotDiagramData,
   wavelengthLabels: readonly string[],
@@ -53,6 +93,7 @@ export function buildSpotDiagramOption(
   const plotSide = Math.max(0, Math.min(maxPlotWidth, maxPlotHeight));
   const extraHorizontalSpace = Math.max(0, maxPlotWidth - plotSide);
   const legendData = spotDiagramData.map((seriesData) => getSeriesLabel(wavelengthLabels, seriesData.wvlIdx));
+  const seriesColors = getSeriesColors(spotDiagramData, wavelengthLabels);
 
   return {
     animation: false,
@@ -95,7 +136,7 @@ export function buildSpotDiagramOption(
       data: seriesData.x.map((x, pointIndex) => [x, seriesData.y[pointIndex] ?? 0]),
       symbolSize: SPOT_DIAGRAM_POINT_SIZE,
       itemStyle: {
-        color: SPOT_DIAGRAM_SERIES_COLORS[index % SPOT_DIAGRAM_SERIES_COLORS.length],
+        color: seriesColors[index],
         opacity: SPOT_DIAGRAM_POINT_OPACITY,
       },
       progressive: 4096,
