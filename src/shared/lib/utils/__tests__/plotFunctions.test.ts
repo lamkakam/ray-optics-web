@@ -1,5 +1,5 @@
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpdFanData, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { buildPlotFn, loadAnalysisPlot, PLOT_FUNCTION_BUILDERS } from "@/shared/lib/utils/plotFunctions";
 
@@ -31,6 +31,22 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     getZernikeCoefficients: jest.fn(),
     plotRayFan: jest.fn().mockResolvedValue("rayFan-result"),
     plotOpdFan: jest.fn().mockResolvedValue("opdFan-result"),
+    getOpdFanData: jest.fn().mockResolvedValue([
+      {
+        fieldIdx: 0,
+        wvlIdx: 1,
+        Sagittal: {
+          x: [-1, 0, 1],
+          y: [0.2, 0, -0.2],
+        },
+        Tangential: {
+          x: [-1, 0, 1],
+          y: [0.1, 0, -0.1],
+        },
+        unitX: "",
+        unitY: "waves",
+      },
+    ] satisfies OpdFanData),
     plotSpotDiagram: jest.fn().mockResolvedValue("spotDiagram-result"),
     getSpotDiagramData: jest.fn().mockResolvedValue([
       {
@@ -160,6 +176,39 @@ describe("loadAnalysisPlot", () => {
     expect(result).toEqual({
       kind: "wavefrontMap",
       wavefrontMapData: undefined,
+    });
+  });
+
+  it("loads opdFan through getOpdFanData", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "opdFan",
+      proxy,
+      model: mockModel,
+      fieldIndex: 1,
+      wavelengthIndex: 2,
+    });
+
+    expect(proxy.getOpdFanData).toHaveBeenCalledWith(mockModel, 1);
+    expect(proxy.plotOpdFan).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      kind: "opdFan",
+      opdFanData: [
+        {
+          fieldIdx: 0,
+          wvlIdx: 1,
+          Sagittal: {
+            x: [-1, 0, 1],
+            y: [0.2, 0, -0.2],
+          },
+          Tangential: {
+            x: [-1, 0, 1],
+            y: [0.1, 0, -0.1],
+          },
+          unitX: "",
+          unitY: "waves",
+        },
+      ],
     });
   });
 

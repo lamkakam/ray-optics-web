@@ -36,6 +36,13 @@ const mockSpotDiagramChart = jest.fn(({ autoHeight }: { readonly autoHeight?: bo
   />
 ));
 
+const mockOpdFanChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="opd-fan-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
   DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
 }));
@@ -50,6 +57,10 @@ jest.mock("@/features/analysis/components/GeoPsfChart", () => ({
 
 jest.mock("@/features/analysis/components/SpotDiagramChart", () => ({
   SpotDiagramChart: (props: { readonly autoHeight?: boolean }) => mockSpotDiagramChart(props),
+}));
+
+jest.mock("@/features/analysis/components/OpdFanChart", () => ({
+  OpdFanChart: (props: { readonly autoHeight?: boolean }) => mockOpdFanChart(props),
 }));
 
 describe("AnalysisPlotView", () => {
@@ -242,6 +253,38 @@ describe("AnalysisPlotView", () => {
 
     expect(screen.getByTestId("spot-diagram-chart")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
+  });
+
+  it("renders an opd fan chart instead of an image", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="opdFan"
+        opdFanData={[
+          {
+            fieldIdx: 0,
+            wvlIdx: 0,
+            Sagittal: {
+              x: [-1, 0, 1],
+              y: [-0.2, 0, 0.2],
+            },
+            Tangential: {
+              x: [-1, 0, 1],
+              y: [-0.1, 0, 0.1],
+            },
+            unitX: "",
+            unitY: "waves",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByTestId("opd-fan-chart")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
+    expect(mockOpdFanChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+      wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
+    }));
   });
 
   it("shows loading text when loading is true", () => {

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Zustand store for managing the analysis plot panel state. Holds the current plot image, geometric-PSF data, wavefront-map data, or diffraction-PSF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
+Zustand store for managing the analysis plot panel state. Holds the current plot image, OPD-fan data, geometric-PSF data, wavefront-map data, or diffraction-PSF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
 
 ## Exports
 
@@ -14,6 +14,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 | Field | Type | Default |
 |---|---|---|
 | `plotImage` | `string \| undefined` | `undefined` |
+| `opdFanData` | `OpdFanData \| undefined` | `undefined` |
 | `spotDiagramData` | `SpotDiagramData \| undefined` | `undefined` |
 | `geoPsfData` | `GeoPsfData \| undefined` | `undefined` |
 | `diffractionPsfData` | `DiffractionPsfData \| undefined` | `undefined` |
@@ -25,11 +26,12 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 ## Actions
 
-- `setPlotImage(image)` — sets or clears the base64 PNG plot image and clears `diffractionPsfData` plus `wavefrontMapData`.
-- `setSpotDiagramData(data)` — sets or clears the ECharts Spot Diagram payload and clears `plotImage`, `geoPsfData`, `diffractionPsfData`, and `wavefrontMapData`.
-- `setGeoPsfData(data)` — sets or clears the geometric PSF chart payload and clears `plotImage`, `diffractionPsfData`, and `wavefrontMapData`.
-- `setDiffractionPsfData(data)` — sets or clears the diffraction PSF chart payload and clears `plotImage` plus `wavefrontMapData`.
-- `setWavefrontMapData(data)` — sets or clears the wavefront-map chart payload and clears `plotImage` plus `diffractionPsfData`.
+- `setPlotImage(image)` — sets or clears the base64 PNG plot image and clears all typed chart payloads.
+- `setOpdFanData(data)` — sets or clears the OPD Fan ECharts payload and clears `plotImage`, `spotDiagramData`, `geoPsfData`, `diffractionPsfData`, and `wavefrontMapData`.
+- `setSpotDiagramData(data)` — sets or clears the ECharts Spot Diagram payload and clears `plotImage`, `opdFanData`, `geoPsfData`, `diffractionPsfData`, and `wavefrontMapData`.
+- `setGeoPsfData(data)` — sets or clears the geometric PSF chart payload and clears `plotImage`, `opdFanData`, `diffractionPsfData`, and `wavefrontMapData`.
+- `setDiffractionPsfData(data)` — sets or clears the diffraction PSF chart payload and clears `plotImage`, `opdFanData`, and `wavefrontMapData`.
+- `setWavefrontMapData(data)` — sets or clears the wavefront-map chart payload and clears `plotImage`, `opdFanData`, and `diffractionPsfData`.
 - `setPlotLoading(loading)` — sets the loading flag.
 - `setSelectedFieldIndex(index, maxCount?)` — sets the active field index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
 - `setSelectedWavelengthIndex(index, maxCount?)` — sets the active wavelength index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
@@ -39,4 +41,4 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 - `create`, `StateCreator` from `zustand`.
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`.
-- `SpotDiagramData`, `GeoPsfData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`.
+- `OpdFanData`, `SpotDiagramData`, `GeoPsfData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`.

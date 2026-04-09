@@ -71,6 +71,25 @@ const mockPlotRayFan: jest.Mock<Promise<string>, [OpticalModel, number]> = jest
 const mockPlotOpdFan: jest.Mock<Promise<string>, [OpticalModel, number]> = jest
   .fn()
   .mockResolvedValue("base64-opdfan");
+const mockGetOpdFanData: jest.Mock<Promise<{
+  fieldIdx: number;
+  wvlIdx: number;
+  Sagittal: { x: number[]; y: number[] };
+  Tangential: { x: number[]; y: number[] };
+  unitX: string;
+  unitY: string;
+}[]>, [OpticalModel, number]> = jest
+  .fn()
+  .mockResolvedValue([
+    {
+      fieldIdx: 0,
+      wvlIdx: 0,
+      Sagittal: { x: [-1, 0, 1], y: [-0.2, 0, 0.2] },
+      Tangential: { x: [-1, 0, 1], y: [-0.1, 0, 0.1] },
+      unitX: "",
+      unitY: "waves",
+    },
+  ]);
 const mockPlotSpotDiagram: jest.Mock<Promise<string>, [OpticalModel, number]> = jest
   .fn()
   .mockResolvedValue("base64-spot");
@@ -147,6 +166,7 @@ const mockProxy = {
   plotLensLayout: mockPlotLensLayout,
   plotRayFan: mockPlotRayFan,
   plotOpdFan: mockPlotOpdFan,
+  getOpdFanData: mockGetOpdFanData,
   plotSpotDiagram: mockPlotSpotDiagram,
   getSpotDiagramData: mockGetSpotDiagramData,
   plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,

@@ -149,6 +149,22 @@ export interface SpotDiagramSeriesData {
 
 export type SpotDiagramData = SpotDiagramSeriesData[];
 
+export interface OpdFanAxisData {
+  x: number[];
+  y: number[];
+}
+
+export interface OpdFanSeriesData {
+  fieldIdx: number;
+  wvlIdx: number;
+  Sagittal: OpdFanAxisData;
+  Tangential: OpdFanAxisData;
+  unitX: string;
+  unitY: string;
+}
+
+export type OpdFanData = OpdFanSeriesData[];
+
 export interface AberrationTypeToLabel extends Record<string, ReactNode> {
   TSA: ReactNode;
   TCO: ReactNode;

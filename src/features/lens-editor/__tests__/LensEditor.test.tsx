@@ -177,6 +177,7 @@ function makeProxy(): PyodideWorkerAPI {
     plotLensLayout: jest.fn().mockResolvedValue("layout-base64"),
     plotRayFan: jest.fn().mockResolvedValue("plot-base64"),
     plotOpdFan: jest.fn().mockResolvedValue("plot-base64"),
+    getOpdFanData: jest.fn().mockResolvedValue([]),
     plotSpotDiagram: jest.fn().mockResolvedValue("plot-base64"),
     plotSurfaceBySurface3rdOrderAberr: jest.fn().mockResolvedValue("plot-base64"),
     plotWavefrontMap: jest.fn().mockResolvedValue("plot-base64"),

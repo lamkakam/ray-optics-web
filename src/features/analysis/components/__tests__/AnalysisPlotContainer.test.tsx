@@ -6,7 +6,7 @@ import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPl
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { DiffractionPsfData, GeoPsfData, OpticalModel, OpticalSpecs, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, OpticalSpecs, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -23,10 +23,13 @@ jest.mock("echarts/core", () => ({
 
 jest.mock("echarts/charts", () => ({
   ScatterChart: {},
+  LineChart: {},
 }), { virtual: true });
 
 jest.mock("echarts/components", () => ({
   GridComponent: {},
+  LegendComponent: {},
+  TitleComponent: {},
   TooltipComponent: {},
   VisualMapComponent: {},
 }), { virtual: true });
@@ -118,6 +121,37 @@ const spotDiagramData: SpotDiagramData = [
   },
 ];
 
+const opdFanData: OpdFanData = [
+  {
+    fieldIdx: 0,
+    wvlIdx: 0,
+    Sagittal: {
+      x: [-1, 0, 1],
+      y: [-0.2, 0, 0.2],
+    },
+    Tangential: {
+      x: [-1, 0, 1],
+      y: [-0.1, 0, 0.1],
+    },
+    unitX: "",
+    unitY: "waves",
+  },
+  {
+    fieldIdx: 0,
+    wvlIdx: 1,
+    Sagittal: {
+      x: [-1, 0, 1],
+      y: [-0.3, 0, 0.3],
+    },
+    Tangential: {
+      x: [-1, 0, 1],
+      y: [-0.15, 0, 0.15],
+    },
+    unitX: "",
+    unitY: "waves",
+  },
+];
+
 function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorkerAPI {
   return {
     init: jest.fn(),
@@ -125,6 +159,7 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
     plotLensLayout: jest.fn(),
     plotRayFan: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-rayfan"),
     plotOpdFan: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-opdfan"),
+    getOpdFanData: jest.fn<Promise<OpdFanData>, [OpticalModel, number]>().mockResolvedValue(opdFanData),
     plotSpotDiagram: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-spot"),
     getSpotDiagramData: jest.fn<Promise<SpotDiagramData>, [OpticalModel, number]>().mockResolvedValue(spotDiagramData),
     plotSurfaceBySurface3rdOrderAberr: jest.fn<Promise<string>, [OpticalModel]>().mockResolvedValue("base64-3rdorder"),
@@ -285,6 +320,21 @@ describe("AnalysisPlotContainer", () => {
     expect(store.getState().spotDiagramData).toEqual(spotDiagramData);
   });
 
+  it("loads opdFan through getOpdFanData and stores chart data instead of a PNG", async () => {
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "opdFan");
+
+    expect(store.getState().selectedPlotType).toBe("opdFan");
+    await waitFor(() => {
+      expect(proxy.getOpdFanData).toHaveBeenCalledWith(testModel, 0);
+    });
+    expect(proxy.plotOpdFan).not.toHaveBeenCalled();
+    expect(store.getState().opdFanData).toEqual(opdFanData);
+    expect(store.getState().plotImage).toBeUndefined();
+  });
+
   it("loads geoPSF through getGeoPSFData and stores chart data instead of a PNG", async () => {
     const proxy = makeMockProxy();
     renderComponent(testSpecs, testModel, store, proxy);
@@ -370,6 +420,17 @@ describe("AnalysisPlotContainer", () => {
     renderComponent(testSpecs, testModel, store, proxy, onError);
     const plotTypeSelect = screen.getByLabelText("Plot type");
     await userEvent.selectOptions(plotTypeSelect, "spotDiagram");
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+  });
+
+  it("onError called when getOpdFanData throws on plot type change", async () => {
+    const onError = jest.fn();
+    const proxy = makeMockProxy({
+      getOpdFanData: jest.fn().mockRejectedValue(new Error("fail")),
+    });
+    renderComponent(testSpecs, testModel, store, proxy, onError);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "opdFan");
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
   });
 

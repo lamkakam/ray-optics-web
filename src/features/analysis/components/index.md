@@ -4,7 +4,9 @@ Components for optical analysis plots and aberration data.
 
 ## Components
 
-- [AnalysisPlotView.tsx](./AnalysisPlotView.tsx.md) — Renders analysis plot controls and switches between PNG plots, the geometric PSF chart, the wavefront heatmap, and the diffraction PSF chart
+- [AnalysisPlotView.tsx](./AnalysisPlotView.tsx.md) — Renders analysis plot controls and switches between PNG plots, the OPD fan chart, the geometric PSF chart, the wavefront heatmap, and the diffraction PSF chart
+- [OpdFanChart.tsx](./OpdFanChart.tsx.md) — Owns the OPD Fan ECharts canvas lifecycle and responsive sizing
+- [opdFanChartOption.ts](./opdFanChartOption.ts.md) — Builds the OPD Fan ECharts dual-subplot line option from worker data
 - [GeoPsfChart.tsx](./GeoPsfChart.tsx.md) — Owns the Geometric PSF ECharts canvas lifecycle and responsive sizing
 - [geoPsfChartOption.ts](./geoPsfChartOption.ts.md) — Builds the Geometric PSF ECharts scatter option from worker data
 - [WavefrontMapChart.tsx](./WavefrontMapChart.tsx.md) — Owns the Wavefront Map ECharts canvas lifecycle and responsive sizing

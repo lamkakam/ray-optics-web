@@ -1,10 +1,11 @@
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
-import type { DiffractionPsfData, GeoPsfData, OpticalModel, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 export type PlotFn = (fieldIndex: number, wavelengthIndex: number) => Promise<string>;
 export type AnalysisPlotLoadResult =
   | { readonly kind: "image"; readonly image: string }
+  | { readonly kind: "opdFan"; readonly opdFanData: OpdFanData }
   | { readonly kind: "spotDiagram"; readonly spotDiagramData: SpotDiagramData }
   | { readonly kind: "geoPSF"; readonly geoPsfData: GeoPsfData }
   | { readonly kind: "wavefrontMap"; readonly wavefrontMapData: WavefrontMapData }
@@ -55,6 +56,13 @@ export async function loadAnalysisPlot({
     return {
       kind: "wavefrontMap",
       wavefrontMapData: await proxy.getWavefrontData(model, fieldIndex, wavelengthIndex),
+    };
+  }
+
+  if (plotType === "opdFan") {
+    return {
+      kind: "opdFan",
+      opdFanData: await proxy.getOpdFanData(model, fieldIndex),
     };
   }
 

@@ -56,6 +56,7 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     plotLensLayout: jest.fn(),
     plotRayFan: jest.fn(),
     plotOpdFan: jest.fn(),
+    getOpdFanData: jest.fn().mockResolvedValue([]),
     plotSpotDiagram: jest.fn(),
     getSpotDiagramData: jest.fn().mockResolvedValue([]),
     plotSurfaceBySurface3rdOrderAberr: jest.fn(),

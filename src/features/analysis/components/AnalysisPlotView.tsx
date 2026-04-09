@@ -1,13 +1,14 @@
 import React from "react";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
 import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
+import { OpdFanChart } from "@/features/analysis/components/OpdFanChart";
 import { SpotDiagramChart } from "@/features/analysis/components/SpotDiagramChart";
 import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapChart";
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { DiffractionPsfData, GeoPsfData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 
 export type PlotType = "rayFan"
   | "opdFan"
@@ -27,6 +28,7 @@ interface AnalysisPlotViewProps {
   readonly selectedWavelengthIndex: number;
   readonly selectedPlotType: PlotType;
   readonly plotImageBase64?: string;
+  readonly opdFanData?: OpdFanData;
   readonly spotDiagramData?: SpotDiagramData;
   readonly geoPsfData?: GeoPsfData;
   readonly diffractionPsfData?: DiffractionPsfData;
@@ -93,6 +95,7 @@ export function AnalysisPlotView({
   selectedWavelengthIndex,
   selectedPlotType,
   plotImageBase64,
+  opdFanData,
   spotDiagramData,
   geoPsfData,
   diffractionPsfData,
@@ -167,6 +170,12 @@ export function AnalysisPlotView({
         ) : selectedPlotType === "geoPSF" && geoPsfData ? (
           <GeoPsfChart
             geoPsfData={geoPsfData}
+            autoHeight={autoHeight}
+          />
+        ) : selectedPlotType === "opdFan" && opdFanData ? (
+          <OpdFanChart
+            opdFanData={opdFanData}
+            wavelengthLabels={wavelengthOptions.map((option) => option.label)}
             autoHeight={autoHeight}
           />
         ) : selectedPlotType === "spotDiagram" && spotDiagramData ? (

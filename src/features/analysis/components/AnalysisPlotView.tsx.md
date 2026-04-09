@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `spotDiagram`, `wavefrontMap`, `geoPSF`, and `diffractionPSF` delegate to dedicated ECharts chart components that render worker-provided typed data instead of PNGs.
+Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `opdFan`, `spotDiagram`, `wavefrontMap`, `geoPSF`, and `diffractionPSF` delegate to dedicated ECharts chart components that render worker-provided typed data instead of PNGs.
 
 ## PlotType
 
@@ -27,6 +27,7 @@ interface AnalysisPlotViewProps {
   selectedWavelengthIndex: number;
   selectedPlotType: PlotType;
   plotImageBase64?: string;
+  opdFanData?: OpdFanData;
   spotDiagramData?: SpotDiagramData;
   diffractionPsfData?: DiffractionPsfData;
   wavefrontMapData?: WavefrontMapData;
@@ -48,6 +49,7 @@ interface AnalysisPlotViewProps {
 | `selectedWavelengthIndex` | `number` | Yes | Currently selected wavelength index |
 | `selectedPlotType` | `PlotType` | Yes | Currently selected plot type |
 | `plotImageBase64` | `string` | No | Base64 PNG data for the plot image |
+| `opdFanData` | `OpdFanData` | No | Per-wavelength OPD fan series used only when `selectedPlotType === "opdFan"` |
 | `spotDiagramData` | `SpotDiagramData` | No | Per-wavelength spot-diagram point clouds used only when `selectedPlotType === "spotDiagram"` |
 | `geoPsfData` | `GeoPsfData` | No | Geometric PSF point-cloud data used only when `selectedPlotType === "geoPSF"` |
 | `diffractionPsfData` | `DiffractionPsfData` | No | Diffraction PSF axis/intensity data used only when `selectedPlotType === "diffractionPSF"` |
@@ -78,6 +80,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
 - PNG-based plots use a plain `<img>` tag with a data URI (not `next/image`).
+- `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `spotDiagram` renders `SpotDiagramChart` only when `spotDiagramData` is present, passing wavelength labels from `wavelengthOptions` so each series is named by the actual wavelength rather than the wavelength index.
 - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
 - `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.
