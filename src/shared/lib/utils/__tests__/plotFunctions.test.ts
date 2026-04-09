@@ -32,6 +32,16 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     plotRayFan: jest.fn().mockResolvedValue("rayFan-result"),
     plotOpdFan: jest.fn().mockResolvedValue("opdFan-result"),
     plotSpotDiagram: jest.fn().mockResolvedValue("spotDiagram-result"),
+    getSpotDiagramData: jest.fn().mockResolvedValue([
+      {
+        fieldIdx: 0,
+        wvlIdx: 1,
+        x: [-0.01, 0.01],
+        y: [-0.02, 0.02],
+        unitX: "mm",
+        unitY: "mm",
+      },
+    ]),
     plotSurfaceBySurface3rdOrderAberr: jest.fn().mockResolvedValue("s3rdOrder-result"),
     plotWavefrontMap: jest.fn().mockResolvedValue("wavefront-result"),
     getWavefrontData: jest.fn(),
@@ -193,6 +203,33 @@ describe("loadAnalysisPlot", () => {
         unitX: "mm",
         unitY: "mm",
       },
+    });
+  });
+
+  it("loads spotDiagram through getSpotDiagramData", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "spotDiagram",
+      proxy,
+      model: mockModel,
+      fieldIndex: 0,
+      wavelengthIndex: 1,
+    });
+
+    expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(mockModel, 0);
+    expect(proxy.plotSpotDiagram).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      kind: "spotDiagram",
+      spotDiagramData: [
+        {
+          fieldIdx: 0,
+          wvlIdx: 1,
+          x: [-0.01, 0.01],
+          y: [-0.02, 0.02],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ],
     });
   });
 });

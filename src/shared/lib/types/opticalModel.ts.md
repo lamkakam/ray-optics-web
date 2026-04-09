@@ -13,6 +13,8 @@ Defines all core TypeScript domain types for the optical model, including system
 - `DiffractionPsfData`: typed diffraction PSF axes and intensity grid returned by the Pyodide worker for the ECharts-based Diffraction PSF view.
 - `WavefrontMapData`: typed wavefront-map axes and OPD grid returned by the Pyodide worker for the ECharts-based Wavefront Map view.
 - `GeoPsfData`: typed geometric-PSF point cloud returned by the Pyodide worker for the ECharts-based Geometric PSF view.
+- `SpotDiagramSeriesData`: one wavelength-group point cloud returned by the Pyodide worker for the ECharts-based Spot Diagram view.
+- `SpotDiagramData`: `SpotDiagramSeriesData[]` for all wavelengths of the selected field.
 - `AberrationTypeToLabel`: interface for mapping keys in of `transverse`, `wavefront` and `curvature` of 3rd order Seidel aberrations data to labels for UI components.
 
 
@@ -40,6 +42,7 @@ Defines all core TypeScript domain types for the optical model, including system
 - `DiffractionPsfData.z` is a rectangular intensity grid whose outer dimension matches `x.length` and inner dimension matches `y.length`.
 - `WavefrontMapData.z` is a rectangular OPD grid whose outer dimension matches `y.length` and inner dimension matches `x.length`; missing samples are represented as `undefined` on the TypeScript side.
 - `GeoPsfData.x` and `GeoPsfData.y` are paired image-plane point coordinates and should be consumed as a point cloud.
+- `SpotDiagramData` is grouped by wavelength. Each series entry exposes its own `wvlIdx` so the UI can label series with the actual wavelength value from the optical model rather than the wavelength index.
 
 ## Usages
 

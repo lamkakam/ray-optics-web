@@ -12,6 +12,7 @@ import {
   _plotSurfaceBySurface3rdOrderAberr,
   _get3rdOrderSeidelData,
   _plotWavefrontMap,
+  _getSpotDiagramData,
   _getWavefrontData,
   _getGeoPSFData,
   _plotGeoPSF,
@@ -137,6 +138,38 @@ describe("_plotSpotDiagram", () => {
       return "";
     }, allSphericalOpticalModel, 0);
     expect(pythonScript).toContain("plot_spot_diagram(0, _build_opm())");
+  });
+});
+
+describe("_getSpotDiagramData", () => {
+  it("should build the model script, call json.dumps(get_spot_data(...)) and return parsed data", async () => {
+    const mockData = [
+      {
+        fieldIdx: 1,
+        wvlIdx: 0,
+        x: [-0.02, 0, 0.02],
+        y: [-0.01, 0, 0.01],
+        unitX: "mm",
+        unitY: "mm",
+      },
+      {
+        fieldIdx: 1,
+        wvlIdx: 1,
+        x: [-0.03, 0, 0.03],
+        y: [-0.015, 0, 0.015],
+        unitX: "mm",
+        unitY: "mm",
+      },
+    ];
+    let pythonScript = "";
+    const result = await _getSpotDiagramData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 1);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_spot_data(_build_opm(), 1))");
+    expect(result).toEqual(mockData);
   });
 });
 

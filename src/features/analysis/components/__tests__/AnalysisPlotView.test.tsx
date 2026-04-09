@@ -29,6 +29,13 @@ const mockGeoPsfChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean
   />
 ));
 
+const mockSpotDiagramChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="spot-diagram-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
   DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
 }));
@@ -39,6 +46,10 @@ jest.mock("@/features/analysis/components/WavefrontMapChart", () => ({
 
 jest.mock("@/features/analysis/components/GeoPsfChart", () => ({
   GeoPsfChart: (props: { readonly autoHeight?: boolean }) => mockGeoPsfChart(props),
+}));
+
+jest.mock("@/features/analysis/components/SpotDiagramChart", () => ({
+  SpotDiagramChart: (props: { readonly autoHeight?: boolean }) => mockSpotDiagramChart(props),
 }));
 
 describe("AnalysisPlotView", () => {
@@ -209,6 +220,28 @@ describe("AnalysisPlotView", () => {
     expect(mockGeoPsfChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
     }));
+  });
+
+  it("renders a spot diagram chart instead of an image", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="spotDiagram"
+        spotDiagramData={[
+          {
+            fieldIdx: 0,
+            wvlIdx: 0,
+            x: [-0.02, 0, 0.02],
+            y: [-0.01, 0, 0.01],
+            unitX: "mm",
+            unitY: "mm",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByTestId("spot-diagram-chart")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
   });
 
   it("shows loading text when loading is true", () => {

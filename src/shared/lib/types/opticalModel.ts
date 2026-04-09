@@ -138,6 +138,17 @@ export interface GeoPsfData {
   unitY: string;
 }
 
+export interface SpotDiagramSeriesData {
+  fieldIdx: number;
+  wvlIdx: number;
+  x: number[];
+  y: number[];
+  unitX: string;
+  unitY: string;
+}
+
+export type SpotDiagramData = SpotDiagramSeriesData[];
+
 export interface AberrationTypeToLabel extends Record<string, ReactNode> {
   TSA: ReactNode;
   TCO: ReactNode;

@@ -1,12 +1,13 @@
 import React from "react";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
 import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
+import { SpotDiagramChart } from "@/features/analysis/components/SpotDiagramChart";
 import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapChart";
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { DiffractionPsfData, GeoPsfData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 
 export type PlotType = "rayFan"
   | "opdFan"
@@ -26,6 +27,7 @@ interface AnalysisPlotViewProps {
   readonly selectedWavelengthIndex: number;
   readonly selectedPlotType: PlotType;
   readonly plotImageBase64?: string;
+  readonly spotDiagramData?: SpotDiagramData;
   readonly geoPsfData?: GeoPsfData;
   readonly diffractionPsfData?: DiffractionPsfData;
   readonly wavefrontMapData?: WavefrontMapData;
@@ -91,6 +93,7 @@ export function AnalysisPlotView({
   selectedWavelengthIndex,
   selectedPlotType,
   plotImageBase64,
+  spotDiagramData,
   geoPsfData,
   diffractionPsfData,
   wavefrontMapData,
@@ -164,6 +167,12 @@ export function AnalysisPlotView({
         ) : selectedPlotType === "geoPSF" && geoPsfData ? (
           <GeoPsfChart
             geoPsfData={geoPsfData}
+            autoHeight={autoHeight}
+          />
+        ) : selectedPlotType === "spotDiagram" && spotDiagramData ? (
+          <SpotDiagramChart
+            spotDiagramData={spotDiagramData}
+            wavelengthLabels={wavelengthOptions.map((option) => option.label)}
             autoHeight={autoHeight}
           />
         ) : selectedPlotType === "diffractionPSF" && diffractionPsfData ? (

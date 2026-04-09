@@ -9,6 +9,7 @@ const mockProxy = {
   plotRayFan: jest.fn().mockResolvedValue("base64-rayfan"),
   plotOpdFan: jest.fn().mockResolvedValue("base64-opdfan"),
   plotSpotDiagram: jest.fn().mockResolvedValue("base64-spot"),
+  getSpotDiagramData: jest.fn().mockResolvedValue([]),
 };
 
 // Mock createPyodideWorker (avoids import.meta.url)

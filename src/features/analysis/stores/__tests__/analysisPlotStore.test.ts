@@ -50,6 +50,11 @@ describe("analysisPlotStore", () => {
       const store = makeStore();
       expect(store.getState().wavefrontMapData).toBeUndefined();
     });
+
+    it("has spotDiagramData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().spotDiagramData).toBeUndefined();
+    });
   });
 
   describe("setPlotImage", () => {
@@ -95,6 +100,80 @@ describe("analysisPlotStore", () => {
       expect(store.getState().geoPsfData).toBeUndefined();
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().spotDiagramData).toBeUndefined();
+    });
+  });
+
+  describe("setSpotDiagramData", () => {
+    it("sets spotDiagramData", () => {
+      const store = makeStore();
+      store.getState().setSpotDiagramData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 0,
+          x: [-0.02, 0, 0.02],
+          y: [-0.01, 0, 0.01],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ]);
+
+      expect(store.getState().spotDiagramData).toEqual([
+        expect.objectContaining({
+          fieldIdx: 1,
+          wvlIdx: 0,
+        }),
+      ]);
+    });
+
+    it("clears plot image and all other chart payloads when setting spot diagram data", () => {
+      const store = makeStore();
+      store.getState().setPlotImage("base64data");
+      store.getState().setGeoPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        unitX: "mm",
+        unitY: "mm",
+      });
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[undefined]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setSpotDiagramData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 2,
+          x: [-0.02, 0, 0.02],
+          y: [-0.01, 0, 0.01],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ]);
+
+      expect(store.getState().plotImage).toBeUndefined();
+      expect(store.getState().geoPsfData).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().spotDiagramData).toBeDefined();
     });
   });
 

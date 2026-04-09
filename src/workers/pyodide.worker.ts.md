@@ -17,6 +17,7 @@ export async function plotLensLayout(opticalModel: OpticalModel): Promise<string
 export async function plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>
 export async function plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>
 export async function plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string>
+export async function getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
 export async function plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string>
 export async function plotWavefrontMap(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
 export async function getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<WavefrontMapData>
@@ -42,6 +43,7 @@ export async function _plotLensLayout(runPython: (code: string) => Promise<unkno
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string>
 export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string>
 export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string>
+export async function _getSpotDiagramData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
 export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<string>
 export async function _plotWavefrontMap(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
 export async function _getWavefrontData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<WavefrontMapData>
@@ -87,7 +89,8 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `plotLensLayout(model)` | Builds `opm` from model, returns a lens layout plot as a base64-encoded PNG string. |
 | `plotRayFan(model, fieldIndex)` | Builds `opm` from model, returns a transverse ray fan plot for the given field index (zero-indexed). |
 | `plotOpdFan(model, fieldIndex)` | Builds `opm` from model, returns an OPD fan plot for the given field index (zero-indexed). |
-| `plotSpotDiagram(model, fieldIndex)` | Builds `opm` from model, returns a spot diagram for the given field index (zero-indexed). |
+| `plotSpotDiagram(model, fieldIndex)` | Builds `opm` from model, returns a spot diagram PNG for the given field index (zero-indexed). |
+| `getSpotDiagramData(model, fieldIndex)` | Builds `opm` from model, returns grouped spot-diagram point clouds for all wavelengths at the selected field. Used by the ECharts Spot Diagram view. |
 | `plotSurfaceBySurface3rdOrderAberr(model)` | Builds `opm` from model, returns a surface-by-surface Seidel aberration plot. Field independent. |
 | `plotWavefrontMap(model, fi, wi, numRays?)` | Returns a wavefront OPD map PNG for the given field and wavelength index. `numRays` defaults to 64. |
 | `getWavefrontData(model, fi, wi, numRays?)` | Returns `WavefrontMapData` for the given field and wavelength index using `json.dumps(get_wavefront_data(...))`. Used by the ECharts Wavefront Map view. |
@@ -115,6 +118,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_plotRayFan(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_ray_fan(${fieldIndex}, ${opm})\`)`.
 - `_plotOpdFan(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_opd_fan(${fieldIndex}, ${opm})\`)`.
 - `_plotSpotDiagram(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_spot_diagram(${fieldIndex}, ${opm})\`)`.
+- `_getSpotDiagramData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_spot_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `SpotDiagramData`.
 - `_plotSurfaceBySurface3rdOrderAberr(runPython, model)` — runs `buildScript(model, (opm) => \`plot_surface_by_surface_3rd_order_aberr(${opm})\`)`.
 - `_plotWavefrontMap(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`plot_wavefront_map(${fi}, ${wi}, ${opm}, num_rays=${numRays})\`)`. `numRays` defaults to 64.
 - `_getGeoPSFData(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`json.dumps(get_geo_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}))\`)` and parses the JSON into `GeoPsfData`.
@@ -130,7 +134,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **Singleton `pyodide`**: `init()` is a no-op if the singleton is already set.
 - **`requirePyodide()` guard**: All public functions call this helper. It throws `"Pyodide not initialized. Call init() first."` if `pyodide` is `null`.
 - **Stateless**: Each computation function builds `opm` locally from the received `OpticalModel` within a single `runPython` call. No global `opm` state persists between calls.
-- **Plot return type**: Plot image functions return a `string` (base64-encoded image), while `getWavefrontData`, `getGeoPSFData`, and `getDiffractionPSFData` return typed data for frontend rendering.
+- **Plot return type**: Plot image functions return a `string` (base64-encoded image), while `getSpotDiagramData`, `getWavefrontData`, `getGeoPSFData`, and `getDiffractionPSFData` return typed data for frontend rendering.
 - **`caf2` global**: Initialized by `_rwu_init()` during `_init`.
 
 ## Edge Cases / Error Handling

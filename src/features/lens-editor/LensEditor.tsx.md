@@ -57,7 +57,7 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 - `onError` delegates to `app/AppShell.tsx`, which owns the shared `ErrorModal`
 - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
 - `handleSubmit` uses `loadAnalysisPlot(...)` from `shared/lib/utils/plotFunctions.ts`, so submit-time analysis updates use the same worker-path rules as `AnalysisPlotContainer.tsx`
-- When the selected plot type is `wavefrontMap` or `diffractionPSF`, submit/example-confirm flows store typed chart data via `setWavefrontMapData(...)` or `setDiffractionPsfData(...)` instead of requesting PNG plots
+- When the selected plot type is `spotDiagram`, `wavefrontMap`, `geoPSF`, or `diffractionPSF`, submit/example-confirm flows store typed chart data via the matching analysis-plot store setter instead of requesting PNG plots
 
 ## Usages
 

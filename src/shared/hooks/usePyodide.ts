@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
-import type { DiffractionPsfData, GeoPsfData, OpticalModel, SeidelData, FocusingResult, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpticalModel, SeidelData, FocusingResult, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { ZernikeData, ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
@@ -14,6 +14,7 @@ export interface PyodideWorkerAPI {
   plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
   plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
   plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>;
   plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string>;
   plotWavefrontMap(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
   getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<WavefrontMapData>;

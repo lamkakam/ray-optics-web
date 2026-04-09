@@ -14,6 +14,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 | Field | Type | Default |
 |---|---|---|
 | `plotImage` | `string \| undefined` | `undefined` |
+| `spotDiagramData` | `SpotDiagramData \| undefined` | `undefined` |
 | `geoPsfData` | `GeoPsfData \| undefined` | `undefined` |
 | `diffractionPsfData` | `DiffractionPsfData \| undefined` | `undefined` |
 | `wavefrontMapData` | `WavefrontMapData \| undefined` | `undefined` |
@@ -25,6 +26,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 ## Actions
 
 - `setPlotImage(image)` — sets or clears the base64 PNG plot image and clears `diffractionPsfData` plus `wavefrontMapData`.
+- `setSpotDiagramData(data)` — sets or clears the ECharts Spot Diagram payload and clears `plotImage`, `geoPsfData`, `diffractionPsfData`, and `wavefrontMapData`.
 - `setGeoPsfData(data)` — sets or clears the geometric PSF chart payload and clears `plotImage`, `diffractionPsfData`, and `wavefrontMapData`.
 - `setDiffractionPsfData(data)` — sets or clears the diffraction PSF chart payload and clears `plotImage` plus `wavefrontMapData`.
 - `setWavefrontMapData(data)` — sets or clears the wavefront-map chart payload and clears `plotImage` plus `diffractionPsfData`.
@@ -37,4 +39,4 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 - `create`, `StateCreator` from `zustand`.
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`.
-- `GeoPsfData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`.
+- `SpotDiagramData`, `GeoPsfData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`.
