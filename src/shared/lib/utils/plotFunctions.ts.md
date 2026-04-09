@@ -19,6 +19,7 @@ A unified function signature for all plot types. `fieldIndex` and `wavelengthInd
 ```ts
 type AnalysisPlotLoadResult =
   | { kind: "image"; image: string }
+  | { kind: "surfaceBySurface3rdOrder"; surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData }
   | { kind: "rayFan"; rayFanData: RayFanData }
   | { kind: "opdFan"; opdFanData: OpdFanData }
   | { kind: "spotDiagram"; spotDiagramData: SpotDiagramData }
@@ -81,12 +82,13 @@ Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx
 
 - Returns `undefined` when `proxy` or `model` is missing.
 - Calls `proxy.getRayFanData(model, fi)` for `rayFan`.
+- Calls `proxy.get3rdOrderSeidelData(model)` for `surfaceBySurface3rdOrder` and returns `surfaceBySurface`.
 - Calls `proxy.getOpdFanData(model, fi)` for `opdFan`.
 - Calls `proxy.getSpotDiagramData(model, fi)` for `spotDiagram`.
 - Calls `proxy.getWavefrontData(...)` for `wavefrontMap`.
 - Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
 - Calls `proxy.getDiffractionPSFData(...)` for `diffractionPSF`.
-- Uses `buildPlotFn(...)` only for PNG-backed plot types and returns `{ kind: "image", image }`. `rayFan` is intentionally not part of that PNG path anymore even though `buildPlotFn("rayFan", ...)` still exists for compatibility.
+- Uses `buildPlotFn(...)` only for legacy PNG-backed plot types and returns `{ kind: "image", image }`. `rayFan` and `surfaceBySurface3rdOrder` are intentionally not part of that PNG path anymore even though `buildPlotFn(...)` still exposes the legacy image builders for compatibility.
 - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
 
 ## Dependencies

@@ -4,12 +4,13 @@ import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
 import { OpdFanChart } from "@/features/analysis/components/OpdFanChart";
 import { RayFanChart } from "@/features/analysis/components/RayFanChart";
 import { SpotDiagramChart } from "@/features/analysis/components/SpotDiagramChart";
+import { SurfaceBySurface3rdOrderChart } from "@/features/analysis/components/SurfaceBySurface3rdOrderChart";
 import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapChart";
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SeidelSurfaceBySurfaceData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 
 export type PlotType = "rayFan"
   | "opdFan"
@@ -29,6 +30,7 @@ interface AnalysisPlotViewProps {
   readonly selectedWavelengthIndex: number;
   readonly selectedPlotType: PlotType;
   readonly plotImageBase64?: string;
+  readonly surfaceBySurface3rdOrderData?: SeidelSurfaceBySurfaceData;
   readonly rayFanData?: RayFanData;
   readonly opdFanData?: OpdFanData;
   readonly spotDiagramData?: SpotDiagramData;
@@ -97,6 +99,7 @@ export function AnalysisPlotView({
   selectedWavelengthIndex,
   selectedPlotType,
   plotImageBase64,
+  surfaceBySurface3rdOrderData,
   rayFanData,
   opdFanData,
   spotDiagramData,
@@ -173,6 +176,11 @@ export function AnalysisPlotView({
         ) : selectedPlotType === "geoPSF" && geoPsfData ? (
           <GeoPsfChart
             geoPsfData={geoPsfData}
+            autoHeight={autoHeight}
+          />
+        ) : selectedPlotType === "surfaceBySurface3rdOrder" && surfaceBySurface3rdOrderData ? (
+          <SurfaceBySurface3rdOrderChart
+            surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
             autoHeight={autoHeight}
           />
         ) : selectedPlotType === "rayFan" && rayFanData ? (

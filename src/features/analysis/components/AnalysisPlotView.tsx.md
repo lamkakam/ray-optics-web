@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `rayFan`, `opdFan`, `spotDiagram`, `wavefrontMap`, `geoPSF`, and `diffractionPSF` delegate to dedicated ECharts chart components that render worker-provided typed data instead of PNGs.
+Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types originally rendered a base64 PNG image; `rayFan`, `opdFan`, `spotDiagram`, `surfaceBySurface3rdOrder`, `wavefrontMap`, `geoPSF`, and `diffractionPSF` now delegate to dedicated ECharts chart components that render typed data instead of PNGs.
 
 ## PlotType
 
@@ -27,6 +27,7 @@ interface AnalysisPlotViewProps {
   selectedWavelengthIndex: number;
   selectedPlotType: PlotType;
   plotImageBase64?: string;
+  surfaceBySurface3rdOrderData?: SeidelSurfaceBySurfaceData;
   rayFanData?: RayFanData;
   opdFanData?: OpdFanData;
   spotDiagramData?: SpotDiagramData;
@@ -50,6 +51,7 @@ interface AnalysisPlotViewProps {
 | `selectedWavelengthIndex` | `number` | Yes | Currently selected wavelength index |
 | `selectedPlotType` | `PlotType` | Yes | Currently selected plot type |
 | `plotImageBase64` | `string` | No | Base64 PNG data for the plot image |
+| `surfaceBySurface3rdOrderData` | `SeidelSurfaceBySurfaceData` | No | Per-surface Seidel aberration matrix used only when `selectedPlotType === "surfaceBySurface3rdOrder"` |
 | `rayFanData` | `RayFanData` | No | Per-wavelength ray-fan series used only when `selectedPlotType === "rayFan"` |
 | `opdFanData` | `OpdFanData` | No | Per-wavelength OPD fan series used only when `selectedPlotType === "opdFan"` |
 | `spotDiagramData` | `SpotDiagramData` | No | Per-wavelength spot-diagram point clouds used only when `selectedPlotType === "spotDiagram"` |
@@ -81,7 +83,8 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the field dropdown is disabled for non-field-dependent types.
 - The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
-- PNG-based plots use a plain `<img>` tag with a data URI (not `next/image`).
+- PNG-based plots still use a plain `<img>` tag with a data URI (not `next/image`) for legacy image-backed modes.
+- `surfaceBySurface3rdOrder` renders `SurfaceBySurface3rdOrderChart` only when `surfaceBySurface3rdOrderData` is present. The chart uses the Seidel `surfaceBySurface` payload already fetched from the worker instead of the old PNG.
 - `rayFan` renders `RayFanChart` only when `rayFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `spotDiagram` renders `SpotDiagramChart` only when `spotDiagramData` is present, passing wavelength labels from `wavelengthOptions` so each series is named by the actual wavelength rather than the wavelength index.

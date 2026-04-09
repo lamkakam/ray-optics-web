@@ -1,5 +1,5 @@
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
-import type { OpdFanData, OpticalModel, RayFanData } from "@/shared/lib/types/opticalModel";
+import type { OpdFanData, OpticalModel, RayFanData, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { buildPlotFn, loadAnalysisPlot, PLOT_FUNCTION_BUILDERS } from "@/shared/lib/utils/plotFunctions";
 
@@ -27,7 +27,22 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     updateSpecs: jest.fn(),
     getAnalysisData: jest.fn(),
     importLensFile: jest.fn(),
-    get3rdOrderSeidelData: jest.fn(),
+    get3rdOrderSeidelData: jest.fn().mockResolvedValue({
+      surfaceBySurface: {
+        aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+        surfaceLabels: ["S1", "sum"],
+        data: [
+          [0.1, 0.3],
+          [0.2, 0.4],
+          [0.3, 0.5],
+          [0.4, 0.6],
+          [0.5, 0.7],
+        ],
+      },
+      transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
+      wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
+      curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
+    } satisfies SeidelData),
     getZernikeCoefficients: jest.fn(),
     plotRayFan: jest.fn().mockResolvedValue("rayFan-result"),
     getRayFanData: jest.fn().mockResolvedValue([
@@ -129,7 +144,7 @@ describe("buildPlotFn", () => {
     expect(proxy.plotSpotDiagram).toHaveBeenCalledWith(mockModel, 0);
   });
 
-  it("surfaceBySurface3rdOrder calls proxy.plotSurfaceBySurface3rdOrderAberr with model only", async () => {
+  it("surfaceBySurface3rdOrder builder still calls proxy.plotSurfaceBySurface3rdOrderAberr with model only", async () => {
     const proxy = makeMockProxy();
     const fn = buildPlotFn("surfaceBySurface3rdOrder", proxy, mockModel)!;
     await fn(1, 2);
@@ -328,6 +343,34 @@ describe("loadAnalysisPlot", () => {
           unitY: "mm",
         },
       ],
+    });
+  });
+
+  it("loads surfaceBySurface3rdOrder through get3rdOrderSeidelData instead of the PNG path", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "surfaceBySurface3rdOrder",
+      proxy,
+      model: mockModel,
+      fieldIndex: 0,
+      wavelengthIndex: 0,
+    });
+
+    expect(proxy.get3rdOrderSeidelData).toHaveBeenCalledWith(mockModel);
+    expect(proxy.plotSurfaceBySurface3rdOrderAberr).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      kind: "surfaceBySurface3rdOrder",
+      surfaceBySurface3rdOrderData: {
+        aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+        surfaceLabels: ["S1", "sum"],
+        data: [
+          [0.1, 0.3],
+          [0.2, 0.4],
+          [0.3, 0.5],
+          [0.4, 0.6],
+          [0.5, 0.7],
+        ],
+      },
     });
   });
 });

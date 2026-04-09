@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AnalysisPlotView } from "@/features/analysis/components/AnalysisPlotView";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
+import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn(),
@@ -50,6 +51,13 @@ const mockRayFanChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean
   />
 ));
 
+const mockSurfaceBySurface3rdOrderChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="surface-by-surface-3rd-order-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
   DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
 }));
@@ -74,6 +82,10 @@ jest.mock("@/features/analysis/components/RayFanChart", () => ({
   RayFanChart: (props: { readonly autoHeight?: boolean }) => mockRayFanChart(props),
 }));
 
+jest.mock("@/features/analysis/components/SurfaceBySurface3rdOrderChart", () => ({
+  SurfaceBySurface3rdOrderChart: (props: { readonly autoHeight?: boolean }) => mockSurfaceBySurface3rdOrderChart(props),
+}));
+
 describe("AnalysisPlotView", () => {
   const fieldOptions = [
     { label: "0.0°", value: 0 },
@@ -86,6 +98,18 @@ describe("AnalysisPlotView", () => {
     { label: "587.6nm", value: 1 },
     { label: "656.3nm", value: 2 },
   ];
+
+  const surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData = {
+    aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+    surfaceLabels: ["S1", "S2", "sum"],
+    data: [
+      [0.1, 0.2, 0.3],
+      [0.4, 0.5, 0.6],
+      [0.7, 0.8, 0.9],
+      [1.0, 1.1, 1.2],
+      [1.3, 1.4, 1.5],
+    ],
+  };
 
   const defaultProps = {
     fieldOptions,
@@ -162,6 +186,24 @@ describe("AnalysisPlotView", () => {
     render(<AnalysisPlotView {...defaultProps} plotImageBase64="xyz789" />);
     const img = screen.getByRole("img", { name: "Analysis plot" });
     expect(img).toHaveAttribute("src", "data:image/png;base64,xyz789");
+  });
+
+  it("renders a surface by surface 3rd order chart instead of an image", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="surfaceBySurface3rdOrder"
+        surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
+        plotImageBase64="xyz789"
+      />
+    );
+
+    expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
+    expect(mockSurfaceBySurface3rdOrderChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+      surfaceBySurface3rdOrderData,
+    }));
   });
 
   it("renders a ray fan chart instead of an image", () => {
@@ -376,6 +418,19 @@ describe("AnalysisPlotView", () => {
       render(<AnalysisPlotView {...defaultProps} plotImageBase64="xyz789" autoHeight />);
       const img = screen.getByRole("img", { name: "Analysis plot" });
       expect(img).not.toHaveClass("max-h-full");
+    });
+
+    it("forwards autoHeight to the surface-by-surface chart", () => {
+      render(
+        <AnalysisPlotView
+          {...defaultProps}
+          selectedPlotType="surfaceBySurface3rdOrder"
+          surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
+          autoHeight
+        />
+      );
+
+      expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toHaveAttribute("data-auto-height", "true");
     });
   });
 

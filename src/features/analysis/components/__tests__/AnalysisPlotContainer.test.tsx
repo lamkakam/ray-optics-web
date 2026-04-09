@@ -4,12 +4,14 @@ import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
 import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPlotContainer";
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
+import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, OpticalSpecs, RayFanData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, OpticalSpecs, RayFanData, SeidelData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { AnalysisPlotStoreContext } from "../../providers/AnalysisPlotStoreProvider";
 
 jest.mock("echarts/core", () => ({
@@ -24,6 +26,7 @@ jest.mock("echarts/core", () => ({
 jest.mock("echarts/charts", () => ({
   ScatterChart: {},
   LineChart: {},
+  BarChart: {},
 }), { virtual: true });
 
 jest.mock("echarts/components", () => ({
@@ -183,6 +186,23 @@ const rayFanData: RayFanData = [
   },
 ];
 
+const seidelData: SeidelData = {
+  surfaceBySurface: {
+    aberrTypes: ["S-I", "S-II", "S-III", "S-IV", "S-V"],
+    surfaceLabels: ["S1", "S2", "sum"],
+    data: [
+      [0.1, 0.2, 0.3],
+      [0.4, 0.5, 0.9],
+      [0.6, 0.7, 1.3],
+      [0.8, 0.9, 1.7],
+      [1.0, 1.1, 2.1],
+    ],
+  },
+  transverse: { TSA: 0.1, TCO: 0.2, TAS: 0.3, SAS: 0.4, PTB: 0.5, DST: 0.6 },
+  wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
+  curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
+};
+
 function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorkerAPI {
   return {
     init: jest.fn(),
@@ -224,23 +244,34 @@ function makeLensStore(model: OpticalModel): StoreApi<LensEditorState> {
   return store;
 }
 
+function makeAnalysisDataStore(data?: SeidelData): StoreApi<AnalysisDataState> {
+  const store = createStore<AnalysisDataState>(createAnalysisDataSlice);
+  if (data) {
+    store.getState().setSeidelData(data);
+  }
+  return store;
+}
+
 function renderComponent(
   testSpecs: OpticalSpecs,
   testModel: OpticalModel,
   store: StoreApi<AnalysisPlotState>,
   mockProxy?: PyodideWorkerAPI,
   onError = jest.fn(),
+  analysisDataStore: StoreApi<AnalysisDataState> = makeAnalysisDataStore(),
 ) {
   return (
     render(
       <SpecsConfiguratorStoreContext.Provider value={makeSpecsStore(testSpecs)}>
         <LensEditorStoreContext.Provider value={makeLensStore(testModel)}>
-          <AnalysisPlotStoreContext.Provider value={store}>
-            <AnalysisPlotContainer
-              proxy={mockProxy}
-              onError={onError}
-            />
-          </AnalysisPlotStoreContext.Provider>
+          <AnalysisDataStoreContext.Provider value={analysisDataStore}>
+            <AnalysisPlotStoreContext.Provider value={store}>
+              <AnalysisPlotContainer
+                proxy={mockProxy}
+                onError={onError}
+              />
+            </AnalysisPlotStoreContext.Provider>
+          </AnalysisDataStoreContext.Provider>
         </LensEditorStoreContext.Provider>
       </SpecsConfiguratorStoreContext.Provider>
     )
@@ -321,10 +352,19 @@ describe("AnalysisPlotContainer", () => {
   it("handleFieldChange: no-op for plot call when fieldDependent === false", async () => {
     store.getState().setSelectedPlotType("surfaceBySurface3rdOrder");
     const proxy = makeMockProxy();
-    renderComponent(testSpecs, testModel, store, proxy);
+    renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
     // field select is disabled for surfaceBySurface3rdOrder — just verify it's disabled
     const fieldSelect = screen.getByLabelText("Field");
     expect(fieldSelect).toBeDisabled();
+    expect(proxy.plotSurfaceBySurface3rdOrderAberr).not.toHaveBeenCalled();
+  });
+
+  it("renders the surface by surface chart from analysisDataStore instead of loading a PNG", async () => {
+    store.getState().setSelectedPlotType("surfaceBySurface3rdOrder");
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
+
+    expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toBeInTheDocument();
     expect(proxy.plotSurfaceBySurface3rdOrderAberr).not.toHaveBeenCalled();
   });
 

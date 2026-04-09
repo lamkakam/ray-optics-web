@@ -1,10 +1,11 @@
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, RayFanData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, RayFanData, SeidelSurfaceBySurfaceData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 export type PlotFn = (fieldIndex: number, wavelengthIndex: number) => Promise<string>;
 export type AnalysisPlotLoadResult =
   | { readonly kind: "image"; readonly image: string }
+  | { readonly kind: "surfaceBySurface3rdOrder"; readonly surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData }
   | { readonly kind: "rayFan"; readonly rayFanData: RayFanData }
   | { readonly kind: "opdFan"; readonly opdFanData: OpdFanData }
   | { readonly kind: "spotDiagram"; readonly spotDiagramData: SpotDiagramData }
@@ -57,6 +58,13 @@ export async function loadAnalysisPlot({
     return {
       kind: "rayFan",
       rayFanData: await proxy.getRayFanData(model, fieldIndex),
+    };
+  }
+
+  if (plotType === "surfaceBySurface3rdOrder") {
+    return {
+      kind: "surfaceBySurface3rdOrder",
+      surfaceBySurface3rdOrderData: (await proxy.get3rdOrderSeidelData(model)).surfaceBySurface,
     };
   }
 

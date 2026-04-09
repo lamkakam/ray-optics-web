@@ -2,6 +2,7 @@
 
 import React, { useCallback } from "react";
 import { useStore } from "zustand";
+import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -27,6 +28,8 @@ export function AnalysisPlotContainer({
 }: AnalysisPlotContainerProps) {
   const lensStore = useLensEditorStore();
   const committedOpticalModel = useStore(lensStore, (s) => s.committedOpticalModel);
+  const analysisDataStore = useAnalysisDataStore();
+  const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
 
   const store = useAnalysisPlotStore();
   const plotImage = useStore(store, (s) => s.plotImage);
@@ -69,6 +72,17 @@ export function AnalysisPlotContainer({
         return;
       }
 
+      if (result.kind === "surfaceBySurface3rdOrder") {
+        const existingSeidelData = analysisDataStore.getState().seidelData;
+        analysisDataStore.getState().setSeidelData({
+          transverse: existingSeidelData?.transverse ?? {},
+          wavefront: existingSeidelData?.wavefront ?? {},
+          curvature: existingSeidelData?.curvature ?? {},
+          surfaceBySurface: result.surfaceBySurface3rdOrderData,
+        });
+        return;
+      }
+
       if (result.kind === "rayFan") {
         store.getState().setRayFanData(result.rayFanData);
         return;
@@ -100,7 +114,7 @@ export function AnalysisPlotContainer({
     } finally {
       store.getState().setPlotLoading(false);
     }
-  }, [proxy, committedOpticalModel, store, onError]);
+  }, [proxy, committedOpticalModel, store, onError, analysisDataStore]);
 
   const handleFieldChange = useCallback(async (value: number) => {
     store.getState().setSelectedFieldIndex(value);
@@ -119,6 +133,7 @@ export function AnalysisPlotContainer({
   const handlePlotTypeChange = useCallback(async (plotType: PlotType) => {
     store.getState().setSelectedPlotType(plotType);
     if (!proxy) return;
+    if (plotType === "surfaceBySurface3rdOrder") return;
     await loadPlot(plotType, selectedFieldIndex, selectedWavelengthIndex);
   }, [proxy, store, selectedFieldIndex, selectedWavelengthIndex, loadPlot]);
 
@@ -130,6 +145,7 @@ export function AnalysisPlotContainer({
       selectedWavelengthIndex={selectedWavelengthIndex}
       selectedPlotType={selectedPlotType}
       plotImageBase64={plotImage}
+      surfaceBySurface3rdOrderData={seidelData?.surfaceBySurface}
       rayFanData={rayFanData}
       opdFanData={opdFanData}
       spotDiagramData={spotDiagramData}
