@@ -16,7 +16,7 @@ import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/Lens
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/glassCatalogsResource";
-import type { DiffractionPsfData, OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, OpticalModel, SeidelData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData } from "@/shared/lib/types/zernikeData";
@@ -105,6 +105,22 @@ const mockGetDiffractionPSFData: jest.Mock<Promise<DiffractionPsfData>, [Optical
     unitY: "mm",
     unitZ: "",
   });
+const mockGetWavefrontData: jest.Mock<Promise<WavefrontMapData>, [OpticalModel, number, number]> = jest
+  .fn()
+  .mockResolvedValue({
+    fieldIdx: 0,
+    wvlIdx: 0,
+    x: [-1, 0, 1],
+    y: [-1, 0, 1],
+    z: [
+      [undefined, 0.1, undefined],
+      [0.2, 0.3, 0.4],
+      [undefined, 0.5, undefined],
+    ],
+    unitX: "",
+    unitY: "",
+    unitZ: "waves",
+  });
 
 const mockProxy = {
   init: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
@@ -115,6 +131,7 @@ const mockProxy = {
   plotSpotDiagram: mockPlotSpotDiagram,
   plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,
   plotWavefrontMap: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-wavefront"),
+  getWavefrontData: mockGetWavefrontData,
   plotGeoPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-geopsf"),
   plotDiffractionPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-diffrpsf"),
   getDiffractionPSFData: mockGetDiffractionPSFData,

@@ -28,7 +28,7 @@ A lookup table mapping each `PlotType` to a curried builder that takes `(proxy, 
 | `opdFan` | `proxy.plotOpdFan(model, fi)` |
 | `spotDiagram` | `proxy.plotSpotDiagram(model, fi)` |
 | `surfaceBySurface3rdOrder` | `proxy.plotSurfaceBySurface3rdOrderAberr(model)` |
-| `wavefrontMap` | `proxy.plotWavefrontMap(model, fi, wi)` |
+| `wavefrontMap` | Throws; the analysis container must use `proxy.getWavefrontData(model, fi, wi)` instead of the generic PNG path |
 | `geoPSF` | `proxy.plotGeoPSF(model, fi, wi)` |
 | `diffractionPSF` | `proxy.plotDiffractionPSF(model, fi, wi)` |
 

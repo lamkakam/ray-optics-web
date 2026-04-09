@@ -12,6 +12,7 @@ import {
   _plotSurfaceBySurface3rdOrderAberr,
   _get3rdOrderSeidelData,
   _plotWavefrontMap,
+  _getWavefrontData,
   _plotGeoPSF,
   _plotDiffractionPSF,
   _getDiffractionPSFData,
@@ -183,6 +184,41 @@ describe("_plotWavefrontMap", () => {
       return "";
     }, allSphericalOpticalModel, 0, 1, 32);
     expect(pythonScript).toContain("plot_wavefront_map(0, 1, _build_opm(), num_rays=32)");
+  });
+});
+
+describe("_getWavefrontData", () => {
+  it("should build the model script, call json.dumps(get_wavefront_data(...)) and return parsed data", async () => {
+    const mockData = {
+      fieldIdx: 1,
+      wvlIdx: 2,
+      x: [-1, 0, 1],
+      y: [-1, 0, 1],
+      z: [
+        [null, 0.1, null],
+        [0.2, 0.3, 0.4],
+        [null, 0.5, null],
+      ],
+      unitX: "",
+      unitY: "",
+      unitZ: "waves",
+    };
+    let pythonScript = "";
+    const result = await _getWavefrontData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 1, 2);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_wavefront_data(_build_opm(), 1, 2, num_rays=64))");
+    expect(result).toEqual({
+      ...mockData,
+      z: [
+        [undefined, 0.1, undefined],
+        [0.2, 0.3, 0.4],
+        [undefined, 0.5, undefined],
+      ],
+    });
   });
 });
 

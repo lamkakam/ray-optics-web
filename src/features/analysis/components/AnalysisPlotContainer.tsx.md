@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container component that owns all analysis-plot logic: derives field/wavelength select options, maps plot types to worker API calls, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds either a base64 image or typed diffraction-PSF grid data depending on the selected plot type.
+Container component that owns all analysis-plot logic: derives field/wavelength select options, maps plot types to worker API calls, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds either a base64 image, typed wavefront-map grid data, or typed diffraction-PSF grid data depending on the selected plot type.
 
 ## Props
 
@@ -22,8 +22,8 @@ interface AnalysisPlotContainerProps {
 
 ## State
 
-All six analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
-- `plotImage`, `diffractionPsfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
+All seven analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
+- `plotImage`, `wavefrontMapData`, `diffractionPsfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
 
 `committedOpticalModel` is read from `lensStore` via `useLensEditorStore` and `useStore(lensStore, (s) => s.committedOpticalModel)`.
 
@@ -36,7 +36,7 @@ All six analysis-plot state fields (reactive) are read from `useAnalysisPlotStor
 
 ## Internal Logic
 
-Most plot functions are obtained via `buildPlotFn(plotType, proxy, committedOpticalModel)` from `@/shared/lib/utils/plotFunctions`. For `diffractionPSF`, the container bypasses the PNG plot path and calls `proxy.getDiffractionPSFData(...)` instead.
+Most plot functions are obtained via `buildPlotFn(plotType, proxy, committedOpticalModel)` from `@/shared/lib/utils/plotFunctions`. For `wavefrontMap` and `diffractionPSF`, the container bypasses the PNG plot path and calls typed worker APIs instead.
 
 ### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
 
@@ -45,8 +45,9 @@ Shared async helper used by all three change handlers:
 1. Returns immediately when `proxy` or `committedOpticalModel` is missing.
 2. Sets `plotLoading(true)`.
 3. If `plotType === "diffractionPSF"`, calls `proxy.getDiffractionPSFData(committedOpticalModel, fieldIndex, wavelengthIndex)` and stores the result with `setDiffractionPsfData(...)`.
-4. Otherwise resolves `buildPlotFn(...)`, awaits the base64 PNG result, and stores it with `setPlotImage(...)`.
-5. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
+4. If `plotType === "wavefrontMap"`, calls `proxy.getWavefrontData(committedOpticalModel, fieldIndex, wavelengthIndex)` and stores the result with `setWavefrontMapData(...)`.
+5. Otherwise resolves `buildPlotFn(...)`, awaits the base64 PNG result, and stores it with `setPlotImage(...)`.
+6. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
 
 ### `handleFieldChange(value)`
 

@@ -118,6 +118,17 @@ export interface DiffractionPsfData {
   unitZ: string;
 }
 
+export interface WavefrontMapData {
+  fieldIdx: number;
+  wvlIdx: number;
+  x: number[];
+  y: number[];
+  z: (number | undefined)[][];
+  unitX: string;
+  unitY: string;
+  unitZ: string;
+}
+
 export interface AberrationTypeToLabel extends Record<string, ReactNode> {
   TSA: ReactNode;
   TCO: ReactNode;

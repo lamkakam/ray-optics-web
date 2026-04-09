@@ -12,7 +12,9 @@ export const PLOT_FUNCTION_BUILDERS: Record<
   opdFan:                   (proxy, m) => (fi)     => proxy.plotOpdFan(m, fi),
   spotDiagram:              (proxy, m) => (fi)     => proxy.plotSpotDiagram(m, fi),
   surfaceBySurface3rdOrder: (proxy, m) => ()       => proxy.plotSurfaceBySurface3rdOrderAberr(m),
-  wavefrontMap:             (proxy, m) => (fi, wi) => proxy.plotWavefrontMap(m, fi, wi),
+  wavefrontMap:             ()          => async () => {
+    throw new Error("wavefrontMap should be loaded through getWavefrontData");
+  },
   geoPSF:                   (proxy, m) => (fi, wi) => proxy.plotGeoPSF(m, fi, wi),
   diffractionPSF:           (proxy, m) => (fi, wi) => proxy.plotDiffractionPSF(m, fi, wi),
 };

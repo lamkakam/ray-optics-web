@@ -34,4 +34,4 @@ function buildDiffractionPsfOption(
 - Pins the `visualMap` top edge to the diffraction plot top so the legend bar aligns vertically with the scatter plot instead of the overall chart frame.
 - Formats `visualMap` labels back into linear intensity values using 2 significant figures.
 - Caps `visualMap.itemHeight` based on measured chart height so short panels keep the legend inside bounds.
-- Uses the fixed 11-color diffraction PSF palette shared by the view.
+- Uses the shared 11-color analysis heatmap palette from `analysisChartPalette.ts`.

@@ -34,8 +34,10 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     plotSpotDiagram: jest.fn().mockResolvedValue("spotDiagram-result"),
     plotSurfaceBySurface3rdOrderAberr: jest.fn().mockResolvedValue("s3rdOrder-result"),
     plotWavefrontMap: jest.fn().mockResolvedValue("wavefront-result"),
+    getWavefrontData: jest.fn(),
     plotGeoPSF: jest.fn().mockResolvedValue("geoPSF-result"),
     plotDiffractionPSF: jest.fn().mockResolvedValue("diffractionPSF-result"),
+    getDiffractionPSFData: jest.fn(),
   } as unknown as jest.Mocked<PyodideWorkerAPI>;
 }
 
@@ -87,8 +89,8 @@ describe("buildPlotFn", () => {
   it("wavefrontMap calls proxy.plotWavefrontMap with model, fieldIndex, and wavelengthIndex", async () => {
     const proxy = makeMockProxy();
     const fn = buildPlotFn("wavefrontMap", proxy, mockModel)!;
-    await fn(1, 2);
-    expect(proxy.plotWavefrontMap).toHaveBeenCalledWith(mockModel, 1, 2);
+    await expect(fn(1, 2)).rejects.toThrow("wavefrontMap should be loaded through getWavefrontData");
+    expect(proxy.plotWavefrontMap).not.toHaveBeenCalled();
   });
 
   it("geoPSF calls proxy.plotGeoPSF with model, fieldIndex, and wavelengthIndex", async () => {

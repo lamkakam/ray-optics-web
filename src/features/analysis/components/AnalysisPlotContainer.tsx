@@ -3,7 +3,7 @@
 import React, { useCallback } from "react";
 import { useStore } from "zustand";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -32,6 +32,7 @@ export function AnalysisPlotContainer({
   const store = useAnalysisPlotStore();
   const plotImage = useStore(store, (s) => s.plotImage);
   const diffractionPsfData = useStore(store, (s) => s.diffractionPsfData);
+  const wavefrontMapData = useStore(store, (s) => s.wavefrontMapData);
   const plotLoading = useStore(store, (s) => s.plotLoading);
   const selectedFieldIndex = useStore(store, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(store, (s) => s.selectedWavelengthIndex);
@@ -58,6 +59,16 @@ export function AnalysisPlotContainer({
           wavelengthIndex,
         );
         store.getState().setDiffractionPsfData(diffractionData);
+        return;
+      }
+
+      if (plotType === "wavefrontMap") {
+        const wavefrontData: WavefrontMapData = await proxy.getWavefrontData(
+          committedOpticalModel,
+          fieldIndex,
+          wavelengthIndex,
+        );
+        store.getState().setWavefrontMapData(wavefrontData);
         return;
       }
 
@@ -102,6 +113,7 @@ export function AnalysisPlotContainer({
       selectedPlotType={selectedPlotType}
       plotImageBase64={plotImage}
       diffractionPsfData={diffractionPsfData}
+      wavefrontMapData={wavefrontMapData}
       loading={plotLoading}
       onFieldChange={handleFieldChange}
       onWavelengthChange={handleWavelengthChange}

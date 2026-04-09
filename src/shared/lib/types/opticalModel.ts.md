@@ -11,6 +11,7 @@ Defines all core TypeScript domain types for the optical model, including system
 - `SeidelData`: the shape of data from Rayoptics via the Pyodide worker for 3rd order Seidel aberrations.
 - `FocusingResult`: `{ delta_thi: number; metric_value: number }` — result returned by the 4 focusing functions in the worker.
 - `DiffractionPsfData`: typed diffraction PSF axes and intensity grid returned by the Pyodide worker for the ECharts-based Diffraction PSF view.
+- `WavefrontMapData`: typed wavefront-map axes and OPD grid returned by the Pyodide worker for the ECharts-based Wavefront Map view.
 - `AberrationTypeToLabel`: interface for mapping keys in of `transverse`, `wavefront` and `curvature` of 3rd order Seidel aberrations data to labels for UI components.
 
 
@@ -36,6 +37,7 @@ Defines all core TypeScript domain types for the optical model, including system
 - `fields` in `OpticalSpecs.field` may be absolute or relative values depending on `isRelative`.
 - `referenceIndex` in `wavelengths` is a zero-based index into `weights`; callers must ensure it is in range.
 - `DiffractionPsfData.z` is a rectangular intensity grid whose outer dimension matches `x.length` and inner dimension matches `y.length`.
+- `WavefrontMapData.z` is a rectangular OPD grid whose outer dimension matches `y.length` and inner dimension matches `x.length`; missing samples are represented as `undefined` on the TypeScript side.
 
 ## Usages
 

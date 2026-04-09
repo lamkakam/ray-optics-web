@@ -6,7 +6,7 @@ import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPl
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { DiffractionPsfData, OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, OpticalModel, OpticalSpecs, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -75,6 +75,21 @@ const diffractionPsfData: DiffractionPsfData = {
   unitZ: "",
 };
 
+const wavefrontMapData: WavefrontMapData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  x: [-1, 0, 1],
+  y: [-1, 0, 1],
+  z: [
+    [undefined, 0.1, undefined],
+    [0.2, 0.3, 0.4],
+    [undefined, 0.5, undefined],
+  ],
+  unitX: "",
+  unitY: "",
+  unitZ: "waves",
+};
+
 function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorkerAPI {
   return {
     init: jest.fn(),
@@ -85,6 +100,7 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
     plotSpotDiagram: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-spot"),
     plotSurfaceBySurface3rdOrderAberr: jest.fn<Promise<string>, [OpticalModel]>().mockResolvedValue("base64-3rdorder"),
     plotWavefrontMap: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-wavefront"),
+    getWavefrontData: jest.fn<Promise<WavefrontMapData>, [OpticalModel, number, number]>().mockResolvedValue(wavefrontMapData),
     plotGeoPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-geopsf"),
     plotDiffractionPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-diffrpsf"),
     getDiffractionPSFData: jest.fn<Promise<DiffractionPsfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionPsfData),
@@ -221,7 +237,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedWavelengthIndex).toBe(2);
     await waitFor(() => {
-      expect(proxy.plotWavefrontMap).toHaveBeenCalledWith(testModel, 0, 2);
+      expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 2);
     });
   });
 
@@ -262,6 +278,20 @@ describe("AnalysisPlotContainer", () => {
     expect(store.getState().plotImage).toBeUndefined();
   });
 
+  it("handlePlotTypeChange: wavefrontMap fetches data and stores it instead of a PNG", async () => {
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "wavefrontMap");
+
+    expect(store.getState().selectedPlotType).toBe("wavefrontMap");
+    await waitFor(() => {
+      expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 0);
+    });
+    expect(store.getState().wavefrontMapData).toEqual(wavefrontMapData);
+    expect(store.getState().plotImage).toBeUndefined();
+  });
+
   it("onError called when proxy throws on field change", async () => {
     const onError = jest.fn();
     const proxy = makeMockProxy({
@@ -277,7 +307,7 @@ describe("AnalysisPlotContainer", () => {
     store.getState().setSelectedPlotType("wavefrontMap");
     const onError = jest.fn();
     const proxy = makeMockProxy({
-      plotWavefrontMap: jest.fn().mockRejectedValue(new Error("fail")),
+      getWavefrontData: jest.fn().mockRejectedValue(new Error("fail")),
     });
     renderComponent(testSpecs, testModel, store, proxy, onError);
     const wlSelect = screen.getByLabelText("Wavelength");

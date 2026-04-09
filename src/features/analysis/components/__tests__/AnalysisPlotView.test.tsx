@@ -15,8 +15,19 @@ const mockDiffractionPsfChart = jest.fn(({ autoHeight }: { readonly autoHeight?:
   />
 ));
 
+const mockWavefrontMapChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="wavefront-map-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
   DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
+}));
+
+jest.mock("@/features/analysis/components/WavefrontMapChart", () => ({
+  WavefrontMapChart: (props: { readonly autoHeight?: boolean }) => mockWavefrontMapChart(props),
 }));
 
 describe("AnalysisPlotView", () => {
@@ -133,6 +144,35 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByTestId("diffraction-psf-chart")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
     expect(mockDiffractionPsfChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+    }));
+  });
+
+  it("renders a wavefront map chart instead of an image", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="wavefrontMap"
+        wavefrontMapData={{
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [-1, 0, 1],
+          y: [-1, 0, 1],
+          z: [
+            [undefined, 0.1, undefined],
+            [0.2, 0.3, 0.4],
+            [undefined, 0.5, undefined],
+          ],
+          unitX: "",
+          unitY: "",
+          unitZ: "waves",
+        }}
+      />
+    );
+
+    expect(screen.getByTestId("wavefront-map-chart")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
+    expect(mockWavefrontMapChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
     }));
   });

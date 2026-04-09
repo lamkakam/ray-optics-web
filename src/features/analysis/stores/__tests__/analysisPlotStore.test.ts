@@ -40,6 +40,11 @@ describe("analysisPlotStore", () => {
       const store = makeStore();
       expect(store.getState().diffractionPsfData).toBeUndefined();
     });
+
+    it("has wavefrontMapData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+    });
   });
 
   describe("setPlotImage", () => {
@@ -54,6 +59,36 @@ describe("analysisPlotStore", () => {
       store.getState().setPlotImage("base64data");
       store.getState().setPlotImage(undefined);
       expect(store.getState().plotImage).toBeUndefined();
+    });
+
+    it("clears chart payloads when setting plotImage", () => {
+      const store = makeStore();
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[undefined]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setPlotImage("base64data");
+
+      expect(store.getState().plotImage).toBe("base64data");
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
     });
   });
 
@@ -92,6 +127,115 @@ describe("analysisPlotStore", () => {
       });
       store.getState().setDiffractionPsfData(undefined);
       expect(store.getState().diffractionPsfData).toBeUndefined();
+    });
+
+    it("clears plot image and wavefront data when setting diffraction data", () => {
+      const store = makeStore();
+      store.getState().setPlotImage("base64data");
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[0]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-0.02, 0, 0.02],
+        y: [-0.02, 0, 0.02],
+        z: [
+          [0.001, 0.01, 0.001],
+          [0.01, 1, 0.01],
+          [0.001, 0.01, 0.001],
+        ],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+
+      expect(store.getState().plotImage).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().diffractionPsfData?.fieldIdx).toBe(1);
+    });
+  });
+
+  describe("setWavefrontMapData", () => {
+    it("sets wavefrontMapData", () => {
+      const store = makeStore();
+      store.getState().setWavefrontMapData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-1, 0, 1],
+        y: [-1, 0, 1],
+        z: [
+          [undefined, 0.1, undefined],
+          [0.2, 0.3, 0.4],
+          [undefined, 0.5, undefined],
+        ],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      expect(store.getState().wavefrontMapData).toBeDefined();
+      expect(store.getState().wavefrontMapData?.fieldIdx).toBe(1);
+    });
+
+    it("clears wavefrontMapData with undefined", () => {
+      const store = makeStore();
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[0]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setWavefrontMapData(undefined);
+
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+    });
+
+    it("clears plot image and diffraction data when setting wavefront data", () => {
+      const store = makeStore();
+      store.getState().setPlotImage("base64data");
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+
+      store.getState().setWavefrontMapData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-1, 0, 1],
+        y: [-1, 0, 1],
+        z: [
+          [undefined, 0.1, undefined],
+          [0.2, 0.3, 0.4],
+          [undefined, 0.5, undefined],
+        ],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      expect(store.getState().plotImage).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData?.fieldIdx).toBe(1);
     });
   });
 

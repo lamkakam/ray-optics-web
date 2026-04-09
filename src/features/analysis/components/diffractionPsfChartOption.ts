@@ -2,23 +2,10 @@ import * as echarts from "echarts/core";
 import { ScatterChart } from "echarts/charts";
 import { GridComponent, TooltipComponent, VisualMapComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([ScatterChart, GridComponent, TooltipComponent, VisualMapComponent, CanvasRenderer]);
-
-const DIFFRACTION_PSF_COLOR_PALETTE = [
-  "#313695",
-  "#4575b4",
-  "#74add1",
-  "#abd9e9",
-  "#e0f3f8",
-  "#ffffbf",
-  "#fee090",
-  "#fdae61",
-  "#f46d43",
-  "#d73027",
-  "#a50026",
-] as const;
 
 const DIFFRACTION_PSF_MIN_INTENSITY = 5e-4;
 const DIFFRACTION_GRID_TOP = 16;
@@ -117,7 +104,7 @@ export function buildDiffractionPsfOption(
       itemHeight: visualMapHeight,
       formatter: formatDiffractionPsfIntensity,
       inRange: {
-        color: DIFFRACTION_PSF_COLOR_PALETTE,
+        color: ANALYSIS_HEATMAP_COLOR_PALETTE,
       },
     },
     series: [

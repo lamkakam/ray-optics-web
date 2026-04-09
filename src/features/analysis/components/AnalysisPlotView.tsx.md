@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `diffractionPSF` delegates rendering to `DiffractionPsfChart`, which owns the Apache ECharts v6 scatter-plot lifecycle built from worker-provided axis/grid data. The component handles field-dependent vs. field-independent plot types by disabling the field selector when irrelevant, and shows the wavelength selector only for wavelength-dependent plot types.
+Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `wavefrontMap` delegates to `WavefrontMapChart`, and `diffractionPSF` delegates to `DiffractionPsfChart`. Both charts own their Apache ECharts lifecycles and render from worker-provided typed data instead of PNGs.
 
 ## PlotType
 
@@ -28,6 +28,7 @@ interface AnalysisPlotViewProps {
   selectedPlotType: PlotType;
   plotImageBase64?: string;
   diffractionPsfData?: DiffractionPsfData;
+  wavefrontMapData?: WavefrontMapData;
   loading?: boolean;
   onFieldChange: (fieldIndex: number) => void;
   onWavelengthChange: (wavelengthIndex: number) => void;
@@ -47,6 +48,7 @@ interface AnalysisPlotViewProps {
 | `selectedPlotType` | `PlotType` | Yes | Currently selected plot type |
 | `plotImageBase64` | `string` | No | Base64 PNG data for the plot image |
 | `diffractionPsfData` | `DiffractionPsfData` | No | Diffraction PSF axis/intensity data used only when `selectedPlotType === "diffractionPSF"` |
+| `wavefrontMapData` | `WavefrontMapData` | No | Wavefront-map axis/OPD data used only when `selectedPlotType === "wavefrontMap"` |
 | `loading` | `boolean` | No | Shows "Loading plot..." placeholder when `true` |
 | `onFieldChange` | `(n) => void` | Yes | Called with the new field index |
 | `onWavelengthChange` | `(n) => void` | Yes | Called with the new wavelength index |
@@ -72,9 +74,10 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the field dropdown is disabled for non-field-dependent types.
 - The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
-- Non-diffraction plots use a plain `<img>` tag with a data URI (not `next/image`).
+- PNG-based plots use a plain `<img>` tag with a data URI (not `next/image`).
+- `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
 - `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.
-- `AnalysisPlotView` no longer imports Apache ECharts directly; diffraction-specific measurement, debounce, and option-building logic live in dedicated feature-local modules.
+- `AnalysisPlotView` never imports Apache ECharts directly; chart-specific measurement, debounce, and option-building logic live in dedicated feature-local modules.
 
 ## Usages
 
