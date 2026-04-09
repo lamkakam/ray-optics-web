@@ -60,6 +60,11 @@ describe("analysisPlotStore", () => {
       const store = makeStore();
       expect(store.getState().opdFanData).toBeUndefined();
     });
+
+    it("has rayFanData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().rayFanData).toBeUndefined();
+    });
   });
 
   describe("setPlotImage", () => {
@@ -107,6 +112,114 @@ describe("analysisPlotStore", () => {
       expect(store.getState().wavefrontMapData).toBeUndefined();
       expect(store.getState().spotDiagramData).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
+    });
+  });
+
+  describe("setRayFanData", () => {
+    it("sets rayFanData", () => {
+      const store = makeStore();
+      store.getState().setRayFanData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 0,
+          Sagittal: {
+            x: [-1, 0, 1],
+            y: [-0.2, 0, 0.2],
+          },
+          Tangential: {
+            x: [-1, 0, 1],
+            y: [-0.1, 0, 0.1],
+          },
+          unitX: "",
+          unitY: "mm",
+        },
+      ]);
+
+      expect(store.getState().rayFanData).toEqual([
+        expect.objectContaining({
+          fieldIdx: 1,
+          wvlIdx: 0,
+        }),
+      ]);
+    });
+
+    it("clears plot image and all other chart payloads when setting ray fan data", () => {
+      const store = makeStore();
+      store.getState().setPlotImage("base64data");
+      store.getState().setOpdFanData([
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: { x: [0], y: [0] },
+          Tangential: { x: [0], y: [0] },
+          unitX: "",
+          unitY: "waves",
+        },
+      ]);
+      store.getState().setSpotDiagramData([
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [0],
+          y: [0],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ]);
+      store.getState().setGeoPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        unitX: "mm",
+        unitY: "mm",
+      });
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[undefined]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setRayFanData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 2,
+          Sagittal: {
+            x: [-1, 0, 1],
+            y: [-0.2, 0, 0.2],
+          },
+          Tangential: {
+            x: [-1, 0, 1],
+            y: [-0.1, 0, 0.1],
+          },
+          unitX: "",
+          unitY: "mm",
+        },
+      ]);
+
+      expect(store.getState().plotImage).toBeUndefined();
+      expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().spotDiagramData).toBeUndefined();
+      expect(store.getState().geoPsfData).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeDefined();
     });
   });
 
@@ -202,6 +315,7 @@ describe("analysisPlotStore", () => {
       expect(store.getState().geoPsfData).toBeUndefined();
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
       expect(store.getState().opdFanData).toBeDefined();
     });
   });
@@ -276,6 +390,7 @@ describe("analysisPlotStore", () => {
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
       expect(store.getState().spotDiagramData).toBeDefined();
+      expect(store.getState().rayFanData).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
     });
   });
@@ -333,6 +448,7 @@ describe("analysisPlotStore", () => {
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
       expect(store.getState().geoPsfData?.fieldIdx).toBe(1);
     });
   });
@@ -406,6 +522,7 @@ describe("analysisPlotStore", () => {
       expect(store.getState().plotImage).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
       expect(store.getState().diffractionPsfData?.fieldIdx).toBe(1);
     });
   });
@@ -482,6 +599,7 @@ describe("analysisPlotStore", () => {
       expect(store.getState().plotImage).toBeUndefined();
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
       expect(store.getState().wavefrontMapData?.fieldIdx).toBe(1);
     });
   });

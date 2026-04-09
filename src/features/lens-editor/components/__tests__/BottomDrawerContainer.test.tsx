@@ -53,6 +53,7 @@ function makeProxy(): PyodideWorkerAPI {
     getFirstOrderData: jest.fn(),
     plotLensLayout: jest.fn(),
     plotRayFan: jest.fn(),
+    getRayFanData: jest.fn(),
     plotOpdFan: jest.fn(),
     getOpdFanData: jest.fn(),
     plotSpotDiagram: jest.fn(),

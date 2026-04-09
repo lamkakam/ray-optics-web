@@ -7,6 +7,7 @@ const mockProxy = {
   getFirstOrderData: jest.fn().mockResolvedValue({ efl: 100 }),
   plotLensLayout: jest.fn().mockResolvedValue("base64-layout"),
   plotRayFan: jest.fn().mockResolvedValue("base64-rayfan"),
+  getRayFanData: jest.fn().mockResolvedValue([]),
   plotOpdFan: jest.fn().mockResolvedValue("base64-opdfan"),
   getOpdFanData: jest.fn().mockResolvedValue([]),
   plotSpotDiagram: jest.fn().mockResolvedValue("base64-spot"),

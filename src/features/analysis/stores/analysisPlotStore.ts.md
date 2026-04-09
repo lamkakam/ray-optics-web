@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Zustand store for managing the analysis plot panel state. Holds the current plot image, OPD-fan data, geometric-PSF data, wavefront-map data, or diffraction-PSF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
+Zustand store for managing the analysis plot panel state. Holds the current plot image, Ray-Fan data, OPD-fan data, geometric-PSF data, wavefront-map data, or diffraction-PSF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
 
 ## Exports
 
@@ -14,6 +14,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 | Field | Type | Default |
 |---|---|---|
 | `plotImage` | `string \| undefined` | `undefined` |
+| `rayFanData` | `RayFanData \| undefined` | `undefined` |
 | `opdFanData` | `OpdFanData \| undefined` | `undefined` |
 | `spotDiagramData` | `SpotDiagramData \| undefined` | `undefined` |
 | `geoPsfData` | `GeoPsfData \| undefined` | `undefined` |
@@ -27,6 +28,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 ## Actions
 
 - `setPlotImage(image)` — sets or clears the base64 PNG plot image and clears all typed chart payloads.
+- `setRayFanData(data)` — sets or clears the Ray Fan ECharts payload and clears `plotImage`, `opdFanData`, `spotDiagramData`, `geoPsfData`, `diffractionPsfData`, and `wavefrontMapData`.
 - `setOpdFanData(data)` — sets or clears the OPD Fan ECharts payload and clears `plotImage`, `spotDiagramData`, `geoPsfData`, `diffractionPsfData`, and `wavefrontMapData`.
 - `setSpotDiagramData(data)` — sets or clears the ECharts Spot Diagram payload and clears `plotImage`, `opdFanData`, `geoPsfData`, `diffractionPsfData`, and `wavefrontMapData`.
 - `setGeoPsfData(data)` — sets or clears the geometric PSF chart payload and clears `plotImage`, `opdFanData`, `diffractionPsfData`, and `wavefrontMapData`.
@@ -41,4 +43,4 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 - `create`, `StateCreator` from `zustand`.
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`.
-- `OpdFanData`, `SpotDiagramData`, `GeoPsfData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`.
+- `RayFanData`, `OpdFanData`, `SpotDiagramData`, `GeoPsfData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`.

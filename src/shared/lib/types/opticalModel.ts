@@ -149,6 +149,22 @@ export interface SpotDiagramSeriesData {
 
 export type SpotDiagramData = SpotDiagramSeriesData[];
 
+export interface RayFanAxisData {
+  x: number[];
+  y: number[];
+}
+
+export interface RayFanSeriesData {
+  fieldIdx: number;
+  wvlIdx: number;
+  Sagittal: RayFanAxisData;
+  Tangential: RayFanAxisData;
+  unitX: string;
+  unitY: string;
+}
+
+export type RayFanData = RayFanSeriesData[];
+
 export interface OpdFanAxisData {
   x: number[];
   y: number[];

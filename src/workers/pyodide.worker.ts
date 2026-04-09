@@ -1,5 +1,5 @@
 import { expose } from "comlink";
-import { type DiffractionPsfData, type GeoPsfData, type OpdFanData, type OpticalModel, type SeidelData, type FocusingResult, type SpotDiagramData, type WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import { type DiffractionPsfData, type GeoPsfData, type OpdFanData, type OpticalModel, type RayFanData, type SeidelData, type FocusingResult, type SpotDiagramData, type WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import { type ZernikeData, type ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import { type RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
@@ -54,7 +54,7 @@ from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 from rayoptics.elem.profiles import XToroid, YToroid
 
-from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_geo_psf_data, get_diffraction_psf_data
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_geo_psf_data, get_diffraction_psf_data
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
     plot_ray_fan,
@@ -122,6 +122,17 @@ export async function _plotLensLayout(runPython: (code: string) => Promise<unkno
 
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
   return (await runPython(buildScript(opticalModel, (opm) => `plot_ray_fan(${fieldIndex}, ${opm})`))) as string;
+}
+
+export async function _getRayFanData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<RayFanData> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}))`),
+  )) as string;
+  return JSON.parse(json) as RayFanData;
 }
 
 export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
@@ -343,6 +354,10 @@ export async function plotRayFan(opticalModel: OpticalModel, fieldIndex: number)
   return await _plotRayFan(requirePyodide(), opticalModel, fieldIndex);
 }
 
+export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData> {
+  return await _getRayFanData(requirePyodide(), opticalModel, fieldIndex);
+}
+
 export async function plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
   return await _plotOpdFan(requirePyodide(), opticalModel, fieldIndex);
 }
@@ -459,6 +474,7 @@ expose({
   getFirstOrderData,
   plotLensLayout,
   plotRayFan,
+  getRayFanData,
   plotOpdFan,
   getOpdFanData,
   plotSpotDiagram,

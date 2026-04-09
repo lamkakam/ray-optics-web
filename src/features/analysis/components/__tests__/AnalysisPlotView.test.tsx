@@ -43,6 +43,13 @@ const mockOpdFanChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean
   />
 ));
 
+const mockRayFanChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="ray-fan-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
   DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
 }));
@@ -61,6 +68,10 @@ jest.mock("@/features/analysis/components/SpotDiagramChart", () => ({
 
 jest.mock("@/features/analysis/components/OpdFanChart", () => ({
   OpdFanChart: (props: { readonly autoHeight?: boolean }) => mockOpdFanChart(props),
+}));
+
+jest.mock("@/features/analysis/components/RayFanChart", () => ({
+  RayFanChart: (props: { readonly autoHeight?: boolean }) => mockRayFanChart(props),
 }));
 
 describe("AnalysisPlotView", () => {
@@ -151,6 +162,38 @@ describe("AnalysisPlotView", () => {
     render(<AnalysisPlotView {...defaultProps} plotImageBase64="xyz789" />);
     const img = screen.getByRole("img", { name: "Analysis plot" });
     expect(img).toHaveAttribute("src", "data:image/png;base64,xyz789");
+  });
+
+  it("renders a ray fan chart instead of an image", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="rayFan"
+        rayFanData={[
+          {
+            fieldIdx: 0,
+            wvlIdx: 0,
+            Sagittal: {
+              x: [-1, 0, 1],
+              y: [-0.2, 0, 0.2],
+            },
+            Tangential: {
+              x: [-1, 0, 1],
+              y: [-0.1, 0, 0.1],
+            },
+            unitX: "",
+            unitY: "mm",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByTestId("ray-fan-chart")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
+    expect(mockRayFanChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+      wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
+    }));
   });
 
   it("renders a diffraction PSF chart instead of an image", () => {

@@ -6,7 +6,7 @@ import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPl
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, OpticalSpecs, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, OpticalSpecs, RayFanData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -152,12 +152,44 @@ const opdFanData: OpdFanData = [
   },
 ];
 
+const rayFanData: RayFanData = [
+  {
+    fieldIdx: 0,
+    wvlIdx: 0,
+    Sagittal: {
+      x: [-1, 0, 1],
+      y: [-0.2, 0, 0.2],
+    },
+    Tangential: {
+      x: [-1, 0, 1],
+      y: [-0.1, 0, 0.1],
+    },
+    unitX: "",
+    unitY: "mm",
+  },
+  {
+    fieldIdx: 0,
+    wvlIdx: 1,
+    Sagittal: {
+      x: [-1, 0, 1],
+      y: [-0.3, 0, 0.3],
+    },
+    Tangential: {
+      x: [-1, 0, 1],
+      y: [-0.15, 0, 0.15],
+    },
+    unitX: "",
+    unitY: "mm",
+  },
+];
+
 function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorkerAPI {
   return {
     init: jest.fn(),
     getFirstOrderData: jest.fn(),
     plotLensLayout: jest.fn(),
     plotRayFan: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-rayfan"),
+    getRayFanData: jest.fn<Promise<RayFanData>, [OpticalModel, number]>().mockResolvedValue(rayFanData),
     plotOpdFan: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-opdfan"),
     getOpdFanData: jest.fn<Promise<OpdFanData>, [OpticalModel, number]>().mockResolvedValue(opdFanData),
     plotSpotDiagram: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-spot"),
@@ -255,7 +287,7 @@ describe("AnalysisPlotContainer", () => {
     expect(wlSelect).toContainHTML("656.3 nm");
   });
 
-  it("handleFieldChange: updates selectedFieldIndex in store and calls proxy plot fn", async () => {
+  it("handleFieldChange: updates selectedFieldIndex in store and calls getRayFanData for ray fan", async () => {
     const proxy = makeMockProxy();
     renderComponent(testSpecs, testModel, store, proxy);
     const fieldSelect = screen.getByLabelText("Field");
@@ -263,23 +295,26 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedFieldIndex).toBe(1);
     await waitFor(() => {
-      expect(proxy.plotRayFan).toHaveBeenCalledWith(testModel, 1);
+      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1);
     });
+    expect(proxy.plotRayFan).not.toHaveBeenCalled();
+    expect(store.getState().rayFanData).toEqual(rayFanData);
   });
 
   it("handleFieldChange: sets plotLoading true then clears it after plot", async () => {
-    let resolveProxy!: (v: string) => void;
+    let resolveProxy!: (value: RayFanData) => void;
     const proxy = makeMockProxy({
-      plotRayFan: jest.fn().mockImplementation(
-        () => new Promise<string>((resolve) => { resolveProxy = resolve; })
+      getRayFanData: jest.fn().mockImplementation(
+        () => new Promise<RayFanData>((resolve) => { resolveProxy = resolve; })
       ),
     });
     renderComponent(testSpecs, testModel, store, proxy);
     const fieldSelect = screen.getByLabelText("Field");
-    void userEvent.selectOptions(fieldSelect, "1");
+    const selectPromise = userEvent.selectOptions(fieldSelect, "1");
 
     await waitFor(() => expect(store.getState().plotLoading).toBe(true));
-    resolveProxy("base64");
+    resolveProxy(rayFanData);
+    await selectPromise;
     await waitFor(() => expect(store.getState().plotLoading).toBe(false));
   });
 
@@ -392,7 +427,7 @@ describe("AnalysisPlotContainer", () => {
   it("onError called when proxy throws on field change", async () => {
     const onError = jest.fn();
     const proxy = makeMockProxy({
-      plotRayFan: jest.fn().mockRejectedValue(new Error("fail")),
+      getRayFanData: jest.fn().mockRejectedValue(new Error("fail")),
     });
     renderComponent(testSpecs, testModel, store, proxy, onError);
     const fieldSelect = screen.getByLabelText("Field");
@@ -436,11 +471,25 @@ describe("AnalysisPlotContainer", () => {
 
   it("plotLoading cleared in finally even on error", async () => {
     const proxy = makeMockProxy({
-      plotRayFan: jest.fn().mockRejectedValue(new Error("fail")),
+      getRayFanData: jest.fn().mockRejectedValue(new Error("fail")),
     });
     renderComponent(testSpecs, testModel, store, proxy);
     const fieldSelect = screen.getByLabelText("Field");
     await userEvent.selectOptions(fieldSelect, "1");
     await waitFor(() => expect(store.getState().plotLoading).toBe(false));
+  });
+
+  it("loads rayFan through getRayFanData and stores chart data instead of a PNG", async () => {
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const fieldSelect = screen.getByLabelText("Field");
+    await userEvent.selectOptions(fieldSelect, "1");
+
+    await waitFor(() => {
+      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1);
+    });
+    expect(proxy.plotRayFan).not.toHaveBeenCalled();
+    expect(store.getState().rayFanData).toEqual(rayFanData);
+    expect(store.getState().plotImage).toBeUndefined();
   });
 });

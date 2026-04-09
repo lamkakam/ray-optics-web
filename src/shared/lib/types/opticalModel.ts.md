@@ -13,6 +13,9 @@ Defines all core TypeScript domain types for the optical model, including system
 - `DiffractionPsfData`: typed diffraction PSF axes and intensity grid returned by the Pyodide worker for the ECharts-based Diffraction PSF view.
 - `WavefrontMapData`: typed wavefront-map axes and OPD grid returned by the Pyodide worker for the ECharts-based Wavefront Map view.
 - `GeoPsfData`: typed geometric-PSF point cloud returned by the Pyodide worker for the ECharts-based Geometric PSF view.
+- `RayFanAxisData`: paired `x/y` samples for one transverse ray-fan axis.
+- `RayFanSeriesData`: one wavelength-group ray-fan payload returned by the Pyodide worker, carrying both `Tangential` and `Sagittal` curves.
+- `RayFanData`: `RayFanSeriesData[]` for all wavelengths of the selected field.
 - `OpdFanAxisData`: paired `x/y` samples for one OPD fan axis.
 - `OpdFanSeriesData`: one wavelength-group OPD fan payload returned by the Pyodide worker, carrying both `Tangential` and `Sagittal` curves.
 - `OpdFanData`: `OpdFanSeriesData[]` for all wavelengths of the selected field.
@@ -45,6 +48,7 @@ Defines all core TypeScript domain types for the optical model, including system
 - `DiffractionPsfData.z` is a rectangular intensity grid whose outer dimension matches `x.length` and inner dimension matches `y.length`.
 - `WavefrontMapData.z` is a rectangular OPD grid whose outer dimension matches `y.length` and inner dimension matches `x.length`; missing samples are represented as `undefined` on the TypeScript side.
 - `GeoPsfData.x` and `GeoPsfData.y` are paired image-plane point coordinates and should be consumed as a point cloud.
+- `RayFanData` is grouped by wavelength. Each series entry exposes both `Tangential` and `Sagittal` curves under the same `wvlIdx` so the UI can render two synchronized subplots with a shared legend and correct wavelength labels.
 - `OpdFanData` is grouped by wavelength. Each series entry exposes both `Tangential` and `Sagittal` curves under the same `wvlIdx` so the UI can render two synchronized subplots with a shared legend.
 - `SpotDiagramData` is grouped by wavelength. Each series entry exposes its own `wvlIdx` so the UI can label series with the actual wavelength value from the optical model rather than the wavelength index.
 

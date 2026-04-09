@@ -125,6 +125,8 @@ export function LensEditor({
       lensLayoutImageStore.getState().setLayoutImage(layout);
       if (plotResult?.kind === "wavefrontMap") {
         analysisPlotStore.getState().setWavefrontMapData(plotResult.wavefrontMapData);
+      } else if (plotResult?.kind === "rayFan") {
+        analysisPlotStore.getState().setRayFanData(plotResult.rayFanData);
       } else if (plotResult?.kind === "opdFan") {
         analysisPlotStore.getState().setOpdFanData(plotResult.opdFanData);
       } else if (plotResult?.kind === "spotDiagram") {

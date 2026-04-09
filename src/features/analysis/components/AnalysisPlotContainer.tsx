@@ -30,6 +30,7 @@ export function AnalysisPlotContainer({
 
   const store = useAnalysisPlotStore();
   const plotImage = useStore(store, (s) => s.plotImage);
+  const rayFanData = useStore(store, (s) => s.rayFanData);
   const opdFanData = useStore(store, (s) => s.opdFanData);
   const spotDiagramData = useStore(store, (s) => s.spotDiagramData);
   const geoPsfData = useStore(store, (s) => s.geoPsfData);
@@ -65,6 +66,11 @@ export function AnalysisPlotContainer({
 
       if (result.kind === "diffractionPSF") {
         store.getState().setDiffractionPsfData(result.diffractionPsfData);
+        return;
+      }
+
+      if (result.kind === "rayFan") {
+        store.getState().setRayFanData(result.rayFanData);
         return;
       }
 
@@ -124,6 +130,7 @@ export function AnalysisPlotContainer({
       selectedWavelengthIndex={selectedWavelengthIndex}
       selectedPlotType={selectedPlotType}
       plotImageBase64={plotImage}
+      rayFanData={rayFanData}
       opdFanData={opdFanData}
       spotDiagramData={spotDiagramData}
       geoPsfData={geoPsfData}

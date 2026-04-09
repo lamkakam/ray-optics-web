@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container component that owns all analysis-plot logic: derives field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds either a base64 image, typed OPD-fan data, typed spot-diagram point data, typed geometric-PSF point data, typed wavefront-map grid data, or typed diffraction-PSF grid data depending on the selected plot type.
+Container component that owns all analysis-plot logic: derives field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds either a base64 image, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed geometric-PSF point data, typed wavefront-map grid data, or typed diffraction-PSF grid data depending on the selected plot type.
 
 ## Props
 
@@ -23,7 +23,7 @@ interface AnalysisPlotContainerProps {
 ## State
 
 All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
-- `plotImage`, `opdFanData`, `spotDiagramData`, `geoPsfData`, `wavefrontMapData`, `diffractionPsfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
+- `plotImage`, `rayFanData`, `opdFanData`, `spotDiagramData`, `geoPsfData`, `wavefrontMapData`, `diffractionPsfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
 
 `committedOpticalModel` is read from `lensStore` via `useLensEditorStore` and `useStore(lensStore, (s) => s.committedOpticalModel)`.
 
@@ -46,12 +46,13 @@ Shared async helper used by all three change handlers:
 2. Sets `plotLoading(true)`.
 3. Calls `loadAnalysisPlot({ plotType, proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex })`.
 4. If the result kind is `"diffractionPSF"`, stores the payload with `setDiffractionPsfData(...)`.
-5. If the result kind is `"opdFan"`, stores the payload with `setOpdFanData(...)`.
-6. If the result kind is `"spotDiagram"`, stores the payload with `setSpotDiagramData(...)`.
-7. If the result kind is `"geoPSF"`, stores the payload with `setGeoPsfData(...)`.
-8. If the result kind is `"wavefrontMap"`, stores the payload with `setWavefrontMapData(...)`.
-9. If the result kind is `"image"`, stores the base64 PNG with `setPlotImage(...)`.
-10. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
+5. If the result kind is `"rayFan"`, stores the payload with `setRayFanData(...)`.
+6. If the result kind is `"opdFan"`, stores the payload with `setOpdFanData(...)`.
+7. If the result kind is `"spotDiagram"`, stores the payload with `setSpotDiagramData(...)`.
+8. If the result kind is `"geoPSF"`, stores the payload with `setGeoPsfData(...)`.
+9. If the result kind is `"wavefrontMap"`, stores the payload with `setWavefrontMapData(...)`.
+10. If the result kind is `"image"`, stores the base64 PNG with `setPlotImage(...)`.
+11. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
 
 ### `handleFieldChange(value)`
 

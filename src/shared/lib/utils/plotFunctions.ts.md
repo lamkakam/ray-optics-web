@@ -19,6 +19,7 @@ A unified function signature for all plot types. `fieldIndex` and `wavelengthInd
 ```ts
 type AnalysisPlotLoadResult =
   | { kind: "image"; image: string }
+  | { kind: "rayFan"; rayFanData: RayFanData }
   | { kind: "opdFan"; opdFanData: OpdFanData }
   | { kind: "spotDiagram"; spotDiagramData: SpotDiagramData }
   | { kind: "geoPSF"; geoPsfData: GeoPsfData }
@@ -79,19 +80,20 @@ async function loadAnalysisPlot({
 Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx`.
 
 - Returns `undefined` when `proxy` or `model` is missing.
+- Calls `proxy.getRayFanData(model, fi)` for `rayFan`.
 - Calls `proxy.getOpdFanData(model, fi)` for `opdFan`.
 - Calls `proxy.getSpotDiagramData(model, fi)` for `spotDiagram`.
 - Calls `proxy.getWavefrontData(...)` for `wavefrontMap`.
 - Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
 - Calls `proxy.getDiffractionPSFData(...)` for `diffractionPSF`.
-- Uses `buildPlotFn(...)` only for PNG-backed plot types and returns `{ kind: "image", image }`.
+- Uses `buildPlotFn(...)` only for PNG-backed plot types and returns `{ kind: "image", image }`. `rayFan` is intentionally not part of that PNG path anymore even though `buildPlotFn("rayFan", ...)` still exists for compatibility.
 - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
 
 ## Dependencies
 
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`
 - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
-- `DiffractionPsfData` and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`
+- `RayFanData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`
 - `PyodideWorkerAPI` (type-only) from `@/shared/hooks/usePyodide`
 
 ## Usages

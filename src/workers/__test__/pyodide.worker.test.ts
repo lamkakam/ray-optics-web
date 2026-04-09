@@ -7,6 +7,7 @@ import {
   _getFirstOrderData,
   _plotLensLayout,
   _plotRayFan,
+  _getRayFanData,
   _plotOpdFan,
   _getOpdFanData,
   _plotSpotDiagram,
@@ -91,6 +92,36 @@ describe("_plotRayFan", () => {
       return "";
     }, allSphericalOpticalModel, 0);
     expect(pythonScript).toContain("plot_ray_fan(0, _build_opm())");
+  });
+});
+
+describe("_getRayFanData", () => {
+  it("should build the model script, call json.dumps(get_ray_fan_data(...)) and return parsed data", async () => {
+    const mockData = [
+      {
+        fieldIdx: 1,
+        wvlIdx: 0,
+        Sagittal: {
+          x: [-1, 0, 1],
+          y: [-0.2, 0, 0.2],
+        },
+        Tangential: {
+          x: [-1, 0, 1],
+          y: [-0.1, 0, 0.1],
+        },
+        unitX: "",
+        unitY: "mm",
+      },
+    ];
+    let pythonScript = "";
+    const result = await _getRayFanData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 1);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_ray_fan_data(_build_opm(), 1))");
+    expect(result).toEqual(mockData);
   });
 });
 

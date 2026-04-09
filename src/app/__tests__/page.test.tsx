@@ -159,12 +159,29 @@ const mockGetWavefrontData: jest.Mock<Promise<WavefrontMapData>, [OpticalModel, 
     unitY: "",
     unitZ: "waves",
   });
+const mockGetRayFanData = jest.fn().mockResolvedValue([
+  {
+    fieldIdx: 0,
+    wvlIdx: 0,
+    Sagittal: {
+      x: [-1, 0, 1],
+      y: [-0.2, 0, 0.2],
+    },
+    Tangential: {
+      x: [-1, 0, 1],
+      y: [-0.1, 0, 0.1],
+    },
+    unitX: "",
+    unitY: "mm",
+  },
+]);
 
 const mockProxy = {
   init: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
   getFirstOrderData: mockGetFirstOrderData,
   plotLensLayout: mockPlotLensLayout,
   plotRayFan: mockPlotRayFan,
+  getRayFanData: mockGetRayFanData,
   plotOpdFan: mockPlotOpdFan,
   getOpdFanData: mockGetOpdFanData,
   plotSpotDiagram: mockPlotSpotDiagram,

@@ -12,6 +12,7 @@ interface PyodideWorkerAPI {
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
   plotLensLayout(opticalModel: OpticalModel): Promise<string>;
   plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>;
   plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
   getOpdFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>;
   plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
@@ -62,6 +63,7 @@ interface PyodideWorkerAPI {
 - `DiffractionPsfData` — imported from `shared/lib/types/opticalModel` (type only).
 - `WavefrontMapData` — imported from `shared/lib/types/opticalModel` (type only).
 - `GeoPsfData` — imported from `shared/lib/types/opticalModel` (type only).
+- `RayFanData` — imported from `shared/lib/types/opticalModel` (type only).
 - `OpdFanData` — imported from `shared/lib/types/opticalModel` (type only).
 - `SpotDiagramData` — imported from `shared/lib/types/opticalModel` (type only).
 - `ZernikeData` — imported from `shared/lib/types/zernikeData` (type only).

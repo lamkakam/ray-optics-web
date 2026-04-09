@@ -176,6 +176,22 @@ function makeProxy(): PyodideWorkerAPI {
     getFirstOrderData: jest.fn().mockResolvedValue({ efl: 100 }),
     plotLensLayout: jest.fn().mockResolvedValue("layout-base64"),
     plotRayFan: jest.fn().mockResolvedValue("plot-base64"),
+    getRayFanData: jest.fn().mockResolvedValue([
+      {
+        fieldIdx: 0,
+        wvlIdx: 0,
+        Sagittal: {
+          x: [-1, 0, 1],
+          y: [-0.2, 0, 0.2],
+        },
+        Tangential: {
+          x: [-1, 0, 1],
+          y: [-0.1, 0, 0.1],
+        },
+        unitX: "",
+        unitY: "mm",
+      },
+    ]),
     plotOpdFan: jest.fn().mockResolvedValue("plot-base64"),
     getOpdFanData: jest.fn().mockResolvedValue([]),
     plotSpotDiagram: jest.fn().mockResolvedValue("plot-base64"),

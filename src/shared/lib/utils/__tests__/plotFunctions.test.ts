@@ -1,5 +1,5 @@
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
-import type { OpdFanData, OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpdFanData, OpticalModel, RayFanData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { buildPlotFn, loadAnalysisPlot, PLOT_FUNCTION_BUILDERS } from "@/shared/lib/utils/plotFunctions";
 
@@ -30,6 +30,22 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     get3rdOrderSeidelData: jest.fn(),
     getZernikeCoefficients: jest.fn(),
     plotRayFan: jest.fn().mockResolvedValue("rayFan-result"),
+    getRayFanData: jest.fn().mockResolvedValue([
+      {
+        fieldIdx: 0,
+        wvlIdx: 1,
+        Sagittal: {
+          x: [-1, 0, 1],
+          y: [0.2, 0, -0.2],
+        },
+        Tangential: {
+          x: [-1, 0, 1],
+          y: [0.1, 0, -0.1],
+        },
+        unitX: "",
+        unitY: "mm",
+      },
+    ] satisfies RayFanData),
     plotOpdFan: jest.fn().mockResolvedValue("opdFan-result"),
     getOpdFanData: jest.fn().mockResolvedValue([
       {
@@ -92,7 +108,7 @@ describe("buildPlotFn", () => {
     }
   });
 
-  it("rayFan calls proxy.plotRayFan with model and fieldIndex", async () => {
+  it("rayFan builder still calls proxy.plotRayFan with model and fieldIndex", async () => {
     const proxy = makeMockProxy();
     const fn = buildPlotFn("rayFan", proxy, mockModel)!;
     await fn(1, 0);
@@ -176,6 +192,39 @@ describe("loadAnalysisPlot", () => {
     expect(result).toEqual({
       kind: "wavefrontMap",
       wavefrontMapData: undefined,
+    });
+  });
+
+  it("loads rayFan through getRayFanData", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "rayFan",
+      proxy,
+      model: mockModel,
+      fieldIndex: 1,
+      wavelengthIndex: 2,
+    });
+
+    expect(proxy.getRayFanData).toHaveBeenCalledWith(mockModel, 1);
+    expect(proxy.plotRayFan).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      kind: "rayFan",
+      rayFanData: [
+        {
+          fieldIdx: 0,
+          wvlIdx: 1,
+          Sagittal: {
+            x: [-1, 0, 1],
+            y: [0.2, 0, -0.2],
+          },
+          Tangential: {
+            x: [-1, 0, 1],
+            y: [0.1, 0, -0.1],
+          },
+          unitX: "",
+          unitY: "mm",
+        },
+      ],
     });
   });
 
