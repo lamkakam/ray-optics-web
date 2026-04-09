@@ -129,6 +129,15 @@ export interface WavefrontMapData {
   unitZ: string;
 }
 
+export interface GeoPsfData {
+  fieldIdx: number;
+  wvlIdx: number;
+  x: number[];
+  y: number[];
+  unitX: string;
+  unitY: string;
+}
+
 export interface AberrationTypeToLabel extends Record<string, ReactNode> {
   TSA: ReactNode;
   TCO: ReactNode;

@@ -13,6 +13,7 @@ import {
   _get3rdOrderSeidelData,
   _plotWavefrontMap,
   _getWavefrontData,
+  _getGeoPSFData,
   _plotGeoPSF,
   _plotDiffractionPSF,
   _getDiffractionPSFData,
@@ -252,6 +253,28 @@ describe("_plotGeoPSF", () => {
       return "";
     }, allSphericalOpticalModel, 1, 2, 32);
     expect(pythonScript).toContain("plot_geo_psf(1, 2, _build_opm(), num_rays=32)");
+  });
+});
+
+describe("_getGeoPSFData", () => {
+  it("should build the model script, call json.dumps(get_geo_psf_data(...)) and return parsed data", async () => {
+    const mockData = {
+      fieldIdx: 1,
+      wvlIdx: 2,
+      x: [-0.02, 0, 0.02],
+      y: [-0.01, 0, 0.01],
+      unitX: "mm",
+      unitY: "mm",
+    };
+    let pythonScript = "";
+    const result = await _getGeoPSFData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 1, 2);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_geo_psf_data(_build_opm(), 1, 2, num_rays=64))");
+    expect(result).toEqual(mockData);
   });
 });
 

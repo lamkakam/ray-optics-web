@@ -1,11 +1,12 @@
 import React from "react";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
+import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
 import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapChart";
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { DiffractionPsfData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 
 export type PlotType = "rayFan"
   | "opdFan"
@@ -25,6 +26,7 @@ interface AnalysisPlotViewProps {
   readonly selectedWavelengthIndex: number;
   readonly selectedPlotType: PlotType;
   readonly plotImageBase64?: string;
+  readonly geoPsfData?: GeoPsfData;
   readonly diffractionPsfData?: DiffractionPsfData;
   readonly wavefrontMapData?: WavefrontMapData;
   readonly loading?: boolean;
@@ -89,6 +91,7 @@ export function AnalysisPlotView({
   selectedWavelengthIndex,
   selectedPlotType,
   plotImageBase64,
+  geoPsfData,
   diffractionPsfData,
   wavefrontMapData,
   loading,
@@ -156,6 +159,11 @@ export function AnalysisPlotView({
         ) : selectedPlotType === "wavefrontMap" && wavefrontMapData ? (
           <WavefrontMapChart
             wavefrontMapData={wavefrontMapData}
+            autoHeight={autoHeight}
+          />
+        ) : selectedPlotType === "geoPSF" && geoPsfData ? (
+          <GeoPsfChart
+            geoPsfData={geoPsfData}
             autoHeight={autoHeight}
           />
         ) : selectedPlotType === "diffractionPSF" && diffractionPsfData ? (

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `wavefrontMap` delegates to `WavefrontMapChart`, and `diffractionPSF` delegates to `DiffractionPsfChart`. Both charts own their Apache ECharts lifecycles and render from worker-provided typed data instead of PNGs.
+Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types render a base64 PNG image; `wavefrontMap`, `geoPSF`, and `diffractionPSF` delegate to dedicated ECharts chart components that render worker-provided typed data instead of PNGs.
 
 ## PlotType
 
@@ -47,6 +47,7 @@ interface AnalysisPlotViewProps {
 | `selectedWavelengthIndex` | `number` | Yes | Currently selected wavelength index |
 | `selectedPlotType` | `PlotType` | Yes | Currently selected plot type |
 | `plotImageBase64` | `string` | No | Base64 PNG data for the plot image |
+| `geoPsfData` | `GeoPsfData` | No | Geometric PSF point-cloud data used only when `selectedPlotType === "geoPSF"` |
 | `diffractionPsfData` | `DiffractionPsfData` | No | Diffraction PSF axis/intensity data used only when `selectedPlotType === "diffractionPSF"` |
 | `wavefrontMapData` | `WavefrontMapData` | No | Wavefront-map axis/OPD data used only when `selectedPlotType === "wavefrontMap"` |
 | `loading` | `boolean` | No | Shows "Loading plot..." placeholder when `true` |
@@ -76,6 +77,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
 - PNG-based plots use a plain `<img>` tag with a data URI (not `next/image`).
 - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
+- `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.
 - `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.
 - `AnalysisPlotView` never imports Apache ECharts directly; chart-specific measurement, debounce, and option-building logic live in dedicated feature-local modules.
 

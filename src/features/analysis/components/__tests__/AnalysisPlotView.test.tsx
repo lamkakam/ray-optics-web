@@ -22,12 +22,23 @@ const mockWavefrontMapChart = jest.fn(({ autoHeight }: { readonly autoHeight?: b
   />
 ));
 
+const mockGeoPsfChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="geo-psf-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
   DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
 }));
 
 jest.mock("@/features/analysis/components/WavefrontMapChart", () => ({
   WavefrontMapChart: (props: { readonly autoHeight?: boolean }) => mockWavefrontMapChart(props),
+}));
+
+jest.mock("@/features/analysis/components/GeoPsfChart", () => ({
+  GeoPsfChart: (props: { readonly autoHeight?: boolean }) => mockGeoPsfChart(props),
 }));
 
 describe("AnalysisPlotView", () => {
@@ -173,6 +184,29 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByTestId("wavefront-map-chart")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
     expect(mockWavefrontMapChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+    }));
+  });
+
+  it("renders a geometric PSF chart instead of an image", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="geoPSF"
+        geoPsfData={{
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [-0.02, 0, 0.02],
+          y: [-0.01, 0, 0.01],
+          unitX: "mm",
+          unitY: "mm",
+        }}
+      />
+    );
+
+    expect(screen.getByTestId("geo-psf-chart")).toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
+    expect(mockGeoPsfChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
     }));
   });

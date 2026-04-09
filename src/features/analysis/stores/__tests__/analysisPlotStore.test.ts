@@ -41,6 +41,11 @@ describe("analysisPlotStore", () => {
       expect(store.getState().diffractionPsfData).toBeUndefined();
     });
 
+    it("has geoPsfData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().geoPsfData).toBeUndefined();
+    });
+
     it("has wavefrontMapData as undefined", () => {
       const store = makeStore();
       expect(store.getState().wavefrontMapData).toBeUndefined();
@@ -87,8 +92,65 @@ describe("analysisPlotStore", () => {
       store.getState().setPlotImage("base64data");
 
       expect(store.getState().plotImage).toBe("base64data");
+      expect(store.getState().geoPsfData).toBeUndefined();
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
+    });
+  });
+
+  describe("setGeoPsfData", () => {
+    it("sets geoPsfData", () => {
+      const store = makeStore();
+      store.getState().setGeoPsfData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-0.02, 0, 0.02],
+        y: [-0.01, 0, 0.01],
+        unitX: "mm",
+        unitY: "mm",
+      });
+
+      expect(store.getState().geoPsfData).toBeDefined();
+      expect(store.getState().geoPsfData?.fieldIdx).toBe(1);
+    });
+
+    it("clears plot image, diffraction data, and wavefront data when setting geo PSF data", () => {
+      const store = makeStore();
+      store.getState().setPlotImage("base64data");
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[undefined]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setGeoPsfData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-0.02, 0, 0.02],
+        y: [-0.01, 0, 0.01],
+        unitX: "mm",
+        unitY: "mm",
+      });
+
+      expect(store.getState().plotImage).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().geoPsfData?.fieldIdx).toBe(1);
     });
   });
 

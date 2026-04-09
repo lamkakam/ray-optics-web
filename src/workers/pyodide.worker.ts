@@ -1,5 +1,5 @@
 import { expose } from "comlink";
-import { type DiffractionPsfData, type OpticalModel, type SeidelData, type FocusingResult, type WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import { type DiffractionPsfData, type GeoPsfData, type OpticalModel, type SeidelData, type FocusingResult, type WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import { type ZernikeData, type ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import { type RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
@@ -54,7 +54,7 @@ from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 from rayoptics.elem.profiles import XToroid, YToroid
 
-from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_wavefront_data, get_diffraction_psf_data
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_wavefront_data, get_geo_psf_data, get_diffraction_psf_data
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
     plot_ray_fan,
@@ -189,6 +189,22 @@ export async function _plotGeoPSF(
   numRays: number = 64,
 ): Promise<string> {
   return (await runPython(buildScript(opticalModel, (opm) => `plot_geo_psf(${fieldIndex}, ${wavelengthIndex}, ${opm}, num_rays=${numRays})`))) as string;
+}
+
+export async function _getGeoPSFData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 64,
+): Promise<GeoPsfData> {
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(get_geo_psf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}))`,
+    ),
+  )) as string;
+  return JSON.parse(json) as GeoPsfData;
 }
 
 export async function _plotDiffractionPSF(
@@ -344,6 +360,15 @@ export async function plotGeoPSF(
   return await _plotGeoPSF(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
 }
 
+export async function getGeoPSFData(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 128,
+): Promise<GeoPsfData> {
+  return await _getGeoPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
+}
+
 export async function plotDiffractionPSF(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -409,6 +434,7 @@ expose({
   plotSurfaceBySurface3rdOrderAberr,
   plotWavefrontMap,
   getWavefrontData,
+  getGeoPSFData,
   plotGeoPSF,
   plotDiffractionPSF,
   getDiffractionPSFData,

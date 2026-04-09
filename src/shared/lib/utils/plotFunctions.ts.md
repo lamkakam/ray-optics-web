@@ -19,6 +19,7 @@ A unified function signature for all plot types. `fieldIndex` and `wavelengthInd
 ```ts
 type AnalysisPlotLoadResult =
   | { kind: "image"; image: string }
+  | { kind: "geoPSF"; geoPsfData: GeoPsfData }
   | { kind: "wavefrontMap"; wavefrontMapData: WavefrontMapData }
   | { kind: "diffractionPSF"; diffractionPsfData: DiffractionPsfData };
 ```
@@ -77,6 +78,7 @@ Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx
 
 - Returns `undefined` when `proxy` or `model` is missing.
 - Calls `proxy.getWavefrontData(...)` for `wavefrontMap`.
+- Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
 - Calls `proxy.getDiffractionPSFData(...)` for `diffractionPSF`.
 - Uses `buildPlotFn(...)` for all PNG-backed plot types and returns `{ kind: "image", image }`.
 - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.

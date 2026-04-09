@@ -57,14 +57,18 @@ function makeProxy(): PyodideWorkerAPI {
     plotSpotDiagram: jest.fn(),
     plotSurfaceBySurface3rdOrderAberr: jest.fn(),
     plotWavefrontMap: jest.fn(),
+    getWavefrontData: jest.fn(),
+    getGeoPSFData: jest.fn(),
     plotGeoPSF: jest.fn(),
     plotDiffractionPSF: jest.fn(),
+    getDiffractionPSFData: jest.fn(),
     get3rdOrderSeidelData: jest.fn(),
     getZernikeCoefficients: jest.fn(),
     focusByMonoRmsSpot: jest.fn(),
     focusByMonoStrehl: jest.fn(),
     focusByPolyRmsSpot: jest.fn(),
     focusByPolyStrehl: jest.fn(),
+    getAllGlassCatalogsData: jest.fn(),
   } as unknown as PyodideWorkerAPI;
 }
 

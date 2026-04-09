@@ -6,7 +6,7 @@ import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPl
 import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { DiffractionPsfData, OpticalModel, OpticalSpecs, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpticalModel, OpticalSpecs, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -90,6 +90,15 @@ const wavefrontMapData: WavefrontMapData = {
   unitZ: "waves",
 };
 
+const geoPsfData: GeoPsfData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  x: [-0.02, 0, 0.02],
+  y: [-0.01, 0, 0.01],
+  unitX: "mm",
+  unitY: "mm",
+};
+
 function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorkerAPI {
   return {
     init: jest.fn(),
@@ -101,6 +110,7 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
     plotSurfaceBySurface3rdOrderAberr: jest.fn<Promise<string>, [OpticalModel]>().mockResolvedValue("base64-3rdorder"),
     plotWavefrontMap: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-wavefront"),
     getWavefrontData: jest.fn<Promise<WavefrontMapData>, [OpticalModel, number, number]>().mockResolvedValue(wavefrontMapData),
+    getGeoPSFData: jest.fn<Promise<GeoPsfData>, [OpticalModel, number, number]>().mockResolvedValue(geoPsfData),
     plotGeoPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-geopsf"),
     plotDiffractionPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-diffrpsf"),
     getDiffractionPSFData: jest.fn<Promise<DiffractionPsfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionPsfData),
@@ -251,6 +261,21 @@ describe("AnalysisPlotContainer", () => {
     await waitFor(() => {
       expect(proxy.plotSpotDiagram).toHaveBeenCalledWith(testModel, 0);
     });
+  });
+
+  it("loads geoPSF through getGeoPSFData and stores chart data instead of a PNG", async () => {
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "geoPSF");
+
+    expect(store.getState().selectedPlotType).toBe("geoPSF");
+    await waitFor(() => {
+      expect(proxy.getGeoPSFData).toHaveBeenCalledWith(testModel, 0, 0);
+    });
+    expect(proxy.plotGeoPSF).not.toHaveBeenCalled();
+    expect(store.getState().geoPsfData).toEqual(geoPsfData);
+    expect(store.getState().plotImage).toBeUndefined();
   });
 
   it("handlePlotTypeChange: no-op when proxy is undefined", async () => {

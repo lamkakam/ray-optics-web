@@ -35,6 +35,14 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     plotSurfaceBySurface3rdOrderAberr: jest.fn().mockResolvedValue("s3rdOrder-result"),
     plotWavefrontMap: jest.fn().mockResolvedValue("wavefront-result"),
     getWavefrontData: jest.fn(),
+    getGeoPSFData: jest.fn().mockResolvedValue({
+      fieldIdx: 0,
+      wvlIdx: 1,
+      x: [-0.01, 0.01],
+      y: [-0.02, 0.02],
+      unitX: "mm",
+      unitY: "mm",
+    }),
     plotGeoPSF: jest.fn().mockResolvedValue("geoPSF-result"),
     plotDiffractionPSF: jest.fn().mockResolvedValue("diffractionPSF-result"),
     getDiffractionPSFData: jest.fn(),
@@ -163,7 +171,7 @@ describe("loadAnalysisPlot", () => {
     });
   });
 
-  it("loads PNG-backed plots through the generic builder path", async () => {
+  it("loads geoPSF through getGeoPSFData", async () => {
     const proxy = makeMockProxy();
     const result = await loadAnalysisPlot({
       plotType: "geoPSF",
@@ -173,10 +181,18 @@ describe("loadAnalysisPlot", () => {
       wavelengthIndex: 1,
     });
 
-    expect(proxy.plotGeoPSF).toHaveBeenCalledWith(mockModel, 0, 1);
+    expect(proxy.getGeoPSFData).toHaveBeenCalledWith(mockModel, 0, 1);
+    expect(proxy.plotGeoPSF).not.toHaveBeenCalled();
     expect(result).toEqual({
-      kind: "image",
-      image: "geoPSF-result",
+      kind: "geoPSF",
+      geoPsfData: {
+        fieldIdx: 0,
+        wvlIdx: 1,
+        x: [-0.01, 0.01],
+        y: [-0.02, 0.02],
+        unitX: "mm",
+        unitY: "mm",
+      },
     });
   });
 });

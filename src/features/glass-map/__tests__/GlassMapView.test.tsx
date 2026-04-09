@@ -69,6 +69,14 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
       unitY: "",
       unitZ: "waves",
     }),
+    getGeoPSFData: jest.fn().mockResolvedValue({
+      fieldIdx: 0,
+      wvlIdx: 0,
+      x: [0],
+      y: [0],
+      unitX: "mm",
+      unitY: "mm",
+    }),
     plotGeoPSF: jest.fn(),
     plotDiffractionPSF: jest.fn(),
     getDiffractionPSFData: jest.fn().mockResolvedValue({

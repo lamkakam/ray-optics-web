@@ -125,6 +125,8 @@ export function LensEditor({
       lensLayoutImageStore.getState().setLayoutImage(layout);
       if (plotResult?.kind === "wavefrontMap") {
         analysisPlotStore.getState().setWavefrontMapData(plotResult.wavefrontMapData);
+      } else if (plotResult?.kind === "geoPSF") {
+        analysisPlotStore.getState().setGeoPsfData(plotResult.geoPsfData);
       } else if (plotResult?.kind === "diffractionPSF") {
         analysisPlotStore.getState().setDiffractionPsfData(plotResult.diffractionPsfData);
       } else {

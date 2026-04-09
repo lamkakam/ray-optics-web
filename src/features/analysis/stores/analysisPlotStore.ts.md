@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Zustand store for managing the analysis plot panel state. Holds the current plot image, wavefront-map data, or diffraction-PSF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
+Zustand store for managing the analysis plot panel state. Holds the current plot image, geometric-PSF data, wavefront-map data, or diffraction-PSF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
 
 ## Exports
 
@@ -14,6 +14,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 | Field | Type | Default |
 |---|---|---|
 | `plotImage` | `string \| undefined` | `undefined` |
+| `geoPsfData` | `GeoPsfData \| undefined` | `undefined` |
 | `diffractionPsfData` | `DiffractionPsfData \| undefined` | `undefined` |
 | `wavefrontMapData` | `WavefrontMapData \| undefined` | `undefined` |
 | `plotLoading` | `boolean` | `false` |
@@ -24,6 +25,7 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 ## Actions
 
 - `setPlotImage(image)` — sets or clears the base64 PNG plot image and clears `diffractionPsfData` plus `wavefrontMapData`.
+- `setGeoPsfData(data)` — sets or clears the geometric PSF chart payload and clears `plotImage`, `diffractionPsfData`, and `wavefrontMapData`.
 - `setDiffractionPsfData(data)` — sets or clears the diffraction PSF chart payload and clears `plotImage` plus `wavefrontMapData`.
 - `setWavefrontMapData(data)` — sets or clears the wavefront-map chart payload and clears `plotImage` plus `diffractionPsfData`.
 - `setPlotLoading(loading)` — sets the loading flag.
@@ -35,4 +37,4 @@ Zustand store for managing the analysis plot panel state. Holds the current plot
 
 - `create`, `StateCreator` from `zustand`.
 - `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`.
-- `DiffractionPsfData` and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`.
+- `GeoPsfData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/shared/lib/types/opticalModel`.
