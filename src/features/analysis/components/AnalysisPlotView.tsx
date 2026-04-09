@@ -30,10 +30,14 @@ const DIFFRACTION_PSF_DEBOUNCE_MS = 500;
 const DIFFRACTION_GRID_TOP = 16;
 const DIFFRACTION_GRID_BOTTOM = 56;
 const DIFFRACTION_GRID_LEFT = 72;
+const DIFFRACTION_GRID_RIGHT = 160;
 const DIFFRACTION_VISUAL_MAP_WIDTH = 20;
-const DIFFRACTION_VISUAL_MAP_GAP = 12;
-const DIFFRACTION_RIGHT_PADDING = 8;
+const DIFFRACTION_RIGHT_PADDING = 16;
 const PRECISION = 2;
+
+function formatDiffractionPsfIntensity(log10Intensity: number): string {
+  return Number(10 ** log10Intensity).toPrecision(PRECISION);
+}
 
 export type PlotType = "rayFan"
   | "opdFan"
@@ -109,7 +113,11 @@ const PLOT_TYPE_OPTIONS: SelectOption[] = (Object.keys(PLOT_TYPE_CONFIG) as Plot
   (key) => ({ value: key, label: PLOT_TYPE_CONFIG[key].label }),
 );
 
-function buildDiffractionPsfOption(diffractionPsfData: DiffractionPsfData, chartSize: number) {
+function buildDiffractionPsfOption(
+  diffractionPsfData: DiffractionPsfData,
+  chartWidth: number,
+  chartHeight: number,
+) {
   let axisExtent = 0;
   let maxClippedIntensity = DIFFRACTION_PSF_MIN_INTENSITY;
   const scatterData: number[][] = [];
@@ -132,12 +140,10 @@ function buildDiffractionPsfOption(diffractionPsfData: DiffractionPsfData, chart
   const normalizedAxisExtent = axisExtent > 0 ? axisExtent : 1;
   const visualMapMin = Math.log10(DIFFRACTION_PSF_MIN_INTENSITY);
   const visualMapMax = Math.max(visualMapMin, Math.log10(maxClippedIntensity));
-  const maxPlotWidth = chartSize
+  const maxPlotWidth = chartWidth
     - DIFFRACTION_GRID_LEFT
-    - DIFFRACTION_VISUAL_MAP_WIDTH
-    - DIFFRACTION_VISUAL_MAP_GAP
-    - DIFFRACTION_RIGHT_PADDING;
-  const maxPlotHeight = chartSize - DIFFRACTION_GRID_TOP - DIFFRACTION_GRID_BOTTOM;
+    - DIFFRACTION_GRID_RIGHT;
+  const maxPlotHeight = chartHeight - DIFFRACTION_GRID_TOP - DIFFRACTION_GRID_BOTTOM;
   const plotSide = Math.max(0, Math.min(maxPlotWidth, maxPlotHeight));
   const extraHorizontalSpace = Math.max(0, maxPlotWidth - plotSide);
 
@@ -151,6 +157,7 @@ function buildDiffractionPsfOption(diffractionPsfData: DiffractionPsfData, chart
     },
     grid: {
       left: DIFFRACTION_GRID_LEFT + extraHorizontalSpace / 2,
+      right: DIFFRACTION_GRID_RIGHT - extraHorizontalSpace / 2,
       top: DIFFRACTION_GRID_TOP,
       width: plotSide,
       height: plotSide,
@@ -179,9 +186,10 @@ function buildDiffractionPsfOption(diffractionPsfData: DiffractionPsfData, chart
       calculable: false,
       orient: "vertical",
       right: DIFFRACTION_RIGHT_PADDING,
-      top: DIFFRACTION_GRID_TOP + plotSide / 2 - 76,
+      top: "middle",
       itemWidth: DIFFRACTION_VISUAL_MAP_WIDTH,
       itemHeight: 152,
+      formatter: formatDiffractionPsfIntensity,
       inRange: {
         color: DIFFRACTION_PSF_COLOR_PALETTE,
       },
@@ -206,10 +214,12 @@ function DiffractionPsfChart({
 }) {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(undefined);
-  const [squareSize, setSquareSize] = useState<number | undefined>(undefined);
+  const [chartDimensions, setChartDimensions] = useState<{ width: number; height: number } | undefined>(undefined);
   const chartOption = useMemo(
-    () => squareSize === undefined ? undefined : buildDiffractionPsfOption(diffractionPsfData, squareSize),
-    [diffractionPsfData, squareSize],
+    () => chartDimensions === undefined
+      ? undefined
+      : buildDiffractionPsfOption(diffractionPsfData, chartDimensions.width, chartDimensions.height),
+    [chartDimensions, diffractionPsfData],
   );
 
   useEffect(() => {
@@ -217,22 +227,25 @@ function DiffractionPsfChart({
     const parent = container?.parentElement;
     if (!container || !parent) return undefined;
 
-    const updateSquareSize = () => {
+    const updateChartDimensions = () => {
       const nextWidth = parent.clientWidth;
       const nextHeight = parent.clientHeight;
-      const nextSize = autoHeight || nextHeight <= 0
+      const nextChartHeight = autoHeight || nextHeight <= 0
         ? nextWidth
         : Math.min(nextWidth, nextHeight);
 
-      if (nextSize > 0) {
-        setSquareSize(nextSize);
+      if (nextWidth > 0 && nextChartHeight > 0) {
+        setChartDimensions({
+          width: nextWidth,
+          height: nextChartHeight,
+        });
       }
     };
 
-    updateSquareSize();
+    updateChartDimensions();
 
     const resizeObserver = new ResizeObserver(() => {
-      updateSquareSize();
+      updateChartDimensions();
     });
     resizeObserver.observe(parent);
 
@@ -277,7 +290,9 @@ function DiffractionPsfChart({
       data-testid="diffraction-psf-chart"
       aria-label="Diffraction PSF plot"
       className={autoHeight ? "max-w-full shrink-0" : "max-w-full shrink-0"}
-      style={squareSize === undefined ? undefined : { width: `${squareSize}px`, height: `${squareSize}px` }}
+      style={chartDimensions === undefined
+        ? undefined
+        : { width: `${chartDimensions.width}px`, height: `${chartDimensions.height}px` }}
     />
   );
 }

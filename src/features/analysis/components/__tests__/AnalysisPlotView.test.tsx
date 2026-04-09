@@ -191,7 +191,7 @@ describe("AnalysisPlotView", () => {
     expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
   });
 
-  it("keeps the diffraction PSF chart container square based on the parent dimensions", () => {
+  it("uses the full available chart width when the parent is wider than tall", () => {
     render(
       <div style={{ width: "600px", height: "400px" }}>
         <AnalysisPlotView
@@ -214,7 +214,7 @@ describe("AnalysisPlotView", () => {
       );
     });
 
-    expect(chart).toHaveStyle({ width: "400px", height: "400px" });
+    expect(chart).toHaveStyle({ width: "600px", height: "400px" });
   });
 
   it("debounces diffraction PSF chart rendering by 500ms and uses the expected ECharts option", () => {
@@ -255,8 +255,14 @@ describe("AnalysisPlotView", () => {
     expect(option.yAxis.min).toBe(-0.02);
     expect(option.yAxis.max).toBe("0.020");
     expect(option.grid.width).toBe(option.grid.height);
+    expect(option.grid.width).toBe(168);
+    expect(option.grid.right).toBe(160);
     expect(option.series[0].type).toBe("scatter");
     expect(option.visualMap.min).toBeCloseTo(Math.log10(5e-4));
+    expect(option.visualMap.right).toBe(16);
+    expect(option.visualMap.top).toBe("middle");
+    expect(option.visualMap.formatter(Math.log10(1))).toBe("1.0");
+    expect(option.visualMap.formatter(Math.log10(5e-4))).toBe("0.00050");
     expect(option.visualMap.inRange.color).toEqual([
       "#313695",
       "#4575b4",
