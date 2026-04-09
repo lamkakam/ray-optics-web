@@ -87,4 +87,37 @@ describe("buildOpdFanChartOption", () => {
       expect.objectContaining({ name: "waves" }),
     ]);
   });
+
+  it("rounds axis min and max values to 2 significant figures", () => {
+    const option = buildOpdFanChartOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: {
+            x: [-0.01234, 0.5678],
+            y: [-0.9876, 0.04321],
+          },
+          Tangential: {
+            x: [-0.004567, 1.234],
+            y: [-0.0009876, 0.006789],
+          },
+          unitX: "",
+          unitY: "waves",
+        },
+      ],
+      ["486.1 nm"],
+      800,
+      400,
+    );
+
+    expect(option.xAxis).toEqual([
+      expect.objectContaining({ min: -0.012, max: 1.2 }),
+      expect.objectContaining({ min: -0.012, max: 1.2 }),
+    ]);
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: -0.99, max: 0.043 }),
+      expect.objectContaining({ min: -0.99, max: 0.043 }),
+    ]);
+  });
 });

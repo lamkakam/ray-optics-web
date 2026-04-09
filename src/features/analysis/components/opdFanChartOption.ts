@@ -14,6 +14,7 @@ const OPD_FAN_GRID_RIGHT = 28;
 const OPD_FAN_GRID_GAP = 48;
 const OPD_FAN_TITLE_TOP = 40;
 const OPD_FAN_LEGEND_TOP = 12;
+const OPD_FAN_AXIS_PRECISION = 2;
 
 function parseWavelengthLabel(wavelengthLabel: string | undefined): number | undefined {
   if (wavelengthLabel === undefined) return undefined;
@@ -101,7 +102,12 @@ function getAxisExtents(opdFanData: OpdFanData): { readonly xMin: number; readon
     yMax = 1e-6;
   }
 
-  return { xMin, xMax, yMin, yMax };
+  return {
+    xMin: Number(xMin.toPrecision(OPD_FAN_AXIS_PRECISION)),
+    xMax: Number(xMax.toPrecision(OPD_FAN_AXIS_PRECISION)),
+    yMin: Number(yMin.toPrecision(OPD_FAN_AXIS_PRECISION)),
+    yMax: Number(yMax.toPrecision(OPD_FAN_AXIS_PRECISION)),
+  };
 }
 
 export function buildOpdFanChartOption(
