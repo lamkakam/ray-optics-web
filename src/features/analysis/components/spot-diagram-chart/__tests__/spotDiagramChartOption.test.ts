@@ -134,18 +134,42 @@ describe("buildSpotDiagramOption", () => {
       max: 0.03,
       name: "x (mm)",
       nameTextStyle: { color: globalTokens.echarts.text.light },
-      axisLabel: { color: globalTokens.echarts.text.light },
     }));
     expect(option.yAxis).toEqual(expect.objectContaining({
       min: -0.03,
       max: 0.03,
       name: "y (mm)",
       nameTextStyle: { color: globalTokens.echarts.text.light },
-      axisLabel: { color: globalTokens.echarts.text.light },
     }));
+    expect(option.xAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.yAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.xAxis.axisLabel.formatter(5e-5)).toBe("5e-5");
+    expect(option.yAxis.axisLabel.formatter(-5e-5)).toBe("-5e-5");
     expect(option.grid).toEqual(expect.objectContaining({
       width: 196,
       height: 196,
     }));
+  });
+
+  it("clamps sub-1e-9 rounded axis extents to 0", () => {
+    const option = buildSpotDiagramOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [-1e-10, 0, 1e-10],
+          y: [-1e-10, 0, 1e-10],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ],
+      ["486.1 nm"],
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual(expect.objectContaining({ min: 0, max: 0 }));
+    expect(option.yAxis).toEqual(expect.objectContaining({ min: 0, max: 0 }));
   });
 });

@@ -2,6 +2,7 @@ import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
+import { formatPlotValue } from "@/features/analysis/shared/formatPlotValue";
 import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([BarChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
@@ -20,33 +21,25 @@ type TooltipFormatterParam = {
   readonly marker?: string;
 };
 
-function formatToTwoSignificantFigures(value: number) {
-  if (!Number.isFinite(value) || value === 0) {
-    return "0";
-  }
-
-  return Number(value.toPrecision(2)).toString();
-}
-
 function formatTooltipValue(value: TooltipFormatterParam["value"]) {
   if (typeof value === "number") {
-    return formatToTwoSignificantFigures(value);
+    return formatPlotValue(value);
   }
 
   if (typeof value === "string") {
     const parsedValue = Number(value);
-    return Number.isNaN(parsedValue) ? value : formatToTwoSignificantFigures(parsedValue);
+    return Number.isNaN(parsedValue) ? value : formatPlotValue(parsedValue);
   }
 
   if (Array.isArray(value)) {
     const lastValue = value.at(-1);
     if (typeof lastValue === "number") {
-      return formatToTwoSignificantFigures(lastValue);
+      return formatPlotValue(lastValue);
     }
 
     if (typeof lastValue === "string") {
       const parsedValue = Number(lastValue);
-      return Number.isNaN(parsedValue) ? lastValue : formatToTwoSignificantFigures(parsedValue);
+      return Number.isNaN(parsedValue) ? lastValue : formatPlotValue(parsedValue);
     }
   }
 
@@ -120,7 +113,7 @@ export function buildSurfaceBySurface3rdOrderChartOption(
       },
       axisLabel: {
         color: textColor,
-        formatter: (value: number) => formatToTwoSignificantFigures(value),
+        formatter: (value: number) => formatPlotValue(value),
       },
     },
     series: surfaceBySurface3rdOrderData.aberrTypes.map((aberrationType, rowIndex) => ({

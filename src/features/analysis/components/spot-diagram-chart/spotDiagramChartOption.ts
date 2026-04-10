@@ -3,6 +3,7 @@ import { ScatterChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
+import { formatPlotValue } from "@/features/analysis/shared/formatPlotValue";
 import type { SpotDiagramData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([ScatterChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
@@ -13,8 +14,6 @@ const SPOT_DIAGRAM_GRID_LEFT = 72;
 const SPOT_DIAGRAM_GRID_RIGHT = 32;
 const SPOT_DIAGRAM_POINT_SIZE = 5;
 const SPOT_DIAGRAM_POINT_OPACITY = 0.8;
-const SPOT_DIAGRAM_PRECISION = 2;
-
 function parseWavelengthLabel(wavelengthLabel: string | undefined): number | undefined {
   if (wavelengthLabel === undefined) return undefined;
 
@@ -120,8 +119,8 @@ export function buildSpotDiagramOption(
     },
     xAxis: {
       type: "value",
-      min: -Number(axisExtent.toPrecision(SPOT_DIAGRAM_PRECISION)),
-      max: Number(axisExtent.toPrecision(SPOT_DIAGRAM_PRECISION)),
+      min: Number(formatPlotValue(-axisExtent)),
+      max: Number(formatPlotValue(axisExtent)),
       name: spotDiagramData[0]?.unitX ? `x (${spotDiagramData[0].unitX})` : "x",
       nameLocation: "middle",
       nameGap: 30,
@@ -130,12 +129,13 @@ export function buildSpotDiagramOption(
       },
       axisLabel: {
         color: textColor,
+        formatter: (value: number) => formatPlotValue(value),
       },
     },
     yAxis: {
       type: "value",
-      min: -Number(axisExtent.toPrecision(SPOT_DIAGRAM_PRECISION)),
-      max: Number(axisExtent.toPrecision(SPOT_DIAGRAM_PRECISION)),
+      min: Number(formatPlotValue(-axisExtent)),
+      max: Number(formatPlotValue(axisExtent)),
       name: spotDiagramData[0]?.unitY ? `y (${spotDiagramData[0].unitY})` : "y",
       nameLocation: "middle",
       nameGap: 36,
@@ -144,6 +144,7 @@ export function buildSpotDiagramOption(
       },
       axisLabel: {
         color: textColor,
+        formatter: (value: number) => formatPlotValue(value),
       },
     },
     series: spotDiagramData.map((seriesData, index) => ({

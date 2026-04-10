@@ -95,6 +95,16 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
         },
       ]),
     ).toContain("990");
+    expect(
+      formatter([
+        {
+          axisValueLabel: "S1",
+          seriesName: "S-I",
+          value: 1e-8,
+          marker: "<span></span>",
+        },
+      ]),
+    ).toContain("1e-8");
   });
 
   it("uses a larger category gap between surface groups", () => {
@@ -141,5 +151,6 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     expect(formatter(0.1234)).toBe("0.12");
     expect(formatter(12.34)).toBe("12");
     expect(formatter(987.6)).toBe("990");
+    expect(formatter(1e-8)).toBe("1e-8");
   });
 });

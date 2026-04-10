@@ -40,8 +40,9 @@ describe("diffractionPsfChartOption", () => {
   };
 
   it("formats the visual map labels back to intensity values", () => {
-    expect(formatDiffractionPsfIntensity(Math.log10(1))).toBe("1.0");
-    expect(formatDiffractionPsfIntensity(Math.log10(5e-4))).toBe("0.00050");
+    expect(formatDiffractionPsfIntensity(Math.log10(1))).toBe("1");
+    expect(formatDiffractionPsfIntensity(Math.log10(5e-4))).toBe("0.0005");
+    expect(formatDiffractionPsfIntensity(-8)).toBe("1e-8");
   });
 
   it("builds the expected scatter option for the diffraction PSF chart", () => {
@@ -59,11 +60,11 @@ describe("diffractionPsfChartOption", () => {
       },
     });
     expect(option.xAxis.min).toBe(-0.02);
-    expect(option.xAxis.max).toBe("0.020");
+    expect(option.xAxis.max).toBe(0.02);
     expect(option.xAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
     expect(option.xAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
     expect(option.yAxis.min).toBe(-0.02);
-    expect(option.yAxis.max).toBe("0.020");
+    expect(option.yAxis.max).toBe(0.02);
     expect(option.yAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
     expect(option.yAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
     expect(option.grid.width).toBe(option.grid.height);
@@ -77,8 +78,9 @@ describe("diffractionPsfChartOption", () => {
     expect(option.visualMap.right).toBe(16);
     expect(option.visualMap.top).toBe(16);
     expect(option.visualMap.textStyle).toEqual({ color: globalTokens.echarts.text.light });
-    expect(option.visualMap.formatter(Math.log10(1))).toBe("1.0");
-    expect(option.visualMap.formatter(Math.log10(5e-4))).toBe("0.00050");
+    expect(option.visualMap.text).toEqual(["1", "0.0005"]);
+    expect(option.visualMap.formatter(Math.log10(1))).toBe("1");
+    expect(option.visualMap.formatter(Math.log10(5e-4))).toBe("0.0005");
     expect(option.visualMap.inRange.color).toEqual([
       "#313695",
       "#4575b4",
@@ -105,5 +107,23 @@ describe("diffractionPsfChartOption", () => {
     expect(option.visualMap.itemHeight).toBe(64);
     expect(option.visualMap.itemHeight).toBeLessThanOrEqual(96);
     expect(option.visualMap.top).toBe(16);
+  });
+
+  it("clamps sub-1e-9 rounded axis extents to 0", () => {
+    const option = buildDiffractionPsfOption(
+      {
+        ...diffractionPsfData,
+        x: [-1e-10, 0, 1e-10],
+        y: [-1e-10, 0, 1e-10],
+      },
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis.min).toBe(0);
+    expect(option.xAxis.max).toBe(0);
+    expect(option.yAxis.min).toBe(0);
+    expect(option.yAxis.max).toBe(0);
   });
 });

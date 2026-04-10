@@ -29,8 +29,10 @@ function buildWavefrontMapOption(
 - Flattens the worker `x`/`y`/`z` grid into heatmap cells `[xIndex, yIndex, z]`.
 - Skips `undefined` wavefront cells so missing OPD samples remain blank in the chart.
 - Uses a linear `visualMap` scale directly from the worker values; it does not log-transform the wavefront data.
-- Formats both x- and y-axis tick labels to 2 significant figures.
+- Formats both x- and y-axis tick labels with the shared analysis plot-value formatter.
+- Formats tooltip wavefront values and `visualMap` tick labels with the shared analysis plot-value formatter, clamping magnitudes smaller than `1e-7` to `0`.
 - Applies the caller-provided `textColor` to axis names, axis tick labels, and `visualMap` text so chart chrome follows the active light/dark theme.
-- Enables a crosshair `axisPointer` in the tooltip and formats the x/y pointer labels to 2 significant figures.
+- Shows explicit `visualMap` endpoint labels as highest/lowest values in `waves`.
+- Enables a crosshair `axisPointer` in the tooltip and formats the x/y pointer labels with the shared analysis plot-value formatter.
 - Keeps the plot area square by deriving `grid.width` and `grid.height` from the available measured space.
 - Reuses the shared 11-color analysis heatmap palette.

@@ -2,6 +2,7 @@ import * as echarts from "echarts/core";
 import { ScatterChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
+import { formatPlotValue } from "@/features/analysis/shared/formatPlotValue";
 import type { GeoPsfData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([ScatterChart, GridComponent, TooltipComponent, CanvasRenderer]);
@@ -13,8 +14,6 @@ const GEO_PSF_GRID_RIGHT = 32;
 const GEO_PSF_POINT_SIZE = 1;
 const GEO_PSF_POINT_COLOR = "#5470c6";
 const GEO_PSF_POINT_OPACITY = 0.65;
-const PRECISION = 2;
-
 export function buildGeoPsfOption(
   geoPsfData: GeoPsfData,
   chartWidth: number,
@@ -55,8 +54,8 @@ export function buildGeoPsfOption(
     },
     xAxis: {
       type: "value",
-      min: -normalizedAxisExtent.toPrecision(PRECISION),
-      max: normalizedAxisExtent.toPrecision(PRECISION),
+      min: Number(formatPlotValue(-normalizedAxisExtent)),
+      max: Number(formatPlotValue(normalizedAxisExtent)),
       name: geoPsfData.unitX ? `x (${geoPsfData.unitX})` : "x",
       nameLocation: "middle",
       nameGap: 30,
@@ -65,12 +64,13 @@ export function buildGeoPsfOption(
       },
       axisLabel: {
         color: textColor,
+        formatter: (value: number) => formatPlotValue(value),
       },
     },
     yAxis: {
       type: "value",
-      min: -normalizedAxisExtent.toPrecision(PRECISION),
-      max: normalizedAxisExtent.toPrecision(PRECISION),
+      min: Number(formatPlotValue(-normalizedAxisExtent)),
+      max: Number(formatPlotValue(normalizedAxisExtent)),
       name: geoPsfData.unitY ? `y (${geoPsfData.unitY})` : "y",
       nameLocation: "middle",
       nameGap: 36,
@@ -79,6 +79,7 @@ export function buildGeoPsfOption(
       },
       axisLabel: {
         color: textColor,
+        formatter: (value: number) => formatPlotValue(value),
       },
     },
     series: [

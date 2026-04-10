@@ -3,6 +3,7 @@ import { HeatmapChart } from "echarts/charts";
 import { GridComponent, TooltipComponent, VisualMapComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
+import { formatPlotValue } from "@/features/analysis/shared/formatPlotValue";
 import type { WavefrontMapData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([HeatmapChart, GridComponent, TooltipComponent, VisualMapComponent, CanvasRenderer]);
@@ -14,14 +15,19 @@ const WAVEFRONT_GRID_RIGHT = 160;
 const WAVEFRONT_VISUAL_MAP_WIDTH = 20;
 const WAVEFRONT_VISUAL_MAP_MAX_HEIGHT = 152;
 const WAVEFRONT_RIGHT_PADDING = 16;
-const VALUE_PRECISION = 2;
+const WAVEFRONT_VISUAL_MAP_UNIT = "waves";
 
 function formatWavefrontValue(value: number): string {
-  return value.toFixed(VALUE_PRECISION);
+  return formatPlotValue(value);
 }
 
-function formatWavefrontAxisTick(value: number): string {
-  return Number(value).toPrecision(VALUE_PRECISION);
+function formatWavefrontAxisTick(value: number | string): string {
+  if (typeof value === "string") {
+    const parsedValue = Number(value);
+    return Number.isNaN(parsedValue) ? value : formatPlotValue(parsedValue);
+  }
+
+  return formatPlotValue(value);
 }
 
 function formatWavefrontAxisPointerLabel(params: {
@@ -67,6 +73,8 @@ export function buildWavefrontMapOption(
       chartHeight - (WAVEFRONT_GRID_TOP * 2),
     ),
   );
+  const visualMapMaxLabel = `${formatWavefrontValue(normalizedMax)} ${WAVEFRONT_VISUAL_MAP_UNIT}`;
+  const visualMapMinLabel = `${formatWavefrontValue(normalizedMin)} ${WAVEFRONT_VISUAL_MAP_UNIT}`;
 
   return {
     animation: false,
@@ -126,7 +134,7 @@ export function buildWavefrontMapOption(
       itemWidth: WAVEFRONT_VISUAL_MAP_WIDTH,
       itemHeight: visualMapHeight,
       formatter: formatWavefrontValue,
-      text: [wavefrontMapData.unitZ, ""],
+      text: [visualMapMaxLabel, visualMapMinLabel],
       textStyle: {
         color: textColor,
       },

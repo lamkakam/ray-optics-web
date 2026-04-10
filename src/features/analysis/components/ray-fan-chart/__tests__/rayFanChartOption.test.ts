@@ -110,25 +110,61 @@ describe("buildRayFanChartOption", () => {
       expect.objectContaining({
         name: "Pupil Radius (Relative)",
         nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
       }),
       expect.objectContaining({
         name: "Pupil Radius (Relative)",
         nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
       }),
     ]);
     expect(option.yAxis).toEqual([
       expect.objectContaining({
         name: "Transverse Aberr. (mm)",
         nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
       }),
       expect.objectContaining({
         name: "",
         nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
       }),
+    ]);
+    expect(option.xAxis[0]?.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.xAxis[1]?.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.yAxis[0]?.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.yAxis[1]?.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.xAxis[0]?.axisLabel?.formatter(5e-5)).toBe("5e-5");
+    expect(option.yAxis[0]?.axisLabel?.formatter(-5e-5)).toBe("-5e-5");
+  });
+
+  it("clamps sub-1e-9 rounded axis extents to 0", () => {
+    const option = buildRayFanChartOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: {
+            x: [-1e-10, 1e-10],
+            y: [-1e-10, 1e-10],
+          },
+          Tangential: {
+            x: [-1e-10, 1e-10],
+            y: [-1e-10, 1e-10],
+          },
+          unitX: "",
+          unitY: "mm",
+        },
+      ],
+      ["486.1 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual([
+      expect.objectContaining({ min: 0, max: 0 }),
+      expect.objectContaining({ min: 0, max: 0 }),
+    ]);
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: 0, max: 0 }),
+      expect.objectContaining({ min: 0, max: 0 }),
     ]);
   });
 });
