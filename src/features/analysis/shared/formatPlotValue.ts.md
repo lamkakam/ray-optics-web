@@ -16,6 +16,7 @@ function formatPlotValue(value: number): string
   - non-finite values
   - exact zero
   - any value whose absolute magnitude is smaller than `1e-7`
+- Formats values whose absolute magnitude is at least `1e-7` but smaller than `1e-4` in scientific notation.
 - Formats all other values to 2 significant figures.
 - Normalizes the formatted output through `Number(...).toString()`, so insignificant trailing zeroes are removed.
 - Can be reused for numeric axis bounds by wrapping the return value with `Number(...)`.

@@ -110,26 +110,28 @@ describe("buildRayFanChartOption", () => {
       expect.objectContaining({
         name: "Pupil Radius (Relative)",
         nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
       }),
       expect.objectContaining({
         name: "Pupil Radius (Relative)",
         nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
       }),
     ]);
     expect(option.yAxis).toEqual([
       expect.objectContaining({
         name: "Transverse Aberr. (mm)",
         nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
       }),
       expect.objectContaining({
         name: "",
         nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
       }),
     ]);
+    expect(option.xAxis[0]?.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.xAxis[1]?.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.yAxis[0]?.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.yAxis[1]?.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.xAxis[0]?.axisLabel?.formatter(5e-5)).toBe("5e-5");
+    expect(option.yAxis[0]?.axisLabel?.formatter(-5e-5)).toBe("-5e-5");
   });
 
   it("clamps tiny rounded axis extents to 0", () => {

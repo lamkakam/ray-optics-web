@@ -129,6 +129,7 @@ export function buildSpotDiagramOption(
       },
       axisLabel: {
         color: textColor,
+        formatter: (value: number) => formatPlotValue(value),
       },
     },
     yAxis: {
@@ -143,6 +144,7 @@ export function buildSpotDiagramOption(
       },
       axisLabel: {
         color: textColor,
+        formatter: (value: number) => formatPlotValue(value),
       },
     },
     series: spotDiagramData.map((seriesData, index) => ({

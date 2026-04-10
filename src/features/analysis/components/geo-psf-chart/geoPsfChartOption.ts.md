@@ -28,6 +28,7 @@ function buildGeoPsfOption(
 - Pairs worker `x` and `y` arrays into scatter points `[x, y]`.
 - Uses a symmetric axis extent across both axes based on the largest absolute `x` or `y` value.
 - Applies the caller-provided `textColor` to axis names and axis tick labels so chart chrome follows the active light/dark theme.
+- Formats visible x- and y-axis tick labels with the shared analysis plot-value formatter, including scientific notation for magnitudes between `1e-7` and `1e-4`.
 - Keeps the plot area square by deriving `grid.width` and `grid.height` from the available measured space.
 - Does not include a `visualMap`.
 - Sets `tooltip.trigger` to `"none"` and `axisPointer.type` to `"cross"`.

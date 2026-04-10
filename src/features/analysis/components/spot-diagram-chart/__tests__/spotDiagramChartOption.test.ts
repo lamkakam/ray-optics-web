@@ -134,15 +134,17 @@ describe("buildSpotDiagramOption", () => {
       max: 0.03,
       name: "x (mm)",
       nameTextStyle: { color: globalTokens.echarts.text.light },
-      axisLabel: { color: globalTokens.echarts.text.light },
     }));
     expect(option.yAxis).toEqual(expect.objectContaining({
       min: -0.03,
       max: 0.03,
       name: "y (mm)",
       nameTextStyle: { color: globalTokens.echarts.text.light },
-      axisLabel: { color: globalTokens.echarts.text.light },
     }));
+    expect(option.xAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.yAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
+    expect(option.xAxis.axisLabel.formatter(5e-5)).toBe("5e-5");
+    expect(option.yAxis.axisLabel.formatter(-5e-5)).toBe("-5e-5");
     expect(option.grid).toEqual(expect.objectContaining({
       width: 196,
       height: 196,

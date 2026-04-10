@@ -189,6 +189,7 @@ export function buildRayFanChartOption(
         },
         axisLabel: {
           color: textColor,
+          formatter: (value: number) => formatPlotValue(value),
         },
       },
       {
@@ -204,6 +205,7 @@ export function buildRayFanChartOption(
         },
         axisLabel: {
           color: textColor,
+          formatter: (value: number) => formatPlotValue(value),
         },
       },
     ],
@@ -221,6 +223,7 @@ export function buildRayFanChartOption(
         },
         axisLabel: {
           color: textColor,
+          formatter: (value: number) => formatPlotValue(value),
         },
       },
       {
@@ -236,6 +239,7 @@ export function buildRayFanChartOption(
         },
         axisLabel: {
           color: textColor,
+          formatter: (value: number) => formatPlotValue(value),
         },
       },
     ],

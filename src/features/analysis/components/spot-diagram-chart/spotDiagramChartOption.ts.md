@@ -25,6 +25,7 @@ function buildSpotDiagramOption(
 - Parses numeric wavelength values from the labels and maps them to the nearest entry in `ANALYSIS_HEATMAP_COLOR_PALETTE`, using lower wavelengths for cooler colors and higher wavelengths for warmer colors.
 - Falls back to a stable palette index when a series label does not contain a numeric wavelength.
 - Uses symmetric axis extents across both axes based on the largest absolute `x` or `y` value across all wavelength groups, then rounds them with the shared analysis plot-value formatter before assigning them to ECharts.
+- Formats visible x- and y-axis tick labels with the shared analysis plot-value formatter, including scientific notation for magnitudes between `1e-7` and `1e-4`.
 - Keeps the plot area square by deriving `grid.width` and `grid.height` from the available measured space.
 - Does not include a `visualMap`.
 - Sets `tooltip.trigger` to `"none"` and `axisPointer.type` to `"cross"`.

@@ -64,6 +64,7 @@ export function buildGeoPsfOption(
       },
       axisLabel: {
         color: textColor,
+        formatter: (value: number) => formatPlotValue(value),
       },
     },
     yAxis: {
@@ -78,6 +79,7 @@ export function buildGeoPsfOption(
       },
       axisLabel: {
         color: textColor,
+        formatter: (value: number) => formatPlotValue(value),
       },
     },
     series: [
