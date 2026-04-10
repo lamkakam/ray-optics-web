@@ -104,7 +104,7 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
           marker: "<span></span>",
         },
       ]),
-    ).toContain("0");
+    ).toContain("1e-8");
   });
 
   it("uses a larger category gap between surface groups", () => {
@@ -151,6 +151,6 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     expect(formatter(0.1234)).toBe("0.12");
     expect(formatter(12.34)).toBe("12");
     expect(formatter(987.6)).toBe("990");
-    expect(formatter(1e-8)).toBe("0");
+    expect(formatter(1e-8)).toBe("1e-8");
   });
 });

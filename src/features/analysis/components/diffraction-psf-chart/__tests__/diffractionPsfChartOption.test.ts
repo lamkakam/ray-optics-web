@@ -42,7 +42,7 @@ describe("diffractionPsfChartOption", () => {
   it("formats the visual map labels back to intensity values", () => {
     expect(formatDiffractionPsfIntensity(Math.log10(1))).toBe("1");
     expect(formatDiffractionPsfIntensity(Math.log10(5e-4))).toBe("0.0005");
-    expect(formatDiffractionPsfIntensity(-8)).toBe("0");
+    expect(formatDiffractionPsfIntensity(-8)).toBe("1e-8");
   });
 
   it("builds the expected scatter option for the diffraction PSF chart", () => {
@@ -109,12 +109,12 @@ describe("diffractionPsfChartOption", () => {
     expect(option.visualMap.top).toBe(16);
   });
 
-  it("clamps tiny rounded axis extents to 0", () => {
+  it("clamps sub-1e-9 rounded axis extents to 0", () => {
     const option = buildDiffractionPsfOption(
       {
         ...diffractionPsfData,
-        x: [-1e-8, 0, 1e-8],
-        y: [-1e-8, 0, 1e-8],
+        x: [-1e-10, 0, 1e-10],
+        y: [-1e-10, 0, 1e-10],
       },
       400,
       400,

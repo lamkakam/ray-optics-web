@@ -48,7 +48,7 @@ describe("wavefrontMapChartOption", () => {
     expect(option.tooltip.axisPointer.label.formatter({
       axisDimension: "x",
       value: 1e-8,
-    })).toBe("0");
+    })).toBe("1e-8");
     expect(option.tooltip.axisPointer.label.formatter({
       axisDimension: "y",
       value: 12.34,
@@ -60,7 +60,7 @@ describe("wavefrontMapChartOption", () => {
     expect(option.xAxis.axisLabel.color).toBe(globalTokens.echarts.text.light);
     expect(option.xAxis.axisLabel.formatter("-1")).toBe("-1");
     expect(option.xAxis.axisLabel.formatter(0.1234)).toBe("0.12");
-    expect(option.xAxis.axisLabel.formatter(1e-8)).toBe("0");
+    expect(option.xAxis.axisLabel.formatter(1e-8)).toBe("1e-8");
     expect(option.yAxis.type).toBe("category");
     expect(option.yAxis.data).toEqual([-1, 0, 1]);
     expect(option.yAxis.name).toBe("y");
@@ -68,7 +68,7 @@ describe("wavefrontMapChartOption", () => {
     expect(option.yAxis.axisLabel.color).toBe(globalTokens.echarts.text.light);
     expect(option.yAxis.axisLabel.formatter("1")).toBe("1");
     expect(option.yAxis.axisLabel.formatter(0.1234)).toBe("0.12");
-    expect(option.yAxis.axisLabel.formatter(1e-8)).toBe("0");
+    expect(option.yAxis.axisLabel.formatter(1e-8)).toBe("1e-8");
     expect(option.visualMap.min).toBe(0.1);
     expect(option.visualMap.max).toBe(0.5);
     expect(option.visualMap.inRange.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE);
@@ -76,7 +76,7 @@ describe("wavefrontMapChartOption", () => {
     expect(option.visualMap.formatter(0.3)).toBe("0.3");
     expect(option.visualMap.text).toEqual(["0.5 waves", "0.1 waves"]);
     expect(option.tooltip.formatter({ data: [1, 1, 0.456] })).toBe("0.46");
-    expect(option.tooltip.formatter({ data: [1, 1, 1e-8] })).toBe("0");
+    expect(option.tooltip.formatter({ data: [1, 1, 1e-8] })).toBe("1e-8");
     expect(option.series[0].type).toBe("heatmap");
     expect(option.series[0].data).toContainEqual([0, 1, 0.2]);
     expect(option.series[0].data).toContainEqual([2, 1, 0.4]);

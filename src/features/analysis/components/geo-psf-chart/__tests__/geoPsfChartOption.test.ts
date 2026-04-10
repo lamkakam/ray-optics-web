@@ -61,12 +61,12 @@ describe("geoPsfChartOption", () => {
     ]);
   });
 
-  it("clamps tiny rounded axis extents to 0", () => {
+  it("clamps sub-1e-9 rounded axis extents to 0", () => {
     const option = buildGeoPsfOption(
       {
         ...geoPsfData,
-        x: [-1e-8, 0, 1e-8],
-        y: [-1e-8, 0, 1e-8],
+        x: [-1e-10, 0, 1e-10],
+        y: [-1e-10, 0, 1e-10],
       },
       400,
       400,

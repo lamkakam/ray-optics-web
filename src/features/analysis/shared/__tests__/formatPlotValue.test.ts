@@ -13,19 +13,21 @@ describe("formatPlotValue", () => {
     expect(formatPlotValue(Number.NEGATIVE_INFINITY)).toBe("0");
   });
 
-  it("clamps values smaller than 1e-7 to 0", () => {
-    expect(formatPlotValue(1e-8)).toBe("0");
-    expect(formatPlotValue(-1e-8)).toBe("0");
+  it("clamps values smaller than 1e-9 to 0", () => {
+    expect(formatPlotValue(1e-10)).toBe("0");
+    expect(formatPlotValue(-1e-10)).toBe("0");
   });
 
-  it("uses scientific notation for values between 1e-7 and 1e-4", () => {
+  it("uses scientific notation for values between 1e-9 and 1e-4", () => {
+    expect(formatPlotValue(1e-8)).toBe("1e-8");
+    expect(formatPlotValue(-1e-8)).toBe("-1e-8");
     expect(formatPlotValue(5e-5)).toBe("5e-5");
     expect(formatPlotValue(-5e-5)).toBe("-5e-5");
   });
 
-  it("keeps the 1e-7 boundary value formatable", () => {
-    expect(formatPlotValue(1e-7)).toBe("1e-7");
-    expect(formatPlotValue(-1e-7)).toBe("-1e-7");
+  it("keeps the 1e-9 boundary value formatable", () => {
+    expect(formatPlotValue(1e-9)).toBe("1e-9");
+    expect(formatPlotValue(-1e-9)).toBe("-1e-9");
   });
 
   it("keeps the 1e-4 boundary out of scientific notation", () => {

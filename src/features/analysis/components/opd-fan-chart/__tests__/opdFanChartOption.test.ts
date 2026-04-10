@@ -131,7 +131,7 @@ describe("buildOpdFanChartOption", () => {
     const yAxisLabel1 = option.yAxis[1]?.axisLabel as unknown as { formatter: (value: number) => string };
     expect(yAxisLabel0.formatter(0.1234)).toBe("0.12");
     expect(yAxisLabel1.formatter(12.34)).toBe("12");
-    expect(yAxisLabel0.formatter(1e-8)).toBe("0");
+    expect(yAxisLabel0.formatter(1e-8)).toBe("1e-8");
   });
 
   it("rounds axis min and max values to 2 significant figures", () => {
@@ -168,19 +168,19 @@ describe("buildOpdFanChartOption", () => {
     ]);
   });
 
-  it("clamps tiny rounded axis extents to 0", () => {
+  it("clamps sub-1e-9 rounded axis extents to 0", () => {
     const option = buildOpdFanChartOption(
       [
         {
           fieldIdx: 0,
           wvlIdx: 0,
           Sagittal: {
-            x: [-1e-8, 1e-8],
-            y: [-1e-8, 1e-8],
+            x: [-1e-10, 1e-10],
+            y: [-1e-10, 1e-10],
           },
           Tangential: {
-            x: [-1e-8, 1e-8],
-            y: [-1e-8, 1e-8],
+            x: [-1e-10, 1e-10],
+            y: [-1e-10, 1e-10],
           },
           unitX: "",
           unitY: "waves",
