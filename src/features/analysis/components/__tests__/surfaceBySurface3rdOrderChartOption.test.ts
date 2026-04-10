@@ -133,7 +133,7 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
       globalTokens.echarts.text.light,
     );
 
-    expect(option.title.textStyle).toEqual({ color: globalTokens.echarts.text.light });
+    expect("title" in option).toBe(false);
     expect(option.yAxis.nameTextStyle).toEqual({ color: globalTokens.echarts.text.light });
     expect(option.yAxis.axisLabel).toEqual(expect.objectContaining({ color: globalTokens.echarts.text.light }));
     const formatter = option.yAxis.axisLabel.formatter as (value: number) => string;

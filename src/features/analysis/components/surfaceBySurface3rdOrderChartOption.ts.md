@@ -17,7 +17,7 @@ function buildSurfaceBySurface3rdOrderChartOption(
 
 ## Key Behaviors
 
-- Registers the required ECharts modules: `BarChart`, `GridComponent`, `LegendComponent`, `TitleComponent`, `TooltipComponent`, and `CanvasRenderer`.
+- Registers the required ECharts modules: `BarChart`, `GridComponent`, `LegendComponent`, `TooltipComponent`, and `CanvasRenderer`.
 - Uses the incoming `aberrTypes` array directly as:
   - the legend data
   - the series names
@@ -29,5 +29,6 @@ function buildSurfaceBySurface3rdOrderChartOption(
   - a custom formatter that renders tooltip numeric values with 2 significant figures
 - Increases the inter-category spacing between grouped bar clusters by setting each bar series `barCategoryGap` to `"60%"`.
 - Formats y-axis tick labels with at most 2 significant figures.
-- Applies the caller-provided `textColor` to the chart title, legend labels, axis names, and axis tick labels so chart chrome follows the active light/dark theme.
+- Does not render a chart title.
+- Applies the caller-provided `textColor` to legend labels, axis names, and axis tick labels so chart chrome follows the active light/dark theme.
 - Does not override series colors, so ECharts’ default palette supplies the distinct legend/series colors.

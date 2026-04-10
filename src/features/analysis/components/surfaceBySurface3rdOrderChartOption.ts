@@ -1,17 +1,16 @@
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
-import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from "echarts/components";
+import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
 
-echarts.use([BarChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer]);
+echarts.use([BarChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
 
 const SURFACE_BY_SURFACE_GRID_TOP = 72;
 const SURFACE_BY_SURFACE_GRID_BOTTOM = 56;
 const SURFACE_BY_SURFACE_GRID_LEFT = 64;
 const SURFACE_BY_SURFACE_GRID_RIGHT = 28;
 const SURFACE_BY_SURFACE_LEGEND_TOP = 12;
-const SURFACE_BY_SURFACE_TITLE_TOP = 40;
 const SURFACE_BY_SURFACE_BAR_CATEGORY_GAP = "60%";
 
 type TooltipFormatterParam = {
@@ -85,14 +84,6 @@ export function buildSurfaceBySurface3rdOrderChartOption(
     legend: {
       top: SURFACE_BY_SURFACE_LEGEND_TOP,
       data: surfaceBySurface3rdOrderData.aberrTypes,
-      textStyle: {
-        color: textColor,
-      },
-    },
-    title: {
-      text: "Surface by Surface 3rd Order Aberrations",
-      top: SURFACE_BY_SURFACE_TITLE_TOP,
-      left: chartWidth / 2,
       textStyle: {
         color: textColor,
       },
