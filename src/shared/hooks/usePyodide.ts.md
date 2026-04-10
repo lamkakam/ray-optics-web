@@ -12,12 +12,18 @@ interface PyodideWorkerAPI {
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
   plotLensLayout(opticalModel: OpticalModel): Promise<string>;
   plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>;
   plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  getOpdFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>;
   plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
+  getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>;
   plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string>;
   plotWavefrontMap(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
+  getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<WavefrontMapData>;
+  getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<GeoPsfData>;
   plotGeoPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
   plotDiffractionPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
+  getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<DiffractionPsfData>;
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
   getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>;
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
@@ -54,6 +60,12 @@ interface PyodideWorkerAPI {
 - `comlink.wrap` — wraps the worker as a typed async proxy.
 - `OpticalModel` — imported from `shared/lib/types/opticalModel` (type only).
 - `SeidelData` — imported from `shared/lib/types/opticalModel` (type only).
+- `DiffractionPsfData` — imported from `shared/lib/types/opticalModel` (type only).
+- `WavefrontMapData` — imported from `shared/lib/types/opticalModel` (type only).
+- `GeoPsfData` — imported from `shared/lib/types/opticalModel` (type only).
+- `RayFanData` — imported from `shared/lib/types/opticalModel` (type only).
+- `OpdFanData` — imported from `shared/lib/types/opticalModel` (type only).
+- `SpotDiagramData` — imported from `shared/lib/types/opticalModel` (type only).
 - `ZernikeData` — imported from `shared/lib/types/zernikeData` (type only).
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
 

@@ -16,7 +16,7 @@ import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/Lens
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/glassCatalogsResource";
-import type { OpticalModel, SeidelData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, OpticalModel, SeidelData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData } from "@/shared/lib/types/zernikeData";
@@ -71,9 +71,47 @@ const mockPlotRayFan: jest.Mock<Promise<string>, [OpticalModel, number]> = jest
 const mockPlotOpdFan: jest.Mock<Promise<string>, [OpticalModel, number]> = jest
   .fn()
   .mockResolvedValue("base64-opdfan");
+const mockGetOpdFanData: jest.Mock<Promise<{
+  fieldIdx: number;
+  wvlIdx: number;
+  Sagittal: { x: number[]; y: number[] };
+  Tangential: { x: number[]; y: number[] };
+  unitX: string;
+  unitY: string;
+}[]>, [OpticalModel, number]> = jest
+  .fn()
+  .mockResolvedValue([
+    {
+      fieldIdx: 0,
+      wvlIdx: 0,
+      Sagittal: { x: [-1, 0, 1], y: [-0.2, 0, 0.2] },
+      Tangential: { x: [-1, 0, 1], y: [-0.1, 0, 0.1] },
+      unitX: "",
+      unitY: "waves",
+    },
+  ]);
 const mockPlotSpotDiagram: jest.Mock<Promise<string>, [OpticalModel, number]> = jest
   .fn()
   .mockResolvedValue("base64-spot");
+const mockGetSpotDiagramData: jest.Mock<Promise<{
+  fieldIdx: number;
+  wvlIdx: number;
+  x: number[];
+  y: number[];
+  unitX: string;
+  unitY: string;
+}[]>, [OpticalModel, number]> = jest
+  .fn()
+  .mockResolvedValue([
+    {
+      fieldIdx: 0,
+      wvlIdx: 0,
+      x: [0],
+      y: [0],
+      unitX: "mm",
+      unitY: "mm",
+    },
+  ]);
 const mockPlotSurfaceBySurface3rdOrderAberr: jest.Mock<Promise<string>, [OpticalModel]> = jest
   .fn()
   .mockResolvedValue("base64-3rdorder");
@@ -89,18 +127,79 @@ const mockGet3rdOrderSeidelData: jest.Mock<Promise<SeidelData>, [OpticalModel]> 
     wavefront: { W040: 0.1, W131: 0.2, W222: 0.3, W220: 0.4, W311: 0.5 },
     curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
   });
+const mockGetDiffractionPSFData: jest.Mock<Promise<DiffractionPsfData>, [OpticalModel, number, number]> = jest
+  .fn()
+  .mockResolvedValue({
+    fieldIdx: 0,
+    wvlIdx: 0,
+    x: [-0.02, 0, 0.02],
+    y: [-0.02, 0, 0.02],
+    z: [
+      [0.001, 0.01, 0.001],
+      [0.01, 1, 0.01],
+      [0.001, 0.01, 0.001],
+    ],
+    unitX: "mm",
+    unitY: "mm",
+    unitZ: "",
+  });
+const mockGetWavefrontData: jest.Mock<Promise<WavefrontMapData>, [OpticalModel, number, number]> = jest
+  .fn()
+  .mockResolvedValue({
+    fieldIdx: 0,
+    wvlIdx: 0,
+    x: [-1, 0, 1],
+    y: [-1, 0, 1],
+    z: [
+      [undefined, 0.1, undefined],
+      [0.2, 0.3, 0.4],
+      [undefined, 0.5, undefined],
+    ],
+    unitX: "",
+    unitY: "",
+    unitZ: "waves",
+  });
+const mockGetRayFanData = jest.fn().mockResolvedValue([
+  {
+    fieldIdx: 0,
+    wvlIdx: 0,
+    Sagittal: {
+      x: [-1, 0, 1],
+      y: [-0.2, 0, 0.2],
+    },
+    Tangential: {
+      x: [-1, 0, 1],
+      y: [-0.1, 0, 0.1],
+    },
+    unitX: "",
+    unitY: "mm",
+  },
+]);
 
 const mockProxy = {
   init: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
   getFirstOrderData: mockGetFirstOrderData,
   plotLensLayout: mockPlotLensLayout,
   plotRayFan: mockPlotRayFan,
+  getRayFanData: mockGetRayFanData,
   plotOpdFan: mockPlotOpdFan,
+  getOpdFanData: mockGetOpdFanData,
   plotSpotDiagram: mockPlotSpotDiagram,
+  getSpotDiagramData: mockGetSpotDiagramData,
   plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,
   plotWavefrontMap: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-wavefront"),
+  getWavefrontData: mockGetWavefrontData,
+  getGeoPSFData: jest.fn().mockResolvedValue({
+    fieldIdx: 0,
+    wvlIdx: 0,
+    x: [0],
+    y: [0],
+    unitX: "mm",
+    unitY: "mm",
+  }),
   plotGeoPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-geopsf"),
   plotDiffractionPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-diffrpsf"),
+  getDiffractionPSFData: mockGetDiffractionPSFData,
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
   getZernikeCoefficients: jest.fn<Promise<ZernikeData>, [OpticalModel, number, number, number?]>().mockResolvedValue({
     coefficients: [],

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container component that owns all analysis-plot logic: derives field/wavelength select options, maps plot types to worker API calls, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child.
+Container component that owns all analysis-plot logic: derives field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed geometric-PSF point data, typed wavefront-map grid data, or typed diffraction-PSF grid data depending on the selected plot type.
 
 ## Props
 
@@ -22,10 +22,12 @@ interface AnalysisPlotContainerProps {
 
 ## State
 
-All five analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
-- `plotImage`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
+All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
+- `rayFanData`, `opdFanData`, `spotDiagramData`, `geoPsfData`, `wavefrontMapData`, `diffractionPsfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
 
 `committedOpticalModel` is read from `lensStore` via `useLensEditorStore` and `useStore(lensStore, (s) => s.committedOpticalModel)`.
+
+`seidelData` is read reactively from `useAnalysisDataStore()` and passed through to the view for `surfaceBySurface3rdOrder`.
 
 `committedSpecs` is subscribed from `specsStore` via `useSpecsConfiguratorStore` and `useStore(specsStore, (s) => s.committedSpecs)` (return value unused — subscription only) to trigger re-renders when the committed specs change.
 
@@ -36,25 +38,40 @@ All five analysis-plot state fields (reactive) are read from `useAnalysisPlotSto
 
 ## Internal Logic
 
-Plot functions are obtained via `buildPlotFn(plotType, proxy, committedOpticalModel)` from `@/shared/lib/utils/plotFunctions`. This returns a `(fieldIndex, wavelengthIndex) => Promise<string>` function, or `undefined` when `proxy` or `committedOpticalModel` is missing.
+All plot loading goes through `loadAnalysisPlot(...)` from `@/shared/lib/utils/plotFunctions`, which centralizes the plot-type to worker-API mapping. This keeps the panel behavior aligned with `LensEditor.tsx` submit handling.
+
+### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
+
+Shared async helper used by all three change handlers:
+
+1. Returns immediately when `proxy` or `committedOpticalModel` is missing.
+2. Sets `plotLoading(true)`.
+3. Calls `loadAnalysisPlot({ plotType, proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex })`.
+4. If the result kind is `"diffractionPSF"`, stores the payload with `setDiffractionPsfData(...)`.
+5. If the result kind is `"rayFan"`, stores the payload with `setRayFanData(...)`.
+6. If the result kind is `"opdFan"`, stores the payload with `setOpdFanData(...)`.
+7. If the result kind is `"spotDiagram"`, stores the payload with `setSpotDiagramData(...)`.
+8. If the result kind is `"geoPSF"`, stores the payload with `setGeoPsfData(...)`.
+9. If the result kind is `"wavefrontMap"`, stores the payload with `setWavefrontMapData(...)`.
+10. If the result kind is `"surfaceBySurface3rdOrder"`, updates only `analysisDataStore.seidelData.surfaceBySurface`.
+11. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
 
 ### `handleFieldChange(value)`
 
 1. Updates `selectedFieldIndex` in store.
 2. If `proxy` is undefined or `PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent === false`, returns without plotting.
-3. Sets `plotLoading(true)`, calls `plotFn(value, selectedWavelengthIndex)`, updates `plotImage`.
-4. Sets `plotLoading(false)` in `finally`; calls `onError()` in `catch`.
+3. Delegates to `loadPlot(selectedPlotType, value, selectedWavelengthIndex)`.
 
 ### `handleWavelengthChange(value)`
 
-Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and calls `plotFn(selectedFieldIndex, value)`. Only executes the plot call when `fieldDependent === true` (all wavelength-dependent plot types are also field-dependent).
+Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and delegates to `loadPlot(selectedPlotType, selectedFieldIndex, value)`. Only executes the plot call when `fieldDependent === true` (all wavelength-dependent plot types are also field-dependent).
 
 ### `handlePlotTypeChange(plotType)`
 
 1. Updates `selectedPlotType` in store.
 2. If `proxy` is undefined, returns.
-3. Sets `plotLoading(true)`, calls `plotFn(selectedFieldIndex, selectedWavelengthIndex)`, updates `plotImage`.
-4. Sets `plotLoading(false)` in `finally`; calls `onError()` in `catch`.
+3. Returns immediately for `surfaceBySurface3rdOrder`; the view reuses already-fetched `seidelData.surfaceBySurface` and does not refetch or use the legacy PNG path.
+4. Delegates to `loadPlot(plotType, selectedFieldIndex, selectedWavelengthIndex)` for the remaining plot types.
 
 ## Usages
 

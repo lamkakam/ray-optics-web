@@ -9,7 +9,7 @@ import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/shared/lib/types/zernikeData
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
 import { ExampleSystems } from "@/shared/lib/data/exampleSystems";
-import { buildPlotFn } from "@/shared/lib/utils/plotFunctions";
+import { loadAnalysisPlot } from "@/shared/lib/utils/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -108,17 +108,34 @@ export function LensEditor({
       analysisPlotStore.getState().setSelectedFieldIndex(clampedFieldIndex, specs.field.fields.length);
       analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex, specs.wavelengths.weights.length);
 
-      const plotFn = buildPlotFn(selectedPlotType, proxy, model);
-      const [fod, layout, plot, seidel] = await Promise.all([
+      const [fod, layout, plotResult, seidel] = await Promise.all([
         proxy.getFirstOrderData(model),
         proxy.plotLensLayout(model),
-        plotFn ? plotFn(clampedFieldIndex, clampedWavelengthIndex) : Promise.resolve(undefined),
+        loadAnalysisPlot({
+          plotType: selectedPlotType,
+          proxy,
+          model,
+          fieldIndex: clampedFieldIndex,
+          wavelengthIndex: clampedWavelengthIndex,
+        }),
         proxy.get3rdOrderSeidelData(model),
       ]);
 
       analysisDataStore.getState().setFirstOrderData(fod);
       lensLayoutImageStore.getState().setLayoutImage(layout);
-      analysisPlotStore.getState().setPlotImage(plot);
+      if (plotResult?.kind === "wavefrontMap") {
+        analysisPlotStore.getState().setWavefrontMapData(plotResult.wavefrontMapData);
+      } else if (plotResult?.kind === "rayFan") {
+        analysisPlotStore.getState().setRayFanData(plotResult.rayFanData);
+      } else if (plotResult?.kind === "opdFan") {
+        analysisPlotStore.getState().setOpdFanData(plotResult.opdFanData);
+      } else if (plotResult?.kind === "spotDiagram") {
+        analysisPlotStore.getState().setSpotDiagramData(plotResult.spotDiagramData);
+      } else if (plotResult?.kind === "geoPSF") {
+        analysisPlotStore.getState().setGeoPsfData(plotResult.geoPsfData);
+      } else if (plotResult?.kind === "diffractionPSF") {
+        analysisPlotStore.getState().setDiffractionPsfData(plotResult.diffractionPsfData);
+      }
       analysisDataStore.getState().setSeidelData(seidel);
       specsStore.getState().setCommittedSpecs(specs);
       lensStore.getState().setCommittedOpticalModel(model);

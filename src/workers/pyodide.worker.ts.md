@@ -15,12 +15,18 @@ export async function init(): Promise<void>
 export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>
 export async function plotLensLayout(opticalModel: OpticalModel): Promise<string>
 export async function plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>
+export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>
 export async function plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>
+export async function getOpdFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>
 export async function plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string>
+export async function getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
 export async function plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string>
 export async function plotWavefrontMap(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
+export async function getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<WavefrontMapData>
+export async function getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<GeoPsfData>
 export async function plotGeoPSF(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
 export async function plotDiffractionPSF(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<string>
+export async function getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
 export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>
 export async function getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>
 export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
@@ -37,12 +43,18 @@ export async function _init(runPython: (code: string) => Promise<unknown>, wheel
 export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<Record<string, number>>
 export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<string>
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string>
+export async function _getRayFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>
 export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string>
+export async function _getOpdFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>
 export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string>
+export async function _getSpotDiagramData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
 export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<string>
 export async function _plotWavefrontMap(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
+export async function _getWavefrontData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<WavefrontMapData>
+export async function _getGeoPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<GeoPsfData>
 export async function _plotGeoPSF(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<string>
 export async function _plotDiffractionPSF(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<string>
+export async function _getDiffractionPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
 export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData>
 export async function _getZernikeCoefficients(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>
 export async function _focusByMonoRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
@@ -80,12 +92,18 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `getFirstOrderData(model)` | Builds `opm` from model, returns optical data (EFL, f-number, etc.) as `Record<string, number>`. |
 | `plotLensLayout(model)` | Builds `opm` from model, returns a lens layout plot as a base64-encoded PNG string. |
 | `plotRayFan(model, fieldIndex)` | Builds `opm` from model, returns a transverse ray fan plot for the given field index (zero-indexed). |
-| `plotOpdFan(model, fieldIndex)` | Builds `opm` from model, returns an OPD fan plot for the given field index (zero-indexed). |
-| `plotSpotDiagram(model, fieldIndex)` | Builds `opm` from model, returns a spot diagram for the given field index (zero-indexed). |
+| `getRayFanData(model, fieldIndex)` | Builds `opm` from model, returns grouped transverse ray-fan line data for all wavelengths at the selected field. Used by the ECharts Ray Fan view. |
+| `plotOpdFan(model, fieldIndex)` | Builds `opm` from model, returns an OPD fan plot PNG for the given field index (zero-indexed). |
+| `getOpdFanData(model, fieldIndex)` | Builds `opm` from model, returns grouped OPD-fan line data for all wavelengths at the selected field. Used by the ECharts OPD Fan view. |
+| `plotSpotDiagram(model, fieldIndex)` | Builds `opm` from model, returns a spot diagram PNG for the given field index (zero-indexed). |
+| `getSpotDiagramData(model, fieldIndex)` | Builds `opm` from model, returns grouped spot-diagram point clouds for all wavelengths at the selected field. Used by the ECharts Spot Diagram view. |
 | `plotSurfaceBySurface3rdOrderAberr(model)` | Builds `opm` from model, returns a surface-by-surface Seidel aberration plot. Field independent. |
-| `plotWavefrontMap(model, fi, wi, numRays?)` | Returns a wavefront OPD map for the given field and wavelength index. `numRays` defaults to 64. |
-| `plotGeoPSF(model, fi, wi, numRays?)` | Returns a geometrical PSF (2D histogram) for the given field and wavelength index. `numRays` defaults to 64. |
-| `plotDiffractionPSF(model, fi, wi, numRays?, maxDims?)` | Returns a diffraction PSF for the given field and wavelength index. `numRays` defaults to 64, `maxDims` defaults to 256. |
+| `plotWavefrontMap(model, fi, wi, numRays?)` | Returns a wavefront OPD map PNG for the given field and wavelength index. `numRays` defaults to 64. |
+| `getWavefrontData(model, fi, wi, numRays?)` | Returns `WavefrontMapData` for the given field and wavelength index using `json.dumps(get_wavefront_data(...))`. Used by the ECharts Wavefront Map view. |
+| `getGeoPSFData(model, fi, wi, numRays?)` | Returns `GeoPsfData` for the given field and wavelength index using `json.dumps(get_geo_psf_data(...))`. Used by the ECharts Geometric PSF view. |
+| `plotGeoPSF(model, fi, wi, numRays?)` | Returns a geometrical PSF (2D histogram) PNG for the given field and wavelength index. `numRays` defaults to 64. |
+| `plotDiffractionPSF(model, fi, wi, numRays?, maxDims?)` | Returns a base64 PNG diffraction PSF for the given field and wavelength index. `numRays` defaults to 64, `maxDims` defaults to 256. |
+| `getDiffractionPSFData(model, fi, wi, numRays?, maxDims?)` | Returns `DiffractionPsfData` for the given field and wavelength index using `json.dumps(get_diffraction_psf_data(...))`. Used by the ECharts Diffraction PSF view. |
 | `get3rdOrderSeidelData(model)` | Builds `opm` from model, returns `SeidelData` with 3rd-order Seidel aberration data. |
 | `getZernikeCoefficients(model, fi, wi, n?)` | Builds `opm` from model, returns `ZernikeData` with Zernike polynomial coefficients. `numTerms` defaults to 56. |
 | `focusByMonoRmsSpot(model, fieldIndex)` | Focuses by minimizing monochromatic RMS spot radius. Returns `FocusingResult` with `delta_thi` and `metric_value`. |
@@ -104,12 +122,17 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_getFirstOrderData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_first_order_data(${opm}))\`)`.
 - `_plotLensLayout(runPython, model)` — runs `buildScript(model, (opm) => \`plot_lens_layout(${opm})\`)`.
 - `_plotRayFan(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_ray_fan(${fieldIndex}, ${opm})\`)`.
+- `_getRayFanData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `RayFanData`.
 - `_plotOpdFan(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_opd_fan(${fieldIndex}, ${opm})\`)`.
+- `_getOpdFanData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `OpdFanData`.
 - `_plotSpotDiagram(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_spot_diagram(${fieldIndex}, ${opm})\`)`.
+- `_getSpotDiagramData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_spot_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `SpotDiagramData`.
 - `_plotSurfaceBySurface3rdOrderAberr(runPython, model)` — runs `buildScript(model, (opm) => \`plot_surface_by_surface_3rd_order_aberr(${opm})\`)`.
 - `_plotWavefrontMap(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`plot_wavefront_map(${fi}, ${wi}, ${opm}, num_rays=${numRays})\`)`. `numRays` defaults to 64.
+- `_getGeoPSFData(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`json.dumps(get_geo_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}))\`)` and parses the JSON into `GeoPsfData`.
 - `_plotGeoPSF(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`plot_geo_psf(${fi}, ${wi}, ${opm}, num_rays=${numRays})\`)`. `numRays` defaults to 64.
 - `_plotDiffractionPSF(runPython, model, fi, wi, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`plot_diffraction_psf(${fi}, ${wi}, ${opm}, num_rays=${numRays}, max_dims=${maxDims})\`)`. `numRays` defaults to 64, `maxDims` defaults to 256.
+- `_getDiffractionPSFData(runPython, model, fi, wi, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}))\`)` and parses the JSON into `DiffractionPsfData`.
 - `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
 - `_getZernikeCoefficients(runPython, model, fi, wi, n?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56.
 - `_resetPyodideForTesting()` — sets `pyodide = null` to allow `init()` to be re-exercised in tests.
@@ -119,7 +142,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **Singleton `pyodide`**: `init()` is a no-op if the singleton is already set.
 - **`requirePyodide()` guard**: All public functions call this helper. It throws `"Pyodide not initialized. Call init() first."` if `pyodide` is `null`.
 - **Stateless**: Each computation function builds `opm` locally from the received `OpticalModel` within a single `runPython` call. No global `opm` state persists between calls.
-- **Plot return type**: All plot functions return a `string` (base64-encoded image).
+- **Plot return type**: Plot image functions return a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getWavefrontData`, `getGeoPSFData`, and `getDiffractionPSFData` return typed data for frontend rendering.
 - **`caf2` global**: Initialized by `_rwu_init()` during `_init`.
 
 ## Edge Cases / Error Handling

@@ -11,11 +11,6 @@ function makeStore() {
 
 describe("analysisPlotStore", () => {
   describe("initial state", () => {
-    it("has plotImage as undefined", () => {
-      const store = makeStore();
-      expect(store.getState().plotImage).toBeUndefined();
-    });
-
     it("has plotLoading as false", () => {
       const store = makeStore();
       expect(store.getState().plotLoading).toBe(false);
@@ -35,20 +30,511 @@ describe("analysisPlotStore", () => {
       const store = makeStore();
       expect(store.getState().selectedPlotType).toBe("rayFan");
     });
-  });
 
-  describe("setPlotImage", () => {
-    it("sets plotImage to a string", () => {
+    it("has diffractionPsfData as undefined", () => {
       const store = makeStore();
-      store.getState().setPlotImage("base64data");
-      expect(store.getState().plotImage).toBe("base64data");
+      expect(store.getState().diffractionPsfData).toBeUndefined();
     });
 
-    it("clears plotImage with undefined", () => {
+    it("has geoPsfData as undefined", () => {
       const store = makeStore();
-      store.getState().setPlotImage("base64data");
-      store.getState().setPlotImage(undefined);
-      expect(store.getState().plotImage).toBeUndefined();
+      expect(store.getState().geoPsfData).toBeUndefined();
+    });
+
+    it("has wavefrontMapData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+    });
+
+    it("has spotDiagramData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().spotDiagramData).toBeUndefined();
+    });
+
+    it("has opdFanData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().opdFanData).toBeUndefined();
+    });
+
+    it("has rayFanData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().rayFanData).toBeUndefined();
+    });
+  });
+
+  describe("setRayFanData", () => {
+    it("sets rayFanData", () => {
+      const store = makeStore();
+      store.getState().setRayFanData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 0,
+          Sagittal: {
+            x: [-1, 0, 1],
+            y: [-0.2, 0, 0.2],
+          },
+          Tangential: {
+            x: [-1, 0, 1],
+            y: [-0.1, 0, 0.1],
+          },
+          unitX: "",
+          unitY: "mm",
+        },
+      ]);
+
+      expect(store.getState().rayFanData).toEqual([
+        expect.objectContaining({
+          fieldIdx: 1,
+          wvlIdx: 0,
+        }),
+      ]);
+    });
+
+    it("clears all other chart payloads when setting ray fan data", () => {
+      const store = makeStore();
+      store.getState().setOpdFanData([
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: { x: [0], y: [0] },
+          Tangential: { x: [0], y: [0] },
+          unitX: "",
+          unitY: "waves",
+        },
+      ]);
+      store.getState().setSpotDiagramData([
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [0],
+          y: [0],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ]);
+      store.getState().setGeoPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        unitX: "mm",
+        unitY: "mm",
+      });
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[undefined]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setRayFanData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 2,
+          Sagittal: {
+            x: [-1, 0, 1],
+            y: [-0.2, 0, 0.2],
+          },
+          Tangential: {
+            x: [-1, 0, 1],
+            y: [-0.1, 0, 0.1],
+          },
+          unitX: "",
+          unitY: "mm",
+        },
+      ]);
+
+      expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().spotDiagramData).toBeUndefined();
+      expect(store.getState().geoPsfData).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeDefined();
+    });
+  });
+
+  describe("setOpdFanData", () => {
+    it("sets opdFanData", () => {
+      const store = makeStore();
+      store.getState().setOpdFanData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 0,
+          Sagittal: {
+            x: [-1, 0, 1],
+            y: [-0.2, 0, 0.2],
+          },
+          Tangential: {
+            x: [-1, 0, 1],
+            y: [-0.1, 0, 0.1],
+          },
+          unitX: "",
+          unitY: "waves",
+        },
+      ]);
+
+      expect(store.getState().opdFanData).toEqual([
+        expect.objectContaining({
+          fieldIdx: 1,
+          wvlIdx: 0,
+        }),
+      ]);
+    });
+
+    it("clears all other chart payloads when setting opd fan data", () => {
+      const store = makeStore();
+      store.getState().setSpotDiagramData([
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [0],
+          y: [0],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ]);
+      store.getState().setGeoPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        unitX: "mm",
+        unitY: "mm",
+      });
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[undefined]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setOpdFanData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 2,
+          Sagittal: {
+            x: [-1, 0, 1],
+            y: [-0.2, 0, 0.2],
+          },
+          Tangential: {
+            x: [-1, 0, 1],
+            y: [-0.1, 0, 0.1],
+          },
+          unitX: "",
+          unitY: "waves",
+        },
+      ]);
+
+      expect(store.getState().spotDiagramData).toBeUndefined();
+      expect(store.getState().geoPsfData).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
+      expect(store.getState().opdFanData).toBeDefined();
+    });
+  });
+
+  describe("setSpotDiagramData", () => {
+    it("sets spotDiagramData", () => {
+      const store = makeStore();
+      store.getState().setSpotDiagramData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 0,
+          x: [-0.02, 0, 0.02],
+          y: [-0.01, 0, 0.01],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ]);
+
+      expect(store.getState().spotDiagramData).toEqual([
+        expect.objectContaining({
+          fieldIdx: 1,
+          wvlIdx: 0,
+        }),
+      ]);
+    });
+
+    it("clears all other chart payloads when setting spot diagram data", () => {
+      const store = makeStore();
+      store.getState().setGeoPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        unitX: "mm",
+        unitY: "mm",
+      });
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[undefined]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setSpotDiagramData([
+        {
+          fieldIdx: 1,
+          wvlIdx: 2,
+          x: [-0.02, 0, 0.02],
+          y: [-0.01, 0, 0.01],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ]);
+
+      expect(store.getState().geoPsfData).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().spotDiagramData).toBeDefined();
+      expect(store.getState().rayFanData).toBeUndefined();
+      expect(store.getState().opdFanData).toBeUndefined();
+    });
+  });
+
+  describe("setGeoPsfData", () => {
+    it("sets geoPsfData", () => {
+      const store = makeStore();
+      store.getState().setGeoPsfData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-0.02, 0, 0.02],
+        y: [-0.01, 0, 0.01],
+        unitX: "mm",
+        unitY: "mm",
+      });
+
+      expect(store.getState().geoPsfData).toBeDefined();
+      expect(store.getState().geoPsfData?.fieldIdx).toBe(1);
+    });
+
+    it("clears other chart payloads when setting geo PSF data", () => {
+      const store = makeStore();
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[undefined]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setGeoPsfData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-0.02, 0, 0.02],
+        y: [-0.01, 0, 0.01],
+        unitX: "mm",
+        unitY: "mm",
+      });
+
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
+      expect(store.getState().geoPsfData?.fieldIdx).toBe(1);
+    });
+  });
+
+  describe("setDiffractionPsfData", () => {
+    it("sets diffractionPsfData", () => {
+      const store = makeStore();
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-0.02, 0, 0.02],
+        y: [-0.02, 0, 0.02],
+        z: [
+          [0.001, 0.01, 0.001],
+          [0.01, 1, 0.01],
+          [0.001, 0.01, 0.001],
+        ],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      expect(store.getState().diffractionPsfData).toBeDefined();
+      expect(store.getState().diffractionPsfData?.fieldIdx).toBe(1);
+    });
+
+    it("clears diffractionPsfData with undefined", () => {
+      const store = makeStore();
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+      store.getState().setDiffractionPsfData(undefined);
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+    });
+
+    it("clears other chart payloads when setting diffraction data", () => {
+      const store = makeStore();
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[0]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-0.02, 0, 0.02],
+        y: [-0.02, 0, 0.02],
+        z: [
+          [0.001, 0.01, 0.001],
+          [0.01, 1, 0.01],
+          [0.001, 0.01, 0.001],
+        ],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
+      expect(store.getState().diffractionPsfData?.fieldIdx).toBe(1);
+    });
+  });
+
+  describe("setWavefrontMapData", () => {
+    it("sets wavefrontMapData", () => {
+      const store = makeStore();
+      store.getState().setWavefrontMapData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-1, 0, 1],
+        y: [-1, 0, 1],
+        z: [
+          [undefined, 0.1, undefined],
+          [0.2, 0.3, 0.4],
+          [undefined, 0.5, undefined],
+        ],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      expect(store.getState().wavefrontMapData).toBeDefined();
+      expect(store.getState().wavefrontMapData?.fieldIdx).toBe(1);
+    });
+
+    it("clears wavefrontMapData with undefined", () => {
+      const store = makeStore();
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[0]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setWavefrontMapData(undefined);
+
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+    });
+
+    it("clears other chart payloads when setting wavefront data", () => {
+      const store = makeStore();
+      store.getState().setDiffractionPsfData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[1]],
+        unitX: "mm",
+        unitY: "mm",
+        unitZ: "",
+      });
+
+      store.getState().setWavefrontMapData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        x: [-1, 0, 1],
+        y: [-1, 0, 1],
+        z: [
+          [undefined, 0.1, undefined],
+          [0.2, 0.3, 0.4],
+          [undefined, 0.5, undefined],
+        ],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
+      expect(store.getState().wavefrontMapData?.fieldIdx).toBe(1);
     });
   });
 

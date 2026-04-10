@@ -1,5 +1,5 @@
 import { expose } from "comlink";
-import { type OpticalModel, type SeidelData, type FocusingResult } from "@/shared/lib/types/opticalModel";
+import { type DiffractionPsfData, type GeoPsfData, type OpdFanData, type OpticalModel, type RayFanData, type SeidelData, type FocusingResult, type SpotDiagramData, type WavefrontMapData } from "@/shared/lib/types/opticalModel";
 import { type ZernikeData, type ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import { type RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
@@ -54,7 +54,7 @@ from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 from rayoptics.elem.profiles import XToroid, YToroid
 
-from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_geo_psf_data, get_diffraction_psf_data
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
     plot_ray_fan,
@@ -124,12 +124,45 @@ export async function _plotRayFan(runPython: (code: string) => Promise<unknown>,
   return (await runPython(buildScript(opticalModel, (opm) => `plot_ray_fan(${fieldIndex}, ${opm})`))) as string;
 }
 
+export async function _getRayFanData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<RayFanData> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}))`),
+  )) as string;
+  return JSON.parse(json) as RayFanData;
+}
+
 export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
   return (await runPython(buildScript(opticalModel, (opm) => `plot_opd_fan(${fieldIndex}, ${opm})`))) as string;
 }
 
+export async function _getOpdFanData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<OpdFanData> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}))`),
+  )) as string;
+  return JSON.parse(json) as OpdFanData;
+}
+
 export async function _plotSpotDiagram(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
   return (await runPython(buildScript(opticalModel, (opm) => `plot_spot_diagram(${fieldIndex}, ${opm})`))) as string;
+}
+
+export async function _getSpotDiagramData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+): Promise<SpotDiagramData> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(get_spot_data(${opm}, ${fieldIndex}))`),
+  )) as string;
+  return JSON.parse(json) as SpotDiagramData;
 }
 
 export async function _plotSurfaceBySurface3rdOrderAberr(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<string> {
@@ -151,6 +184,36 @@ export async function _plotWavefrontMap(
   return (await runPython(buildScript(opticalModel, (opm) => `plot_wavefront_map(${fieldIndex}, ${wavelengthIndex}, ${opm}, num_rays=${numRays})`))) as string;
 }
 
+export async function _getWavefrontData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 64,
+): Promise<WavefrontMapData> {
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(get_wavefront_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}))`,
+    ),
+  )) as string;
+  const parsed = JSON.parse(json) as {
+    fieldIdx: number;
+    wvlIdx: number;
+    x: number[];
+    y: number[];
+    z: (number | null)[][];
+    unitX: string;
+    unitY: string;
+    unitZ: string;
+  };
+
+  return {
+    ...parsed,
+    z: parsed.z.map((row) => row.map((value) => value ?? undefined)),
+  };
+}
+
 export async function _plotGeoPSF(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -159,6 +222,22 @@ export async function _plotGeoPSF(
   numRays: number = 64,
 ): Promise<string> {
   return (await runPython(buildScript(opticalModel, (opm) => `plot_geo_psf(${fieldIndex}, ${wavelengthIndex}, ${opm}, num_rays=${numRays})`))) as string;
+}
+
+export async function _getGeoPSFData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 64,
+): Promise<GeoPsfData> {
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(get_geo_psf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}))`,
+    ),
+  )) as string;
+  return JSON.parse(json) as GeoPsfData;
 }
 
 export async function _plotDiffractionPSF(
@@ -175,6 +254,23 @@ export async function _plotDiffractionPSF(
       (opm) => `plot_diffraction_psf(${fieldIndex}, ${wavelengthIndex}, ${opm}, num_rays=${numRays}, max_dims=${maxDims})`,
     ),
   )) as string;
+}
+
+export async function _getDiffractionPSFData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 64,
+  maxDims: number = 256,
+): Promise<DiffractionPsfData> {
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(get_diffraction_psf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}))`,
+    ),
+  )) as string;
+  return JSON.parse(json) as DiffractionPsfData;
 }
 
 export async function _getZernikeCoefficients(
@@ -258,12 +354,24 @@ export async function plotRayFan(opticalModel: OpticalModel, fieldIndex: number)
   return await _plotRayFan(requirePyodide(), opticalModel, fieldIndex);
 }
 
+export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData> {
+  return await _getRayFanData(requirePyodide(), opticalModel, fieldIndex);
+}
+
 export async function plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
   return await _plotOpdFan(requirePyodide(), opticalModel, fieldIndex);
 }
 
+export async function getOpdFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData> {
+  return await _getOpdFanData(requirePyodide(), opticalModel, fieldIndex);
+}
+
 export async function plotSpotDiagram(opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
   return await _plotSpotDiagram(requirePyodide(), opticalModel, fieldIndex);
+}
+
+export async function getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData> {
+  return await _getSpotDiagramData(requirePyodide(), opticalModel, fieldIndex);
 }
 
 export async function plotSurfaceBySurface3rdOrderAberr(opticalModel: OpticalModel): Promise<string> {
@@ -279,6 +387,15 @@ export async function plotWavefrontMap(
   return await _plotWavefrontMap(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
 }
 
+export async function getWavefrontData(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 128,
+): Promise<WavefrontMapData> {
+  return await _getWavefrontData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
+}
+
 export async function plotGeoPSF(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -286,6 +403,15 @@ export async function plotGeoPSF(
   numRays: number = 128,
 ): Promise<string> {
   return await _plotGeoPSF(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
+}
+
+export async function getGeoPSFData(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 128,
+): Promise<GeoPsfData> {
+  return await _getGeoPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
 }
 
 export async function plotDiffractionPSF(
@@ -296,6 +422,16 @@ export async function plotDiffractionPSF(
   maxDims: number = 256,
 ): Promise<string> {
   return await _plotDiffractionPSF(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays, maxDims);
+}
+
+export async function getDiffractionPSFData(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 128,
+  maxDims: number = 256,
+): Promise<DiffractionPsfData> {
+  return await _getDiffractionPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays, maxDims);
 }
 
 
@@ -338,12 +474,18 @@ expose({
   getFirstOrderData,
   plotLensLayout,
   plotRayFan,
+  getRayFanData,
   plotOpdFan,
+  getOpdFanData,
   plotSpotDiagram,
+  getSpotDiagramData,
   plotSurfaceBySurface3rdOrderAberr,
   plotWavefrontMap,
+  getWavefrontData,
+  getGeoPSFData,
   plotGeoPSF,
   plotDiffractionPSF,
+  getDiffractionPSFData,
   get3rdOrderSeidelData,
   getZernikeCoefficients,
   focusByMonoRmsSpot,

@@ -6,7 +6,7 @@
  * duplicating class strings in every component.
  */
 
-const globalTokens = {
+export const globalTokens = {
   color: {
     primaryColor: "bg-blue-600",
     errorColor: "bg-red-600",
@@ -22,6 +22,12 @@ const globalTokens = {
     toggleHoverBgColor: "hover:bg-blue-50 dark:hover:bg-gray-700",
     backdropBgColor: "bg-black/50",
     overlayPanelBgColor: "bg-white dark:bg-gray-900",
+  },
+  echarts: {
+    text: {
+      light: "#111827",
+      dark: "#f3f4f6",
+    },
   },
   size: {
     focusRingWidth: "focus:ring-2",
