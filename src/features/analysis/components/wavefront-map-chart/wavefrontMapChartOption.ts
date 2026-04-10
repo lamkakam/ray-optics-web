@@ -15,9 +15,10 @@ const WAVEFRONT_VISUAL_MAP_WIDTH = 20;
 const WAVEFRONT_VISUAL_MAP_MAX_HEIGHT = 152;
 const WAVEFRONT_RIGHT_PADDING = 16;
 const VALUE_PRECISION = 2;
+const WAVEFRONT_VISUAL_MAP_UNIT = "waves";
 
 function formatWavefrontValue(value: number): string {
-  return value.toFixed(VALUE_PRECISION);
+  return Number(value).toPrecision(VALUE_PRECISION);
 }
 
 function formatWavefrontAxisTick(value: number): string {
@@ -67,6 +68,8 @@ export function buildWavefrontMapOption(
       chartHeight - (WAVEFRONT_GRID_TOP * 2),
     ),
   );
+  const visualMapMaxLabel = `${formatWavefrontValue(normalizedMax)} ${WAVEFRONT_VISUAL_MAP_UNIT}`;
+  const visualMapMinLabel = `${formatWavefrontValue(normalizedMin)} ${WAVEFRONT_VISUAL_MAP_UNIT}`;
 
   return {
     animation: false,
@@ -126,7 +129,7 @@ export function buildWavefrontMapOption(
       itemWidth: WAVEFRONT_VISUAL_MAP_WIDTH,
       itemHeight: visualMapHeight,
       formatter: formatWavefrontValue,
-      text: [wavefrontMapData.unitZ, ""],
+      text: [visualMapMaxLabel, visualMapMinLabel],
       textStyle: {
         color: textColor,
       },

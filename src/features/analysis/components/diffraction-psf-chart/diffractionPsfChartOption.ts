@@ -60,6 +60,10 @@ export function buildDiffractionPsfOption(
       chartHeight - (DIFFRACTION_GRID_TOP * 2),
     ),
   );
+  const visualMapText = [
+    formatDiffractionPsfIntensity(visualMapMax),
+    formatDiffractionPsfIntensity(visualMapMin),
+  ];
 
   return {
     animation: false,
@@ -116,6 +120,7 @@ export function buildDiffractionPsfOption(
       itemWidth: DIFFRACTION_VISUAL_MAP_WIDTH,
       itemHeight: visualMapHeight,
       formatter: formatDiffractionPsfIntensity,
+      text: visualMapText,
       textStyle: {
         color: textColor,
       },

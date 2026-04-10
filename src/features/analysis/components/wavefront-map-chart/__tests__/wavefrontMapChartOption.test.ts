@@ -66,6 +66,8 @@ describe("wavefrontMapChartOption", () => {
     expect(option.visualMap.inRange.color).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE);
     expect(option.visualMap.textStyle).toEqual({ color: globalTokens.echarts.text.light });
     expect(option.visualMap.formatter(0.3)).toBe("0.30");
+    expect(option.visualMap.text).toEqual(["0.50 waves", "0.10 waves"]);
+    expect(option.tooltip.formatter({ data: [1, 1, 0.456] })).toBe("0.46");
     expect(option.series[0].type).toBe("heatmap");
     expect(option.series[0].data).toContainEqual([0, 1, 0.2]);
     expect(option.series[0].data).toContainEqual([2, 1, 0.4]);
@@ -87,7 +89,7 @@ describe("wavefrontMapChartOption", () => {
 
     expect(option.xAxis.name).toBe("x (pupil)");
     expect(option.yAxis.name).toBe("y (pupil)");
-    expect(option.visualMap.text).toEqual(["waves", ""]);
+    expect(option.visualMap.text).toEqual(["0.50 waves", "0.10 waves"]);
   });
 
   it("keeps the plot square inside the available chart area", () => {
