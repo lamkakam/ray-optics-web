@@ -26,7 +26,7 @@ function buildRayFanChartOption(
 - Sets `showSymbol: false` on every line series.
 - Parses numeric wavelengths from UI labels so lower/higher wavelengths map consistently onto `ANALYSIS_HEATMAP_COLOR_PALETTE`.
 - Falls back to stable palette ordering when a wavelength label is not numeric.
-- Rounds computed x- and y-axis min/max extents to 2 significant figures before assigning them to both subplots.
+- Rounds computed x- and y-axis min/max extents with the shared analysis plot-value formatter before assigning them to both subplots, including clamping magnitudes smaller than `1e-7` to `0`.
 - Labels only the first y-axis with `Transverse Aberr. (${unitY})`; the second subplot omits the duplicate y-axis label.
 
 ## Output Shape

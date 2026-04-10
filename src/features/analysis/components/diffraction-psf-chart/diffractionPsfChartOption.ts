@@ -3,6 +3,7 @@ import { ScatterChart } from "echarts/charts";
 import { GridComponent, TooltipComponent, VisualMapComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
+import { formatPlotValue } from "@/features/analysis/shared/formatPlotValue";
 import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([ScatterChart, GridComponent, TooltipComponent, VisualMapComponent, CanvasRenderer]);
@@ -15,10 +16,8 @@ const DIFFRACTION_GRID_RIGHT = 160;
 const DIFFRACTION_VISUAL_MAP_WIDTH = 20;
 const DIFFRACTION_VISUAL_MAP_MAX_HEIGHT = 152;
 const DIFFRACTION_RIGHT_PADDING = 16;
-const PRECISION = 2;
-
 export function formatDiffractionPsfIntensity(log10Intensity: number): string {
-  return Number(10 ** log10Intensity).toPrecision(PRECISION);
+  return formatPlotValue(10 ** log10Intensity);
 }
 
 export function buildDiffractionPsfOption(
@@ -82,8 +81,8 @@ export function buildDiffractionPsfOption(
     },
     xAxis: {
       type: "value",
-      min: -normalizedAxisExtent.toPrecision(PRECISION),
-      max: normalizedAxisExtent.toPrecision(PRECISION),
+      min: Number(formatPlotValue(-normalizedAxisExtent)),
+      max: Number(formatPlotValue(normalizedAxisExtent)),
       name: diffractionPsfData.unitX ? `x (${diffractionPsfData.unitX})` : "x",
       nameLocation: "middle",
       nameGap: 30,
@@ -96,8 +95,8 @@ export function buildDiffractionPsfOption(
     },
     yAxis: {
       type: "value",
-      min: -normalizedAxisExtent.toPrecision(PRECISION),
-      max: normalizedAxisExtent.toPrecision(PRECISION),
+      min: Number(formatPlotValue(-normalizedAxisExtent)),
+      max: Number(formatPlotValue(normalizedAxisExtent)),
       name: diffractionPsfData.unitY ? `y (${diffractionPsfData.unitY})` : "y",
       nameLocation: "middle",
       nameGap: 36,

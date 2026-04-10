@@ -148,4 +148,26 @@ describe("buildSpotDiagramOption", () => {
       height: 196,
     }));
   });
+
+  it("clamps tiny rounded axis extents to 0", () => {
+    const option = buildSpotDiagramOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [-1e-8, 0, 1e-8],
+          y: [-1e-8, 0, 1e-8],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ],
+      ["486.1 nm"],
+      400,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual(expect.objectContaining({ min: 0, max: 0 }));
+    expect(option.yAxis).toEqual(expect.objectContaining({ min: 0, max: 0 }));
+  });
 });

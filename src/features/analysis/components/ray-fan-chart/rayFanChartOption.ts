@@ -3,6 +3,7 @@ import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
+import { formatPlotValue } from "@/features/analysis/shared/formatPlotValue";
 import type { RayFanData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([LineChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer]);
@@ -14,8 +15,6 @@ const RAY_FAN_GRID_RIGHT = 28;
 const RAY_FAN_GRID_GAP = 48;
 const RAY_FAN_TITLE_TOP = 40;
 const RAY_FAN_LEGEND_TOP = 12;
-const RAY_FAN_AXIS_PRECISION = 2;
-
 function parseWavelengthLabel(wavelengthLabel: string | undefined): number | undefined {
   if (wavelengthLabel === undefined) return undefined;
 
@@ -103,10 +102,10 @@ function getAxisExtents(rayFanData: RayFanData): { readonly xMin: number; readon
   }
 
   return {
-    xMin: Number(xMin.toPrecision(RAY_FAN_AXIS_PRECISION)),
-    xMax: Number(xMax.toPrecision(RAY_FAN_AXIS_PRECISION)),
-    yMin: Number(yMin.toPrecision(RAY_FAN_AXIS_PRECISION)),
-    yMax: Number(yMax.toPrecision(RAY_FAN_AXIS_PRECISION)),
+    xMin: Number(formatPlotValue(xMin)),
+    xMax: Number(formatPlotValue(xMax)),
+    yMin: Number(formatPlotValue(yMin)),
+    yMax: Number(formatPlotValue(yMax)),
   };
 }
 

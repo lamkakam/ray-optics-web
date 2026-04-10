@@ -3,6 +3,7 @@ import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
+import { formatPlotValue } from "@/features/analysis/shared/formatPlotValue";
 import type { OpdFanData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([LineChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer]);
@@ -14,10 +15,8 @@ const OPD_FAN_GRID_RIGHT = 28;
 const OPD_FAN_GRID_GAP = 48;
 const OPD_FAN_TITLE_TOP = 40;
 const OPD_FAN_LEGEND_TOP = 12;
-const OPD_FAN_AXIS_PRECISION = 2;
-
 function formatOpdFanAxisTick(value: number): string {
-  return Number(value).toPrecision(OPD_FAN_AXIS_PRECISION);
+  return formatPlotValue(value);
 }
 
 function parseWavelengthLabel(wavelengthLabel: string | undefined): number | undefined {
@@ -107,10 +106,10 @@ function getAxisExtents(opdFanData: OpdFanData): { readonly xMin: number; readon
   }
 
   return {
-    xMin: Number(xMin.toPrecision(OPD_FAN_AXIS_PRECISION)),
-    xMax: Number(xMax.toPrecision(OPD_FAN_AXIS_PRECISION)),
-    yMin: Number(yMin.toPrecision(OPD_FAN_AXIS_PRECISION)),
-    yMax: Number(yMax.toPrecision(OPD_FAN_AXIS_PRECISION)),
+    xMin: Number(formatPlotValue(xMin)),
+    xMax: Number(formatPlotValue(xMax)),
+    yMin: Number(formatPlotValue(yMin)),
+    yMax: Number(formatPlotValue(yMax)),
   };
 }
 

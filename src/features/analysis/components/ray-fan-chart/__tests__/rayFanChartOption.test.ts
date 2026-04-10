@@ -131,4 +131,38 @@ describe("buildRayFanChartOption", () => {
       }),
     ]);
   });
+
+  it("clamps tiny rounded axis extents to 0", () => {
+    const option = buildRayFanChartOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: {
+            x: [-1e-8, 1e-8],
+            y: [-1e-8, 1e-8],
+          },
+          Tangential: {
+            x: [-1e-8, 1e-8],
+            y: [-1e-8, 1e-8],
+          },
+          unitX: "",
+          unitY: "mm",
+        },
+      ],
+      ["486.1 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual([
+      expect.objectContaining({ min: 0, max: 0 }),
+      expect.objectContaining({ min: 0, max: 0 }),
+    ]);
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: 0, max: 0 }),
+      expect.objectContaining({ min: 0, max: 0 }),
+    ]);
+  });
 });

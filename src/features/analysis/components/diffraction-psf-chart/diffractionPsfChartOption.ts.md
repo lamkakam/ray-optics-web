@@ -33,8 +33,9 @@ function buildDiffractionPsfOption(
 - Keeps the plot area square by deriving `grid.width` and `grid.height` from the available measured space.
 - Reserves right-side layout space for the continuous `visualMap`.
 - Pins the `visualMap` top edge to the diffraction plot top so the legend bar aligns vertically with the scatter plot instead of the overall chart frame.
-- Formats `visualMap` labels back into linear intensity values using 2 significant figures.
+- Formats `visualMap` labels back into linear intensity values with the shared analysis plot-value formatter, clamping magnitudes smaller than `1e-7` to `0`.
 - Shows explicit `visualMap` endpoint labels for the highest and lowest displayed intensity values without a unit suffix.
 - Applies the caller-provided `textColor` to axis names, axis tick labels, and `visualMap` text so chart chrome follows the active light/dark theme.
 - Caps `visualMap.itemHeight` based on measured chart height so short panels keep the legend inside bounds.
 - Uses the shared 11-color analysis heatmap palette from `../analysisChartPalette.ts`.
+- Rounds symmetric axis extents with the shared analysis plot-value formatter before assigning them to ECharts.

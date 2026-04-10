@@ -32,3 +32,4 @@ function buildGeoPsfOption(
 - Does not include a `visualMap`.
 - Sets `tooltip.trigger` to `"none"` and `axisPointer.type` to `"cross"`.
 - Uses a fixed point color (`#5470c6`), opacity, and minimum visible symbol size (`1`) rather than data-driven coloring.
+- Rounds symmetric axis extents with the shared analysis plot-value formatter before assigning them to ECharts, including clamping magnitudes smaller than `1e-7` to `0`.
