@@ -85,15 +85,17 @@ export function GlassMapControls({
               id={`catalog-${name}`}
               ariaLabel={name}
               checked={enabledCatalogs[name]}
-              label={name}
-              onChange={() => onToggleCatalog(name)}
-              contentBeforeLabel={(
-                <span
-                  data-testid={`catalog-dot-${name}`}
-                  className="inline-block w-3 h-3 rounded-full"
-                  style={{ backgroundColor: CATALOG_COLOR_MAP[name] }}
-                />
+              label={(
+                <div className="flex flex-1 items-center gap-2 text-left text-sm leading-5">
+                  <span
+                    data-testid={`catalog-dot-${name}`}
+                    className="inline-block h-3 w-3 rounded-full"
+                    style={{ backgroundColor: CATALOG_COLOR_MAP[name] }}
+                  />
+                  <span>{name}</span>
+                </div>
               )}
+              onChange={() => onToggleCatalog(name)}
             />
           ))}
         </div>
