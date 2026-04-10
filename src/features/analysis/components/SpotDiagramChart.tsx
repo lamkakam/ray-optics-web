@@ -1,11 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import * as echarts from "echarts/core";
 import { buildSpotDiagramOption } from "@/features/analysis/components/spotDiagramChartOption";
-import { useTheme } from "@/shared/components/providers/ThemeProvider";
-import { globalTokens } from "@/shared/tokens/styleTokens";
+import { createAnalysisChartComponent } from "@/features/analysis/components/createAnalysisChartComponent";
 import type { SpotDiagramData } from "@/shared/lib/types/opticalModel";
-
-const SPOT_DIAGRAM_DEBOUNCE_MS = 500;
 
 interface SpotDiagramChartProps {
   readonly spotDiagramData: SpotDiagramData;
@@ -13,100 +8,17 @@ interface SpotDiagramChartProps {
   readonly autoHeight?: boolean;
 }
 
-export function SpotDiagramChart({
-  spotDiagramData,
-  wavelengthLabels,
-  autoHeight,
-}: SpotDiagramChartProps) {
-  const { theme } = useTheme();
-  const chartContainerRef = useRef<HTMLDivElement | null>(null);
-  const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(undefined);
-  const [chartDimensions, setChartDimensions] = useState<{ width: number; height: number } | undefined>(undefined);
-  const chartTextColor = theme === "dark"
-    ? globalTokens.echarts.text.dark
-    : globalTokens.echarts.text.light;
-  const chartOption = useMemo(
-    () => chartDimensions === undefined
-      ? undefined
-      : buildSpotDiagramOption(spotDiagramData, wavelengthLabels, chartDimensions.width, chartDimensions.height, chartTextColor),
-    [chartDimensions, chartTextColor, spotDiagramData, wavelengthLabels],
-  );
-
-  useEffect(() => {
-    const container = chartContainerRef.current;
-    const parent = container?.parentElement;
-    if (!container || !parent) return undefined;
-
-    const updateChartDimensions = () => {
-      const nextWidth = parent.clientWidth;
-      const nextHeight = parent.clientHeight;
-      const nextChartHeight = autoHeight
-        ? nextWidth
-        : Math.max(0, Math.min(nextWidth, nextHeight));
-
-      if (nextWidth > 0) {
-        setChartDimensions({
-          width: nextWidth,
-          height: nextChartHeight,
-        });
-        return;
-      }
-
-      setChartDimensions(undefined);
-    };
-
-    updateChartDimensions();
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateChartDimensions();
-    });
-
-    resizeObserver.observe(parent);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [autoHeight]);
-
-  useEffect(() => {
-    const container = chartContainerRef.current;
-    if (!container || chartOption === undefined) return undefined;
-
-    const timeoutId = window.setTimeout(() => {
-      if (!chartRef.current) {
-        chartRef.current = echarts.init(container, undefined, { renderer: "canvas" });
-      }
-      chartRef.current.setOption(chartOption, true);
-      chartRef.current.resize();
-    }, SPOT_DIAGRAM_DEBOUNCE_MS);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [chartOption]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      chartRef.current?.resize();
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      chartRef.current?.dispose();
-      chartRef.current = undefined;
-    };
-  }, []);
-
-  return (
-    <div
-      ref={chartContainerRef}
-      data-testid="spot-diagram-chart"
-      aria-label="Spot diagram plot"
-      className="max-w-full shrink-0 overflow-hidden"
-      style={chartDimensions === undefined
-        ? undefined
-        : { width: `${chartDimensions.width}px`, height: `${chartDimensions.height}px` }}
-    />
-  );
-}
+export const SpotDiagramChart = createAnalysisChartComponent<
+  SpotDiagramChartProps,
+  { readonly spotDiagramData: SpotDiagramData; readonly wavelengthLabels: readonly string[] }
+>({
+  displayName: "SpotDiagramChart",
+  testId: "spot-diagram-chart",
+  ariaLabel: "Spot diagram plot",
+  debounceMs: 500,
+  getBuilderArgs: ({ spotDiagramData, wavelengthLabels }) => ({ spotDiagramData, wavelengthLabels }),
+  getChartHeight: ({ parentWidth, parentHeight, autoHeight }) =>
+    autoHeight ? parentWidth : Math.max(0, Math.min(parentWidth, parentHeight)),
+  buildOption: ({ spotDiagramData, wavelengthLabels }, chartWidth, chartHeight, chartTextColor) =>
+    buildSpotDiagramOption(spotDiagramData, wavelengthLabels, chartWidth, chartHeight, chartTextColor),
+});

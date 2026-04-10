@@ -12,6 +12,7 @@ Components for optical analysis plots and aberration data.
 - [WavefrontMapChart.tsx](./WavefrontMapChart.tsx.md) — Owns the Wavefront Map ECharts canvas lifecycle and responsive sizing
 - [wavefrontMapChartOption.ts](./wavefrontMapChartOption.ts.md) — Builds the Wavefront Map ECharts heatmap/visualMap option from worker data
 - [DiffractionPsfChart.tsx](./DiffractionPsfChart.tsx.md) — Owns the Diffraction PSF ECharts canvas lifecycle and responsive sizing
+- [createAnalysisChartComponent.tsx](./createAnalysisChartComponent.tsx.md) — Higher-order factory that returns analysis chart function components with shared ECharts lifecycle handling
 - [diffractionPsfChartOption.ts](./diffractionPsfChartOption.ts.md) — Builds the Diffraction PSF ECharts scatter/visualMap option from worker data
 - [analysisChartPalette.ts](./analysisChartPalette.ts.md) — Shared 11-color palette used by analysis heatmap-style ECharts views
 - [AnalysisPlotContainer.tsx](./AnalysisPlotContainer.tsx.md) — Manages analysis plot selection and data fetching via Pyodide
