@@ -146,6 +146,7 @@ export function buildOpdFanChartOption(
         text: "Tangential",
         top: OPD_FAN_TITLE_TOP,
         left: OPD_FAN_GRID_LEFT + subplotWidth / 2,
+        textAlign: "center",
         textStyle: {
           color: textColor,
         },
@@ -154,6 +155,7 @@ export function buildOpdFanChartOption(
         text: "Sagittal",
         top: OPD_FAN_TITLE_TOP,
         left: OPD_FAN_GRID_LEFT + subplotWidth + OPD_FAN_GRID_GAP + subplotWidth / 2,
+        textAlign: "center",
         textStyle: {
           color: textColor,
         },

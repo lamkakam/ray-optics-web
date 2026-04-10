@@ -147,6 +147,7 @@ export function buildRayFanChartOption(
         text: "Tangential",
         top: RAY_FAN_TITLE_TOP,
         left: RAY_FAN_GRID_LEFT + subplotWidth / 2,
+        textAlign: "center",
         textStyle: {
           color: textColor,
         },
@@ -155,6 +156,7 @@ export function buildRayFanChartOption(
         text: "Sagittal",
         top: RAY_FAN_TITLE_TOP,
         left: RAY_FAN_GRID_LEFT + subplotWidth + RAY_FAN_GRID_GAP + subplotWidth / 2,
+        textAlign: "center",
         textStyle: {
           color: textColor,
         },
