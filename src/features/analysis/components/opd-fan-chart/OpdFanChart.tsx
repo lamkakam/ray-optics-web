@@ -18,7 +18,9 @@ export const OpdFanChart = createAnalysisChartComponent<
   debounceMs: 500,
   getBuilderArgs: ({ opdFanData, wavelengthLabels }) => ({ opdFanData, wavelengthLabels }),
   getChartHeight: ({ parentWidth, parentHeight, autoHeight }) =>
-    autoHeight ? Math.max(Math.round(parentWidth / 2), 320) : Math.max(0, parentHeight),
+    autoHeight
+      ? Math.max(Math.round(parentWidth / 2), 320)
+      : Math.max(0, Math.min(parentHeight, Math.max(Math.round(parentWidth / 2), 320))),
   isDimensionValid: ({ width, height }) => width > 0 && height > 0,
   buildOption: ({ opdFanData, wavelengthLabels }, chartWidth, chartHeight, chartTextColor) =>
     buildOpdFanChartOption(opdFanData, wavelengthLabels, chartWidth, chartHeight, chartTextColor),

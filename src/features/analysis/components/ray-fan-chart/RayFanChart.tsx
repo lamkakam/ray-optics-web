@@ -18,7 +18,9 @@ export const RayFanChart = createAnalysisChartComponent<
   debounceMs: 500,
   getBuilderArgs: ({ rayFanData, wavelengthLabels }) => ({ rayFanData, wavelengthLabels }),
   getChartHeight: ({ parentWidth, parentHeight, autoHeight }) =>
-    autoHeight ? Math.max(Math.round(parentWidth / 2), 320) : Math.max(0, parentHeight),
+    autoHeight
+      ? Math.max(Math.round(parentWidth / 2), 320)
+      : Math.max(0, Math.min(parentHeight, Math.max(Math.round(parentWidth / 2), 320))),
   isDimensionValid: ({ width, height }) => width > 0 && height > 0,
   buildOption: ({ rayFanData, wavelengthLabels }, chartWidth, chartHeight, chartTextColor) =>
     buildRayFanChartOption(rayFanData, wavelengthLabels, chartWidth, chartHeight, chartTextColor),

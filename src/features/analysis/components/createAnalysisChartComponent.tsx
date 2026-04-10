@@ -119,6 +119,17 @@ export function createAnalysisChartComponent<Props extends { readonly autoHeight
     }, [chartOption]);
 
     useEffect(() => {
+      if (chartRef.current === undefined || chartDimensions === undefined) {
+        return;
+      }
+
+      chartRef.current.resize({
+        width: chartDimensions.width,
+        height: chartDimensions.height,
+      });
+    }, [chartDimensions]);
+
+    useEffect(() => {
       const handleResize = () => {
         chartRef.current?.resize();
       };

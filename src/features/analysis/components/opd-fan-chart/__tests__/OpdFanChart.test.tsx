@@ -93,4 +93,40 @@ describe("OpdFanChart", () => {
     );
     expect(mockSetOption).toHaveBeenCalled();
   });
+
+  it("clamps the fixed-height chart to the width-based fan layout when the parent is taller than needed", () => {
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get() {
+        return 800;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+      get() {
+        return 900;
+      },
+    });
+
+    render(
+      <OpdFanChart
+        opdFanData={opdFanData}
+        wavelengthLabels={["486.1 nm", "587.6 nm", "656.3 nm"]}
+      />
+    );
+
+    jest.runAllTimers();
+
+    expect(screen.getByTestId("opd-fan-chart")).toHaveStyle({
+      width: "800px",
+      height: "400px",
+    });
+    expect(mockBuildOpdFanChartOption).toHaveBeenCalledWith(
+      opdFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+  });
 });

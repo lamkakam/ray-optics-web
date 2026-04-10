@@ -18,7 +18,7 @@ interface SurfaceBySurface3rdOrderChartProps {
 - Uses `buildSurfaceBySurface3rdOrderChartOption(...)` to translate Seidel surface data into a grouped bar chart.
 - Delegates parent measurement, debounce timing, resize handling, and chart disposal to `createAnalysisChartComponent(...)`.
 - Reads the active app theme via `useTheme()` and passes a resolved light/dark chart text color into `buildSurfaceBySurface3rdOrderChartOption(...)`.
-- Injects a sizing policy where `autoHeight` uses `max(round(parentWidth * 0.6), 320)` and fixed-height mode fills the available parent height.
+- Injects a sizing policy where `autoHeight` uses `max(round(parentWidth * 0.6), 320)` and fixed-height mode clamps to `min(parentHeight, max(round(parentWidth * 0.6), 320))` so tall containers cannot stretch the chart beyond the intended layout.
 - Exposes `data-testid="surface-by-surface-3rd-order-chart"` for tests.
 
 ## Data Shape

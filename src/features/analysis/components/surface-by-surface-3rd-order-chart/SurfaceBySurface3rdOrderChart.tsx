@@ -17,7 +17,9 @@ export const SurfaceBySurface3rdOrderChart = createAnalysisChartComponent<
   debounceMs: 500,
   getBuilderArgs: ({ surfaceBySurface3rdOrderData }) => surfaceBySurface3rdOrderData,
   getChartHeight: ({ parentWidth, parentHeight, autoHeight }) =>
-    autoHeight ? Math.max(Math.round(parentWidth * 0.6), 320) : Math.max(0, parentHeight),
+    autoHeight
+      ? Math.max(Math.round(parentWidth * 0.6), 320)
+      : Math.max(0, Math.min(parentHeight, Math.max(Math.round(parentWidth * 0.6), 320))),
   isDimensionValid: ({ width, height }) => width > 0 && height > 0,
   buildOption: (surfaceBySurface3rdOrderData, chartWidth, chartHeight, chartTextColor) =>
     buildSurfaceBySurface3rdOrderChartOption(surfaceBySurface3rdOrderData, chartWidth, chartHeight, chartTextColor),

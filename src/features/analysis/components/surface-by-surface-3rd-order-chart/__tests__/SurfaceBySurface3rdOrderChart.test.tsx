@@ -111,4 +111,36 @@ describe("SurfaceBySurface3rdOrderChart", () => {
       height: "480px",
     });
   });
+
+  it("clamps the fixed-height chart to the width-based layout when the parent is taller than needed", () => {
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get: () => 800,
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+      get: () => 900,
+    });
+
+    render(
+      <SurfaceBySurface3rdOrderChart
+        surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
+      />
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toHaveStyle({
+      width: "800px",
+      height: "480px",
+    });
+    expect(mockBuildSurfaceBySurface3rdOrderChartOption).toHaveBeenCalledWith(
+      surfaceBySurface3rdOrderData,
+      800,
+      480,
+      globalTokens.echarts.text.light,
+    );
+  });
 });
