@@ -16,6 +16,10 @@ const OPD_FAN_TITLE_TOP = 40;
 const OPD_FAN_LEGEND_TOP = 12;
 const OPD_FAN_AXIS_PRECISION = 2;
 
+function formatOpdFanAxisTick(value: number): string {
+  return Number(value).toPrecision(OPD_FAN_AXIS_PRECISION);
+}
+
 function parseWavelengthLabel(wavelengthLabel: string | undefined): number | undefined {
   if (wavelengthLabel === undefined) return undefined;
 
@@ -221,6 +225,7 @@ export function buildOpdFanChartOption(
         },
         axisLabel: {
           color: textColor,
+          formatter: formatOpdFanAxisTick,
         },
       },
       {
@@ -236,6 +241,7 @@ export function buildOpdFanChartOption(
         },
         axisLabel: {
           color: textColor,
+          formatter: formatOpdFanAxisTick,
         },
       },
     ],

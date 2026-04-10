@@ -106,30 +106,31 @@ describe("buildOpdFanChartOption", () => {
     expect(option.legend).toEqual(expect.objectContaining({
       textStyle: { color: globalTokens.echarts.text.light },
     }));
-    expect(option.xAxis).toEqual([
-      expect.objectContaining({
-        name: "Pupil Radius (Relative)",
-        nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
-      }),
-      expect.objectContaining({
-        name: "Pupil Radius (Relative)",
-        nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
-      }),
-    ]);
-    expect(option.yAxis).toEqual([
-      expect.objectContaining({
-        name: "waves",
-        nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
-      }),
-      expect.objectContaining({
-        name: "",
-        nameTextStyle: { color: globalTokens.echarts.text.light },
-        axisLabel: { color: globalTokens.echarts.text.light },
-      }),
-    ]);
+    expect(option.xAxis[0]).toEqual(expect.objectContaining({
+      name: "Pupil Radius (Relative)",
+      nameTextStyle: { color: globalTokens.echarts.text.light },
+      axisLabel: expect.objectContaining({ color: globalTokens.echarts.text.light }),
+    }));
+    expect(option.xAxis[1]).toEqual(expect.objectContaining({
+      name: "Pupil Radius (Relative)",
+      nameTextStyle: { color: globalTokens.echarts.text.light },
+      axisLabel: expect.objectContaining({ color: globalTokens.echarts.text.light }),
+    }));
+    expect(option.yAxis[0]).toEqual(expect.objectContaining({
+      name: "waves",
+      nameTextStyle: { color: globalTokens.echarts.text.light },
+      axisLabel: expect.objectContaining({ color: globalTokens.echarts.text.light }),
+    }));
+    expect(option.yAxis[1]).toEqual(expect.objectContaining({
+      name: "",
+      nameTextStyle: { color: globalTokens.echarts.text.light },
+      axisLabel: expect.objectContaining({ color: globalTokens.echarts.text.light }),
+    }));
+
+    const yAxisLabel0 = option.yAxis[0]?.axisLabel as unknown as { formatter: (value: number) => string };
+    const yAxisLabel1 = option.yAxis[1]?.axisLabel as unknown as { formatter: (value: number) => string };
+    expect(yAxisLabel0.formatter(0.1234)).toBe("0.12");
+    expect(yAxisLabel1.formatter(12.34)).toBe("12");
   });
 
   it("rounds axis min and max values to 2 significant figures", () => {

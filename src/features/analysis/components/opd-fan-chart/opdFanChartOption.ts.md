@@ -22,6 +22,7 @@ function buildOpdFanChartOption(
 - Produces two grids with titles `Tangential` and `Sagittal`.
 - Uses one shared legend entry per wavelength; both subplot series for a wavelength share the same label and color.
 - Applies the caller-provided `textColor` to subplot titles, legend labels, axis names, and axis tick labels so chart chrome follows the active light/dark theme.
+- Formats y-axis tick labels to 2 significant figures.
 - Sets `tooltip.trigger` to `"none"` and `tooltip.axisPointer.type` to `"cross"`.
 - Sets `showSymbol: false` on every line series.
 - Parses numeric wavelengths from UI labels so lower/higher wavelengths map consistently onto `ANALYSIS_HEATMAP_COLOR_PALETTE`.
