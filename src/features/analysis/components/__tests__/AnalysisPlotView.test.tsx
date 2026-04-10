@@ -58,31 +58,31 @@ const mockSurfaceBySurface3rdOrderChart = jest.fn(({ autoHeight }: { readonly au
   />
 ));
 
-jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
+jest.mock("@/features/analysis/components/diffraction-psf-chart/DiffractionPsfChart", () => ({
   DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
 }));
 
-jest.mock("@/features/analysis/components/WavefrontMapChart", () => ({
+jest.mock("@/features/analysis/components/wavefront-map-chart/WavefrontMapChart", () => ({
   WavefrontMapChart: (props: { readonly autoHeight?: boolean }) => mockWavefrontMapChart(props),
 }));
 
-jest.mock("@/features/analysis/components/GeoPsfChart", () => ({
+jest.mock("@/features/analysis/components/geo-psf-chart/GeoPsfChart", () => ({
   GeoPsfChart: (props: { readonly autoHeight?: boolean }) => mockGeoPsfChart(props),
 }));
 
-jest.mock("@/features/analysis/components/SpotDiagramChart", () => ({
+jest.mock("@/features/analysis/components/spot-diagram-chart/SpotDiagramChart", () => ({
   SpotDiagramChart: (props: { readonly autoHeight?: boolean }) => mockSpotDiagramChart(props),
 }));
 
-jest.mock("@/features/analysis/components/OpdFanChart", () => ({
+jest.mock("@/features/analysis/components/opd-fan-chart/OpdFanChart", () => ({
   OpdFanChart: (props: { readonly autoHeight?: boolean }) => mockOpdFanChart(props),
 }));
 
-jest.mock("@/features/analysis/components/RayFanChart", () => ({
+jest.mock("@/features/analysis/components/ray-fan-chart/RayFanChart", () => ({
   RayFanChart: (props: { readonly autoHeight?: boolean }) => mockRayFanChart(props),
 }));
 
-jest.mock("@/features/analysis/components/SurfaceBySurface3rdOrderChart", () => ({
+jest.mock("@/features/analysis/components/surface-by-surface-3rd-order-chart/SurfaceBySurface3rdOrderChart", () => ({
   SurfaceBySurface3rdOrderChart: (props: { readonly autoHeight?: boolean }) => mockSurfaceBySurface3rdOrderChart(props),
 }));
 

@@ -1,11 +1,11 @@
 import React from "react";
-import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
-import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
-import { OpdFanChart } from "@/features/analysis/components/OpdFanChart";
-import { RayFanChart } from "@/features/analysis/components/RayFanChart";
-import { SpotDiagramChart } from "@/features/analysis/components/SpotDiagramChart";
-import { SurfaceBySurface3rdOrderChart } from "@/features/analysis/components/SurfaceBySurface3rdOrderChart";
-import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapChart";
+import { DiffractionPsfChart } from "@/features/analysis/components/diffraction-psf-chart/DiffractionPsfChart";
+import { GeoPsfChart } from "@/features/analysis/components/geo-psf-chart/GeoPsfChart";
+import { OpdFanChart } from "@/features/analysis/components/opd-fan-chart/OpdFanChart";
+import { RayFanChart } from "@/features/analysis/components/ray-fan-chart/RayFanChart";
+import { SpotDiagramChart } from "@/features/analysis/components/spot-diagram-chart/SpotDiagramChart";
+import { SurfaceBySurface3rdOrderChart } from "@/features/analysis/components/surface-by-surface-3rd-order-chart/SurfaceBySurface3rdOrderChart";
+import { WavefrontMapChart } from "@/features/analysis/components/wavefront-map-chart/WavefrontMapChart";
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";

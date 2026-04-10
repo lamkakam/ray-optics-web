@@ -2,17 +2,19 @@
 
 Components for optical analysis plots and aberration data.
 
-## Components
+## Shared Modules
 
-- [AnalysisPlotView.tsx](./AnalysisPlotView.tsx.md) — Renders analysis plot controls and switches between PNG plots, the OPD fan chart, the geometric PSF chart, the wavefront heatmap, and the diffraction PSF chart
-- [OpdFanChart.tsx](./OpdFanChart.tsx.md) — Owns the OPD Fan ECharts canvas lifecycle and responsive sizing
-- [opdFanChartOption.ts](./opdFanChartOption.ts.md) — Builds the OPD Fan ECharts dual-subplot line option from worker data
-- [GeoPsfChart.tsx](./GeoPsfChart.tsx.md) — Owns the Geometric PSF ECharts canvas lifecycle and responsive sizing
-- [geoPsfChartOption.ts](./geoPsfChartOption.ts.md) — Builds the Geometric PSF ECharts scatter option from worker data
-- [WavefrontMapChart.tsx](./WavefrontMapChart.tsx.md) — Owns the Wavefront Map ECharts canvas lifecycle and responsive sizing
-- [wavefrontMapChartOption.ts](./wavefrontMapChartOption.ts.md) — Builds the Wavefront Map ECharts heatmap/visualMap option from worker data
-- [DiffractionPsfChart.tsx](./DiffractionPsfChart.tsx.md) — Owns the Diffraction PSF ECharts canvas lifecycle and responsive sizing
+- [AnalysisPlotView.tsx](./AnalysisPlotView.tsx.md) — Renders analysis plot controls and switches between chart renderers and PNG fallbacks
 - [createAnalysisChartComponent.tsx](./createAnalysisChartComponent.tsx.md) — Higher-order factory that returns analysis chart function components with shared ECharts lifecycle handling
-- [diffractionPsfChartOption.ts](./diffractionPsfChartOption.ts.md) — Builds the Diffraction PSF ECharts scatter/visualMap option from worker data
 - [analysisChartPalette.ts](./analysisChartPalette.ts.md) — Shared 11-color palette used by analysis heatmap-style ECharts views
 - [AnalysisPlotContainer.tsx](./AnalysisPlotContainer.tsx.md) — Manages analysis plot selection and data fetching via Pyodide
+
+## Chart Directories
+
+- [diffraction-psf-chart/](./diffraction-psf-chart/index.md) — Diffraction PSF chart component, option builder, specs, and moved tests
+- [geo-psf-chart/](./geo-psf-chart/index.md) — Geometric PSF chart component, option builder, specs, and moved tests
+- [opd-fan-chart/](./opd-fan-chart/index.md) — OPD fan chart component, option builder, specs, and moved tests
+- [ray-fan-chart/](./ray-fan-chart/index.md) — Ray fan chart component, option builder, specs, and moved tests
+- [spot-diagram-chart/](./spot-diagram-chart/index.md) — Spot diagram chart component, option builder, specs, and moved tests
+- [surface-by-surface-3rd-order-chart/](./surface-by-surface-3rd-order-chart/index.md) — Surface-by-surface Seidel chart component, option builder, specs, and moved tests
+- [wavefront-map-chart/](./wavefront-map-chart/index.md) — Wavefront map chart component, option builder, specs, and moved tests
