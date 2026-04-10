@@ -29,7 +29,6 @@ interface AnalysisPlotViewProps {
   readonly selectedFieldIndex: number;
   readonly selectedWavelengthIndex: number;
   readonly selectedPlotType: PlotType;
-  readonly plotImageBase64?: string;
   readonly surfaceBySurface3rdOrderData?: SeidelSurfaceBySurfaceData;
   readonly rayFanData?: RayFanData;
   readonly opdFanData?: OpdFanData;
@@ -205,7 +204,6 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
     selectedFieldIndex,
     selectedWavelengthIndex,
     selectedPlotType,
-    plotImageBase64,
     loading,
     onFieldChange,
     onWavelengthChange,
@@ -271,13 +269,6 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
           </Paragraph>
         ) : selectedPlotRenderer.hasData(props) ? (
           selectedPlotRenderer.render(props)
-        ) : plotImageBase64 ? (
-          /* eslint-disable-next-line @next/next/no-img-element -- base64 data URI */
-          <img
-            src={`data:image/png;base64,${plotImageBase64}`}
-            alt="Analysis plot"
-            className={autoHeight ? "h-auto w-full" : "max-h-full max-w-full object-contain"}
-          />
         ) : (
           <Paragraph variant="placeholder">
             No plot available

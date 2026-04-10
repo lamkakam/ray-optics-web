@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container component that owns all analysis-plot logic: derives field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds either a base64 image, typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed geometric-PSF point data, typed wavefront-map grid data, or typed diffraction-PSF grid data depending on the selected plot type.
+Container component that owns all analysis-plot logic: derives field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed geometric-PSF point data, typed wavefront-map grid data, or typed diffraction-PSF grid data depending on the selected plot type.
 
 ## Props
 
@@ -23,7 +23,7 @@ interface AnalysisPlotContainerProps {
 ## State
 
 All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
-- `plotImage`, `rayFanData`, `opdFanData`, `spotDiagramData`, `geoPsfData`, `wavefrontMapData`, `diffractionPsfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
+- `rayFanData`, `opdFanData`, `spotDiagramData`, `geoPsfData`, `wavefrontMapData`, `diffractionPsfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
 
 `committedOpticalModel` is read from `lensStore` via `useLensEditorStore` and `useStore(lensStore, (s) => s.committedOpticalModel)`.
 
@@ -54,8 +54,7 @@ Shared async helper used by all three change handlers:
 8. If the result kind is `"geoPSF"`, stores the payload with `setGeoPsfData(...)`.
 9. If the result kind is `"wavefrontMap"`, stores the payload with `setWavefrontMapData(...)`.
 10. If the result kind is `"surfaceBySurface3rdOrder"`, updates only `analysisDataStore.seidelData.surfaceBySurface`.
-11. If the result kind is `"image"`, stores the base64 PNG with `setPlotImage(...)`.
-12. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
+11. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
 
 ### `handleFieldChange(value)`
 

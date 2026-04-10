@@ -182,31 +182,23 @@ describe("AnalysisPlotView", () => {
     expect(onPlotTypeChange).toHaveBeenCalledWith("opdFan");
   });
 
-  it("renders the plot image when plotImageBase64 is provided", () => {
-    render(<AnalysisPlotView {...defaultProps} plotImageBase64="xyz789" />);
-    const img = screen.getByRole("img", { name: "Analysis plot" });
-    expect(img).toHaveAttribute("src", "data:image/png;base64,xyz789");
-  });
-
-  it("renders a surface by surface 3rd order chart instead of an image", () => {
+  it("renders a surface by surface 3rd order chart when data is provided", () => {
     render(
       <AnalysisPlotView
         {...defaultProps}
         selectedPlotType="surfaceBySurface3rdOrder"
         surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
-        plotImageBase64="xyz789"
       />
     );
 
     expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
     expect(mockSurfaceBySurface3rdOrderChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
       surfaceBySurface3rdOrderData,
     }));
   });
 
-  it("renders a ray fan chart instead of an image", () => {
+  it("renders a ray fan chart when data is provided", () => {
     render(
       <AnalysisPlotView
         {...defaultProps}
@@ -231,14 +223,13 @@ describe("AnalysisPlotView", () => {
     );
 
     expect(screen.getByTestId("ray-fan-chart")).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
     expect(mockRayFanChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
       wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
     }));
   });
 
-  it("renders a diffraction PSF chart instead of an image", () => {
+  it("renders a diffraction PSF chart when data is provided", () => {
     render(
       <AnalysisPlotView
         {...defaultProps}
@@ -260,13 +251,12 @@ describe("AnalysisPlotView", () => {
       />
     );
     expect(screen.getByTestId("diffraction-psf-chart")).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
     expect(mockDiffractionPsfChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
     }));
   });
 
-  it("renders a wavefront map chart instead of an image", () => {
+  it("renders a wavefront map chart when data is provided", () => {
     render(
       <AnalysisPlotView
         {...defaultProps}
@@ -289,13 +279,12 @@ describe("AnalysisPlotView", () => {
     );
 
     expect(screen.getByTestId("wavefront-map-chart")).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
     expect(mockWavefrontMapChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
     }));
   });
 
-  it("renders a geometric PSF chart instead of an image", () => {
+  it("renders a geometric PSF chart when data is provided", () => {
     render(
       <AnalysisPlotView
         {...defaultProps}
@@ -312,13 +301,12 @@ describe("AnalysisPlotView", () => {
     );
 
     expect(screen.getByTestId("geo-psf-chart")).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
     expect(mockGeoPsfChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
     }));
   });
 
-  it("renders a spot diagram chart instead of an image", () => {
+  it("renders a spot diagram chart when data is provided", () => {
     render(
       <AnalysisPlotView
         {...defaultProps}
@@ -337,10 +325,9 @@ describe("AnalysisPlotView", () => {
     );
 
     expect(screen.getByTestId("spot-diagram-chart")).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
   });
 
-  it("renders an opd fan chart instead of an image", () => {
+  it("renders an opd fan chart when data is provided", () => {
     render(
       <AnalysisPlotView
         {...defaultProps}
@@ -365,7 +352,6 @@ describe("AnalysisPlotView", () => {
     );
 
     expect(screen.getByTestId("opd-fan-chart")).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: "Analysis plot" })).not.toBeInTheDocument();
     expect(mockOpdFanChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
       wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
@@ -407,17 +393,10 @@ describe("AnalysisPlotView", () => {
   });
 
   describe("autoHeight mode", () => {
-    it("applies w-full and h-auto classes to the plot image", () => {
-      render(<AnalysisPlotView {...defaultProps} plotImageBase64="xyz789" autoHeight />);
-      const img = screen.getByRole("img", { name: "Analysis plot" });
-      expect(img).toHaveClass("w-full");
-      expect(img).toHaveClass("h-auto");
-    });
-
-    it("does not apply max-h-full to the plot image", () => {
-      render(<AnalysisPlotView {...defaultProps} plotImageBase64="xyz789" autoHeight />);
-      const img = screen.getByRole("img", { name: "Analysis plot" });
-      expect(img).not.toHaveClass("max-h-full");
+    it("uses the autoHeight container classes without rendering an image fallback", () => {
+      const { container } = render(<AnalysisPlotView {...defaultProps} autoHeight />);
+      expect(container.querySelector("img")).toBeNull();
+      expect(screen.getByText("No plot available").parentElement).toHaveClass("flex", "items-center", "justify-center");
     });
 
     it("forwards autoHeight to the surface-by-surface chart", () => {

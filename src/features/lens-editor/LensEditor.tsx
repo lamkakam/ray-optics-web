@@ -135,8 +135,6 @@ export function LensEditor({
         analysisPlotStore.getState().setGeoPsfData(plotResult.geoPsfData);
       } else if (plotResult?.kind === "diffractionPSF") {
         analysisPlotStore.getState().setDiffractionPsfData(plotResult.diffractionPsfData);
-      } else if (plotResult?.kind === "image") {
-        analysisPlotStore.getState().setPlotImage(plotResult?.image);
       }
       analysisDataStore.getState().setSeidelData(seidel);
       specsStore.getState().setCommittedSpecs(specs);

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Displays an analysis plot alongside plot-type, field, and wavelength selectors. Most plot types originally rendered a base64 PNG image; `rayFan`, `opdFan`, `spotDiagram`, `surfaceBySurface3rdOrder`, `wavefrontMap`, `geoPSF`, and `diffractionPSF` now delegate to dedicated ECharts chart components that render typed data instead of PNGs.
+Displays an analysis plot alongside plot-type, field, and wavelength selectors. All supported analysis plot types delegate to dedicated ECharts chart components that render typed data.
 
 ## PlotType
 
@@ -26,7 +26,6 @@ interface AnalysisPlotViewProps {
   selectedFieldIndex: number;
   selectedWavelengthIndex: number;
   selectedPlotType: PlotType;
-  plotImageBase64?: string;
   surfaceBySurface3rdOrderData?: SeidelSurfaceBySurfaceData;
   rayFanData?: RayFanData;
   opdFanData?: OpdFanData;
@@ -50,7 +49,6 @@ interface AnalysisPlotViewProps {
 | `selectedFieldIndex` | `number` | Yes | Currently selected field index |
 | `selectedWavelengthIndex` | `number` | Yes | Currently selected wavelength index |
 | `selectedPlotType` | `PlotType` | Yes | Currently selected plot type |
-| `plotImageBase64` | `string` | No | Base64 PNG data for the plot image |
 | `surfaceBySurface3rdOrderData` | `SeidelSurfaceBySurfaceData` | No | Per-surface Seidel aberration matrix used only when `selectedPlotType === "surfaceBySurface3rdOrder"` |
 | `rayFanData` | `RayFanData` | No | Per-wavelength ray-fan series used only when `selectedPlotType === "rayFan"` |
 | `opdFanData` | `OpdFanData` | No | Per-wavelength OPD fan series used only when `selectedPlotType === "opdFan"` |
@@ -62,7 +60,7 @@ interface AnalysisPlotViewProps {
 | `onFieldChange` | `(n) => void` | Yes | Called with the new field index |
 | `onWavelengthChange` | `(n) => void` | Yes | Called with the new wavelength index |
 | `onPlotTypeChange` | `(t) => void` | Yes | Called with the new plot type |
-| `autoHeight` | `boolean` | No | When `true`, image uses `w-full h-auto` instead of `max-h-full` fill layout |
+| `autoHeight` | `boolean` | No | When `true`, the outer container avoids the fixed-height panel layout so chart components can size to their content |
 
 ## PLOT_TYPE_CONFIG
 
@@ -87,7 +85,6 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
   - `hasData(props)`, which checks whether the corresponding chart data is defined
   - `render(props)`, which renders the matching chart component for that plot type
 - `AnalysisPlotView` generalizes typed-chart availability by looking up `PLOT_RENDERERS[selectedPlotType]` and rendering the chart only when `hasData(props)` is `true`.
-- PNG-based plots still use a plain `<img>` tag with a data URI (not `next/image`) for legacy image-backed modes.
 - `surfaceBySurface3rdOrder` renders `SurfaceBySurface3rdOrderChart` only when `surfaceBySurface3rdOrderData` is present. The chart uses the Seidel `surfaceBySurface` payload already fetched from the worker instead of the old PNG.
 - `rayFan` renders `RayFanChart` only when `rayFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
@@ -109,10 +106,15 @@ const handleFieldChange = useCallback(async (value: number) => {
   if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
   store.getState().setPlotLoading(true);
   try {
-    const plotFn = buildPlotFn(selectedPlotType, proxy, committedOpticalModel);
-    if (plotFn) {
-      const plot = await plotFn(value, selectedWavelengthIndex);
-      store.getState().setPlotImage(plot);
+    const result = await loadAnalysisPlot({
+      plotType: selectedPlotType,
+      proxy,
+      model: committedOpticalModel,
+      fieldIndex: value,
+      wavelengthIndex: selectedWavelengthIndex,
+    });
+    if (result?.kind === "rayFan") {
+      store.getState().setRayFanData(result.rayFanData);
     }
   } catch {
     onError();
@@ -128,7 +130,6 @@ return (
     selectedFieldIndex={selectedFieldIndex}
     selectedWavelengthIndex={selectedWavelengthIndex}
     selectedPlotType={selectedPlotType}
-    plotImageBase64={plotImage}
     diffractionPsfData={diffractionPsfData}
     loading={plotLoading}
     onFieldChange={handleFieldChange}

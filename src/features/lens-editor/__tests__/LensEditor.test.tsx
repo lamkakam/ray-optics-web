@@ -330,7 +330,6 @@ describe("LensEditor", () => {
     });
     expect(proxy!.plotWavefrontMap).not.toHaveBeenCalled();
     expect(analysisPlotStore.getState().wavefrontMapData).toEqual(mockWavefrontMapData);
-    expect(analysisPlotStore.getState().plotImage).toBeUndefined();
   });
 
   it("Update System uses getDiffractionPSFData instead of requesting a diffraction PNG", async () => {
@@ -347,7 +346,6 @@ describe("LensEditor", () => {
     });
     expect(proxy!.plotDiffractionPSF).not.toHaveBeenCalled();
     expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
-    expect(analysisPlotStore.getState().plotImage).toBeUndefined();
   });
 
   it("confirming an example uses getWavefrontData when Wavefront Map is already selected", async () => {
@@ -368,7 +366,6 @@ describe("LensEditor", () => {
     });
     expect(proxy!.plotWavefrontMap).not.toHaveBeenCalled();
     expect(analysisPlotStore.getState().wavefrontMapData).toEqual(mockWavefrontMapData);
-    expect(analysisPlotStore.getState().plotImage).toBeUndefined();
   });
 
   it("confirming an example uses getDiffractionPSFData when Diffraction PSF is already selected", async () => {
@@ -389,7 +386,6 @@ describe("LensEditor", () => {
     });
     expect(proxy!.plotDiffractionPSF).not.toHaveBeenCalled();
     expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
-    expect(analysisPlotStore.getState().plotImage).toBeUndefined();
   });
 
   it("submit error path calls onError", async () => {

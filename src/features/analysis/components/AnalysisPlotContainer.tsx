@@ -32,7 +32,6 @@ export function AnalysisPlotContainer({
   const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
 
   const store = useAnalysisPlotStore();
-  const plotImage = useStore(store, (s) => s.plotImage);
   const rayFanData = useStore(store, (s) => s.rayFanData);
   const opdFanData = useStore(store, (s) => s.opdFanData);
   const spotDiagramData = useStore(store, (s) => s.spotDiagramData);
@@ -107,8 +106,6 @@ export function AnalysisPlotContainer({
         store.getState().setWavefrontMapData(result.wavefrontMapData);
         return;
       }
-
-      store.getState().setPlotImage(result.image);
     } catch {
       onError();
     } finally {
@@ -144,7 +141,6 @@ export function AnalysisPlotContainer({
       selectedFieldIndex={selectedFieldIndex}
       selectedWavelengthIndex={selectedWavelengthIndex}
       selectedPlotType={selectedPlotType}
-      plotImageBase64={plotImage}
       surfaceBySurface3rdOrderData={seidelData?.surfaceBySurface}
       rayFanData={rayFanData}
       opdFanData={opdFanData}

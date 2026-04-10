@@ -11,11 +11,6 @@ function makeStore() {
 
 describe("analysisPlotStore", () => {
   describe("initial state", () => {
-    it("has plotImage as undefined", () => {
-      const store = makeStore();
-      expect(store.getState().plotImage).toBeUndefined();
-    });
-
     it("has plotLoading as false", () => {
       const store = makeStore();
       expect(store.getState().plotLoading).toBe(false);
@@ -67,55 +62,6 @@ describe("analysisPlotStore", () => {
     });
   });
 
-  describe("setPlotImage", () => {
-    it("sets plotImage to a string", () => {
-      const store = makeStore();
-      store.getState().setPlotImage("base64data");
-      expect(store.getState().plotImage).toBe("base64data");
-    });
-
-    it("clears plotImage with undefined", () => {
-      const store = makeStore();
-      store.getState().setPlotImage("base64data");
-      store.getState().setPlotImage(undefined);
-      expect(store.getState().plotImage).toBeUndefined();
-    });
-
-    it("clears chart payloads when setting plotImage", () => {
-      const store = makeStore();
-      store.getState().setDiffractionPsfData({
-        fieldIdx: 0,
-        wvlIdx: 0,
-        x: [0],
-        y: [0],
-        z: [[1]],
-        unitX: "mm",
-        unitY: "mm",
-        unitZ: "",
-      });
-      store.getState().setWavefrontMapData({
-        fieldIdx: 0,
-        wvlIdx: 0,
-        x: [0],
-        y: [0],
-        z: [[undefined]],
-        unitX: "",
-        unitY: "",
-        unitZ: "waves",
-      });
-
-      store.getState().setPlotImage("base64data");
-
-      expect(store.getState().plotImage).toBe("base64data");
-      expect(store.getState().geoPsfData).toBeUndefined();
-      expect(store.getState().diffractionPsfData).toBeUndefined();
-      expect(store.getState().wavefrontMapData).toBeUndefined();
-      expect(store.getState().spotDiagramData).toBeUndefined();
-      expect(store.getState().opdFanData).toBeUndefined();
-      expect(store.getState().rayFanData).toBeUndefined();
-    });
-  });
-
   describe("setRayFanData", () => {
     it("sets rayFanData", () => {
       const store = makeStore();
@@ -144,9 +90,8 @@ describe("analysisPlotStore", () => {
       ]);
     });
 
-    it("clears plot image and all other chart payloads when setting ray fan data", () => {
+    it("clears all other chart payloads when setting ray fan data", () => {
       const store = makeStore();
-      store.getState().setPlotImage("base64data");
       store.getState().setOpdFanData([
         {
           fieldIdx: 0,
@@ -213,7 +158,6 @@ describe("analysisPlotStore", () => {
         },
       ]);
 
-      expect(store.getState().plotImage).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
       expect(store.getState().spotDiagramData).toBeUndefined();
       expect(store.getState().geoPsfData).toBeUndefined();
@@ -251,9 +195,8 @@ describe("analysisPlotStore", () => {
       ]);
     });
 
-    it("clears plot image and all other chart payloads when setting opd fan data", () => {
+    it("clears all other chart payloads when setting opd fan data", () => {
       const store = makeStore();
-      store.getState().setPlotImage("base64data");
       store.getState().setSpotDiagramData([
         {
           fieldIdx: 0,
@@ -310,7 +253,6 @@ describe("analysisPlotStore", () => {
         },
       ]);
 
-      expect(store.getState().plotImage).toBeUndefined();
       expect(store.getState().spotDiagramData).toBeUndefined();
       expect(store.getState().geoPsfData).toBeUndefined();
       expect(store.getState().diffractionPsfData).toBeUndefined();
@@ -342,9 +284,8 @@ describe("analysisPlotStore", () => {
       ]);
     });
 
-    it("clears plot image and all other chart payloads when setting spot diagram data", () => {
+    it("clears all other chart payloads when setting spot diagram data", () => {
       const store = makeStore();
-      store.getState().setPlotImage("base64data");
       store.getState().setGeoPsfData({
         fieldIdx: 0,
         wvlIdx: 0,
@@ -385,7 +326,6 @@ describe("analysisPlotStore", () => {
         },
       ]);
 
-      expect(store.getState().plotImage).toBeUndefined();
       expect(store.getState().geoPsfData).toBeUndefined();
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
@@ -411,9 +351,8 @@ describe("analysisPlotStore", () => {
       expect(store.getState().geoPsfData?.fieldIdx).toBe(1);
     });
 
-    it("clears plot image, diffraction data, and wavefront data when setting geo PSF data", () => {
+    it("clears other chart payloads when setting geo PSF data", () => {
       const store = makeStore();
-      store.getState().setPlotImage("base64data");
       store.getState().setDiffractionPsfData({
         fieldIdx: 0,
         wvlIdx: 0,
@@ -444,7 +383,6 @@ describe("analysisPlotStore", () => {
         unitY: "mm",
       });
 
-      expect(store.getState().plotImage).toBeUndefined();
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
@@ -490,9 +428,8 @@ describe("analysisPlotStore", () => {
       expect(store.getState().diffractionPsfData).toBeUndefined();
     });
 
-    it("clears plot image and wavefront data when setting diffraction data", () => {
+    it("clears other chart payloads when setting diffraction data", () => {
       const store = makeStore();
-      store.getState().setPlotImage("base64data");
       store.getState().setWavefrontMapData({
         fieldIdx: 0,
         wvlIdx: 0,
@@ -519,7 +456,6 @@ describe("analysisPlotStore", () => {
         unitZ: "",
       });
 
-      expect(store.getState().plotImage).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
       expect(store.getState().rayFanData).toBeUndefined();
@@ -567,9 +503,8 @@ describe("analysisPlotStore", () => {
       expect(store.getState().wavefrontMapData).toBeUndefined();
     });
 
-    it("clears plot image and diffraction data when setting wavefront data", () => {
+    it("clears other chart payloads when setting wavefront data", () => {
       const store = makeStore();
-      store.getState().setPlotImage("base64data");
       store.getState().setDiffractionPsfData({
         fieldIdx: 0,
         wvlIdx: 0,
@@ -596,7 +531,6 @@ describe("analysisPlotStore", () => {
         unitZ: "waves",
       });
 
-      expect(store.getState().plotImage).toBeUndefined();
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().opdFanData).toBeUndefined();
       expect(store.getState().rayFanData).toBeUndefined();

@@ -411,7 +411,6 @@ describe("AnalysisPlotContainer", () => {
     });
     expect(proxy.plotOpdFan).not.toHaveBeenCalled();
     expect(store.getState().opdFanData).toEqual(opdFanData);
-    expect(store.getState().plotImage).toBeUndefined();
   });
 
   it("loads geoPSF through getGeoPSFData and stores chart data instead of a PNG", async () => {
@@ -426,7 +425,6 @@ describe("AnalysisPlotContainer", () => {
     });
     expect(proxy.plotGeoPSF).not.toHaveBeenCalled();
     expect(store.getState().geoPsfData).toEqual(geoPsfData);
-    expect(store.getState().plotImage).toBeUndefined();
   });
 
   it("handlePlotTypeChange: no-op when proxy is undefined", async () => {
@@ -451,7 +449,6 @@ describe("AnalysisPlotContainer", () => {
       expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(testModel, 0, 0);
     });
     expect(store.getState().diffractionPsfData).toEqual(diffractionPsfData);
-    expect(store.getState().plotImage).toBeUndefined();
   });
 
   it("handlePlotTypeChange: wavefrontMap fetches data and stores it instead of a PNG", async () => {
@@ -465,7 +462,6 @@ describe("AnalysisPlotContainer", () => {
       expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 0);
     });
     expect(store.getState().wavefrontMapData).toEqual(wavefrontMapData);
-    expect(store.getState().plotImage).toBeUndefined();
   });
 
   it("onError called when proxy throws on field change", async () => {
@@ -534,6 +530,5 @@ describe("AnalysisPlotContainer", () => {
     });
     expect(proxy.plotRayFan).not.toHaveBeenCalled();
     expect(store.getState().rayFanData).toEqual(rayFanData);
-    expect(store.getState().plotImage).toBeUndefined();
   });
 });
