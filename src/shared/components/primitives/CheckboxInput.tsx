@@ -1,17 +1,16 @@
-import React from "react";
+import React, { type JSX } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 interface CheckboxInputProps {
   readonly id: string;
-  readonly label: string;
+  readonly label: string | JSX.Element;
   readonly checked: boolean;
   readonly onChange: (checked: boolean) => void;
   readonly disabled?: boolean;
   readonly ariaLabel?: string;
   readonly className?: string;
   readonly labelClassName?: string;
-  readonly contentBeforeLabel?: React.ReactNode;
 }
 
 const WRAPPER_CLASSES = [
@@ -47,7 +46,6 @@ export function CheckboxInput({
   ariaLabel,
   className,
   labelClassName,
-  contentBeforeLabel,
 }: CheckboxInputProps) {
   return (
     <label htmlFor={id} className={clsx(WRAPPER_CLASSES, className)}>
@@ -60,10 +58,11 @@ export function CheckboxInput({
         onChange={(event) => onChange(event.target.checked)}
         className={clsx(INPUT_CLASSES, disabled && "cursor-not-allowed")}
       />
-      {contentBeforeLabel}
-      <span className={clsx("flex-1 text-left text-sm leading-5", labelClassName)}>
-        {label}
-      </span>
+      {typeof label === "string" ? (
+        <span className={clsx("flex-1 text-left text-sm leading-5", labelClassName)}>
+          {label}
+        </span>
+      ) : label}
     </label>
   );
 }

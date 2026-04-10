@@ -19,7 +19,7 @@ Pure presentational component that renders all filter/selector controls for the 
 1. **Plot Type** — `RadioInput` group (`refractiveIndex` / `partialDispersion`)
 2. **Centre Wavelength** — `RadioInput` group (`d` / `e`), labelled "Centre Wavelength"; options rendered via `MathJax inline`
 3. **Partial Dispersion** (only visible when `plotType='partialDispersion'`) — `RadioInput` group for `P_F,d`, `P_F,e`, `P_g,F`; option labels rendered via `MathJax inline` (`\(P_{F,d}\)` etc.)
-4. **Catalogs** — shared compact checkbox per catalog with a colored dot indicator using `CATALOG_COLOR_MAP`
+4. **Catalogs** — shared compact checkbox per catalog with a JSX-composed label that includes a colored dot indicator using `CATALOG_COLOR_MAP`; the checkbox keeps a plain-text `aria-label` equal to the catalog name
 
 ## MathJax
 The component uses `<MathJax inline>` from `better-react-mathjax` for visually rich labels (subscript notation). `RadioOption.labelNode` carries the MathJax node while `RadioOption.label` preserves plain-text `aria-label` for accessibility. **The component does not own a `MathJaxContext`** — the context is provided by the parent (`GlassMapView`). Axis labels in the scatter plot are not affected (they remain plain strings rendered in SVG).

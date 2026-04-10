@@ -76,15 +76,29 @@ describe("CheckboxInput", () => {
     );
   });
 
-  it("renders optional contentBeforeLabel", () => {
+  it("wraps string labels in the component-owned span", () => {
+    render(<CheckboxInput {...defaultProps} />);
+
+    expect(screen.getByText("Use model glass").tagName).toBe("SPAN");
+  });
+
+  it("renders JSX labels without the component-owned span wrapper", () => {
     render(
       <CheckboxInput
         {...defaultProps}
-        contentBeforeLabel={<span data-testid="catalog-dot" />}
+        ariaLabel="Schott"
+        label={(
+          <div data-testid="catalog-label">
+            <span data-testid="catalog-dot" />
+            <span>Schott</span>
+          </div>
+        )}
       />
     );
 
     expect(screen.getByTestId("catalog-dot")).toBeInTheDocument();
+    expect(screen.getByTestId("catalog-label").parentElement?.tagName).toBe("LABEL");
+    expect(screen.getByRole("checkbox", { name: "Schott" })).toBeInTheDocument();
   });
 
   it("supports disabled state", () => {
