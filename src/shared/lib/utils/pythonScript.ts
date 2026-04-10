@@ -11,6 +11,13 @@ const nonBuiltInSpecialMaterial = new Map<string, string>([
   ["CaF2", "caf2"],
 ]);
 
+type PythonLine = string;
+type SurfaceMutationLine = PythonLine;
+
+type SurfaceBuildStep = {
+  addSurfaceLine: PythonLine;
+  mutationLines: SurfaceMutationLine[];
+};
 
 function formattedMedium(medium: string, glassManufacturer: string): { medium: string | number, glassManufacturer: string | number } {
   const refractiveIdxForModalGlass = parseFloat(medium);
@@ -37,95 +44,191 @@ function formattedPolynomialCoeffs(coeffs: AsphericalPolynomialCoeffs) {
   return JSON.stringify(coeffs);
 }
 
-export function buildOpticalModelScript(opticalModel: OpticalModel): string {
-  const { setAutoAperture, specs, surfaces, object, image } = opticalModel;
+function formatWavelengthSpec(opticalModel: OpticalModel): PythonLine {
   const {
-    pupil: { space: pupilSpace, type: pupilType, value: pupilValue },
-    field: { space: fieldSpace, type: fieldType, maxField, fields, isRelative: isFieldRelative, isWideAngle: isFieldWideAngle },
-    wavelengths: { weights, referenceIndex: refWavelengthIdx }
-  } = specs;
+    specs: {
+      wavelengths: { weights, referenceIndex: refWavelengthIdx },
+    },
+  } = opticalModel;
 
   const formattedWeights = weights
     .reduce((acc, [wl, weight], idx) => `${acc}(${wl}, ${weight})${idx === weights.length - 1 ? "" : ","}`, "");
 
-  const addSurfaceCommands = surfaces.reduce((acc, surface) => {
-    const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter } = surface;
-    // common surface
-    const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
-    const { medium: mediumOption, glassManufacturer } = formattedMedium(medium, manufacturer);
-    const setStop = label === "Stop" ? "\nsm.set_stop()" : "";
+  return `osp['wvls'] = WvlSpec([${formattedWeights}], ref_wl=${refWavelengthIdx})`;
+}
 
-    let asphericalCommands = "";
-    if (aspherical !== undefined) {
-      const { kind } = aspherical;
-      if (kind === "Conic") {
-        const { conicConstant } = aspherical;
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
-      } else if (kind === "EvenAspherical") {
-        const { conicConstant, polynomialCoefficients } = aspherical;
-        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
-      } else if (kind === "RadialPolynomial") {
-        const { conicConstant, polynomialCoefficients } = aspherical;
-        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
-      } else if (kind === "XToroid") {
-        const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
-        const cr = toricSweepRadiusOfCurvature;
-        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = XToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${cr}, coefs=${coefsString})`;
-      } else if (kind === "YToroid") {
-        const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
-        const cr = toricSweepRadiusOfCurvature;
-        const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
-        asphericalCommands = `\nsm.ifcs[sm.cur_surface].profile = YToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${cr}, coefs=${coefsString})`;
-      }
-    }
-
-    let decenterCommands = "";
-    if (decenter !== undefined) {
-      const { coordinateSystemStrategy: posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = decenter;
-      decenterCommands = `\nsm.ifcs[sm.cur_surface].decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
-    }
-
-    return `${acc}\nsm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}]${semiDiameterArg})${asphericalCommands}${decenterCommands}${setStop}`;
-  }, "");
-
-  const { distance: objectDistance } = object;
-  const { curvatureRadius: imageCurvatureRadius, decenter: imageDecenter } = image;
-
-  let imageDecenterCommands = "";
-  if (imageDecenter !== undefined) {
-    const { coordinateSystemStrategy: posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = imageDecenter;
-    imageDecenterCommands = `\nsm.ifcs[-1].decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
-  }
-
-  const doApertureFlag = setAutoAperture === "autoAperture" ? "True" : "False";
+function formatFieldSpec(opticalModel: OpticalModel): PythonLine {
+  const {
+    specs: {
+      field: {
+        space: fieldSpace,
+        type: fieldType,
+        maxField,
+        fields,
+        isRelative: isFieldRelative,
+        isWideAngle: isFieldWideAngle,
+      },
+    },
+  } = opticalModel;
   const isWideAngleFlag = isFieldWideAngle === true ? ", is_wide_angle=True" : "";
 
-  // WARNING: DON'T TOUCH THE FORMATTING BELOW
+  return `osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"}${isWideAngleFlag})`;
+}
+
+function formatPupilSpec(opticalModel: OpticalModel): PythonLine {
+  const {
+    specs: {
+      pupil: { space: pupilSpace, type: pupilType, value: pupilValue },
+    },
+  } = opticalModel;
+
+  return `osp['pupil'] = PupilSpec(osp, key=['${pupilSpace}', '${pupilType}'], value=${pupilValue})`;
+}
+
+function formatDecenterAssignment(targetExpr: string, decenter: NonNullable<OpticalModel["image"]["decenter"]>): PythonLine {
+  const { coordinateSystemStrategy: posAndOrientation, alpha, beta, gamma, offsetX, offsetY } = decenter;
+  return `${targetExpr}.decenter = DecenterData(${JSON.stringify(posAndOrientation)}, alpha=${alpha}, beta=${beta}, gamma=${gamma}, x=${offsetX}, y=${offsetY})`;
+}
+
+function formatAsphereAssignment(
+  targetExpr: string,
+  curvatureRadius: number,
+  aspherical: NonNullable<OpticalModel["surfaces"][number]["aspherical"]>,
+): PythonLine {
+  const { kind } = aspherical;
+
+  if (kind === "Conic") {
+    const { conicConstant } = aspherical;
+    return `${targetExpr}.profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant})`;
+  }
+
+  if (kind === "EvenAspherical") {
+    const { conicConstant, polynomialCoefficients } = aspherical;
+    const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+    return `${targetExpr}.profile = EvenPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
+  }
+
+  if (kind === "RadialPolynomial") {
+    const { conicConstant, polynomialCoefficients } = aspherical;
+    const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+    return `${targetExpr}.profile = RadialPolynomial(r=${curvatureRadius}, cc=${conicConstant}, coefs=${coefsString})`;
+  }
+
+  if (kind === "XToroid") {
+    const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
+    const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+    return `${targetExpr}.profile = XToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${toricSweepRadiusOfCurvature}, coefs=${coefsString})`;
+  }
+
+  const { toricSweepRadiusOfCurvature, conicConstant, polynomialCoefficients } = aspherical;
+  const coefsString = formattedPolynomialCoeffs(polynomialCoefficients);
+  return `${targetExpr}.profile = YToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${toricSweepRadiusOfCurvature}, coefs=${coefsString})`;
+}
+
+function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBuildStep {
+  const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter } = surface;
+  const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
+  const { medium: mediumOption, glassManufacturer } = formattedMedium(medium, manufacturer);
+  const mutationLines: SurfaceMutationLine[] = [];
+  const currentSurfaceExpr = "sm.ifcs[sm.cur_surface]";
+
+  if (aspherical !== undefined) {
+    mutationLines.push(formatAsphereAssignment(currentSurfaceExpr, curvatureRadius, aspherical));
+  }
+
+  if (decenter !== undefined) {
+    mutationLines.push(formatDecenterAssignment(currentSurfaceExpr, decenter));
+  }
+
+  if (label === "Stop") {
+    mutationLines.push("sm.set_stop()");
+  }
+
+  return {
+    addSurfaceLine: `sm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}]${semiDiameterArg})`,
+    mutationLines,
+  };
+}
+
+function buildObjectSetupLines(opticalModel: OpticalModel): PythonLine[] {
+  const {
+    object: { distance: objectDistance },
+  } = opticalModel;
+
+  return [
+    `sm.gaps[0].thi=${objectDistance}`,
+  ];
+}
+
+function buildImageSetupLines(opticalModel: OpticalModel): PythonLine[] {
+  const {
+    image: { curvatureRadius: imageCurvatureRadius, decenter: imageDecenter },
+  } = opticalModel;
+  const lines = [`sm.ifcs[-1].profile.r = ${imageCurvatureRadius}`];
+
+  if (imageDecenter !== undefined) {
+    lines.push(formatDecenterAssignment("sm.ifcs[-1]", imageDecenter));
+  }
+
+  return lines;
+}
+
+function buildOpticalModelLines(opticalModel: OpticalModel): PythonLine[] {
+  const { setAutoAperture, surfaces } = opticalModel;
+  const doApertureFlag = setAutoAperture === "autoAperture" ? "True" : "False";
+  const lines: PythonLine[] = [
+    "opm = OpticalModel()",
+    "sm  = opm['seq_model']",
+    "osp = opm['optical_spec']",
+    "pm  = opm['parax_model']",
+    "",
+    "opm.system_spec.dimensions = 'mm'",
+    "",
+    formatPupilSpec(opticalModel),
+    formatFieldSpec(opticalModel),
+    formatWavelengthSpec(opticalModel),
+    "",
+    "opm.radius_mode = True",
+    `sm.do_apertures = ${doApertureFlag}`,
+    "",
+    ...buildObjectSetupLines(opticalModel),
+  ];
+
+  for (const surface of surfaces) {
+    const step = buildSurfaceStep(surface);
+    lines.push(step.addSurfaceLine, ...step.mutationLines);
+  }
+
+  lines.push(
+    ...buildImageSetupLines(opticalModel),
+    "",
+    "opm.update_model()",
+    "set_vig(opm)",
+  );
+
+  return lines;
+}
+
+function renderPythonBlock(lines: PythonLine[]): string {
+  return lines.join("\n");
+}
+
+function buildExportPreamble(): string {
   return `
-opm = OpticalModel()
-sm  = opm['seq_model']
-osp = opm['optical_spec']
-pm  = opm['parax_model']
+isdark = False
+from rayoptics.environment import *
+from rayoptics.raytr.vigcalc import set_vig
+from rayoptics.elem.surface import DecenterData
+from rayoptics.elem.profiles import XToroid, YToroid
+from opticalglass.rindexinfo import create_material
 
-opm.system_spec.dimensions = 'mm'
+caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'
+caf2 = create_glass(caf2_url, "rindexinfo")
+`;
+}
 
-osp['pupil'] = PupilSpec(osp, key=['${pupilSpace}', '${pupilType}'], value=${pupilValue})
-osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"}${isWideAngleFlag})
-osp['wvls'] = WvlSpec([${formattedWeights}], ref_wl=${refWavelengthIdx})
-
-opm.radius_mode = True
-sm.do_apertures = ${doApertureFlag}
-
-sm.gaps[0].thi=${objectDistance}
-${addSurfaceCommands}
-sm.ifcs[-1].profile.r = ${imageCurvatureRadius}
-${imageDecenterCommands}
-
-opm.update_model()
-set_vig(opm)`;
+export function buildOpticalModelScript(opticalModel: OpticalModel): string {
+  return renderPythonBlock(buildOpticalModelLines(opticalModel));
 }
 
 export function buildScript(
@@ -142,19 +245,7 @@ export function buildScript(
 }
 
 export function buildExportScript(opticalModel: OpticalModel) {
-  const scriptForImporting = `
-isdark = False
-from rayoptics.environment import *
-from rayoptics.raytr.vigcalc import set_vig
-from rayoptics.elem.surface import DecenterData
-from rayoptics.elem.profiles import XToroid, YToroid
-from opticalglass.rindexinfo import create_material
-
-caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'
-caf2 = create_glass(caf2_url, "rindexinfo")
-`;
-
-  return `${scriptForImporting}
+  return `${buildExportPreamble()}
 ${buildOpticalModelScript(opticalModel)}
 
 sm.list_model()
@@ -163,4 +254,3 @@ pm.first_order_data()
 layout_plt = plt.figure(FigureClass=InteractiveLayout, opt_model=opm,do_draw_rays=True, do_paraxial_layout=False,is_dark=isdark).plot()
 `;
 }
-
