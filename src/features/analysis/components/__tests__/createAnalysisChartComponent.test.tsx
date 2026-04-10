@@ -200,4 +200,42 @@ describe("createAnalysisChartComponent", () => {
     );
     expect(chart).toHaveStyle({ width: "640px", height: "640px" });
   });
+
+  it("resizes an existing echarts instance immediately when the parent shrinks before the debounce completes", () => {
+    const TestChart = createAnalysisChartComponent<TestChartProps, string>({
+      displayName: "TestChart",
+      testId: "test-chart",
+      ariaLabel: "Test chart",
+      debounceMs: 500,
+      getBuilderArgs: ({ data }) => data,
+      getChartHeight: ({ parentHeight }) => parentHeight,
+      buildOption: (data, width, height, chartTextColor) =>
+        mockBuildOption(data, width, height, chartTextColor),
+    });
+
+    render(
+      <div style={{ width: "640px", height: "480px" }}>
+        <TestChart data="series-e" />
+      </div>
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(500);
+    });
+
+    const chart = screen.getByTestId("test-chart");
+    const chartParent = chart.parentElement as HTMLDivElement;
+    Object.defineProperty(chartParent, "clientWidth", { configurable: true, value: 640 });
+    Object.defineProperty(chartParent, "clientHeight", { configurable: true, value: 180 });
+
+    act(() => {
+      resizeObserverCallback?.(
+        [{ target: chartParent, contentRect: { width: 640, height: 180 } as DOMRectReadOnly }] as unknown as ResizeObserverEntry[],
+        {} as ResizeObserver,
+      );
+    });
+
+    expect(chart).toHaveStyle({ width: "640px", height: "180px" });
+    expect(mockResize).toHaveBeenLastCalledWith({ width: 640, height: 180 });
+  });
 });

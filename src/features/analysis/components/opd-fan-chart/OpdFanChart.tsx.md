@@ -19,7 +19,7 @@ interface OpdFanChartProps {
 - Builds the chart option with `buildOpdFanChartOption(...)`.
 - Delegates parent measurement, debounce timing, resize handling, and chart disposal to `createAnalysisChartComponent(...)`.
 - Reads the active app theme via `useTheme()` and passes a resolved light/dark chart text color into `buildOpdFanChartOption(...)`.
-- Injects a sizing policy where `autoHeight` uses `max(round(parentWidth / 2), 320)` and fixed-height mode fills the parent height.
+- Injects a sizing policy where `autoHeight` uses `max(round(parentWidth / 2), 320)` and fixed-height mode clamps to `min(parentHeight, max(round(parentWidth / 2), 320))` so tall containers cannot stretch the chart beyond the intended fan layout.
 - Exposes `data-testid="opd-fan-chart"` and `aria-label="OPD fan plot"` for tests and accessibility.
 
 ## Dependencies
