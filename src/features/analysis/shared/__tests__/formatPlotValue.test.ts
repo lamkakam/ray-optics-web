@@ -34,4 +34,9 @@ describe("formatPlotValue", () => {
     expect(formatPlotValue(1e-4)).toBe("0.0001");
     expect(formatPlotValue(-1e-4)).toBe("-0.0001");
   });
+
+  it("uses scientific notation for values larger than 1000", () => {
+    expect(formatPlotValue(1000.1)).toBe("1e+3");
+    expect(formatPlotValue(-1000.1)).toBe("-1e+3");
+  });
 });
