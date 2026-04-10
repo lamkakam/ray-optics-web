@@ -92,29 +92,130 @@ const PLOT_TYPE_OPTIONS: SelectOption[] = (Object.keys(PLOT_TYPE_CONFIG) as Plot
   (key) => ({ value: key, label: PLOT_TYPE_CONFIG[key].label }),
 );
 
-export function AnalysisPlotView({
-  fieldOptions,
-  wavelengthOptions,
-  selectedFieldIndex,
-  selectedWavelengthIndex,
-  selectedPlotType,
-  plotImageBase64,
-  surfaceBySurface3rdOrderData,
-  rayFanData,
-  opdFanData,
-  spotDiagramData,
-  geoPsfData,
-  diffractionPsfData,
-  wavefrontMapData,
-  loading,
-  onFieldChange,
-  onWavelengthChange,
-  onPlotTypeChange,
-  autoHeight,
-}: AnalysisPlotViewProps) {
+type ChartRendererProps = AnalysisPlotViewProps;
+
+interface PlotRendererConfig {
+  readonly hasData: (props: ChartRendererProps) => boolean;
+  readonly render: (props: ChartRendererProps) => React.ReactNode;
+}
+
+function hasDefinedData<TData>(data: TData | undefined): data is TData {
+  return data !== undefined;
+}
+
+function createPlotRenderer<TData>(
+  hasData: (props: ChartRendererProps) => boolean,
+  getData: (props: ChartRendererProps) => TData | undefined,
+  render: (props: ChartRendererProps, data: TData) => React.ReactNode,
+): PlotRendererConfig {
+  return {
+    hasData,
+    render: (props) => {
+      const data = getData(props);
+
+      if (!hasDefinedData(data)) {
+        return undefined;
+      }
+
+      return render(props, data);
+    },
+  };
+}
+
+const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
+  rayFan: createPlotRenderer(
+    (props) => props.rayFanData !== undefined,
+    (props) => props.rayFanData,
+    (props, rayFanData) => (
+      <RayFanChart
+        rayFanData={rayFanData}
+        wavelengthLabels={props.wavelengthOptions.map((option) => option.label)}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  opdFan: createPlotRenderer(
+    (props) => props.opdFanData !== undefined,
+    (props) => props.opdFanData,
+    (props, opdFanData) => (
+      <OpdFanChart
+        opdFanData={opdFanData}
+        wavelengthLabels={props.wavelengthOptions.map((option) => option.label)}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  spotDiagram: createPlotRenderer(
+    (props) => props.spotDiagramData !== undefined,
+    (props) => props.spotDiagramData,
+    (props, spotDiagramData) => (
+      <SpotDiagramChart
+        spotDiagramData={spotDiagramData}
+        wavelengthLabels={props.wavelengthOptions.map((option) => option.label)}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  surfaceBySurface3rdOrder: createPlotRenderer(
+    (props) => props.surfaceBySurface3rdOrderData !== undefined,
+    (props) => props.surfaceBySurface3rdOrderData,
+    (props, surfaceBySurface3rdOrderData) => (
+      <SurfaceBySurface3rdOrderChart
+        surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  wavefrontMap: createPlotRenderer(
+    (props) => props.wavefrontMapData !== undefined,
+    (props) => props.wavefrontMapData,
+    (props, wavefrontMapData) => (
+      <WavefrontMapChart
+        wavefrontMapData={wavefrontMapData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  geoPSF: createPlotRenderer(
+    (props) => props.geoPsfData !== undefined,
+    (props) => props.geoPsfData,
+    (props, geoPsfData) => (
+      <GeoPsfChart
+        geoPsfData={geoPsfData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  diffractionPSF: createPlotRenderer(
+    (props) => props.diffractionPsfData !== undefined,
+    (props) => props.diffractionPsfData,
+    (props, diffractionPsfData) => (
+      <DiffractionPsfChart
+        diffractionPsfData={diffractionPsfData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+};
+
+export function AnalysisPlotView(props: AnalysisPlotViewProps) {
+  const {
+    fieldOptions,
+    wavelengthOptions,
+    selectedFieldIndex,
+    selectedWavelengthIndex,
+    selectedPlotType,
+    plotImageBase64,
+    loading,
+    onFieldChange,
+    onWavelengthChange,
+    onPlotTypeChange,
+    autoHeight,
+  } = props;
   const screenSize = useScreenBreakpoint();
   const selectType = screenSize === "screenSM" ? "compact" : "default";
   const fieldDisabled = !PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent;
+  const selectedPlotRenderer = PLOT_RENDERERS[selectedPlotType];
 
   return (
     <div className={`flex ${autoHeight ? "" : "h-full "}min-h-0 flex-col gap-3`}>
@@ -168,44 +269,8 @@ export function AnalysisPlotView({
           <Paragraph variant="placeholder">
             Loading plot...
           </Paragraph>
-        ) : selectedPlotType === "wavefrontMap" && wavefrontMapData ? (
-          <WavefrontMapChart
-            wavefrontMapData={wavefrontMapData}
-            autoHeight={autoHeight}
-          />
-        ) : selectedPlotType === "geoPSF" && geoPsfData ? (
-          <GeoPsfChart
-            geoPsfData={geoPsfData}
-            autoHeight={autoHeight}
-          />
-        ) : selectedPlotType === "surfaceBySurface3rdOrder" && surfaceBySurface3rdOrderData ? (
-          <SurfaceBySurface3rdOrderChart
-            surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
-            autoHeight={autoHeight}
-          />
-        ) : selectedPlotType === "rayFan" && rayFanData ? (
-          <RayFanChart
-            rayFanData={rayFanData}
-            wavelengthLabels={wavelengthOptions.map((option) => option.label)}
-            autoHeight={autoHeight}
-          />
-        ) : selectedPlotType === "opdFan" && opdFanData ? (
-          <OpdFanChart
-            opdFanData={opdFanData}
-            wavelengthLabels={wavelengthOptions.map((option) => option.label)}
-            autoHeight={autoHeight}
-          />
-        ) : selectedPlotType === "spotDiagram" && spotDiagramData ? (
-          <SpotDiagramChart
-            spotDiagramData={spotDiagramData}
-            wavelengthLabels={wavelengthOptions.map((option) => option.label)}
-            autoHeight={autoHeight}
-          />
-        ) : selectedPlotType === "diffractionPSF" && diffractionPsfData ? (
-          <DiffractionPsfChart
-            diffractionPsfData={diffractionPsfData}
-            autoHeight={autoHeight}
-          />
+        ) : selectedPlotRenderer.hasData(props) ? (
+          selectedPlotRenderer.render(props)
         ) : plotImageBase64 ? (
           /* eslint-disable-next-line @next/next/no-img-element -- base64 data URI */
           <img

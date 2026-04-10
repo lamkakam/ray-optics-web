@@ -83,6 +83,10 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the field dropdown is disabled for non-field-dependent types.
 - The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
+- `PLOT_RENDERERS` (module-local) maps each `PlotType` to a typed renderer config with:
+  - `hasData(props)`, which checks whether the corresponding chart data is defined
+  - `render(props)`, which renders the matching chart component for that plot type
+- `AnalysisPlotView` generalizes typed-chart availability by looking up `PLOT_RENDERERS[selectedPlotType]` and rendering the chart only when `hasData(props)` is `true`.
 - PNG-based plots still use a plain `<img>` tag with a data URI (not `next/image`) for legacy image-backed modes.
 - `surfaceBySurface3rdOrder` renders `SurfaceBySurface3rdOrderChart` only when `surfaceBySurface3rdOrderData` is present. The chart uses the Seidel `surfaceBySurface` payload already fetched from the worker instead of the old PNG.
 - `rayFan` renders `RayFanChart` only when `rayFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
