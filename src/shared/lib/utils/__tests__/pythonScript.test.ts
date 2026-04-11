@@ -94,6 +94,19 @@ describe("buildOpticalModelScript", () => {
     );
   });
 
+  it("should keep object setup lines grouped before surface construction", () => {
+    const script = buildOpticalModelScript(baseModel);
+    expect(script).toContain(
+      [
+        "opm.radius_mode = True",
+        "sm.do_apertures = False",
+        "",
+        "sm.gaps[0].thi=10000000000",
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)",
+      ].join("\n")
+    );
+  });
+
   it("should set the radius_mode correctly", () => {
     const script = buildOpticalModelScript(baseModel);
     expect(script).toContain("opm.radius_mode = True");
@@ -205,6 +218,46 @@ describe("buildOpticalModelScript", () => {
     };
     const script = buildOpticalModelScript(model);
     expect(script).toContain("sm.ifcs[sm.cur_surface].profile = YToroid(r=23.713, cc=0.1, cR=40, coefs=[0,0.02])");
+  });
+
+  it("should preserve the mutation order for a stop surface with asphere and decenter", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Stop",
+          curvatureRadius: 23.713,
+          thickness: 1.2,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5.5,
+          aspherical: {
+            kind: "EvenAspherical",
+            conicConstant: -1,
+            polynomialCoefficients: [0, 0.02],
+          },
+          decenter: {
+            coordinateSystemStrategy: "decenter",
+            alpha: 1,
+            beta: 2,
+            gamma: 3,
+            offsetX: 0.1,
+            offsetY: 0.2,
+          },
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      [
+        "sm.add_surface([23.713, 1.2, \"air\"], sd=5.5)",
+        "sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=-1, coefs=[0,0.02])",
+        "sm.ifcs[sm.cur_surface].decenter = DecenterData(\"decenter\", alpha=1, beta=2, gamma=3, x=0.1, y=0.2)",
+        "sm.set_stop()",
+      ].join("\n")
+    );
   });
 
   it("should set a surface with fluorite correctly", () => {

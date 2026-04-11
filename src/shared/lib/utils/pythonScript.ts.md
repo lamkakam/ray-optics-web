@@ -18,6 +18,8 @@ export function buildExportScript(opticalModel: OpticalModel): string;
 
 ### `buildOpticalModelScript(model)`
 - This function is used by `buildScript` and `buildExportScript`.
+- Internally, the function builds an ordered list of Python statements grouped into model setup, object setup, sequential surface steps, image setup, and final update calls, then joins them with newlines.
+- The imperative construction flow is intentional because RayOptics does not support constructing `OpticalModel` directly from a dict payload.
 - Reads `model.setAutoAperture` to determine `sm.do_apertures`.
 - Returns a Python string (no leading imports) that:
 
@@ -30,6 +32,7 @@ export function buildExportScript(opticalModel: OpticalModel): string;
    - Passes `[curvatureRadius, thickness, medium, manufacturer]` (manufacturer omitted for `"air"`, `"REFL"`, `"CaF2"`).
    - Handles `medium = "CaF2"` by emitting the variable name `caf2` (defined in the export script preamble).
    - Appends `sd=semiDiameter` when non-zero.
+   - Surface-specific follow-up mutations are emitted after `sm.add_surface(...)`, in order, so multiple mutations may coexist on the same surface.
    - If `aspherical.kind === "Conic"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=...)`.
    - If `aspherical.kind === "EvenAspherical"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=..., coefs=[...])`.
    - If `aspherical.kind === "RadialPolynomial"`, emits `sm.ifcs[sm.cur_surface].profile = RadialPolynomial(r=..., cc=..., coefs=[...])`.
@@ -40,8 +43,8 @@ export function buildExportScript(opticalModel: OpticalModel): string;
 7. Sets `sm.ifcs[-1].profile.r` to the image surface curvature radius.
 8. If the image surface has `decenter`, emits `sm.ifcs[-1].decenter = DecenterData(...)`.
 9. Calls `opm.update_model()` then `set_vig(opm)`.
-
-> **Warning**: The indentation and whitespace in the template literal are intentional — do not reformat them. Python is whitespace-sensitive.
+- The object-side setup is isolated in its own builder phase so future object-gap mutations such as `sm.gaps[0].medium = ...` can be added without changing surface-step logic.
+- The surface-step structure is intentionally extensible so future interface mutations such as `sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(...)` can be appended alongside asphere and decenter lines for the same surface.
 
 ### `buildScript(model, computation)`
 
@@ -65,6 +68,8 @@ Returns a string with:
 1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface`, and `opticalglass.rindexinfo`. Also creates a `caf2` glass object from `refractiveindex.info`.
 2. The full output of `buildOpticalModelScript(model)`.
 3. Calls to `sm.list_model()`, `pm.first_order_data()`, and `plt.figure(FigureClass=InteractiveLayout, ...)`.
+
+The import preamble is built separately from the model-construction lines so future export-only dependencies, such as a `DiffractionGrating` import, can be added without changing model-step generation.
 
 ## Edge Cases / Error Handling
 
