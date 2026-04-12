@@ -260,6 +260,28 @@ describe("buildOpticalModelScript", () => {
     );
   });
 
+  it("should set a surface diffraction grating when provided", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          diffractionGrating: {
+            lpmm: 1000,
+            order: 1,
+          },
+        },
+        ...baseModel.surfaces.slice(1),
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      "sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(grating_lpmm=1000, order=1)"
+    );
+  });
+
   it("should set a surface with fluorite correctly", () => {
     const model: OpticalModel = {
       ...baseModel,

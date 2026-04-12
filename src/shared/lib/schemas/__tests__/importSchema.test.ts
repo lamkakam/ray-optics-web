@@ -212,4 +212,93 @@ describe("validateImportedLensData", () => {
 
     expect(validateImportedLensData(model)).toBe(false);
   });
+
+  it("accepts models with diffraction grating on a surface", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          diffractionGrating: {
+            lpmm: 1000,
+            order: 1,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it("rejects diffraction grating with non-numeric lpmm", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          diffractionGrating: {
+            lpmm: "1000",
+            order: 1,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects diffraction grating with non-integer order", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          diffractionGrating: {
+            lpmm: 1000,
+            order: 1.5,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects diffraction grating with unexpected keys", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          diffractionGrating: {
+            lpmm: 1000,
+            order: 1,
+            grooveShape: "sawtooth",
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
 });

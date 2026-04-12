@@ -58,15 +58,39 @@ describe("_getFirstOrderData", () => {
 
 
 describe("_plotLensLayout", () => {
-  it("should build the model script and call plot_lens_layout(opm)", async () => {
+  it("should build the model script and call plot_lens_layout(opm) with false flags by default", async () => {
     const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
     let pythonScript = "";
     const result = await _plotLensLayout(async (code) => {
       pythonScript = code;
       return mockBase64;
-    }, allSphericalOpticalModel);
+    }, allSphericalOpticalModel, false);
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_lens_layout(_build_opm())");
+    expect(pythonScript).toContain("plot_lens_layout(_build_opm(), show_ray_fan_vs_wvls=False, is_dark=False)");
+    expect(result).toBe(mockBase64);
+  });
+
+  it("should enable wavelength ray fan overlay when any surface has a diffraction grating and pass dark mode", async () => {
+    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+    let pythonScript = "";
+    const modelWithDiffractionGrating: OpticalModel = {
+      ...allSphericalOpticalModel,
+      surfaces: [
+        ...allSphericalOpticalModel.surfaces.slice(0, 1),
+        {
+          ...allSphericalOpticalModel.surfaces[1],
+          diffractionGrating: { lpmm: 1200, order: 1 },
+        },
+        ...allSphericalOpticalModel.surfaces.slice(2),
+      ],
+    };
+
+    const result = await _plotLensLayout(async (code) => {
+      pythonScript = code;
+      return mockBase64;
+    }, modelWithDiffractionGrating, true);
+
+    expect(pythonScript).toContain("plot_lens_layout(_build_opm(), show_ray_fan_vs_wvls=True, is_dark=True)");
     expect(result).toBe(mockBase64);
   });
 });

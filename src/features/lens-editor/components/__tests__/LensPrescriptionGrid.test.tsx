@@ -45,6 +45,7 @@ describe("LensPrescriptionGrid", () => {
     onOpenMediumModal: jest.fn(),
     onOpenAsphericalModal: jest.fn(),
     onOpenDecenterModal: jest.fn(),
+    onOpenDiffractionGratingModal: jest.fn(),
     onAddRowAfter: jest.fn(),
     onDeleteRow: jest.fn(),
   };
@@ -75,6 +76,7 @@ describe("LensPrescriptionGrid", () => {
     expect(headerTexts).toContain("Medium");
     expect(headerTexts).toContain("Semi-diam.");
     expect(headerTexts).toContain("Tilt & Decenter");
+    expect(headerTexts).toContain("Diffraction Grating");
   });
 
   it("has an aria-label on the wrapper", () => {
@@ -302,6 +304,44 @@ describe("LensPrescriptionGrid", () => {
     await userEvent.click(cellWrapper);
 
     expect(onOpenDecenterModal).toHaveBeenCalledWith(IMAGE_ROW_ID);
+  });
+
+  // --- Diffraction Grating column ---
+  it("renders diffraction grating buttons for surface rows only", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const gratingButtons = screen.getAllByRole("button", { name: "Edit diffraction grating" });
+    expect(gratingButtons).toHaveLength(2);
+  });
+
+  it("calls onOpenDiffractionGratingModal when grating button is clicked", async () => {
+    const onOpenDiffractionGratingModal = jest.fn();
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
+      />
+    );
+    const gratingButtons = screen.getAllByRole("button", { name: "Edit diffraction grating" });
+
+    await userEvent.click(gratingButtons[0]);
+
+    expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith("s1");
+  });
+
+  it("opens diffraction grating modal when clicking cell area around the grating button", async () => {
+    const onOpenDiffractionGratingModal = jest.fn();
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
+      />
+    );
+    const gratingButtons = screen.getAllByRole("button", { name: "Edit diffraction grating" });
+    const cellWrapper = gratingButtons[0].closest("[data-cell-wrapper]")!;
+
+    await userEvent.click(cellWrapper);
+
+    expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith("s1");
   });
 
   // --- semiDiameterReadonly prop ---

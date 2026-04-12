@@ -26,6 +26,7 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 - Surface `aspherical` data must use the discriminated union shape with `kind`.
 - Supported `aspherical.kind` values are `"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
 - Toroid shapes require `toricSweepRadiusOfCurvature`; all coefficient-bearing shapes limit `polynomialCoefficients` to at most 10 items.
+- Surface `diffractionGrating` is optional and, when present, must contain numeric `lpmm` and integer `order`.
 
 - **`additionalProperties: false`** is set on every schema object — any unknown key causes validation failure.
 

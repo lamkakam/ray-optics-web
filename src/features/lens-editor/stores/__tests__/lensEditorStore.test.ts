@@ -193,6 +193,26 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       expect(store.getState().decenterModal).toEqual({ open: false, rowId: "" });
     });
+
+    it("opens and closes diffraction grating modal", () => {
+      const store = makeStore();
+      store.getState().openDiffractionGratingModal("s1");
+      expect(store.getState().diffractionGratingModal).toEqual({
+        open: true,
+        rowId: "s1",
+      });
+
+      store.getState().closeDiffractionGratingModal();
+      expect(store.getState().diffractionGratingModal).toEqual({
+        open: false,
+        rowId: "",
+      });
+    });
+
+    it("initializes diffraction grating modal as closed", () => {
+      const store = makeStore();
+      expect(store.getState().diffractionGratingModal).toEqual({ open: false, rowId: "" });
+    });
   });
 
   describe("addRowAfter", () => {

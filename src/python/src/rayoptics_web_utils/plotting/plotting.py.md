@@ -7,7 +7,11 @@ Generates matplotlib visualisations of optical system behaviour and returns them
 ## Exports
 
 ```python
-def plot_lens_layout(opm: OpticalModel) -> str: ...
+def plot_lens_layout(
+    opm: OpticalModel,
+    show_ray_fan_vs_wvls: bool = False,
+    is_dark: bool = False,
+) -> str: ...
 def plot_ray_fan(fi: int, opm: OpticalModel) -> str: ...
 def plot_opd_fan(fi: int, opm: OpticalModel) -> str: ...
 def plot_spot_diagram(fi: int, opm: OpticalModel) -> str: ...
@@ -18,11 +22,14 @@ All functions return a base64-encoded PNG string.
 
 ## Function Details
 
-### `plot_lens_layout(opm)`
+### `plot_lens_layout(opm, show_ray_fan_vs_wvls=False, is_dark=False)`
 
 Renders the optical layout (cross-section with ray traces) using `InteractiveLayout`.
 
-- Creates a figure with `FigureClass=InteractiveLayout`, enabling ray drawing (`do_draw_rays=True`) and disabling paraxial layout (`do_paraxial_layout=False`).
+- By default, creates a figure with `FigureClass=InteractiveLayout`, enabling ray drawing (`do_draw_rays=True`) and disabling paraxial layout (`do_paraxial_layout=False`).
+- Forwards `is_dark` to `InteractiveLayout` so the layout can render in light or dark mode.
+- When `show_ray_fan_vs_wvls=True`, disables the standard ray/beam overlays and injects an `entity_factory_list` that builds one `RayFanBundle` per configured wavelength for field index `0`.
+- The wavelength overlay uses `RayFan(..., xyfan='y')` and the field label from `fov.index_labels[0]`, with each bundle reusing the wavelength render color from the optical model.
 - Calls `fig.plot()` then delegates to `_fig_to_base64`.
 
 ### `plot_ray_fan(fi, opm)`
@@ -79,6 +86,9 @@ Renders the optical system cross-section with ray traces:
 from rayoptics_web_utils.plotting import plot_lens_layout
 
 png_base64 = plot_lens_layout(opm)
+# Returns: "iVBORw0KGgoAAAANS..." (base64-encoded PNG string)
+
+ray_fan_png = plot_lens_layout(opm, show_ray_fan_vs_wvls=True, is_dark=True)
 # Returns: "iVBORw0KGgoAAAANS..." (base64-encoded PNG string)
 ```
 

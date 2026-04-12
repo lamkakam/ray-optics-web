@@ -39,6 +39,7 @@ export function buildExportScript(opticalModel: OpticalModel): string;
    - If `aspherical.kind === "XToroid"`, emits `sm.ifcs[sm.cur_surface].profile = XToroid(r=..., cc=..., cr=..., coefs=[...])`.
    - If `aspherical.kind === "YToroid"`, emits `sm.ifcs[sm.cur_surface].profile = YToroid(r=..., cc=..., cr=..., coefs=[...])`.
    - If `decenter` is set, emits `sm.ifcs[sm.cur_surface].decenter = DecenterData(...)`.
+   - If `diffractionGrating` is set, emits `sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(...)`.
    - If `label === "Stop"`, emits `sm.set_stop()`.
 7. Sets `sm.ifcs[-1].profile.r` to the image surface curvature radius.
 8. If the image surface has `decenter`, emits `sm.ifcs[-1].decenter = DecenterData(...)`.

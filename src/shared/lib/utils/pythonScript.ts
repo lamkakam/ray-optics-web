@@ -125,8 +125,16 @@ function formatAsphereAssignment(
   return `${targetExpr}.profile = YToroid(r=${curvatureRadius}, cc=${conicConstant}, cR=${toricSweepRadiusOfCurvature}, coefs=${coefsString})`;
 }
 
+function formatDiffractionGrating(
+  targetExpr: string,
+  grating: NonNullable<OpticalModel["surfaces"][number]["diffractionGrating"]>,
+) {
+  const { lpmm, order } = grating;
+  return `${targetExpr}.phase_element = DiffractionGrating(grating_lpmm=${lpmm}, order=${order})`;
+}
+
 function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBuildStep {
-  const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter } = surface;
+  const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter, diffractionGrating } = surface;
   const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
   const { medium: mediumOption, glassManufacturer } = formattedMedium(medium, manufacturer);
   const mutationLines: SurfaceMutationLine[] = [];
@@ -138,6 +146,10 @@ function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBui
 
   if (decenter !== undefined) {
     mutationLines.push(formatDecenterAssignment(currentSurfaceExpr, decenter));
+  }
+
+  if (diffractionGrating !== undefined) {
+    mutationLines.push(formatDiffractionGrating(currentSurfaceExpr, diffractionGrating));
   }
 
   if (label === "Stop") {

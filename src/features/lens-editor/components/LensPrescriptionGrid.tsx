@@ -8,6 +8,7 @@ import type { GridRow } from "@/shared/lib/types/gridTypes";
 import { MediumCell } from "@/features/lens-editor/components/MediumCell";
 import { AsphericalCell } from "@/features/lens-editor/components/AsphericalCell";
 import { DecenterCell } from "@/features/lens-editor/components/DecenterCell";
+import { DiffractionGratingCell } from "@/features/lens-editor/components/DiffractionGratingCell";
 import { GridRowButtons } from "@/features/lens-editor/components/GridRowButtons";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 
@@ -48,6 +49,7 @@ interface LensPrescriptionGridProps {
   readonly onOpenMediumModal: (rowId: string) => void;
   readonly onOpenAsphericalModal: (rowId: string) => void;
   readonly onOpenDecenterModal: (rowId: string) => void;
+  readonly onOpenDiffractionGratingModal: (rowId: string) => void;
   readonly onAddRowAfter: (rowId: string) => void;
   readonly onDeleteRow: (rowId: string) => void;
   readonly semiDiameterReadonly?: boolean;
@@ -59,6 +61,7 @@ export function LensPrescriptionGrid({
   onOpenMediumModal,
   onOpenAsphericalModal,
   onOpenDecenterModal,
+  onOpenDiffractionGratingModal,
   onAddRowAfter,
   onDeleteRow,
   semiDiameterReadonly = false,
@@ -201,7 +204,25 @@ export function LensPrescriptionGrid({
         );
       },
     },
-  ], [semiDiameterReadonly, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenDecenterModal, onAddRowAfter, onDeleteRow]);
+    {
+      headerName: "Diffraction Grating",
+      valueGetter: (params) => {
+        if (!params.data || params.data.kind !== "surface") return undefined;
+        return params.data.diffractionGrating;
+      },
+      cellRenderer: (params: { data: GridRow }) => {
+        if (params.data.kind !== "surface") return null;
+        return (
+          <ActionWrapper onAction={() => onOpenDiffractionGratingModal(params.data.id)}>
+            <DiffractionGratingCell
+              isDiffractionGratingSet={params.data.diffractionGrating !== undefined}
+              onOpenModal={() => onOpenDiffractionGratingModal(params.data.id)}
+            />
+          </ActionWrapper>
+        );
+      },
+    },
+  ], [semiDiameterReadonly, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenDecenterModal, onOpenDiffractionGratingModal, onAddRowAfter, onDeleteRow]);
 
   return (
     <div

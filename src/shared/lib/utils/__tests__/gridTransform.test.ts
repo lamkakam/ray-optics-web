@@ -245,6 +245,35 @@ describe("surfacesToGridRows", () => {
       });
     }
   });
+
+  it("preserves diffraction grating data", () => {
+    const withGrating: Surfaces = {
+      object: { distance: 0 },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 50,
+          thickness: 5,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+          diffractionGrating: {
+            lpmm: 900,
+            order: 1,
+          },
+        },
+      ],
+    };
+    const rows = surfacesToGridRows(withGrating);
+    const surfaceRow = rows[1];
+    if (surfaceRow.kind === "surface") {
+      expect(surfaceRow.diffractionGrating).toEqual({
+        lpmm: 900,
+        order: 1,
+      });
+    }
+  });
 });
 
 describe("gridRowsToSurfaces", () => {
@@ -343,6 +372,53 @@ describe("gridRowsToSurfaces", () => {
     const surfaces = gridRowsToSurfaces(rows);
     expect(surfaces.surfaces[0]).not.toHaveProperty("aspherical");
   });
+
+  it("preserves diffraction grating on surface rows", () => {
+    const rows: GridRow[] = [
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      {
+        id: "s1",
+        kind: "surface",
+        label: "Default",
+        curvatureRadius: 0,
+        thickness: 0,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 1,
+        diffractionGrating: {
+          lpmm: 1200,
+          order: -1,
+        },
+      },
+      { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
+    ];
+
+    const surfaces = gridRowsToSurfaces(rows);
+    expect(surfaces.surfaces[0].diffractionGrating).toEqual({
+      lpmm: 1200,
+      order: -1,
+    });
+  });
+
+  it("excludes diffraction grating key when undefined", () => {
+    const rows: GridRow[] = [
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      {
+        id: "s1",
+        kind: "surface",
+        label: "Default",
+        curvatureRadius: 0,
+        thickness: 0,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 1,
+      },
+      { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
+    ];
+
+    const surfaces = gridRowsToSurfaces(rows);
+    expect(surfaces.surfaces[0]).not.toHaveProperty("diffractionGrating");
+  });
 });
 
 describe("round-trip", () => {
@@ -420,6 +496,29 @@ describe("round-trip", () => {
     };
     const result = gridRowsToSurfaces(surfacesToGridRows(withImageDecenter));
     expect(result).toEqual(withImageDecenter);
+  });
+
+  it("round-trips surfaces with diffraction grating data", () => {
+    const withGrating: Surfaces = {
+      object: { distance: 0 },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 50,
+          thickness: 5,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 10,
+          diffractionGrating: {
+            lpmm: 1000,
+            order: 1,
+          },
+        },
+      ],
+    };
+    const result = gridRowsToSurfaces(surfacesToGridRows(withGrating));
+    expect(result).toEqual(withGrating);
   });
 
   it("round-trips zero surfaces", () => {

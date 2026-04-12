@@ -20,6 +20,16 @@ const decenterConfigSchema = {
   },
 };
 
+const diffractionGratingSchema = {
+  type: "object",
+  required: ["lpmm", "order"],
+  additionalProperties: false,
+  properties: {
+    lpmm: { type: "number" },
+    order: { type: "integer" },
+  },
+};
+
 const conicAsphericalSchema = {
   type: "object",
   required: ["kind", "conicConstant"],
@@ -107,6 +117,7 @@ const surfaceSchema = {
       oneOf: [conicAsphericalSchema, evenAsphericalSchema, radialPolynomialSchema, xToroidSchema, yToroidSchema],
     },
     decenter: decenterConfigSchema,
+    diffractionGrating: diffractionGratingSchema,
   },
 };
 

@@ -471,6 +471,57 @@ describe("LensPrescriptionContainer", () => {
     );
   });
 
+  it("renders DiffractionGratingModal when diffractionGratingModal is open", () => {
+    const { store } = renderLPC();
+
+    act(() => {
+      const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
+      store.getState().openDiffractionGratingModal(rowId);
+    });
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText("Diffraction Grating")).toBeInTheDocument();
+  });
+
+  it("saves diffraction grating data and closes modal when Confirm is clicked", async () => {
+    const { store } = renderLPC();
+    const surfaceRow = store.getState().rows.find((r) => r.kind === "surface")!;
+
+    act(() => {
+      store.getState().openDiffractionGratingModal(surfaceRow.id);
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(store.getState().diffractionGratingModal.open).toBe(false);
+    const updatedRow = store.getState().rows.find((r) => r.id === surfaceRow.id);
+    expect(updatedRow?.kind === "surface" && updatedRow.diffractionGrating).toEqual({
+      lpmm: 1000,
+      order: 1,
+    });
+  });
+
+  it("removes diffraction grating and closes modal when Remove is clicked", async () => {
+    const store = createTestStore();
+    const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
+    store.getState().updateRow(rowId, {
+      diffractionGrating: { lpmm: 1200, order: 1 },
+    });
+
+    renderLPC(store);
+
+    act(() => {
+      store.getState().openDiffractionGratingModal(rowId);
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Remove" }));
+
+    expect(store.getState().diffractionGratingModal.open).toBe(false);
+    const updatedRow = store.getState().rows.find((r) => r.id === rowId);
+    expect(updatedRow?.kind === "surface" && updatedRow.diffractionGrating).toBeUndefined();
+  });
+
   // --- Export Python Script ---
   it("renders 'Export Python Script' button", () => {
     renderLPC();
