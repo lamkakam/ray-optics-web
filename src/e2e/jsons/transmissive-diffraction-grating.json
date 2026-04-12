@@ -1,0 +1,161 @@
+{
+  "setAutoAperture": "manualAperture",
+  "specs": {
+    "pupil": {
+      "space": "object",
+      "type": "epd",
+      "value": 16
+    },
+    "field": {
+      "space": "object",
+      "type": "height",
+      "maxField": 0,
+      "fields": [
+        0
+      ],
+      "isRelative": true,
+      "isWideAngle": false
+    },
+    "wavelengths": {
+      "weights": [
+        [
+          400,
+          0.5
+        ],
+        [
+          600,
+          1
+        ],
+        [
+          800,
+          0.5
+        ]
+      ],
+      "referenceIndex": 1
+    }
+  },
+  "object": {
+    "distance": 39
+  },
+  "image": {
+    "curvatureRadius": 0
+  },
+  "surfaces": [
+    {
+      "label": "Default",
+      "curvatureRadius": 34.9,
+      "thickness": 9,
+      "medium": "N-BAF10",
+      "manufacturer": "Schott",
+      "semiDiameter": 12.7
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": -28.8,
+      "thickness": 3.5,
+      "medium": "N-SF6",
+      "manufacturer": "Schott",
+      "semiDiameter": 12.7
+    },
+    {
+      "label": "Stop",
+      "curvatureRadius": -137.5,
+      "thickness": 15,
+      "medium": "air",
+      "manufacturer": "",
+      "semiDiameter": 8
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": 0,
+      "thickness": 8,
+      "medium": "N-BAF10",
+      "manufacturer": "Schott",
+      "semiDiameter": 12.7,
+      "decenter": {
+        "coordinateSystemStrategy": "dec and return",
+        "alpha": 15,
+        "beta": 0,
+        "gamma": 0,
+        "offsetX": 0,
+        "offsetY": 0
+      }
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": 0,
+      "thickness": 2,
+      "medium": "air",
+      "manufacturer": "",
+      "semiDiameter": 12.7
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": 0,
+      "thickness": 2,
+      "medium": "SF10",
+      "manufacturer": "Schott",
+      "semiDiameter": 12.7,
+      "diffractionGrating": {
+        "lpmm": 600,
+        "order": 1
+      }
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": 0,
+      "thickness": 2,
+      "medium": "air",
+      "manufacturer": "",
+      "semiDiameter": 12.7
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": 0,
+      "thickness": 8,
+      "medium": "N-BAF10",
+      "manufacturer": "Schott",
+      "semiDiameter": 12.7
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": 0,
+      "thickness": 15,
+      "medium": "air",
+      "manufacturer": "",
+      "semiDiameter": 12.7,
+      "decenter": {
+        "coordinateSystemStrategy": "dec and return",
+        "alpha": -15,
+        "beta": 0,
+        "gamma": 0,
+        "offsetX": 0,
+        "offsetY": 0
+      }
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": 34.9,
+      "thickness": 9,
+      "medium": "N-BAF10",
+      "manufacturer": "Schott",
+      "semiDiameter": 12.7
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": -28.8,
+      "thickness": 3.5,
+      "medium": "N-SF6",
+      "manufacturer": "Schott",
+      "semiDiameter": 12.7
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": -137.5,
+      "thickness": 50,
+      "medium": "air",
+      "manufacturer": "",
+      "semiDiameter": 12.7
+    }
+  ]
+}
