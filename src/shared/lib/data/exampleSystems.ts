@@ -1428,13 +1428,13 @@ const cellphoneLensExample: OpticalModel = {
   ]
 };
 
-const diffractionGratingExample: OpticalModel = {
+const transmissiveDiffractionGrating: OpticalModel = {
   setAutoAperture: "manualAperture",
   specs: {
     pupil: {
       space: "object",
       type: "epd",
-      value: 25.4,
+      value: 16,
     },
     field: {
       space: "object",
@@ -1462,7 +1462,7 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 9,
       medium: "N-BAF10",
       manufacturer: "Schott",
-      semiDiameter: 15,
+      semiDiameter: 12.7,
     },
     {
       label: "Default",
@@ -1470,7 +1470,7 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 3.5,
       medium: "N-SF6",
       manufacturer: "Schott",
-      semiDiameter: 15,
+      semiDiameter: 12.7,
     },
     {
       label: "Stop",
@@ -1478,7 +1478,7 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 15,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 15,
+      semiDiameter: 8,
     },
     {
       label: "Default",
@@ -1486,7 +1486,7 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 8,
       medium: "N-BAF10",
       manufacturer: "Schott",
-      semiDiameter: 15,
+      semiDiameter: 12.7,
       decenter: {
         coordinateSystemStrategy: "dec and return",
         alpha: 15,
@@ -1502,15 +1502,15 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 2,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 1,
+      semiDiameter: 12.7,
     },
     {
       label: "Default",
       curvatureRadius: 0,
       thickness: 2,
-      medium: "N-BAF10",
+      medium: "SF10",
       manufacturer: "Schott",
-      semiDiameter: 15,
+      semiDiameter: 12.7,
       diffractionGrating: {
         lpmm: 600,
         order: 1,
@@ -1522,7 +1522,7 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 2,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 1
+      semiDiameter: 12.7,
     },
     {
       label: "Default",
@@ -1530,7 +1530,7 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 8,
       medium: "N-BAF10",
       manufacturer: "Schott",
-      semiDiameter: 15,
+      semiDiameter: 12.7,
     },
     {
       label: "Default",
@@ -1538,7 +1538,7 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 15,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 15,
+      semiDiameter: 12.7,
       decenter: {
         coordinateSystemStrategy: "dec and return",
         alpha: -15,
@@ -1554,7 +1554,7 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 9,
       medium: "N-BAF10",
       manufacturer: "Schott",
-      semiDiameter: 15,
+      semiDiameter: 12.7,
     },
     {
       label: "Default",
@@ -1562,7 +1562,7 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 3.5,
       medium: "N-SF6",
       manufacturer: "Schott",
-      semiDiameter: 15,
+      semiDiameter: 12.7,
     },
     {
       label: "Default",
@@ -1570,10 +1570,98 @@ const diffractionGratingExample: OpticalModel = {
       thickness: 50,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 15,
+      semiDiameter: 12.7,
     }
   ]
 };
+
+const reflectiveDiffractionGrating: OpticalModel = {
+  setAutoAperture: "autoAperture",
+  specs: {
+    pupil: {
+      space: "object",
+      type: "epd",
+      value: 20,
+    },
+    field: {
+      space: "object",
+      type: "height",
+      maxField: 0,
+      fields: [0],
+      isRelative: true,
+      isWideAngle: false,
+    },
+    wavelengths: {
+      weights: [
+        [435.835, 0.5],
+        [546.073, 1],
+        [656.273, 0.5],
+      ],
+      referenceIndex: 1,
+    }
+  },
+  object: {
+    distance: 34.8,
+  },
+  image: {
+    curvatureRadius: 0,
+  },
+  surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 40,
+      thickness: 15,
+      medium: "1.5",
+      manufacturer: "62.5",
+      semiDiameter: 1,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -40,
+      thickness: 150,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 1,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "REFL",
+      manufacturer: "",
+      semiDiameter: 1,
+      decenter: {
+        coordinateSystemStrategy: "dec and return",
+        alpha: 30,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      },
+      diffractionGrating: {
+        lpmm: 600,
+        order: 1,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: -70,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 1,
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 60,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    }
+  ]
+};
+
 
 
 const list: Record<string, OpticalModel> = {
@@ -1596,7 +1684,8 @@ const list: Record<string, OpticalModel> = {
   "Reversed Tracing of Modified Imaizumi M. 80deg AFoV Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
   "Fisheye Lens Example": fishEyeLens,
   "Cell Phone Camera Lens Example US#7,535,658": cellphoneLensExample,
-  "Diffraction Grating Example": diffractionGratingExample,
+  "Diffraction Grating (Transmissive) Example": transmissiveDiffractionGrating,
+  "Diffraction Grating (Reflective) Example": reflectiveDiffractionGrating,
 } as const;
 
 export const ExampleSystems: { [x: string]: OpticalModel } = Object.keys(list).reduce((acc, name, idx) => ({

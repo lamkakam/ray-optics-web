@@ -135,7 +135,8 @@ The bundled example optical systems are derived or adapted from the following so
 - **Reverse Raytraced Imaizumi M. Eyepiece (modified)** — eyepiece design by Imaizumi M., U.S. Patent 5,557,464 (1996); modified configuration from [telescope-optics.net: Eyepiece raytrace](https://www.telescope-optics.net/eyepiece_raytrace.htm)
 - **Fisheye Lens Example** - from a [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/157#discussioncomment-11589178)
 - **Cell Phone Camera Lens** - from the [RayOptics example gallery](https://ray-optics.readthedocs.io/en/stable/examples/Cell_Phone_lens/Cell_Phone_lens.html), which cites U.S. Patent 7,535,658
-- **Diffraction Grating Example** - from a [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/156#discussioncomment-10790331)
+- **Diffraction Grating (Transmissive) Example** - from a [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/156#discussioncomment-10790331)
+- **Diffraction Grating (Reflective) Example** - from a [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/147#discussioncomment-9360602)
 
 
 ## License
