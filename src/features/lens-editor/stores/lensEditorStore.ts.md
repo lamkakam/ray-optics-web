@@ -22,6 +22,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 | `pendingMediumSelection` | `{ rowId: string; medium: string; manufacturer: string } \| undefined` | `undefined` |
 | `asphericalModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `decenterModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
+| `diffractionGratingModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `committedOpticalModel` | `OpticalModel \| undefined` | `undefined` |
 
 ## Actions
@@ -40,6 +41,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `closeMediumModal()` — closes the medium modal and discards the pending draft.
 - `openAsphericalModal(rowId)` / `closeAsphericalModal()` — open/close the aspherical coefficients modal.
 - `openDecenterModal(rowId)` / `closeDecenterModal()` — open/close the surface decenter modal.
+- `openDiffractionGratingModal(rowId)` / `closeDiffractionGratingModal()` — open/close the surface diffraction grating modal.
 - `setCommittedOpticalModel(model)` — stores the last successfully submitted `OpticalModel` snapshot. Used by `AnalysisPlotContainer` and other consumers that need the most recently committed model.
 
 ## Key Conventions

@@ -35,6 +35,12 @@ export type DecenterConfig = {
   offsetY: number,
 };
 
+export type DiffractionGrating = {
+  lpmm: number,
+  order: number,
+};
+
+
 export type AsphericalPolynomialCoeffs = number[];
 
 type AsphericalConfigMap = {
@@ -69,6 +75,7 @@ export interface Surface {
   semiDiameter: number;
   aspherical?: AsphericalConfig;
   decenter?: DecenterConfig,
+  diffractionGrating?: DiffractionGrating,
 }
 
 export interface Surfaces {

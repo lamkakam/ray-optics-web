@@ -25,6 +25,7 @@ export interface LensEditorState {
   pendingMediumSelection: PendingMediumSelection | undefined;
   asphericalModal: ModalState;
   decenterModal: ModalState;
+  diffractionGratingModal: ModalState;
   committedOpticalModel: OpticalModel | undefined;
 
   setRows: (rows: GridRow[]) => void;
@@ -43,6 +44,8 @@ export interface LensEditorState {
   closeAsphericalModal: () => void;
   openDecenterModal: (rowId: string) => void;
   closeDecenterModal: () => void;
+  openDiffractionGratingModal: (rowId: string) => void;
+  closeDiffractionGratingModal: () => void;
   setCommittedOpticalModel: (model: OpticalModel) => void;
 }
 
@@ -74,6 +77,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   pendingMediumSelection: undefined,
   asphericalModal: { open: false, rowId: "" },
   decenterModal: { open: false, rowId: "" },
+  diffractionGratingModal: { open: false, rowId: "" },
   committedOpticalModel: undefined,
 
   setRows: (rows) => set({ rows }),
@@ -206,6 +210,12 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
   closeDecenterModal: () =>
     set({ decenterModal: { open: false, rowId: "" } }),
+
+  openDiffractionGratingModal: (rowId) =>
+    set({ diffractionGratingModal: { open: true, rowId } }),
+
+  closeDiffractionGratingModal: () =>
+    set({ diffractionGratingModal: { open: false, rowId: "" } }),
 
   setCommittedOpticalModel: (model) => set({ committedOpticalModel: model }),
 });

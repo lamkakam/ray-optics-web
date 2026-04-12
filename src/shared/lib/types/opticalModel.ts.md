@@ -6,6 +6,7 @@ Defines all core TypeScript domain types for the optical model, including system
 
 ## Exports
 - `DecenterConfig`: shared tilt/decenter configuration for image and surface rows.
+- `DiffractionGrating`: surface diffraction grating configuration with `lpmm` and integer `order`.
 - `OpticalModel`: interface for all information (system specs, surfaces, and aperture flag) needed for RayOptics. Includes `setAutoAperture: SetAutoApertureFlag`.
 - `SeidelSurfaceBySurfaceData`: per-surface Seidel aberration matrix plus row/column labels.
 - `SeidelData`: the shape of data from Rayoptics via the Pyodide worker for 3rd order Seidel aberrations.
@@ -36,6 +37,7 @@ Defines all core TypeScript domain types for the optical model, including system
   - `{ kind: "RadialPolynomial", conicConstant, polynomialCoefficients }`
   - `{ kind: "XToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
   - `{ kind: "YToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
+- `diffractionGrating`, when present on a surface, is `{ lpmm: number; order: number }`.
 - `OpticalModel` extends `Surfaces`, so all surface data is directly on the model object.
 - `setAutoAperture: "autoAperture"` tells RayOptics to recompute semi-diameters; `"manualAperture"` preserves them.
 

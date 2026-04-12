@@ -16,6 +16,7 @@ import { LensPrescriptionGrid } from "@/features/lens-editor/components/LensPres
 import { MediumSelectorModal } from "@/features/lens-editor/components/MediumSelectorModal";
 import { AsphericalModal } from "@/features/lens-editor/components/AsphericalModal";
 import { DecenterModal, type DecenterType } from "@/features/lens-editor/components/DecenterModal";
+import { DiffractionGratingModal } from "@/features/lens-editor/components/DiffractionGratingModal";
 import { PythonScriptModal } from "@/features/lens-editor/components/PythonScriptModal";
 import { ConfirmImportModal } from "@/features/lens-editor/components/ConfirmImportModal";
 
@@ -90,6 +91,7 @@ export function LensPrescriptionContainer({
   const pendingMediumSelection = useStore(store, (s) => s.pendingMediumSelection);
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
   const decenterModal = useStore(store, (s) => s.decenterModal);
+  const diffractionGratingModal = useStore(store, (s) => s.diffractionGratingModal);
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
   const [importErrorOpen, setImportErrorOpen] = useState(false);
   const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
@@ -104,12 +106,17 @@ export function LensPrescriptionContainer({
   const handleOpenMediumModal = useCallback((rowId: string) => store.getState().openMediumModal(rowId), [store]);
   const handleOpenAsphericalModal = useCallback((rowId: string) => store.getState().openAsphericalModal(rowId), [store]);
   const handleOpenDecenterModal = useCallback((rowId: string) => store.getState().openDecenterModal(rowId), [store]);
+  const handleOpenDiffractionGratingModal = useCallback(
+    (rowId: string) => store.getState().openDiffractionGratingModal(rowId),
+    [store]
+  );
   const handleAddRowAfter = useCallback((rowId: string) => store.getState().addRowAfter(rowId), [store]);
   const handleDeleteRow = useCallback((rowId: string) => store.getState().deleteRow(rowId), [store]);
 
   const mediumRow = rows.find((r) => r.id === mediumModal.rowId);
   const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);
   const decenterRow = rows.find((r) => r.id === decenterModal.rowId);
+  const diffractionGratingRow = rows.find((r) => r.id === diffractionGratingModal.rowId);
 
   const handleExport = () => {
     const json = JSON.stringify(getOpticalModel(), undefined, 2);
@@ -201,6 +208,7 @@ export function LensPrescriptionContainer({
         onOpenMediumModal={handleOpenMediumModal}
         onOpenAsphericalModal={handleOpenAsphericalModal}
         onOpenDecenterModal={handleOpenDecenterModal}
+        onOpenDiffractionGratingModal={handleOpenDiffractionGratingModal}
         onAddRowAfter={handleAddRowAfter}
         onDeleteRow={handleDeleteRow}
         semiDiameterReadonly={autoAperture}
@@ -292,6 +300,23 @@ export function LensPrescriptionContainer({
         onRemove={() => {
           store.getState().updateRow(decenterModal.rowId, { decenter: undefined });
           store.getState().closeDecenterModal();
+        }}
+      />
+
+      <DiffractionGratingModal
+        key={diffractionGratingModal.open ? diffractionGratingModal.rowId : "diffraction-grating-closed"}
+        isOpen={diffractionGratingModal.open}
+        initialDiffractionGrating={
+          diffractionGratingRow?.kind === "surface" ? diffractionGratingRow.diffractionGrating : undefined
+        }
+        onConfirm={(diffractionGrating) => {
+          store.getState().updateRow(diffractionGratingModal.rowId, { diffractionGrating });
+          store.getState().closeDiffractionGratingModal();
+        }}
+        onClose={() => store.getState().closeDiffractionGratingModal()}
+        onRemove={() => {
+          store.getState().updateRow(diffractionGratingModal.rowId, { diffractionGrating: undefined });
+          store.getState().closeDiffractionGratingModal();
         }}
       />
 

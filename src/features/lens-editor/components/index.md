@@ -6,6 +6,7 @@ All components (composite + container + domain cells) for the lens editor featur
 
 - [AsphericalCell.tsx](./AsphericalCell.tsx.md) — AG Grid cell editor for aspherical coefficients
 - [DecenterCell.tsx](./DecenterCell.tsx.md) — AG Grid cell editor for decentering values
+- [DiffractionGratingCell.tsx](./DiffractionGratingCell.tsx.md) — AG Grid cell editor for diffraction grating settings
 - [MediumCell.tsx](./MediumCell.tsx.md) — AG Grid cell editor for selecting optical media
 
 ## Core Components
@@ -27,6 +28,7 @@ All components (composite + container + domain cells) for the lens editor featur
 
 - [AsphericalModal.tsx](./AsphericalModal.tsx.md) — Modal for setting aspherical coefficients
 - [DecenterModal.tsx](./DecenterModal.tsx.md) — Modal for setting decentering and tilting
+- [DiffractionGratingModal.tsx](./DiffractionGratingModal.tsx.md) — Modal for setting diffraction grating parameters
 - [MediumSelectorModal.tsx](./MediumSelectorModal.tsx.md) — Modal for selecting optical media
 - [FieldConfigModal.tsx](./FieldConfigModal.tsx.md) — Modal for configuring field angles/heights
 - [WavelengthConfigModal.tsx](./WavelengthConfigModal.tsx.md) — Modal for setting wavelengths and weights

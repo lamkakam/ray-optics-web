@@ -25,6 +25,7 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
     semiDiameter: s.semiDiameter,
     ...(s.aspherical !== undefined ? { aspherical: s.aspherical } : {}),
     ...(s.decenter !== undefined ? { decenter: s.decenter } : {}),
+    ...(s.diffractionGrating !== undefined ? { diffractionGrating: s.diffractionGrating } : {}),
   }));
 
   const imageRow: GridRow = {
@@ -56,6 +57,9 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
     }
     if (r.decenter !== undefined) {
       surface.decenter = r.decenter;
+    }
+    if (r.diffractionGrating !== undefined) {
+      surface.diffractionGrating = r.diffractionGrating;
     }
     return surface;
   });
