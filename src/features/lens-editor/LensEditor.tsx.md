@@ -24,6 +24,7 @@ Read reactively via `useStore` / `useLensEditorStore`:
 - From `useLensLayoutImageStore()`: `layoutImage`, `layoutLoading`
 - From `useAnalysisDataStore()`: `firstOrderData`, `seidelData`
 - From `useLensEditorStore()`: `committedOpticalModel`
+- From `useTheme()`: `theme`
 
 Imperative access to actions is via the provider hooks (`useLensEditorStore`, `useSpecsConfiguratorStore`, `useAnalysisPlotStore`, `useAnalysisDataStore`, `useLensLayoutImageStore`) and then `store.getState()`.
 
@@ -31,7 +32,7 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 - `handleExampleChange` — sets `pendingExample` when a dropdown option is selected
 - `handleExampleCancel` — clears `pendingExample`, resets dropdown
 - `handleExampleConfirm` — loads example into stores, calls `handleSubmit`
-- `handleSubmit` — builds `OpticalModel`, clamps field/wavelength indices, loads first-order/layout/analysis/seidel data in parallel, updates committed state; calls `onError()` on failure
+- `handleSubmit` — builds `OpticalModel`, derives `isDark` from `theme === "dark"`, clamps field/wavelength indices, loads first-order/layout/analysis/seidel data in parallel, updates committed state; calls `onError()` on failure
 - `handleFetchZernikeData` — fetches Zernike coefficients for `ZernikeTermsModal` from the committed optical model
 - `getOpticalModel` — builds the current `OpticalModel` snapshot from the provider-backed stores
 - `handleImportJson` — loads an imported `OpticalModel` into the specs and lens-editor stores
@@ -57,6 +58,7 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 - `onError` delegates to `app/AppShell.tsx`, which owns the shared `ErrorModal`
 - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
 - `handleSubmit` uses `loadAnalysisPlot(...)` from `shared/lib/utils/plotFunctions.ts`, so submit-time analysis updates use the same worker-path rules as `AnalysisPlotContainer.tsx`
+- `handleSubmit` passes `theme === "dark"` into `proxy.plotLensLayout(...)`; the worker then derives whether to enable wavelength ray-fan overlays from any `surface.diffractionGrating`
 - Submit/example-confirm flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
 
 ## Usages

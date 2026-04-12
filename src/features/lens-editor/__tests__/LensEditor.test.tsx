@@ -10,14 +10,20 @@ import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/anal
 import { createLensLayoutImageSlice, type LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
+import { surfacesToGridRows } from "@/shared/lib/utils/gridTransform";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { AnalysisPlotStoreContext } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
+}));
+
+jest.mock("@/shared/components/providers/ThemeProvider", () => ({
+  useTheme: jest.fn().mockReturnValue({ theme: "light", setTheme: jest.fn() }),
 }));
 
 const testImportModel: OpticalModel = {
@@ -30,6 +36,21 @@ const testImportModel: OpticalModel = {
     field: { space: "object", type: "angle", maxField: 20, fields: [0, 1], isRelative: true },
     wavelengths: { weights: [[587.6, 1]], referenceIndex: 0 },
   },
+};
+
+const testImportModelWithDiffractionGrating: OpticalModel = {
+  ...testImportModel,
+  surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 50,
+      thickness: 5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 10,
+      diffractionGrating: { lpmm: 1200, order: 1 },
+    },
+  ],
 };
 
 jest.mock("@/features/lens-editor/components/BottomDrawerContainer", () => ({
@@ -251,6 +272,7 @@ function renderLensEditor(overrides?: {
 
 beforeEach(() => {
   jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
+  jest.mocked(useTheme).mockReturnValue({ theme: "light", setTheme: jest.fn() });
 });
 
 describe("LensEditor", () => {
@@ -314,6 +336,41 @@ describe("LensEditor", () => {
     await waitFor(() => expect(proxy!.plotLensLayout).toHaveBeenCalled());
     expect(proxy!.getFirstOrderData).toHaveBeenCalled();
     expect(proxy!.get3rdOrderSeidelData).toHaveBeenCalled();
+  });
+
+  it("Update System passes isDark=true to plotLensLayout when the theme is dark", async () => {
+    jest.mocked(useTheme).mockReturnValue({ theme: "dark", setTheme: jest.fn() });
+    const { proxy } = renderLensEditor();
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => {
+      expect(proxy!.plotLensLayout).toHaveBeenCalledWith(expect.anything(), true);
+    });
+  });
+
+  it("Update System passes isDark=false and preserves diffraction grating data in the submitted model when the theme is light", async () => {
+    const { proxy, lensStore } = renderLensEditor();
+    act(() => {
+      lensStore.getState().setRows(surfacesToGridRows(testImportModelWithDiffractionGrating));
+    });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => {
+      expect(proxy!.plotLensLayout).toHaveBeenCalledWith(
+        expect.objectContaining({
+          surfaces: expect.arrayContaining([
+            expect.objectContaining({
+              diffractionGrating: { lpmm: 1200, order: 1 },
+            }),
+          ]),
+        }),
+        false,
+      );
+    });
   });
 
   it("Update System uses getWavefrontData instead of requesting a wavefront PNG", async () => {

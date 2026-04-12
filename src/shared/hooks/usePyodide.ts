@@ -10,7 +10,7 @@ import { createPyodideWorker } from "@/workers/createPyodideWorker";
 export interface PyodideWorkerAPI {
   init(): Promise<void>;
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
-  plotLensLayout(opticalModel: OpticalModel): Promise<string>;
+  plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
   plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
   getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>;
   plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;

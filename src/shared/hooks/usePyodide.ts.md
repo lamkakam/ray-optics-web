@@ -10,7 +10,7 @@ Initialise the singleton Pyodide web worker and expose a typed Comlink proxy to 
 interface PyodideWorkerAPI {
   init(): Promise<void>;
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
-  plotLensLayout(opticalModel: OpticalModel): Promise<string>;
+  plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
   plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
   getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>;
   plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
@@ -74,6 +74,7 @@ interface PyodideWorkerAPI {
 - Multiple hook instances share the same singleton proxy and init promise — calling the hook from many components is safe.
 - Errors from `proxy.init()` are caught and stored as a plain string in `error`; the worker itself remains alive.
 - `proxy` is `undefined` while initialising, preventing callers from invoking methods before the worker is ready.
+- `plotLensLayout` requires the caller to provide `isDark`; the worker derives any diffraction-grating-dependent overlay from the `OpticalModel`.
 - `_resetSingleton()` is exported for test isolation only — NOT for production use.
 
 ## Usages

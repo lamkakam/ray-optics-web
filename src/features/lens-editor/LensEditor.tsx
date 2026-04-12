@@ -25,6 +25,7 @@ import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { ConfirmOverwriteModal } from "@/features/lens-editor/components/ConfirmOverwriteModal";
 import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrModal";
 import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
+import { useTheme } from "@/shared/components/providers/ThemeProvider";
 
 export interface LensEditorProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -39,6 +40,7 @@ export function LensEditor({
 }: LensEditorProps) {
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
+  const { theme } = useTheme();
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
   const analysisPlotStore = useAnalysisPlotStore();
@@ -97,6 +99,7 @@ export function LensEditor({
     const specs = specsStore.getState().toOpticalSpecs();
     const surfacesData = gridRowsToSurfaces(lensStore.getState().rows);
     const model: OpticalModel = { setAutoAperture, specs, ...surfacesData };
+    const isDark = theme === "dark";
 
     setComputing(true);
     lensLayoutImageStore.getState().setLayoutLoading(true);
@@ -110,7 +113,7 @@ export function LensEditor({
 
       const [fod, layout, plotResult, seidel] = await Promise.all([
         proxy.getFirstOrderData(model),
-        proxy.plotLensLayout(model),
+        proxy.plotLensLayout(model, isDark),
         loadAnalysisPlot({
           plotType: selectedPlotType,
           proxy,
@@ -151,7 +154,7 @@ export function LensEditor({
         exampleSelectRef.current.value = "";
       }
     }
-  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError]);
+  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError, theme]);
 
   const handleExampleConfirm = useCallback(() => {
     if (!pendingExample) return;

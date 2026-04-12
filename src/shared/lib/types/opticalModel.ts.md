@@ -77,7 +77,7 @@ const model: OpticalModel = {
 
 // Passing to Pyodide worker
 const firstOrderData = await proxy.getFirstOrderData(model);
-const layoutImage = await proxy.plotLensLayout(model);
+const layoutImage = await proxy.plotLensLayout(model, false);
 ```
 
 Imported by virtually every module. Types are validated by `lib/importSchema.ts` for uploaded files.

@@ -116,8 +116,18 @@ export async function _getFirstOrderData(runPython: (code: string) => Promise<un
   return JSON.parse(json);
 }
 
-export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<string> {
-  return (await runPython(buildScript(opticalModel, (opm) => `plot_lens_layout(${opm})`))) as string;
+export async function _plotLensLayout(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  isDark: boolean,
+): Promise<string> {
+  const showRayFanVsWvls = opticalModel.surfaces.some((surface) => surface.diffractionGrating !== undefined);
+  return (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `plot_lens_layout(${opm}, show_ray_fan_vs_wvls=${showRayFanVsWvls ? "True" : "False"}, is_dark=${isDark ? "True" : "False"})`,
+    ),
+  )) as string;
 }
 
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string> {
@@ -346,8 +356,8 @@ export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Rec
   return await _getFirstOrderData(requirePyodide(), opticalModel);
 }
 
-export async function plotLensLayout(opticalModel: OpticalModel): Promise<string> {
-  return await _plotLensLayout(requirePyodide(), opticalModel);
+export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string> {
+  return await _plotLensLayout(requirePyodide(), opticalModel, isDark);
 }
 
 export async function plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string> {

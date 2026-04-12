@@ -13,7 +13,7 @@ Each exported function (except `init`) is **stateless**: it receives an `Optical
 ```ts
 export async function init(): Promise<void>
 export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>
-export async function plotLensLayout(opticalModel: OpticalModel): Promise<string>
+export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>
 export async function plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>
 export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>
 export async function plotOpdFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>
@@ -41,7 +41,7 @@ export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData
 ```ts
 export async function _init(runPython: (code: string) => Promise<unknown>, wheelUrl: string): Promise<void>
 export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<Record<string, number>>
-export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<string>
+export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, isDark: boolean): Promise<string>
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string>
 export async function _getRayFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>
 export async function _plotOpdFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string>
@@ -90,7 +90,7 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 |---|---|
 | `init()` | Initializes Pyodide singleton. No-op if already initialized. |
 | `getFirstOrderData(model)` | Builds `opm` from model, returns optical data (EFL, f-number, etc.) as `Record<string, number>`. |
-| `plotLensLayout(model)` | Builds `opm` from model, returns a lens layout plot as a base64-encoded PNG string. |
+| `plotLensLayout(model, isDark)` | Builds `opm` from model, derives `show_ray_fan_vs_wvls` from any `surface.diffractionGrating`, forwards `is_dark`, and returns a lens layout plot as a base64-encoded PNG string. |
 | `plotRayFan(model, fieldIndex)` | Builds `opm` from model, returns a transverse ray fan plot for the given field index (zero-indexed). |
 | `getRayFanData(model, fieldIndex)` | Builds `opm` from model, returns grouped transverse ray-fan line data for all wavelengths at the selected field. Used by the ECharts Ray Fan view. |
 | `plotOpdFan(model, fieldIndex)` | Builds `opm` from model, returns an OPD fan plot PNG for the given field index (zero-indexed). |
@@ -120,7 +120,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 
 - `_init(runPython, wheelUrl)` — full package installation sequence.
 - `_getFirstOrderData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_first_order_data(${opm}))\`)`.
-- `_plotLensLayout(runPython, model)` — runs `buildScript(model, (opm) => \`plot_lens_layout(${opm})\`)`.
+- `_plotLensLayout(runPython, model, isDark)` — checks `model.surfaces` for any `diffractionGrating` and runs `buildScript(model, (opm) => \`plot_lens_layout(${opm}, show_ray_fan_vs_wvls=..., is_dark=...)\`)`.
 - `_plotRayFan(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_ray_fan(${fieldIndex}, ${opm})\`)`.
 - `_getRayFanData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `RayFanData`.
 - `_plotOpdFan(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_opd_fan(${fieldIndex}, ${opm})\`)`.
@@ -177,7 +177,7 @@ export function AnalysisPanel({ opticalModel }: { opticalModel: OpticalModel }) 
     if (!proxy) return;
 
     // Call a worker function
-    const layoutBase64 = await proxy.plotLensLayout(opticalModel);
+    const layoutBase64 = await proxy.plotLensLayout(opticalModel, false);
     console.log("Lens layout image:", layoutBase64);
 
     // Get first-order data
