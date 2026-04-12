@@ -1428,6 +1428,153 @@ const cellphoneLensExample: OpticalModel = {
   ]
 };
 
+const diffractionGratingExample: OpticalModel = {
+  setAutoAperture: "manualAperture",
+  specs: {
+    pupil: {
+      space: "object",
+      type: "epd",
+      value: 25.4,
+    },
+    field: {
+      space: "object",
+      type: "height",
+      maxField: 0,
+      fields: [0],
+      isRelative: true,
+      isWideAngle: false,
+    },
+    wavelengths: {
+      weights: [
+        [400, 0.5],
+        [600, 1],
+        [800, 0.5],
+      ],
+      referenceIndex: 1,
+    }
+  },
+  object: { distance: 39 },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 34.9,
+      thickness: 9,
+      medium: "N-BAF10",
+      manufacturer: "Schott",
+      semiDiameter: 15,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -28.8,
+      thickness: 3.5,
+      medium: "N-SF6",
+      manufacturer: "Schott",
+      semiDiameter: 15,
+    },
+    {
+      label: "Stop",
+      curvatureRadius: -137.5,
+      thickness: 15,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 15,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 8,
+      medium: "N-BAF10",
+      manufacturer: "Schott",
+      semiDiameter: 15,
+      decenter: {
+        coordinateSystemStrategy: "dec and return",
+        alpha: 15,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 1,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 2,
+      medium: "N-BAF10",
+      manufacturer: "Schott",
+      semiDiameter: 15,
+      diffractionGrating: {
+        lpmm: 600,
+        order: 1,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 1
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 8,
+      medium: "N-BAF10",
+      manufacturer: "Schott",
+      semiDiameter: 15,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 15,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 15,
+      decenter: {
+        coordinateSystemStrategy: "dec and return",
+        alpha: -15,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      }
+    },
+    {
+      label: "Default",
+      curvatureRadius: 34.9,
+      thickness: 9,
+      medium: "N-BAF10",
+      manufacturer: "Schott",
+      semiDiameter: 15,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -28.8,
+      thickness: 3.5,
+      medium: "N-SF6",
+      manufacturer: "Schott",
+      semiDiameter: 15,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -137.5,
+      thickness: 50,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 15,
+    }
+  ]
+};
+
 
 const list: Record<string, OpticalModel> = {
   "Sasian Triplet": SasianTriplet,
@@ -1449,6 +1596,7 @@ const list: Record<string, OpticalModel> = {
   "Reversed Tracing of Modified Imaizumi M. 80deg AFoV Eyepiece US#5,557,464 (1996)": modifiedImaizumiEyepieceReversed,
   "Fisheye Lens Example": fishEyeLens,
   "Cell Phone Camera Lens Example US#7,535,658": cellphoneLensExample,
+  "Diffraction Grating Example": diffractionGratingExample,
 } as const;
 
 export const ExampleSystems: { [x: string]: OpticalModel } = Object.keys(list).reduce((acc, name, idx) => ({
