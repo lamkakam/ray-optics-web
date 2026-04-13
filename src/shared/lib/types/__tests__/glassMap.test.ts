@@ -75,6 +75,16 @@ describe("normalizeGlassData", () => {
     expect(result.dispersionCoeffs).toEqual([1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653]);
   });
 
+  it("accepts Sellmeier4T data", () => {
+    const result = normalizeGlassData({
+      ...rawGlass,
+      dispersion_coeff_kind: 'Sellmeier4T',
+      dispersion_coeffs: [0.5684027565, 0.1726177391, 0.02086189578, 0.1130748688, 0.005101829712, 0.01821153936, 0.02620722293, 10.69792721],
+    });
+    expect(result.dispersionCoeffKind).toBe('Sellmeier4T');
+    expect(result.dispersionCoeffs).toHaveLength(8);
+  });
+
 });
 
 describe("normalizeAllCatalogsData", () => {

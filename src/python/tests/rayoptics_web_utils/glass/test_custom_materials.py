@@ -129,6 +129,48 @@ class TestGetFusedSilicaData:
         assert abs(C3 - 9.896161 ** 2) < 1e-6
 
 
+class TestGetWaterData:
+    """Tests for _get_water_data()."""
+
+    @pytest.fixture(scope="class")
+    def water_data(self):
+        from rayoptics_web_utils.glass.custom_materials import _get_water_data
+        return _get_water_data()
+
+    def test_returns_dict_with_required_keys(self, water_data):
+        assert isinstance(water_data, dict)
+        assert REQUIRED_CaF2_KEYS == set(water_data.keys())
+
+    def test_dispersion_coeff_kind_is_sellmeier4t(self, water_data):
+        assert water_data["dispersion_coeff_kind"] == "Sellmeier4T"
+
+    def test_dispersion_coeffs_has_eight_finite_floats(self, water_data):
+        coeffs = water_data["dispersion_coeffs"]
+        assert isinstance(coeffs, list)
+        assert len(coeffs) == 8
+        for i, c in enumerate(coeffs):
+            assert isinstance(c, float), f"coeff[{i}] not float"
+            assert math.isfinite(c), f"coeff[{i}]={c} not finite"
+
+    def test_refractive_index_d_approx(self, water_data):
+        assert abs(water_data["refractive_index_d"] - 1.3334021391241768) < 1e-9
+
+    def test_abbe_number_d_approx(self, water_data):
+        assert abs(water_data["abbe_number_d"] - 55.737679838534845) < 1e-9
+
+    def test_dispersion_coeffs_order_is_b1_b2_b3_b4_c1_c2_c3_c4(self, water_data):
+        coeffs = water_data["dispersion_coeffs"]
+        B1, B2, B3, B4, C1, C2, C3, C4 = coeffs
+        assert abs(B1 - 0.5684027565) < 1e-12
+        assert abs(B2 - 0.1726177391) < 1e-12
+        assert abs(B3 - 0.02086189578) < 1e-12
+        assert abs(B4 - 0.1130748688) < 1e-12
+        assert abs(C1 - 0.005101829712) < 1e-12
+        assert abs(C2 - 0.01821153936) < 1e-12
+        assert abs(C3 - 0.02620722293) < 1e-12
+        assert abs(C4 - 10.69792721) < 1e-10
+
+
 class TestGetSpecialMaterialsData:
     """Tests for get_special_materials_data()."""
 
@@ -146,6 +188,7 @@ class TestGetSpecialMaterialsData:
         assert isinstance(catalog, dict)
         assert "CaF2" in catalog
         assert "Fused Silica" in catalog
+        assert "Water" in catalog
 
     def test_caf2_entry_has_required_keys(self, special_data):
         entry = special_data["Special"]["CaF2"]
@@ -153,4 +196,8 @@ class TestGetSpecialMaterialsData:
 
     def test_fused_silica_entry_has_required_keys(self, special_data):
         entry = special_data["Special"]["Fused Silica"]
+        assert REQUIRED_CaF2_KEYS == set(entry.keys())
+
+    def test_water_entry_has_required_keys(self, special_data):
+        entry = special_data["Special"]["Water"]
         assert REQUIRED_CaF2_KEYS == set(entry.keys())

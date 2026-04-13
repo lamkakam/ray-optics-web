@@ -41,5 +41,6 @@ def init() -> dict[str, OpticalMedium]:
 
     caf2 = load_custom_material('CaF2_Malitson.yml', 'CaF2')
     fused_silica = load_custom_material('FusedSilica_Malitson.yml', 'Fused Silica')
+    water = load_custom_material('Water_Daimon-20.0C.yml', 'Water')
 
-    return {'caf2': caf2, 'fused_silica': fused_silica}
+    return {'caf2': caf2, 'fused_silica': fused_silica, 'water': water}

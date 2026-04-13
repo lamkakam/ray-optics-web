@@ -80,7 +80,7 @@ export function _resetPyodideForTesting(): void
 
 1. Installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
 2. Installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
-3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2` and `fused_silica` glass objects, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, and `rayoptics_web_utils.glass.glass`.
+3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, and `water` glass objects, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, and `rayoptics_web_utils.glass.glass`.
 
 ## Public API
 
@@ -143,7 +143,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **`requirePyodide()` guard**: All public functions call this helper. It throws `"Pyodide not initialized. Call init() first."` if `pyodide` is `null`.
 - **Stateless**: Each computation function builds `opm` locally from the received `OpticalModel` within a single `runPython` call. No global `opm` state persists between calls.
 - **Plot return type**: Plot image functions return a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getWavefrontData`, `getGeoPSFData`, and `getDiffractionPSFData` return typed data for frontend rendering.
-- **Custom material globals**: `_init()` binds both `caf2` and `fused_silica` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
+- **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, and `water` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
 
 ## Edge Cases / Error Handling
 

@@ -29,6 +29,7 @@ Reads refractive indices at `"C"`, `"d"`, `"e"`, `"F"`, `"g"` from `('refractive
 - Reads `"dispersion coefficients"` of each glass from `data`.
 - Each glass from catalog name of `"CDGM"`, `"Hoya"` and `"Sumita"` use the convention for Schott dispersion equation with total 5 terms. Each glass from `"Hikari"` use the convention for Schott dispersion equation with total 8 terms. For output, `"dispersion_coeffs"` for each glass from `"CDGM"`, `"Hoya"`, `"Sumita"` is padded to have a uniform length of 8, aligning to the length of `"dispersion_coeffs"` of each glass from `"Hikari"`. The `"dispersion_coeff_kind"` is `"Schott2x6"`.
 - Each glass from catalog name of `"Ohara"` and `"Schott"` use the convention of Sellmeier dispersion equation with total 6 terms. The `"dispersion_coeff_kind"` is `"Sellmeier3T"`.
+- Special materials may also use `"Sellmeier4T"` when the bundled refractiveindex.info source carries four Sellmeier terms, as with Water.
 
 ### `_build_glass_entry(data) -> dict[str, float | dict[str, float] | list[float]]`
 
@@ -43,7 +44,7 @@ Returns `{glass_name: glass_dict}` for all valid glasses in the named catalog. C
 Returns data for all 6 opticalglass catalogs (CDGM, Hikari, Hoya, Ohara, Schott, Sumita) plus the `"Special"` catalog from `custom_materials.get_special_materials_data()` (contains CaF2 and Fused Silica). Total: 7 catalog keys.
 
 ## Output Schema (per glass)
-The value for the attribute `"dispersion_coeff_kind"` is either `"Schott2x6"` or `"Sellmeier3T"`
+The value for the attribute `"dispersion_coeff_kind"` is `"Schott2x6"`, `"Sellmeier3T"`, or `"Sellmeier4T"`
 
 ```json
 {
@@ -78,7 +79,7 @@ The value for the attribute `"dispersion_coeff_kind"` is either `"Schott2x6"` or
 | Ohara    | 134                |
 | Schott   | 123                |
 | Sumita   | 134                |
-| Special  | 2 (CaF2, Fused Silica) |
+| Special  | 3 (CaF2, Fused Silica, Water) |
 
 ## Usages
 
@@ -97,7 +98,7 @@ all_catalogs = get_all_glass_catalogs_data()
 #   "Ohara": {"S-BAH3": {...}, ...},
 #   "Schott": {"BK7": {...}, "FK51": {...}, ...},
 #   "Sumita": {"K-BaK4": {...}, ...},
-#   "Special": {"CaF2": {...}, "Fused Silica": {...}}
+#   "Special": {"CaF2": {...}, "Fused Silica": {...}, "Water": {...}}
 # }
 json_result = json.dumps(all_catalogs)
 ```
