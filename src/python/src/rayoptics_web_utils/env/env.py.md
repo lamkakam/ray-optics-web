@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Initialises the Pyodide runtime environment by stubbing unavailable GUI and networking modules, setting the matplotlib backend to `Agg`, and loading the CaF2 optical material from bundled YAML data.
+Initialises the Pyodide runtime environment by stubbing unavailable GUI and networking modules, setting the matplotlib backend to `Agg`, and loading the bundled custom optical materials from YAML data.
 
 ## Exports
 
@@ -10,7 +10,7 @@ Initialises the Pyodide runtime environment by stubbing unavailable GUI and netw
 def init() -> dict[str, OpticalMedium]: ...
 ```
 
-Returns `{'caf2': <OpticalMedium>}`.
+Returns `{'caf2': <OpticalMedium>, 'fused_silica': <OpticalMedium>}`.
 
 ## Initialization Steps
 
@@ -20,15 +20,15 @@ Returns `{'caf2': <OpticalMedium>}`.
 2. **Stub `rayoptics.qtgui`** — creates a fake `rayoptics.qtgui` module and a fake `rayoptics.qtgui.guiappcmds` submodule, wires them into `sys.modules`, and sets `fake_qtgui.guiappcmds = fake_guiappcmds`. This prevents rayoptics' GUI command layer from failing to import.
 3. *(No rayoptics import here)* — the docstring notes that `from rayoptics.environment import *` is intentionally omitted; the worker performs its own import after `init()` returns.
 4. **Set matplotlib backend to `Agg`** — calls `matplotlib.use('Agg')` to prevent any display/GUI backend from being activated in the headless Pyodide environment.
-5. **Load CaF2 material** — uses `importlib.resources.files` to locate `rayoptics_web_utils/data/CaF2_Malitson.yml`, reads and parses it with `yaml.safe_load`, then calls `opticalglass.rindexinfo.create_material` to construct the `OpticalMedium` object.
-6. **Return** — returns `{'caf2': caf2}`.
+5. **Load custom materials** — imports `load_custom_material()` from `rayoptics_web_utils.glass.custom_materials`, then constructs `caf2` from `CaF2_Malitson.yml` and `fused_silica` from `FusedSilica_Malitson.yml`.
+6. **Return** — returns `{'caf2': caf2, 'fused_silica': fused_silica}`.
 
 ## Key Conventions
 
 - `init()` must be called before importing `analysis` or `plotting`, because those modules import rayoptics at module level and require the Qt stubs to already be in place.
 - `matplotlib.use('Agg')` must be called before any figure is created; `init()` guarantees this by calling it unconditionally on every invocation.
 - `init()` is **not** idempotent regarding `sys.modules` — it overwrites stub entries on each call, which is harmless.
-- The bundled YAML file (`data/CaF2_Malitson.yml`) is accessed via `importlib.resources` so it works correctly inside a zip-installed wheel.
+- The bundled YAML files (`data/CaF2_Malitson.yml` and `data/FusedSilica_Malitson.yml`) are accessed via `importlib.resources` so they work correctly inside a zip-installed wheel.
 
 
 ## Usages

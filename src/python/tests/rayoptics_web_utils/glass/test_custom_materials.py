@@ -90,6 +90,35 @@ class TestGetCaF2Data:
         assert abs(C3 - 34.649040 ** 2) < 1e-4
 
 
+class TestGetFusedSilicaData:
+    """Tests for _get_fused_silica_data()."""
+
+    @pytest.fixture(scope="class")
+    def fused_silica_data(self):
+        from rayoptics_web_utils.glass.custom_materials import _get_fused_silica_data
+        return _get_fused_silica_data()
+
+    def test_returns_dict_with_required_keys(self, fused_silica_data):
+        assert isinstance(fused_silica_data, dict)
+        assert REQUIRED_CaF2_KEYS == set(fused_silica_data.keys())
+
+    def test_refractive_index_d_approx(self, fused_silica_data):
+        assert abs(fused_silica_data["refractive_index_d"] - 1.4585) < 0.001
+
+    def test_abbe_number_d_approx(self, fused_silica_data):
+        assert abs(fused_silica_data["abbe_number_d"] - 67.8) < 2.0
+
+    def test_dispersion_coeffs_order_is_B1_B2_B3_C1_C2_C3(self, fused_silica_data):
+        coeffs = fused_silica_data["dispersion_coeffs"]
+        B1, B2, B3, C1, C2, C3 = coeffs
+        assert abs(B1 - 0.6961663) < 1e-7
+        assert abs(B2 - 0.4079426) < 1e-7
+        assert abs(B3 - 0.8974794) < 1e-7
+        assert abs(C1 - 0.0684043 ** 2) < 1e-7
+        assert abs(C2 - 0.1162414 ** 2) < 1e-7
+        assert abs(C3 - 9.896161 ** 2) < 1e-6
+
+
 class TestGetSpecialMaterialsData:
     """Tests for get_special_materials_data()."""
 
@@ -102,11 +131,16 @@ class TestGetSpecialMaterialsData:
         assert isinstance(special_data, dict)
         assert "Special" in special_data
 
-    def test_special_catalog_contains_caf2(self, special_data):
+    def test_special_catalog_contains_expected_entries(self, special_data):
         catalog = special_data["Special"]
         assert isinstance(catalog, dict)
         assert "CaF2" in catalog
+        assert "Fused Silica" in catalog
 
     def test_caf2_entry_has_required_keys(self, special_data):
         entry = special_data["Special"]["CaF2"]
+        assert REQUIRED_CaF2_KEYS == set(entry.keys())
+
+    def test_fused_silica_entry_has_required_keys(self, special_data):
+        entry = special_data["Special"]["Fused Silica"]
         assert REQUIRED_CaF2_KEYS == set(entry.keys())

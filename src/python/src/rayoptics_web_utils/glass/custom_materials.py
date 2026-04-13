@@ -2,6 +2,7 @@ from __future__ import annotations
 import importlib.resources
 import yaml
 from opticalglass.rindexinfo import create_material
+from opticalglass.rindexinfo import RIIMedium
 
 # Fraunhofer wavelengths in μm
 _WL_C  = 0.6563   # hydrogen C
@@ -50,14 +51,22 @@ _map_equation_name_to_dispersion_equation: dict[str, callable[[list[float], floa
 }
 
 
-def _get_caf2_data() -> dict:
-    data_path = importlib.resources.files('rayoptics_web_utils') / 'data' / 'CaF2_Malitson.yml'
+def _load_material_yaml(filename: str) -> dict:
+    data_path = importlib.resources.files('rayoptics_web_utils') / 'data' / filename
     with importlib.resources.as_file(data_path) as f:
-        caf2_yaml = yaml.safe_load(f.read_text())
-    caf2 = create_material(caf2_yaml, 'CaF2', 'rii-main', 'data-nk')
+        return yaml.safe_load(f.read_text())
 
-    equation_type = caf2.yaml_data['DATA'][0]['type']
-    coeffs_str = caf2.yaml_data['DATA'][0]['coefficients']
+
+def load_custom_material(filename: str, material_name: str) -> RIIMedium:
+    material_yaml = _load_material_yaml(filename)
+    return create_material(material_yaml, material_name, 'rii-main', 'data-nk')
+
+
+def _build_special_material_data(filename: str, material_name: str) -> dict:
+    material = load_custom_material(filename, material_name)
+
+    equation_type = material.yaml_data['DATA'][0]['type']
+    coeffs_str = material.yaml_data['DATA'][0]['coefficients']
 
     # refractiveindex.info formula 1 stores coefficients as:
     # n0 B1 C1 B2 C2 B3 C3  (n0 is constant term, typically 0 — drop it)
@@ -96,6 +105,19 @@ def _get_caf2_data() -> dict:
     }
 
 
+def _get_caf2_data() -> dict:
+    return _build_special_material_data('CaF2_Malitson.yml', 'CaF2')
+
+
+def _get_fused_silica_data() -> dict:
+    return _build_special_material_data('FusedSilica_Malitson.yml', 'Fused Silica')
+
+
 def get_special_materials_data() -> dict[str, dict[str, dict]]:
-    """Return {"Special": {"CaF2": glass_entry}} for special materials."""
-    return {"Special": {"CaF2": _get_caf2_data()}}
+    """Return {"Special": {"CaF2": glass_entry, "Fused Silica": glass_entry}} for special materials."""
+    return {
+        "Special": {
+            "CaF2": _get_caf2_data(),
+            "Fused Silica": _get_fused_silica_data(),
+        }
+    }

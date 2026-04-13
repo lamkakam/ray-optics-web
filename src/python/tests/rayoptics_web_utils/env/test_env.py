@@ -27,13 +27,15 @@ class TestInit:
         qtgui = sys.modules['rayoptics.qtgui']
         assert hasattr(qtgui, 'guiappcmds')
 
-    def test_init_returns_dict_with_caf2(self):
-        """init() should return a dict containing a 'caf2' key."""
+    def test_init_returns_dict_with_custom_materials(self):
+        """init() should return a dict containing both custom material keys."""
         from rayoptics_web_utils.env import init
         result = init()
         assert isinstance(result, dict)
         assert 'caf2' in result
         assert result['caf2'] is not None
+        assert 'fused_silica' in result
+        assert result['fused_silica'] is not None
 
     def test_init_sets_matplotlib_backend(self):
         """init() should set the matplotlib backend to Agg."""

@@ -1,4 +1,4 @@
-"""Initialization: Qt stubbing, rayoptics environment setup, CaF2 material creation."""
+"""Initialization: Qt stubbing, rayoptics environment setup, custom material creation."""
 
 import sys
 import types
@@ -11,7 +11,7 @@ def init() -> dict[str, OpticalMedium]:
     Must be called before importing any other modules from this package
     (analysis, plotting) since they import rayoptics at module level.
 
-    Returns a dict with commonly needed objects (e.g. 'caf2').
+    Returns a dict with commonly needed custom materials.
     """
     # 1. Stub PySide6 and other unavailable modules
     for m in [
@@ -36,15 +36,10 @@ def init() -> dict[str, OpticalMedium]:
     import matplotlib
     matplotlib.use('Agg')
 
-    # 5. Load CaF2 YAML from package data and create material
-    import importlib.resources
-    import yaml
-    from opticalglass.rindexinfo import create_material
+    # 5. Load custom materials from package data
+    from rayoptics_web_utils.glass.custom_materials import load_custom_material
 
-    data_path = importlib.resources.files('rayoptics_web_utils') / 'data' / 'CaF2_Malitson.yml'
-    with importlib.resources.as_file(data_path) as f:
-        caf2_yaml = yaml.safe_load(f.read_text())
+    caf2 = load_custom_material('CaF2_Malitson.yml', 'CaF2')
+    fused_silica = load_custom_material('FusedSilica_Malitson.yml', 'Fused Silica')
 
-    caf2 = create_material(caf2_yaml, 'CaF2', 'rii-main', 'data-nk')
-
-    return {'caf2': caf2}
+    return {'caf2': caf2, 'fused_silica': fused_silica}
