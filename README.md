@@ -108,12 +108,36 @@ Browser
 The refractive index data for fluorite used in this app is sourced from [refractiveindex.info](https://refractiveindex.info/?shelf=main&book=CaF2&page=Malitson) and is at `python/src/rayoptics_web_utils/data/CaF2_Malitson.yml`.
 
 - Source file: https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml
-- License: [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) — this file is **not** subject to the license of this repository.
 
 **Citations:**
 
 - I. H. Malitson. A redetermination of some optical properties of calcium fluoride. [*Appl. Opt.* **2**, 1103–1107 (1963)](https://opg.optica.org/ao/abstract.cfm?uri=ao-2-11-1103).
 - M. N. Polyanskiy. Refractiveindex.info database of optical constants. *Sci. Data* **11**, 94 (2024). https://doi.org/10.1038/s41597-023-02898-2
+
+### Fused Silica (SiO2) refractive index data
+The refractive index data for fused silica used in this app is sourced from [refractiveindex.info](https://refractiveindex.info/?shelf=main&book=SiO2&page=Malitson) and is at `src/python/src/rayoptics_web_utils/data/FusedSilica_Malitson.yml`.
+
+- Source file: https://refractiveindex.info/database/data/main/SiO2/nk/Malitson.yml
+
+**Citations:**
+- Sellmeier formula is reported in Ref. 1 for the 0.21–3.71 μm wavelength range. Ref. 2 verifies the validity of the formula up to 6.7 μm:
+
+1. I. H. Malitson. Interspecimen comparison of the refractive index of fused silica. [*J. Opt. Soc. Am.* **55**, 1205-1208 (1965)](https://opg.optica.org/josa/abstract.cfm?uri=josa-55-10-1205)
+2. C. Z. Tan. Determination of refractive index of silica glass for infrared wavelengths by IR spectroscopy. [*J. Non-Cryst. Solids* **223**, 158-163 (1998)](https://www.sciencedirect.com/science/article/abs/pii/S0022309397004389?via%3Dihub)
+- M. N. Polyanskiy. Refractiveindex.info database of optical constants. *Sci. Data* **11**, 94 (2024). https://doi.org/10.1038/s41597-023-02898-2
+
+### Water (H2O) refractive index data
+The refractive index data for water used in this app is sourced from [refractiveindex.info](https://refractiveindex.info/?shelf=main&book=H2O&page=Daimon-20.0C) and is at `src/python/src/rayoptics_web_utils/data/Water_Daimon-20.0C.yml`.
+
+- Source file: https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C.yml
+
+**Citations:**
+- M. Daimon and A. Masumura. Measurement of the refractive index of distilled water from the near-infrared region to the ultraviolet region. [*Appl. Opt.* **46**, 3811-3820 (2007)](https://opg.optica.org/ao/abstract.cfm?uri=ao-46-18-3811)
+- M. N. Polyanskiy. Refractiveindex.info database of optical constants. *Sci. Data* **11**, 94 (2024). https://doi.org/10.1038/s41597-023-02898-2
+
+### License for Third-Party Refractive Index Data ###
+
+[CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) — these aforementioned third-party refractive index data files are **not** subject to the license of this repository.
 
 ### Example Optical Systems
 
