@@ -15,7 +15,7 @@ const testSpecs: OpticalSpecs = {
 
 const testModel: OpticalModel = {
   setAutoAperture: "manualAperture",
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [],
   specs: testSpecs,
@@ -27,7 +27,7 @@ function makeStore() {
 
 function makeTestRows(): GridRow[] {
   return [
-    { id: OBJECT_ROW_ID, kind: "object", objectDistance: 1e10 },
+    { id: OBJECT_ROW_ID, kind: "object", objectDistance: 1e10, medium: "air", manufacturer: "" },
     {
       id: "s1",
       kind: "surface",
@@ -58,7 +58,7 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       const rows = store.getState().rows;
       expect(rows).toHaveLength(2);
-      expect(rows[0]).toMatchObject({ id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 });
+      expect(rows[0]).toMatchObject({ id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" });
       expect(rows[1]).toMatchObject({ id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 });
     });
 
@@ -157,6 +157,23 @@ describe("lensEditorStore", () => {
       store.getState().closeMediumModal();
       expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
       expect(store.getState().pendingMediumSelection).toBeUndefined();
+    });
+
+    it("opens medium modal for object row and seeds pending object medium selection", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+
+      store.getState().openMediumModal(OBJECT_ROW_ID);
+
+      expect(store.getState().mediumModal).toEqual({
+        open: true,
+        rowId: OBJECT_ROW_ID,
+      });
+      expect(store.getState().pendingMediumSelection).toEqual({
+        rowId: OBJECT_ROW_ID,
+        medium: "air",
+        manufacturer: "",
+      });
     });
 
     it("opens and closes aspherical modal", () => {
@@ -318,6 +335,24 @@ describe("lensEditorStore", () => {
         medium: "N-BK7",
         manufacturer: "Schott",
       });
+    });
+
+    it("commits pending medium selection into the object row and clears draft state", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().openMediumModal(OBJECT_ROW_ID);
+      store.getState().updatePendingMediumSelection({
+        medium: "N-BK7",
+        manufacturer: "Schott",
+      });
+
+      store.getState().commitPendingMediumSelection();
+
+      const row = store.getState().rows.find((item) => item.id === OBJECT_ROW_ID);
+      expect(row?.kind === "object" ? row.medium : undefined).toBe("N-BK7");
+      expect(row?.kind === "object" ? row.manufacturer : undefined).toBe("Schott");
+      expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
+      expect(store.getState().pendingMediumSelection).toBeUndefined();
     });
   });
 

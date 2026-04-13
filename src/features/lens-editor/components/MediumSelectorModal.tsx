@@ -16,6 +16,7 @@ interface MediumSelectorModalProps {
   readonly isOpen: boolean;
   readonly initialMedium: string;
   readonly initialManufacturer: string;
+  readonly allowReflective?: boolean;
   readonly selectedMedium?: string;
   readonly selectedManufacturer?: string;
   readonly onSelectionChange?: (medium: string, manufacturer: string) => void;
@@ -50,6 +51,7 @@ export function MediumSelectorModal({
   isOpen,
   initialMedium,
   initialManufacturer,
+  allowReflective = true,
   selectedMedium,
   selectedManufacturer,
   onSelectionChange,
@@ -82,7 +84,7 @@ export function MediumSelectorModal({
       .map(([catalogName]) => catalogName),
   ];
   const specialMediaOptions = [
-    ...SPECIAL_MEDIA,
+    ...SPECIAL_MEDIA.filter((medium) => allowReflective || medium.toUpperCase() !== "REFL"),
     ...Object.keys(catalogs?.Special ?? {}),
   ];
   const isSpecial = manufacturer === "Special";

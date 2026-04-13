@@ -41,7 +41,7 @@ const SasianTriplet: OpticalModel = {
     },
   },
 
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     {
@@ -117,7 +117,7 @@ const ReflectorWithOpticalWindow: OpticalModel = {
     },
   },
 
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -1370 },
   surfaces: [
     {
@@ -182,7 +182,7 @@ const herschelReflector: OpticalModel = {
     wavelengths: commonWavelengthConfig,
   },
 
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -1.2e4 },
   surfaces: [
     {
@@ -220,7 +220,9 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
   },
 
   object: {
-    distance: 1e10
+    distance: 1e10,
+    medium: "air",
+    manufacturer: "",
   },
   image: {
     curvatureRadius: 0,
@@ -370,6 +372,8 @@ const tiltedHoughton: OpticalModel = {
 
   object: {
     distance: 1e10,
+    medium: "air",
+    manufacturer: "",
   },
 
   image: {
@@ -484,7 +488,9 @@ const quadSchiefspiegler: OpticalModel = {
     wavelengths: commonWavelengthConfig,
   },
   object: {
-    distance: 1e10
+    distance: 1e10,
+    medium: "air",
+    manufacturer: "",
   },
   image: {
     curvatureRadius: 0,
@@ -570,6 +576,8 @@ const clydeBoneJrMersenne: OpticalModel = {
 
   object: {
     distance: 1e10,
+    medium: "air",
+    manufacturer: "",
   },
   image: {
     curvatureRadius: 0,
@@ -713,7 +721,7 @@ const schmidtCamera: OpticalModel = {
     },
     wavelengths: commonWavelengthConfig,
   },
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -325.3 },
   surfaces: [
     {
@@ -764,7 +772,7 @@ const orthoAPO: OpticalModel = {
     wavelengths: commonWavelengthConfig,
   },
 
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -260 },
 
   surfaces: [
@@ -834,7 +842,7 @@ const fluoriteDoubletAPOWithAspherizedSurface: OpticalModel = {
     wavelengths: commonWavelengthConfig,
   },
 
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -480 },
 
   surfaces: [
@@ -887,7 +895,7 @@ const fraunhoferAchromat: OpticalModel = {
     wavelengths: commonWavelengthConfig,
   },
 
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     { label: "Stop", curvatureRadius: 0.6 * 120 * 23.6, thickness: 0.011 * 120 * 23.6, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 60 },
@@ -905,7 +913,7 @@ const fraunhoferAchromatFast: OpticalModel = {
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
     wavelengths: commonWavelengthConfig,
   },
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     { label: "Stop", curvatureRadius: 0.6 * 120 * 7.5, thickness: 0.011 * 120 * 7.5, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 60 },
@@ -924,7 +932,7 @@ const edDoublet: OpticalModel = {
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
     wavelengths: commonWavelengthConfig,
   },
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -340 },
   surfaces: [
     { label: "Stop", curvatureRadius: 499, thickness: 16, medium: "S-FPL53", manufacturer: "Ohara", semiDiameter: 60 },
@@ -942,7 +950,7 @@ const petzvalAPO: OpticalModel = {
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
     wavelengths: commonWavelengthConfig,
   },
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     { label: "Stop", curvatureRadius: 481, thickness: 9, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 70 },
@@ -977,7 +985,7 @@ const tripletAPOWithSingletMeniscusLens: OpticalModel = {
     wavelengths: commonWavelengthConfig,
   },
 
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
 
   image: { curvatureRadius: 0 },
 
@@ -1074,7 +1082,7 @@ const modifiedImaizumiEyepieceReversed: OpticalModel = {
     },
   },
 
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
 
   surfaces: [
@@ -1119,7 +1127,7 @@ const fishEyeLens: OpticalModel = {
       "referenceIndex": 1
     },
   },
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     {
@@ -1294,7 +1302,7 @@ const cellphoneLensExample: OpticalModel = {
       referenceIndex: 1,
     }
   },
-  object: { distance: 10000000000 },
+  object: { distance: 10000000000, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     {
@@ -1453,7 +1461,7 @@ const transmissiveDiffractionGrating: OpticalModel = {
       referenceIndex: 1,
     }
   },
-  object: { distance: 39 },
+  object: { distance: 39, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     {
@@ -1602,6 +1610,8 @@ const reflectiveDiffractionGrating: OpticalModel = {
   },
   object: {
     distance: 34.8,
+    medium: "air",
+    manufacturer: "",
   },
   image: {
     curvatureRadius: 0,

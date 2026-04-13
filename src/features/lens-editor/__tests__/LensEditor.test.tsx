@@ -28,7 +28,7 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 
 const testImportModel: OpticalModel = {
   setAutoAperture: "autoAperture",
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [],
   specs: {

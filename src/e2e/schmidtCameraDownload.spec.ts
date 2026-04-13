@@ -41,6 +41,8 @@ test("load Schmidt Camera example and download config JSON", async ({
   expect(parsed).toHaveProperty("surfaces");
   expect(parsed).toHaveProperty("object");
   expect(parsed).toHaveProperty("image");
+  expect(parsed.object).toHaveProperty("medium");
+  expect(parsed.object).toHaveProperty("manufacturer");
   expect(Array.isArray(parsed.surfaces)).toBe(true);
   expect(parsed.surfaces.length).toBeGreaterThan(0);
 });

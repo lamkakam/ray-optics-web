@@ -27,7 +27,7 @@ export function buildExportScript(opticalModel: OpticalModel): string;
 2. Sets `opm.system_spec.dimensions = 'MM'`.
 3. Configures `osp['pupil']`, `osp['fov']`, `osp['wvls']` from `OpticalSpecs`.
 4. Sets `opm.radius_mode = True`. Sets `sm.do_apertures` based on `model.setAutoAperture`.
-5. Sets `sm.gaps[0].thi` to the object distance.
+5. Sets `sm.gaps[0].thi` to the object distance and `sm.gaps[0].medium = decode_medium(...)` from `model.object.medium` / `model.object.manufacturer`.
 6. Calls `sm.add_surface(...)` for each surface in order. Per surface:
    - Passes `[curvatureRadius, thickness, medium, manufacturer]` (manufacturer omitted for `"air"`, `"REFL"`, `"CaF2"`).
    - Handles `medium = "CaF2"` by emitting the variable name `caf2` (defined in the export script preamble).

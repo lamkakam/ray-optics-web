@@ -20,14 +20,14 @@ Returns a unique string of the form `"row-surface-N"` where `N` is a module-leve
 
 ### `surfacesToGridRows(surfaces)`
 
-1. Creates one `{ kind: "object" }` row with `id = OBJECT_ROW_ID` and `objectDistance` from `surfaces.object.distance`.
+1. Creates one `{ kind: "object" }` row with `id = OBJECT_ROW_ID`, `objectDistance` from `surfaces.object.distance`, and `medium` / `manufacturer` from `surfaces.object`.
 2. Maps each entry in `surfaces.surfaces` to a `{ kind: "surface" }` row by calling `generateRowId()` for each ID. Optional `aspherical`, `decenter`, and `diffractionGrating` fields are spread onto the row only when present (not `undefined`).
 3. Creates one `{ kind: "image" }` row with `id = IMAGE_ROW_ID` and `curvatureRadius` from `surfaces.image`. Optional `decenter` is spread only when present.
 4. Returns `[objectRow, ...surfaceRows, imageRow]`.
 
 ### `gridRowsToSurfaces(rows)`
 
-1. Finds the first row with `kind === "object"` → provides `object.distance`.
+1. Finds the first row with `kind === "object"` → provides `object.distance`, `object.medium`, and `object.manufacturer`.
 2. Finds the first row with `kind === "image"` → provides `image.curvatureRadius` and optional `image.decenter`.
 3. Filters all rows with `kind === "surface"` (in order) → provides `surfaces[]`.
 4. Each surface field falls back to a default when missing:
@@ -42,7 +42,7 @@ Returns a unique string of the form `"row-surface-N"` where `N` is a module-leve
 | `semiDiameter` | `1` |
 
 5. Optional `aspherical`, `decenter`, and `diffractionGrating` are forwarded to the `Surface` object only when present.
-6. `object.distance` defaults to `0` if the object row is missing.
+6. `object.distance` defaults to `0`, `object.medium` defaults to `"air"`, and `object.manufacturer` defaults to `""` if the object row is missing.
 7. `image.curvatureRadius` defaults to `0` if the image row is missing.
 
 ## Dependencies

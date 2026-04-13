@@ -37,7 +37,7 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 }));
 
 const testSurfaces: Surfaces = {
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     {
@@ -349,6 +349,35 @@ describe("LensPrescriptionContainer", () => {
 
     const updatedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
     expect(updatedRow?.kind === "surface" ? updatedRow.medium : undefined).toBe("N-SF6");
+    expect(store.getState().pendingMediumSelection).toBeUndefined();
+    expect(store.getState().mediumModal.open).toBe(false);
+  });
+
+  it("pre-populates MediumSelectorModal with object row medium values", () => {
+    const { store } = renderLPC();
+
+    act(() => {
+      store.getState().openMediumModal(store.getState().rows[0].id);
+    });
+
+    expect(screen.getByLabelText("Manufacturer")).toHaveValue("Special");
+    expect(screen.getByLabelText("Glass")).toHaveValue("air");
+  });
+
+  it("commits the pending glass selection into the object row when MediumSelectorModal confirm is clicked", async () => {
+    const { store } = renderLPC();
+
+    act(() => {
+      store.getState().openMediumModal(store.getState().rows[0].id);
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const updatedRow = store.getState().rows.find((row) => row.id === store.getState().rows[0].id);
+    expect(updatedRow?.kind === "object" ? updatedRow.medium : undefined).toBe("N-SF6");
+    expect(updatedRow?.kind === "object" ? updatedRow.manufacturer : undefined).toBe("Schott");
     expect(store.getState().pendingMediumSelection).toBeUndefined();
     expect(store.getState().mediumModal.open).toBe(false);
   });

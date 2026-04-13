@@ -49,14 +49,9 @@ export interface LensEditorState {
   setCommittedOpticalModel: (model: OpticalModel) => void;
 }
 
-const DEFAULT_ROWS: GridRow[] = [
-  { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
-  { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
-];
-
 function derivePendingMediumSelection(rows: GridRow[], rowId: string): PendingMediumSelection | undefined {
   const row = rows.find((item) => item.id === rowId);
-  if (row?.kind !== "surface") {
+  if (row?.kind !== "surface" && row?.kind !== "object") {
     return undefined;
   }
 
@@ -66,6 +61,11 @@ function derivePendingMediumSelection(rows: GridRow[], rowId: string): PendingMe
     manufacturer: row.manufacturer,
   };
 }
+
+const DEFAULT_ROWS: GridRow[] = [
+  { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" },
+  { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
+];
 
 export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) => ({
   rows: DEFAULT_ROWS,

@@ -164,11 +164,17 @@ function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBui
 
 function buildObjectSetupLines(opticalModel: OpticalModel): PythonLine[] {
   const {
-    object: { distance: objectDistance },
+    object: { distance: objectDistance, medium, manufacturer },
   } = opticalModel;
+
+  const { medium: mediumOption, glassManufacturer } = formattedMedium(
+    medium.toUpperCase() === "REFL" ? "air" : medium,
+    medium.toUpperCase() === "REFL" ? "" : manufacturer,
+  );
 
   return [
     `sm.gaps[0].thi=${objectDistance}`,
+    `sm.gaps[0].medium = decode_medium(${mediumOption}${glassManufacturer})`,
   ];
 }
 
@@ -232,6 +238,7 @@ from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 from rayoptics.elem.profiles import XToroid, YToroid
+from rayoptics.seq.medium import decode_medium
 from opticalglass.rindexinfo import create_material
 
 caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'

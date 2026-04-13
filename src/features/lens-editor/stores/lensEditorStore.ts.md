@@ -35,7 +35,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `setAutoAperture(value)` — sets the auto-aperture flag.
 - `setActiveBottomDrawerTabId(id)` — records the currently selected Lens Editor bottom-drawer tab so the same tab can be restored after navigating away and back.
 - `setBottomDrawerHeight(height)` — records the most recently committed bottom-drawer height so the drawer can restore its size after navigating away and back.
-- `openMediumModal(rowId)` — opens the glass medium picker modal and seeds `pendingMediumSelection` from the row’s confirmed medium/manufacturer.
+- `openMediumModal(rowId)` — opens the glass medium picker modal and seeds `pendingMediumSelection` from the object or surface row’s confirmed medium/manufacturer.
 - `updatePendingMediumSelection(patch)` — updates the unconfirmed catalog-glass selection while the medium modal is open.
 - `commitPendingMediumSelection(selection?)` — writes the confirmed selection to the target row, then clears the pending draft and closes the modal. Optional `selection` allows model-glass values to bypass the catalog draft.
 - `closeMediumModal()` — closes the medium modal and discards the pending draft.
@@ -47,6 +47,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 ## Key Conventions
 
 - Object and image rows (`kind === "object"` / `kind === "image"`) cannot be deleted or added after (image guard in `addRowAfter`).
+- The default object row is `{ objectDistance: 0, medium: "air", manufacturer: "" }`.
 - New rows inserted by `addRowAfter` are seeded with `generateRowId()` and default surface values: flat (`curvatureRadius: 0`), zero thickness, `"air"` medium, `semiDiameter: 1`.
 - Modal `rowId` is reset to `""` on close.
 - `pendingMediumSelection` persists unconfirmed catalog-glass choices across route changes while the root store provider remains mounted.

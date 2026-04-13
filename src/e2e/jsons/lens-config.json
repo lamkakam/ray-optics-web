@@ -44,7 +44,9 @@
     }
   },
   "object": {
-    "distance": 10000000000
+    "distance": 10000000000,
+    "medium": "air",
+    "manufacturer": ""
   },
   "image": {
     "curvatureRadius": 0,

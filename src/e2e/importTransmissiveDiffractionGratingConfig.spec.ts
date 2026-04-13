@@ -31,6 +31,10 @@ test("import transmissive diffraction grating config and verify grating plus til
     "Diffraction Grating"
   );
 
+  await expect(
+    page.locator(`${prescriptionGrid} .ag-row[row-index="0"] .ag-cell[col-id="${mediumColId}"]`)
+  ).toContainText("air");
+
   const decenterRow4 = page
     .locator(`${prescriptionGrid} .ag-row[row-index="4"]:not(.ag-opacity-zero)`)
     .first();

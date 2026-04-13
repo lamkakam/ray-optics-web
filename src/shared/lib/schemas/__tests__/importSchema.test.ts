@@ -21,7 +21,7 @@ const baseModel: OpticalModel = {
       referenceIndex: 1,
     },
   },
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [],
 };
@@ -70,6 +70,43 @@ describe("validateImportedLensData", () => {
           ...baseModel.specs.field,
           isWideAngle: "yes",
         },
+      },
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects models with missing object medium", () => {
+    const model = {
+      ...baseModel,
+      object: {
+        distance: baseModel.object.distance,
+        manufacturer: baseModel.object.manufacturer,
+      },
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects models with missing object manufacturer", () => {
+    const model = {
+      ...baseModel,
+      object: {
+        distance: baseModel.object.distance,
+        medium: baseModel.object.medium,
+      },
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects models with REFL object medium", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      object: {
+        distance: baseModel.object.distance,
+        medium: "REFL",
+        manufacturer: "",
       },
     };
 
