@@ -12,6 +12,7 @@ Internal Python package for optical computing utilities and RayOptics integratio
 - [env/](./env/index.md) — Environment and configuration management
 - [focusing/](./focusing/index.md) — Focusing algorithms for lens optimization
 - [glass/](./glass/index.md) — Glass material data and selection utilities
+- [optimization/](./optimization/index.md) — Operand-based optimization framework for variables, pickups, and least-squares solves
 - [plotting/](./plotting/index.md) — Matplotlib plotting utilities for optical visualization
 - [raygrid/](./raygrid/index.md) — Ray grid generation and sampling strategies
 - [utils/](./utils/index.md) — General utility functions and helpers
