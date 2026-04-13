@@ -2,6 +2,7 @@ import {
   buildDiffractionPsfOption,
   formatDiffractionPsfIntensity,
 } from "@/features/analysis/components/diffraction-psf-chart/diffractionPsfChartOption";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
 
@@ -81,19 +82,7 @@ describe("diffractionPsfChartOption", () => {
     expect(option.visualMap.text).toEqual(["1", "0.0005"]);
     expect(option.visualMap.formatter(Math.log10(1))).toBe("1");
     expect(option.visualMap.formatter(Math.log10(5e-4))).toBe("0.0005");
-    expect(option.visualMap.inRange.color).toEqual([
-      "#313695",
-      "#4575b4",
-      "#74add1",
-      "#abd9e9",
-      "#e0f3f8",
-      "#ffffbf",
-      "#fee090",
-      "#fdae61",
-      "#f46d43",
-      "#d73027",
-      "#a50026",
-    ]);
+    expect(option.visualMap.inRange.color).toEqual(ANALYSIS_HEATMAP_COLOR_PALETTE);
   });
 
   it("caps the visual map height when the chart is short", () => {
