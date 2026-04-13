@@ -11,6 +11,7 @@ Provides optical glass data for special materials not found in the standard `opt
 - refractiveindex.info equation names are dispatched through `_map_equation_name_to_dispersion_equation`; this module currently supports `"formula 1"` and `"formula 2"` from the refractiveindex.info schema.
 - `_formula1` expects alternating coefficient pairs `[B1, C1, B2, C2, B3, C3, ...]` where each `Ci` is the raw resonance wavelength in μm. It evaluates `n²−1 = Σ Bi·λ²/(λ²−Ci²)`.
 - `_formula2` expects alternating coefficient pairs `[B1, C1, B2, C2, B3, C3, ...]` where each `Ci` is already a squared resonance wavelength in μm². It evaluates `n²−1 = Σ Bi·λ²/(λ²−Ci)`.
+- `_build_formula1_six_coeff_special_material_data(filename, material_name)` is intentionally narrow: it is only for bundled special materials whose refractiveindex.info payload uses `"formula 1"` and exactly 6 dispersion coefficients after dropping the leading `n0` term.
 - The bundled CaF2 and Fused Silica YAML files both use refractiveindex.info `"formula 1"` data, so the module computes refractive indices from raw `Ci` values and only squares `Ci` when exporting `dispersion_coeffs` in the downstream `"Sellmeier3T"` layout `[B1, B2, B3, C1², C2², C3²]`.
 - Fraunhofer wavelengths used: C=0.6563 μm, d=0.5876 μm, e=0.5461 μm, F=0.4861 μm, g=0.4358 μm.
 - Both Vd and Ve use F and C lines: Vd = (nd−1)/(nF−nC), Ve = (ne−1)/(nF−nC).
@@ -35,11 +36,11 @@ Expects alternating coefficient pairs `[B1, C1, B2, C2, B3, C3, ...]` where `Ci`
 
 ### `_get_caf2_data() -> dict`
 
-Reads `CaF2_Malitson.yml`, parses its refractiveindex.info `"formula 1"` coefficients as raw resonance wavelengths, computes optical properties from those raw values, then exports a glass entry dict whose `"dispersion_coeffs"` field uses the squared-`Ci` `"Sellmeier3T"` convention expected by the rest of the app.
+Reads `CaF2_Malitson.yml` via `_build_formula1_six_coeff_special_material_data`, parses its refractiveindex.info `"formula 1"` coefficients as raw resonance wavelengths, computes optical properties from those raw values, then exports a glass entry dict whose `"dispersion_coeffs"` field uses the squared-`Ci` `"Sellmeier3T"` convention expected by the rest of the app.
 
 ### `_get_fused_silica_data() -> dict`
 
-Reads `FusedSilica_Malitson.yml`, parses its refractiveindex.info `"formula 1"` coefficients as raw resonance wavelengths, computes optical properties from those raw values, then exports a glass entry dict whose `"dispersion_coeffs"` field uses the squared-`Ci` `"Sellmeier3T"` convention expected by the rest of the app.
+Reads `FusedSilica_Malitson.yml` via `_build_formula1_six_coeff_special_material_data`, parses its refractiveindex.info `"formula 1"` coefficients as raw resonance wavelengths, computes optical properties from those raw values, then exports a glass entry dict whose `"dispersion_coeffs"` field uses the squared-`Ci` `"Sellmeier3T"` convention expected by the rest of the app.
 
 ### `get_special_materials_data() -> dict[str, dict[str, dict]]`
 

@@ -62,7 +62,7 @@ def load_custom_material(filename: str, material_name: str) -> RIIMedium:
     return create_material(material_yaml, material_name, 'rii-main', 'data-nk')
 
 
-def _build_special_material_data(filename: str, material_name: str) -> dict:
+def _build_formula1_six_coeff_special_material_data(filename: str, material_name: str) -> dict:
     material = load_custom_material(filename, material_name)
 
     equation_type = material.yaml_data['DATA'][0]['type']
@@ -106,11 +106,11 @@ def _build_special_material_data(filename: str, material_name: str) -> dict:
 
 
 def _get_caf2_data() -> dict:
-    return _build_special_material_data('CaF2_Malitson.yml', 'CaF2')
+    return _build_formula1_six_coeff_special_material_data('CaF2_Malitson.yml', 'CaF2')
 
 
 def _get_fused_silica_data() -> dict:
-    return _build_special_material_data('FusedSilica_Malitson.yml', 'Fused Silica')
+    return _build_formula1_six_coeff_special_material_data('FusedSilica_Malitson.yml', 'Fused Silica')
 
 
 def get_special_materials_data() -> dict[str, dict[str, dict]]:

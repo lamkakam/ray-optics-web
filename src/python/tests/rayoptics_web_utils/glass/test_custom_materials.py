@@ -15,6 +15,16 @@ REQUIRED_CaF2_KEYS = {
 PARTIAL_DISPERSION_KEYS = {"P_F_e", "P_F_d", "P_g_F"}
 
 
+class TestHelperNaming:
+    """Tests for helper names that document supported custom-material formats."""
+
+    def test_uses_formula1_six_coeffs_specific_helper_name(self):
+        from rayoptics_web_utils.glass import custom_materials
+
+        assert hasattr(custom_materials, "_build_formula1_six_coeff_special_material_data")
+        assert not hasattr(custom_materials, "_build_special_material_data")
+
+
 class TestGetCaF2Data:
     """Tests for _get_caf2_data()."""
 
