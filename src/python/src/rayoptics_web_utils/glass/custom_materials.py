@@ -62,6 +62,8 @@ def _get_caf2_data() -> dict:
     # refractiveindex.info formula 1 stores coefficients as:
     # n0 B1 C1 B2 C2 B3 C3  (n0 is constant term, typically 0 — drop it)
     # Ci are raw resonance wavelengths in μm (not squared).
+    # Use the raw values for evaluation, then square Ci only when exporting the
+    # downstream Sellmeier3T payload expected by the frontend.
     raw_dispersion_coeffs = [float(x) for x in coeffs_str.split()][1:]
 
     dispersion_fn = _map_equation_name_to_dispersion_equation[equation_type]
@@ -84,6 +86,7 @@ def _get_caf2_data() -> dict:
     B1, C1, B2, C2, B3, C3 = raw_dispersion_coeffs
     return {
         "dispersion_coeff_kind": "Sellmeier3T",
+        # Sellmeier3T stores [B1, B2, B3, C1, C2, C3] with Ci already squared.
         "dispersion_coeffs": [B1, B2, B3, C1**2, C2**2, C3**2],
         "refractive_index_d": nd,
         "refractive_index_e": ne,

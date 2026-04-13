@@ -7,20 +7,30 @@ Provides optical glass data for special materials not found in the standard `opt
 ## Key Conventions
 
 - Data source: YAML files under `rayoptics_web_utils/data/`, loaded via `importlib.resources`.
-- refractiveindex.info **formula 1** (Sellmeier) stores coefficients as `n0 B1 C1 B2 C2 B3 C3` where `n0` is a constant (dropped) and `Ci` is the resonance **wavelength** in μm (not μm²). `dispersion_coeffs` stores these raw values as `[B1, B2, B3, C1, C2, C3]` without squaring. `_sellmeier3T` squares the C values internally per the formula `n²−1 = B1·λ²/(λ²−C1²) + …`.
+- refractiveindex.info equation names are dispatched through `_map_equation_name_to_dispersion_equation`; this module currently supports `"formula 1"` and `"formula 2"` from the refractiveindex.info schema.
+- `_formula1` expects alternating coefficient pairs `[B1, C1, B2, C2, B3, C3, ...]` where each `Ci` is the raw resonance wavelength in μm. It evaluates `n²−1 = Σ Bi·λ²/(λ²−Ci²)`.
+- `_formula2` expects alternating coefficient pairs `[B1, C1, B2, C2, B3, C3, ...]` where each `Ci` is already a squared resonance wavelength in μm². It evaluates `n²−1 = Σ Bi·λ²/(λ²−Ci)`.
+- The bundled CaF2 YAML uses refractiveindex.info `"formula 1"` data, so `_get_caf2_data()` computes refractive indices from raw `Ci` values and only squares `Ci` when exporting `dispersion_coeffs` in the downstream `"Sellmeier3T"` layout `[B1, B2, B3, C1², C2², C3²]`.
 - Fraunhofer wavelengths used: C=0.6563 μm, d=0.5876 μm, e=0.5461 μm, F=0.4861 μm, g=0.4358 μm.
 - Both Vd and Ve use F and C lines: Vd = (nd−1)/(nF−nC), Ve = (ne−1)/(nF−nC).
 
 ## API
 
-### `_sellmeier3T(dispersion_coeffs, wavelengthInMicron) -> float`
+### `_formula1(dispersion_coeffs, wavelengthInMicron) -> float`
 
-Computes refractive index via: `n = sqrt(1 + B1·λ²/(λ²−C1²) + B2·λ²/(λ²−C2²) + B3·λ²/(λ²−C3²))`.
-Expects `dispersion_coeffs = [B1, B2, B3, C1, C2, C3]` where Ci are raw resonance wavelengths in μm.
+Computes refractive index via refractiveindex.info formula 1:
+`n = sqrt(1 + Σ Bi·λ²/(λ²−Ci²))`.
+Expects alternating coefficient pairs `[B1, C1, B2, C2, B3, C3, ...]` where `Ci` are raw resonance wavelengths in μm.
+
+### `_formula2(dispersion_coeffs, wavelengthInMicron) -> float`
+
+Computes refractive index via refractiveindex.info formula 2:
+`n = sqrt(1 + Σ Bi·λ²/(λ²−Ci))`.
+Expects alternating coefficient pairs `[B1, C1, B2, C2, B3, C3, ...]` where `Ci` are already squared resonance wavelengths in μm².
 
 ### `_get_caf2_data() -> dict`
 
-Reads `CaF2_Malitson.yml`, parses coefficients (raw resonance wavelengths, NOT squared), computes optical properties, and returns a glass entry dict.
+Reads `CaF2_Malitson.yml`, parses its refractiveindex.info `"formula 1"` coefficients as raw resonance wavelengths, computes optical properties from those raw values, then exports a glass entry dict whose `"dispersion_coeffs"` field uses the squared-`Ci` `"Sellmeier3T"` convention expected by the rest of the app.
 
 ### `get_special_materials_data() -> dict[str, dict[str, dict]]`
 
@@ -40,7 +50,7 @@ Returns `{"Special": {"CaF2": glass_entry}}`.
     "P_g_F": 0.552
   },
   "dispersion_coeff_kind": "Sellmeier3T",
-  "dispersion_coeffs": [0.5675888, 0.4710914, 3.8484723, 0.050263605, 0.1003909, 34.649040]
+  "dispersion_coeffs": [0.5675888, 0.4710914, 3.8484723, 0.0025264299593920254, 0.01007833277281, 1200.5563482816]
 }
 ```
 
