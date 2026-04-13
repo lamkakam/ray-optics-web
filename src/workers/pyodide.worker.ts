@@ -47,12 +47,15 @@ await micropip.install("${wheelUrl}", deps=False)
 from rayoptics_web_utils import init as _rwu_init
 _rwu_init_result = _rwu_init()
 caf2 = _rwu_init_result['caf2']
+fused_silica = _rwu_init_result['fused_silica']
+water = _rwu_init_result['water']
 
 import json
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 from rayoptics.elem.profiles import XToroid, YToroid
+from rayoptics.seq.medium import decode_medium
 
 from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_geo_psf_data, get_diffraction_psf_data
 from rayoptics_web_utils.plotting import (
@@ -91,7 +94,7 @@ export async function init(): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.12-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.13-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
   } catch (err) {

@@ -22,6 +22,8 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 ## Behavior
 
 - The validator enforces the full nested structure of `OpticalModel`.
+- `object` now requires `distance`, `medium`, and `manufacturer`.
+- Object medium rejects reflective values (`"REFL"` / `"refl"`).
 - `specs.field.isWideAngle` is accepted as an optional boolean to support wide-angle ray-aiming mode while preserving compatibility with older imported files.
 - Surface `aspherical` data must use the discriminated union shape with `kind`.
 - Supported `aspherical.kind` values are `"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
@@ -38,6 +40,7 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 ## Edge Cases / Error Handling
 
 - Returns `false` and populates `.errors` for any structural mismatch, unknown property, or type error.
+- Returns `false` if `object.medium` or `object.manufacturer` is missing, or if `object.medium` is reflective.
 - `specs.field.isWideAngle` may be omitted, but if present it must be a boolean.
 - Legacy aspherical payloads without `kind` are rejected.
 - `XToroid` and `YToroid` payloads are rejected unless `toricSweepRadiusOfCurvature` is present and numeric.

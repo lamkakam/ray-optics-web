@@ -35,7 +35,7 @@ const testSpecs: OpticalSpecs = {
 
 const testModel: OpticalModel = {
   setAutoAperture: "manualAperture",
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [],
   specs: testSpecs,

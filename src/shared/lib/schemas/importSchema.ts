@@ -176,10 +176,12 @@ const importedLensDataSchema = {
     },
     object: {
       type: "object",
-      required: ["distance"],
+      required: ["distance", "medium", "manufacturer"],
       additionalProperties: false,
       properties: {
         distance: { type: "number" },
+        medium: { type: "string", not: { enum: ["REFL", "refl"] } },
+        manufacturer: { type: "string" },
       },
     },
     image: {

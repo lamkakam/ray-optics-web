@@ -13,7 +13,7 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 }));
 
 const testRows: GridRow[] = [
-  { id: OBJECT_ROW_ID, kind: "object", objectDistance: 1e10 },
+  { id: OBJECT_ROW_ID, kind: "object", objectDistance: 1e10, medium: "air", manufacturer: "" },
   {
     id: "s1",
     kind: "surface",
@@ -115,7 +115,7 @@ describe("LensPrescriptionGrid", () => {
   it("renders medium buttons for surface rows", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
-    expect(mediumButtons).toHaveLength(2); // two surface rows
+    expect(mediumButtons).toHaveLength(3); // object row + two surface rows
   });
 
   it("calls onOpenMediumModal when medium button is clicked", async () => {
@@ -124,6 +124,21 @@ describe("LensPrescriptionGrid", () => {
     const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
 
     await userEvent.click(mediumButtons[0]);
+
+    expect(onOpenMediumModal).toHaveBeenCalledWith(OBJECT_ROW_ID);
+  });
+
+  it("renders the object row medium value in the Medium column", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    expect(screen.getByText("air")).toBeInTheDocument();
+  });
+
+  it("opens the surface row medium modal when the second medium button is clicked", async () => {
+    const onOpenMediumModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenMediumModal={onOpenMediumModal} />);
+    const mediumButtons = screen.getAllByRole("button", { name: "Edit medium" });
+
+    await userEvent.click(mediumButtons[1]);
 
     expect(onOpenMediumModal).toHaveBeenCalledWith("s1");
   });
@@ -198,7 +213,7 @@ describe("LensPrescriptionGrid", () => {
 
     await userEvent.click(cellWrapper);
 
-    expect(onOpenMediumModal).toHaveBeenCalledWith("s1");
+    expect(onOpenMediumModal).toHaveBeenCalledWith(OBJECT_ROW_ID);
   });
 
   it("opens aspherical modal when clicking cell area around the aspherical button", async () => {

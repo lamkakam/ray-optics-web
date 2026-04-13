@@ -81,6 +81,8 @@ export interface Surface {
 export interface Surfaces {
   object: {
     distance: number,
+    medium: Exclude<string, "REFL" | "refl">,
+    manufacturer: string,
   },
   image: {
     curvatureRadius: number, // 0 means flat (infinite radius)

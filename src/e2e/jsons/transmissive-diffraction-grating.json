@@ -35,7 +35,9 @@
     }
   },
   "object": {
-    "distance": 39
+    "distance": 39,
+    "medium": "air",
+    "manufacturer": ""
   },
   "image": {
     "curvatureRadius": 0

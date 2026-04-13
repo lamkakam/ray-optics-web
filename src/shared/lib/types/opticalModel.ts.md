@@ -31,6 +31,7 @@ Defines all core TypeScript domain types for the optical model, including system
 - **`medium: "REFL"`** denotes a reflective surface (mirror).
 - **`medium: "CaF2"`** is a special-cased medium.
 - `manufacturer` is always `""` when `medium` is `"air"` or `"REFL"`.
+- `Surfaces["object"]` stores `distance`, `medium`, and `manufacturer`; object medium must be non-reflective.
 - `aspherical` is a discriminated union:
   - `{ kind: "Conic", conicConstant }`
   - `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
@@ -66,7 +67,7 @@ const model: OpticalModel = {
     field: { space: "object", type: "height", fields: [0, 14, 20], isRelative: true },
     wavelengths: { weights: [[546.073, 1]], referenceIndex: 0 },
   },
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   surfaces: [
     { curvatureRadius: 50, thickness: 10, medium: "BK7", manufacturer: "Schott" },
     { curvatureRadius: -50, thickness: 5, medium: "air" },

@@ -9,6 +9,8 @@ const builtInSpecialMaterial = new Set<string>([
 // the value(s) refer to the Python variable(s) defined in `init()` in rayoptics-web-utils
 const nonBuiltInSpecialMaterial = new Map<string, string>([
   ["CaF2", "caf2"],
+  ["Fused Silica", "fused_silica"],
+  ["Water", "water"],
 ]);
 
 type PythonLine = string;
@@ -164,11 +166,17 @@ function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBui
 
 function buildObjectSetupLines(opticalModel: OpticalModel): PythonLine[] {
   const {
-    object: { distance: objectDistance },
+    object: { distance: objectDistance, medium, manufacturer },
   } = opticalModel;
+
+  const { medium: mediumOption, glassManufacturer } = formattedMedium(
+    medium.toUpperCase() === "REFL" ? "air" : medium,
+    medium.toUpperCase() === "REFL" ? "" : manufacturer,
+  );
 
   return [
     `sm.gaps[0].thi=${objectDistance}`,
+    `sm.gaps[0].medium = decode_medium(${mediumOption}${glassManufacturer})`,
   ];
 }
 
@@ -232,10 +240,17 @@ from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData
 from rayoptics.elem.profiles import XToroid, YToroid
+from rayoptics.seq.medium import decode_medium
 from opticalglass.rindexinfo import create_material
 
 caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'
 caf2 = create_glass(caf2_url, "rindexinfo")
+
+fused_silica_url = https://refractiveindex.info/database/data/main/SiO2/nk/Malitson.yml
+fused_silica = create_glass(fused_silica_url, "rindexinfo")
+
+water_url = 'https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C.yml'
+water = create_glass(water_url, "rindexinfo")
 `;
 }
 

@@ -1,7 +1,7 @@
 export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special'] as const;
 export type CatalogName = typeof CATALOG_NAMES[number];
 
-export type DispersionCoeffKind = 'Schott2x6' | 'Sellmeier3T';
+export type DispersionCoeffKind = 'Schott2x6' | 'Sellmeier3T' | 'Sellmeier4T';
 
 export interface GlassData {
   readonly refractiveIndexD: number;

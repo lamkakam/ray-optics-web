@@ -73,14 +73,14 @@ export function _resetPyodideForTesting(): void
 2. Loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
 3. Calls `loadPyodide({ indexURL })` to create the Pyodide instance.
 4. Loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-5. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.2.12-py3-none-any.whl`.
+5. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.2.13-py3-none-any.whl`.
 6. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl)`.
 
 `_init(runPython, wheelUrl)` performs three `runPython` calls:
 
 1. Installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
 2. Installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
-3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2` glass object, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, and `rayoptics_web_utils.glass.glass`.
+3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, and `water` glass objects, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, and `rayoptics_web_utils.glass.glass`.
 
 ## Public API
 
@@ -143,7 +143,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **`requirePyodide()` guard**: All public functions call this helper. It throws `"Pyodide not initialized. Call init() first."` if `pyodide` is `null`.
 - **Stateless**: Each computation function builds `opm` locally from the received `OpticalModel` within a single `runPython` call. No global `opm` state persists between calls.
 - **Plot return type**: Plot image functions return a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getWavefrontData`, `getGeoPSFData`, and `getDiffractionPSFData` return typed data for frontend rendering.
-- **`caf2` global**: Initialized by `_rwu_init()` during `_init`.
+- **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, and `water` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
 
 ## Edge Cases / Error Handling
 

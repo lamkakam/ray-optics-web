@@ -11,6 +11,7 @@ interface MediumSelectorModalProps {
   isOpen: boolean;
   initialMedium: string;
   initialManufacturer: string;
+  allowReflective?: boolean;
   selectedMedium?: string;
   selectedManufacturer?: string;
   onSelectionChange?: (medium: string, manufacturer: string) => void;
@@ -26,6 +27,7 @@ interface MediumSelectorModalProps {
 | `isOpen` | `boolean` | Yes | Controls modal visibility |
 | `initialMedium` | `string` | Yes | Pre-selected medium on open |
 | `initialManufacturer` | `string` | Yes | Pre-selected manufacturer on open; empty string or `"air"` maps to `"Special"` |
+| `allowReflective` | `boolean` | No | When `false`, `"REFL"` is removed from the Special media options |
 | `selectedMedium` | `string \| undefined` | No | Controlled catalog-glass medium value used when the parent persists an unconfirmed draft |
 | `selectedManufacturer` | `string \| undefined` | No | Controlled catalog-glass manufacturer value used with `selectedMedium` |
 | `onSelectionChange` | `(medium, manufacturer) => void` | No | Called whenever the catalog-glass draft changes |
@@ -47,6 +49,7 @@ interface MediumSelectorModalProps {
 - When manufacturer changes to `"Special"`, medium resets to `"air"`.
 - Manufacturer options come from loaded provider catalogs with `"Special"` prefixed and empty catalogs omitted.
 - The `"Special"` glass list combines built-in non-glass media (`"air"`, `"REFL"`) with provider-backed special glasses such as `"CaF2"`.
+- When `allowReflective` is `false`, `"REFL"` is excluded from the Special media list so object-space media cannot be set to reflective.
 - When manufacturer changes to a catalog, the first glass in that provider-backed list is selected if the current selection is not in the new catalog.
 - When `selectedMedium` / `selectedManufacturer` are provided, the catalog-glass dropdowns are controlled by the parent so unconfirmed choices can survive route changes.
 - `onSelectionChange` fires for catalog-glass changes and reports `"Special"` for the special manufacturer option.
@@ -82,8 +85,9 @@ return (
     <MediumSelectorModal
       key={mediumModal.open ? mediumModal.rowId : "medium-closed"}
       isOpen={mediumModal.open}
-      initialMedium={mediumRow?.kind === "surface" ? mediumRow.medium : "air"}
-      initialManufacturer={mediumRow?.kind === "surface" ? mediumRow.manufacturer : ""}
+      initialMedium={mediumRow?.kind === "surface" || mediumRow?.kind === "object" ? mediumRow.medium : "air"}
+      initialManufacturer={mediumRow?.kind === "surface" || mediumRow?.kind === "object" ? mediumRow.manufacturer : ""}
+      allowReflective={mediumRow?.kind !== "object"}
       onConfirm={(medium, manufacturer) => {
         store.getState().updateRow(mediumModal.rowId, { medium, manufacturer });
         store.getState().closeMediumModal();

@@ -1,4 +1,4 @@
-import { buildOpticalModelScript, buildScript } from "../pythonScript";
+import { buildOpticalModelScript, buildScript, buildExportScript } from "../pythonScript";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 const baseModel: OpticalModel = {
@@ -8,7 +8,7 @@ const baseModel: OpticalModel = {
     field: { space: "object", type: "angle", maxField: 20.0, fields: [0, 0.707, 1], isRelative: true },
     wavelengths: { weights: [[656.3, 1], [587, 2], [486.1, 1]], referenceIndex: 1 },
   },
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: -42 },
   surfaces: [
     { label: "Default", curvatureRadius: 23.713, thickness: 4.831, medium: "N-LAK9", manufacturer: "Schott", semiDiameter: 10.009 },
@@ -102,6 +102,7 @@ describe("buildOpticalModelScript", () => {
         "sm.do_apertures = False",
         "",
         "sm.gaps[0].thi=10000000000",
+        "sm.gaps[0].medium = decode_medium(\"air\")",
         "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)",
       ].join("\n")
     );
@@ -294,6 +295,18 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("sm.add_surface([30, 1.1, caf2], sd=10)");
   });
 
+  it("should set a surface with water correctly", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "Water", manufacturer: "", semiDiameter: 10 },
+        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+      ],
+    };
+    const script = buildOpticalModelScript(model);
+    expect(script).toContain("sm.add_surface([30, 1.1, water], sd=10)");
+  });
+
   it("should set a model glass surface without manufacturer when medium is numeric and manufacturer is empty", () => {
     const model: OpticalModel = {
       ...baseModel,
@@ -339,6 +352,14 @@ describe("buildOpticalModelScript", () => {
     };
     const script = buildOpticalModelScript(opticalModel);
     expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True, is_wide_angle=True)");
+  });
+});
+
+describe("buildExportScript", () => {
+  it("defines the water material in the export preamble", () => {
+    const script = buildExportScript(baseModel);
+    expect(script).toContain("water_url = 'https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C.yml'");
+    expect(script).toContain('water = create_glass(water_url, "rindexinfo")');
   });
 });
 

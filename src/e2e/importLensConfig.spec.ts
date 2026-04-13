@@ -101,6 +101,12 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   const colIdMedium = await getColId(page, prescGrid, "Medium");
   const colIdSemiDiam = await getColId(page, prescGrid, "Semi-diam.");
 
+  await expect(
+    page.locator(
+      `${prescGrid} .ag-row[row-index="0"] .ag-cell[col-id="${colIdMedium}"]`
+    )
+  ).toContainText("air");
+
   // Row 1: Stop — aspherical + decenter
   await expect(
     page.locator(

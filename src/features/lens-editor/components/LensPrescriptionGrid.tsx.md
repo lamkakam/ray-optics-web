@@ -38,6 +38,7 @@ interface LensPrescriptionGridProps {
 
 - Column definitions are memoized with `useMemo` over the callback props to avoid unnecessary AG Grid re-renders.
 - `MediumCell`, `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` are wrapped in an `ActionWrapper` div that opens the modal on background click (in case the inner element doesn't capture it).
+- The Medium column renders for the Object row and all surface rows; the Image row remains blank in that column.
 - Only surface-kind rows get a delete button; object/image rows only get an add button or neither.
 - The diffraction grating column renders only for `surface` rows.
 - Number parsing rejects non-numeric input and restores the old value.

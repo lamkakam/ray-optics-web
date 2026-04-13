@@ -138,11 +138,11 @@ export function LensPrescriptionGrid({
     {
       headerName: "Medium",
       valueGetter: (params) => {
-        if (!params.data || params.data.kind !== "surface") return undefined;
+        if (!params.data || params.data.kind === "image") return undefined;
         return params.data.medium;
       },
       cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind !== "surface") return null;
+        if (params.data.kind === "image") return null;
         return (
           <ActionWrapper onAction={() => onOpenMediumModal(params.data.id)}>
             <MediumCell

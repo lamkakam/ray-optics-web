@@ -117,6 +117,7 @@ export function LensPrescriptionContainer({
   const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);
   const decenterRow = rows.find((r) => r.id === decenterModal.rowId);
   const diffractionGratingRow = rows.find((r) => r.id === diffractionGratingModal.rowId);
+  const isObjectMediumRow = mediumRow?.kind === "object";
 
   const handleExport = () => {
     const json = JSON.stringify(getOpticalModel(), undefined, 2);
@@ -217,8 +218,9 @@ export function LensPrescriptionContainer({
       <MediumSelectorModal
         key={mediumModal.open ? mediumModal.rowId : "medium-closed"}
         isOpen={mediumModal.open}
-        initialMedium={mediumRow?.kind === "surface" ? mediumRow.medium : "air"}
-        initialManufacturer={mediumRow?.kind === "surface" ? mediumRow.manufacturer : ""}
+        initialMedium={mediumRow?.kind === "surface" || mediumRow?.kind === "object" ? mediumRow.medium : "air"}
+        initialManufacturer={mediumRow?.kind === "surface" || mediumRow?.kind === "object" ? mediumRow.manufacturer : ""}
+        allowReflective={!isObjectMediumRow}
         selectedMedium={pendingMediumSelection?.medium}
         selectedManufacturer={
           pendingMediumSelection?.manufacturer === "" ? "Special" : pendingMediumSelection?.manufacturer

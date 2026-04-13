@@ -4,7 +4,7 @@ import type { Surfaces } from "@/shared/lib/types/opticalModel";
 
 // Cooke Triplet demo surfaces for testing
 const DEMO_SURFACES: Surfaces = {
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     {
@@ -70,6 +70,8 @@ describe("surfacesToGridRows", () => {
         id: OBJECT_ROW_ID,
         kind: "object",
         objectDistance: 1e10,
+        medium: "air",
+        manufacturer: "",
       })
     );
 
@@ -115,7 +117,7 @@ describe("surfacesToGridRows", () => {
 
   it("handles a single surface", () => {
     const single: Surfaces = {
-      object: { distance: 100 },
+      object: { distance: 100, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
       surfaces: [
         {
@@ -137,7 +139,7 @@ describe("surfacesToGridRows", () => {
 
   it("handles zero surfaces", () => {
     const empty: Surfaces = {
-      object: { distance: 0 },
+      object: { distance: 0, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
       surfaces: [],
     };
@@ -157,7 +159,7 @@ describe("surfacesToGridRows", () => {
       offsetY: -0.5,
     };
     const withImageDecenter: Surfaces = {
-      object: { distance: 0 },
+      object: { distance: 0, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0, decenter },
       surfaces: [],
     };
@@ -180,7 +182,7 @@ describe("surfacesToGridRows", () => {
 
   it("preserves decenter data on surface rows", () => {
     const withDecenter: Surfaces = {
-      object: { distance: 0 },
+      object: { distance: 0, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
       surfaces: [
         {
@@ -217,7 +219,7 @@ describe("surfacesToGridRows", () => {
 
   it("preserves aspherical data", () => {
     const withAsph: Surfaces = {
-      object: { distance: 0 },
+      object: { distance: 0, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
       surfaces: [
         {
@@ -248,7 +250,7 @@ describe("surfacesToGridRows", () => {
 
   it("preserves diffraction grating data", () => {
     const withGrating: Surfaces = {
-      object: { distance: 0 },
+      object: { distance: 0, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
       surfaces: [
         {
@@ -279,7 +281,7 @@ describe("surfacesToGridRows", () => {
 describe("gridRowsToSurfaces", () => {
   it("converts GridRow[] back to Surfaces", () => {
     const rows: GridRow[] = [
-      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 1e10 },
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 1e10, medium: "air", manufacturer: "" },
       {
         id: "s1",
         kind: "surface",
@@ -295,6 +297,8 @@ describe("gridRowsToSurfaces", () => {
 
     const surfaces = gridRowsToSurfaces(rows);
     expect(surfaces.object.distance).toBe(1e10);
+    expect(surfaces.object.medium).toBe("air");
+    expect(surfaces.object.manufacturer).toBe("");
     expect(surfaces.image.curvatureRadius).toBe(0);
     expect(surfaces.surfaces).toHaveLength(1);
     expect(surfaces.surfaces[0]).toEqual({
@@ -309,7 +313,7 @@ describe("gridRowsToSurfaces", () => {
 
   it("excludes decenter key when undefined (surface row)", () => {
     const rows: GridRow[] = [
-      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" },
       {
         id: "s1",
         kind: "surface",
@@ -337,7 +341,7 @@ describe("gridRowsToSurfaces", () => {
       offsetY: 0.2,
     };
     const rows: GridRow[] = [
-      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" },
       { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0, decenter },
     ];
     const surfaces = gridRowsToSurfaces(rows);
@@ -346,7 +350,7 @@ describe("gridRowsToSurfaces", () => {
 
   it("excludes decenter key from image when undefined", () => {
     const rows: GridRow[] = [
-      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" },
       { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
     ];
     const surfaces = gridRowsToSurfaces(rows);
@@ -355,7 +359,7 @@ describe("gridRowsToSurfaces", () => {
 
   it("excludes aspherical key when undefined", () => {
     const rows: GridRow[] = [
-      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" },
       {
         id: "s1",
         kind: "surface",
@@ -375,7 +379,7 @@ describe("gridRowsToSurfaces", () => {
 
   it("preserves diffraction grating on surface rows", () => {
     const rows: GridRow[] = [
-      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" },
       {
         id: "s1",
         kind: "surface",
@@ -402,7 +406,7 @@ describe("gridRowsToSurfaces", () => {
 
   it("excludes diffraction grating key when undefined", () => {
     const rows: GridRow[] = [
-      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0 },
+      { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" },
       {
         id: "s1",
         kind: "surface",
@@ -429,7 +433,7 @@ describe("round-trip", () => {
 
   it("round-trips surfaces with aspherical data", () => {
     const withAsph: Surfaces = {
-      object: { distance: 100 },
+      object: { distance: 100, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
       surfaces: [
         {
@@ -453,7 +457,7 @@ describe("round-trip", () => {
 
   it("round-trips surfaces with decenter data", () => {
     const withDecenter: Surfaces = {
-      object: { distance: 0 },
+      object: { distance: 0, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
       surfaces: [
         {
@@ -480,7 +484,7 @@ describe("round-trip", () => {
 
   it("round-trips image decenter data", () => {
     const withImageDecenter: Surfaces = {
-      object: { distance: 0 },
+      object: { distance: 0, medium: "air", manufacturer: "" },
       image: {
         curvatureRadius: 0,
         decenter: {
@@ -500,7 +504,7 @@ describe("round-trip", () => {
 
   it("round-trips surfaces with diffraction grating data", () => {
     const withGrating: Surfaces = {
-      object: { distance: 0 },
+      object: { distance: 0, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
       surfaces: [
         {
@@ -523,11 +527,23 @@ describe("round-trip", () => {
 
   it("round-trips zero surfaces", () => {
     const empty: Surfaces = {
-      object: { distance: 0 },
+      object: { distance: 0, medium: "air", manufacturer: "" },
       image: { curvatureRadius: 0 },
       surfaces: [],
     };
     const result = gridRowsToSurfaces(surfacesToGridRows(empty));
     expect(result).toEqual(empty);
+  });
+
+  it("round-trips object medium and manufacturer", () => {
+    const withObjectMedium: Surfaces = {
+      object: { distance: 25, medium: "N-BK7", manufacturer: "Schott" },
+      image: { curvatureRadius: 0 },
+      surfaces: [],
+    };
+
+    const result = gridRowsToSurfaces(surfacesToGridRows(withObjectMedium));
+
+    expect(result).toEqual(withObjectMedium);
   });
 });

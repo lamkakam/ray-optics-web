@@ -12,7 +12,7 @@ import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 
 const testSurfaces = {
-  object: { distance: 1e10 },
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
   surfaces: [
     {

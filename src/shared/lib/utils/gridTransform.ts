@@ -12,6 +12,8 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
     id: OBJECT_ROW_ID,
     kind: "object",
     objectDistance: surfaces.object.distance,
+    medium: surfaces.object.medium,
+    manufacturer: surfaces.object.manufacturer,
   };
 
   const surfaceRows: GridRow[] = surfaces.surfaces.map((s) => ({
@@ -65,7 +67,11 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
   });
 
   return {
-    object: { distance: objectRow?.objectDistance ?? 0 },
+    object: {
+      distance: objectRow?.objectDistance ?? 0,
+      medium: objectRow?.medium ?? "air",
+      manufacturer: objectRow?.manufacturer ?? "",
+    },
     image: {
       curvatureRadius: imageRow?.curvatureRadius ?? 0,
       ...(imageRow?.decenter !== undefined ? { decenter: imageRow.decenter } : {}),
