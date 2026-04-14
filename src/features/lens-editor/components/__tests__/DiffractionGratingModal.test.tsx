@@ -38,6 +38,24 @@ describe("DiffractionGratingModal", () => {
     expect(screen.getByText("Diffraction Grating")).toBeInTheDocument();
   });
 
+  it("renders read-only controls and only Close action in read-only mode", () => {
+    render(
+      <DiffractionGratingModal
+        isOpen={true}
+        initialDiffractionGrating={defaultGrating}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+        onRemove={jest.fn()}
+        readOnly
+      />
+    );
+
+    expect(screen.getByRole("textbox", { name: "lp/mm" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "order" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+  });
+
   it("defaults lp/mm to 1000 and order to 1", () => {
     render(
       <DiffractionGratingModal

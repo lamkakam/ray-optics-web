@@ -10,6 +10,7 @@ Modal for configuring surface tilt and decenter parameters: coordinate system st
 interface DecenterModalProps {
   isOpen: boolean;
   initialDecenter: DecenterType | undefined;
+  readOnly?: boolean;
   onConfirm: (decenter: DecenterType) => void;
   onClose: () => void;
   onRemove: () => void;
@@ -24,6 +25,7 @@ type DecenterType = DecenterConfig;  // from lib/opticalModel
 |------|------|----------|-------------|
 | `isOpen` | `boolean` | Yes | Controls visibility |
 | `initialDecenter` | `DecenterType \| undefined` | Yes | Existing decenter config, or `undefined` for a new one (defaults to bend/all zeros) |
+| `readOnly` | `boolean` | No | When `true`, all controls are disabled and the footer shows only `Close` |
 | `onConfirm` | `(decenter) => void` | Yes | Called with parsed values on Confirm |
 | `onClose` | `() => void` | Yes | Cancel callback |
 | `onRemove` | `() => void` | Yes | Clears decenter data for the surface |
@@ -37,6 +39,7 @@ type DecenterType = DecenterConfig;  // from lib/opticalModel
 
 - When `initialDecenter` is `undefined`, all fields default to `0` and strategy defaults to `"bend"`.
 - Invalid or empty numeric strings fall back to the initial value.
+- In `readOnly` mode, the strategy select and all numeric inputs are disabled; the footer renders only `Close`.
 
 ## Usages
 

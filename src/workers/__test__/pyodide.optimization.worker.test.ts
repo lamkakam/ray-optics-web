@@ -1,0 +1,52 @@
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import { _optimizeOpm } from "@/workers/pyodide.worker";
+
+const baseModel: OpticalModel = {
+  setAutoAperture: "manualAperture",
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 50,
+      thickness: 5,
+      medium: "BK7",
+      manufacturer: "Schott",
+      semiDiameter: 10,
+    },
+  ],
+  specs: {
+    pupil: { space: "object", type: "epd", value: 12.5 },
+    field: { space: "object", type: "angle", maxField: 20, fields: [0, 1], isRelative: true },
+    wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
+  },
+};
+
+describe("_optimizeOpm", () => {
+  it("runs optimize_opm in Python and parses the JSON result", async () => {
+    const runPython = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        success: true,
+        status: "optimized",
+        message: "done",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [],
+        merit_function: { sum_of_squares: 0, rss: 0 },
+      }),
+    );
+
+    const result = await _optimizeOpm(runPython, baseModel, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [],
+      pickups: [],
+      merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
+    });
+
+    expect(result.success).toBe(true);
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining("optimize_opm("));
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));
+  });
+});

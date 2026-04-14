@@ -10,6 +10,7 @@ Modal for configuring diffraction grating parameters on a surface.
 interface DiffractionGratingModalProps {
   isOpen: boolean;
   initialDiffractionGrating: DiffractionGrating | undefined;
+  readOnly?: boolean;
   onConfirm: (diffractionGrating: DiffractionGrating) => void;
   onClose: () => void;
   onRemove: () => void;
@@ -23,3 +24,4 @@ interface DiffractionGratingModalProps {
 - Invalid `lp/mm` values fall back to the initial positive value.
 - Invalid `order` values fall back to the initial integer value.
 - `Remove` clears the stored diffraction grating config.
+- In `readOnly` mode, both inputs are disabled and the footer renders only `Close`.

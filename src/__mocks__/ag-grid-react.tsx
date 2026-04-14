@@ -20,6 +20,7 @@ interface AgGridReactProps {
   getRowId?: (params: { data: Record<string, unknown> }) => string;
   onRowSelected?: (event: unknown) => void;
   theme?: unknown;
+  domLayout?: string;
   [key: string]: unknown;
 }
 
@@ -95,10 +96,10 @@ export function AgGridProvider({ children }: { children: React.ReactNode; module
   return <>{children}</>;
 }
 
-export function AgGridReact({ rowData, columnDefs, theme }: AgGridReactProps) {
+export function AgGridReact({ rowData, columnDefs, theme, domLayout }: AgGridReactProps) {
   const themeName = theme && typeof theme === "object" && "_name" in theme ? (theme as { _name: string })._name : undefined;
   return (
-    <table data-testid="ag-grid-mock" data-theme={themeName}>
+    <table data-testid="ag-grid-mock" data-theme={themeName} data-dom-layout={domLayout}>
       <thead>
         <tr>
           {columnDefs?.map((col, i) => (

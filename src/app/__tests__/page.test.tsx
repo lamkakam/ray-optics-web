@@ -216,6 +216,17 @@ const mockProxy = {
   focusByPolyRmsSpot: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
   focusByPolyStrehl: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
   getAllGlassCatalogsData: jest.fn().mockResolvedValue({}),
+  optimizeOpm: jest.fn().mockResolvedValue({
+    success: true,
+    status: "optimized",
+    message: "done",
+    optimizer: { kind: "least_squares", method: "trf" },
+    initial_values: [],
+    final_values: [],
+    pickups: [],
+    residuals: [],
+    merit_function: { sum_of_squares: 0, rss: 0 },
+  }),
 } satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
 type MockUsePyodideResult = {

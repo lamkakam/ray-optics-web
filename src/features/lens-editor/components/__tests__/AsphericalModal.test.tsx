@@ -32,6 +32,14 @@ describe("AsphericalModal", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
+  it("renders read-only controls and only Close action in read-only mode", () => {
+    render(<AsphericalModal {...defaultProps} readOnly />);
+    expect(screen.getByLabelText("Conic constant")).toBeDisabled();
+    expect(screen.getByLabelText("Type")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+  });
+
   it("renders a backdrop overlay behind the dialog", () => {
     render(<AsphericalModal {...defaultProps} />);
     const backdrop = screen.getByTestId("modal-backdrop");

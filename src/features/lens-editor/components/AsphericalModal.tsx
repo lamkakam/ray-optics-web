@@ -15,6 +15,7 @@ const COEFFICIENT_NUM = 10;
 
 interface AsphericalModalProps {
   readonly isOpen: boolean;
+  readonly readOnly?: boolean;
   readonly initialConicConstant: number;
   readonly initialType: AsphericalType;
   readonly initialCoefficients: number[];
@@ -218,6 +219,7 @@ const contentMap: {
 
 export function AsphericalModal({
   isOpen,
+  readOnly = false,
   initialConicConstant,
   initialType,
   initialCoefficients,
@@ -276,6 +278,7 @@ export function AsphericalModal({
               aria-label="Conic constant"
               type="text"
               value={conicConstantStr}
+              disabled={readOnly}
               onChange={(e) => setConicConstantStr(e.target.value)}
             />
 
@@ -289,6 +292,7 @@ export function AsphericalModal({
                   aria-label="Toroid sweep radius of curvature"
                   type="text"
                   value={toricSweepRadiusOfCurvatureStr}
+                  disabled={readOnly}
                   onChange={(e) => setToricSweepRadiusOfCurvatureStr(e.target.value)}
                 />
               </div>
@@ -303,6 +307,7 @@ export function AsphericalModal({
               id="aspherical-type"
               aria-label="Type"
               value={type}
+              disabled={readOnly}
               onChange={(e) => setType(e.target.value as AsphericalType)}
               options={[
                 { value: "Conic", label: "Conic" },
@@ -333,6 +338,7 @@ export function AsphericalModal({
                     aria-label={key}
                     type="text"
                     value={coefficientStrs[i]}
+                    disabled={readOnly}
                     onChange={(e) => updateCoefficient(i, e.target.value)}
                   />
                 </div>
@@ -343,10 +349,18 @@ export function AsphericalModal({
 
         {/* ── Actions ── */}
         <div className="flex items-center gap-3 pt-4">
-          <Button variant="danger" onClick={onRemove}>Remove Aspherical</Button>
-          <span className="flex-1" />
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+          {readOnly ? (
+            <div className="flex justify-end w-full">
+              <Button variant="secondary" onClick={onClose}>Close</Button>
+            </div>
+          ) : (
+            <>
+              <Button variant="danger" onClick={onRemove}>Remove Aspherical</Button>
+              <span className="flex-1" />
+              <Button variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+            </>
+          )}
         </div>
       </Modal>
   );

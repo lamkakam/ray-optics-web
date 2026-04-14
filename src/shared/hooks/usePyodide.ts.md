@@ -31,6 +31,7 @@ interface PyodideWorkerAPI {
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
+  optimizeOpm(opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>;
 }
 ```
 
@@ -68,6 +69,7 @@ interface PyodideWorkerAPI {
 - `SpotDiagramData` — imported from `shared/lib/types/opticalModel` (type only).
 - `ZernikeData` — imported from `shared/lib/types/zernikeData` (type only).
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
+- `OptimizationConfig`, `OptimizationReport` — imported from `shared/lib/types/optimization` (type only).
 
 ## Edge Cases / Error Handling
 

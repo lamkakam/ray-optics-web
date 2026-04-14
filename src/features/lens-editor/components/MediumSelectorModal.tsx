@@ -16,6 +16,7 @@ interface MediumSelectorModalProps {
   readonly isOpen: boolean;
   readonly initialMedium: string;
   readonly initialManufacturer: string;
+  readonly readOnly?: boolean;
   readonly allowReflective?: boolean;
   readonly selectedMedium?: string;
   readonly selectedManufacturer?: string;
@@ -51,6 +52,7 @@ export function MediumSelectorModal({
   isOpen,
   initialMedium,
   initialManufacturer,
+  readOnly = false,
   allowReflective = true,
   selectedMedium,
   selectedManufacturer,
@@ -123,6 +125,7 @@ export function MediumSelectorModal({
           ariaLabel="Use model glass"
           checked={useModelGlass}
           label="Use model glass"
+          disabled={readOnly}
           onChange={setUseModelGlass}
         />
 
@@ -142,7 +145,7 @@ export function MediumSelectorModal({
                 aria-label="Manufacturer"
                 options={manufacturers.map((m) => ({ value: m, label: m }))}
                 value={manufacturer}
-                disabled={!canSelectCatalogGlass}
+                disabled={readOnly || !canSelectCatalogGlass}
                 onChange={(e) => {
                   const newMfr = e.target.value;
                   if (newMfr === "Special") {
@@ -167,7 +170,7 @@ export function MediumSelectorModal({
                 aria-label="Glass"
                 options={mediaOptions.map((g) => ({ value: g, label: g }))}
                 value={medium}
-                disabled={!canSelectCatalogGlass}
+                disabled={readOnly || !canSelectCatalogGlass}
                 onChange={(e) => updateCatalogSelection(e.target.value, manufacturer)}
               />
               {glassMapHref && (
@@ -188,6 +191,7 @@ export function MediumSelectorModal({
               ariaLabel="Single refractive index"
               checked={singleRefractiveIndex}
               label="Single refractive index"
+              disabled={readOnly}
               onChange={(checked) => {
                 setSingleRefractiveIndex(checked);
                 if (checked) {
@@ -204,6 +208,7 @@ export function MediumSelectorModal({
                 id="refractive-index-input"
                 aria-label="Refractive index at d-line"
                 value={refractiveIndexAtDLine}
+                disabled={readOnly}
                 onChange={(e) => setRefractiveIndexAtDLine(e.target.value)}
                 onBlur={(e) => setRefractiveIndexAtDLine(normalizePositiveNumericString(e.target.value))}
               />
@@ -218,6 +223,7 @@ export function MediumSelectorModal({
                   id="abbe-number-input"
                   aria-label="Abbe Number"
                   value={abbeNumber}
+                  disabled={readOnly}
                   onChange={(e) => setAbbeNumber(e.target.value)}
                   onBlur={(e) => setAbbeNumber(normalizeNumericOrEmptyString(e.target.value))}
                 />
@@ -229,20 +235,26 @@ export function MediumSelectorModal({
 
       {/* ── Actions ── */}
       <div className="flex items-center justify-end gap-3 pt-4">
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button
-          variant="primary"
-          onClick={() => onConfirm(
-            useModelGlass
-              ? refractiveIndexAtDLine
-              : medium,
-            useModelGlass
-              ? (singleRefractiveIndex ? "" : abbeNumber)
-              : (isSpecial ? "" : manufacturer),
-          )}
-        >
-          Confirm
-        </Button>
+        {readOnly ? (
+          <Button variant="secondary" onClick={onClose}>Close</Button>
+        ) : (
+          <>
+            <Button variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button
+              variant="primary"
+              onClick={() => onConfirm(
+                useModelGlass
+                  ? refractiveIndexAtDLine
+                  : medium,
+                useModelGlass
+                  ? (singleRefractiveIndex ? "" : abbeNumber)
+                  : (isSpecial ? "" : manufacturer),
+              )}
+            >
+              Confirm
+            </Button>
+          </>
+        )}
       </div>
     </Modal>
   );

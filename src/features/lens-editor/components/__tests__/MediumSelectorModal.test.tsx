@@ -120,6 +120,16 @@ describe("MediumSelectorModal", () => {
     expect(onClose).toHaveBeenCalledTimes(0);
   });
 
+  it("renders all controls disabled and only Close action in read-only mode", () => {
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} readOnly />);
+
+    expect(screen.getByLabelText("Use model glass")).toBeDisabled();
+    expect(screen.getByLabelText("Manufacturer")).toBeDisabled();
+    expect(screen.getByLabelText("Glass")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+  });
+
   it("has a manufacturer dropdown with Special and manufacturers from provider data", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
     const select = screen.getByLabelText("Manufacturer");

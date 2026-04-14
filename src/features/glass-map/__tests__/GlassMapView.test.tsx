@@ -99,6 +99,7 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     focusByPolyRmsSpot: jest.fn(),
     focusByPolyStrehl: jest.fn(),
     getAllGlassCatalogsData: jest.fn().mockResolvedValue(rawData),
+    optimizeOpm: jest.fn(),
     ...overrides,
   };
 }
