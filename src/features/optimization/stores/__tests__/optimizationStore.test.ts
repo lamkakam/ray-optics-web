@@ -133,6 +133,52 @@ describe("optimizationStore", () => {
     });
   });
 
+  it("resets the target to 0 when an operand is changed to opd", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    const operandId = store.getState().operands[0].id;
+    store.getState().updateOperand(operandId, { kind: "opd" });
+
+    expect(store.getState().operands[0]).toMatchObject({
+      kind: "opd",
+      target: "0",
+    });
+  });
+
+  it("builds the Python optimization config for opd with field and wavelength weights", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().setFieldWeight(1, "0.5");
+    store.getState().setWavelengthWeight(2, "0.25");
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "opd",
+        target: "0",
+      },
+    ]);
+
+    expect(store.getState().buildOptimizationConfig().merit_function.operands).toEqual([
+      {
+        kind: "opd",
+        target: 0,
+        weight: 1,
+        fields: [
+          { index: 0, weight: 1 },
+          { index: 1, weight: 0.5 },
+          { index: 2, weight: 1 },
+        ],
+        wavelengths: [
+          { index: 0, weight: 1 },
+          { index: 1, weight: 1 },
+          { index: 2, weight: 0.25 },
+        ],
+      },
+    ]);
+  });
+
   it("applies optimization result radius and thickness values to the local optical model snapshot", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);

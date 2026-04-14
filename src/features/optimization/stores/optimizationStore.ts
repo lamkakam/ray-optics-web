@@ -122,6 +122,7 @@ function getDefaultOperandTarget(kind: OptimizationOperandKind): string {
       return "100";
     case "f_number":
       return "10";
+    case "opd":
     case "rms_spot_size":
     case "rms_wavefront_error":
       return "0";

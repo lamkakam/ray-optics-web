@@ -72,6 +72,7 @@ Both return JSON-serialisable dicts containing:
 
 - `rms_spot_size`
 - `rms_wavefront_error`
+- `opd`
 - `focal_length`
 - `f_number`
 
@@ -79,6 +80,7 @@ Both return JSON-serialisable dicts containing:
 
 - `focal_length` and `f_number` are field-independent and wavelength-independent; any `fields` or `wavelengths` entries are ignored.
 - Field-dependent operands expand into one residual per selected field/wavelength pair.
+- `opd` reuses `rayoptics_web_utils.analysis.get_opd_fan_data(opm, fi)` and computes one scalar per field/wavelength sample as `mean(abs(OPD_i - mean(OPD)))` across the combined tangential and sagittal OPD fan ordinates, after dropping non-finite values.
 - Each residual uses:
 
 ```python
@@ -168,6 +170,7 @@ Each entry contains:
 
 - `scipy.optimize.least_squares`
 - `rayoptics_web_utils.raygrid.make_ray_grid`
+- `rayoptics_web_utils.analysis.get_opd_fan_data`
 - `rayoptics_web_utils.zernike.zernike._extract_exit_pupil_grid`
 - RayOptics sequential model access via `opm["seq_model"]`
 

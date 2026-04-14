@@ -19,7 +19,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `fieldWeights` / `wavelengthWeights` — numeric optimization weights
 - `radiusModes` — one entry per non-object radius target, including the image surface
 - `thicknessModes` — one entry per surface-row thickness target
-- `operands` — add/delete operand rows
+- `operands` — add/delete operand rows for `focal_length`, `f_number`, `opd`, `rms_spot_size`, and `rms_wavefront_error`
 - `isOptimizing` — loading flag for the page-blocking overlay
 - `warningModal`, `applyConfirmOpen`, `radiusModal` — modal state
 - `lastOptimizationReport` — last successful worker report
@@ -47,5 +47,5 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Key Conventions
 
 - `surfaceIndex` matches the sequential-model indexing used by Python: first lens surface is `1`; radius modes include the image surface (`surfaces.length + 1`), while thickness modes stop at the last surface row.
-- Default operand is `focal_length` with target `"100"`.
+- Default operand row is `focal_length` with target `"100"`; switching the row to `opd`, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"`.
 - `syncFromOpticalModel()` reconciles field weights, wavelength weights, radius modes, and thickness modes by index so editor changes propagate into optimization without resetting all optimization settings when the model shape still matches.

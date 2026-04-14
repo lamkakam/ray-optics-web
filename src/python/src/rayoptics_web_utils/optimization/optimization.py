@@ -10,6 +10,7 @@ import numpy as np
 import rayoptics.optical.model_constants as mc
 from scipy.optimize import least_squares
 
+from rayoptics_web_utils.analysis import get_opd_fan_data
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid
 
@@ -113,6 +114,27 @@ def _compute_rms_wavefront_error(opm, field_index: int, wavelength_index: int, o
     return float(np.std(valid))
 
 
+def _compute_opd(opm, field_index: int, wavelength_index: int, options: dict | None) -> float:
+    """Return mean absolute OPD deviation in waves for one field/wavelength sample."""
+    del options
+    fan_data = get_opd_fan_data(opm, fi=field_index)
+    _validate_surface_index(fan_data, wavelength_index, "wavelength index")
+    wavelength_fan = fan_data[wavelength_index]
+    samples = np.array(
+        [
+            *wavelength_fan["Tangential"]["y"],
+            *wavelength_fan["Sagittal"]["y"],
+        ],
+        dtype=float,
+    )
+    valid = samples[np.isfinite(samples)]
+    if len(valid) == 0:
+        return _PENALTY_RESIDUAL
+
+    mean = float(np.mean(valid))
+    return float(np.mean(np.abs(valid - mean)))
+
+
 def _compute_focal_length(opm, field_index: int | None, wavelength_index: int | None, options: dict | None) -> float:
     """Return paraxial effective focal length."""
     del field_index, wavelength_index, options
@@ -128,6 +150,7 @@ def _compute_f_number(opm, field_index: int | None, wavelength_index: int | None
 _OPERAND_REGISTRY = {
     "rms_spot_size": _compute_rms_spot_size,
     "rms_wavefront_error": _compute_rms_wavefront_error,
+    "opd": _compute_opd,
     "focal_length": _compute_focal_length,
     "f_number": _compute_f_number,
 }

@@ -5,6 +5,7 @@ export type LeastSquaresMethod = "trf";
 export type OptimizationOperandKind =
   | "focal_length"
   | "f_number"
+  | "opd"
   | "rms_spot_size"
   | "rms_wavefront_error";
 

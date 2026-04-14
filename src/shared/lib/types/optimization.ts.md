@@ -8,7 +8,7 @@ Shared TypeScript types for the optimization UI and the Pyodide worker boundary.
 
 - `OptimizerKind` — currently `"least_squares"`
 - `LeastSquaresMethod` — currently `"trf"`
-- `OptimizationOperandKind` — `"focal_length" | "f_number" | "rms_spot_size" | "rms_wavefront_error"`
+- `OptimizationOperandKind` — `"focal_length" | "f_number" | "opd" | "rms_spot_size" | "rms_wavefront_error"`
 - `OptimizationConfig` — JSON-safe config sent to Python `optimize_opm`
 - `OptimizationValueEntry` — one variable entry from `initial_values` / `final_values`
 - `OptimizationPickupEntry` — one pickup entry from the worker report

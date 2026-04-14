@@ -138,6 +138,95 @@ class TestEvaluateOptimizationProblem:
         assert residual_by_field[1]["total_weight"] == pytest.approx(6.0)
         assert residual_by_field[0]["total_weight"] == pytest.approx(2.0)
 
+    def test_evaluates_opd_operand_using_combined_tangential_and_sagittal_fans(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.analysis import get_opd_fan_data
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        field_index = 1
+        wavelength_index = 1
+        opd_data = get_opd_fan_data(fresh_cooke_triplet, fi=field_index)
+        fan_entry = opd_data[wavelength_index]
+        samples = [*fan_entry["Tangential"]["y"], *fan_entry["Sagittal"]["y"]]
+        sample_mean = sum(samples) / len(samples)
+        expected_value = sum(abs(sample - sample_mean) for sample in samples) / len(samples)
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "opd",
+                            "target": 0.0,
+                            "weight": 1.0,
+                            "fields": [{"index": field_index, "weight": 1.0}],
+                            "wavelengths": [{"index": wavelength_index, "weight": 1.0}],
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert report["residuals"] == [
+            {
+                "kind": "opd",
+                "target": 0.0,
+                "value": pytest.approx(expected_value),
+                "field_index": field_index,
+                "wavelength_index": wavelength_index,
+                "operand_weight": 1.0,
+                "field_weight": 1.0,
+                "wavelength_weight": 1.0,
+                "total_weight": 1.0,
+                "weighted_residual": pytest.approx(expected_value),
+            }
+        ]
+
+    def test_opd_operand_returns_penalty_when_analysis_fans_have_no_valid_samples(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        def fake_get_opd_fan_data(opm, fi):
+            del opm, fi
+            return [
+                {
+                    "fieldIdx": 0,
+                    "wvlIdx": 0,
+                    "Tangential": {"x": [0.0], "y": [float("nan")]},
+                    "Sagittal": {"x": [0.0], "y": [float("nan")]},
+                    "unitX": "",
+                    "unitY": "waves",
+                }
+            ]
+
+        monkeypatch.setattr(optimization_module, "get_opd_fan_data", fake_get_opd_fan_data, raising=False)
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "opd",
+                            "target": 0.0,
+                            "weight": 1.0,
+                            "fields": [{"index": 0, "weight": 1.0}],
+                            "wavelengths": [{"index": 0, "weight": 1.0}],
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert report["residuals"][0]["value"] == pytest.approx(1e6)
+        assert report["residuals"][0]["weighted_residual"] == pytest.approx(1e6)
+
 
 class TestOptimizeOpm:
     def test_optimizes_image_distance_to_reduce_rms_spot(self, fresh_cooke_triplet):

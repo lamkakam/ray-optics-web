@@ -174,6 +174,22 @@ describe("OptimizationPage", () => {
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
   });
 
+  it("exposes OPD in the operand kind selector and resets the target when selected", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+
+    expect(screen.getByRole("option", { name: "OPD" })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Operand Kind" }), "opd");
+
+    expect(optimizationStore.getState().operands[0]).toMatchObject({
+      kind: "opd",
+      target: "0",
+    });
+  });
+
   it("calls optimizeOpm and updates the local optimization model on success", async () => {
     const proxy = makeProxy();
     const { optimizationStore } = renderOptimizationPage(proxy);
