@@ -42,6 +42,7 @@ export interface OptimizationOperandRow {
   readonly id: string;
   readonly kind: OptimizationOperandKind;
   readonly target: string;
+  readonly weight: string;
 }
 
 interface RadiusModalState {
@@ -171,6 +172,7 @@ function createDefaultOperand(): OptimizationOperandRow {
     id: generateOperandId(),
     kind: "focal_length",
     target: getDefaultOperandTarget("focal_length"),
+    weight: "1",
   };
 }
 
@@ -432,18 +434,19 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
 
     const operands = state.operands.map((operand) => {
       const target = parseFloatValue(operand.target, "Target");
+      const weight = parsePositiveFloat(operand.weight, "Weight");
       if (operand.kind === "focal_length" || operand.kind === "f_number") {
         return {
           kind: operand.kind,
           target,
-          weight: 1,
+          weight,
         };
       }
 
       return {
         kind: operand.kind,
         target,
-        weight: 1,
+        weight,
         fields: state.fieldWeights.map((weight, index) => ({ index, weight })),
         wavelengths: state.wavelengthWeights.map((weight, index) => ({ index, weight })),
       };

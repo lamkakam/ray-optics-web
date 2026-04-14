@@ -62,6 +62,7 @@ describe("optimizationStore", () => {
     expect(state.operands[0]).toMatchObject({
       kind: "focal_length",
       target: "100",
+      weight: "1",
     });
   });
 
@@ -92,6 +93,7 @@ describe("optimizationStore", () => {
         id: "operand-1",
         kind: "rms_spot_size",
         target: "0",
+        weight: "2.5",
       },
     ]);
 
@@ -116,7 +118,7 @@ describe("optimizationStore", () => {
           {
             kind: "rms_spot_size",
             target: 0,
-            weight: 1,
+            weight: 2.5,
             fields: [
               { index: 0, weight: 1 },
               { index: 1, weight: 0.5 },
@@ -143,6 +145,7 @@ describe("optimizationStore", () => {
     expect(store.getState().operands[0]).toMatchObject({
       kind: "opd_difference",
       target: "0",
+      weight: "1",
     });
   });
 
@@ -157,6 +160,7 @@ describe("optimizationStore", () => {
         id: "operand-1",
         kind: "opd_difference",
         target: "0",
+        weight: "1.5",
       },
     ]);
 
@@ -164,7 +168,7 @@ describe("optimizationStore", () => {
       {
         kind: "opd_difference",
         target: 0,
-        weight: 1,
+        weight: 1.5,
         fields: [
           { index: 0, weight: 1 },
           { index: 1, weight: 0.5 },
@@ -177,6 +181,24 @@ describe("optimizationStore", () => {
         ],
       },
     ]);
+  });
+
+  it("rejects operand weights that are not positive non-zero numbers", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "0",
+      },
+    ]);
+
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(
+      "Weight must be a positive non-zero number.",
+    );
   });
 
   it("applies optimization result radius and thickness values to the local optical model snapshot", () => {

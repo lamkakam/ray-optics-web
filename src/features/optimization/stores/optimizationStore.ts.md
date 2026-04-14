@@ -19,7 +19,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `fieldWeights` / `wavelengthWeights` — numeric optimization weights
 - `radiusModes` — one entry per non-object radius target, including the image surface
 - `thicknessModes` — one entry per surface-row thickness target
-- `operands` — add/delete operand rows for `focal_length`, `f_number`, `opd_difference`, `rms_spot_size`, and `rms_wavefront_error`
+- `operands` — add/delete operand rows for `focal_length`, `f_number`, `opd_difference`, `rms_spot_size`, and `rms_wavefront_error`, each with editable `target` and `weight` strings
 - `isOptimizing` — loading flag for the page-blocking overlay
 - `warningModal`, `applyConfirmOpen`, `radiusModal` — modal state
 - `lastOptimizationReport` — last successful worker report
@@ -40,6 +40,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 
 - `max_nfev` must be a positive integer.
 - `ftol`, `xtol`, and `gtol` must be positive non-zero numbers.
+- Operand `weight` must be a positive non-zero number.
 - Variable `min` and `max` must be numeric, and `min < max`.
 - Pickup `source_surface_index` must be in range and must not equal the target surface index.
 - At least one operand is required before `buildOptimizationConfig()` succeeds.
@@ -47,5 +48,5 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Key Conventions
 
 - `surfaceIndex` matches the sequential-model indexing used by Python: first lens surface is `1`; radius modes include the image surface (`surfaces.length + 1`), while thickness modes stop at the last surface row.
-- Default operand row is `focal_length` with target `"100"`; switching the row to `opd_difference`, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"`.
+- Default operand row is `focal_length` with target `"100"` and weight `"1"`; switching the row to `opd_difference`, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
 - `syncFromOpticalModel()` reconciles field weights, wavelength weights, radius modes, and thickness modes by index so editor changes propagate into optimization without resetting all optimization settings when the model shape still matches.

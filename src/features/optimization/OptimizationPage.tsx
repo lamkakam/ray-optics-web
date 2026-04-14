@@ -51,6 +51,7 @@ interface OperandRowView {
   readonly id: string;
   kind: OptimizationOperandKind;
   target: string;
+  weight: string;
 }
 
 interface RadiusRow {
@@ -550,6 +551,20 @@ export function OptimizationPage({
         }
         optimizationStore.getState().updateOperand(params.data.id, {
           target: String(params.newValue),
+        });
+        return true;
+      },
+    },
+    {
+      headerName: "Weight",
+      editable: true,
+      valueGetter: (params) => params.data?.weight,
+      valueSetter: (params) => {
+        if (params.data === undefined) {
+          return false;
+        }
+        optimizationStore.getState().updateOperand(params.data.id, {
+          weight: String(params.newValue),
         });
         return true;
       },

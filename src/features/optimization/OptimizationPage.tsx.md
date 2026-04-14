@@ -33,7 +33,8 @@ interface OptimizationPageProps {
   - a `Var.` column after `Radius of Curvature` for radius variable/pickup configuration
   - a second `Var.` column after `Thickness` for thickness variable/pickup configuration
   - read-only `Medium`, `Semi-diam.`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` columns
-- Operands tab renders an add/delete AG Grid table with `Operand Kind` and `Target`, including an `OPD Difference` operand option whose default target is `0`.
+- Operands tab renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including an `OPD Difference` operand option whose default target is `0`.
+- The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
 - `Optimize` validates the store state, calls `proxy.optimizeOpm`, shows `LoadingOverlay` while running, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
 - `Apply to Editor` opens a confirm modal, overwrites the lens-editor rows/specs/auto-aperture state with the page-local optimization snapshot, updates `committedOpticalModel`, and then calls optional `onApplyToEditor(model)`.
 - Modal-backed prescription columns open the existing lens-editor dialogs in `readOnly` mode so users can inspect, but not edit, those settings from optimization.

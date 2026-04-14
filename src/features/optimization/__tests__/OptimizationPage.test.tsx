@@ -190,6 +190,30 @@ describe("OptimizationPage", () => {
     });
   });
 
+  it("renders the operand weight column after target and updates the row weight when edited", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+
+    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
+    expect(Array.from(headers, (header) => header.textContent)).toEqual([
+      "Operand Kind",
+      "Target",
+      "Weight",
+      "",
+    ]);
+
+    const inputs = screen.getAllByRole("textbox");
+    await user.clear(inputs[1]);
+    await user.type(inputs[1], "2.75");
+    await user.tab();
+
+    expect(optimizationStore.getState().operands[0]).toMatchObject({
+      weight: "2.75",
+    });
+  });
+
   it("calls optimizeOpm and updates the local optimization model on success", async () => {
     const proxy = makeProxy();
     const { optimizationStore } = renderOptimizationPage(proxy);
