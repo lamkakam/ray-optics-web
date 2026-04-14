@@ -133,20 +133,20 @@ describe("optimizationStore", () => {
     });
   });
 
-  it("resets the target to 0 when an operand is changed to opd", () => {
+  it("resets the target to 0 when an operand is changed to opd_difference", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
 
     const operandId = store.getState().operands[0].id;
-    store.getState().updateOperand(operandId, { kind: "opd" });
+    store.getState().updateOperand(operandId, { kind: "opd_difference" });
 
     expect(store.getState().operands[0]).toMatchObject({
-      kind: "opd",
+      kind: "opd_difference",
       target: "0",
     });
   });
 
-  it("builds the Python optimization config for opd with field and wavelength weights", () => {
+  it("builds the Python optimization config for opd_difference with field and wavelength weights", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
 
@@ -155,14 +155,14 @@ describe("optimizationStore", () => {
     store.getState().replaceOperands([
       {
         id: "operand-1",
-        kind: "opd",
+        kind: "opd_difference",
         target: "0",
       },
     ]);
 
     expect(store.getState().buildOptimizationConfig().merit_function.operands).toEqual([
       {
-        kind: "opd",
+        kind: "opd_difference",
         target: 0,
         weight: 1,
         fields: [

@@ -511,7 +511,7 @@ export function OptimizationPage({
       editable: true,
       cellEditor: "agSelectCellEditor",
       cellEditorParams: {
-        values: ["focal_length", "f_number", "opd", "rms_spot_size", "rms_wavefront_error"],
+        values: ["focal_length", "f_number", "opd_difference", "rms_spot_size", "rms_wavefront_error"],
       },
       valueGetter: (params) => params.data?.kind,
       valueFormatter: (params) => {
@@ -520,8 +520,8 @@ export function OptimizationPage({
             return "Paraxial focal length";
           case "f_number":
             return "Paraxial f/#";
-          case "opd":
-            return "OPD";
+          case "opd_difference":
+            return "OPD Difference";
           case "rms_spot_size":
             return "RMS Spot Size";
           case "rms_wavefront_error":

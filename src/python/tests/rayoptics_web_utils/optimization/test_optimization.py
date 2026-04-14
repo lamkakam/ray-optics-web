@@ -159,7 +159,7 @@ class TestEvaluateOptimizationProblem:
                 "merit_function": {
                     "operands": [
                         {
-                            "kind": "opd",
+                            "kind": "opd_difference",
                             "target": 0.0,
                             "weight": 1.0,
                             "fields": [{"index": field_index, "weight": 1.0}],
@@ -172,7 +172,7 @@ class TestEvaluateOptimizationProblem:
 
         assert report["residuals"] == [
             {
-                "kind": "opd",
+                "kind": "opd_difference",
                 "target": 0.0,
                 "value": pytest.approx(expected_value),
                 "field_index": field_index,
@@ -213,7 +213,7 @@ class TestEvaluateOptimizationProblem:
                 "merit_function": {
                     "operands": [
                         {
-                            "kind": "opd",
+                            "kind": "opd_difference",
                             "target": 0.0,
                             "weight": 1.0,
                             "fields": [{"index": 0, "weight": 1.0}],

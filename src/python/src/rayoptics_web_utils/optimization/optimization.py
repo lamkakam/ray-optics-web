@@ -114,7 +114,7 @@ def _compute_rms_wavefront_error(opm, field_index: int, wavelength_index: int, o
     return float(np.std(valid))
 
 
-def _compute_opd(opm, field_index: int, wavelength_index: int, options: dict | None) -> float:
+def _compute_opd_difference(opm, field_index: int, wavelength_index: int, options: dict | None) -> float:
     """Return mean absolute OPD deviation in waves for one field/wavelength sample."""
     del options
     fan_data = get_opd_fan_data(opm, fi=field_index)
@@ -150,7 +150,7 @@ def _compute_f_number(opm, field_index: int | None, wavelength_index: int | None
 _OPERAND_REGISTRY = {
     "rms_spot_size": _compute_rms_spot_size,
     "rms_wavefront_error": _compute_rms_wavefront_error,
-    "opd": _compute_opd,
+    "opd_difference": _compute_opd_difference,
     "focal_length": _compute_focal_length,
     "f_number": _compute_f_number,
 }

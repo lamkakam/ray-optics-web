@@ -174,18 +174,18 @@ describe("OptimizationPage", () => {
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
   });
 
-  it("exposes OPD in the operand kind selector and resets the target when selected", async () => {
+  it("exposes OPD Difference in the operand kind selector and resets the target when selected", async () => {
     const { optimizationStore } = renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
 
-    expect(screen.getByRole("option", { name: "OPD" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "OPD Difference" })).toBeInTheDocument();
 
-    await user.selectOptions(screen.getByRole("combobox", { name: "Operand Kind" }), "opd");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Operand Kind" }), "opd_difference");
 
     expect(optimizationStore.getState().operands[0]).toMatchObject({
-      kind: "opd",
+      kind: "opd_difference",
       target: "0",
     });
   });
