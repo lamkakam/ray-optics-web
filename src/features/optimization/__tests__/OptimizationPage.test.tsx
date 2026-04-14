@@ -185,7 +185,7 @@ describe("OptimizationPage", () => {
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
   });
 
-  it("shows a warning modal when optimizeOpm returns a failed message", async () => {
+  it("applies the returned result and still shows a warning modal when optimizeOpm returns a failed status", async () => {
     const proxy = makeProxy({
       optimizeOpm: jest.fn().mockResolvedValue({
         success: false,
@@ -193,7 +193,7 @@ describe("OptimizationPage", () => {
         message: "bad config",
         optimizer: { kind: "least_squares", method: "trf" },
         initial_values: [],
-        final_values: [],
+        final_values: [{ kind: "radius", surface_index: 1, value: 33, min: 20, max: 40 }],
         pickups: [],
         residuals: [],
         merit_function: { sum_of_squares: 0, rss: 0 },
@@ -201,10 +201,11 @@ describe("OptimizationPage", () => {
     });
     const user = userEvent.setup();
 
-    renderOptimizationPage(proxy);
+    const { optimizationStore } = renderOptimizationPage(proxy);
     await user.click(screen.getByRole("button", { name: "Optimize" }));
 
     expect(await screen.findByText("bad config")).toBeInTheDocument();
+    expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(33);
   });
 
   it("confirms Apply to Editor and overwrites the lens editor rows with the optimized model", async () => {

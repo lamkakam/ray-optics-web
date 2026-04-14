@@ -224,12 +224,11 @@ export function OptimizationPage({
     try {
       const config = optimizationStore.getState().buildOptimizationConfig();
       const report = await proxy.optimizeOpm(optimizationModel, config);
+      optimizationStore.getState().applyOptimizationResult(report);
       if (!report.success) {
         optimizationStore.getState().openWarningModal(report.message);
         return;
       }
-
-      optimizationStore.getState().applyOptimizationResult(report);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Optimization failed.";
       optimizationStore.getState().openWarningModal(message);
