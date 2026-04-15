@@ -32,7 +32,11 @@ interface PyodideWorkerAPI {
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
   evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>;
-  optimizeOpm(opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>;
+  optimizeOpm(
+    opticalModel: OpticalModel,
+    config: OptimizationConfig,
+    onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  ): Promise<OptimizationReport>;
 }
 ```
 
@@ -70,7 +74,7 @@ interface PyodideWorkerAPI {
 - `SpotDiagramData` — imported from `shared/lib/types/opticalModel` (type only).
 - `ZernikeData` — imported from `shared/lib/types/zernikeData` (type only).
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
-- `OptimizationConfig`, `OptimizationReport` — imported from `shared/lib/types/optimization` (type only).
+- `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `shared/lib/types/optimization` (type only).
 
 ## Edge Cases / Error Handling
 
@@ -79,6 +83,7 @@ interface PyodideWorkerAPI {
 - `proxy` is `undefined` while initialising, preventing callers from invoking methods before the worker is ready.
 - `plotLensLayout` requires the caller to provide `isDark`; the worker derives any diffraction-grating-dependent overlay from the `OpticalModel`.
 - `evaluateOptimizationProblem` and `optimizeOpm` share the same report shape, so optimization UIs can preview residuals before running the full solve.
+- `optimizeOpm` also accepts an optional streamed progress callback; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker.
 - `_resetSingleton()` is exported for test isolation only — NOT for production use.
 
 ## Usages

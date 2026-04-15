@@ -15,6 +15,7 @@ from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid
 
 _PENALTY_RESIDUAL = 1e6
+_MERIT_LOG_EPSILON = 1e-300
 
 
 def _snapshot_state(opm, variable_configs: list[dict], pickup_configs: list[dict]) -> dict[tuple[str, int], float]:
@@ -355,6 +356,9 @@ class _OptimizationProblem:
         self.ordered_pickups = _pickup_order(self.pickups)
         self.optimizer = self.config["optimizer"]
         self.operands = self.config["merit_function"]["operands"]
+        self.optimization_progress: list[dict] = []
+        self._last_progress_vector: np.ndarray | None = None
+        self._progress_reporter = None
 
     def current_vector(self) -> np.ndarray:
         return np.array([_read_target_value(self.opm, variable["kind"], variable["surface_index"]) for variable in self.variables], dtype=float)
@@ -433,11 +437,57 @@ class _OptimizationProblem:
                 "sum_of_squares": sum_of_squares,
                 "rss": rss,
             },
+            "optimization_progress": list(self.optimization_progress),
         }
 
     def penalty_residual_vector(self) -> np.ndarray:
         size = max(len(self.operands), 1)
         return np.full(size, _PENALTY_RESIDUAL, dtype=float)
+
+    def _record_progress(self, vector: np.ndarray, evaluation: dict) -> bool:
+        candidate = np.array(vector, dtype=float, copy=True)
+        if self._last_progress_vector is not None and np.allclose(candidate, self._last_progress_vector, rtol=0.0, atol=1e-12):
+            return False
+        if "merit_function" not in evaluation:
+            return False
+
+        merit_function_value = float(evaluation["merit_function"]["sum_of_squares"])
+        progress_entry = {
+            "iteration": len(self.optimization_progress),
+            "merit_function_value": merit_function_value,
+            "log10_merit_function_value": float(math.log10(max(merit_function_value, _MERIT_LOG_EPSILON))),
+        }
+        self.optimization_progress.append(progress_entry)
+        self._last_progress_vector = candidate
+        if self._progress_reporter is not None:
+            self._progress_reporter(list(self.optimization_progress))
+        return True
+
+    def objective(self, vector: np.ndarray) -> np.ndarray:
+        try:
+            evaluation = self.evaluate(vector)
+        except Exception:
+            return self.penalty_residual_vector()
+        self._record_progress(vector, evaluation)
+        return np.array([entry["weighted_residual"] for entry in evaluation["residuals"]], dtype=float)
+
+    def optimize(self, progress_reporter=None):
+        x0 = self.current_vector()
+        lower, upper = self.bounds()
+        self._progress_reporter = progress_reporter
+        try:
+            return least_squares(
+                self.objective,
+                x0,
+                bounds=(lower, upper),
+                method=self.optimizer["method"],
+                ftol=self.optimizer.get("ftol", 1e-8),
+                xtol=self.optimizer.get("xtol", 1e-8),
+                gtol=self.optimizer.get("gtol", 1e-8),
+                max_nfev=self.optimizer.get("max_nfev", 200),
+            )
+        finally:
+            self._progress_reporter = None
 
     def _variable_state(self) -> list[dict]:
         return [
@@ -466,10 +516,11 @@ def evaluate_optimization_problem(opm, config: dict) -> dict:
     report["status"] = "evaluated"
     report["message"] = "Optimization problem evaluated"
     report["initial_values"] = initial_values
+    report["optimization_progress"] = []
     return report
 
 
-def optimize_opm(opm, config: dict) -> dict:
+def optimize_opm(opm, config: dict, progress_reporter=None) -> dict:
     """Optimize a rayoptics optical model using a dict-driven config."""
     problem = _OptimizationProblem(opm, config)
     snapshot = _snapshot_state(opm, problem.variables, problem.pickups)
@@ -477,34 +528,19 @@ def optimize_opm(opm, config: dict) -> dict:
 
     if len(problem.variables) == 0:
         report = problem.evaluate()
+        problem._record_progress(problem.current_vector(), report)
         report["success"] = True
         report["status"] = "no_variables"
         report["message"] = "No optimization variables supplied"
         report["initial_values"] = initial_values
+        report["optimization_progress"] = list(problem.optimization_progress)
         report["optimizer"].update({"nfev": 0, "njev": 0})
+        if progress_reporter is not None:
+            progress_reporter(list(problem.optimization_progress))
         return report
 
-    x0 = problem.current_vector()
-    lower, upper = problem.bounds()
-
-    def objective(vector: np.ndarray) -> np.ndarray:
-        try:
-            evaluation = problem.evaluate(vector)
-        except Exception:
-            return problem.penalty_residual_vector()
-        return np.array([entry["weighted_residual"] for entry in evaluation["residuals"]], dtype=float)
-
     try:
-        result = least_squares(
-            objective,
-            x0,
-            bounds=(lower, upper),
-            method=problem.optimizer["method"],
-            ftol=problem.optimizer.get("ftol", 1e-8),
-            xtol=problem.optimizer.get("xtol", 1e-8),
-            gtol=problem.optimizer.get("gtol", 1e-8),
-            max_nfev=problem.optimizer.get("max_nfev", 200),
-        )
+        result = problem.optimize(progress_reporter)
         report = problem.evaluate(result.x)
     except Exception:
         _restore_state(opm, snapshot)
@@ -522,4 +558,5 @@ def optimize_opm(opm, config: dict) -> dict:
             "optimality": float(result.optimality),
         }
     )
+    report["optimization_progress"] = list(problem.optimization_progress)
     return report

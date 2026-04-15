@@ -22,6 +22,7 @@ Both return JSON-serialisable dicts containing:
 - `pickups`
 - `residuals`
 - `merit_function`
+- `optimization_progress`
 
 ## Config Shape
 
@@ -111,22 +112,31 @@ weighted_residual = total_weight * (actual_value - target)
 5. Evaluates all operand residuals and returns a JSON-safe report.
 6. If evaluation fails, restores the snapshotted state and re-raises.
 
+### `_OptimizationProblem`
+
+- Owns normalized optimizer state, variable/pickup application, merit evaluation, and the SciPy integration hooks.
+- `objective(vector)` evaluates one optimizer step and converts the merit report into the residual vector consumed by SciPy.
+- `objective(vector)` also records merit-history entries in `self.optimization_progress` whenever the incoming variable vector differs materially from the last recorded vector. This approximates solver iterations without relying on SciPy’s newer `callback` argument, which is unavailable in the Pyodide-supported SciPy version.
+- `objective(vector)` catches evaluation failures and returns a large penalty residual vector (`1e6` per operand, minimum length 1) so optimization can continue.
+- `optimize(progress_reporter=None)` runs `scipy.optimize.least_squares(...)` using the stored optimizer configuration, current variable vector, bounds, and `objective`, and forwards each newly recorded history snapshot to `progress_reporter` when provided.
+
 ### `optimize_opm(opm, config)`
 
 1. Validates and normalizes the config.
 2. Snapshots all variable/pickup targets before mutation.
 3. Builds the current variable vector and bounds from the config.
-4. Runs `scipy.optimize.least_squares(...)` using the configured method and tolerances.
+4. Delegates the SciPy `least_squares(...)` call to `_OptimizationProblem.optimize()`.
 5. Each objective evaluation:
+   - is handled by `_OptimizationProblem.objective(vector)`
    - writes variables
    - applies pickups
    - calls `opm.update_model()`
    - evaluates operand residuals
-6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual) so SciPy can continue.
-7. Leaves `opm` at the optimized state and returns a detailed report.
+6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) so SciPy can continue.
+7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`.
 8. If SciPy setup or the final evaluation fails, restores the snapshotted state and re-raises.
 
-If there are no variables, `optimize_opm()` skips SciPy and returns the evaluated merit report with `status == "no_variables"`.
+If there are no variables, `optimize_opm()` skips SciPy, records one progress point from the evaluated merit report, and returns `status == "no_variables"`.
 
 ## Result Shape
 
@@ -165,6 +175,14 @@ Each entry contains:
 - `wavelength_weight`
 - `total_weight`
 - `weighted_residual`
+
+### `optimization_progress`
+
+Each entry contains:
+
+- `iteration`
+- `merit_function_value`
+- `log10_merit_function_value`
 
 ## Dependencies
 

@@ -288,6 +288,279 @@ class TestOptimizeOpm:
         assert pickup_value == pytest.approx(-source_value)
         assert fresh_cooke_triplet["seq_model"].ifcs[2].profile_cv == pytest.approx(1.0 / pickup_value)
 
+    def test_problem_objective_returns_penalty_when_evaluation_fails(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+
+        problem = optimization_module._OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 90.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+
+        def fail_evaluate(values=None):
+            del values
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(problem, "evaluate", fail_evaluate)
+
+        residuals = problem.objective(problem.current_vector())
+
+        assert residuals.tolist() == pytest.approx([1e6])
+
+    def test_problem_optimize_invokes_least_squares_with_class_objective(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+
+        captured = {}
+        problem = optimization_module._OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 30},
+                "variables": [
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 90.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+        expected_residual = 12.5
+
+        def fake_objective(values=None):
+            del values
+            return {"residuals": [{"weighted_residual": expected_residual}]}
+
+        def fake_least_squares(func, x0, bounds, method, ftol, xtol, gtol, max_nfev):
+            captured["func"] = func
+            captured["x0"] = x0
+            captured["bounds"] = bounds
+            captured["method"] = method
+            captured["ftol"] = ftol
+            captured["xtol"] = xtol
+            captured["gtol"] = gtol
+            captured["max_nfev"] = max_nfev
+
+            class _Result:
+                x = x0
+                success = True
+                status = 1
+                message = "ok"
+                nfev = 1
+                njev = 1
+                cost = 0.0
+                optimality = 0.0
+
+            return _Result()
+
+        monkeypatch.setattr(problem, "evaluate", fake_objective)
+        monkeypatch.setattr(optimization_module, "least_squares", fake_least_squares)
+
+        result = problem.optimize()
+
+        assert result.success is True
+        assert captured["func"] == problem.objective
+        assert captured["method"] == "trf"
+        assert captured["max_nfev"] == 30
+        assert captured["func"](captured["x0"]).tolist() == pytest.approx([expected_residual])
+
+    def test_problem_objective_records_progress_for_distinct_vectors_only(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+
+        problem = optimization_module._OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf"},
+                "variables": [
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 90.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+
+        evaluations = [
+            {
+                "residuals": [{"weighted_residual": 2.0}],
+                "merit_function": {"sum_of_squares": 4.0, "rss": 2.0},
+            },
+            {
+                "residuals": [{"weighted_residual": 3.0}],
+                "merit_function": {"sum_of_squares": 9.0, "rss": 3.0},
+            },
+            {
+                "residuals": [{"weighted_residual": 5.0}],
+                "merit_function": {"sum_of_squares": 25.0, "rss": 5.0},
+            },
+        ]
+
+        def fake_evaluate(values=None):
+            del values
+            return evaluations.pop(0)
+
+        monkeypatch.setattr(problem, "evaluate", fake_evaluate)
+
+        first_vector = problem.current_vector()
+        second_vector = first_vector + 1.0
+
+        assert problem.objective(first_vector).tolist() == pytest.approx([2.0])
+        assert problem.objective(first_vector).tolist() == pytest.approx([3.0])
+        assert problem.objective(second_vector).tolist() == pytest.approx([5.0])
+
+        assert problem.optimization_progress == [
+            {
+                "iteration": 0,
+                "merit_function_value": 4.0,
+                "log10_merit_function_value": pytest.approx(0.6020599913279624),
+            },
+            {
+                "iteration": 1,
+                "merit_function_value": 25.0,
+                "log10_merit_function_value": pytest.approx(1.3979400086720377),
+            },
+        ]
+
+    def test_problem_optimize_reports_progress_snapshots(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+
+        reported_progress = []
+        problem = optimization_module._OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 30},
+                "variables": [
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 90.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+
+        def fake_least_squares(func, x0, bounds, method, ftol, xtol, gtol, max_nfev):
+            del bounds, method, ftol, xtol, gtol, max_nfev
+            func(x0)
+            func(x0 + 1.0)
+
+            class _Result:
+                x = x0 + 1.0
+                success = True
+                status = 1
+                message = "ok"
+                nfev = 2
+                njev = 1
+                cost = 0.0
+                optimality = 0.0
+
+            return _Result()
+
+        evaluations = [
+            {
+                "residuals": [{"weighted_residual": 4.0}],
+                "merit_function": {"sum_of_squares": 16.0, "rss": 4.0},
+            },
+            {
+                "residuals": [{"weighted_residual": 2.0}],
+                "merit_function": {"sum_of_squares": 4.0, "rss": 2.0},
+            },
+        ]
+
+        def fake_evaluate(values=None):
+            del values
+            return evaluations.pop(0)
+
+        monkeypatch.setattr(optimization_module, "least_squares", fake_least_squares)
+        monkeypatch.setattr(problem, "evaluate", fake_evaluate)
+
+        problem.optimize(reported_progress.append)
+
+        assert reported_progress == [
+            [
+                {
+                    "iteration": 0,
+                    "merit_function_value": 16.0,
+                    "log10_merit_function_value": pytest.approx(1.2041199826559248),
+                }
+            ],
+            [
+                {
+                    "iteration": 0,
+                    "merit_function_value": 16.0,
+                    "log10_merit_function_value": pytest.approx(1.2041199826559248),
+                },
+                {
+                    "iteration": 1,
+                    "merit_function_value": 4.0,
+                    "log10_merit_function_value": pytest.approx(0.6020599913279624),
+                },
+            ],
+        ]
+
+    def test_optimize_opm_returns_progress_history(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        result = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 5},
+                "variables": [
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "rms_spot_size",
+                            "target": 0.0,
+                            "weight": 1.0,
+                            "fields": [{"index": 0, "weight": 1.0}],
+                            "wavelengths": [{"index": 1, "weight": 1.0}],
+                            "options": {"num_rays": 9},
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert len(result["optimization_progress"]) >= 1
+        assert result["optimization_progress"][0]["iteration"] == 0
+        assert result["optimization_progress"][0]["merit_function_value"] >= 0.0
+        assert "log10_merit_function_value" in result["optimization_progress"][0]
+
 
 class TestOptimizationValidation:
     def test_rejects_unknown_operand_kind(self, fresh_cooke_triplet):

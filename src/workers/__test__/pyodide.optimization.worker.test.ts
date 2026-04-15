@@ -49,6 +49,52 @@ describe("_optimizeOpm", () => {
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining("optimize_opm("));
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));
   });
+
+  it("streams optimization progress through the supplied callback and returns the final history", async () => {
+    const progressCallback = jest.fn().mockResolvedValue(undefined);
+    const runPython = jest.fn().mockImplementation(async () => {
+      await progressCallback([
+        { iteration: 0, merit_function_value: 25, log10_merit_function_value: Math.log10(25) },
+      ]);
+      await progressCallback([
+        { iteration: 0, merit_function_value: 25, log10_merit_function_value: Math.log10(25) },
+        { iteration: 1, merit_function_value: 4, log10_merit_function_value: Math.log10(4) },
+      ]);
+
+      return JSON.stringify({
+        success: true,
+        status: "optimized",
+        message: "done",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [],
+        merit_function: { sum_of_squares: 4, rss: 2 },
+        optimization_progress: [
+          { iteration: 0, merit_function_value: 25, log10_merit_function_value: Math.log10(25) },
+          { iteration: 1, merit_function_value: 4, log10_merit_function_value: Math.log10(4) },
+        ],
+      });
+    });
+
+    const result = await _optimizeOpm(runPython, baseModel, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [],
+      pickups: [],
+      merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
+    }, progressCallback);
+
+    expect(progressCallback).toHaveBeenCalledTimes(2);
+    expect(progressCallback).toHaveBeenNthCalledWith(2, [
+      { iteration: 0, merit_function_value: 25, log10_merit_function_value: Math.log10(25) },
+      { iteration: 1, merit_function_value: 4, log10_merit_function_value: Math.log10(4) },
+    ]);
+    expect(result.optimization_progress).toEqual([
+      { iteration: 0, merit_function_value: 25, log10_merit_function_value: Math.log10(25) },
+      { iteration: 1, merit_function_value: 4, log10_merit_function_value: Math.log10(4) },
+    ]);
+  });
 });
 
 describe("_evaluateOptimizationProblem", () => {

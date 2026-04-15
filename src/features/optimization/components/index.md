@@ -14,5 +14,6 @@ Components for the optimization workflow UI.
 - [ThicknessModeModal.tsx](./ThicknessModeModal.tsx.md) — thickness variable/pickup modal body
 - [OptimizationWarningModal.tsx](./OptimizationWarningModal.tsx.md) — warning dialog wrapper
 - [OptimizationApplyConfirmModal.tsx](./OptimizationApplyConfirmModal.tsx.md) — apply confirmation dialog wrapper
+- [OptimizationProgressModal.tsx](./OptimizationProgressModal.tsx.md) — blocking optimization-progress dialog with live merit chart
 - [OptimizationInspectionModals.tsx](./OptimizationInspectionModals.tsx.md) — read-only lens-editor inspection modal wrappers
 - [optimizationViewModels.ts](./optimizationViewModels.ts.md) — shared row/view helpers for optimization components

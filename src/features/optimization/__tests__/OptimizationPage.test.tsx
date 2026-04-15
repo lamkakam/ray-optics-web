@@ -2,6 +2,7 @@ import React from "react";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
+import * as echarts from "echarts/core";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
@@ -15,6 +16,15 @@ import { GlassCatalogContext, type GlassCatalogContextValue } from "@/shared/com
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
+}));
+
+jest.mock("echarts/core", () => ({
+  use: jest.fn(),
+  init: jest.fn(() => ({
+    setOption: jest.fn(),
+    dispose: jest.fn(),
+    resize: jest.fn(),
+  })),
 }));
 
 const baseModel: OpticalModel = {
@@ -331,6 +341,97 @@ describe("OptimizationPage", () => {
 
     await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
+  });
+
+  it("shows a blocking optimization progress modal, streams chart updates, and only shows OK after completion", async () => {
+    let resolveOptimization: ((value: {
+      success: boolean;
+      status: string;
+      message: string;
+      optimizer: { kind: "least_squares"; method: "trf" };
+      initial_values: never[];
+      final_values: { kind: "radius"; surface_index: number; value: number; min: number; max: number }[];
+      pickups: never[];
+      residuals: never[];
+      merit_function: { sum_of_squares: number; rss: number };
+      optimization_progress: { iteration: number; merit_function_value: number; log10_merit_function_value: number }[];
+    }) => void) | undefined;
+    const optimizationPromise = new Promise<{
+      success: boolean;
+      status: string;
+      message: string;
+      optimizer: { kind: "least_squares"; method: "trf" };
+      initial_values: never[];
+      final_values: { kind: "radius"; surface_index: number; value: number; min: number; max: number }[];
+      pickups: never[];
+      residuals: never[];
+      merit_function: { sum_of_squares: number; rss: number };
+      optimization_progress: { iteration: number; merit_function_value: number; log10_merit_function_value: number }[];
+    }>((resolve) => {
+      resolveOptimization = resolve;
+    });
+
+    const optimizeOpm = jest.fn().mockImplementation(async (_model, _config, onProgress) => {
+      await onProgress?.([
+        { iteration: 0, merit_function_value: 100, log10_merit_function_value: 2 },
+      ]);
+      await onProgress?.([
+        { iteration: 0, merit_function_value: 100, log10_merit_function_value: 2 },
+        { iteration: 1, merit_function_value: 10, log10_merit_function_value: 1 },
+      ]);
+      return await optimizationPromise;
+    });
+
+    const proxy = makeProxy({ optimizeOpm });
+    const user = userEvent.setup();
+    renderOptimizationPage(proxy);
+
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Optimization Progress" });
+    expect(dialog).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "OK" })).not.toBeInTheDocument();
+
+    const backdrop = screen.getByTestId("modal-backdrop");
+    await user.click(backdrop);
+    expect(screen.getByRole("dialog", { name: "Optimization Progress" })).toBeInTheDocument();
+
+    resolveOptimization?.({
+      success: true,
+      status: "optimized",
+      message: "done",
+      optimizer: { kind: "least_squares", method: "trf" },
+      initial_values: [],
+      final_values: [{ kind: "radius", surface_index: 1, value: 42, min: 40, max: 60 }],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 10, rss: 3.1622776601683795 },
+      optimization_progress: [
+        { iteration: 0, merit_function_value: 100, log10_merit_function_value: 2 },
+        { iteration: 1, merit_function_value: 10, log10_merit_function_value: 1 },
+      ],
+    });
+
+    await waitFor(() => expect(optimizeOpm).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument());
+
+    expect(screen.getByTestId("optimization-progress-chart")).toBeInTheDocument();
+    expect(echarts.init).toHaveBeenCalled();
+
+    const chartInstance = (echarts.init as jest.Mock).mock.results.at(-1)?.value;
+    expect(chartInstance.setOption).toHaveBeenCalledWith(
+      expect.objectContaining({
+        series: [
+          expect.objectContaining({
+            data: [
+              [0, 2],
+              [1, 1],
+            ],
+          }),
+        ],
+      }),
+      true,
+    );
   });
 
   it("applies the returned result and still shows a warning modal when optimizeOpm returns a failed status", async () => {

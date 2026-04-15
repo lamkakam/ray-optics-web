@@ -43,11 +43,14 @@ interface OptimizationPageProps {
 - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
 - Whenever the optimization config changes, the component debounces a worker-side evaluation call, updates the static table from the returned residuals, and ignores stale async responses from older requests.
 - Invalid intermediate configs clear the evaluation table instead of opening the warning modal.
-- `Optimize` validates the store state, calls `proxy.optimizeOpm`, shows `LoadingOverlay` while running, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
+- `Optimize` validates the store state, opens `OptimizationProgressModal`, calls `proxy.optimizeOpm`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
+- The progress modal is blocking while optimization is active: there is no `OK` button and backdrop clicks are ignored until the worker promise settles.
+- After the optimization run settles, the progress modal keeps the final chart visible, exposes an `OK` button, and can then be dismissed without mutating the optimization result.
 - `Apply to Editor` opens a confirm modal, overwrites the lens-editor rows/specs/auto-aperture state with the page-local optimization snapshot, updates `committedOpticalModel`, and then calls optional `onApplyToEditor(model)`.
 - Modal rendering is delegated to extracted wrappers:
   - `RadiusModeModal`
   - `ThicknessModeModal`
+  - `OptimizationProgressModal`
   - `OptimizationWarningModal`
   - `OptimizationApplyConfirmModal`
   - `OptimizationInspectionModals`

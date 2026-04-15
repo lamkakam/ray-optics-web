@@ -229,6 +229,7 @@ describe("optimizationStore", () => {
       ],
       residuals: [],
       merit_function: { sum_of_squares: 0, rss: 0 },
+      optimization_progress: [],
     });
 
     const model = store.getState().optimizationModel;

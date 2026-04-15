@@ -72,6 +72,12 @@ export interface OptimizationResidualEntry {
   readonly weighted_residual: number;
 }
 
+export interface OptimizationProgressEntry {
+  readonly iteration: number;
+  readonly merit_function_value: number;
+  readonly log10_merit_function_value: number;
+}
+
 export interface OptimizationReport {
   readonly success: boolean;
   readonly status: string;
@@ -79,6 +85,10 @@ export interface OptimizationReport {
   readonly optimizer: {
     readonly kind: OptimizerKind;
     readonly method?: LeastSquaresMethod;
+    readonly nfev?: number;
+    readonly njev?: number;
+    readonly cost?: number;
+    readonly optimality?: number;
   };
   readonly initial_values: ReadonlyArray<OptimizationValueEntry>;
   readonly final_values: ReadonlyArray<OptimizationValueEntry>;
@@ -88,6 +98,7 @@ export interface OptimizationReport {
     readonly sum_of_squares: number;
     readonly rss: number;
   };
+  readonly optimization_progress: ReadonlyArray<OptimizationProgressEntry>;
 }
 
 export interface OptimizationRunResult {

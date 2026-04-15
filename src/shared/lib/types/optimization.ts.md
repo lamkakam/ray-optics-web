@@ -13,6 +13,7 @@ Shared TypeScript types for the optimization UI and the Pyodide worker boundary.
 - `OptimizationValueEntry` — one variable entry from `initial_values` / `final_values`
 - `OptimizationPickupEntry` — one pickup entry from the worker report
 - `OptimizationResidualEntry` — one residual entry from the worker report
+- `OptimizationProgressEntry` — one streamed optimization-progress sample
 - `OptimizationReport` — full worker response from `optimize_opm`
 - `OptimizationRunResult` — convenience shape pairing `model` + `report`
 
@@ -21,3 +22,5 @@ Shared TypeScript types for the optimization UI and the Pyodide worker boundary.
 - `OptimizationConfig` mirrors the config shape documented in `src/python/src/rayoptics_web_utils/optimization/optimization.py.md`.
 - The current frontend emits radius variables and radius pickups only.
 - `OptimizationReport` preserves the Python snake_case keys unchanged so the worker can parse the JSON directly.
+- `OptimizationReport.optimizer` may include solver metadata such as `nfev`, `njev`, `cost`, and `optimality` after a full optimization run.
+- `OptimizationReport.optimization_progress` is always a chronological list of merit-history samples; each entry exposes the raw `merit_function_value` plus the precomputed `log10_merit_function_value` used by the progress chart.

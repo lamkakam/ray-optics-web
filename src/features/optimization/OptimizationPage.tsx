@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { proxy as comlinkProxy } from "comlink";
 import { useStore } from "zustand";
 import { Tabs, type TabItem } from "@/shared/components/primitives/Tabs";
-import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useOptimizationStore } from "@/features/optimization/providers/OptimizationStoreProvider";
@@ -14,6 +14,7 @@ import { OptimizationEvaluationPanel } from "@/features/optimization/components/
 import { OptimizationInspectionModals } from "@/features/optimization/components/OptimizationInspectionModals";
 import { OptimizationLensPrescriptionGrid } from "@/features/optimization/components/OptimizationLensPrescriptionGrid";
 import { OptimizationOperandsTab } from "@/features/optimization/components/OptimizationOperandsTab";
+import { OptimizationProgressModal } from "@/features/optimization/components/OptimizationProgressModal";
 import { OptimizationWarningModal } from "@/features/optimization/components/OptimizationWarningModal";
 import { OptimizationWeightsGrid } from "@/features/optimization/components/OptimizationWeightsGrid";
 import { RadiusModeModal } from "@/features/optimization/components/RadiusModeModal";
@@ -22,7 +23,7 @@ import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
 import type { GridRow } from "@/shared/lib/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { OptimizationReport } from "@/shared/lib/types/optimization";
+import type { OptimizationProgressEntry, OptimizationReport } from "@/shared/lib/types/optimization";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 interface OptimizationPageProps {
@@ -81,6 +82,9 @@ export function OptimizationPage({
   const [diffractionGratingModalRow, setDiffractionGratingModalRow] = useState<GridRow | undefined>();
   const [evaluationReport, setEvaluationReport] = useState<OptimizationReport | undefined>();
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [optimizationProgress, setOptimizationProgress] = useState<ReadonlyArray<OptimizationProgressEntry>>([]);
+  const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] = useState(false);
+  const [optimizationRunComplete, setOptimizationRunComplete] = useState(false);
   const evaluationRequestIdRef = useRef(0);
 
   useEffect(() => {
@@ -231,10 +235,20 @@ export function OptimizationPage({
       return;
     }
 
+    setOptimizationProgress([]);
+    setOptimizationProgressModalOpen(true);
+    setOptimizationRunComplete(false);
     optimizationStore.getState().setIsOptimizing(true);
     try {
       const config = optimizationStore.getState().buildOptimizationConfig();
-      const report = await proxy.optimizeOpm(optimizationModel, config);
+      const report = await proxy.optimizeOpm(
+        optimizationModel,
+        config,
+        comlinkProxy((progress: ReadonlyArray<OptimizationProgressEntry>) => {
+          setOptimizationProgress(progress);
+        }),
+      );
+      setOptimizationProgress(report.optimization_progress ?? []);
       optimizationStore.getState().applyOptimizationResult(report);
       if (!report.success) {
         optimizationStore.getState().openWarningModal(report.message);
@@ -245,6 +259,7 @@ export function OptimizationPage({
       optimizationStore.getState().openWarningModal(message);
       onError();
     } finally {
+      setOptimizationRunComplete(true);
       optimizationStore.getState().setIsOptimizing(false);
     }
   };
@@ -332,12 +347,17 @@ export function OptimizationPage({
 
   return (
     <div className="relative flex flex-1 flex-col overflow-y-auto p-4">
-      {isOptimizing ? (
-        <LoadingOverlay
-          title="Optimizing"
-          contents="Running optimization in Pyodide…"
-        />
-      ) : null}
+      <OptimizationProgressModal
+        isOpen={optimizationProgressModalOpen}
+        isOptimizing={isOptimizing}
+        progress={optimizationProgress}
+        onClose={() => {
+          if (!optimizationRunComplete) {
+            return;
+          }
+          setOptimizationProgressModalOpen(false);
+        }}
+      />
 
       <OptimizationActionBar
         canOptimize={isReady && proxy !== undefined && optimizationModel !== undefined}
