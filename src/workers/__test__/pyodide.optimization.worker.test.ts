@@ -1,5 +1,5 @@
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import { _optimizeOpm } from "@/workers/pyodide.worker";
+import { _evaluateOptimizationProblem, _optimizeOpm } from "@/workers/pyodide.worker";
 
 const baseModel: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -47,6 +47,49 @@ describe("_optimizeOpm", () => {
 
     expect(result.success).toBe(true);
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining("optimize_opm("));
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));
+  });
+});
+
+describe("_evaluateOptimizationProblem", () => {
+  it("runs evaluate_optimization_problem in Python and parses the JSON result", async () => {
+    const runPython = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        success: true,
+        status: "evaluated",
+        message: "ok",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [
+          {
+            kind: "rms_spot_size",
+            target: 0,
+            value: 0.42,
+            field_index: 0,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 1,
+            wavelength_weight: 1,
+            total_weight: 1,
+            weighted_residual: 0.42,
+          },
+        ],
+        merit_function: { sum_of_squares: 0.1764, rss: 0.42 },
+      }),
+    );
+
+    const result = await _evaluateOptimizationProblem(runPython, baseModel, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [],
+      pickups: [],
+      merit_function: { operands: [{ kind: "rms_spot_size", target: 0, weight: 1, fields: [{ index: 0, weight: 1 }], wavelengths: [{ index: 0, weight: 1 }] }] },
+    });
+
+    expect(result.status).toBe("evaluated");
+    expect(result.residuals[0]?.value).toBe(0.42);
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining("evaluate_optimization_problem("));
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));
   });
 });

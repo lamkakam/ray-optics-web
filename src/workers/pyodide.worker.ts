@@ -71,7 +71,7 @@ from rayoptics_web_utils.plotting import (
 )
 from rayoptics_web_utils.focusing import focus_by_mono_rms_spot, focus_by_mono_strehl, focus_by_poly_rms_spot, focus_by_poly_strehl
 from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
-from rayoptics_web_utils.optimization import optimize_opm
+from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_opm
 `);
 }
 
@@ -354,6 +354,21 @@ export async function _getAllGlassCatalogsData(
   return JSON.parse(json) as RawAllGlassCatalogsData;
 }
 
+export async function _evaluateOptimizationProblem(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  config: OptimizationConfig,
+): Promise<OptimizationReport> {
+  const configJson = JSON.stringify(config);
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(evaluate_optimization_problem(${opm}, json.loads(${JSON.stringify(configJson)})))`,
+    ),
+  )) as string;
+  return JSON.parse(json) as OptimizationReport;
+}
+
 export async function _optimizeOpm(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -499,6 +514,13 @@ export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData
   return await _getAllGlassCatalogsData(requirePyodide());
 }
 
+export async function evaluateOptimizationProblem(
+  opticalModel: OpticalModel,
+  config: OptimizationConfig,
+): Promise<OptimizationReport> {
+  return await _evaluateOptimizationProblem(requirePyodide(), opticalModel, config);
+}
+
 export async function optimizeOpm(
   opticalModel: OpticalModel,
   config: OptimizationConfig,
@@ -530,5 +552,6 @@ expose({
   focusByPolyRmsSpot,
   focusByPolyStrehl,
   getAllGlassCatalogsData,
+  evaluateOptimizationProblem,
   optimizeOpm,
 });

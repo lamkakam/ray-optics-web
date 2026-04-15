@@ -71,6 +71,28 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     focusByPolyRmsSpot: jest.fn(),
     focusByPolyStrehl: jest.fn(),
     getAllGlassCatalogsData: jest.fn(),
+    evaluateOptimizationProblem: jest.fn().mockResolvedValue({
+      success: true,
+      status: "evaluated",
+      message: "ok",
+      optimizer: { kind: "least_squares", method: "trf" },
+      initial_values: [],
+      final_values: [],
+      pickups: [],
+      residuals: [
+        {
+          kind: "focal_length",
+          target: 100,
+          value: 98.5,
+          operand_weight: 1,
+          field_weight: 1,
+          wavelength_weight: 1,
+          total_weight: 1,
+          weighted_residual: -1.5,
+        },
+      ],
+      merit_function: { sum_of_squares: 2.25, rss: 1.5 },
+    }),
     optimizeOpm: jest.fn().mockResolvedValue({
       success: true,
       status: "optimized",
@@ -143,6 +165,24 @@ describe("OptimizationPage", () => {
     expect(screen.getByRole("tab", { name: "Operands" })).toBeInTheDocument();
   });
 
+  it("renders the live evaluation table between the action buttons and tabs", async () => {
+    const proxy = makeProxy();
+    renderOptimizationPage(proxy);
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+
+    expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveClass("max-h-64", "overflow-y-auto");
+    const headers = screen.getAllByRole("columnheader");
+    expect(headers.slice(0, 4).map((header) => header.textContent)).toEqual([
+      "Operand Type",
+      "Target",
+      "Weight",
+      "Value",
+    ]);
+    expect(screen.getByText("Paraxial focal length")).toBeInTheDocument();
+    expect(screen.getByText("98.5")).toBeInTheDocument();
+  });
+
   it("shows radius and thickness variable columns plus the read-only modal-backed columns in Lens Prescription", async () => {
     renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
@@ -212,6 +252,74 @@ describe("OptimizationPage", () => {
     expect(optimizationStore.getState().operands[0]).toMatchObject({
       weight: "2.75",
     });
+  });
+
+  it("refreshes the live evaluation table when the optimization config changes", async () => {
+    const proxy = makeProxy({
+      evaluateOptimizationProblem: jest
+        .fn()
+        .mockResolvedValueOnce({
+          success: true,
+          status: "evaluated",
+          message: "ok",
+          optimizer: { kind: "least_squares", method: "trf" },
+          initial_values: [],
+          final_values: [],
+          pickups: [],
+          residuals: [
+            {
+              kind: "focal_length",
+              target: 100,
+              value: 98.5,
+              operand_weight: 1,
+              field_weight: 1,
+              wavelength_weight: 1,
+              total_weight: 1,
+              weighted_residual: -1.5,
+            },
+          ],
+          merit_function: { sum_of_squares: 2.25, rss: 1.5 },
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          status: "evaluated",
+          message: "ok",
+          optimizer: { kind: "least_squares", method: "trf" },
+          initial_values: [],
+          final_values: [],
+          pickups: [],
+          residuals: [
+            {
+              kind: "focal_length",
+              target: 125,
+              value: 124.25,
+              operand_weight: 2.75,
+              field_weight: 1,
+              wavelength_weight: 1,
+              total_weight: 2.75,
+              weighted_residual: -2.0625,
+            },
+          ],
+          merit_function: { sum_of_squares: 4.25390625, rss: 2.0625 },
+        }),
+    });
+    renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1));
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    const inputs = screen.getAllByRole("textbox");
+    await user.clear(inputs[0]);
+    await user.type(inputs[0], "125");
+    await user.tab();
+    await user.clear(inputs[1]);
+    await user.type(inputs[1], "2.75");
+    await user.tab();
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("124.25")).toBeInTheDocument();
+    expect(screen.getByText("2.75")).toBeInTheDocument();
   });
 
   it("calls optimizeOpm and updates the local optimization model on success", async () => {

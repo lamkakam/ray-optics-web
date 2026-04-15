@@ -31,6 +31,7 @@ interface PyodideWorkerAPI {
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
+  evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>;
   optimizeOpm(opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>;
 }
 ```
@@ -77,6 +78,7 @@ interface PyodideWorkerAPI {
 - Errors from `proxy.init()` are caught and stored as a plain string in `error`; the worker itself remains alive.
 - `proxy` is `undefined` while initialising, preventing callers from invoking methods before the worker is ready.
 - `plotLensLayout` requires the caller to provide `isDark`; the worker derives any diffraction-grating-dependent overlay from the `OpticalModel`.
+- `evaluateOptimizationProblem` and `optimizeOpm` share the same report shape, so optimization UIs can preview residuals before running the full solve.
 - `_resetSingleton()` is exported for test isolation only — NOT for production use.
 
 ## Usages

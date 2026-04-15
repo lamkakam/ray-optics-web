@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";
 import { AgGridProvider, AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useOptimizationStore } from "@/features/optimization/providers/OptimizationStoreProvider";
-import type { OptimizationOperandKind } from "@/shared/lib/types/optimization";
+import type { OptimizationOperandKind, OptimizationReport, OptimizationResidualEntry } from "@/shared/lib/types/optimization";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { MediumCell } from "@/features/lens-editor/components/MediumCell";
 import { AsphericalCell } from "@/features/lens-editor/components/AsphericalCell";
@@ -22,6 +22,7 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
 import { Select } from "@/shared/components/primitives/Select";
 import { Label } from "@/shared/components/primitives/Label";
+import { Table } from "@/shared/components/primitives/Table";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
@@ -59,6 +60,14 @@ interface RadiusRow {
   readonly radiusSurfaceIndex?: number;
   readonly thicknessSurfaceIndex?: number;
   readonly row: GridRow;
+}
+
+interface EvaluationRow {
+  readonly id: string;
+  readonly operandType: string;
+  readonly target: string;
+  readonly weight: string;
+  readonly value: string;
 }
 
 function ActionWrapper({
@@ -104,6 +113,35 @@ function getRadiusValue(model: OpticalModel, surfaceIndex: number): number {
   return model.surfaces[surfaceIndex - 1]?.curvatureRadius ?? 0;
 }
 
+function getOperandLabel(kind: OptimizationOperandKind): string {
+  switch (kind) {
+    case "focal_length":
+      return "Paraxial focal length";
+    case "f_number":
+      return "Paraxial f/#";
+    case "opd_difference":
+      return "OPD Difference";
+    case "rms_spot_size":
+      return "RMS Spot Size";
+    case "rms_wavefront_error":
+      return "RMS wavefront error";
+  }
+}
+
+function formatEvaluationValue(value: number | undefined): string {
+  return value === undefined ? "" : String(value);
+}
+
+function createEvaluationRow(residual: OptimizationResidualEntry, index: number): EvaluationRow {
+  return {
+    id: `${residual.kind}-${residual.field_index ?? "none"}-${residual.wavelength_index ?? "none"}-${index}`,
+    operandType: getOperandLabel(residual.kind as OptimizationOperandKind),
+    target: formatEvaluationValue(residual.target),
+    weight: formatEvaluationValue(residual.total_weight),
+    value: formatEvaluationValue(residual.value),
+  };
+}
+
 export function OptimizationPage({
   proxy,
   isReady,
@@ -144,6 +182,9 @@ export function OptimizationPage({
   const [asphericalModalRow, setAsphericalModalRow] = useState<GridRow | undefined>();
   const [decenterModalRow, setDecenterModalRow] = useState<GridRow | undefined>();
   const [diffractionGratingModalRow, setDiffractionGratingModalRow] = useState<GridRow | undefined>();
+  const [evaluationReport, setEvaluationReport] = useState<OptimizationReport | undefined>();
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const evaluationRequestIdRef = useRef(0);
 
   useEffect(() => {
     const currentEditorModel = buildCurrentEditorModel(lensStore, specsStore);
@@ -215,6 +256,73 @@ export function OptimizationPage({
   const selectedThicknessMode = thicknessModal.surfaceIndex === undefined
     ? undefined
     : thicknessModes.find((mode) => mode.surfaceIndex === thicknessModal.surfaceIndex);
+
+  const evaluationRows = useMemo<EvaluationRow[]>(
+    () => evaluationReport?.residuals.map(createEvaluationRow) ?? [],
+    [evaluationReport],
+  );
+  const evaluationTableRows = useMemo(
+    () => evaluationRows.map((row) => [row.operandType, row.target, row.weight, row.value] as const),
+    [evaluationRows],
+  );
+
+  useEffect(() => {
+    if (!isReady || proxy === undefined || optimizationModel === undefined) {
+      setEvaluationReport(undefined);
+      setIsEvaluating(false);
+      return;
+    }
+
+    const requestId = evaluationRequestIdRef.current + 1;
+    evaluationRequestIdRef.current = requestId;
+    const timeoutId = window.setTimeout(() => {
+      let config;
+      try {
+        config = optimizationStore.getState().buildOptimizationConfig();
+      } catch {
+        if (evaluationRequestIdRef.current === requestId) {
+          setEvaluationReport(undefined);
+          setIsEvaluating(false);
+        }
+        return;
+      }
+
+      setIsEvaluating(true);
+      void proxy.evaluateOptimizationProblem(optimizationModel, config)
+        .then((report) => {
+          if (evaluationRequestIdRef.current !== requestId) {
+            return;
+          }
+          setEvaluationReport(report);
+        })
+        .catch(() => {
+          if (evaluationRequestIdRef.current !== requestId) {
+            return;
+          }
+          setEvaluationReport(undefined);
+        })
+        .finally(() => {
+          if (evaluationRequestIdRef.current === requestId) {
+            setIsEvaluating(false);
+          }
+        });
+    }, 200);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    isReady,
+    proxy,
+    optimizationModel,
+    optimizationStore,
+    optimizer,
+    fieldWeights,
+    wavelengthWeights,
+    radiusModes,
+    thicknessModes,
+    operands,
+  ]);
 
   const handleOptimize = async () => {
     if (proxy === undefined || optimizationModel === undefined) {
@@ -518,15 +626,15 @@ export function OptimizationPage({
       valueFormatter: (params) => {
         switch (params.value) {
           case "focal_length":
-            return "Paraxial focal length";
+            return getOperandLabel("focal_length");
           case "f_number":
-            return "Paraxial f/#";
+            return getOperandLabel("f_number");
           case "opd_difference":
-            return "OPD Difference";
+            return getOperandLabel("opd_difference");
           case "rms_spot_size":
-            return "RMS Spot Size";
+            return getOperandLabel("rms_spot_size");
           case "rms_wavefront_error":
-            return "RMS wavefront error";
+            return getOperandLabel("rms_wavefront_error");
           default:
             return String(params.value ?? "");
         }
@@ -666,6 +774,32 @@ export function OptimizationPage({
         >
           Apply to Editor
         </Button>
+      </div>
+
+      <div className="mb-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
+          <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">Operand Evaluation</h2>
+          {isEvaluating ? (
+            <span className="text-xs text-gray-500 dark:text-gray-400" role="status">
+              Updating evaluation…
+            </span>
+          ) : null}
+        </div>
+        {evaluationRows.length > 0 ? (
+          <div
+            data-testid="optimization-evaluation-scroll"
+            className="max-h-64 overflow-x-auto overflow-y-auto px-4 py-3"
+          >
+            <Table
+              headers={["Operand Type", "Target", "Weight", "Value"]}
+              rows={evaluationTableRows}
+            />
+          </div>
+        ) : (
+          <Paragraph className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+            Evaluation results appear here when the current optimization config is valid.
+          </Paragraph>
+        )}
       </div>
 
       <Tabs
