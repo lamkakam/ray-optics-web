@@ -176,6 +176,14 @@ function createDefaultOperand(): OptimizationOperandRow {
   };
 }
 
+function createInitialFieldWeights(count: number): number[] {
+  return Array.from({ length: count }, (_, index) => (index === 0 ? 1 : 0));
+}
+
+function createInitialWavelengthWeights(model: OpticalModel): number[] {
+  return model.specs.wavelengths.weights.map(([, weight]) => weight);
+}
+
 function reconcileWeights(previous: number[], count: number): number[] {
   return Array.from({ length: count }, (_, index) => previous[index] ?? 1);
 }
@@ -246,15 +254,15 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
     kind: "least_squares",
     method: "trf",
     maxNumSteps: "200",
-    meritFunctionTolerance: "1e-8",
-    independentVariableTolerance: "1e-8",
-    gradientTolerance: "1e-8",
+    meritFunctionTolerance: "1e-5",
+    independentVariableTolerance: "1e-5",
+    gradientTolerance: "1e-5",
   },
   fieldWeights: [],
   wavelengthWeights: [],
   radiusModes: [],
   thicknessModes: [],
-  operands: [createDefaultOperand()],
+  operands: [],
   isOptimizing: false,
   lastOptimizationReport: undefined,
   warningModal: { open: false, message: "" },
@@ -265,11 +273,11 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   initializeFromOpticalModel: (model) =>
     set({
       optimizationModel: model,
-      fieldWeights: model.specs.field.fields.map(() => 1),
-      wavelengthWeights: model.specs.wavelengths.weights.map(() => 1),
+      fieldWeights: createInitialFieldWeights(model.specs.field.fields.length),
+      wavelengthWeights: createInitialWavelengthWeights(model),
       radiusModes: createRadiusModes(model),
       thicknessModes: createThicknessModes(model),
-      operands: [createDefaultOperand()],
+      operands: [],
       lastOptimizationReport: undefined,
     }),
 

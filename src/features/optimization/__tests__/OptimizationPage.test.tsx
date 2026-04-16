@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import * as echarts from "echarts/core";
@@ -212,9 +212,23 @@ describe("OptimizationPage", () => {
     expect(screen.queryByRole("button", { name: "Toggle drawer" })).not.toBeInTheDocument();
   });
 
-  it("renders the live evaluation table between the action buttons and tabs", async () => {
+  it("does not render evaluation results until an operand is added", async () => {
     const proxy = makeProxy();
     renderOptimizationPage(proxy);
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).not.toHaveBeenCalled());
+
+    expect(screen.queryByText("Paraxial focal length")).not.toBeInTheDocument();
+    expect(screen.queryByText("98.5")).not.toBeInTheDocument();
+  });
+
+  it("renders the live evaluation table between the action buttons and tabs after adding an operand", async () => {
+    const proxy = makeProxy();
+    renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
 
     await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
 
@@ -226,8 +240,9 @@ describe("OptimizationPage", () => {
       "Weight",
       "Value",
     ]);
-    expect(screen.getByText("Paraxial focal length")).toBeInTheDocument();
-    expect(screen.getByText("98.5")).toBeInTheDocument();
+    const evaluationScroll = screen.getByTestId("optimization-evaluation-scroll");
+    expect(within(evaluationScroll).getByText("Paraxial focal length")).toBeInTheDocument();
+    expect(within(evaluationScroll).getByText("98.5")).toBeInTheDocument();
   });
 
   it("shows radius and thickness variable columns plus the read-only modal-backed columns in Lens Prescription", async () => {
@@ -276,8 +291,9 @@ describe("OptimizationPage", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
 
-    expect(screen.getByRole("option", { name: "OPD Difference" })).toBeInTheDocument();
+    expect(screen.getAllByRole("option", { name: "OPD Difference" })).toHaveLength(1);
 
     await user.selectOptions(screen.getByRole("combobox", { name: "Operand Kind" }), "opd_difference");
 
@@ -292,6 +308,7 @@ describe("OptimizationPage", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
 
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
     expect(Array.from(headers, (header) => header.textContent)).toEqual([
@@ -363,9 +380,9 @@ describe("OptimizationPage", () => {
     renderOptimizationPage(proxy);
     const user = userEvent.setup();
 
-    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1));
-
     await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1));
     const inputs = screen.getAllByRole("textbox");
     await user.clear(inputs[0]);
     await user.type(inputs[0], "125");
@@ -434,6 +451,8 @@ describe("OptimizationPage", () => {
       renderOptimizationPage(proxy);
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 
+      await user.click(screen.getByRole("tab", { name: "Operands" }));
+      await user.click(screen.getByRole("button", { name: "Add operand" }));
       await act(async () => {
         jest.advanceTimersByTime(250);
       });
@@ -467,6 +486,8 @@ describe("OptimizationPage", () => {
     const { optimizationStore } = renderOptimizationPage(proxy);
     const user = userEvent.setup();
 
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
     await user.click(screen.getByRole("button", { name: "Optimize" }));
 
     await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
@@ -516,11 +537,13 @@ describe("OptimizationPage", () => {
     const user = userEvent.setup();
     renderOptimizationPage(proxy);
 
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
     await user.click(screen.getByRole("button", { name: "Optimize" }));
 
     const dialog = await screen.findByRole("dialog", { name: "Optimization Progress" });
     expect(dialog).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "OK" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "OK" })).not.toBeInTheDocument();
 
     const backdrop = screen.getByTestId("modal-backdrop");
     await user.click(backdrop);
@@ -581,6 +604,8 @@ describe("OptimizationPage", () => {
     const user = userEvent.setup();
 
     const { optimizationStore } = renderOptimizationPage(proxy);
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
     await user.click(screen.getByRole("button", { name: "Optimize" }));
 
     expect(await screen.findByText("bad config")).toBeInTheDocument();
@@ -592,6 +617,8 @@ describe("OptimizationPage", () => {
     const { lensStore } = renderOptimizationPage(proxy);
     const user = userEvent.setup();
 
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
     await user.click(screen.getByRole("button", { name: "Optimize" }));
     await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
 
@@ -618,5 +645,59 @@ describe("OptimizationPage", () => {
     await waitFor(() =>
       expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(88),
     );
+  });
+
+  it("reseeds persisted optimization weights from the editor when the page mounts", async () => {
+    const proxy = makeProxy();
+    const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
+    const lensStore = createStore<LensEditorState>(createLensEditorSlice);
+    const optimizationStore = createStore<OptimizationState>(createOptimizationSlice);
+
+    specsStore.getState().loadFromSpecs(baseModel.specs);
+    specsStore.getState().setCommittedSpecs(baseModel.specs);
+    lensStore.getState().setRows(surfacesToGridRows(baseModel));
+    lensStore.getState().setAutoAperture(false);
+    lensStore.getState().setCommittedOpticalModel(baseModel);
+
+    optimizationStore.setState({
+      optimizationModel: baseModel,
+      fieldWeights: [1, 1, 1],
+      wavelengthWeights: [1, 1, 1],
+    });
+
+    const { OptimizationPage } = require("@/features/optimization/OptimizationPage") as typeof import("@/features/optimization/OptimizationPage");
+
+    const glassCatalogValue: GlassCatalogContextValue = {
+      catalogs: {
+        CDGM: {},
+        Hikari: {},
+        Hoya: {},
+        Ohara: {},
+        Schott: {},
+        Sumita: {},
+        Special: {},
+      },
+      error: undefined,
+      isLoaded: true,
+      isLoading: false,
+      preload: jest.fn(),
+    };
+
+    render(
+      <GlassCatalogContext.Provider value={glassCatalogValue}>
+        <SpecsConfiguratorStoreContext.Provider value={specsStore}>
+          <LensEditorStoreContext.Provider value={lensStore}>
+            <OptimizationStoreContext.Provider value={optimizationStore}>
+              <OptimizationPage proxy={proxy} isReady={true} onError={jest.fn()} />
+            </OptimizationStoreContext.Provider>
+          </LensEditorStoreContext.Provider>
+        </SpecsConfiguratorStoreContext.Provider>
+      </GlassCatalogContext.Provider>,
+    );
+
+    await waitFor(() => {
+      expect(optimizationStore.getState().fieldWeights).toEqual([1, 0, 0]);
+      expect(optimizationStore.getState().wavelengthWeights).toEqual([1, 2, 1]);
+    });
   });
 });

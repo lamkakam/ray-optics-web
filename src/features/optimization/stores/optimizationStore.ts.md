@@ -15,11 +15,11 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Key State
 
 - `optimizationModel` — page-local `OpticalModel` snapshot seeded from the editor
-- `optimizer` — least-squares algorithm inputs stored as strings for direct form binding
+- `optimizer` — least-squares algorithm inputs stored as strings for direct form binding; default tolerances are `1e-5`
 - `fieldWeights` / `wavelengthWeights` — numeric optimization weights
 - `radiusModes` — one entry per non-object radius target, including the image surface
 - `thicknessModes` — one entry per surface-row thickness target
-- `operands` — add/delete operand rows for `focal_length`, `f_number`, `opd_difference`, `rms_spot_size`, and `rms_wavefront_error`, each with editable `target` and `weight` strings
+- `operands` — add/delete operand rows for `focal_length`, `f_number`, `opd_difference`, `rms_spot_size`, and `rms_wavefront_error`, each with editable `target` and `weight` strings; initialization starts with no rows
 - `isOptimizing` — loading flag for the page-blocking overlay
 - `warningModal`, `applyConfirmOpen`, `radiusModal` — modal state
 - `lastOptimizationReport` — last successful worker report
@@ -48,5 +48,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Key Conventions
 
 - `surfaceIndex` matches the sequential-model indexing used by Python: first lens surface is `1`; radius modes include the image surface (`surfaces.length + 1`), while thickness modes stop at the last surface row.
-- Default operand row is `focal_length` with target `"100"` and weight `"1"`; switching the row to `opd_difference`, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
+- `initializeFromOpticalModel()` seeds field weights as `1` for field index `0` and `0` for every remaining field.
+- `initializeFromOpticalModel()` seeds wavelength weights from `model.specs.wavelengths.weights[*][1]`, matching the editor-page wavelength weights.
+- The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
 - `syncFromOpticalModel()` reconciles field weights, wavelength weights, radius modes, and thickness modes by index so editor changes propagate into optimization without resetting all optimization settings when the model shape still matches.

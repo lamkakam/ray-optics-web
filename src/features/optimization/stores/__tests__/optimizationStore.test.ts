@@ -35,7 +35,7 @@ const baseModel: OpticalModel = {
 };
 
 describe("optimizationStore", () => {
-  it("initializes from an optical model with default optimizer, radius/thickness controls, and operand row", () => {
+  it("initializes from an optical model with default optimizer, radius/thickness controls, and no operand row", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
 
     store.getState().initializeFromOpticalModel(baseModel);
@@ -46,9 +46,11 @@ describe("optimizationStore", () => {
     expect(state.optimizer.kind).toBe("least_squares");
     expect(state.optimizer.method).toBe("trf");
     expect(state.optimizer.maxNumSteps).toBe("200");
-    expect(state.optimizer.meritFunctionTolerance).toBe("1e-8");
-    expect(state.fieldWeights).toEqual([1, 1, 1]);
-    expect(state.wavelengthWeights).toEqual([1, 1, 1]);
+    expect(state.optimizer.meritFunctionTolerance).toBe("1e-5");
+    expect(state.optimizer.independentVariableTolerance).toBe("1e-5");
+    expect(state.optimizer.gradientTolerance).toBe("1e-5");
+    expect(state.fieldWeights).toEqual([1, 0, 0]);
+    expect(state.wavelengthWeights).toEqual([1, 2, 1]);
     expect(state.radiusModes).toEqual([
       { surfaceIndex: 1, mode: "constant" },
       { surfaceIndex: 2, mode: "constant" },
@@ -58,8 +60,17 @@ describe("optimizationStore", () => {
       { surfaceIndex: 1, mode: "constant" },
       { surfaceIndex: 2, mode: "constant" },
     ]);
-    expect(state.operands).toHaveLength(1);
-    expect(state.operands[0]).toMatchObject({
+    expect(state.operands).toEqual([]);
+  });
+
+  it("adds the default focal-length operand row on demand", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().addOperand();
+
+    expect(store.getState().operands).toHaveLength(1);
+    expect(store.getState().operands[0]).toMatchObject({
       kind: "focal_length",
       target: "100",
       weight: "1",
@@ -102,9 +113,9 @@ describe("optimizationStore", () => {
         kind: "least_squares",
         method: "trf",
         max_nfev: 200,
-        ftol: 1e-8,
-        xtol: 1e-8,
-        gtol: 1e-8,
+        ftol: 1e-5,
+        xtol: 1e-5,
+        gtol: 1e-5,
       },
       variables: [
         { kind: "radius", surface_index: 1, min: 40, max: 60 },
@@ -122,11 +133,11 @@ describe("optimizationStore", () => {
             fields: [
               { index: 0, weight: 1 },
               { index: 1, weight: 0.5 },
-              { index: 2, weight: 1 },
+              { index: 2, weight: 0 },
             ],
             wavelengths: [
               { index: 0, weight: 1 },
-              { index: 1, weight: 1 },
+              { index: 1, weight: 2 },
               { index: 2, weight: 0.25 },
             ],
           },
@@ -138,6 +149,7 @@ describe("optimizationStore", () => {
   it("resets the target to 0 when an operand is changed to opd_difference", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().addOperand();
 
     const operandId = store.getState().operands[0].id;
     store.getState().updateOperand(operandId, { kind: "opd_difference" });
@@ -172,11 +184,11 @@ describe("optimizationStore", () => {
         fields: [
           { index: 0, weight: 1 },
           { index: 1, weight: 0.5 },
-          { index: 2, weight: 1 },
+          { index: 2, weight: 0 },
         ],
         wavelengths: [
           { index: 0, weight: 1 },
-          { index: 1, weight: 1 },
+          { index: 1, weight: 2 },
           { index: 2, weight: 0.25 },
         ],
       },
@@ -198,6 +210,15 @@ describe("optimizationStore", () => {
 
     expect(() => store.getState().buildOptimizationConfig()).toThrow(
       "Weight must be a positive non-zero number.",
+    );
+  });
+
+  it("requires at least one operand before building the optimization config", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(
+      "At least one operand is required.",
     );
   });
 
@@ -264,7 +285,7 @@ describe("optimizationStore", () => {
 
     const state = store.getState();
     expect(state.optimizationModel?.surfaces[0].curvatureRadius).toBe(75);
-    expect(state.fieldWeights).toEqual([1, 0.5, 1]);
+    expect(state.fieldWeights).toEqual([1, 0.5, 0]);
     expect(state.radiusModes[0]).toEqual({
       surfaceIndex: 1,
       mode: "variable",

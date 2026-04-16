@@ -89,11 +89,12 @@ export function OptimizationPage({
   const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] = useState(false);
   const [optimizationRunComplete, setOptimizationRunComplete] = useState(false);
   const evaluationRequestIdRef = useRef(0);
+  const initializedForMountRef = useRef(false);
 
   useEffect(() => {
     const currentEditorModel = buildCurrentEditorModel(lensStore, specsStore);
-    const optimizationModelState = optimizationStore.getState().optimizationModel;
-    if (optimizationModelState === undefined) {
+    if (!initializedForMountRef.current) {
+      initializedForMountRef.current = true;
       optimizationStore.getState().initializeFromOpticalModel(currentEditorModel);
       return;
     }

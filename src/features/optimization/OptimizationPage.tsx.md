@@ -17,7 +17,7 @@ interface OptimizationPageProps {
 
 ## Behavior
 
-- On first mount, seeds the optimization slice from the current editor draft.
+- On each page mount, re-seeds the optimization slice from the current editor draft so initial optimization defaults always match the current editor state even though the underlying store provider persists across route switches.
 - After mount, listens to live Lens Editor and Specs store changes and calls `syncFromOpticalModel(...)` so optimization reflects the latest prescription/spec state instead of staying stale.
 - Renders the extracted `OptimizationActionBar` above the tabs with:
   - `Optimize`
@@ -65,6 +65,7 @@ interface OptimizationPageProps {
 ## Key Conventions
 
 - The optimization page stays decoupled from the editor while open; it does not mutate the editor until the user confirms `Apply to Editor`.
+- Mount-time initialization intentionally overwrites any stale persisted optimization weights/operands from a previous visit so the page always starts from the current editor model.
 - Editor-driven optical-model changes propagate into optimization automatically; optimization-only UI state is preserved where the model shape remains compatible.
 - The live evaluation table uses the residual `total_weight` reported by Python, so field/wavelength-expanded operands can appear as multiple rows with their effective weights.
 - `OptimizationPage` remains the orchestration boundary: extracted components are view-focused and receive callbacks/state from the page instead of reading stores directly.
