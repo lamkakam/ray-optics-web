@@ -2,6 +2,7 @@ import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import {
   createOptimizationSlice,
+  hasNonZeroOptimizationContribution,
   type OptimizationState,
 } from "@/features/optimization/stores/optimizationStore";
 
@@ -35,6 +36,116 @@ const baseModel: OpticalModel = {
 };
 
 describe("optimizationStore", () => {
+  it("detects non-zero optimization contribution for operand-only rows", () => {
+    expect(hasNonZeroOptimizationContribution({
+      merit_function: {
+        operands: [
+          {
+            kind: "focal_length",
+            target: 100,
+            weight: 1,
+          },
+        ],
+      },
+    })).toBe(true);
+
+    expect(hasNonZeroOptimizationContribution({
+      merit_function: {
+        operands: [
+          {
+            kind: "focal_length",
+            target: 100,
+            weight: 0,
+          },
+        ],
+      },
+    })).toBe(false);
+  });
+
+  it("detects non-zero optimization contribution from any field and wavelength combination", () => {
+    expect(hasNonZeroOptimizationContribution({
+      merit_function: {
+        operands: [
+          {
+            kind: "rms_spot_size",
+            target: 0,
+            weight: 2,
+            fields: [
+              { index: 0, weight: 0 },
+              { index: 1, weight: 0.5 },
+            ],
+            wavelengths: [
+              { index: 0, weight: 0 },
+              { index: 1, weight: 0 },
+            ],
+          },
+          {
+            kind: "opd_difference",
+            target: 0,
+            weight: 1,
+            fields: [
+              { index: 0, weight: 0 },
+              { index: 1, weight: 1 },
+            ],
+            wavelengths: [
+              { index: 0, weight: 0 },
+              { index: 1, weight: 0.25 },
+            ],
+          },
+        ],
+      },
+    })).toBe(true);
+  });
+
+  it("uses operand shape instead of operand kind names when checking contribution", () => {
+    expect(hasNonZeroOptimizationContribution({
+      merit_function: {
+        operands: [
+          {
+            kind: "future_operand",
+            target: 1,
+            weight: 3,
+            fields: [{ index: 0, weight: 0 }],
+            wavelengths: [{ index: 0, weight: 0 }],
+          },
+          {
+            kind: "future_operand",
+            target: 2,
+            weight: 4,
+            fields: [{ index: 0, weight: 0.5 }],
+          },
+        ],
+      },
+    } as never)).toBe(true);
+  });
+
+  it("returns false when every effective contribution is zero", () => {
+    expect(hasNonZeroOptimizationContribution({
+      merit_function: {
+        operands: [
+          {
+            kind: "focal_length",
+            target: 100,
+            weight: 0,
+          },
+          {
+            kind: "rms_wavefront_error",
+            target: 0,
+            weight: 2,
+            fields: [
+              { index: 0, weight: 0 },
+              { index: 1, weight: 0 },
+            ],
+            wavelengths: [
+              { index: 0, weight: 1 },
+              { index: 1, weight: 1 },
+            ],
+          },
+        ],
+      },
+    })).toBe(false);
+  });
+
   it("initializes from an optical model with default optimizer, radius/thickness controls, and no operand row", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
 

@@ -10,6 +10,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `RadiusModeDraft` — input payload used by `setRadiusMode` and `setThicknessMode`
 - `OptimizationOperandRow` — editable operand row shape
 - `OptimizationState` — full slice interface
+- `hasNonZeroOptimizationContribution(config)` — pure helper that checks whether any built merit-function operand contributes a non-zero effective weight
 - `createOptimizationSlice` — `StateCreator<OptimizationState>`
 
 ## Key State
@@ -44,6 +45,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - Variable `min` and `max` must be numeric, and `min < max`.
 - Pickup `source_surface_index` must be in range and must not equal the target surface index.
 - At least one operand is required before `buildOptimizationConfig()` succeeds.
+- `hasNonZeroOptimizationContribution(...)` treats missing `fields` or `wavelengths` as a neutral factor of `1`, and otherwise checks all operand/field/wavelength weight combinations for any product greater than `0`.
 
 ## Key Conventions
 
@@ -52,3 +54,4 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `initializeFromOpticalModel()` seeds wavelength weights from `model.specs.wavelengths.weights[*][1]`, matching the editor-page wavelength weights.
 - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
 - `syncFromOpticalModel()` reconciles field weights, wavelength weights, radius modes, and thickness modes by index so editor changes propagate into optimization without resetting all optimization settings when the model shape still matches.
+- The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.

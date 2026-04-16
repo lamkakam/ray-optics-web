@@ -19,6 +19,7 @@ import { OptimizationWarningModal } from "@/features/optimization/components/Opt
 import { OptimizationWeightsGrid } from "@/features/optimization/components/OptimizationWeightsGrid";
 import { RadiusModeModal } from "@/features/optimization/components/RadiusModeModal";
 import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal";
+import { hasNonZeroOptimizationContribution } from "@/features/optimization/stores/optimizationStore";
 import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/optimization/components/optimizationViewModels";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
 import type { GridRow } from "@/shared/lib/types/gridTypes";
@@ -33,6 +34,8 @@ interface OptimizationPageProps {
   readonly onError: () => void;
   readonly onApplyToEditor?: (model: OpticalModel) => Promise<void> | void;
 }
+
+const ZERO_WEIGHT_WARNING_MESSAGE = "At least one effective optimization weight must be non-zero.";
 
 function buildCurrentEditorModel(lensStore: ReturnType<typeof useLensEditorStore>, specsStore: ReturnType<typeof useSpecsConfiguratorStore>) {
   const autoAperture = lensStore.getState().autoAperture;
@@ -73,6 +76,13 @@ export function OptimizationPage({
   const wavelengthWeights = useStore(optimizationStore, (state) => state.wavelengthWeights);
   const radiusModes = useStore(optimizationStore, (state) => state.radiusModes);
   const operands = useStore(optimizationStore, (state) => state.operands);
+  const hasNonZeroContribution = useStore(optimizationStore, (state) => {
+    try {
+      return hasNonZeroOptimizationContribution(state.buildOptimizationConfig());
+    } catch {
+      return true;
+    }
+  });
   const isOptimizing = useStore(optimizationStore, (state) => state.isOptimizing);
   const warningModal = useStore(optimizationStore, (state) => state.warningModal);
   const applyConfirmOpen = useStore(optimizationStore, (state) => state.applyConfirmOpen);
@@ -176,6 +186,11 @@ export function OptimizationPage({
     [evaluationRows],
   );
 
+  const canOptimize = isReady
+    && proxy !== undefined
+    && optimizationModel !== undefined
+    && hasNonZeroContribution;
+
   useEffect(() => {
     if (!isReady || proxy === undefined || optimizationModel === undefined) {
       setEvaluationReport(undefined);
@@ -245,6 +260,10 @@ export function OptimizationPage({
     optimizationStore.getState().setIsOptimizing(true);
     try {
       const config = optimizationStore.getState().buildOptimizationConfig();
+      if (!hasNonZeroOptimizationContribution(config)) {
+        optimizationStore.getState().openWarningModal(ZERO_WEIGHT_WARNING_MESSAGE);
+        return;
+      }
       const report = await proxy.optimizeOpm(
         optimizationModel,
         config,
@@ -364,7 +383,7 @@ export function OptimizationPage({
       />
 
       <OptimizationActionBar
-        canOptimize={isReady && proxy !== undefined && optimizationModel !== undefined}
+        canOptimize={canOptimize}
         canApplyToEditor={optimizationModel !== undefined}
         isOptimizing={isOptimizing}
         onOptimize={() => void handleOptimize()}

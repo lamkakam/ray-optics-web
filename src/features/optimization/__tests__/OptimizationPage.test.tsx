@@ -494,6 +494,50 @@ describe("OptimizationPage", () => {
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
   });
 
+  it("disables Optimize when every effective optimization weight is zero", async () => {
+    const proxy = makeProxy();
+    const { optimizationStore } = renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    act(() => {
+      const operandId = optimizationStore.getState().operands[0].id;
+      optimizationStore.getState().updateOperand(operandId, { kind: "rms_spot_size" });
+      optimizationStore.getState().setFieldWeight(0, 0);
+      optimizationStore.getState().setFieldWeight(1, 0);
+      optimizationStore.getState().setFieldWeight(2, 0);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+    });
+
+    expect(proxy.optimizeOpm).not.toHaveBeenCalled();
+  });
+
+  it("keeps Optimize enabled when at least one effective optimization weight is non-zero", async () => {
+    const proxy = makeProxy();
+    const { optimizationStore } = renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    act(() => {
+      const operandId = optimizationStore.getState().operands[0].id;
+      optimizationStore.getState().updateOperand(operandId, { kind: "rms_spot_size" });
+      optimizationStore.getState().setFieldWeight(0, 0);
+      optimizationStore.getState().setFieldWeight(1, 0);
+      optimizationStore.getState().setFieldWeight(2, 1);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled();
+    });
+  });
+
   it("shows a blocking optimization progress modal, streams chart updates, and only shows OK after completion", async () => {
     let resolveOptimization: ((value: {
       success: boolean;

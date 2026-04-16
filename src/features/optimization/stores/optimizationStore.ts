@@ -111,6 +111,31 @@ export interface OptimizationState {
 
 let nextOperandId = 0;
 
+type WeightedFactor = {
+  readonly weight: number;
+};
+
+function getFactorWeights(factors?: ReadonlyArray<WeightedFactor>): number[] {
+  if (factors === undefined || factors.length === 0) {
+    return [1];
+  }
+
+  return factors.map((factor) => factor.weight);
+}
+
+export function hasNonZeroOptimizationContribution(
+  config: Pick<OptimizationConfig, "merit_function">,
+): boolean {
+  return config.merit_function.operands.some((operand) => {
+    const fieldWeights = getFactorWeights(operand.fields);
+    const wavelengthWeights = getFactorWeights(operand.wavelengths);
+
+    return fieldWeights.some((fieldWeight) =>
+      wavelengthWeights.some((wavelengthWeight) => operand.weight * fieldWeight * wavelengthWeight > 0),
+    );
+  });
+}
+
 function generateOperandId(): string {
   const id = nextOperandId;
   nextOperandId += 1;

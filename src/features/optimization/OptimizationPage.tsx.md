@@ -49,7 +49,8 @@ interface OptimizationPageProps {
 - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call, updates the static table from the returned residuals, and ignores stale async responses from older requests.
 - Radius and thickness mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`.
 - Invalid intermediate configs clear the evaluation table instead of opening the warning modal.
-- `Optimize` validates the store state, opens `OptimizationProgressModal`, calls `proxy.optimizeOpm`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
+- `Optimize` is disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
+- `Optimize` validates the store state, rejects zero-contribution configs with a warning modal even if the handler is triggered programmatically, opens `OptimizationProgressModal`, calls `proxy.optimizeOpm`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
 - The progress modal is blocking while optimization is active: there is no `OK` button and backdrop clicks are ignored until the worker promise settles.
 - After the optimization run settles, the progress modal keeps the final chart visible, exposes an `OK` button, and can then be dismissed without mutating the optimization result.
 - `Apply to Editor` opens a confirm modal, overwrites the lens-editor rows/specs/auto-aperture state with the page-local optimization snapshot, updates `committedOpticalModel`, and then calls optional `onApplyToEditor(model)`.
@@ -68,5 +69,6 @@ interface OptimizationPageProps {
 - Mount-time initialization intentionally overwrites any stale persisted optimization weights/operands from a previous visit so the page always starts from the current editor model.
 - Editor-driven optical-model changes propagate into optimization automatically; optimization-only UI state is preserved where the model shape remains compatible.
 - The live evaluation table uses the residual `total_weight` reported by Python, so field/wavelength-expanded operands can appear as multiple rows with their effective weights.
+- The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.
 - `OptimizationPage` remains the orchestration boundary: extracted components are view-focused and receive callbacks/state from the page instead of reading stores directly.
 - AG Grid tabs keep `domLayout="autoHeight"` and avoid their own vertical scroll wrappers so the drawer panel is the single vertical scroller on large screens.
