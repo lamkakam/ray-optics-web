@@ -72,4 +72,34 @@ describe("OptimizationLensPrescriptionGrid", () => {
     await user.click(screen.getByRole("button", { name: "Edit diffraction grating" }));
     expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith(surfaceRow);
   });
+
+  it("uses view-oriented tooltip copy for optimization-only inspection cells", async () => {
+    const user = userEvent.setup();
+    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        radiusModes={constantModes}
+        thicknessModes={constantModes}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    await user.hover(screen.getByRole("button", { name: "Edit medium" }));
+    expect(screen.getByText("Click to view medium or glass")).toHaveClass("opacity-100");
+
+    await user.unhover(screen.getByRole("button", { name: "Edit medium" }));
+    await user.hover(screen.getByRole("button", { name: "Edit aspherical parameters" }));
+    expect(screen.getByText("Click to view aspherical parameters")).toHaveClass("opacity-100");
+
+    await user.unhover(screen.getByRole("button", { name: "Edit aspherical parameters" }));
+    await user.hover(screen.getByRole("button", { name: "Edit diffraction grating" }));
+    expect(screen.getByText("Click to view diffraction grating")).toHaveClass("opacity-100");
+  });
 });

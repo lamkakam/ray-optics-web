@@ -3,14 +3,12 @@
 import React, { useMemo } from "react";
 import { AgGridProvider, AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
-import { MediumCell } from "@/features/lens-editor/components/MediumCell";
-import { AsphericalCell } from "@/features/lens-editor/components/AsphericalCell";
 import { DecenterCell } from "@/features/lens-editor/components/DecenterCell";
-import { DiffractionGratingCell } from "@/features/lens-editor/components/DiffractionGratingCell";
 import type { RadiusMode } from "@/features/optimization/stores/optimizationStore";
 import type { RadiusRow } from "@/features/optimization/components/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/types/gridTypes";
 import { SetButton } from "@/shared/components/primitives/SetButton";
+import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 
 function ActionWrapper({
@@ -32,6 +30,59 @@ function ActionWrapper({
     <div className="flex h-full w-full cursor-pointer items-center" onClick={handleClick}>
       {children}
     </div>
+  );
+}
+
+function OptimizationMediumCell({
+  medium,
+  onOpenModal,
+}: {
+  readonly medium: string;
+  readonly onOpenModal: () => void;
+}) {
+  return (
+    <Tooltip text="Click to view medium or glass" position="top" portal noTouch>
+      <button
+        type="button"
+        aria-label="Edit medium"
+        className="cursor-pointer"
+        onClick={onOpenModal}
+      >
+        {medium}
+      </button>
+    </Tooltip>
+  );
+}
+
+function OptimizationAsphericalCell({
+  isAspherical,
+  onOpenModal,
+}: {
+  readonly isAspherical: boolean;
+  readonly onOpenModal: () => void;
+}) {
+  return (
+    <Tooltip text="Click to view aspherical parameters" position="top" portal noTouch>
+      <SetButton isSet={isAspherical} aria-label="Edit aspherical parameters" onClick={onOpenModal} />
+    </Tooltip>
+  );
+}
+
+function OptimizationDiffractionGratingCell({
+  isDiffractionGratingSet,
+  onOpenModal,
+}: {
+  readonly isDiffractionGratingSet: boolean;
+  readonly onOpenModal: () => void;
+}) {
+  return (
+    <Tooltip text="Click to view diffraction grating" position="top" portal noTouch>
+      <SetButton
+        isSet={isDiffractionGratingSet}
+        aria-label="Edit diffraction grating"
+        onClick={onOpenModal}
+      />
+    </Tooltip>
   );
 }
 
@@ -151,7 +202,10 @@ export function OptimizationLensPrescriptionGrid({
 
         return (
           <ActionWrapper onAction={() => onOpenMediumModal(params.data.row)}>
-            <MediumCell medium={params.data.row.medium} onOpenModal={() => onOpenMediumModal(params.data.row)} />
+            <OptimizationMediumCell
+              medium={params.data.row.medium}
+              onOpenModal={() => onOpenMediumModal(params.data.row)}
+            />
           </ActionWrapper>
         );
       },
@@ -182,7 +236,10 @@ export function OptimizationLensPrescriptionGrid({
 
         return (
           <ActionWrapper onAction={() => onOpenAsphericalModal(params.data.row)}>
-            <AsphericalCell isAspherical={params.data.row.aspherical !== undefined} onOpenModal={() => onOpenAsphericalModal(params.data.row)} />
+            <OptimizationAsphericalCell
+              isAspherical={params.data.row.aspherical !== undefined}
+              onOpenModal={() => onOpenAsphericalModal(params.data.row)}
+            />
           </ActionWrapper>
         );
       },
@@ -224,7 +281,7 @@ export function OptimizationLensPrescriptionGrid({
 
         return (
           <ActionWrapper onAction={() => onOpenDiffractionGratingModal(params.data.row)}>
-            <DiffractionGratingCell
+            <OptimizationDiffractionGratingCell
               isDiffractionGratingSet={params.data.row.diffractionGrating !== undefined}
               onOpenModal={() => onOpenDiffractionGratingModal(params.data.row)}
             />
