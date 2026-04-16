@@ -41,7 +41,8 @@ interface OptimizationPageProps {
   - read-only `Medium`, `Semi-diam.`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` columns
 - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including an `OPD Difference` operand option whose default target is `0`.
 - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
-- Whenever the optimization config changes, the component debounces a worker-side evaluation call, updates the static table from the returned residuals, and ignores stale async responses from older requests.
+- Whenever the committed optimization config changes, the component debounces a worker-side evaluation call, updates the static table from the returned residuals, and ignores stale async responses from older requests.
+- Radius and thickness mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`.
 - Invalid intermediate configs clear the evaluation table instead of opening the warning modal.
 - `Optimize` validates the store state, opens `OptimizationProgressModal`, calls `proxy.optimizeOpm`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
 - The progress modal is blocking while optimization is active: there is no `OK` button and backdrop clicks are ignored until the worker promise settles.

@@ -332,6 +332,89 @@ describe("OptimizationPage", () => {
     expect(screen.getByText("2.75")).toBeInTheDocument();
   });
 
+  it("does not refresh the live evaluation table for radius edits until Done is pressed", async () => {
+    jest.useFakeTimers();
+
+    try {
+      const proxy = makeProxy({
+        evaluateOptimizationProblem: jest
+          .fn()
+          .mockResolvedValueOnce({
+            success: true,
+            status: "evaluated",
+            message: "ok",
+            optimizer: { kind: "least_squares", method: "trf" },
+            initial_values: [],
+            final_values: [],
+            pickups: [],
+            residuals: [
+              {
+                kind: "focal_length",
+                target: 100,
+                value: 98.5,
+                operand_weight: 1,
+                field_weight: 1,
+                wavelength_weight: 1,
+                total_weight: 1,
+                weighted_residual: -1.5,
+              },
+            ],
+            merit_function: { sum_of_squares: 2.25, rss: 1.5 },
+          })
+          .mockResolvedValueOnce({
+            success: true,
+            status: "evaluated",
+            message: "ok",
+            optimizer: { kind: "least_squares", method: "trf" },
+            initial_values: [],
+            final_values: [],
+            pickups: [],
+            residuals: [
+              {
+                kind: "focal_length",
+                target: 100,
+                value: 97.25,
+                operand_weight: 1,
+                field_weight: 1,
+                wavelength_weight: 1,
+                total_weight: 1,
+                weighted_residual: -2.75,
+              },
+            ],
+            merit_function: { sum_of_squares: 7.5625, rss: 2.75 },
+          }),
+      });
+      renderOptimizationPage(proxy);
+      const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+
+      await act(async () => {
+        jest.advanceTimersByTime(250);
+      });
+      await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1));
+
+      await user.click(screen.getByRole("tab", { name: "Lens Prescription" }));
+      await user.click(screen.getByRole("button", { name: "Radius mode for surface 1" }));
+      await user.selectOptions(screen.getByRole("combobox", { name: "Radius mode" }), "variable");
+      await user.clear(screen.getByRole("textbox", { name: "Min." }));
+      await user.type(screen.getByRole("textbox", { name: "Min." }), "41");
+
+      await act(async () => {
+        jest.advanceTimersByTime(250);
+      });
+      expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1);
+
+      await user.click(screen.getByRole("button", { name: "Done" }));
+
+      await act(async () => {
+        jest.advanceTimersByTime(250);
+      });
+      await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(2));
+      expect(await screen.findByText("97.25")).toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
   it("calls optimizeOpm and updates the local optimization model on success", async () => {
     const proxy = makeProxy();
     const { optimizationStore } = renderOptimizationPage(proxy);

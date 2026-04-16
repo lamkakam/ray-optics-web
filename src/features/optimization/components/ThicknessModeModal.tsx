@@ -22,6 +22,26 @@ interface ThicknessModeModalProps {
   readonly onClose: () => void;
 }
 
+function toDraft(mode: RadiusMode): RadiusModeDraft {
+  switch (mode.mode) {
+    case "constant":
+      return { mode: "constant" };
+    case "variable":
+      return {
+        mode: "variable",
+        min: mode.min,
+        max: mode.max,
+      };
+    case "pickup":
+      return {
+        mode: "pickup",
+        sourceSurfaceIndex: mode.sourceSurfaceIndex,
+        scale: mode.scale,
+        offset: mode.offset,
+      };
+  }
+}
+
 export function ThicknessModeModal({
   isOpen,
   optimizationModel,
@@ -30,7 +50,18 @@ export function ThicknessModeModal({
   onSetMode,
   onClose,
 }: ThicknessModeModalProps) {
-  if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined) {
+  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft | undefined>(undefined);
+
+  React.useEffect(() => {
+    if (!isOpen || surfaceIndex === undefined || selectedMode === undefined) {
+      setDraftMode(undefined);
+      return;
+    }
+
+    setDraftMode(toDraft(selectedMode));
+  }, [isOpen, selectedMode, surfaceIndex]);
+
+  if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined || draftMode === undefined) {
     return (
       <Modal isOpen={false} title="Thickness Variable / Pickup">
         <></>
@@ -55,7 +86,7 @@ export function ThicknessModeModal({
           <Select
             id="thickness-mode"
             aria-label="Thickness mode"
-            value={selectedMode.mode}
+            value={draftMode.mode}
             options={[
               { label: "constant", value: "constant" },
               { label: "variable", value: "variable" },
@@ -64,12 +95,12 @@ export function ThicknessModeModal({
             onChange={(event) => {
               const mode = event.target.value as VariableChoice;
               if (mode === "constant") {
-                onSetMode(surfaceIndex, { mode });
+                setDraftMode({ mode });
                 return;
               }
 
               if (mode === "variable") {
-                onSetMode(surfaceIndex, {
+                setDraftMode({
                   mode,
                   min: String(thicknessValue),
                   max: String(thicknessValue),
@@ -77,7 +108,7 @@ export function ThicknessModeModal({
                 return;
               }
 
-              onSetMode(surfaceIndex, {
+              setDraftMode({
                 mode,
                 sourceSurfaceIndex: "1",
                 scale: "1",
@@ -87,18 +118,18 @@ export function ThicknessModeModal({
           />
         </div>
 
-        {selectedMode.mode === "variable" ? (
+        {draftMode.mode === "variable" ? (
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label htmlFor="thickness-min">Min.</Label>
               <Input
                 id="thickness-min"
                 aria-label="Thickness Min."
-                value={selectedMode.min}
-                onChange={(event) => onSetMode(surfaceIndex, {
+                value={draftMode.min}
+                onChange={(event) => setDraftMode({
                   mode: "variable",
                   min: event.target.value,
-                  max: selectedMode.max,
+                  max: draftMode.max,
                 })}
               />
             </div>
@@ -107,10 +138,10 @@ export function ThicknessModeModal({
               <Input
                 id="thickness-max"
                 aria-label="Thickness Max."
-                value={selectedMode.max}
-                onChange={(event) => onSetMode(surfaceIndex, {
+                value={draftMode.max}
+                onChange={(event) => setDraftMode({
                   mode: "variable",
-                  min: selectedMode.min,
+                  min: draftMode.min,
                   max: event.target.value,
                 })}
               />
@@ -118,19 +149,19 @@ export function ThicknessModeModal({
           </div>
         ) : null}
 
-        {selectedMode.mode === "pickup" ? (
+        {draftMode.mode === "pickup" ? (
           <div className="grid gap-4">
             <div>
               <Label htmlFor="pickup-thickness-source">Source surface index</Label>
               <Input
                 id="pickup-thickness-source"
                 aria-label="Thickness source surface index"
-                value={selectedMode.sourceSurfaceIndex}
-                onChange={(event) => onSetMode(surfaceIndex, {
+                value={draftMode.sourceSurfaceIndex}
+                onChange={(event) => setDraftMode({
                   mode: "pickup",
                   sourceSurfaceIndex: event.target.value,
-                  scale: selectedMode.scale,
-                  offset: selectedMode.offset,
+                  scale: draftMode.scale,
+                  offset: draftMode.offset,
                 })}
               />
             </div>
@@ -139,12 +170,12 @@ export function ThicknessModeModal({
               <Input
                 id="pickup-thickness-scale"
                 aria-label="Thickness scale"
-                value={selectedMode.scale}
-                onChange={(event) => onSetMode(surfaceIndex, {
+                value={draftMode.scale}
+                onChange={(event) => setDraftMode({
                   mode: "pickup",
-                  sourceSurfaceIndex: selectedMode.sourceSurfaceIndex,
+                  sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
                   scale: event.target.value,
-                  offset: selectedMode.offset,
+                  offset: draftMode.offset,
                 })}
               />
             </div>
@@ -153,11 +184,11 @@ export function ThicknessModeModal({
               <Input
                 id="pickup-thickness-offset"
                 aria-label="Thickness offset"
-                value={selectedMode.offset}
-                onChange={(event) => onSetMode(surfaceIndex, {
+                value={draftMode.offset}
+                onChange={(event) => setDraftMode({
                   mode: "pickup",
-                  sourceSurfaceIndex: selectedMode.sourceSurfaceIndex,
-                  scale: selectedMode.scale,
+                  sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
+                  scale: draftMode.scale,
                   offset: event.target.value,
                 })}
               />
@@ -166,7 +197,13 @@ export function ThicknessModeModal({
         ) : null}
 
         <div className="flex justify-end">
-          <Button variant="primary" onClick={onClose}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              onSetMode(surfaceIndex, draftMode);
+              onClose();
+            }}
+          >
             Done
           </Button>
         </div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
@@ -28,7 +28,7 @@ const model: OpticalModel = {
 };
 
 describe("OptimizationVariableModals", () => {
-  it("renders the radius modal and updates variable and pickup fields", async () => {
+  it("keeps radius changes local until Done is pressed", async () => {
     const user = userEvent.setup();
     const onSetMode = jest.fn();
     const onClose = jest.fn();
@@ -66,23 +66,34 @@ describe("OptimizationVariableModals", () => {
     const inputs = screen.getAllByRole("textbox");
     await user.clear(inputs[0]);
     await user.type(inputs[0], "41");
-    expect(onSetMode).toHaveBeenLastCalledWith(1, { mode: "variable", min: "41", max: "60" });
+    expect(screen.getByDisplayValue("41")).toBeInTheDocument();
+    expect(onSetMode).not.toHaveBeenCalled();
 
     await user.selectOptions(screen.getByRole("combobox", { name: "Radius mode" }), "pickup");
+    expect(screen.getByDisplayValue("pickup")).toBeInTheDocument();
+    expect(onSetMode).not.toHaveBeenCalled();
+
+    const pickupInputs = screen.getAllByRole("textbox");
+    await user.clear(pickupInputs[1]);
+    await user.type(pickupInputs[1], "2");
+    expect(screen.getByDisplayValue("2")).toBeInTheDocument();
+    expect(onSetMode).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    expect(onSetMode).toHaveBeenCalledTimes(1);
     expect(onSetMode).toHaveBeenLastCalledWith(1, {
       mode: "pickup",
       sourceSurfaceIndex: "1",
-      scale: "1",
+      scale: "2",
       offset: "0",
     });
-
-    await user.click(screen.getByRole("button", { name: "Done" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("renders the thickness modal and updates pickup fields", async () => {
+  it("keeps thickness changes local until Done is pressed", async () => {
     const user = userEvent.setup();
     const onSetMode = jest.fn();
+    const onClose = jest.fn();
 
     function ThicknessModalHarness() {
       const [mode, setMode] = React.useState<RadiusMode>({
@@ -105,7 +116,7 @@ describe("OptimizationVariableModals", () => {
           surfaceIndex={1}
           selectedMode={mode}
           onSetMode={handleSetMode}
-          onClose={jest.fn()}
+          onClose={onClose}
         />
       );
     }
@@ -117,11 +128,42 @@ describe("OptimizationVariableModals", () => {
     const inputs = screen.getAllByRole("textbox");
     await user.clear(inputs[1]);
     await user.type(inputs[1], "2");
+    expect(screen.getByDisplayValue("2")).toBeInTheDocument();
+    expect(onSetMode).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+    expect(onSetMode).toHaveBeenCalledTimes(1);
     expect(onSetMode).toHaveBeenLastCalledWith(1, {
       mode: "pickup",
       sourceSurfaceIndex: "1",
       scale: "2",
       offset: "0",
     });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("discards radius draft changes when the modal is closed without Done", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+    const onClose = jest.fn();
+
+    render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        onSetMode={onSetMode}
+        onClose={onClose}
+      />,
+    );
+
+    await user.clear(screen.getByRole("textbox", { name: "Min." }));
+    await user.type(screen.getByRole("textbox", { name: "Min." }), "41");
+
+    fireEvent.click(screen.getByTestId("modal-backdrop"));
+
+    expect(onSetMode).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
