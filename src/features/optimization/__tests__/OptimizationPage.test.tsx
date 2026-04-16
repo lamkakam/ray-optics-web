@@ -822,11 +822,14 @@ describe("OptimizationPage", () => {
     const chartInstance = (echarts.init as jest.Mock).mock.results.at(-1)?.value;
     expect(chartInstance.setOption).toHaveBeenCalledWith(
       expect.objectContaining({
+        yAxis: expect.objectContaining({
+          type: "log",
+        }),
         series: [
           expect.objectContaining({
             data: [
-              [0, 2],
-              [1, 1],
+              [0, 100],
+              [1, 10],
             ],
           }),
         ],

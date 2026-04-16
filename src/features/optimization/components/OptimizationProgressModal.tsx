@@ -47,8 +47,8 @@ function buildOptimizationProgressOption(
       axisLabel: { color: textColor },
     },
     yAxis: {
-      type: "value",
-      name: "log10(Total merit function value)",
+      type: "log",
+      name: "Total merit function value",
       nameLocation: "middle",
       nameGap: 50,
       nameTextStyle: { color: textColor },
@@ -59,7 +59,7 @@ function buildOptimizationProgressOption(
         type: "line",
         smooth: false,
         showSymbol: progress.length <= 1,
-        data: progress.map((entry) => [entry.iteration, entry.log10_merit_function_value]),
+        data: progress.map((entry) => [entry.iteration, entry.merit_function_value]),
         lineStyle: {
           width: 2,
           color: "#2563eb",

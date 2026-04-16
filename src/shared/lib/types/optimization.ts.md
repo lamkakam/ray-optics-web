@@ -23,4 +23,4 @@ Shared TypeScript types for the optimization UI and the Pyodide worker boundary.
 - The current frontend emits radius variables and radius pickups only.
 - `OptimizationReport` preserves the Python snake_case keys unchanged so the worker can parse the JSON directly.
 - `OptimizationReport.optimizer` may include solver metadata such as `nfev`, `njev`, `cost`, and `optimality` after a full optimization run.
-- `OptimizationReport.optimization_progress` is always a chronological list of merit-history samples; each entry exposes the raw `merit_function_value` plus the precomputed `log10_merit_function_value` used by the progress chart.
+- `OptimizationReport.optimization_progress` is always a chronological list of merit-history samples; each entry exposes the raw `merit_function_value` used by the progress chart plus the precomputed `log10_merit_function_value` for consumers that need a transformed value.
