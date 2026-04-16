@@ -43,7 +43,7 @@ export function OptimizationWeightsGrid({
   ], [onUpdateWeight]);
 
   return (
-    <div data-testid="optimization-weights-grid" className="overflow-x-auto p-4">
+    <div data-testid="optimization-weights-grid" className="overflow-x-auto">
       <AgGridProvider modules={[AllCommunityModule]}>
         <AgGridReact theme={gridTheme} rowData={[...rows]} columnDefs={weightColumns} domLayout="autoHeight" />
       </AgGridProvider>

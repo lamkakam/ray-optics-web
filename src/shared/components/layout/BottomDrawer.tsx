@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import clsx from "clsx";
 import { Tabs, TabItem } from "@/shared/components/primitives/Tabs";
 
 export type { TabItem };
@@ -8,6 +9,7 @@ export type { TabItem };
 interface BottomDrawerProps {
   readonly tabs: readonly TabItem[];
   readonly draggable?: boolean;
+  readonly panelClassName?: string;
   readonly activeTabId?: string;
   readonly onTabChange?: (tabId: string) => void;
   readonly initialHeight?: number;
@@ -29,6 +31,7 @@ function isCollapsedHeight(height: number): boolean {
 export function BottomDrawer({
   tabs,
   draggable = true,
+  panelClassName,
   activeTabId,
   onTabChange,
   initialHeight,
@@ -115,7 +118,7 @@ export function BottomDrawer({
       <div className="flex shrink-0 flex-col border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
         <Tabs
           tabs={tabs}
-          panelClassName="p-3"
+          panelClassName={clsx("p-3", panelClassName)}
           activeTabId={activeTabId}
           onTabChange={onTabChange}
         />
@@ -153,7 +156,7 @@ export function BottomDrawer({
           </button>
         }
         showPanel={!collapsed}
-        panelClassName="flex-1 overflow-auto p-3"
+        panelClassName={clsx("flex-1 overflow-auto p-3", panelClassName)}
         activeTabId={activeTabId}
         onTabChange={onTabChange}
       />

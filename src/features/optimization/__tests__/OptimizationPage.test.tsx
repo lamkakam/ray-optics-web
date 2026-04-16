@@ -185,18 +185,29 @@ describe("OptimizationPage", () => {
   });
 
   it("renders the optimization tabs inside a draggable bottom drawer on large screens", () => {
-    renderOptimizationPage(makeProxy());
+    const { container } = renderOptimizationPage(makeProxy());
+    const pageShell = container.firstElementChild;
 
+    expect(pageShell).not.toHaveClass("p-4");
+    expect(screen.getByTestId("optimization-shared-content-wrapper")).toHaveClass("p-4", "pb-0");
+    expect(screen.getByRole("tabpanel")).toHaveClass("p-0");
     expect(screen.getByRole("separator", { name: "Resize drawer" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Toggle drawer" })).toBeInTheDocument();
-    expect(screen.getByTestId("optimization-bottom-drawer-wrapper")).toHaveClass("mt-auto");
+    expect(screen.getByTestId("optimization-bottom-drawer-wrapper")).toHaveClass("mt-auto", "pb-4");
+    expect(screen.getByTestId("optimization-bottom-drawer-wrapper")).not.toHaveClass("px-4");
   });
 
   it("renders the optimization tabs inside a non-draggable bottom drawer on small screens", () => {
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
 
-    renderOptimizationPage(makeProxy());
+    const { container } = renderOptimizationPage(makeProxy());
+    const pageShell = container.firstElementChild;
 
+    expect(pageShell).not.toHaveClass("p-4");
+    expect(screen.getByTestId("optimization-shared-content-wrapper")).toHaveClass("p-4", "pb-0");
+    expect(screen.getByRole("tabpanel")).toHaveClass("p-0");
+    expect(screen.getByTestId("optimization-bottom-drawer-wrapper")).toHaveClass("pb-4");
+    expect(screen.getByTestId("optimization-bottom-drawer-wrapper")).not.toHaveClass("px-4");
     expect(screen.queryByRole("separator", { name: "Resize drawer" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Toggle drawer" })).not.toBeInTheDocument();
   });
@@ -237,20 +248,26 @@ describe("OptimizationPage", () => {
     renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
 
+    expect(screen.getByTestId("optimization-algorithm-tab")).not.toHaveClass("p-4");
+
     await user.click(screen.getByRole("tab", { name: "Fields" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("p-4");
     expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("overflow-y-auto");
 
     await user.click(screen.getByRole("tab", { name: "Wavelengths" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("p-4");
     expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("overflow-y-auto");
 
     await user.click(screen.getByRole("tab", { name: "Lens Prescription" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("p-4");
     expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("overflow-y-auto");
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("p-4");
     expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("overflow-y-auto");
   });
 

@@ -63,6 +63,19 @@ describe("BottomDrawer", () => {
     expect(screen.getByText("Specs content")).toBeInTheDocument();
   });
 
+  it("applies a custom panel class to the tab panel", () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
+        ]}
+        panelClassName="p-0"
+      />
+    );
+
+    expect(screen.getByRole("tabpanel")).toHaveClass("p-0");
+  });
+
   it("switches tab content when another tab is clicked", async () => {
     render(
       <BottomDrawer
@@ -374,6 +387,11 @@ describe("BottomDrawer with draggable=false", () => {
   it("shows the first tab content without needing to expand", () => {
     render(<BottomDrawer tabs={tabs} draggable={false} />);
     expect(screen.getByText("Specs content")).toBeInTheDocument();
+  });
+
+  it("applies a custom panel class in non-draggable mode", () => {
+    render(<BottomDrawer tabs={tabs} draggable={false} panelClassName="p-0" />);
+    expect(screen.getByRole("tabpanel")).toHaveClass("p-0");
   });
 
   it("switches tab content when another tab is clicked", async () => {

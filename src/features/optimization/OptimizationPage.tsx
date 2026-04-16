@@ -349,7 +349,7 @@ export function OptimizationPage({
   ];
 
   const sharedContent = (
-    <>
+    <div data-testid="optimization-shared-content-wrapper" className="p-4 pb-0">
       <OptimizationProgressModal
         isOpen={optimizationProgressModalOpen}
         isOptimizing={isOptimizing}
@@ -412,17 +412,18 @@ export function OptimizationPage({
         onCloseDecenterModal={() => setDecenterModalRow(undefined)}
         onCloseDiffractionGratingModal={() => setDiffractionGratingModalRow(undefined)}
       />
-    </>
+    </div>
   );
 
   if (isLG) {
     return (
-      <div className="relative flex flex-1 min-h-0 flex-col overflow-hidden p-4">
+      <div className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
         {sharedContent}
-        <div data-testid="optimization-bottom-drawer-wrapper" className="mt-auto">
+        <div data-testid="optimization-bottom-drawer-wrapper" className="mt-auto pb-4">
           <BottomDrawer
             tabs={tabs}
             draggable={true}
+            panelClassName="p-0"
             activeTabId={activeTabId}
             onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
           />
@@ -432,14 +433,17 @@ export function OptimizationPage({
   }
 
   return (
-    <div className="relative flex flex-1 min-h-0 flex-col overflow-y-auto p-4">
+    <div className="relative flex flex-1 min-h-0 flex-col overflow-y-auto">
       {sharedContent}
-      <BottomDrawer
-        tabs={tabs}
-        draggable={false}
-        activeTabId={activeTabId}
-        onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
-      />
+      <div data-testid="optimization-bottom-drawer-wrapper" className="pb-4">
+        <BottomDrawer
+          tabs={tabs}
+          draggable={false}
+          panelClassName="p-0"
+          activeTabId={activeTabId}
+          onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
+        />
+      </div>
     </div>
   );
 }

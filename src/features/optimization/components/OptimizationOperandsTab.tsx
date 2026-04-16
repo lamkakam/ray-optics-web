@@ -85,7 +85,7 @@ export function OptimizationOperandsTab({
   ], [onDeleteOperand, onUpdateOperand]);
 
   return (
-    <div data-testid="optimization-operands-tab" className="space-y-4 overflow-x-auto p-4">
+    <div data-testid="optimization-operands-tab" className="space-y-4 overflow-x-auto">
       <Button variant="secondary" size="sm" aria-label="Add operand" onClick={onAddOperand}>
         Add Operand
       </Button>

@@ -24,7 +24,7 @@ export function OptimizationAlgorithmTab({
   onChangeOptimizer,
 }: OptimizationAlgorithmTabProps) {
   return (
-    <div className="grid gap-4 p-4 md:grid-cols-2">
+    <div data-testid="optimization-algorithm-tab" className="grid gap-4 md:grid-cols-2">
       <div>
         <Label htmlFor="optimizer-kind">Optimizer Kind</Label>
         <Select

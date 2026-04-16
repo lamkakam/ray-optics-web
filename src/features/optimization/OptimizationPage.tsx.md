@@ -32,6 +32,8 @@ interface OptimizationPageProps {
 - Matches the Lens Editor drawer pattern responsively:
   - on `screenLG`, renders a draggable `BottomDrawer` anchored to the bottom of the page with `mt-auto` and keeps the page shell `overflow-hidden` so the drawer panel owns tab-content scrolling
   - on smaller screens, renders the same `BottomDrawer` in non-draggable mode while the page continues to scroll vertically
+  - the page shell itself does not own outer padding; instead, a descendant wrapper pads the shared action/evaluation/modal section and a separate drawer wrapper keeps only the drawer bottom spacing so the drawer still spans edge to edge
+  - the optimization page passes `panelClassName="p-0"` to `BottomDrawer` so each tab keeps a single `p-4` content gutter that matches the rest of the page layout instead of stacking drawer padding with per-tab padding
 - The tabs delegate their view rendering to feature components:
   - `OptimizationAlgorithmTab`
   - `OptimizationWeightsGrid` for `Fields` and `Wavelengths`
