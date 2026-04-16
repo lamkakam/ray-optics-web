@@ -43,6 +43,7 @@ interface OptimizationPageProps {
   - `OptimizationOperandsTab`
 - The field and wavelength grid components render AG Grid tables where only the `Weight` column is editable.
 - `OptimizationLensPrescriptionGrid` renders a read-only prescription view with:
+  - an `Index` column before `Surface` that is blank for `Object` and `Image` and shows `1..N` for real surface rows
   - a `Var.` column after `Radius of Curvature` for radius variable/pickup configuration
   - a second `Var.` column after `Thickness` for thickness variable/pickup configuration
   - read-only `Medium`, `Semi-diam.`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` columns

@@ -438,6 +438,21 @@ describe("OptimizationPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Lens Prescription" }));
 
+    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
+    expect(Array.from(headers, (header) => header.textContent)).toEqual([
+      "Index",
+      "Surface",
+      "Radius of Curvature",
+      "Var.",
+      "Thickness",
+      "Var.",
+      "Medium",
+      "Semi-diam.",
+      "Asph.",
+      "Tilt & Decenter",
+      "Diffraction Grating",
+    ]);
+
     expect(screen.getAllByText("Var.")).toHaveLength(2);
     expect(screen.getByText("Medium")).toBeInTheDocument();
     expect(screen.getByText("Semi-diam.")).toBeInTheDocument();

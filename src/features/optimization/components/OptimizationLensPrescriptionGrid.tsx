@@ -113,6 +113,16 @@ export function OptimizationLensPrescriptionGrid({
 
   const lensColumns = useMemo<ColDef<RadiusRow>[]>(() => [
     {
+      headerName: "Index",
+      valueGetter: (params) => {
+        if (params.data?.row.kind !== "surface") {
+          return undefined;
+        }
+
+        return params.data.radiusSurfaceIndex;
+      },
+    },
+    {
       headerName: "Surface",
       valueGetter: (params) => {
         if (params.data === undefined) {

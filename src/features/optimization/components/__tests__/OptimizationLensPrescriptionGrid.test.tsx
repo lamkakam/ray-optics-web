@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { GridRow } from "@/shared/lib/types/gridTypes";
+import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/types/gridTypes";
 import type { RadiusMode } from "@/features/optimization/stores/optimizationStore";
 import { OptimizationLensPrescriptionGrid } from "@/features/optimization/components/OptimizationLensPrescriptionGrid";
 
@@ -18,6 +18,20 @@ const surfaceRow: GridRow = {
   medium: "BK7",
   manufacturer: "Schott",
   semiDiameter: 10,
+};
+
+const objectRow: GridRow = {
+  id: OBJECT_ROW_ID,
+  kind: "object",
+  objectDistance: 1e10,
+  medium: "air",
+  manufacturer: "",
+};
+
+const imageRow: GridRow = {
+  id: IMAGE_ROW_ID,
+  kind: "image",
+  curvatureRadius: 0,
 };
 
 describe("OptimizationLensPrescriptionGrid", () => {
@@ -47,6 +61,21 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("overflow-y-auto");
 
+    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
+    expect(Array.from(headers, (header) => header.textContent)).toEqual([
+      "Index",
+      "Surface",
+      "Radius of Curvature",
+      "Var.",
+      "Thickness",
+      "Var.",
+      "Medium",
+      "Semi-diam.",
+      "Asph.",
+      "Tilt & Decenter",
+      "Diffraction Grating",
+    ]);
+
     expect(screen.getAllByText("Var.")).toHaveLength(2);
     expect(screen.getByText("Medium")).toBeInTheDocument();
     expect(screen.getByText("Semi-diam.")).toBeInTheDocument();
@@ -71,6 +100,73 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit diffraction grating" }));
     expect(onOpenDiffractionGratingModal).toHaveBeenCalledWith(surfaceRow);
+  });
+
+  it("shows surface indices only for real surface rows", () => {
+    const radiusModes: RadiusMode[] = [
+      { surfaceIndex: 1, mode: "constant" },
+      { surfaceIndex: 2, mode: "constant" },
+    ];
+    const thicknessModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[
+          { id: "optimization-row-0", radiusSurfaceIndex: undefined, thicknessSurfaceIndex: undefined, row: objectRow },
+          { id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow },
+          { id: "optimization-row-2", radiusSurfaceIndex: 2, thicknessSurfaceIndex: undefined, row: imageRow },
+        ]}
+        radiusModes={radiusModes}
+        thicknessModes={thicknessModes}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    expect(Array.from(rows[0].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
+      "",
+      "Object",
+      "",
+      "",
+      "10000000000",
+      "",
+      "air",
+      "",
+      "",
+      "",
+      "",
+    ]);
+    expect(Array.from(rows[1].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
+      "1",
+      "Default",
+      "50",
+      "Set",
+      "5",
+      "Set",
+      "BK7",
+      "10",
+      "—",
+      "—",
+      "—",
+    ]);
+    expect(Array.from(rows[2].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
+      "",
+      "Image",
+      "0",
+      "Set",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "—",
+      "",
+    ]);
   });
 
   it("uses view-oriented tooltip copy for optimization-only inspection cells", async () => {
