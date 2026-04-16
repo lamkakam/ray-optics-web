@@ -1,17 +1,22 @@
 "use client";
 
 import React from "react";
+import clsx from "clsx";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Table } from "@/shared/components/primitives/Table";
 
 interface OptimizationEvaluationPanelProps {
   readonly rows: ReadonlyArray<readonly [string, string, string, string]>;
   readonly isEvaluating: boolean;
+  readonly maxBodyHeight?: number;
+  readonly allowBodyScroll?: boolean;
 }
 
 export function OptimizationEvaluationPanel({
   rows,
   isEvaluating,
+  maxBodyHeight,
+  allowBodyScroll = true,
 }: OptimizationEvaluationPanelProps) {
   return (
     <div className="mb-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
@@ -26,7 +31,11 @@ export function OptimizationEvaluationPanel({
       {rows.length > 0 ? (
         <div
           data-testid="optimization-evaluation-scroll"
-          className="max-h-64 overflow-x-auto overflow-y-auto px-4 py-3"
+          className={clsx(
+            "overflow-x-auto px-4 py-3",
+            allowBodyScroll ? "overflow-y-auto" : "overflow-y-visible",
+          )}
+          style={allowBodyScroll && maxBodyHeight !== undefined ? { maxHeight: `${maxBodyHeight}px` } : undefined}
         >
           <Table
             headers={["Operand Type", "Target", "Weight", "Value"]}

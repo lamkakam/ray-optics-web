@@ -14,6 +14,7 @@ interface BottomDrawerProps {
   readonly onTabChange?: (tabId: string) => void;
   readonly initialHeight?: number;
   readonly onHeightCommit?: (height: number) => void;
+  readonly onHeightChange?: (height: number) => void;
 }
 
 const SNAP_COLLAPSED = 48;
@@ -36,6 +37,7 @@ export function BottomDrawer({
   onTabChange,
   initialHeight,
   onHeightCommit,
+  onHeightChange,
 }: BottomDrawerProps) {
   const resolvedInitialHeight = initialHeight ?? 300;
   const resolvedInitialCollapsed = isCollapsedHeight(resolvedInitialHeight);
@@ -88,7 +90,8 @@ export function BottomDrawer({
     collapsedRef.current = nextCollapsed;
     setHeight(roundedHeight);
     setCollapsed(nextCollapsed);
-  }, []);
+    onHeightChange?.(nextCollapsed ? SNAP_COLLAPSED : roundedHeight);
+  }, [onHeightChange]);
 
   const handlePointerUp = useCallback(() => {
     if (!dragging.current) return;
@@ -103,15 +106,17 @@ export function BottomDrawer({
       collapsedRef.current = false;
       setHeight(defaultHeight);
       setCollapsed(false);
+      onHeightChange?.(defaultHeight);
       onHeightCommit?.(defaultHeight);
     } else {
       heightRef.current = SNAP_COLLAPSED;
       collapsedRef.current = true;
       setHeight(SNAP_COLLAPSED);
       setCollapsed(true);
+      onHeightChange?.(SNAP_COLLAPSED);
       onHeightCommit?.(SNAP_COLLAPSED);
     }
-  }, [collapsed, onHeightCommit]);
+  }, [collapsed, onHeightChange, onHeightCommit]);
 
   if (!draggable) {
     return (

@@ -1,5 +1,5 @@
 import React from "react";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import * as echarts from "echarts/core";
@@ -31,6 +31,10 @@ jest.mock("echarts/core", () => ({
     resize: jest.fn(),
   })),
 }));
+
+let resizeObserverCallback: ResizeObserverCallback | undefined;
+let mockResizeObserverObserve: jest.Mock;
+let mockResizeObserverDisconnect: jest.Mock;
 
 const baseModel: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -123,6 +127,13 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
   } as unknown as PyodideWorkerAPI;
 }
 
+function mockPointerCapture(element: HTMLElement) {
+  Object.defineProperty(element, "setPointerCapture", {
+    configurable: true,
+    value: jest.fn(),
+  });
+}
+
 function renderOptimizationPage(proxy: PyodideWorkerAPI, onError = jest.fn()) {
   const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
@@ -170,6 +181,28 @@ function renderOptimizationPage(proxy: PyodideWorkerAPI, onError = jest.fn()) {
 describe("OptimizationPage", () => {
   beforeEach(() => {
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
+    mockResizeObserverObserve = jest.fn();
+    mockResizeObserverDisconnect = jest.fn();
+    resizeObserverCallback = undefined;
+    Object.defineProperty(window, "PointerEvent", {
+      configurable: true,
+      writable: true,
+      value: MouseEvent,
+    });
+    class MockResizeObserver implements ResizeObserver {
+      observe = mockResizeObserverObserve;
+      unobserve = jest.fn();
+      disconnect = mockResizeObserverDisconnect;
+
+      constructor(callback: ResizeObserverCallback) {
+        resizeObserverCallback = callback;
+      }
+    }
+    Object.defineProperty(window, "ResizeObserver", {
+      configurable: true,
+      writable: true,
+      value: MockResizeObserver,
+    });
   });
 
   it("renders the five requested tabs and action buttons", () => {
@@ -232,7 +265,7 @@ describe("OptimizationPage", () => {
 
     await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
 
-    expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveClass("max-h-64", "overflow-y-auto");
+    expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveClass("overflow-y-auto");
     const headers = screen.getAllByRole("columnheader");
     expect(headers.slice(0, 4).map((header) => header.textContent)).toEqual([
       "Operand Type",
@@ -243,6 +276,69 @@ describe("OptimizationPage", () => {
     const evaluationScroll = screen.getByTestId("optimization-evaluation-scroll");
     expect(within(evaluationScroll).getByText("Paraxial focal length")).toBeInTheDocument();
     expect(within(evaluationScroll).getByText("98.5")).toBeInTheDocument();
+  });
+
+  it("on large screens, grows and shrinks the evaluation table when the drawer is resized", async () => {
+    const proxy = makeProxy();
+    const { container } = renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    const pageShell = container.firstElementChild as HTMLElement;
+    Object.defineProperty(pageShell, "getBoundingClientRect", {
+      configurable: true,
+      value: () => ({
+        width: 1200,
+        height: 900,
+        top: 0,
+        left: 0,
+        bottom: 900,
+        right: 1200,
+        x: 0,
+        y: 0,
+        toJSON: () => undefined,
+      }),
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+    await waitFor(() => expect(mockResizeObserverObserve).toHaveBeenCalled());
+
+    act(() => {
+      resizeObserverCallback?.(
+        [{
+          target: pageShell,
+          contentRect: {
+            width: 1200,
+            height: 900,
+            top: 0,
+            left: 0,
+            bottom: 900,
+            right: 1200,
+            x: 0,
+            y: 0,
+            toJSON: () => undefined,
+          } as DOMRectReadOnly,
+        }] as unknown as ResizeObserverEntry[],
+        {} as ResizeObserver,
+      );
+    });
+
+    const evaluationScroll = screen.getByTestId("optimization-evaluation-scroll");
+    expect(evaluationScroll).toHaveStyle({ maxHeight: "260px" });
+
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    mockPointerCapture(handle);
+
+    fireEvent.pointerDown(handle, { clientY: 700, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientY: 820, pointerId: 1 });
+    expect(evaluationScroll).toHaveStyle({ maxHeight: "380px" });
+
+    fireEvent.pointerMove(handle, { clientY: 560, pointerId: 1 });
+    expect(evaluationScroll).toHaveStyle({ maxHeight: "120px" });
+
+    fireEvent.pointerUp(handle, { pointerId: 1 });
   });
 
   it("shows radius and thickness variable columns plus the read-only modal-backed columns in Lens Prescription", async () => {
@@ -743,5 +839,22 @@ describe("OptimizationPage", () => {
       expect(optimizationStore.getState().fieldWeights).toEqual([1, 0, 0]);
       expect(optimizationStore.getState().wavelengthWeights).toEqual([1, 2, 1]);
     });
+  });
+
+  it("on small screens, shows the full evaluation table without an internal vertical scrollbar", async () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+    const proxy = makeProxy();
+    const user = userEvent.setup();
+
+    renderOptimizationPage(proxy);
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+
+    const evaluationScroll = screen.getByTestId("optimization-evaluation-scroll");
+    expect(evaluationScroll).not.toHaveClass("overflow-y-auto");
+    expect(evaluationScroll.style.maxHeight).toBe("");
   });
 });

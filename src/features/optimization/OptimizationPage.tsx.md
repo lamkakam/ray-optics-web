@@ -22,7 +22,7 @@ interface OptimizationPageProps {
 - Renders the extracted `OptimizationActionBar` above the tabs with:
   - `Optimize`
   - `Apply to Editor`
-- Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual with `Operand Type`, `Target`, `Weight`, and `Value`, and sits inside a vertically scrollable container when the content grows tall.
+- Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual with `Operand Type`, `Target`, `Weight`, and `Value`, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
 - Uses controlled `BottomDrawer` tabs with five sections:
   - `Algorithm`
   - `Fields`
@@ -31,7 +31,9 @@ interface OptimizationPageProps {
   - `Operands`
 - Matches the Lens Editor drawer pattern responsively:
   - on `screenLG`, renders a draggable `BottomDrawer` anchored to the bottom of the page with `mt-auto` and keeps the page shell `overflow-hidden` so the drawer panel owns tab-content scrolling
+  - on `screenLG`, observes the page shell height and listens to `BottomDrawer.onHeightChange(...)` so the operand evaluation table grows when the drawer is dragged downward and shrinks when the drawer is dragged upward
   - on smaller screens, renders the same `BottomDrawer` in non-draggable mode while the page continues to scroll vertically
+  - on smaller screens, disables the evaluation panel's internal vertical scrollbar so the page owns the only vertical scroll position
   - the page shell itself does not own outer padding; instead, a descendant wrapper pads the shared action/evaluation/modal section and a separate drawer wrapper keeps only the drawer bottom spacing so the drawer still spans edge to edge
   - the optimization page passes `panelClassName="p-0"` to `BottomDrawer` so each tab keeps a single `p-4` content gutter that matches the rest of the page layout instead of stacking drawer padding with per-tab padding
 - The tabs delegate their view rendering to feature components:
@@ -69,6 +71,7 @@ interface OptimizationPageProps {
 - Mount-time initialization intentionally overwrites any stale persisted optimization weights/operands from a previous visit so the page always starts from the current editor model.
 - Editor-driven optical-model changes propagate into optimization automatically; optimization-only UI state is preserved where the model shape remains compatible.
 - The live evaluation table uses the residual `total_weight` reported by Python, so field/wavelength-expanded operands can appear as multiple rows with their effective weights.
+- Large-screen evaluation height is derived from the observed page-shell height, the current live drawer height, and measured fixed overhead above the table, with a fallback reserve when DOM measurement is not yet available.
 - The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.
 - `OptimizationPage` remains the orchestration boundary: extracted components are view-focused and receive callbacks/state from the page instead of reading stores directly.
 - AG Grid tabs keep `domLayout="autoHeight"` and avoid their own vertical scroll wrappers so the drawer panel is the single vertical scroller on large screens.

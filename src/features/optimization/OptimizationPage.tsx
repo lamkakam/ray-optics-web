@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { proxy as comlinkProxy } from "comlink";
 import { useStore } from "zustand";
 import { BottomDrawer, type TabItem } from "@/shared/components/layout/BottomDrawer";
@@ -36,6 +36,7 @@ interface OptimizationPageProps {
 }
 
 const ZERO_WEIGHT_WARNING_MESSAGE = "At least one effective optimization weight must be non-zero.";
+const LG_EVALUATION_RESERVED_HEIGHT_FALLBACK = 333;
 
 function buildCurrentEditorModel(lensStore: ReturnType<typeof useLensEditorStore>, specsStore: ReturnType<typeof useSpecsConfiguratorStore>) {
   const autoAperture = lensStore.getState().autoAperture;
@@ -51,6 +52,9 @@ export function OptimizationPage({
   onError,
   onApplyToEditor,
 }: OptimizationPageProps) {
+  const defaultLgDrawerHeight = typeof window === "undefined"
+    ? 300
+    : Math.round(window.innerHeight * 0.4);
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
   const lensStore = useLensEditorStore();
@@ -98,8 +102,37 @@ export function OptimizationPage({
   const [optimizationProgress, setOptimizationProgress] = useState<ReadonlyArray<OptimizationProgressEntry>>([]);
   const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] = useState(false);
   const [optimizationRunComplete, setOptimizationRunComplete] = useState(false);
+  const [liveDrawerHeight, setLiveDrawerHeight] = useState(defaultLgDrawerHeight);
+  const [pageShellHeight, setPageShellHeight] = useState(0);
+  const pageShellRef = useRef<HTMLDivElement | null>(null);
+  const sharedContentRef = useRef<HTMLDivElement | null>(null);
+  const evaluationPanelRef = useRef<HTMLDivElement | null>(null);
   const evaluationRequestIdRef = useRef(0);
   const initializedForMountRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (!isLG) {
+      return;
+    }
+
+    const pageShell = pageShellRef.current;
+    if (pageShell === null) {
+      return;
+    }
+
+    const updatePageShellHeight = () => {
+      const nextHeight = Math.round(pageShell.getBoundingClientRect().height);
+      setPageShellHeight(nextHeight);
+    };
+
+    updatePageShellHeight();
+    const resizeObserver = new ResizeObserver(updatePageShellHeight);
+    resizeObserver.observe(pageShell);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isLG]);
 
   useEffect(() => {
     const currentEditorModel = buildCurrentEditorModel(lensStore, specsStore);
@@ -190,6 +223,28 @@ export function OptimizationPage({
     && proxy !== undefined
     && optimizationModel !== undefined
     && hasNonZeroContribution;
+
+  const evaluationReservedHeight = !isLG
+    ? undefined
+    : (() => {
+      const sharedContentHeight = sharedContentRef.current?.getBoundingClientRect().height ?? 0;
+      const evaluationPanelHeight = evaluationPanelRef.current?.getBoundingClientRect().height ?? 0;
+      const measuredReservedHeight = sharedContentHeight > 0 && evaluationPanelHeight > 0
+        ? Math.round(sharedContentHeight - evaluationPanelHeight)
+        : 0;
+
+      return measuredReservedHeight > 0
+        ? measuredReservedHeight
+        : LG_EVALUATION_RESERVED_HEIGHT_FALLBACK;
+    })();
+
+  const evaluationMaxBodyHeight = useMemo(() => {
+    if (!isLG || pageShellHeight <= 0 || evaluationReservedHeight === undefined) {
+      return undefined;
+    }
+
+    return Math.max(120, pageShellHeight - liveDrawerHeight - evaluationReservedHeight);
+  }, [evaluationReservedHeight, isLG, liveDrawerHeight, pageShellHeight]);
 
   useEffect(() => {
     if (!isReady || proxy === undefined || optimizationModel === undefined) {
@@ -369,7 +424,7 @@ export function OptimizationPage({
   ];
 
   const sharedContent = (
-    <div data-testid="optimization-shared-content-wrapper" className="p-4 pb-0">
+    <div ref={sharedContentRef} data-testid="optimization-shared-content-wrapper" className="p-4 pb-0">
       <OptimizationProgressModal
         isOpen={optimizationProgressModalOpen}
         isOptimizing={isOptimizing}
@@ -390,7 +445,14 @@ export function OptimizationPage({
         onApplyToEditor={() => optimizationStore.getState().openApplyConfirm()}
       />
 
-      <OptimizationEvaluationPanel rows={evaluationTableRows} isEvaluating={isEvaluating} />
+      <div ref={evaluationPanelRef}>
+        <OptimizationEvaluationPanel
+          rows={evaluationTableRows}
+          isEvaluating={isEvaluating}
+          maxBodyHeight={evaluationMaxBodyHeight}
+          allowBodyScroll={isLG}
+        />
+      </div>
 
       <RadiusModeModal
         isOpen={radiusModal.open}
@@ -437,7 +499,7 @@ export function OptimizationPage({
 
   if (isLG) {
     return (
-      <div className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
+      <div ref={pageShellRef} className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
         {sharedContent}
         <div data-testid="optimization-bottom-drawer-wrapper" className="mt-auto pb-4">
           <BottomDrawer
@@ -446,6 +508,7 @@ export function OptimizationPage({
             panelClassName="p-0"
             activeTabId={activeTabId}
             onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
+            onHeightChange={setLiveDrawerHeight}
           />
         </div>
       </div>
