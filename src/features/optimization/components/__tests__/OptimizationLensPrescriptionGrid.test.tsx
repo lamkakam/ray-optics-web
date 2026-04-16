@@ -45,6 +45,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
       />,
     );
 
+    expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("overflow-y-auto");
+
     expect(screen.getAllByText("Var.")).toHaveLength(2);
     expect(screen.getByText("Medium")).toBeInTheDocument();
     expect(screen.getByText("Semi-diam.")).toBeInTheDocument();

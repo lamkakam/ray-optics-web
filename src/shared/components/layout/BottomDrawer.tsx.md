@@ -46,6 +46,7 @@ interface BottomDrawerProps {
 - When `draggable = false`, renders a simpler non-resizable bordered container.
 - Tab selection can be either uncontrolled or externally controlled through the forwarded `activeTabId` / `onTabChange` props.
 - `initialHeight` values at or below the collapsed threshold (`48 + 10`) start the drawer in the collapsed state on the first render.
+- The drawer root is `shrink-0` in both draggable and non-draggable modes so flex layouts preserve the committed drawer height instead of compressing the panel internals.
 
 ## Usages
 

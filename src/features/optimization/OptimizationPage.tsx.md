@@ -23,12 +23,15 @@ interface OptimizationPageProps {
   - `Optimize`
   - `Apply to Editor`
 - Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual with `Operand Type`, `Target`, `Weight`, and `Value`, and sits inside a vertically scrollable container when the content grows tall.
-- Uses controlled `Tabs` with five sections:
+- Uses controlled `BottomDrawer` tabs with five sections:
   - `Algorithm`
   - `Fields`
   - `Wavelengths`
   - `Lens Prescription`
   - `Operands`
+- Matches the Lens Editor drawer pattern responsively:
+  - on `screenLG`, renders a draggable `BottomDrawer` anchored to the bottom of the page with `mt-auto` and keeps the page shell `overflow-hidden` so the drawer panel owns tab-content scrolling
+  - on smaller screens, renders the same `BottomDrawer` in non-draggable mode while the page continues to scroll vertically
 - The tabs delegate their view rendering to feature components:
   - `OptimizationAlgorithmTab`
   - `OptimizationWeightsGrid` for `Fields` and `Wavelengths`
@@ -63,3 +66,4 @@ interface OptimizationPageProps {
 - Editor-driven optical-model changes propagate into optimization automatically; optimization-only UI state is preserved where the model shape remains compatible.
 - The live evaluation table uses the residual `total_weight` reported by Python, so field/wavelength-expanded operands can appear as multiple rows with their effective weights.
 - `OptimizationPage` remains the orchestration boundary: extracted components are view-focused and receive callbacks/state from the page instead of reading stores directly.
+- AG Grid tabs keep `domLayout="autoHeight"` and avoid their own vertical scroll wrappers so the drawer panel is the single vertical scroller on large screens.

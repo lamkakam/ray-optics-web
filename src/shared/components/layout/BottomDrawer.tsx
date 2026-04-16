@@ -112,7 +112,7 @@ export function BottomDrawer({
 
   if (!draggable) {
     return (
-      <div className="flex flex-col border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex shrink-0 flex-col border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
         <Tabs
           tabs={tabs}
           panelClassName="p-3"
@@ -125,7 +125,7 @@ export function BottomDrawer({
 
   return (
     <div
-      className="flex flex-col border-t border-gray-200 bg-white will-change-[height] dark:border-gray-700 dark:bg-gray-900"
+      className="flex shrink-0 flex-col border-t border-gray-200 bg-white will-change-[height] dark:border-gray-700 dark:bg-gray-900"
       style={{ height: collapsed ? SNAP_COLLAPSED : height }}
     >
       {/* Drag handle */}

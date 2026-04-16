@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { proxy as comlinkProxy } from "comlink";
 import { useStore } from "zustand";
-import { Tabs, type TabItem } from "@/shared/components/primitives/Tabs";
+import { BottomDrawer, type TabItem } from "@/shared/components/layout/BottomDrawer";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useOptimizationStore } from "@/features/optimization/providers/OptimizationStoreProvider";
@@ -25,6 +25,7 @@ import type { GridRow } from "@/shared/lib/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { OptimizationProgressEntry, OptimizationReport } from "@/shared/lib/types/optimization";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
 interface OptimizationPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -47,6 +48,8 @@ export function OptimizationPage({
   onError,
   onApplyToEditor,
 }: OptimizationPageProps) {
+  const screenSize = useScreenBreakpoint();
+  const isLG = screenSize === "screenLG";
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
   const optimizationStore = useOptimizationStore();
@@ -345,8 +348,8 @@ export function OptimizationPage({
     },
   ];
 
-  return (
-    <div className="relative flex flex-1 flex-col overflow-y-auto p-4">
+  const sharedContent = (
+    <>
       <OptimizationProgressModal
         isOpen={optimizationProgressModalOpen}
         isOptimizing={isOptimizing}
@@ -368,13 +371,6 @@ export function OptimizationPage({
       />
 
       <OptimizationEvaluationPanel rows={evaluationTableRows} isEvaluating={isEvaluating} />
-
-      <Tabs
-        tabs={tabs}
-        activeTabId={activeTabId}
-        onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
-        panelClassName="rounded-b-lg border border-t-0 border-gray-200 dark:border-gray-700"
-      />
 
       <RadiusModeModal
         isOpen={radiusModal.open}
@@ -415,6 +411,34 @@ export function OptimizationPage({
         onCloseAsphericalModal={() => setAsphericalModalRow(undefined)}
         onCloseDecenterModal={() => setDecenterModalRow(undefined)}
         onCloseDiffractionGratingModal={() => setDiffractionGratingModalRow(undefined)}
+      />
+    </>
+  );
+
+  if (isLG) {
+    return (
+      <div className="relative flex flex-1 min-h-0 flex-col overflow-hidden p-4">
+        {sharedContent}
+        <div data-testid="optimization-bottom-drawer-wrapper" className="mt-auto">
+          <BottomDrawer
+            tabs={tabs}
+            draggable={true}
+            activeTabId={activeTabId}
+            onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex flex-1 min-h-0 flex-col overflow-y-auto p-4">
+      {sharedContent}
+      <BottomDrawer
+        tabs={tabs}
+        draggable={false}
+        activeTabId={activeTabId}
+        onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
       />
     </div>
   );

@@ -13,9 +13,14 @@ import { createLensEditorSlice, type LensEditorState } from "@/features/lens-edi
 import { createOptimizationSlice, type OptimizationState } from "@/features/optimization/stores/optimizationStore";
 import { surfacesToGridRows } from "@/shared/lib/utils/gridTransform";
 import { GlassCatalogContext, type GlassCatalogContextValue } from "@/shared/components/providers/GlassCatalogProvider";
+import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
+}));
+
+jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
+  useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
 }));
 
 jest.mock("echarts/core", () => ({
@@ -163,6 +168,10 @@ function renderOptimizationPage(proxy: PyodideWorkerAPI, onError = jest.fn()) {
 }
 
 describe("OptimizationPage", () => {
+  beforeEach(() => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
+  });
+
   it("renders the five requested tabs and action buttons", () => {
     renderOptimizationPage(makeProxy());
 
@@ -173,6 +182,23 @@ describe("OptimizationPage", () => {
     expect(screen.getByRole("tab", { name: "Wavelengths" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Lens Prescription" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Operands" })).toBeInTheDocument();
+  });
+
+  it("renders the optimization tabs inside a draggable bottom drawer on large screens", () => {
+    renderOptimizationPage(makeProxy());
+
+    expect(screen.getByRole("separator", { name: "Resize drawer" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Toggle drawer" })).toBeInTheDocument();
+    expect(screen.getByTestId("optimization-bottom-drawer-wrapper")).toHaveClass("mt-auto");
+  });
+
+  it("renders the optimization tabs inside a non-draggable bottom drawer on small screens", () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+
+    renderOptimizationPage(makeProxy());
+
+    expect(screen.queryByRole("separator", { name: "Resize drawer" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Toggle drawer" })).not.toBeInTheDocument();
   });
 
   it("renders the live evaluation table between the action buttons and tabs", async () => {
@@ -207,21 +233,25 @@ describe("OptimizationPage", () => {
     expect(screen.getByText("Diffraction Grating")).toBeInTheDocument();
   });
 
-  it("uses autoHeight ag-grid layout for the tabular tabs", async () => {
+  it("uses autoHeight ag-grid layout for the tabular tabs without extra vertical scroll wrappers", async () => {
     renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("tab", { name: "Fields" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("overflow-y-auto");
 
     await user.click(screen.getByRole("tab", { name: "Wavelengths" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("overflow-y-auto");
 
     await user.click(screen.getByRole("tab", { name: "Lens Prescription" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("overflow-y-auto");
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("overflow-y-auto");
   });
 
   it("exposes OPD Difference in the operand kind selector and resets the target when selected", async () => {

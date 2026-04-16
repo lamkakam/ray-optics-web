@@ -23,6 +23,8 @@ describe("OptimizationOperandsTab", () => {
       />,
     );
 
+    expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("overflow-y-auto");
+
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
     expect(Array.from(headers, (header) => header.textContent)).toEqual([
       "Operand Kind",

@@ -244,7 +244,7 @@ export function OptimizationLensPrescriptionGrid({
   ]);
 
   return (
-    <div className="p-4">
+    <div data-testid="optimization-lens-prescription-grid" className="overflow-x-auto p-4">
       <AgGridProvider modules={[AllCommunityModule]}>
         <AgGridReact theme={gridTheme} rowData={[...rows]} columnDefs={lensColumns} domLayout="autoHeight" />
       </AgGridProvider>

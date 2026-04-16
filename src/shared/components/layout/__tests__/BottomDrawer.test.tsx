@@ -148,6 +148,23 @@ describe("BottomDrawer", () => {
     });
   });
 
+  it("does not flex-shrink while resized", async () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+      />
+    );
+
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+    expect(drawer).toHaveClass("shrink-0");
+  });
+
   it("uses the provided initial height on first render", () => {
     render(
       <BottomDrawer
