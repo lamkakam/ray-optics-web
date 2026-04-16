@@ -15,7 +15,7 @@ describe("OptimizationEvaluationPanel", () => {
     render(
       <OptimizationEvaluationPanel
         isEvaluating
-        rows={[["Paraxial focal length", "100", "1", "98.5"]]}
+        rows={[["Paraxial focal length", "100", "1.000000", "98.500000"]]}
         maxBodyHeight={320}
         allowBodyScroll
       />,
@@ -25,7 +25,19 @@ describe("OptimizationEvaluationPanel", () => {
     expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveClass("overflow-y-auto");
     expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveStyle({ maxHeight: "320px" });
     expect(screen.getByText("Paraxial focal length")).toBeInTheDocument();
-    expect(screen.getByText("98.5")).toBeInTheDocument();
+    expect(screen.getByText("98.500000")).toBeInTheDocument();
+
+    const headers = screen.getAllByRole("columnheader");
+    expect(headers[0]).toHaveClass("text-left");
+    expect(headers[1]).toHaveClass("text-right");
+    expect(headers[2]).toHaveClass("text-right");
+    expect(headers[3]).toHaveClass("text-right");
+
+    const cells = screen.getAllByRole("cell");
+    expect(cells[0]).toHaveClass("text-left");
+    expect(cells[1]).toHaveClass("text-right");
+    expect(cells[2]).toHaveClass("text-right");
+    expect(cells[3]).toHaveClass("text-right");
   });
 
   it("renders the full table without an internal vertical scrollbar when body scrolling is disabled", () => {

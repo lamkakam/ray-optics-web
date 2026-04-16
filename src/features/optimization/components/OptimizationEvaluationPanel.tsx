@@ -40,6 +40,7 @@ export function OptimizationEvaluationPanel({
           <Table
             headers={["Operand Type", "Target", "Weight", "Value"]}
             rows={rows}
+            columnAlignments={["left", "right", "right", "right"]}
           />
         </div>
       ) : (

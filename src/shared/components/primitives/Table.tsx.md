@@ -10,6 +10,7 @@ Simple read-only HTML table with a header row and data rows. Accepts generic cel
 interface TableProps {
   headers: readonly string[];
   rows: readonly (readonly (string | number | React.ReactNode)[])[];
+  columnAlignments?: readonly ("left" | "right")[];
 }
 ```
 
@@ -19,10 +20,12 @@ interface TableProps {
 |------|------|----------|-------------|
 | `headers` | `readonly string[]` | Yes | Column header labels |
 | `rows` | `readonly (...)[]` | Yes | Row data; each cell may be a string, number, or React node |
+| `columnAlignments` | `readonly ("left" | "right")[]` | No | Optional per-column text alignment applied to both header and body cells; unspecified columns default to left alignment |
 
 ## Key Behaviors
 
 - Row keys fall back to index since rows have no stable id.
+- Header and body cells share the same per-column alignment so numeric columns can be right-aligned consistently.
 - No sorting, filtering, or pagination — purely a display table.
 
 ## Usages
