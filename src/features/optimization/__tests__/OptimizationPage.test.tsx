@@ -278,6 +278,97 @@ describe("OptimizationPage", () => {
     expect(within(evaluationScroll).getByText("98.5")).toBeInTheDocument();
   });
 
+  it("filters zero-weight residuals out of the evaluation table", async () => {
+    const proxy = makeProxy({
+      evaluateOptimizationProblem: jest.fn().mockResolvedValue({
+        success: true,
+        status: "evaluated",
+        message: "ok",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [
+          {
+            kind: "rms_spot_size",
+            target: 0,
+            value: 0.25,
+            field_index: 1,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 0,
+            wavelength_weight: 1,
+            total_weight: 0,
+            weighted_residual: 0,
+          },
+          {
+            kind: "focal_length",
+            target: 100,
+            value: 98.5,
+            operand_weight: 1,
+            field_weight: 1,
+            wavelength_weight: 1,
+            total_weight: 1,
+            weighted_residual: -1.5,
+          },
+        ],
+        merit_function: { sum_of_squares: 2.25, rss: 1.5 },
+      }),
+    });
+    renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+
+    const evaluationScroll = screen.getByTestId("optimization-evaluation-scroll");
+    expect(within(evaluationScroll).queryByText("RMS Spot Size")).not.toBeInTheDocument();
+    expect(within(evaluationScroll).queryByText("0.25")).not.toBeInTheDocument();
+    expect(within(evaluationScroll).getByText("Paraxial focal length")).toBeInTheDocument();
+    expect(within(evaluationScroll).getByText("98.5")).toBeInTheDocument();
+  });
+
+  it("shows the empty state when all returned residuals have zero effective weight", async () => {
+    const proxy = makeProxy({
+      evaluateOptimizationProblem: jest.fn().mockResolvedValue({
+        success: true,
+        status: "evaluated",
+        message: "ok",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [
+          {
+            kind: "rms_spot_size",
+            target: 0,
+            value: 0.25,
+            field_index: 1,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 0,
+            wavelength_weight: 1,
+            total_weight: 0,
+            weighted_residual: 0,
+          },
+        ],
+        merit_function: { sum_of_squares: 0, rss: 0 },
+      }),
+    });
+    renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+
+    expect(screen.getByText("Evaluation results appear here when the current optimization config is valid.")).toBeInTheDocument();
+    expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
+  });
+
   it("on large screens, grows and shrinks the evaluation table when the drawer is resized", async () => {
     const proxy = makeProxy();
     const { container } = renderOptimizationPage(proxy);

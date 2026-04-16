@@ -26,6 +26,10 @@ export interface EvaluationRow {
   readonly value: string;
 }
 
+export function hasVisibleEvaluationWeight(residual: OptimizationResidualEntry): boolean {
+  return residual.total_weight !== 0;
+}
+
 export function getRadiusLabel(surfaceIndex: number, model: OpticalModel): string {
   if (surfaceIndex === model.surfaces.length + 1) {
     return "Image";
@@ -65,7 +69,11 @@ function formatEvaluationValue(value: number | undefined): string {
   return value === undefined ? "" : String(value);
 }
 
-export function createEvaluationRow(residual: OptimizationResidualEntry, index: number): EvaluationRow {
+export function createEvaluationRow(residual: OptimizationResidualEntry, index: number): EvaluationRow | undefined {
+  if (!hasVisibleEvaluationWeight(residual)) {
+    return undefined;
+  }
+
   return {
     id: `${residual.kind}-${residual.field_index ?? "none"}-${residual.wavelength_index ?? "none"}-${index}`,
     operandType: getOperandLabel(residual.kind as OptimizationOperandKind),

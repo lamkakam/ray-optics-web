@@ -210,7 +210,10 @@ export function OptimizationPage({
     : thicknessModes.find((mode) => mode.surfaceIndex === thicknessModal.surfaceIndex);
 
   const evaluationRows = useMemo(
-    () => evaluationReport?.residuals.map(createEvaluationRow) ?? [],
+    () => evaluationReport?.residuals.flatMap((residual, index) => {
+      const row = createEvaluationRow(residual, index);
+      return row === undefined ? [] : [row];
+    }) ?? [],
     [evaluationReport],
   );
 

@@ -22,7 +22,7 @@ interface OptimizationPageProps {
 - Renders the extracted `OptimizationActionBar` above the tabs with:
   - `Optimize`
   - `Apply to Editor`
-- Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual with `Operand Type`, `Target`, `Weight`, and `Value`, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
+- Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual whose effective `total_weight` is non-zero with `Operand Type`, `Target`, `Weight`, and `Value`, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
 - Uses controlled `BottomDrawer` tabs with five sections:
   - `Algorithm`
   - `Fields`
@@ -70,7 +70,7 @@ interface OptimizationPageProps {
 - The optimization page stays decoupled from the editor while open; it does not mutate the editor until the user confirms `Apply to Editor`.
 - Mount-time initialization intentionally overwrites any stale persisted optimization weights/operands from a previous visit so the page always starts from the current editor model.
 - Editor-driven optical-model changes propagate into optimization automatically; optimization-only UI state is preserved where the model shape remains compatible.
-- The live evaluation table uses the residual `total_weight` reported by Python, so field/wavelength-expanded operands can appear as multiple rows with their effective weights.
+- The live evaluation table uses the residual `total_weight` reported by Python and hides rows whose effective weight is zero, so field/wavelength-expanded operands appear only for active contributions.
 - Large-screen evaluation height is derived from the observed page-shell height, the current live drawer height, and measured fixed overhead above the table, with a fallback reserve when DOM measurement is not yet available.
 - The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.
 - `OptimizationPage` remains the orchestration boundary: extracted components are view-focused and receive callbacks/state from the page instead of reading stores directly.
