@@ -275,7 +275,8 @@ describe("OptimizationPage", () => {
     ]);
     const evaluationScroll = screen.getByTestId("optimization-evaluation-scroll");
     expect(within(evaluationScroll).getByText("Paraxial focal length")).toBeInTheDocument();
-    expect(within(evaluationScroll).getByText("98.5")).toBeInTheDocument();
+    expect(within(evaluationScroll).getByText("1.000000")).toBeInTheDocument();
+    expect(within(evaluationScroll).getByText("98.500000")).toBeInTheDocument();
   });
 
   it("filters zero-weight residuals out of the evaluation table", async () => {
@@ -325,9 +326,10 @@ describe("OptimizationPage", () => {
 
     const evaluationScroll = screen.getByTestId("optimization-evaluation-scroll");
     expect(within(evaluationScroll).queryByText("RMS Spot Size")).not.toBeInTheDocument();
-    expect(within(evaluationScroll).queryByText("0.25")).not.toBeInTheDocument();
+    expect(within(evaluationScroll).queryByText("0.250000")).not.toBeInTheDocument();
     expect(within(evaluationScroll).getByText("Paraxial focal length")).toBeInTheDocument();
-    expect(within(evaluationScroll).getByText("98.5")).toBeInTheDocument();
+    expect(within(evaluationScroll).getByText("1.000000")).toBeInTheDocument();
+    expect(within(evaluationScroll).getByText("98.500000")).toBeInTheDocument();
   });
 
   it("shows the empty state when all returned residuals have zero effective weight", async () => {
@@ -594,8 +596,8 @@ describe("OptimizationPage", () => {
     await user.tab();
 
     await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(2));
-    expect(await screen.findByText("124.25")).toBeInTheDocument();
-    expect(screen.getByText("2.75")).toBeInTheDocument();
+    expect(await screen.findByText("124.250000")).toBeInTheDocument();
+    expect(screen.getByText("2.750000")).toBeInTheDocument();
   });
 
   it("does not refresh the live evaluation table for radius edits until Done is pressed", async () => {
@@ -677,7 +679,7 @@ describe("OptimizationPage", () => {
         jest.advanceTimersByTime(250);
       });
       await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(2));
-      expect(await screen.findByText("97.25")).toBeInTheDocument();
+      expect(await screen.findByText("97.250000")).toBeInTheDocument();
     } finally {
       jest.useRealTimers();
     }

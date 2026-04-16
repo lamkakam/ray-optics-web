@@ -22,7 +22,7 @@ interface OptimizationPageProps {
 - Renders the extracted `OptimizationActionBar` above the tabs with:
   - `Optimize`
   - `Apply to Editor`
-- Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual whose effective `total_weight` is non-zero with `Operand Type`, `Target`, `Weight`, and `Value`, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
+- Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual whose effective `total_weight` is non-zero with `Operand Type`, `Target`, `Weight`, and `Value`, formats `Weight` and `Value` with 6 decimal places, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
 - Uses controlled `BottomDrawer` tabs with five sections:
   - `Algorithm`
   - `Fields`

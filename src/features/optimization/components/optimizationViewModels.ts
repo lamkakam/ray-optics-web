@@ -69,6 +69,10 @@ function formatEvaluationValue(value: number | undefined): string {
   return value === undefined ? "" : String(value);
 }
 
+function formatEvaluationFixedValue(value: number | undefined): string {
+  return value === undefined ? "" : value.toFixed(6);
+}
+
 export function createEvaluationRow(residual: OptimizationResidualEntry, index: number): EvaluationRow | undefined {
   if (!hasVisibleEvaluationWeight(residual)) {
     return undefined;
@@ -78,7 +82,7 @@ export function createEvaluationRow(residual: OptimizationResidualEntry, index: 
     id: `${residual.kind}-${residual.field_index ?? "none"}-${residual.wavelength_index ?? "none"}-${index}`,
     operandType: getOperandLabel(residual.kind as OptimizationOperandKind),
     target: formatEvaluationValue(residual.target),
-    weight: formatEvaluationValue(residual.total_weight),
-    value: formatEvaluationValue(residual.value),
+    weight: formatEvaluationFixedValue(residual.total_weight),
+    value: formatEvaluationFixedValue(residual.value),
   };
 }
