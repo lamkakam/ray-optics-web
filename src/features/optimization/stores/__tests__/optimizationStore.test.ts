@@ -371,6 +371,30 @@ describe("optimizationStore", () => {
     expect(model?.image.curvatureRadius).toBe(0);
   });
 
+  it("applies an image-surface radius result to the local optical model snapshot", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().applyOptimizationResult({
+      success: true,
+      status: "optimized",
+      message: "done",
+      optimizer: { kind: "least_squares", method: "trf" },
+      initial_values: [
+        { kind: "radius", surface_index: 3, value: 0, min: -100, max: 100 },
+      ],
+      final_values: [
+        { kind: "radius", surface_index: 3, value: 75, min: -100, max: 100 },
+      ],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 0, rss: 0 },
+      optimization_progress: [],
+    });
+
+    expect(store.getState().optimizationModel?.image.curvatureRadius).toBe(75);
+  });
+
   it("syncs from a changed editor model while preserving compatible optimization state", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);

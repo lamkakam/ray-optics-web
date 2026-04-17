@@ -153,6 +153,18 @@ class TestGetOpdFanData:
 
         json.dumps(result)
 
+    def test_handles_sasian_triplet_with_curved_image_surface(self, sasian_triplet_autoaperture):
+        from rayoptics_web_utils.analysis import get_opd_fan_data
+
+        sasian_triplet_autoaperture["seq_model"].ifcs[-1].profile.r = 1e-4
+        sasian_triplet_autoaperture.update_model()
+
+        result = get_opd_fan_data(sasian_triplet_autoaperture, fi=2)
+
+        assert isinstance(result, list)
+        assert len(result) == len(sasian_triplet_autoaperture["optical_spec"]["wvls"].wavelengths)
+        json.dumps(result)
+
 
 class TestGetSpotData:
     """Tests for get_spot_data()."""

@@ -68,6 +68,7 @@ Both return JSON-serialisable dicts containing:
 
 - `radius` — reads/writes `opm["seq_model"].ifcs[surface_index].profile.r`
 - `thickness` — reads/writes `opm["seq_model"].gaps[surface_index].thi`
+- Radius variables remain radius-based in the public config and report payloads, but SciPy optimizes them internally in curvature space (`c = 1 / R`, with planar `R = 0` mapped to `c = 0`) to avoid the singular numeric behavior around flat surfaces.
 
 ### Operands
 
@@ -118,6 +119,7 @@ weighted_residual = total_weight * (actual_value - target)
 - `objective(vector)` evaluates one optimizer step and converts the merit report into the residual vector consumed by SciPy.
 - `objective(vector)` also records merit-history entries in `self.optimization_progress` whenever the incoming variable vector differs materially from the last recorded vector. This approximates solver iterations without relying on SciPy’s newer `callback` argument, which is unavailable in the Pyodide-supported SciPy version.
 - `objective(vector)` catches evaluation failures and returns a large penalty residual vector (`1e6` per operand, minimum length 1) so optimization can continue.
+- For radius variables, `current_vector()`, `bounds()`, and `apply_vector(...)` all translate between external radius units and the internal curvature-space optimizer vector.
 - `optimize(progress_reporter=None)` runs `scipy.optimize.least_squares(...)` using the stored optimizer configuration, current variable vector, bounds, and `objective`, and forwards each newly recorded history snapshot to `progress_reporter` when provided.
 
 ### `optimize_opm(opm, config)`

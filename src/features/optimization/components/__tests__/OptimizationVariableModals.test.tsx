@@ -166,4 +166,75 @@ describe("OptimizationVariableModals", () => {
     expect(onSetMode).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("shows radius guidance for flat-surface bounds in variable mode", () => {
+    render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("R = 0 means a flat surface (infinite radius).")).toBeInTheDocument();
+    expect(screen.getByText("Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.")).toBeInTheDocument();
+  });
+
+  it("blocks saving radius bounds that straddle zero", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+
+    render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "-10000", max: "10000" }}
+        onSetMode={onSetMode}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Radius variable bounds must stay on one side of 0.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Done" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+
+    expect(onSetMode).not.toHaveBeenCalled();
+  });
+
+  it("allows saving radius bounds that stay on one side of zero", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+    const onClose = jest.fn();
+
+    render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "-10000", max: "10000" }}
+        onSetMode={onSetMode}
+        onClose={onClose}
+      />,
+    );
+
+    await user.clear(screen.getByRole("textbox", { name: "Max." }));
+    await user.type(screen.getByRole("textbox", { name: "Max." }), "-10");
+
+    expect(screen.queryByText("Radius variable bounds must stay on one side of 0.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Done" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "Done" }));
+
+    expect(onSetMode).toHaveBeenCalledWith(1, {
+      mode: "variable",
+      min: "-10000",
+      max: "-10",
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

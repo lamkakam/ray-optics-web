@@ -18,6 +18,18 @@ _PENALTY_RESIDUAL = 1e6
 _MERIT_LOG_EPSILON = 1e-300
 
 
+def _radius_to_curvature(radius: float) -> float:
+    if radius == 0.0:
+        return 0.0
+    return 1.0 / radius
+
+
+def _curvature_to_radius(curvature: float) -> float:
+    if curvature == 0.0:
+        return 0.0
+    return 1.0 / curvature
+
+
 def _snapshot_state(opm, variable_configs: list[dict], pickup_configs: list[dict]) -> dict[tuple[str, int], float]:
     """Capture the current values for all mutable optimizer targets."""
     state: dict[tuple[str, int], float] = {}
@@ -361,18 +373,26 @@ class _OptimizationProblem:
         self._progress_reporter = None
 
     def current_vector(self) -> np.ndarray:
-        return np.array([_read_target_value(self.opm, variable["kind"], variable["surface_index"]) for variable in self.variables], dtype=float)
+        return np.array(
+            [self._to_internal_value(variable, _read_target_value(self.opm, variable["kind"], variable["surface_index"])) for variable in self.variables],
+            dtype=float,
+        )
 
     def bounds(self) -> tuple[np.ndarray, np.ndarray]:
         if len(self.variables) == 0:
             return np.array([], dtype=float), np.array([], dtype=float)
-        lower = np.array([variable["min"] for variable in self.variables], dtype=float)
-        upper = np.array([variable["max"] for variable in self.variables], dtype=float)
+        lower = np.array([self._internal_lower_bound(variable) for variable in self.variables], dtype=float)
+        upper = np.array([self._internal_upper_bound(variable) for variable in self.variables], dtype=float)
         return lower, upper
 
     def apply_vector(self, values: np.ndarray | list[float]) -> list[dict]:
         for value, variable in zip(values, self.variables):
-            _write_target_value(self.opm, variable["kind"], variable["surface_index"], float(value))
+            _write_target_value(
+                self.opm,
+                variable["kind"],
+                variable["surface_index"],
+                self._from_internal_value(variable, float(value)),
+            )
         pickup_reports: list[dict] = []
         for pickup in self.ordered_pickups:
             source_value = _read_target_value(self.opm, pickup["kind"], pickup["source_surface_index"])
@@ -500,6 +520,31 @@ class _OptimizationProblem:
             }
             for variable in self.variables
         ]
+
+    def _to_internal_value(self, variable: dict, value: float) -> float:
+        if variable["kind"] == "radius":
+            return _radius_to_curvature(value)
+        return value
+
+    def _from_internal_value(self, variable: dict, value: float) -> float:
+        if variable["kind"] == "radius":
+            return _curvature_to_radius(value)
+        return value
+
+    def _internal_lower_bound(self, variable: dict) -> float:
+        return min(self._internal_bound_candidates(variable))
+
+    def _internal_upper_bound(self, variable: dict) -> float:
+        return max(self._internal_bound_candidates(variable))
+
+    def _internal_bound_candidates(self, variable: dict) -> list[float]:
+        if variable["kind"] != "radius":
+            return [float(variable["min"]), float(variable["max"])]
+
+        candidates = [_radius_to_curvature(float(variable["min"])), _radius_to_curvature(float(variable["max"]))]
+        if float(variable["min"]) <= 0.0 <= float(variable["max"]):
+            candidates.append(0.0)
+        return candidates
 
 
 def evaluate_optimization_problem(opm, config: dict) -> dict:

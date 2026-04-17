@@ -561,6 +561,45 @@ class TestOptimizeOpm:
         assert result["optimization_progress"][0]["merit_function_value"] >= 0.0
         assert "log10_merit_function_value" in result["optimization_progress"][0]
 
+    def test_optimizes_sasian_triplet_image_surface_radius_for_opd_difference(self, sasian_triplet_autoaperture):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_opm
+
+        image_surface_index = len(sasian_triplet_autoaperture["seq_model"].ifcs) - 1
+        config = {
+            "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 40},
+            "variables": [
+                {"kind": "radius", "surface_index": image_surface_index, "min": -500.0, "max": 500.0},
+            ],
+            "pickups": [],
+            "merit_function": {
+                "operands": [
+                    {
+                        "kind": "opd_difference",
+                        "target": 0.0,
+                        "weight": 100.0,
+                        "fields": [
+                            {"index": 0, "weight": 0.0},
+                            {"index": 1, "weight": 0.0},
+                            {"index": 2, "weight": 1.0},
+                        ],
+                        "wavelengths": [
+                            {"index": 0, "weight": 0.0},
+                            {"index": 1, "weight": 1.0},
+                            {"index": 2, "weight": 0.0},
+                        ],
+                    }
+                ]
+            },
+        }
+
+        before = evaluate_optimization_problem(sasian_triplet_autoaperture, config)
+        result = optimize_opm(sasian_triplet_autoaperture, config)
+
+        assert result["success"] is True
+        assert result["final_values"][0]["surface_index"] == image_surface_index
+        assert result["final_values"][0]["value"] != pytest.approx(before["final_values"][0]["value"])
+        assert result["merit_function"]["sum_of_squares"] < before["merit_function"]["sum_of_squares"]
+
 
 class TestOptimizationValidation:
     def test_rejects_unknown_operand_kind(self, fresh_cooke_triplet):

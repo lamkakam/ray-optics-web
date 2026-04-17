@@ -70,6 +70,8 @@ export function RadiusModeModal({
   }
 
   const radiusValue = getRadiusValue(optimizationModel, surfaceIndex);
+  const variableBoundsCrossZero = draftMode.mode === "variable"
+    && crossesZero(draftMode.min, draftMode.max);
 
   return (
     <Modal
@@ -119,33 +121,46 @@ export function RadiusModeModal({
         </div>
 
         {draftMode.mode === "variable" ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Label htmlFor="radius-min">Min.</Label>
-              <Input
-                id="radius-min"
-                aria-label="Min."
-                value={draftMode.min}
-                onChange={(event) => setDraftMode({
-                  mode: "variable",
-                  min: event.target.value,
-                  max: draftMode.max,
-                })}
-              />
+          <div className="grid gap-3">
+            <Paragraph variant="caption">
+              R = 0 means a flat surface (infinite radius).
+            </Paragraph>
+            <Paragraph variant="caption">
+              Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.
+            </Paragraph>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label htmlFor="radius-min">Min.</Label>
+                <Input
+                  id="radius-min"
+                  aria-label="Min."
+                  value={draftMode.min}
+                  onChange={(event) => setDraftMode({
+                    mode: "variable",
+                    min: event.target.value,
+                    max: draftMode.max,
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="radius-max">Max.</Label>
+                <Input
+                  id="radius-max"
+                  aria-label="Max."
+                  value={draftMode.max}
+                  onChange={(event) => setDraftMode({
+                    mode: "variable",
+                    min: draftMode.min,
+                    max: event.target.value,
+                  })}
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="radius-max">Max.</Label>
-              <Input
-                id="radius-max"
-                aria-label="Max."
-                value={draftMode.max}
-                onChange={(event) => setDraftMode({
-                  mode: "variable",
-                  min: draftMode.min,
-                  max: event.target.value,
-                })}
-              />
-            </div>
+            {variableBoundsCrossZero ? (
+              <Paragraph variant="caption" className="text-red-600 dark:text-red-400">
+                Radius variable bounds must stay on one side of 0.
+              </Paragraph>
+            ) : null}
           </div>
         ) : null}
 
@@ -199,6 +214,7 @@ export function RadiusModeModal({
         <div className="flex justify-end">
           <Button
             variant="primary"
+            disabled={variableBoundsCrossZero}
             onClick={() => {
               onSetMode(surfaceIndex, draftMode);
               onClose();
@@ -210,4 +226,15 @@ export function RadiusModeModal({
       </div>
     </Modal>
   );
+}
+
+function crossesZero(minValue: string, maxValue: string): boolean {
+  const min = Number(minValue);
+  const max = Number(maxValue);
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return false;
+  }
+
+  return min < 0 && max > 0;
 }

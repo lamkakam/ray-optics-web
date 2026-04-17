@@ -138,4 +138,29 @@ describe("_evaluateOptimizationProblem", () => {
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining("evaluate_optimization_problem("));
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));
   });
+
+  it("preserves image-surface radius variables in the generated Python config", async () => {
+    const runPython = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        success: true,
+        status: "evaluated",
+        message: "ok",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [],
+        merit_function: { sum_of_squares: 0, rss: 0 },
+      }),
+    );
+
+    await _evaluateOptimizationProblem(runPython, baseModel, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [{ kind: "radius", surface_index: 2, min: -100, max: 100 }],
+      pickups: [],
+      merit_function: { operands: [{ kind: "opd_difference", target: 0, weight: 100, fields: [{ index: 1, weight: 1 }], wavelengths: [{ index: 0, weight: 1 }] }] },
+    });
+
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"surface_index\\":2'));
+  });
 });

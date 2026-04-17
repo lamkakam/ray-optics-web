@@ -863,6 +863,33 @@ describe("OptimizationPage", () => {
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(33);
   });
 
+  it("applies an optimized image-surface radius to the page-local model", async () => {
+    const proxy = makeProxy({
+      optimizeOpm: jest.fn().mockResolvedValue({
+        success: true,
+        status: "optimized",
+        message: "done",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [{ kind: "radius", surface_index: 3, value: 0, min: -100, max: 100 }],
+        final_values: [{ kind: "radius", surface_index: 3, value: 125, min: -100, max: 100 }],
+        pickups: [],
+        residuals: [],
+        merit_function: { sum_of_squares: 0, rss: 0 },
+        optimization_progress: [],
+      }),
+    });
+    const user = userEvent.setup();
+    const { optimizationStore } = renderOptimizationPage(proxy);
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+
+    await waitFor(() => {
+      expect(optimizationStore.getState().optimizationModel?.image.curvatureRadius).toBe(125);
+    });
+  });
+
   it("confirms Apply to Editor and overwrites the lens editor rows with the optimized model", async () => {
     const proxy = makeProxy();
     const { lensStore } = renderOptimizationPage(proxy);
