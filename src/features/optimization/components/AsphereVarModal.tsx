@@ -1,0 +1,332 @@
+"use client";
+
+import React from "react";
+import type { AsphericalType } from "@/shared/lib/types/opticalModel";
+import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
+import { Button } from "@/shared/components/primitives/Button";
+import { Input } from "@/shared/components/primitives/Input";
+import { Label } from "@/shared/components/primitives/Label";
+import { Modal } from "@/shared/components/primitives/Modal";
+import { Select } from "@/shared/components/primitives/Select";
+
+type TermKind = "conic" | "toricSweep" | { coefficientIndex: number };
+
+interface TermDescriptor {
+  readonly kind: TermKind;
+  readonly label: string;
+}
+
+const ASPHERE_TYPE_OPTIONS = [
+  { value: "Conic", label: "Conic" },
+  { value: "EvenAspherical", label: "Even Aspheric" },
+  { value: "RadialPolynomial", label: "Radial Polynomial" },
+  { value: "XToroid", label: "X Toroid" },
+  { value: "YToroid", label: "Y Toroid" },
+] as const;
+
+const MODE_OPTIONS = [
+  { value: "constant", label: "constant" },
+  { value: "variable", label: "variable" },
+  { value: "pickup", label: "pickup" },
+] as const;
+
+function getTermRows(type: AsphericalType | undefined): ReadonlyArray<TermDescriptor> {
+  if (type === undefined) {
+    return [];
+  }
+
+  const conicRow: TermDescriptor = { kind: "conic", label: "Conic Constant" };
+
+  if (type === "Conic") {
+    return [conicRow];
+  }
+
+  if (type === "EvenAspherical") {
+    const coeffRows: TermDescriptor[] = Array.from({ length: 10 }, (_, i) => ({
+      kind: { coefficientIndex: i } as TermKind,
+      label: `a_${(i + 1) * 2}`,
+    }));
+    return [conicRow, ...coeffRows];
+  }
+
+  if (type === "RadialPolynomial") {
+    const coeffRows: TermDescriptor[] = Array.from({ length: 10 }, (_, i) => ({
+      kind: { coefficientIndex: i } as TermKind,
+      label: `a_${i + 1}`,
+    }));
+    return [conicRow, ...coeffRows];
+  }
+
+  if (type === "XToroid" || type === "YToroid") {
+    const toricRow: TermDescriptor = { kind: "toricSweep", label: "Toroid sweep R" };
+    const coeffRows: TermDescriptor[] = Array.from({ length: 10 }, (_, i) => ({
+      kind: { coefficientIndex: i } as TermKind,
+      label: `a_${(i + 1) * 2}`,
+    }));
+    return [conicRow, toricRow, ...coeffRows];
+  }
+
+  return [conicRow];
+}
+
+function getTermMode(state: AsphereOptimizationState, term: TermDescriptor): AsphereMode {
+  if (term.kind === "conic") {
+    return state.conic;
+  }
+  if (term.kind === "toricSweep") {
+    return state.toricSweep;
+  }
+  return state.coefficients[(term.kind as { coefficientIndex: number }).coefficientIndex] ?? { mode: "constant" };
+}
+
+function setTermMode(state: AsphereOptimizationState, term: TermDescriptor, mode: AsphereMode): AsphereOptimizationState {
+  if (term.kind === "conic") {
+    return { ...state, conic: mode };
+  }
+  if (term.kind === "toricSweep") {
+    return { ...state, toricSweep: mode };
+  }
+  const idx = (term.kind as { coefficientIndex: number }).coefficientIndex;
+  return {
+    ...state,
+    coefficients: state.coefficients.map((c, i) => i === idx ? mode : c),
+  };
+}
+
+function isVariableInvalid(mode: AsphereMode): boolean {
+  if (mode.mode !== "variable") {
+    return false;
+  }
+  const min = Number.parseFloat(mode.min);
+  const max = Number.parseFloat(mode.max);
+  return !Number.isFinite(min) || !Number.isFinite(max) || min >= max;
+}
+
+function isCoefficient(kind: TermKind): kind is { coefficientIndex: number } {
+  return typeof kind === "object";
+}
+
+interface AsphereVarModalProps {
+  readonly isOpen: boolean;
+  readonly surfaceIndex: number | undefined;
+  readonly asphereState: AsphereOptimizationState | undefined;
+  readonly onSave: (surfaceIndex: number, state: AsphereOptimizationState) => void;
+  readonly onClose: () => void;
+}
+
+export function AsphereVarModal({
+  isOpen,
+  surfaceIndex,
+  asphereState,
+  onSave,
+  onClose,
+}: AsphereVarModalProps) {
+  const [draft, setDraft] = React.useState<AsphereOptimizationState | undefined>(undefined);
+
+  React.useEffect(() => {
+    if (!isOpen || surfaceIndex === undefined || asphereState === undefined) {
+      setDraft(undefined);
+      return;
+    }
+    setDraft(asphereState);
+  }, [isOpen, surfaceIndex, asphereState]);
+
+  if (!isOpen || surfaceIndex === undefined || asphereState === undefined || draft === undefined) {
+    return (
+      <Modal isOpen={false} title="Asphere Variable / Pickup">
+        <></>
+      </Modal>
+    );
+  }
+
+  const termRows = getTermRows(draft.type);
+  const isDoneDisabled = termRows.some((term) => isVariableInvalid(getTermMode(draft, term)));
+
+  const handleTypeChange = (type: AsphericalType) => {
+    const constant: AsphereMode = { mode: "constant" };
+    setDraft({
+      ...draft,
+      type,
+      conic: constant,
+      toricSweep: constant,
+      coefficients: Array.from({ length: 10 }, () => constant),
+    });
+  };
+
+  const handleTermModeChange = (term: TermDescriptor, modeStr: string) => {
+    const current = getTermMode(draft, term);
+    if (modeStr === "constant") {
+      setDraft(setTermMode(draft, term, { mode: "constant" }));
+      return;
+    }
+    if (modeStr === "variable") {
+      const prevMin = current.mode === "variable" ? current.min : "0";
+      const prevMax = current.mode === "variable" ? current.max : "0";
+      setDraft(setTermMode(draft, term, { mode: "variable", min: prevMin, max: prevMax }));
+      return;
+    }
+    if (modeStr === "pickup") {
+      setDraft(setTermMode(draft, term, {
+        mode: "pickup",
+        sourceSurfaceIndex: current.mode === "pickup" ? current.sourceSurfaceIndex : "1",
+        scale: current.mode === "pickup" ? current.scale : "1",
+        offset: current.mode === "pickup" ? current.offset : "0",
+      }));
+    }
+  };
+
+  const handleTermVariableChange = (term: TermDescriptor, field: "min" | "max", value: string) => {
+    const current = getTermMode(draft, term);
+    if (current.mode !== "variable") {
+      return;
+    }
+    setDraft(setTermMode(draft, term, {
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const handleTermPickupChange = (term: TermDescriptor, field: "sourceSurfaceIndex" | "scale" | "offset" | "sourceCoefficientIndex", value: string) => {
+    const current = getTermMode(draft, term);
+    if (current.mode !== "pickup") {
+      return;
+    }
+    if (field === "sourceCoefficientIndex") {
+      setDraft(setTermMode(draft, term, {
+        ...current,
+        sourceTermKey: `coefficient:${value}` as AsphereTermKey,
+      }));
+      return;
+    }
+    setDraft(setTermMode(draft, term, {
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  return (
+    <Modal isOpen title="Asphere Variable / Pickup" size="lg" onBackdropClick={onClose}>
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="asphere-type">Type</Label>
+          <Select
+            id="asphere-type"
+            aria-label="Asphere type"
+            value={draft.type ?? ""}
+            disabled={draft.lockedType}
+            options={ASPHERE_TYPE_OPTIONS}
+            placeholder="—"
+            onChange={(e) => handleTypeChange(e.target.value as AsphericalType)}
+          />
+        </div>
+
+        {termRows.length > 0 && (
+          <div className="space-y-3">
+            {termRows.map((term) => {
+              const mode = getTermMode(draft, term);
+              const termId = typeof term.kind === "object"
+                ? `coeff-${(term.kind as { coefficientIndex: number }).coefficientIndex}`
+                : term.kind;
+
+              return (
+                <div key={termId} className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <span className="w-36 shrink-0 text-sm font-medium">{term.label}</span>
+                    <Select
+                      id={`${termId}-mode`}
+                      aria-label={`${term.label} mode`}
+                      value={mode.mode}
+                      options={MODE_OPTIONS}
+                      onChange={(e) => handleTermModeChange(term, e.target.value)}
+                    />
+                  </div>
+
+                  {mode.mode === "variable" && (
+                    <div className="ml-36 grid gap-3 pl-3 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor={`${termId}-min`}>Min.</Label>
+                        <Input
+                          id={`${termId}-min`}
+                          aria-label={`${term.label} Min.`}
+                          value={mode.min}
+                          onChange={(e) => handleTermVariableChange(term, "min", e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`${termId}-max`}>Max.</Label>
+                        <Input
+                          id={`${termId}-max`}
+                          aria-label={`${term.label} Max.`}
+                          value={mode.max}
+                          onChange={(e) => handleTermVariableChange(term, "max", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {mode.mode === "pickup" && (
+                    <div className="ml-36 grid gap-3 pl-3">
+                      <div>
+                        <Label htmlFor={`${termId}-source`}>Source surface index</Label>
+                        <Input
+                          id={`${termId}-source`}
+                          aria-label={`${term.label} source surface index`}
+                          value={mode.sourceSurfaceIndex}
+                          onChange={(e) => handleTermPickupChange(term, "sourceSurfaceIndex", e.target.value)}
+                        />
+                      </div>
+                      {isCoefficient(term.kind) && (
+                        <div>
+                          <Label htmlFor={`${termId}-source-coeff`}>Source coefficient index</Label>
+                          <Input
+                            id={`${termId}-source-coeff`}
+                            aria-label={`${term.label} source coefficient index`}
+                            value={mode.sourceTermKey?.replace("coefficient:", "") ?? ""}
+                            onChange={(e) => handleTermPickupChange(term, "sourceCoefficientIndex", e.target.value)}
+                          />
+                        </div>
+                      )}
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div>
+                          <Label htmlFor={`${termId}-scale`}>Scale</Label>
+                          <Input
+                            id={`${termId}-scale`}
+                            aria-label={`${term.label} scale`}
+                            value={mode.scale}
+                            onChange={(e) => handleTermPickupChange(term, "scale", e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`${termId}-offset`}>Offset</Label>
+                          <Input
+                            id={`${termId}-offset`}
+                            aria-label={`${term.label} offset`}
+                            value={mode.offset}
+                            onChange={(e) => handleTermPickupChange(term, "offset", e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <Button
+            variant="primary"
+            disabled={isDoneDisabled}
+            onClick={() => {
+              onSave(surfaceIndex, draft);
+              onClose();
+            }}
+          >
+            Done
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}

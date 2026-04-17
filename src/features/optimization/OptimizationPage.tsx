@@ -17,6 +17,7 @@ import { OptimizationOperandsTab } from "@/features/optimization/components/Opti
 import { OptimizationProgressModal } from "@/features/optimization/components/OptimizationProgressModal";
 import { OptimizationWarningModal } from "@/features/optimization/components/OptimizationWarningModal";
 import { OptimizationWeightsGrid } from "@/features/optimization/components/OptimizationWeightsGrid";
+import { AsphereVarModal } from "@/features/optimization/components/AsphereVarModal";
 import { RadiusModeModal } from "@/features/optimization/components/RadiusModeModal";
 import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal";
 import { hasNonZeroOptimizationContribution } from "@/features/optimization/stores/optimizationStore";
@@ -93,6 +94,8 @@ export function OptimizationPage({
   const radiusModal = useStore(optimizationStore, (state) => state.radiusModal);
   const thicknessModal = useStore(optimizationStore, (state) => state.thicknessModal);
   const thicknessModes = useStore(optimizationStore, (state) => state.thicknessModes);
+  const asphereStates = useStore(optimizationStore, (state) => state.asphereStates);
+  const asphereModal = useStore(optimizationStore, (state) => state.asphereModal);
   const [mediumModalRow, setMediumModalRow] = useState<GridRow | undefined>();
   const [asphericalModalRow, setAsphericalModalRow] = useState<GridRow | undefined>();
   const [decenterModalRow, setDecenterModalRow] = useState<GridRow | undefined>();
@@ -209,6 +212,10 @@ export function OptimizationPage({
     ? undefined
     : thicknessModes.find((mode) => mode.surfaceIndex === thicknessModal.surfaceIndex);
 
+  const selectedAsphereState = asphereModal.surfaceIndex === undefined
+    ? undefined
+    : asphereStates.find((state) => state.surfaceIndex === asphereModal.surfaceIndex);
+
   const evaluationRows = useMemo(
     () => evaluationReport?.residuals.flatMap((residual, index) => {
       const row = createEvaluationRow(residual, index);
@@ -304,6 +311,7 @@ export function OptimizationPage({
     wavelengthWeights,
     radiusModes,
     thicknessModes,
+    asphereStates,
     operands,
   ]);
 
@@ -403,10 +411,12 @@ export function OptimizationPage({
           rows={radiusRows}
           radiusModes={radiusModes}
           thicknessModes={thicknessModes}
+          asphereStates={asphereStates}
           onOpenRadiusModal={(surfaceIndex) => optimizationStore.getState().openRadiusModal(surfaceIndex)}
           onOpenThicknessModal={(surfaceIndex) => optimizationStore.getState().openThicknessModal(surfaceIndex)}
           onOpenMediumModal={setMediumModalRow}
           onOpenAsphericalModal={setAsphericalModalRow}
+          onOpenAsphereVarModal={(surfaceIndex) => optimizationStore.getState().openAsphereModal(surfaceIndex)}
           onOpenDecenterModal={setDecenterModalRow}
           onOpenDiffractionGratingModal={setDiffractionGratingModalRow}
         />
@@ -473,6 +483,14 @@ export function OptimizationPage({
         selectedMode={selectedThicknessMode}
         onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setThicknessMode(surfaceIndex, mode)}
         onClose={() => optimizationStore.getState().closeThicknessModal()}
+      />
+
+      <AsphereVarModal
+        isOpen={asphereModal.open}
+        surfaceIndex={asphereModal.surfaceIndex}
+        asphereState={selectedAsphereState}
+        onSave={(surfaceIndex, state) => optimizationStore.getState().replaceAsphereState(surfaceIndex, state)}
+        onClose={() => optimizationStore.getState().closeAsphereModal()}
       />
 
       <OptimizationWarningModal

@@ -103,6 +103,11 @@ interface ThicknessModalState {
   readonly surfaceIndex: number | undefined;
 }
 
+interface AsphereModalState {
+  readonly open: boolean;
+  readonly surfaceIndex: number | undefined;
+}
+
 interface WarningModalState {
   readonly open: boolean;
   readonly message: string;
@@ -133,6 +138,7 @@ export interface OptimizationState {
   applyConfirmOpen: boolean;
   radiusModal: RadiusModalState;
   thicknessModal: ThicknessModalState;
+  asphereModal: AsphereModalState;
 
   initializeFromOpticalModel: (model: OpticalModel) => void;
   syncFromOpticalModel: (model: OpticalModel) => void;
@@ -148,6 +154,8 @@ export interface OptimizationState {
   closeRadiusModal: () => void;
   openThicknessModal: (surfaceIndex: number) => void;
   closeThicknessModal: () => void;
+  openAsphereModal: (surfaceIndex: number) => void;
+  closeAsphereModal: () => void;
   addOperand: () => void;
   deleteOperand: (id: string) => void;
   updateOperand: (id: string, patch: Partial<Omit<OptimizationOperandRow, "id">>) => void;
@@ -486,6 +494,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   applyConfirmOpen: false,
   radiusModal: { open: false, surfaceIndex: undefined },
   thicknessModal: { open: false, surfaceIndex: undefined },
+  asphereModal: { open: false, surfaceIndex: undefined },
 
   initializeFromOpticalModel: (model) =>
     set({
@@ -597,6 +606,12 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
 
   closeThicknessModal: () =>
     set({ thicknessModal: { open: false, surfaceIndex: undefined } }),
+
+  openAsphereModal: (surfaceIndex) =>
+    set({ asphereModal: { open: true, surfaceIndex } }),
+
+  closeAsphereModal: () =>
+    set({ asphereModal: { open: false, surfaceIndex: undefined } }),
 
   addOperand: () =>
     set((state) => ({

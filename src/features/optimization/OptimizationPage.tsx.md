@@ -46,11 +46,13 @@ interface OptimizationPageProps {
   - an `Index` column before `Surface` that is blank for `Object` and `Image` and shows `1..N` for real surface rows
   - a `Var.` column after `Radius of Curvature` for radius variable/pickup configuration
   - a second `Var.` column after `Thickness` for thickness variable/pickup configuration
-  - read-only `Medium`, `Semi-diam.`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` columns
+  - read-only `Medium`, `Semi-diam.`, `Asph.` columns
+  - a third `Var.` column after `Asph.` for asphere variable/pickup configuration (real surface rows only; opens `AsphereVarModal`)
+  - read-only `Tilt & Decenter` and `Diffraction Grating` columns
 - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including an `OPD Difference` operand option whose default target is `0`.
 - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
 - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call, updates the static table from the returned residuals, and ignores stale async responses from older requests.
-- Radius and thickness mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`.
+- Radius, thickness, and asphere variable/pickup mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`. Changes to `asphereStates` are included in the evaluation dependency array so commits trigger a re-evaluation debounce.
 - Invalid intermediate configs clear the evaluation table instead of opening the warning modal.
 - `Optimize` is disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
 - `Optimize` validates the store state, rejects zero-contribution configs with a warning modal even if the handler is triggered programmatically, opens `OptimizationProgressModal`, calls `proxy.optimizeOpm`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
@@ -60,6 +62,7 @@ interface OptimizationPageProps {
 - Modal rendering is delegated to extracted wrappers:
   - `RadiusModeModal`
   - `ThicknessModeModal`
+  - `AsphereVarModal`
   - `OptimizationProgressModal`
   - `OptimizationWarningModal`
   - `OptimizationApplyConfirmModal`

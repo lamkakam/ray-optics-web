@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/types/gridTypes";
-import type { RadiusMode } from "@/features/optimization/stores/optimizationStore";
+import type { RadiusMode, AsphereOptimizationState } from "@/features/optimization/stores/optimizationStore";
 import { OptimizationLensPrescriptionGrid } from "@/features/optimization/components/OptimizationLensPrescriptionGrid";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
@@ -41,19 +41,32 @@ describe("OptimizationLensPrescriptionGrid", () => {
     const onOpenThicknessModal = jest.fn();
     const onOpenMediumModal = jest.fn();
     const onOpenAsphericalModal = jest.fn();
+    const onOpenAsphereVarModalMock = jest.fn();
     const onOpenDecenterModal = jest.fn();
     const onOpenDiffractionGratingModal = jest.fn();
     const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const asphereStates: AsphereOptimizationState[] = [
+      {
+        surfaceIndex: 1,
+        type: undefined,
+        lockedType: false,
+        conic: { mode: "constant" },
+        toricSweep: { mode: "constant" },
+        coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" as const })),
+      },
+    ];
 
     render(
       <OptimizationLensPrescriptionGrid
         rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
+        asphereStates={asphereStates}
         onOpenRadiusModal={onOpenRadiusModal}
         onOpenThicknessModal={onOpenThicknessModal}
         onOpenMediumModal={onOpenMediumModal}
         onOpenAsphericalModal={onOpenAsphericalModal}
+        onOpenAsphereVarModal={onOpenAsphereVarModalMock}
         onOpenDecenterModal={onOpenDecenterModal}
         onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
       />,
@@ -72,11 +85,12 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "Medium",
       "Semi-diam.",
       "Asph.",
+      "Var.",
       "Tilt & Decenter",
       "Diffraction Grating",
     ]);
 
-    expect(screen.getAllByText("Var.")).toHaveLength(2);
+    expect(screen.getAllByText("Var.")).toHaveLength(3);
     expect(screen.getByText("Medium")).toBeInTheDocument();
     expect(screen.getByText("Semi-diam.")).toBeInTheDocument();
     expect(screen.getByText("Asph.")).toBeInTheDocument();
@@ -95,6 +109,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
     await user.click(screen.getByRole("button", { name: "Edit aspherical parameters" }));
     expect(onOpenAsphericalModal).toHaveBeenCalledWith(surfaceRow);
 
+    await user.click(screen.getByRole("button", { name: "Asphere mode for surface 1" }));
+    expect(onOpenAsphereVarModalMock).toHaveBeenCalledWith(1);
+
     await user.click(screen.getByRole("button", { name: "Edit decenter and tilt" }));
     expect(onOpenDecenterModal).toHaveBeenCalledWith(surfaceRow);
 
@@ -108,6 +125,16 @@ describe("OptimizationLensPrescriptionGrid", () => {
       { surfaceIndex: 2, mode: "constant" },
     ];
     const thicknessModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const asphereStates: AsphereOptimizationState[] = [
+      {
+        surfaceIndex: 1,
+        type: undefined,
+        lockedType: false,
+        conic: { mode: "constant" },
+        toricSweep: { mode: "constant" },
+        coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" as const })),
+      },
+    ];
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -118,10 +145,12 @@ describe("OptimizationLensPrescriptionGrid", () => {
         ]}
         radiusModes={radiusModes}
         thicknessModes={thicknessModes}
+        asphereStates={asphereStates}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
         onOpenMediumModal={jest.fn()}
         onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
       />,
@@ -140,6 +169,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "",
       "",
       "",
+      "",
     ]);
     expect(Array.from(rows[1].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
       "1",
@@ -151,6 +181,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "BK7",
       "10",
       "—",
+      "Set",
       "—",
       "—",
     ]);
@@ -164,6 +195,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "",
       "",
       "",
+      "",
       "—",
       "",
     ]);
@@ -172,16 +204,28 @@ describe("OptimizationLensPrescriptionGrid", () => {
   it("uses view-oriented tooltip copy for optimization-only inspection cells", async () => {
     const user = userEvent.setup();
     const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+    const asphereStates: AsphereOptimizationState[] = [
+      {
+        surfaceIndex: 1,
+        type: undefined,
+        lockedType: false,
+        conic: { mode: "constant" },
+        toricSweep: { mode: "constant" },
+        coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" as const })),
+      },
+    ];
 
     render(
       <OptimizationLensPrescriptionGrid
         rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
         radiusModes={constantModes}
         thicknessModes={constantModes}
+        asphereStates={asphereStates}
         onOpenRadiusModal={jest.fn()}
         onOpenThicknessModal={jest.fn()}
         onOpenMediumModal={jest.fn()}
         onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
       />,

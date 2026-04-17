@@ -24,7 +24,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `asphereStates` — one entry per real surface, carrying the optimization asphere type plus independent constant/variable/pickup settings for conic constant, 10 coefficient slots, and toroid sweep radius
 - `operands` — add/delete operand rows for `focal_length`, `f_number`, `opd_difference`, `rms_spot_size`, and `rms_wavefront_error`, each with editable `target` and `weight` strings; initialization starts with no rows
 - `isOptimizing` — loading flag for the page-blocking overlay
-- `warningModal`, `applyConfirmOpen`, `radiusModal` — modal state
+- `warningModal`, `applyConfirmOpen`, `radiusModal`, `thicknessModal`, `asphereModal` — modal state
 - `lastOptimizationReport` — last successful worker report
 
 ## Actions
@@ -38,6 +38,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `replaceAsphereState(surfaceIndex, state)` — replace one surface’s full optimization asphere state after the modal commits
 - `setAsphereTermMode(surfaceIndex, term, mode)` — mutate one asphere target directly
 - `openThicknessModal(surfaceIndex)` / `closeThicknessModal()` — control the thickness modal
+- `openAsphereModal(surfaceIndex)` / `closeAsphereModal()` — control the asphere variable/pickup modal
 - `addOperand()` / `deleteOperand(id)` / `updateOperand(id, patch)` / `replaceOperands(rows)` — manage operand rows
 - `buildOptimizationConfig()` — validates current UI state and emits the Python `OptimizationConfig`
 - `applyOptimizationResult(report)` — applies optimized radius/thickness values and pickups back into the page-local optical-model snapshot

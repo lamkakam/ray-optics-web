@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { AgGridProvider, AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
 import { DecenterCell } from "@/features/lens-editor/components/DecenterCell";
-import type { RadiusMode } from "@/features/optimization/stores/optimizationStore";
+import type { RadiusMode, AsphereOptimizationState } from "@/features/optimization/stores/optimizationStore";
 import type { RadiusRow } from "@/features/optimization/components/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/types/gridTypes";
 import { SetButton } from "@/shared/components/primitives/SetButton";
@@ -90,10 +90,12 @@ interface OptimizationLensPrescriptionGridProps {
   readonly rows: ReadonlyArray<RadiusRow>;
   readonly radiusModes: ReadonlyArray<RadiusMode>;
   readonly thicknessModes: ReadonlyArray<RadiusMode>;
+  readonly asphereStates: ReadonlyArray<AsphereOptimizationState>;
   readonly onOpenRadiusModal: (surfaceIndex: number) => void;
   readonly onOpenThicknessModal: (surfaceIndex: number) => void;
   readonly onOpenMediumModal: (row: GridRow) => void;
   readonly onOpenAsphericalModal: (row: GridRow) => void;
+  readonly onOpenAsphereVarModal: (surfaceIndex: number) => void;
   readonly onOpenDecenterModal: (row: GridRow) => void;
   readonly onOpenDiffractionGratingModal: (row: GridRow) => void;
 }
@@ -102,10 +104,12 @@ export function OptimizationLensPrescriptionGrid({
   rows,
   radiusModes,
   thicknessModes,
+  asphereStates,
   onOpenRadiusModal,
   onOpenThicknessModal,
   onOpenMediumModal,
   onOpenAsphericalModal,
+  onOpenAsphereVarModal,
   onOpenDecenterModal,
   onOpenDiffractionGratingModal,
 }: OptimizationLensPrescriptionGridProps) {
@@ -255,6 +259,33 @@ export function OptimizationLensPrescriptionGrid({
       },
     },
     {
+      headerName: "Var.",
+      cellRenderer: (params: { data: RadiusRow }) => {
+        if (params.data.row.kind !== "surface" || params.data.radiusSurfaceIndex === undefined) {
+          return undefined;
+        }
+
+        const asphereState = asphereStates.find((entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex);
+        const isSet = asphereState !== undefined
+          && asphereState.type !== undefined
+          && (
+            asphereState.conic.mode !== "constant"
+            || asphereState.toricSweep.mode !== "constant"
+            || asphereState.coefficients.some((c) => c.mode !== "constant")
+          );
+
+        return (
+          <SetButton
+            isSet={isSet}
+            onClick={() => onOpenAsphereVarModal(params.data.radiusSurfaceIndex!)}
+            aria-label={`Asphere mode for surface ${params.data.radiusSurfaceIndex}`}
+            setLabel="Edit"
+            unsetLabel="Set"
+          />
+        );
+      },
+    },
+    {
       headerName: "Tilt & Decenter",
       valueGetter: (params) => {
         if (!params.data || params.data.row.kind === "object") {
@@ -300,7 +331,9 @@ export function OptimizationLensPrescriptionGrid({
       },
     },
   ], [
+    asphereStates,
     onOpenAsphericalModal,
+    onOpenAsphereVarModal,
     onOpenDecenterModal,
     onOpenDiffractionGratingModal,
     onOpenMediumModal,
