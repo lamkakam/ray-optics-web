@@ -35,6 +35,23 @@ const baseModel: OpticalModel = {
   },
 };
 
+const asphericModel: OpticalModel = {
+  ...baseModel,
+  surfaces: [
+    {
+      ...baseModel.surfaces[0],
+      aspherical: {
+        kind: "RadialPolynomial",
+        conicConstant: -1.25,
+        polynomialCoefficients: [0.001, 0, 0.0003],
+      },
+    },
+    {
+      ...baseModel.surfaces[1],
+    },
+  ],
+};
+
 describe("optimizationStore", () => {
   it("detects non-zero optimization contribution for operand-only rows", () => {
     expect(hasNonZeroOptimizationContribution({
@@ -254,6 +271,141 @@ describe("optimizationStore", () => {
           },
         ],
       },
+    });
+  });
+
+  it("builds asphere variables and pickups into the Python optimization config", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(asphericModel);
+
+    expect(store.getState()).toEqual(expect.objectContaining({
+      setAsphereType: expect.any(Function),
+      setAsphereTermMode: expect.any(Function),
+    }));
+
+    store.getState().setAsphereTermMode(1, "conic", { mode: "variable", min: "-2", max: "-0.5" });
+    store.getState().setAsphereTermMode(1, "coefficient", { mode: "variable", coefficientIndex: 1, min: "-0.01", max: "0.01" });
+    store.getState().setAsphereTermMode(1, "coefficient", {
+      mode: "pickup",
+      coefficientIndex: 2,
+      sourceSurfaceIndex: "1",
+      sourceTermKey: "coefficient:1",
+      scale: "2",
+      offset: "0.5",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "1",
+      },
+    ]);
+
+    expect(store.getState().buildOptimizationConfig()).toEqual(expect.objectContaining({
+      variables: expect.arrayContaining([
+        {
+          kind: "asphere_conic_constant",
+          surface_index: 1,
+          asphere_kind: "RadialPolynomial",
+          min: -2,
+          max: -0.5,
+        },
+        {
+          kind: "asphere_polynomial_coefficient",
+          surface_index: 1,
+          asphere_kind: "RadialPolynomial",
+          coefficient_index: 1,
+          min: -0.01,
+          max: 0.01,
+        },
+      ]),
+      pickups: expect.arrayContaining([
+        {
+          kind: "asphere_polynomial_coefficient",
+          surface_index: 1,
+          asphere_kind: "RadialPolynomial",
+          coefficient_index: 2,
+          source_surface_index: 1,
+          source_coefficient_index: 1,
+          scale: 2,
+          offset: 0.5,
+        },
+      ]),
+    }));
+  });
+
+  it("allows a spherical editor surface to become toroidal in optimization and applies optimized asphere values back into the model", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().setAsphereType(2, "XToroid");
+    store.getState().setAsphereTermMode(2, "conic", { mode: "variable", min: "-1", max: "0" });
+    store.getState().setAsphereTermMode(2, "toricSweep", { mode: "variable", min: "-60", max: "-20" });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "1",
+      },
+    ]);
+
+    expect(store.getState().buildOptimizationConfig().variables).toEqual(expect.arrayContaining([
+      {
+        kind: "asphere_conic_constant",
+        surface_index: 2,
+        asphere_kind: "XToroid",
+        min: -1,
+        max: 0,
+      },
+      {
+        kind: "asphere_toric_sweep_radius",
+        surface_index: 2,
+        asphere_kind: "XToroid",
+        min: -60,
+        max: -20,
+      },
+    ]));
+
+    store.getState().applyOptimizationResult({
+      success: true,
+      status: "optimized",
+      message: "done",
+      optimizer: { kind: "least_squares", method: "trf" },
+      initial_values: [],
+      final_values: [
+        {
+          kind: "asphere_conic_constant",
+          surface_index: 2,
+          asphere_kind: "XToroid",
+          value: -0.75,
+        },
+        {
+          kind: "asphere_toric_sweep_radius",
+          surface_index: 2,
+          asphere_kind: "XToroid",
+          value: -40,
+        },
+        {
+          kind: "asphere_polynomial_coefficient",
+          surface_index: 2,
+          asphere_kind: "XToroid",
+          coefficient_index: 3,
+          value: 0.0002,
+        },
+      ],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 0, rss: 0 },
+      optimization_progress: [],
+    });
+
+    expect(store.getState().optimizationModel?.surfaces[1]?.aspherical).toEqual({
+      kind: "XToroid",
+      conicConstant: -0.75,
+      toricSweepRadiusOfCurvature: -40,
+      polynomialCoefficients: [0, 0, 0, 0.0002],
     });
   });
 

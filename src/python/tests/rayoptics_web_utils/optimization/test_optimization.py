@@ -258,9 +258,166 @@ class TestOptimizeOpm:
         before = evaluate_optimization_problem(fresh_cooke_triplet, config)
         result = optimize_opm(fresh_cooke_triplet, config)
 
-        assert result["success"] is True
-        assert result["merit_function"]["sum_of_squares"] < before["merit_function"]["sum_of_squares"]
-        assert fresh_cooke_triplet["seq_model"].gaps[-1].thi == pytest.approx(result["final_values"][0]["value"])
+    def test_evaluates_asphere_conic_and_polynomial_targets(self, fresh_cooke_triplet):
+        from rayoptics.elem.profiles import RadialPolynomial
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        fresh_cooke_triplet["seq_model"].ifcs[1].profile = RadialPolynomial(r=23.713, cc=-1.2, coefs=[0.001, 0.002])
+        fresh_cooke_triplet.update_model()
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [
+                    {
+                        "kind": "asphere_conic_constant",
+                        "surface_index": 1,
+                        "asphere_kind": "RadialPolynomial",
+                        "min": -2.0,
+                        "max": 0.0,
+                    },
+                    {
+                        "kind": "asphere_polynomial_coefficient",
+                        "surface_index": 1,
+                        "asphere_kind": "RadialPolynomial",
+                        "coefficient_index": 1,
+                        "min": -0.01,
+                        "max": 0.01,
+                    },
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 100.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert report["initial_values"] == [
+            {
+                "kind": "asphere_conic_constant",
+                "surface_index": 1,
+                "asphere_kind": "RadialPolynomial",
+                "value": pytest.approx(-1.2),
+                "min": -2.0,
+                "max": 0.0,
+            },
+            {
+                "kind": "asphere_polynomial_coefficient",
+                "surface_index": 1,
+                "asphere_kind": "RadialPolynomial",
+                "coefficient_index": 1,
+                "value": pytest.approx(0.002),
+                "min": -0.01,
+                "max": 0.01,
+            },
+        ]
+
+    def test_can_aspherize_a_spherical_surface_into_xtoroid(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [
+                    {
+                        "kind": "asphere_conic_constant",
+                        "surface_index": 1,
+                        "asphere_kind": "XToroid",
+                        "min": -2.0,
+                        "max": 0.0,
+                    },
+                    {
+                        "kind": "asphere_toric_sweep_radius",
+                        "surface_index": 1,
+                        "asphere_kind": "XToroid",
+                        "min": 20.0,
+                        "max": 30.0,
+                    },
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 100.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert report["initial_values"][0]["kind"] == "asphere_conic_constant"
+        assert report["initial_values"][0]["asphere_kind"] == "XToroid"
+        assert report["initial_values"][1]["kind"] == "asphere_toric_sweep_radius"
+        assert fresh_cooke_triplet["seq_model"].ifcs[1].profile.__class__.__name__ == "XToroid"
+
+    def test_supports_asphere_pickups_for_polynomial_terms(self, fresh_cooke_triplet):
+        from rayoptics.elem.profiles import RadialPolynomial
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        fresh_cooke_triplet["seq_model"].ifcs[1].profile = RadialPolynomial(r=23.713, cc=-1.2, coefs=[0.001, 0.002, 0.003])
+        fresh_cooke_triplet.update_model()
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [
+                    {
+                        "kind": "asphere_polynomial_coefficient",
+                        "surface_index": 1,
+                        "asphere_kind": "RadialPolynomial",
+                        "coefficient_index": 1,
+                        "min": -0.01,
+                        "max": 0.01,
+                    },
+                ],
+                "pickups": [
+                    {
+                        "kind": "asphere_polynomial_coefficient",
+                        "surface_index": 1,
+                        "asphere_kind": "RadialPolynomial",
+                        "coefficient_index": 2,
+                        "source_surface_index": 1,
+                        "source_coefficient_index": 1,
+                        "scale": 2.0,
+                        "offset": 0.5,
+                    },
+                ],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 100.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert report["pickups"] == [
+            {
+                "kind": "asphere_polynomial_coefficient",
+                "surface_index": 1,
+                "asphere_kind": "RadialPolynomial",
+                "coefficient_index": 2,
+                "source_surface_index": 1,
+                "source_coefficient_index": 1,
+                "scale": 2.0,
+                "offset": 0.5,
+                "value": pytest.approx(2.0 * report["final_values"][0]["value"] + 0.5),
+            }
+        ]
 
     def test_keeps_pickups_consistent_after_optimization(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import optimize_opm

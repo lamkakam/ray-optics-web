@@ -163,4 +163,61 @@ describe("_evaluateOptimizationProblem", () => {
 
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"surface_index\\":2'));
   });
+
+  it("preserves asphere optimization metadata in the generated Python config", async () => {
+    const runPython = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        success: true,
+        status: "evaluated",
+        message: "ok",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [],
+        merit_function: { sum_of_squares: 0, rss: 0 },
+      }),
+    );
+
+    await _evaluateOptimizationProblem(runPython, {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          aspherical: {
+            kind: "RadialPolynomial",
+            conicConstant: -1,
+            polynomialCoefficients: [0.001, 0.002],
+          },
+        },
+      ],
+    }, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [
+        {
+          kind: "asphere_polynomial_coefficient",
+          surface_index: 1,
+          asphere_kind: "RadialPolynomial",
+          coefficient_index: 1,
+          min: -0.1,
+          max: 0.1,
+        },
+      ],
+      pickups: [
+        {
+          kind: "asphere_conic_constant",
+          surface_index: 1,
+          asphere_kind: "RadialPolynomial",
+          source_surface_index: 1,
+          scale: 1,
+          offset: 0,
+        },
+      ],
+      merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
+    });
+
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"asphere_polynomial_coefficient\\"'));
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"asphere_kind\\":\\"RadialPolynomial\\"'));
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"coefficient_index\\":1'));
+  });
 });

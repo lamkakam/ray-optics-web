@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provides a dict-driven optimizer framework for RayOptics `OpticalModel` instances. The public API accepts JSON-encodable config dicts, supports affine pickups for radius and thickness, evaluates operand-based merit functions, and runs SciPy least-squares optimization.
+Provides a dict-driven optimizer framework for RayOptics `OpticalModel` instances. The public API accepts JSON-encodable config dicts, supports affine pickups for geometric and aspheric targets, evaluates operand-based merit functions, and runs SciPy least-squares optimization.
 
 ## Public API
 
@@ -68,7 +68,11 @@ Both return JSON-serialisable dicts containing:
 
 - `radius` — reads/writes `opm["seq_model"].ifcs[surface_index].profile.r`
 - `thickness` — reads/writes `opm["seq_model"].gaps[surface_index].thi`
+- `asphere_conic_constant` — reads/writes `opm["seq_model"].ifcs[surface_index].profile.cc`
+- `asphere_polynomial_coefficient` — reads/writes one coefficient slot in `profile.coefs`, extending the list with trailing zeros when needed
+- `asphere_toric_sweep_radius` — reads/writes `profile.cR` for `XToroid` / `YToroid`
 - Radius variables remain radius-based in the public config and report payloads, but SciPy optimizes them internally in curvature space (`c = 1 / R`, with planar `R = 0` mapped to `c = 0`) to avoid the singular numeric behavior around flat surfaces.
+- Asphere variables and pickups stay in direct value space; only radius variables are transformed internally.
 
 ### Operands
 
@@ -99,6 +103,9 @@ weighted_residual = total_weight * (actual_value - target)
 - Variable targets and pickup targets must be unique.
 - The same target cannot be both a variable and a pickup target.
 - Radius targets use `sm.ifcs`; thickness targets use `sm.gaps`; out-of-range indices raise `IndexError`.
+- Asphere targets use `sm.ifcs` and may include `asphere_kind`; polynomial coefficient targets also include `coefficient_index`, and coefficient pickups include `source_coefficient_index`.
+- When an asphere target references a spherical interface, the optimizer materializes the requested profile kind before reading or writing that target.
+- If an interface is already aspheric with a different profile class than the requested `asphere_kind`, validation raises `ValueError`.
 - Pickup graphs are topologically validated; cycles raise `ValueError("Pickup cycle detected")`.
 - `merit_function.operands` must not be empty.
 
@@ -151,6 +158,7 @@ Each entry contains:
 - `value`
 - `min`
 - `max`
+- Asphere entries additionally include `asphere_kind`; polynomial entries also include `coefficient_index`.
 
 ### `pickups`
 
@@ -162,6 +170,7 @@ Each entry contains:
 - `scale`
 - `offset`
 - `value`
+- Asphere pickups additionally include `asphere_kind`; polynomial coefficient pickups also include `coefficient_index` and `source_coefficient_index`.
 
 ### `residuals`
 

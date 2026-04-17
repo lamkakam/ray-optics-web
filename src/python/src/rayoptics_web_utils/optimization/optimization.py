@@ -8,6 +8,7 @@ import math
 
 import numpy as np
 import rayoptics.optical.model_constants as mc
+from rayoptics.elem.profiles import EvenPolynomial, RadialPolynomial, XToroid, YToroid
 from scipy.optimize import least_squares
 
 from rayoptics_web_utils.analysis import get_opd_fan_data
@@ -30,28 +31,101 @@ def _curvature_to_radius(curvature: float) -> float:
     return 1.0 / curvature
 
 
-def _snapshot_state(opm, variable_configs: list[dict], pickup_configs: list[dict]) -> dict[tuple[str, int], float]:
+def _snapshot_state(opm, variable_configs: list[dict], pickup_configs: list[dict]) -> dict[tuple, float]:
     """Capture the current values for all mutable optimizer targets."""
-    state: dict[tuple[str, int], float] = {}
+    state: dict[tuple, float] = {}
     for entry in [*variable_configs, *pickup_configs]:
-        key = _target_key(entry["kind"], entry["surface_index"])
+        key = _target_key(entry)
         if key not in state:
-            state[key] = _read_target_value(opm, entry["kind"], entry["surface_index"])
+            state[key] = _read_target_value(opm, entry)
     return state
 
 
-def _restore_state(opm, snapshot: dict[tuple[str, int], float]) -> None:
+def _restore_state(opm, snapshot: dict[tuple, float]) -> None:
     """Restore a previously captured optimizer state."""
-    for (kind, surface_index), value in snapshot.items():
-        _write_target_value(opm, kind, surface_index, value)
+    for key, value in snapshot.items():
+        _write_target_value(opm, _entry_from_target_key(key), value)
     opm.update_model()
 
 
-def _target_key(kind: str, surface_index: int) -> tuple[str, int]:
+def _target_key(entry: dict) -> tuple:
+    kind = entry["kind"]
+    surface_index = entry["surface_index"]
+    if kind == "asphere_polynomial_coefficient":
+        return kind, surface_index, entry["coefficient_index"]
     return kind, surface_index
 
 
-def _read_target_value(opm, kind: str, surface_index: int) -> float:
+def _entry_from_target_key(key: tuple) -> dict:
+    if key[0] == "asphere_polynomial_coefficient":
+        return {"kind": key[0], "surface_index": key[1], "coefficient_index": key[2]}
+    return {"kind": key[0], "surface_index": key[1]}
+
+
+def _asphere_kinds():
+    return {
+        "Conic": EvenPolynomial,
+        "EvenAspherical": EvenPolynomial,
+        "RadialPolynomial": RadialPolynomial,
+        "XToroid": XToroid,
+        "YToroid": YToroid,
+    }
+
+
+def _surface_profile(opm, surface_index: int):
+    sm = opm["seq_model"]
+    _validate_surface_index(sm.ifcs, surface_index, "surface_index")
+    return sm.ifcs[surface_index].profile
+
+
+def _surface_radius(opm, surface_index: int) -> float:
+    return float(_surface_profile(opm, surface_index).r)
+
+
+def _supports_polynomials(profile) -> bool:
+    return hasattr(profile, "coefs")
+
+
+def _is_toroid(profile) -> bool:
+    return hasattr(profile, "cR")
+
+
+def _ensure_asphere_profile(opm, entry: dict):
+    kind = entry["kind"]
+    asphere_kind = entry.get("asphere_kind")
+    if kind not in {"asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
+        return
+    if asphere_kind not in _asphere_kinds():
+        raise ValueError(f"Unknown asphere kind: {asphere_kind}")
+
+    sm = opm["seq_model"]
+    _validate_surface_index(sm.ifcs, entry["surface_index"], "surface_index")
+    ifc = sm.ifcs[entry["surface_index"]]
+    profile = ifc.profile
+
+    profile_class = _asphere_kinds()[asphere_kind]
+    if isinstance(profile, profile_class):
+        return
+
+    if isinstance(profile, (EvenPolynomial, RadialPolynomial, XToroid, YToroid)):
+        raise ValueError(f"Surface {entry['surface_index']} is already aspheric with a different type")
+
+    radius = float(profile.r)
+    if asphere_kind == "Conic":
+        ifc.profile = EvenPolynomial(r=radius, cc=0.0)
+    elif asphere_kind == "EvenAspherical":
+        ifc.profile = EvenPolynomial(r=radius, cc=0.0, coefs=[])
+    elif asphere_kind == "RadialPolynomial":
+        ifc.profile = RadialPolynomial(r=radius, cc=0.0, coefs=[])
+    elif asphere_kind == "XToroid":
+        ifc.profile = XToroid(r=radius, cc=0.0, cR=radius, coefs=[])
+    else:
+        ifc.profile = YToroid(r=radius, cc=0.0, cR=radius, coefs=[])
+
+
+def _read_target_value(opm, entry: dict) -> float:
+    kind = entry["kind"]
+    surface_index = entry["surface_index"]
     sm = opm["seq_model"]
     if kind == "radius":
         _validate_surface_index(sm.ifcs, surface_index, "surface_index")
@@ -59,10 +133,24 @@ def _read_target_value(opm, kind: str, surface_index: int) -> float:
     if kind == "thickness":
         _validate_surface_index(sm.gaps, surface_index, "surface_index")
         return float(sm.gaps[surface_index].thi)
+    _ensure_asphere_profile(opm, entry)
+    profile = _surface_profile(opm, surface_index)
+    if kind == "asphere_conic_constant":
+        return float(profile.cc)
+    if kind == "asphere_polynomial_coefficient":
+        coefficients = list(getattr(profile, "coefs", []))
+        coefficient_index = entry["coefficient_index"]
+        return float(coefficients[coefficient_index] if coefficient_index < len(coefficients) else 0.0)
+    if kind == "asphere_toric_sweep_radius":
+        if not _is_toroid(profile):
+            raise ValueError("Toroid sweep radius target requires an XToroid or YToroid surface")
+        return float(profile.cR)
     raise ValueError(f"Unknown variable kind: {kind}")
 
 
-def _write_target_value(opm, kind: str, surface_index: int, value: float) -> None:
+def _write_target_value(opm, entry: dict, value: float) -> None:
+    kind = entry["kind"]
+    surface_index = entry["surface_index"]
     sm = opm["seq_model"]
     if kind == "radius":
         _validate_surface_index(sm.ifcs, surface_index, "surface_index")
@@ -71,6 +159,24 @@ def _write_target_value(opm, kind: str, surface_index: int, value: float) -> Non
     if kind == "thickness":
         _validate_surface_index(sm.gaps, surface_index, "surface_index")
         sm.gaps[surface_index].thi = float(value)
+        return
+    _ensure_asphere_profile(opm, entry)
+    profile = _surface_profile(opm, surface_index)
+    if kind == "asphere_conic_constant":
+        profile.cc = float(value)
+        return
+    if kind == "asphere_polynomial_coefficient":
+        coefficient_index = entry["coefficient_index"]
+        coefficients = list(getattr(profile, "coefs", []))
+        while len(coefficients) <= coefficient_index:
+            coefficients.append(0.0)
+        coefficients[coefficient_index] = float(value)
+        profile.coefs = coefficients
+        return
+    if kind == "asphere_toric_sweep_radius":
+        if not _is_toroid(profile):
+            raise ValueError("Toroid sweep radius target requires an XToroid or YToroid surface")
+        profile.cR = float(value)
         return
     raise ValueError(f"Unknown variable kind: {kind}")
 
@@ -180,76 +286,118 @@ def _normalize_optimizer_config(config: dict) -> dict:
 
 def _normalize_variables(opm, variables: list[dict]) -> list[dict]:
     normalized: list[dict] = []
-    seen_targets: set[tuple[str, int]] = set()
+    seen_targets: set[tuple] = set()
     for entry in variables:
         kind = entry.get("kind")
-        if kind not in {"radius", "thickness"}:
+        if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
             raise ValueError(f"Unknown variable kind: {kind}")
-        surface_index = entry.get("surface_index")
-        _validate_target_for_kind(opm, kind, surface_index)
-        key = _target_key(kind, surface_index)
+        normalized_entry = {
+            "kind": kind,
+            "surface_index": entry.get("surface_index"),
+        }
+        if kind in {"asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
+            normalized_entry["asphere_kind"] = entry.get("asphere_kind")
+        if kind == "asphere_polynomial_coefficient":
+            normalized_entry["coefficient_index"] = entry.get("coefficient_index")
+        _validate_target_for_kind(opm, normalized_entry)
+        key = _target_key(normalized_entry)
         if key in seen_targets:
             raise ValueError(f"Duplicate variable target: {key}")
         if "min" not in entry or "max" not in entry:
             raise ValueError("Variables must provide both min and max bounds")
-        normalized.append(
-            {
-                "kind": kind,
-                "surface_index": surface_index,
-                "min": float(entry["min"]),
-                "max": float(entry["max"]),
-            }
-        )
+        normalized_entry["min"] = float(entry["min"])
+        normalized_entry["max"] = float(entry["max"])
+        normalized.append(normalized_entry)
         seen_targets.add(key)
     return normalized
 
 
-def _normalize_pickups(opm, pickups: list[dict], variable_targets: set[tuple[str, int]]) -> list[dict]:
+def _normalize_pickups(opm, pickups: list[dict], variable_targets: set[tuple]) -> list[dict]:
     normalized: list[dict] = []
-    seen_targets: set[tuple[str, int]] = set()
+    seen_targets: set[tuple] = set()
     for entry in pickups:
         kind = entry.get("kind")
-        if kind not in {"radius", "thickness"}:
+        if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
             raise ValueError(f"Unknown pickup kind: {kind}")
-        surface_index = entry.get("surface_index")
-        source_surface_index = entry.get("source_surface_index")
-        _validate_target_for_kind(opm, kind, surface_index)
-        _validate_target_for_kind(opm, kind, source_surface_index, "source_surface_index")
-        key = _target_key(kind, surface_index)
+        normalized_entry = {
+            "kind": kind,
+            "surface_index": entry.get("surface_index"),
+            "source_surface_index": entry.get("source_surface_index"),
+        }
+        if kind in {"asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
+            normalized_entry["asphere_kind"] = entry.get("asphere_kind")
+        if kind == "asphere_polynomial_coefficient":
+            normalized_entry["coefficient_index"] = entry.get("coefficient_index")
+            normalized_entry["source_coefficient_index"] = entry.get("source_coefficient_index")
+        _validate_target_for_kind(opm, normalized_entry)
+        _validate_target_for_kind(
+            opm,
+            {
+                **normalized_entry,
+                "surface_index": normalized_entry["source_surface_index"],
+                **(
+                    {"coefficient_index": normalized_entry["source_coefficient_index"]}
+                    if kind == "asphere_polynomial_coefficient"
+                    else {}
+                ),
+            },
+            "source_surface_index",
+        )
+        key = _target_key(normalized_entry)
         if key in variable_targets:
             raise ValueError(f"Target {key} cannot be both variable and pickup target")
         if key in seen_targets:
             raise ValueError(f"Duplicate pickup target: {key}")
-        normalized.append(
-            {
-                "kind": kind,
-                "surface_index": surface_index,
-                "source_surface_index": source_surface_index,
-                "scale": float(entry.get("scale", 1.0)),
-                "offset": float(entry.get("offset", 0.0)),
-            }
-        )
+        normalized_entry["scale"] = float(entry.get("scale", 1.0))
+        normalized_entry["offset"] = float(entry.get("offset", 0.0))
+        normalized.append(normalized_entry)
         seen_targets.add(key)
     _validate_pickup_graph(normalized)
     return normalized
 
 
-def _validate_target_for_kind(opm, kind: str, surface_index: int, label: str = "surface_index") -> None:
+def _validate_target_for_kind(opm, entry: dict, label: str = "surface_index") -> None:
+    kind = entry["kind"]
+    surface_index = entry["surface_index"]
     sm = opm["seq_model"]
     if kind == "radius":
         _validate_surface_index(sm.ifcs, surface_index, label)
-    elif kind == "thickness":
+        return
+    if kind == "thickness":
         _validate_surface_index(sm.gaps, surface_index, label)
-    else:
-        raise ValueError(f"Unknown variable kind: {kind}")
+        return
+    if kind in {"asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
+        _validate_surface_index(sm.ifcs, surface_index, label)
+        _ensure_asphere_profile(opm, entry)
+        profile = _surface_profile(opm, surface_index)
+        if kind == "asphere_polynomial_coefficient":
+            coefficient_index = entry.get("coefficient_index")
+            if not isinstance(coefficient_index, int) or coefficient_index < 0 or coefficient_index > 9:
+                raise IndexError(f"coefficient_index {coefficient_index} is out of range")
+            if not _supports_polynomials(profile):
+                raise ValueError("Polynomial coefficient target requires a coefficient-bearing asphere")
+        if kind == "asphere_toric_sweep_radius" and not _is_toroid(profile):
+            raise ValueError("Toroid sweep radius target requires an XToroid or YToroid surface")
+        return
+    raise ValueError(f"Unknown variable kind: {kind}")
 
 
 def _validate_pickup_graph(pickups: list[dict]) -> None:
-    graph: dict[tuple[str, int], set[tuple[str, int]]] = {}
-    indegree: dict[tuple[str, int], int] = {}
+    graph: dict[tuple, set[tuple]] = {}
+    indegree: dict[tuple, int] = {}
     for pickup in pickups:
-        target = _target_key(pickup["kind"], pickup["surface_index"])
-        source = _target_key(pickup["kind"], pickup["source_surface_index"])
+        target = _target_key(pickup)
+        source = _target_key(
+            {
+                "kind": pickup["kind"],
+                "surface_index": pickup["source_surface_index"],
+                **(
+                    {"coefficient_index": pickup["source_coefficient_index"]}
+                    if pickup["kind"] == "asphere_polynomial_coefficient"
+                    else {}
+                ),
+            }
+        )
         graph.setdefault(source, set()).add(target)
         graph.setdefault(target, set())
         indegree.setdefault(source, 0)
@@ -270,11 +418,21 @@ def _validate_pickup_graph(pickups: list[dict]) -> None:
 
 def _pickup_order(pickups: list[dict]) -> list[dict]:
     """Return pickups in dependency order after cycle validation."""
-    by_target = {_target_key(p["kind"], p["surface_index"]): p for p in pickups}
-    graph: dict[tuple[str, int], set[tuple[str, int]]] = {}
-    indegree: dict[tuple[str, int], int] = {}
+    by_target = {_target_key(p): p for p in pickups}
+    graph: dict[tuple, set[tuple]] = {}
+    indegree: dict[tuple, int] = {}
     for target, pickup in by_target.items():
-        source = _target_key(pickup["kind"], pickup["source_surface_index"])
+        source = _target_key(
+            {
+                "kind": pickup["kind"],
+                "surface_index": pickup["source_surface_index"],
+                **(
+                    {"coefficient_index": pickup["source_coefficient_index"]}
+                    if pickup["kind"] == "asphere_polynomial_coefficient"
+                    else {}
+                ),
+            }
+        )
         graph.setdefault(source, set()).add(target)
         graph.setdefault(target, set())
         indegree.setdefault(source, 0)
@@ -346,7 +504,7 @@ def _normalize_merit_function(opm, merit_function: dict) -> dict:
 def _normalize_config(opm, config: dict) -> dict:
     optimizer = _normalize_optimizer_config(config)
     variables = _normalize_variables(opm, deepcopy(config.get("variables") or []))
-    variable_targets = {_target_key(variable["kind"], variable["surface_index"]) for variable in variables}
+    variable_targets = {_target_key(variable) for variable in variables}
     pickups = _normalize_pickups(opm, deepcopy(config.get("pickups") or []), variable_targets)
     merit_function = _normalize_merit_function(opm, deepcopy(config.get("merit_function") or {}))
     return {
@@ -374,7 +532,7 @@ class _OptimizationProblem:
 
     def current_vector(self) -> np.ndarray:
         return np.array(
-            [self._to_internal_value(variable, _read_target_value(self.opm, variable["kind"], variable["surface_index"])) for variable in self.variables],
+            [self._to_internal_value(variable, _read_target_value(self.opm, variable)) for variable in self.variables],
             dtype=float,
         )
 
@@ -387,27 +545,27 @@ class _OptimizationProblem:
 
     def apply_vector(self, values: np.ndarray | list[float]) -> list[dict]:
         for value, variable in zip(values, self.variables):
-            _write_target_value(
-                self.opm,
-                variable["kind"],
-                variable["surface_index"],
-                self._from_internal_value(variable, float(value)),
-            )
+            _write_target_value(self.opm, variable, self._from_internal_value(variable, float(value)))
         pickup_reports: list[dict] = []
         for pickup in self.ordered_pickups:
-            source_value = _read_target_value(self.opm, pickup["kind"], pickup["source_surface_index"])
+            source_target = {
+                "kind": pickup["kind"],
+                "surface_index": pickup["source_surface_index"],
+                **(
+                    {"asphere_kind": pickup["asphere_kind"]}
+                    if "asphere_kind" in pickup
+                    else {}
+                ),
+                **(
+                    {"coefficient_index": pickup["source_coefficient_index"]}
+                    if pickup["kind"] == "asphere_polynomial_coefficient"
+                    else {}
+                ),
+            }
+            source_value = _read_target_value(self.opm, source_target)
             value = pickup["scale"] * source_value + pickup["offset"]
-            _write_target_value(self.opm, pickup["kind"], pickup["surface_index"], value)
-            pickup_reports.append(
-                {
-                    "kind": pickup["kind"],
-                    "surface_index": pickup["surface_index"],
-                    "source_surface_index": pickup["source_surface_index"],
-                    "scale": pickup["scale"],
-                    "offset": pickup["offset"],
-                    "value": float(value),
-                }
-            )
+            _write_target_value(self.opm, pickup, value)
+            pickup_reports.append({**pickup, "value": float(value)})
         self.opm.update_model()
         return pickup_reports
 
@@ -514,7 +672,9 @@ class _OptimizationProblem:
             {
                 "kind": variable["kind"],
                 "surface_index": variable["surface_index"],
-                "value": float(_read_target_value(self.opm, variable["kind"], variable["surface_index"])),
+                **({"asphere_kind": variable["asphere_kind"]} if "asphere_kind" in variable else {}),
+                **({"coefficient_index": variable["coefficient_index"]} if "coefficient_index" in variable else {}),
+                "value": float(_read_target_value(self.opm, variable)),
                 "min": variable["min"],
                 "max": variable["max"],
             }

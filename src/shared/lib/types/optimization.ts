@@ -1,4 +1,4 @@
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 
 export type OptimizerKind = "least_squares";
 export type LeastSquaresMethod = "trf";
@@ -18,19 +18,8 @@ export interface OptimizationConfig {
     readonly xtol: number;
     readonly gtol: number;
   };
-  readonly variables: ReadonlyArray<{
-    readonly kind: "radius" | "thickness";
-    readonly surface_index: number;
-    readonly min: number;
-    readonly max: number;
-  }>;
-  readonly pickups: ReadonlyArray<{
-    readonly kind: "radius" | "thickness";
-    readonly surface_index: number;
-    readonly source_surface_index: number;
-    readonly scale: number;
-    readonly offset: number;
-  }>;
+  readonly variables: ReadonlyArray<OptimizationVariableConfig>;
+  readonly pickups: ReadonlyArray<OptimizationPickupConfig>;
   readonly merit_function: {
     readonly operands: ReadonlyArray<{
       readonly kind: OptimizationOperandKind;
@@ -42,21 +31,117 @@ export interface OptimizationConfig {
   };
 }
 
-export interface OptimizationValueEntry {
-  readonly kind: "radius" | "thickness";
+export type OptimizationVariableConfig =
+  | {
+      readonly kind: "radius" | "thickness";
+      readonly surface_index: number;
+      readonly min: number;
+      readonly max: number;
+    }
+  | {
+      readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
+      readonly surface_index: number;
+      readonly asphere_kind: AsphericalType;
+      readonly min: number;
+      readonly max: number;
+    }
+  | {
+      readonly kind: "asphere_polynomial_coefficient";
+      readonly surface_index: number;
+      readonly asphere_kind: AsphericalType;
+      readonly coefficient_index: number;
+      readonly min: number;
+      readonly max: number;
+    };
+
+export type OptimizationPickupConfig =
+  | {
+      readonly kind: "radius" | "thickness";
+      readonly surface_index: number;
+      readonly source_surface_index: number;
+      readonly scale: number;
+      readonly offset: number;
+    }
+  | {
+      readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
+      readonly surface_index: number;
+      readonly asphere_kind: AsphericalType;
+      readonly source_surface_index: number;
+      readonly scale: number;
+      readonly offset: number;
+    }
+  | {
+      readonly kind: "asphere_polynomial_coefficient";
+      readonly surface_index: number;
+      readonly asphere_kind: AsphericalType;
+      readonly coefficient_index: number;
+      readonly source_surface_index: number;
+      readonly source_coefficient_index: number;
+      readonly scale: number;
+      readonly offset: number;
+    };
+
+export type OptimizationValueEntry =
+  | {
+      readonly kind: "radius" | "thickness";
+      readonly surface_index: number;
+      readonly value: number;
+      readonly min?: number;
+      readonly max?: number;
+    }
+  | {
+      readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
+      readonly surface_index: number;
+      readonly asphere_kind: AsphericalType;
+      readonly value: number;
+      readonly min?: number;
+      readonly max?: number;
+    }
+  | {
+      readonly kind: "asphere_polynomial_coefficient";
+      readonly surface_index: number;
+      readonly asphere_kind: AsphericalType;
+      readonly coefficient_index: number;
+      readonly value: number;
+      readonly min?: number;
+      readonly max?: number;
+    };
+
+export type OptimizationPickupEntry =
+  | {
+      readonly kind: "radius" | "thickness";
+      readonly surface_index: number;
+      readonly source_surface_index: number;
+      readonly scale: number;
+      readonly offset: number;
+      readonly value: number;
+    }
+  | {
+      readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
+      readonly surface_index: number;
+      readonly asphere_kind: AsphericalType;
+      readonly source_surface_index: number;
+      readonly scale: number;
+      readonly offset: number;
+      readonly value: number;
+    }
+  | {
+      readonly kind: "asphere_polynomial_coefficient";
+      readonly surface_index: number;
+      readonly asphere_kind: AsphericalType;
+      readonly coefficient_index: number;
+      readonly source_surface_index: number;
+      readonly source_coefficient_index: number;
+      readonly scale: number;
+      readonly offset: number;
+      readonly value: number;
+    };
+
+export interface OptimizationValueEntryLegacy {
   readonly surface_index: number;
   readonly value: number;
   readonly min?: number;
   readonly max?: number;
-}
-
-export interface OptimizationPickupEntry {
-  readonly kind: "radius" | "thickness";
-  readonly surface_index: number;
-  readonly source_surface_index: number;
-  readonly scale: number;
-  readonly offset: number;
-  readonly value: number;
 }
 
 export interface OptimizationResidualEntry {

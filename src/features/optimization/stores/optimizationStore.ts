@@ -1,10 +1,12 @@
 import { type StateCreator } from "zustand";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
   LeastSquaresMethod,
   OptimizationConfig,
   OptimizationOperandKind,
+  OptimizationPickupConfig,
   OptimizationReport,
+  OptimizationValueEntry,
   OptimizerKind,
 } from "@/shared/lib/types/optimization";
 
@@ -37,6 +39,52 @@ export type RadiusModeDraft =
       readonly scale: string;
       readonly offset: string;
     };
+
+export type AsphereTermKey = "conic" | "toricSweep" | `coefficient:${number}`;
+
+export type AsphereMode =
+  | { readonly mode: "constant" }
+  | {
+      readonly mode: "variable";
+      readonly min: string;
+      readonly max: string;
+    }
+  | {
+      readonly mode: "pickup";
+      readonly sourceSurfaceIndex: string;
+      readonly sourceTermKey?: AsphereTermKey;
+      readonly scale: string;
+      readonly offset: string;
+    };
+
+export type AsphereTermModeDraft =
+  | {
+      readonly mode: "constant";
+      readonly coefficientIndex?: number;
+    }
+  | {
+      readonly mode: "variable";
+      readonly coefficientIndex?: number;
+      readonly min: string;
+      readonly max: string;
+    }
+  | {
+      readonly mode: "pickup";
+      readonly coefficientIndex?: number;
+      readonly sourceSurfaceIndex: string;
+      readonly sourceTermKey?: AsphereTermKey;
+      readonly scale: string;
+      readonly offset: string;
+    };
+
+export interface AsphereOptimizationState {
+  readonly surfaceIndex: number;
+  readonly type: AsphericalType | undefined;
+  readonly lockedType: boolean;
+  readonly conic: AsphereMode;
+  readonly toricSweep: AsphereMode;
+  readonly coefficients: ReadonlyArray<AsphereMode>;
+}
 
 export interface OptimizationOperandRow {
   readonly id: string;
@@ -77,6 +125,7 @@ export interface OptimizationState {
   wavelengthWeights: number[];
   radiusModes: RadiusMode[];
   thicknessModes: RadiusMode[];
+  asphereStates: AsphereOptimizationState[];
   operands: OptimizationOperandRow[];
   isOptimizing: boolean;
   lastOptimizationReport: OptimizationReport | undefined;
@@ -92,6 +141,9 @@ export interface OptimizationState {
   setWavelengthWeight: (index: number, value: string | number) => void;
   setRadiusMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
   setThicknessMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
+  setAsphereType: (surfaceIndex: number, type: AsphericalType) => void;
+  replaceAsphereState: (surfaceIndex: number, state: AsphereOptimizationState) => void;
+  setAsphereTermMode: (surfaceIndex: number, term: "conic" | "toricSweep" | "coefficient", mode: AsphereTermModeDraft) => void;
   openRadiusModal: (surfaceIndex: number) => void;
   closeRadiusModal: () => void;
   openThicknessModal: (surfaceIndex: number) => void;
@@ -221,6 +273,59 @@ function reconcileModes(previous: RadiusMode[], next: RadiusMode[]): RadiusMode[
   return next.map((entry) => previousBySurfaceIndex.get(entry.surfaceIndex) ?? entry);
 }
 
+function createDefaultAsphereMode(): AsphereMode {
+  return { mode: "constant" };
+}
+
+function padCoefficients(coefficients: number[]): number[] {
+  const next = [...coefficients];
+  while (next.length < 10) {
+    next.push(0);
+  }
+  return next.slice(0, 10);
+}
+
+function trimTrailingZeroCoefficients(coefficients: number[]): number[] {
+  let lastNonZero = -1;
+  for (let index = coefficients.length - 1; index >= 0; index -= 1) {
+    if (coefficients[index] !== 0) {
+      lastNonZero = index;
+      break;
+    }
+  }
+
+  return lastNonZero === -1 ? [] : coefficients.slice(0, lastNonZero + 1);
+}
+
+function createAsphereStates(model: OpticalModel): AsphereOptimizationState[] {
+  return model.surfaces.map((surface, index) => ({
+    surfaceIndex: index + 1,
+    type: surface.aspherical?.kind,
+    lockedType: surface.aspherical !== undefined,
+    conic: createDefaultAsphereMode(),
+    toricSweep: createDefaultAsphereMode(),
+    coefficients: Array.from({ length: 10 }, createDefaultAsphereMode),
+  }));
+}
+
+function reconcileAsphereStates(previous: AsphereOptimizationState[], model: OpticalModel): AsphereOptimizationState[] {
+  const prevByIndex = new Map(previous.map((state) => [state.surfaceIndex, state] as const));
+  return model.surfaces.map((surface, index) => {
+    const surfaceIndex = index + 1;
+    const prev = prevByIndex.get(surfaceIndex);
+    const lockedType = surface.aspherical !== undefined;
+    const nextType = lockedType ? surface.aspherical?.kind : prev?.type;
+    return {
+      surfaceIndex,
+      type: nextType,
+      lockedType,
+      conic: prev?.conic ?? createDefaultAsphereMode(),
+      toricSweep: prev?.toricSweep ?? createDefaultAsphereMode(),
+      coefficients: prev?.coefficients ?? Array.from({ length: 10 }, createDefaultAsphereMode),
+    };
+  });
+}
+
 function createRadiusModes(model: OpticalModel): RadiusMode[] {
   return [
     ...model.surfaces.map((_, index) => ({
@@ -236,6 +341,92 @@ function createThicknessModes(model: OpticalModel): RadiusMode[] {
     surfaceIndex: index + 1,
     mode: "constant" as const,
   }));
+}
+
+function ensureSurfaceAsphere(surface: OpticalModel["surfaces"][number], state: AsphereOptimizationState): NonNullable<OpticalModel["surfaces"][number]["aspherical"]> | undefined {
+  const existing = surface.aspherical;
+  const type = state.type ?? existing?.kind;
+  if (type === undefined) {
+    return existing;
+  }
+
+  if (type === "Conic") {
+    return {
+      kind: "Conic",
+      conicConstant: existing?.conicConstant ?? 0,
+    };
+  }
+
+  const coefficients = padCoefficients(
+    existing !== undefined && "polynomialCoefficients" in existing
+      ? existing.polynomialCoefficients
+      : [],
+  );
+
+  if (type === "XToroid" || type === "YToroid") {
+    return {
+      kind: type,
+      conicConstant: existing?.conicConstant ?? 0,
+      toricSweepRadiusOfCurvature:
+        existing !== undefined && "toricSweepRadiusOfCurvature" in existing
+          ? existing.toricSweepRadiusOfCurvature
+          : surface.curvatureRadius,
+      polynomialCoefficients: coefficients,
+    };
+  }
+
+  return {
+    kind: type,
+    conicConstant: existing?.conicConstant ?? 0,
+    polynomialCoefficients: coefficients,
+  };
+}
+
+function updateAsphereValue(
+  surface: OpticalModel["surfaces"][number],
+  state: AsphereOptimizationState | undefined,
+  entry: OptimizationValueEntry | OptimizationPickupConfig,
+  value: number,
+): OpticalModel["surfaces"][number] {
+  if (!entry.kind.startsWith("asphere_")) {
+    return surface;
+  }
+
+  const effectiveState: AsphereOptimizationState = state ?? {
+    surfaceIndex: 0,
+    type: "EvenAspherical",
+    lockedType: false,
+    conic: createDefaultAsphereMode(),
+    toricSweep: createDefaultAsphereMode(),
+    coefficients: Array.from({ length: 10 }, createDefaultAsphereMode),
+  };
+  const baseAsphere = ensureSurfaceAsphere(surface, {
+    ...effectiveState,
+    type: "asphere_kind" in entry ? entry.asphere_kind : effectiveState.type,
+  });
+
+  if (baseAsphere === undefined) {
+    return surface;
+  }
+
+  if (entry.kind === "asphere_conic_constant") {
+    return { ...surface, aspherical: { ...baseAsphere, conicConstant: value } };
+  }
+
+  if (entry.kind === "asphere_toric_sweep_radius" && "toricSweepRadiusOfCurvature" in baseAsphere) {
+    return { ...surface, aspherical: { ...baseAsphere, toricSweepRadiusOfCurvature: value } };
+  }
+
+  if (entry.kind === "asphere_polynomial_coefficient" && "polynomialCoefficients" in baseAsphere) {
+    const coefficients = padCoefficients(baseAsphere.polynomialCoefficients);
+    coefficients[entry.coefficient_index] = value;
+    return {
+      ...surface,
+      aspherical: { ...baseAsphere, polynomialCoefficients: trimTrailingZeroCoefficients(coefficients) },
+    };
+  }
+
+  return { ...surface, aspherical: baseAsphere };
 }
 
 function applyRadiusToModel(model: OpticalModel, surfaceIndex: number, value: number): OpticalModel {
@@ -287,6 +478,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   wavelengthWeights: [],
   radiusModes: [],
   thicknessModes: [],
+  asphereStates: [],
   operands: [],
   isOptimizing: false,
   lastOptimizationReport: undefined,
@@ -302,6 +494,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       wavelengthWeights: createInitialWavelengthWeights(model),
       radiusModes: createRadiusModes(model),
       thicknessModes: createThicknessModes(model),
+      asphereStates: createAsphereStates(model),
       operands: [],
       lastOptimizationReport: undefined,
     }),
@@ -313,6 +506,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       wavelengthWeights: reconcileWeights(state.wavelengthWeights, model.specs.wavelengths.weights.length),
       radiusModes: reconcileModes(state.radiusModes, createRadiusModes(model)),
       thicknessModes: reconcileModes(state.thicknessModes, createThicknessModes(model)),
+      asphereStates: reconcileAsphereStates(state.asphereStates, model),
     })),
 
   setActiveTabId: (tabId) => set({ activeTabId: tabId }),
@@ -347,6 +541,49 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           ? { surfaceIndex, ...mode } as RadiusMode
           : entry,
       ),
+    })),
+
+  setAsphereType: (surfaceIndex, type) =>
+    set((state) => ({
+      asphereStates: state.asphereStates.map((entry) =>
+        entry.surfaceIndex !== surfaceIndex || entry.lockedType
+          ? entry
+          : { ...entry, type },
+      ),
+    })),
+
+  replaceAsphereState: (surfaceIndex, nextState) =>
+    set((state) => ({
+      asphereStates: state.asphereStates.map((entry) =>
+        entry.surfaceIndex === surfaceIndex
+          ? { ...nextState, surfaceIndex, lockedType: entry.lockedType || nextState.lockedType }
+          : entry,
+      ),
+    })),
+
+  setAsphereTermMode: (surfaceIndex, term, mode) =>
+    set((state) => ({
+      asphereStates: state.asphereStates.map((entry) => {
+        if (entry.surfaceIndex !== surfaceIndex) {
+          return entry;
+        }
+
+        if (term === "conic") {
+          return { ...entry, conic: mode as AsphereMode };
+        }
+
+        if (term === "toricSweep") {
+          return { ...entry, toricSweep: mode as AsphereMode };
+        }
+
+        const coefficientIndex = mode.coefficientIndex ?? 0;
+        return {
+          ...entry,
+          coefficients: entry.coefficients.map((coefficientMode, index) =>
+            index === coefficientIndex ? mode as AsphereMode : coefficientMode,
+          ),
+        };
+      }),
     })),
 
   openRadiusModal: (surfaceIndex) =>
@@ -460,10 +697,121 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           kind: mode.kind,
           surface_index: mode.surfaceIndex,
           source_surface_index: sourceSurfaceIndex,
-          scale: parseIntegerValue(mode.scale, "scale"),
+          scale: parseFloatValue(mode.scale, "scale"),
           offset: parseFloatValue(mode.offset, "offset"),
         };
       });
+
+    const asphereVariables = state.asphereStates.flatMap((asphereState) => {
+      const type = asphereState.type;
+      if (type === undefined) {
+        return [];
+      }
+
+      const variables: Array<OptimizationConfig["variables"][number]> = [];
+      if (asphereState.conic.mode === "variable") {
+        const min = parseFloatValue(asphereState.conic.min, "Min.");
+        const max = parseFloatValue(asphereState.conic.max, "Max.");
+        if (min >= max) {
+          throw new Error("Variable minimum must be less than maximum.");
+        }
+        variables.push({
+          kind: "asphere_conic_constant",
+          surface_index: asphereState.surfaceIndex,
+          asphere_kind: type,
+          min,
+          max,
+        });
+      }
+
+      asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
+        if (coefficientMode.mode !== "variable") {
+          return;
+        }
+        const min = parseFloatValue(coefficientMode.min, "Min.");
+        const max = parseFloatValue(coefficientMode.max, "Max.");
+        if (min >= max) {
+          throw new Error("Variable minimum must be less than maximum.");
+        }
+        variables.push({
+          kind: "asphere_polynomial_coefficient",
+          surface_index: asphereState.surfaceIndex,
+          asphere_kind: type,
+          coefficient_index: coefficientIndex,
+          min,
+          max,
+        });
+      });
+
+      if ((type === "XToroid" || type === "YToroid") && asphereState.toricSweep.mode === "variable") {
+        const min = parseFloatValue(asphereState.toricSweep.min, "Min.");
+        const max = parseFloatValue(asphereState.toricSweep.max, "Max.");
+        if (min >= max) {
+          throw new Error("Variable minimum must be less than maximum.");
+        }
+        variables.push({
+          kind: "asphere_toric_sweep_radius",
+          surface_index: asphereState.surfaceIndex,
+          asphere_kind: type,
+          min,
+          max,
+        });
+      }
+
+      return variables;
+    });
+
+    const aspherePickups = state.asphereStates.flatMap((asphereState) => {
+      const type = asphereState.type;
+      if (type === undefined) {
+        return [];
+      }
+
+      const pickups: Array<OptimizationConfig["pickups"][number]> = [];
+      if (asphereState.conic.mode === "pickup") {
+        pickups.push({
+          kind: "asphere_conic_constant",
+          surface_index: asphereState.surfaceIndex,
+          asphere_kind: type,
+          source_surface_index: parsePositiveInteger(asphereState.conic.sourceSurfaceIndex, "Source surface index"),
+          scale: parseFloatValue(asphereState.conic.scale, "scale"),
+          offset: parseFloatValue(asphereState.conic.offset, "offset"),
+        });
+      }
+
+      asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
+        if (coefficientMode.mode !== "pickup") {
+          return;
+        }
+        const sourceTermKey = coefficientMode.sourceTermKey;
+        if (sourceTermKey === undefined || !sourceTermKey.startsWith("coefficient:")) {
+          throw new Error("Asphere coefficient pickups require a source coefficient term.");
+        }
+        pickups.push({
+          kind: "asphere_polynomial_coefficient",
+          surface_index: asphereState.surfaceIndex,
+          asphere_kind: type,
+          coefficient_index: coefficientIndex,
+          source_surface_index: parsePositiveInteger(coefficientMode.sourceSurfaceIndex, "Source surface index"),
+          source_coefficient_index: parsePositiveInteger(sourceTermKey.replace("coefficient:", ""), "Source coefficient index"),
+          scale: parseFloatValue(coefficientMode.scale, "scale"),
+          offset: parseFloatValue(coefficientMode.offset, "offset"),
+        });
+      });
+
+      if ((type === "XToroid" || type === "YToroid") && asphereState.toricSweep.mode === "pickup") {
+        pickups.push({
+          kind: "asphere_toric_sweep_radius",
+          surface_index: asphereState.surfaceIndex,
+          asphere_kind: type,
+          source_surface_index: parsePositiveInteger(asphereState.toricSweep.sourceSurfaceIndex, "Source surface index"),
+          scale: parseFloatValue(asphereState.toricSweep.scale, "scale"),
+          offset: parseFloatValue(asphereState.toricSweep.offset, "offset"),
+        });
+      }
+
+      return pickups;
+    });
 
     const operands = state.operands.map((operand) => {
       const target = parseFloatValue(operand.target, "Target");
@@ -491,8 +839,8 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
 
     return {
       optimizer,
-      variables,
-      pickups,
+      variables: [...variables, ...asphereVariables],
+      pickups: [...pickups, ...aspherePickups],
       merit_function: { operands },
     };
   },
@@ -509,6 +857,16 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           nextModel = applyRadiusToModel(nextModel, entry.surface_index, entry.value);
         } else if (entry.kind === "thickness") {
           nextModel = applyThicknessToModel(nextModel, entry.surface_index, entry.value);
+        } else {
+          const zeroBased = entry.surface_index - 1;
+          nextModel = {
+            ...nextModel,
+            surfaces: nextModel.surfaces.map((surface, index) =>
+              index === zeroBased
+                ? updateAsphereValue(surface, state.asphereStates.find((asphereState) => asphereState.surfaceIndex === entry.surface_index), entry, entry.value)
+                : surface,
+            ),
+          };
         }
       }
       for (const entry of report.pickups) {
@@ -516,6 +874,16 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           nextModel = applyRadiusToModel(nextModel, entry.surface_index, entry.value);
         } else if (entry.kind === "thickness") {
           nextModel = applyThicknessToModel(nextModel, entry.surface_index, entry.value);
+        } else {
+          const zeroBased = entry.surface_index - 1;
+          nextModel = {
+            ...nextModel,
+            surfaces: nextModel.surfaces.map((surface, index) =>
+              index === zeroBased
+                ? updateAsphereValue(surface, state.asphereStates.find((asphereState) => asphereState.surfaceIndex === entry.surface_index), entry, entry.value)
+                : surface,
+            ),
+          };
         }
       }
 
