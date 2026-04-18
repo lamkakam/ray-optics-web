@@ -150,23 +150,39 @@ export function AsphereVarModal({
   onSave,
   onClose,
 }: AsphereVarModalProps) {
-  const [draft, setDraft] = React.useState<AsphereOptimizationState | undefined>(undefined);
-
-  React.useEffect(() => {
-    if (!isOpen || surfaceIndex === undefined || asphereState === undefined) {
-      setDraft(undefined);
-      return;
-    }
-    setDraft(asphereState);
-  }, [isOpen, surfaceIndex, asphereState]);
-
-  if (!isOpen || surfaceIndex === undefined || asphereState === undefined || draft === undefined) {
+  if (!isOpen || surfaceIndex === undefined || asphereState === undefined) {
     return (
       <Modal isOpen={false} title="Asphere Variable / Pickup">
         <></>
       </Modal>
     );
   }
+
+  return (
+    <AsphereVarModalEditor
+      key={`${surfaceIndex}:${serializeAsphereState(asphereState)}`}
+      surfaceIndex={surfaceIndex}
+      asphereState={asphereState}
+      onSave={onSave}
+      onClose={onClose}
+    />
+  );
+}
+
+interface AsphereVarModalEditorProps {
+  readonly surfaceIndex: number;
+  readonly asphereState: AsphereOptimizationState;
+  readonly onSave: (surfaceIndex: number, state: AsphereOptimizationState) => void;
+  readonly onClose: () => void;
+}
+
+function AsphereVarModalEditor({
+  surfaceIndex,
+  asphereState,
+  onSave,
+  onClose,
+}: AsphereVarModalEditorProps) {
+  const [draft, setDraft] = React.useState<AsphereOptimizationState>(() => asphereState);
 
   const termRows = getTermRows(draft.type);
   const isDoneDisabled = termRows.some((term) => {
@@ -389,4 +405,26 @@ export function AsphereVarModal({
       </div>
     </Modal>
   );
+}
+
+function serializeAsphereMode(mode: AsphereMode): string {
+  switch (mode.mode) {
+    case "constant":
+      return "constant";
+    case "variable":
+      return `variable:${mode.min}:${mode.max}`;
+    case "pickup":
+      return `pickup:${mode.sourceSurfaceIndex}:${mode.sourceTermKey ?? ""}:${mode.scale}:${mode.offset}`;
+  }
+}
+
+function serializeAsphereState(state: AsphereOptimizationState): string {
+  return [
+    state.surfaceIndex,
+    state.type ?? "",
+    String(state.lockedType),
+    serializeAsphereMode(state.conic),
+    serializeAsphereMode(state.toricSweep),
+    state.coefficients.map(serializeAsphereMode).join("|"),
+  ].join(":");
 }

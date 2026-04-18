@@ -50,24 +50,42 @@ export function ThicknessModeModal({
   onSetMode,
   onClose,
 }: ThicknessModeModalProps) {
-  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft | undefined>(undefined);
-
-  React.useEffect(() => {
-    if (!isOpen || surfaceIndex === undefined || selectedMode === undefined) {
-      setDraftMode(undefined);
-      return;
-    }
-
-    setDraftMode(toDraft(selectedMode));
-  }, [isOpen, selectedMode, surfaceIndex]);
-
-  if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined || draftMode === undefined) {
+  if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined) {
     return (
       <Modal isOpen={false} title="Thickness Variable / Pickup">
         <></>
       </Modal>
     );
   }
+
+  return (
+    <ThicknessModeModalEditor
+      key={`${surfaceIndex}:${serializeRadiusMode(selectedMode)}`}
+      optimizationModel={optimizationModel}
+      surfaceIndex={surfaceIndex}
+      selectedMode={selectedMode}
+      onSetMode={onSetMode}
+      onClose={onClose}
+    />
+  );
+}
+
+interface ThicknessModeModalEditorProps {
+  readonly optimizationModel: OpticalModel;
+  readonly surfaceIndex: number;
+  readonly selectedMode: RadiusMode;
+  readonly onSetMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
+  readonly onClose: () => void;
+}
+
+function ThicknessModeModalEditor({
+  optimizationModel,
+  surfaceIndex,
+  selectedMode,
+  onSetMode,
+  onClose,
+}: ThicknessModeModalEditorProps) {
+  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() => toDraft(selectedMode));
 
   const thicknessValue = getThicknessValue(optimizationModel, surfaceIndex);
 
@@ -212,4 +230,15 @@ export function ThicknessModeModal({
       </div>
     </Modal>
   );
+}
+
+function serializeRadiusMode(mode: RadiusMode): string {
+  switch (mode.mode) {
+    case "constant":
+      return "constant";
+    case "variable":
+      return `variable:${mode.min}:${mode.max}`;
+    case "pickup":
+      return `pickup:${mode.sourceSurfaceIndex}:${mode.scale}:${mode.offset}`;
+  }
 }

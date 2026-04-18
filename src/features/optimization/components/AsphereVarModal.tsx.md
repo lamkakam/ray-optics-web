@@ -18,7 +18,7 @@ interface AsphereVarModalProps {
 
 ## Behavior
 
-- Initializes draft from `asphereState` via `useEffect` when `isOpen` becomes true; clears draft on close.
+- Seeds draft from `asphereState` when the modal editor mounts, and resets that draft by remounting a keyed inner editor whenever the committed target surface or asphere state changes.
 - **Type selector**: dropdown with Conic / Even Aspheric / Radial Polynomial / X Toroid / Y Toroid. Disabled when `asphereState.lockedType === true` (surface already has an aspheric configuration from the Editor). Changing the type (when unlocked) resets all term modes to `constant`.
 - **Term rows** rendered based on selected type:
   - `Conic`: Conic Constant only
