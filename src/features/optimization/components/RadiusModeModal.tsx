@@ -77,7 +77,6 @@ export function RadiusModeModal({
     <Modal
       isOpen
       title="Radius Variable / Pickup"
-      onBackdropClick={onClose}
     >
       <div className="space-y-4">
         <Paragraph>
@@ -211,7 +210,10 @@ export function RadiusModeModal({
           </div>
         ) : null}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             variant="primary"
             disabled={variableBoundsCrossZero}
@@ -220,7 +222,7 @@ export function RadiusModeModal({
               onClose();
             }}
           >
-            Done
+            Confirm
           </Button>
         </div>
       </div>

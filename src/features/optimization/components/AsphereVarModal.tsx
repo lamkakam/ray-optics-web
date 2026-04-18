@@ -244,7 +244,7 @@ export function AsphereVarModal({
   };
 
   return (
-    <Modal isOpen title="Asphere Variable / Pickup" size="lg" onBackdropClick={onClose}>
+    <Modal isOpen title="Asphere Variable / Pickup" size="lg">
       <div className="space-y-4">
         <div>
           <Label htmlFor="asphere-type">Type</Label>
@@ -371,7 +371,10 @@ export function AsphereVarModal({
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             variant="primary"
             disabled={isDoneDisabled}
@@ -380,7 +383,7 @@ export function AsphereVarModal({
               onClose();
             }}
           >
-            Done
+            Confirm
           </Button>
         </div>
       </div>

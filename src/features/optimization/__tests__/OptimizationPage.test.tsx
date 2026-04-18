@@ -678,7 +678,7 @@ describe("OptimizationPage", () => {
       });
       expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1);
 
-      await user.click(screen.getByRole("button", { name: "Done" }));
+      await user.click(screen.getByRole("button", { name: "Confirm" }));
 
       await act(async () => {
         jest.advanceTimersByTime(250);

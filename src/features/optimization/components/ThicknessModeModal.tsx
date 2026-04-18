@@ -75,7 +75,6 @@ export function ThicknessModeModal({
     <Modal
       isOpen
       title="Thickness Variable / Pickup"
-      onBackdropClick={onClose}
     >
       <div className="space-y-4">
         <Paragraph>
@@ -196,7 +195,10 @@ export function ThicknessModeModal({
           </div>
         ) : null}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
           <Button
             variant="primary"
             onClick={() => {
@@ -204,7 +206,7 @@ export function ThicknessModeModal({
               onClose();
             }}
           >
-            Done
+            Confirm
           </Button>
         </div>
       </div>

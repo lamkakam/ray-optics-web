@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { AsphereOptimizationState, AsphereMode } from "@/features/optimization/stores/optimizationStore";
 import { AsphereVarModal } from "@/features/optimization/components/AsphereVarModal";
@@ -207,7 +207,22 @@ describe("AsphereVarModal", () => {
     expect(screen.getByRole("textbox", { name: /source coefficient index/i })).toBeInTheDocument();
   });
 
-  it("Done button calls onSave with draft state and then onClose", async () => {
+  it("renders Cancel and Confirm actions", () => {
+    render(
+      <AsphereVarModal
+        isOpen
+        surfaceIndex={1}
+        asphereState={makeState({ type: "Conic" })}
+        onSave={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
+  });
+
+  it("Confirm button calls onSave with draft state and then onClose", async () => {
     const user = userEvent.setup();
     const onSave = jest.fn();
     const onClose = jest.fn();
@@ -220,13 +235,86 @@ describe("AsphereVarModal", () => {
         onClose={onClose}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Done" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({ surfaceIndex: 1 }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("Done button is disabled when variable bounds have min >= max", async () => {
+  it("Cancel closes without saving", async () => {
+    const user = userEvent.setup();
+    const onSave = jest.fn();
+    const onClose = jest.fn();
+
+    render(
+      <AsphereVarModal
+        isOpen
+        surfaceIndex={1}
+        asphereState={makeState({ type: "Conic" })}
+        onSave={onSave}
+        onClose={onClose}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not dismiss when the backdrop is clicked", async () => {
+    const user = userEvent.setup();
+    const onSave = jest.fn();
+    const onClose = jest.fn();
+
+    render(
+      <AsphereVarModal
+        isOpen
+        surfaceIndex={1}
+        asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "0", max: "10" } })}
+        onSave={onSave}
+        onClose={onClose}
+      />,
+    );
+
+    await user.clear(screen.getByRole("textbox", { name: "Conic Constant Min." }));
+    await user.type(screen.getByRole("textbox", { name: "Conic Constant Min." }), "1");
+    fireEvent.click(screen.getByTestId("modal-backdrop"));
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue("1")).toBeInTheDocument();
+  });
+
+  it("does not dismiss when Escape is pressed", async () => {
+    const user = userEvent.setup();
+    const onSave = jest.fn();
+    const onClose = jest.fn();
+    const outerKeyDown = jest.fn();
+
+    render(
+      <div onKeyDown={outerKeyDown}>
+        <AsphereVarModal
+          isOpen
+          surfaceIndex={1}
+          asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "0", max: "10" } })}
+          onSave={onSave}
+          onClose={onClose}
+        />
+      </div>,
+    );
+
+    await user.clear(screen.getByRole("textbox", { name: "Conic Constant Min." }));
+    await user.type(screen.getByRole("textbox", { name: "Conic Constant Min." }), "1");
+    await user.keyboard("{Escape}");
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(outerKeyDown).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue("1")).toBeInTheDocument();
+  });
+
+  it("Confirm button is disabled when variable bounds have min >= max", async () => {
     const user = userEvent.setup();
     render(
       <AsphereVarModal
@@ -244,7 +332,7 @@ describe("AsphereVarModal", () => {
     await user.clear(maxInput);
     await user.type(maxInput, "5");
 
-    expect(screen.getByRole("button", { name: "Done" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
   });
 
   it("blocks saving toroid sweep variable bounds that straddle zero", async () => {
@@ -267,9 +355,9 @@ describe("AsphereVarModal", () => {
     expect(screen.getByText("R = 0 means a flat surface (infinite radius).")).toBeInTheDocument();
     expect(screen.getByText("Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.")).toBeInTheDocument();
     expect(screen.getByText("Toroid sweep R variable bounds must stay on one side of 0.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Done" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
 
-    await user.click(screen.getByRole("button", { name: "Done" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(onSave).not.toHaveBeenCalled();
   });
@@ -296,9 +384,9 @@ describe("AsphereVarModal", () => {
     await user.type(screen.getByRole("textbox", { name: "Toroid sweep R Max." }), "-10");
 
     expect(screen.queryByText("Toroid sweep R variable bounds must stay on one side of 0.")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Done" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
 
-    await user.click(screen.getByRole("button", { name: "Done" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
       toricSweep: { mode: "variable", min: "-10000", max: "-10" },
