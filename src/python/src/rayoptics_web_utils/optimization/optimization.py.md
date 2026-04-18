@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provides a dict-driven optimizer framework for RayOptics `OpticalModel` instances. The public API accepts JSON-encodable config dicts, supports affine pickups for geometric and aspheric targets, evaluates operand-based merit functions, and runs SciPy least-squares optimization.
+Provides the public compatibility facade for the optimization package. The public API still accepts JSON-encodable config dicts, supports affine pickups for geometric and aspheric targets, evaluates operand-based merit functions, and runs SciPy least-squares optimization, but the implementation is now split into algorithm-agnostic problem/config/target modules plus solver adapters.
 
 ## Public API
 
@@ -64,6 +64,8 @@ Both return JSON-serialisable dicts containing:
 
 - `least_squares`
 
+The public facade is now backed by an internal solver registry. Only `least_squares` is registered in this refactor, but the core now exposes both residual-vector and scalar-merit objective hooks for future solvers.
+
 ### Variables / Pickups
 
 - `radius` — reads/writes `opm["seq_model"].ifcs[surface_index].profile.r`
@@ -109,6 +111,17 @@ weighted_residual = total_weight * (actual_value - target)
 - Pickup graphs are topologically validated; cycles raise `ValueError("Pickup cycle detected")`.
 - `merit_function.operands` must not be empty.
 
+## Internal Structure
+
+- `optimization.py` — public facade, solver dispatch, compatibility aliases
+- `config.py` — config normalization and validation
+- `targets.py` — mutable target access, snapshots, radius/curvature transforms
+- `operands.py` — operand registry and per-sample evaluators
+- `problem.py` — algorithm-agnostic `OptimizationProblem`
+- `progress.py` — solver-independent progress tracking
+- `solvers/base.py` — solver adapter contract
+- `solvers/least_squares.py` — current SciPy least-squares adapter
+
 ## Algorithm
 
 ### `evaluate_optimization_problem(opm, config)`
@@ -120,21 +133,26 @@ weighted_residual = total_weight * (actual_value - target)
 5. Evaluates all operand residuals and returns a JSON-safe report.
 6. If evaluation fails, restores the snapshotted state and re-raises.
 
-### `_OptimizationProblem`
+### `OptimizationProblem`
 
-- Owns normalized optimizer state, variable/pickup application, merit evaluation, and the SciPy integration hooks.
-- `objective(vector)` evaluates one optimizer step and converts the merit report into the residual vector consumed by SciPy.
-- `objective(vector)` also records merit-history entries in `self.optimization_progress` whenever the incoming variable vector differs materially from the last recorded vector. This approximates solver iterations without relying on SciPy’s newer `callback` argument, which is unavailable in the Pyodide-supported SciPy version.
-- `objective(vector)` catches evaluation failures and returns a large penalty residual vector (`1e6` per operand, minimum length 1) so optimization can continue.
+- Owns normalized optimizer state, variable/pickup application, merit evaluation, scalar and residual objectives, and solver-independent progress tracking.
+- `residual_objective(vector)` evaluates one optimizer step and converts the merit report into the residual vector consumed by least-squares-style solvers.
+- `scalar_objective(vector)` evaluates one optimizer step and returns `merit_function["sum_of_squares"]` for future scalar/global optimizers.
+- Both objective methods record merit-history entries whenever the incoming variable vector differs materially from the last recorded vector.
+- Residual evaluation failures return a large penalty residual vector (`1e6` per operand, minimum length 1); scalar evaluation failures return `1e6`.
 - For radius variables, `current_vector()`, `bounds()`, and `apply_vector(...)` all translate between external radius units and the internal curvature-space optimizer vector.
-- `optimize(progress_reporter=None)` runs `scipy.optimize.least_squares(...)` using the stored optimizer configuration, current variable vector, bounds, and `objective`, and forwards each newly recorded history snapshot to `progress_reporter` when provided.
+
+### `LeastSquaresSolver`
+
+- Runs `scipy.optimize.least_squares(...)` using the stored optimizer configuration, current variable vector, bounds, and `OptimizationProblem.residual_objective(...)`.
+- Normalizes the SciPy result into the mapping consumed by `optimize_opm(...)`.
 
 ### `optimize_opm(opm, config)`
 
 1. Validates and normalizes the config.
 2. Snapshots all variable/pickup targets before mutation.
 3. Builds the current variable vector and bounds from the config.
-4. Delegates the SciPy `least_squares(...)` call to `_OptimizationProblem.optimize()`.
+4. Selects the registered solver adapter for `optimizer.kind` and delegates execution to it.
 5. Each objective evaluation:
    - is handled by `_OptimizationProblem.objective(vector)`
    - writes variables
