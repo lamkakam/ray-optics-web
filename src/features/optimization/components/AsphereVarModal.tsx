@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { MathJax } from "better-react-mathjax";
 import type { AsphericalType } from "@/shared/lib/types/opticalModel";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
 import { Button } from "@/shared/components/primitives/Button";
@@ -14,7 +15,18 @@ type TermKind = "conic" | "toricSweep" | { coefficientIndex: number };
 
 interface TermDescriptor {
   readonly kind: TermKind;
-  readonly label: string;
+  readonly displayLabel: React.ReactNode;
+  readonly ariaLabel: string;
+}
+
+function createCoefficientTermDescriptor(coefficientIndex: number, coefficientLabel: string): TermDescriptor {
+  const mathIndex = coefficientLabel.replace("a_", "");
+
+  return {
+    kind: { coefficientIndex },
+    displayLabel: <MathJax inline>{`\\(a_{${mathIndex}}\\)`}</MathJax>,
+    ariaLabel: coefficientLabel,
+  };
 }
 
 const ASPHERE_TYPE_OPTIONS = [
@@ -36,7 +48,11 @@ function getTermRows(type: AsphericalType | undefined): ReadonlyArray<TermDescri
     return [];
   }
 
-  const conicRow: TermDescriptor = { kind: "conic", label: "Conic Constant" };
+  const conicRow: TermDescriptor = {
+    kind: "conic",
+    displayLabel: "Conic Constant",
+    ariaLabel: "Conic Constant",
+  };
 
   if (type === "Conic") {
     return [conicRow];
@@ -44,25 +60,26 @@ function getTermRows(type: AsphericalType | undefined): ReadonlyArray<TermDescri
 
   if (type === "EvenAspherical") {
     const coeffRows: TermDescriptor[] = Array.from({ length: 10 }, (_, i) => ({
-      kind: { coefficientIndex: i } as TermKind,
-      label: `a_${(i + 1) * 2}`,
+      ...createCoefficientTermDescriptor(i, `a_${(i + 1) * 2}`),
     }));
     return [conicRow, ...coeffRows];
   }
 
   if (type === "RadialPolynomial") {
     const coeffRows: TermDescriptor[] = Array.from({ length: 10 }, (_, i) => ({
-      kind: { coefficientIndex: i } as TermKind,
-      label: `a_${i + 1}`,
+      ...createCoefficientTermDescriptor(i, `a_${i + 1}`),
     }));
     return [conicRow, ...coeffRows];
   }
 
   if (type === "XToroid" || type === "YToroid") {
-    const toricRow: TermDescriptor = { kind: "toricSweep", label: "Toroid sweep R" };
+    const toricRow: TermDescriptor = {
+      kind: "toricSweep",
+      displayLabel: "Toroid sweep R",
+      ariaLabel: "Toroid sweep R",
+    };
     const coeffRows: TermDescriptor[] = Array.from({ length: 10 }, (_, i) => ({
-      kind: { coefficientIndex: i } as TermKind,
-      label: `a_${(i + 1) * 2}`,
+      ...createCoefficientTermDescriptor(i, `a_${(i + 1) * 2}`),
     }));
     return [conicRow, toricRow, ...coeffRows];
   }
@@ -256,10 +273,10 @@ export function AsphereVarModal({
               return (
                 <div key={termId} className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <span className="w-36 shrink-0 text-sm font-medium">{term.label}</span>
+                    <span className="w-36 shrink-0 text-sm font-medium">{term.displayLabel}</span>
                     <Select
                       id={`${termId}-mode`}
-                      aria-label={`${term.label} mode`}
+                      aria-label={`${term.ariaLabel} mode`}
                       value={mode.mode}
                       options={MODE_OPTIONS}
                       onChange={(e) => handleTermModeChange(term, e.target.value)}
@@ -282,7 +299,7 @@ export function AsphereVarModal({
                         <Label htmlFor={`${termId}-min`}>Min.</Label>
                         <Input
                           id={`${termId}-min`}
-                          aria-label={`${term.label} Min.`}
+                          aria-label={`${term.ariaLabel} Min.`}
                           value={mode.min}
                           onChange={(e) => handleTermVariableChange(term, "min", e.target.value)}
                         />
@@ -291,7 +308,7 @@ export function AsphereVarModal({
                         <Label htmlFor={`${termId}-max`}>Max.</Label>
                         <Input
                           id={`${termId}-max`}
-                          aria-label={`${term.label} Max.`}
+                          aria-label={`${term.ariaLabel} Max.`}
                           value={mode.max}
                           onChange={(e) => handleTermVariableChange(term, "max", e.target.value)}
                         />
@@ -310,7 +327,7 @@ export function AsphereVarModal({
                         <Label htmlFor={`${termId}-source`}>Source surface index</Label>
                         <Input
                           id={`${termId}-source`}
-                          aria-label={`${term.label} source surface index`}
+                          aria-label={`${term.ariaLabel} source surface index`}
                           value={mode.sourceSurfaceIndex}
                           onChange={(e) => handleTermPickupChange(term, "sourceSurfaceIndex", e.target.value)}
                         />
@@ -320,7 +337,7 @@ export function AsphereVarModal({
                           <Label htmlFor={`${termId}-source-coeff`}>Source coefficient index</Label>
                           <Input
                             id={`${termId}-source-coeff`}
-                            aria-label={`${term.label} source coefficient index`}
+                            aria-label={`${term.ariaLabel} source coefficient index`}
                             value={mode.sourceTermKey?.replace("coefficient:", "") ?? ""}
                             onChange={(e) => handleTermPickupChange(term, "sourceCoefficientIndex", e.target.value)}
                           />
@@ -331,7 +348,7 @@ export function AsphereVarModal({
                           <Label htmlFor={`${termId}-scale`}>Scale</Label>
                           <Input
                             id={`${termId}-scale`}
-                            aria-label={`${term.label} scale`}
+                            aria-label={`${term.ariaLabel} scale`}
                             value={mode.scale}
                             onChange={(e) => handleTermPickupChange(term, "scale", e.target.value)}
                           />
@@ -340,7 +357,7 @@ export function AsphereVarModal({
                           <Label htmlFor={`${termId}-offset`}>Offset</Label>
                           <Input
                             id={`${termId}-offset`}
-                            aria-label={`${term.label} offset`}
+                            aria-label={`${term.ariaLabel} offset`}
                             value={mode.offset}
                             onChange={(e) => handleTermPickupChange(term, "offset", e.target.value)}
                           />

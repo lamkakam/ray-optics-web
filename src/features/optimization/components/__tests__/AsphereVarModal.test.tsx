@@ -4,6 +4,15 @@ import userEvent from "@testing-library/user-event";
 import type { AsphereOptimizationState, AsphereMode } from "@/features/optimization/stores/optimizationStore";
 import { AsphereVarModal } from "@/features/optimization/components/AsphereVarModal";
 
+jest.mock("better-react-mathjax", () => ({
+  MathJaxContext: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="mathjax-context">{children}</div>
+  ),
+  MathJax: ({ children }: { children: React.ReactNode }) => (
+    <span data-testid="mathjax">{children}</span>
+  ),
+}));
+
 const constantMode: AsphereMode = { mode: "constant" };
 
 function makeState(overrides: Partial<AsphereOptimizationState>): AsphereOptimizationState {
@@ -86,8 +95,8 @@ describe("AsphereVarModal", () => {
       />,
     );
     expect(screen.getByText("Conic Constant")).toBeInTheDocument();
-    expect(screen.getByText("a_2")).toBeInTheDocument();
-    expect(screen.getByText("a_20")).toBeInTheDocument();
+    expect(screen.getByText("\\(a_{2}\\)")).toBeInTheDocument();
+    expect(screen.getByText("\\(a_{20}\\)")).toBeInTheDocument();
     expect(screen.queryByText("a_1")).not.toBeInTheDocument();
     expect(screen.queryByText("Toroid sweep R")).not.toBeInTheDocument();
   });
@@ -100,8 +109,8 @@ describe("AsphereVarModal", () => {
       />,
     );
     expect(screen.getByText("Conic Constant")).toBeInTheDocument();
-    expect(screen.getByText("a_1")).toBeInTheDocument();
-    expect(screen.getByText("a_10")).toBeInTheDocument();
+    expect(screen.getByText("\\(a_{1}\\)")).toBeInTheDocument();
+    expect(screen.getByText("\\(a_{10}\\)")).toBeInTheDocument();
     // RadialPolynomial uses a_1..a_10 (not a_12/a_20 as in EvenAspherical)
     expect(screen.queryByText("a_12")).not.toBeInTheDocument();
     expect(screen.queryByText("a_20")).not.toBeInTheDocument();
@@ -117,8 +126,8 @@ describe("AsphereVarModal", () => {
     );
     expect(screen.getByText("Conic Constant")).toBeInTheDocument();
     expect(screen.getByText("Toroid sweep R")).toBeInTheDocument();
-    expect(screen.getByText("a_2")).toBeInTheDocument();
-    expect(screen.getByText("a_20")).toBeInTheDocument();
+    expect(screen.getByText("\\(a_{2}\\)")).toBeInTheDocument();
+    expect(screen.getByText("\\(a_{20}\\)")).toBeInTheDocument();
   });
 
   it("shows Conic Constant, Toroid sweep R, and even-polynomial coefficient rows for YToroid type", () => {
@@ -130,7 +139,25 @@ describe("AsphereVarModal", () => {
     );
     expect(screen.getByText("Conic Constant")).toBeInTheDocument();
     expect(screen.getByText("Toroid sweep R")).toBeInTheDocument();
-    expect(screen.getByText("a_20")).toBeInTheDocument();
+    expect(screen.getByText("\\(a_{20}\\)")).toBeInTheDocument();
+  });
+
+  it("keeps plain-text accessibility labels for coefficient controls while rendering coefficient text with MathJax", async () => {
+    const user = userEvent.setup();
+    render(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({ type: "EvenAspherical" })}
+      />,
+    );
+
+    expect(screen.getByText("\\(a_{2}\\)")).toBeInTheDocument();
+
+    const selects = screen.getAllByRole("combobox");
+    await user.selectOptions(selects[2], "pickup");
+
+    expect(screen.getByRole("combobox", { name: "a_2 mode" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "a_2 source coefficient index" })).toBeInTheDocument();
   });
 
   it("selecting variable mode for conic shows Min and Max inputs", async () => {

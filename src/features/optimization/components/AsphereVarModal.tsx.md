@@ -25,6 +25,7 @@ interface AsphereVarModalProps {
   - `EvenAspherical`: Conic Constant + a_2, a_4, ..., a_20 (10 coefficients, even-indexed)
   - `RadialPolynomial`: Conic Constant + a_1, a_2, ..., a_10 (10 coefficients, sequential)
   - `XToroid` / `YToroid`: Conic Constant + Toroid sweep R + a_2, a_4, ..., a_20
+- Coefficient row labels are displayed with `MathJax inline` as `\(a_{n}\)` while preserving plain-text accessibility names such as `a_2 mode` and `a_2 Min.` for controls in the same row.
 - Each term row has a mode selector (`constant` / `variable` / `pickup`).
   - **variable**: shows Min and Max `Input` fields inline.
     - For `Toroid sweep R`, also shows guidance that `R = 0` is a flat surface (infinite radius), instructs users not to straddle `0`, and shows an inline validation message when bounds straddle `0`.
@@ -36,3 +37,4 @@ interface AsphereVarModalProps {
 - Coefficient label mapping: EvenAspherical/XToroid/YToroid use `a_${(index+1)*2}` (a_2, a_4…); RadialPolynomial uses `a_${index+1}` (a_1, a_2…).
 - `sourceTermKey` for coefficient pickups is stored as the template literal `"coefficient:N"` and validated by `buildOptimizationConfig()` in the store.
 - Conic and toricSweep pickups do not require a `sourceTermKey`.
+- Uses `<MathJax inline>` for coefficient labels only; this component does not own a `MathJaxContext` and relies on the app-level provider.
