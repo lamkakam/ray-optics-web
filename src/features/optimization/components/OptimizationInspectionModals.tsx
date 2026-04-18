@@ -31,6 +31,7 @@ export function OptimizationInspectionModals({
   return (
     <>
       <MediumSelectorModal
+        key={mediumModalRow?.id ?? "medium-closed"}
         isOpen={mediumModalRow !== undefined}
         initialMedium={mediumModalRow?.kind === "surface" || mediumModalRow?.kind === "object" ? mediumModalRow.medium : "air"}
         initialManufacturer={mediumModalRow?.kind === "surface" || mediumModalRow?.kind === "object" ? mediumModalRow.manufacturer : ""}
@@ -41,6 +42,7 @@ export function OptimizationInspectionModals({
       />
 
       <AsphericalModal
+        key={asphericalModalRow?.id ?? "aspherical-closed"}
         isOpen={asphericalModalRow?.kind === "surface"}
         readOnly
         initialConicConstant={asphericalModalRow?.kind === "surface" ? (asphericalModalRow.aspherical?.conicConstant ?? 0) : 0}
@@ -61,6 +63,7 @@ export function OptimizationInspectionModals({
       />
 
       <DecenterModal
+        key={decenterModalRow?.id ?? "decenter-closed"}
         isOpen={decenterModalRow !== undefined}
         readOnly
         initialDecenter={decenterModalRow?.kind !== "object" ? decenterModalRow?.decenter : undefined}
@@ -70,6 +73,7 @@ export function OptimizationInspectionModals({
       />
 
       <DiffractionGratingModal
+        key={diffractionGratingModalRow?.id ?? "diffraction-grating-closed"}
         isOpen={diffractionGratingModalRow?.kind === "surface"}
         readOnly
         initialDiffractionGrating={diffractionGratingModalRow?.kind === "surface" ? diffractionGratingModalRow.diffractionGrating : undefined}
