@@ -472,21 +472,25 @@ describe("OptimizationPage", () => {
 
     await user.click(screen.getByRole("tab", { name: "Fields" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
     expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("p-4");
     expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("overflow-y-auto");
 
     await user.click(screen.getByRole("tab", { name: "Wavelengths" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
     expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("p-4");
     expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("overflow-y-auto");
 
     await user.click(screen.getByRole("tab", { name: "Lens Prescription" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
     expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("p-4");
     expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("overflow-y-auto");
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
     expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("p-4");
     expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("overflow-y-auto");
   });

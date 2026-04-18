@@ -24,6 +24,7 @@ describe("OptimizationOperandsTab", () => {
     );
 
     expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("overflow-y-auto");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
 
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
     expect(Array.from(headers, (header) => header.textContent)).toEqual([

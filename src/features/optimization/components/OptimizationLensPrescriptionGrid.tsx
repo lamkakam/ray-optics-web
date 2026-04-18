@@ -346,7 +346,13 @@ export function OptimizationLensPrescriptionGrid({
   return (
     <div data-testid="optimization-lens-prescription-grid" className="overflow-x-auto">
       <AgGridProvider modules={[AllCommunityModule]}>
-        <AgGridReact theme={gridTheme} rowData={[...rows]} columnDefs={lensColumns} domLayout="autoHeight" />
+        <AgGridReact
+          theme={gridTheme}
+          rowData={[...rows]}
+          columnDefs={lensColumns}
+          defaultColDef={{ sortable: false, suppressMovable: true }}
+          domLayout="autoHeight"
+        />
       </AgGridProvider>
     </div>
   );

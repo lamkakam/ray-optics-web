@@ -17,6 +17,7 @@ interface ColDef {
 interface AgGridReactProps {
   rowData?: Record<string, unknown>[];
   columnDefs?: ColDef[];
+  defaultColDef?: ColDef;
   getRowId?: (params: { data: Record<string, unknown> }) => string;
   onRowSelected?: (event: unknown) => void;
   theme?: unknown;
@@ -96,10 +97,16 @@ export function AgGridProvider({ children }: { children: React.ReactNode; module
   return <>{children}</>;
 }
 
-export function AgGridReact({ rowData, columnDefs, theme, domLayout }: AgGridReactProps) {
+export function AgGridReact({ rowData, columnDefs, defaultColDef, theme, domLayout }: AgGridReactProps) {
   const themeName = theme && typeof theme === "object" && "_name" in theme ? (theme as { _name: string })._name : undefined;
   return (
-    <table data-testid="ag-grid-mock" data-theme={themeName} data-dom-layout={domLayout}>
+    <table
+      data-testid="ag-grid-mock"
+      data-theme={themeName}
+      data-dom-layout={domLayout}
+      data-default-col-def-suppress-movable={String(defaultColDef?.suppressMovable === true)}
+      data-default-col-def-sortable={String(defaultColDef?.sortable === true)}
+    >
       <thead>
         <tr>
           {columnDefs?.map((col, i) => (

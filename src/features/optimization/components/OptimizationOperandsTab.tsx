@@ -94,6 +94,7 @@ export function OptimizationOperandsTab({
           theme={gridTheme}
           rowData={[...operands]}
           columnDefs={operandColumns}
+          defaultColDef={{ sortable: false, suppressMovable: true }}
           domLayout="autoHeight"
         />
       </AgGridProvider>

@@ -45,7 +45,13 @@ export function OptimizationWeightsGrid({
   return (
     <div data-testid="optimization-weights-grid" className="overflow-x-auto">
       <AgGridProvider modules={[AllCommunityModule]}>
-        <AgGridReact theme={gridTheme} rowData={[...rows]} columnDefs={weightColumns} domLayout="autoHeight" />
+        <AgGridReact
+          theme={gridTheme}
+          rowData={[...rows]}
+          columnDefs={weightColumns}
+          defaultColDef={{ sortable: false, suppressMovable: true }}
+          domLayout="autoHeight"
+        />
       </AgGridProvider>
     </div>
   );
