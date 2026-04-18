@@ -7,6 +7,7 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
+import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select } from "@/shared/components/primitives/Select";
 
 type TermKind = "conic" | "toricSweep" | { coefficientIndex: number };
@@ -102,6 +103,17 @@ function isVariableInvalid(mode: AsphereMode): boolean {
   return !Number.isFinite(min) || !Number.isFinite(max) || min >= max;
 }
 
+function crossesZero(minValue: string, maxValue: string): boolean {
+  const min = Number(minValue);
+  const max = Number(maxValue);
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return false;
+  }
+
+  return min < 0 && max > 0;
+}
+
 function isCoefficient(kind: TermKind): kind is { coefficientIndex: number } {
   return typeof kind === "object";
 }
@@ -140,7 +152,17 @@ export function AsphereVarModal({
   }
 
   const termRows = getTermRows(draft.type);
-  const isDoneDisabled = termRows.some((term) => isVariableInvalid(getTermMode(draft, term)));
+  const isDoneDisabled = termRows.some((term) => {
+    const mode = getTermMode(draft, term);
+
+    if (isVariableInvalid(mode)) {
+      return true;
+    }
+
+    return term.kind === "toricSweep"
+      && mode.mode === "variable"
+      && crossesZero(mode.min, mode.max);
+  });
 
   const handleTypeChange = (type: AsphericalType) => {
     const constant: AsphereMode = { mode: "constant" };
@@ -224,6 +246,9 @@ export function AsphereVarModal({
           <div className="space-y-3">
             {termRows.map((term) => {
               const mode = getTermMode(draft, term);
+              const variableBoundsCrossZero = term.kind === "toricSweep"
+                && mode.mode === "variable"
+                && crossesZero(mode.min, mode.max);
               const termId = typeof term.kind === "object"
                 ? `coeff-${(term.kind as { coefficientIndex: number }).coefficientIndex}`
                 : term.kind;
@@ -243,6 +268,16 @@ export function AsphereVarModal({
 
                   {mode.mode === "variable" && (
                     <div className="ml-36 grid gap-3 pl-3 md:grid-cols-2">
+                      {term.kind === "toricSweep" ? (
+                        <>
+                          <Paragraph variant="caption" className="md:col-span-2">
+                            R = 0 means a flat surface (infinite radius).
+                          </Paragraph>
+                          <Paragraph variant="caption" className="md:col-span-2">
+                            Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.
+                          </Paragraph>
+                        </>
+                      ) : null}
                       <div>
                         <Label htmlFor={`${termId}-min`}>Min.</Label>
                         <Input
@@ -261,6 +296,11 @@ export function AsphereVarModal({
                           onChange={(e) => handleTermVariableChange(term, "max", e.target.value)}
                         />
                       </div>
+                      {variableBoundsCrossZero ? (
+                        <Paragraph variant="caption" className="text-red-600 dark:text-red-400 md:col-span-2">
+                          Toroid sweep R variable bounds must stay on one side of 0.
+                        </Paragraph>
+                      ) : null}
                     </div>
                   )}
 

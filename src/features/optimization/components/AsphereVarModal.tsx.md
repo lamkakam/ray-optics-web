@@ -27,8 +27,9 @@ interface AsphereVarModalProps {
   - `XToroid` / `YToroid`: Conic Constant + Toroid sweep R + a_2, a_4, ..., a_20
 - Each term row has a mode selector (`constant` / `variable` / `pickup`).
   - **variable**: shows Min and Max `Input` fields inline.
+    - For `Toroid sweep R`, also shows guidance that `R = 0` is a flat surface (infinite radius), instructs users not to straddle `0`, and shows an inline validation message when bounds straddle `0`.
   - **pickup**: shows Source Surface Index, Scale, Offset `Input` fields. Coefficient rows additionally show a Source Coefficient Index field (stored as `sourceTermKey = "coefficient:N"`).
-- **Done button**: disabled when any variable term has non-finite bounds or `min >= max`. Calls `onSave(surfaceIndex, draft)` then `onClose()`.
+- **Done button**: disabled when any variable term has non-finite bounds or `min >= max`. Also disabled when `Toroid sweep R` variable bounds straddle `0` (negative min with positive max). Calls `onSave(surfaceIndex, draft)` then `onClose()`.
 
 ## Key Conventions
 
