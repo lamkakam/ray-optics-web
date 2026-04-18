@@ -52,6 +52,7 @@ def test_optimize_opm_dispatches_through_solver_registry(monkeypatch, cooke_trip
     import rayoptics_web_utils.optimization.optimization as optimization_module
 
     captured = {}
+    original_image_distance = cooke_triplet["seq_model"].gaps[6].thi
 
     class FakeSolver:
         def __init__(self, problem):
@@ -72,7 +73,11 @@ def test_optimize_opm_dispatches_through_solver_registry(monkeypatch, cooke_trip
 
     monkeypatch.setitem(optimization_module._SOLVER_REGISTRY, "least_squares", FakeSolver)
 
-    result = optimization_module.optimize_opm(cooke_triplet, optimization_config)
+    try:
+        result = optimization_module.optimize_opm(cooke_triplet, optimization_config)
+    finally:
+        cooke_triplet["seq_model"].gaps[6].thi = original_image_distance
+        cooke_triplet.update_model()
 
     assert captured["problem"].optimizer["kind"] == "least_squares"
     assert result["success"] is True
