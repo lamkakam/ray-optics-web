@@ -4,14 +4,21 @@ import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
 import { getRadiusLabel, getRadiusValue } from "@/features/optimization/components/optimizationViewModels";
+import {
+  MODAL_MODE_OPTIONS,
+  type ModalModeChoice,
+  createPickupDraft,
+  createVariableDraft,
+  curvatureRadiusCrossesZero,
+  serializeRadiusMode,
+  toRadiusModeDraft,
+} from "@/features/optimization/lib/modalHelpers";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select } from "@/shared/components/primitives/Select";
-
-type VariableChoice = "constant" | "variable" | "pickup";
 
 interface RadiusModeModalProps {
   readonly isOpen: boolean;
@@ -20,26 +27,6 @@ interface RadiusModeModalProps {
   readonly selectedMode: RadiusMode | undefined;
   readonly onSetMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
   readonly onClose: () => void;
-}
-
-function toDraft(mode: RadiusMode): RadiusModeDraft {
-  switch (mode.mode) {
-    case "constant":
-      return { mode: "constant" };
-    case "variable":
-      return {
-        mode: "variable",
-        min: mode.min,
-        max: mode.max,
-      };
-    case "pickup":
-      return {
-        mode: "pickup",
-        sourceSurfaceIndex: mode.sourceSurfaceIndex,
-        scale: mode.scale,
-        offset: mode.offset,
-      };
-  }
 }
 
 export function RadiusModeModal({
@@ -85,11 +72,11 @@ function RadiusModeModalEditor({
   onSetMode,
   onClose,
 }: RadiusModeModalEditorProps) {
-  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() => toDraft(selectedMode));
+  const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() => toRadiusModeDraft(selectedMode));
 
   const radiusValue = getRadiusValue(optimizationModel, surfaceIndex);
   const variableBoundsCrossZero = draftMode.mode === "variable"
-    && crossesZero(draftMode.min, draftMode.max);
+    && curvatureRadiusCrossesZero(draftMode.min, draftMode.max);
 
   return (
     <Modal
@@ -106,33 +93,20 @@ function RadiusModeModalEditor({
             id="radius-mode"
             aria-label="Radius mode"
             value={draftMode.mode}
-            options={[
-              { label: "constant", value: "constant" },
-              { label: "variable", value: "variable" },
-              { label: "pickup", value: "pickup" },
-            ]}
+            options={MODAL_MODE_OPTIONS}
             onChange={(event) => {
-              const mode = event.target.value as VariableChoice;
+              const mode = event.target.value as ModalModeChoice;
               if (mode === "constant") {
                 setDraftMode({ mode });
                 return;
               }
 
               if (mode === "variable") {
-                setDraftMode({
-                  mode,
-                  min: String(radiusValue),
-                  max: String(radiusValue),
-                });
+                setDraftMode(createVariableDraft(radiusValue));
                 return;
               }
 
-              setDraftMode({
-                mode,
-                sourceSurfaceIndex: "1",
-                scale: "1",
-                offset: "0",
-              });
+              setDraftMode(createPickupDraft());
             }}
           />
         </div>
@@ -246,26 +220,4 @@ function RadiusModeModalEditor({
       </div>
     </Modal>
   );
-}
-
-function serializeRadiusMode(mode: RadiusMode): string {
-  switch (mode.mode) {
-    case "constant":
-      return "constant";
-    case "variable":
-      return `variable:${mode.min}:${mode.max}`;
-    case "pickup":
-      return `pickup:${mode.sourceSurfaceIndex}:${mode.scale}:${mode.offset}`;
-  }
-}
-
-function crossesZero(minValue: string, maxValue: string): boolean {
-  const min = Number(minValue);
-  const max = Number(maxValue);
-
-  if (!Number.isFinite(min) || !Number.isFinite(max)) {
-    return false;
-  }
-
-  return min < 0 && max > 0;
 }

@@ -4,6 +4,7 @@ import React from "react";
 import { MathJax } from "better-react-mathjax";
 import type { AsphericalType } from "@/shared/lib/types/opticalModel";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
+import { curvatureRadiusCrossesZero } from "@/features/optimization/lib/modalHelpers";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
@@ -120,17 +121,6 @@ function isVariableInvalid(mode: AsphereMode): boolean {
   return !Number.isFinite(min) || !Number.isFinite(max) || min >= max;
 }
 
-function crossesZero(minValue: string, maxValue: string): boolean {
-  const min = Number(minValue);
-  const max = Number(maxValue);
-
-  if (!Number.isFinite(min) || !Number.isFinite(max)) {
-    return false;
-  }
-
-  return min < 0 && max > 0;
-}
-
 function isCoefficient(kind: TermKind): kind is { coefficientIndex: number } {
   return typeof kind === "object";
 }
@@ -194,7 +184,7 @@ function AsphereVarModalEditor({
 
     return term.kind === "toricSweep"
       && mode.mode === "variable"
-      && crossesZero(mode.min, mode.max);
+      && curvatureRadiusCrossesZero(mode.min, mode.max);
   });
 
   const handleTypeChange = (type: AsphericalType) => {
@@ -281,7 +271,7 @@ function AsphereVarModalEditor({
               const mode = getTermMode(draft, term);
               const variableBoundsCrossZero = term.kind === "toricSweep"
                 && mode.mode === "variable"
-                && crossesZero(mode.min, mode.max);
+                && curvatureRadiusCrossesZero(mode.min, mode.max);
               const termId = typeof term.kind === "object"
                 ? `coeff-${(term.kind as { coefficientIndex: number }).coefficientIndex}`
                 : term.kind;
