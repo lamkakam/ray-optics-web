@@ -8,13 +8,13 @@ Provides the algorithm-agnostic `OptimizationProblem` core used by optimization 
 
 ```python
 class OptimizationProblem:
-    current_vector() -> np.ndarray
-    bounds() -> tuple[np.ndarray, np.ndarray]
-    apply_vector(values) -> list[dict]
-    evaluate(values=None) -> dict
-    residual_objective(vector) -> np.ndarray
+    current_vector() -> FloatArray
+    bounds() -> tuple[FloatArray, FloatArray]
+    apply_vector(values) -> list[PickupReportEntry]
+    evaluate(values=None) -> ProblemEvaluation
+    residual_objective(vector) -> FloatArray
     scalar_objective(vector) -> float
-    variable_state() -> list[dict]
+    variable_state() -> list[VariableStateEntry]
     penalty_residual_vector() -> np.ndarray
 ```
 
@@ -26,6 +26,7 @@ class OptimizationProblem:
 - Evaluates all normalized merit operands and returns the same report shape consumed by the existing public API.
 - Exposes both residual-vector and scalar-merit objective methods so future solvers can choose the representation they need.
 - Records progress only when the evaluated optimizer vector changes materially.
+- Uses `OpticalModel` plus package-local typed config/report aliases for all internal mappings.
 
 ## Dependencies
 

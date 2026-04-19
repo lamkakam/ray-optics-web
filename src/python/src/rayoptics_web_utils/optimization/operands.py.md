@@ -7,7 +7,7 @@ Defines operand evaluators and the operand registry used by optimization merit f
 ## Public Surface
 
 ```python
-OPERAND_REGISTRY: dict[str, callable]
+OPERAND_REGISTRY: dict[str, OperandEvaluator]
 PENALTY_RESIDUAL: float
 ```
 
@@ -23,3 +23,4 @@ PENALTY_RESIDUAL: float
 
 - Returns scalar operand values for one normalized field/wavelength sample.
 - Uses `PENALTY_RESIDUAL == 1e6` when no valid optical analysis samples are available.
+- Annotates `opm` as `OpticalModel` and narrows operand `options` to the shared `OperandOptions` mapping.

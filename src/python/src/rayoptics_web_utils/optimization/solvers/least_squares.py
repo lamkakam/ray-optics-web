@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from scipy.optimize import least_squares
 
+from rayoptics_web_utils.optimization._types import ProgressReporter, SolverResult
+
 from .base import SolverAdapter
 
 
 class LeastSquaresSolver(SolverAdapter):
     """Run ``scipy.optimize.least_squares`` against an optimization problem."""
 
-    def solve(self, progress_reporter=None) -> dict:
+    def solve(self, progress_reporter: ProgressReporter | None = None) -> SolverResult:
         x0 = self.problem.current_vector()
         lower, upper = self.problem.bounds()
         self.problem._progress_reporter = progress_reporter

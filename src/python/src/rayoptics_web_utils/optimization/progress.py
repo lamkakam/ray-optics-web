@@ -6,6 +6,8 @@ import math
 
 import numpy as np
 
+from ._types import FloatArray, OptimizationProgressEntry, ProblemEvaluation, ProgressReporter
+
 
 MERIT_LOG_EPSILON = 1e-300
 
@@ -14,10 +16,15 @@ class OptimizationProgress:
     """Track optimization progress snapshots by distinct evaluated vectors."""
 
     def __init__(self) -> None:
-        self.entries: list[dict] = []
-        self._last_vector: np.ndarray | None = None
+        self.entries: list[OptimizationProgressEntry] = []
+        self._last_vector: FloatArray | None = None
 
-    def record(self, vector: np.ndarray, evaluation: dict, reporter=None) -> bool:
+    def record(
+        self,
+        vector: FloatArray,
+        evaluation: ProblemEvaluation,
+        reporter: ProgressReporter | None = None,
+    ) -> bool:
         candidate = np.array(vector, dtype=float, copy=True)
         if self._last_vector is not None and np.allclose(candidate, self._last_vector, rtol=0.0, atol=1e-12):
             return False

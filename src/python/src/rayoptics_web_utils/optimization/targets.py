@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from rayoptics.environment import OpticalModel
 from rayoptics.elem.profiles import EvenPolynomial, RadialPolynomial, XToroid, YToroid
+
+from ._types import MutableTarget, PickupConfig, TargetConfig, TargetKey, VariableConfig
 
 
 def radius_to_curvature(radius: float) -> float:
@@ -17,9 +20,13 @@ def curvature_to_radius(curvature: float) -> float:
     return 1.0 / curvature
 
 
-def snapshot_state(opm, variable_configs: list[dict], pickup_configs: list[dict]) -> dict[tuple, float]:
+def snapshot_state(
+    opm: OpticalModel,
+    variable_configs: list[VariableConfig],
+    pickup_configs: list[PickupConfig],
+) -> dict[TargetKey, float]:
     """Capture the current values for all mutable optimizer targets."""
-    state: dict[tuple, float] = {}
+    state: dict[TargetKey, float] = {}
     for entry in [*variable_configs, *pickup_configs]:
         key = target_key(entry)
         if key not in state:
@@ -27,14 +34,14 @@ def snapshot_state(opm, variable_configs: list[dict], pickup_configs: list[dict]
     return state
 
 
-def restore_state(opm, snapshot: dict[tuple, float]) -> None:
+def restore_state(opm: OpticalModel, snapshot: dict[TargetKey, float]) -> None:
     """Restore a previously captured optimizer state."""
     for key, value in snapshot.items():
         write_target_value(opm, entry_from_target_key(key), value)
     opm.update_model()
 
 
-def target_key(entry: dict) -> tuple:
+def target_key(entry: MutableTarget) -> TargetKey:
     kind = entry["kind"]
     surface_index = entry["surface_index"]
     if kind == "asphere_polynomial_coefficient":
@@ -42,7 +49,7 @@ def target_key(entry: dict) -> tuple:
     return kind, surface_index
 
 
-def entry_from_target_key(key: tuple) -> dict:
+def entry_from_target_key(key: TargetKey) -> TargetConfig:
     if key[0] == "asphere_polynomial_coefficient":
         return {"kind": key[0], "surface_index": key[1], "coefficient_index": key[2]}
     return {"kind": key[0], "surface_index": key[1]}
@@ -63,7 +70,7 @@ def validate_surface_index(seq, index: int, label: str) -> None:
         raise IndexError(f"{label} {index} is out of range")
 
 
-def surface_profile(opm, surface_index: int):
+def surface_profile(opm: OpticalModel, surface_index: int):
     sm = opm["seq_model"]
     validate_surface_index(sm.ifcs, surface_index, "surface_index")
     return sm.ifcs[surface_index].profile
@@ -77,7 +84,7 @@ def is_toroid(profile) -> bool:
     return hasattr(profile, "cR")
 
 
-def ensure_asphere_profile(opm, entry: dict):
+def ensure_asphere_profile(opm: OpticalModel, entry: MutableTarget) -> None:
     kind = entry["kind"]
     asphere_kind = entry.get("asphere_kind")
     if kind not in {"asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
@@ -110,7 +117,7 @@ def ensure_asphere_profile(opm, entry: dict):
         ifc.profile = YToroid(r=radius, cc=0.0, cR=radius, coefs=[])
 
 
-def read_target_value(opm, entry: dict) -> float:
+def read_target_value(opm: OpticalModel, entry: MutableTarget) -> float:
     kind = entry["kind"]
     surface_index = entry["surface_index"]
     sm = opm["seq_model"]
@@ -135,7 +142,7 @@ def read_target_value(opm, entry: dict) -> float:
     raise ValueError(f"Unknown variable kind: {kind}")
 
 
-def write_target_value(opm, entry: dict, value: float) -> None:
+def write_target_value(opm: OpticalModel, entry: MutableTarget, value: float) -> None:
     kind = entry["kind"]
     surface_index = entry["surface_index"]
     sm = opm["seq_model"]

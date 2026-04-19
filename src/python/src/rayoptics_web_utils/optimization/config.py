@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections import deque
 from copy import deepcopy
 
+from rayoptics.environment import OpticalModel
+
 from .operands import OPERAND_REGISTRY
 from .targets import (
     ensure_asphere_profile,
@@ -14,9 +16,23 @@ from .targets import (
     target_key,
     validate_surface_index,
 )
+from ._types import (
+    MeritFunctionConfig,
+    MeritFunctionConfigInput,
+    NormalizedOptimizationConfig,
+    NormalizedOptimizerConfig,
+    OperandConfigInput,
+    OperandSample,
+    OptimizationConfig,
+    PickupConfig,
+    PickupConfigInput,
+    TargetKey,
+    VariableConfig,
+    VariableConfigInput,
+)
 
 
-def normalize_optimizer_config(config: dict) -> dict:
+def normalize_optimizer_config(config: OptimizationConfig) -> NormalizedOptimizerConfig:
     optimizer = deepcopy(config.get("optimizer") or {})
     kind = optimizer.get("kind", "least_squares")
     if kind != "least_squares":
@@ -25,14 +41,14 @@ def normalize_optimizer_config(config: dict) -> dict:
     return optimizer
 
 
-def normalize_variables(opm, variables: list[dict]) -> list[dict]:
-    normalized: list[dict] = []
-    seen_targets: set[tuple] = set()
+def normalize_variables(opm: OpticalModel, variables: list[VariableConfigInput]) -> list[VariableConfig]:
+    normalized: list[VariableConfig] = []
+    seen_targets: set[TargetKey] = set()
     for entry in variables:
         kind = entry.get("kind")
         if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
             raise ValueError(f"Unknown variable kind: {kind}")
-        normalized_entry = {
+        normalized_entry: VariableConfig = {
             "kind": kind,
             "surface_index": entry.get("surface_index"),
         }
@@ -53,14 +69,18 @@ def normalize_variables(opm, variables: list[dict]) -> list[dict]:
     return normalized
 
 
-def normalize_pickups(opm, pickups: list[dict], variable_targets: set[tuple]) -> list[dict]:
-    normalized: list[dict] = []
-    seen_targets: set[tuple] = set()
+def normalize_pickups(
+    opm: OpticalModel,
+    pickups: list[PickupConfigInput],
+    variable_targets: set[TargetKey],
+) -> list[PickupConfig]:
+    normalized: list[PickupConfig] = []
+    seen_targets: set[TargetKey] = set()
     for entry in pickups:
         kind = entry.get("kind")
         if kind not in {"radius", "thickness", "asphere_conic_constant", "asphere_polynomial_coefficient", "asphere_toric_sweep_radius"}:
             raise ValueError(f"Unknown pickup kind: {kind}")
-        normalized_entry = {
+        normalized_entry: PickupConfig = {
             "kind": kind,
             "surface_index": entry.get("surface_index"),
             "source_surface_index": entry.get("source_surface_index"),
@@ -97,7 +117,7 @@ def normalize_pickups(opm, pickups: list[dict], variable_targets: set[tuple]) ->
     return normalized
 
 
-def validate_target_for_kind(opm, entry: dict, label: str = "surface_index") -> None:
+def validate_target_for_kind(opm: OpticalModel, entry: VariableConfig | PickupConfig, label: str = "surface_index") -> None:
     kind = entry["kind"]
     surface_index = entry["surface_index"]
     sm = opm["seq_model"]
@@ -123,9 +143,9 @@ def validate_target_for_kind(opm, entry: dict, label: str = "surface_index") -> 
     raise ValueError(f"Unknown variable kind: {kind}")
 
 
-def validate_pickup_graph(pickups: list[dict]) -> None:
-    graph: dict[tuple, set[tuple]] = {}
-    indegree: dict[tuple, int] = {}
+def validate_pickup_graph(pickups: list[PickupConfig]) -> None:
+    graph: dict[TargetKey, set[TargetKey]] = {}
+    indegree: dict[TargetKey, int] = {}
     for pickup in pickups:
         target = target_key(pickup)
         source = target_key(
@@ -157,11 +177,11 @@ def validate_pickup_graph(pickups: list[dict]) -> None:
         raise ValueError("Pickup cycle detected")
 
 
-def pickup_order(pickups: list[dict]) -> list[dict]:
+def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
     """Return pickups in dependency order after cycle validation."""
     by_target = {target_key(pickup): pickup for pickup in pickups}
-    graph: dict[tuple, set[tuple]] = {}
-    indegree: dict[tuple, int] = {}
+    graph: dict[TargetKey, set[TargetKey]] = {}
+    indegree: dict[TargetKey, int] = {}
     for target, pickup in by_target.items():
         source = target_key(
             {
@@ -179,7 +199,7 @@ def pickup_order(pickups: list[dict]) -> list[dict]:
         indegree.setdefault(source, 0)
         indegree[target] = indegree.get(target, 0) + 1
     queue = deque([node for node, degree in indegree.items() if degree == 0])
-    ordered_targets: list[tuple] = []
+    ordered_targets: list[TargetKey] = []
     while queue:
         node = queue.popleft()
         if node in by_target:
@@ -191,7 +211,7 @@ def pickup_order(pickups: list[dict]) -> list[dict]:
     return [by_target[target] for target in ordered_targets]
 
 
-def normalize_operand_samples(opm, operand: dict) -> list[dict]:
+def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) -> list[OperandSample]:
     kind = operand.get("kind")
     if kind not in OPERAND_REGISTRY:
         raise ValueError(f"Unknown operand kind: {kind}")
@@ -211,7 +231,7 @@ def normalize_operand_samples(opm, operand: dict) -> list[dict]:
         {"index": idx, "weight": 1.0} for idx in range(len(opm["optical_spec"]["wvls"].wavelengths))
     ]
 
-    normalized: list[dict] = []
+    normalized: list[OperandSample] = []
     for field in fields:
         field_index = field.get("index")
         validate_surface_index(opm["optical_spec"]["fov"].fields, field_index, "field index")
@@ -232,17 +252,17 @@ def normalize_operand_samples(opm, operand: dict) -> list[dict]:
     return normalized
 
 
-def normalize_merit_function(opm, merit_function: dict) -> dict:
+def normalize_merit_function(opm: OpticalModel, merit_function: MeritFunctionConfigInput) -> MeritFunctionConfig:
     operands = merit_function.get("operands") or []
     if len(operands) == 0:
         raise ValueError("merit_function.operands must not be empty")
-    normalized_operands: list[dict] = []
+    normalized_operands: list[OperandSample] = []
     for operand in operands:
         normalized_operands.extend(normalize_operand_samples(opm, operand))
     return {"operands": normalized_operands}
 
 
-def normalize_config(opm, config: dict) -> dict:
+def normalize_config(opm: OpticalModel, config: OptimizationConfig) -> NormalizedOptimizationConfig:
     optimizer = normalize_optimizer_config(config)
     variables = normalize_variables(opm, deepcopy(config.get("variables") or []))
     variable_targets = {target_key(variable) for variable in variables}

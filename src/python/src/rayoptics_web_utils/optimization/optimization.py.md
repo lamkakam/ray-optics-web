@@ -4,11 +4,17 @@
 
 Provides the public compatibility facade for the optimization package. The public API still accepts JSON-encodable config dicts, supports affine pickups for geometric and aspheric targets, evaluates operand-based merit functions, and runs SciPy least-squares optimization, but the implementation is now split into algorithm-agnostic problem/config/target modules plus solver adapters.
 
+`opm` is typed as `rayoptics.environment.OpticalModel`.
+
 ## Public API
 
 ```python
-evaluate_optimization_problem(opm, config: dict) -> dict
-optimize_opm(opm, config: dict) -> dict
+evaluate_optimization_problem(opm: OpticalModel, config: OptimizationConfig) -> OptimizationReport
+optimize_opm(
+    opm: OpticalModel,
+    config: OptimizationConfig,
+    progress_reporter: ProgressReporter | None = None,
+) -> OptimizationReport
 ```
 
 Both return JSON-serialisable dicts containing:
@@ -113,6 +119,7 @@ weighted_residual = total_weight * (actual_value - target)
 
 ## Internal Structure
 
+- `_types.py` — shared typed dicts, aliases, and protocols used across the package
 - `optimization.py` — public facade, solver dispatch, compatibility aliases
 - `config.py` — config normalization and validation
 - `targets.py` — mutable target access, snapshots, radius/curvature transforms

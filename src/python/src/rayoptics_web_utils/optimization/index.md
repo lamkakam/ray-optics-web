@@ -4,6 +4,7 @@ Operand-based optimization helpers for RayOptics optical models.
 
 ## Modules
 
+- [_types.py](./_types.py.md) — Shared typed dicts, aliases, and protocols for optimization configs and reports
 - [optimization.py](./optimization.py.md) — Public optimization facade and solver dispatch
 - [config.py](./config.py.md) — Config normalization and validation
 - [targets.py](./targets.py.md) — Mutable target access and state snapshots

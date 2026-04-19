@@ -8,7 +8,7 @@ Implements the current SciPy least-squares optimization as a solver adapter.
 
 ```python
 class LeastSquaresSolver(SolverAdapter):
-    solve(progress_reporter=None) -> dict
+    solve(progress_reporter: ProgressReporter | None = None) -> SolverResult
 ```
 
 ## Key Behaviors

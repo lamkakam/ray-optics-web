@@ -2,10 +2,20 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from scipy.optimize import least_squares
+from rayoptics.environment import OpticalModel
 
 import rayoptics_web_utils.optimization.operands as _operands_module
 from rayoptics_web_utils.analysis import get_opd_fan_data
+from rayoptics_web_utils.optimization._types import (
+    FloatArray,
+    OptimizationConfig,
+    OptimizationReport,
+    ProblemEvaluation,
+    ProgressReporter,
+)
 from rayoptics_web_utils.optimization.operands import (
     OPERAND_REGISTRY as _OPERAND_REGISTRY,
 )
@@ -26,13 +36,13 @@ def _sync_legacy_hooks() -> None:
 class _OptimizationProblem(OptimizationProblem):
     """Compatibility subclass retained for tests and internal imports."""
 
-    def objective(self, vector):
+    def objective(self, vector: FloatArray) -> FloatArray:
         return self.residual_objective(vector)
 
-    def _record_progress(self, vector, evaluation):
+    def _record_progress(self, vector: FloatArray, evaluation: ProblemEvaluation) -> bool:
         return self.progress.record(vector, evaluation, self._progress_reporter)
 
-    def optimize(self, progress_reporter=None):
+    def optimize(self, progress_reporter: ProgressReporter | None = None):
         x0 = self.current_vector()
         lower, upper = self.bounds()
         self._progress_reporter = progress_reporter
@@ -51,7 +61,7 @@ class _OptimizationProblem(OptimizationProblem):
             self._progress_reporter = None
 
 
-def evaluate_optimization_problem(opm, config: dict) -> dict:
+def evaluate_optimization_problem(opm: OpticalModel, config: OptimizationConfig) -> OptimizationReport:
     """Evaluate a dict-driven optimization problem without running SciPy."""
     _sync_legacy_hooks()
     problem = _OptimizationProblem(opm, config)
@@ -62,6 +72,7 @@ def evaluate_optimization_problem(opm, config: dict) -> dict:
     except Exception:
         _restore_state(opm, snapshot)
         raise
+    report = cast(OptimizationReport, report)
     report["success"] = True
     report["status"] = "evaluated"
     report["message"] = "Optimization problem evaluated"
@@ -70,7 +81,11 @@ def evaluate_optimization_problem(opm, config: dict) -> dict:
     return report
 
 
-def optimize_opm(opm, config: dict, progress_reporter=None) -> dict:
+def optimize_opm(
+    opm: OpticalModel,
+    config: OptimizationConfig,
+    progress_reporter: ProgressReporter | None = None,
+) -> OptimizationReport:
     """Optimize a rayoptics optical model using a dict-driven config."""
     _sync_legacy_hooks()
     problem = _OptimizationProblem(opm, config)
@@ -78,7 +93,7 @@ def optimize_opm(opm, config: dict, progress_reporter=None) -> dict:
     initial_values = problem.variable_state()
 
     if len(problem.variables) == 0:
-        report = problem.evaluate()
+        report = cast(OptimizationReport, problem.evaluate())
         problem.progress.record(problem.current_vector(), report, progress_reporter)
         report["success"] = True
         report["status"] = "no_variables"
@@ -96,6 +111,7 @@ def optimize_opm(opm, config: dict, progress_reporter=None) -> dict:
         _restore_state(opm, snapshot)
         raise
 
+    report = cast(OptimizationReport, report)
     report["success"] = bool(result["success"])
     report["status"] = int(result["status"])
     report["message"] = result["message"]

@@ -8,10 +8,11 @@ Defines the internal solver-adapter contract used to keep algorithm-specific Sci
 
 ```python
 class SolverAdapter(ABC):
-    solve(progress_reporter=None) -> dict
+    solve(progress_reporter: ProgressReporter | None = None) -> SolverResult
 ```
 
 ## Key Behaviors
 
 - Accepts a prepared `OptimizationProblem`.
 - Returns a normalized solver result mapping consumed by `optimize_opm(...)`.
+- Uses a protocol-based dependency so solver adapters can depend on the typed problem contract rather than the concrete class.

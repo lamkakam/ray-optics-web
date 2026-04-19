@@ -8,8 +8,8 @@ Tracks solver progress snapshots in a solver-independent way.
 
 ```python
 class OptimizationProgress:
-    entries: list[dict]
-    record(vector: np.ndarray, evaluation: dict, reporter=None) -> bool
+    entries: list[OptimizationProgressEntry]
+    record(vector: FloatArray, evaluation: ProblemEvaluation, reporter: ProgressReporter | None = None) -> bool
 ```
 
 ## Key Behaviors

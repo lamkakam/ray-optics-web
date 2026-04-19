@@ -5,8 +5,20 @@ from __future__ import annotations
 import math
 
 import numpy as np
+from rayoptics.environment import OpticalModel
 
 from .config import normalize_config, pickup_order
+from ._types import (
+    FloatArray,
+    NormalizedOptimizationConfig,
+    OptimizationConfig,
+    PickupReportEntry,
+    ProblemEvaluation,
+    ProgressReporter,
+    ResidualEntry,
+    VariableConfig,
+    VariableStateEntry,
+)
 from .operands import OPERAND_REGISTRY, PENALTY_RESIDUAL
 from .progress import OptimizationProgress
 from .targets import (
@@ -20,9 +32,9 @@ from .targets import (
 class OptimizationProblem:
     """Validated optimization problem bound to an optical model."""
 
-    def __init__(self, opm, config: dict):
+    def __init__(self, opm: OpticalModel, config: OptimizationConfig):
         self.opm = opm
-        self.config = normalize_config(opm, config)
+        self.config: NormalizedOptimizationConfig = normalize_config(opm, config)
         self.variables = self.config["variables"]
         self.pickups = self.config["pickups"]
         self.ordered_pickups = pickup_order(self.pickups)
@@ -30,25 +42,25 @@ class OptimizationProblem:
         self.operands = self.config["merit_function"]["operands"]
         self.progress = OptimizationProgress()
         self.optimization_progress = self.progress.entries
-        self._progress_reporter = None
+        self._progress_reporter: ProgressReporter | None = None
 
-    def current_vector(self) -> np.ndarray:
+    def current_vector(self) -> FloatArray:
         return np.array(
             [self._to_internal_value(variable, read_target_value(self.opm, variable)) for variable in self.variables],
             dtype=float,
         )
 
-    def bounds(self) -> tuple[np.ndarray, np.ndarray]:
+    def bounds(self) -> tuple[FloatArray, FloatArray]:
         if len(self.variables) == 0:
             return np.array([], dtype=float), np.array([], dtype=float)
         lower = np.array([self._internal_lower_bound(variable) for variable in self.variables], dtype=float)
         upper = np.array([self._internal_upper_bound(variable) for variable in self.variables], dtype=float)
         return lower, upper
 
-    def apply_vector(self, values: np.ndarray | list[float]) -> list[dict]:
+    def apply_vector(self, values: FloatArray | list[float]) -> list[PickupReportEntry]:
         for value, variable in zip(values, self.variables):
             write_target_value(self.opm, variable, self._from_internal_value(variable, float(value)))
-        pickup_reports: list[dict] = []
+        pickup_reports: list[PickupReportEntry] = []
         for pickup in self.ordered_pickups:
             source_target = {
                 "kind": pickup["kind"],
@@ -67,11 +79,11 @@ class OptimizationProblem:
         self.opm.update_model()
         return pickup_reports
 
-    def evaluate(self, values: np.ndarray | list[float] | None = None) -> dict:
+    def evaluate(self, values: FloatArray | list[float] | None = None) -> ProblemEvaluation:
         if values is None:
             values = self.current_vector()
         pickups = self.apply_vector(values)
-        residuals: list[dict] = []
+        residuals: list[ResidualEntry] = []
         weighted_values: list[float] = []
         for operand in self.operands:
             evaluator = OPERAND_REGISTRY[operand["kind"]]
@@ -116,7 +128,7 @@ class OptimizationProblem:
             "optimization_progress": list(self.optimization_progress),
         }
 
-    def variable_state(self) -> list[dict]:
+    def variable_state(self) -> list[VariableStateEntry]:
         return [
             {
                 "kind": variable["kind"],
@@ -134,7 +146,7 @@ class OptimizationProblem:
         size = max(len(self.operands), 1)
         return np.full(size, PENALTY_RESIDUAL, dtype=float)
 
-    def residual_objective(self, vector: np.ndarray) -> np.ndarray:
+    def residual_objective(self, vector: FloatArray) -> FloatArray:
         try:
             evaluation = self.evaluate(vector)
         except Exception:
@@ -142,7 +154,7 @@ class OptimizationProblem:
         self.progress.record(vector, evaluation, self._progress_reporter)
         return np.array([entry["weighted_residual"] for entry in evaluation["residuals"]], dtype=float)
 
-    def scalar_objective(self, vector: np.ndarray) -> float:
+    def scalar_objective(self, vector: FloatArray) -> float:
         try:
             evaluation = self.evaluate(vector)
         except Exception:
@@ -150,23 +162,23 @@ class OptimizationProblem:
         self.progress.record(vector, evaluation, self._progress_reporter)
         return float(evaluation["merit_function"]["sum_of_squares"])
 
-    def _to_internal_value(self, variable: dict, value: float) -> float:
+    def _to_internal_value(self, variable: VariableConfig, value: float) -> float:
         if variable["kind"] == "radius":
             return radius_to_curvature(value)
         return value
 
-    def _from_internal_value(self, variable: dict, value: float) -> float:
+    def _from_internal_value(self, variable: VariableConfig, value: float) -> float:
         if variable["kind"] == "radius":
             return curvature_to_radius(value)
         return value
 
-    def _internal_lower_bound(self, variable: dict) -> float:
+    def _internal_lower_bound(self, variable: VariableConfig) -> float:
         return min(self._internal_bound_candidates(variable))
 
-    def _internal_upper_bound(self, variable: dict) -> float:
+    def _internal_upper_bound(self, variable: VariableConfig) -> float:
         return max(self._internal_bound_candidates(variable))
 
-    def _internal_bound_candidates(self, variable: dict) -> list[float]:
+    def _internal_bound_candidates(self, variable: VariableConfig) -> list[float]:
         if variable["kind"] != "radius":
             return [float(variable["min"]), float(variable["max"])]
 
