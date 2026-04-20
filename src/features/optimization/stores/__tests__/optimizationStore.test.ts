@@ -335,6 +335,41 @@ describe("optimizationStore", () => {
     }));
   });
 
+  it("builds an asphere coefficient pickup with zero-based source coefficient index 0", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(asphericModel);
+
+    store.getState().setAsphereTermMode(1, "coefficient", {
+      mode: "pickup",
+      coefficientIndex: 1,
+      sourceSurfaceIndex: "2",
+      sourceTermKey: "coefficient:0",
+      scale: "1.5",
+      offset: "-0.25",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "1",
+      },
+    ]);
+
+    expect(store.getState().buildOptimizationConfig().pickups).toEqual(expect.arrayContaining([
+      {
+        kind: "asphere_polynomial_coefficient",
+        surface_index: 1,
+        asphere_kind: "RadialPolynomial",
+        coefficient_index: 1,
+        source_surface_index: 2,
+        source_coefficient_index: 0,
+        scale: 1.5,
+        offset: -0.25,
+      },
+    ]));
+  });
+
   it("allows a spherical editor surface to become toroidal in optimization and applies optimized asphere values back into the model", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);

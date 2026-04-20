@@ -223,6 +223,14 @@ function parsePositiveInteger(value: string, label: string): number {
   return parsed;
 }
 
+function parseNonNegativeInteger(value: string, label: string): number {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`${label} must be a non-negative integer.`);
+  }
+  return parsed;
+}
+
 function parsePositiveFloat(value: string, label: string): number {
   const parsed = Number.parseFloat(value);
   if (!Number.isFinite(parsed) || parsed <= 0) {
@@ -808,7 +816,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           asphere_kind: type,
           coefficient_index: coefficientIndex,
           source_surface_index: parsePositiveInteger(coefficientMode.sourceSurfaceIndex, "Source surface index"),
-          source_coefficient_index: parsePositiveInteger(sourceTermKey.replace("coefficient:", ""), "Source coefficient index"),
+          source_coefficient_index: parseNonNegativeInteger(sourceTermKey.replace("coefficient:", ""), "Source coefficient index"),
           scale: parseFloatValue(coefficientMode.scale, "scale"),
           offset: parseFloatValue(coefficientMode.offset, "offset"),
         });
