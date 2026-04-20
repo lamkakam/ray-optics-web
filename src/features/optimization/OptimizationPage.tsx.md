@@ -54,7 +54,8 @@ interface OptimizationPageProps {
 - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call, updates the static table from the returned residuals, and ignores stale async responses from older requests.
 - Radius, thickness, and asphere variable/pickup mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`. Changes to `asphereStates` are included in the evaluation dependency array so commits trigger a re-evaluation debounce.
 - Invalid intermediate configs clear the evaluation table instead of opening the warning modal.
-- `Optimize` is disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
+- `Optimize` is disabled when the current optimization config cannot be built, including fresh pages with no operands and malformed variable/pickup inputs.
+- `Optimize` is also disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
 - `Optimize` validates the store state, rejects zero-contribution configs with a warning modal even if the handler is triggered programmatically, opens `OptimizationProgressModal`, calls `proxy.optimizeOpm`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
 - The progress modal is blocking while optimization is active: there is no `OK` button and backdrop clicks are ignored until the worker promise settles.
 - After the optimization run settles, the progress modal keeps the final chart visible, exposes an `OK` button, and can then be dismissed without mutating the optimization result.

@@ -208,7 +208,7 @@ describe("OptimizationPage", () => {
   it("renders the five requested tabs and action buttons", () => {
     renderOptimizationPage(makeProxy());
 
-    expect(screen.getByRole("button", { name: "Optimize" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Apply to Editor" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Algorithm" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Fields" })).toBeInTheDocument();
@@ -717,6 +717,29 @@ describe("OptimizationPage", () => {
       optimizationStore.getState().setFieldWeight(0, 0);
       optimizationStore.getState().setFieldWeight(1, 0);
       optimizationStore.getState().setFieldWeight(2, 0);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+    });
+
+    expect(proxy.optimizeOpm).not.toHaveBeenCalled();
+  });
+
+  it("disables Optimize when the optimization config is invalid", async () => {
+    const proxy = makeProxy();
+    const { optimizationStore } = renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "10",
+        max: "10",
+      });
     });
 
     await waitFor(() => {

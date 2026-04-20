@@ -81,11 +81,19 @@ export function OptimizationPage({
   const wavelengthWeights = useStore(optimizationStore, (state) => state.wavelengthWeights);
   const radiusModes = useStore(optimizationStore, (state) => state.radiusModes);
   const operands = useStore(optimizationStore, (state) => state.operands);
+  const canBuildOptimizationConfig = useStore(optimizationStore, (state) => {
+    try {
+      state.buildOptimizationConfig();
+      return true;
+    } catch {
+      return false;
+    }
+  });
   const hasNonZeroContribution = useStore(optimizationStore, (state) => {
     try {
       return hasNonZeroOptimizationContribution(state.buildOptimizationConfig());
     } catch {
-      return true;
+      return false;
     }
   });
   const isOptimizing = useStore(optimizationStore, (state) => state.isOptimizing);
@@ -232,6 +240,7 @@ export function OptimizationPage({
   const canOptimize = isReady
     && proxy !== undefined
     && optimizationModel !== undefined
+    && canBuildOptimizationConfig
     && hasNonZeroContribution;
 
   const evaluationReservedHeight = !isLG
