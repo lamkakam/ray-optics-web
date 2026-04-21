@@ -3,6 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
 import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, RayFanData, SeidelData, FocusingResult, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type {
+  OptimizationConfig,
+  OptimizationProgressEntry,
+  OptimizationReport,
+} from "@/shared/lib/types/optimization";
 import type { ZernikeData, ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
@@ -31,6 +36,12 @@ export interface PyodideWorkerAPI {
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
+  evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>;
+  optimizeOpm(
+    opticalModel: OpticalModel,
+    config: OptimizationConfig,
+    onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  ): Promise<OptimizationReport>;
 }
 
 // Singleton state — shared across all hook instances

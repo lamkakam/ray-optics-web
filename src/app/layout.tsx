@@ -8,6 +8,7 @@ import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/Analysi
 import { AnalysisDataStoreProvider } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { OptimizationStoreProvider } from "@/features/optimization/providers/OptimizationStoreProvider";
 import AppShell from "@/app/AppShell";
 
 export const metadata: Metadata = {
@@ -31,7 +32,9 @@ export default function RootLayout({
                 <AnalysisDataStoreProvider>
                   <LensLayoutImageStoreProvider>
                     <GlassMapStoreProvider>
-                      <AppShell>{children}</AppShell>
+                      <OptimizationStoreProvider>
+                        <AppShell>{children}</AppShell>
+                      </OptimizationStoreProvider>
                     </GlassMapStoreProvider>
                   </LensLayoutImageStoreProvider>
                 </AnalysisDataStoreProvider>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
+import clsx from "clsx";
 import { Tabs, TabItem } from "@/shared/components/primitives/Tabs";
 
 export type { TabItem };
@@ -8,10 +9,12 @@ export type { TabItem };
 interface BottomDrawerProps {
   readonly tabs: readonly TabItem[];
   readonly draggable?: boolean;
+  readonly panelClassName?: string;
   readonly activeTabId?: string;
   readonly onTabChange?: (tabId: string) => void;
   readonly initialHeight?: number;
   readonly onHeightCommit?: (height: number) => void;
+  readonly onHeightChange?: (height: number) => void;
 }
 
 const SNAP_COLLAPSED = 48;
@@ -29,10 +32,12 @@ function isCollapsedHeight(height: number): boolean {
 export function BottomDrawer({
   tabs,
   draggable = true,
+  panelClassName,
   activeTabId,
   onTabChange,
   initialHeight,
   onHeightCommit,
+  onHeightChange,
 }: BottomDrawerProps) {
   const resolvedInitialHeight = initialHeight ?? 300;
   const resolvedInitialCollapsed = isCollapsedHeight(resolvedInitialHeight);
@@ -85,7 +90,8 @@ export function BottomDrawer({
     collapsedRef.current = nextCollapsed;
     setHeight(roundedHeight);
     setCollapsed(nextCollapsed);
-  }, []);
+    onHeightChange?.(nextCollapsed ? SNAP_COLLAPSED : roundedHeight);
+  }, [onHeightChange]);
 
   const handlePointerUp = useCallback(() => {
     if (!dragging.current) return;
@@ -100,22 +106,24 @@ export function BottomDrawer({
       collapsedRef.current = false;
       setHeight(defaultHeight);
       setCollapsed(false);
+      onHeightChange?.(defaultHeight);
       onHeightCommit?.(defaultHeight);
     } else {
       heightRef.current = SNAP_COLLAPSED;
       collapsedRef.current = true;
       setHeight(SNAP_COLLAPSED);
       setCollapsed(true);
+      onHeightChange?.(SNAP_COLLAPSED);
       onHeightCommit?.(SNAP_COLLAPSED);
     }
-  }, [collapsed, onHeightCommit]);
+  }, [collapsed, onHeightChange, onHeightCommit]);
 
   if (!draggable) {
     return (
-      <div className="flex flex-col border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
+      <div className="flex shrink-0 flex-col border-t border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
         <Tabs
           tabs={tabs}
-          panelClassName="p-3"
+          panelClassName={clsx("p-3", panelClassName)}
           activeTabId={activeTabId}
           onTabChange={onTabChange}
         />
@@ -125,7 +133,7 @@ export function BottomDrawer({
 
   return (
     <div
-      className="flex flex-col border-t border-gray-200 bg-white will-change-[height] dark:border-gray-700 dark:bg-gray-900"
+      className="flex shrink-0 flex-col border-t border-gray-200 bg-white will-change-[height] dark:border-gray-700 dark:bg-gray-900"
       style={{ height: collapsed ? SNAP_COLLAPSED : height }}
     >
       {/* Drag handle */}
@@ -153,7 +161,7 @@ export function BottomDrawer({
           </button>
         }
         showPanel={!collapsed}
-        panelClassName="flex-1 overflow-auto p-3"
+        panelClassName={clsx("flex-1 overflow-auto p-3", panelClassName)}
         activeTabId={activeTabId}
         onTabChange={onTabChange}
       />

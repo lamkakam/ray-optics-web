@@ -14,6 +14,7 @@ export type DecenterType = DecenterConfig;
 interface DecenterModalProps {
   readonly isOpen: boolean;
   readonly initialDecenter: DecenterType | undefined;
+  readonly readOnly?: boolean;
   readonly onConfirm: (decenter: DecenterType) => void;
   readonly onClose: () => void;
   readonly onRemove: () => void;
@@ -36,6 +37,7 @@ const POS_AND_ORIENTATION_OPTIONS = [
 export function DecenterModal({
   isOpen,
   initialDecenter,
+  readOnly = false,
   onConfirm,
   onClose,
   onRemove,
@@ -76,6 +78,7 @@ export function DecenterModal({
           id="pos-and-orientation"
           aria-label="Coordinate system for this and following surfaces"
           value={posAndOrientation}
+          disabled={readOnly}
           onChange={(e) => setPosAndOrientation(e.target.value as DecenterCoordinateSystemStrategy)}
           options={POS_AND_ORIENTATION_OPTIONS}
         />
@@ -90,6 +93,7 @@ export function DecenterModal({
             aria-label="Alpha (°)"
             type="text"
             value={alphaStr}
+            disabled={readOnly}
             onChange={(e) => setAlphaStr(e.target.value)}
           />
         </div>
@@ -100,6 +104,7 @@ export function DecenterModal({
             aria-label="Beta (°)"
             type="text"
             value={betaStr}
+            disabled={readOnly}
             onChange={(e) => setBetaStr(e.target.value)}
           />
         </div>
@@ -110,6 +115,7 @@ export function DecenterModal({
             aria-label="Gamma (°)"
             type="text"
             value={gammaStr}
+            disabled={readOnly}
             onChange={(e) => setGammaStr(e.target.value)}
           />
         </div>
@@ -124,6 +130,7 @@ export function DecenterModal({
             aria-label="Offset X"
             type="text"
             value={offsetXStr}
+            disabled={readOnly}
             onChange={(e) => setOffsetXStr(e.target.value)}
           />
         </div>
@@ -134,6 +141,7 @@ export function DecenterModal({
             aria-label="Offset Y"
             type="text"
             value={offsetYStr}
+            disabled={readOnly}
             onChange={(e) => setOffsetYStr(e.target.value)}
           />
         </div>
@@ -141,10 +149,18 @@ export function DecenterModal({
 
       {/* Actions */}
       <div className="flex items-center gap-3 pt-4">
-        <Button variant="danger" onClick={onRemove}>Remove Decenter</Button>
-        <span className="flex-1" />
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+        {readOnly ? (
+          <div className="flex justify-end w-full">
+            <Button variant="secondary" onClick={onClose}>Close</Button>
+          </div>
+        ) : (
+          <>
+            <Button variant="danger" onClick={onRemove}>Remove Decenter</Button>
+            <span className="flex-1" />
+            <Button variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+          </>
+        )}
       </div>
     </Modal>
   );

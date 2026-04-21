@@ -1,5 +1,10 @@
 import { expose } from "comlink";
 import { type DiffractionPsfData, type GeoPsfData, type OpdFanData, type OpticalModel, type RayFanData, type SeidelData, type FocusingResult, type SpotDiagramData, type WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import {
+  type OptimizationConfig,
+  type OptimizationProgressEntry,
+  type OptimizationReport,
+} from "@/shared/lib/types/optimization";
 import { type ZernikeData, type ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import { type RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
@@ -70,6 +75,7 @@ from rayoptics_web_utils.plotting import (
 )
 from rayoptics_web_utils.focusing import focus_by_mono_rms_spot, focus_by_mono_strehl, focus_by_poly_rms_spot, focus_by_poly_strehl
 from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
+from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_opm
 `);
 }
 
@@ -94,7 +100,7 @@ export async function init(): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.13-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.14-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
   } catch (err) {
@@ -352,6 +358,66 @@ export async function _getAllGlassCatalogsData(
   return JSON.parse(json) as RawAllGlassCatalogsData;
 }
 
+export async function _evaluateOptimizationProblem(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  config: OptimizationConfig,
+): Promise<OptimizationReport> {
+  const configJson = JSON.stringify(config);
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(evaluate_optimization_problem(${opm}, json.loads(${JSON.stringify(configJson)})))`,
+    ),
+  )) as string;
+  return JSON.parse(json) as OptimizationReport;
+}
+
+export async function _optimizeOpm(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  config: OptimizationConfig,
+  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+): Promise<OptimizationReport> {
+  const configJson = JSON.stringify(config);
+  const reportProgress = (progressJson: string) => {
+    if (onProgress === undefined) {
+      return;
+    }
+
+    const progress = JSON.parse(progressJson) as OptimizationProgressEntry[];
+    void onProgress(progress);
+  };
+
+  const canBindProgressCallback = onProgress !== undefined
+    && pyodide !== null
+    && typeof pyodide.globals?.set === "function"
+    && typeof pyodide.globals?.delete === "function";
+
+  if (canBindProgressCallback) {
+    pyodide.globals.set("_optimization_progress_callback", reportProgress);
+  }
+  try {
+    const json = (await runPython(
+      buildScript(
+        opticalModel,
+        (opm) => !canBindProgressCallback
+          ? `json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)})))`
+          : `
+def _report_optimization_progress(progress):
+    _optimization_progress_callback(json.dumps(progress))
+json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)}), progress_reporter=_report_optimization_progress))
+`,
+      ),
+    )) as string;
+    return JSON.parse(json) as OptimizationReport;
+  } finally {
+    if (canBindProgressCallback) {
+      pyodide.globals.delete("_optimization_progress_callback");
+    }
+  }
+}
+
 
 // ─── Public API (exposed via Comlink) ─────────────────────────────────────────
 
@@ -482,6 +548,21 @@ export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData
   return await _getAllGlassCatalogsData(requirePyodide());
 }
 
+export async function evaluateOptimizationProblem(
+  opticalModel: OpticalModel,
+  config: OptimizationConfig,
+): Promise<OptimizationReport> {
+  return await _evaluateOptimizationProblem(requirePyodide(), opticalModel, config);
+}
+
+export async function optimizeOpm(
+  opticalModel: OpticalModel,
+  config: OptimizationConfig,
+  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+): Promise<OptimizationReport> {
+  return await _optimizeOpm(requirePyodide(), opticalModel, config, onProgress);
+}
+
 expose({
   init,
   getFirstOrderData,
@@ -506,4 +587,6 @@ expose({
   focusByPolyRmsSpot,
   focusByPolyStrehl,
   getAllGlassCatalogsData,
+  evaluateOptimizationProblem,
+  optimizeOpm,
 });

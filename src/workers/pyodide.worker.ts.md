@@ -34,6 +34,12 @@ export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: 
 export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>
+export async function evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>
+export async function optimizeOpm(
+  opticalModel: OpticalModel,
+  config: OptimizationConfig,
+  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+): Promise<OptimizationReport>
 ```
 
 ### Injectable Variants (for testing)
@@ -62,6 +68,13 @@ export async function _focusByMonoStrehl(runPython: (code: string) => Promise<un
 export async function _focusByPolyRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _focusByPolyStrehl(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _getAllGlassCatalogsData(runPython: (code: string) => Promise<unknown>): Promise<RawAllGlassCatalogsData>
+export async function _evaluateOptimizationProblem(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>
+export async function _optimizeOpm(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  config: OptimizationConfig,
+  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+): Promise<OptimizationReport>
 export function _resetPyodideForTesting(): void
 ```
 
@@ -73,14 +86,14 @@ export function _resetPyodideForTesting(): void
 2. Loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
 3. Calls `loadPyodide({ indexURL })` to create the Pyodide instance.
 4. Loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-5. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.2.13-py3-none-any.whl`.
+5. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.2.14-py3-none-any.whl`.
 6. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl)`.
 
 `_init(runPython, wheelUrl)` performs three `runPython` calls:
 
 1. Installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
 2. Installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
-3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, and `water` glass objects, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, and `rayoptics_web_utils.glass.glass`.
+3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, and `water` glass objects, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, `rayoptics_web_utils.glass.glass`, and `rayoptics_web_utils.optimization`, including `evaluate_optimization_problem` and `optimize_opm`.
 
 ## Public API
 
@@ -111,6 +124,8 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `focusByPolyRmsSpot(model, fieldIndex)` | Focuses by minimizing polychromatic RMS spot radius. Returns `FocusingResult`. |
 | `focusByPolyStrehl(model, fieldIndex)` | Focuses by maximizing polychromatic Strehl ratio. Returns `FocusingResult`. |
 | `getAllGlassCatalogsData()` | Returns raw glass catalog data for all 6 catalogs as `RawAllGlassCatalogsData`. No optical model required. |
+| `evaluateOptimizationProblem(model, config)` | Builds `opm` from the model, calls Python `evaluate_optimization_problem(opm, config)`, and returns the parsed JSON-safe residual report without running SciPy. |
+| `optimizeOpm(model, config, onProgress?)` | Builds `opm` from the model, optionally bridges a streamed progress callback into Python, calls `optimize_opm(opm, config, ...)`, and returns the parsed JSON-safe optimization report. |
 
 ## Injectable Variants (for testing)
 
@@ -135,6 +150,8 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_getDiffractionPSFData(runPython, model, fi, wi, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}))\`)` and parses the JSON into `DiffractionPsfData`.
 - `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
 - `_getZernikeCoefficients(runPython, model, fi, wi, n?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56.
+- `_evaluateOptimizationProblem(runPython, model, config)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, runs `evaluate_optimization_problem`, and parses the returned report.
+- `_optimizeOpm(runPython, model, config, onProgress?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, and when a live callback is available binds `_optimization_progress_callback` through `pyodide.globals` so Python can push JSON snapshots back to JS while `optimize_opm(...)` is still running.
 - `_resetPyodideForTesting()` — sets `pyodide = null` to allow `init()` to be re-exercised in tests.
 
 ## Key Conventions
@@ -142,6 +159,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **Singleton `pyodide`**: `init()` is a no-op if the singleton is already set.
 - **`requirePyodide()` guard**: All public functions call this helper. It throws `"Pyodide not initialized. Call init() first."` if `pyodide` is `null`.
 - **Stateless**: Each computation function builds `opm` locally from the received `OpticalModel` within a single `runPython` call. No global `opm` state persists between calls.
+- **Optimization progress bridging**: `_optimizeOpm(...)` is the only exception to the fully fire-and-return pattern; when a progress callback is supplied, it temporarily installs `_optimization_progress_callback` in Pyodide globals for that single optimization call and removes it in `finally`.
 - **Plot return type**: Plot image functions return a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getWavefrontData`, `getGeoPSFData`, and `getDiffractionPSFData` return typed data for frontend rendering.
 - **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, and `water` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
 

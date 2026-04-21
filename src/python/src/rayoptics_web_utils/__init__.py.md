@@ -25,6 +25,7 @@ Package entry point. Eagerly imports `init` from `env/env.py` (safe — no rayop
 | `get_zernike_coefficients` | `rayoptics_web_utils.zernike.zernike` |
 | `plot_lens_layout`, `plot_ray_fan`, `plot_opd_fan`, `plot_spot_diagram`, `plot_surface_by_surface_3rd_order_aberr`, `plot_wavefront_map`, `plot_geo_psf`, `plot_diffraction_psf` | `rayoptics_web_utils.plotting.plotting` |
 | `focus_by_mono_rms_spot`, `focus_by_mono_strehl`, `focus_by_poly_rms_spot`, `focus_by_poly_strehl` | `rayoptics_web_utils.focusing.focusing` |
+| `evaluate_optimization_problem`, `optimize_opm` | `rayoptics_web_utils.optimization.optimization` |
 
 ## Usages
 

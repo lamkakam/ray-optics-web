@@ -9,6 +9,7 @@ Modal for configuring aspherical surface parameters: conic constant, surface typ
 ```ts
 interface AsphericalModalProps {
   isOpen: boolean;
+  readOnly?: boolean;
   initialConicConstant: number;
   initialType: AsphericalType;
   initialCoefficients: number[];
@@ -36,6 +37,7 @@ The modal keeps these UI-facing labels, while the container maps them to the dom
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | `isOpen` | `boolean` | Yes | Controls visibility |
+| `readOnly` | `boolean` | No | When `true`, all controls are disabled and the footer shows only `Close` |
 | `initialConicConstant` | `number` | Yes | Starting conic constant value |
 | `initialType` | `AsphericalType` | Yes | Surface type on open |
 | `initialCoefficients` | `number[]` | Yes | Polynomial coefficients on open (may be shorter than 10) |
@@ -59,6 +61,7 @@ The modal keeps these UI-facing labels, while the container maps them to the dom
 - On confirm, toroid sweep radius values that parse to a non-finite number fall back to `0`.
 - Coefficients array is padded to length 10 on initialization.
 - Uses `<MathJax>` for the sag formula and coefficient labels; `MathJaxContext` is provided by the ancestor (`page.tsx`).
+- In `readOnly` mode, the type selector and all numeric inputs are disabled; `Remove Aspherical`, `Cancel`, and `Confirm` are replaced by a single `Close` button.
 
 ## Usages
 

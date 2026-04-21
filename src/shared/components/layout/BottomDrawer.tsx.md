@@ -10,10 +10,12 @@ Resizable bottom panel that houses tabbed content. Supports pointer-based drag-t
 interface BottomDrawerProps {
   tabs: readonly TabItem[];
   draggable?: boolean;
+  panelClassName?: string;
   activeTabId?: string;
   onTabChange?: (tabId: string) => void;
   initialHeight?: number;
   onHeightCommit?: (height: number) => void;
+  onHeightChange?: (height: number) => void;
 }
 ```
 
@@ -23,10 +25,12 @@ interface BottomDrawerProps {
 |------|------|----------|-------------|
 | `tabs` | `readonly TabItem[]` | Yes | Tab definitions passed directly to `Tabs` |
 | `draggable` | `boolean` | No | Enables drag-resize and collapse toggle. Defaults to `true` |
+| `panelClassName` | `string` | No | Extra classes appended to the tab panel so callers can override or extend the default panel padding/scroll styling |
 | `activeTabId` | `string` | No | Optional controlled active tab id forwarded to `Tabs` |
 | `onTabChange` | `(tabId: string) => void` | No | Optional tab click callback forwarded to `Tabs` |
 | `initialHeight` | `number` | No | Optional persisted drawer height in pixels used for the first render |
 | `onHeightCommit` | `(height: number) => void` | No | Optional callback invoked when the drawer height is committed after resize settles or collapse/expand toggles |
+| `onHeightChange` | `(height: number) => void` | No | Optional callback invoked on live height changes while dragging and on collapse/expand toggles so surrounding layouts can react immediately |
 
 ## Internal State
 
@@ -39,13 +43,16 @@ interface BottomDrawerProps {
 
 - Pointer events use `setPointerCapture` to track drag outside the handle element.
 - While dragging, the drawer height updates continuously within a bounded range of 48px to 85% of the viewport height.
+- While dragging, `onHeightChange` receives the current live height on every pointer move.
 - On pointer-up, dragging stops without snapping to preset heights and commits the final height through `onHeightCommit`.
 - Dragging close to the minimum height collapses the drawer and hides the active tab panel.
 - Collapse toggle button is injected into `Tabs`'s `actions` slot.
-- Expanding from the collapsed state restores the default open height of `window.innerHeight * 0.4` and commits that height through `onHeightCommit`.
+- Collapsing and expanding through the toggle both emit `onHeightChange`; expanding from the collapsed state restores the default open height of `window.innerHeight * 0.4` and commits that height through `onHeightCommit`.
 - When `draggable = false`, renders a simpler non-resizable bordered container.
+- Caller-provided `panelClassName` is appended after the drawer's default panel classes, so feature pages can override padding with Tailwind utilities such as `p-0` without changing the shared drawer defaults.
 - Tab selection can be either uncontrolled or externally controlled through the forwarded `activeTabId` / `onTabChange` props.
 - `initialHeight` values at or below the collapsed threshold (`48 + 10`) start the drawer in the collapsed state on the first render.
+- The drawer root is `shrink-0` in both draggable and non-draggable modes so flex layouts preserve the committed drawer height instead of compressing the panel internals.
 
 ## Usages
 

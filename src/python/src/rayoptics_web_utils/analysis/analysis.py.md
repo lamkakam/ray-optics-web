@@ -68,6 +68,7 @@ Each list entry corresponds to one wavelength and contains:
 
 - Uses the same transverse-aberration callback as `plot_ray_fan`.
 - `Sagittal.x`, `Sagittal.y`, `Tangential.x`, and `Tangential.y` are plain Python `list[float]`.
+- Fan extraction preserves per-wavelength sample lists even when RayOptics returns ragged fan lengths, instead of coercing them into a rectangular numpy array first.
 
 ### `get_opd_fan_data(opm, fi)`
 
@@ -75,6 +76,7 @@ Returns OPD fan data for all wavelengths at field index `fi`.
 
 - Return shape is the same as `get_ray_fan_data`, but `unitY` is `"waves"`.
 - Uses `wave_abr_full_calc(...) / opm.nm_to_sys_units(wvl)` to convert OPD from system units to waves.
+- Uses the same ragged-safe fan extraction path as `get_ray_fan_data`, so curved-image or vignetted cases that produce different sample counts per wavelength still serialize successfully.
 
 ### `get_spot_data(opm, fi)`
 

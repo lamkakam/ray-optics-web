@@ -35,6 +35,9 @@ _LAZY_IMPORTS = {
     'focus_by_mono_strehl':    'rayoptics_web_utils.focusing.focusing',
     'focus_by_poly_rms_spot':  'rayoptics_web_utils.focusing.focusing',
     'focus_by_poly_strehl':    'rayoptics_web_utils.focusing.focusing',
+    # optimization
+    'evaluate_optimization_problem': 'rayoptics_web_utils.optimization.optimization',
+    'optimize_opm': 'rayoptics_web_utils.optimization.optimization',
 }
 
 

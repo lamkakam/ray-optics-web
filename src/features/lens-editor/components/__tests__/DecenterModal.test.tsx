@@ -39,6 +39,23 @@ describe("DecenterModal", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
+  it("renders read-only controls and only Close action in read-only mode", () => {
+    render(
+      <DecenterModal
+        isOpen={true}
+        initialDecenter={defaultDecenter}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+        onRemove={jest.fn()}
+        readOnly
+      />
+    );
+    expect(screen.getByRole("combobox", { name: "Coordinate system for this and following surfaces" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Alpha (°)" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+  });
+
   it("renders title 'Decenter & Tilt'", () => {
     render(
       <DecenterModal

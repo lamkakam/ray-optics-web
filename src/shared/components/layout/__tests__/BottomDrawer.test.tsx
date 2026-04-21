@@ -63,6 +63,19 @@ describe("BottomDrawer", () => {
     expect(screen.getByText("Specs content")).toBeInTheDocument();
   });
 
+  it("applies a custom panel class to the tab panel", () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
+        ]}
+        panelClassName="p-0"
+      />
+    );
+
+    expect(screen.getByRole("tabpanel")).toHaveClass("p-0");
+  });
+
   it("switches tab content when another tab is clicked", async () => {
     render(
       <BottomDrawer
@@ -146,6 +159,23 @@ describe("BottomDrawer", () => {
     await waitFor(() => {
       expect(drawer).toHaveStyle({ height: "400px" });
     });
+  });
+
+  it("does not flex-shrink while resized", async () => {
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+      />
+    );
+
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+    expect(drawer).toHaveClass("shrink-0");
   });
 
   it("uses the provided initial height on first render", () => {
@@ -248,6 +278,38 @@ describe("BottomDrawer", () => {
     expect(onHeightCommit).toHaveBeenCalledWith(500);
   });
 
+  it("reports live height changes while dragging before the height is committed", async () => {
+    const onHeightChange = jest.fn();
+
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+        onHeightChange={onHeightChange}
+      />
+    );
+
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    mockPointerCapture(handle);
+
+    await waitFor(() => {
+      const drawer = getDrawerRoot(handle);
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+
+    fireEvent.pointerDown(handle, {
+      clientY: 700,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(handle, {
+      clientY: 600,
+      pointerId: 1,
+    });
+
+    expect(onHeightChange).toHaveBeenCalledWith(500);
+  });
+
   it("collapses when dragged down to the minimum height", async () => {
     render(
       <BottomDrawer
@@ -336,6 +398,35 @@ describe("BottomDrawer", () => {
     expect(onHeightCommit).toHaveBeenNthCalledWith(1, 48);
     expect(onHeightCommit).toHaveBeenNthCalledWith(2, expectedOpenHeight);
   });
+
+  it("reports live height changes when toggled collapsed and expanded", async () => {
+    const onHeightChange = jest.fn();
+    const user = userEvent.setup();
+    const expectedOpenHeight = Math.round(window.innerHeight * 0.4);
+
+    render(
+      <BottomDrawer
+        tabs={[
+          { id: "specs", label: "System Specs", content: <div>content</div> },
+        ]}
+        onHeightChange={onHeightChange}
+      />
+    );
+
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const toggleButton = screen.getByRole("button", { name: "Toggle drawer" });
+
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: `${expectedOpenHeight}px` });
+    });
+
+    await user.click(toggleButton);
+    await user.click(toggleButton);
+
+    expect(onHeightChange).toHaveBeenCalledTimes(2);
+    expect(onHeightChange).toHaveBeenNthCalledWith(1, 48);
+    expect(onHeightChange).toHaveBeenNthCalledWith(2, expectedOpenHeight);
+  });
 });
 
 describe("BottomDrawer with draggable=false", () => {
@@ -357,6 +448,11 @@ describe("BottomDrawer with draggable=false", () => {
   it("shows the first tab content without needing to expand", () => {
     render(<BottomDrawer tabs={tabs} draggable={false} />);
     expect(screen.getByText("Specs content")).toBeInTheDocument();
+  });
+
+  it("applies a custom panel class in non-draggable mode", () => {
+    render(<BottomDrawer tabs={tabs} draggable={false} panelClassName="p-0" />);
+    expect(screen.getByRole("tabpanel")).toHaveClass("p-0");
   });
 
   it("switches tab content when another tab is clicked", async () => {

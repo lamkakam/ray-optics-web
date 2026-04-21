@@ -4,6 +4,7 @@ from typing import Literal
 import numpy as np
 import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
+from rayoptics.raytr import trace
 from rayoptics.raytr.waveabr import wave_abr_full_calc
 from rayoptics.raytr.analyses import RayList, calc_psf, calc_psf_scaling
 from rayoptics.raytr import sampler
@@ -17,6 +18,51 @@ from rayoptics.parax.thirdorder import (
 
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _system_units, _json_float_list, _json_float_grid
+
+
+def _trace_fan_series(opm: OpticalModel, fi: int, xy: int, fan_filter) -> tuple[list[list[float]], list[list[float]]]:
+    """Trace one pupil fan per wavelength while preserving ragged sample counts."""
+    osp = opm.optical_spec
+    fld = osp.field_of_view.fields[fi]
+    central_wvl = opm.seq_model.central_wavelength()
+    foc = osp.defocus.get_focus()
+
+    ref_sphere, chief_ray = trace.setup_pupil_coords(opm, fld, central_wvl, foc)
+    fld.chief_ray = chief_ray
+    fld.ref_sphere = ref_sphere
+    ref_img_pt = ref_sphere[0]
+
+    fan_start = np.array([0.0, 0.0])
+    fan_stop = np.array([0.0, 0.0])
+    fan_start[xy] = -1.0
+    fan_stop[xy] = 1.0
+    fan_def = [fan_start, fan_stop, 21]
+
+    fans_x: list[list[float]] = []
+    fans_y: list[list[float]] = []
+    for wavelength_nm in osp.spectral_region.wavelengths:
+        ref_sphere, chief_ray = trace.setup_pupil_coords(
+            opm,
+            fld,
+            wavelength_nm,
+            foc,
+            image_pt=ref_img_pt,
+        )
+        fld.chief_ray = chief_ray
+        fld.ref_sphere = ref_sphere
+        fan = trace.trace_fan(
+            opm,
+            fan_def,
+            fld,
+            wavelength_nm,
+            foc,
+            img_filter=lambda pupil, ray_pkg: fan_filter(pupil, xy, ray_pkg, fld, wavelength_nm, foc),
+        )
+
+        fans_x.append([float(pupil[xy]) for pupil, _ in fan])
+        fans_y.append([float(value) for _, value in fan])
+
+    return fans_x, fans_y
 
 
 def get_first_order_data(opm: OpticalModel) -> dict[str, float]:
@@ -61,8 +107,6 @@ def get_ray_fan_data(opm: OpticalModel, fi: int) -> list[dict]:
         'unitY': str, // from opm.system_spec.dimensions
     }[] // array idx: wvl idx
     """
-    sm = opm.seq_model
-
     def _ray_abr(p, xy, ray_pkg, fld, wvl, foc):
         if ray_pkg[mc.ray] is not None:
             image_pt = fld.ref_sphere[0]
@@ -73,8 +117,8 @@ def get_ray_fan_data(opm: OpticalModel, fi: int) -> list[dict]:
             return t_abr[xy]
         return None
 
-    sagittal_x, sagittal_y, _, _ = sm.trace_fan(_ray_abr, fi, 0)
-    tangential_x, tangential_y, _, _ = sm.trace_fan(_ray_abr, fi, 1)
+    sagittal_x, sagittal_y = _trace_fan_series(opm, fi, 0, _ray_abr)
+    tangential_x, tangential_y = _trace_fan_series(opm, fi, 1, _ray_abr)
 
     data: list[dict] = []
     for wvl_idx in range(len(sagittal_x)):
@@ -107,8 +151,6 @@ def get_opd_fan_data(opm: OpticalModel, fi: int) -> list[dict]:
         'unitY': 'waves',
     }[] // array idx: wvl idx
     """
-    sm = opm.seq_model
-
     def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
         if ray_pkg[mc.ray] is not None:
             fod = opm['analysis_results']['parax_data'].fod
@@ -116,8 +158,8 @@ def get_opd_fan_data(opm: OpticalModel, fi: int) -> list[dict]:
             return opd_val / opm.nm_to_sys_units(wvl)
         return None
 
-    sagittal_x, sagittal_y, _, _ = sm.trace_fan(_opd_abr, fi, 0)
-    tangential_x, tangential_y, _, _ = sm.trace_fan(_opd_abr, fi, 1)
+    sagittal_x, sagittal_y = _trace_fan_series(opm, fi, 0, _opd_abr)
+    tangential_x, tangential_y = _trace_fan_series(opm, fi, 1, _opd_abr)
 
     data: list[dict] = []
     for wvl_idx in range(len(sagittal_x)):

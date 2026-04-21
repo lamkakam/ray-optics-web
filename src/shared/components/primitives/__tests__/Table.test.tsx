@@ -57,4 +57,28 @@ describe("Table", () => {
     const tbody = screen.getByRole("table").querySelector("tbody");
     expect(tbody?.querySelectorAll("tr")).toHaveLength(0);
   });
+
+  it("applies per-column alignment to header and body cells", () => {
+    render(
+      <Table
+        headers={headers}
+        rows={rows}
+        columnAlignments={["left", "right", "right"]}
+      />,
+    );
+
+    const colHeaders = screen.getAllByRole("columnheader");
+    expect(colHeaders[0]).toHaveClass("text-left");
+    expect(colHeaders[1]).toHaveClass("text-right");
+    expect(colHeaders[2]).toHaveClass("text-right");
+
+    const bodyRows = within(screen.getByRole("table").querySelector("tbody") as HTMLElement).getAllByRole("row");
+    const firstRowCells = within(bodyRows[0]).getAllByRole("cell");
+    const secondRowCells = within(bodyRows[1]).getAllByRole("cell");
+
+    expect(firstRowCells[0]).toHaveClass("text-left");
+    expect(firstRowCells[1]).toHaveClass("text-right");
+    expect(secondRowCells[1]).toHaveClass("text-right");
+    expect(secondRowCells[2]).toHaveClass("text-right");
+  });
 });

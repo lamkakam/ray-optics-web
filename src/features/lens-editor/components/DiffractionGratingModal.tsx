@@ -10,6 +10,7 @@ import type { DiffractionGrating } from "@/shared/lib/types/opticalModel";
 interface DiffractionGratingModalProps {
   readonly isOpen: boolean;
   readonly initialDiffractionGrating: DiffractionGrating | undefined;
+  readonly readOnly?: boolean;
   readonly onConfirm: (diffractionGrating: DiffractionGrating) => void;
   readonly onClose: () => void;
   readonly onRemove: () => void;
@@ -30,6 +31,7 @@ function parseInteger(value: string, fallback: number): number {
 export function DiffractionGratingModal({
   isOpen,
   initialDiffractionGrating,
+  readOnly = false,
   onConfirm,
   onClose,
   onRemove,
@@ -59,6 +61,7 @@ export function DiffractionGratingModal({
             aria-label="lp/mm"
             type="text"
             value={lpmmStr}
+            disabled={readOnly}
             onChange={(e) => setLpmmStr(e.target.value)}
           />
         </div>
@@ -69,16 +72,25 @@ export function DiffractionGratingModal({
             aria-label="order"
             type="text"
             value={orderStr}
+            disabled={readOnly}
             onChange={(e) => setOrderStr(e.target.value)}
           />
         </div>
       </div>
 
       <div className="flex items-center gap-3 pt-4">
-        <Button variant="danger" onClick={onRemove}>Remove</Button>
-        <span className="flex-1" />
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+        {readOnly ? (
+          <div className="flex justify-end w-full">
+            <Button variant="secondary" onClick={onClose}>Close</Button>
+          </div>
+        ) : (
+          <>
+            <Button variant="danger" onClick={onRemove}>Remove</Button>
+            <span className="flex-1" />
+            <Button variant="secondary" onClick={onClose}>Cancel</Button>
+            <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+          </>
+        )}
       </div>
     </Modal>
   );
