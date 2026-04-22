@@ -3,21 +3,19 @@
 import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
+import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
+import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
+import { VariableModeFields } from "@/features/optimization/components/VariableModeFields";
 import { getRadiusLabel, getThicknessValue } from "@/features/optimization/components/optimizationViewModels";
 import {
-  MODAL_MODE_OPTIONS,
-  type ModalModeChoice,
   createPickupDraft,
   createVariableDraft,
   serializeRadiusMode,
   toRadiusModeDraft,
 } from "@/features/optimization/lib/modalHelpers";
 import { Button } from "@/shared/components/primitives/Button";
-import { Input } from "@/shared/components/primitives/Input";
-import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
-import { Select } from "@/shared/components/primitives/Select";
 
 interface ThicknessModeModalProps {
   readonly isOpen: boolean;
@@ -84,106 +82,76 @@ function ThicknessModeModalEditor({
         <Paragraph>
           {getRadiusLabel(surfaceIndex, optimizationModel)} thickness: {thicknessValue}
         </Paragraph>
-        <div>
-          <Label htmlFor="thickness-mode">Mode</Label>
-          <Select
-            id="thickness-mode"
-            aria-label="Thickness mode"
-            value={draftMode.mode}
-            options={MODAL_MODE_OPTIONS}
-            onChange={(event) => {
-              const mode = event.target.value as ModalModeChoice;
-              if (mode === "constant") {
-                setDraftMode({ mode });
-                return;
-              }
+        <ModeSelectField
+          id="thickness-mode"
+          label="Mode"
+          ariaLabel="Thickness mode"
+          value={draftMode.mode}
+          onChange={(mode) => {
+            if (mode === "constant") {
+              setDraftMode({ mode });
+              return;
+            }
 
-              if (mode === "variable") {
-                setDraftMode(createVariableDraft(thicknessValue));
-                return;
-              }
+            if (mode === "variable") {
+              setDraftMode(createVariableDraft(thicknessValue));
+              return;
+            }
 
-              setDraftMode(createPickupDraft());
-            }}
-          />
-        </div>
+            setDraftMode(createPickupDraft());
+          }}
+        />
 
         {draftMode.mode === "variable" ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <Label htmlFor="thickness-min">Min.</Label>
-              <Input
-                id="thickness-min"
-                aria-label="Thickness Min."
-                value={draftMode.min}
-                onChange={(event) => setDraftMode({
-                  mode: "variable",
-                  min: event.target.value,
-                  max: draftMode.max,
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="thickness-max">Max.</Label>
-              <Input
-                id="thickness-max"
-                aria-label="Thickness Max."
-                value={draftMode.max}
-                onChange={(event) => setDraftMode({
-                  mode: "variable",
-                  min: draftMode.min,
-                  max: event.target.value,
-                })}
-              />
-            </div>
-          </div>
+          <VariableModeFields
+            idPrefix="thickness"
+            minAriaLabel="Thickness Min."
+            minValue={draftMode.min}
+            maxAriaLabel="Thickness Max."
+            maxValue={draftMode.max}
+            onMinChange={(value) => setDraftMode({
+              mode: "variable",
+              min: value,
+              max: draftMode.max,
+            })}
+            onMaxChange={(value) => setDraftMode({
+              mode: "variable",
+              min: draftMode.min,
+              max: value,
+            })}
+            className="grid gap-4 md:grid-cols-2"
+            inputRowClassName="contents"
+          />
         ) : null}
 
         {draftMode.mode === "pickup" ? (
-          <div className="grid gap-4">
-            <div>
-              <Label htmlFor="pickup-thickness-source">Source surface index</Label>
-              <Input
-                id="pickup-thickness-source"
-                aria-label="Thickness source surface index"
-                value={draftMode.sourceSurfaceIndex}
-                onChange={(event) => setDraftMode({
-                  mode: "pickup",
-                  sourceSurfaceIndex: event.target.value,
-                  scale: draftMode.scale,
-                  offset: draftMode.offset,
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="pickup-thickness-scale">scale</Label>
-              <Input
-                id="pickup-thickness-scale"
-                aria-label="Thickness scale"
-                value={draftMode.scale}
-                onChange={(event) => setDraftMode({
-                  mode: "pickup",
-                  sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
-                  scale: event.target.value,
-                  offset: draftMode.offset,
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="pickup-thickness-offset">offset</Label>
-              <Input
-                id="pickup-thickness-offset"
-                aria-label="Thickness offset"
-                value={draftMode.offset}
-                onChange={(event) => setDraftMode({
-                  mode: "pickup",
-                  sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
-                  scale: draftMode.scale,
-                  offset: event.target.value,
-                })}
-              />
-            </div>
-          </div>
+          <PickupModeFields
+            idPrefix="pickup-thickness"
+            sourceSurfaceAriaLabel="Thickness source surface index"
+            sourceSurfaceValue={draftMode.sourceSurfaceIndex}
+            onSourceSurfaceChange={(value) => setDraftMode({
+              mode: "pickup",
+              sourceSurfaceIndex: value,
+              scale: draftMode.scale,
+              offset: draftMode.offset,
+            })}
+            scaleAriaLabel="Thickness scale"
+            scaleValue={draftMode.scale}
+            onScaleChange={(value) => setDraftMode({
+              mode: "pickup",
+              sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
+              scale: value,
+              offset: draftMode.offset,
+            })}
+            offsetAriaLabel="Thickness offset"
+            offsetValue={draftMode.offset}
+            onOffsetChange={(value) => setDraftMode({
+              mode: "pickup",
+              sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
+              scale: draftMode.scale,
+              offset: value,
+            })}
+          />
         ) : null}
 
         <div className="flex justify-end gap-3">
