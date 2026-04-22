@@ -260,6 +260,246 @@ function normalizeWeight(value: string | number): number {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1;
 }
 
+type SurfaceModeKind = "radius" | "thickness";
+
+type SurfaceModeEntry = RadiusMode & {
+  readonly kind: SurfaceModeKind;
+};
+
+function parseVariableBounds(minValue: string, maxValue: string): { readonly min: number; readonly max: number } {
+  const min = parseFloatValue(minValue, "Min.");
+  const max = parseFloatValue(maxValue, "Max.");
+  if (min >= max) {
+    throw new Error("Variable minimum must be less than maximum.");
+  }
+
+  return { min, max };
+}
+
+function buildOptimizerConfig(
+  optimizer: OptimizationState["optimizer"],
+): OptimizationConfig["optimizer"] {
+  return {
+    kind: optimizer.kind,
+    method: optimizer.method,
+    max_nfev: parsePositiveInteger(optimizer.maxNumSteps, "Max. num of steps"),
+    ftol: parsePositiveFloat(optimizer.meritFunctionTolerance, "Merit function change tolerance"),
+    xtol: parsePositiveFloat(optimizer.independentVariableTolerance, "Independent variable change tolerance"),
+    gtol: parsePositiveFloat(optimizer.gradientTolerance, "Gradient tolerance"),
+  };
+}
+
+function createSurfaceModeEntries(
+  radiusModes: ReadonlyArray<RadiusMode>,
+  thicknessModes: ReadonlyArray<RadiusMode>,
+): SurfaceModeEntry[] {
+  return [
+    ...radiusModes.map((mode) => ({ ...mode, kind: "radius" as const })),
+    ...thicknessModes.map((mode) => ({ ...mode, kind: "thickness" as const })),
+  ];
+}
+
+function parseSurfacePickupSourceIndex(
+  mode: Extract<SurfaceModeEntry, { mode: "pickup" }>,
+  maxIndex: number,
+): number {
+  const sourceSurfaceIndex = parsePositiveInteger(mode.sourceSurfaceIndex, "Source surface index");
+  if (sourceSurfaceIndex === mode.surfaceIndex) {
+    throw new Error("Pickup source surface index must not equal the target surface index.");
+  }
+  if (sourceSurfaceIndex > maxIndex) {
+    throw new Error("Pickup source surface index is out of range.");
+  }
+
+  return sourceSurfaceIndex;
+}
+
+function buildSurfaceVariables(
+  radiusModes: ReadonlyArray<RadiusMode>,
+  thicknessModes: ReadonlyArray<RadiusMode>,
+): OptimizationConfig["variables"] {
+  return createSurfaceModeEntries(radiusModes, thicknessModes)
+    .filter(
+      (
+        mode,
+      ): mode is Extract<SurfaceModeEntry, { mode: "variable" }> => mode.mode === "variable",
+    )
+    .map((mode) => {
+      const { min, max } = parseVariableBounds(mode.min, mode.max);
+
+      return {
+        kind: mode.kind,
+        surface_index: mode.surfaceIndex,
+        min,
+        max,
+      };
+    });
+}
+
+function buildSurfacePickups(
+  radiusModes: ReadonlyArray<RadiusMode>,
+  thicknessModes: ReadonlyArray<RadiusMode>,
+): OptimizationConfig["pickups"] {
+  return createSurfaceModeEntries(radiusModes, thicknessModes)
+    .filter(
+      (
+        mode,
+      ): mode is Extract<SurfaceModeEntry, { mode: "pickup" }> => mode.mode === "pickup",
+    )
+    .map((mode) => ({
+      kind: mode.kind,
+      surface_index: mode.surfaceIndex,
+      source_surface_index: parseSurfacePickupSourceIndex(
+        mode,
+        mode.kind === "radius" ? radiusModes.length : thicknessModes.length,
+      ),
+      scale: parseFloatValue(mode.scale, "scale"),
+      offset: parseFloatValue(mode.offset, "offset"),
+    }));
+}
+
+function buildAsphereVariables(
+  asphereStates: ReadonlyArray<AsphereOptimizationState>,
+): OptimizationConfig["variables"] {
+  return asphereStates.flatMap((asphereState) => {
+    const type = asphereState.type;
+    if (type === undefined) {
+      return [];
+    }
+
+    const variables: Array<OptimizationConfig["variables"][number]> = [];
+    if (asphereState.conic.mode === "variable") {
+      const { min, max } = parseVariableBounds(asphereState.conic.min, asphereState.conic.max);
+      variables.push({
+        kind: "asphere_conic_constant",
+        surface_index: asphereState.surfaceIndex,
+        asphere_kind: type,
+        min,
+        max,
+      });
+    }
+
+    asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
+      if (coefficientMode.mode !== "variable") {
+        return;
+      }
+
+      const { min, max } = parseVariableBounds(coefficientMode.min, coefficientMode.max);
+      variables.push({
+        kind: "asphere_polynomial_coefficient",
+        surface_index: asphereState.surfaceIndex,
+        asphere_kind: type,
+        coefficient_index: coefficientIndex,
+        min,
+        max,
+      });
+    });
+
+    if ((type === "XToroid" || type === "YToroid") && asphereState.toricSweep.mode === "variable") {
+      const { min, max } = parseVariableBounds(asphereState.toricSweep.min, asphereState.toricSweep.max);
+      variables.push({
+        kind: "asphere_toric_sweep_radius",
+        surface_index: asphereState.surfaceIndex,
+        asphere_kind: type,
+        min,
+        max,
+      });
+    }
+
+    return variables;
+  });
+}
+
+function buildAspherePickups(
+  asphereStates: ReadonlyArray<AsphereOptimizationState>,
+): OptimizationConfig["pickups"] {
+  return asphereStates.flatMap((asphereState) => {
+    const type = asphereState.type;
+    if (type === undefined) {
+      return [];
+    }
+
+    const pickups: Array<OptimizationConfig["pickups"][number]> = [];
+    if (asphereState.conic.mode === "pickup") {
+      pickups.push({
+        kind: "asphere_conic_constant",
+        surface_index: asphereState.surfaceIndex,
+        asphere_kind: type,
+        source_surface_index: parsePositiveInteger(asphereState.conic.sourceSurfaceIndex, "Source surface index"),
+        scale: parseFloatValue(asphereState.conic.scale, "scale"),
+        offset: parseFloatValue(asphereState.conic.offset, "offset"),
+      });
+    }
+
+    asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
+      if (coefficientMode.mode !== "pickup") {
+        return;
+      }
+
+      const sourceTermKey = coefficientMode.sourceTermKey;
+      if (sourceTermKey === undefined || !sourceTermKey.startsWith("coefficient:")) {
+        throw new Error("Asphere coefficient pickups require a source coefficient term.");
+      }
+
+      pickups.push({
+        kind: "asphere_polynomial_coefficient",
+        surface_index: asphereState.surfaceIndex,
+        asphere_kind: type,
+        coefficient_index: coefficientIndex,
+        source_surface_index: parsePositiveInteger(coefficientMode.sourceSurfaceIndex, "Source surface index"),
+        source_coefficient_index: parseNonNegativeInteger(sourceTermKey.replace("coefficient:", ""), "Source coefficient index"),
+        scale: parseFloatValue(coefficientMode.scale, "scale"),
+        offset: parseFloatValue(coefficientMode.offset, "offset"),
+      });
+    });
+
+    if ((type === "XToroid" || type === "YToroid") && asphereState.toricSweep.mode === "pickup") {
+      pickups.push({
+        kind: "asphere_toric_sweep_radius",
+        surface_index: asphereState.surfaceIndex,
+        asphere_kind: type,
+        source_surface_index: parsePositiveInteger(asphereState.toricSweep.sourceSurfaceIndex, "Source surface index"),
+        scale: parseFloatValue(asphereState.toricSweep.scale, "scale"),
+        offset: parseFloatValue(asphereState.toricSweep.offset, "offset"),
+      });
+    }
+
+    return pickups;
+  });
+}
+
+function buildMeritFunctionOperands(
+  operands: ReadonlyArray<OptimizationOperandRow>,
+  fieldWeights: ReadonlyArray<number>,
+  wavelengthWeights: ReadonlyArray<number>,
+): OptimizationConfig["merit_function"]["operands"] {
+  const configOperands = operands.map((operand) => {
+    const target = parseFloatValue(operand.target, "Target");
+    const weight = parsePositiveFloat(operand.weight, "Weight");
+    if (operand.kind === "focal_length" || operand.kind === "f_number") {
+      return {
+        kind: operand.kind,
+        target,
+        weight,
+      };
+    }
+
+    return {
+      kind: operand.kind,
+      target,
+      weight,
+      fields: fieldWeights.map((currentWeight, index) => ({ index, weight: currentWeight })),
+      wavelengths: wavelengthWeights.map((currentWeight, index) => ({ index, weight: currentWeight })),
+    };
+  });
+
+  if (configOperands.length === 0) {
+    throw new Error("At least one operand is required.");
+  }
+
+  return configOperands;
+}
+
 function createDefaultOperand(): OptimizationOperandRow {
   return {
     id: generateOperandId(),
@@ -669,202 +909,23 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       throw new Error("No optical model available for optimization.");
     }
 
-    const optimizer = {
-      kind: state.optimizer.kind,
-      method: state.optimizer.method,
-      max_nfev: parsePositiveInteger(state.optimizer.maxNumSteps, "Max. num of steps"),
-      ftol: parsePositiveFloat(state.optimizer.meritFunctionTolerance, "Merit function change tolerance"),
-      xtol: parsePositiveFloat(state.optimizer.independentVariableTolerance, "Independent variable change tolerance"),
-      gtol: parsePositiveFloat(state.optimizer.gradientTolerance, "Gradient tolerance"),
-    } as const;
-
-    const variableModes = [
-      ...state.radiusModes.map((mode) => ({ ...mode, kind: "radius" as const })),
-      ...state.thicknessModes.map((mode) => ({ ...mode, kind: "thickness" as const })),
-    ];
-    const pickupModes = [
-      ...state.radiusModes.map((mode) => ({ ...mode, kind: "radius" as const })),
-      ...state.thicknessModes.map((mode) => ({ ...mode, kind: "thickness" as const })),
-    ];
-
-    const variables = variableModes
-      .filter((mode): mode is (Extract<RadiusMode, { mode: "variable" }> & { kind: "radius" | "thickness" }) => mode.mode === "variable")
-      .map((mode) => {
-        const min = parseFloatValue(mode.min, "Min.");
-        const max = parseFloatValue(mode.max, "Max.");
-        if (min >= max) {
-          throw new Error("Variable minimum must be less than maximum.");
-        }
-
-        return {
-          kind: mode.kind,
-          surface_index: mode.surfaceIndex,
-          min,
-          max,
-        };
-      });
-
-    const pickups = pickupModes
-      .filter((mode): mode is (Extract<RadiusMode, { mode: "pickup" }> & { kind: "radius" | "thickness" }) => mode.mode === "pickup")
-      .map((mode) => {
-        const sourceSurfaceIndex = parsePositiveInteger(mode.sourceSurfaceIndex, "Source surface index");
-        if (sourceSurfaceIndex === mode.surfaceIndex) {
-          throw new Error("Pickup source surface index must not equal the target surface index.");
-        }
-        const maxIndex = mode.kind === "radius" ? state.radiusModes.length : state.thicknessModes.length;
-        if (sourceSurfaceIndex > maxIndex) {
-          throw new Error("Pickup source surface index is out of range.");
-        }
-
-        return {
-          kind: mode.kind,
-          surface_index: mode.surfaceIndex,
-          source_surface_index: sourceSurfaceIndex,
-          scale: parseFloatValue(mode.scale, "scale"),
-          offset: parseFloatValue(mode.offset, "offset"),
-        };
-      });
-
-    const asphereVariables = state.asphereStates.flatMap((asphereState) => {
-      const type = asphereState.type;
-      if (type === undefined) {
-        return [];
-      }
-
-      const variables: Array<OptimizationConfig["variables"][number]> = [];
-      if (asphereState.conic.mode === "variable") {
-        const min = parseFloatValue(asphereState.conic.min, "Min.");
-        const max = parseFloatValue(asphereState.conic.max, "Max.");
-        if (min >= max) {
-          throw new Error("Variable minimum must be less than maximum.");
-        }
-        variables.push({
-          kind: "asphere_conic_constant",
-          surface_index: asphereState.surfaceIndex,
-          asphere_kind: type,
-          min,
-          max,
-        });
-      }
-
-      asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
-        if (coefficientMode.mode !== "variable") {
-          return;
-        }
-        const min = parseFloatValue(coefficientMode.min, "Min.");
-        const max = parseFloatValue(coefficientMode.max, "Max.");
-        if (min >= max) {
-          throw new Error("Variable minimum must be less than maximum.");
-        }
-        variables.push({
-          kind: "asphere_polynomial_coefficient",
-          surface_index: asphereState.surfaceIndex,
-          asphere_kind: type,
-          coefficient_index: coefficientIndex,
-          min,
-          max,
-        });
-      });
-
-      if ((type === "XToroid" || type === "YToroid") && asphereState.toricSweep.mode === "variable") {
-        const min = parseFloatValue(asphereState.toricSweep.min, "Min.");
-        const max = parseFloatValue(asphereState.toricSweep.max, "Max.");
-        if (min >= max) {
-          throw new Error("Variable minimum must be less than maximum.");
-        }
-        variables.push({
-          kind: "asphere_toric_sweep_radius",
-          surface_index: asphereState.surfaceIndex,
-          asphere_kind: type,
-          min,
-          max,
-        });
-      }
-
-      return variables;
-    });
-
-    const aspherePickups = state.asphereStates.flatMap((asphereState) => {
-      const type = asphereState.type;
-      if (type === undefined) {
-        return [];
-      }
-
-      const pickups: Array<OptimizationConfig["pickups"][number]> = [];
-      if (asphereState.conic.mode === "pickup") {
-        pickups.push({
-          kind: "asphere_conic_constant",
-          surface_index: asphereState.surfaceIndex,
-          asphere_kind: type,
-          source_surface_index: parsePositiveInteger(asphereState.conic.sourceSurfaceIndex, "Source surface index"),
-          scale: parseFloatValue(asphereState.conic.scale, "scale"),
-          offset: parseFloatValue(asphereState.conic.offset, "offset"),
-        });
-      }
-
-      asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
-        if (coefficientMode.mode !== "pickup") {
-          return;
-        }
-        const sourceTermKey = coefficientMode.sourceTermKey;
-        if (sourceTermKey === undefined || !sourceTermKey.startsWith("coefficient:")) {
-          throw new Error("Asphere coefficient pickups require a source coefficient term.");
-        }
-        pickups.push({
-          kind: "asphere_polynomial_coefficient",
-          surface_index: asphereState.surfaceIndex,
-          asphere_kind: type,
-          coefficient_index: coefficientIndex,
-          source_surface_index: parsePositiveInteger(coefficientMode.sourceSurfaceIndex, "Source surface index"),
-          source_coefficient_index: parseNonNegativeInteger(sourceTermKey.replace("coefficient:", ""), "Source coefficient index"),
-          scale: parseFloatValue(coefficientMode.scale, "scale"),
-          offset: parseFloatValue(coefficientMode.offset, "offset"),
-        });
-      });
-
-      if ((type === "XToroid" || type === "YToroid") && asphereState.toricSweep.mode === "pickup") {
-        pickups.push({
-          kind: "asphere_toric_sweep_radius",
-          surface_index: asphereState.surfaceIndex,
-          asphere_kind: type,
-          source_surface_index: parsePositiveInteger(asphereState.toricSweep.sourceSurfaceIndex, "Source surface index"),
-          scale: parseFloatValue(asphereState.toricSweep.scale, "scale"),
-          offset: parseFloatValue(asphereState.toricSweep.offset, "offset"),
-        });
-      }
-
-      return pickups;
-    });
-
-    const operands = state.operands.map((operand) => {
-      const target = parseFloatValue(operand.target, "Target");
-      const weight = parsePositiveFloat(operand.weight, "Weight");
-      if (operand.kind === "focal_length" || operand.kind === "f_number") {
-        return {
-          kind: operand.kind,
-          target,
-          weight,
-        };
-      }
-
-      return {
-        kind: operand.kind,
-        target,
-        weight,
-        fields: state.fieldWeights.map((weight, index) => ({ index, weight })),
-        wavelengths: state.wavelengthWeights.map((weight, index) => ({ index, weight })),
-      };
-    });
-
-    if (operands.length === 0) {
-      throw new Error("At least one operand is required.");
-    }
-
     return {
-      optimizer,
-      variables: [...variables, ...asphereVariables],
-      pickups: [...pickups, ...aspherePickups],
-      merit_function: { operands },
+      optimizer: buildOptimizerConfig(state.optimizer),
+      variables: [
+        ...buildSurfaceVariables(state.radiusModes, state.thicknessModes),
+        ...buildAsphereVariables(state.asphereStates),
+      ],
+      pickups: [
+        ...buildSurfacePickups(state.radiusModes, state.thicknessModes),
+        ...buildAspherePickups(state.asphereStates),
+      ],
+      merit_function: {
+        operands: buildMeritFunctionOperands(
+          state.operands,
+          state.fieldWeights,
+          state.wavelengthWeights,
+        ),
+      },
     };
   },
 

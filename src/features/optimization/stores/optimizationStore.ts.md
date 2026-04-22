@@ -43,6 +43,12 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `buildOptimizationConfig()` — validates current UI state and emits the Python `OptimizationConfig`
 - `applyOptimizationResult(report)` — applies optimized radius/thickness values and pickups back into the page-local optical-model snapshot
 
+## Internal Structure
+
+- `buildOptimizationConfig()` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
+- Shared validation for variable bounds stays centralized so radius, thickness, and asphere variable entries continue to use the same `min < max` rule and error text.
+- Surface pickup source-index validation stays centralized so radius and thickness pickups continue to share the same same-surface and out-of-range checks.
+
 ## Validation Rules
 
 - `max_nfev` must be a positive integer.
