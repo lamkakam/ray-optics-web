@@ -5,7 +5,7 @@ import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
-import { VariableModeFields } from "@/features/optimization/components/VariableModeFields";
+import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import { getRadiusLabel, getThicknessValue } from "@/features/optimization/components/optimizationViewModels";
 import {
   createPickupDraft,
@@ -103,7 +103,7 @@ function ThicknessModeModalEditor({
         />
 
         {draftMode.mode === "variable" ? (
-          <VariableModeFields
+          <BoundedVariableModeFields
             idPrefix="thickness"
             minAriaLabel="Thickness Min."
             minValue={draftMode.min}

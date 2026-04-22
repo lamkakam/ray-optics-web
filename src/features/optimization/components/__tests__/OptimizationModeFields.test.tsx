@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
-import { VariableModeFields } from "@/features/optimization/components/VariableModeFields";
+import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 
 describe("OptimizationModeFields", () => {
   it("renders the shared mode selector and reports changes", async () => {
@@ -30,7 +30,7 @@ describe("OptimizationModeFields", () => {
     const onMaxChange = jest.fn();
 
     render(
-      <VariableModeFields
+      <BoundedVariableModeFields
         idPrefix="shared-variable"
         minAriaLabel="Shared Min."
         minValue=""

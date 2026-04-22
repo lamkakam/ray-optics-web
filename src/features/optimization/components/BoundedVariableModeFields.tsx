@@ -4,7 +4,7 @@ import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-interface VariableModeFieldsProps {
+interface BoundedVariableModeFieldsProps {
   readonly idPrefix: string;
   readonly minLabel?: string;
   readonly minAriaLabel: string;
@@ -22,7 +22,7 @@ interface VariableModeFieldsProps {
   readonly errorTextClassName?: string;
 }
 
-export function VariableModeFields({
+export function BoundedVariableModeFields({
   idPrefix,
   minLabel = "Min.",
   minAriaLabel,
@@ -38,7 +38,7 @@ export function VariableModeFields({
   inputRowClassName = "grid gap-4 md:grid-cols-2",
   helperTextClassName,
   errorTextClassName = "text-red-600 dark:text-red-400",
-}: VariableModeFieldsProps) {
+}: BoundedVariableModeFieldsProps) {
   return (
     <div className={className ?? "grid gap-3"}>
       {guidanceText?.map((text) => (

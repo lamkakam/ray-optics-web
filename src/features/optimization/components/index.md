@@ -8,7 +8,7 @@ Components for the optimization workflow UI.
 - [OptimizationEvaluationPanel.tsx](./OptimizationEvaluationPanel.tsx.md) — static residual table and empty/loading states
 - [OptimizationAlgorithmTab.tsx](./OptimizationAlgorithmTab.tsx.md) — optimizer parameter form
 - [ModeSelectField.tsx](./ModeSelectField.tsx.md) — shared constant/variable/pickup mode selector for optimization modals
-- [VariableModeFields.tsx](./VariableModeFields.tsx.md) — shared Min/Max field group for optimization variable editors
+- [BoundedVariableModeFields.tsx](./BoundedVariableModeFields.tsx.md) — shared Min/Max field group for optimization variable editors
 - [PickupModeFields.tsx](./PickupModeFields.tsx.md) — shared pickup field group for optimization modal editors
 - [OptimizationWeightsGrid.tsx](./OptimizationWeightsGrid.tsx.md) — shared AG Grid view for field and wavelength weights
 - [OptimizationLensPrescriptionGrid.tsx](./OptimizationLensPrescriptionGrid.tsx.md) — read-only prescription grid with modal-backed inspection cells

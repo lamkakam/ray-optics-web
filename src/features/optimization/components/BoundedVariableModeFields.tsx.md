@@ -1,4 +1,4 @@
-# `features/optimization/components/VariableModeFields.tsx`
+# `features/optimization/components/BoundedVariableModeFields.tsx`
 
 Shared optimization-only Min/Max field group for variable-mode editors.
 

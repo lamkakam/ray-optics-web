@@ -6,7 +6,7 @@ import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores
 import { getRadiusLabel, getRadiusValue } from "@/features/optimization/components/optimizationViewModels";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
-import { VariableModeFields } from "@/features/optimization/components/VariableModeFields";
+import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import {
   createPickupDraft,
   createVariableDraft,
@@ -106,7 +106,7 @@ function RadiusModeModalEditor({
         />
 
         {draftMode.mode === "variable" ? (
-          <VariableModeFields
+          <BoundedVariableModeFields
             idPrefix="radius"
             minAriaLabel="Min."
             minValue={draftMode.min}

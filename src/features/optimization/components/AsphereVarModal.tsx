@@ -6,7 +6,7 @@ import type { AsphericalType } from "@/shared/lib/types/opticalModel";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
-import { VariableModeFields } from "@/features/optimization/components/VariableModeFields";
+import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import { curvatureRadiusCrossesZero } from "@/features/optimization/lib/modalHelpers";
 import { Button } from "@/shared/components/primitives/Button";
 import { Label } from "@/shared/components/primitives/Label";
@@ -284,7 +284,7 @@ function AsphereVarModalEditor({
                   </div>
 
                   {mode.mode === "variable" && (
-                    <VariableModeFields
+                    <BoundedVariableModeFields
                       idPrefix={termId}
                       minAriaLabel={`${term.ariaLabel} Min.`}
                       minValue={mode.min}
