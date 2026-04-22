@@ -37,7 +37,7 @@ export function BoundedVariableModeFields({
   className,
   inputRowClassName = "grid gap-4 md:grid-cols-2",
   helperTextClassName,
-  errorTextClassName = "text-red-600 dark:text-red-400",
+  errorTextClassName,
 }: BoundedVariableModeFieldsProps) {
   return (
     <div className={className ?? "grid gap-3"}>
@@ -67,7 +67,7 @@ export function BoundedVariableModeFields({
         </div>
       </div>
       {errorText ? (
-        <Paragraph variant="caption" className={errorTextClassName}>
+        <Paragraph variant="errorMessage" className={errorTextClassName}>
           {errorText}
         </Paragraph>
       ) : null}

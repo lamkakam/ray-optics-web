@@ -19,7 +19,7 @@ interface AsphereVarModalProps {
 ## Behavior
 
 - Seeds draft from `asphereState` when the modal editor mounts, and resets that draft by remounting a keyed inner editor whenever the committed target surface or asphere state changes.
-- Reuses `curvatureRadiusCrossesZero()` from `features/optimization/lib/modalHelpers.ts` for toroid sweep radius validation.
+- Reuses `curvatureRadiusCrossesZero()`, shared curvature-radius guidance text, and shared zero-crossing error formatting from `features/optimization/lib/modalHelpers.ts` for toroid sweep radius validation copy.
 - Reuses `ModeSelectField.tsx`, `BoundedVariableModeFields.tsx`, and `PickupModeFields.tsx` for the shared term-row mode selector and common variable/pickup field groups, while keeping asphere-specific type switching, term mapping, coefficient pickup wiring, and toroid validation in this modal.
 - **Type selector**: dropdown with Conic / Even Aspheric / Radial Polynomial / X Toroid / Y Toroid. Disabled when `asphereState.lockedType === true` (surface already has an aspheric configuration from the Editor). Changing the type (when unlocked) resets all term modes to `constant`.
 - **Term rows** rendered based on selected type:
@@ -30,7 +30,8 @@ interface AsphereVarModalProps {
 - Coefficient row labels are displayed with `MathJax inline` as `\(a_{n}\)` while preserving plain-text accessibility names such as `a_2 mode` and `a_2 Min.` for controls in the same row.
 - Each term row has a mode selector (`constant` / `variable` / `pickup`).
   - **variable**: shows Min and Max `Input` fields inline.
-    - For `Toroid sweep R`, also shows guidance that `R = 0` is a flat surface (infinite radius), instructs users not to straddle `0`, and shows an inline validation message when bounds straddle `0`.
+    - For `Toroid sweep R`, also shows the shared curvature-radius guidance that `R = 0` is a flat surface (infinite radius), instructs users not to straddle `0`, and shows the shared labeled inline validation message when bounds straddle `0`.
+    - The toroid validation message styling comes from `BoundedVariableModeFields` via `Paragraph` variant `errorMessage`; this modal only supplies layout classes.
   - **pickup**: shows Source Surface Index, Scale, Offset `Input` fields. Coefficient rows additionally show a Source Coefficient Index field (stored as `sourceTermKey = "coefficient:N"` where `N` is the zero-based coefficient slot and may be `0`).
 - Footer actions: `Cancel` on the left and `Confirm` on the right.
 - **Cancel button**: closes the modal and discards uncommitted draft changes.

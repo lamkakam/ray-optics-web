@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
 import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
+import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 describe("OptimizationModeFields", () => {
   it("renders the shared mode selector and reports changes", async () => {
@@ -48,7 +49,11 @@ describe("OptimizationModeFields", () => {
 
     expect(screen.getByText("First helper line.")).toBeInTheDocument();
     expect(screen.getByText("Second helper line.")).toBeInTheDocument();
-    expect(screen.getByText("Bounds are invalid.")).toBeInTheDocument();
+    const errorText = screen.getByText("Bounds are invalid.");
+    expect(errorText).toBeInTheDocument();
+    expect(errorText).toHaveClass("text-red-600");
+    expect(errorText).toHaveClass("dark:text-red-400");
+    expect(errorText).toHaveClass(cx.text.size.captionFontSize);
 
     await user.clear(screen.getByRole("textbox", { name: "Shared Min." }));
     await user.type(screen.getByRole("textbox", { name: "Shared Min." }), "3");

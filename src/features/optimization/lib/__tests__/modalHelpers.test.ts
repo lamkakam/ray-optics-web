@@ -1,9 +1,11 @@
 import type { RadiusMode } from "@/features/optimization/stores/optimizationStore";
 import {
+  CURVATURE_RADIUS_GUIDANCE_TEXT,
   MODAL_MODE_OPTIONS,
   curvatureRadiusCrossesZero,
   createPickupDraft,
   createVariableDraft,
+  getCurvatureRadiusBoundsErrorText,
   serializeRadiusMode,
   toRadiusModeDraft,
 } from "@/features/optimization/lib/modalHelpers";
@@ -39,6 +41,22 @@ describe("optimization modal helpers", () => {
       min: "12.5",
       max: "12.5",
     });
+  });
+
+  it("exposes shared curvature-radius guidance copy", () => {
+    expect(CURVATURE_RADIUS_GUIDANCE_TEXT).toEqual([
+      "R = 0 means a flat surface (infinite radius).",
+      "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
+    ]);
+  });
+
+  it("formats curvature-radius bounds errors with the provided label", () => {
+    expect(getCurvatureRadiusBoundsErrorText("Radius")).toBe(
+      "Radius variable bounds must stay on one side of 0.",
+    );
+    expect(getCurvatureRadiusBoundsErrorText("Toroid sweep R")).toBe(
+      "Toroid sweep R variable bounds must stay on one side of 0.",
+    );
   });
 
   it("creates the default pickup draft", () => {

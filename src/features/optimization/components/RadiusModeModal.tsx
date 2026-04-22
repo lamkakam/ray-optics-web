@@ -8,9 +8,11 @@ import { ModeSelectField } from "@/features/optimization/components/ModeSelectFi
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
 import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import {
+  CURVATURE_RADIUS_GUIDANCE_TEXT,
   createPickupDraft,
   createVariableDraft,
   curvatureRadiusCrossesZero,
+  getCurvatureRadiusBoundsErrorText,
   serializeRadiusMode,
   toRadiusModeDraft,
 } from "@/features/optimization/lib/modalHelpers";
@@ -122,11 +124,8 @@ function RadiusModeModalEditor({
               min: draftMode.min,
               max: value,
             })}
-            guidanceText={[
-              "R = 0 means a flat surface (infinite radius).",
-              "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
-            ]}
-            errorText={variableBoundsCrossZero ? "Radius variable bounds must stay on one side of 0." : undefined}
+            guidanceText={CURVATURE_RADIUS_GUIDANCE_TEXT}
+            errorText={variableBoundsCrossZero ? getCurvatureRadiusBoundsErrorText("Radius") : undefined}
           />
         ) : null}
 

@@ -26,6 +26,8 @@ componentTokens
 
 `globalTokens` holds reusable primitives (e.g. `primaryColor`, `inputBorder`, `surfaceBg`, shared hover classes) plus raw ECharts-ready theme values. Component tokens reference these via a local alias `g`.
 
+`globalTokens.color.errorTextColor` centralizes the shared inline error text color classes and is re-exposed as `componentTokens.text.color.errorTextColor` for paragraph-style consumers.
+
 ## Key Conventions
 
 - All values are literal Tailwind class strings (no dynamic generation).

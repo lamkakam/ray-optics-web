@@ -7,7 +7,11 @@ import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/fe
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
 import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
-import { curvatureRadiusCrossesZero } from "@/features/optimization/lib/modalHelpers";
+import {
+  CURVATURE_RADIUS_GUIDANCE_TEXT,
+  curvatureRadiusCrossesZero,
+  getCurvatureRadiusBoundsErrorText,
+} from "@/features/optimization/lib/modalHelpers";
 import { Button } from "@/shared/components/primitives/Button";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
@@ -292,15 +296,14 @@ function AsphereVarModalEditor({
                       maxValue={mode.max}
                       onMinChange={(value) => handleTermVariableChange(term, "min", value)}
                       onMaxChange={(value) => handleTermVariableChange(term, "max", value)}
-                      guidanceText={term.kind === "toricSweep" ? [
-                        "R = 0 means a flat surface (infinite radius).",
-                        "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
-                      ] : undefined}
-                      errorText={variableBoundsCrossZero ? "Toroid sweep R variable bounds must stay on one side of 0." : undefined}
+                      guidanceText={term.kind === "toricSweep" ? CURVATURE_RADIUS_GUIDANCE_TEXT : undefined}
+                      errorText={variableBoundsCrossZero
+                        ? getCurvatureRadiusBoundsErrorText("Toroid sweep R")
+                        : undefined}
                       className="ml-36 grid gap-3 pl-3"
                       inputRowClassName="grid gap-3 md:grid-cols-2"
                       helperTextClassName="md:col-span-2"
-                      errorTextClassName="text-red-600 dark:text-red-400 md:col-span-2"
+                      errorTextClassName="md:col-span-2"
                     />
                   )}
 
