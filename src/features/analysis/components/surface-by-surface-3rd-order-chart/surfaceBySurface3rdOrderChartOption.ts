@@ -2,7 +2,7 @@ import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
-import { formatPlotValue } from "@/features/analysis/shared/formatPlotValue";
+import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([BarChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);

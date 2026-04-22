@@ -852,12 +852,60 @@ describe("OptimizationPage", () => {
       expect.objectContaining({
         yAxis: expect.objectContaining({
           type: "log",
+          axisLabel: expect.objectContaining({
+            formatter: expect.any(Function),
+          }),
         }),
         series: [
           expect.objectContaining({
             data: [
               [0, 100],
               [1, 10],
+            ],
+          }),
+        ],
+      }),
+      true,
+    );
+
+    const chartOption = (chartInstance.setOption as jest.Mock).mock.calls.at(-1)?.[0];
+    const yAxis = chartOption?.yAxis as { axisLabel?: { formatter?: (value: number) => string } } | undefined;
+    expect(yAxis?.axisLabel?.formatter?.(0)).toBe("1e-9");
+  });
+
+  it("floors zero merit values to the minimum non-zero plot value for the log chart", async () => {
+    const optimizeOpm = jest.fn().mockResolvedValue({
+      success: true,
+      status: "optimized",
+      message: "done",
+      optimizer: { kind: "least_squares", method: "trf" },
+      initial_values: [],
+      final_values: [],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 0, rss: 0 },
+      optimization_progress: [
+        { iteration: 0, merit_function_value: 0, log10_merit_function_value: -300 },
+      ],
+    });
+
+    const proxy = makeProxy({ optimizeOpm });
+    const user = userEvent.setup();
+    renderOptimizationPage(proxy);
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument());
+
+    const chartInstance = (echarts.init as jest.Mock).mock.results.at(-1)?.value;
+    expect(chartInstance.setOption).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        series: [
+          expect.objectContaining({
+            data: [
+              [0, 1e-9],
             ],
           }),
         ],

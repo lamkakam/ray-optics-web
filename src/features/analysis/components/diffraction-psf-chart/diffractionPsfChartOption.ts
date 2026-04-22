@@ -3,7 +3,7 @@ import { ScatterChart } from "echarts/charts";
 import { GridComponent, TooltipComponent, VisualMapComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
-import { formatPlotValue } from "@/features/analysis/shared/formatPlotValue";
+import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
 
 echarts.use([ScatterChart, GridComponent, TooltipComponent, VisualMapComponent, CanvasRenderer]);

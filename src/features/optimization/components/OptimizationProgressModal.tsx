@@ -10,6 +10,10 @@ import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
+import {
+  formatLogScalePlotValue,
+  MINIMUM_NON_ZERO_PLOT_VALUE,
+} from "@/shared/lib/chart-formatting/formatPlotValue";
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { OptimizationProgressEntry } from "@/shared/lib/types/optimization";
 
@@ -52,14 +56,20 @@ function buildOptimizationProgressOption(
       nameLocation: "middle",
       nameGap: 50,
       nameTextStyle: { color: textColor },
-      axisLabel: { color: textColor },
+      axisLabel: {
+        color: textColor,
+        formatter: formatLogScalePlotValue,
+      },
     },
     series: [
       {
         type: "line",
         smooth: false,
         showSymbol: progress.length <= 1,
-        data: progress.map((entry) => [entry.iteration, entry.merit_function_value]),
+        data: progress.map((entry) => [
+          entry.iteration,
+          Math.max(entry.merit_function_value, MINIMUM_NON_ZERO_PLOT_VALUE),
+        ]),
         lineStyle: {
           width: 2,
           color: "#2563eb",

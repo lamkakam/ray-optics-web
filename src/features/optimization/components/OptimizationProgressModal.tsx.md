@@ -19,11 +19,12 @@ interface OptimizationProgressModalProps {
 - While `isOptimizing` is `true`, the backdrop is non-dismissible and the footer does not render an `OK` button.
 - After optimization completes, renders an `OK` button and allows backdrop dismissal through `onClose`.
 - Initializes one ECharts canvas instance per open modal session and updates it whenever `progress` or theme text color changes.
-- Series data is built directly from `progress.map(({ iteration, merit_function_value }) => [iteration, merit_function_value])`.
+- Series data is built from `progress`, but each plotted y value is floored to `MINIMUM_NON_ZERO_PLOT_VALUE` (`1e-9`) before it is sent to the log-scale series.
 
 ## Chart Conventions
 
 - `xAxis.name` is `Iteration`.
 - `yAxis.type` is `log`.
 - `yAxis.name` is `Total merit function value`.
+- `yAxis.axisLabel.formatter` uses the shared log-scale plot formatter so `0` and sub-floor values display as `1e-9`.
 - Uses a single blue line series with tooltip support and no animation so streamed updates stay stable.
