@@ -42,7 +42,7 @@ describe("diffractionPsfChartOption", () => {
 
   it("formats the visual map labels back to intensity values", () => {
     expect(formatDiffractionPsfIntensity(Math.log10(1))).toBe("1");
-    expect(formatDiffractionPsfIntensity(Math.log10(5e-4))).toBe("0.0005");
+    expect(formatDiffractionPsfIntensity(Math.log10(5e-4))).toBe("5e-4");
     expect(formatDiffractionPsfIntensity(-8)).toBe("1e-8");
   });
 
@@ -79,9 +79,9 @@ describe("diffractionPsfChartOption", () => {
     expect(option.visualMap.right).toBe(16);
     expect(option.visualMap.top).toBe(16);
     expect(option.visualMap.textStyle).toEqual({ color: globalTokens.echarts.text.light });
-    expect(option.visualMap.text).toEqual(["1", "0.0005"]);
+    expect(option.visualMap.text).toEqual(["1", "5e-4"]);
     expect(option.visualMap.formatter(Math.log10(1))).toBe("1");
-    expect(option.visualMap.formatter(Math.log10(5e-4))).toBe("0.0005");
+    expect(option.visualMap.formatter(Math.log10(5e-4))).toBe("5e-4");
     expect(option.visualMap.inRange.color).toEqual(ANALYSIS_HEATMAP_COLOR_PALETTE);
   });
 
