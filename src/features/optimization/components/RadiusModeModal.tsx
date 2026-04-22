@@ -4,9 +4,10 @@ import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
 import { getRadiusLabel, getRadiusValue } from "@/features/optimization/components/optimizationViewModels";
+import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
+import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
+import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import {
-  MODAL_MODE_OPTIONS,
-  type ModalModeChoice,
   createPickupDraft,
   createVariableDraft,
   curvatureRadiusCrossesZero,
@@ -14,11 +15,8 @@ import {
   toRadiusModeDraft,
 } from "@/features/optimization/lib/modalHelpers";
 import { Button } from "@/shared/components/primitives/Button";
-import { Input } from "@/shared/components/primitives/Input";
-import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
-import { Select } from "@/shared/components/primitives/Select";
 
 interface RadiusModeModalProps {
   readonly isOpen: boolean;
@@ -87,119 +85,79 @@ function RadiusModeModalEditor({
         <Paragraph>
           {getRadiusLabel(surfaceIndex, optimizationModel)} radius: {radiusValue}
         </Paragraph>
-        <div>
-          <Label htmlFor="radius-mode">Mode</Label>
-          <Select
-            id="radius-mode"
-            aria-label="Radius mode"
-            value={draftMode.mode}
-            options={MODAL_MODE_OPTIONS}
-            onChange={(event) => {
-              const mode = event.target.value as ModalModeChoice;
-              if (mode === "constant") {
-                setDraftMode({ mode });
-                return;
-              }
+        <ModeSelectField
+          id="radius-mode"
+          label="Mode"
+          ariaLabel="Radius mode"
+          value={draftMode.mode}
+          onChange={(mode) => {
+            if (mode === "constant") {
+              setDraftMode({ mode });
+              return;
+            }
 
-              if (mode === "variable") {
-                setDraftMode(createVariableDraft(radiusValue));
-                return;
-              }
+            if (mode === "variable") {
+              setDraftMode(createVariableDraft(radiusValue));
+              return;
+            }
 
-              setDraftMode(createPickupDraft());
-            }}
-          />
-        </div>
+            setDraftMode(createPickupDraft());
+          }}
+        />
 
         {draftMode.mode === "variable" ? (
-          <div className="grid gap-3">
-            <Paragraph variant="caption">
-              R = 0 means a flat surface (infinite radius).
-            </Paragraph>
-            <Paragraph variant="caption">
-              Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.
-            </Paragraph>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <Label htmlFor="radius-min">Min.</Label>
-                <Input
-                  id="radius-min"
-                  aria-label="Min."
-                  value={draftMode.min}
-                  onChange={(event) => setDraftMode({
-                    mode: "variable",
-                    min: event.target.value,
-                    max: draftMode.max,
-                  })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="radius-max">Max.</Label>
-                <Input
-                  id="radius-max"
-                  aria-label="Max."
-                  value={draftMode.max}
-                  onChange={(event) => setDraftMode({
-                    mode: "variable",
-                    min: draftMode.min,
-                    max: event.target.value,
-                  })}
-                />
-              </div>
-            </div>
-            {variableBoundsCrossZero ? (
-              <Paragraph variant="caption" className="text-red-600 dark:text-red-400">
-                Radius variable bounds must stay on one side of 0.
-              </Paragraph>
-            ) : null}
-          </div>
+          <BoundedVariableModeFields
+            idPrefix="radius"
+            minAriaLabel="Min."
+            minValue={draftMode.min}
+            maxAriaLabel="Max."
+            maxValue={draftMode.max}
+            onMinChange={(value) => setDraftMode({
+              mode: "variable",
+              min: value,
+              max: draftMode.max,
+            })}
+            onMaxChange={(value) => setDraftMode({
+              mode: "variable",
+              min: draftMode.min,
+              max: value,
+            })}
+            guidanceText={[
+              "R = 0 means a flat surface (infinite radius).",
+              "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
+            ]}
+            errorText={variableBoundsCrossZero ? "Radius variable bounds must stay on one side of 0." : undefined}
+          />
         ) : null}
 
         {draftMode.mode === "pickup" ? (
-          <div className="grid gap-4">
-            <div>
-              <Label htmlFor="pickup-source">Source surface index</Label>
-              <Input
-                id="pickup-source"
-                aria-label="Source surface index"
-                value={draftMode.sourceSurfaceIndex}
-                onChange={(event) => setDraftMode({
-                  mode: "pickup",
-                  sourceSurfaceIndex: event.target.value,
-                  scale: draftMode.scale,
-                  offset: draftMode.offset,
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="pickup-scale">scale</Label>
-              <Input
-                id="pickup-scale"
-                aria-label="scale"
-                value={draftMode.scale}
-                onChange={(event) => setDraftMode({
-                  mode: "pickup",
-                  sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
-                  scale: event.target.value,
-                  offset: draftMode.offset,
-                })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="pickup-offset">offset</Label>
-              <Input
-                id="pickup-offset"
-                aria-label="offset"
-                value={draftMode.offset}
-                onChange={(event) => setDraftMode({
-                  mode: "pickup",
-                  sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
-                  scale: draftMode.scale,
-                  offset: event.target.value,
-                })}
-              />
-            </div>
-          </div>
+          <PickupModeFields
+            idPrefix="pickup"
+            sourceSurfaceAriaLabel="Source surface index"
+            sourceSurfaceValue={draftMode.sourceSurfaceIndex}
+            onSourceSurfaceChange={(value) => setDraftMode({
+              mode: "pickup",
+              sourceSurfaceIndex: value,
+              scale: draftMode.scale,
+              offset: draftMode.offset,
+            })}
+            scaleAriaLabel="scale"
+            scaleValue={draftMode.scale}
+            onScaleChange={(value) => setDraftMode({
+              mode: "pickup",
+              sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
+              scale: value,
+              offset: draftMode.offset,
+            })}
+            offsetAriaLabel="offset"
+            offsetValue={draftMode.offset}
+            onOffsetChange={(value) => setDraftMode({
+              mode: "pickup",
+              sourceSurfaceIndex: draftMode.sourceSurfaceIndex,
+              scale: draftMode.scale,
+              offset: value,
+            })}
+          />
         ) : null}
 
         <div className="flex justify-end gap-3">

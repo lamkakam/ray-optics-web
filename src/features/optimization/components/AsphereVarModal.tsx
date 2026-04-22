@@ -4,12 +4,13 @@ import React from "react";
 import { MathJax } from "better-react-mathjax";
 import type { AsphericalType } from "@/shared/lib/types/opticalModel";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
+import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
+import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
+import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import { curvatureRadiusCrossesZero } from "@/features/optimization/lib/modalHelpers";
 import { Button } from "@/shared/components/primitives/Button";
-import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
-import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select } from "@/shared/components/primitives/Select";
 
 type TermKind = "conic" | "toricSweep" | { coefficientIndex: number };
@@ -36,12 +37,6 @@ const ASPHERE_TYPE_OPTIONS = [
   { value: "RadialPolynomial", label: "Radial Polynomial" },
   { value: "XToroid", label: "X Toroid" },
   { value: "YToroid", label: "Y Toroid" },
-] as const;
-
-const MODE_OPTIONS = [
-  { value: "constant", label: "constant" },
-  { value: "variable", label: "variable" },
-  { value: "pickup", label: "pickup" },
 ] as const;
 
 function getTermRows(type: AsphericalType | undefined): ReadonlyArray<TermDescriptor> {
@@ -280,96 +275,60 @@ function AsphereVarModalEditor({
                 <div key={termId} className="space-y-2">
                   <div className="flex items-center gap-3">
                     <span className="w-36 shrink-0 text-sm font-medium">{term.displayLabel}</span>
-                    <Select
+                    <ModeSelectField
                       id={`${termId}-mode`}
-                      aria-label={`${term.ariaLabel} mode`}
+                      ariaLabel={`${term.ariaLabel} mode`}
                       value={mode.mode}
-                      options={MODE_OPTIONS}
-                      onChange={(e) => handleTermModeChange(term, e.target.value)}
+                      onChange={(value) => handleTermModeChange(term, value)}
                     />
                   </div>
 
                   {mode.mode === "variable" && (
-                    <div className="ml-36 grid gap-3 pl-3 md:grid-cols-2">
-                      {term.kind === "toricSweep" ? (
-                        <>
-                          <Paragraph variant="caption" className="md:col-span-2">
-                            R = 0 means a flat surface (infinite radius).
-                          </Paragraph>
-                          <Paragraph variant="caption" className="md:col-span-2">
-                            Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.
-                          </Paragraph>
-                        </>
-                      ) : null}
-                      <div>
-                        <Label htmlFor={`${termId}-min`}>Min.</Label>
-                        <Input
-                          id={`${termId}-min`}
-                          aria-label={`${term.ariaLabel} Min.`}
-                          value={mode.min}
-                          onChange={(e) => handleTermVariableChange(term, "min", e.target.value)}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor={`${termId}-max`}>Max.</Label>
-                        <Input
-                          id={`${termId}-max`}
-                          aria-label={`${term.ariaLabel} Max.`}
-                          value={mode.max}
-                          onChange={(e) => handleTermVariableChange(term, "max", e.target.value)}
-                        />
-                      </div>
-                      {variableBoundsCrossZero ? (
-                        <Paragraph variant="caption" className="text-red-600 dark:text-red-400 md:col-span-2">
-                          Toroid sweep R variable bounds must stay on one side of 0.
-                        </Paragraph>
-                      ) : null}
-                    </div>
+                    <BoundedVariableModeFields
+                      idPrefix={termId}
+                      minAriaLabel={`${term.ariaLabel} Min.`}
+                      minValue={mode.min}
+                      maxAriaLabel={`${term.ariaLabel} Max.`}
+                      maxValue={mode.max}
+                      onMinChange={(value) => handleTermVariableChange(term, "min", value)}
+                      onMaxChange={(value) => handleTermVariableChange(term, "max", value)}
+                      guidanceText={term.kind === "toricSweep" ? [
+                        "R = 0 means a flat surface (infinite radius).",
+                        "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
+                      ] : undefined}
+                      errorText={variableBoundsCrossZero ? "Toroid sweep R variable bounds must stay on one side of 0." : undefined}
+                      className="ml-36 grid gap-3 pl-3"
+                      inputRowClassName="grid gap-3 md:grid-cols-2"
+                      helperTextClassName="md:col-span-2"
+                      errorTextClassName="text-red-600 dark:text-red-400 md:col-span-2"
+                    />
                   )}
 
                   {mode.mode === "pickup" && (
-                    <div className="ml-36 grid gap-3 pl-3">
-                      <div>
-                        <Label htmlFor={`${termId}-source`}>Source surface index</Label>
-                        <Input
-                          id={`${termId}-source`}
-                          aria-label={`${term.ariaLabel} source surface index`}
-                          value={mode.sourceSurfaceIndex}
-                          onChange={(e) => handleTermPickupChange(term, "sourceSurfaceIndex", e.target.value)}
-                        />
-                      </div>
-                      {isCoefficient(term.kind) && (
-                        <div>
-                          <Label htmlFor={`${termId}-source-coeff`}>Source coefficient index</Label>
-                          <Input
-                            id={`${termId}-source-coeff`}
-                            aria-label={`${term.ariaLabel} source coefficient index`}
-                            value={mode.sourceTermKey?.replace("coefficient:", "") ?? ""}
-                            onChange={(e) => handleTermPickupChange(term, "sourceCoefficientIndex", e.target.value)}
-                          />
-                        </div>
-                      )}
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <div>
-                          <Label htmlFor={`${termId}-scale`}>Scale</Label>
-                          <Input
-                            id={`${termId}-scale`}
-                            aria-label={`${term.ariaLabel} scale`}
-                            value={mode.scale}
-                            onChange={(e) => handleTermPickupChange(term, "scale", e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`${termId}-offset`}>Offset</Label>
-                          <Input
-                            id={`${termId}-offset`}
-                            aria-label={`${term.ariaLabel} offset`}
-                            value={mode.offset}
-                            onChange={(e) => handleTermPickupChange(term, "offset", e.target.value)}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    <PickupModeFields
+                      idPrefix={termId}
+                      sourceSurfaceLabel="Source surface index"
+                      sourceSurfaceAriaLabel={`${term.ariaLabel} source surface index`}
+                      sourceSurfaceValue={mode.sourceSurfaceIndex}
+                      onSourceSurfaceChange={(value) => handleTermPickupChange(term, "sourceSurfaceIndex", value)}
+                      scaleLabel="Scale"
+                      scaleAriaLabel={`${term.ariaLabel} scale`}
+                      scaleValue={mode.scale}
+                      onScaleChange={(value) => handleTermPickupChange(term, "scale", value)}
+                      offsetLabel="Offset"
+                      offsetAriaLabel={`${term.ariaLabel} offset`}
+                      offsetValue={mode.offset}
+                      onOffsetChange={(value) => handleTermPickupChange(term, "offset", value)}
+                      extraField={isCoefficient(term.kind) ? {
+                        idSuffix: "source-coeff",
+                        label: "Source coefficient index",
+                        ariaLabel: `${term.ariaLabel} source coefficient index`,
+                        value: mode.sourceTermKey?.replace("coefficient:", "") ?? "",
+                        onChange: (value) => handleTermPickupChange(term, "sourceCoefficientIndex", value),
+                      } : undefined}
+                      className="ml-36 grid gap-3 pl-3"
+                      scaleOffsetLayout="two-column"
+                    />
                   )}
                 </div>
               );
