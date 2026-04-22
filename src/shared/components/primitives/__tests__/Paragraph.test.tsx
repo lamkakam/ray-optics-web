@@ -38,6 +38,16 @@ describe("Paragraph", () => {
     );
   });
 
+  it("variant errorMessage applies errorTextColor + captionFontSize", () => {
+    render(<Paragraph variant="errorMessage">error text</Paragraph>);
+    const el = screen.getByText("error text");
+    expectClasses(
+      el,
+      cx.text.color.errorTextColor,
+      cx.text.size.captionFontSize,
+    );
+  });
+
   it("variant subheading applies label fontWeight + textColor + fontSize", () => {
     render(<Paragraph variant="subheading">subheading text</Paragraph>);
     const el = screen.getByText("subheading text");

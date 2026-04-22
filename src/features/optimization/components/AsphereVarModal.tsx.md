@@ -31,6 +31,7 @@ interface AsphereVarModalProps {
 - Each term row has a mode selector (`constant` / `variable` / `pickup`).
   - **variable**: shows Min and Max `Input` fields inline.
     - For `Toroid sweep R`, also shows guidance that `R = 0` is a flat surface (infinite radius), instructs users not to straddle `0`, and shows an inline validation message when bounds straddle `0`.
+    - The toroid validation message styling comes from `BoundedVariableModeFields` via `Paragraph` variant `errorMessage`; this modal only supplies layout classes.
   - **pickup**: shows Source Surface Index, Scale, Offset `Input` fields. Coefficient rows additionally show a Source Coefficient Index field (stored as `sourceTermKey = "coefficient:N"` where `N` is the zero-based coefficient slot and may be `0`).
 - Footer actions: `Cancel` on the left and `Confirm` on the right.
 - **Cancel button**: closes the modal and discards uncommitted draft changes.

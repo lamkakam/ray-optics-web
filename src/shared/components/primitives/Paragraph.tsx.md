@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Themed `<p>` element with four semantic variants that map to different color and size tokens.
+Themed `<p>` element with semantic variants that map to different color and size tokens.
 
 ## Props
 
 ```ts
-type ParagraphVariant = "body" | "caption" | "subheading" | "placeholder";
+type ParagraphVariant = "body" | "caption" | "subheading" | "placeholder" | "errorMessage";
 
 interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
   variant?: ParagraphVariant;
@@ -24,6 +24,7 @@ interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
 
 - Implemented as `React.forwardRef`.
 - `caption` adds a bottom margin token; `subheading` uses medium font weight; `placeholder` uses muted text color.
+- `errorMessage` uses the shared error text color token with caption-sized typography.
 
 ## Usages
 
@@ -53,5 +54,10 @@ interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
 // Empty state message
 <Paragraph variant="placeholder">
   No data available
+</Paragraph>
+
+// Inline validation or error message
+<Paragraph variant="errorMessage">
+  Bounds are invalid.
 </Paragraph>
 ```

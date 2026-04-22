@@ -300,7 +300,7 @@ function AsphereVarModalEditor({
                       className="ml-36 grid gap-3 pl-3"
                       inputRowClassName="grid gap-3 md:grid-cols-2"
                       helperTextClassName="md:col-span-2"
-                      errorTextClassName="text-red-600 dark:text-red-400 md:col-span-2"
+                      errorTextClassName="md:col-span-2"
                     />
                   )}
 

@@ -10,6 +10,7 @@ export const globalTokens = {
   color: {
     primaryColor: "bg-blue-600",
     errorColor: "bg-red-600",
+    errorTextColor: "text-red-600 dark:text-red-400",
     primaryText: "text-gray-900 dark:text-gray-100",
     secondaryText: "text-gray-700 dark:text-gray-300",
     mutedText: "text-gray-500 dark:text-gray-400",
@@ -294,6 +295,7 @@ export const componentTokens = {
       bodyTextColor: g.color.secondaryText,
       placeholderTextColor: g.color.mutedText,
       captionTextColor: g.color.mutedText,
+      errorTextColor: g.color.errorTextColor,
     },
     size: {
       subheadingFontSize: "text-sm",
