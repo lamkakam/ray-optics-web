@@ -4,7 +4,7 @@ import React from "react";
 import { MathJax } from "better-react-mathjax";
 import type { AsphericalType } from "@/shared/lib/types/opticalModel";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
-import { curvatureRadiusCrossesZero } from "@/features/optimization/lib/modalHelpers";
+import { curvatureRadiusCrossesZero, MODAL_MODE_OPTIONS as MODE_OPTIONS } from "@/features/optimization/lib/modalHelpers";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
@@ -36,12 +36,6 @@ const ASPHERE_TYPE_OPTIONS = [
   { value: "RadialPolynomial", label: "Radial Polynomial" },
   { value: "XToroid", label: "X Toroid" },
   { value: "YToroid", label: "Y Toroid" },
-] as const;
-
-const MODE_OPTIONS = [
-  { value: "constant", label: "constant" },
-  { value: "variable", label: "variable" },
-  { value: "pickup", label: "pickup" },
 ] as const;
 
 function getTermRows(type: AsphericalType | undefined): ReadonlyArray<TermDescriptor> {
