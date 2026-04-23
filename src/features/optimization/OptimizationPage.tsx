@@ -37,6 +37,7 @@ interface OptimizationPageProps {
 }
 
 const ZERO_WEIGHT_WARNING_MESSAGE = "At least one effective optimization weight must be non-zero.";
+const LM_DIMENSION_WARNING_MESSAGE = "Levenberg-Marquardt requires at least as many residuals as variables.";
 const LG_EVALUATION_RESERVED_HEIGHT_FALLBACK = 333;
 
 function buildCurrentEditorModel(lensStore: ReturnType<typeof useLensEditorStore>, specsStore: ReturnType<typeof useSpecsConfiguratorStore>) {
@@ -388,6 +389,16 @@ export function OptimizationPage({
             optimizationStore.setState((state) => ({
               optimizer: { ...state.optimizer, ...patch },
             }));
+            if (patch.method === "lm") {
+              try {
+                optimizationStore.getState().buildOptimizationConfig();
+              } catch (error) {
+                const message = error instanceof Error ? error.message : "";
+                if (message === LM_DIMENSION_WARNING_MESSAGE) {
+                  optimizationStore.getState().openWarningModal(message);
+                }
+              }
+            }
           }}
         />
       ),
@@ -481,6 +492,8 @@ export function OptimizationPage({
         optimizationModel={optimizationModel}
         surfaceIndex={radiusModal.surfaceIndex}
         selectedMode={selectedRadiusMode}
+        optimizerKind={optimizer.kind}
+        optimizerMethod={optimizer.method}
         onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setRadiusMode(surfaceIndex, mode)}
         onClose={() => optimizationStore.getState().closeRadiusModal()}
       />
@@ -490,6 +503,8 @@ export function OptimizationPage({
         optimizationModel={optimizationModel}
         surfaceIndex={thicknessModal.surfaceIndex}
         selectedMode={selectedThicknessMode}
+        optimizerKind={optimizer.kind}
+        optimizerMethod={optimizer.method}
         onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setThicknessMode(surfaceIndex, mode)}
         onClose={() => optimizationStore.getState().closeThicknessModal()}
       />
@@ -498,6 +513,8 @@ export function OptimizationPage({
         isOpen={asphereModal.open}
         surfaceIndex={asphereModal.surfaceIndex}
         asphereState={selectedAsphereState}
+        optimizerKind={optimizer.kind}
+        optimizerMethod={optimizer.method}
         onSave={(surfaceIndex, state) => optimizationStore.getState().replaceAsphereState(surfaceIndex, state)}
         onClose={() => optimizationStore.getState().closeAsphereModal()}
       />

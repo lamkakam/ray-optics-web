@@ -18,6 +18,7 @@ type TargetKind = Literal[
     "asphere_toric_sweep_radius",
 ]
 type OptimizerKind = Literal["least_squares"]
+type LeastSquaresMethod = Literal["trf", "lm"]
 type AsphereKind = Literal["Conic", "EvenAspherical", "RadialPolynomial", "XToroid", "YToroid"]
 type BaseTargetKey = tuple[TargetKind, int]
 type PolynomialTargetKey = tuple[Literal["asphere_polynomial_coefficient"], int, int]
@@ -40,7 +41,7 @@ class OptimizerConfigInput(TypedDict, total=False):
 
 class NormalizedOptimizerConfig(TypedDict, total=False):
     kind: OptimizerKind
-    method: str
+    method: LeastSquaresMethod
     ftol: float
     xtol: float
     gtol: float
@@ -65,43 +66,38 @@ class PolynomialVariableConfigInput(AsphereVariableConfigInput, total=False):
 type VariableConfigInput = BaseVariableConfigInput | AsphereVariableConfigInput | PolynomialVariableConfigInput
 
 
-class RadiusVariable(TypedDict):
+class VariableBounds(TypedDict, total=False):
+    min: float
+    max: float
+
+
+class RadiusVariable(VariableBounds):
     kind: Literal["radius"]
     surface_index: int
-    min: float
-    max: float
 
 
-class ThicknessVariable(TypedDict):
+class ThicknessVariable(VariableBounds):
     kind: Literal["thickness"]
     surface_index: int
-    min: float
-    max: float
 
 
-class AsphereConicVariable(TypedDict):
+class AsphereConicVariable(VariableBounds):
     kind: Literal["asphere_conic_constant"]
     surface_index: int
     asphere_kind: AsphereKind
-    min: float
-    max: float
 
 
-class AsphereToricSweepVariable(TypedDict):
+class AsphereToricSweepVariable(VariableBounds):
     kind: Literal["asphere_toric_sweep_radius"]
     surface_index: int
     asphere_kind: AsphereKind
-    min: float
-    max: float
 
 
-class AspherePolynomialVariable(TypedDict):
+class AspherePolynomialVariable(VariableBounds):
     kind: Literal["asphere_polynomial_coefficient"]
     surface_index: int
     asphere_kind: AsphereKind
     coefficient_index: int
-    min: float
-    max: float
 
 
 type VariableConfig = (
@@ -284,8 +280,8 @@ class VariableStateEntry(TypedDict):
     kind: TargetKind
     surface_index: int
     value: float
-    min: float
-    max: float
+    min: NotRequired[float]
+    max: NotRequired[float]
     asphere_kind: NotRequired[AsphereKind]
     coefficient_index: NotRequired[int]
 
@@ -331,7 +327,7 @@ type ProgressReporter = Callable[[list[OptimizationProgressEntry]], None]
 
 class OptimizerSummary(TypedDict):
     kind: OptimizerKind
-    method: str
+    method: LeastSquaresMethod
 
 
 class ProblemEvaluation(TypedDict):

@@ -1,7 +1,7 @@
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 
 export type OptimizerKind = "least_squares";
-export type LeastSquaresMethod = "trf";
+export type LeastSquaresMethod = "trf" | "lm";
 export type OptimizationOperandKind =
   | "focal_length"
   | "f_number"
@@ -35,23 +35,23 @@ export type OptimizationVariableConfig =
   | {
       readonly kind: "radius" | "thickness";
       readonly surface_index: number;
-      readonly min: number;
-      readonly max: number;
+      readonly min?: number;
+      readonly max?: number;
     }
   | {
       readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
       readonly surface_index: number;
       readonly asphere_kind: AsphericalType;
-      readonly min: number;
-      readonly max: number;
+      readonly min?: number;
+      readonly max?: number;
     }
   | {
       readonly kind: "asphere_polynomial_coefficient";
       readonly surface_index: number;
       readonly asphere_kind: AsphericalType;
       readonly coefficient_index: number;
-      readonly min: number;
-      readonly max: number;
+      readonly min?: number;
+      readonly max?: number;
     };
 
 export type OptimizationPickupConfig =

@@ -15,6 +15,7 @@ class LeastSquaresSolver(SolverAdapter):
 
 - Calls `scipy.optimize.least_squares(...)`.
 - Uses `OptimizationProblem.residual_objective(...)` as the solver objective.
+- Passes SciPy `bounds=(lower, upper)` only for bounded least-squares methods such as `trf`; omits the `bounds` argument for `lm`.
 - Returns a normalized result mapping with:
   - `x`
   - `success`

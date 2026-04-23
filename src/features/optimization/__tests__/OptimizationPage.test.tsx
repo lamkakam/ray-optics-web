@@ -217,6 +217,68 @@ describe("OptimizationPage", () => {
     expect(screen.getByRole("tab", { name: "Operands" })).toBeInTheDocument();
   });
 
+  it("updates the optimizer method in store when Levenberg-Marquardt is selected", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    expect(optimizationStore.getState().optimizer.method).toBe("trf");
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
+
+    expect(optimizationStore.getState().optimizer.method).toBe("lm");
+  });
+
+  it("disables Optimize for lm when residual count is smaller than variable count", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+      optimizationStore.getState().setThicknessMode(2, {
+        mode: "variable",
+        min: "10",
+        max: "30",
+      });
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Algorithm" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+  });
+
+  it("shows a warning modal when switching to lm with fewer residuals than variables", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+      optimizationStore.getState().setThicknessMode(2, {
+        mode: "variable",
+        min: "10",
+        max: "30",
+      });
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await user.click(screen.getByRole("tab", { name: "Algorithm" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
+
+    expect(await screen.findByRole("dialog", { name: "Warning" })).toBeInTheDocument();
+    expect(screen.getByText("Levenberg-Marquardt requires at least as many residuals as variables.")).toBeInTheDocument();
+  });
+
   it("renders the optimization tabs inside a draggable bottom drawer on large screens", () => {
     const { container } = renderOptimizationPage(makeProxy());
     const pageShell = container.firstElementChild;

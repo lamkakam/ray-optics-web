@@ -27,5 +27,6 @@ class OptimizationProblemProtocol(Protocol): ...
 
 - Separates user-facing config inputs from normalized internal config shapes.
 - Uses discriminated target and pickup unions so per-kind keys such as `coefficient_index` are explicit.
+- Variable typed dicts allow optional `min` / `max` so normalized configs can represent bounded `trf` variables and unbounded `lm` variables with one shared union.
 - Captures the existing JSON-serialisable result payload shape in concrete report/progress typed dicts.
 - Keeps solver adapters decoupled from the concrete `OptimizationProblem` class via a small protocol.

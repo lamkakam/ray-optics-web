@@ -3,15 +3,16 @@
 import React from "react";
 import { MathJax } from "better-react-mathjax";
 import type { AsphericalType } from "@/shared/lib/types/opticalModel";
+import type { LeastSquaresMethod, OptimizerKind } from "@/shared/lib/types/optimization";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
-import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import {
   CURVATURE_RADIUS_GUIDANCE_TEXT,
   curvatureRadiusCrossesZero,
   getCurvatureRadiusBoundsErrorText,
 } from "@/features/optimization/lib/modalHelpers";
+import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/variableModeFields";
 import { Button } from "@/shared/components/primitives/Button";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
@@ -111,8 +112,8 @@ function setTermMode(state: AsphereOptimizationState, term: TermDescriptor, mode
   };
 }
 
-function isVariableInvalid(mode: AsphereMode): boolean {
-  if (mode.mode !== "variable") {
+function isVariableInvalid(mode: AsphereMode, usesBounds: boolean): boolean {
+  if (mode.mode !== "variable" || !usesBounds) {
     return false;
   }
   const min = Number.parseFloat(mode.min);
@@ -128,6 +129,8 @@ interface AsphereVarModalProps {
   readonly isOpen: boolean;
   readonly surfaceIndex: number | undefined;
   readonly asphereState: AsphereOptimizationState | undefined;
+  readonly optimizerKind?: OptimizerKind;
+  readonly optimizerMethod?: LeastSquaresMethod;
   readonly onSave: (surfaceIndex: number, state: AsphereOptimizationState) => void;
   readonly onClose: () => void;
 }
@@ -136,6 +139,8 @@ export function AsphereVarModal({
   isOpen,
   surfaceIndex,
   asphereState,
+  optimizerKind = "least_squares",
+  optimizerMethod = "trf",
   onSave,
   onClose,
 }: AsphereVarModalProps) {
@@ -152,6 +157,8 @@ export function AsphereVarModal({
       key={`${surfaceIndex}:${serializeAsphereState(asphereState)}`}
       surfaceIndex={surfaceIndex}
       asphereState={asphereState}
+      optimizerKind={optimizerKind}
+      optimizerMethod={optimizerMethod}
       onSave={onSave}
       onClose={onClose}
     />
@@ -161,6 +168,8 @@ export function AsphereVarModal({
 interface AsphereVarModalEditorProps {
   readonly surfaceIndex: number;
   readonly asphereState: AsphereOptimizationState;
+  readonly optimizerKind: OptimizerKind;
+  readonly optimizerMethod: LeastSquaresMethod;
   readonly onSave: (surfaceIndex: number, state: AsphereOptimizationState) => void;
   readonly onClose: () => void;
 }
@@ -168,20 +177,24 @@ interface AsphereVarModalEditorProps {
 function AsphereVarModalEditor({
   surfaceIndex,
   asphereState,
+  optimizerKind,
+  optimizerMethod,
   onSave,
   onClose,
 }: AsphereVarModalEditorProps) {
   const [draft, setDraft] = React.useState<AsphereOptimizationState>(() => asphereState);
+  const variableModeFields = getVariableModeFieldsRenderer(optimizerKind, optimizerMethod);
 
   const termRows = getTermRows(draft.type);
   const isDoneDisabled = termRows.some((term) => {
     const mode = getTermMode(draft, term);
 
-    if (isVariableInvalid(mode)) {
+    if (isVariableInvalid(mode, variableModeFields.usesBounds)) {
       return true;
     }
 
-    return term.kind === "toricSweep"
+    return variableModeFields.usesBounds
+      && term.kind === "toricSweep"
       && mode.mode === "variable"
       && curvatureRadiusCrossesZero(mode.min, mode.max);
   });
@@ -268,7 +281,8 @@ function AsphereVarModalEditor({
           <div className="space-y-3">
             {termRows.map((term) => {
               const mode = getTermMode(draft, term);
-              const variableBoundsCrossZero = term.kind === "toricSweep"
+              const variableBoundsCrossZero = variableModeFields.usesBounds
+                && term.kind === "toricSweep"
                 && mode.mode === "variable"
                 && curvatureRadiusCrossesZero(mode.min, mode.max);
               const termId = typeof term.kind === "object"
@@ -288,7 +302,7 @@ function AsphereVarModalEditor({
                   </div>
 
                   {mode.mode === "variable" && (
-                    <BoundedVariableModeFields
+                    <variableModeFields.Component
                       idPrefix={termId}
                       minAriaLabel={`${term.ariaLabel} Min.`}
                       minValue={mode.min}
@@ -296,7 +310,9 @@ function AsphereVarModalEditor({
                       maxValue={mode.max}
                       onMinChange={(value) => handleTermVariableChange(term, "min", value)}
                       onMaxChange={(value) => handleTermVariableChange(term, "max", value)}
-                      guidanceText={term.kind === "toricSweep" ? CURVATURE_RADIUS_GUIDANCE_TEXT : undefined}
+                      guidanceText={variableModeFields.usesBounds && term.kind === "toricSweep"
+                        ? CURVATURE_RADIUS_GUIDANCE_TEXT
+                        : undefined}
                       errorText={variableBoundsCrossZero
                         ? getCurvatureRadiusBoundsErrorText("Toroid sweep R")
                         : undefined}

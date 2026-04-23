@@ -136,8 +136,8 @@ class OptimizationProblem:
                 **({"asphere_kind": variable["asphere_kind"]} if "asphere_kind" in variable else {}),
                 **({"coefficient_index": variable["coefficient_index"]} if "coefficient_index" in variable else {}),
                 "value": float(read_target_value(self.opm, variable)),
-                "min": variable["min"],
-                "max": variable["max"],
+                **({"min": variable["min"]} if "min" in variable else {}),
+                **({"max": variable["max"]} if "max" in variable else {}),
             }
             for variable in self.variables
         ]

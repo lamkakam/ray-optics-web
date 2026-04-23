@@ -274,6 +274,80 @@ describe("optimizationStore", () => {
     });
   });
 
+  it("omits variable bounds from built config when the optimizer method is lm", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.setState((state) => ({
+      optimizer: {
+        ...state.optimizer,
+        method: "lm",
+      },
+    }));
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "rms_spot_size",
+        target: "0",
+        weight: "1",
+      },
+    ]);
+
+    expect(store.getState().buildOptimizationConfig()).toEqual(expect.objectContaining({
+      optimizer: expect.objectContaining({
+        method: "lm",
+      }),
+      variables: [
+        { kind: "radius", surface_index: 1 },
+        { kind: "thickness", surface_index: 2 },
+      ],
+    }));
+  });
+
+  it("rejects lm when residual count is smaller than variable count", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.setState((state) => ({
+      optimizer: {
+        ...state.optimizer,
+        method: "lm",
+      },
+    }));
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "1",
+      },
+    ]);
+
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(
+      "Levenberg-Marquardt requires at least as many residuals as variables.",
+    );
+  });
+
   it("builds asphere variables and pickups into the Python optimization config", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(asphericModel);

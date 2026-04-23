@@ -28,6 +28,63 @@ const model: OpticalModel = {
 };
 
 describe("OptimizationVariableModals", () => {
+  it("hides radius bounds and flat-surface guidance for lm variable mode", () => {
+    render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        optimizerMethod="lm"
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox", { name: "Min." })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Max." })).not.toBeInTheDocument();
+    expect(screen.queryByText("R = 0 means a flat surface (infinite radius).")).not.toBeInTheDocument();
+    expect(screen.queryByText("Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+  });
+
+  it("hides thickness bounds for lm variable mode", () => {
+    render(
+      <ThicknessModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "1", max: "10" }}
+        optimizerMethod="lm"
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox", { name: "Thickness Min." })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Thickness Max." })).not.toBeInTheDocument();
+  });
+
+  it("keeps pickup mode fields visible for lm", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        optimizerMethod="lm"
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Source surface index" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "scale" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "offset" })).toBeInTheDocument();
+  });
+
   it("keeps radius changes local until Confirm is pressed", async () => {
     const user = userEvent.setup();
     const onSetMode = jest.fn();
@@ -157,6 +214,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        optimizerMethod="trf"
         onSetMode={onSetMode}
         onClose={onClose}
       />,
@@ -185,6 +243,7 @@ describe("OptimizationVariableModals", () => {
           optimizationModel={model}
           surfaceIndex={1}
           selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+          optimizerMethod="trf"
           onSetMode={onSetMode}
           onClose={onClose}
         />
@@ -212,6 +271,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        optimizerMethod="trf"
         onSetMode={onSetMode}
         onClose={onClose}
       />,
@@ -232,6 +292,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        optimizerMethod="trf"
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
@@ -251,6 +312,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "variable", min: "-10000", max: "10000" }}
+        optimizerMethod="trf"
         onSetMode={onSetMode}
         onClose={jest.fn()}
       />,

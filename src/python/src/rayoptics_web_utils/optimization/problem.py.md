@@ -22,6 +22,7 @@ class OptimizationProblem:
 
 - Normalizes the incoming config with `config.normalize_config(...)`.
 - Keeps variables in radius-based external units while translating radius optimization internally to curvature space.
+- Keeps variable-state report entries aligned with the normalized config shape, so `min` / `max` appear only for bounded variables.
 - Applies variables, then pickups in dependency order, then calls `opm.update_model()`.
 - Evaluates all normalized merit operands and returns the same report shape consumed by the existing public API.
 - Exposes both residual-vector and scalar-merit objective methods so future solvers can choose the representation they need.

@@ -37,11 +37,18 @@ def normalize_optimizer_config(config: OptimizationConfig) -> NormalizedOptimize
     kind = optimizer.get("kind", "least_squares")
     if kind != "least_squares":
         raise ValueError(f"Unknown optimizer kind: {kind}")
-    optimizer.setdefault("method", "trf")
+    method = optimizer.get("method", "trf")
+    if method not in {"trf", "lm"}:
+        raise ValueError(f"Unknown least-squares method: {method}")
+    optimizer["method"] = method
     return optimizer
 
 
-def normalize_variables(opm: OpticalModel, variables: list[VariableConfigInput]) -> list[VariableConfig]:
+def normalize_variables(
+    opm: OpticalModel,
+    variables: list[VariableConfigInput],
+    method: str,
+) -> list[VariableConfig]:
     normalized: list[VariableConfig] = []
     seen_targets: set[TargetKey] = set()
     for entry in variables:
@@ -60,10 +67,15 @@ def normalize_variables(opm: OpticalModel, variables: list[VariableConfigInput])
         key = target_key(normalized_entry)
         if key in seen_targets:
             raise ValueError(f"Duplicate variable target: {key}")
-        if "min" not in entry or "max" not in entry:
-            raise ValueError("Variables must provide both min and max bounds")
-        normalized_entry["min"] = float(entry["min"])
-        normalized_entry["max"] = float(entry["max"])
+        has_min = "min" in entry
+        has_max = "max" in entry
+        if method == "trf":
+            if not has_min or not has_max:
+                raise ValueError("Variables must provide both min and max bounds")
+            normalized_entry["min"] = float(entry["min"])
+            normalized_entry["max"] = float(entry["max"])
+        elif has_min != has_max:
+            raise ValueError("lm variables must omit both min and max bounds together")
         normalized.append(normalized_entry)
         seen_targets.add(key)
     return normalized
@@ -262,12 +274,24 @@ def normalize_merit_function(opm: OpticalModel, merit_function: MeritFunctionCon
     return {"operands": normalized_operands}
 
 
+def validate_optimizer_dimensions(
+    optimizer: NormalizedOptimizerConfig,
+    variables: list[VariableConfig],
+    merit_function: MeritFunctionConfig,
+) -> None:
+    if optimizer["method"] != "lm":
+        return
+    if len(merit_function["operands"]) < len(variables):
+        raise ValueError("Levenberg-Marquardt requires at least as many residuals as variables")
+
+
 def normalize_config(opm: OpticalModel, config: OptimizationConfig) -> NormalizedOptimizationConfig:
     optimizer = normalize_optimizer_config(config)
-    variables = normalize_variables(opm, deepcopy(config.get("variables") or []))
+    variables = normalize_variables(opm, deepcopy(config.get("variables") or []), optimizer["method"])
     variable_targets = {target_key(variable) for variable in variables}
     pickups = normalize_pickups(opm, deepcopy(config.get("pickups") or []), variable_targets)
     merit_function = normalize_merit_function(opm, deepcopy(config.get("merit_function") or {}))
+    validate_optimizer_dimensions(optimizer, variables, merit_function)
     return {
         "optimizer": optimizer,
         "variables": variables,

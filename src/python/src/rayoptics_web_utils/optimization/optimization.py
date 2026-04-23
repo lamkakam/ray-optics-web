@@ -44,18 +44,22 @@ class _OptimizationProblem(OptimizationProblem):
 
     def optimize(self, progress_reporter: ProgressReporter | None = None):
         x0 = self.current_vector()
-        lower, upper = self.bounds()
         self._progress_reporter = progress_reporter
         try:
+            least_squares_kwargs = {
+                "method": self.optimizer["method"],
+                "ftol": self.optimizer.get("ftol", 1e-8),
+                "xtol": self.optimizer.get("xtol", 1e-8),
+                "gtol": self.optimizer.get("gtol", 1e-8),
+                "max_nfev": self.optimizer.get("max_nfev", 200),
+            }
+            if self.optimizer["method"] == "trf":
+                lower, upper = self.bounds()
+                least_squares_kwargs["bounds"] = (lower, upper)
             return least_squares(
                 self.objective,
                 x0,
-                bounds=(lower, upper),
-                method=self.optimizer["method"],
-                ftol=self.optimizer.get("ftol", 1e-8),
-                xtol=self.optimizer.get("xtol", 1e-8),
-                gtol=self.optimizer.get("gtol", 1e-8),
-                max_nfev=self.optimizer.get("max_nfev", 200),
+                **least_squares_kwargs,
             )
         finally:
             self._progress_reporter = None

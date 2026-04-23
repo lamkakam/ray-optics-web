@@ -317,6 +317,7 @@ function parseSurfacePickupSourceIndex(
 function buildSurfaceVariables(
   radiusModes: ReadonlyArray<RadiusMode>,
   thicknessModes: ReadonlyArray<RadiusMode>,
+  method: LeastSquaresMethod,
 ): OptimizationConfig["variables"] {
   return createSurfaceModeEntries(radiusModes, thicknessModes)
     .filter(
@@ -325,6 +326,13 @@ function buildSurfaceVariables(
       ): mode is Extract<SurfaceModeEntry, { mode: "variable" }> => mode.mode === "variable",
     )
     .map((mode) => {
+      if (method === "lm") {
+        return {
+          kind: mode.kind,
+          surface_index: mode.surfaceIndex,
+        };
+      }
+
       const { min, max } = parseVariableBounds(mode.min, mode.max);
 
       return {
@@ -360,6 +368,7 @@ function buildSurfacePickups(
 
 function buildAsphereVariables(
   asphereStates: ReadonlyArray<AsphereOptimizationState>,
+  method: LeastSquaresMethod,
 ): OptimizationConfig["variables"] {
   return asphereStates.flatMap((asphereState) => {
     const type = asphereState.type;
@@ -369,14 +378,17 @@ function buildAsphereVariables(
 
     const variables: Array<OptimizationConfig["variables"][number]> = [];
     if (asphereState.conic.mode === "variable") {
-      const { min, max } = parseVariableBounds(asphereState.conic.min, asphereState.conic.max);
-      variables.push({
+      const baseVariable = {
         kind: "asphere_conic_constant",
         surface_index: asphereState.surfaceIndex,
         asphere_kind: type,
-        min,
-        max,
-      });
+      } as const;
+      if (method === "lm") {
+        variables.push(baseVariable);
+      } else {
+        const { min, max } = parseVariableBounds(asphereState.conic.min, asphereState.conic.max);
+        variables.push({ ...baseVariable, min, max });
+      }
     }
 
     asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
@@ -384,26 +396,32 @@ function buildAsphereVariables(
         return;
       }
 
-      const { min, max } = parseVariableBounds(coefficientMode.min, coefficientMode.max);
-      variables.push({
+      const baseVariable = {
         kind: "asphere_polynomial_coefficient",
         surface_index: asphereState.surfaceIndex,
         asphere_kind: type,
         coefficient_index: coefficientIndex,
-        min,
-        max,
-      });
+      } as const;
+      if (method === "lm") {
+        variables.push(baseVariable);
+      } else {
+        const { min, max } = parseVariableBounds(coefficientMode.min, coefficientMode.max);
+        variables.push({ ...baseVariable, min, max });
+      }
     });
 
     if ((type === "XToroid" || type === "YToroid") && asphereState.toricSweep.mode === "variable") {
-      const { min, max } = parseVariableBounds(asphereState.toricSweep.min, asphereState.toricSweep.max);
-      variables.push({
+      const baseVariable = {
         kind: "asphere_toric_sweep_radius",
         surface_index: asphereState.surfaceIndex,
         asphere_kind: type,
-        min,
-        max,
-      });
+      } as const;
+      if (method === "lm") {
+        variables.push(baseVariable);
+      } else {
+        const { min, max } = parseVariableBounds(asphereState.toricSweep.min, asphereState.toricSweep.max);
+        variables.push({ ...baseVariable, min, max });
+      }
     }
 
     return variables;
@@ -498,6 +516,16 @@ function buildMeritFunctionOperands(
   }
 
   return configOperands;
+}
+
+function countResidualSamples(
+  operands: ReadonlyArray<OptimizationConfig["merit_function"]["operands"][number]>,
+): number {
+  return operands.reduce((count, operand) => {
+    const fieldCount = operand.fields?.length ?? 1;
+    const wavelengthCount = operand.wavelengths?.length ?? 1;
+    return count + (fieldCount * wavelengthCount);
+  }, 0);
 }
 
 function createDefaultOperand(): OptimizationOperandRow {
@@ -909,22 +937,31 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       throw new Error("No optical model available for optimization.");
     }
 
+    const meritOperands = buildMeritFunctionOperands(
+      state.operands,
+      state.fieldWeights,
+      state.wavelengthWeights,
+    );
+    const variables = [
+      ...buildSurfaceVariables(state.radiusModes, state.thicknessModes, state.optimizer.method),
+      ...buildAsphereVariables(state.asphereStates, state.optimizer.method),
+    ];
+    if (
+      state.optimizer.method === "lm"
+      && countResidualSamples(meritOperands) < variables.length
+    ) {
+      throw new Error("Levenberg-Marquardt requires at least as many residuals as variables.");
+    }
+
     return {
       optimizer: buildOptimizerConfig(state.optimizer),
-      variables: [
-        ...buildSurfaceVariables(state.radiusModes, state.thicknessModes),
-        ...buildAsphereVariables(state.asphereStates),
-      ],
+      variables,
       pickups: [
         ...buildSurfacePickups(state.radiusModes, state.thicknessModes),
         ...buildAspherePickups(state.asphereStates),
       ],
       merit_function: {
-        operands: buildMeritFunctionOperands(
-          state.operands,
-          state.fieldWeights,
-          state.wavelengthWeights,
-        ),
+        operands: meritOperands,
       },
     };
   },
