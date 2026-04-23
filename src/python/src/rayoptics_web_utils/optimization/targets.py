@@ -5,7 +5,7 @@ from __future__ import annotations
 from rayoptics.environment import OpticalModel
 from rayoptics.elem.profiles import EvenPolynomial, RadialPolynomial, XToroid, YToroid
 
-from ._types import MutableTarget, PickupConfig, TargetConfig, TargetKey, VariableConfig
+from ._types import MutableTarget, PickupConfig, SnapshotEntry, TargetConfig, TargetKey, VariableConfig
 
 
 def radius_to_curvature(radius: float) -> float:
@@ -24,20 +24,20 @@ def snapshot_state(
     opm: OpticalModel,
     variable_configs: list[VariableConfig],
     pickup_configs: list[PickupConfig],
-) -> dict[TargetKey, float]:
+) -> dict[TargetKey, SnapshotEntry]:
     """Capture the current values for all mutable optimizer targets."""
-    state: dict[TargetKey, float] = {}
+    state: dict[TargetKey, SnapshotEntry] = {}
     for entry in [*variable_configs, *pickup_configs]:
         key = target_key(entry)
         if key not in state:
-            state[key] = read_target_value(opm, entry)
+            state[key] = {"entry": entry, "value": read_target_value(opm, entry)}
     return state
 
 
-def restore_state(opm: OpticalModel, snapshot: dict[TargetKey, float]) -> None:
+def restore_state(opm: OpticalModel, snapshot: dict[TargetKey, SnapshotEntry]) -> None:
     """Restore a previously captured optimizer state."""
-    for key, value in snapshot.items():
-        write_target_value(opm, entry_from_target_key(key), value)
+    for snapshot_entry in snapshot.values():
+        write_target_value(opm, snapshot_entry["entry"], snapshot_entry["value"])
     opm.update_model()
 
 

@@ -4,11 +4,13 @@ import type {
   LeastSquaresMethod,
   OptimizationConfig,
   OptimizationOperandKind,
+  OptimizationOperandConfig,
   OptimizationPickupConfig,
   OptimizationReport,
   OptimizationValueEntry,
   OptimizerKind,
 } from "@/shared/lib/types/optimization";
+import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 
 export type RadiusMode =
   | { readonly surfaceIndex: number; readonly mode: "constant" }
@@ -89,7 +91,7 @@ export interface AsphereOptimizationState {
 export interface OptimizationOperandRow {
   readonly id: string;
   readonly kind: OptimizationOperandKind;
-  readonly target: string;
+  readonly target?: string;
   readonly weight: string;
 }
 
@@ -202,17 +204,8 @@ function generateOperandId(): string {
   return `operand-${id}`;
 }
 
-function getDefaultOperandTarget(kind: OptimizationOperandKind): string {
-  switch (kind) {
-    case "focal_length":
-      return "100";
-    case "f_number":
-      return "10";
-    case "opd_difference":
-    case "rms_spot_size":
-    case "rms_wavefront_error":
-      return "0";
-  }
+function getDefaultOperandTarget(kind: OptimizationOperandKind): string | undefined {
+  return getOptimizationOperandMetadata(kind).defaultTarget;
 }
 
 function parsePositiveInteger(value: string, label: string): number {
@@ -491,23 +484,28 @@ function buildMeritFunctionOperands(
   fieldWeights: ReadonlyArray<number>,
   wavelengthWeights: ReadonlyArray<number>,
 ): OptimizationConfig["merit_function"]["operands"] {
-  const configOperands = operands.map((operand) => {
-    const target = parseFloatValue(operand.target, "Target");
+  const configOperands: OptimizationOperandConfig[] = operands.map((operand) => {
+    const metadata = getOptimizationOperandMetadata(operand.kind);
     const weight = parsePositiveFloat(operand.weight, "Weight");
-    if (operand.kind === "focal_length" || operand.kind === "f_number") {
-      return {
-        kind: operand.kind,
-        target,
-        weight,
-      };
+    const base = metadata.expandsByFieldAndWavelength
+      ? {
+          kind: operand.kind,
+          weight,
+          fields: fieldWeights.map((currentWeight, index) => ({ index, weight: currentWeight })),
+          wavelengths: wavelengthWeights.map((currentWeight, index) => ({ index, weight: currentWeight })),
+        }
+      : {
+          kind: operand.kind,
+          weight,
+        };
+
+    if (!metadata.requiresTarget) {
+      return base;
     }
 
     return {
-      kind: operand.kind,
-      target,
-      weight,
-      fields: fieldWeights.map((currentWeight, index) => ({ index, weight: currentWeight })),
-      wavelengths: wavelengthWeights.map((currentWeight, index) => ({ index, weight: currentWeight })),
+      ...base,
+      target: parseFloatValue(operand.target ?? "", "Target"),
     };
   });
 
@@ -524,7 +522,8 @@ function countResidualSamples(
   return operands.reduce((count, operand) => {
     const fieldCount = operand.fields?.length ?? 1;
     const wavelengthCount = operand.wavelengths?.length ?? 1;
-    return count + (fieldCount * wavelengthCount);
+    const perSampleCount = getOptimizationOperandMetadata(operand.kind).nominalResidualCountPerSample;
+    return count + (fieldCount * wavelengthCount * perSampleCount);
   }, 0);
 }
 
@@ -907,13 +906,14 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
         }
 
         const nextKind = patch.kind ?? operand.kind;
+        const nextMetadata = getOptimizationOperandMetadata(nextKind);
         return {
           ...operand,
           ...patch,
           kind: nextKind,
           target:
             patch.kind !== undefined && patch.target === undefined
-              ? getDefaultOperandTarget(nextKind)
+              ? (nextMetadata.requiresTarget ? getDefaultOperandTarget(nextKind) : undefined)
               : patch.target ?? operand.target,
         };
       }),

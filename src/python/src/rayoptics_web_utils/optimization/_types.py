@@ -233,7 +233,7 @@ class WavelengthSampleConfigInput(TypedDict, total=False):
 
 class OperandConfigInput(TypedDict, total=False):
     kind: str
-    target: float
+    target: NotRequired[float]
     weight: float
     fields: list[FieldSampleConfigInput]
     wavelengths: list[WavelengthSampleConfigInput]
@@ -242,13 +242,13 @@ class OperandConfigInput(TypedDict, total=False):
 
 class OperandSample(TypedDict):
     kind: str
-    target: float
     weight: float
     field_index: int | None
     field_weight: float
     wavelength_index: int | None
     wavelength_weight: float
     options: OperandOptions
+    target: NotRequired[float]
 
 
 class MeritFunctionConfigInput(TypedDict, total=False):
@@ -298,9 +298,13 @@ class PickupReportEntry(TypedDict):
     source_coefficient_index: NotRequired[int]
 
 
+class SnapshotEntry(TypedDict):
+    entry: MutableTarget
+    value: float
+
+
 class ResidualEntry(TypedDict):
     kind: str
-    target: float
     value: float
     field_index: int | None
     wavelength_index: int | None
@@ -309,6 +313,7 @@ class ResidualEntry(TypedDict):
     wavelength_weight: float
     total_weight: float
     weighted_residual: float
+    target: NotRequired[float]
 
 
 class MeritFunctionSummary(TypedDict):
@@ -357,7 +362,8 @@ class SolverResult(TypedDict):
     optimality: float
 
 
-type OperandEvaluator = Callable[[OpticalModel, int | None, int | None, OperandOptions | None], float]
+type OperandValue = float | list[float]
+type OperandEvaluator = Callable[[OpticalModel, int | None, int | None, OperandOptions | None], OperandValue]
 
 
 class OptimizationProblemProtocol(Protocol):

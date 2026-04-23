@@ -7,7 +7,24 @@ export type OptimizationOperandKind =
   | "f_number"
   | "opd_difference"
   | "rms_spot_size"
-  | "rms_wavefront_error";
+  | "rms_wavefront_error"
+  | "ray_fan";
+
+export type OptimizationOperandConfig =
+  | {
+      readonly kind: OptimizationOperandKind;
+      readonly target: number;
+      readonly weight: number;
+      readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+    }
+  | {
+      readonly kind: OptimizationOperandKind;
+      readonly target?: undefined;
+      readonly weight: number;
+      readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+    };
 
 export interface OptimizationConfig {
   readonly optimizer: {
@@ -21,13 +38,7 @@ export interface OptimizationConfig {
   readonly variables: ReadonlyArray<OptimizationVariableConfig>;
   readonly pickups: ReadonlyArray<OptimizationPickupConfig>;
   readonly merit_function: {
-    readonly operands: ReadonlyArray<{
-      readonly kind: OptimizationOperandKind;
-      readonly target: number;
-      readonly weight: number;
-      readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
-      readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
-    }>;
+    readonly operands: ReadonlyArray<OptimizationOperandConfig>;
   };
 }
 
@@ -146,7 +157,7 @@ export interface OptimizationValueEntryLegacy {
 
 export interface OptimizationResidualEntry {
   readonly kind: string;
-  readonly target: number;
+  readonly target?: number;
   readonly value: number;
   readonly field_index?: number;
   readonly wavelength_index?: number;

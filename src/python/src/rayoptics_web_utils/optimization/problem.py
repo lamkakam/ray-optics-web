@@ -19,7 +19,7 @@ from ._types import (
     VariableConfig,
     VariableStateEntry,
 )
-from .operands import OPERAND_REGISTRY, PENALTY_RESIDUAL
+from .operands import OPERAND_REGISTRY, PENALTY_RESIDUAL, RAY_FAN_RESIDUAL_COUNT
 from .progress import OptimizationProgress
 from .targets import (
     curvature_to_radius,
@@ -87,20 +87,23 @@ class OptimizationProblem:
         weighted_values: list[float] = []
         for operand in self.operands:
             evaluator = OPERAND_REGISTRY[operand["kind"]]
-            actual = float(
-                evaluator(
-                    self.opm,
-                    operand["field_index"],
-                    operand["wavelength_index"],
-                    operand["options"],
-                )
+            actual_values = evaluator(
+                self.opm,
+                operand["field_index"],
+                operand["wavelength_index"],
+                operand["options"],
             )
+            if isinstance(actual_values, list):
+                actuals = [float(value) for value in actual_values]
+            else:
+                actuals = [float(actual_values)]
             total_weight = operand["weight"] * math.sqrt(operand["field_weight"]) * math.sqrt(operand["wavelength_weight"])
-            weighted_residual = total_weight * (actual - operand["target"])
-            residuals.append(
-                {
+            for actual in actuals:
+                weighted_residual = total_weight * (
+                    actual - operand["target"] if "target" in operand else actual
+                )
+                residual: ResidualEntry = {
                     "kind": operand["kind"],
-                    "target": operand["target"],
                     "value": actual,
                     "field_index": operand["field_index"],
                     "wavelength_index": operand["wavelength_index"],
@@ -110,8 +113,10 @@ class OptimizationProblem:
                     "total_weight": float(total_weight),
                     "weighted_residual": float(weighted_residual),
                 }
-            )
-            weighted_values.append(float(weighted_residual))
+                if "target" in operand:
+                    residual["target"] = operand["target"]
+                residuals.append(residual)
+                weighted_values.append(float(weighted_residual))
 
         sum_of_squares = float(sum(value ** 2 for value in weighted_values))
         rss = float(math.sqrt(sum_of_squares))
@@ -143,7 +148,10 @@ class OptimizationProblem:
         ]
 
     def penalty_residual_vector(self) -> np.ndarray:
-        size = max(len(self.operands), 1)
+        size = max(
+            sum(RAY_FAN_RESIDUAL_COUNT if operand["kind"] == "ray_fan" else 1 for operand in self.operands),
+            1,
+        )
         return np.full(size, PENALTY_RESIDUAL, dtype=float)
 
     def residual_objective(self, vector: FloatArray) -> FloatArray:

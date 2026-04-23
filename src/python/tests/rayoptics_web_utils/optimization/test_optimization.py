@@ -34,6 +34,31 @@ def fresh_cooke_triplet():
 
 
 class TestEvaluateOptimizationProblem:
+    def test_accepts_ray_fan_without_target(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "ray_fan",
+                            "weight": 1.0,
+                            "fields": [{"index": 0, "weight": 1.0}],
+                            "wavelengths": [{"index": 0, "weight": 1.0}],
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert report["residuals"]
+        assert "target" not in report["residuals"][0]
+
     def test_accepts_lm_variables_without_bounds(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
 
@@ -114,6 +139,33 @@ class TestEvaluateOptimizationProblem:
                     },
                 },
             )
+
+    def test_lm_accepts_nominal_ray_fan_residual_count(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares", "method": "lm"},
+                "variables": [
+                    {"kind": "radius", "surface_index": 1},
+                    {"kind": "thickness", "surface_index": 6},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "ray_fan",
+                            "weight": 1.0,
+                            "fields": [{"index": 0, "weight": 1.0}],
+                            "wavelengths": [{"index": 0, "weight": 1.0}],
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert report["optimizer"]["method"] == "lm"
 
     def test_returns_json_safe_report_with_merit_breakdown(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
@@ -307,6 +359,211 @@ class TestEvaluateOptimizationProblem:
 
         assert report["residuals"][0]["value"] == pytest.approx(1e6)
         assert report["residuals"][0]["weighted_residual"] == pytest.approx(1e6)
+
+    def test_ray_fan_operand_expands_to_multiple_target_less_residuals(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.operands as operands_module
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        def fake_get_ray_fan_data(opm, fi):
+            del opm, fi
+            return [
+                {
+                    "fieldIdx": 0,
+                    "wvlIdx": 0,
+                    "Tangential": {"x": [0.0, 0.1], "y": [1.5, float("nan")]},
+                    "Sagittal": {"x": [0.0, 0.1], "y": [-2.0, 0.5]},
+                    "unitX": "",
+                    "unitY": "mm",
+                }
+            ]
+
+        monkeypatch.setattr(operands_module, "get_ray_fan_data", fake_get_ray_fan_data)
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "ray_fan",
+                            "weight": 2.0,
+                            "fields": [{"index": 0, "weight": 4.0}],
+                            "wavelengths": [{"index": 0, "weight": 9.0}],
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert len(report["residuals"]) == 42
+        assert report["residuals"][:4] == [
+            {
+                "kind": "ray_fan",
+                "value": pytest.approx(1.5),
+                "field_index": 0,
+                "wavelength_index": 0,
+                "operand_weight": 2.0,
+                "field_weight": 4.0,
+                "wavelength_weight": 9.0,
+                "total_weight": pytest.approx(12.0),
+                "weighted_residual": pytest.approx(18.0),
+            },
+            {
+                "kind": "ray_fan",
+                "value": pytest.approx(1e6),
+                "field_index": 0,
+                "wavelength_index": 0,
+                "operand_weight": 2.0,
+                "field_weight": 4.0,
+                "wavelength_weight": 9.0,
+                "total_weight": pytest.approx(12.0),
+                "weighted_residual": pytest.approx(12e6),
+            },
+            {
+                "kind": "ray_fan",
+                "value": pytest.approx(-2.0),
+                "field_index": 0,
+                "wavelength_index": 0,
+                "operand_weight": 2.0,
+                "field_weight": 4.0,
+                "wavelength_weight": 9.0,
+                "total_weight": pytest.approx(12.0),
+                "weighted_residual": pytest.approx(-24.0),
+            },
+            {
+                "kind": "ray_fan",
+                "value": pytest.approx(0.5),
+                "field_index": 0,
+                "wavelength_index": 0,
+                "operand_weight": 2.0,
+                "field_weight": 4.0,
+                "wavelength_weight": 9.0,
+                "total_weight": pytest.approx(12.0),
+                "weighted_residual": pytest.approx(6.0),
+            },
+        ]
+        assert all(entry["value"] == pytest.approx(1e6) for entry in report["residuals"][4:])
+        assert report["merit_function"]["sum_of_squares"] == pytest.approx((18.0 ** 2) + (12e6 ** 2) + ((-24.0) ** 2) + (6.0 ** 2) + (38 * (12e6 ** 2)))
+
+    def test_ray_fan_operand_returns_penalty_vector_when_no_valid_samples_remain(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.operands as operands_module
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        def fake_get_ray_fan_data(opm, fi):
+            del opm, fi
+            return [
+                {
+                    "fieldIdx": 0,
+                    "wvlIdx": 0,
+                    "Tangential": {"x": [0.0], "y": [float("nan")]},
+                    "Sagittal": {"x": [0.0], "y": [float("inf")]},
+                    "unitX": "",
+                    "unitY": "mm",
+                }
+            ]
+
+        monkeypatch.setattr(operands_module, "get_ray_fan_data", fake_get_ray_fan_data)
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "ray_fan",
+                            "weight": 1.0,
+                            "fields": [{"index": 0, "weight": 1.0}],
+                            "wavelengths": [{"index": 0, "weight": 1.0}],
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert len(report["residuals"]) == 42
+        assert all(entry["value"] == pytest.approx(1e6) for entry in report["residuals"])
+        assert all(entry["weighted_residual"] == pytest.approx(1e6) for entry in report["residuals"])
+
+    def test_ray_fan_residual_objective_keeps_a_stable_dimension(self, monkeypatch, fresh_cooke_triplet):
+        import numpy as np
+        import rayoptics_web_utils.optimization.operands as operands_module
+        from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+        responses = iter([
+            [
+                {
+                    "fieldIdx": 0,
+                    "wvlIdx": 0,
+                    "Tangential": {"x": [float(index) for index in range(21)], "y": [0.1] * 21},
+                    "Sagittal": {"x": [float(index) for index in range(21)], "y": [0.2] * 21},
+                    "unitX": "",
+                    "unitY": "mm",
+                }
+            ],
+            [
+                {
+                    "fieldIdx": 0,
+                    "wvlIdx": 0,
+                    "Tangential": {"x": [float(index) for index in range(19)], "y": [0.1] * 19},
+                    "Sagittal": {"x": [float(index) for index in range(19)], "y": [0.2] * 19},
+                    "unitX": "",
+                    "unitY": "mm",
+                }
+            ],
+        ])
+
+        monkeypatch.setattr(operands_module, "get_ray_fan_data", lambda opm, fi: next(responses))
+
+        problem = OptimizationProblem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "ray_fan",
+                            "weight": 1.0,
+                            "fields": [{"index": 0, "weight": 1.0}],
+                            "wavelengths": [{"index": 0, "weight": 1.0}],
+                        }
+                    ]
+                },
+            },
+        )
+
+        first = problem.residual_objective(np.array([], dtype=float))
+        second = problem.residual_objective(np.array([], dtype=float))
+
+        assert first.shape == (42,)
+        assert second.shape == (42,)
+        assert second[-4:].tolist() == pytest.approx([1e6, 1e6, 1e6, 1e6])
+
+    def test_restore_state_preserves_asphere_kind_information(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization.targets import restore_state, snapshot_state
+
+        variable = {
+            "kind": "asphere_conic_constant",
+            "surface_index": 1,
+            "asphere_kind": "RadialPolynomial",
+            "min": -2.0,
+            "max": 0.0,
+        }
+
+        snapshot = snapshot_state(fresh_cooke_triplet, [variable], [])
+        fresh_cooke_triplet["seq_model"].ifcs[1].profile.cc = -0.75
+
+        restore_state(fresh_cooke_triplet, snapshot)
+
+        assert fresh_cooke_triplet["seq_model"].ifcs[1].profile.__class__.__name__ == "RadialPolynomial"
+        assert fresh_cooke_triplet["seq_model"].ifcs[1].profile.cc == pytest.approx(0.0)
 
 
 class TestOptimizeOpm:

@@ -7,6 +7,7 @@ import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
 
 from rayoptics_web_utils.analysis import get_opd_fan_data
+from rayoptics_web_utils.analysis import get_ray_fan_data
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid
 
@@ -14,6 +15,8 @@ from ._types import OperandEvaluator, OperandOptions
 from .targets import validate_surface_index
 
 PENALTY_RESIDUAL = 1e6
+RAY_FAN_SAMPLES_PER_AXIS = 21
+RAY_FAN_RESIDUAL_COUNT = RAY_FAN_SAMPLES_PER_AXIS * 2
 
 
 def _spot_fn(p, wi, ray_pkg, fld, wvl, foc):
@@ -128,10 +131,37 @@ def compute_f_number(
     return float(opm["analysis_results"]["parax_data"].fod.fno)
 
 
+def compute_ray_fan(
+    opm: OpticalModel,
+    field_index: int | None,
+    wavelength_index: int | None,
+    options: OperandOptions | None,
+) -> list[float]:
+    """Return combined tangential and sagittal ray-fan ordinates for one field/wavelength sample."""
+    del options
+    if field_index is None or wavelength_index is None:
+        raise ValueError("ray_fan requires field and wavelength indices")
+    ray_fan_data = get_ray_fan_data(opm, fi=field_index)
+    validate_surface_index(ray_fan_data, wavelength_index, "wavelength index")
+    wavelength_fan = ray_fan_data[wavelength_index]
+    samples = [
+        *wavelength_fan["Tangential"]["y"],
+        *wavelength_fan["Sagittal"]["y"],
+    ]
+    padded_samples = list(samples[:RAY_FAN_RESIDUAL_COUNT])
+    while len(padded_samples) < RAY_FAN_RESIDUAL_COUNT:
+        padded_samples.append(float("nan"))
+    return [
+        float(sample) if np.isfinite(sample) else PENALTY_RESIDUAL
+        for sample in padded_samples
+    ]
+
+
 OPERAND_REGISTRY: dict[str, OperandEvaluator] = {
     "rms_spot_size": compute_rms_spot_size,
     "rms_wavefront_error": compute_rms_wavefront_error,
     "opd_difference": compute_opd_difference,
     "focal_length": compute_focal_length,
     "f_number": compute_f_number,
+    "ray_fan": compute_ray_fan,
 }

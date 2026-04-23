@@ -62,4 +62,26 @@ describe("createEvaluationRow", () => {
 
     expect(createEvaluationRow(residual, 0)).toBeUndefined();
   });
+
+  it("formats target-less residuals as N/A", () => {
+    const residual: OptimizationResidualEntry = {
+      kind: "ray_fan",
+      value: 0.25,
+      field_index: 1,
+      wavelength_index: 2,
+      operand_weight: 0.125,
+      field_weight: 1,
+      wavelength_weight: 1,
+      total_weight: 0.125,
+      weighted_residual: 0.03125,
+    };
+
+    expect(createEvaluationRow(residual, 3)).toEqual({
+      id: "ray_fan-1-2-3",
+      operandType: "Ray Fan",
+      target: "N/A",
+      weight: "0.125000",
+      value: "0.250000",
+    });
+  });
 });

@@ -139,6 +139,48 @@ describe("_evaluateOptimizationProblem", () => {
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));
   });
 
+  it("passes ray_fan operands without target and accepts residuals without target", async () => {
+    const runPython = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        success: true,
+        status: "evaluated",
+        message: "ok",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [
+          {
+            kind: "ray_fan",
+            value: 0.42,
+            field_index: 0,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 1,
+            wavelength_weight: 1,
+            total_weight: 1,
+            weighted_residual: 0.42,
+          },
+        ],
+        merit_function: { sum_of_squares: 0.1764, rss: 0.42 },
+      }),
+    );
+
+    const result = await _evaluateOptimizationProblem(runPython, baseModel, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [],
+      pickups: [],
+      merit_function: {
+        operands: [{ kind: "ray_fan", weight: 1, fields: [{ index: 0, weight: 1 }], wavelengths: [{ index: 0, weight: 1 }] }],
+      },
+    });
+
+    expect(result.residuals[0]?.kind).toBe("ray_fan");
+    expect(result.residuals[0]?.target).toBeUndefined();
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"ray_fan\\"'));
+    expect(runPython).toHaveBeenCalledWith(expect.not.stringContaining('\\"target\\"'));
+  });
+
   it("preserves image-surface radius variables in the generated Python config", async () => {
     const runPython = jest.fn().mockResolvedValue(
       JSON.stringify({

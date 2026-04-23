@@ -8,7 +8,8 @@ Shared TypeScript types for the optimization UI and the Pyodide worker boundary.
 
 - `OptimizerKind` — currently `"least_squares"`
 - `LeastSquaresMethod` — `"trf" | "lm"`
-- `OptimizationOperandKind` — `"focal_length" | "f_number" | "opd_difference" | "rms_spot_size" | "rms_wavefront_error"`
+- `OptimizationOperandKind` — `"focal_length" | "f_number" | "opd_difference" | "rms_spot_size" | "rms_wavefront_error" | "ray_fan"`
+- `OptimizationOperandConfig` — one merit-function operand config, supporting both targeted scalar operands and target-less operands such as `ray_fan`
 - `OptimizationConfig` — JSON-safe config sent to Python `optimize_opm`
 - `OptimizationVariableConfig` — one variable entry in `OptimizationConfig.variables`, with optional `min` / `max` so least-squares configs can represent both bounded and unbounded variables
 - `OptimizationPickupConfig` — one pickup entry in `OptimizationConfig.pickups`
@@ -25,6 +26,7 @@ Shared TypeScript types for the optimization UI and the Pyodide worker boundary.
 - `variables` and `pickups` are discriminated unions. Supported kinds are `radius`, `thickness`, `asphere_conic_constant`, `asphere_polynomial_coefficient`, and `asphere_toric_sweep_radius`.
 - `OptimizationConfig.variables[*].min` / `max` are present for bounded least-squares runs (`trf`) and may be omitted for unbounded least-squares runs (`lm`).
 - Asphere config/report entries carry `asphere_kind`; polynomial coefficient entries additionally carry `coefficient_index`, and coefficient pickups also carry `source_coefficient_index`.
+- Merit operands and residual entries may omit `target` for target-less operands. Existing scalar operands still include numeric targets.
 - `OptimizationReport` preserves the Python snake_case keys unchanged so the worker can parse the JSON directly.
 - `OptimizationReport.optimizer` may include solver metadata such as `nfev`, `njev`, `cost`, and `optimality` after a full optimization run.
 - `OptimizationReport.optimization_progress` is always a chronological list of merit-history samples; each entry exposes the raw `merit_function_value` used by the progress chart plus the precomputed `log10_merit_function_value` for consumers that need a transformed value.

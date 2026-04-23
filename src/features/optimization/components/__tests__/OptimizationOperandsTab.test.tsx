@@ -35,6 +35,7 @@ describe("OptimizationOperandsTab", () => {
     ]);
 
     expect(screen.getByRole("option", { name: "OPD Difference" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Ray Fan" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Add operand" }));
     expect(onAddOperand).toHaveBeenCalledTimes(1);
@@ -55,5 +56,19 @@ describe("OptimizationOperandsTab", () => {
 
     await user.click(screen.getByRole("button", { name: "Delete operand operand-1" }));
     expect(onDeleteOperand).toHaveBeenCalledWith("operand-1");
+  });
+
+  it("renders N/A and disables target editing for ray_fan rows", () => {
+    render(
+      <OptimizationOperandsTab
+        operands={[{ id: "operand-1", kind: "ray_fan", target: undefined, weight: "1" }]}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={jest.fn()}
+        onUpdateOperand={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("N/A")).toBeInTheDocument();
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
   });
 });

@@ -52,4 +52,16 @@ describe("OptimizationEvaluationPanel", () => {
     expect(screen.getByTestId("optimization-evaluation-scroll")).not.toHaveClass("overflow-y-auto");
     expect(screen.getByTestId("optimization-evaluation-scroll")).not.toHaveStyle({ maxHeight: "320px" });
   });
+
+  it("renders N/A targets for target-less residual rows", () => {
+    render(
+      <OptimizationEvaluationPanel
+        isEvaluating={false}
+        rows={[["Ray Fan", "N/A", "1.000000", "0.125000"]]}
+      />,
+    );
+
+    expect(screen.getByText("Ray Fan")).toBeInTheDocument();
+    expect(screen.getByText("N/A")).toBeInTheDocument();
+  });
 });

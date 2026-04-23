@@ -341,6 +341,67 @@ describe("OptimizationPage", () => {
     expect(within(evaluationScroll).getByText("98.500000")).toBeInTheDocument();
   });
 
+  it("renders multiple ray_fan evaluation rows and keeps zero-weight rows hidden", async () => {
+    const proxy = makeProxy({
+      evaluateOptimizationProblem: jest.fn().mockResolvedValue({
+        success: true,
+        status: "evaluated",
+        message: "ok",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [
+          {
+            kind: "ray_fan",
+            value: 0.5,
+            field_index: 0,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 1,
+            wavelength_weight: 1,
+            total_weight: 1,
+            weighted_residual: 0.5,
+          },
+          {
+            kind: "ray_fan",
+            value: 0.25,
+            field_index: 0,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 1,
+            wavelength_weight: 1,
+            total_weight: 1,
+            weighted_residual: 0.25,
+          },
+          {
+            kind: "ray_fan",
+            value: 123,
+            field_index: 0,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 0,
+            wavelength_weight: 1,
+            total_weight: 0,
+            weighted_residual: 0,
+          },
+        ],
+        merit_function: { sum_of_squares: 0.3125, rss: Math.sqrt(0.3125) },
+      }),
+    });
+    const { optimizationStore } = renderOptimizationPage(proxy);
+
+    act(() => {
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-1", kind: "ray_fan", target: undefined, weight: "1" },
+      ]);
+    });
+
+    expect(await screen.findAllByText("Ray Fan")).toHaveLength(2);
+    expect(screen.getAllByText("N/A")).toHaveLength(2);
+    expect(screen.queryByText("123.000000")).not.toBeInTheDocument();
+  });
+
   it("filters zero-weight residuals out of the evaluation table", async () => {
     const proxy = makeProxy({
       evaluateOptimizationProblem: jest.fn().mockResolvedValue({

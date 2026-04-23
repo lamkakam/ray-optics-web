@@ -25,7 +25,10 @@ class OptimizationProblem:
 - Keeps variable-state report entries aligned with the normalized config shape, so `min` / `max` appear only for bounded variables.
 - Applies variables, then pickups in dependency order, then calls `opm.update_model()`.
 - Evaluates all normalized merit operands and returns the same report shape consumed by the existing public API.
+- Expands vector-valued operand outputs into one residual report entry per returned sample, so target-less operands such as `ray_fan` can contribute many least-squares residuals from one normalized field/wavelength selection.
 - Exposes both residual-vector and scalar-merit objective methods so future solvers can choose the representation they need.
+- For targeted scalar operands, weighted residuals remain `total_weight * (actual - target)`. For target-less vector operands, weighted residuals are `total_weight * sample_value`.
+- The penalty residual vector length matches the nominal expanded residual dimension. For `ray_fan`, that means `42` entries per normalized field/wavelength sample so least-squares finite differencing sees a stable residual shape.
 - Records progress only when the evaluated optimizer vector changes materially.
 - Uses `OpticalModel` plus package-local typed config/report aliases for all internal mappings.
 

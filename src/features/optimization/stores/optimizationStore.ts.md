@@ -22,7 +22,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `radiusModes` — one entry per non-object radius target, including the image surface
 - `thicknessModes` — one entry per surface-row thickness target
 - `asphereStates` — one entry per real surface, carrying the optimization asphere type plus independent constant/variable/pickup settings for conic constant, 10 coefficient slots, and toroid sweep radius
-- `operands` — add/delete operand rows for `focal_length`, `f_number`, `opd_difference`, `rms_spot_size`, and `rms_wavefront_error`, each with editable `target` and `weight` strings; initialization starts with no rows
+- `operands` — add/delete operand rows for `focal_length`, `f_number`, `opd_difference`, `rms_spot_size`, `rms_wavefront_error`, and `ray_fan`; targeted operands keep editable string `target` values while target-less operands store `target: undefined`
 - `isOptimizing` — loading flag for the page-blocking overlay
 - `warningModal`, `applyConfirmOpen`, `radiusModal`, `thicknessModal`, `asphereModal` — modal state
 - `lastOptimizationReport` — last successful worker report
@@ -71,6 +71,8 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `syncFromOpticalModel()` reconciles field weights, wavelength weights, radius modes, thickness modes, and `asphereStates` by index so editor changes propagate into optimization without resetting all optimization settings when the model shape still matches.
 - `buildOptimizationConfig()` appends asphere variables and pickups alongside radius/thickness entries, using `asphere_kind` plus zero-based `coefficient_index` / `source_coefficient_index` metadata for the Python optimizer.
 - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching methods does not discard prior inputs.
-- `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the expanded merit-function sample count (`fields * wavelengths` for field-dependent operands, `1` otherwise), so the UI disables invalid `lm` runs early instead of surfacing the raw SciPy exception.
+- Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
+- `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`.
+- `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the nominal expanded merit-function sample count. `ray_fan` contributes `42` residuals per selected field/wavelength pair because the current ray-fan analysis helper traces `21` tangential plus `21` sagittal samples.
 - `applyOptimizationResult()` can create or update `surface.aspherical` on the optimization-local optical model when optimized asphere results come back from Python.
 - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
