@@ -1,6 +1,6 @@
 """Tests for rayoptics_web_utils.utils module."""
 
-
+# test
 class TestFigToBase64:
     """Tests for the _fig_to_base64 helper."""
 
