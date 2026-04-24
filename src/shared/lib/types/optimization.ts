@@ -150,13 +150,6 @@ export type OptimizationPickupEntry =
       readonly value: number;
     };
 
-export interface OptimizationValueEntryLegacy {
-  readonly surface_index: number;
-  readonly value: number;
-  readonly min?: number;
-  readonly max?: number;
-}
-
 export interface OptimizationResidualEntry {
   readonly kind: string;
   readonly target?: number;
