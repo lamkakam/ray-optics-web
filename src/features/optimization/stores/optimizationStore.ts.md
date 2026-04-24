@@ -46,6 +46,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Internal Structure
 
 - `buildOptimizationConfig()` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
+- Shared method capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the same least-squares rule set.
 - Shared validation for bounded variable ranges stays centralized so radius, thickness, and asphere variable entries continue to use the same `min < max` rule and error text when the active method requires bounds.
 - Surface pickup source-index validation stays centralized so radius and thickness pickups continue to share the same same-surface and out-of-range checks.
 
@@ -71,8 +72,8 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `syncFromOpticalModel()` reconciles field weights, wavelength weights, radius modes, thickness modes, and `asphereStates` by index so editor changes propagate into optimization without resetting all optimization settings when the model shape still matches.
 - `buildOptimizationConfig()` appends asphere variables and pickups alongside radius/thickness entries, using `asphere_kind` plus zero-based `coefficient_index` / `source_coefficient_index` metadata for the Python optimizer.
 - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching methods does not discard prior inputs.
-- Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
+- Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
 - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`.
-- `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the nominal expanded merit-function sample count. `ray_fan` contributes `42` residuals per selected field/wavelength pair because the current ray-fan analysis helper traces `21` tangential plus `21` sagittal samples.
+- `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared method-capability helper and the nominal expanded merit-function sample count. `ray_fan` contributes `num_rays * 2` residuals per selected field/wavelength pair and defaults to `options.num_rays = 21`.
 - `applyOptimizationResult()` can create or update `surface.aspherical` on the optimization-local optical model when optimized asphere results come back from Python.
 - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.

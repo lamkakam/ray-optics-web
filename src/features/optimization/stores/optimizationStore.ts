@@ -11,6 +11,7 @@ import type {
   OptimizerKind,
 } from "@/shared/lib/types/optimization";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
+import { getOptimizationMethodCapabilities } from "@/features/optimization/lib/methodCapabilities";
 
 export type RadiusMode =
   | { readonly surfaceIndex: number; readonly mode: "constant" }
@@ -307,6 +308,20 @@ function parseSurfacePickupSourceIndex(
   return sourceSurfaceIndex;
 }
 
+function createVariableConfig(
+  method: LeastSquaresMethod,
+  baseVariable: OptimizationConfig["variables"][number],
+  minValue: string,
+  maxValue: string,
+): OptimizationConfig["variables"][number] {
+  if (!getOptimizationMethodCapabilities(method).canUseBounds) {
+    return baseVariable;
+  }
+
+  const { min, max } = parseVariableBounds(minValue, maxValue);
+  return { ...baseVariable, min, max };
+}
+
 function buildSurfaceVariables(
   radiusModes: ReadonlyArray<RadiusMode>,
   thicknessModes: ReadonlyArray<RadiusMode>,
@@ -318,23 +333,15 @@ function buildSurfaceVariables(
         mode,
       ): mode is Extract<SurfaceModeEntry, { mode: "variable" }> => mode.mode === "variable",
     )
-    .map((mode) => {
-      if (method === "lm") {
-        return {
-          kind: mode.kind,
-          surface_index: mode.surfaceIndex,
-        };
-      }
-
-      const { min, max } = parseVariableBounds(mode.min, mode.max);
-
-      return {
+    .map((mode) => createVariableConfig(
+      method,
+      {
         kind: mode.kind,
         surface_index: mode.surfaceIndex,
-        min,
-        max,
-      };
-    });
+      },
+      mode.min,
+      mode.max,
+    ));
 }
 
 function buildSurfacePickups(
@@ -371,17 +378,11 @@ function buildAsphereVariables(
 
     const variables: Array<OptimizationConfig["variables"][number]> = [];
     if (asphereState.conic.mode === "variable") {
-      const baseVariable = {
+      variables.push(createVariableConfig(method, {
         kind: "asphere_conic_constant",
         surface_index: asphereState.surfaceIndex,
         asphere_kind: type,
-      } as const;
-      if (method === "lm") {
-        variables.push(baseVariable);
-      } else {
-        const { min, max } = parseVariableBounds(asphereState.conic.min, asphereState.conic.max);
-        variables.push({ ...baseVariable, min, max });
-      }
+      }, asphereState.conic.min, asphereState.conic.max));
     }
 
     asphereState.coefficients.forEach((coefficientMode, coefficientIndex) => {
@@ -389,32 +390,20 @@ function buildAsphereVariables(
         return;
       }
 
-      const baseVariable = {
+      variables.push(createVariableConfig(method, {
         kind: "asphere_polynomial_coefficient",
         surface_index: asphereState.surfaceIndex,
         asphere_kind: type,
         coefficient_index: coefficientIndex,
-      } as const;
-      if (method === "lm") {
-        variables.push(baseVariable);
-      } else {
-        const { min, max } = parseVariableBounds(coefficientMode.min, coefficientMode.max);
-        variables.push({ ...baseVariable, min, max });
-      }
+      }, coefficientMode.min, coefficientMode.max));
     });
 
     if ((type === "XToroid" || type === "YToroid") && asphereState.toricSweep.mode === "variable") {
-      const baseVariable = {
+      variables.push(createVariableConfig(method, {
         kind: "asphere_toric_sweep_radius",
         surface_index: asphereState.surfaceIndex,
         asphere_kind: type,
-      } as const;
-      if (method === "lm") {
-        variables.push(baseVariable);
-      } else {
-        const { min, max } = parseVariableBounds(asphereState.toricSweep.min, asphereState.toricSweep.max);
-        variables.push({ ...baseVariable, min, max });
-      }
+      }, asphereState.toricSweep.min, asphereState.toricSweep.max));
     }
 
     return variables;
@@ -493,10 +482,12 @@ function buildMeritFunctionOperands(
           weight,
           fields: fieldWeights.map((currentWeight, index) => ({ index, weight: currentWeight })),
           wavelengths: wavelengthWeights.map((currentWeight, index) => ({ index, weight: currentWeight })),
+          ...(metadata.defaultOptions !== undefined ? { options: metadata.defaultOptions } : {}),
         }
       : {
           kind: operand.kind,
           weight,
+          ...(metadata.defaultOptions !== undefined ? { options: metadata.defaultOptions } : {}),
         };
 
     if (!metadata.requiresTarget) {
@@ -522,7 +513,7 @@ function countResidualSamples(
   return operands.reduce((count, operand) => {
     const fieldCount = operand.fields?.length ?? 1;
     const wavelengthCount = operand.wavelengths?.length ?? 1;
-    const perSampleCount = getOptimizationOperandMetadata(operand.kind).nominalResidualCountPerSample;
+    const perSampleCount = getOptimizationOperandMetadata(operand.kind).getNominalResidualCountPerSample(operand.options);
     return count + (fieldCount * wavelengthCount * perSampleCount);
   }, 0);
 }
@@ -947,7 +938,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       ...buildAsphereVariables(state.asphereStates, state.optimizer.method),
     ];
     if (
-      state.optimizer.method === "lm"
+      getOptimizationMethodCapabilities(state.optimizer.method).requiresResidualCountAtLeastVariableCount
       && countResidualSamples(meritOperands) < variables.length
     ) {
       throw new Error("Levenberg-Marquardt requires at least as many residuals as variables.");

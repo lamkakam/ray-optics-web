@@ -166,7 +166,7 @@ describe("AsphereVarModal", () => {
       <AsphereVarModal
         {...defaultProps}
         asphereState={makeState({ type: "Conic" })}
-        optimizerMethod="trf"
+        canUseBounds
       />,
     );
     // selects[0] = type selector, selects[1] = conic constant mode
@@ -182,7 +182,7 @@ describe("AsphereVarModal", () => {
       <AsphereVarModal
         {...defaultProps}
         asphereState={makeState({ type: "Conic" })}
-        optimizerMethod="lm"
+        canUseBounds={false}
       />,
     );
 
@@ -208,7 +208,7 @@ describe("AsphereVarModal", () => {
       <AsphereVarModal
         {...defaultProps}
         asphereState={trfState}
-        optimizerMethod="trf"
+        canUseBounds
       />,
     );
 
@@ -220,7 +220,7 @@ describe("AsphereVarModal", () => {
       <AsphereVarModal
         {...defaultProps}
         asphereState={lmState}
-        optimizerMethod="lm"
+        canUseBounds={false}
       />,
     );
 
@@ -228,6 +228,32 @@ describe("AsphereVarModal", () => {
 
     expect(screen.queryByText("R = 0 means a flat surface (infinite radius).")).not.toBeInTheDocument();
     expect(screen.queryByText("Toroid sweep R variable bounds must stay on one side of 0.")).not.toBeInTheDocument();
+  });
+
+  it("renders asphere variable bounds from canUseBounds alone", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({ type: "Conic" })}
+        canUseBounds
+      />,
+    );
+
+    await user.selectOptions(screen.getAllByRole("combobox")[1], "variable");
+    expect(screen.getByRole("textbox", { name: "Conic Constant Min." })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Conic Constant Max." })).toBeInTheDocument();
+
+    rerender(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "-1", max: "1" } })}
+        canUseBounds={false}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox", { name: "Conic Constant Min." })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Conic Constant Max." })).not.toBeInTheDocument();
   });
 
   it("selecting pickup mode for conic shows source surface, scale, offset but no source coefficient", async () => {

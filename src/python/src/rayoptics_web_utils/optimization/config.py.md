@@ -24,4 +24,5 @@ pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]
 - Keeps validation logic independent from solver execution so future algorithms can reuse the same normalized config.
 - Annotates `opm` as `rayoptics.environment.OpticalModel` and uses package-local typed dicts instead of generic `dict`.
 - Requires `min` / `max` bounds only for bounded methods such as `trf`; `lm` variables may omit both bounds and normalization rejects only partial lm bound shapes.
-- Validates the SciPy `lm` dimension rule after merit-function expansion, rejecting configs where the nominal residual count is smaller than the variable count. `ray_fan` contributes `42` nominal residuals per selected field/wavelength pair, matching the fixed-length padded residual vector used at runtime so frontend and backend validation stay aligned with solver behavior.
+- Validates the SciPy `lm` dimension rule after merit-function expansion, rejecting configs where the nominal residual count is smaller than the variable count.
+- Reuses the shared operand residual-count helper so option-driven operands such as `ray_fan` contribute `num_rays * 2` nominal residuals per selected field/wavelength pair, matching the padded runtime residual vector.

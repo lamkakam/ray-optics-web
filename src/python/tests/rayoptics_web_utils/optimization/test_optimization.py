@@ -167,6 +167,34 @@ class TestEvaluateOptimizationProblem:
 
         assert report["optimizer"]["method"] == "lm"
 
+    def test_lm_uses_ray_fan_num_rays_option_for_dimension_validation(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        with pytest.raises(ValueError, match="Levenberg-Marquardt requires at least as many residuals as variables"):
+            evaluate_optimization_problem(
+                fresh_cooke_triplet,
+                {
+                    "optimizer": {"kind": "least_squares", "method": "lm"},
+                    "variables": [
+                        {"kind": "radius", "surface_index": 1},
+                        {"kind": "thickness", "surface_index": 6},
+                        {"kind": "radius", "surface_index": 2},
+                    ],
+                    "pickups": [],
+                    "merit_function": {
+                        "operands": [
+                            {
+                                "kind": "ray_fan",
+                                "weight": 1.0,
+                                "fields": [{"index": 0, "weight": 1.0}],
+                                "wavelengths": [{"index": 0, "weight": 1.0}],
+                                "options": {"num_rays": 1},
+                            }
+                        ]
+                    },
+                },
+            )
+
     def test_returns_json_safe_report_with_merit_breakdown(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
 

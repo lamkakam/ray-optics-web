@@ -17,6 +17,7 @@ export type OptimizationOperandConfig =
       readonly weight: number;
       readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
       readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly options?: { readonly num_rays?: number };
     }
   | {
       readonly kind: OptimizationOperandKind;
@@ -24,6 +25,7 @@ export type OptimizationOperandConfig =
       readonly weight: number;
       readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
       readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly options?: { readonly num_rays?: number };
     };
 
 export interface OptimizationConfig {

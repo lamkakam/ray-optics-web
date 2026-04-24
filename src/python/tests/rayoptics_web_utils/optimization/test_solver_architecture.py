@@ -164,3 +164,52 @@ def test_least_squares_adapter_omits_bounds_for_lm(monkeypatch, cooke_triplet, o
     assert captured["func"] == problem.residual_objective
     assert captured["method"] == "lm"
     assert "bounds" not in captured["kwargs"]
+
+
+def test_compute_ray_fan_uses_operand_num_rays_for_padding(monkeypatch):
+    from rayoptics_web_utils.optimization.operands import PENALTY_RESIDUAL, compute_ray_fan
+
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.operands.get_ray_fan_data",
+        lambda opm, fi: [{
+            "Tangential": {"y": [1.0]},
+            "Sagittal": {"y": [2.0]},
+        }],
+    )
+
+    residuals = compute_ray_fan(
+        opm=None,
+        field_index=0,
+        wavelength_index=0,
+        options={"num_rays": 3},
+    )
+
+    assert residuals == [1.0, 2.0, PENALTY_RESIDUAL, PENALTY_RESIDUAL, PENALTY_RESIDUAL, PENALTY_RESIDUAL]
+
+
+def test_penalty_residual_vector_uses_ray_fan_num_rays_option(cooke_triplet):
+    from rayoptics_web_utils.optimization.problem import OptimizationProblem
+
+    problem = OptimizationProblem(
+        cooke_triplet,
+        {
+            "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 5},
+            "variables": [
+                {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+            ],
+            "pickups": [],
+            "merit_function": {
+                "operands": [
+                    {
+                        "kind": "ray_fan",
+                        "weight": 1.0,
+                        "fields": [{"index": 0, "weight": 1.0}],
+                        "wavelengths": [{"index": 0, "weight": 1.0}],
+                        "options": {"num_rays": 3},
+                    }
+                ]
+            },
+        },
+    )
+
+    assert problem.penalty_residual_vector().shape == (6,)

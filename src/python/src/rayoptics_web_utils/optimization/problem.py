@@ -19,7 +19,7 @@ from ._types import (
     VariableConfig,
     VariableStateEntry,
 )
-from .operands import OPERAND_REGISTRY, PENALTY_RESIDUAL, RAY_FAN_RESIDUAL_COUNT
+from .operands import OPERAND_REGISTRY, PENALTY_RESIDUAL, get_nominal_operand_sample_residual_count
 from .progress import OptimizationProgress
 from .targets import (
     curvature_to_radius,
@@ -149,7 +149,7 @@ class OptimizationProblem:
 
     def penalty_residual_vector(self) -> np.ndarray:
         size = max(
-            sum(RAY_FAN_RESIDUAL_COUNT if operand["kind"] == "ray_fan" else 1 for operand in self.operands),
+            sum(get_nominal_operand_sample_residual_count(operand) for operand in self.operands),
             1,
         )
         return np.full(size, PENALTY_RESIDUAL, dtype=float)

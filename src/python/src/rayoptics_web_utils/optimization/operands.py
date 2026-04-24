@@ -11,12 +11,22 @@ from rayoptics_web_utils.analysis import get_ray_fan_data
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid
 
-from ._types import OperandEvaluator, OperandOptions
+from ._types import OperandEvaluator, OperandOptions, OperandSample
 from .targets import validate_surface_index
 
 PENALTY_RESIDUAL = 1e6
-RAY_FAN_SAMPLES_PER_AXIS = 21
-RAY_FAN_RESIDUAL_COUNT = RAY_FAN_SAMPLES_PER_AXIS * 2
+
+
+def get_operand_num_rays(options: OperandOptions | None, default: int = 21) -> int:
+    """Return the caller-configured ray sampling count for operand analyses."""
+    return int((options or {}).get("num_rays", default))
+
+
+def get_nominal_operand_sample_residual_count(sample: OperandSample) -> int:
+    """Return the stable residual count contributed by one normalized operand sample."""
+    if sample["kind"] != "ray_fan":
+        return 1
+    return get_operand_num_rays(sample.get("options")) * 2
 
 
 def _spot_fn(p, wi, ray_pkg, fld, wvl, foc):
@@ -41,7 +51,7 @@ def compute_rms_spot_size(
     """Return RMS spot size for one field/wavelength sample."""
     if field_index is None or wavelength_index is None:
         raise ValueError("rms_spot_size requires field and wavelength indices")
-    num_rays = int((options or {}).get("num_rays", 21))
+    num_rays = get_operand_num_rays(options)
     wavelengths = opm["optical_spec"]["wvls"].wavelengths
     validate_surface_index(wavelengths, wavelength_index, "wavelength index")
     grids, _ = opm["seq_model"].trace_grid(
@@ -69,7 +79,7 @@ def compute_rms_wavefront_error(
     """Return RMS WFE in waves for one field/wavelength sample."""
     if field_index is None or wavelength_index is None:
         raise ValueError("rms_wavefront_error requires field and wavelength indices")
-    num_rays = int((options or {}).get("num_rays", 21))
+    num_rays = get_operand_num_rays(options)
     wavelengths = opm["optical_spec"]["wvls"].wavelengths
     validate_surface_index(wavelengths, wavelength_index, "wavelength index")
     wavelength_nm = wavelengths[wavelength_index]
@@ -138,9 +148,9 @@ def compute_ray_fan(
     options: OperandOptions | None,
 ) -> list[float]:
     """Return combined tangential and sagittal ray-fan ordinates for one field/wavelength sample."""
-    del options
     if field_index is None or wavelength_index is None:
         raise ValueError("ray_fan requires field and wavelength indices")
+    residual_count = get_operand_num_rays(options) * 2
     ray_fan_data = get_ray_fan_data(opm, fi=field_index)
     validate_surface_index(ray_fan_data, wavelength_index, "wavelength index")
     wavelength_fan = ray_fan_data[wavelength_index]
@@ -148,8 +158,8 @@ def compute_ray_fan(
         *wavelength_fan["Tangential"]["y"],
         *wavelength_fan["Sagittal"]["y"],
     ]
-    padded_samples = list(samples[:RAY_FAN_RESIDUAL_COUNT])
-    while len(padded_samples) < RAY_FAN_RESIDUAL_COUNT:
+    padded_samples = list(samples[:residual_count])
+    while len(padded_samples) < residual_count:
         padded_samples.append(float("nan"))
     return [
         float(sample) if np.isfinite(sample) else PENALTY_RESIDUAL

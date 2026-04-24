@@ -1,5 +1,4 @@
 import React from "react";
-import type { LeastSquaresMethod, OptimizerKind } from "@/shared/lib/types/optimization";
 import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import { UnboundedVariableModeFields } from "@/features/optimization/components/UnboundedVariableModeFields";
 
@@ -23,29 +22,18 @@ export interface VariableModeFieldsProps {
 
 interface VariableModeFieldsRenderer {
   readonly Component: (props: VariableModeFieldsProps) => React.JSX.Element;
-  readonly usesBounds: boolean;
 }
 
-const boundedVariableModeFieldsRenderer: VariableModeFieldsRenderer = {
+const BOUNDED_VARIABLE_MODE_FIELDS_RENDERER: VariableModeFieldsRenderer = {
   Component: (props) => <BoundedVariableModeFields {...props} />,
-  usesBounds: true,
 };
 
-const unboundedVariableModeFieldsRenderer: VariableModeFieldsRenderer = {
+const UNBOUNDED_VARIABLE_MODE_FIELDS_RENDERER: VariableModeFieldsRenderer = {
   Component: ({ className }) => <UnboundedVariableModeFields className={className} />,
-  usesBounds: false,
 };
 
-export const VARIABLE_MODE_FIELDS_BY_OPTIMIZER = {
-  least_squares: {
-    trf: boundedVariableModeFieldsRenderer,
-    lm: unboundedVariableModeFieldsRenderer,
-  },
-} satisfies Record<OptimizerKind, Record<LeastSquaresMethod, VariableModeFieldsRenderer>>;
-
-export function getVariableModeFieldsRenderer(
-  optimizerKind: OptimizerKind,
-  optimizerMethod: LeastSquaresMethod,
-): VariableModeFieldsRenderer {
-  return VARIABLE_MODE_FIELDS_BY_OPTIMIZER[optimizerKind][optimizerMethod];
+export function getVariableModeFieldsRenderer(canUseBounds: boolean): VariableModeFieldsRenderer {
+  return canUseBounds
+    ? BOUNDED_VARIABLE_MODE_FIELDS_RENDERER
+    : UNBOUNDED_VARIABLE_MODE_FIELDS_RENDERER;
 }

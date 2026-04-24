@@ -279,6 +279,22 @@ describe("OptimizationPage", () => {
     expect(screen.getByText("Levenberg-Marquardt requires at least as many residuals as variables.")).toBeInTheDocument();
   });
 
+  it("shows a warning modal for any config-build error triggered by method switching", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    act(() => {
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-1", kind: "focal_length", target: "100", weight: "0" },
+      ]);
+    });
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
+
+    expect(await screen.findByRole("dialog", { name: "Warning" })).toBeInTheDocument();
+    expect(screen.getByText("Weight must be a positive non-zero number.")).toBeInTheDocument();
+  });
+
   it("renders the optimization tabs inside a draggable bottom drawer on large screens", () => {
     const { container } = renderOptimizationPage(makeProxy());
     const pageShell = container.firstElementChild;

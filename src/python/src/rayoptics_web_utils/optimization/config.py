@@ -7,7 +7,7 @@ from copy import deepcopy
 
 from rayoptics.environment import OpticalModel
 
-from .operands import OPERAND_REGISTRY, RAY_FAN_RESIDUAL_COUNT
+from .operands import OPERAND_REGISTRY, get_nominal_operand_sample_residual_count
 from .targets import (
     ensure_asphere_profile,
     is_toroid,
@@ -282,9 +282,10 @@ def validate_optimizer_dimensions(
 ) -> None:
     if optimizer["method"] != "lm":
         return
-    nominal_residual_count = 0
-    for operand in merit_function["operands"]:
-        nominal_residual_count += RAY_FAN_RESIDUAL_COUNT if operand["kind"] == "ray_fan" else 1
+    nominal_residual_count = sum(
+        get_nominal_operand_sample_residual_count(operand)
+        for operand in merit_function["operands"]
+    )
     if nominal_residual_count < len(variables):
         raise ValueError("Levenberg-Marquardt requires at least as many residuals as variables")
 

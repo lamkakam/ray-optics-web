@@ -28,7 +28,7 @@ class OptimizationProblem:
 - Expands vector-valued operand outputs into one residual report entry per returned sample, so target-less operands such as `ray_fan` can contribute many least-squares residuals from one normalized field/wavelength selection.
 - Exposes both residual-vector and scalar-merit objective methods so future solvers can choose the representation they need.
 - For targeted scalar operands, weighted residuals remain `total_weight * (actual - target)`. For target-less vector operands, weighted residuals are `total_weight * sample_value`.
-- The penalty residual vector length matches the nominal expanded residual dimension. For `ray_fan`, that means `42` entries per normalized field/wavelength sample so least-squares finite differencing sees a stable residual shape.
+- The penalty residual vector length matches the nominal expanded residual dimension using the same shared operand residual-count helper as config validation. For `ray_fan`, that means `num_rays * 2` entries per normalized field/wavelength sample so least-squares finite differencing sees a stable residual shape.
 - Records progress only when the evaluated optimizer vector changes materially.
 - Uses `OpticalModel` plus package-local typed config/report aliases for all internal mappings.
 

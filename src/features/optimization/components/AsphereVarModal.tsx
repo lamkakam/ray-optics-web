@@ -3,7 +3,6 @@
 import React from "react";
 import { MathJax } from "better-react-mathjax";
 import type { AsphericalType } from "@/shared/lib/types/opticalModel";
-import type { LeastSquaresMethod, OptimizerKind } from "@/shared/lib/types/optimization";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
@@ -129,8 +128,7 @@ interface AsphereVarModalProps {
   readonly isOpen: boolean;
   readonly surfaceIndex: number | undefined;
   readonly asphereState: AsphereOptimizationState | undefined;
-  readonly optimizerKind?: OptimizerKind;
-  readonly optimizerMethod?: LeastSquaresMethod;
+  readonly canUseBounds?: boolean;
   readonly onSave: (surfaceIndex: number, state: AsphereOptimizationState) => void;
   readonly onClose: () => void;
 }
@@ -139,8 +137,7 @@ export function AsphereVarModal({
   isOpen,
   surfaceIndex,
   asphereState,
-  optimizerKind = "least_squares",
-  optimizerMethod = "trf",
+  canUseBounds = true,
   onSave,
   onClose,
 }: AsphereVarModalProps) {
@@ -157,8 +154,7 @@ export function AsphereVarModal({
       key={`${surfaceIndex}:${serializeAsphereState(asphereState)}`}
       surfaceIndex={surfaceIndex}
       asphereState={asphereState}
-      optimizerKind={optimizerKind}
-      optimizerMethod={optimizerMethod}
+      canUseBounds={canUseBounds}
       onSave={onSave}
       onClose={onClose}
     />
@@ -168,8 +164,7 @@ export function AsphereVarModal({
 interface AsphereVarModalEditorProps {
   readonly surfaceIndex: number;
   readonly asphereState: AsphereOptimizationState;
-  readonly optimizerKind: OptimizerKind;
-  readonly optimizerMethod: LeastSquaresMethod;
+  readonly canUseBounds: boolean;
   readonly onSave: (surfaceIndex: number, state: AsphereOptimizationState) => void;
   readonly onClose: () => void;
 }
@@ -177,23 +172,22 @@ interface AsphereVarModalEditorProps {
 function AsphereVarModalEditor({
   surfaceIndex,
   asphereState,
-  optimizerKind,
-  optimizerMethod,
+  canUseBounds,
   onSave,
   onClose,
 }: AsphereVarModalEditorProps) {
   const [draft, setDraft] = React.useState<AsphereOptimizationState>(() => asphereState);
-  const variableModeFields = getVariableModeFieldsRenderer(optimizerKind, optimizerMethod);
+  const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
 
   const termRows = getTermRows(draft.type);
   const isDoneDisabled = termRows.some((term) => {
     const mode = getTermMode(draft, term);
 
-    if (isVariableInvalid(mode, variableModeFields.usesBounds)) {
+    if (isVariableInvalid(mode, canUseBounds)) {
       return true;
     }
 
-    return variableModeFields.usesBounds
+    return canUseBounds
       && term.kind === "toricSweep"
       && mode.mode === "variable"
       && curvatureRadiusCrossesZero(mode.min, mode.max);
@@ -281,7 +275,7 @@ function AsphereVarModalEditor({
           <div className="space-y-3">
             {termRows.map((term) => {
               const mode = getTermMode(draft, term);
-              const variableBoundsCrossZero = variableModeFields.usesBounds
+              const variableBoundsCrossZero = canUseBounds
                 && term.kind === "toricSweep"
                 && mode.mode === "variable"
                 && curvatureRadiusCrossesZero(mode.min, mode.max);
@@ -302,7 +296,7 @@ function AsphereVarModalEditor({
                   </div>
 
                   {mode.mode === "variable" && (
-                    <variableModeFields.Component
+                    <VariableModeFields.Component
                       idPrefix={termId}
                       minAriaLabel={`${term.ariaLabel} Min.`}
                       minValue={mode.min}
@@ -310,7 +304,7 @@ function AsphereVarModalEditor({
                       maxValue={mode.max}
                       onMinChange={(value) => handleTermVariableChange(term, "min", value)}
                       onMaxChange={(value) => handleTermVariableChange(term, "max", value)}
-                      guidanceText={variableModeFields.usesBounds && term.kind === "toricSweep"
+                      guidanceText={canUseBounds && term.kind === "toricSweep"
                         ? CURVATURE_RADIUS_GUIDANCE_TEXT
                         : undefined}
                       errorText={variableBoundsCrossZero

@@ -1,15 +1,18 @@
 import type { OptimizationOperandKind } from "@/shared/lib/types/optimization";
 
+export interface OptimizationOperandOptions {
+  readonly num_rays?: number;
+}
+
 export interface OptimizationOperandMetadata {
   readonly kind: OptimizationOperandKind;
   readonly label: string;
   readonly requiresTarget: boolean;
   readonly defaultTarget?: string;
+  readonly defaultOptions?: OptimizationOperandOptions;
   readonly expandsByFieldAndWavelength: boolean;
-  readonly nominalResidualCountPerSample: number;
+  readonly getNominalResidualCountPerSample: (options?: OptimizationOperandOptions) => number;
 }
-
-const RAY_FAN_SAMPLES_PER_AXIS = 21;
 
 export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMetadata> = [
   {
@@ -18,7 +21,7 @@ export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMet
     requiresTarget: true,
     defaultTarget: "100",
     expandsByFieldAndWavelength: false,
-    nominalResidualCountPerSample: 1,
+    getNominalResidualCountPerSample: () => 1,
   },
   {
     kind: "f_number",
@@ -26,7 +29,7 @@ export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMet
     requiresTarget: true,
     defaultTarget: "10",
     expandsByFieldAndWavelength: false,
-    nominalResidualCountPerSample: 1,
+    getNominalResidualCountPerSample: () => 1,
   },
   {
     kind: "opd_difference",
@@ -34,7 +37,7 @@ export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMet
     requiresTarget: true,
     defaultTarget: "0",
     expandsByFieldAndWavelength: true,
-    nominalResidualCountPerSample: 1,
+    getNominalResidualCountPerSample: () => 1,
   },
   {
     kind: "rms_spot_size",
@@ -42,7 +45,7 @@ export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMet
     requiresTarget: true,
     defaultTarget: "0",
     expandsByFieldAndWavelength: true,
-    nominalResidualCountPerSample: 1,
+    getNominalResidualCountPerSample: () => 1,
   },
   {
     kind: "rms_wavefront_error",
@@ -50,14 +53,15 @@ export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMet
     requiresTarget: true,
     defaultTarget: "0",
     expandsByFieldAndWavelength: true,
-    nominalResidualCountPerSample: 1,
+    getNominalResidualCountPerSample: () => 1,
   },
   {
     kind: "ray_fan",
     label: "Ray Fan",
     requiresTarget: false,
+    defaultOptions: { num_rays: 21 },
     expandsByFieldAndWavelength: true,
-    nominalResidualCountPerSample: RAY_FAN_SAMPLES_PER_AXIS * 2,
+    getNominalResidualCountPerSample: (options) => (options?.num_rays ?? 21) * 2,
   },
 ] as const;
 

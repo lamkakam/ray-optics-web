@@ -35,7 +35,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
-        optimizerMethod="lm"
+        canUseBounds={false}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
@@ -55,7 +55,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "variable", min: "1", max: "10" }}
-        optimizerMethod="lm"
+        canUseBounds={false}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
@@ -66,15 +66,13 @@ describe("OptimizationVariableModals", () => {
   });
 
   it("keeps pickup mode fields visible for lm", async () => {
-    const user = userEvent.setup();
-
     render(
       <RadiusModeModal
         isOpen
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
-        optimizerMethod="lm"
+        canUseBounds={false}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
@@ -214,7 +212,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
-        optimizerMethod="trf"
+        canUseBounds
         onSetMode={onSetMode}
         onClose={onClose}
       />,
@@ -243,7 +241,7 @@ describe("OptimizationVariableModals", () => {
           optimizationModel={model}
           surfaceIndex={1}
           selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
-          optimizerMethod="trf"
+          canUseBounds
           onSetMode={onSetMode}
           onClose={onClose}
         />
@@ -271,7 +269,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
-        optimizerMethod="trf"
+        canUseBounds
         onSetMode={onSetMode}
         onClose={onClose}
       />,
@@ -292,7 +290,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
-        optimizerMethod="trf"
+        canUseBounds
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
@@ -312,7 +310,7 @@ describe("OptimizationVariableModals", () => {
         optimizationModel={model}
         surfaceIndex={1}
         selectedMode={{ surfaceIndex: 1, mode: "variable", min: "-10000", max: "10000" }}
-        optimizerMethod="trf"
+        canUseBounds
         onSetMode={onSetMode}
         onClose={jest.fn()}
       />,
@@ -356,5 +354,69 @@ describe("OptimizationVariableModals", () => {
       max: "-10",
     });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders radius bounded or unbounded fields from canUseBounds alone", () => {
+    const { rerender } = render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        canUseBounds
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Min." })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Max." })).toBeInTheDocument();
+
+    rerender(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }}
+        canUseBounds={false}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox", { name: "Min." })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Max." })).not.toBeInTheDocument();
+  });
+
+  it("renders thickness bounded or unbounded fields from canUseBounds alone", () => {
+    const { rerender } = render(
+      <ThicknessModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "1", max: "10" }}
+        canUseBounds
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Thickness Min." })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Thickness Max." })).toBeInTheDocument();
+
+    rerender(
+      <ThicknessModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "1", max: "10" }}
+        canUseBounds={false}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox", { name: "Thickness Min." })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Thickness Max." })).not.toBeInTheDocument();
   });
 });
