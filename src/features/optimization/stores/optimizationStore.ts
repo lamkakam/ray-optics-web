@@ -12,6 +12,7 @@ import type {
 } from "@/shared/lib/types/optimization";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationMethodCapabilities } from "@/features/optimization/lib/methodCapabilities";
+import { formatOptimizerUiDefaultValue, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 
 type SharedOptimizerConfig = OptimizationConfig["optimizer"];
 type SharedSurfaceVariableConfig = Extract<OptimizationConfig["variables"][number], { readonly kind: "radius" | "thickness" }>;
@@ -621,6 +622,25 @@ function createThicknessModes(model: OpticalModel): RadiusMode[] {
   }));
 }
 
+function createDefaultOptimizerState(): OptimizationState["optimizer"] {
+  const optimizerConfig = OPTIMIZER_UI_CONFIG.least_squares;
+
+  return {
+    kind: "least_squares",
+    method: optimizerConfig.methods[0].kind,
+    maxNumSteps: "200",
+    meritFunctionTolerance: formatOptimizerUiDefaultValue(
+      optimizerConfig.tolerances.find(({ kind }) => kind === "ftol")!.default,
+    ),
+    independentVariableTolerance: formatOptimizerUiDefaultValue(
+      optimizerConfig.tolerances.find(({ kind }) => kind === "xtol")!.default,
+    ),
+    gradientTolerance: formatOptimizerUiDefaultValue(
+      optimizerConfig.tolerances.find(({ kind }) => kind === "gtol")!.default,
+    ),
+  };
+}
+
 function ensureSurfaceAsphere(surface: OpticalModel["surfaces"][number], state: AsphereOptimizationState): NonNullable<OpticalModel["surfaces"][number]["aspherical"]> | undefined {
   const existing = surface.aspherical;
   const type = state.type ?? existing?.kind;
@@ -744,14 +764,7 @@ function applyThicknessToModel(model: OpticalModel, surfaceIndex: number, value:
 export const createOptimizationSlice: StateCreator<OptimizationState> = (set, get) => ({
   activeTabId: "algorithm",
   optimizationModel: undefined,
-  optimizer: {
-    kind: "least_squares",
-    method: "trf",
-    maxNumSteps: "200",
-    meritFunctionTolerance: "1e-5",
-    independentVariableTolerance: "1e-5",
-    gradientTolerance: "1e-5",
-  },
+  optimizer: createDefaultOptimizerState(),
   fieldWeights: [],
   wavelengthWeights: [],
   radiusModes: [],

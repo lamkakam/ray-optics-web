@@ -48,6 +48,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `buildOptimizationConfig()` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
 - Store-local optimizer and surface-mode helper types derive shared contract fields from `shared/lib/types/optimization.ts` via indexed-access / `Extract` types, so the worker-boundary kind unions stay defined in one place.
 - Shared method capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the same least-squares rule set.
+- Default optimizer method and tolerance strings are seeded from `features/optimization/lib/optimizerUiConfig.ts` so the form defaults, labels, and capability rules stay aligned.
 - Shared validation for bounded variable ranges stays centralized so radius, thickness, and asphere variable entries continue to use the same `min < max` rule and error text when the active method requires bounds.
 - Surface pickup source-index validation stays centralized so radius and thickness pickups continue to share the same same-surface and out-of-range checks.
 

@@ -1,4 +1,5 @@
 import { createStore } from "zustand";
+import { formatOptimizerUiDefaultValue, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import {
   createOptimizationSlice,
@@ -174,9 +175,15 @@ describe("optimizationStore", () => {
     expect(state.optimizer.kind).toBe("least_squares");
     expect(state.optimizer.method).toBe("trf");
     expect(state.optimizer.maxNumSteps).toBe("200");
-    expect(state.optimizer.meritFunctionTolerance).toBe("1e-5");
-    expect(state.optimizer.independentVariableTolerance).toBe("1e-5");
-    expect(state.optimizer.gradientTolerance).toBe("1e-5");
+    expect(state.optimizer.meritFunctionTolerance).toBe(
+      formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[0].default),
+    );
+    expect(state.optimizer.independentVariableTolerance).toBe(
+      formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[1].default),
+    );
+    expect(state.optimizer.gradientTolerance).toBe(
+      formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[2].default),
+    );
     expect(state.fieldWeights).toEqual([1, 0, 0]);
     expect(state.wavelengthWeights).toEqual([1, 2, 1]);
     expect(state.radiusModes).toEqual([

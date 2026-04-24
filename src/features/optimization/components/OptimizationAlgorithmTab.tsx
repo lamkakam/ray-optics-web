@@ -4,6 +4,7 @@ import React from "react";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
+import { optimizerUiMetadataHasMethods, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 import type { LeastSquaresMethod, OptimizerKind } from "@/shared/lib/types/optimization";
 
 interface OptimizerFormState {
@@ -20,10 +21,28 @@ interface OptimizationAlgorithmTabProps {
   readonly onChangeOptimizer: (patch: Partial<OptimizerFormState>) => void;
 }
 
+const TOLERANCE_FIELD_BY_KIND = {
+  ftol: "meritFunctionTolerance",
+  xtol: "independentVariableTolerance",
+  gtol: "gradientTolerance",
+} satisfies Record<
+  (typeof OPTIMIZER_UI_CONFIG)["least_squares"]["tolerances"][number]["kind"],
+  keyof Pick<
+    OptimizerFormState,
+    "meritFunctionTolerance" | "independentVariableTolerance" | "gradientTolerance"
+  >
+>;
+
 export function OptimizationAlgorithmTab({
   optimizer,
   onChangeOptimizer,
 }: OptimizationAlgorithmTabProps) {
+  const optimizerConfig = OPTIMIZER_UI_CONFIG[optimizer.kind];
+
+  if (!optimizerUiMetadataHasMethods(optimizerConfig)) {
+    throw new Error(`Optimizer kind "${optimizer.kind}" does not expose method options.`);
+  }
+
   return (
     <div data-testid="optimization-algorithm-tab" className="grid gap-4 md:grid-cols-2">
       <div>
@@ -32,7 +51,10 @@ export function OptimizationAlgorithmTab({
           id="optimizer-kind"
           aria-label="Optimizer Kind"
           value={optimizer.kind}
-          options={[{ label: "Least Squares", value: "least_squares" }]}
+          options={Object.entries(OPTIMIZER_UI_CONFIG).map(([kind, config]) => ({
+            label: config.label,
+            value: kind,
+          }))}
           onChange={() => undefined}
         />
       </div>
@@ -42,10 +64,7 @@ export function OptimizationAlgorithmTab({
           id="optimizer-method"
           aria-label="Method"
           value={optimizer.method}
-          options={[
-            { label: "Trust Region Reflective", value: "trf" },
-            { label: "Levenberg-Marquardt", value: "lm" },
-          ]}
+          options={optimizerConfig.methods.map((method) => ({ label: method.label, value: method.kind }))}
           onChange={(event) => onChangeOptimizer({ method: event.target.value as LeastSquaresMethod })}
         />
       </div>
@@ -58,33 +77,21 @@ export function OptimizationAlgorithmTab({
           onChange={(event) => onChangeOptimizer({ maxNumSteps: event.target.value })}
         />
       </div>
-      <div>
-        <Label htmlFor="optimizer-ftol">Merit function change tolerance</Label>
-        <Input
-          id="optimizer-ftol"
-          aria-label="Merit function change tolerance"
-          value={optimizer.meritFunctionTolerance}
-          onChange={(event) => onChangeOptimizer({ meritFunctionTolerance: event.target.value })}
-        />
-      </div>
-      <div>
-        <Label htmlFor="optimizer-xtol">Independent variable change tolerance</Label>
-        <Input
-          id="optimizer-xtol"
-          aria-label="Independent variable change tolerance"
-          value={optimizer.independentVariableTolerance}
-          onChange={(event) => onChangeOptimizer({ independentVariableTolerance: event.target.value })}
-        />
-      </div>
-      <div>
-        <Label htmlFor="optimizer-gtol">Gradient tolerance</Label>
-        <Input
-          id="optimizer-gtol"
-          aria-label="Gradient tolerance"
-          value={optimizer.gradientTolerance}
-          onChange={(event) => onChangeOptimizer({ gradientTolerance: event.target.value })}
-        />
-      </div>
+      {optimizerConfig.tolerances.map((tolerance) => {
+        const field = TOLERANCE_FIELD_BY_KIND[tolerance.kind];
+
+        return (
+          <div key={tolerance.kind}>
+            <Label htmlFor={`optimizer-${tolerance.kind}`}>{tolerance.label}</Label>
+            <Input
+              id={`optimizer-${tolerance.kind}`}
+              aria-label={tolerance.label}
+              value={optimizer[field]}
+              onChange={(event) => onChangeOptimizer({ [field]: event.target.value })}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
