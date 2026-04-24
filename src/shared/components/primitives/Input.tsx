@@ -22,7 +22,10 @@ const BASE_CLASSES = [
 ] as const;
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  function Input({ className, variant = "default", ...rest }, ref) {
+  function Input(
+    { autoComplete = "off", className, variant = "default", ...rest },
+    ref,
+  ) {
     const sizeClasses =
       variant === "compact"
         ? [
@@ -40,6 +43,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         ref={ref}
         className={clsx(BASE_CLASSES, sizeClasses, className)}
+        autoComplete={autoComplete}
         {...rest}
       />
     );

@@ -84,6 +84,16 @@ describe("Input", () => {
     expect(screen.getByRole("textbox")).toHaveAttribute("type", "email");
   });
 
+  it("defaults autocomplete to off", () => {
+    render(<Input aria-label="test" />);
+    expect(screen.getByRole("textbox")).toHaveAttribute("autocomplete", "off");
+  });
+
+  it("allows callers to override autocomplete", () => {
+    render(<Input aria-label="test" autoComplete="email" />);
+    expect(screen.getByRole("textbox")).toHaveAttribute("autocomplete", "email");
+  });
+
   it("merges extra className", () => {
     render(<Input aria-label="test" className="w-24 mb-2" />);
     const el = screen.getByRole("textbox");
