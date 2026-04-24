@@ -1,48 +1,48 @@
 import type { OptimizationConfig, OptimizerKind } from "@/shared/lib/types/optimization";
 
 type SharedOptimizerConfig = OptimizationConfig["optimizer"];
-type SharedOptimizerConfigByKind<TKind extends string> = Extract<SharedOptimizerConfig, { readonly kind: TKind }>;
+type SharedOptimizerConfigByKind<TKind extends OptimizerKind> = Extract<SharedOptimizerConfig, { readonly kind: TKind }>;
 
-type OptimizerMethodKind<TKind extends string> =
+type OptimizerMethodKind<TKind extends OptimizerKind> =
   SharedOptimizerConfigByKind<TKind> extends { readonly method: infer TMethod extends string } ? TMethod : never;
-type OptimizerToleranceKind<TKind extends string> = Exclude<
+type OptimizerToleranceKind<TKind extends OptimizerKind> = Exclude<
   keyof SharedOptimizerConfigByKind<TKind>,
   "kind" | "method" | "max_nfev"
 >;
 
-export interface OptimizerMethodUiConfig<TKind extends string> {
+export interface OptimizerMethodUiConfig<TKind extends OptimizerKind> {
   readonly kind: OptimizerMethodKind<TKind>;
   readonly label: string;
   readonly canUseBounds: boolean;
   readonly requiresResidualCountAtLeastVariableCount: boolean;
 }
 
-export interface OptimizerToleranceUiConfig<TKind extends string> {
+export interface OptimizerToleranceUiConfig<TKind extends OptimizerKind> {
   readonly kind: OptimizerToleranceKind<TKind>;
   readonly label: string;
   readonly default: number;
 }
 
-interface BaseOptimizerUiMetadata<TKind extends string> {
+interface BaseOptimizerUiMetadata<TKind extends OptimizerKind> {
   readonly label: string;
   readonly tolerances: ReadonlyArray<OptimizerToleranceUiConfig<TKind>>;
 }
 
-export interface OptimizerUiMetadataWithMethods<TKind extends string> extends BaseOptimizerUiMetadata<TKind> {
+export interface OptimizerUiMetadataWithMethods<TKind extends OptimizerKind> extends BaseOptimizerUiMetadata<TKind> {
   readonly methods: ReadonlyArray<OptimizerMethodUiConfig<TKind>>;
 }
 
-export interface OptimizerUiMetadataWithoutMethods<TKind extends string> extends BaseOptimizerUiMetadata<TKind> {
+export interface OptimizerUiMetadataWithoutMethods<TKind extends OptimizerKind> extends BaseOptimizerUiMetadata<TKind> {
   readonly canUseBounds: boolean;
   readonly requiresResidualCountAtLeastVariableCount: boolean;
   readonly methods?: undefined;
 }
 
-export type OptimizerUiMetadata<TKind extends string> =
+export type OptimizerUiMetadata<TKind extends OptimizerKind> =
   | OptimizerUiMetadataWithMethods<TKind>
   | OptimizerUiMetadataWithoutMethods<TKind>;
 
-export function optimizerUiMetadataHasMethods<TKind extends string>(
+export function optimizerUiMetadataHasMethods<TKind extends OptimizerKind>(
   metadata: OptimizerUiMetadata<TKind>,
 ): metadata is OptimizerUiMetadataWithMethods<TKind> {
   return metadata.methods !== undefined;
