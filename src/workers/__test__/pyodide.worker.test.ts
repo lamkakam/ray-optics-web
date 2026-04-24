@@ -543,9 +543,25 @@ describe("init", () => {
 
   it("constructs wheel URL with base path", async () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/ray-optics-web";
-    // Re-init to pick up the env var
-    _resetPyodideForTesting();
+    const scripts: string[] = [];
+    const loadPackage = jest.fn().mockResolvedValue(undefined);
+    const runPythonAsync = jest.fn().mockImplementation(async (code: string) => {
+      scripts.push(code);
+      return undefined;
+    });
+    (global as unknown as Record<string, unknown>).loadPyodide = jest.fn().mockResolvedValue({
+      loadPackage,
+      runPythonAsync,
+      globals: new Map(),
+      FS: {
+        mkdirTree: jest.fn(),
+        writeFile: jest.fn(),
+      },
+    });
+
     await init();
-    // The wheel URL construction is tested implicitly via _init tests
+
+    expect(loadPackage).toHaveBeenCalled();
+    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.2.16-py3-none-any.whl", deps=False)');
   });
 });
