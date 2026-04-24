@@ -82,7 +82,7 @@ export const componentTokens = {
     style: {
       borderRadius: "rounded-lg",
       fontWeight: "font-medium",
-      opacity: "disabled:opacity-50",
+      opacity: g.style.opacity,
       cursor: "cursor-pointer disabled:cursor-not-allowed",
     },
   },
@@ -110,6 +110,8 @@ export const componentTokens = {
       borderStyle: "border",
       outlineStyle: "outline-none",
       transitionStyle: "transition",
+      opacity: g.style.opacity,
+      cursor: g.style.cursor,
     },
   },
 

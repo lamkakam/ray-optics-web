@@ -11,6 +11,8 @@ const BASE_CLASSES = [
   cx.input.style.borderStyle,
   cx.input.style.outlineStyle,
   cx.input.style.transitionStyle,
+  cx.input.style.opacity,
+  cx.input.style.cursor,
   cx.input.size.defaultWidth,
   cx.input.size.focusRingWidth,
   cx.input.color.focusRingColor,
@@ -20,7 +22,10 @@ const BASE_CLASSES = [
 ] as const;
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  function Input({ className, variant = "default", ...rest }, ref) {
+  function Input(
+    { autoComplete = "off", className, variant = "default", ...rest },
+    ref,
+  ) {
     const sizeClasses =
       variant === "compact"
         ? [
@@ -38,6 +43,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         ref={ref}
         className={clsx(BASE_CLASSES, sizeClasses, className)}
+        autoComplete={autoComplete}
         {...rest}
       />
     );

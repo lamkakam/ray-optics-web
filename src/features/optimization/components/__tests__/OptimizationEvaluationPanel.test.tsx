@@ -1,13 +1,27 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { OptimizationEvaluationPanel } from "@/features/optimization/components/OptimizationEvaluationPanel";
+import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 describe("OptimizationEvaluationPanel", () => {
   it("renders the empty state when there are no rows", () => {
     render(<OptimizationEvaluationPanel rows={[]} isEvaluating={false} />);
 
     expect(screen.getByText("Operand Evaluation")).toBeInTheDocument();
-    expect(screen.getByText("Evaluation results appear here when the current optimization config is valid.")).toBeInTheDocument();
+    const emptyState = screen.getByText(
+      "Evaluation results appear here when the current optimization config is valid.",
+    );
+    expect(emptyState).toBeInTheDocument();
+    expect(emptyState).toHaveClass("px-4", "py-3");
+    cx.text.color.placeholderTextColor.split(" ").forEach((token) => {
+      expect(emptyState).toHaveClass(token);
+    });
+    cx.text.size.placeholderFontSize.split(" ").forEach((token) => {
+      expect(emptyState).toHaveClass(token);
+    });
+    cx.text.color.bodyTextColor.split(" ").forEach((token) => {
+      expect(emptyState).not.toHaveClass(token);
+    });
     expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
   });
 

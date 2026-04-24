@@ -21,7 +21,9 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 ## Key Behaviors
 
 - Implemented as `React.forwardRef` so it can be used inside forms and AG Grid cell editors.
-- Base classes (border, background, text color, focus ring) are always applied; only padding and font size differ between variants.
+- Defaults `autoComplete` to `"off"` to suppress browser autofill on shared form inputs, while still honoring any explicit `autoComplete` prop passed by the caller.
+- Base classes (border, background, text color, focus ring, and disabled-state opacity/cursor tokens) are always applied; only padding and font size differ between variants.
+- Disabled styling is tokenized via `cx.input.style.opacity` and `cx.input.style.cursor`, which mirror the shared disabled behavior used by `Select`.
 
 ## Usages
 

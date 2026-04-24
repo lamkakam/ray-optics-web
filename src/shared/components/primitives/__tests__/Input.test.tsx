@@ -31,6 +31,8 @@ describe("Input", () => {
       cx.input.style.borderStyle,
       cx.input.style.outlineStyle,
       cx.input.style.transitionStyle,
+      cx.input.style.opacity,
+      cx.input.style.cursor,
       cx.input.size.defaultWidth,
       cx.input.size.focusRingWidth,
       cx.input.color.focusRingColor,
@@ -67,7 +69,9 @@ describe("Input", () => {
 
   it("forwards disabled", () => {
     render(<Input aria-label="test" disabled />);
-    expect(screen.getByRole("textbox")).toBeDisabled();
+    const el = screen.getByRole("textbox");
+    expect(el).toBeDisabled();
+    expectClasses(el, cx.input.style.opacity, cx.input.style.cursor);
   });
 
   it("forwards placeholder", () => {
@@ -78,6 +82,16 @@ describe("Input", () => {
   it("forwards type", () => {
     render(<Input aria-label="test" type="email" />);
     expect(screen.getByRole("textbox")).toHaveAttribute("type", "email");
+  });
+
+  it("defaults autocomplete to off", () => {
+    render(<Input aria-label="test" />);
+    expect(screen.getByRole("textbox")).toHaveAttribute("autocomplete", "off");
+  });
+
+  it("allows callers to override autocomplete", () => {
+    render(<Input aria-label="test" autoComplete="email" />);
+    expect(screen.getByRole("textbox")).toHaveAttribute("autocomplete", "email");
   });
 
   it("merges extra className", () => {
