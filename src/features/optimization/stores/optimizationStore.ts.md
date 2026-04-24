@@ -46,6 +46,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Internal Structure
 
 - `buildOptimizationConfig()` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
+- Store-local optimizer and surface-mode helper types derive shared contract fields from `shared/lib/types/optimization.ts` via indexed-access / `Extract` types, so the worker-boundary kind unions stay defined in one place.
 - Shared method capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the same least-squares rule set.
 - Shared validation for bounded variable ranges stays centralized so radius, thickness, and asphere variable entries continue to use the same `min < max` rule and error text when the active method requires bounds.
 - Surface pickup source-index validation stays centralized so radius and thickness pickups continue to share the same same-surface and out-of-range checks.
@@ -77,3 +78,4 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared method-capability helper and the nominal expanded merit-function sample count. `ray_fan` contributes `num_rays * 2` residuals per selected field/wavelength pair and defaults to `options.num_rays = 21`.
 - `applyOptimizationResult()` can create or update `surface.aspherical` on the optimization-local optical model when optimized asphere results come back from Python.
 - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
+- `RadiusMode`, `RadiusModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.
