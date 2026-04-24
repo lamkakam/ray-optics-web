@@ -4,7 +4,7 @@ import React from "react";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
-import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
+import { optimizerUiMetadataHasMethods, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 import type { LeastSquaresMethod, OptimizerKind } from "@/shared/lib/types/optimization";
 
 interface OptimizerFormState {
@@ -38,6 +38,10 @@ export function OptimizationAlgorithmTab({
   onChangeOptimizer,
 }: OptimizationAlgorithmTabProps) {
   const optimizerConfig = OPTIMIZER_UI_CONFIG[optimizer.kind];
+
+  if (!optimizerUiMetadataHasMethods(optimizerConfig)) {
+    throw new Error(`Optimizer kind "${optimizer.kind}" does not expose method options.`);
+  }
 
   return (
     <div data-testid="optimization-algorithm-tab" className="grid gap-4 md:grid-cols-2">
