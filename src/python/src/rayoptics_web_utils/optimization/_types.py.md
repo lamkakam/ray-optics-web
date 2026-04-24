@@ -28,8 +28,9 @@ class OptimizationProblemProtocol(Protocol): ...
 
 - Separates user-facing config inputs from normalized internal config shapes, including optional operand targets for target-less operands.
 - Uses discriminated target and pickup unions so per-kind keys such as `coefficient_index` are explicit.
-- Variable typed dicts allow optional `min` / `max` so normalized configs can represent bounded `trf` variables and unbounded `lm` variables with one shared union.
+- Variable typed dicts allow optional `min` / `max` so normalized configs can represent bounded `trf` / `differential_evolution` variables and unbounded `lm` variables with one shared union.
 - Captures the existing JSON-serialisable result payload shape in concrete report/progress typed dicts; residual entries may omit `target`.
+- Optimizer and solver typed dicts allow solver-specific optional fields such as `method`, `njev`, `cost`, `optimality`, and `nit` instead of forcing every solver through the least-squares shape.
 - Operand evaluators may return either one scalar residual or a list of residual samples.
 - Snapshot entries preserve both the original mutable target descriptor and its value so rollback can restore asphere targets without losing `asphere_kind`.
-- Keeps solver adapters decoupled from the concrete `OptimizationProblem` class via a small protocol.
+- Keeps solver adapters decoupled from the concrete `OptimizationProblem` class via a small protocol that exposes both residual-vector and scalar-merit objectives.

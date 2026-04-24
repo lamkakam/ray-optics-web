@@ -13,3 +13,4 @@ Operand-based optimization helpers for RayOptics optical models.
 - [progress.py](./progress.py.md) — Solver-independent progress tracking
 - [solvers/base.py](./solvers/base.py.md) — Solver adapter contract
 - [solvers/least_squares.py](./solvers/least_squares.py.md) — SciPy least-squares adapter
+- [solvers/differential_evolution.py](./solvers/differential_evolution.py.md) — SciPy differential-evolution adapter

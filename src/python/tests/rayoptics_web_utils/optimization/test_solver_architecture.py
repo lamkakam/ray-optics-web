@@ -85,6 +85,58 @@ def test_optimize_opm_dispatches_through_solver_registry(monkeypatch, cooke_trip
     assert result["message"] == "stub"
 
 
+def test_optimize_opm_dispatches_differential_evolution_through_solver_registry(monkeypatch, cooke_triplet):
+    import rayoptics_web_utils.optimization.optimization as optimization_module
+
+    captured = {}
+    original_image_distance = cooke_triplet["seq_model"].gaps[6].thi
+    config = {
+        "optimizer": {"kind": "differential_evolution", "maxiter": 3},
+        "variables": [
+            {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+        ],
+        "pickups": [],
+        "merit_function": {
+            "operands": [
+                {
+                    "kind": "focal_length",
+                    "target": 90.0,
+                    "weight": 1.0,
+                }
+            ]
+        },
+    }
+
+    class FakeSolver:
+        def __init__(self, problem):
+            captured["problem"] = problem
+
+        def solve(self, progress_reporter=None):
+            captured["progress_reporter"] = progress_reporter
+            return {
+                "x": np.array([42.0]),
+                "success": True,
+                "status": 9,
+                "message": "stub de",
+                "nfev": 4,
+                "nit": 2,
+            }
+
+    monkeypatch.setitem(optimization_module._SOLVER_REGISTRY, "differential_evolution", FakeSolver)
+
+    try:
+        result = optimization_module.optimize_opm(cooke_triplet, config)
+    finally:
+        cooke_triplet["seq_model"].gaps[6].thi = original_image_distance
+        cooke_triplet.update_model()
+
+    assert captured["problem"].optimizer["kind"] == "differential_evolution"
+    assert "method" not in captured["problem"].optimizer
+    assert result["success"] is True
+    assert result["status"] == 9
+    assert result["message"] == "stub de"
+
+
 def test_least_squares_adapter_calls_scipy_with_problem_interfaces(monkeypatch, cooke_triplet, optimization_config):
     from rayoptics_web_utils.optimization.problem import OptimizationProblem
     from rayoptics_web_utils.optimization.solvers.least_squares import LeastSquaresSolver
@@ -164,6 +216,135 @@ def test_least_squares_adapter_omits_bounds_for_lm(monkeypatch, cooke_triplet, o
     assert captured["func"] == problem.residual_objective
     assert captured["method"] == "lm"
     assert "bounds" not in captured["kwargs"]
+
+
+def test_differential_evolution_adapter_calls_scipy_with_scalar_objective_and_bounds(monkeypatch, cooke_triplet):
+    from rayoptics_web_utils.optimization.problem import OptimizationProblem
+    from rayoptics_web_utils.optimization.solvers.differential_evolution import DifferentialEvolutionSolver
+
+    captured = {}
+    config = {
+        "optimizer": {"kind": "differential_evolution"},
+        "variables": [
+            {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0},
+            {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+        ],
+        "pickups": [],
+        "merit_function": {
+            "operands": [
+                {
+                    "kind": "focal_length",
+                    "target": 90.0,
+                    "weight": 1.0,
+                }
+            ]
+        },
+    }
+    problem = OptimizationProblem(cooke_triplet, config)
+
+    def fake_differential_evolution(
+        func,
+        bounds,
+        strategy,
+        maxiter,
+        popsize,
+        tol,
+        mutation,
+        recombination,
+        seed,
+        polish,
+        init,
+        atol,
+    ):
+        captured["func"] = func
+        captured["bounds"] = bounds
+        captured["strategy"] = strategy
+        captured["maxiter"] = maxiter
+        captured["popsize"] = popsize
+        captured["tol"] = tol
+        captured["mutation"] = mutation
+        captured["recombination"] = recombination
+        captured["seed"] = seed
+        captured["polish"] = polish
+        captured["init"] = init
+        captured["atol"] = atol
+
+        class _Result:
+            x = np.array([0.03, 42.0])
+            success = True
+            status = 1
+            message = "ok"
+            nfev = 8
+            nit = 3
+
+        return _Result()
+
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.solvers.differential_evolution.differential_evolution",
+        fake_differential_evolution,
+    )
+
+    result = DifferentialEvolutionSolver(problem).solve()
+    lower, upper = problem.bounds()
+
+    assert result["success"] is True
+    assert captured["func"] == problem.scalar_objective
+    assert captured["bounds"] == list(zip(lower.tolist(), upper.tolist(), strict=True))
+
+
+def test_differential_evolution_adapter_forwards_supported_kwargs_with_defaults(monkeypatch, cooke_triplet):
+    from rayoptics_web_utils.optimization.problem import OptimizationProblem
+    from rayoptics_web_utils.optimization.solvers.differential_evolution import DifferentialEvolutionSolver
+
+    captured = {}
+    config = {
+        "optimizer": {"kind": "differential_evolution"},
+        "variables": [
+            {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+        ],
+        "pickups": [],
+        "merit_function": {
+            "operands": [
+                {
+                    "kind": "focal_length",
+                    "target": 90.0,
+                    "weight": 1.0,
+                }
+            ]
+        },
+    }
+    problem = OptimizationProblem(cooke_triplet, config)
+
+    def fake_differential_evolution(**kwargs):
+        captured.update(kwargs)
+
+        class _Result:
+            x = np.array([42.0])
+            success = True
+            status = 1
+            message = "ok"
+            nfev = 2
+            nit = 1
+
+        return _Result()
+
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.solvers.differential_evolution.differential_evolution",
+        fake_differential_evolution,
+    )
+
+    DifferentialEvolutionSolver(problem).solve()
+
+    assert captured["strategy"] == "best1bin"
+    assert captured["maxiter"] == 1000
+    assert captured["popsize"] == 15
+    assert captured["tol"] == pytest.approx(0.01)
+    assert captured["mutation"] == (0.5, 1)
+    assert captured["recombination"] == pytest.approx(0.7)
+    assert captured["seed"] is None
+    assert captured["polish"] is True
+    assert captured["init"] == "latinhypercube"
+    assert captured["atol"] == pytest.approx(0.0)
 
 
 def test_compute_ray_fan_uses_operand_num_rays_for_padding(monkeypatch):

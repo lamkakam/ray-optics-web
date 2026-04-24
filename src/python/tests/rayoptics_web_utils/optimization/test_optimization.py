@@ -91,6 +91,32 @@ class TestEvaluateOptimizationProblem:
             }
         ]
 
+    def test_accepts_differential_evolution_without_method(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "differential_evolution", "maxiter": 3},
+                "variables": [
+                    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 100.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert report["optimizer"]["kind"] == "differential_evolution"
+        assert "method" not in report["optimizer"]
+
     def test_rejects_trf_variables_without_bounds(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
 
@@ -101,6 +127,54 @@ class TestEvaluateOptimizationProblem:
                     "optimizer": {"kind": "least_squares", "method": "trf"},
                     "variables": [
                         {"kind": "thickness", "surface_index": 6},
+                    ],
+                    "pickups": [],
+                    "merit_function": {
+                        "operands": [
+                            {
+                                "kind": "focal_length",
+                                "target": 100.0,
+                                "weight": 1.0,
+                            }
+                        ]
+                    },
+                },
+            )
+
+    def test_rejects_differential_evolution_variables_without_bounds(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        with pytest.raises(ValueError, match="Differential evolution variables must provide finite min and max bounds"):
+            evaluate_optimization_problem(
+                fresh_cooke_triplet,
+                {
+                    "optimizer": {"kind": "differential_evolution"},
+                    "variables": [
+                        {"kind": "thickness", "surface_index": 6},
+                    ],
+                    "pickups": [],
+                    "merit_function": {
+                        "operands": [
+                            {
+                                "kind": "focal_length",
+                                "target": 100.0,
+                                "weight": 1.0,
+                            }
+                        ]
+                    },
+                },
+            )
+
+    def test_rejects_differential_evolution_variables_with_non_finite_bounds(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        with pytest.raises(ValueError, match="Differential evolution variables must provide finite min and max bounds"):
+            evaluate_optimization_problem(
+                fresh_cooke_triplet,
+                {
+                    "optimizer": {"kind": "differential_evolution"},
+                    "variables": [
+                        {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": float("inf")},
                     ],
                     "pickups": [],
                     "merit_function": {
@@ -595,6 +669,55 @@ class TestEvaluateOptimizationProblem:
 
 
 class TestOptimizeOpm:
+    def test_reports_differential_evolution_metadata_without_method(self, monkeypatch, fresh_cooke_triplet):
+        import numpy as np
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        config = {
+            "optimizer": {"kind": "differential_evolution", "maxiter": 3},
+            "variables": [
+                {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+            ],
+            "pickups": [],
+            "merit_function": {
+                "operands": [
+                    {
+                        "kind": "focal_length",
+                        "target": 90.0,
+                        "weight": 1.0,
+                    }
+                ]
+            },
+        }
+
+        class FakeSolver:
+            def __init__(self, problem):
+                self.problem = problem
+
+            def solve(self, progress_reporter=None):
+                del progress_reporter
+                return {
+                    "x": np.array([42.0]),
+                    "success": True,
+                    "status": 5,
+                    "message": "de ok",
+                    "nfev": 6,
+                    "nit": 4,
+                }
+
+        monkeypatch.setitem(optimization_module._SOLVER_REGISTRY, "differential_evolution", FakeSolver)
+
+        report = optimize_opm(fresh_cooke_triplet, config)
+
+        assert report["optimizer"]["kind"] == "differential_evolution"
+        assert "method" not in report["optimizer"]
+        assert report["optimizer"]["nfev"] == 6
+        assert report["optimizer"]["nit"] == 4
+        assert "njev" not in report["optimizer"]
+        assert "cost" not in report["optimizer"]
+        assert "optimality" not in report["optimizer"]
+
     def test_optimizes_image_distance_to_reduce_rms_spot(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_opm
 

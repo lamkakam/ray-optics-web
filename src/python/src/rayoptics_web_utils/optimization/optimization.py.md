@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provides the public compatibility facade for the optimization package. The public API still accepts JSON-encodable config dicts, supports affine pickups for geometric and aspheric targets, evaluates operand-based merit functions, and runs SciPy least-squares optimization, but the implementation is now split into algorithm-agnostic problem/config/target modules plus solver adapters.
+Provides the public compatibility facade for the optimization package. The public API still accepts JSON-encodable config dicts, supports affine pickups for geometric and aspheric targets, evaluates operand-based merit functions, and runs SciPy-backed optimization through solver adapters, including least-squares and differential evolution.
 
 `opm` is typed as `rayoptics.environment.OpticalModel`.
 
@@ -69,8 +69,9 @@ Both return JSON-serialisable dicts containing:
 ### Optimizer
 
 - `least_squares`
+- `differential_evolution`
 
-The public facade is now backed by an internal solver registry. Only `least_squares` is registered in this refactor, but the core now exposes both residual-vector and scalar-merit objective hooks for future solvers.
+The public facade is backed by an internal solver registry. `least_squares` uses the residual-vector objective and `differential_evolution` uses the scalar sum-of-squares objective.
 
 ### Variables / Pickups
 
@@ -81,7 +82,7 @@ The public facade is now backed by an internal solver registry. Only `least_squa
 - `asphere_toric_sweep_radius` — reads/writes `profile.cR` for `XToroid` / `YToroid`
 - Radius variables remain radius-based in the public config and report payloads, but SciPy optimizes them internally in curvature space (`c = 1 / R`, with planar `R = 0` mapped to `c = 0`) to avoid the singular numeric behavior around flat surfaces.
 - Asphere variables and pickups stay in direct value space; only radius variables are transformed internally.
-- Bounded methods such as `trf` expect variable `min` / `max`; unbounded methods such as `lm` may omit them.
+- Bounded methods such as `trf` and global optimizers such as `differential_evolution` expect variable `min` / `max`; unbounded methods such as `lm` may omit them.
 
 ### Operands
 
@@ -132,6 +133,7 @@ weighted_residual = total_weight * (actual_value - target)
 - `progress.py` — solver-independent progress tracking
 - `solvers/base.py` — solver adapter contract
 - `solvers/least_squares.py` — current SciPy least-squares adapter
+- `solvers/differential_evolution.py` — SciPy differential-evolution adapter
 
 ## Algorithm
 
@@ -148,7 +150,7 @@ weighted_residual = total_weight * (actual_value - target)
 
 - Owns normalized optimizer state, variable/pickup application, merit evaluation, scalar and residual objectives, and solver-independent progress tracking.
 - `residual_objective(vector)` evaluates one optimizer step and converts the merit report into the residual vector consumed by least-squares-style solvers.
-- `scalar_objective(vector)` evaluates one optimizer step and returns `merit_function["sum_of_squares"]` for future scalar/global optimizers.
+- `scalar_objective(vector)` evaluates one optimizer step and returns `merit_function["sum_of_squares"]` for scalar/global optimizers such as differential evolution.
 - Both objective methods record merit-history entries whenever the incoming variable vector differs materially from the last recorded vector.
 - Residual evaluation failures return a large penalty residual vector with the nominal expanded length (`1e6` per residual sample, minimum length 1); scalar evaluation failures return `1e6`.
 - For radius variables, `current_vector()`, bounded `bounds()`, and `apply_vector(...)` all translate between external radius units and the internal curvature-space optimizer vector.
@@ -159,11 +161,18 @@ weighted_residual = total_weight * (actual_value - target)
 - Supplies SciPy bounds only when the selected least-squares method is bounded (`trf`); `lm` runs without a `bounds` argument.
 - Normalizes the SciPy result into the mapping consumed by `optimize_opm(...)`.
 
+### `DifferentialEvolutionSolver`
+
+- Runs `scipy.optimize.differential_evolution(...)` using the stored optimizer configuration and `OptimizationProblem.scalar_objective(...)`.
+- Converts `OptimizationProblem.bounds()` into the per-dimension `(min, max)` sequence required by SciPy differential evolution.
+- Supports SciPy 1.14.1-compatible DE options: `strategy`, `maxiter`, `popsize`, `tol`, `mutation`, `recombination`, `seed`, `polish`, `init`, and `atol`.
+- Normalizes the SciPy result into the mapping consumed by `optimize_opm(...)`, carrying solver-specific metadata such as `nfev` and `nit`.
+
 ### `optimize_opm(opm, config)`
 
 1. Validates and normalizes the config.
 2. Snapshots all variable/pickup targets before mutation.
-3. Builds the current variable vector and, for bounded methods, bounds from the config.
+3. Builds the current variable vector and, for bounded solvers, bounds from the config.
 4. Selects the registered solver adapter for `optimizer.kind` and delegates execution to it.
 5. Each objective evaluation:
    - is handled by `_OptimizationProblem.objective(vector)`
@@ -171,7 +180,7 @@ weighted_residual = total_weight * (actual_value - target)
    - applies pickups
    - calls `opm.update_model()`
    - evaluates operand residuals
-6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) so SciPy can continue.
+6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) for residual solvers or a scalar `1e6` penalty for scalar solvers so SciPy can continue.
 7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`.
 8. If SciPy setup or the final evaluation fails, restores the snapshotted state and re-raises.
 
