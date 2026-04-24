@@ -11,6 +11,8 @@ const BASE_CLASSES = [
   cx.input.style.borderStyle,
   cx.input.style.outlineStyle,
   cx.input.style.transitionStyle,
+  cx.input.style.opacity,
+  cx.input.style.cursor,
   cx.input.size.defaultWidth,
   cx.input.size.focusRingWidth,
   cx.input.color.focusRingColor,

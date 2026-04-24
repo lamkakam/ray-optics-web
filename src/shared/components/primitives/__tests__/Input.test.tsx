@@ -31,6 +31,8 @@ describe("Input", () => {
       cx.input.style.borderStyle,
       cx.input.style.outlineStyle,
       cx.input.style.transitionStyle,
+      cx.input.style.opacity,
+      cx.input.style.cursor,
       cx.input.size.defaultWidth,
       cx.input.size.focusRingWidth,
       cx.input.color.focusRingColor,
@@ -67,7 +69,9 @@ describe("Input", () => {
 
   it("forwards disabled", () => {
     render(<Input aria-label="test" disabled />);
-    expect(screen.getByRole("textbox")).toBeDisabled();
+    const el = screen.getByRole("textbox");
+    expect(el).toBeDisabled();
+    expectClasses(el, cx.input.style.opacity, cx.input.style.cursor);
   });
 
   it("forwards placeholder", () => {

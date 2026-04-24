@@ -110,6 +110,8 @@ export const componentTokens = {
       borderStyle: "border",
       outlineStyle: "outline-none",
       transitionStyle: "transition",
+      opacity: g.style.opacity,
+      cursor: g.style.cursor,
     },
   },
 
