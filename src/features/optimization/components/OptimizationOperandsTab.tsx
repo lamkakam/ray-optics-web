@@ -6,6 +6,7 @@ import { AllCommunityModule, type ColDef } from "ag-grid-community";
 import type { OptimizationOperandKind } from "@/shared/lib/types/optimization";
 import type { OptimizationOperandRow } from "@/features/optimization/stores/optimizationStore";
 import { getOperandLabel } from "@/features/optimization/components/optimizationViewModels";
+import { OPTIMIZATION_OPERAND_METADATA, getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { Button } from "@/shared/components/primitives/Button";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 
@@ -30,7 +31,7 @@ export function OptimizationOperandsTab({
       editable: true,
       cellEditor: "agSelectCellEditor",
       cellEditorParams: {
-        values: ["focal_length", "f_number", "opd_difference", "rms_spot_size", "rms_wavefront_error"],
+        values: OPTIMIZATION_OPERAND_METADATA.map((metadata) => metadata.kind),
       },
       valueGetter: (params) => params.data?.kind,
       valueFormatter: (params) => getOperandLabel(params.value as OptimizationOperandKind),
@@ -45,10 +46,21 @@ export function OptimizationOperandsTab({
     },
     {
       headerName: "Target",
-      editable: true,
-      valueGetter: (params) => params.data?.target,
+      editable: (params) =>
+        params.data !== undefined
+        && getOptimizationOperandMetadata(params.data.kind).requiresTarget,
+      valueGetter: (params) => {
+        if (params.data === undefined) {
+          return undefined;
+        }
+        return getOptimizationOperandMetadata(params.data.kind).requiresTarget ? params.data.target : "N/A";
+      },
       valueSetter: (params) => {
         if (params.data === undefined) {
+          return false;
+        }
+
+        if (!getOptimizationOperandMetadata(params.data.kind).requiresTarget) {
           return false;
         }
 

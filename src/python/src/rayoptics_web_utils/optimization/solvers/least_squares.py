@@ -14,18 +14,22 @@ class LeastSquaresSolver(SolverAdapter):
 
     def solve(self, progress_reporter: ProgressReporter | None = None) -> SolverResult:
         x0 = self.problem.current_vector()
-        lower, upper = self.problem.bounds()
         self.problem._progress_reporter = progress_reporter
         try:
+            least_squares_kwargs = {
+                "method": self.problem.optimizer["method"],
+                "ftol": self.problem.optimizer.get("ftol", 1e-8),
+                "xtol": self.problem.optimizer.get("xtol", 1e-8),
+                "gtol": self.problem.optimizer.get("gtol", 1e-8),
+                "max_nfev": self.problem.optimizer.get("max_nfev", 200),
+            }
+            if self.problem.optimizer["method"] == "trf":
+                lower, upper = self.problem.bounds()
+                least_squares_kwargs["bounds"] = (lower, upper)
             result = least_squares(
                 self.problem.residual_objective,
                 x0,
-                bounds=(lower, upper),
-                method=self.problem.optimizer["method"],
-                ftol=self.problem.optimizer.get("ftol", 1e-8),
-                xtol=self.problem.optimizer.get("xtol", 1e-8),
-                gtol=self.problem.optimizer.get("gtol", 1e-8),
-                max_nfev=self.problem.optimizer.get("max_nfev", 200),
+                **least_squares_kwargs,
             )
             return {
                 "x": result.x,

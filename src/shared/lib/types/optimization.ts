@@ -1,13 +1,32 @@
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 
 export type OptimizerKind = "least_squares";
-export type LeastSquaresMethod = "trf";
+export type LeastSquaresMethod = "trf" | "lm";
 export type OptimizationOperandKind =
   | "focal_length"
   | "f_number"
   | "opd_difference"
   | "rms_spot_size"
-  | "rms_wavefront_error";
+  | "rms_wavefront_error"
+  | "ray_fan";
+
+export type OptimizationOperandConfig =
+  | {
+      readonly kind: OptimizationOperandKind;
+      readonly target: number;
+      readonly weight: number;
+      readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly options?: { readonly num_rays?: number };
+    }
+  | {
+      readonly kind: OptimizationOperandKind;
+      readonly target?: undefined;
+      readonly weight: number;
+      readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
+      readonly options?: { readonly num_rays?: number };
+    };
 
 export interface OptimizationConfig {
   readonly optimizer: {
@@ -21,13 +40,7 @@ export interface OptimizationConfig {
   readonly variables: ReadonlyArray<OptimizationVariableConfig>;
   readonly pickups: ReadonlyArray<OptimizationPickupConfig>;
   readonly merit_function: {
-    readonly operands: ReadonlyArray<{
-      readonly kind: OptimizationOperandKind;
-      readonly target: number;
-      readonly weight: number;
-      readonly fields?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
-      readonly wavelengths?: ReadonlyArray<{ readonly index: number; readonly weight: number }>;
-    }>;
+    readonly operands: ReadonlyArray<OptimizationOperandConfig>;
   };
 }
 
@@ -35,23 +48,23 @@ export type OptimizationVariableConfig =
   | {
       readonly kind: "radius" | "thickness";
       readonly surface_index: number;
-      readonly min: number;
-      readonly max: number;
+      readonly min?: number;
+      readonly max?: number;
     }
   | {
       readonly kind: "asphere_conic_constant" | "asphere_toric_sweep_radius";
       readonly surface_index: number;
       readonly asphere_kind: AsphericalType;
-      readonly min: number;
-      readonly max: number;
+      readonly min?: number;
+      readonly max?: number;
     }
   | {
       readonly kind: "asphere_polynomial_coefficient";
       readonly surface_index: number;
       readonly asphere_kind: AsphericalType;
       readonly coefficient_index: number;
-      readonly min: number;
-      readonly max: number;
+      readonly min?: number;
+      readonly max?: number;
     };
 
 export type OptimizationPickupConfig =
@@ -146,7 +159,7 @@ export interface OptimizationValueEntryLegacy {
 
 export interface OptimizationResidualEntry {
   readonly kind: string;
-  readonly target: number;
+  readonly target?: number;
   readonly value: number;
   readonly field_index?: number;
   readonly wavelength_index?: number;

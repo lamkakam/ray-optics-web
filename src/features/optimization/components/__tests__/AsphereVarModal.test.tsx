@@ -166,6 +166,7 @@ describe("AsphereVarModal", () => {
       <AsphereVarModal
         {...defaultProps}
         asphereState={makeState({ type: "Conic" })}
+        canUseBounds
       />,
     );
     // selects[0] = type selector, selects[1] = conic constant mode
@@ -173,6 +174,86 @@ describe("AsphereVarModal", () => {
     await user.selectOptions(selects[1], "variable");
     expect(screen.getByRole("textbox", { name: /min/i })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /max/i })).toBeInTheDocument();
+  });
+
+  it("hides asphere variable bounds for lm", async () => {
+    const user = userEvent.setup();
+    render(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({ type: "Conic" })}
+        canUseBounds={false}
+      />,
+    );
+
+    const selects = screen.getAllByRole("combobox");
+    await user.selectOptions(selects[1], "variable");
+
+    expect(screen.queryByRole("textbox", { name: /min/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /max/i })).not.toBeInTheDocument();
+  });
+
+  it("shows toroid guidance and zero-crossing validation only for trf", async () => {
+    const user = userEvent.setup();
+    const trfState = makeState({
+      type: "XToroid",
+      toricSweep: { mode: "variable", min: "-10", max: "10" },
+    });
+    const lmState = makeState({
+      type: "XToroid",
+      toricSweep: { mode: "variable", min: "-10", max: "10" },
+    });
+
+    const { rerender } = render(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={trfState}
+        canUseBounds
+      />,
+    );
+
+    expect(screen.getByText("R = 0 means a flat surface (infinite radius).")).toBeInTheDocument();
+    expect(screen.getByText("Toroid sweep R variable bounds must stay on one side of 0.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+
+    rerender(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={lmState}
+        canUseBounds={false}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(screen.queryByText("R = 0 means a flat surface (infinite radius).")).not.toBeInTheDocument();
+    expect(screen.queryByText("Toroid sweep R variable bounds must stay on one side of 0.")).not.toBeInTheDocument();
+  });
+
+  it("renders asphere variable bounds from canUseBounds alone", async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({ type: "Conic" })}
+        canUseBounds
+      />,
+    );
+
+    await user.selectOptions(screen.getAllByRole("combobox")[1], "variable");
+    expect(screen.getByRole("textbox", { name: "Conic Constant Min." })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Conic Constant Max." })).toBeInTheDocument();
+
+    rerender(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "-1", max: "1" } })}
+        canUseBounds={false}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox", { name: "Conic Constant Min." })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Conic Constant Max." })).not.toBeInTheDocument();
   });
 
   it("selecting pickup mode for conic shows source surface, scale, offset but no source coefficient", async () => {

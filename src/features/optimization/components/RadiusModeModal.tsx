@@ -6,7 +6,6 @@ import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores
 import { getRadiusLabel, getRadiusValue } from "@/features/optimization/components/optimizationViewModels";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
-import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import {
   CURVATURE_RADIUS_GUIDANCE_TEXT,
   createPickupDraft,
@@ -16,6 +15,7 @@ import {
   serializeRadiusMode,
   toRadiusModeDraft,
 } from "@/features/optimization/lib/modalHelpers";
+import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/variableModeFields";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
@@ -25,6 +25,7 @@ interface RadiusModeModalProps {
   readonly optimizationModel: OpticalModel | undefined;
   readonly surfaceIndex: number | undefined;
   readonly selectedMode: RadiusMode | undefined;
+  readonly canUseBounds?: boolean;
   readonly onSetMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
   readonly onClose: () => void;
 }
@@ -34,6 +35,7 @@ export function RadiusModeModal({
   optimizationModel,
   surfaceIndex,
   selectedMode,
+  canUseBounds = true,
   onSetMode,
   onClose,
 }: RadiusModeModalProps) {
@@ -51,6 +53,7 @@ export function RadiusModeModal({
       optimizationModel={optimizationModel}
       surfaceIndex={surfaceIndex}
       selectedMode={selectedMode}
+      canUseBounds={canUseBounds}
       onSetMode={onSetMode}
       onClose={onClose}
     />
@@ -61,6 +64,7 @@ interface RadiusModeModalEditorProps {
   readonly optimizationModel: OpticalModel;
   readonly surfaceIndex: number;
   readonly selectedMode: RadiusMode;
+  readonly canUseBounds: boolean;
   readonly onSetMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
   readonly onClose: () => void;
 }
@@ -69,13 +73,16 @@ function RadiusModeModalEditor({
   optimizationModel,
   surfaceIndex,
   selectedMode,
+  canUseBounds,
   onSetMode,
   onClose,
 }: RadiusModeModalEditorProps) {
   const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() => toRadiusModeDraft(selectedMode));
+  const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
 
   const radiusValue = getRadiusValue(optimizationModel, surfaceIndex);
-  const variableBoundsCrossZero = draftMode.mode === "variable"
+  const variableBoundsCrossZero = canUseBounds
+    && draftMode.mode === "variable"
     && curvatureRadiusCrossesZero(draftMode.min, draftMode.max);
 
   return (
@@ -108,7 +115,7 @@ function RadiusModeModalEditor({
         />
 
         {draftMode.mode === "variable" ? (
-          <BoundedVariableModeFields
+          <VariableModeFields.Component
             idPrefix="radius"
             minAriaLabel="Min."
             minValue={draftMode.min}
@@ -124,7 +131,7 @@ function RadiusModeModalEditor({
               min: draftMode.min,
               max: value,
             })}
-            guidanceText={CURVATURE_RADIUS_GUIDANCE_TEXT}
+            guidanceText={canUseBounds ? CURVATURE_RADIUS_GUIDANCE_TEXT : undefined}
             errorText={variableBoundsCrossZero ? getCurvatureRadiusBoundsErrorText("Radius") : undefined}
           />
         ) : null}

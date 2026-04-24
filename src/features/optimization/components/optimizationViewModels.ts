@@ -3,6 +3,7 @@
 import type { GridRow } from "@/shared/lib/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { OptimizationOperandKind, OptimizationResidualEntry } from "@/shared/lib/types/optimization";
+import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 
 export interface WeightRow {
   readonly id: string;
@@ -51,22 +52,11 @@ export function getThicknessValue(model: OpticalModel, surfaceIndex: number): nu
 }
 
 export function getOperandLabel(kind: OptimizationOperandKind): string {
-  switch (kind) {
-    case "focal_length":
-      return "Paraxial focal length";
-    case "f_number":
-      return "Paraxial f/#";
-    case "opd_difference":
-      return "OPD Difference";
-    case "rms_spot_size":
-      return "RMS Spot Size";
-    case "rms_wavefront_error":
-      return "RMS wavefront error";
-  }
+  return getOptimizationOperandMetadata(kind).label;
 }
 
 function formatEvaluationValue(value: number | undefined): string {
-  return value === undefined ? "" : String(value);
+  return value === undefined ? "N/A" : String(value);
 }
 
 function formatEvaluationFixedValue(value: number | undefined): string {

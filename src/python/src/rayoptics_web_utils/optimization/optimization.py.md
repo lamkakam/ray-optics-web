@@ -36,7 +36,7 @@ Both return JSON-serialisable dicts containing:
 {
   "optimizer": {
     "kind": "least_squares",
-    "method": "trf",
+    "method": "trf",  # or "lm"
     "ftol": 1e-8,
     "xtol": 1e-8,
     "gtol": 1e-8,
@@ -81,6 +81,7 @@ The public facade is now backed by an internal solver registry. Only `least_squa
 - `asphere_toric_sweep_radius` — reads/writes `profile.cR` for `XToroid` / `YToroid`
 - Radius variables remain radius-based in the public config and report payloads, but SciPy optimizes them internally in curvature space (`c = 1 / R`, with planar `R = 0` mapped to `c = 0`) to avoid the singular numeric behavior around flat surfaces.
 - Asphere variables and pickups stay in direct value space; only radius variables are transformed internally.
+- Bounded methods such as `trf` expect variable `min` / `max`; unbounded methods such as `lm` may omit them.
 
 ### Operands
 
@@ -89,12 +90,15 @@ The public facade is now backed by an internal solver registry. Only `least_squa
 - `opd_difference`
 - `focal_length`
 - `f_number`
+- `ray_fan`
 
 ## Weighting Rules
 
 - `focal_length` and `f_number` are field-independent and wavelength-independent; any `fields` or `wavelengths` entries are ignored.
-- Field-dependent operands expand into one residual per selected field/wavelength pair.
+- Field-dependent scalar operands expand into one residual per selected field/wavelength pair.
+- `ray_fan` expands into a fixed `42` residual samples per selected field/wavelength pair (`21` tangential + `21` sagittal). Missing or non-finite analysis samples are padded with `1e6` penalties so SciPy `lm` finite differencing always receives vectors with stable dimensions.
 - `opd_difference` reuses `rayoptics_web_utils.analysis.get_opd_fan_data(opm, fi)` and computes one scalar per field/wavelength sample as `mean(abs(OPD_i - mean(OPD)))` across the combined tangential and sagittal OPD fan ordinates, after dropping non-finite values.
+- `ray_fan` reuses `rayoptics_web_utils.analysis.get_ray_fan_data(opm, fi)` and exposes the combined tangential and sagittal ordinates as target-less residual samples.
 - Each residual uses:
 
 ```python
@@ -146,19 +150,20 @@ weighted_residual = total_weight * (actual_value - target)
 - `residual_objective(vector)` evaluates one optimizer step and converts the merit report into the residual vector consumed by least-squares-style solvers.
 - `scalar_objective(vector)` evaluates one optimizer step and returns `merit_function["sum_of_squares"]` for future scalar/global optimizers.
 - Both objective methods record merit-history entries whenever the incoming variable vector differs materially from the last recorded vector.
-- Residual evaluation failures return a large penalty residual vector (`1e6` per operand, minimum length 1); scalar evaluation failures return `1e6`.
-- For radius variables, `current_vector()`, `bounds()`, and `apply_vector(...)` all translate between external radius units and the internal curvature-space optimizer vector.
+- Residual evaluation failures return a large penalty residual vector with the nominal expanded length (`1e6` per residual sample, minimum length 1); scalar evaluation failures return `1e6`.
+- For radius variables, `current_vector()`, bounded `bounds()`, and `apply_vector(...)` all translate between external radius units and the internal curvature-space optimizer vector.
 
 ### `LeastSquaresSolver`
 
-- Runs `scipy.optimize.least_squares(...)` using the stored optimizer configuration, current variable vector, bounds, and `OptimizationProblem.residual_objective(...)`.
+- Runs `scipy.optimize.least_squares(...)` using the stored optimizer configuration, current variable vector, and `OptimizationProblem.residual_objective(...)`.
+- Supplies SciPy bounds only when the selected least-squares method is bounded (`trf`); `lm` runs without a `bounds` argument.
 - Normalizes the SciPy result into the mapping consumed by `optimize_opm(...)`.
 
 ### `optimize_opm(opm, config)`
 
 1. Validates and normalizes the config.
 2. Snapshots all variable/pickup targets before mutation.
-3. Builds the current variable vector and bounds from the config.
+3. Builds the current variable vector and, for bounded methods, bounds from the config.
 4. Selects the registered solver adapter for `optimizer.kind` and delegates execution to it.
 5. Each objective evaluation:
    - is handled by `_OptimizationProblem.objective(vector)`
@@ -184,6 +189,7 @@ Each entry contains:
 - `min`
 - `max`
 - Asphere entries additionally include `asphere_kind`; polynomial entries also include `coefficient_index`.
+- For unbounded variables such as `lm`, `min` and `max` are omitted from the report entries.
 
 ### `pickups`
 

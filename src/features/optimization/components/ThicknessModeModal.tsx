@@ -5,7 +5,6 @@ import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
-import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
 import { getRadiusLabel, getThicknessValue } from "@/features/optimization/components/optimizationViewModels";
 import {
   createPickupDraft,
@@ -13,6 +12,7 @@ import {
   serializeRadiusMode,
   toRadiusModeDraft,
 } from "@/features/optimization/lib/modalHelpers";
+import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/variableModeFields";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
@@ -22,6 +22,7 @@ interface ThicknessModeModalProps {
   readonly optimizationModel: OpticalModel | undefined;
   readonly surfaceIndex: number | undefined;
   readonly selectedMode: RadiusMode | undefined;
+  readonly canUseBounds?: boolean;
   readonly onSetMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
   readonly onClose: () => void;
 }
@@ -31,6 +32,7 @@ export function ThicknessModeModal({
   optimizationModel,
   surfaceIndex,
   selectedMode,
+  canUseBounds = true,
   onSetMode,
   onClose,
 }: ThicknessModeModalProps) {
@@ -48,6 +50,7 @@ export function ThicknessModeModal({
       optimizationModel={optimizationModel}
       surfaceIndex={surfaceIndex}
       selectedMode={selectedMode}
+      canUseBounds={canUseBounds}
       onSetMode={onSetMode}
       onClose={onClose}
     />
@@ -58,6 +61,7 @@ interface ThicknessModeModalEditorProps {
   readonly optimizationModel: OpticalModel;
   readonly surfaceIndex: number;
   readonly selectedMode: RadiusMode;
+  readonly canUseBounds: boolean;
   readonly onSetMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
   readonly onClose: () => void;
 }
@@ -66,10 +70,12 @@ function ThicknessModeModalEditor({
   optimizationModel,
   surfaceIndex,
   selectedMode,
+  canUseBounds,
   onSetMode,
   onClose,
 }: ThicknessModeModalEditorProps) {
   const [draftMode, setDraftMode] = React.useState<RadiusModeDraft>(() => toRadiusModeDraft(selectedMode));
+  const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
 
   const thicknessValue = getThicknessValue(optimizationModel, surfaceIndex);
 
@@ -103,7 +109,7 @@ function ThicknessModeModalEditor({
         />
 
         {draftMode.mode === "variable" ? (
-          <BoundedVariableModeFields
+          <VariableModeFields.Component
             idPrefix="thickness"
             minAriaLabel="Thickness Min."
             minValue={draftMode.min}

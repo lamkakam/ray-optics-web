@@ -23,3 +23,4 @@ interface OptimizationEvaluationPanelProps {
 - When `rows` is present and `allowBodyScroll` is `true`, the table body keeps `overflow-y-auto` and applies the caller-provided `maxBodyHeight` inline so parent layouts can grow or shrink the visible table area dynamically.
 - When `allowBodyScroll` is `false`, the table body drops the internal vertical scrollbar and height cap so the entire table contributes to page height.
 - Horizontal overflow remains enabled in both modes so wide tables still scroll sideways without clipping.
+- The table accepts display rows whose target column is the literal string `N/A`, which is used for target-less residual entries such as `ray_fan`.

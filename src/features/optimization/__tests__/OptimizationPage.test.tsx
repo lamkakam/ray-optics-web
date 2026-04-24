@@ -217,6 +217,84 @@ describe("OptimizationPage", () => {
     expect(screen.getByRole("tab", { name: "Operands" })).toBeInTheDocument();
   });
 
+  it("updates the optimizer method in store when Levenberg-Marquardt is selected", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    expect(optimizationStore.getState().optimizer.method).toBe("trf");
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
+
+    expect(optimizationStore.getState().optimizer.method).toBe("lm");
+  });
+
+  it("disables Optimize for lm when residual count is smaller than variable count", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+      optimizationStore.getState().setThicknessMode(2, {
+        mode: "variable",
+        min: "10",
+        max: "30",
+      });
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Algorithm" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+  });
+
+  it("shows a warning modal when switching to lm with fewer residuals than variables", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+      optimizationStore.getState().setThicknessMode(2, {
+        mode: "variable",
+        min: "10",
+        max: "30",
+      });
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await user.click(screen.getByRole("tab", { name: "Algorithm" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
+
+    expect(await screen.findByRole("dialog", { name: "Warning" })).toBeInTheDocument();
+    expect(screen.getByText("Levenberg-Marquardt requires at least as many residuals as variables.")).toBeInTheDocument();
+  });
+
+  it("shows a warning modal for any config-build error triggered by method switching", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    act(() => {
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-1", kind: "focal_length", target: "100", weight: "0" },
+      ]);
+    });
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
+
+    expect(await screen.findByRole("dialog", { name: "Warning" })).toBeInTheDocument();
+    expect(screen.getByText("Weight must be a positive non-zero number.")).toBeInTheDocument();
+  });
+
   it("renders the optimization tabs inside a draggable bottom drawer on large screens", () => {
     const { container } = renderOptimizationPage(makeProxy());
     const pageShell = container.firstElementChild;
@@ -277,6 +355,67 @@ describe("OptimizationPage", () => {
     expect(within(evaluationScroll).getByText("Paraxial focal length")).toBeInTheDocument();
     expect(within(evaluationScroll).getByText("1.000000")).toBeInTheDocument();
     expect(within(evaluationScroll).getByText("98.500000")).toBeInTheDocument();
+  });
+
+  it("renders multiple ray_fan evaluation rows and keeps zero-weight rows hidden", async () => {
+    const proxy = makeProxy({
+      evaluateOptimizationProblem: jest.fn().mockResolvedValue({
+        success: true,
+        status: "evaluated",
+        message: "ok",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [
+          {
+            kind: "ray_fan",
+            value: 0.5,
+            field_index: 0,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 1,
+            wavelength_weight: 1,
+            total_weight: 1,
+            weighted_residual: 0.5,
+          },
+          {
+            kind: "ray_fan",
+            value: 0.25,
+            field_index: 0,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 1,
+            wavelength_weight: 1,
+            total_weight: 1,
+            weighted_residual: 0.25,
+          },
+          {
+            kind: "ray_fan",
+            value: 123,
+            field_index: 0,
+            wavelength_index: 0,
+            operand_weight: 1,
+            field_weight: 0,
+            wavelength_weight: 1,
+            total_weight: 0,
+            weighted_residual: 0,
+          },
+        ],
+        merit_function: { sum_of_squares: 0.3125, rss: Math.sqrt(0.3125) },
+      }),
+    });
+    const { optimizationStore } = renderOptimizationPage(proxy);
+
+    act(() => {
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-1", kind: "ray_fan", target: undefined, weight: "1" },
+      ]);
+    });
+
+    expect(await screen.findAllByText("Ray Fan")).toHaveLength(2);
+    expect(screen.getAllByText("N/A")).toHaveLength(2);
+    expect(screen.queryByText("123.000000")).not.toBeInTheDocument();
   });
 
   it("filters zero-weight residuals out of the evaluation table", async () => {

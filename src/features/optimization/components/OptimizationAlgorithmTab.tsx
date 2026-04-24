@@ -4,10 +4,11 @@ import React from "react";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
+import type { LeastSquaresMethod, OptimizerKind } from "@/shared/lib/types/optimization";
 
 interface OptimizerFormState {
-  readonly kind: "least_squares";
-  readonly method: "trf";
+  readonly kind: OptimizerKind;
+  readonly method: LeastSquaresMethod;
   readonly maxNumSteps: string;
   readonly meritFunctionTolerance: string;
   readonly independentVariableTolerance: string;
@@ -41,8 +42,11 @@ export function OptimizationAlgorithmTab({
           id="optimizer-method"
           aria-label="Method"
           value={optimizer.method}
-          options={[{ label: "Trust Region Reflective", value: "trf" }]}
-          onChange={() => undefined}
+          options={[
+            { label: "Trust Region Reflective", value: "trf" },
+            { label: "Levenberg-Marquardt", value: "lm" },
+          ]}
+          onChange={(event) => onChangeOptimizer({ method: event.target.value as LeastSquaresMethod })}
         />
       </div>
       <div>

@@ -20,6 +20,7 @@ import { OptimizationWeightsGrid } from "@/features/optimization/components/Opti
 import { AsphereVarModal } from "@/features/optimization/components/AsphereVarModal";
 import { RadiusModeModal } from "@/features/optimization/components/RadiusModeModal";
 import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal";
+import { getOptimizationMethodCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import { hasNonZeroOptimizationContribution } from "@/features/optimization/stores/optimizationStore";
 import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/optimization/components/optimizationViewModels";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
@@ -242,6 +243,7 @@ export function OptimizationPage({
     && optimizationModel !== undefined
     && canBuildOptimizationConfig
     && hasNonZeroContribution;
+  const { canUseBounds } = getOptimizationMethodCapabilities(optimizer.method);
 
   const evaluationReservedHeight = !isLG
     ? undefined
@@ -388,6 +390,14 @@ export function OptimizationPage({
             optimizationStore.setState((state) => ({
               optimizer: { ...state.optimizer, ...patch },
             }));
+            if (patch.method !== undefined) {
+              try {
+                optimizationStore.getState().buildOptimizationConfig();
+              } catch (error) {
+                const message = error instanceof Error ? error.message : "Optimization config is invalid.";
+                optimizationStore.getState().openWarningModal(message);
+              }
+            }
           }}
         />
       ),
@@ -481,6 +491,7 @@ export function OptimizationPage({
         optimizationModel={optimizationModel}
         surfaceIndex={radiusModal.surfaceIndex}
         selectedMode={selectedRadiusMode}
+        canUseBounds={canUseBounds}
         onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setRadiusMode(surfaceIndex, mode)}
         onClose={() => optimizationStore.getState().closeRadiusModal()}
       />
@@ -490,6 +501,7 @@ export function OptimizationPage({
         optimizationModel={optimizationModel}
         surfaceIndex={thicknessModal.surfaceIndex}
         selectedMode={selectedThicknessMode}
+        canUseBounds={canUseBounds}
         onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setThicknessMode(surfaceIndex, mode)}
         onClose={() => optimizationStore.getState().closeThicknessModal()}
       />
@@ -498,6 +510,7 @@ export function OptimizationPage({
         isOpen={asphereModal.open}
         surfaceIndex={asphereModal.surfaceIndex}
         asphereState={selectedAsphereState}
+        canUseBounds={canUseBounds}
         onSave={(surfaceIndex, state) => optimizationStore.getState().replaceAsphereState(surfaceIndex, state)}
         onClose={() => optimizationStore.getState().closeAsphereModal()}
       />

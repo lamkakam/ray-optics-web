@@ -205,6 +205,93 @@ describe("optimizationStore", () => {
     });
   });
 
+  it("accepts ray_fan rows and clears numeric target text when switching kinds", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().replaceOperands([
+      { id: "operand-1", kind: "focal_length", target: "125", weight: "2" },
+    ]);
+
+    store.getState().updateOperand("operand-1", { kind: "ray_fan" });
+
+    expect(store.getState().operands).toEqual([
+      { id: "operand-1", kind: "ray_fan", target: undefined, weight: "2" },
+    ]);
+  });
+
+  it("omits target from Python config for target-less ray_fan operands", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().replaceOperands([
+      { id: "operand-1", kind: "ray_fan", target: undefined, weight: "2.5" },
+    ]);
+
+    expect(store.getState().buildOptimizationConfig()).toEqual({
+      optimizer: {
+        kind: "least_squares",
+        method: "trf",
+        max_nfev: 200,
+        ftol: 1e-5,
+        xtol: 1e-5,
+        gtol: 1e-5,
+      },
+      variables: [],
+      pickups: [],
+      merit_function: {
+        operands: [
+          {
+            kind: "ray_fan",
+            weight: 2.5,
+            options: { num_rays: 21 },
+            fields: [
+              { index: 0, weight: 1 },
+              { index: 1, weight: 0 },
+              { index: 2, weight: 0 },
+            ],
+            wavelengths: [
+              { index: 0, weight: 1 },
+              { index: 1, weight: 2 },
+              { index: 2, weight: 1 },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it("emits bounded trf variables and unbounded lm variables from shared method capabilities", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().replaceOperands([
+      { id: "operand-1", kind: "ray_fan", target: undefined, weight: "1" },
+    ]);
+
+    expect(store.getState().buildOptimizationConfig().variables).toEqual([
+      { kind: "radius", surface_index: 1, min: 40, max: 60 },
+      { kind: "thickness", surface_index: 2, min: 10, max: 30 },
+    ]);
+
+    store.setState((state) => ({
+      optimizer: { ...state.optimizer, method: "lm" },
+    }));
+
+    expect(store.getState().buildOptimizationConfig().variables).toEqual([
+      { kind: "radius", surface_index: 1 },
+      { kind: "thickness", surface_index: 2 },
+    ]);
+  });
+
   it("builds the Python optimization config using current slice state", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
@@ -272,6 +359,142 @@ describe("optimizationStore", () => {
         ],
       },
     });
+  });
+
+  it("counts nominal ray_fan samples for lm validation", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().setAsphereType(1, "RadialPolynomial");
+    store.getState().setAsphereTermMode(1, "conic", {
+      mode: "variable",
+      min: "-2",
+      max: "0",
+    });
+    store.getState().replaceOperands([
+      { id: "operand-1", kind: "ray_fan", target: undefined, weight: "1" },
+    ]);
+
+    store.setState((state) => ({
+      optimizer: { ...state.optimizer, method: "lm" },
+    }));
+
+    expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
+  });
+
+  it("uses ray_fan operand options for lm residual-count validation", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().setAsphereType(1, "RadialPolynomial");
+    store.getState().setAsphereTermMode(1, "conic", {
+      mode: "variable",
+      min: "-2",
+      max: "0",
+    });
+    store.getState().replaceOperands([
+      { id: "operand-1", kind: "ray_fan", target: undefined, weight: "1" },
+    ]);
+
+    store.setState((state) => ({
+      optimizer: { ...state.optimizer, method: "lm" },
+    }));
+
+    expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
+  });
+
+  it("omits variable bounds from built config when the optimizer method is lm", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.setState((state) => ({
+      optimizer: {
+        ...state.optimizer,
+        method: "lm",
+      },
+    }));
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "rms_spot_size",
+        target: "0",
+        weight: "1",
+      },
+    ]);
+
+    expect(store.getState().buildOptimizationConfig()).toEqual(expect.objectContaining({
+      optimizer: expect.objectContaining({
+        method: "lm",
+      }),
+      variables: [
+        { kind: "radius", surface_index: 1 },
+        { kind: "thickness", surface_index: 2 },
+      ],
+    }));
+  });
+
+  it("rejects lm when residual count is smaller than variable count", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.setState((state) => ({
+      optimizer: {
+        ...state.optimizer,
+        method: "lm",
+      },
+    }));
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "1",
+      },
+    ]);
+
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(
+      "Levenberg-Marquardt requires at least as many residuals as variables.",
+    );
   });
 
   it("builds asphere variables and pickups into the Python optimization config", () => {
