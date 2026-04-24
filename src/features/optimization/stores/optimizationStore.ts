@@ -13,6 +13,7 @@ import type {
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationMethodCapabilities } from "@/features/optimization/lib/methodCapabilities";
 
+// test
 type SharedOptimizerConfig = OptimizationConfig["optimizer"];
 type SharedSurfaceVariableConfig = Extract<OptimizationConfig["variables"][number], { readonly kind: "radius" | "thickness" }>;
 type SharedSurfacePickupConfig = Extract<OptimizationPickupConfig, { readonly kind: "radius" | "thickness" }>;

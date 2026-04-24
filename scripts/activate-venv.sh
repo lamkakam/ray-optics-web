@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# test
 # Must be sourced: source scripts/activate-venv.sh
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then

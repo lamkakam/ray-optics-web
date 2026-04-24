@@ -1,5 +1,5 @@
 # `scripts/activate-venv.sh`
-
+test
 ## Purpose
 
 Activate the `src/python/.venv` virtual environment in the current shell session. Satisfies the CLAUDE.md safety rule requiring venv activation before working on files under `python/`.
