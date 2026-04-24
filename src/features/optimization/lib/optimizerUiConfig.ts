@@ -11,7 +11,8 @@ type OptimizerToleranceKind<TKind extends OptimizerKind> = Exclude<
 export interface OptimizerMethodUiConfig<TKind extends OptimizerKind> {
   readonly kind: OptimizerMethodKind<TKind>;
   readonly label: string;
-  readonly use_bounds: boolean;
+  readonly canUseBounds: boolean;
+  readonly requiresResidualCountAtLeastVariableCount: boolean;
 }
 
 export interface OptimizerToleranceUiConfig<TKind extends OptimizerKind> {
@@ -34,8 +35,18 @@ export const OPTIMIZER_UI_CONFIG = {
   least_squares: {
     label: "Least Squares",
     methods: [
-      { kind: "trf", use_bounds: true, label: "Trust Region Reflective" },
-      { kind: "lm", use_bounds: false, label: "Levenberg-Marquardt" },
+      {
+        kind: "trf",
+        canUseBounds: true,
+        requiresResidualCountAtLeastVariableCount: false,
+        label: "Trust Region Reflective",
+      },
+      {
+        kind: "lm",
+        canUseBounds: false,
+        requiresResidualCountAtLeastVariableCount: true,
+        label: "Levenberg-Marquardt",
+      },
     ],
     tolerances: [
       { kind: "ftol", label: "Merit function change tolerance", default: 1e-5 },

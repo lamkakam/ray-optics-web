@@ -11,8 +11,8 @@ const METHOD_CAPABILITIES: Record<LeastSquaresMethod, OptimizationMethodCapabili
     (capabilities, method) => ({
       ...capabilities,
       [method.kind]: {
-        canUseBounds: method.use_bounds,
-        requiresResidualCountAtLeastVariableCount: method.kind === "lm",
+        canUseBounds: method.canUseBounds,
+        requiresResidualCountAtLeastVariableCount: method.requiresResidualCountAtLeastVariableCount,
       },
     }),
     {} as Record<LeastSquaresMethod, OptimizationMethodCapabilities>,

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Centralizes optimizer UI metadata so the optimization algorithm tab, store defaults, and method capability lookup all read the same labels, defaults, and per-method bound support.
+Centralizes optimizer UI metadata so the optimization algorithm tab, store defaults, and method capability lookup all read the same labels, defaults, and per-method capability flags.
 
 ## Exports
 
@@ -18,4 +18,4 @@ Centralizes optimizer UI metadata so the optimization algorithm tab, store defau
 - Derives method and tolerance key types from `shared/lib/types/optimization.ts` instead of restating unions locally.
 - Constrains `methods[*].kind` to the valid method union for each optimizer kind.
 - Constrains `tolerances[*].kind` to numeric optimizer fields other than `kind`, `method`, and `max_nfev`.
-- Stores the least-squares method labels, `use_bounds` flags, and tolerance labels/defaults in one UI-facing config object.
+- Stores the least-squares method labels, `canUseBounds` flags, `requiresResidualCountAtLeastVariableCount` flags, and tolerance labels/defaults in one UI-facing config object.

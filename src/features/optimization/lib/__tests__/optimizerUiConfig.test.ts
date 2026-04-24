@@ -7,8 +7,18 @@ describe("optimizerUiConfig", () => {
 
   it("defines least-squares methods with labels and bound support", () => {
     expect(OPTIMIZER_UI_CONFIG.least_squares.methods).toEqual([
-      { kind: "trf", use_bounds: true, label: "Trust Region Reflective" },
-      { kind: "lm", use_bounds: false, label: "Levenberg-Marquardt" },
+      {
+        kind: "trf",
+        canUseBounds: true,
+        requiresResidualCountAtLeastVariableCount: false,
+        label: "Trust Region Reflective",
+      },
+      {
+        kind: "lm",
+        canUseBounds: false,
+        requiresResidualCountAtLeastVariableCount: true,
+        label: "Levenberg-Marquardt",
+      },
     ]);
   });
 
