@@ -44,7 +44,7 @@ export function OptimizationEvaluationPanel({
           />
         </div>
       ) : (
-        <Paragraph className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+        <Paragraph variant="placeholder" className="px-4 py-3">
           Evaluation results appear here when the current optimization config is valid.
         </Paragraph>
       )}
