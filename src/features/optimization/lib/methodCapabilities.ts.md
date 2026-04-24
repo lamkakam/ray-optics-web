@@ -15,6 +15,7 @@ getOptimizationMethodCapabilities(method: LeastSquaresMethod): {
 
 ## Key Behaviors
 
-- Centralizes least-squares method rules in one place so UI rendering and config validation do not drift.
+- Derives least-squares method bound support from `optimizerUiConfig.ts` so UI rendering and config validation do not drift.
 - `trf` reports `canUseBounds: true` and does not enforce the Levenberg-Marquardt residual-dimension rule.
 - `lm` reports `canUseBounds: false` and does enforce `residuals >= variables`.
+- Keeps `requiresResidualCountAtLeastVariableCount` as an explicit behavior layer above the shared UI metadata, with only `lm` enabling it.
