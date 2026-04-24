@@ -13,6 +13,10 @@ import type {
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationMethodCapabilities } from "@/features/optimization/lib/methodCapabilities";
 
+type SharedOptimizerConfig = OptimizationConfig["optimizer"];
+type SharedSurfaceVariableConfig = Extract<OptimizationConfig["variables"][number], { readonly kind: "radius" | "thickness" }>;
+type SharedSurfacePickupConfig = Extract<OptimizationPickupConfig, { readonly kind: "radius" | "thickness" }>;
+
 export type RadiusMode =
   | { readonly surfaceIndex: number; readonly mode: "constant" }
   | {
@@ -117,8 +121,8 @@ interface WarningModalState {
 }
 
 interface OptimizationAlgorithmState {
-  readonly kind: OptimizerKind;
-  readonly method: LeastSquaresMethod;
+  readonly kind: SharedOptimizerConfig["kind"];
+  readonly method: SharedOptimizerConfig["method"];
   readonly maxNumSteps: string;
   readonly meritFunctionTolerance: string;
   readonly independentVariableTolerance: string;
@@ -254,7 +258,7 @@ function normalizeWeight(value: string | number): number {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1;
 }
 
-type SurfaceModeKind = "radius" | "thickness";
+type SurfaceModeKind = SharedSurfaceVariableConfig["kind"] | SharedSurfacePickupConfig["kind"];
 
 type SurfaceModeEntry = RadiusMode & {
   readonly kind: SurfaceModeKind;
