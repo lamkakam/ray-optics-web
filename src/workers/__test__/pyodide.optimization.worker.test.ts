@@ -50,6 +50,38 @@ describe("_optimizeOpm", () => {
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));
   });
 
+  it("passes Differential Evolution optimizer config without least-squares keys", async () => {
+    const runPython = jest.fn().mockResolvedValue(
+      JSON.stringify({
+        success: true,
+        status: "optimized",
+        message: "done",
+        optimizer: { kind: "differential_evolution", nfev: 25, nit: 3 },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [],
+        merit_function: { sum_of_squares: 0, rss: 0 },
+      }),
+    );
+
+    await _optimizeOpm(runPython, baseModel, {
+      optimizer: { kind: "differential_evolution", max_nfev: 50, tol: 0.01, atol: 0 },
+      variables: [{ kind: "radius", surface_index: 1, min: 40, max: 60 }],
+      pickups: [],
+      merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
+    });
+
+    const pythonSource = runPython.mock.calls[0]?.[0] ?? "";
+    expect(pythonSource).toContain('\\"kind\\":\\"differential_evolution\\"');
+    expect(pythonSource).toContain('\\"tol\\":0.01');
+    expect(pythonSource).toContain('\\"atol\\":0');
+    expect(pythonSource).not.toContain('\\"method\\"');
+    expect(pythonSource).not.toContain('\\"ftol\\"');
+    expect(pythonSource).not.toContain('\\"xtol\\"');
+    expect(pythonSource).not.toContain('\\"gtol\\"');
+  });
+
   it("streams optimization progress through the supplied callback and returns the final history", async () => {
     const progressCallback = jest.fn().mockResolvedValue(undefined);
     const runPython = jest.fn().mockImplementation(async () => {

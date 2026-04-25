@@ -1,6 +1,6 @@
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 
-export type OptimizerKind = "least_squares";
+export type OptimizerKind = "least_squares" | "differential_evolution";
 export type LeastSquaresMethod = "trf" | "lm";
 export type OptimizationOperandKind =
   | "focal_length"
@@ -29,14 +29,21 @@ export type OptimizationOperandConfig =
     };
 
 export interface OptimizationConfig {
-  readonly optimizer: {
-    readonly kind: OptimizerKind;
-    readonly method: LeastSquaresMethod;
-    readonly max_nfev: number;
-    readonly ftol: number;
-    readonly xtol: number;
-    readonly gtol: number;
-  };
+  readonly optimizer:
+    | {
+        readonly kind: "least_squares";
+        readonly method: LeastSquaresMethod;
+        readonly max_nfev: number;
+        readonly ftol: number;
+        readonly xtol: number;
+        readonly gtol: number;
+      }
+    | {
+        readonly kind: "differential_evolution";
+        readonly max_nfev: number;
+        readonly tol: number;
+        readonly atol: number;
+      };
   readonly variables: ReadonlyArray<OptimizationVariableConfig>;
   readonly pickups: ReadonlyArray<OptimizationPickupConfig>;
   readonly merit_function: {
@@ -177,6 +184,7 @@ export interface OptimizationReport {
     readonly kind: OptimizerKind;
     readonly method?: LeastSquaresMethod;
     readonly nfev?: number;
+    readonly nit?: number;
     readonly njev?: number;
     readonly cost?: number;
     readonly optimality?: number;

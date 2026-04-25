@@ -25,4 +25,5 @@ Centralizes optimizer UI metadata so the optimization algorithm tab, store defau
   method-based optimizers expose `methods[*].canUseBounds` and `methods[*].requiresResidualCountAtLeastVariableCount`
   methodless optimizers omit `methods` and instead expose top-level `canUseBounds` and `requiresResidualCountAtLeastVariableCount`
 - Requires `least_squares` to remain method-based inside `OptimizerUiConfig`, while allowing other optimizer kinds to use either metadata shape in the future.
-- Stores the least-squares method labels, capability flags, and tolerance labels/defaults in one UI-facing config object.
+- Stores least-squares method labels, capability flags, and tolerance labels/defaults in one UI-facing config object.
+- Stores Differential Evolution as a methodless optimizer with `canUseBounds: true`, no residual-count dimension rule, and only `tol` / `atol` tolerance fields exposed as `Relative tolerance` and `Absolute tolerance`.

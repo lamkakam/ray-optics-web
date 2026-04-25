@@ -227,7 +227,7 @@ def test_differential_evolution_adapter_calls_scipy_with_scalar_objective_and_bo
 
     captured = {}
     config = {
-        "optimizer": {"kind": "differential_evolution", "max_nfev": 11},
+        "optimizer": {"kind": "differential_evolution", "max_nfev": 60},
         "variables": [
             {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0},
             {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
@@ -293,7 +293,11 @@ def test_differential_evolution_adapter_calls_scipy_with_scalar_objective_and_bo
     assert result["success"] is True
     assert captured["func"] == problem.scalar_objective
     assert captured["bounds"] == list(zip(lower.tolist(), upper.tolist(), strict=True))
-    assert captured["maxiter"] == 11
+    # SciPy's differential_evolution maxiter is a generation count, not a
+    # function-evaluation budget. The public max_nfev value must be translated
+    # so the UI's "Max. num of steps" bounds progress updates by evaluations.
+    assert captured["maxiter"] == 1
+    assert captured["polish"] is False
 
 
 def test_differential_evolution_adapter_forwards_supported_kwargs_with_defaults(monkeypatch, cooke_triplet):
@@ -346,9 +350,53 @@ def test_differential_evolution_adapter_forwards_supported_kwargs_with_defaults(
     assert captured["mutation"] == (0.5, 1)
     assert captured["recombination"] == pytest.approx(0.7)
     assert captured["seed"] is None
-    assert captured["polish"] is True
+    assert captured["polish"] is False
     assert captured["init"] == "latinhypercube"
     assert captured["atol"] == pytest.approx(0.0)
+
+
+def test_differential_evolution_adapter_defaults_missing_scipy_status(monkeypatch, cooke_triplet):
+    from rayoptics_web_utils.optimization.problem import OptimizationProblem
+    from rayoptics_web_utils.optimization.solvers.differential_evolution import DifferentialEvolutionSolver
+
+    config = {
+        "optimizer": {"kind": "differential_evolution"},
+        "variables": [
+            {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+        ],
+        "pickups": [],
+        "merit_function": {
+            "operands": [
+                {
+                    "kind": "focal_length",
+                    "target": 90.0,
+                    "weight": 1.0,
+                }
+            ]
+        },
+    }
+    problem = OptimizationProblem(cooke_triplet, config)
+
+    def fake_differential_evolution(**kwargs):
+        class _Result:
+            x = np.array([42.0])
+            success = False
+            message = "Maximum number of iterations has been exceeded."
+            nfev = 30
+            nit = 1
+
+        return _Result()
+
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.solvers.differential_evolution.differential_evolution",
+        fake_differential_evolution,
+    )
+
+    result = DifferentialEvolutionSolver(problem).solve()
+
+    assert result["success"] is False
+    assert result["status"] == 0
+    assert result["message"] == "Maximum number of iterations has been exceeded."
 
 
 def test_compute_ray_fan_uses_operand_num_rays_for_padding(monkeypatch):
