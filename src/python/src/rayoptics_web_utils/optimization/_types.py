@@ -31,42 +31,48 @@ class OperandOptions(TypedDict, total=False):
     num_rays: int
 
 
-class OptimizerConfigInput(TypedDict, total=False):
-    kind: str
+class LeastSquaresOptimizerOptions(TypedDict, total=False):
+    ftol: float
+    xtol: float
+    gtol: float
+    max_nfev: int
+
+
+class DifferentialEvolutionOptimizerOptions(TypedDict, total=False):
+    strategy: str
+    max_nfev: int
+    popsize: int
+    tol: float
+    mutation: float | tuple[float, float]
+    recombination: float
+    seed: int | np.random.RandomState | np.random.Generator | None
+    polish: bool
+    init: str | FloatArray
+    atol: float
+
+
+class LeastSquaresOptimizerConfigInput(LeastSquaresOptimizerOptions, total=False):
+    kind: Literal["least_squares"]
     method: str
-    ftol: float
-    xtol: float
-    gtol: float
-    max_nfev: int
-    strategy: str
-    maxiter: int
-    popsize: int
-    tol: float
-    mutation: float | tuple[float, float]
-    recombination: float
-    seed: int | np.random.RandomState | np.random.Generator | None
-    polish: bool
-    init: str | FloatArray
-    atol: float
 
 
-class NormalizedOptimizerConfig(TypedDict, total=False):
-    kind: OptimizerKind
+class DifferentialEvolutionOptimizerConfigInput(DifferentialEvolutionOptimizerOptions, total=False):
+    kind: Literal["differential_evolution"]
+
+
+type OptimizerConfigInput = LeastSquaresOptimizerConfigInput | DifferentialEvolutionOptimizerConfigInput
+
+
+class NormalizedLeastSquaresOptimizerConfig(LeastSquaresOptimizerOptions):
+    kind: Literal["least_squares"]
     method: LeastSquaresMethod
-    ftol: float
-    xtol: float
-    gtol: float
-    max_nfev: int
-    strategy: str
-    maxiter: int
-    popsize: int
-    tol: float
-    mutation: float | tuple[float, float]
-    recombination: float
-    seed: int | np.random.RandomState | np.random.Generator | None
-    polish: bool
-    init: str | FloatArray
-    atol: float
+
+
+class NormalizedDifferentialEvolutionOptimizerConfig(DifferentialEvolutionOptimizerOptions):
+    kind: Literal["differential_evolution"]
+
+
+type NormalizedOptimizerConfig = NormalizedLeastSquaresOptimizerConfig | NormalizedDifferentialEvolutionOptimizerConfig
 
 
 class BaseVariableConfigInput(TypedDict, total=False):

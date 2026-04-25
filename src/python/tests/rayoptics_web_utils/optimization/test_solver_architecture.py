@@ -91,7 +91,7 @@ def test_optimize_opm_dispatches_differential_evolution_through_solver_registry(
     captured = {}
     original_image_distance = cooke_triplet["seq_model"].gaps[6].thi
     config = {
-        "optimizer": {"kind": "differential_evolution", "maxiter": 3},
+        "optimizer": {"kind": "differential_evolution", "max_nfev": 3},
         "variables": [
             {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
         ],
@@ -131,7 +131,9 @@ def test_optimize_opm_dispatches_differential_evolution_through_solver_registry(
         cooke_triplet.update_model()
 
     assert captured["problem"].optimizer["kind"] == "differential_evolution"
+    assert captured["problem"].optimizer["max_nfev"] == 3
     assert "method" not in captured["problem"].optimizer
+    assert "maxiter" not in captured["problem"].optimizer
     assert result["success"] is True
     assert result["status"] == 9
     assert result["message"] == "stub de"
@@ -173,6 +175,7 @@ def test_least_squares_adapter_calls_scipy_with_problem_interfaces(monkeypatch, 
     assert result["success"] is True
     assert captured["func"] == problem.residual_objective
     assert captured["method"] == "trf"
+    assert captured["max_nfev"] == 5
     assert "bounds" in captured
 
 
@@ -224,7 +227,7 @@ def test_differential_evolution_adapter_calls_scipy_with_scalar_objective_and_bo
 
     captured = {}
     config = {
-        "optimizer": {"kind": "differential_evolution"},
+        "optimizer": {"kind": "differential_evolution", "max_nfev": 11},
         "variables": [
             {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0},
             {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
@@ -290,6 +293,7 @@ def test_differential_evolution_adapter_calls_scipy_with_scalar_objective_and_bo
     assert result["success"] is True
     assert captured["func"] == problem.scalar_objective
     assert captured["bounds"] == list(zip(lower.tolist(), upper.tolist(), strict=True))
+    assert captured["maxiter"] == 11
 
 
 def test_differential_evolution_adapter_forwards_supported_kwargs_with_defaults(monkeypatch, cooke_triplet):

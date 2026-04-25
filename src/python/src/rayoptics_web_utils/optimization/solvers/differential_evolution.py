@@ -21,7 +21,7 @@ class DifferentialEvolutionSolver(SolverAdapter):
                 func=self.problem.scalar_objective,
                 bounds=bounds,
                 strategy=self.problem.optimizer.get("strategy", "best1bin"),
-                maxiter=self.problem.optimizer.get("maxiter", 1000),
+                maxiter=self.problem.optimizer.get("max_nfev", 1000),
                 popsize=self.problem.optimizer.get("popsize", 15),
                 tol=self.problem.optimizer.get("tol", 0.01),
                 mutation=self.problem.optimizer.get("mutation", (0.5, 1)),

@@ -27,6 +27,7 @@ class OptimizationProblemProtocol(Protocol): ...
 ## Key Behaviors
 
 - Separates user-facing config inputs from normalized internal config shapes, including optional operand targets for target-less operands.
+- Models optimizer config as solver-specific `TypedDict` unions. Least-squares config owns `method`, tolerances, and `max_nfev`; differential-evolution config owns DE options, uses `max_nfev` as its iteration-limit key, and has no `method` or `maxiter`.
 - Uses discriminated target and pickup unions so per-kind keys such as `coefficient_index` are explicit.
 - Variable typed dicts allow optional `min` / `max` so normalized configs can represent bounded `trf` / `differential_evolution` variables and unbounded `lm` variables with one shared union.
 - Captures the existing JSON-serialisable result payload shape in concrete report/progress typed dicts; residual entries may omit `target`.

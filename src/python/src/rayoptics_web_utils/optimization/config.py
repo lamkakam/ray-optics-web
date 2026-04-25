@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import deque
 from copy import deepcopy
+from typing import cast
 
 from rayoptics.environment import OpticalModel
 
@@ -19,6 +20,8 @@ from .targets import (
 from ._types import (
     MeritFunctionConfig,
     MeritFunctionConfigInput,
+    NormalizedDifferentialEvolutionOptimizerConfig,
+    NormalizedLeastSquaresOptimizerConfig,
     NormalizedOptimizationConfig,
     NormalizedOptimizerConfig,
     OperandConfigInput,
@@ -33,21 +36,56 @@ from ._types import (
 )
 
 
+LEAST_SQUARES_OPTIMIZER_KEYS = {"kind", "method", "ftol", "xtol", "gtol", "max_nfev"}
+DIFFERENTIAL_EVOLUTION_OPTIMIZER_KEYS = {
+    "kind",
+    "strategy",
+    "max_nfev",
+    "popsize",
+    "tol",
+    "mutation",
+    "recombination",
+    "seed",
+    "polish",
+    "init",
+    "atol",
+}
+
+
+def reject_unknown_optimizer_options(optimizer: dict[str, object], kind: str, allowed_keys: set[str]) -> None:
+    unknown_keys = set(optimizer) - allowed_keys
+    if unknown_keys:
+        key = sorted(unknown_keys)[0]
+        raise ValueError(f"Unsupported optimizer option for {kind}: {key}")
+
+
 def normalize_optimizer_config(config: OptimizationConfig) -> NormalizedOptimizerConfig:
-    optimizer = deepcopy(config.get("optimizer") or {})
+    optimizer = dict(cast(dict[str, object], deepcopy(config.get("optimizer") or {})))
     kind = optimizer.get("kind", "least_squares")
     if kind not in {"least_squares", "differential_evolution"}:
         raise ValueError(f"Unknown optimizer kind: {kind}")
-    optimizer["kind"] = kind
     if kind == "least_squares":
+        reject_unknown_optimizer_options(optimizer, kind, LEAST_SQUARES_OPTIMIZER_KEYS)
         method = optimizer.get("method", "trf")
         if method not in {"trf", "lm"}:
             raise ValueError(f"Unknown least-squares method: {method}")
-        optimizer["method"] = method
-        return optimizer
+        return cast(
+            NormalizedLeastSquaresOptimizerConfig,
+            {
+                **optimizer,
+                "kind": kind,
+                "method": method,
+            },
+        )
 
-    optimizer.pop("method", None)
-    return optimizer
+    reject_unknown_optimizer_options(optimizer, kind, DIFFERENTIAL_EVOLUTION_OPTIMIZER_KEYS)
+    return cast(
+        NormalizedDifferentialEvolutionOptimizerConfig,
+        {
+            **optimizer,
+            "kind": kind,
+        },
+    )
 
 
 def normalize_variables(

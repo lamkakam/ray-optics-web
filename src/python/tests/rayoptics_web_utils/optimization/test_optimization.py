@@ -97,7 +97,7 @@ class TestEvaluateOptimizationProblem:
         report = evaluate_optimization_problem(
             fresh_cooke_triplet,
             {
-                "optimizer": {"kind": "differential_evolution", "maxiter": 3},
+                "optimizer": {"kind": "differential_evolution", "max_nfev": 3},
                 "variables": [
                     {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
                 ],
@@ -116,6 +116,30 @@ class TestEvaluateOptimizationProblem:
 
         assert report["optimizer"]["kind"] == "differential_evolution"
         assert "method" not in report["optimizer"]
+
+    def test_rejects_differential_evolution_legacy_maxiter(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        with pytest.raises(ValueError, match="Unsupported optimizer option for differential_evolution: maxiter"):
+            evaluate_optimization_problem(
+                fresh_cooke_triplet,
+                {
+                    "optimizer": {"kind": "differential_evolution", "maxiter": 3},
+                    "variables": [
+                        {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+                    ],
+                    "pickups": [],
+                    "merit_function": {
+                        "operands": [
+                            {
+                                "kind": "focal_length",
+                                "target": 100.0,
+                                "weight": 1.0,
+                            }
+                        ]
+                    },
+                },
+            )
 
     def test_rejects_trf_variables_without_bounds(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
@@ -675,7 +699,7 @@ class TestOptimizeOpm:
         from rayoptics_web_utils.optimization import optimize_opm
 
         config = {
-            "optimizer": {"kind": "differential_evolution", "maxiter": 3},
+            "optimizer": {"kind": "differential_evolution", "max_nfev": 3},
             "variables": [
                 {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
             ],
@@ -712,6 +736,8 @@ class TestOptimizeOpm:
 
         assert report["optimizer"]["kind"] == "differential_evolution"
         assert "method" not in report["optimizer"]
+        assert "max_nfev" in config["optimizer"]
+        assert "maxiter" not in report["optimizer"]
         assert report["optimizer"]["nfev"] == 6
         assert report["optimizer"]["nit"] == 4
         assert "njev" not in report["optimizer"]

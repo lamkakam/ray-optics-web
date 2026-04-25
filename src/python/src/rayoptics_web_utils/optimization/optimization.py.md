@@ -165,7 +165,7 @@ weighted_residual = total_weight * (actual_value - target)
 
 - Runs `scipy.optimize.differential_evolution(...)` using the stored optimizer configuration and `OptimizationProblem.scalar_objective(...)`.
 - Converts `OptimizationProblem.bounds()` into the per-dimension `(min, max)` sequence required by SciPy differential evolution.
-- Supports SciPy 1.14.1-compatible DE options: `strategy`, `maxiter`, `popsize`, `tol`, `mutation`, `recombination`, `seed`, `polish`, `init`, and `atol`.
+- Supports SciPy 1.14.1-compatible DE options: `strategy`, `max_nfev`, `popsize`, `tol`, `mutation`, `recombination`, `seed`, `polish`, `init`, and `atol`; the solver adapter forwards `max_nfev` to SciPy as `maxiter`.
 - Normalizes the SciPy result into the mapping consumed by `optimize_opm(...)`, carrying solver-specific metadata such as `nfev` and `nit`.
 
 ### `optimize_opm(opm, config)`

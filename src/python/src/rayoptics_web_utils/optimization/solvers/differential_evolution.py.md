@@ -18,7 +18,7 @@ class DifferentialEvolutionSolver(SolverAdapter):
 - Converts `OptimizationProblem.bounds()` into SciPy's per-dimension `(min, max)` sequence.
 - Supports the SciPy 1.14.1-compatible DE options:
   - `strategy`
-  - `maxiter`
+  - `max_nfev` as the public/internal config key, forwarded to SciPy as `maxiter`
   - `popsize`
   - `tol`
   - `mutation`

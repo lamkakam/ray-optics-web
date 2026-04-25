@@ -9,7 +9,7 @@ Normalizes and validates optimization config dictionaries for variables, pickups
 ```python
 normalize_config(opm: OpticalModel, config: OptimizationConfig) -> NormalizedOptimizationConfig
 normalize_optimizer_config(config: OptimizationConfig) -> NormalizedOptimizerConfig
-normalize_variables(opm: OpticalModel, variables: list[VariableConfigInput]) -> list[VariableConfig]
+normalize_variables(opm: OpticalModel, variables: list[VariableConfigInput], optimizer: NormalizedOptimizerConfig) -> list[VariableConfig]
 normalize_pickups(opm: OpticalModel, pickups: list[PickupConfigInput], variable_targets: set[TargetKey]) -> list[PickupConfig]
 normalize_merit_function(opm: OpticalModel, merit_function: MeritFunctionConfigInput) -> MeritFunctionConfig
 pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]
@@ -19,6 +19,8 @@ pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]
 
 - Accepts `optimizer.kind == "least_squares"` and `optimizer.kind == "differential_evolution"`.
 - Accepts least-squares methods `trf` and `lm`; `differential_evolution` is methodless on the normalized Python side.
+- Validates optimizer options against the selected solver kind. Least-squares accepts only `kind`, `method`, `ftol`, `xtol`, `gtol`, and `max_nfev`; differential evolution accepts only `kind`, `strategy`, `max_nfev`, `popsize`, `tol`, `mutation`, `recombination`, `seed`, `polish`, `init`, and `atol`.
+- Rejects legacy or cross-solver optimizer keys such as `maxiter` on differential evolution and `strategy` on least squares.
 - Validates variable and pickup target uniqueness and pickup graph acyclicity.
 - Expands merit operands into one normalized sample per field/wavelength pair where applicable, while preserving optional missing `target` for target-less operands such as `ray_fan`.
 - Keeps validation logic independent from solver execution so future algorithms can reuse the same normalized config.
