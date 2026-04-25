@@ -86,7 +86,7 @@ export function _resetPyodideForTesting(): void
 2. Loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
 3. Calls `loadPyodide({ indexURL })` to create the Pyodide instance.
 4. Loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-5. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.2.16-py3-none-any.whl`.
+5. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.2.17-py3-none-any.whl`.
 6. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl)`.
 
 `_init(runPython, wheelUrl)` performs three `runPython` calls:
