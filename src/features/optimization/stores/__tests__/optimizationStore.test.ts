@@ -177,14 +177,14 @@ describe("optimizationStore", () => {
       throw new Error("Expected least-squares optimizer state.");
     }
     expect(state.optimizer.method).toBe("trf");
-    expect(state.optimizer.maxNumSteps).toBe("200");
-    expect(state.optimizer.meritFunctionTolerance).toBe(
+    expect(state.optimizer.max_nfev).toBe("200");
+    expect(state.optimizer.ftol).toBe(
       formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[0].default),
     );
-    expect(state.optimizer.independentVariableTolerance).toBe(
+    expect(state.optimizer.xtol).toBe(
       formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[1].default),
     );
-    expect(state.optimizer.gradientTolerance).toBe(
+    expect(state.optimizer.gtol).toBe(
       formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[2].default),
     );
     expect(state.fieldWeights).toEqual([1, 0, 0]);
@@ -308,10 +308,10 @@ describe("optimizationStore", () => {
 
     store.setState((state) => ({
       optimizer: {
-        ...state.optimizer,
         kind: "differential_evolution",
-        relativeTolerance: "0.02",
-        absoluteTolerance: "0",
+        max_nfev: "200",
+        tol: "0.02",
+        atol: "0",
       },
     }));
     store.getState().setRadiusMode(1, {
@@ -351,10 +351,10 @@ describe("optimizationStore", () => {
 
     store.setState((state) => ({
       optimizer: {
-        ...state.optimizer,
         kind: "differential_evolution",
-        relativeTolerance: "0.01",
-        absoluteTolerance: "0",
+        max_nfev: "200",
+        tol: "0.01",
+        atol: "0",
       },
     }));
     store.getState().setRadiusMode(1, {
@@ -385,8 +385,8 @@ describe("optimizationStore", () => {
     store.setState((state) => ({
       optimizer: {
         ...state.optimizer,
-        maxNumSteps: "99",
-        meritFunctionTolerance: "1e-4",
+        max_nfev: "99",
+        ftol: "1e-4",
       },
     }));
 
@@ -394,11 +394,11 @@ describe("optimizationStore", () => {
 
     expect(store.getState().optimizer).toEqual({
       kind: "differential_evolution",
-      maxNumSteps: "200",
-      relativeTolerance: formatOptimizerUiDefaultValue(
+      max_nfev: "200",
+      tol: formatOptimizerUiDefaultValue(
         OPTIMIZER_UI_CONFIG.differential_evolution.tolerances[0].default,
       ),
-      absoluteTolerance: formatOptimizerUiDefaultValue(
+      atol: formatOptimizerUiDefaultValue(
         OPTIMIZER_UI_CONFIG.differential_evolution.tolerances[1].default,
       ),
     });

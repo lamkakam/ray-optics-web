@@ -11,14 +11,14 @@ describe("OptimizationAlgorithmTab", () => {
         optimizer={{
           kind: "least_squares",
           method: "trf",
-          maxNumSteps: "200",
-          meritFunctionTolerance: formatOptimizerUiDefaultValue(
+          max_nfev: "200",
+          ftol: formatOptimizerUiDefaultValue(
             OPTIMIZER_UI_CONFIG.least_squares.tolerances[0].default,
           ),
-          independentVariableTolerance: formatOptimizerUiDefaultValue(
+          xtol: formatOptimizerUiDefaultValue(
             OPTIMIZER_UI_CONFIG.least_squares.tolerances[1].default,
           ),
-          gradientTolerance: formatOptimizerUiDefaultValue(
+          gtol: formatOptimizerUiDefaultValue(
             OPTIMIZER_UI_CONFIG.least_squares.tolerances[2].default,
           ),
         }}
@@ -40,9 +40,9 @@ describe("OptimizationAlgorithmTab", () => {
       <OptimizationAlgorithmTab
         optimizer={{
           kind: "differential_evolution",
-          maxNumSteps: "200",
-          relativeTolerance: "1e-2",
-          absoluteTolerance: "0e+0",
+          max_nfev: "200",
+          tol: "1e-2",
+          atol: "0e+0",
         }}
         onChangeOptimizer={jest.fn()}
       />,
@@ -66,10 +66,10 @@ describe("OptimizationAlgorithmTab", () => {
         optimizer={{
           kind: "least_squares",
           method: "trf",
-          maxNumSteps: "200",
-          meritFunctionTolerance: "1e-5",
-          independentVariableTolerance: "1e-5",
-          gradientTolerance: "1e-5",
+          max_nfev: "200",
+          ftol: "1e-5",
+          xtol: "1e-5",
+          gtol: "1e-5",
         }}
         onChangeOptimizer={onChangeOptimizer}
       />,

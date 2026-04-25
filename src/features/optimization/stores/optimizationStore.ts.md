@@ -17,7 +17,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Key State
 
 - `optimizationModel` — page-local `OpticalModel` snapshot seeded from the editor
-- `optimizer` — optimizer-kind-specific algorithm inputs stored as strings for direct form binding; least squares stores `method` plus `ftol` / `xtol` / `gtol` UI values, while Differential Evolution stores `tol` / `atol` UI values
+- `optimizer` — optimizer-kind-specific algorithm inputs stored as strings for direct form binding while mirroring `OptimizationConfig["optimizer"]` attribute names; least squares stores `method`, `max_nfev`, `ftol`, `xtol`, and `gtol` UI values, while Differential Evolution stores `max_nfev`, `tol`, and `atol` UI values
 - `fieldWeights` / `wavelengthWeights` — numeric optimization weights
 - `radiusModes` — one entry per non-object radius target, including the image surface
 - `thicknessModes` — one entry per surface-row thickness target
@@ -47,7 +47,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Internal Structure
 
 - `buildOptimizationConfig()` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
-- Store-local optimizer and surface-mode helper types derive shared contract fields from `shared/lib/types/optimization.ts` via indexed-access / `Extract` types, so the worker-boundary kind unions stay defined in one place.
+- Store-local optimizer and surface-mode helper types derive shared contract fields from `shared/lib/types/optimization.ts` via indexed-access / `Extract` types, so the worker-boundary kind unions stay defined in one place. Optimizer form state keeps the shared field names and maps only numeric values to input strings.
 - Shared optimizer capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the selected optimizer's rule set.
 - Default optimizer method and tolerance strings are seeded from `features/optimization/lib/optimizerUiConfig.ts` so the form defaults, labels, and capability rules stay aligned.
 - Shared validation for bounded variable ranges stays centralized so radius, thickness, and asphere variable entries continue to use the same `min < max` rule and error text when the active method requires bounds.

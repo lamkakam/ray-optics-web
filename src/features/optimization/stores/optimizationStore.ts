@@ -15,6 +15,11 @@ import { formatOptimizerUiDefaultValue, OPTIMIZER_UI_CONFIG } from "@/features/o
 type SharedOptimizerConfig = OptimizationConfig["optimizer"];
 type SharedSurfaceVariableConfig = Extract<OptimizationConfig["variables"][number], { readonly kind: "radius" | "thickness" }>;
 type SharedSurfacePickupConfig = Extract<OptimizationPickupConfig, { readonly kind: "radius" | "thickness" }>;
+type OptimizerFormStateByConfig<TConfig extends SharedOptimizerConfig> = {
+  readonly [TKey in keyof TConfig]: TConfig[TKey] extends number ? string : TConfig[TKey];
+};
+type OptimizationAlgorithmState<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
+  TConfig extends SharedOptimizerConfig ? OptimizerFormStateByConfig<TConfig> : never;
 
 export type RadiusMode =
   | { readonly surfaceIndex: number; readonly mode: "constant" }
@@ -118,22 +123,6 @@ interface WarningModalState {
   readonly open: boolean;
   readonly message: string;
 }
-
-type OptimizationAlgorithmState =
-  | {
-      readonly kind: "least_squares";
-      readonly method: Extract<SharedOptimizerConfig, { readonly kind: "least_squares" }>["method"];
-      readonly maxNumSteps: string;
-      readonly meritFunctionTolerance: string;
-      readonly independentVariableTolerance: string;
-      readonly gradientTolerance: string;
-    }
-  | {
-      readonly kind: "differential_evolution";
-      readonly maxNumSteps: string;
-      readonly relativeTolerance: string;
-      readonly absoluteTolerance: string;
-    };
 
 export interface OptimizationState {
   activeTabId: string;
@@ -295,19 +284,19 @@ function buildOptimizerConfig(
   if (optimizer.kind === "differential_evolution") {
     return {
       kind: optimizer.kind,
-      max_nfev: parsePositiveInteger(optimizer.maxNumSteps, "Max. num of steps"),
-      tol: parsePositiveFloat(optimizer.relativeTolerance, "Relative tolerance"),
-      atol: parseNonNegativeFloat(optimizer.absoluteTolerance, "Absolute tolerance"),
+      max_nfev: parsePositiveInteger(optimizer.max_nfev, "Max. num of steps"),
+      tol: parsePositiveFloat(optimizer.tol, "Relative tolerance"),
+      atol: parseNonNegativeFloat(optimizer.atol, "Absolute tolerance"),
     };
   }
 
   return {
     kind: optimizer.kind,
     method: optimizer.method,
-    max_nfev: parsePositiveInteger(optimizer.maxNumSteps, "Max. num of steps"),
-    ftol: parsePositiveFloat(optimizer.meritFunctionTolerance, "Merit function change tolerance"),
-    xtol: parsePositiveFloat(optimizer.independentVariableTolerance, "Independent variable change tolerance"),
-    gtol: parsePositiveFloat(optimizer.gradientTolerance, "Gradient tolerance"),
+    max_nfev: parsePositiveInteger(optimizer.max_nfev, "Max. num of steps"),
+    ftol: parsePositiveFloat(optimizer.ftol, "Merit function change tolerance"),
+    xtol: parsePositiveFloat(optimizer.xtol, "Independent variable change tolerance"),
+    gtol: parsePositiveFloat(optimizer.gtol, "Gradient tolerance"),
   };
 }
 
@@ -665,9 +654,9 @@ function createDefaultOptimizerState(
   if (kind === "differential_evolution") {
     return {
       kind,
-      maxNumSteps: "200",
-      relativeTolerance: getOptimizerToleranceDefault(kind, "tol"),
-      absoluteTolerance: getOptimizerToleranceDefault(kind, "atol"),
+      max_nfev: "200",
+      tol: getOptimizerToleranceDefault(kind, "tol"),
+      atol: getOptimizerToleranceDefault(kind, "atol"),
     };
   }
 
@@ -676,10 +665,10 @@ function createDefaultOptimizerState(
   return {
     kind: "least_squares",
     method: optimizerConfig.methods[0].kind,
-    maxNumSteps: "200",
-    meritFunctionTolerance: getOptimizerToleranceDefault(kind, "ftol"),
-    independentVariableTolerance: getOptimizerToleranceDefault(kind, "xtol"),
-    gradientTolerance: getOptimizerToleranceDefault(kind, "gtol"),
+    max_nfev: "200",
+    ftol: getOptimizerToleranceDefault(kind, "ftol"),
+    xtol: getOptimizerToleranceDefault(kind, "xtol"),
+    gtol: getOptimizerToleranceDefault(kind, "gtol"),
   };
 }
 

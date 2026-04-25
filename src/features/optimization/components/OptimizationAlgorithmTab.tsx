@@ -5,70 +5,31 @@ import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
 import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
-import type { LeastSquaresMethod, OptimizerKind } from "@/shared/lib/types/optimization";
+import type { LeastSquaresMethod, OptimizationConfig, OptimizerKind } from "@/shared/lib/types/optimization";
 
-type OptimizerFormState =
-  | {
-      readonly kind: "least_squares";
-      readonly method: LeastSquaresMethod;
-      readonly maxNumSteps: string;
-      readonly meritFunctionTolerance: string;
-      readonly independentVariableTolerance: string;
-      readonly gradientTolerance: string;
-    }
-  | {
-      readonly kind: "differential_evolution";
-      readonly maxNumSteps: string;
-      readonly relativeTolerance: string;
-      readonly absoluteTolerance: string;
-    };
+type SharedOptimizerConfig = OptimizationConfig["optimizer"];
+type OptimizerFormStateByConfig<TConfig extends SharedOptimizerConfig> = {
+  readonly [TKey in keyof TConfig]: TConfig[TKey] extends number ? string : TConfig[TKey];
+};
+type OptimizerFormState<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
+  TConfig extends SharedOptimizerConfig ? OptimizerFormStateByConfig<TConfig> : never;
+type OptimizerToleranceKind<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
+  TConfig extends SharedOptimizerConfig ? Exclude<keyof TConfig, "kind" | "method" | "max_nfev"> : never;
 
 interface OptimizationAlgorithmTabProps {
   readonly optimizer: OptimizerFormState;
   readonly onChangeOptimizer: (patch: Partial<OptimizerFormState>) => void;
 }
 
-const TOLERANCE_FIELD_BY_KIND = {
-  ftol: "meritFunctionTolerance",
-  xtol: "independentVariableTolerance",
-  gtol: "gradientTolerance",
-  tol: "relativeTolerance",
-  atol: "absoluteTolerance",
-} as const;
-
-type OptimizerToleranceKind = keyof typeof TOLERANCE_FIELD_BY_KIND;
-
 function getToleranceValue(optimizer: OptimizerFormState, toleranceKind: OptimizerToleranceKind): string {
-  if (optimizer.kind === "least_squares") {
-    if (toleranceKind === "ftol") {
-      return optimizer.meritFunctionTolerance;
-    }
-    if (toleranceKind === "xtol") {
-      return optimizer.independentVariableTolerance;
-    }
-    if (toleranceKind === "gtol") {
-      return optimizer.gradientTolerance;
-    }
-  }
-
-  if (optimizer.kind === "differential_evolution") {
-    if (toleranceKind === "tol") {
-      return optimizer.relativeTolerance;
-    }
-    if (toleranceKind === "atol") {
-      return optimizer.absoluteTolerance;
-    }
-  }
-
-  throw new Error(`Optimizer kind "${optimizer.kind}" does not expose tolerance "${toleranceKind}".`);
+  return (optimizer as unknown as Record<OptimizerToleranceKind, string>)[toleranceKind];
 }
 
 function createTolerancePatch(
   toleranceKind: OptimizerToleranceKind,
   value: string,
 ): Partial<OptimizerFormState> {
-  const field = TOLERANCE_FIELD_BY_KIND[toleranceKind];
-  return { [field]: value } as Partial<OptimizerFormState>;
+  return { [toleranceKind]: value } as Partial<OptimizerFormState>;
 }
 
 export function OptimizationAlgorithmTab({
@@ -109,8 +70,8 @@ export function OptimizationAlgorithmTab({
         <Input
           id="optimizer-max-steps"
           aria-label="Max. num of steps"
-          value={optimizer.maxNumSteps}
-          onChange={(event) => onChangeOptimizer({ maxNumSteps: event.target.value })}
+          value={optimizer.max_nfev}
+          onChange={(event) => onChangeOptimizer({ max_nfev: event.target.value })}
         />
       </div>
       {optimizerConfig.tolerances.map((tolerance) => {
