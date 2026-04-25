@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Callable, Literal, NotRequired, Protocol, TypedDict
 
 import numpy as np
@@ -17,7 +18,7 @@ type TargetKind = Literal[
     "asphere_polynomial_coefficient",
     "asphere_toric_sweep_radius",
 ]
-type OptimizerKind = Literal["least_squares"]
+type OptimizerKind = Literal["least_squares", "differential_evolution"]
 type LeastSquaresMethod = Literal["trf", "lm"]
 type AsphereKind = Literal["Conic", "EvenAspherical", "RadialPolynomial", "XToroid", "YToroid"]
 type BaseTargetKey = tuple[TargetKind, int]
@@ -30,22 +31,48 @@ class OperandOptions(TypedDict, total=False):
     num_rays: int
 
 
-class OptimizerConfigInput(TypedDict, total=False):
-    kind: str
+class LeastSquaresOptimizerOptions(TypedDict, total=False):
+    ftol: float
+    xtol: float
+    gtol: float
+    max_nfev: int
+
+
+class DifferentialEvolutionOptimizerOptions(TypedDict, total=False):
+    strategy: str
+    max_nfev: int
+    popsize: int
+    tol: float
+    mutation: float | tuple[float, float]
+    recombination: float
+    seed: int | np.random.RandomState | np.random.Generator | None
+    polish: bool
+    init: str | FloatArray
+    atol: float
+
+
+class LeastSquaresOptimizerConfigInput(LeastSquaresOptimizerOptions, total=False):
+    kind: Literal["least_squares"]
     method: str
-    ftol: float
-    xtol: float
-    gtol: float
-    max_nfev: int
 
 
-class NormalizedOptimizerConfig(TypedDict, total=False):
-    kind: OptimizerKind
+class DifferentialEvolutionOptimizerConfigInput(DifferentialEvolutionOptimizerOptions, total=False):
+    kind: Literal["differential_evolution"]
+
+
+type OptimizerConfigInput = LeastSquaresOptimizerConfigInput | DifferentialEvolutionOptimizerConfigInput
+
+
+class NormalizedLeastSquaresOptimizerConfig(LeastSquaresOptimizerOptions):
+    kind: Literal["least_squares"]
     method: LeastSquaresMethod
-    ftol: float
-    xtol: float
-    gtol: float
-    max_nfev: int
+
+
+class NormalizedDifferentialEvolutionOptimizerConfig(DifferentialEvolutionOptimizerOptions):
+    kind: Literal["differential_evolution"]
+
+
+type NormalizedOptimizerConfig = NormalizedLeastSquaresOptimizerConfig | NormalizedDifferentialEvolutionOptimizerConfig
 
 
 class BaseVariableConfigInput(TypedDict, total=False):
@@ -332,7 +359,12 @@ type ProgressReporter = Callable[[list[OptimizationProgressEntry]], None]
 
 class OptimizerSummary(TypedDict):
     kind: OptimizerKind
-    method: LeastSquaresMethod
+    method: NotRequired[LeastSquaresMethod]
+    nfev: NotRequired[int]
+    njev: NotRequired[int]
+    nit: NotRequired[int]
+    cost: NotRequired[float]
+    optimality: NotRequired[float]
 
 
 class ProblemEvaluation(TypedDict):
@@ -356,10 +388,11 @@ class SolverResult(TypedDict):
     success: bool
     status: int
     message: str
-    nfev: int
-    njev: int
-    cost: float
-    optimality: float
+    nfev: NotRequired[int]
+    njev: NotRequired[int]
+    nit: NotRequired[int]
+    cost: NotRequired[float]
+    optimality: NotRequired[float]
 
 
 type OperandValue = float | list[float]
@@ -375,3 +408,12 @@ class OptimizationProblemProtocol(Protocol):
     def bounds(self) -> tuple[FloatArray, FloatArray]: ...
 
     def residual_objective(self, vector: FloatArray) -> FloatArray: ...
+
+    def scalar_objective(self, vector: FloatArray) -> float: ...
+
+
+def has_finite_variable_bounds(variable: VariableConfig) -> bool:
+    """Return whether a normalized variable provides finite min/max bounds."""
+    if "min" not in variable or "max" not in variable:
+        return False
+    return math.isfinite(variable["min"]) and math.isfinite(variable["max"])

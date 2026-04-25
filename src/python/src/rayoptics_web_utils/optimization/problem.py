@@ -120,8 +120,11 @@ class OptimizationProblem:
 
         sum_of_squares = float(sum(value ** 2 for value in weighted_values))
         rss = float(math.sqrt(sum_of_squares))
+        optimizer_summary = {"kind": self.optimizer["kind"]}
+        if "method" in self.optimizer:
+            optimizer_summary["method"] = self.optimizer["method"]
         return {
-            "optimizer": {"kind": self.optimizer["kind"], "method": self.optimizer["method"]},
+            "optimizer": optimizer_summary,
             "initial_values": self.variable_state(),
             "final_values": self.variable_state(),
             "pickups": pickups,
