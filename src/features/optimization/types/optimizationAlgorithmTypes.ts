@@ -1,4 +1,4 @@
-import type { LeastSquaresMethod, OptimizerKind } from "@/features/optimization/type/optimizationWorkerTypes";
+import type { LeastSquaresMethod, OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
 
 export interface OptimizationMethodCapabilities {
   readonly canUseBounds: boolean;

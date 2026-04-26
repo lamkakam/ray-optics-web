@@ -4,7 +4,7 @@ import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
 import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
-import type { LeastSquaresMethod, OptimizationConfig, OptimizerKind } from "@/features/optimization/type/optimizationWorkerTypes";
+import type { LeastSquaresMethod, OptimizationConfig, OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
 
 type SharedOptimizerConfig = OptimizationConfig["optimizer"];
 type OptimizerFormStateByConfig<TConfig extends SharedOptimizerConfig> = {

@@ -1,5 +1,5 @@
-import type { OptimizationOperandKind } from "@/features/optimization/type/optimizationWorkerTypes";
-import type { OptimizationOperandMetadata } from "@/features/optimization/type/optimizationOperandTypes";
+import type { OptimizationOperandKind } from "@/features/optimization/types/optimizationWorkerTypes";
+import type { OptimizationOperandMetadata } from "@/features/optimization/types/optimizationOperandTypes";
 
 export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMetadata> = [
   {

@@ -1,4 +1,4 @@
-# `features/optimization/type/optimizationVariableFieldTypes.ts`
+# `features/optimization/types/optimizationVariableFieldTypes.ts`
 
 ## Purpose
 

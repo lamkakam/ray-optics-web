@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { AgGridProvider, AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
-import type { OptimizationOperandKind } from "@/features/optimization/type/optimizationWorkerTypes";
+import type { OptimizationOperandKind } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { OptimizationOperandRow } from "@/features/optimization/stores/optimizationStore";
 import { getOperandLabel } from "@/features/optimization/components/optimizationViewModels";
 import { OPTIMIZATION_OPERAND_METADATA, getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";

@@ -1,4 +1,4 @@
-# `features/optimization/type/`
+# `features/optimization/types/`
 
 Type-only modules for the optimization feature.
 

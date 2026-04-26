@@ -1,5 +1,5 @@
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
-import type { SourceSurfaceSelectOption } from "@/features/optimization/type/optimizationModalTypes";
+import type { SourceSurfaceSelectOption } from "@/features/optimization/types/optimizationModalTypes";
 
 export const MODAL_MODE_OPTIONS = [
   { value: "constant", label: "constant" },

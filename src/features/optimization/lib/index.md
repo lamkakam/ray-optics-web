@@ -13,4 +13,4 @@ Pure helper utilities shared across optimization feature modules.
 ## Conventions
 
 - Runtime constants and helper functions live here.
-- Optimization-only type definitions live in `features/optimization/type/`.
+- Optimization-only type definitions live in `features/optimization/types/`.

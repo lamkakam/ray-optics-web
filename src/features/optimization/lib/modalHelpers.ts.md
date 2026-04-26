@@ -15,7 +15,7 @@ Pure helper utilities shared by optimization variable/pickup modals.
 - `toRadiusModeDraft(mode)`: removes `surfaceIndex` from a committed `RadiusMode` to seed modal-local draft state
 - `serializeRadiusMode(mode)`: converts a committed `RadiusMode` into a stable string for keyed modal remounting
 
-Type definitions for modal mode values and source-surface select options live in `features/optimization/type/optimizationModalTypes.ts`.
+Type definitions for modal mode values and source-surface select options live in `features/optimization/types/optimizationModalTypes.ts`.
 
 ## Behavior
 

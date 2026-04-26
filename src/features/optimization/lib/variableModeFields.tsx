@@ -3,7 +3,7 @@ import { UnboundedVariableModeFields } from "@/features/optimization/components/
 import type {
   VariableModeFieldsProps,
   VariableModeFieldsRenderer,
-} from "@/features/optimization/type/optimizationVariableFieldTypes";
+} from "@/features/optimization/types/optimizationVariableFieldTypes";
 
 const BOUNDED_VARIABLE_MODE_FIELDS_RENDERER: VariableModeFieldsRenderer = {
   Component: (props) => <BoundedVariableModeFields {...props} />,

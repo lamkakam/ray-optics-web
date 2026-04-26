@@ -4,7 +4,7 @@ import {
   type OptimizationConfig,
   type OptimizationProgressEntry,
   type OptimizationReport,
-} from "@/features/optimization/type/optimizationWorkerTypes";
+} from "@/features/optimization/types/optimizationWorkerTypes";
 import { type ZernikeData, type ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import { type RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";

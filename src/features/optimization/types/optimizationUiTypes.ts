@@ -1,4 +1,4 @@
-import type { OptimizationConfig, OptimizerKind } from "@/features/optimization/type/optimizationWorkerTypes";
+import type { OptimizationConfig, OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
 
 type SharedOptimizerConfig = OptimizationConfig["optimizer"];
 type SharedOptimizerConfigByKind<TKind extends OptimizerKind> = Extract<SharedOptimizerConfig, { readonly kind: TKind }>;

@@ -2,7 +2,7 @@
 
 Selects the variable-mode editor renderer for optimization modals from one method-aware mapping.
 
-Type definitions for renderer props and return shape live in `features/optimization/type/optimizationVariableFieldTypes.ts`.
+Type definitions for renderer props and return shape live in `features/optimization/types/optimizationVariableFieldTypes.ts`.
 
 ## Behavior
 

@@ -1,4 +1,4 @@
-import type { OptimizationOperandKind } from "@/features/optimization/type/optimizationWorkerTypes";
+import type { OptimizationOperandKind } from "@/features/optimization/types/optimizationWorkerTypes";
 
 export interface OptimizationOperandOptions {
   readonly num_rays?: number;

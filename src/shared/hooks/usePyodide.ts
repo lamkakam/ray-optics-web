@@ -7,7 +7,7 @@ import type {
   OptimizationConfig,
   OptimizationProgressEntry,
   OptimizationReport,
-} from "@/features/optimization/type/optimizationWorkerTypes";
+} from "@/features/optimization/types/optimizationWorkerTypes";
 import type { ZernikeData, ZernikeOrdering } from "@/shared/lib/types/zernikeData";
 import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";

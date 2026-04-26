@@ -1,4 +1,4 @@
-# `features/optimization/type/optimizationUiTypes.ts`
+# `features/optimization/types/optimizationUiTypes.ts`
 
 ## Purpose
 

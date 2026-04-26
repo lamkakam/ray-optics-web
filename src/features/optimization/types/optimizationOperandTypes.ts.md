@@ -1,4 +1,4 @@
-# `features/optimization/type/optimizationOperandTypes.ts`
+# `features/optimization/types/optimizationOperandTypes.ts`
 
 ## Purpose
 

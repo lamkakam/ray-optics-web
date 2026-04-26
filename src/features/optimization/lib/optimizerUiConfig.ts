@@ -1,9 +1,9 @@
-import type { OptimizerKind } from "@/features/optimization/type/optimizationWorkerTypes";
+import type { OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
 import type {
   OptimizerUiConfig,
   OptimizerUiMetadata,
   OptimizerUiMetadataWithMethods,
-} from "@/features/optimization/type/optimizationUiTypes";
+} from "@/features/optimization/types/optimizationUiTypes";
 
 export function optimizerUiMetadataHasMethods<TKind extends OptimizerKind>(
   metadata: OptimizerUiMetadata<TKind>,

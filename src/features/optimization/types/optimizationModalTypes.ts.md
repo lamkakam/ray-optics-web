@@ -1,4 +1,4 @@
-# `features/optimization/type/optimizationModalTypes.ts`
+# `features/optimization/types/optimizationModalTypes.ts`
 
 ## Purpose
 

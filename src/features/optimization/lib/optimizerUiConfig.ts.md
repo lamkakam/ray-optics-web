@@ -12,8 +12,8 @@ Centralizes optimizer UI metadata so the optimization algorithm tab, store defau
 
 ## Key Behaviors
 
-- Uses type definitions from `features/optimization/type/optimizationUiTypes.ts`.
-- Derives method and tolerance key types from `features/optimization/type/optimizationWorkerTypes.ts` through the optimizer UI type module instead of restating unions locally.
+- Uses type definitions from `features/optimization/types/optimizationUiTypes.ts`.
+- Derives method and tolerance key types from `features/optimization/types/optimizationWorkerTypes.ts` through the optimizer UI type module instead of restating unions locally.
 - Constrains `methods[*].kind` to the valid method union for each optimizer kind when that optimizer exposes methods.
 - Constrains `tolerances[*].kind` to numeric optimizer fields other than `kind`, `method`, and `max_nfev`.
 - Supports two metadata shapes:

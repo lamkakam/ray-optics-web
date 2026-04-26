@@ -2,7 +2,7 @@
 
 import type { GridRow } from "@/shared/lib/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { OptimizationOperandKind, OptimizationResidualEntry } from "@/features/optimization/type/optimizationWorkerTypes";
+import type { OptimizationOperandKind, OptimizationResidualEntry } from "@/features/optimization/types/optimizationWorkerTypes";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 
 export interface WeightRow {

@@ -14,7 +14,7 @@ Defines the shared optimization operand metadata consumed by the store and opera
 - `label` is the user-facing operand name shown in selectors and evaluation tables.
 - `requiresTarget` controls whether the UI and config builder require a numeric `target`.
 - `defaultTarget` is only present for targeted operands.
-- Type definitions for operand metadata and options live in `features/optimization/type/optimizationOperandTypes.ts`.
+- Type definitions for operand metadata and options live in `features/optimization/types/optimizationOperandTypes.ts`.
 - `defaultOptions` carries caller-owned default operand options when an operand needs them.
 - `expandsByFieldAndWavelength` determines whether store config assembly attaches field and wavelength weight arrays.
 - `getNominalResidualCountPerSample(options)` is used for deterministic `lm` pre-validation. `ray_fan` defaults to `options.num_rays = 21` and contributes `num_rays * 2` residuals per field/wavelength.

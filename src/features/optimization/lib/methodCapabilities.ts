@@ -2,8 +2,8 @@ import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConf
 import type {
   OptimizationAlgorithmSelection,
   OptimizationMethodCapabilities,
-} from "@/features/optimization/type/optimizationAlgorithmTypes";
-import type { LeastSquaresMethod } from "@/features/optimization/type/optimizationWorkerTypes";
+} from "@/features/optimization/types/optimizationAlgorithmTypes";
+import type { LeastSquaresMethod } from "@/features/optimization/types/optimizationWorkerTypes";
 
 const METHOD_CAPABILITIES: Record<LeastSquaresMethod, OptimizationMethodCapabilities> =
   OPTIMIZER_UI_CONFIG.least_squares.methods.reduce<Record<LeastSquaresMethod, OptimizationMethodCapabilities>>(
