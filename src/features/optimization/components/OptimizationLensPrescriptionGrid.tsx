@@ -11,6 +11,8 @@ import { SetButton } from "@/shared/components/primitives/SetButton";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 
+const OPTIMIZATION_VAR_COLUMN_WIDTH = 60;
+
 function ActionWrapper({
   children,
   onAction,
@@ -19,7 +21,7 @@ function ActionWrapper({
   readonly onAction: () => void;
 }) {
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (event.target !== event.currentTarget) {
+    if ((event.target as HTMLElement).closest("button,a,input,select,textarea") !== null) {
       return;
     }
 
@@ -51,6 +53,59 @@ function OptimizationMediumCell({
         {medium}
       </button>
     </Tooltip>
+  );
+}
+
+function getSurfaceModeLabel(mode: RadiusMode["mode"] | undefined): string {
+  if (mode === "variable") {
+    return "V";
+  }
+  if (mode === "pickup") {
+    return "P";
+  }
+  return "C";
+}
+
+function getAsphereModeLabel(asphereState: AsphereOptimizationState | undefined): string {
+  if (asphereState === undefined) {
+    return "C";
+  }
+
+  const modes = [
+    asphereState.conic,
+    asphereState.toricSweep,
+    ...asphereState.coefficients,
+  ];
+  const labels: string[] = [];
+
+  if (modes.some((mode) => mode.mode === "variable")) {
+    labels.push("V");
+  }
+  if (modes.some((mode) => mode.mode === "pickup")) {
+    labels.push("P");
+  }
+
+  return labels.length > 0 ? labels.join(",") : "C";
+}
+
+function OptimizationVariableModeCell({
+  label,
+  ariaLabel,
+  onOpenModal,
+}: {
+  readonly label: string;
+  readonly ariaLabel: string;
+  readonly onOpenModal: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      className="cursor-pointer"
+      onClick={onOpenModal}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -118,6 +173,7 @@ export function OptimizationLensPrescriptionGrid({
   const lensColumns = useMemo<ColDef<RadiusRow>[]>(() => [
     {
       headerName: "Index",
+      width: 95,
       valueGetter: (params) => {
         if (params.data?.row.kind !== "surface") {
           return undefined;
@@ -152,20 +208,30 @@ export function OptimizationLensPrescriptionGrid({
     },
     {
       headerName: "Var.",
+      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
       cellRenderer: (params: { data: RadiusRow }) => {
         if (params.data.radiusSurfaceIndex === undefined) {
           return undefined;
         }
 
         const mode = radiusModes.find((entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex);
+        const surfaceIndex = params.data.radiusSurfaceIndex;
         return (
-          <SetButton
-            isSet={mode?.mode !== "constant"}
-            onClick={() => onOpenRadiusModal(params.data.radiusSurfaceIndex!)}
-            aria-label={`Radius mode for surface ${params.data.radiusSurfaceIndex}`}
-            setLabel="Edit"
-            unsetLabel="Set"
-          />
+          <ActionWrapper onAction={() => onOpenRadiusModal(surfaceIndex)}>
+            <Tooltip
+              text="Click to configure radius variable or pickup"
+              position="top"
+              portal
+              noTouch
+              triggerClassName="flex h-full w-full"
+            >
+              <OptimizationVariableModeCell
+                label={getSurfaceModeLabel(mode?.mode)}
+                ariaLabel={`Radius mode for surface ${surfaceIndex}`}
+                onOpenModal={() => onOpenRadiusModal(surfaceIndex)}
+              />
+            </Tooltip>
+          </ActionWrapper>
         );
       },
     },
@@ -183,20 +249,30 @@ export function OptimizationLensPrescriptionGrid({
     },
     {
       headerName: "Var.",
+      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
       cellRenderer: (params: { data: RadiusRow }) => {
         if (params.data.thicknessSurfaceIndex === undefined) {
           return undefined;
         }
 
         const mode = thicknessModes.find((entry) => entry.surfaceIndex === params.data.thicknessSurfaceIndex);
+        const surfaceIndex = params.data.thicknessSurfaceIndex;
         return (
-          <SetButton
-            isSet={mode?.mode !== "constant"}
-            onClick={() => onOpenThicknessModal(params.data.thicknessSurfaceIndex!)}
-            aria-label={`Thickness mode for surface ${params.data.thicknessSurfaceIndex}`}
-            setLabel="Edit"
-            unsetLabel="Set"
-          />
+          <ActionWrapper onAction={() => onOpenThicknessModal(surfaceIndex)}>
+            <Tooltip
+              text="Click to configure thickness variable or pickup"
+              position="top"
+              portal
+              noTouch
+              triggerClassName="flex h-full w-full"
+            >
+              <OptimizationVariableModeCell
+                label={getSurfaceModeLabel(mode?.mode)}
+                ariaLabel={`Thickness mode for surface ${surfaceIndex}`}
+                onOpenModal={() => onOpenThicknessModal(surfaceIndex)}
+              />
+            </Tooltip>
+          </ActionWrapper>
         );
       },
     },
@@ -260,28 +336,31 @@ export function OptimizationLensPrescriptionGrid({
     },
     {
       headerName: "Var.",
+      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
       cellRenderer: (params: { data: RadiusRow }) => {
         if (params.data.row.kind !== "surface" || params.data.radiusSurfaceIndex === undefined) {
           return undefined;
         }
 
         const asphereState = asphereStates.find((entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex);
-        const isSet = asphereState !== undefined
-          && asphereState.type !== undefined
-          && (
-            asphereState.conic.mode !== "constant"
-            || asphereState.toricSweep.mode !== "constant"
-            || asphereState.coefficients.some((c) => c.mode !== "constant")
-          );
+        const surfaceIndex = params.data.radiusSurfaceIndex;
 
         return (
-          <SetButton
-            isSet={isSet}
-            onClick={() => onOpenAsphereVarModal(params.data.radiusSurfaceIndex!)}
-            aria-label={`Asphere mode for surface ${params.data.radiusSurfaceIndex}`}
-            setLabel="Edit"
-            unsetLabel="Set"
-          />
+          <ActionWrapper onAction={() => onOpenAsphereVarModal(surfaceIndex)}>
+            <Tooltip
+              text="Click to configure asphere variable or pickup"
+              position="top"
+              portal
+              noTouch
+              triggerClassName="flex h-full w-full"
+            >
+              <OptimizationVariableModeCell
+                label={getAsphereModeLabel(asphereState)}
+                ariaLabel={`Asphere mode for surface ${surfaceIndex}`}
+                onOpenModal={() => onOpenAsphereVarModal(surfaceIndex)}
+              />
+            </Tooltip>
+          </ActionWrapper>
         );
       },
     },

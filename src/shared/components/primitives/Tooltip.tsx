@@ -9,6 +9,7 @@ interface TooltipProps {
   readonly position?: "top" | "bottom" | "top-start" | "start" | "no-transform";
   readonly portal?: boolean;
   readonly noTouch?: boolean;
+  readonly triggerClassName?: string;
 }
 
 const baseClasses = clsx(
@@ -40,7 +41,7 @@ const portalBaseClasses = clsx(
 );
 
 
-export function Tooltip({ text, children, position = "top", portal = false, noTouch }: TooltipProps) {
+export function Tooltip({ text, children, position = "top", portal = false, noTouch, triggerClassName }: TooltipProps) {
   const triggerRef = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
@@ -88,7 +89,7 @@ export function Tooltip({ text, children, position = "top", portal = false, noTo
     return (
       <span
         ref={triggerRef}
-        className="relative inline-flex"
+        className={clsx("relative inline-flex", triggerClassName)}
         style={noTouch ? { touchAction: "none" } : undefined}
         onTouchStart={noTouch ? () => { isTouchingRef.current = true; } : undefined}
         onMouseEnter={handleMouseEnter}
@@ -108,7 +109,7 @@ export function Tooltip({ text, children, position = "top", portal = false, noTo
             : "";
 
   return (
-    <span className="group relative inline-flex" style={noTouch ? { touchAction: "none" } : undefined}>
+    <span className={clsx("group relative inline-flex", triggerClassName)} style={noTouch ? { touchAction: "none" } : undefined}>
       {children}
       <span
         role="tooltip"
