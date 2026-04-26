@@ -11,6 +11,8 @@ import { SetButton } from "@/shared/components/primitives/SetButton";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 
+const OPTIMIZATION_VAR_COLUMN_WIDTH = 60;
+
 function ActionWrapper({
   children,
   onAction,
@@ -205,6 +207,7 @@ export function OptimizationLensPrescriptionGrid({
     },
     {
       headerName: "Var.",
+      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
       cellRenderer: (params: { data: RadiusRow }) => {
         if (params.data.radiusSurfaceIndex === undefined) {
           return undefined;
@@ -245,6 +248,7 @@ export function OptimizationLensPrescriptionGrid({
     },
     {
       headerName: "Var.",
+      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
       cellRenderer: (params: { data: RadiusRow }) => {
         if (params.data.thicknessSurfaceIndex === undefined) {
           return undefined;
@@ -331,6 +335,7 @@ export function OptimizationLensPrescriptionGrid({
     },
     {
       headerName: "Var.",
+      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
       cellRenderer: (params: { data: RadiusRow }) => {
         if (params.data.row.kind !== "surface" || params.data.radiusSurfaceIndex === undefined) {
           return undefined;
