@@ -27,6 +27,37 @@ const model: OpticalModel = {
   },
 };
 
+const multiSurfaceModel: OpticalModel = {
+  ...model,
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 50,
+      thickness: 5,
+      medium: "BK7",
+      manufacturer: "Schott",
+      semiDiameter: 10,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 40,
+      thickness: 4,
+      medium: "F2",
+      manufacturer: "Schott",
+      semiDiameter: 9,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -35,
+      thickness: 3,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 8,
+    },
+  ],
+};
+
 describe("OptimizationVariableModals", () => {
   it("hides radius bounds and flat-surface guidance for lm variable mode", () => {
     render(
@@ -69,18 +100,101 @@ describe("OptimizationVariableModals", () => {
     render(
       <RadiusModeModal
         isOpen
-        optimizationModel={model}
+        optimizationModel={multiSurfaceModel}
         surfaceIndex={1}
-        selectedMode={{ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        selectedMode={{ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "2", scale: "1", offset: "0" }}
         canUseBounds={false}
         onSetMode={jest.fn()}
         onClose={jest.fn()}
       />,
     );
 
-    expect(screen.getByRole("textbox", { name: "Source surface index" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Source surface" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "scale" })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "offset" })).toBeInTheDocument();
+  });
+
+  it("renders radius pickup source surface options with Image and omits the target", () => {
+    render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={multiSurfaceModel}
+        surfaceIndex={2}
+        selectedMode={{ surfaceIndex: 2, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox", { name: "Source surface index" })).not.toBeInTheDocument();
+
+    const sourceSurfaceSelect = screen.getByRole("combobox", { name: "Source surface" });
+    expect(sourceSurfaceSelect).toHaveValue("1");
+    expect(Array.from(sourceSurfaceSelect.querySelectorAll("option")).map((option) => ({
+      value: option.value,
+      label: option.textContent,
+    }))).toEqual([
+      { value: "1", label: "1" },
+      { value: "3", label: "3" },
+      { value: "4", label: "Image" },
+    ]);
+  });
+
+  it("keeps radius pickup source selection local until Confirm is pressed", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+    const onClose = jest.fn();
+
+    render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={multiSurfaceModel}
+        surfaceIndex={2}
+        selectedMode={{ surfaceIndex: 2, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        onSetMode={onSetMode}
+        onClose={onClose}
+      />,
+    );
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Source surface" }), "4");
+
+    expect(onSetMode).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSetMode).toHaveBeenCalledTimes(1);
+    expect(onSetMode).toHaveBeenLastCalledWith(2, {
+      mode: "pickup",
+      sourceSurfaceIndex: "4",
+      scale: "1",
+      offset: "0",
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders thickness pickup source surface options from real surfaces and omits the target", () => {
+    render(
+      <ThicknessModeModal
+        isOpen
+        optimizationModel={multiSurfaceModel}
+        surfaceIndex={2}
+        selectedMode={{ surfaceIndex: 2, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" }}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox", { name: "Thickness source surface index" })).not.toBeInTheDocument();
+
+    const sourceSurfaceSelect = screen.getByRole("combobox", { name: "Source surface" });
+    expect(sourceSurfaceSelect).toHaveValue("1");
+    expect(Array.from(sourceSurfaceSelect.querySelectorAll("option")).map((option) => ({
+      value: option.value,
+      label: option.textContent,
+    }))).toEqual([
+      { value: "1", label: "1" },
+      { value: "3", label: "3" },
+    ]);
   });
 
   it("keeps radius changes local until Confirm is pressed", async () => {
@@ -90,7 +204,7 @@ describe("OptimizationVariableModals", () => {
 
     function RadiusModalHarness() {
       const [mode, setMode] = React.useState<RadiusMode>({
-        surfaceIndex: 1,
+        surfaceIndex: 2,
         mode: "variable",
         min: "40",
         max: "60",
@@ -104,8 +218,8 @@ describe("OptimizationVariableModals", () => {
       return (
         <RadiusModeModal
           isOpen
-          optimizationModel={model}
-          surfaceIndex={1}
+          optimizationModel={multiSurfaceModel}
+          surfaceIndex={2}
           selectedMode={mode}
           onSetMode={handleSetMode}
           onClose={onClose}
@@ -130,15 +244,14 @@ describe("OptimizationVariableModals", () => {
     expect(screen.getByDisplayValue("pickup")).toBeInTheDocument();
     expect(onSetMode).not.toHaveBeenCalled();
 
-    const pickupInputs = screen.getAllByRole("textbox");
-    await user.clear(pickupInputs[1]);
-    await user.type(pickupInputs[1], "2");
+    await user.clear(screen.getByRole("textbox", { name: "scale" }));
+    await user.type(screen.getByRole("textbox", { name: "scale" }), "2");
     expect(screen.getByDisplayValue("2")).toBeInTheDocument();
     expect(onSetMode).not.toHaveBeenCalled();
 
     await user.click(screen.getByRole("button", { name: "Confirm" }));
     expect(onSetMode).toHaveBeenCalledTimes(1);
-    expect(onSetMode).toHaveBeenLastCalledWith(1, {
+    expect(onSetMode).toHaveBeenLastCalledWith(2, {
       mode: "pickup",
       sourceSurfaceIndex: "1",
       scale: "2",
@@ -184,9 +297,8 @@ describe("OptimizationVariableModals", () => {
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeInTheDocument();
 
-    const inputs = screen.getAllByRole("textbox");
-    await user.clear(inputs[1]);
-    await user.type(inputs[1], "2");
+    await user.clear(screen.getByRole("textbox", { name: "Thickness scale" }));
+    await user.type(screen.getByRole("textbox", { name: "Thickness scale" }), "2");
     expect(screen.getByDisplayValue("2")).toBeInTheDocument();
     expect(onSetMode).not.toHaveBeenCalled();
 

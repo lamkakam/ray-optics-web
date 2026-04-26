@@ -9,6 +9,7 @@ import { getRadiusLabel, getThicknessValue } from "@/features/optimization/compo
 import {
   createPickupDraft,
   createVariableDraft,
+  getThicknessPickupSourceSurfaceOptions,
   serializeRadiusMode,
   toRadiusModeDraft,
 } from "@/features/optimization/lib/modalHelpers";
@@ -78,6 +79,10 @@ function ThicknessModeModalEditor({
   const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
 
   const thicknessValue = getThicknessValue(optimizationModel, surfaceIndex);
+  const sourceSurfaceOptions = React.useMemo(
+    () => getThicknessPickupSourceSurfaceOptions(optimizationModel.surfaces.length, surfaceIndex),
+    [optimizationModel.surfaces.length, surfaceIndex],
+  );
 
   return (
     <Modal
@@ -133,8 +138,10 @@ function ThicknessModeModalEditor({
         {draftMode.mode === "pickup" ? (
           <PickupModeFields
             idPrefix="pickup-thickness"
-            sourceSurfaceAriaLabel="Thickness source surface index"
+            sourceSurfaceLabel="Source surface"
+            sourceSurfaceAriaLabel="Source surface"
             sourceSurfaceValue={draftMode.sourceSurfaceIndex}
+            sourceSurfaceOptions={sourceSurfaceOptions}
             onSourceSurfaceChange={(value) => setDraftMode({
               mode: "pickup",
               sourceSurfaceIndex: value,

@@ -2,6 +2,7 @@
 
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
+import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 
 interface PickupExtraField {
   readonly idSuffix: string;
@@ -16,6 +17,7 @@ interface PickupModeFieldsProps {
   readonly sourceSurfaceLabel?: string;
   readonly sourceSurfaceAriaLabel: string;
   readonly sourceSurfaceValue: string;
+  readonly sourceSurfaceOptions?: ReadonlyArray<SelectOption>;
   readonly onSourceSurfaceChange: (value: string) => void;
   readonly scaleLabel?: string;
   readonly scaleAriaLabel: string;
@@ -35,6 +37,7 @@ export function PickupModeFields({
   sourceSurfaceLabel = "Source surface index",
   sourceSurfaceAriaLabel,
   sourceSurfaceValue,
+  sourceSurfaceOptions,
   onSourceSurfaceChange,
   scaleLabel = "scale",
   scaleAriaLabel,
@@ -52,12 +55,22 @@ export function PickupModeFields({
     <div className={className ?? "grid gap-4"}>
       <div>
         <Label htmlFor={`${idPrefix}-source`}>{sourceSurfaceLabel}</Label>
-        <Input
-          id={`${idPrefix}-source`}
-          aria-label={sourceSurfaceAriaLabel}
-          value={sourceSurfaceValue}
-          onChange={(event) => onSourceSurfaceChange(event.target.value)}
-        />
+        {sourceSurfaceOptions === undefined ? (
+          <Input
+            id={`${idPrefix}-source`}
+            aria-label={sourceSurfaceAriaLabel}
+            value={sourceSurfaceValue}
+            onChange={(event) => onSourceSurfaceChange(event.target.value)}
+          />
+        ) : (
+          <Select
+            id={`${idPrefix}-source`}
+            aria-label={sourceSurfaceAriaLabel}
+            value={sourceSurfaceValue}
+            options={sourceSurfaceOptions}
+            onChange={(event) => onSourceSurfaceChange(event.target.value)}
+          />
+        )}
       </div>
 
       {extraField ? (
