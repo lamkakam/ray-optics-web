@@ -173,15 +173,18 @@ describe("optimizationStore", () => {
     expect(state.optimizationModel).toEqual(baseModel);
     expect(state.activeTabId).toBe("algorithm");
     expect(state.optimizer.kind).toBe("least_squares");
+    if (state.optimizer.kind !== "least_squares") {
+      throw new Error("Expected least-squares optimizer state.");
+    }
     expect(state.optimizer.method).toBe("trf");
-    expect(state.optimizer.maxNumSteps).toBe("200");
-    expect(state.optimizer.meritFunctionTolerance).toBe(
+    expect(state.optimizer.max_nfev).toBe("200");
+    expect(state.optimizer.ftol).toBe(
       formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[0].default),
     );
-    expect(state.optimizer.independentVariableTolerance).toBe(
+    expect(state.optimizer.xtol).toBe(
       formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[1].default),
     );
-    expect(state.optimizer.gradientTolerance).toBe(
+    expect(state.optimizer.gtol).toBe(
       formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[2].default),
     );
     expect(state.fieldWeights).toEqual([1, 0, 0]);
@@ -297,6 +300,108 @@ describe("optimizationStore", () => {
       { kind: "radius", surface_index: 1 },
       { kind: "thickness", surface_index: 2 },
     ]);
+  });
+
+  it("builds Differential Evolution config with DE tolerances and finite variable bounds", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.setState((state) => ({
+      optimizer: {
+        kind: "differential_evolution",
+        max_nfev: "200",
+        tol: "0.02",
+        atol: "0",
+      },
+    }));
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "1",
+      },
+    ]);
+
+    const config = store.getState().buildOptimizationConfig();
+
+    expect(config.optimizer).toEqual({
+      kind: "differential_evolution",
+      max_nfev: 200,
+      tol: 0.02,
+      atol: 0,
+    });
+    expect(config.optimizer).not.toHaveProperty("method");
+    expect(config.optimizer).not.toHaveProperty("ftol");
+    expect(config.optimizer).not.toHaveProperty("xtol");
+    expect(config.optimizer).not.toHaveProperty("gtol");
+    expect(config.variables).toEqual([
+      { kind: "radius", surface_index: 1, min: 40, max: 60 },
+    ]);
+  });
+
+  it("does not apply least-squares residual-count validation to Differential Evolution", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.setState((state) => ({
+      optimizer: {
+        kind: "differential_evolution",
+        max_nfev: "200",
+        tol: "0.01",
+        atol: "0",
+      },
+    }));
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "focal_length",
+        target: "100",
+        weight: "1",
+      },
+    ]);
+
+    expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
+  });
+
+  it("resets algorithm fields when switching optimizer kind", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+
+    store.setState((state) => ({
+      optimizer: {
+        ...state.optimizer,
+        max_nfev: "99",
+        ftol: "1e-4",
+      },
+    }));
+
+    store.getState().setOptimizerKind("differential_evolution");
+
+    expect(store.getState().optimizer).toEqual({
+      kind: "differential_evolution",
+      max_nfev: "200",
+      tol: formatOptimizerUiDefaultValue(
+        OPTIMIZER_UI_CONFIG.differential_evolution.tolerances[0].default,
+      ),
+      atol: formatOptimizerUiDefaultValue(
+        OPTIMIZER_UI_CONFIG.differential_evolution.tolerances[1].default,
+      ),
+    });
   });
 
   it("builds the Python optimization config using current slice state", () => {

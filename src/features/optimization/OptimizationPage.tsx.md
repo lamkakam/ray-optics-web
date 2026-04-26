@@ -55,6 +55,8 @@ interface OptimizationPageProps {
 - Radius, thickness, and asphere variable/pickup mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`. Changes to `asphereStates` are included in the evaluation dependency array so commits trigger a re-evaluation debounce.
 - The page derives one shared `canUseBounds` boolean from the selected least-squares method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from optimizer-kind/method details.
 - When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, the page opens the existing warning modal with the thrown error message instead of filtering to one hardcoded `lm` warning.
+- When the user switches Optimizer Kind, the page delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
+- Variable-bound affordances use optimizer-kind-aware capabilities, so both bounded least-squares (`trf`) and methodless Differential Evolution can use the min/max variable UI while `lm` remains unbounded.
 - Invalid intermediate configs clear the evaluation table instead of opening the warning modal.
 - `Optimize` is disabled when the current optimization config cannot be built, including fresh pages with no operands and malformed variable/pickup inputs.
 - `Optimize` is also disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.

@@ -4,44 +4,39 @@ import React from "react";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
-import { optimizerUiMetadataHasMethods, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
-import type { LeastSquaresMethod, OptimizerKind } from "@/shared/lib/types/optimization";
+import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
+import type { LeastSquaresMethod, OptimizationConfig, OptimizerKind } from "@/shared/lib/types/optimization";
 
-interface OptimizerFormState {
-  readonly kind: OptimizerKind;
-  readonly method: LeastSquaresMethod;
-  readonly maxNumSteps: string;
-  readonly meritFunctionTolerance: string;
-  readonly independentVariableTolerance: string;
-  readonly gradientTolerance: string;
-}
+type SharedOptimizerConfig = OptimizationConfig["optimizer"];
+type OptimizerFormStateByConfig<TConfig extends SharedOptimizerConfig> = {
+  readonly [TKey in keyof TConfig]: TConfig[TKey] extends number ? string : TConfig[TKey];
+};
+type OptimizerFormState<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
+  TConfig extends SharedOptimizerConfig ? OptimizerFormStateByConfig<TConfig> : never;
+type OptimizerToleranceKind<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
+  TConfig extends SharedOptimizerConfig ? Exclude<keyof TConfig, "kind" | "method" | "max_nfev"> : never;
 
 interface OptimizationAlgorithmTabProps {
   readonly optimizer: OptimizerFormState;
   readonly onChangeOptimizer: (patch: Partial<OptimizerFormState>) => void;
 }
 
-const TOLERANCE_FIELD_BY_KIND = {
-  ftol: "meritFunctionTolerance",
-  xtol: "independentVariableTolerance",
-  gtol: "gradientTolerance",
-} satisfies Record<
-  (typeof OPTIMIZER_UI_CONFIG)["least_squares"]["tolerances"][number]["kind"],
-  keyof Pick<
-    OptimizerFormState,
-    "meritFunctionTolerance" | "independentVariableTolerance" | "gradientTolerance"
-  >
->;
+function getToleranceValue(optimizer: OptimizerFormState, toleranceKind: OptimizerToleranceKind): string {
+  return (optimizer as unknown as Record<OptimizerToleranceKind, string>)[toleranceKind];
+}
+
+function createTolerancePatch(
+  toleranceKind: OptimizerToleranceKind,
+  value: string,
+): Partial<OptimizerFormState> {
+  return { [toleranceKind]: value } as Partial<OptimizerFormState>;
+}
 
 export function OptimizationAlgorithmTab({
   optimizer,
   onChangeOptimizer,
 }: OptimizationAlgorithmTabProps) {
   const optimizerConfig = OPTIMIZER_UI_CONFIG[optimizer.kind];
-
-  if (!optimizerUiMetadataHasMethods(optimizerConfig)) {
-    throw new Error(`Optimizer kind "${optimizer.kind}" does not expose method options.`);
-  }
 
   return (
     <div data-testid="optimization-algorithm-tab" className="grid gap-4 md:grid-cols-2">
@@ -55,39 +50,39 @@ export function OptimizationAlgorithmTab({
             label: config.label,
             value: kind,
           }))}
-          onChange={() => undefined}
+          onChange={(event) => onChangeOptimizer({ kind: event.target.value as OptimizerKind })}
         />
       </div>
-      <div>
-        <Label htmlFor="optimizer-method">Method</Label>
-        <Select
-          id="optimizer-method"
-          aria-label="Method"
-          value={optimizer.method}
-          options={optimizerConfig.methods.map((method) => ({ label: method.label, value: method.kind }))}
-          onChange={(event) => onChangeOptimizer({ method: event.target.value as LeastSquaresMethod })}
-        />
-      </div>
+      {optimizer.kind === "least_squares" ? (
+        <div>
+          <Label htmlFor="optimizer-method">Method</Label>
+          <Select
+            id="optimizer-method"
+            aria-label="Method"
+            value={optimizer.method}
+            options={OPTIMIZER_UI_CONFIG.least_squares.methods.map((method) => ({ label: method.label, value: method.kind }))}
+            onChange={(event) => onChangeOptimizer({ method: event.target.value as LeastSquaresMethod })}
+          />
+        </div>
+      ) : undefined}
       <div>
         <Label htmlFor="optimizer-max-steps">Max. num of steps</Label>
         <Input
           id="optimizer-max-steps"
           aria-label="Max. num of steps"
-          value={optimizer.maxNumSteps}
-          onChange={(event) => onChangeOptimizer({ maxNumSteps: event.target.value })}
+          value={optimizer.max_nfev}
+          onChange={(event) => onChangeOptimizer({ max_nfev: event.target.value })}
         />
       </div>
       {optimizerConfig.tolerances.map((tolerance) => {
-        const field = TOLERANCE_FIELD_BY_KIND[tolerance.kind];
-
         return (
           <div key={tolerance.kind}>
             <Label htmlFor={`optimizer-${tolerance.kind}`}>{tolerance.label}</Label>
             <Input
               id={`optimizer-${tolerance.kind}`}
               aria-label={tolerance.label}
-              value={optimizer[field]}
-              onChange={(event) => onChangeOptimizer({ [field]: event.target.value })}
+              value={getToleranceValue(optimizer, tolerance.kind)}
+              onChange={(event) => onChangeOptimizer(createTolerancePatch(tolerance.kind, event.target.value))}
             />
           </div>
         );

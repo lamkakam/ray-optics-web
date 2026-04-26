@@ -1,22 +1,25 @@
 import { type StateCreator } from "zustand";
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
-  LeastSquaresMethod,
   OptimizationConfig,
   OptimizationOperandKind,
   OptimizationOperandConfig,
   OptimizationPickupConfig,
   OptimizationReport,
   OptimizationValueEntry,
-  OptimizerKind,
 } from "@/shared/lib/types/optimization";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
-import { getOptimizationMethodCapabilities } from "@/features/optimization/lib/methodCapabilities";
+import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import { formatOptimizerUiDefaultValue, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 
 type SharedOptimizerConfig = OptimizationConfig["optimizer"];
 type SharedSurfaceVariableConfig = Extract<OptimizationConfig["variables"][number], { readonly kind: "radius" | "thickness" }>;
 type SharedSurfacePickupConfig = Extract<OptimizationPickupConfig, { readonly kind: "radius" | "thickness" }>;
+type OptimizerFormStateByConfig<TConfig extends SharedOptimizerConfig> = {
+  readonly [TKey in keyof TConfig]: TConfig[TKey] extends number ? string : TConfig[TKey];
+};
+type OptimizationAlgorithmState<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
+  TConfig extends SharedOptimizerConfig ? OptimizerFormStateByConfig<TConfig> : never;
 
 export type RadiusMode =
   | { readonly surfaceIndex: number; readonly mode: "constant" }
@@ -121,15 +124,6 @@ interface WarningModalState {
   readonly message: string;
 }
 
-interface OptimizationAlgorithmState {
-  readonly kind: SharedOptimizerConfig["kind"];
-  readonly method: SharedOptimizerConfig["method"];
-  readonly maxNumSteps: string;
-  readonly meritFunctionTolerance: string;
-  readonly independentVariableTolerance: string;
-  readonly gradientTolerance: string;
-}
-
 export interface OptimizationState {
   activeTabId: string;
   optimizationModel: OpticalModel | undefined;
@@ -173,6 +167,7 @@ export interface OptimizationState {
   openApplyConfirm: () => void;
   closeApplyConfirm: () => void;
   setIsOptimizing: (value: boolean) => void;
+  setOptimizerKind: (kind: OptimizationAlgorithmState["kind"]) => void;
   buildOptimizationConfig: () => OptimizationConfig;
   applyOptimizationResult: (report: OptimizationReport) => void;
 }
@@ -238,6 +233,14 @@ function parsePositiveFloat(value: string, label: string): number {
   return parsed;
 }
 
+function parseNonNegativeFloat(value: string, label: string): number {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error(`${label} must be a non-negative number.`);
+  }
+  return parsed;
+}
+
 function parseFloatValue(value: string, label: string): number {
   const parsed = Number.parseFloat(value);
   if (!Number.isFinite(parsed)) {
@@ -278,13 +281,22 @@ function parseVariableBounds(minValue: string, maxValue: string): { readonly min
 function buildOptimizerConfig(
   optimizer: OptimizationState["optimizer"],
 ): OptimizationConfig["optimizer"] {
+  if (optimizer.kind === "differential_evolution") {
+    return {
+      kind: optimizer.kind,
+      max_nfev: parsePositiveInteger(optimizer.max_nfev, "Max. num of steps"),
+      tol: parsePositiveFloat(optimizer.tol, "Relative tolerance"),
+      atol: parseNonNegativeFloat(optimizer.atol, "Absolute tolerance"),
+    };
+  }
+
   return {
     kind: optimizer.kind,
     method: optimizer.method,
-    max_nfev: parsePositiveInteger(optimizer.maxNumSteps, "Max. num of steps"),
-    ftol: parsePositiveFloat(optimizer.meritFunctionTolerance, "Merit function change tolerance"),
-    xtol: parsePositiveFloat(optimizer.independentVariableTolerance, "Independent variable change tolerance"),
-    gtol: parsePositiveFloat(optimizer.gradientTolerance, "Gradient tolerance"),
+    max_nfev: parsePositiveInteger(optimizer.max_nfev, "Max. num of steps"),
+    ftol: parsePositiveFloat(optimizer.ftol, "Merit function change tolerance"),
+    xtol: parsePositiveFloat(optimizer.xtol, "Independent variable change tolerance"),
+    gtol: parsePositiveFloat(optimizer.gtol, "Gradient tolerance"),
   };
 }
 
@@ -314,12 +326,12 @@ function parseSurfacePickupSourceIndex(
 }
 
 function createVariableConfig(
-  method: LeastSquaresMethod,
+  canUseBounds: boolean,
   baseVariable: OptimizationConfig["variables"][number],
   minValue: string,
   maxValue: string,
 ): OptimizationConfig["variables"][number] {
-  if (!getOptimizationMethodCapabilities(method).canUseBounds) {
+  if (!canUseBounds) {
     return baseVariable;
   }
 
@@ -330,7 +342,7 @@ function createVariableConfig(
 function buildSurfaceVariables(
   radiusModes: ReadonlyArray<RadiusMode>,
   thicknessModes: ReadonlyArray<RadiusMode>,
-  method: LeastSquaresMethod,
+  canUseBounds: boolean,
 ): OptimizationConfig["variables"] {
   return createSurfaceModeEntries(radiusModes, thicknessModes)
     .filter(
@@ -339,7 +351,7 @@ function buildSurfaceVariables(
       ): mode is Extract<SurfaceModeEntry, { mode: "variable" }> => mode.mode === "variable",
     )
     .map((mode) => createVariableConfig(
-      method,
+      canUseBounds,
       {
         kind: mode.kind,
         surface_index: mode.surfaceIndex,
@@ -373,7 +385,7 @@ function buildSurfacePickups(
 
 function buildAsphereVariables(
   asphereStates: ReadonlyArray<AsphereOptimizationState>,
-  method: LeastSquaresMethod,
+  canUseBounds: boolean,
 ): OptimizationConfig["variables"] {
   return asphereStates.flatMap((asphereState) => {
     const type = asphereState.type;
@@ -383,7 +395,7 @@ function buildAsphereVariables(
 
     const variables: Array<OptimizationConfig["variables"][number]> = [];
     if (asphereState.conic.mode === "variable") {
-      variables.push(createVariableConfig(method, {
+      variables.push(createVariableConfig(canUseBounds, {
         kind: "asphere_conic_constant",
         surface_index: asphereState.surfaceIndex,
         asphere_kind: type,
@@ -395,7 +407,7 @@ function buildAsphereVariables(
         return;
       }
 
-      variables.push(createVariableConfig(method, {
+      variables.push(createVariableConfig(canUseBounds, {
         kind: "asphere_polynomial_coefficient",
         surface_index: asphereState.surfaceIndex,
         asphere_kind: type,
@@ -404,7 +416,7 @@ function buildAsphereVariables(
     });
 
     if ((type === "XToroid" || type === "YToroid") && asphereState.toricSweep.mode === "variable") {
-      variables.push(createVariableConfig(method, {
+      variables.push(createVariableConfig(canUseBounds, {
         kind: "asphere_toric_sweep_radius",
         surface_index: asphereState.surfaceIndex,
         asphere_kind: type,
@@ -622,22 +634,41 @@ function createThicknessModes(model: OpticalModel): RadiusMode[] {
   }));
 }
 
-function createDefaultOptimizerState(): OptimizationState["optimizer"] {
+function getOptimizerToleranceDefault<TKind extends OptimizationAlgorithmState["kind"]>(
+  kind: TKind,
+  toleranceKind: Extract<OptimizationConfig["optimizer"], { readonly kind: TKind }> extends infer TOptimizer
+    ? Exclude<keyof TOptimizer, "kind" | "method" | "max_nfev">
+    : never,
+): string {
+  const tolerance = OPTIMIZER_UI_CONFIG[kind].tolerances.find(({ kind: currentKind }) => currentKind === toleranceKind);
+  if (tolerance === undefined) {
+    throw new Error(`Optimizer kind "${kind}" does not expose tolerance "${String(toleranceKind)}".`);
+  }
+
+  return formatOptimizerUiDefaultValue(tolerance.default);
+}
+
+function createDefaultOptimizerState(
+  kind: OptimizationAlgorithmState["kind"] = "least_squares",
+): OptimizationState["optimizer"] {
+  if (kind === "differential_evolution") {
+    return {
+      kind,
+      max_nfev: "200",
+      tol: getOptimizerToleranceDefault(kind, "tol"),
+      atol: getOptimizerToleranceDefault(kind, "atol"),
+    };
+  }
+
   const optimizerConfig = OPTIMIZER_UI_CONFIG.least_squares;
 
   return {
     kind: "least_squares",
     method: optimizerConfig.methods[0].kind,
-    maxNumSteps: "200",
-    meritFunctionTolerance: formatOptimizerUiDefaultValue(
-      optimizerConfig.tolerances.find(({ kind }) => kind === "ftol")!.default,
-    ),
-    independentVariableTolerance: formatOptimizerUiDefaultValue(
-      optimizerConfig.tolerances.find(({ kind }) => kind === "xtol")!.default,
-    ),
-    gradientTolerance: formatOptimizerUiDefaultValue(
-      optimizerConfig.tolerances.find(({ kind }) => kind === "gtol")!.default,
-    ),
+    max_nfev: "200",
+    ftol: getOptimizerToleranceDefault(kind, "ftol"),
+    xtol: getOptimizerToleranceDefault(kind, "xtol"),
+    gtol: getOptimizerToleranceDefault(kind, "gtol"),
   };
 }
 
@@ -938,6 +969,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   openApplyConfirm: () => set({ applyConfirmOpen: true }),
   closeApplyConfirm: () => set({ applyConfirmOpen: false }),
   setIsOptimizing: (value) => set({ isOptimizing: value }),
+  setOptimizerKind: (kind) => set({ optimizer: createDefaultOptimizerState(kind) }),
 
   buildOptimizationConfig: () => {
     const state = get();
@@ -950,12 +982,17 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       state.fieldWeights,
       state.wavelengthWeights,
     );
+    const capabilities = getOptimizationAlgorithmCapabilities(
+      state.optimizer.kind === "least_squares"
+        ? { kind: state.optimizer.kind, method: state.optimizer.method }
+        : { kind: state.optimizer.kind },
+    );
     const variables = [
-      ...buildSurfaceVariables(state.radiusModes, state.thicknessModes, state.optimizer.method),
-      ...buildAsphereVariables(state.asphereStates, state.optimizer.method),
+      ...buildSurfaceVariables(state.radiusModes, state.thicknessModes, capabilities.canUseBounds),
+      ...buildAsphereVariables(state.asphereStates, capabilities.canUseBounds),
     ];
     if (
-      getOptimizationMethodCapabilities(state.optimizer.method).requiresResidualCountAtLeastVariableCount
+      capabilities.requiresResidualCountAtLeastVariableCount
       && countResidualSamples(meritOperands) < variables.length
     ) {
       throw new Error("Levenberg-Marquardt requires at least as many residuals as variables.");

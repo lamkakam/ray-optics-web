@@ -221,11 +221,21 @@ describe("OptimizationPage", () => {
     const { optimizationStore } = renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
 
-    expect(optimizationStore.getState().optimizer.method).toBe("trf");
+    const initialOptimizer = optimizationStore.getState().optimizer;
+    expect(initialOptimizer.kind).toBe("least_squares");
+    if (initialOptimizer.kind !== "least_squares") {
+      throw new Error("Expected least-squares optimizer state.");
+    }
+    expect(initialOptimizer.method).toBe("trf");
 
     await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
 
-    expect(optimizationStore.getState().optimizer.method).toBe("lm");
+    const updatedOptimizer = optimizationStore.getState().optimizer;
+    expect(updatedOptimizer.kind).toBe("least_squares");
+    if (updatedOptimizer.kind !== "least_squares") {
+      throw new Error("Expected least-squares optimizer state.");
+    }
+    expect(updatedOptimizer.method).toBe("lm");
   });
 
   it("disables Optimize for lm when residual count is smaller than variable count", async () => {

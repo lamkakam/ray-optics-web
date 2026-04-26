@@ -17,7 +17,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Key State
 
 - `optimizationModel` — page-local `OpticalModel` snapshot seeded from the editor
-- `optimizer` — least-squares algorithm inputs stored as strings for direct form binding; default tolerances are `1e-5`
+- `optimizer` — optimizer-kind-specific algorithm inputs stored as strings for direct form binding while mirroring `OptimizationConfig["optimizer"]` attribute names; least squares stores `method`, `max_nfev`, `ftol`, `xtol`, and `gtol` UI values, while Differential Evolution stores `max_nfev`, `tol`, and `atol` UI values
 - `fieldWeights` / `wavelengthWeights` — numeric optimization weights
 - `radiusModes` — one entry per non-object radius target, including the image surface
 - `thicknessModes` — one entry per surface-row thickness target
@@ -40,14 +40,15 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `openThicknessModal(surfaceIndex)` / `closeThicknessModal()` — control the thickness modal
 - `openAsphereModal(surfaceIndex)` / `closeAsphereModal()` — control the asphere variable/pickup modal
 - `addOperand()` / `deleteOperand(id)` / `updateOperand(id, patch)` / `replaceOperands(rows)` — manage operand rows
+- `setOptimizerKind(kind)` — switches optimizer kind and resets algorithm fields to that kind's defaults so method-based and methodless fields are not mixed
 - `buildOptimizationConfig()` — validates current UI state and emits the Python `OptimizationConfig`, including method-aware bounded or unbounded variable entries
 - `applyOptimizationResult(report)` — applies optimized radius/thickness values and pickups back into the page-local optical-model snapshot
 
 ## Internal Structure
 
 - `buildOptimizationConfig()` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
-- Store-local optimizer and surface-mode helper types derive shared contract fields from `shared/lib/types/optimization.ts` via indexed-access / `Extract` types, so the worker-boundary kind unions stay defined in one place.
-- Shared method capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the same least-squares rule set.
+- Store-local optimizer and surface-mode helper types derive shared contract fields from `shared/lib/types/optimization.ts` via indexed-access / `Extract` types, so the worker-boundary kind unions stay defined in one place. Optimizer form state keeps the shared field names and maps only numeric values to input strings.
+- Shared optimizer capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the selected optimizer's rule set.
 - Default optimizer method and tolerance strings are seeded from `features/optimization/lib/optimizerUiConfig.ts` so the form defaults, labels, and capability rules stay aligned.
 - Shared validation for bounded variable ranges stays centralized so radius, thickness, and asphere variable entries continue to use the same `min < max` rule and error text when the active method requires bounds.
 - Surface pickup source-index validation stays centralized so radius and thickness pickups continue to share the same same-surface and out-of-range checks.
@@ -55,9 +56,10 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Validation Rules
 
 - `max_nfev` must be a positive integer.
-- `ftol`, `xtol`, and `gtol` must be positive non-zero numbers.
+- For least squares, `ftol`, `xtol`, and `gtol` must be positive non-zero numbers.
+- For Differential Evolution, `tol` must be a positive non-zero number and `atol` must be a non-negative number.
 - Operand `weight` must be a positive non-zero number.
-- For bounded least-squares methods such as `trf`, variable `min` and `max` must be numeric, and `min < max`.
+- For bounded optimizers such as `trf` and `differential_evolution`, variable `min` and `max` must be numeric, and `min < max`.
 - For least-squares `lm`, the built config must provide at least as many residual samples as optimization variables; otherwise `buildOptimizationConfig()` throws before the page tries to evaluate or optimize.
 - Pickup `source_surface_index` must be in range and must not equal the target surface index.
 - Asphere coefficient pickups require a coefficient `sourceTermKey`.
@@ -73,10 +75,10 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
 - `syncFromOpticalModel()` reconciles field weights, wavelength weights, radius modes, thickness modes, and `asphereStates` by index so editor changes propagate into optimization without resetting all optimization settings when the model shape still matches.
 - `buildOptimizationConfig()` appends asphere variables and pickups alongside radius/thickness entries, using `asphere_kind` plus zero-based `coefficient_index` / `source_coefficient_index` metadata for the Python optimizer.
-- `buildOptimizationConfig()` emits `min` / `max` for bounded `trf`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching methods does not discard prior inputs.
+- `buildOptimizationConfig()` emits `min` / `max` for bounded `trf` and `differential_evolution`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching least-squares methods does not discard prior inputs.
 - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
 - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`.
-- `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared method-capability helper and the nominal expanded merit-function sample count. `ray_fan` contributes `num_rays * 2` residuals per selected field/wavelength pair and defaults to `options.num_rays = 21`.
+- `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count. `ray_fan` contributes `num_rays * 2` residuals per selected field/wavelength pair and defaults to `options.num_rays = 21`; Differential Evolution does not use this least-squares residual-count rule.
 - `applyOptimizationResult()` can create or update `surface.aspherical` on the optimization-local optical model when optimized asphere results come back from Python.
 - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
 - `RadiusMode`, `RadiusModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.

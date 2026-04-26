@@ -77,6 +77,15 @@ export const OPTIMIZER_UI_CONFIG = {
       { kind: "gtol", label: "Gradient tolerance", default: 1e-5 },
     ],
   },
+  differential_evolution: {
+    label: "Differential Evolution",
+    canUseBounds: true,
+    requiresResidualCountAtLeastVariableCount: false,
+    tolerances: [
+      { kind: "tol", label: "Relative tolerance", default: 0.01 },
+      { kind: "atol", label: "Absolute tolerance", default: 0 },
+    ],
+  },
 } satisfies OptimizerUiConfig;
 
 export function formatOptimizerUiDefaultValue(value: number): string {

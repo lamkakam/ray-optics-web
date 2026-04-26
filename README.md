@@ -28,7 +28,7 @@ This project is not affiliated with, endorsed by, or in any way officially conne
 - **3rd-order Seidel aberrations** — surface-by-surface breakdown, transverse ray aberrations, wavefront aberrations (in waves of reference wavelength set in System Specs), field curvature
 - **Zernike wavefront analysis** — Strehl ratio, Zernike polynomial terms (Fringe and Noll ordering up to quaternary spherical)
 - **Focusing** — optimize image surface position by minimizing monochromatic/polychromatic spot size/wavefront error
-- **Optimization** — dedicated optimization workspace for lens designs (currently only SciPy `least_squares` with `trf`), with operands for RMS spot size, OPD difference, paraxial focal length, and paraxial f-number, and optimizable variables for surface radius, thickness, conic constant and coefficients for aspheric profile
+- **Optimization** — dedicated optimization workspace for lens designs (currently only SciPy `least_squares` with `trf` or `lm`, and `differential_evolution`), with operands for RMS spot size, OPD difference, paraxial focal length, and paraxial f-number, and optimizable variables for surface radius, thickness, conic constant and coefficients for aspheric profile
 - **First-order properties** — EFL, BFD, image height, f/#, NA at object and image space
 - **Import / export** JSON configuration files for this web app
 

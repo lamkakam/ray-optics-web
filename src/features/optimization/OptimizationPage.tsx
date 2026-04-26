@@ -20,7 +20,7 @@ import { OptimizationWeightsGrid } from "@/features/optimization/components/Opti
 import { AsphereVarModal } from "@/features/optimization/components/AsphereVarModal";
 import { RadiusModeModal } from "@/features/optimization/components/RadiusModeModal";
 import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal";
-import { getOptimizationMethodCapabilities } from "@/features/optimization/lib/methodCapabilities";
+import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import { hasNonZeroOptimizationContribution } from "@/features/optimization/stores/optimizationStore";
 import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/optimization/components/optimizationViewModels";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
@@ -243,7 +243,11 @@ export function OptimizationPage({
     && optimizationModel !== undefined
     && canBuildOptimizationConfig
     && hasNonZeroContribution;
-  const { canUseBounds } = getOptimizationMethodCapabilities(optimizer.method);
+  const { canUseBounds } = getOptimizationAlgorithmCapabilities(
+    optimizer.kind === "least_squares"
+      ? { kind: optimizer.kind, method: optimizer.method }
+      : { kind: optimizer.kind },
+  );
 
   const evaluationReservedHeight = !isLG
     ? undefined
@@ -387,10 +391,16 @@ export function OptimizationPage({
         <OptimizationAlgorithmTab
           optimizer={optimizer}
           onChangeOptimizer={(patch) => {
+            if (patch.kind !== undefined && patch.kind !== optimizationStore.getState().optimizer.kind) {
+              optimizationStore.getState().setOptimizerKind(patch.kind);
+              return;
+            }
             optimizationStore.setState((state) => ({
-              optimizer: { ...state.optimizer, ...patch },
+              optimizer: state.optimizer.kind === "least_squares"
+                ? { ...state.optimizer, ...patch, kind: "least_squares" }
+                : { ...state.optimizer, ...patch, kind: "differential_evolution" },
             }));
-            if (patch.method !== undefined) {
+            if ("method" in patch && patch.method !== undefined) {
               try {
                 optimizationStore.getState().buildOptimizationConfig();
               } catch (error) {
