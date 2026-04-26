@@ -246,7 +246,7 @@ from opticalglass.rindexinfo import create_material
 caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'
 caf2 = create_glass(caf2_url, "rindexinfo")
 
-fused_silica_url = https://refractiveindex.info/database/data/main/SiO2/nk/Malitson.yml
+fused_silica_url = 'https://refractiveindex.info/database/data/main/SiO2/nk/Malitson.yml'
 fused_silica = create_glass(fused_silica_url, "rindexinfo")
 
 water_url = 'https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C.yml'
