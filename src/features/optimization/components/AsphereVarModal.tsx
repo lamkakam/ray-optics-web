@@ -2,7 +2,7 @@
 
 import React from "react";
 import { MathJax } from "better-react-mathjax";
-import type { AsphericalType } from "@/shared/lib/types/opticalModel";
+import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
@@ -10,12 +10,13 @@ import {
   CURVATURE_RADIUS_GUIDANCE_TEXT,
   curvatureRadiusCrossesZero,
   getCurvatureRadiusBoundsErrorText,
+  getThicknessPickupSourceSurfaceOptions,
 } from "@/features/optimization/lib/modalHelpers";
 import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/variableModeFields";
 import { Button } from "@/shared/components/primitives/Button";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
-import { Select } from "@/shared/components/primitives/Select";
+import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 
 type TermKind = "conic" | "toricSweep" | { coefficientIndex: number };
 
@@ -124,8 +125,22 @@ function isCoefficient(kind: TermKind): kind is { coefficientIndex: number } {
   return typeof kind === "object";
 }
 
+function getSourceCoefficientOptions(optimizationModel: OpticalModel, sourceSurfaceIndex: string): ReadonlyArray<SelectOption> {
+  const sourceSurface = optimizationModel.surfaces[Number.parseInt(sourceSurfaceIndex, 10) - 1];
+  const isRadialPolynomial = sourceSurface?.aspherical?.kind === "RadialPolynomial";
+
+  return Array.from({ length: 10 }, (_, index) => {
+    const coefficientLabel = isRadialPolynomial ? index + 1 : (index + 1) * 2;
+    return {
+      value: index,
+      label: `a_${coefficientLabel}`,
+    };
+  });
+}
+
 interface AsphereVarModalProps {
   readonly isOpen: boolean;
+  readonly optimizationModel: OpticalModel | undefined;
   readonly surfaceIndex: number | undefined;
   readonly asphereState: AsphereOptimizationState | undefined;
   readonly canUseBounds?: boolean;
@@ -135,13 +150,14 @@ interface AsphereVarModalProps {
 
 export function AsphereVarModal({
   isOpen,
+  optimizationModel,
   surfaceIndex,
   asphereState,
   canUseBounds = true,
   onSave,
   onClose,
 }: AsphereVarModalProps) {
-  if (!isOpen || surfaceIndex === undefined || asphereState === undefined) {
+  if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || asphereState === undefined) {
     return (
       <Modal isOpen={false} title="Asphere Variable / Pickup">
         <></>
@@ -152,6 +168,7 @@ export function AsphereVarModal({
   return (
     <AsphereVarModalEditor
       key={`${surfaceIndex}:${serializeAsphereState(asphereState)}`}
+      optimizationModel={optimizationModel}
       surfaceIndex={surfaceIndex}
       asphereState={asphereState}
       canUseBounds={canUseBounds}
@@ -162,6 +179,7 @@ export function AsphereVarModal({
 }
 
 interface AsphereVarModalEditorProps {
+  readonly optimizationModel: OpticalModel;
   readonly surfaceIndex: number;
   readonly asphereState: AsphereOptimizationState;
   readonly canUseBounds: boolean;
@@ -170,6 +188,7 @@ interface AsphereVarModalEditorProps {
 }
 
 function AsphereVarModalEditor({
+  optimizationModel,
   surfaceIndex,
   asphereState,
   canUseBounds,
@@ -178,6 +197,10 @@ function AsphereVarModalEditor({
 }: AsphereVarModalEditorProps) {
   const [draft, setDraft] = React.useState<AsphereOptimizationState>(() => asphereState);
   const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
+  const sourceSurfaceOptions = React.useMemo(
+    () => getThicknessPickupSourceSurfaceOptions(optimizationModel.surfaces.length, surfaceIndex),
+    [optimizationModel.surfaces.length, surfaceIndex],
+  );
 
   const termRows = getTermRows(draft.type);
   const isDoneDisabled = termRows.some((term) => {
@@ -217,11 +240,16 @@ function AsphereVarModalEditor({
       return;
     }
     if (modeStr === "pickup") {
+      const defaultSourceSurfaceIndex = String(sourceSurfaceOptions[0]?.value ?? "");
+      const coefficientSourceTermKey = isCoefficient(term.kind)
+        ? { sourceTermKey: current.mode === "pickup" ? (current.sourceTermKey ?? "coefficient:0") : "coefficient:0" as AsphereTermKey }
+        : {};
       setDraft(setTermMode(draft, term, {
         mode: "pickup",
-        sourceSurfaceIndex: current.mode === "pickup" ? current.sourceSurfaceIndex : "1",
+        sourceSurfaceIndex: current.mode === "pickup" ? current.sourceSurfaceIndex : defaultSourceSurfaceIndex,
         scale: current.mode === "pickup" ? current.scale : "1",
         offset: current.mode === "pickup" ? current.offset : "0",
+        ...coefficientSourceTermKey,
       }));
     }
   };
@@ -320,9 +348,10 @@ function AsphereVarModalEditor({
                   {mode.mode === "pickup" && (
                     <PickupModeFields
                       idPrefix={termId}
-                      sourceSurfaceLabel="Source surface index"
-                      sourceSurfaceAriaLabel={`${term.ariaLabel} source surface index`}
+                      sourceSurfaceLabel="Source surface"
+                      sourceSurfaceAriaLabel="Source surface"
                       sourceSurfaceValue={mode.sourceSurfaceIndex}
+                      sourceSurfaceOptions={sourceSurfaceOptions}
                       onSourceSurfaceChange={(value) => handleTermPickupChange(term, "sourceSurfaceIndex", value)}
                       scaleLabel="Scale"
                       scaleAriaLabel={`${term.ariaLabel} scale`}
@@ -334,9 +363,10 @@ function AsphereVarModalEditor({
                       onOffsetChange={(value) => handleTermPickupChange(term, "offset", value)}
                       extraField={isCoefficient(term.kind) ? {
                         idSuffix: "source-coeff",
-                        label: "Source coefficient index",
-                        ariaLabel: `${term.ariaLabel} source coefficient index`,
-                        value: mode.sourceTermKey?.replace("coefficient:", "") ?? "",
+                        label: "Source coefficient",
+                        ariaLabel: `${term.ariaLabel} source coefficient`,
+                        value: mode.sourceTermKey?.replace("coefficient:", "") ?? "0",
+                        options: getSourceCoefficientOptions(optimizationModel, mode.sourceSurfaceIndex),
                         onChange: (value) => handleTermPickupChange(term, "sourceCoefficientIndex", value),
                       } : undefined}
                       className="ml-36 grid gap-3 pl-3"

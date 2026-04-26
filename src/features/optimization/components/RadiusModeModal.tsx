@@ -12,6 +12,7 @@ import {
   createVariableDraft,
   curvatureRadiusCrossesZero,
   getCurvatureRadiusBoundsErrorText,
+  getRadiusPickupSourceSurfaceOptions,
   serializeRadiusMode,
   toRadiusModeDraft,
 } from "@/features/optimization/lib/modalHelpers";
@@ -81,6 +82,10 @@ function RadiusModeModalEditor({
   const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
 
   const radiusValue = getRadiusValue(optimizationModel, surfaceIndex);
+  const sourceSurfaceOptions = React.useMemo(
+    () => getRadiusPickupSourceSurfaceOptions(optimizationModel.surfaces.length, surfaceIndex),
+    [optimizationModel.surfaces.length, surfaceIndex],
+  );
   const variableBoundsCrossZero = canUseBounds
     && draftMode.mode === "variable"
     && curvatureRadiusCrossesZero(draftMode.min, draftMode.max);
@@ -139,8 +144,10 @@ function RadiusModeModalEditor({
         {draftMode.mode === "pickup" ? (
           <PickupModeFields
             idPrefix="pickup"
-            sourceSurfaceAriaLabel="Source surface index"
+            sourceSurfaceLabel="Source surface"
+            sourceSurfaceAriaLabel="Source surface"
             sourceSurfaceValue={draftMode.sourceSurfaceIndex}
+            sourceSurfaceOptions={sourceSurfaceOptions}
             onSourceSurfaceChange={(value) => setDraftMode({
               mode: "pickup",
               sourceSurfaceIndex: value,

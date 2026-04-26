@@ -2,6 +2,11 @@ import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores
 
 export type ModalModeChoice = "constant" | "variable" | "pickup";
 
+export type SourceSurfaceSelectOption = {
+  readonly value: number;
+  readonly label: string;
+};
+
 export const MODAL_MODE_OPTIONS = [
   { value: "constant", label: "constant" },
   { value: "variable", label: "variable" },
@@ -43,6 +48,32 @@ export function createPickupDraft(): RadiusModeDraft {
     scale: "1",
     offset: "0",
   };
+}
+
+export function getRadiusPickupSourceSurfaceOptions(
+  realSurfaceCount: number,
+  targetSurfaceIndex: number,
+): SourceSurfaceSelectOption[] {
+  return Array.from({ length: realSurfaceCount + 1 }, (_, index) => {
+    const surfaceIndex = index + 1;
+    return {
+      value: surfaceIndex,
+      label: surfaceIndex === realSurfaceCount + 1 ? "Image" : String(surfaceIndex),
+    };
+  }).filter((option) => option.value !== targetSurfaceIndex);
+}
+
+export function getThicknessPickupSourceSurfaceOptions(
+  realSurfaceCount: number,
+  targetSurfaceIndex: number,
+): SourceSurfaceSelectOption[] {
+  return Array.from({ length: realSurfaceCount }, (_, index) => {
+    const surfaceIndex = index + 1;
+    return {
+      value: surfaceIndex,
+      label: String(surfaceIndex),
+    };
+  }).filter((option) => option.value !== targetSurfaceIndex);
 }
 
 export function toRadiusModeDraft(mode: RadiusMode): RadiusModeDraft {

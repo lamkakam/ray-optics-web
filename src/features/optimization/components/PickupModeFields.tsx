@@ -2,12 +2,14 @@
 
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
+import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 
 interface PickupExtraField {
   readonly idSuffix: string;
   readonly label: string;
   readonly ariaLabel: string;
   readonly value: string;
+  readonly options?: ReadonlyArray<SelectOption>;
   readonly onChange: (value: string) => void;
 }
 
@@ -16,6 +18,7 @@ interface PickupModeFieldsProps {
   readonly sourceSurfaceLabel?: string;
   readonly sourceSurfaceAriaLabel: string;
   readonly sourceSurfaceValue: string;
+  readonly sourceSurfaceOptions?: ReadonlyArray<SelectOption>;
   readonly onSourceSurfaceChange: (value: string) => void;
   readonly scaleLabel?: string;
   readonly scaleAriaLabel: string;
@@ -35,6 +38,7 @@ export function PickupModeFields({
   sourceSurfaceLabel = "Source surface index",
   sourceSurfaceAriaLabel,
   sourceSurfaceValue,
+  sourceSurfaceOptions,
   onSourceSurfaceChange,
   scaleLabel = "scale",
   scaleAriaLabel,
@@ -52,23 +56,43 @@ export function PickupModeFields({
     <div className={className ?? "grid gap-4"}>
       <div>
         <Label htmlFor={`${idPrefix}-source`}>{sourceSurfaceLabel}</Label>
-        <Input
-          id={`${idPrefix}-source`}
-          aria-label={sourceSurfaceAriaLabel}
-          value={sourceSurfaceValue}
-          onChange={(event) => onSourceSurfaceChange(event.target.value)}
-        />
+        {sourceSurfaceOptions === undefined ? (
+          <Input
+            id={`${idPrefix}-source`}
+            aria-label={sourceSurfaceAriaLabel}
+            value={sourceSurfaceValue}
+            onChange={(event) => onSourceSurfaceChange(event.target.value)}
+          />
+        ) : (
+          <Select
+            id={`${idPrefix}-source`}
+            aria-label={sourceSurfaceAriaLabel}
+            value={sourceSurfaceValue}
+            options={sourceSurfaceOptions}
+            onChange={(event) => onSourceSurfaceChange(event.target.value)}
+          />
+        )}
       </div>
 
       {extraField ? (
         <div>
           <Label htmlFor={`${idPrefix}-${extraField.idSuffix}`}>{extraField.label}</Label>
-          <Input
-            id={`${idPrefix}-${extraField.idSuffix}`}
-            aria-label={extraField.ariaLabel}
-            value={extraField.value}
-            onChange={(event) => extraField.onChange(event.target.value)}
-          />
+          {extraField.options === undefined ? (
+            <Input
+              id={`${idPrefix}-${extraField.idSuffix}`}
+              aria-label={extraField.ariaLabel}
+              value={extraField.value}
+              onChange={(event) => extraField.onChange(event.target.value)}
+            />
+          ) : (
+            <Select
+              id={`${idPrefix}-${extraField.idSuffix}`}
+              aria-label={extraField.ariaLabel}
+              value={extraField.value}
+              options={extraField.options}
+              onChange={(event) => extraField.onChange(event.target.value)}
+            />
+          )}
         </div>
       ) : null}
 

@@ -518,6 +518,7 @@ export function OptimizationPage({
 
       <AsphereVarModal
         isOpen={asphereModal.open}
+        optimizationModel={optimizationModel}
         surfaceIndex={asphereModal.surfaceIndex}
         asphereState={selectedAsphereState}
         canUseBounds={canUseBounds}
