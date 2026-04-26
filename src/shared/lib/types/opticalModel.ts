@@ -95,9 +95,3 @@ export interface OpticalModel extends Surfaces {
   setAutoAperture: SetAutoApertureFlag;
   specs: OpticalSpecs;
 }
-
-
-export interface FocusingResult {
-  delta_thi: number;
-  metric_value: number;
-}

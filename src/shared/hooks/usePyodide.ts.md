@@ -65,6 +65,7 @@ interface PyodideWorkerAPI {
 - `createPyodideWorker` — function that creates the `Worker` instance.
 - `comlink.wrap` — wraps the worker as a typed async proxy.
 - `OpticalModel` — imported from `shared/lib/types/opticalModel` (type only).
+- `FocusingResult` — imported from `features/lens-editor/types/focusingResult` (type only).
 - `SeidelData` — imported from `features/lens-editor/types/seidelData` (type only).
 - `DiffractionPsfData` — imported from `features/analysis/types/plotData` (type only).
 - `WavefrontMapData` — imported from `features/analysis/types/plotData` (type only).

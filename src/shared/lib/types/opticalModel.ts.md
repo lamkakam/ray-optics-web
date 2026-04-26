@@ -2,15 +2,12 @@
 
 ## Purpose
 
-Defines core TypeScript domain types for the optical model, including system specifications, surfaces, aspherical surface configuration, and focusing results. Feature-owned analysis, Seidel, Zernike, and glass-map payload types live under their owning feature directories.
+Defines core TypeScript domain types for the optical model, including system specifications, surfaces, and aspherical surface configuration. Feature-owned analysis, focusing, Seidel, Zernike, and glass-map payload types live under their owning feature directories.
 
 ## Exports
 - `DecenterConfig`: shared tilt/decenter configuration for image and surface rows.
 - `DiffractionGrating`: surface diffraction grating configuration with `lpmm` and integer `order`.
 - `OpticalModel`: interface for all information (system specs, surfaces, and aperture flag) needed for RayOptics. Includes `setAutoAperture: SetAutoApertureFlag`.
-- `FocusingResult`: `{ delta_thi: number; metric_value: number }` — result returned by the 4 focusing functions in the worker.
-
-
 ## Key Conventions
 
 - **`curvatureRadius: 0`** means flat surface (infinite radius of curvature) — used throughout the codebase.

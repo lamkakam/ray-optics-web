@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
-import type { OpticalModel, FocusingResult } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
 import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type {

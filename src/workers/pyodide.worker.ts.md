@@ -173,7 +173,9 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 ## Dependencies
 
 - `comlink` — `expose()` to register the worker API.
-- `lib/opticalModel` — `OpticalModel`, `SeidelData` (types only).
+- `shared/lib/types/opticalModel` — `OpticalModel` (type only).
+- `features/lens-editor/types/focusingResult` — `FocusingResult` (type only).
+- `features/lens-editor/types/seidelData` — `SeidelData` (type only).
 - `features/lens-editor/types/zernikeData` — `ZernikeData` and `ZernikeOrdering` (type only).
 - `lib/pythonScript` — `buildScript` (generates the combined model-build + computation Python script).
 - `lib/glassMap` — `RawAllGlassCatalogsData` (type only).
