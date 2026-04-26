@@ -1,4 +1,3 @@
-import React from "react";
 import { Chip } from "@/shared/components/primitives/Chip";
 
 interface FirstOrderChipsProps {

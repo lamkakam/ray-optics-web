@@ -1,4 +1,3 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import { Header } from "@/shared/components/primitives/Header";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";

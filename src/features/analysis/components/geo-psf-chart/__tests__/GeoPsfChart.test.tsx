@@ -1,4 +1,3 @@
-import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { GeoPsfChart } from "@/features/analysis/components/geo-psf-chart/GeoPsfChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
@@ -10,7 +9,6 @@ let mockResize: jest.Mock;
 let mockEchartsInit: jest.Mock;
 let mockResizeObserverObserve: jest.Mock;
 let mockResizeObserverDisconnect: jest.Mock;
-let resizeObserverCallback: ResizeObserverCallback | undefined;
 let mockBuildGeoPsfOption: jest.Mock;
 
 jest.mock("echarts/core", () => ({
@@ -49,16 +47,13 @@ describe("GeoPsfChart", () => {
     mockResizeObserverObserve = jest.fn();
     mockResizeObserverDisconnect = jest.fn();
     mockBuildGeoPsfOption = jest.fn(() => ({ series: [] }));
-    resizeObserverCallback = undefined;
 
     class MockResizeObserver implements ResizeObserver {
       observe = mockResizeObserverObserve;
       unobserve = jest.fn();
       disconnect = mockResizeObserverDisconnect;
 
-      constructor(callback: ResizeObserverCallback) {
-        resizeObserverCallback = callback;
-      }
+      constructor(_callback: ResizeObserverCallback) {}
     }
 
     Object.defineProperty(window, "ResizeObserver", {

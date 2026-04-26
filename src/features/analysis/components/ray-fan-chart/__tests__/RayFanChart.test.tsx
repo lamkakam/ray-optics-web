@@ -1,4 +1,3 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import { RayFanChart } from "@/features/analysis/components/ray-fan-chart/RayFanChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
@@ -47,7 +46,7 @@ describe("RayFanChart", () => {
   class ResizeObserverMock {
     public observe = jest.fn();
     public disconnect = jest.fn();
-    public constructor(private readonly callback: () => void) {}
+    public constructor(_callback: () => void) {}
   }
 
   beforeEach(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useStore } from "zustand";
 import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
 import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";

@@ -1,4 +1,4 @@
-import React, { createRef } from "react";
+import { createRef } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Select } from "@/shared/components/primitives/Select";
@@ -12,14 +12,6 @@ function expectClasses(element: HTMLElement, ...tokenStrings: string[]) {
   tokenStrings.forEach((token) => {
     splitClasses(token).forEach((cls) => {
       expect(element).toHaveClass(cls);
-    });
-  });
-}
-
-function notExpectClasses(element: HTMLElement, ...tokenStrings: string[]) {
-  tokenStrings.forEach((token) => {
-    splitClasses(token).forEach((cls) => {
-      expect(element).not.toHaveClass(cls);
     });
   });
 }

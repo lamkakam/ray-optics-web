@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/shared/lib/types/gridTypes";
 import {

@@ -249,14 +249,6 @@ function parseFloatValue(value: string, label: string): number {
   return parsed;
 }
 
-function parseIntegerValue(value: string, label: string): number {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isInteger(parsed)) {
-    throw new Error(`${label} must be an integer.`);
-  }
-  return parsed;
-}
-
 function normalizeWeight(value: string | number): number {
   const parsed = typeof value === "number" ? value : Number.parseFloat(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 1;

@@ -1,4 +1,3 @@
-import React from "react";
 import { RadioInput } from "@/shared/components/primitives/RadioInput";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";

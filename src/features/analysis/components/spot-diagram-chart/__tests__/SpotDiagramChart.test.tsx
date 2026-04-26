@@ -1,4 +1,3 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import { SpotDiagramChart } from "@/features/analysis/components/spot-diagram-chart/SpotDiagramChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
@@ -41,7 +40,7 @@ describe("SpotDiagramChart", () => {
   class ResizeObserverMock {
     public observe = jest.fn();
     public disconnect = jest.fn();
-    public constructor(private readonly callback: () => void) {}
+    public constructor(_callback: () => void) {}
   }
 
   beforeEach(() => {

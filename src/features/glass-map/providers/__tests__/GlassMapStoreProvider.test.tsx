@@ -1,6 +1,4 @@
-import React from "react";
 import { renderHook } from "@testing-library/react";
-import { act } from "@testing-library/react";
 import { createStore } from "zustand/vanilla";
 import {
   GlassMapStoreProvider,

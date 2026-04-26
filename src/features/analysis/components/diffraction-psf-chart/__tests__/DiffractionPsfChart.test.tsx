@@ -1,4 +1,3 @@
-import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { DiffractionPsfChart } from "@/features/analysis/components/diffraction-psf-chart/DiffractionPsfChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";

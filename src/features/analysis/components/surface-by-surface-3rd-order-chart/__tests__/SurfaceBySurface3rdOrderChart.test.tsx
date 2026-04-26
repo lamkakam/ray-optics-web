@@ -1,4 +1,3 @@
-import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { SurfaceBySurface3rdOrderChart } from "@/features/analysis/components/surface-by-surface-3rd-order-chart/SurfaceBySurface3rdOrderChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";

@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { Button } from "@/shared/components/primitives/Button";
 import { NavLink } from "@/shared/components/primitives/NavLink";

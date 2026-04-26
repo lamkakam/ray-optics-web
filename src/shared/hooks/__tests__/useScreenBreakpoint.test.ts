@@ -1,7 +1,6 @@
 import { renderHook, act } from "@testing-library/react";
 import {
   useScreenBreakpoint,
-  ScreenSize,
   _resetRegistry,
 } from "../useScreenBreakpoint";
 

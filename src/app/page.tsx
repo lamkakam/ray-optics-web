@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { LensEditor } from "@/features/lens-editor/LensEditor";
 import { useAppShell } from "@/app/AppShellContext";
 
