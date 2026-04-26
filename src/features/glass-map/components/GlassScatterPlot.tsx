@@ -8,7 +8,7 @@ import { GridRows, GridColumns } from "@visx/grid";
 import { Zoom } from "@visx/zoom";
 import { Group } from "@visx/group";
 import { useTooltip, Tooltip } from "@visx/tooltip";
-import { CATALOG_COLOR_MAP } from "@/features/glass-map/types/glassMap";
+import { CATALOG_COLOR_MAP } from "@/features/glass-map/lib/glassMap";
 import type { PlotPoint, SelectedGlass } from "@/features/glass-map/types/glassMap";
 
 interface GlassScatterPlotProps {

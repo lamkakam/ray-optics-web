@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";
 import type { CatalogName } from "@/features/glass-map/types/glassMap";
-import { CATALOG_COLOR_MAP } from "@/features/glass-map/types/glassMap";
+import { CATALOG_COLOR_MAP } from "@/features/glass-map/lib/glassMap";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (

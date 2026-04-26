@@ -3,6 +3,8 @@ import {
   normalizeAllCatalogsData,
   computePlotPoints,
   CATALOG_COLOR_MAP,
+} from "@/features/glass-map/lib/glassMap";
+import {
   CATALOG_NAMES,
 } from "@/features/glass-map/types/glassMap";
 import type {

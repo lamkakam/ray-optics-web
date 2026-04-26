@@ -23,7 +23,7 @@ interface GlassMapRouteIntent {
 - Returns a loading placeholder until `isReady=true` and `proxy` is available
 - Reads normalized catalog data via the shared `readGlassCatalogs(proxy)` loader; loading is handled by Suspense and deduplicated per worker proxy
 - Usually receives already-warm catalog data because `app/AppShell.tsx` preloads the same resource during app initialization
-- Computes `PlotPoint[]` via `computePlotPoints()`
+- Computes `PlotPoint[]` via `computePlotPoints()` from `features/glass-map/lib/glassMap`
 - Derives axis labels from `plotType`, `abbeNumCenterLine`, `partialDispersionType`
 - Treats `routeIntent` as a render-time override instead of synchronizing it into the store
 - If `routeIntent` resolves to a valid glass, that glass is shown initially and its catalog is forced visible in the controls

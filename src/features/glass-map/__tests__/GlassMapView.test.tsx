@@ -7,7 +7,7 @@ import { GlassMapStoreContext } from "@/features/glass-map/providers/GlassMapSto
 import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
-import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/types/glassCatalogsResource";
+import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
