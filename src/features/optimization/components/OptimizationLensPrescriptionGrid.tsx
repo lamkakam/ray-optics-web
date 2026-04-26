@@ -63,12 +63,12 @@ function getSurfaceModeLabel(mode: RadiusMode["mode"] | undefined): string {
   if (mode === "pickup") {
     return "P";
   }
-  return "";
+  return "C";
 }
 
 function getAsphereModeLabel(asphereState: AsphereOptimizationState | undefined): string {
   if (asphereState === undefined) {
-    return "";
+    return "C";
   }
 
   const modes = [
@@ -85,7 +85,7 @@ function getAsphereModeLabel(asphereState: AsphereOptimizationState | undefined)
     labels.push("P");
   }
 
-  return labels.join(",");
+  return labels.length > 0 ? labels.join(",") : "C";
 }
 
 function OptimizationVariableModeCell({

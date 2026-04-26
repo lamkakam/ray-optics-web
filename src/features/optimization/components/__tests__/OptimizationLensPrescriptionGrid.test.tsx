@@ -170,13 +170,13 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "1",
       "Default",
       "50",
-      "",
+      "C",
       "5",
-      "",
+      "C",
       "BK7",
       "10",
       "—",
-      "",
+      "C",
       "—",
       "—",
     ]);
@@ -184,7 +184,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "",
       "Image",
       "0",
-      "",
+      "C",
       "",
       "",
       "",
@@ -231,6 +231,94 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(screen.getByRole("button", { name: "Radius mode for surface 1" })).toHaveTextContent("V");
     expect(screen.getByRole("button", { name: "Thickness mode for surface 1" })).toHaveTextContent("P");
     expect(screen.getByRole("button", { name: "Asphere mode for surface 1" })).toHaveTextContent("V,P");
+  });
+
+  it("shows C for saved constant radius and thickness modes", () => {
+    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        radiusModes={constantModes}
+        thicknessModes={constantModes}
+        asphereStates={[makeAsphereState()]}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Radius mode for surface 1" })).toHaveTextContent("C");
+    expect(screen.getByRole("button", { name: "Thickness mode for surface 1" })).toHaveTextContent("C");
+  });
+
+  it("shows C for missing radius and thickness mode entries", () => {
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        radiusModes={[]}
+        thicknessModes={[]}
+        asphereStates={[makeAsphereState()]}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Radius mode for surface 1" })).toHaveTextContent("C");
+    expect(screen.getByRole("button", { name: "Thickness mode for surface 1" })).toHaveTextContent("C");
+  });
+
+  it("shows C for missing asphere optimization state", () => {
+    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        radiusModes={constantModes}
+        thicknessModes={constantModes}
+        asphereStates={[]}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Asphere mode for surface 1" })).toHaveTextContent("C");
+  });
+
+  it("shows C when all asphere modes are constant", () => {
+    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        radiusModes={constantModes}
+        thicknessModes={constantModes}
+        asphereStates={[makeAsphereState()]}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Asphere mode for surface 1" })).toHaveTextContent("C");
   });
 
   it("opens optimization variable modals when clicking the Var. cell body", async () => {
