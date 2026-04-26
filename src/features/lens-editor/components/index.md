@@ -4,10 +4,10 @@ All components (composite + container + domain cells) for the lens editor featur
 
 ## Domain Grid Cells
 
-- [AsphericalCell.tsx](./AsphericalCell.tsx.md) — AG Grid cell editor for aspherical coefficients
-- [DecenterCell.tsx](./DecenterCell.tsx.md) — AG Grid cell editor for decentering values
-- [DiffractionGratingCell.tsx](./DiffractionGratingCell.tsx.md) — AG Grid cell editor for diffraction grating settings
-- [MediumCell.tsx](./MediumCell.tsx.md) — AG Grid cell editor for selecting optical media
+- [AsphericalCell.tsx](./AsphericalCell.tsx.md) — Compatibility export for the shared aspherical prescription cell
+- [DecenterCell.tsx](./DecenterCell.tsx.md) — Compatibility export for the shared decenter prescription cell
+- [DiffractionGratingCell.tsx](./DiffractionGratingCell.tsx.md) — Compatibility export for the shared diffraction grating prescription cell
+- [MediumCell.tsx](./MediumCell.tsx.md) — Compatibility export for the shared medium prescription cell
 
 ## Core Components
 

@@ -5,43 +5,13 @@ import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule } from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/shared/lib/types/gridTypes";
-import { MediumCell } from "@/features/lens-editor/components/MediumCell";
-import { AsphericalCell } from "@/features/lens-editor/components/AsphericalCell";
-import { DecenterCell } from "@/features/lens-editor/components/DecenterCell";
-import { DiffractionGratingCell } from "@/features/lens-editor/components/DiffractionGratingCell";
 import { GridRowButtons } from "@/features/lens-editor/components/GridRowButtons";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
-
-function ActionWrapper({
-  children,
-  onAction,
-}: {
-  readonly children: React.ReactNode;
-  readonly onAction: () => void;
-}) {
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target !== e.currentTarget) return;
-    onAction();
-  };
-  return (
-    <div
-      data-cell-wrapper
-      className="w-full h-full flex items-center cursor-pointer"
-      onClick={handleClick}
-    >
-      {children}
-    </div>
-  );
-}
-
-const VALID_NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
-
-function numberValueParser(params: { newValue: string; oldValue: unknown }) {
-  const raw = String(params.newValue ?? "").trim();
-  if (raw === "" || !VALID_NUMBER.test(raw)) return params.oldValue;
-  const num = parseFloat(raw);
-  return Number.isFinite(num) ? num : params.oldValue;
-}
+import {
+  createLensPrescriptionCommonColumns,
+  LENS_PRESCRIPTION_GRID_DOM_LAYOUT,
+  lensPrescriptionGridDefaultColDef,
+} from "@/shared/lib/lens-prescription-grid";
 
 interface LensPrescriptionGridProps {
   readonly rows: GridRow[];
@@ -83,145 +53,24 @@ export function LensPrescriptionGrid({
         );
       },
     },
-    {
-      headerName: "Surface",
-      valueGetter: (params) => {
-        if (!params.data) return "";
-        if (params.data.kind === "object") return "Object";
-        if (params.data.kind === "image") return "Image";
-        return params.data.label;
-      },
-      editable: (params) => params.data?.kind === "surface",
-      cellEditor: "agSelectCellEditor",
-      cellEditorParams: { values: ["Default", "Stop"] },
-      valueSetter: (params) => {
-        if (!params.data) return false;
-        onRowChange(params.data.id, { label: params.newValue as "Default" | "Stop" });
-        return true;
-      },
-    },
-    {
-      headerName: "Radius of Curvature",
-      valueGetter: (params) => {
-        if (!params.data) return undefined;
-        if (params.data.kind === "object") return undefined;
-        return params.data.curvatureRadius;
-      },
-      editable: (params) => params.data?.kind !== "object",
-      valueParser: numberValueParser,
-      valueSetter: (params) => {
-        if (!params.data) return false;
-        onRowChange(params.data.id, { curvatureRadius: params.newValue as number });
-        return true;
-      },
-    },
-    {
-      headerName: "Thickness",
-      valueGetter: (params) => {
-        if (!params.data) return undefined;
-        if (params.data.kind === "object") return params.data.objectDistance;
-        if (params.data.kind === "image") return undefined;
-        return params.data.thickness;
-      },
-      editable: (params) => params.data?.kind !== "image",
-      valueParser: numberValueParser,
-      valueSetter: (params) => {
-        if (!params.data) return false;
-        if (params.data.kind === "object") {
-          onRowChange(params.data.id, { objectDistance: params.newValue as number });
+    ...createLensPrescriptionCommonColumns<GridRow>({
+      getGridRow: (row) => row,
+      onSurfaceLabelChange: (row, label) => onRowChange(row.id, { label }),
+      onRadiusChange: (row, curvatureRadius) => onRowChange(row.id, { curvatureRadius }),
+      onThicknessChange: (row, thickness) => {
+        if (row.kind === "object") {
+          onRowChange(row.id, { objectDistance: thickness });
         } else {
-          onRowChange(params.data.id, { thickness: params.newValue as number });
+          onRowChange(row.id, { thickness });
         }
-        return true;
       },
-    },
-    {
-      headerName: "Medium",
-      valueGetter: (params) => {
-        if (!params.data || params.data.kind === "image") return undefined;
-        return params.data.medium;
-      },
-      cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind === "image") return null;
-        return (
-          <ActionWrapper onAction={() => onOpenMediumModal(params.data.id)}>
-            <MediumCell
-              medium={params.data.medium}
-              onOpenModal={() => onOpenMediumModal(params.data.id)}
-            />
-          </ActionWrapper>
-        );
-      },
-    },
-    {
-      headerName: "Semi-diam.",
-      valueGetter: (params) => {
-        if (!params.data || params.data.kind !== "surface") return undefined;
-        return params.data.semiDiameter;
-      },
-      editable: (params) => !semiDiameterReadonly && params.data?.kind === "surface",
-      cellStyle: (params) => (!semiDiameterReadonly && params.data?.kind === "surface") ? undefined : { opacity: 0.5 },
-      valueParser: numberValueParser,
-      valueSetter: (params) => {
-        if (!params.data) return false;
-        onRowChange(params.data.id, { semiDiameter: params.newValue as number });
-        return true;
-      },
-    },
-    {
-      headerName: "Asph.",
-      valueGetter: (params) => {
-        if (!params.data || params.data.kind !== "surface") return undefined;
-        return params.data.aspherical;
-      },
-      cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind !== "surface") return null;
-        return (
-          <ActionWrapper onAction={() => onOpenAsphericalModal(params.data.id)}>
-            <AsphericalCell
-              isAspherical={params.data.aspherical !== undefined}
-              onOpenModal={() => onOpenAsphericalModal(params.data.id)}
-            />
-          </ActionWrapper>
-        );
-      },
-    },
-    {
-      headerName: "Tilt & Decenter",
-      valueGetter: (params) => {
-        if (!params.data || params.data.kind === "object") return undefined;
-        return params.data.decenter;
-      },
-      cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind === "object") return null;
-        return (
-          <ActionWrapper onAction={() => onOpenDecenterModal(params.data.id)}>
-            <DecenterCell
-              isDecenterSet={params.data.decenter !== undefined}
-              onOpenModal={() => onOpenDecenterModal(params.data.id)}
-            />
-          </ActionWrapper>
-        );
-      },
-    },
-    {
-      headerName: "Diffraction Grating",
-      valueGetter: (params) => {
-        if (!params.data || params.data.kind !== "surface") return undefined;
-        return params.data.diffractionGrating;
-      },
-      cellRenderer: (params: { data: GridRow }) => {
-        if (params.data.kind !== "surface") return null;
-        return (
-          <ActionWrapper onAction={() => onOpenDiffractionGratingModal(params.data.id)}>
-            <DiffractionGratingCell
-              isDiffractionGratingSet={params.data.diffractionGrating !== undefined}
-              onOpenModal={() => onOpenDiffractionGratingModal(params.data.id)}
-            />
-          </ActionWrapper>
-        );
-      },
-    },
+      onOpenMediumModal: (row) => onOpenMediumModal(row.id),
+      onSemiDiameterChange: (row, semiDiameter) => onRowChange(row.id, { semiDiameter }),
+      semiDiameterReadonly,
+      onOpenAsphericalModal: (row) => onOpenAsphericalModal(row.id),
+      onOpenDecenterModal: (row) => onOpenDecenterModal(row.id),
+      onOpenDiffractionGratingModal: (row) => onOpenDiffractionGratingModal(row.id),
+    }),
   ], [semiDiameterReadonly, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenDecenterModal, onOpenDiffractionGratingModal, onAddRowAfter, onDeleteRow]);
 
   return (
@@ -233,8 +82,8 @@ export function LensPrescriptionGrid({
           theme={gridTheme}
           rowData={rows}
           columnDefs={columnDefs}
-          defaultColDef={{ sortable: false, suppressMovable: true }}
-          domLayout="autoHeight"
+          defaultColDef={lensPrescriptionGridDefaultColDef}
+          domLayout={LENS_PRESCRIPTION_GRID_DOM_LAYOUT}
           getRowId={(params) => params.data.id}
         />
       </AgGridProvider>
