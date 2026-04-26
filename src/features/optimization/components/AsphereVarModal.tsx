@@ -2,7 +2,7 @@
 
 import React from "react";
 import { MathJax } from "better-react-mathjax";
-import type { AsphericalType } from "@/shared/lib/types/opticalModel";
+import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
 import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
@@ -10,6 +10,7 @@ import {
   CURVATURE_RADIUS_GUIDANCE_TEXT,
   curvatureRadiusCrossesZero,
   getCurvatureRadiusBoundsErrorText,
+  getThicknessPickupSourceSurfaceOptions,
 } from "@/features/optimization/lib/modalHelpers";
 import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/variableModeFields";
 import { Button } from "@/shared/components/primitives/Button";
@@ -126,6 +127,7 @@ function isCoefficient(kind: TermKind): kind is { coefficientIndex: number } {
 
 interface AsphereVarModalProps {
   readonly isOpen: boolean;
+  readonly optimizationModel: OpticalModel | undefined;
   readonly surfaceIndex: number | undefined;
   readonly asphereState: AsphereOptimizationState | undefined;
   readonly canUseBounds?: boolean;
@@ -135,13 +137,14 @@ interface AsphereVarModalProps {
 
 export function AsphereVarModal({
   isOpen,
+  optimizationModel,
   surfaceIndex,
   asphereState,
   canUseBounds = true,
   onSave,
   onClose,
 }: AsphereVarModalProps) {
-  if (!isOpen || surfaceIndex === undefined || asphereState === undefined) {
+  if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || asphereState === undefined) {
     return (
       <Modal isOpen={false} title="Asphere Variable / Pickup">
         <></>
@@ -152,6 +155,7 @@ export function AsphereVarModal({
   return (
     <AsphereVarModalEditor
       key={`${surfaceIndex}:${serializeAsphereState(asphereState)}`}
+      optimizationModel={optimizationModel}
       surfaceIndex={surfaceIndex}
       asphereState={asphereState}
       canUseBounds={canUseBounds}
@@ -162,6 +166,7 @@ export function AsphereVarModal({
 }
 
 interface AsphereVarModalEditorProps {
+  readonly optimizationModel: OpticalModel;
   readonly surfaceIndex: number;
   readonly asphereState: AsphereOptimizationState;
   readonly canUseBounds: boolean;
@@ -170,6 +175,7 @@ interface AsphereVarModalEditorProps {
 }
 
 function AsphereVarModalEditor({
+  optimizationModel,
   surfaceIndex,
   asphereState,
   canUseBounds,
@@ -178,6 +184,10 @@ function AsphereVarModalEditor({
 }: AsphereVarModalEditorProps) {
   const [draft, setDraft] = React.useState<AsphereOptimizationState>(() => asphereState);
   const VariableModeFields = getVariableModeFieldsRenderer(canUseBounds);
+  const sourceSurfaceOptions = React.useMemo(
+    () => getThicknessPickupSourceSurfaceOptions(optimizationModel.surfaces.length, surfaceIndex),
+    [optimizationModel.surfaces.length, surfaceIndex],
+  );
 
   const termRows = getTermRows(draft.type);
   const isDoneDisabled = termRows.some((term) => {
@@ -217,9 +227,10 @@ function AsphereVarModalEditor({
       return;
     }
     if (modeStr === "pickup") {
+      const defaultSourceSurfaceIndex = String(sourceSurfaceOptions[0]?.value ?? "");
       setDraft(setTermMode(draft, term, {
         mode: "pickup",
-        sourceSurfaceIndex: current.mode === "pickup" ? current.sourceSurfaceIndex : "1",
+        sourceSurfaceIndex: current.mode === "pickup" ? current.sourceSurfaceIndex : defaultSourceSurfaceIndex,
         scale: current.mode === "pickup" ? current.scale : "1",
         offset: current.mode === "pickup" ? current.offset : "0",
       }));
@@ -320,9 +331,10 @@ function AsphereVarModalEditor({
                   {mode.mode === "pickup" && (
                     <PickupModeFields
                       idPrefix={termId}
-                      sourceSurfaceLabel="Source surface index"
-                      sourceSurfaceAriaLabel={`${term.ariaLabel} source surface index`}
+                      sourceSurfaceLabel="Source surface"
+                      sourceSurfaceAriaLabel="Source surface"
                       sourceSurfaceValue={mode.sourceSurfaceIndex}
+                      sourceSurfaceOptions={sourceSurfaceOptions}
                       onSourceSurfaceChange={(value) => handleTermPickupChange(term, "sourceSurfaceIndex", value)}
                       scaleLabel="Scale"
                       scaleAriaLabel={`${term.ariaLabel} scale`}

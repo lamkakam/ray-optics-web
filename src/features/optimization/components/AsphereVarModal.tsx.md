@@ -9,6 +9,7 @@ Modal dialog for configuring asphere variable and pickup optimization targets fo
 ```ts
 interface AsphereVarModalProps {
   isOpen: boolean;
+  optimizationModel: OpticalModel | undefined;
   surfaceIndex: number | undefined;
   asphereState: AsphereOptimizationState | undefined;
   onSave: (surfaceIndex: number, state: AsphereOptimizationState) => void;
@@ -18,6 +19,7 @@ interface AsphereVarModalProps {
 
 ## Behavior
 
+- Requires `optimizationModel`, `surfaceIndex`, and `asphereState` before rendering the editor; otherwise renders the closed modal placeholder.
 - Seeds draft from `asphereState` when the modal editor mounts, and resets that draft by remounting a keyed inner editor whenever the committed target surface or asphere state changes.
 - Reuses `curvatureRadiusCrossesZero()`, shared curvature-radius guidance text, and shared zero-crossing error formatting from `features/optimization/lib/modalHelpers.ts` for toroid sweep radius validation copy when `canUseBounds === true`.
 - Reuses `ModeSelectField.tsx`, `PickupModeFields.tsx`, and the boolean-driven renderer helper in `features/optimization/lib/variableModeFields.tsx` for the shared term-row mode selector and common variable/pickup field groups, while keeping asphere-specific type switching, term mapping, coefficient pickup wiring, and toroid validation in this modal.
@@ -34,7 +36,7 @@ interface AsphereVarModalProps {
     - For `Toroid sweep R` when `canUseBounds === true`, also shows the shared curvature-radius guidance that `R = 0` is a flat surface (infinite radius), instructs users not to straddle `0`, and shows the shared labeled inline validation message when bounds straddle `0`.
     - For `canUseBounds === false`, renders the unbounded variable body instead of Min./Max. inputs and skips toroid zero-crossing guidance/error copy.
     - The toroid validation message styling comes from `BoundedVariableModeFields` via `Paragraph` variant `errorMessage`; this modal only supplies layout classes.
-  - **pickup**: shows Source Surface Index, Scale, Offset `Input` fields. Coefficient rows additionally show a Source Coefficient Index field (stored as `sourceTermKey = "coefficient:N"` where `N` is the zero-based coefficient slot and may be `0`).
+  - **pickup**: shows Source surface as a `Select`, plus Scale and Offset `Input` fields. Source surface options are real surfaces only (`optimizationModel.surfaces.length`) and omit the current target `surfaceIndex`, matching thickness pickup behavior. Switching a term into pickup mode defaults `sourceSurfaceIndex` to the first available source option instead of the target surface. Coefficient rows additionally show a Source Coefficient Index field (stored as `sourceTermKey = "coefficient:N"` where `N` is the zero-based coefficient slot and may be `0`).
 - Footer actions: `Cancel` on the left and `Confirm` on the right.
 - **Cancel button**: closes the modal and discards uncommitted draft changes.
 - **Confirm button**: when `canUseBounds === true`, disabled when any variable term has non-finite bounds or `min >= max`, and also when `Toroid sweep R` variable bounds straddle `0` (negative min with positive max). Calls `onSave(surfaceIndex, draft)` then `onClose()`.

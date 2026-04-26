@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { AsphereOptimizationState, AsphereMode } from "@/features/optimization/stores/optimizationStore";
 import { AsphereVarModal } from "@/features/optimization/components/AsphereVarModal";
+import type { OpticalModel, Surface } from "@/shared/lib/types/opticalModel";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
@@ -14,6 +15,50 @@ jest.mock("better-react-mathjax", () => ({
 }));
 
 const constantMode: AsphereMode = { mode: "constant" };
+
+const defaultSurface: Surface = {
+  label: "Default",
+  curvatureRadius: 100,
+  thickness: 5,
+  medium: "air",
+  manufacturer: "",
+  semiDiameter: 10,
+};
+
+const defaultOptimizationModel: OpticalModel = {
+  setAutoAperture: "autoAperture",
+  object: {
+    distance: 0,
+    medium: "air",
+    manufacturer: "",
+  },
+  image: {
+    curvatureRadius: 0,
+  },
+  surfaces: [
+    { ...defaultSurface },
+    { ...defaultSurface },
+    { ...defaultSurface },
+  ],
+  specs: {
+    pupil: {
+      space: "object",
+      type: "epd",
+      value: 10,
+    },
+    field: {
+      space: "object",
+      type: "angle",
+      maxField: 10,
+      fields: [0],
+      isRelative: false,
+    },
+    wavelengths: {
+      weights: [[587.6, 1]],
+      referenceIndex: 0,
+    },
+  },
+};
 
 function makeState(overrides: Partial<AsphereOptimizationState>): AsphereOptimizationState {
   return {
@@ -29,6 +74,7 @@ function makeState(overrides: Partial<AsphereOptimizationState>): AsphereOptimiz
 
 const defaultProps = {
   isOpen: true,
+  optimizationModel: defaultOptimizationModel,
   surfaceIndex: 1,
   asphereState: makeState({}),
   onSave: jest.fn(),
@@ -44,6 +90,7 @@ describe("AsphereVarModal", () => {
     render(
       <AsphereVarModal
         isOpen={false}
+        optimizationModel={defaultOptimizationModel}
         surfaceIndex={1}
         asphereState={makeState({})}
         onSave={jest.fn()}
@@ -256,7 +303,7 @@ describe("AsphereVarModal", () => {
     expect(screen.queryByRole("textbox", { name: "Conic Constant Max." })).not.toBeInTheDocument();
   });
 
-  it("selecting pickup mode for conic shows source surface, scale, offset but no source coefficient", async () => {
+  it("selecting pickup mode for conic shows source surface dropdown, scale, offset but no source coefficient", async () => {
     const user = userEvent.setup();
     render(
       <AsphereVarModal
@@ -267,10 +314,52 @@ describe("AsphereVarModal", () => {
     // selects[0] = type selector, selects[1] = conic constant mode
     const selects = screen.getAllByRole("combobox");
     await user.selectOptions(selects[1], "pickup");
-    expect(screen.getByRole("textbox", { name: /source surface index/i })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Source surface" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: /source surface/i })).not.toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /scale/i })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /offset/i })).toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: /source coefficient index/i })).not.toBeInTheDocument();
+  });
+
+  it("omits the target surface from source surface pickup options", () => {
+    render(
+      <AsphereVarModal
+        {...defaultProps}
+        surfaceIndex={2}
+        asphereState={makeState({
+          surfaceIndex: 2,
+          type: "Conic",
+          conic: { mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" },
+        })}
+      />,
+    );
+
+    const sourceSurface = screen.getByRole("combobox", { name: "Source surface" });
+    expect(Array.from(sourceSurface.querySelectorAll("option")).map((option) => option.textContent)).toEqual(["1", "3"]);
+  });
+
+  it("defaults newly selected pickup mode to the first available source surface", async () => {
+    const user = userEvent.setup();
+    const onSave = jest.fn();
+
+    render(
+      <AsphereVarModal
+        {...defaultProps}
+        surfaceIndex={1}
+        asphereState={makeState({ surfaceIndex: 1, type: "Conic" })}
+        onSave={onSave}
+      />,
+    );
+
+    await user.selectOptions(screen.getAllByRole("combobox")[1], "pickup");
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
+      conic: expect.objectContaining({
+        mode: "pickup",
+        sourceSurfaceIndex: "2",
+      }),
+    }));
   });
 
   it("selecting pickup mode for a coefficient row shows source coefficient index input", async () => {
@@ -292,6 +381,7 @@ describe("AsphereVarModal", () => {
     render(
       <AsphereVarModal
         isOpen
+        optimizationModel={defaultOptimizationModel}
         surfaceIndex={1}
         asphereState={makeState({ type: "Conic" })}
         onSave={jest.fn()}
@@ -310,6 +400,7 @@ describe("AsphereVarModal", () => {
     render(
       <AsphereVarModal
         isOpen
+        optimizationModel={defaultOptimizationModel}
         surfaceIndex={1}
         asphereState={makeState({ type: "Conic" })}
         onSave={onSave}
@@ -330,6 +421,7 @@ describe("AsphereVarModal", () => {
     render(
       <AsphereVarModal
         isOpen
+        optimizationModel={defaultOptimizationModel}
         surfaceIndex={1}
         asphereState={makeState({ type: "Conic" })}
         onSave={onSave}
@@ -351,6 +443,7 @@ describe("AsphereVarModal", () => {
     render(
       <AsphereVarModal
         isOpen
+        optimizationModel={defaultOptimizationModel}
         surfaceIndex={1}
         asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "0", max: "10" } })}
         onSave={onSave}
@@ -377,6 +470,7 @@ describe("AsphereVarModal", () => {
       <div onKeyDown={outerKeyDown}>
         <AsphereVarModal
           isOpen
+          optimizationModel={defaultOptimizationModel}
           surfaceIndex={1}
           asphereState={makeState({ type: "Conic", conic: { mode: "variable", min: "0", max: "10" } })}
           onSave={onSave}
@@ -423,6 +517,7 @@ describe("AsphereVarModal", () => {
     render(
       <AsphereVarModal
         isOpen
+        optimizationModel={defaultOptimizationModel}
         surfaceIndex={1}
         asphereState={makeState({
           type: "XToroid",
@@ -451,6 +546,7 @@ describe("AsphereVarModal", () => {
     render(
       <AsphereVarModal
         isOpen
+        optimizationModel={defaultOptimizationModel}
         surfaceIndex={1}
         asphereState={makeState({
           type: "XToroid",
