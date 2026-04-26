@@ -34,6 +34,18 @@ const imageRow: GridRow = {
   curvatureRadius: 0,
 };
 
+function makeAsphereState(overrides: Partial<AsphereOptimizationState> = {}): AsphereOptimizationState {
+  return {
+    surfaceIndex: 1,
+    type: undefined,
+    lockedType: false,
+    conic: { mode: "constant" },
+    toricSweep: { mode: "constant" },
+    coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" as const })),
+    ...overrides,
+  };
+}
+
 describe("OptimizationLensPrescriptionGrid", () => {
   it("renders the expected headers and forwards modal open actions", async () => {
     const user = userEvent.setup();
@@ -45,16 +57,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     const onOpenDecenterModal = jest.fn();
     const onOpenDiffractionGratingModal = jest.fn();
     const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
-    const asphereStates: AsphereOptimizationState[] = [
-      {
-        surfaceIndex: 1,
-        type: undefined,
-        lockedType: false,
-        conic: { mode: "constant" },
-        toricSweep: { mode: "constant" },
-        coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" as const })),
-      },
-    ];
+    const asphereStates: AsphereOptimizationState[] = [makeAsphereState()];
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -126,16 +129,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       { surfaceIndex: 2, mode: "constant" },
     ];
     const thicknessModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
-    const asphereStates: AsphereOptimizationState[] = [
-      {
-        surfaceIndex: 1,
-        type: undefined,
-        lockedType: false,
-        conic: { mode: "constant" },
-        toricSweep: { mode: "constant" },
-        coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" as const })),
-      },
-    ];
+    const asphereStates: AsphereOptimizationState[] = [makeAsphereState()];
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -176,13 +170,13 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "1",
       "Default",
       "50",
-      "Set",
+      "",
       "5",
-      "Set",
+      "",
       "BK7",
       "10",
       "—",
-      "Set",
+      "",
       "—",
       "—",
     ]);
@@ -190,7 +184,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "",
       "Image",
       "0",
-      "Set",
+      "",
       "",
       "",
       "",
@@ -202,19 +196,82 @@ describe("OptimizationLensPrescriptionGrid", () => {
     ]);
   });
 
+  it("shows saved variable mode labels in optimization Var. cells", () => {
+    const radiusModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "variable", min: "40", max: "60" }];
+    const thicknessModes: RadiusMode[] = [
+      { surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" },
+    ];
+    const asphereStates: AsphereOptimizationState[] = [
+      makeAsphereState({
+        type: "EvenAspherical",
+        conic: { mode: "variable", min: "-1", max: "1" },
+        coefficients: [
+          { mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0" },
+          ...Array.from({ length: 9 }, () => ({ mode: "constant" as const })),
+        ],
+      }),
+    ];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        radiusModes={radiusModes}
+        thicknessModes={thicknessModes}
+        asphereStates={asphereStates}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Radius mode for surface 1" })).toHaveTextContent("V");
+    expect(screen.getByRole("button", { name: "Thickness mode for surface 1" })).toHaveTextContent("P");
+    expect(screen.getByRole("button", { name: "Asphere mode for surface 1" })).toHaveTextContent("V,P");
+  });
+
+  it("opens optimization variable modals when clicking the Var. cell body", async () => {
+    const user = userEvent.setup();
+    const onOpenRadiusModal = jest.fn();
+    const onOpenThicknessModal = jest.fn();
+    const onOpenAsphereVarModal = jest.fn();
+    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        radiusModes={constantModes}
+        thicknessModes={constantModes}
+        asphereStates={[makeAsphereState()]}
+        onOpenRadiusModal={onOpenRadiusModal}
+        onOpenThicknessModal={onOpenThicknessModal}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={onOpenAsphereVarModal}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    const rowCells = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr")[0].querySelectorAll("td");
+
+    await user.click(rowCells[3].firstElementChild!);
+    expect(onOpenRadiusModal).toHaveBeenCalledWith(1);
+
+    await user.click(rowCells[5].firstElementChild!);
+    expect(onOpenThicknessModal).toHaveBeenCalledWith(1);
+
+    await user.click(rowCells[9].firstElementChild!);
+    expect(onOpenAsphereVarModal).toHaveBeenCalledWith(1);
+  });
+
   it("uses view-oriented tooltip copy for optimization-only inspection cells", async () => {
     const user = userEvent.setup();
     const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
-    const asphereStates: AsphereOptimizationState[] = [
-      {
-        surfaceIndex: 1,
-        type: undefined,
-        lockedType: false,
-        conic: { mode: "constant" },
-        toricSweep: { mode: "constant" },
-        coefficients: Array.from({ length: 10 }, () => ({ mode: "constant" as const })),
-      },
-    ];
+    const asphereStates: AsphereOptimizationState[] = [makeAsphereState()];
 
     render(
       <OptimizationLensPrescriptionGrid
@@ -242,5 +299,42 @@ describe("OptimizationLensPrescriptionGrid", () => {
     await user.unhover(screen.getByRole("button", { name: "Edit aspherical parameters" }));
     await user.hover(screen.getByRole("button", { name: "Edit diffraction grating" }));
     expect(screen.getByText("Click to view diffraction grating")).toHaveClass("opacity-100");
+  });
+
+  it("shows optimization variable tooltip copy for Var. cell buttons", async () => {
+    const user = userEvent.setup();
+    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow }]}
+        radiusModes={constantModes}
+        thicknessModes={constantModes}
+        asphereStates={[makeAsphereState()]}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    const rowCells = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr")[0].querySelectorAll("td");
+    const radiusTooltipTrigger = rowCells[3].firstElementChild!.firstElementChild!;
+    const thicknessTooltipTrigger = rowCells[5].firstElementChild!.firstElementChild!;
+    const asphereTooltipTrigger = rowCells[9].firstElementChild!.firstElementChild!;
+
+    await user.hover(radiusTooltipTrigger);
+    expect(screen.getByText("Click to configure radius variable or pickup")).toHaveClass("opacity-100");
+
+    await user.unhover(radiusTooltipTrigger);
+    await user.hover(thicknessTooltipTrigger);
+    expect(screen.getByText("Click to configure thickness variable or pickup")).toHaveClass("opacity-100");
+
+    await user.unhover(thicknessTooltipTrigger);
+    await user.hover(asphereTooltipTrigger);
+    expect(screen.getByText("Click to configure asphere variable or pickup")).toHaveClass("opacity-100");
   });
 });
