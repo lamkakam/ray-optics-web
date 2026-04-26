@@ -5,7 +5,7 @@ import { useStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
-import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/types/zernikeData";
+import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/lib/zernikeData";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
 import { ExampleSystems } from "@/shared/lib/data/exampleSystems";

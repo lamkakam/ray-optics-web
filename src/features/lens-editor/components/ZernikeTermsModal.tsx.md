@@ -47,6 +47,7 @@ interface ZernikeTermsModalProps {
   - Noll: 56 rows, first column "Noll j", uses `nollToNm(j)`
   - Fringe: `NUM_FRINGE_TERMS` (37) rows, first column "Fringe j", uses `fringeToNm(j)`
 - Each row shows: j index, Z notation (MathJax), classical name via `classicalName(n, m)`, unnormalized coefficient, RMS-normalized coefficient.
+- Imports `ZernikeData` and `ZernikeOrdering` from `features/lens-editor/types/zernikeData`, and Zernike runtime constants/helpers from `features/lens-editor/lib/zernikeData`.
 - Summary section displays P-V WFE, RMS WFE, and Strehl ratio.
 - Uses `<MathJax>` for Zernike notation; context provided by ancestor (`page.tsx`).
 - **Loading states**:
@@ -69,7 +70,9 @@ interface ZernikeTermsModalProps {
 ## Usages
 
 ```tsx
-import { ZernikeTermsModal, type ZernikeOrdering } from "@/features/lens-editor/components/ZernikeTermsModal";
+import { NUM_FRINGE_TERMS, NUM_NOLL_TERMS } from "@/features/lens-editor/lib/zernikeData";
+import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
+import type { ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 
 // In a page component (e.g., LensEditor)
 const [zernikeModalOpen, setZernikeModalOpen] = useState(false);

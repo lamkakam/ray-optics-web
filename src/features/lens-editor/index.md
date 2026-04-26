@@ -9,4 +9,5 @@ The main lens design and editing feature. Contains the full lens editor page, al
 ## Subdirectories
 
 - [components/](./components/index.md) — Composite, container, and domain-cell components
+- [lib/](./lib/index.md) — Lens editor runtime helpers and constants
 - [stores/](./stores/index.md) — Zustand stores for lens model and specs state
