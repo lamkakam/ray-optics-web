@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useCallback } from "react";
-import { useStore, type StoreApi } from "zustand";
+import { useCallback } from "react";
+import { useStore } from "zustand";
 import {
-  type SpecsConfiguratorState,
   type PupilSpace,
   type PupilType,
   type FieldSpace,

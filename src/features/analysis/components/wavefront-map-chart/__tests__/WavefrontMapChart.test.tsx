@@ -1,4 +1,3 @@
-import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { WavefrontMapChart } from "@/features/analysis/components/wavefront-map-chart/WavefrontMapChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
@@ -11,7 +10,6 @@ let mockResize: jest.Mock;
 let mockEchartsInit: jest.Mock;
 let mockResizeObserverObserve: jest.Mock;
 let mockResizeObserverDisconnect: jest.Mock;
-let resizeObserverCallback: ResizeObserverCallback | undefined;
 let mockBuildWavefrontMapOption: jest.Mock;
 
 jest.mock("echarts/core", () => ({
@@ -56,16 +54,13 @@ describe("WavefrontMapChart", () => {
     mockResizeObserverObserve = jest.fn();
     mockResizeObserverDisconnect = jest.fn();
     mockBuildWavefrontMapOption = jest.fn(() => ({ series: [] }));
-    resizeObserverCallback = undefined;
 
     class MockResizeObserver implements ResizeObserver {
       observe = mockResizeObserverObserve;
       unobserve = jest.fn();
       disconnect = mockResizeObserverDisconnect;
 
-      constructor(callback: ResizeObserverCallback) {
-        resizeObserverCallback = callback;
-      }
+      constructor(_callback: ResizeObserverCallback) {}
     }
 
     Object.defineProperty(window, "ResizeObserver", {

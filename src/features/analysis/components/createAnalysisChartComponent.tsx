@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";

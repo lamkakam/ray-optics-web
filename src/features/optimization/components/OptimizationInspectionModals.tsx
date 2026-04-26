@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { AsphericalModal } from "@/features/lens-editor/components/AsphericalModal";
 import { DecenterModal } from "@/features/lens-editor/components/DecenterModal";
 import { DiffractionGratingModal } from "@/features/lens-editor/components/DiffractionGratingModal";

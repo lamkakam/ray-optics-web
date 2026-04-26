@@ -1,4 +1,3 @@
-import React from "react";
 import { act, render, screen } from "@testing-library/react";
 import { createAnalysisChartComponent } from "@/features/analysis/components/createAnalysisChartComponent";
 import { globalTokens } from "@/shared/tokens/styleTokens";

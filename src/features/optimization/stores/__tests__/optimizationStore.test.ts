@@ -306,14 +306,14 @@ describe("optimizationStore", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
 
-    store.setState((state) => ({
+    store.setState({
       optimizer: {
         kind: "differential_evolution",
         max_nfev: "200",
         tol: "0.02",
         atol: "0",
       },
-    }));
+    });
     store.getState().setRadiusMode(1, {
       mode: "variable",
       min: "40",
@@ -349,14 +349,14 @@ describe("optimizationStore", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
 
-    store.setState((state) => ({
+    store.setState({
       optimizer: {
         kind: "differential_evolution",
         max_nfev: "200",
         tol: "0.01",
         atol: "0",
       },
-    }));
+    });
     store.getState().setRadiusMode(1, {
       mode: "variable",
       min: "40",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as echarts from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import { LineChart } from "echarts/charts";

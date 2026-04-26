@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";

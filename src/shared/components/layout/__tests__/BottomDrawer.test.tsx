@@ -1,4 +1,3 @@
-import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";

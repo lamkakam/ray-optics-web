@@ -1,4 +1,3 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import { OptimizationEvaluationPanel } from "@/features/optimization/components/OptimizationEvaluationPanel";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";

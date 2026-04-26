@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Button } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";

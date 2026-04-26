@@ -1,20 +1,13 @@
 # `features/lens-editor/components/DiffractionGratingCell.tsx`
 
-## Purpose
+Compatibility export for `DiffractionGratingCell`.
 
-AG Grid cell renderer for the `Diffraction Grating` column. Renders a `SetButton` inside a portal tooltip to indicate whether diffraction grating parameters are configured on a surface.
+The implementation lives in `shared/lib/lens-prescription-grid/LensPrescriptionGridCells.tsx` so Lens Editor and Optimization can reuse the same prescription cell UI without importing from `features/`.
 
-## Props
+## Export
 
 ```ts
-interface DiffractionGratingCellProps {
-  isDiffractionGratingSet: boolean;
-  onOpenModal: () => void;
-}
+export { DiffractionGratingCell } from "@/shared/lib/lens-prescription-grid";
 ```
 
-## Key Behaviors
-
-- Uses `Tooltip` with `portal` and `noTouch` for AG Grid compatibility.
-- Delegates visual state to `SetButton`.
-- Uses aria-label `"Edit diffraction grating"` for the button.
+The default tooltip copy remains Lens Editor-oriented: `Click to set diffraction grating`.

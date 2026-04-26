@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useStore } from "zustand";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";

@@ -1,60 +1,28 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { AgGridProvider, AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
-import { DecenterCell } from "@/features/lens-editor/components/DecenterCell";
 import type { RadiusMode, AsphereOptimizationState } from "@/features/optimization/stores/optimizationStore";
 import type { RadiusRow } from "@/features/optimization/components/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/types/gridTypes";
-import { SetButton } from "@/shared/components/primitives/SetButton";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
+import {
+  createAsphericalColumn,
+  createDecenterColumn,
+  createDiffractionGratingColumn,
+  createMediumColumn,
+  createRadiusOfCurvatureColumn,
+  createSemiDiameterColumn,
+  createSurfaceColumn,
+  createThicknessColumn,
+  LENS_PRESCRIPTION_GRID_DOM_LAYOUT,
+  LensPrescriptionActionWrapper,
+  lensPrescriptionGridDefaultColDef,
+} from "@/shared/lib/lens-prescription-grid";
 
 const OPTIMIZATION_VAR_COLUMN_WIDTH = 60;
-
-function ActionWrapper({
-  children,
-  onAction,
-}: {
-  readonly children: React.ReactNode;
-  readonly onAction: () => void;
-}) {
-  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if ((event.target as HTMLElement).closest("button,a,input,select,textarea") !== null) {
-      return;
-    }
-
-    onAction();
-  };
-
-  return (
-    <div className="flex h-full w-full cursor-pointer items-center" onClick={handleClick}>
-      {children}
-    </div>
-  );
-}
-
-function OptimizationMediumCell({
-  medium,
-  onOpenModal,
-}: {
-  readonly medium: string;
-  readonly onOpenModal: () => void;
-}) {
-  return (
-    <Tooltip text="Click to view medium or glass" position="top" portal noTouch>
-      <button
-        type="button"
-        aria-label="Edit medium"
-        className="cursor-pointer"
-        onClick={onOpenModal}
-      >
-        {medium}
-      </button>
-    </Tooltip>
-  );
-}
 
 function getSurfaceModeLabel(mode: RadiusMode["mode"] | undefined): string {
   if (mode === "variable") {
@@ -109,38 +77,6 @@ function OptimizationVariableModeCell({
   );
 }
 
-function OptimizationAsphericalCell({
-  isAspherical,
-  onOpenModal,
-}: {
-  readonly isAspherical: boolean;
-  readonly onOpenModal: () => void;
-}) {
-  return (
-    <Tooltip text="Click to view aspherical parameters" position="top" portal noTouch>
-      <SetButton isSet={isAspherical} aria-label="Edit aspherical parameters" onClick={onOpenModal} />
-    </Tooltip>
-  );
-}
-
-function OptimizationDiffractionGratingCell({
-  isDiffractionGratingSet,
-  onOpenModal,
-}: {
-  readonly isDiffractionGratingSet: boolean;
-  readonly onOpenModal: () => void;
-}) {
-  return (
-    <Tooltip text="Click to view diffraction grating" position="top" portal noTouch>
-      <SetButton
-        isSet={isDiffractionGratingSet}
-        aria-label="Edit diffraction grating"
-        onClick={onOpenModal}
-      />
-    </Tooltip>
-  );
-}
-
 interface OptimizationLensPrescriptionGridProps {
   readonly rows: ReadonlyArray<RadiusRow>;
   readonly radiusModes: ReadonlyArray<RadiusMode>;
@@ -182,30 +118,8 @@ export function OptimizationLensPrescriptionGrid({
         return params.data.radiusSurfaceIndex;
       },
     },
-    {
-      headerName: "Surface",
-      valueGetter: (params) => {
-        if (params.data === undefined) {
-          return "";
-        }
-        if (params.data.row.kind === "object") {
-          return "Object";
-        }
-        if (params.data.row.kind === "image") {
-          return "Image";
-        }
-        return params.data.row.label;
-      },
-    },
-    {
-      headerName: "Radius of Curvature",
-      valueGetter: (params) => {
-        if (params.data?.row.kind === "object") {
-          return undefined;
-        }
-        return params.data?.row.curvatureRadius;
-      },
-    },
+    createSurfaceColumn<RadiusRow>({ getGridRow: (data) => data.row }),
+    createRadiusOfCurvatureColumn<RadiusRow>({ getGridRow: (data) => data.row }),
     {
       headerName: "Var.",
       width: OPTIMIZATION_VAR_COLUMN_WIDTH,
@@ -217,7 +131,7 @@ export function OptimizationLensPrescriptionGrid({
         const mode = radiusModes.find((entry) => entry.surfaceIndex === params.data.radiusSurfaceIndex);
         const surfaceIndex = params.data.radiusSurfaceIndex;
         return (
-          <ActionWrapper onAction={() => onOpenRadiusModal(surfaceIndex)}>
+          <LensPrescriptionActionWrapper onAction={() => onOpenRadiusModal(surfaceIndex)}>
             <Tooltip
               text="Click to configure radius variable or pickup"
               position="top"
@@ -231,22 +145,11 @@ export function OptimizationLensPrescriptionGrid({
                 onOpenModal={() => onOpenRadiusModal(surfaceIndex)}
               />
             </Tooltip>
-          </ActionWrapper>
+          </LensPrescriptionActionWrapper>
         );
       },
     },
-    {
-      headerName: "Thickness",
-      valueGetter: (params) => {
-        if (params.data?.row.kind === "object") {
-          return params.data.row.objectDistance;
-        }
-        if (params.data?.row.kind === "image") {
-          return undefined;
-        }
-        return params.data?.row.thickness;
-      },
-    },
+    createThicknessColumn<RadiusRow>({ getGridRow: (data) => data.row }),
     {
       headerName: "Var.",
       width: OPTIMIZATION_VAR_COLUMN_WIDTH,
@@ -258,7 +161,7 @@ export function OptimizationLensPrescriptionGrid({
         const mode = thicknessModes.find((entry) => entry.surfaceIndex === params.data.thicknessSurfaceIndex);
         const surfaceIndex = params.data.thicknessSurfaceIndex;
         return (
-          <ActionWrapper onAction={() => onOpenThicknessModal(surfaceIndex)}>
+          <LensPrescriptionActionWrapper onAction={() => onOpenThicknessModal(surfaceIndex)}>
             <Tooltip
               text="Click to configure thickness variable or pickup"
               position="top"
@@ -272,68 +175,21 @@ export function OptimizationLensPrescriptionGrid({
                 onOpenModal={() => onOpenThicknessModal(surfaceIndex)}
               />
             </Tooltip>
-          </ActionWrapper>
+          </LensPrescriptionActionWrapper>
         );
       },
     },
-    {
-      headerName: "Medium",
-      valueGetter: (params) => {
-        if (!params.data || params.data.row.kind === "image") {
-          return undefined;
-        }
-
-        return params.data.row.medium;
-      },
-      cellRenderer: (params: { data: RadiusRow }) => {
-        if (params.data.row.kind === "image") {
-          return undefined;
-        }
-
-        return (
-          <ActionWrapper onAction={() => onOpenMediumModal(params.data.row)}>
-            <OptimizationMediumCell
-              medium={params.data.row.medium}
-              onOpenModal={() => onOpenMediumModal(params.data.row)}
-            />
-          </ActionWrapper>
-        );
-      },
-    },
-    {
-      headerName: "Semi-diam.",
-      valueGetter: (params) => {
-        if (!params.data || params.data.row.kind !== "surface") {
-          return undefined;
-        }
-
-        return params.data.row.semiDiameter;
-      },
-    },
-    {
-      headerName: "Asph.",
-      valueGetter: (params) => {
-        if (!params.data || params.data.row.kind !== "surface") {
-          return undefined;
-        }
-
-        return params.data.row.aspherical;
-      },
-      cellRenderer: (params: { data: RadiusRow }) => {
-        if (params.data.row.kind !== "surface") {
-          return undefined;
-        }
-
-        return (
-          <ActionWrapper onAction={() => onOpenAsphericalModal(params.data.row)}>
-            <OptimizationAsphericalCell
-              isAspherical={params.data.row.aspherical !== undefined}
-              onOpenModal={() => onOpenAsphericalModal(params.data.row)}
-            />
-          </ActionWrapper>
-        );
-      },
-    },
+    createMediumColumn<RadiusRow>({
+      getGridRow: (data) => data.row,
+      onOpenMediumModal,
+      tooltipText: "Click to view medium or glass",
+    }),
+    createSemiDiameterColumn<RadiusRow>({ getGridRow: (data) => data.row }),
+    createAsphericalColumn<RadiusRow>({
+      getGridRow: (data) => data.row,
+      onOpenAsphericalModal,
+      tooltipText: "Click to view aspherical parameters",
+    }),
     {
       headerName: "Var.",
       width: OPTIMIZATION_VAR_COLUMN_WIDTH,
@@ -346,7 +202,7 @@ export function OptimizationLensPrescriptionGrid({
         const surfaceIndex = params.data.radiusSurfaceIndex;
 
         return (
-          <ActionWrapper onAction={() => onOpenAsphereVarModal(surfaceIndex)}>
+          <LensPrescriptionActionWrapper onAction={() => onOpenAsphereVarModal(surfaceIndex)}>
             <Tooltip
               text="Click to configure asphere variable or pickup"
               position="top"
@@ -360,55 +216,19 @@ export function OptimizationLensPrescriptionGrid({
                 onOpenModal={() => onOpenAsphereVarModal(surfaceIndex)}
               />
             </Tooltip>
-          </ActionWrapper>
+          </LensPrescriptionActionWrapper>
         );
       },
     },
-    {
-      headerName: "Tilt & Decenter",
-      valueGetter: (params) => {
-        if (!params.data || params.data.row.kind === "object") {
-          return undefined;
-        }
-
-        return params.data.row.decenter;
-      },
-      cellRenderer: (params: { data: RadiusRow }) => {
-        if (params.data.row.kind === "object") {
-          return undefined;
-        }
-
-        return (
-          <ActionWrapper onAction={() => onOpenDecenterModal(params.data.row)}>
-            <DecenterCell isDecenterSet={params.data.row.decenter !== undefined} onOpenModal={() => onOpenDecenterModal(params.data.row)} />
-          </ActionWrapper>
-        );
-      },
-    },
-    {
-      headerName: "Diffraction Grating",
-      valueGetter: (params) => {
-        if (!params.data || params.data.row.kind !== "surface") {
-          return undefined;
-        }
-
-        return params.data.row.diffractionGrating;
-      },
-      cellRenderer: (params: { data: RadiusRow }) => {
-        if (params.data.row.kind !== "surface") {
-          return undefined;
-        }
-
-        return (
-          <ActionWrapper onAction={() => onOpenDiffractionGratingModal(params.data.row)}>
-            <OptimizationDiffractionGratingCell
-              isDiffractionGratingSet={params.data.row.diffractionGrating !== undefined}
-              onOpenModal={() => onOpenDiffractionGratingModal(params.data.row)}
-            />
-          </ActionWrapper>
-        );
-      },
-    },
+    createDecenterColumn<RadiusRow>({
+      getGridRow: (data) => data.row,
+      onOpenDecenterModal,
+    }),
+    createDiffractionGratingColumn<RadiusRow>({
+      getGridRow: (data) => data.row,
+      onOpenDiffractionGratingModal,
+      tooltipText: "Click to view diffraction grating",
+    }),
   ], [
     asphereStates,
     onOpenAsphericalModal,
@@ -429,8 +249,8 @@ export function OptimizationLensPrescriptionGrid({
           theme={gridTheme}
           rowData={[...rows]}
           columnDefs={lensColumns}
-          defaultColDef={{ sortable: false, suppressMovable: true }}
-          domLayout="autoHeight"
+          defaultColDef={lensPrescriptionGridDefaultColDef}
+          domLayout={LENS_PRESCRIPTION_GRID_DOM_LAYOUT}
         />
       </AgGridProvider>
     </div>

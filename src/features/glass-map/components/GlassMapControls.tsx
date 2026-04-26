@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { MathJax } from "better-react-mathjax";
 import { CATALOG_NAMES, CATALOG_COLOR_MAP } from "@/shared/lib/types/glassMap";
 import type { AbbeNumCenterLine, CatalogName, GlassMapPlotType, PartialDispersionType } from "@/shared/lib/types/glassMap";

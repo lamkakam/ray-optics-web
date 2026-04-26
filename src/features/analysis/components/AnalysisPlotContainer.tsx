@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import { useCallback } from "react";
 import { useStore } from "zustand";
 import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";

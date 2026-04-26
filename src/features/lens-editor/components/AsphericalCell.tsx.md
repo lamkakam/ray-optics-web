@@ -1,43 +1,13 @@
 # `features/lens-editor/components/AsphericalCell.tsx`
 
-## Purpose
+Compatibility export for `AsphericalCell`.
 
-AG Grid cell renderer for the Asph. column. Renders a `SetButton` inside a portal tooltip to indicate and toggle aspherical parameters.
+The implementation lives in `shared/lib/lens-prescription-grid/LensPrescriptionGridCells.tsx` so Lens Editor and Optimization can reuse the same prescription cell UI without importing from `features/`.
 
-## Props
+## Export
 
 ```ts
-interface AsphericalCellProps {
-  isAspherical: boolean;
-  onOpenModal: () => void;
-}
+export { AsphericalCell } from "@/shared/lib/lens-prescription-grid";
 ```
 
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isAspherical` | `boolean` | Yes | `true` when the surface has aspherical data set |
-| `onOpenModal` | `() => void` | Yes | Callback to open the modal for aspherical surface parameters config  |
-
-## Key Behaviors
-
-- Delegates visual state (set vs. unset) entirely to `SetButton`.
-- Uses `portal` tooltip mode for correct rendering inside AG Grid.
-
-## Usages
-
-- Used as a `cellRenderer` in `LensPrescriptionGrid`.
-
-### Example
-
-```tsx
-<AsphericalCell
-  isAspherical={params.data.aspherical !== undefined}
-  onOpenModal={() => onOpenAsphericalModal(params.data.id)}
-/>
-```
-
-This example shows typical usage within AG Grid's `cellRenderer` in the "Asph." column of the lens prescription grid, where:
-- `isAspherical` indicates whether the surface has aspherical data configured
-- `onOpenModal` is called when the user clicks to open the aspherical parameters editor modal
+The default tooltip copy remains Lens Editor-oriented: `Click to set aspherical parameters`.

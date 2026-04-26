@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
 import { Input } from "@/shared/components/primitives/Input";

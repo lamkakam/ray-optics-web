@@ -1,4 +1,3 @@
-import React from "react";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
 interface LoadingMaskProps {

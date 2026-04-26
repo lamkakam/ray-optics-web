@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";

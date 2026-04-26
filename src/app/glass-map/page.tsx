@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
 import type { GlassMapRouteIntent } from "@/features/glass-map/stores/glassMapStore";

@@ -1,4 +1,3 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import { OpdFanChart } from "@/features/analysis/components/opd-fan-chart/OpdFanChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
@@ -47,7 +46,7 @@ describe("OpdFanChart", () => {
   class ResizeObserverMock {
     public observe = jest.fn();
     public disconnect = jest.fn();
-    public constructor(private readonly callback: () => void) {}
+    public constructor(_callback: () => void) {}
   }
 
   beforeEach(() => {

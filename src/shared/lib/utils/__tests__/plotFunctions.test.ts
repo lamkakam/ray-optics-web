@@ -1,4 +1,3 @@
-import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
 import type { OpdFanData, OpticalModel, RayFanData, SeidelData } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { loadAnalysisPlot } from "@/shared/lib/utils/plotFunctions";

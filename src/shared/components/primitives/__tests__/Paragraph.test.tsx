@@ -1,4 +1,4 @@
-import React, { createRef } from "react";
+import { createRef } from "react";
 import { render, screen } from "@testing-library/react";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";

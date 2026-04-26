@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";

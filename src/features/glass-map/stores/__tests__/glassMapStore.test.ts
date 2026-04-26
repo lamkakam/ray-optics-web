@@ -3,7 +3,7 @@ import {
   createGlassMapSlice,
   type GlassMapStore,
 } from "@/features/glass-map/stores/glassMapStore";
-import type { AllGlassCatalogsData, CatalogName } from "@/shared/lib/types/glassMap";
+import type { CatalogName } from "@/shared/lib/types/glassMap";
 
 const mockGlassData = {
   refractiveIndexD: 1.5168,
@@ -13,16 +13,6 @@ const mockGlassData = {
   partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
   dispersionCoeffKind: 'Sellmeier3T' as const,
   dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
-};
-
-const mockCatalogsData: AllGlassCatalogsData = {
-  CDGM: { BK7: mockGlassData },
-  Hikari: {},
-  Hoya: {},
-  Ohara: {},
-  Schott: {},
-  Sumita: {},
-  Special: {},
 };
 
 function makeStore() {

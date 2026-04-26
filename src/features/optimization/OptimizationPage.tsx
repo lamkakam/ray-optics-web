@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { proxy as comlinkProxy } from "comlink";
 import { useStore } from "zustand";
 import { BottomDrawer, type TabItem } from "@/shared/components/layout/BottomDrawer";

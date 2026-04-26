@@ -1,4 +1,3 @@
-import React from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 
