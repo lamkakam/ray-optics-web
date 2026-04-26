@@ -1,11 +1,9 @@
 "use client";
 
-import {
-  MODAL_MODE_OPTIONS,
-  type ModalModeChoice,
-} from "@/features/optimization/lib/modalHelpers";
+import { MODAL_MODE_OPTIONS } from "@/features/optimization/lib/modalHelpers";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
+import type { ModalModeChoice } from "@/features/optimization/type/optimizationModalTypes";
 
 interface ModeSelectFieldProps {
   readonly id: string;

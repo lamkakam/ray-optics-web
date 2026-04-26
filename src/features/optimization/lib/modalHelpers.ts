@@ -1,11 +1,5 @@
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
-
-export type ModalModeChoice = "constant" | "variable" | "pickup";
-
-export type SourceSurfaceSelectOption = {
-  readonly value: number;
-  readonly label: string;
-};
+import type { SourceSurfaceSelectOption } from "@/features/optimization/type/optimizationModalTypes";
 
 export const MODAL_MODE_OPTIONS = [
   { value: "constant", label: "constant" },

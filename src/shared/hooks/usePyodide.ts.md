@@ -74,7 +74,7 @@ interface PyodideWorkerAPI {
 - `SpotDiagramData` — imported from `shared/lib/types/opticalModel` (type only).
 - `ZernikeData` — imported from `shared/lib/types/zernikeData` (type only).
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
-- `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `shared/lib/types/optimization` (type only).
+- `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `features/optimization/type/optimizationWorkerTypes` (type only).
 
 ## Edge Cases / Error Handling
 
