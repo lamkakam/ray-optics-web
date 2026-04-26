@@ -1,58 +1,15 @@
-import type { OptimizationConfig, OptimizerKind } from "@/shared/lib/types/optimization";
-
-type SharedOptimizerConfig = OptimizationConfig["optimizer"];
-type SharedOptimizerConfigByKind<TKind extends OptimizerKind> = Extract<SharedOptimizerConfig, { readonly kind: TKind }>;
-
-type OptimizerMethodKind<TKind extends OptimizerKind> =
-  SharedOptimizerConfigByKind<TKind> extends { readonly method: infer TMethod extends string } ? TMethod : never;
-type OptimizerToleranceKind<TKind extends OptimizerKind> = Exclude<
-  keyof SharedOptimizerConfigByKind<TKind>,
-  "kind" | "method" | "max_nfev"
->;
-
-interface OptimizerMethodUiConfig<TKind extends OptimizerKind> {
-  readonly kind: OptimizerMethodKind<TKind>;
-  readonly label: string;
-  readonly canUseBounds: boolean;
-  readonly requiresResidualCountAtLeastVariableCount: boolean;
-}
-
-interface OptimizerToleranceUiConfig<TKind extends OptimizerKind> {
-  readonly kind: OptimizerToleranceKind<TKind>;
-  readonly label: string;
-  readonly default: number;
-}
-
-interface BaseOptimizerUiMetadata<TKind extends OptimizerKind> {
-  readonly label: string;
-  readonly tolerances: ReadonlyArray<OptimizerToleranceUiConfig<TKind>>;
-}
-
-interface OptimizerUiMetadataWithMethods<TKind extends OptimizerKind> extends BaseOptimizerUiMetadata<TKind> {
-  readonly methods: ReadonlyArray<OptimizerMethodUiConfig<TKind>>;
-}
-
-interface OptimizerUiMetadataWithoutMethods<TKind extends OptimizerKind> extends BaseOptimizerUiMetadata<TKind> {
-  readonly canUseBounds: boolean;
-  readonly requiresResidualCountAtLeastVariableCount: boolean;
-  readonly methods?: undefined;
-}
-
-type OptimizerUiMetadata<TKind extends OptimizerKind> =
-  | OptimizerUiMetadataWithMethods<TKind>
-  | OptimizerUiMetadataWithoutMethods<TKind>;
+import type { OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
+import type {
+  OptimizerUiConfig,
+  OptimizerUiMetadata,
+  OptimizerUiMetadataWithMethods,
+} from "@/features/optimization/types/optimizationUiTypes";
 
 export function optimizerUiMetadataHasMethods<TKind extends OptimizerKind>(
   metadata: OptimizerUiMetadata<TKind>,
 ): metadata is OptimizerUiMetadataWithMethods<TKind> {
   return metadata.methods !== undefined;
 }
-
-export type OptimizerUiConfig = {
-  readonly least_squares: OptimizerUiMetadataWithMethods<"least_squares">;
-} & {
-  readonly [TKind in Exclude<OptimizerKind, "least_squares">]: OptimizerUiMetadata<TKind>;
-};
 
 export const OPTIMIZER_UI_CONFIG = {
   least_squares: {

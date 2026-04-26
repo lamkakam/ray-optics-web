@@ -16,6 +16,7 @@ interface OptimizationProgressModalProps {
 ## Behavior
 
 - Uses the shared `Modal` primitive with `size="4xl"` and title `Optimization Progress`.
+- Imports progress entry types from `features/optimization/types/optimizationWorkerTypes.ts`.
 - While `isOptimizing` is `true`, the backdrop is non-dismissible and the footer does not render an `OK` button.
 - After optimization completes, renders an `OK` button and allows backdrop dismissal through `onClose`.
 - Initializes one ECharts canvas instance per open modal session and updates it whenever `progress` or theme text color changes.

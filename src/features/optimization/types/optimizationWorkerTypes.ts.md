@@ -1,8 +1,8 @@
-# `shared/lib/types/optimization.ts`
+# `features/optimization/types/optimizationWorkerTypes.ts`
 
 ## Purpose
 
-Shared TypeScript types for the optimization UI and the Pyodide worker boundary.
+TypeScript types for the optimization UI and the Pyodide worker boundary.
 
 ## Exports
 
@@ -23,6 +23,7 @@ Shared TypeScript types for the optimization UI and the Pyodide worker boundary.
 ## Key Conventions
 
 - `OptimizationConfig` mirrors the config shape documented in `src/python/src/rayoptics_web_utils/optimization/optimization.py.md`.
+- The module lives under `features/optimization/types/` because these contracts are specific to optimization, even when imported by shared worker hooks.
 - `OptimizationConfig.optimizer` is a discriminated union:
   least-squares configs include `kind: "least_squares"`, `method`, `max_nfev`, `ftol`, `xtol`, and `gtol`;
   differential-evolution configs include `kind: "differential_evolution"`, `max_nfev`, `tol`, and `atol`.

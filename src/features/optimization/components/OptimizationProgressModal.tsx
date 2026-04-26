@@ -15,7 +15,7 @@ import {
   MINIMUM_NON_ZERO_PLOT_VALUE,
 } from "@/shared/lib/chart-formatting/formatPlotValue";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { OptimizationProgressEntry } from "@/shared/lib/types/optimization";
+import type { OptimizationProgressEntry } from "@/features/optimization/types/optimizationWorkerTypes";
 
 echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
 

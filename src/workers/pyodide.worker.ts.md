@@ -177,6 +177,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `lib/zernikeData` — `ZernikeData` (type only).
 - `lib/pythonScript` — `buildScript` (generates the combined model-build + computation Python script).
 - `lib/glassMap` — `RawAllGlassCatalogsData` (type only).
+- `features/optimization/types/optimizationWorkerTypes` — optimization config, report, and progress types (type only).
 
 ## Usages
 

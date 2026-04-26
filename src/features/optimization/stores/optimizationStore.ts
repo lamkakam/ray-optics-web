@@ -7,7 +7,7 @@ import type {
   OptimizationPickupConfig,
   OptimizationReport,
   OptimizationValueEntry,
-} from "@/shared/lib/types/optimization";
+} from "@/features/optimization/types/optimizationWorkerTypes";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import { formatOptimizerUiDefaultValue, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";

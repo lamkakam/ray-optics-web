@@ -1,5 +1,5 @@
 import { createEvaluationRow } from "@/features/optimization/components/optimizationViewModels";
-import type { OptimizationResidualEntry } from "@/shared/lib/types/optimization";
+import type { OptimizationResidualEntry } from "@/features/optimization/types/optimizationWorkerTypes";
 
 describe("createEvaluationRow", () => {
   it("creates a table row for residuals with a non-zero effective weight", () => {

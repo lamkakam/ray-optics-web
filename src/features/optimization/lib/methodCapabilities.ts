@@ -1,14 +1,9 @@
-import type { LeastSquaresMethod, OptimizerKind } from "@/shared/lib/types/optimization";
 import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
-
-export interface OptimizationMethodCapabilities {
-  readonly canUseBounds: boolean;
-  readonly requiresResidualCountAtLeastVariableCount: boolean;
-}
-
-export type OptimizationAlgorithmSelection =
-  | { readonly kind: "least_squares"; readonly method: LeastSquaresMethod }
-  | { readonly kind: Exclude<OptimizerKind, "least_squares"> };
+import type {
+  OptimizationAlgorithmSelection,
+  OptimizationMethodCapabilities,
+} from "@/features/optimization/types/optimizationAlgorithmTypes";
+import type { LeastSquaresMethod } from "@/features/optimization/types/optimizationWorkerTypes";
 
 const METHOD_CAPABILITIES: Record<LeastSquaresMethod, OptimizationMethodCapabilities> =
   OPTIMIZER_UI_CONFIG.least_squares.methods.reduce<Record<LeastSquaresMethod, OptimizationMethodCapabilities>>(

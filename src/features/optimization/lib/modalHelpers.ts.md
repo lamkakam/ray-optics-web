@@ -5,7 +5,6 @@ Pure helper utilities shared by optimization variable/pickup modals.
 ## Exports
 
 - `MODAL_MODE_OPTIONS`: shared select options for `constant`, `variable`, and `pickup`
-- `ModalModeChoice`: union type for modal mode selection values
 - `CURVATURE_RADIUS_GUIDANCE_TEXT`: shared helper copy for curvature-radius style variable bounds where `R = 0` means a flat surface
 - `getCurvatureRadiusBoundsErrorText(label)`: formats the shared zero-crossing validation message for a caller-provided field label
 - `curvatureRadiusCrossesZero(minValue, maxValue)`: returns `true` only when both bounds are finite and the interval straddles `0`
@@ -15,6 +14,8 @@ Pure helper utilities shared by optimization variable/pickup modals.
 - `getThicknessPickupSourceSurfaceOptions(realSurfaceCount, targetSurfaceIndex)`: returns real-surface options only, omitting the target surface index
 - `toRadiusModeDraft(mode)`: removes `surfaceIndex` from a committed `RadiusMode` to seed modal-local draft state
 - `serializeRadiusMode(mode)`: converts a committed `RadiusMode` into a stable string for keyed modal remounting
+
+Type definitions for modal mode values and source-surface select options live in `features/optimization/types/optimizationModalTypes.ts`.
 
 ## Behavior
 

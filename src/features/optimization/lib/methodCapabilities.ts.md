@@ -4,6 +4,8 @@
 
 Provides the shared optimizer-capability lookup used by the optimization UI and store validation.
 
+Type definitions for capability return values and algorithm selections live in `features/optimization/types/optimizationAlgorithmTypes.ts`.
+
 ## Public Surface
 
 ```ts

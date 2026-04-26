@@ -26,7 +26,7 @@ import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
 import type { GridRow } from "@/shared/lib/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { OptimizationProgressEntry, OptimizationReport } from "@/shared/lib/types/optimization";
+import type { OptimizationProgressEntry, OptimizationReport } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
