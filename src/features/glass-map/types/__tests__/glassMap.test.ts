@@ -4,13 +4,13 @@ import {
   computePlotPoints,
   CATALOG_COLOR_MAP,
   CATALOG_NAMES,
-} from "@/shared/lib/types/glassMap";
+} from "@/features/glass-map/types/glassMap";
 import type {
   RawGlassData,
   RawAllGlassCatalogsData,
   AllGlassCatalogsData,
   CatalogName,
-} from "@/shared/lib/types/glassMap";
+} from "@/features/glass-map/types/glassMap";
 
 const rawGlass: RawGlassData = {
   refractive_index_d: 1.5168,

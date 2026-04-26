@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { SpotDiagramChart } from "@/features/analysis/components/spot-diagram-chart/SpotDiagramChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { SpotDiagramData } from "@/shared/lib/types/opticalModel";
+import type { SpotDiagramData } from "@/features/analysis/types/plotData";
 
 let mockBuildSpotDiagramOption: jest.Mock;
 const mockSetOption = jest.fn();

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { createContext, useContext } from "react";
-import type { AllGlassCatalogsData } from "@/shared/lib/types/glassMap";
-import type { GlassCatalogsLoadResult } from "@/shared/lib/data/glassCatalogsResource";
+import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
+import type { GlassCatalogsLoadResult } from "@/features/glass-map/types/glassCatalogsResource";
 
 export interface GlassCatalogContextValue {
   readonly catalogs: AllGlassCatalogsData | undefined;

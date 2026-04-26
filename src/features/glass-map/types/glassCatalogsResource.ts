@@ -4,7 +4,7 @@ import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import {
   normalizeAllCatalogsData,
   type AllGlassCatalogsData,
-} from "@/shared/lib/types/glassMap";
+} from "@/features/glass-map/types/glassMap";
 
 export type GlassCatalogsLoadResult =
   | { readonly data: AllGlassCatalogsData; readonly error: undefined }

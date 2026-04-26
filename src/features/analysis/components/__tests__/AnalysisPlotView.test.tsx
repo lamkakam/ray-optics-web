@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AnalysisPlotView } from "@/features/analysis/components/AnalysisPlotView";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
+import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn(),

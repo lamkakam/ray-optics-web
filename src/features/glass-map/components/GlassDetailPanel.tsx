@@ -2,7 +2,7 @@
 
 import React from "react";
 import { MathJax } from "better-react-mathjax";
-import type { SelectedGlass } from "@/shared/lib/types/glassMap";
+import type { SelectedGlass } from "@/features/glass-map/types/glassMap";
 import { Table } from "@/shared/components/primitives/Table";
 
 interface GlassDetailPanelProps {

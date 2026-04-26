@@ -25,5 +25,5 @@ interface RayFanChartProps {
 ## Dependencies
 
 - `buildRayFanChartOption` from `./rayFanChartOption`
-- `RayFanData` from `@/shared/lib/types/opticalModel`
+- `RayFanData` from `@/features/analysis/types/plotData`
 - `createAnalysisChartComponent(...)` from `../createAnalysisChartComponent`

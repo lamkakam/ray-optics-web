@@ -17,7 +17,7 @@ import {
   fringeToNm,
   zernikeNotation,
   classicalName,
-} from "@/shared/lib/types/zernikeData";
+} from "@/features/lens-editor/types/zernikeData";
 
 const ORDERING_OPTIONS: SelectOption[] = [
   { value: "fringe", label: "Fringe" },

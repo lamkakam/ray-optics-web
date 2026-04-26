@@ -1,6 +1,6 @@
 import { buildGeoPsfOption } from "@/features/analysis/components/geo-psf-chart/geoPsfChartOption";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { GeoPsfData } from "@/shared/lib/types/opticalModel";
+import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
 jest.mock("echarts/core", () => ({
   use: jest.fn(),

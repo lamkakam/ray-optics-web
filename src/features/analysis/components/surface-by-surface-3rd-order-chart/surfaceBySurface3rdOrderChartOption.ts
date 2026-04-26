@@ -3,7 +3,7 @@ import { BarChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
-import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
+import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 echarts.use([BarChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
 

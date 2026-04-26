@@ -25,5 +25,5 @@ interface OpdFanChartProps {
 ## Dependencies
 
 - `buildOpdFanChartOption` from `./opdFanChartOption`
-- `OpdFanData` from `@/shared/lib/types/opticalModel`
+- `OpdFanData` from `@/features/analysis/types/plotData`
 - `createAnalysisChartComponent(...)` from `../createAnalysisChartComponent`

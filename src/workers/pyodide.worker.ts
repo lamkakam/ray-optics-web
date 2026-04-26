@@ -1,13 +1,15 @@
 import { expose } from "comlink";
-import { type DiffractionPsfData, type GeoPsfData, type OpdFanData, type OpticalModel, type RayFanData, type SeidelData, type FocusingResult, type SpotDiagramData, type WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel, FocusingResult } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import {
   type OptimizationConfig,
   type OptimizationProgressEntry,
   type OptimizationReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
-import { type ZernikeData, type ZernikeOrdering } from "@/shared/lib/types/zernikeData";
+import { type ZernikeData, type ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
-import { type RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
+import { type RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(opts: { indexURL: string }): Promise<any>;

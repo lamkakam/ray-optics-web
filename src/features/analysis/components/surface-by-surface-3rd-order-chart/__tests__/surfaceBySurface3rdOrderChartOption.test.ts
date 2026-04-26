@@ -1,6 +1,6 @@
 import { buildSurfaceBySurface3rdOrderChartOption } from "@/features/analysis/components/surface-by-surface-3rd-order-chart/surfaceBySurface3rdOrderChartOption";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
+import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 describe("buildSurfaceBySurface3rdOrderChartOption", () => {
   const surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData = {

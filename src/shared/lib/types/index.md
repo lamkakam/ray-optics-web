@@ -4,7 +4,5 @@ Core domain TypeScript type definitions shared across the app.
 
 ## Files
 
-- [opticalModel.ts](./opticalModel.ts.md) — Core types: OpticalModel, Surface, OpticalSpecs, FocusingResult, SeidelData
+- [opticalModel.ts](./opticalModel.ts.md) — Core optical model, surface, specification, aspherical, and focusing types
 - [gridTypes.ts](./gridTypes.ts.md) — Type definitions for lens prescription grid rows and columns
-- [glassMap.ts](./glassMap.ts.md) — Glass material types: CatalogName, SelectedGlass, PlotPoint
-- [zernikeData.ts](./zernikeData.ts.md) — Zernike polynomial types and coefficient definitions

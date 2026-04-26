@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { GeoPsfChart } from "@/features/analysis/components/geo-psf-chart/GeoPsfChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { GeoPsfData } from "@/shared/lib/types/opticalModel";
+import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
 let mockSetOption: jest.Mock;
 let mockDispose: jest.Mock;

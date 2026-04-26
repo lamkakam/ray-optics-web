@@ -5,7 +5,7 @@ import {
   computeRenderedCircleStyle,
   isSingleTouchGesture,
 } from "@/features/glass-map/components/GlassScatterPlot";
-import type { PlotPoint, SelectedGlass } from "@/shared/lib/types/glassMap";
+import type { PlotPoint, SelectedGlass } from "@/features/glass-map/types/glassMap";
 
 const glassData = {
   refractiveIndexD: 1.5168,

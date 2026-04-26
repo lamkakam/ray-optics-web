@@ -3,7 +3,7 @@ import { ScatterChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
-import type { GeoPsfData } from "@/shared/lib/types/opticalModel";
+import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
 echarts.use([ScatterChart, GridComponent, TooltipComponent, CanvasRenderer]);
 

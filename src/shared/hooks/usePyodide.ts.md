@@ -65,14 +65,14 @@ interface PyodideWorkerAPI {
 - `createPyodideWorker` — function that creates the `Worker` instance.
 - `comlink.wrap` — wraps the worker as a typed async proxy.
 - `OpticalModel` — imported from `shared/lib/types/opticalModel` (type only).
-- `SeidelData` — imported from `shared/lib/types/opticalModel` (type only).
-- `DiffractionPsfData` — imported from `shared/lib/types/opticalModel` (type only).
-- `WavefrontMapData` — imported from `shared/lib/types/opticalModel` (type only).
-- `GeoPsfData` — imported from `shared/lib/types/opticalModel` (type only).
-- `RayFanData` — imported from `shared/lib/types/opticalModel` (type only).
-- `OpdFanData` — imported from `shared/lib/types/opticalModel` (type only).
-- `SpotDiagramData` — imported from `shared/lib/types/opticalModel` (type only).
-- `ZernikeData` — imported from `shared/lib/types/zernikeData` (type only).
+- `SeidelData` — imported from `features/lens-editor/types/seidelData` (type only).
+- `DiffractionPsfData` — imported from `features/analysis/types/plotData` (type only).
+- `WavefrontMapData` — imported from `features/analysis/types/plotData` (type only).
+- `GeoPsfData` — imported from `features/analysis/types/plotData` (type only).
+- `RayFanData` — imported from `features/analysis/types/plotData` (type only).
+- `OpdFanData` — imported from `features/analysis/types/plotData` (type only).
+- `SpotDiagramData` — imported from `features/analysis/types/plotData` (type only).
+- `ZernikeData` — imported from `features/lens-editor/types/zernikeData` (type only).
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
 - `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `features/optimization/types/optimizationWorkerTypes` (type only).
 

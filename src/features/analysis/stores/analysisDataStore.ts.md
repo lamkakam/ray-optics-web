@@ -24,4 +24,4 @@ Zustand store for analysis results computed after each successful submit. Holds 
 ## Dependencies
 
 - `create`, `StateCreator` from `zustand`.
-- `SeidelData` from `@/shared/lib/types/opticalModel`.
+- `SeidelData` from `@/features/lens-editor/types/seidelData`.

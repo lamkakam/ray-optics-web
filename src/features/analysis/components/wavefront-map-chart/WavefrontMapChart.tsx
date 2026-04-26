@@ -1,6 +1,6 @@
 import { buildWavefrontMapOption } from "@/features/analysis/components/wavefront-map-chart/wavefrontMapChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/components/createAnalysisChartComponent";
-import type { WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { WavefrontMapData } from "@/features/analysis/types/plotData";
 
 interface WavefrontMapChartProps {
   readonly wavefrontMapData: WavefrontMapData;

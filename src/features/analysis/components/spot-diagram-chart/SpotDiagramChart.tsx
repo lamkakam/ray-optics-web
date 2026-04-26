@@ -1,6 +1,6 @@
 import { buildSpotDiagramOption } from "@/features/analysis/components/spot-diagram-chart/spotDiagramChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/components/createAnalysisChartComponent";
-import type { SpotDiagramData } from "@/shared/lib/types/opticalModel";
+import type { SpotDiagramData } from "@/features/analysis/types/plotData";
 
 interface SpotDiagramChartProps {
   readonly spotDiagramData: SpotDiagramData;

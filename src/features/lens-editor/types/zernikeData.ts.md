@@ -1,4 +1,4 @@
-# `shared/lib/types/zernikeData.ts`
+# `features/lens-editor/types/zernikeData.ts`
 
 ## Purpose
 
@@ -49,8 +49,8 @@ import {
   zernikeNotation,
   classicalName,
   NUM_NOLL_TERMS,
-} from "@/shared/lib/types/zernikeData";
-import type { ZernikeData } from "@/shared/lib/types/zernikeData";
+} from "@/features/lens-editor/types/zernikeData";
+import type { ZernikeData } from "@/features/lens-editor/types/zernikeData";
 
 // Fetch from worker
 const zernikeData: ZernikeData = await proxy.getZernikeCoefficients(

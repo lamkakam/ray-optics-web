@@ -6,7 +6,7 @@ import {
   type GlassMapPlotType,
   type PartialDispersionType,
   type SelectedGlass,
-} from "@/shared/lib/types/glassMap";
+} from "@/features/glass-map/types/glassMap";
 
 export interface GlassMapState {
   plotType: GlassMapPlotType;

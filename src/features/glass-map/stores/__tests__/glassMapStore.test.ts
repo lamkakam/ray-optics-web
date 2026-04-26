@@ -3,7 +3,7 @@ import {
   createGlassMapSlice,
   type GlassMapStore,
 } from "@/features/glass-map/stores/glassMapStore";
-import type { CatalogName } from "@/shared/lib/types/glassMap";
+import type { CatalogName } from "@/features/glass-map/types/glassMap";
 
 const mockGlassData = {
   refractiveIndexD: 1.5168,

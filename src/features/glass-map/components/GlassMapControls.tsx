@@ -1,8 +1,8 @@
 "use client";
 
 import { MathJax } from "better-react-mathjax";
-import { CATALOG_NAMES, CATALOG_COLOR_MAP } from "@/shared/lib/types/glassMap";
-import type { AbbeNumCenterLine, CatalogName, GlassMapPlotType, PartialDispersionType } from "@/shared/lib/types/glassMap";
+import { CATALOG_NAMES, CATALOG_COLOR_MAP } from "@/features/glass-map/types/glassMap";
+import type { AbbeNumCenterLine, CatalogName, GlassMapPlotType, PartialDispersionType } from "@/features/glass-map/types/glassMap";
 import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
 import { RadioInput } from "@/shared/components/primitives/RadioInput";
 import type { RadioOption } from "@/shared/components/primitives/RadioInput";

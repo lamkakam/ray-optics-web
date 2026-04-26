@@ -12,7 +12,7 @@ import {
   peekGlassCatalogs,
   preloadGlassCatalogs,
   type GlassCatalogsLoadResult,
-} from "@/shared/lib/data/glassCatalogsResource";
+} from "@/features/glass-map/types/glassCatalogsResource";
 
 interface AppShellProps {
   readonly children: React.ReactNode;

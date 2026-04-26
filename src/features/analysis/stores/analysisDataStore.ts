@@ -1,5 +1,5 @@
 import { type StateCreator } from "zustand";
-import type { SeidelData } from "@/shared/lib/types/opticalModel";
+import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 
 export interface AnalysisDataState {
   seidelData: SeidelData | undefined;

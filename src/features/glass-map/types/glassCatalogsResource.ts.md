@@ -1,7 +1,7 @@
-# `shared/lib/data/glassCatalogsResource.ts`
+# `features/glass-map/types/glassCatalogsResource.ts`
 
 ## Purpose
-Shared client-side loader for normalized glass catalog data fetched from the Pyodide worker. It supports both eager preloading and Suspense reads while deduplicating requests per worker proxy.
+Glass-map client-side loader for normalized glass catalog data fetched from the Pyodide worker. It supports both eager preloading and Suspense reads while deduplicating requests per worker proxy.
 
 ## Exports
 

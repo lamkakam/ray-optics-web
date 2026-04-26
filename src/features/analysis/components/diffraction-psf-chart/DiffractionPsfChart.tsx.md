@@ -24,6 +24,6 @@ interface DiffractionPsfChartProps {
 
 ## Dependencies
 
-- `DiffractionPsfData` from `shared/lib/types/opticalModel`
+- `DiffractionPsfData` from `features/analysis/types/plotData`
 - `buildDiffractionPsfOption(...)` from `diffractionPsfChartOption.ts`
 - `createAnalysisChartComponent(...)` from `createAnalysisChartComponent.tsx`

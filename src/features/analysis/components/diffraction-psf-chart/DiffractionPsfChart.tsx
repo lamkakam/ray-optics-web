@@ -1,4 +1,4 @@
-import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 import { buildDiffractionPsfOption } from "@/features/analysis/components/diffraction-psf-chart/diffractionPsfChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/components/createAnalysisChartComponent";
 

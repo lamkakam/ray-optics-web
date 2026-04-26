@@ -1,6 +1,6 @@
 import { buildGeoPsfOption } from "@/features/analysis/components/geo-psf-chart/geoPsfChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/components/createAnalysisChartComponent";
-import type { GeoPsfData } from "@/shared/lib/types/opticalModel";
+import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
 interface GeoPsfChartProps {
   readonly geoPsfData: GeoPsfData;

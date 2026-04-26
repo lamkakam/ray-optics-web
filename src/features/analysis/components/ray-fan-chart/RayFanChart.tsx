@@ -1,6 +1,6 @@
 import { buildRayFanChartOption } from "@/features/analysis/components/ray-fan-chart/rayFanChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/components/createAnalysisChartComponent";
-import type { RayFanData } from "@/shared/lib/types/opticalModel";
+import type { RayFanData } from "@/features/analysis/types/plotData";
 
 interface RayFanChartProps {
   readonly rayFanData: RayFanData;
