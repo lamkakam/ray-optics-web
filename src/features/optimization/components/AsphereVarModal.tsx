@@ -16,7 +16,7 @@ import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/varia
 import { Button } from "@/shared/components/primitives/Button";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
-import { Select } from "@/shared/components/primitives/Select";
+import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 
 type TermKind = "conic" | "toricSweep" | { coefficientIndex: number };
 
@@ -125,6 +125,19 @@ function isCoefficient(kind: TermKind): kind is { coefficientIndex: number } {
   return typeof kind === "object";
 }
 
+function getSourceCoefficientOptions(optimizationModel: OpticalModel, sourceSurfaceIndex: string): ReadonlyArray<SelectOption> {
+  const sourceSurface = optimizationModel.surfaces[Number.parseInt(sourceSurfaceIndex, 10) - 1];
+  const isRadialPolynomial = sourceSurface?.aspherical?.kind === "RadialPolynomial";
+
+  return Array.from({ length: 10 }, (_, index) => {
+    const coefficientLabel = isRadialPolynomial ? index + 1 : (index + 1) * 2;
+    return {
+      value: index,
+      label: `a_${coefficientLabel}`,
+    };
+  });
+}
+
 interface AsphereVarModalProps {
   readonly isOpen: boolean;
   readonly optimizationModel: OpticalModel | undefined;
@@ -228,11 +241,15 @@ function AsphereVarModalEditor({
     }
     if (modeStr === "pickup") {
       const defaultSourceSurfaceIndex = String(sourceSurfaceOptions[0]?.value ?? "");
+      const coefficientSourceTermKey = isCoefficient(term.kind)
+        ? { sourceTermKey: current.mode === "pickup" ? (current.sourceTermKey ?? "coefficient:0") : "coefficient:0" as AsphereTermKey }
+        : {};
       setDraft(setTermMode(draft, term, {
         mode: "pickup",
         sourceSurfaceIndex: current.mode === "pickup" ? current.sourceSurfaceIndex : defaultSourceSurfaceIndex,
         scale: current.mode === "pickup" ? current.scale : "1",
         offset: current.mode === "pickup" ? current.offset : "0",
+        ...coefficientSourceTermKey,
       }));
     }
   };
@@ -346,9 +363,10 @@ function AsphereVarModalEditor({
                       onOffsetChange={(value) => handleTermPickupChange(term, "offset", value)}
                       extraField={isCoefficient(term.kind) ? {
                         idSuffix: "source-coeff",
-                        label: "Source coefficient index",
-                        ariaLabel: `${term.ariaLabel} source coefficient index`,
-                        value: mode.sourceTermKey?.replace("coefficient:", "") ?? "",
+                        label: "Source coefficient",
+                        ariaLabel: `${term.ariaLabel} source coefficient`,
+                        value: mode.sourceTermKey?.replace("coefficient:", "") ?? "0",
+                        options: getSourceCoefficientOptions(optimizationModel, mode.sourceSurfaceIndex),
                         onChange: (value) => handleTermPickupChange(term, "sourceCoefficientIndex", value),
                       } : undefined}
                       className="ml-36 grid gap-3 pl-3"

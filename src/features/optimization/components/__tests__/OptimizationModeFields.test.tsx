@@ -155,4 +155,40 @@ describe("OptimizationModeFields", () => {
 
     expect(onSourceSurfaceChange).toHaveBeenCalledWith("3");
   });
+
+  it("renders an optional extra pickup field as a select when options are provided", async () => {
+    const user = userEvent.setup();
+    const onExtraChange = jest.fn();
+
+    render(
+      <PickupModeFields
+        idPrefix="shared-pickup"
+        sourceSurfaceAriaLabel="Shared source surface index"
+        sourceSurfaceValue="2"
+        onSourceSurfaceChange={jest.fn()}
+        scaleAriaLabel="Shared scale"
+        scaleValue="1"
+        onScaleChange={jest.fn()}
+        offsetAriaLabel="Shared offset"
+        offsetValue="0"
+        onOffsetChange={jest.fn()}
+        extraField={{
+          idSuffix: "source-coeff",
+          label: "Source coefficient",
+          ariaLabel: "Shared source coefficient",
+          value: "0",
+          options: [
+            { value: 0, label: "a_1" },
+            { value: 1, label: "a_2" },
+          ],
+          onChange: onExtraChange,
+        }}
+      />,
+    );
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "Shared source coefficient" }), "1");
+
+    expect(screen.queryByRole("textbox", { name: "Shared source coefficient" })).not.toBeInTheDocument();
+    expect(onExtraChange).toHaveBeenCalledWith("1");
+  });
 });

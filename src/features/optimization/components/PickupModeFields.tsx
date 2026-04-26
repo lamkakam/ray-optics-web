@@ -9,6 +9,7 @@ interface PickupExtraField {
   readonly label: string;
   readonly ariaLabel: string;
   readonly value: string;
+  readonly options?: ReadonlyArray<SelectOption>;
   readonly onChange: (value: string) => void;
 }
 
@@ -76,12 +77,22 @@ export function PickupModeFields({
       {extraField ? (
         <div>
           <Label htmlFor={`${idPrefix}-${extraField.idSuffix}`}>{extraField.label}</Label>
-          <Input
-            id={`${idPrefix}-${extraField.idSuffix}`}
-            aria-label={extraField.ariaLabel}
-            value={extraField.value}
-            onChange={(event) => extraField.onChange(event.target.value)}
-          />
+          {extraField.options === undefined ? (
+            <Input
+              id={`${idPrefix}-${extraField.idSuffix}`}
+              aria-label={extraField.ariaLabel}
+              value={extraField.value}
+              onChange={(event) => extraField.onChange(event.target.value)}
+            />
+          ) : (
+            <Select
+              id={`${idPrefix}-${extraField.idSuffix}`}
+              aria-label={extraField.ariaLabel}
+              value={extraField.value}
+              options={extraField.options}
+              onChange={(event) => extraField.onChange(event.target.value)}
+            />
+          )}
         </div>
       ) : null}
 
