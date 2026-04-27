@@ -1,7 +1,7 @@
 import { type StateCreator } from "zustand";
-import type { GridRow } from "@/shared/lib/types/gridTypes";
-import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/shared/lib/types/gridTypes";
-import { generateRowId } from "@/shared/lib/utils/gridTransform";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 interface ModalState {

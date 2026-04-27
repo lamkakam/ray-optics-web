@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { LensPrescriptionContainer } from "@/features/lens-editor/components/LensPrescriptionContainer";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
-import { IMAGE_ROW_ID } from "@/shared/lib/types/gridTypes";
+import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import { IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { Surfaces, OpticalModel } from "@/shared/lib/types/opticalModel";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import {

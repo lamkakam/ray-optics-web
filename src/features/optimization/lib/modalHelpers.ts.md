@@ -19,7 +19,7 @@ Type definitions for modal mode values and source-surface select options live in
 
 ## Behavior
 
-- `CURVATURE_RADIUS_GUIDANCE_TEXT` and `getCurvatureRadiusBoundsErrorText()` are shared by `RadiusModeModal` and the toroid-sweep variable row in `AsphereVarModal` so the flat-surface guidance and zero-crossing error copy stay in sync.
+- `CURVATURE_RADIUS_GUIDANCE_TEXT` and `getCurvatureRadiusBoundsErrorText()` are shared by `features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal.tsx` and the toroid-sweep variable row in `features/optimization/components/LensPrescriptionGrid/AsphereVarModal/AsphereVarModal.tsx` so the flat-surface guidance and zero-crossing error copy stay in sync.
 - `curvatureRadiusCrossesZero()` is intended for curvature-radius style bounds, where `R = 0` represents a flat surface with infinite radius and bounds must stay entirely negative or entirely positive.
-- The draft builders are shared by both `RadiusModeModal` and `ThicknessModeModal` to keep default mode transitions consistent.
+- The draft builders are shared by both `features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal.tsx` and `features/optimization/components/LensPrescriptionGrid/ThicknessModeModal/ThicknessModeModal.tsx` to keep default mode transitions consistent.
 - The pickup source-surface option builders keep radius and thickness dropdown bounds consistent with their optimizer validation rules.

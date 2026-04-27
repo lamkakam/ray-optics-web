@@ -1,0 +1,15 @@
+import type { Surface, Surfaces } from "@/shared/lib/types/opticalModel";
+
+export const OBJECT_ROW_ID = "row-object";
+export const IMAGE_ROW_ID = "row-image";
+
+export type GridRow = { readonly id: string } & (
+  | {
+      readonly kind: "object";
+      objectDistance: Surfaces["object"]["distance"];
+      medium: Surfaces["object"]["medium"];
+      manufacturer: Surfaces["object"]["manufacturer"];
+    }
+  | ({ readonly kind: "image" } & Surfaces["image"])
+  | ({ readonly kind: "surface" } & Surface)
+);

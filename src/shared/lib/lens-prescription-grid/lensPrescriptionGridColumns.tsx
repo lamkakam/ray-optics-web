@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColDef } from "ag-grid-community";
-import type { GridRow } from "@/shared/lib/types/gridTypes";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import {
   AsphericalCell,
   DecenterCell,

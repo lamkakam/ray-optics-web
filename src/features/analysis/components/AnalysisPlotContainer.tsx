@@ -7,7 +7,7 @@ import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
-import { loadAnalysisPlot } from "@/shared/lib/utils/plotFunctions";
+import { loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
 import {
   AnalysisPlotView,
   PLOT_TYPE_CONFIG,

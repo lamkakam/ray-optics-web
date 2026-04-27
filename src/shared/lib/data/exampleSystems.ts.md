@@ -25,7 +25,7 @@ Keys are of the form `"N: <name>"` where `N` is the 1-based index of the system 
 
 ```tsx
 import ExampleSystems from "@/shared/lib/data/exampleSystems";
-import { surfacesToGridRows } from "@/shared/lib/utils/gridTransform";
+import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 
 // In a system selector dropdown
 function SystemSelector() {
