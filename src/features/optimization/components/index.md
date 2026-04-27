@@ -6,6 +6,8 @@ Direct component directories expose an `index.ts` barrel so page-level imports c
 
 ## Components
 
+- [BottomDrawerContainer.tsx](./BottomDrawerContainer/BottomDrawerContainer.tsx.md) — responsive optimization bottom drawer and five-tab assembly
+- [BottomDrawerContainer/index.ts](./BottomDrawerContainer/index.ts.md) — public directory import for the bottom drawer container
 - [OptimizationActionBar.tsx](./OptimizationActionBar/OptimizationActionBar.tsx.md) — primary page actions for optimization and apply-to-editor
 - [OptimizationActionBar/index.ts](./OptimizationActionBar/index.ts.md) — public directory import for the action bar
 - [OptimizationEvaluationPanel.tsx](./OptimizationEvaluationPanel/OptimizationEvaluationPanel.tsx.md) — static residual table and empty/loading states

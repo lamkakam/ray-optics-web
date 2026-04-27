@@ -3,21 +3,17 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { proxy as comlinkProxy } from "comlink";
 import { useStore } from "zustand";
-import { BottomDrawer, type TabItem } from "@/shared/components/layout/BottomDrawer";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useOptimizationStore } from "./providers/OptimizationStoreProvider";
 import {
+  BottomDrawerContainer,
   OptimizationActionBar,
-  OptimizationAlgorithmTab,
   OptimizationApplyConfirmModal,
   OptimizationEvaluationPanel,
   OptimizationInspectionModals,
-  OptimizationLensPrescriptionGrid,
-  OptimizationOperandsTab,
   OptimizationProgressModal,
   OptimizationWarningModal,
-  OptimizationWeightsGrid,
   AsphereVarModal,
   RadiusModeModal,
   ThicknessModeModal,
@@ -77,7 +73,6 @@ export function OptimizationPage({
   const wavelengthWeightsFromEditor = useStore(specsStore, (state) => state.wavelengthWeights);
   const referenceIndex = useStore(specsStore, (state) => state.referenceIndex);
 
-  const activeTabId = useStore(optimizationStore, (state) => state.activeTabId);
   const optimizationModel = useStore(optimizationStore, (state) => state.optimizationModel);
   const optimizer = useStore(optimizationStore, (state) => state.optimizer);
   const fieldWeights = useStore(optimizationStore, (state) => state.fieldWeights);
@@ -385,87 +380,21 @@ export function OptimizationPage({
     await onApplyToEditor?.(model);
   };
 
-  const tabs: TabItem[] = [
-    {
-      id: "algorithm",
-      label: "Algorithm",
-      content: (
-        <OptimizationAlgorithmTab
-          optimizer={optimizer}
-          onChangeOptimizer={(patch) => {
-            if (patch.kind !== undefined && patch.kind !== optimizationStore.getState().optimizer.kind) {
-              optimizationStore.getState().setOptimizerKind(patch.kind);
-              return;
-            }
-            optimizationStore.setState((state) => ({
-              optimizer: state.optimizer.kind === "least_squares"
-                ? { ...state.optimizer, ...patch, kind: "least_squares" }
-                : { ...state.optimizer, ...patch, kind: "differential_evolution" },
-            }));
-            if ("method" in patch && patch.method !== undefined) {
-              try {
-                optimizationStore.getState().buildOptimizationConfig();
-              } catch (error) {
-                const message = error instanceof Error ? error.message : "Optimization config is invalid.";
-                optimizationStore.getState().openWarningModal(message);
-              }
-            }
-          }}
-        />
-      ),
+  const bottomDrawerContent = {
+    fields: {
+      rows: fieldRows,
     },
-    {
-      id: "fields",
-      label: "Fields",
-      content: (
-        <OptimizationWeightsGrid
-          rows={fieldRows}
-          onUpdateWeight={(index, value) => optimizationStore.getState().setFieldWeight(index, value)}
-        />
-      ),
+    wavelengths: {
+      rows: wavelengthRows,
     },
-    {
-      id: "wavelengths",
-      label: "Wavelengths",
-      content: (
-        <OptimizationWeightsGrid
-          rows={wavelengthRows}
-          onUpdateWeight={(index, value) => optimizationStore.getState().setWavelengthWeight(index, value)}
-        />
-      ),
+    prescription: {
+      rows: radiusRows,
+      onOpenMediumModal: setMediumModalRow,
+      onOpenAsphericalModal: setAsphericalModalRow,
+      onOpenDecenterModal: setDecenterModalRow,
+      onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
     },
-    {
-      id: "lens-prescription",
-      label: "Lens Prescription",
-      content: (
-        <OptimizationLensPrescriptionGrid
-          rows={radiusRows}
-          radiusModes={radiusModes}
-          thicknessModes={thicknessModes}
-          asphereStates={asphereStates}
-          onOpenRadiusModal={(surfaceIndex) => optimizationStore.getState().openRadiusModal(surfaceIndex)}
-          onOpenThicknessModal={(surfaceIndex) => optimizationStore.getState().openThicknessModal(surfaceIndex)}
-          onOpenMediumModal={setMediumModalRow}
-          onOpenAsphericalModal={setAsphericalModalRow}
-          onOpenAsphereVarModal={(surfaceIndex) => optimizationStore.getState().openAsphereModal(surfaceIndex)}
-          onOpenDecenterModal={setDecenterModalRow}
-          onOpenDiffractionGratingModal={setDiffractionGratingModalRow}
-        />
-      ),
-    },
-    {
-      id: "operands",
-      label: "Operands",
-      content: (
-        <OptimizationOperandsTab
-          operands={operands}
-          onAddOperand={() => optimizationStore.getState().addOperand()}
-          onDeleteOperand={(id) => optimizationStore.getState().deleteOperand(id)}
-          onUpdateOperand={(id, patch) => optimizationStore.getState().updateOperand(id, patch)}
-        />
-      ),
-    },
-  ];
+  };
 
   const sharedContent = (
     <div ref={sharedContentRef} data-testid="optimization-shared-content-wrapper" className="p-4 pb-0">
@@ -557,16 +486,10 @@ export function OptimizationPage({
     return (
       <div ref={pageShellRef} className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
         {sharedContent}
-        <div data-testid="optimization-bottom-drawer-wrapper" className="mt-auto pb-4">
-          <BottomDrawer
-            tabs={tabs}
-            draggable={true}
-            panelClassName="p-0"
-            activeTabId={activeTabId}
-            onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
-            onHeightChange={setLiveDrawerHeight}
-          />
-        </div>
+        <BottomDrawerContainer
+          {...bottomDrawerContent}
+          layout={{ isLG, onHeightChange: setLiveDrawerHeight }}
+        />
       </div>
     );
   }
@@ -574,15 +497,10 @@ export function OptimizationPage({
   return (
     <div className="relative flex flex-1 min-h-0 flex-col overflow-y-auto">
       {sharedContent}
-      <div data-testid="optimization-bottom-drawer-wrapper" className="pb-4">
-        <BottomDrawer
-          tabs={tabs}
-          draggable={false}
-          panelClassName="p-0"
-          activeTabId={activeTabId}
-          onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
-        />
-      </div>
+      <BottomDrawerContainer
+        {...bottomDrawerContent}
+        layout={{ isLG }}
+      />
     </div>
   );
 }

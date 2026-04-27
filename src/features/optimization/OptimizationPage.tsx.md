@@ -23,7 +23,7 @@ interface OptimizationPageProps {
   - `Optimize`
   - `Apply to Editor`
 - Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual whose effective `total_weight` is non-zero with `Operand Type`, `Target`, `Weight`, and `Value`, formats `Weight` and `Value` with 6 decimal places, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
-- Uses controlled `BottomDrawer` tabs with five sections:
+- Delegates controlled `BottomDrawer` tab construction and rendering to `BottomDrawerContainer`, with five sections:
   - `Algorithm`
   - `Fields`
   - `Wavelengths`
@@ -54,8 +54,8 @@ interface OptimizationPageProps {
 - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call, updates the static table from the returned residuals, and ignores stale async responses from older requests.
 - Radius, thickness, and asphere variable/pickup mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`. Changes to `asphereStates` are included in the evaluation dependency array so commits trigger a re-evaluation debounce.
 - The page derives one shared `canUseBounds` boolean from the selected least-squares method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from optimizer-kind/method details.
-- When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, the page opens the existing warning modal with the thrown error message instead of filtering to one hardcoded `lm` warning.
-- When the user switches Optimizer Kind, the page delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
+- When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, `BottomDrawerContainer` opens the existing warning modal with the thrown error message instead of filtering to one hardcoded `lm` warning.
+- When the user switches Optimizer Kind, `BottomDrawerContainer` delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
 - Variable-bound affordances use optimizer-kind-aware capabilities, so both bounded least-squares (`trf`) and methodless Differential Evolution can use the min/max variable UI while `lm` remains unbounded.
 - Invalid intermediate configs clear the evaluation table instead of opening the warning modal.
 - `Optimize` is disabled when the current optimization config cannot be built, including fresh pages with no operands and malformed variable/pickup inputs.
@@ -82,8 +82,9 @@ interface OptimizationPageProps {
 - The live evaluation table uses the residual `total_weight` reported by Python and hides rows whose effective weight is zero, so field/wavelength-expanded operands appear only for active contributions.
 - Large-screen evaluation height is derived from the observed page-shell height, the current live drawer height, and measured fixed overhead above the table, with a fallback reserve when DOM measurement is not yet available.
 - The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.
-- `OptimizationPage` remains the orchestration boundary: extracted components are view-focused and receive callbacks/state from the page instead of reading stores directly.
-- Page-level optimization components are imported through their component-directory `index.ts` barrels. `OptimizationLensPrescriptionGrid` comes from the narrow `LensPrescriptionGrid/index.ts` public surface, while `OptimizationInspectionModals` comes from its own nested directory barrel.
+- `OptimizationPage` remains responsible for deriving row data, evaluation state, modal state, worker calls, and apply-to-editor behavior.
+- `BottomDrawerContainer` owns the drawer wrapper, tab assembly, active-tab state binding, optimizer handlers, field/wavelength weight handlers, prescription variable-modal handlers, and operand handlers by reading the optimization store directly.
+- Page-level optimization components are imported through their component-directory `index.ts` barrels. `BottomDrawerContainer` handles the narrow drawer-tab component imports, while `OptimizationInspectionModals` comes from its own nested directory barrel.
 - Optimization worker report/progress types are imported from `features/optimization/types/optimizationWorkerTypes.ts`.
 - Changing the Method select updates the optimization store immediately, so evaluation config building and variable modal rendering switch between bounded `trf` and unbounded `lm` behavior in place.
 - That method-switch warning is limited to explicit method changes, but it now surfaces any config-build error produced by the switch instead of only one hardcoded residual-count message.

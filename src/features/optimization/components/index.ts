@@ -1,4 +1,5 @@
 export * from "./AsphereVarModal";
+export * from "./BottomDrawerContainer";
 export * from "./LensPrescriptionGrid";
 export * from "./OptimizationActionBar";
 export * from "./OptimizationAlgorithmTab";
