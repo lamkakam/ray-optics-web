@@ -9,10 +9,17 @@ All components (composite + container + domain cells) for the lens editor featur
 - [DiffractionGratingCell](./DiffractionGratingCell/DiffractionGratingCell.tsx.md) — Compatibility export for the shared diffraction grating prescription cell
 - [MediumCell](./MediumCell/MediumCell.tsx.md) — Compatibility export for the shared medium prescription cell
 
-## Core Components
+## Lens Prescription Components
 
-- [LensPrescriptionGrid](./LensPrescriptionGrid/LensPrescriptionGrid.tsx.md) — AG Grid table for editing optical surfaces
-- [GridRowButtons](./GridRowButtons/GridRowButtons.tsx.md) — Action buttons for row operations (insert, delete)
+- [LensPrescriptionContainer](./LensPrescriptionContainer/LensPrescriptionContainer.tsx.md) — Manages lens prescription grid state, toolbar actions, and surface updates
+- [LensPrescriptionGrid](./LensPrescriptionContainer/LensPrescriptionGrid/LensPrescriptionGrid.tsx.md) — Internal AG Grid table for editing optical surfaces
+- [GridRowButtons](./LensPrescriptionContainer/GridRowButtons/GridRowButtons.tsx.md) — Action buttons for row operations (insert, delete); exported through `LensPrescriptionContainer`
+- [AsphericalModal](./LensPrescriptionContainer/AsphericalModal/AsphericalModal.tsx.md) — Modal for setting aspherical coefficients; exported through `LensPrescriptionContainer`
+- [DecenterModal](./LensPrescriptionContainer/DecenterModal/DecenterModal.tsx.md) — Modal for setting decentering and tilting; exported through `LensPrescriptionContainer`
+- [DiffractionGratingModal](./LensPrescriptionContainer/DiffractionGratingModal/DiffractionGratingModal.tsx.md) — Modal for setting diffraction grating parameters; exported through `LensPrescriptionContainer`
+- [MediumSelectorModal](./LensPrescriptionContainer/MediumSelectorModal/MediumSelectorModal.tsx.md) — Modal for selecting optical media; exported through `LensPrescriptionContainer`
+- [ConfirmImportModal](./LensPrescriptionContainer/ConfirmImportModal/ConfirmImportModal.tsx.md) — Internal confirmation dialog before importing a lens file
+- [PythonScriptModal](./LensPrescriptionContainer/PythonScriptModal/PythonScriptModal.tsx.md) — Internal modal for viewing/editing Python scripts
 
 ## Specs & Configuration
 
@@ -26,21 +33,14 @@ All components (composite + container + domain cells) for the lens editor featur
 
 ## Modals
 
-- [AsphericalModal](./AsphericalModal/AsphericalModal.tsx.md) — Modal for setting aspherical coefficients
-- [DecenterModal](./DecenterModal/DecenterModal.tsx.md) — Modal for setting decentering and tilting
-- [DiffractionGratingModal](./DiffractionGratingModal/DiffractionGratingModal.tsx.md) — Modal for setting diffraction grating parameters
-- [MediumSelectorModal](./MediumSelectorModal/MediumSelectorModal.tsx.md) — Modal for selecting optical media
 - [FieldConfigModal](./FieldConfigModal/FieldConfigModal.tsx.md) — Modal for configuring field angles/heights
 - [WavelengthConfigModal](./WavelengthConfigModal/WavelengthConfigModal.tsx.md) — Modal for setting wavelengths and weights
 - [ZernikeTermsModal](./ZernikeTermsModal/ZernikeTermsModal.tsx.md) — Modal for displaying Zernike polynomial terms
 - [SeidelAberrModal](./SeidelAberrModal/SeidelAberrModal.tsx.md) — Modal for displaying 3rd-order Seidel aberrations
-- [ConfirmImportModal](./ConfirmImportModal/ConfirmImportModal.tsx.md) — Confirmation dialog before importing a lens file
 - [ConfirmOverwriteModal](./ConfirmOverwriteModal/ConfirmOverwriteModal.tsx.md) — Confirmation dialog before overwriting current model
-- [PythonScriptModal](./PythonScriptModal/PythonScriptModal.tsx.md) — Modal for viewing/editing Python scripts
 
 ## Containers
 
-- [LensPrescriptionContainer](./LensPrescriptionContainer/LensPrescriptionContainer.tsx.md) — Manages lens prescription grid state and surface updates
 - [SpecsConfiguratorContainer](./SpecsConfiguratorContainer/SpecsConfiguratorContainer.tsx.md) — Manages optical specs configuration state
 - [FocusingContainer](./FocusingContainer/FocusingContainer.tsx.md) — Manages focusing algorithm execution
 - [BottomDrawerContainer](./BottomDrawerContainer/BottomDrawerContainer.tsx.md) — Manages bottom drawer open/close state

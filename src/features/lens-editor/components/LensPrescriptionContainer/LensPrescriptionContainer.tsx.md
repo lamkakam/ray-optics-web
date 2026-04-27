@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container that owns the toolbar (Update System, Load Config, Download Config, Export Python Script, semi-diameter toggle) and orchestrates all modals for the lens prescription editor. Bridges the `lensEditorStore` to `LensPrescriptionGrid` and its associated modals.
+Container that owns the toolbar (Update System, Load Config, Download Config, Export Python Script, semi-diameter toggle) and orchestrates all modals for the lens prescription editor. Bridges the `lensEditorStore` to its colocated `LensPrescriptionGrid`, modal components, and row buttons under `LensPrescriptionContainer/`.
 
 ## Injected Dependencies
 
@@ -35,6 +35,7 @@ Lens store state is consumed via `LensEditorStoreContext`:
 - `DiffractionGratingModal` only applies to `surface` rows and writes `surface.diffractionGrating` back into the row state on confirm.
 - `PythonScriptModal` receives an empty string for `script` when closed, generating the script only when open.
 - Auto/Manual semi-diameter toggle updates `autoAperture` in the store and passes `semiDiameterReadonly` to the grid.
+- `LensPrescriptionGrid`, `PythonScriptModal`, and `ConfirmImportModal` are internal to this directory; the nested barrel only exports components used outside `LensPrescriptionContainer/` (`MediumSelectorModal`, `AsphericalModal`, `DecenterModal`, `DiffractionGratingModal`, and `GridRowButtons`).
 
 ## Usages
 

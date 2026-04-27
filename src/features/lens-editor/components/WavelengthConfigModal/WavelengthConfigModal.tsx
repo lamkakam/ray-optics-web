@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
-import { GridRowButtons } from "@/features/lens-editor/components/GridRowButtons";
+import { GridRowButtons } from "@/features/lens-editor/components/LensPrescriptionContainer";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";

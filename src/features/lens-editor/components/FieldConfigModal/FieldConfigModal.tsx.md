@@ -42,6 +42,7 @@ interface FieldConfigModalProps {
 - Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh editor subtree whose draft state is initialized from props without a reset `useEffect`.
 - Row limit is 10; the add button becomes hidden (not removed) at the limit.
 - The first row cannot be deleted.
+- Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for field row insertion and deletion controls.
 - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
 - Row ids use a module-level counter for stable AG Grid `getRowId`.
 

@@ -12,13 +12,13 @@ import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { Label } from "@/shared/components/primitives/Label";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
-import { LensPrescriptionGrid } from "@/features/lens-editor/components/LensPrescriptionGrid";
-import { MediumSelectorModal } from "@/features/lens-editor/components/MediumSelectorModal";
-import { AsphericalModal } from "@/features/lens-editor/components/AsphericalModal";
-import { DecenterModal, type DecenterType } from "@/features/lens-editor/components/DecenterModal";
-import { DiffractionGratingModal } from "@/features/lens-editor/components/DiffractionGratingModal";
-import { PythonScriptModal } from "@/features/lens-editor/components/PythonScriptModal";
-import { ConfirmImportModal } from "@/features/lens-editor/components/ConfirmImportModal";
+import { LensPrescriptionGrid } from "./LensPrescriptionGrid";
+import { MediumSelectorModal } from "./MediumSelectorModal";
+import { AsphericalModal } from "./AsphericalModal";
+import { DecenterModal, type DecenterType } from "./DecenterModal";
+import { DiffractionGratingModal } from "./DiffractionGratingModal";
+import { PythonScriptModal } from "./PythonScriptModal";
+import { ConfirmImportModal } from "./ConfirmImportModal";
 
 interface LensPrescriptionContainerProps {
   readonly getOpticalModel: () => OpticalModel;
