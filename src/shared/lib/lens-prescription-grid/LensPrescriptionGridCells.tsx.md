@@ -13,6 +13,7 @@ Reusable prescription grid cell UI that is safe for `shared/` because it depends
 ## Behavior
 
 - All tooltips use `portal` and `noTouch` for AG Grid compatibility.
+- Medium, aspherical, decenter, and diffraction grating tooltip-backed action cells do not apply `touch-action: none`, so native touch scrolling can start over those controls in iOS Safari.
 - Aspherical, decenter, and diffraction grating cells use `triggerClassName="flex h-full w-full"` so the tooltip trigger fills the cell action area.
 - Empty aspherical, decenter, and diffraction grating values display `None`.
 - Aspherical values display the shared asphere type label (`Conic`, `Even Aspherical`, `Radial Polynomial`, `X Toroid`, `Y Toroid`).

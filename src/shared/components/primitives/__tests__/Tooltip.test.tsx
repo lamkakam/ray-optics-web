@@ -91,14 +91,14 @@ describe("Tooltip", () => {
   });
 
   describe("noTouch prop", () => {
-    it("when noTouch is set, wrapper span has touch-action: none style", () => {
+    it("when noTouch is set, wrapper span does not have touch-action: none style", () => {
       const { container } = render(
         <Tooltip text="Help text" noTouch>
           <button>Click me</button>
         </Tooltip>,
       );
       const wrapper = container.firstChild as HTMLElement;
-      expect(wrapper.style.touchAction).toBe("none");
+      expect(wrapper.style.touchAction).not.toBe("none");
     });
 
     it("when noTouch is not set, wrapper span does not have touch-action: none style", () => {
@@ -189,6 +189,16 @@ describe("Tooltip", () => {
     });
 
     describe("portal mode with noTouch", () => {
+      it("does not apply touch-action: none to the wrapper span", () => {
+        render(
+          <Tooltip text="Portal tip" portal noTouch>
+            <button>Trigger</button>
+          </Tooltip>,
+        );
+        const wrapper = screen.getByRole("button").parentElement!;
+        expect(wrapper.style.touchAction).not.toBe("none");
+      });
+
       it("does not show tooltip when touchstart precedes mouseenter", () => {
         render(
           <Tooltip text="Portal tip" portal noTouch>

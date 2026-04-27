@@ -25,7 +25,7 @@ interface TooltipProps {
 | `children` | `React.ReactNode` | Yes | Trigger element |
 | `position` | `string` | No | Placement relative to trigger. Defaults to `"top"` |
 | `portal` | `boolean` | No | When `true`, renders via `createPortal` using fixed positioning. Required inside AG Grid cells. Defaults to `false` |
-| `noTouch` | `boolean` | No | When `true`, applies `touch-action: none` inline style to the wrapper span and, in portal mode, uses a `touchstart` ref flag to suppress the synthetic `mouseenter` browsers fire after touch (since `touch-action: none` alone does not suppress those events). Defaults to `false` |
+| `noTouch` | `boolean` | No | When `true` in portal mode, uses a `touchstart` ref flag to suppress the synthetic `mouseenter` browsers fire after touch. It does not apply `touch-action: none`, so native scroll and pan gestures remain available. Defaults to `false` |
 | `triggerClassName` | `string` | No | Additional classes for the trigger wrapper span. Use this when the hover target must fill its parent, such as an AG Grid cell action area. |
 
 ## Internal State
@@ -40,7 +40,7 @@ interface TooltipProps {
 - **Portal mode**: attaches `onMouseEnter`/`onMouseLeave` listeners, measures the trigger rect via `getBoundingClientRect`, and renders a fixed `<span>` at those coordinates.
 - `triggerClassName` is merged onto the trigger wrapper in both portal and non-portal modes without changing default inline-flex behavior.
 - `portal` must be `true` when the tooltip is rendered inside any element with `overflow: hidden` (e.g. AG Grid rows).
-- **`noTouch` mode**: applies `style={{ touchAction: "none" }}` to the wrapper span. In portal mode, also attaches an `onTouchStart` handler that sets `isTouchingRef.current = true`. When `onMouseEnter` fires and `noTouch && isTouchingRef.current` is true (i.e., the enter was synthesized from a touch tap), the handler resets the flag and returns early without showing the tooltip. Plain mouse hovers are unaffected because no `touchstart` precedes them. `onMouseLeave` always resets the flag. Should be set on any `<Tooltip>` that wraps a clickable element (button, toggle, etc.).
+- **`noTouch` mode**: in portal mode, attaches an `onTouchStart` handler that sets `isTouchingRef.current = true`. When `onMouseEnter` fires and `noTouch && isTouchingRef.current` is true (i.e., the enter was synthesized from a touch tap), the handler resets the flag and returns early without showing the tooltip. Plain mouse hovers are unaffected because no `touchstart` precedes them. `onMouseLeave` always resets the flag. `noTouch` does not apply `touch-action: none`, because doing so blocks native scroll and pan gestures on iOS Safari. Should be set on any portal `<Tooltip>` that wraps a clickable element (button, toggle, etc.).
 
 ## Usages
 
