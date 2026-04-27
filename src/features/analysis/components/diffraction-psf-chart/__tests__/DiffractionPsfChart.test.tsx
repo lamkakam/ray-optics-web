@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { DiffractionPsfChart } from "@/features/analysis/components/diffraction-psf-chart/DiffractionPsfChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
 let mockSetOption: jest.Mock;
 let mockDispose: jest.Mock;

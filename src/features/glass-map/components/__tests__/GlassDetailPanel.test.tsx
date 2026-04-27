@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
-import type { SelectedGlass } from "@/shared/lib/types/glassMap";
+import type { SelectedGlass } from "@/features/glass-map/types/glassMap";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (

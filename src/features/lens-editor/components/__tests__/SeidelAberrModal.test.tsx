@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrModal";
-import type { SeidelData } from "@/shared/lib/types/opticalModel";
+import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (

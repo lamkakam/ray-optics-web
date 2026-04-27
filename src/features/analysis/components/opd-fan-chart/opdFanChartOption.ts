@@ -4,7 +4,7 @@ import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
-import type { OpdFanData } from "@/shared/lib/types/opticalModel";
+import type { OpdFanData } from "@/features/analysis/types/plotData";
 
 echarts.use([LineChart, GridComponent, LegendComponent, TitleComponent, TooltipComponent, CanvasRenderer]);
 

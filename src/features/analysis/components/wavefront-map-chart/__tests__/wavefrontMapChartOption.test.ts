@@ -1,7 +1,7 @@
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { buildWavefrontMapOption } from "@/features/analysis/components/wavefront-map-chart/wavefrontMapChartOption";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { WavefrontMapData } from "@/features/analysis/types/plotData";
 
 jest.mock("echarts/core", () => ({
   use: jest.fn(),

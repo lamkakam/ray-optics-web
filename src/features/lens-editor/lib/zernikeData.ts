@@ -1,16 +1,3 @@
-export interface ZernikeData {
-  readonly coefficients: readonly number[];
-  readonly rms_normalized_coefficients: readonly number[];
-  readonly rms_wfe: number;
-  readonly pv_wfe: number;
-  readonly strehl_ratio: number;
-  readonly num_terms: number;
-  readonly field_index: number;
-  readonly wavelength_nm: number;
-}
-
-export type ZernikeOrdering = "noll" | "fringe";
-
 export const NUM_NOLL_TERMS = 56;
 
 export const NUM_FRINGE_TERMS = 37;
@@ -47,13 +34,13 @@ export function nollToNm(j: number): [number, number] {
  * Port of the Python fringe_to_nm function.
  *
  * Groups by c = (n + |m|) / 2. Group c has 2c+1 terms; cumulative
- * count through group c is (c+1)². Within each group, |m| descending,
- * cos (+m) before sin (−m), m=0 last.
+ * count through group c is (c+1)^2. Within each group, |m| descending,
+ * cos (+m) before sin (-m), m=0 last.
  */
 export function fringeToNm(j: number): [number, number] {
   let c = 0;
   while ((c + 1) ** 2 < j) c++;
-  const pos = j - c * c; // 1-based position within group c
+  const pos = j - c * c;
   if (pos === 2 * c + 1) return [2 * c, 0];
   const pairIdx = Math.floor((pos - 1) / 2);
   const mAbs = c - pairIdx;
@@ -72,7 +59,7 @@ export function zernikeNotation(n: number, m: number): string {
 /**
  * Classical names for Zernike terms keyed by "(n,m)" string.
  * Covers all 56 Noll-ordered terms (n=0..10).
- * Naming convention: m>0 (cos term) → "X" suffix; m<0 (sin term) → "Y" suffix; m=0 → no suffix.
+ * Naming convention: m>0 (cos term) -> "X" suffix; m<0 (sin term) -> "Y" suffix; m=0 -> no suffix.
  */
 export const CLASSICAL_NAMES: Record<string, string> = {
   "0,0": "Piston",

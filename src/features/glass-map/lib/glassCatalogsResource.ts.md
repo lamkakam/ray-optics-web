@@ -1,7 +1,7 @@
-# `shared/lib/data/glassCatalogsResource.ts`
+# `features/glass-map/lib/glassCatalogsResource.ts`
 
 ## Purpose
-Shared client-side loader for normalized glass catalog data fetched from the Pyodide worker. It supports both eager preloading and Suspense reads while deduplicating requests per worker proxy.
+Glass-map client-side loader for normalized glass catalog data fetched from the Pyodide worker. It supports both eager preloading and Suspense reads while deduplicating requests per worker proxy.
 
 ## Exports
 
@@ -40,5 +40,5 @@ _resetGlassCatalogsResourceForTest(): void
 
 ## Behaviour
 - Uses a module-level `WeakMap<PyodideWorkerAPI, GlassCatalogsResourceEntry>` for dedupe
-- Normalizes worker payloads with `normalizeAllCatalogsData()`
+- Normalizes worker payloads with `normalizeAllCatalogsData()` from `features/glass-map/lib/glassMap`
 - Represents failure as `{ data: undefined, error: string }` rather than throwing after settlement

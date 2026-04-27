@@ -2,14 +2,17 @@
 
 import { useState, useEffect, useRef } from "react";
 import { wrap } from "comlink";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, RayFanData, SeidelData, FocusingResult, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type {
   OptimizationConfig,
   OptimizationProgressEntry,
   OptimizationReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
-import type { ZernikeData, ZernikeOrdering } from "@/shared/lib/types/zernikeData";
-import type { RawAllGlassCatalogsData } from "@/shared/lib/types/glassMap";
+import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import type { RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
 
 export interface PyodideWorkerAPI {

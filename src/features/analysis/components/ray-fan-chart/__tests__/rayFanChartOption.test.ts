@@ -1,7 +1,7 @@
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { buildRayFanChartOption } from "@/features/analysis/components/ray-fan-chart/rayFanChartOption";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { RayFanData } from "@/shared/lib/types/opticalModel";
+import type { RayFanData } from "@/features/analysis/types/plotData";
 
 describe("buildRayFanChartOption", () => {
   const rayFanData: RayFanData = [

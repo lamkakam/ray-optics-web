@@ -3,7 +3,7 @@ import {
   createAnalysisDataSlice,
   type AnalysisDataState,
 } from "@/features/analysis/stores/analysisDataStore";
-import type { SeidelData } from "@/shared/lib/types/opticalModel";
+import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 
 const mockSeidelData: SeidelData = {
   surfaceBySurface: {

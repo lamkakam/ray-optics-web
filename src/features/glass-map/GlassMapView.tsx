@@ -9,9 +9,9 @@ import type { GlassMapRouteIntent, GlassMapStore } from "@/features/glass-map/st
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { CatalogName, SelectedGlass } from "@/shared/lib/types/glassMap";
-import { computePlotPoints } from "@/shared/lib/types/glassMap";
-import { readGlassCatalogs } from "@/shared/lib/data/glassCatalogsResource";
+import type { CatalogName, SelectedGlass } from "@/features/glass-map/types/glassMap";
+import { computePlotPoints } from "@/features/glass-map/lib/glassMap";
+import { readGlassCatalogs } from "@/features/glass-map/lib/glassCatalogsResource";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;

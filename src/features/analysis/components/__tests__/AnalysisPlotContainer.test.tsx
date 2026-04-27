@@ -6,7 +6,9 @@ import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/anal
 import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, OpticalModel, OpticalSpecs, RayFanData, SeidelData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";

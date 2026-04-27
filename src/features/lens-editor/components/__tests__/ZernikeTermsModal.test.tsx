@@ -2,8 +2,8 @@ import React from "react";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
-import type { ZernikeData } from "@/shared/lib/types/zernikeData";
-import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/shared/lib/types/zernikeData";
+import type { ZernikeData } from "@/features/lens-editor/types/zernikeData";
+import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/lib/zernikeData";
 import type { SelectOption } from "@/shared/components/primitives/Select";
 
 jest.mock("better-react-mathjax", () => ({

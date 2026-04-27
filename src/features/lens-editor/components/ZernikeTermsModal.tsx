@@ -9,15 +9,14 @@ import type { SelectOption } from "@/shared/components/primitives/Select";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { LoadingMask } from "@/shared/components/primitives/LoadingMask";
 import {
-  type ZernikeData,
-  type ZernikeOrdering,
   NUM_NOLL_TERMS,
   NUM_FRINGE_TERMS,
   nollToNm,
   fringeToNm,
   zernikeNotation,
   classicalName,
-} from "@/shared/lib/types/zernikeData";
+} from "@/features/lens-editor/lib/zernikeData";
+import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 
 const ORDERING_OPTIONS: SelectOption[] = [
   { value: "fringe", label: "Fringe" },

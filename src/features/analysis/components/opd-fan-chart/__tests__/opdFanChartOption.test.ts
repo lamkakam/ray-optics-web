@@ -1,7 +1,7 @@
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { buildOpdFanChartOption } from "@/features/analysis/components/opd-fan-chart/opdFanChartOption";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { OpdFanData } from "@/shared/lib/types/opticalModel";
+import type { OpdFanData } from "@/features/analysis/types/plotData";
 
 describe("buildOpdFanChartOption", () => {
   const opdFanData: OpdFanData = [

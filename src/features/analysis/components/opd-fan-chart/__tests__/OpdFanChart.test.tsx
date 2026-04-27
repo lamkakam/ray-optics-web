@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { OpdFanChart } from "@/features/analysis/components/opd-fan-chart/OpdFanChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { OpdFanData } from "@/shared/lib/types/opticalModel";
+import type { OpdFanData } from "@/features/analysis/types/plotData";
 
 let mockBuildOpdFanChartOption: jest.Mock;
 const mockSetOption = jest.fn();

@@ -10,7 +10,8 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SeidelSurfaceBySurfaceData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 export type PlotType = "rayFan"
   | "opdFan"

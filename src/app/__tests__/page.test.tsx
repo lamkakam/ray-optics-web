@@ -15,11 +15,13 @@ import { AnalysisDataStoreProvider } from "@/features/analysis/providers/Analysi
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
-import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/glassCatalogsResource";
-import type { DiffractionPsfData, OpticalModel, SeidelData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { ZernikeData } from "@/shared/lib/types/zernikeData";
+import type { ZernikeData } from "@/features/lens-editor/types/zernikeData";
 
 let mockSelectedSegment: string | null = null;
 let mockSearchParams = new URLSearchParams();

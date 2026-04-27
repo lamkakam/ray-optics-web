@@ -1,7 +1,7 @@
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { buildSpotDiagramOption } from "@/features/analysis/components/spot-diagram-chart/spotDiagramChartOption";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { SpotDiagramData } from "@/shared/lib/types/opticalModel";
+import type { SpotDiagramData } from "@/features/analysis/types/plotData";
 
 describe("buildSpotDiagramOption", () => {
   const spotDiagramData: SpotDiagramData = [

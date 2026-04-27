@@ -4,7 +4,7 @@ import {
 } from "@/features/analysis/components/diffraction-psf-chart/diffractionPsfChartOption";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
 jest.mock("echarts/core", () => ({
   use: jest.fn(),

@@ -1,6 +1,6 @@
 import { buildOpdFanChartOption } from "@/features/analysis/components/opd-fan-chart/opdFanChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/components/createAnalysisChartComponent";
-import type { OpdFanData } from "@/shared/lib/types/opticalModel";
+import type { OpdFanData } from "@/features/analysis/types/plotData";
 
 interface OpdFanChartProps {
   readonly opdFanData: OpdFanData;

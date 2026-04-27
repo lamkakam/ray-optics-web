@@ -75,6 +75,7 @@ CSS variables in `globals.css`:
 
 ```tsx
 import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
+import { computePlotPoints } from "@/features/glass-map/lib/glassMap";
 
 // In a page component (e.g., GlassMapView)
 const points = useMemo(

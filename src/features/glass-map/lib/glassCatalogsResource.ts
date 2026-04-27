@@ -1,10 +1,8 @@
 "use client";
 
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import {
-  normalizeAllCatalogsData,
-  type AllGlassCatalogsData,
-} from "@/shared/lib/types/glassMap";
+import { normalizeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
+import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 
 export type GlassCatalogsLoadResult =
   | { readonly data: AllGlassCatalogsData; readonly error: undefined }

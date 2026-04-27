@@ -4,7 +4,7 @@ import { GridComponent, TooltipComponent, VisualMapComponent } from "echarts/com
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/analysisChartPalette";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
-import type { DiffractionPsfData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
 echarts.use([ScatterChart, GridComponent, TooltipComponent, VisualMapComponent, CanvasRenderer]);
 

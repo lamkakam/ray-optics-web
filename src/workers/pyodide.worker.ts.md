@@ -28,7 +28,7 @@ export async function plotGeoPSF(opticalModel: OpticalModel, fieldIndex: number,
 export async function plotDiffractionPSF(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<string>
 export async function getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
 export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>
-export async function getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>
+export async function getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>
 export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
@@ -62,7 +62,7 @@ export async function _plotGeoPSF(runPython: (code: string) => Promise<unknown>,
 export async function _plotDiffractionPSF(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<string>
 export async function _getDiffractionPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
 export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData>
-export async function _getZernikeCoefficients(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number): Promise<ZernikeData>
+export async function _getZernikeCoefficients(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>
 export async function _focusByMonoRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _focusByMonoStrehl(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _focusByPolyRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
@@ -118,7 +118,7 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `plotDiffractionPSF(model, fi, wi, numRays?, maxDims?)` | Returns a base64 PNG diffraction PSF for the given field and wavelength index. `numRays` defaults to 64, `maxDims` defaults to 256. |
 | `getDiffractionPSFData(model, fi, wi, numRays?, maxDims?)` | Returns `DiffractionPsfData` for the given field and wavelength index using `json.dumps(get_diffraction_psf_data(...))`. Used by the ECharts Diffraction PSF view. |
 | `get3rdOrderSeidelData(model)` | Builds `opm` from model, returns `SeidelData` with 3rd-order Seidel aberration data. |
-| `getZernikeCoefficients(model, fi, wi, n?)` | Builds `opm` from model, returns `ZernikeData` with Zernike polynomial coefficients. `numTerms` defaults to 56. |
+| `getZernikeCoefficients(model, fi, wi, n?, ordering?)` | Builds `opm` from model, returns `ZernikeData` with Zernike polynomial coefficients. `numTerms` defaults to 56 and `ordering` defaults to `"noll"`. |
 | `focusByMonoRmsSpot(model, fieldIndex)` | Focuses by minimizing monochromatic RMS spot radius. Returns `FocusingResult` with `delta_thi` and `metric_value`. |
 | `focusByMonoStrehl(model, fieldIndex)` | Focuses by maximizing monochromatic Strehl ratio. Returns `FocusingResult`. |
 | `focusByPolyRmsSpot(model, fieldIndex)` | Focuses by minimizing polychromatic RMS spot radius. Returns `FocusingResult`. |
@@ -149,7 +149,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_plotDiffractionPSF(runPython, model, fi, wi, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`plot_diffraction_psf(${fi}, ${wi}, ${opm}, num_rays=${numRays}, max_dims=${maxDims})\`)`. `numRays` defaults to 64, `maxDims` defaults to 256.
 - `_getDiffractionPSFData(runPython, model, fi, wi, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}))\`)` and parses the JSON into `DiffractionPsfData`.
 - `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
-- `_getZernikeCoefficients(runPython, model, fi, wi, n?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56.
+- `_getZernikeCoefficients(runPython, model, fi, wi, n?, ordering?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56 and `ordering` defaults to `"noll"`.
 - `_evaluateOptimizationProblem(runPython, model, config)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, runs `evaluate_optimization_problem`, and parses the returned report.
 - `_optimizeOpm(runPython, model, config, onProgress?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, and when a live callback is available binds `_optimization_progress_callback` through `pyodide.globals` so Python can push JSON snapshots back to JS while `optimize_opm(...)` is still running.
 - `_resetPyodideForTesting()` — sets `pyodide = null` to allow `init()` to be re-exercised in tests.
@@ -173,8 +173,10 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 ## Dependencies
 
 - `comlink` — `expose()` to register the worker API.
-- `lib/opticalModel` — `OpticalModel`, `SeidelData` (types only).
-- `lib/zernikeData` — `ZernikeData` (type only).
+- `shared/lib/types/opticalModel` — `OpticalModel` (type only).
+- `features/lens-editor/types/focusingResult` — `FocusingResult` (type only).
+- `features/lens-editor/types/seidelData` — `SeidelData` (type only).
+- `features/lens-editor/types/zernikeData` — `ZernikeData` and `ZernikeOrdering` (type only).
 - `lib/pythonScript` — `buildScript` (generates the combined model-build + computation Python script).
 - `lib/glassMap` — `RawAllGlassCatalogsData` (type only).
 - `features/optimization/types/optimizationWorkerTypes` — optimization config, report, and progress types (type only).

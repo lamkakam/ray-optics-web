@@ -44,7 +44,7 @@ import { useStore } from "zustand";
 import { createStore } from "zustand";
 import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import { createGlassMapSlice } from "@/features/glass-map/stores/glassMapStore";
-import { readGlassCatalogs } from "@/features/glass-map/glassCatalogsResource";
+import { readGlassCatalogs } from "@/features/glass-map/lib/glassCatalogsResource";
 import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
 
 export default function GlassMapView({ proxy }: { proxy: PyodideWorkerAPI }) {

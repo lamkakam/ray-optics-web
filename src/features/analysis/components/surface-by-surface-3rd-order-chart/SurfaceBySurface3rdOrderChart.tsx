@@ -1,6 +1,6 @@
 import { buildSurfaceBySurface3rdOrderChartOption } from "@/features/analysis/components/surface-by-surface-3rd-order-chart/surfaceBySurface3rdOrderChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/components/createAnalysisChartComponent";
-import type { SeidelSurfaceBySurfaceData } from "@/shared/lib/types/opticalModel";
+import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 interface SurfaceBySurface3rdOrderChartProps {
   readonly surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData;

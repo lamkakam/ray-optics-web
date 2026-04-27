@@ -5,7 +5,7 @@ import { Modal } from "@/shared/components/primitives/Modal";
 import { Table } from "@/shared/components/primitives/Table";
 import { Tabs } from "@/shared/components/primitives/Tabs";
 import type { TabItem } from "@/shared/components/primitives/Tabs";
-import type { SeidelData, AberrationTypeToLabel } from "@/shared/lib/types/opticalModel";
+import type { SeidelData, AberrationTypeToLabel } from "@/features/lens-editor/types/seidelData";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
 interface SeidelAberrModalProps {

@@ -1,6 +1,6 @@
 import { type StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
 
 export interface AnalysisPlotState {
   rayFanData: RayFanData | undefined;

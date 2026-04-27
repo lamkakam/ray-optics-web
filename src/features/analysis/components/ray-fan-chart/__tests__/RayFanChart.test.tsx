@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { RayFanChart } from "@/features/analysis/components/ray-fan-chart/RayFanChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { RayFanData } from "@/shared/lib/types/opticalModel";
+import type { RayFanData } from "@/features/analysis/types/plotData";
 
 let mockBuildRayFanChartOption: jest.Mock;
 const mockSetOption = jest.fn();

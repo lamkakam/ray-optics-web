@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { WavefrontMapChart } from "@/features/analysis/components/wavefront-map-chart/WavefrontMapChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { WavefrontMapData } from "@/shared/lib/types/opticalModel";
+import type { WavefrontMapData } from "@/features/analysis/types/plotData";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 
 let mockSetOption: jest.Mock;
