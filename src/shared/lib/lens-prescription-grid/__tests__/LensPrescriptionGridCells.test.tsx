@@ -4,6 +4,7 @@ import {
   AsphericalCell,
   DecenterCell,
   DiffractionGratingCell,
+  MediumCell,
 } from "@/shared/lib/lens-prescription-grid";
 import type { DecenterConfig } from "@/shared/lib/types/opticalModel";
 
@@ -68,6 +69,26 @@ describe("LensPrescriptionGridCells", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Edit diffraction grating" }));
     expect(onOpenModal).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps tooltip-backed action cells touch-scroll safe", () => {
+    const { rerender } = render(<MediumCell medium="AIR" onOpenModal={() => {}} />);
+    expect(screen.getByRole("button", { name: "Edit medium" }).parentElement!.style.touchAction).not.toBe("none");
+
+    rerender(<AsphericalCell aspherical={undefined} onOpenModal={() => {}} />);
+    expect(
+      screen.getByRole("button", { name: "Edit aspherical parameters" }).parentElement!.style.touchAction,
+    ).not.toBe("none");
+
+    rerender(<DecenterCell decenter={undefined} onOpenModal={() => {}} />);
+    expect(screen.getByRole("button", { name: "Edit decenter and tilt" }).parentElement!.style.touchAction).not.toBe(
+      "none",
+    );
+
+    rerender(<DiffractionGratingCell diffractionGrating={undefined} onOpenModal={() => {}} />);
+    expect(screen.getByRole("button", { name: "Edit diffraction grating" }).parentElement!.style.touchAction).not.toBe(
+      "none",
+    );
   });
 
   it("keeps portal tooltips mouse-hover only for the full trigger", () => {

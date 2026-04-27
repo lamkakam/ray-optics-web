@@ -90,7 +90,6 @@ export function Tooltip({ text, children, position = "top", portal = false, noTo
       <span
         ref={triggerRef}
         className={clsx("relative inline-flex", triggerClassName)}
-        style={noTouch ? { touchAction: "none" } : undefined}
         onTouchStart={noTouch ? () => { isTouchingRef.current = true; } : undefined}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={() => { isTouchingRef.current = false; setVisible(false); }}
@@ -109,7 +108,7 @@ export function Tooltip({ text, children, position = "top", portal = false, noTo
             : "";
 
   return (
-    <span className={clsx("group relative inline-flex", triggerClassName)} style={noTouch ? { touchAction: "none" } : undefined}>
+    <span className={clsx("group relative inline-flex", triggerClassName)}>
       {children}
       <span
         role="tooltip"
