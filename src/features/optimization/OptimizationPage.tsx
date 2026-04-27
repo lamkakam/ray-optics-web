@@ -22,7 +22,7 @@ import { RadiusModeModal } from "@/features/optimization/components/LensPrescrip
 import { ThicknessModeModal } from "@/features/optimization/components/LensPrescriptionGrid/ThicknessModeModal/ThicknessModeModal";
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import { hasNonZeroOptimizationContribution } from "@/features/optimization/stores/optimizationStore";
-import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/optimization/components/optimizationViewModels";
+import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/optimization/lib/optimizationViewModels";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";

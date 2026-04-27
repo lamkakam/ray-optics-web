@@ -5,7 +5,7 @@ import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
 import { ModeSelectField } from "@/features/optimization/components/LensPrescriptionGrid/ModeSelectField/ModeSelectField";
 import { PickupModeFields } from "@/features/optimization/components/LensPrescriptionGrid/PickupModeFields/PickupModeFields";
-import { getRadiusLabel, getThicknessValue } from "@/features/optimization/components/optimizationViewModels";
+import { getRadiusLabel, getThicknessValue } from "@/features/optimization/lib/optimizationViewModels";
 import {
   createPickupDraft,
   createVariableDraft,

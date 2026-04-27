@@ -5,7 +5,7 @@ import { AgGridProvider, AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
 import type { OptimizationOperandKind } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { OptimizationOperandRow } from "@/features/optimization/stores/optimizationStore";
-import { getOperandLabel } from "@/features/optimization/components/optimizationViewModels";
+import { getOperandLabel } from "@/features/optimization/lib/optimizationViewModels";
 import { OPTIMIZATION_OPERAND_METADATA, getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { Button } from "@/shared/components/primitives/Button";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";

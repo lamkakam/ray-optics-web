@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { AgGridProvider, AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
-import type { WeightRow } from "@/features/optimization/components/optimizationViewModels";
+import type { WeightRow } from "@/features/optimization/lib/optimizationViewModels";
 
 interface OptimizationWeightsGridProps {
   readonly rows: ReadonlyArray<WeightRow>;

@@ -1,4 +1,4 @@
-import { createEvaluationRow } from "@/features/optimization/components/optimizationViewModels";
+import { createEvaluationRow } from "@/features/optimization/lib/optimizationViewModels";
 import type { OptimizationResidualEntry } from "@/features/optimization/types/optimizationWorkerTypes";
 
 describe("createEvaluationRow", () => {

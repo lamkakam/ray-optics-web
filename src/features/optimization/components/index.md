@@ -22,4 +22,3 @@ Components for the optimization workflow UI.
 - [OptimizationApplyConfirmModal.tsx](./OptimizationApplyConfirmModal.tsx.md) — apply confirmation dialog wrapper
 - [OptimizationProgressModal.tsx](./OptimizationProgressModal.tsx.md) — blocking optimization-progress dialog with live merit chart
 - [OptimizationInspectionModals.tsx](./LensPrescriptionGrid/OptimizationInspectionModals/OptimizationInspectionModals.tsx.md) — read-only lens-editor inspection modal wrappers
-- [optimizationViewModels.ts](./optimizationViewModels.ts.md) — shared row/view helpers for optimization components
