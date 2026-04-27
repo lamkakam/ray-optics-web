@@ -1,4 +1,4 @@
-# `features/glass-map/components/GlassMapControls.tsx`
+# `features/glass-map/components/GlassMapControls/GlassMapControls.tsx`
 
 ## Purpose
 Pure presentational component that renders all filter/selector controls for the Glass Map page. No store access — all state and callbacks are passed as props.

@@ -1,4 +1,4 @@
-# `features/glass-map/components/GlassDetailPanel.tsx`
+# `features/glass-map/components/GlassDetailPanel/GlassDetailPanel.tsx`
 
 ## Purpose
 Displays details for the currently selected glass point. Shows a placeholder when no glass is selected.
