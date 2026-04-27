@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { AgGridReact, AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule } from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
-import type { GridRow } from "@/shared/lib/types/gridTypes";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { GridRowButtons } from "@/features/lens-editor/components/GridRowButtons";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import {

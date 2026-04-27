@@ -57,8 +57,8 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 ## Dependencies
 
 - `create`, `StateCreator` from `zustand`.
-- `GridRow`, `OBJECT_ROW_ID`, `IMAGE_ROW_ID` from `@/shared/lib/types/gridTypes`.
-- `generateRowId` from `@/shared/lib/utils/gridTransform`.
+- `GridRow`, `OBJECT_ROW_ID`, `IMAGE_ROW_ID` from `@/shared/lib/lens-prescription-grid/types/gridTypes`.
+- `generateRowId` from `@/shared/lib/lens-prescription-grid/lib/gridTransform`.
 - `OpticalModel` from `@/shared/lib/types/opticalModel`.
 
 ## Usages

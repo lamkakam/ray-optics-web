@@ -4,7 +4,7 @@ import { AsphericalModal } from "@/features/lens-editor/components/AsphericalMod
 import { DecenterModal } from "@/features/lens-editor/components/DecenterModal";
 import { DiffractionGratingModal } from "@/features/lens-editor/components/DiffractionGratingModal";
 import { MediumSelectorModal } from "@/features/lens-editor/components/MediumSelectorModal";
-import type { GridRow } from "@/shared/lib/types/gridTypes";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 interface OptimizationInspectionModalsProps {
   readonly mediumModalRow: GridRow | undefined;

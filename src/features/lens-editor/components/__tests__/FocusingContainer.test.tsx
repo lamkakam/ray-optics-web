@@ -4,7 +4,7 @@ import { createStore } from "zustand";
 import { FocusingContainer } from "@/features/lens-editor/components/FocusingContainer";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import { surfacesToGridRows } from "@/shared/lib/utils/gridTransform";
+import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";

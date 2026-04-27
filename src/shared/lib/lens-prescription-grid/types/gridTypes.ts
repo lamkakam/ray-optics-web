@@ -1,4 +1,4 @@
-import type { Surface, Surfaces } from "./opticalModel";
+import type { Surface, Surfaces } from "@/shared/lib/types/opticalModel";
 
 export const OBJECT_ROW_ID = "row-object";
 export const IMAGE_ROW_ID = "row-image";

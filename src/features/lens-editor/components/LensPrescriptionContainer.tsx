@@ -3,7 +3,7 @@
 import React, { useState, useRef, useCallback } from "react";
 import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
-import { type GridRow } from "@/shared/lib/types/gridTypes";
+import { type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel, AsphericalType } from "@/shared/lib/types/opticalModel";
 import { buildExportScript } from "@/shared/lib/utils/pythonScript";
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";

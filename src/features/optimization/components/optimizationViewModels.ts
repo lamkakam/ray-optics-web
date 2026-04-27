@@ -1,6 +1,6 @@
 "use client";
 
-import type { GridRow } from "@/shared/lib/types/gridTypes";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { OptimizationOperandKind, OptimizationResidualEntry } from "@/features/optimization/types/optimizationWorkerTypes";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";

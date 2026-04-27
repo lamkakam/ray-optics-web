@@ -38,7 +38,7 @@ All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` a
 
 ## Internal Logic
 
-All plot loading goes through `loadAnalysisPlot(...)` from `@/shared/lib/utils/plotFunctions`, which centralizes the plot-type to worker-API mapping. This keeps the panel behavior aligned with `LensEditor.tsx` submit handling.
+All plot loading goes through `loadAnalysisPlot(...)` from `@/features/analysis/lib/plotFunctions`, which centralizes the plot-type to worker-API mapping. This keeps the panel behavior aligned with `LensEditor.tsx` submit handling.
 
 ### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
 

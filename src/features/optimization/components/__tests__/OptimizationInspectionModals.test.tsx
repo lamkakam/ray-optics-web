@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GlassCatalogContext, type GlassCatalogContextValue } from "@/shared/components/providers/GlassCatalogProvider";
-import type { GridRow } from "@/shared/lib/types/gridTypes";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { OptimizationInspectionModals } from "@/features/optimization/components/OptimizationInspectionModals";
 
 jest.mock("better-react-mathjax", () => ({

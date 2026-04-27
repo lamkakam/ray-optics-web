@@ -1,4 +1,4 @@
-# `shared/lib/types/gridTypes.ts`
+# `shared/lib/lens-prescription-grid/types/gridTypes.ts`
 
 ## Purpose
 
@@ -31,10 +31,14 @@ Defines the type used to represent rows in the LensEditor AG Grid, covering the 
 - Object and image rows use the stable constants `OBJECT_ROW_ID` / `IMAGE_ROW_ID`; surface rows use generated IDs from `generateRowId()` in `gridTransform.ts`.
 - The `kind` discriminant should be checked before accessing kind-specific fields.
 
+## Dependencies
+
+- `shared/lib/types/opticalModel.ts` — `Surface`, `Surfaces` (type-only imports)
+
 ## Usages
 
 ```tsx
-import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/types/gridTypes";
+import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 // Using constants for stable row identification
 function handleSelectRow(rowId: string) {

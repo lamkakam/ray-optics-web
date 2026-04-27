@@ -58,7 +58,7 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 ## Notes
 - `onError` delegates to `app/AppShell.tsx`, which owns the shared `ErrorModal`
 - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
-- `handleSubmit` uses `loadAnalysisPlot(...)` from `shared/lib/utils/plotFunctions.ts`, so submit-time analysis updates use the same worker-path rules as `AnalysisPlotContainer.tsx`
+- `handleSubmit` uses `loadAnalysisPlot(...)` from `features/analysis/lib/plotFunctions.ts`, so submit-time analysis updates use the same worker-path rules as `AnalysisPlotContainer.tsx`
 - `handleSubmit` passes `theme === "dark"` into `proxy.plotLensLayout(...)`; the worker then derives whether to enable wavelength ray-fan overlays from any `surface.diffractionGrating`
 - Submit/example-confirm flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
 

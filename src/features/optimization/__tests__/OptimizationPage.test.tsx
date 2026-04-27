@@ -10,7 +10,7 @@ import { OptimizationStoreContext } from "@/features/optimization/providers/Opti
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { createOptimizationSlice, type OptimizationState } from "@/features/optimization/stores/optimizationStore";
-import { surfacesToGridRows } from "@/shared/lib/utils/gridTransform";
+import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { GlassCatalogContext, type GlassCatalogContextValue } from "@/shared/components/providers/GlassCatalogProvider";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 

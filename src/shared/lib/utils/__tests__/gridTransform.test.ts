@@ -1,5 +1,5 @@
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
-import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/types/gridTypes";
+import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { Surfaces } from "@/shared/lib/types/opticalModel";
 
 // Cooke Triplet demo surfaces for testing

@@ -23,8 +23,8 @@ import { ThicknessModeModal } from "@/features/optimization/components/Thickness
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import { hasNonZeroOptimizationContribution } from "@/features/optimization/stores/optimizationStore";
 import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/optimization/components/optimizationViewModels";
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
-import type { GridRow } from "@/shared/lib/types/gridTypes";
+import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { OptimizationProgressEntry, OptimizationReport } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";

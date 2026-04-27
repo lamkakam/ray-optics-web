@@ -5,7 +5,7 @@ import { AgGridProvider, AgGridReact } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
 import type { RadiusMode, AsphereOptimizationState } from "@/features/optimization/stores/optimizationStore";
 import type { RadiusRow } from "@/features/optimization/components/optimizationViewModels";
-import type { GridRow } from "@/shared/lib/types/gridTypes";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import {

@@ -1,4 +1,4 @@
-# `shared/lib/utils/plotFunctions.ts`
+# `features/analysis/lib/plotFunctions.ts`
 
 ## Purpose
 

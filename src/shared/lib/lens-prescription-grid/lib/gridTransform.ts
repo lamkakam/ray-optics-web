@@ -1,5 +1,5 @@
 import type { Surfaces, Surface } from "@/shared/lib/types/opticalModel";
-import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/types/gridTypes";
+import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 let nextId = 0;
 

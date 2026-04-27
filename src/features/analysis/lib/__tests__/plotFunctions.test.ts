@@ -2,7 +2,7 @@ import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { OpdFanData, RayFanData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { loadAnalysisPlot } from "@/shared/lib/utils/plotFunctions";
+import { loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
 
 const mockModel = {} as OpticalModel;
 

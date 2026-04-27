@@ -1,4 +1,4 @@
-# `shared/lib/utils/gridTransform.ts`
+# `shared/lib/lens-prescription-grid/lib/gridTransform.ts`
 
 ## Purpose
 
@@ -48,7 +48,7 @@ Returns a unique string of the form `"row-surface-N"` where `N` is a module-leve
 ## Dependencies
 
 - `shared/lib/types/opticalModel.ts` — `Surfaces`, `Surface` (type-only imports)
-- `shared/lib/types/gridTypes.ts` — `OBJECT_ROW_ID`, `IMAGE_ROW_ID`, `GridRow`
+- `shared/lib/lens-prescription-grid/types/gridTypes.ts` — `OBJECT_ROW_ID`, `IMAGE_ROW_ID`, `GridRow`
 
 ## Edge Cases / Error Handling
 
@@ -59,7 +59,7 @@ Returns a unique string of the form `"row-surface-N"` where `N` is a module-leve
 ## Usages
 
 ```ts
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/utils/gridTransform";
+import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { OpticalModel, Surfaces } from "@/shared/lib/types/opticalModel";
 
 // Convert model to AG Grid rows when loading
