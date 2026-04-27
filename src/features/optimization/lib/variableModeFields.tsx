@@ -1,5 +1,5 @@
-import { BoundedVariableModeFields } from "@/features/optimization/components/BoundedVariableModeFields";
-import { UnboundedVariableModeFields } from "@/features/optimization/components/UnboundedVariableModeFields";
+import { BoundedVariableModeFields } from "@/features/optimization/lib/BoundedVariableModeFields/BoundedVariableModeFields";
+import { UnboundedVariableModeFields } from "@/features/optimization/lib/UnboundedVariableModeFields/UnboundedVariableModeFields";
 import type {
   VariableModeFieldsProps,
   VariableModeFieldsRenderer,

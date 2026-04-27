@@ -1,4 +1,4 @@
-# `features/optimization/components/OptimizationLensPrescriptionGrid.tsx`
+# `features/optimization/components/LensPrescriptionGrid/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid.tsx`
 
 Renders the optimization lens prescription grid, including a read-only surface `Index` column, radius/thickness variable buttons, asphere variable/pickup button, and read-only inspection cells that open existing lens-editor dialogs.
 

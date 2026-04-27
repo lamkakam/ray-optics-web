@@ -7,5 +7,5 @@ Type definitions for renderer props and return shape live in `features/optimizat
 ## Behavior
 
 - Exposes `getVariableModeFieldsRenderer(canUseBounds)` so modal rendering depends only on a caller-supplied boolean instead of optimizer-kind/method types.
-- Returns `BoundedVariableModeFields` when `canUseBounds === true`.
-- Returns `UnboundedVariableModeFields` when `canUseBounds === false`.
+- Returns `features/optimization/lib/BoundedVariableModeFields/BoundedVariableModeFields.tsx` when `canUseBounds === true`.
+- Returns `features/optimization/lib/UnboundedVariableModeFields/UnboundedVariableModeFields.tsx` when `canUseBounds === false`.

@@ -1,4 +1,4 @@
-# `features/optimization/components/ModeSelectField.tsx`
+# `features/optimization/components/LensPrescriptionGrid/ModeSelectField/ModeSelectField.tsx`
 
 Shared optimization-only mode selector for `constant`, `variable`, and `pickup`.
 

@@ -4,8 +4,8 @@ import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
 import { getRadiusLabel, getRadiusValue } from "@/features/optimization/components/optimizationViewModels";
-import { ModeSelectField } from "@/features/optimization/components/ModeSelectField";
-import { PickupModeFields } from "@/features/optimization/components/PickupModeFields";
+import { ModeSelectField } from "@/features/optimization/components/LensPrescriptionGrid/ModeSelectField/ModeSelectField";
+import { PickupModeFields } from "@/features/optimization/components/LensPrescriptionGrid/PickupModeFields/PickupModeFields";
 import {
   CURVATURE_RADIUS_GUIDANCE_TEXT,
   createPickupDraft,

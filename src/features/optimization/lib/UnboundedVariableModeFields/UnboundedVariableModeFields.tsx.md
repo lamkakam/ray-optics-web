@@ -1,4 +1,4 @@
-# `features/optimization/components/UnboundedVariableModeFields.tsx`
+# `features/optimization/lib/UnboundedVariableModeFields/UnboundedVariableModeFields.tsx`
 
 Renders the variable-mode body for unbounded optimizers.
 

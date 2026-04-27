@@ -1,4 +1,4 @@
-# `features/optimization/components/PickupModeFields.tsx`
+# `features/optimization/components/LensPrescriptionGrid/PickupModeFields/PickupModeFields.tsx`
 
 Shared optimization-only pickup field group for source-surface based editors.
 
