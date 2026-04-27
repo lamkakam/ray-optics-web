@@ -2,7 +2,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { AsphereOptimizationState, AsphereMode } from "@/features/optimization/stores/optimizationStore";
-import { AsphereVarModal } from "@/features/optimization/components/LensPrescriptionGrid/AsphereVarModal/AsphereVarModal";
+import { AsphereVarModal } from "../AsphereVarModal";
 import type { OpticalModel, Surface } from "@/shared/lib/types/opticalModel";
 
 jest.mock("better-react-mathjax", () => ({

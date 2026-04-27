@@ -17,9 +17,9 @@ import { OptimizationOperandsTab } from "@/features/optimization/components/Opti
 import { OptimizationProgressModal } from "@/features/optimization/components/OptimizationProgressModal/OptimizationProgressModal";
 import { OptimizationWarningModal } from "@/features/optimization/components/OptimizationWarningModal/OptimizationWarningModal";
 import { OptimizationWeightsGrid } from "@/features/optimization/components/OptimizationWeightsGrid/OptimizationWeightsGrid";
-import { AsphereVarModal } from "@/features/optimization/components/LensPrescriptionGrid/AsphereVarModal/AsphereVarModal";
-import { RadiusModeModal } from "@/features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal";
-import { ThicknessModeModal } from "@/features/optimization/components/LensPrescriptionGrid/ThicknessModeModal/ThicknessModeModal";
+import { AsphereVarModal } from "@/features/optimization/components/AsphereVarModal/AsphereVarModal";
+import { RadiusModeModal } from "@/features/optimization/components/RadiusModeModal/RadiusModeModal";
+import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal/ThicknessModeModal";
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import { hasNonZeroOptimizationContribution } from "@/features/optimization/stores/optimizationStore";
 import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/optimization/lib/optimizationViewModels";

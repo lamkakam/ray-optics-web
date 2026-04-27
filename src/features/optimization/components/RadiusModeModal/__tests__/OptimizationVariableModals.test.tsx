@@ -3,8 +3,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
-import { RadiusModeModal } from "@/features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal";
-import { ThicknessModeModal } from "@/features/optimization/components/LensPrescriptionGrid/ThicknessModeModal/ThicknessModeModal";
+import { RadiusModeModal } from "../RadiusModeModal";
+import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal/ThicknessModeModal";
 
 const model: OpticalModel = {
   setAutoAperture: "manualAperture",

@@ -6,9 +6,6 @@ Components for the optimization lens prescription grid and its modal-backed vari
 
 - [OptimizationLensPrescriptionGrid.tsx](./OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid.tsx.md) — read-only prescription grid with modal-backed inspection cells
 - [OptimizationInspectionModals.tsx](./OptimizationInspectionModals/OptimizationInspectionModals.tsx.md) — read-only lens-editor inspection modal wrappers
-- [RadiusModeModal.tsx](./RadiusModeModal/RadiusModeModal.tsx.md) — radius variable/pickup modal body
-- [ThicknessModeModal.tsx](./ThicknessModeModal/ThicknessModeModal.tsx.md) — thickness variable/pickup modal body
-- [AsphereVarModal.tsx](./AsphereVarModal/AsphereVarModal.tsx.md) — asphere variable/pickup modal body
 - [ModeSelectField.tsx](./ModeSelectField/ModeSelectField.tsx.md) — shared constant/variable/pickup mode selector for optimization modals
 - [BoundedVariableModeFields.tsx](../../lib/BoundedVariableModeFields/BoundedVariableModeFields.tsx.md) — shared Min/Max field group for optimization variable editors
 - [UnboundedVariableModeFields.tsx](../../lib/UnboundedVariableModeFields/UnboundedVariableModeFields.tsx.md) — unbounded variable-mode body for methods without bounds
