@@ -1,0 +1,1 @@
+export { MediumCell } from "./MediumCell";

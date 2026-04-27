@@ -1,0 +1,102 @@
+# `features/lens-editor/components/ZernikeTermsModal/ZernikeTermsModal.tsx`
+
+## Purpose
+
+Modal that displays Zernike polynomial coefficients for a selected field, wavelength, and ordering (Noll or Fringe). Data is fetched lazily when the modal opens or when any dropdown selection changes.
+
+## Props
+
+```ts
+interface ZernikeTermsModalProps {
+  readonly isOpen: boolean;
+  readonly fieldOptions: readonly SelectOption[];
+  readonly wavelengthOptions: readonly SelectOption[];
+  readonly onFetchData: (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => Promise<ZernikeData>;
+  readonly onClose: () => void;
+}
+```
+
+## Prop Details
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `isOpen` | `boolean` | Yes | Controls visibility |
+| `fieldOptions` | `readonly SelectOption[]` | Yes | Options for the Field dropdown |
+| `wavelengthOptions` | `readonly SelectOption[]` | Yes | Options for the Wavelength dropdown |
+| `onFetchData` | `(fieldIndex, wvlIndex, ordering) => Promise<ZernikeData>` | Yes | Callback to fetch Zernike data. Called on open and on any dropdown change. |
+| `onClose` | `() => void` | Yes | Called when the Ok button is clicked |
+
+## Internal State
+
+| State | Type | Description |
+|-------|------|-------------|
+| `selectedFieldIndex` | `number` | Currently selected field index (reset to 0 on each open) |
+| `selectedWvlIndex` | `number` | Currently selected wavelength index (reset to 0 on each open) |
+| `selectedOrdering` | `ZernikeOrdering` | "noll" or "fringe" (reset to "fringe" on each open) |
+| `data` | `ZernikeData \| undefined` | Fetched Zernike data |
+| `loading` | `boolean` | Whether a fetch is in progress |
+| `requestCounter` | `MutableRefObject<number>` | Monotonic request id used to ignore stale async results |
+
+## Key Behaviors
+
+- Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh inner editor with default selection state (`0`, `0`, `"fringe"`).
+- On mount, fetches data once for `(field=0, wavelength=0, ordering="fringe")`.
+- On any dropdown change (field, wavelength, ordering): fetches data with the new selection.
+- Race condition guard: uses a request counter ref to discard stale results from prior fetches.
+- Renders Zernike terms in a scrollable table; row count and index scheme depend on ordering:
+  - Noll: 56 rows, first column "Noll j", uses `nollToNm(j)`
+  - Fringe: `NUM_FRINGE_TERMS` (37) rows, first column "Fringe j", uses `fringeToNm(j)`
+- Each row shows: j index, Z notation (MathJax), classical name via `classicalName(n, m)`, unnormalized coefficient, RMS-normalized coefficient.
+- Imports `ZernikeData` and `ZernikeOrdering` from `features/lens-editor/types/zernikeData`, and Zernike runtime constants/helpers from `features/lens-editor/lib/zernikeData`.
+- Summary section displays P-V WFE, RMS WFE, and Strehl ratio.
+- Uses `<MathJax>` for Zernike notation; context provided by ancestor (`page.tsx`).
+- **Loading states**:
+  - Initial load (`loading && !data`): shows "Loading…" text, no table.
+  - Re-fetch (`loading && data`): shows `<LoadingMask>` overlaid on the existing table (stale data stays visible behind the mask).
+  - Idle (`!loading && data`): table visible, no mask.
+
+## Layout
+
+- Row 1: Field + Wavelength dropdowns in a flex row
+- Row 2: Ordering dropdown (below Field+Wavelength)
+- `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
+- Scrollable table area (`max-h-[calc(90dvh-20rem)] overflow-y-auto`) — viewport-relative height reserves ~20rem for static overhead (title, dropdowns, summary, button, padding), preventing double scrollbar when the modal approaches the `90dvh` cap
+- Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
+  - First column header is "Noll j" or "Fringe j" depending on ordering
+- Summary: P-V WFE, RMS WFE, Strehl ratio
+- `<LoadingMask />` rendered inside the `relative` wrapper only when `loading && data`
+- Ok button aligned right
+
+## Usages
+
+```tsx
+import { NUM_FRINGE_TERMS, NUM_NOLL_TERMS } from "@/features/lens-editor/lib/zernikeData";
+import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
+import type { ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+
+// In a page component (e.g., LensEditor)
+const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
+
+const handleFetchZernikeData = useCallback(
+  async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => {
+    if (!proxy) throw new Error("Pyodide not ready");
+    const committedOpticalModel = lensStore.getState().committedOpticalModel;
+    if (!committedOpticalModel) throw new Error("No optical model computed yet");
+    const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
+    return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, numTerms, ordering);
+  },
+  [proxy, lensStore]
+);
+
+return (
+  <>
+    <ZernikeTermsModal
+      isOpen={zernikeModalOpen}
+      fieldOptions={specsStore.getState().getFieldOptions()}
+      wavelengthOptions={specsStore.getState().getWavelengthOptions()}
+      onFetchData={handleFetchZernikeData}
+      onClose={() => setZernikeModalOpen(false)}
+    />
+  </>
+);
+```

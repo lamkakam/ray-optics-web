@@ -1,5 +1,5 @@
 import { type StateCreator } from "zustand";
-import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
+import type { PlotType } from "@/features/analysis/components";
 import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
 
 export interface AnalysisPlotState {

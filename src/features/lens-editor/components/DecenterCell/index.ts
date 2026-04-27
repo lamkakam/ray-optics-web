@@ -1,0 +1,1 @@
+export { DecenterCell } from "./DecenterCell";

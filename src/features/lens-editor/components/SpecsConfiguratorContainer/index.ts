@@ -1,0 +1,1 @@
+export { SpecsConfiguratorContainer } from "./SpecsConfiguratorContainer";

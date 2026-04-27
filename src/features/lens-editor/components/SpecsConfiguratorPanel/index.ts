@@ -1,0 +1,1 @@
+export { SpecsConfiguratorPanel } from "./SpecsConfiguratorPanel";

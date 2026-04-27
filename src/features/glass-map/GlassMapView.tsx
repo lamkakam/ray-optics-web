@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { useStore } from "zustand";
-import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
-import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";
-import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
-import type { GlassMapRouteIntent, GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
-import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import {
+  GlassScatterPlot,
+  GlassMapControls,
+  GlassDetailPanel,
+} from "./components";
+import type { GlassMapRouteIntent, GlassMapStore } from "./stores/glassMapStore";
+import { useGlassMapStore } from "./providers/GlassMapStoreProvider";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { CatalogName, SelectedGlass } from "@/features/glass-map/types/glassMap";
-import { computePlotPoints } from "@/features/glass-map/lib/glassMap";
-import { readGlassCatalogs } from "@/features/glass-map/lib/glassCatalogsResource";
+import type { CatalogName, SelectedGlass } from "./types/glassMap";
+import { computePlotPoints } from "./lib/glassMap";
+import { readGlassCatalogs } from "./lib/glassCatalogsResource";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;
