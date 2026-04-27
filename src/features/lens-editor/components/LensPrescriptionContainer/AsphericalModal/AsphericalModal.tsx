@@ -8,7 +8,8 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
-import { AsphericalType } from "@/shared/lib/types/opticalModel";
+import { ASPHERICAL_TYPE_OPTIONS } from "@/shared/lib/lens-prescription-grid/displayLabels";
+import type { AsphericalType } from "@/shared/lib/types/opticalModel";
 
 const COEFFICIENT_NUM = 10;
 
@@ -309,13 +310,7 @@ export function AsphericalModal({
               value={type}
               disabled={readOnly}
               onChange={(e) => setType(e.target.value as AsphericalType)}
-              options={[
-                { value: "Conic", label: "Conic" },
-                { value: "EvenAspherical", label: "Even Aspherical" },
-                { value: "RadialPolynomial", label: "Radial Polynomial" },
-                { value: "XToroid", label: "X Toroid" },
-                { value: "YToroid", label: "Y Toroid" },
-              ]}
+              options={ASPHERICAL_TYPE_OPTIONS}
             />
           </div>
         </div>

@@ -1,8 +1,13 @@
 "use client";
 
 import React from "react";
-import { SetButton } from "@/shared/components/primitives/SetButton";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
+import {
+  formatAsphericalLabel,
+  formatDecenterLabel,
+  formatDiffractionGratingLabel,
+} from "@/shared/lib/lens-prescription-grid/displayLabels";
+import type { DecenterConfig, DiffractionGrating, Surface } from "@/shared/lib/types/opticalModel";
 
 interface ActionWrapperProps {
   readonly children: React.ReactNode;
@@ -54,60 +59,81 @@ export function MediumCell({
   );
 }
 
+interface TextActionButtonProps {
+  readonly ariaLabel: string;
+  readonly children: React.ReactNode;
+  readonly onClick: () => void;
+}
+
+function TextActionButton({ ariaLabel, children, onClick }: TextActionButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      className="h-full w-full cursor-pointer text-left"
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
 interface AsphericalCellProps {
-  readonly isAspherical: boolean;
+  readonly aspherical: Surface["aspherical"] | undefined;
   readonly onOpenModal: () => void;
   readonly tooltipText?: string;
 }
 
 export function AsphericalCell({
-  isAspherical,
+  aspherical,
   onOpenModal,
   tooltipText = "Click to set aspherical parameters",
 }: AsphericalCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch>
-      <SetButton isSet={isAspherical} aria-label="Edit aspherical parameters" onClick={onOpenModal} />
+    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
+      <TextActionButton ariaLabel="Edit aspherical parameters" onClick={onOpenModal}>
+        {formatAsphericalLabel(aspherical)}
+      </TextActionButton>
     </Tooltip>
   );
 }
 
 interface DecenterCellProps {
-  readonly isDecenterSet: boolean;
+  readonly decenter: DecenterConfig | undefined;
   readonly onOpenModal: () => void;
   readonly tooltipText?: string;
 }
 
 export function DecenterCell({
-  isDecenterSet,
+  decenter,
   onOpenModal,
   tooltipText = "Click to open settings for Tilt and Decenter",
 }: DecenterCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch>
-      <SetButton isSet={isDecenterSet} aria-label="Edit decenter and tilt" onClick={onOpenModal} />
+    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
+      <TextActionButton ariaLabel="Edit decenter and tilt" onClick={onOpenModal}>
+        {formatDecenterLabel(decenter)}
+      </TextActionButton>
     </Tooltip>
   );
 }
 
 interface DiffractionGratingCellProps {
-  readonly isDiffractionGratingSet: boolean;
+  readonly diffractionGrating: DiffractionGrating | undefined;
   readonly onOpenModal: () => void;
   readonly tooltipText?: string;
 }
 
 export function DiffractionGratingCell({
-  isDiffractionGratingSet,
+  diffractionGrating,
   onOpenModal,
   tooltipText = "Click to set diffraction grating",
 }: DiffractionGratingCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch>
-      <SetButton
-        isSet={isDiffractionGratingSet}
-        aria-label="Edit diffraction grating"
-        onClick={onOpenModal}
-      />
+    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
+      <TextActionButton ariaLabel="Edit diffraction grating" onClick={onOpenModal}>
+        {formatDiffractionGratingLabel(diffractionGrating)}
+      </TextActionButton>
     </Tooltip>
   );
 }

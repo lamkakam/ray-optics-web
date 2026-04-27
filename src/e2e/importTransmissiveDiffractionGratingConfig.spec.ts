@@ -56,30 +56,32 @@ test("import transmissive diffraction grating config and verify grating plus til
     .locator(`.ag-cell[col-id="${decenterColId}"]`)
     .getByRole("button", { name: "Edit decenter and tilt" })
     .first();
+  const decenterCellRow4 = decenterRow4.locator(`.ag-cell[col-id="${decenterColId}"]`);
+  const diffractionGratingCellRow6 = gratingRow6.locator(`.ag-cell[col-id="${diffractionGratingColId}"]`);
 
   await expect(
     decenterRow4.locator(`.ag-cell[col-id="${surfaceColId}"]`)
   ).toContainText("Default");
   await expect(
     decenterButtonRow4
-  ).toHaveText("Set");
+  ).toHaveText("dec and return");
 
   await expect(
     gratingRow6.locator(`.ag-cell[col-id="${mediumColId}"]`)
   ).toContainText("SF10");
   await expect(
     diffractionGratingButtonRow6
-  ).toHaveText("Set");
+  ).toHaveText("600 lp/mm");
 
   await expect(
     decenterRow9.locator(`.ag-cell[col-id="${surfaceColId}"]`)
   ).toContainText("Default");
   await expect(
     decenterButtonRow9
-  ).toHaveText("Set");
+  ).toHaveText("dec and return");
 
-  await diffractionGratingButtonRow6.hover();
-  await diffractionGratingButtonRow6.click();
+  await diffractionGratingCellRow6.hover();
+  await diffractionGratingCellRow6.click();
   const gratingModal = page.locator(
     '[role="dialog"][aria-labelledby="diffraction-grating-modal-title"]'
   );
@@ -93,8 +95,8 @@ test("import transmissive diffraction grating config and verify grating plus til
     '[role="dialog"][aria-labelledby="decenter-modal-title"]'
   );
 
-  await decenterButtonRow4.hover();
-  await decenterButtonRow4.click();
+  await decenterCellRow4.hover();
+  await decenterCellRow4.click();
   await decenterModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(
     decenterModal.getByLabel("Coordinate system for this and following surfaces")

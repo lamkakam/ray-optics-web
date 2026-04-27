@@ -10,4 +10,4 @@ The implementation lives in `shared/lib/lens-prescription-grid/LensPrescriptionG
 export { DiffractionGratingCell } from "@/shared/lib/lens-prescription-grid";
 ```
 
-The default tooltip copy remains Lens Editor-oriented: `Click to set diffraction grating`.
+The shared cell displays `None` when no grating exists, otherwise `${lpmm} lp/mm`. The default tooltip copy remains Lens Editor-oriented: `Click to set diffraction grating`.

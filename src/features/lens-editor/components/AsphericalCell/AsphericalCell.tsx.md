@@ -10,4 +10,4 @@ The implementation lives in `shared/lib/lens-prescription-grid/LensPrescriptionG
 export { AsphericalCell } from "@/shared/lib/lens-prescription-grid";
 ```
 
-The default tooltip copy remains Lens Editor-oriented: `Click to set aspherical parameters`.
+The shared cell displays `None` when no aspherical config exists, otherwise the shared asphere type label. The default tooltip copy remains Lens Editor-oriented: `Click to set aspherical parameters`.

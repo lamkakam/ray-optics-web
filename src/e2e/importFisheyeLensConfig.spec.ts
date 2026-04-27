@@ -81,10 +81,10 @@ test("import fisheye config, update system, and verify loaded prescription/specs
     await row.hover();
     await expect(
       row.locator('[aria-label="Edit aspherical parameters"]')
-    ).toHaveText("—");
+    ).toHaveText("None");
     await expect(
       row.locator('[aria-label="Edit decenter and tilt"]')
-    ).toHaveText("—");
+    ).toHaveText("None");
   }
 
   await page.getByRole("tab", { name: "System Specs" }).click();

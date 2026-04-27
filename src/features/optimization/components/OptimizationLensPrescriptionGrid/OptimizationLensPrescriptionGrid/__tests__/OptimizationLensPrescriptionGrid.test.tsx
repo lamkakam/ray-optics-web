@@ -174,10 +174,10 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "C",
       "BK7",
       "10",
-      "—",
+      "None",
       "C",
-      "—",
-      "—",
+      "None",
+      "None",
     ]);
     expect(Array.from(rows[2].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
       "",
@@ -190,9 +190,46 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "",
       "",
       "",
-      "—",
+      "None",
       "",
     ]);
+  });
+
+  it("shows prescription text labels for configured inspection cells", () => {
+    const configuredSurfaceRow: GridRow = {
+      ...surfaceRow,
+      aspherical: { kind: "EvenAspherical", conicConstant: -1, polynomialCoefficients: [0.1] },
+      decenter: {
+        coordinateSystemStrategy: "reverse",
+        alpha: 0,
+        beta: 0,
+        gamma: 0,
+        offsetX: 0,
+        offsetY: 0,
+      },
+      diffractionGrating: { lpmm: 600, order: 1 },
+    };
+    const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[{ id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: configuredSurfaceRow }]}
+        radiusModes={constantModes}
+        thicknessModes={constantModes}
+        asphereStates={[makeAsphereState()]}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Edit aspherical parameters" })).toHaveTextContent("Even Aspherical");
+    expect(screen.getByRole("button", { name: "Edit decenter and tilt" })).toHaveTextContent("reverse");
+    expect(screen.getByRole("button", { name: "Edit diffraction grating" })).toHaveTextContent("600 lp/mm");
   });
 
   it("shows saved variable mode labels in optimization Var. cells", () => {

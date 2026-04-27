@@ -10,4 +10,4 @@ The implementation lives in `shared/lib/lens-prescription-grid/LensPrescriptionG
 export { DecenterCell } from "@/shared/lib/lens-prescription-grid";
 ```
 
-The default tooltip copy remains `Click to open settings for Tilt and Decenter`.
+The shared cell displays `None` when no decenter config exists, otherwise the row's `coordinateSystemStrategy` value (`bend`, `dec and return`, `decenter`, or `reverse`). The default tooltip copy remains `Click to open settings for Tilt and Decenter`.
