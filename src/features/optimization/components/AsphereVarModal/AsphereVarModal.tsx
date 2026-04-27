@@ -4,8 +4,8 @@ import React from "react";
 import { MathJax } from "better-react-mathjax";
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { AsphereOptimizationState, AsphereMode, AsphereTermKey } from "@/features/optimization/stores/optimizationStore";
-import { ModeSelectField } from "@/features/optimization/components/LensPrescriptionGrid/ModeSelectField/ModeSelectField";
-import { PickupModeFields } from "@/features/optimization/components/LensPrescriptionGrid/PickupModeFields/PickupModeFields";
+import { ModeSelectField } from "@/features/optimization/components/LensPrescriptionGrid/ModeSelectField";
+import { PickupModeFields } from "@/features/optimization/components/LensPrescriptionGrid/PickupModeFields";
 import {
   CURVATURE_RADIUS_GUIDANCE_TEXT,
   curvatureRadiusCrossesZero,

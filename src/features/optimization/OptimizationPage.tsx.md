@@ -83,6 +83,7 @@ interface OptimizationPageProps {
 - Large-screen evaluation height is derived from the observed page-shell height, the current live drawer height, and measured fixed overhead above the table, with a fallback reserve when DOM measurement is not yet available.
 - The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.
 - `OptimizationPage` remains the orchestration boundary: extracted components are view-focused and receive callbacks/state from the page instead of reading stores directly.
+- Page-level optimization components are imported through their component-directory `index.ts` barrels. `OptimizationLensPrescriptionGrid` comes from the narrow `LensPrescriptionGrid/index.ts` public surface, while `OptimizationInspectionModals` comes from its own nested directory barrel.
 - Optimization worker report/progress types are imported from `features/optimization/types/optimizationWorkerTypes.ts`.
 - Changing the Method select updates the optimization store immediately, so evaluation config building and variable modal rendering switch between bounded `trf` and unbounded `lm` behavior in place.
 - That method-switch warning is limited to explicit method changes, but it now surfaces any config-build error produced by the switch instead of only one hardcoded residual-count message.

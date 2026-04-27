@@ -77,7 +77,7 @@ function OptimizationVariableModeCell({
   );
 }
 
-interface OptimizationLensPrescriptionGridProps {
+export interface OptimizationLensPrescriptionGridProps {
   readonly rows: ReadonlyArray<RadiusRow>;
   readonly radiusModes: ReadonlyArray<RadiusMode>;
   readonly thicknessModes: ReadonlyArray<RadiusMode>;

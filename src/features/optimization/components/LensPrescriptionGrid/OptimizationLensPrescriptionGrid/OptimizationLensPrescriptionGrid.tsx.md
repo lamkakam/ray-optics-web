@@ -2,6 +2,7 @@
 
 Renders the optimization lens prescription grid, including a read-only surface `Index` column, radius/thickness variable buttons, asphere variable/pickup button, and read-only inspection cells that open existing lens-editor dialogs.
 
+- Exports `OptimizationLensPrescriptionGridProps` so the component directory barrels can expose the grid's public prop type without widening the `LensPrescriptionGrid` public surface.
 - Uses a horizontal-overflow wrapper for the wide prescription table and relies on parent layout padding instead of adding its own outer `p-4`.
 - Leaves vertical overflow to the parent drawer/page layout by using the shared `LENS_PRESCRIPTION_GRID_DOM_LAYOUT` value (`"autoHeight"`) and not introducing an inner vertical scroller.
 - Applies the shared `lensPrescriptionGridDefaultColDef` (`{ sortable: false, suppressMovable: true }`) so the prescription columns stay in their prescribed order across the Optimization tabs.
