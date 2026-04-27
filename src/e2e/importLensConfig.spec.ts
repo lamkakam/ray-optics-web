@@ -100,6 +100,8 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   const colIdThickness = await getColId(page, prescGrid, "Thickness");
   const colIdMedium = await getColId(page, prescGrid, "Medium");
   const colIdSemiDiam = await getColId(page, prescGrid, "Semi-diam.");
+  const colIdAspherical = await getColId(page, prescGrid, "Asph.");
+  const colIdDecenter = await getColId(page, prescGrid, "Tilt & Decenter");
 
   await expect(
     page.locator(
@@ -138,10 +140,10 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   await row1.hover();
   await expect(
     row1.locator('[aria-label="Edit aspherical parameters"]')
-  ).toHaveText("Set");
+  ).toHaveText("Conic");
   await expect(
     row1.locator('[aria-label="Edit decenter and tilt"]')
-  ).toHaveText("Set");
+  ).toHaveText("bend");
 
   // Row 3: Default, N-BK7, decenter only
   await expect(
@@ -164,10 +166,10 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   await row3.hover();
   await expect(
     row3.locator('[aria-label="Edit decenter and tilt"]')
-  ).toHaveText("Set");
+  ).toHaveText("decenter");
   await expect(
     row3.locator('[aria-label="Edit aspherical parameters"]')
-  ).toHaveText("—");
+  ).toHaveText("None");
 
   // Row 4: Default, R=-556.536, air, reverse decenter
   await expect(
@@ -185,7 +187,7 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   await row4.hover();
   await expect(
     row4.locator('[aria-label="Edit decenter and tilt"]')
-  ).toHaveText("Set");
+  ).toHaveText("reverse");
 
   // Row 7: Default, R=-514.2, N-BK7, decenter
   await expect(
@@ -208,18 +210,18 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   await row7.hover();
   await expect(
     row7.locator('[aria-label="Edit decenter and tilt"]')
-  ).toHaveText("Set");
+  ).toHaveText("decenter");
 
   // Row 10: Image — decenter set
   const row10 = page.locator(`${prescGrid} .ag-row[row-index="10"]`);
   await row10.hover();
   await expect(
     row10.locator('[aria-label="Edit decenter and tilt"]')
-  ).toHaveText("Set");
+  ).toHaveText("decenter");
 
   // 7. Verify Aspherical modal for row 1 (Stop)
   await row1.hover();
-  await row1.locator('[aria-label="Edit aspherical parameters"]').click();
+  await row1.locator(`.ag-cell[col-id="${colIdAspherical}"]`).click();
   const asphModal = page.locator('[role="dialog"][aria-labelledby="aspherical-modal-title"]');
   await asphModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(asphModal.getByLabel("Conic constant")).toHaveValue("-1");
@@ -229,7 +231,7 @@ test("import lens-config.json and verify System Specs and Prescription", async (
 
   // 8. Verify Decenter modal for row 1 (Stop — bend)
   await row1.hover();
-  await row1.locator('[aria-label="Edit decenter and tilt"]').click();
+  await row1.locator(`.ag-cell[col-id="${colIdDecenter}"]`).click();
   const decModal = page.locator('[role="dialog"][aria-labelledby="decenter-modal-title"]');
   await decModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(

@@ -6,6 +6,14 @@ export {
   MediumCell,
 } from "@/shared/lib/lens-prescription-grid/LensPrescriptionGridCells";
 export {
+  ASPHERICAL_TYPE_LABELS,
+  ASPHERICAL_TYPE_OPTIONS,
+  EMPTY_LENS_PRESCRIPTION_CELL_LABEL,
+  formatAsphericalLabel,
+  formatDecenterLabel,
+  formatDiffractionGratingLabel,
+} from "@/shared/lib/lens-prescription-grid/displayLabels";
+export {
   createAsphericalColumn,
   createDecenterColumn,
   createDiffractionGratingColumn,

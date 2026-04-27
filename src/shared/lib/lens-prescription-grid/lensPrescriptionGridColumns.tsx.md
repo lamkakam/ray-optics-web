@@ -22,3 +22,5 @@ Shared column and AG Grid configuration for lens prescription grids.
 Builders accept `getGridRow(data)` so feature grids can adapt their own row model to `GridRow` without coupling `shared/` to feature state. Modal and edit behavior is injected through optional callbacks. When edit callbacks are omitted, numeric and select columns remain read-only.
 
 `createLensPrescriptionCommonColumns` returns the common column order used by the Lens Editor. Optimization uses the individual builders so its local `Var.` columns can stay interleaved after Radius, Thickness, and Asph.
+
+The modal-backed `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` builders pass the row's actual optional config into the shared text action cells. Those cells display `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels while keeping the existing modal callbacks.

@@ -22,6 +22,15 @@ const testRows: GridRow[] = [
     medium: "BK7",
     manufacturer: "Schott",
     semiDiameter: 10,
+    decenter: {
+      coordinateSystemStrategy: "decenter",
+      alpha: 0,
+      beta: 0,
+      gamma: 0,
+      offsetX: 0,
+      offsetY: 1,
+    },
+    diffractionGrating: { lpmm: 600, order: 1 },
   },
   {
     id: "s2",
@@ -147,6 +156,24 @@ describe("LensPrescriptionGrid", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     const buttons = screen.getAllByRole("button", { name: "Edit aspherical parameters" });
     expect(buttons).toHaveLength(2); // two surface rows
+  });
+
+  it("renders text labels for aspherical, decenter, and diffraction grating cells", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const s1Cells = rows[1].querySelectorAll("td");
+    const s2Cells = rows[2].querySelectorAll("td");
+
+    expect(Array.from([s1Cells[6], s1Cells[7], s1Cells[8]], (cell) => cell.textContent)).toEqual([
+      "None",
+      "decenter",
+      "600 lp/mm",
+    ]);
+    expect(Array.from([s2Cells[6], s2Cells[7], s2Cells[8]], (cell) => cell.textContent)).toEqual([
+      "Conic",
+      "None",
+      "None",
+    ]);
   });
 
   it("calls onOpenAsphericalModal when aspherical button is clicked", async () => {

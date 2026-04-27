@@ -229,7 +229,7 @@ export function createAsphericalColumn<TData>({
       return (
         <LensPrescriptionActionWrapper onAction={() => onOpenAsphericalModal(row)}>
           <AsphericalCell
-            isAspherical={row.aspherical !== undefined}
+            aspherical={row.aspherical}
             onOpenModal={() => onOpenAsphericalModal(row)}
             tooltipText={tooltipText}
           />
@@ -259,7 +259,7 @@ export function createDecenterColumn<TData>({
       return (
         <LensPrescriptionActionWrapper onAction={() => onOpenDecenterModal(row)}>
           <DecenterCell
-            isDecenterSet={row.decenter !== undefined}
+            decenter={row.decenter}
             onOpenModal={() => onOpenDecenterModal(row)}
             tooltipText={tooltipText}
           />
@@ -289,7 +289,7 @@ export function createDiffractionGratingColumn<TData>({
       return (
         <LensPrescriptionActionWrapper onAction={() => onOpenDiffractionGratingModal(row)}>
           <DiffractionGratingCell
-            isDiffractionGratingSet={row.diffractionGrating !== undefined}
+            diffractionGrating={row.diffractionGrating}
             onOpenModal={() => onOpenDiffractionGratingModal(row)}
             tooltipText={tooltipText}
           />

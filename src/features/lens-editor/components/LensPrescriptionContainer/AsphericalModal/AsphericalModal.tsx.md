@@ -25,7 +25,7 @@ interface AsphericalModalProps {
 }
 ```
 
-The modal keeps these UI-facing labels, while the container maps them to the domain `Surface["aspherical"]` union:
+The modal uses `ASPHERICAL_TYPE_OPTIONS` from `shared/lib/lens-prescription-grid/displayLabels.ts` for these UI-facing labels, while the container maps them to the domain `Surface["aspherical"]` union:
 - `"Conic"` -> `{ kind: "Conic", conicConstant }`
 - `"EvenAspherical"` -> `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
 - `"RadialPolynomial"` -> `{ kind: "RadialPolynomial", conicConstant, polynomialCoefficients }`

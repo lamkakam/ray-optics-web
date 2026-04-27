@@ -40,6 +40,7 @@ interface LensPrescriptionGridProps {
 - The leading row action column remains editor-specific.
 - Common prescription columns are composed from `shared/lib/lens-prescription-grid` so Lens Editor and Optimization use the same value getters, numeric parsing, cell renderers, and AG Grid defaults.
 - Shared `MediumCell`, `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` render inside `LensPrescriptionActionWrapper`, which opens the modal when the non-interactive cell body is clicked.
+- `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` display text labels (`None`, asphere type labels, decenter strategy values, and `${lpmm} lp/mm`) instead of set/unset status text.
 - The Medium column renders for the Object row and all surface rows; the Image row remains blank in that column.
 - Only surface-kind rows get a delete button; object/image rows only get an add button or neither.
 - The diffraction grating column renders only for `surface` rows.
