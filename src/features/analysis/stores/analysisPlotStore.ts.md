@@ -40,5 +40,5 @@ Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OP
 ## Dependencies
 
 - `create`, `StateCreator` from `zustand`.
-- `PlotType` (type-only) from `@/features/analysis/components/AnalysisPlotView`.
+- `PlotType` (type-only) from `@/features/analysis/components`.
 - `RayFanData`, `OpdFanData`, `SpotDiagramData`, `GeoPsfData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.

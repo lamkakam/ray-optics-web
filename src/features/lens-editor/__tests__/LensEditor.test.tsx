@@ -75,7 +75,7 @@ jest.mock("@/features/lens-editor/components/BottomDrawerContainer", () => ({
   ),
 }));
 
-jest.mock("@/features/analysis/components/AnalysisPlotContainer", () => ({
+jest.mock("@/features/analysis/components", () => ({
   AnalysisPlotContainer: () => (
     <div data-testid="analysis-plot-container-mock">Analysis Plot</div>
   ),

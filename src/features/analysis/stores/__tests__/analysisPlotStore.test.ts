@@ -3,7 +3,7 @@ import {
   createAnalysisPlotSlice,
   type AnalysisPlotState,
 } from "@/features/analysis/stores/analysisPlotStore";
-import type { PlotType } from "@/features/analysis/components/AnalysisPlotView";
+import type { PlotType } from "@/features/analysis/components";
 
 function makeStore() {
   return createStore<AnalysisPlotState>(createAnalysisPlotSlice);

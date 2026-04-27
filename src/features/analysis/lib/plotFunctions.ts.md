@@ -54,6 +54,7 @@ Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx
 ## Dependencies
 
 - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
+- `PlotType` (type-only) from `@/features/analysis/components`
 - `RayFanData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
 - `SeidelSurfaceBySurfaceData` (type-only) from `@/features/lens-editor/types/seidelData`
 - `PyodideWorkerAPI` (type-only) from `@/shared/hooks/usePyodide`

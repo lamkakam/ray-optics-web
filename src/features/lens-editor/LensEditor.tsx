@@ -15,7 +15,7 @@ import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorS
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { useLensLayoutImageStore } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
-import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPlotContainer";
+import { AnalysisPlotContainer } from "@/features/analysis/components";
 import {
   BottomDrawerContainer,
   ConfirmOverwriteModal,
