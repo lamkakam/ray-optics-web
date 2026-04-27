@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GlassCatalogContext, type GlassCatalogContextValue } from "@/shared/components/providers/GlassCatalogProvider";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import { OptimizationInspectionModals } from "@/features/optimization/components/LensPrescriptionGrid/OptimizationInspectionModals/OptimizationInspectionModals";
+import { OptimizationInspectionModals } from "../OptimizationInspectionModals";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (

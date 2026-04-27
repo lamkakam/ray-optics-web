@@ -6,27 +6,29 @@ import { useStore } from "zustand";
 import { BottomDrawer, type TabItem } from "@/shared/components/layout/BottomDrawer";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
-import { useOptimizationStore } from "@/features/optimization/providers/OptimizationStoreProvider";
-import { OptimizationActionBar } from "@/features/optimization/components/OptimizationActionBar";
-import { OptimizationAlgorithmTab } from "@/features/optimization/components/OptimizationAlgorithmTab";
-import { OptimizationApplyConfirmModal } from "@/features/optimization/components/OptimizationApplyConfirmModal";
-import { OptimizationEvaluationPanel } from "@/features/optimization/components/OptimizationEvaluationPanel";
-import { OptimizationInspectionModals } from "@/features/optimization/components/LensPrescriptionGrid/OptimizationInspectionModals";
-import { OptimizationLensPrescriptionGrid } from "@/features/optimization/components/LensPrescriptionGrid";
-import { OptimizationOperandsTab } from "@/features/optimization/components/OptimizationOperandsTab";
-import { OptimizationProgressModal } from "@/features/optimization/components/OptimizationProgressModal";
-import { OptimizationWarningModal } from "@/features/optimization/components/OptimizationWarningModal";
-import { OptimizationWeightsGrid } from "@/features/optimization/components/OptimizationWeightsGrid";
-import { AsphereVarModal } from "@/features/optimization/components/AsphereVarModal";
-import { RadiusModeModal } from "@/features/optimization/components/RadiusModeModal";
-import { ThicknessModeModal } from "@/features/optimization/components/ThicknessModeModal";
-import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
-import { hasNonZeroOptimizationContribution } from "@/features/optimization/stores/optimizationStore";
-import { createEvaluationRow, type RadiusRow, type WeightRow } from "@/features/optimization/lib/optimizationViewModels";
+import { useOptimizationStore } from "./providers/OptimizationStoreProvider";
+import {
+  OptimizationActionBar,
+  OptimizationAlgorithmTab,
+  OptimizationApplyConfirmModal,
+  OptimizationEvaluationPanel,
+  OptimizationInspectionModals,
+  OptimizationLensPrescriptionGrid,
+  OptimizationOperandsTab,
+  OptimizationProgressModal,
+  OptimizationWarningModal,
+  OptimizationWeightsGrid,
+  AsphereVarModal,
+  RadiusModeModal,
+  ThicknessModeModal,
+} from "./components";
+import { getOptimizationAlgorithmCapabilities } from "./lib/methodCapabilities";
+import { hasNonZeroOptimizationContribution } from "./stores/optimizationStore";
+import { createEvaluationRow, type RadiusRow, type WeightRow } from "./lib/optimizationViewModels";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { OptimizationProgressEntry, OptimizationReport } from "@/features/optimization/types/optimizationWorkerTypes";
+import type { OptimizationProgressEntry, OptimizationReport } from "./types/optimizationWorkerTypes";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
