@@ -9,7 +9,7 @@ import { OptimizationWeightsGrid } from "@/features/optimization/components/Opti
 import {
   OptimizationLensPrescriptionGrid,
   type OptimizationLensPrescriptionGridProps,
-} from "@/features/optimization/components/LensPrescriptionGrid";
+} from "@/features/optimization/components/OptimizationLensPrescriptionGrid";
 import { OptimizationOperandsTab } from "@/features/optimization/components/OptimizationOperandsTab";
 
 type OptimizerPatch = Parameters<ComponentProps<typeof OptimizationAlgorithmTab>["onChangeOptimizer"]>[0];

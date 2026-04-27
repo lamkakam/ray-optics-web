@@ -3,8 +3,8 @@
 import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
-import { ModeSelectField } from "@/features/optimization/components/LensPrescriptionGrid/ModeSelectField";
-import { PickupModeFields } from "@/features/optimization/components/LensPrescriptionGrid/PickupModeFields";
+import { ModeSelectField } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/ModeSelectField";
+import { PickupModeFields } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/PickupModeFields";
 import { getRadiusLabel, getThicknessValue } from "@/features/optimization/lib/optimizationViewModels";
 import {
   createPickupDraft,

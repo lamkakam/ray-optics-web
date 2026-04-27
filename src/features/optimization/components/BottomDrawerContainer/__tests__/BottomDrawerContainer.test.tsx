@@ -60,7 +60,7 @@ jest.mock("@/features/optimization/components/OptimizationWeightsGrid", () => ({
   ),
 }));
 
-jest.mock("@/features/optimization/components/LensPrescriptionGrid", () => ({
+jest.mock("@/features/optimization/components/OptimizationLensPrescriptionGrid", () => ({
   OptimizationLensPrescriptionGrid: ({
     onOpenRadiusModal,
     onOpenThicknessModal,

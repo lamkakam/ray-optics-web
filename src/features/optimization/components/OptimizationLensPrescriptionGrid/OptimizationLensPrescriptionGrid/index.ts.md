@@ -1,4 +1,4 @@
-# `features/optimization/components/LensPrescriptionGrid/OptimizationLensPrescriptionGrid/index.ts`
+# `features/optimization/components/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid/index.ts`
 
 Component-level barrel for the optimization lens prescription grid.
 

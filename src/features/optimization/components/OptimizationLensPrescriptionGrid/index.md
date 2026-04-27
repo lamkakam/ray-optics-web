@@ -1,4 +1,4 @@
-# `features/optimization/components/LensPrescriptionGrid/`
+# `features/optimization/components/OptimizationLensPrescriptionGrid/`
 
 Components for the optimization lens prescription grid and its modal-backed variable/pickup editors.
 
