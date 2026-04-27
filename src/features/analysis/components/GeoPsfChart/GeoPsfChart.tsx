@@ -1,5 +1,5 @@
 import { buildGeoPsfOption } from "./geoPsfChartOption";
-import { createAnalysisChartComponent } from "@/features/analysis/components/CreateAnalysisChartComponent";
+import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
 interface GeoPsfChartProps {

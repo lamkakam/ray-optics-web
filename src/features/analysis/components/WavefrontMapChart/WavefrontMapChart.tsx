@@ -1,5 +1,5 @@
 import { buildWavefrontMapOption } from "./wavefrontMapChartOption";
-import { createAnalysisChartComponent } from "@/features/analysis/components/CreateAnalysisChartComponent";
+import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import type { WavefrontMapData } from "@/features/analysis/types/plotData";
 
 interface WavefrontMapChartProps {

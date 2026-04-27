@@ -1,4 +1,4 @@
-import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/AnalysisChartPalette";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { buildSpotDiagramOption } from "@/features/analysis/components/SpotDiagramChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { SpotDiagramData } from "@/features/analysis/types/plotData";

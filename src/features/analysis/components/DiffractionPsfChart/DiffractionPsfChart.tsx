@@ -1,6 +1,6 @@
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 import { buildDiffractionPsfOption } from "./diffractionPsfChartOption";
-import { createAnalysisChartComponent } from "@/features/analysis/components/CreateAnalysisChartComponent";
+import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 
 interface DiffractionPsfChartProps {
   readonly diffractionPsfData: DiffractionPsfData;

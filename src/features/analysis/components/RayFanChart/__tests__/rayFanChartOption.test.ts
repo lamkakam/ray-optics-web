@@ -1,4 +1,4 @@
-import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/AnalysisChartPalette";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { buildRayFanChartOption } from "@/features/analysis/components/RayFanChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { RayFanData } from "@/features/analysis/types/plotData";

@@ -4,12 +4,10 @@ Components for optical analysis plots and aberration data.
 
 `index.ts` re-exports the public analysis component surface for preferred imports from `@/features/analysis/components` or from each PascalCase module directory.
 
-## Shared Modules
+## Shared Components
 
 - [AnalysisPlotContainer.tsx](./AnalysisPlotContainer/AnalysisPlotContainer.tsx.md) — Manages analysis plot selection and data fetching via Pyodide
 - [AnalysisPlotView.tsx](./AnalysisPlotView/AnalysisPlotView.tsx.md) — Renders analysis plot controls and switches between typed chart renderers
-- [CreateAnalysisChartComponent/](./CreateAnalysisChartComponent/createAnalysisChartComponent.tsx.md) — Higher-order factory that returns analysis chart function components with shared ECharts lifecycle handling
-- [AnalysisChartPalette/](./AnalysisChartPalette/analysisChartPalette.ts.md) — Shared 11-color palette used by analysis heatmap-style ECharts views
 
 ## Chart Directories
 

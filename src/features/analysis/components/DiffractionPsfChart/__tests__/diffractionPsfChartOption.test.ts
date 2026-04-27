@@ -2,7 +2,7 @@ import {
   buildDiffractionPsfOption,
   formatDiffractionPsfIntensity,
 } from "@/features/analysis/components/DiffractionPsfChart";
-import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/AnalysisChartPalette";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 

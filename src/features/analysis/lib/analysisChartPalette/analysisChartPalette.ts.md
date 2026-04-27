@@ -1,4 +1,4 @@
-# `features/analysis/components/AnalysisChartPalette/analysisChartPalette.ts`
+# `features/analysis/lib/analysisChartPalette/analysisChartPalette.ts`
 
 ## Purpose
 

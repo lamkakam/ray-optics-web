@@ -2,7 +2,7 @@ import * as echarts from "echarts/core";
 import { ScatterChart } from "echarts/charts";
 import { GridComponent, TooltipComponent, VisualMapComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
-import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/AnalysisChartPalette";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 

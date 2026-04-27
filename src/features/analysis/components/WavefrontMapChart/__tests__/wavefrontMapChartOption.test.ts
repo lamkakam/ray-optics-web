@@ -1,4 +1,4 @@
-import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/AnalysisChartPalette";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { buildWavefrontMapOption } from "@/features/analysis/components/WavefrontMapChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { WavefrontMapData } from "@/features/analysis/types/plotData";

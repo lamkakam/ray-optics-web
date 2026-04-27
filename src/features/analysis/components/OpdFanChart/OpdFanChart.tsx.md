@@ -26,4 +26,4 @@ interface OpdFanChartProps {
 
 - `buildOpdFanChartOption` from `./opdFanChartOption`
 - `OpdFanData` from `@/features/analysis/types/plotData`
-- `createAnalysisChartComponent(...)` from `../CreateAnalysisChartComponent`
+- `createAnalysisChartComponent(...)` from `../../lib/createAnalysisChartComponent`

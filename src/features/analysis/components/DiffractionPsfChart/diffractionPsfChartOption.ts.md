@@ -37,5 +37,5 @@ function buildDiffractionPsfOption(
 - Shows explicit `visualMap` endpoint labels for the highest and lowest displayed intensity values without a unit suffix.
 - Applies the caller-provided `textColor` to axis names, axis tick labels, and `visualMap` text so chart chrome follows the active light/dark theme.
 - Caps `visualMap.itemHeight` based on measured chart height so short panels keep the legend inside bounds.
-- Uses the shared 11-color analysis heatmap palette from `../AnalysisChartPalette`.
+- Uses the shared 11-color analysis heatmap palette from `../../lib/analysisChartPalette`.
 - Rounds symmetric axis extents with the shared analysis plot-value formatter before assigning them to ECharts.

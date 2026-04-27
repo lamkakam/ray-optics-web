@@ -1,4 +1,4 @@
-import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/AnalysisChartPalette";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 
 const EXPECTED_VIRIDIS_PALETTE = [
   "#5b2a86",

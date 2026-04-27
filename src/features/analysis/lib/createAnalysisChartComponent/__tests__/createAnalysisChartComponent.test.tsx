@@ -1,5 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
-import { createAnalysisChartComponent } from "@/features/analysis/components/CreateAnalysisChartComponent";
+import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 

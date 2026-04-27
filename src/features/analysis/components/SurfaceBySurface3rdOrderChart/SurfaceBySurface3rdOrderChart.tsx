@@ -1,5 +1,5 @@
 import { buildSurfaceBySurface3rdOrderChartOption } from "./surfaceBySurface3rdOrderChartOption";
-import { createAnalysisChartComponent } from "@/features/analysis/components/CreateAnalysisChartComponent";
+import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 interface SurfaceBySurface3rdOrderChartProps {

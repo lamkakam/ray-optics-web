@@ -1,5 +1,5 @@
 import { buildOpdFanChartOption } from "./opdFanChartOption";
-import { createAnalysisChartComponent } from "@/features/analysis/components/CreateAnalysisChartComponent";
+import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import type { OpdFanData } from "@/features/analysis/types/plotData";
 
 interface OpdFanChartProps {

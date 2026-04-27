@@ -1,5 +1,5 @@
 import { buildSpotDiagramOption } from "./spotDiagramChartOption";
-import { createAnalysisChartComponent } from "@/features/analysis/components/CreateAnalysisChartComponent";
+import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import type { SpotDiagramData } from "@/features/analysis/types/plotData";
 
 interface SpotDiagramChartProps {

@@ -26,4 +26,4 @@ interface DiffractionPsfChartProps {
 
 - `DiffractionPsfData` from `features/analysis/types/plotData`
 - `buildDiffractionPsfOption(...)` from `diffractionPsfChartOption.ts`
-- `createAnalysisChartComponent(...)` from `../CreateAnalysisChartComponent`
+- `createAnalysisChartComponent(...)` from `../../lib/createAnalysisChartComponent`

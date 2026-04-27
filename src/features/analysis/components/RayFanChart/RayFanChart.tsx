@@ -1,5 +1,5 @@
 import { buildRayFanChartOption } from "./rayFanChartOption";
-import { createAnalysisChartComponent } from "@/features/analysis/components/CreateAnalysisChartComponent";
+import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import type { RayFanData } from "@/features/analysis/types/plotData";
 
 interface RayFanChartProps {

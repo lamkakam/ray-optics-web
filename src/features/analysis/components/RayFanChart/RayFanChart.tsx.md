@@ -26,4 +26,4 @@ interface RayFanChartProps {
 
 - `buildRayFanChartOption` from `./rayFanChartOption`
 - `RayFanData` from `@/features/analysis/types/plotData`
-- `createAnalysisChartComponent(...)` from `../CreateAnalysisChartComponent`
+- `createAnalysisChartComponent(...)` from `../../lib/createAnalysisChartComponent`

@@ -1,4 +1,4 @@
-# `features/analysis/components/CreateAnalysisChartComponent/createAnalysisChartComponent.tsx`
+# `features/analysis/lib/createAnalysisChartComponent/createAnalysisChartComponent.tsx`
 
 ## Purpose
 

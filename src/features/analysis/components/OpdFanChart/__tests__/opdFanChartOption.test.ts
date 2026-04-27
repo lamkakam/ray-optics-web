@@ -1,4 +1,4 @@
-import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/components/AnalysisChartPalette";
+import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import { buildOpdFanChartOption } from "@/features/analysis/components/OpdFanChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { OpdFanData } from "@/features/analysis/types/plotData";
