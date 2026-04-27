@@ -1,0 +1,1 @@
+export { DiffractionGratingModal } from "./DiffractionGratingModal";

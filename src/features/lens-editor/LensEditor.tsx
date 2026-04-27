@@ -14,17 +14,19 @@ import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/Spec
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisDataStoreProvider";
-import { useLensLayoutImageStore } from "../analysis/providers/LensLayoutImageStoreProvider";
-import { LensLayoutPanel } from "@/features/lens-editor/components/LensLayoutPanel";
+import { useLensLayoutImageStore } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPlotContainer";
-import { BottomDrawerContainer } from "@/features/lens-editor/components/BottomDrawerContainer";
-import { FirstOrderChips } from "@/features/lens-editor/components/FirstOrderChips";
+import {
+  BottomDrawerContainer,
+  ConfirmOverwriteModal,
+  FirstOrderChips,
+  LensLayoutPanel,
+  SeidelAberrModal,
+  ZernikeTermsModal,
+} from "@/features/lens-editor/components";
 import { Select } from "@/shared/components/primitives/Select";
 import { Button } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
-import { ConfirmOverwriteModal } from "@/features/lens-editor/components/ConfirmOverwriteModal";
-import { SeidelAberrModal } from "@/features/lens-editor/components/SeidelAberrModal";
-import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 
 export interface LensEditorProps {
