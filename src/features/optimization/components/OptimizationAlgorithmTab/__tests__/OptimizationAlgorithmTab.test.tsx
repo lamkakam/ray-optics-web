@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { OptimizationAlgorithmTab } from "@/features/optimization/components/OptimizationAlgorithmTab";
+import { OptimizationAlgorithmTab } from "@/features/optimization/components/OptimizationAlgorithmTab/OptimizationAlgorithmTab";
 import { formatOptimizerUiDefaultValue, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 
 describe("OptimizationAlgorithmTab", () => {

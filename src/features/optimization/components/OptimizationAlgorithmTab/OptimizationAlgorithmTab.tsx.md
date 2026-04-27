@@ -1,4 +1,4 @@
-# `features/optimization/components/OptimizationAlgorithmTab.tsx`
+# `features/optimization/components/OptimizationAlgorithmTab/OptimizationAlgorithmTab.tsx`
 
 Renders the optimizer configuration form for the Algorithm tab while leaving state ownership in the parent page.
 

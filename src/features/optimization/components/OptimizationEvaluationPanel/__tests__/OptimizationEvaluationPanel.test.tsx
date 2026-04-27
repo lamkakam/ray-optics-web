@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { OptimizationEvaluationPanel } from "@/features/optimization/components/OptimizationEvaluationPanel";
+import { OptimizationEvaluationPanel } from "@/features/optimization/components/OptimizationEvaluationPanel/OptimizationEvaluationPanel";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 describe("OptimizationEvaluationPanel", () => {

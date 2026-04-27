@@ -1,4 +1,4 @@
-# `features/optimization/components/OptimizationWeightsGrid.tsx`
+# `features/optimization/components/OptimizationWeightsGrid/OptimizationWeightsGrid.tsx`
 
 Shared AG Grid wrapper for field and wavelength weight rows with a single numeric update callback.
 

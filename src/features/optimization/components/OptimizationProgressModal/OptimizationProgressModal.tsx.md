@@ -1,4 +1,4 @@
-# `features/optimization/components/OptimizationProgressModal.tsx`
+# `features/optimization/components/OptimizationProgressModal/OptimizationProgressModal.tsx`
 
 Blocking optimization-status modal for the Optimization page. It renders an Apache ECharts line chart of optimization progress with iteration on the x-axis and raw `total merit function value` on a logarithmic y-axis.
 

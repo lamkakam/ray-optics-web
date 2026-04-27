@@ -1,4 +1,4 @@
-# `features/optimization/components/OptimizationEvaluationPanel.tsx`
+# `features/optimization/components/OptimizationEvaluationPanel/OptimizationEvaluationPanel.tsx`
 
 ## Purpose
 
