@@ -527,6 +527,24 @@ describe("_init", () => {
     const allCode = scripts.join("\n");
     expect(allCode).toContain("from rayoptics.environment import *");
   });
+
+  it("emits package-install milestones around the Python setup calls", async () => {
+    const progress: Array<{ value: number; status: string }> = [];
+
+    await _init(
+      async () => undefined,
+      testWheelUrl,
+      (entry) => {
+        progress.push(entry);
+      },
+    );
+
+    expect(progress).toEqual([
+      { value: 60, status: "Installing RayOptics packages" },
+      { value: 75, status: "Installing supporting packages" },
+      { value: 85, status: "Loading local wheel and imports" },
+    ]);
+  });
 });
 
 describe("init", () => {
@@ -563,5 +581,24 @@ describe("init", () => {
 
     expect(loadPackage).toHaveBeenCalled();
     expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.2.17-py3-none-any.whl", deps=False)');
+  });
+
+  it("emits ordered initialization milestones", async () => {
+    const progress: Array<{ value: number; status: string }> = [];
+
+    await init((entry) => {
+      progress.push(entry);
+    });
+
+    expect(progress).toEqual([
+      { value: 0, status: "Starting worker" },
+      { value: 10, status: "Loading Pyodide script" },
+      { value: 25, status: "Starting Pyodide runtime" },
+      { value: 40, status: "Loading Pyodide packages" },
+      { value: 60, status: "Installing RayOptics packages" },
+      { value: 75, status: "Installing supporting packages" },
+      { value: 85, status: "Loading local wheel and imports" },
+      { value: 100, status: "Ready" },
+    ]);
   });
 });

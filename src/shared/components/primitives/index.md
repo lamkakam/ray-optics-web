@@ -17,6 +17,7 @@ Generic, single-responsibility UI primitives. These are the base building blocks
 - [Modal.tsx](./Modal/Modal.tsx.md) — Modal dialog backdrop and container
 - [NavLink.tsx](./NavLink/NavLink.tsx.md) — Navigation link with active state styling
 - [Paragraph.tsx](./Paragraph/Paragraph.tsx.md) — Styled text paragraph
+- [Progress.tsx](./Progress/Progress.tsx.md) — Determinate linear progress bar with optional status text
 - [RadioInput.tsx](./RadioInput/RadioInput.tsx.md) — Radio button for mutually exclusive selections
 - [Select.tsx](./Select/Select.tsx.md) — Dropdown select with native or custom options
 - [Switch.tsx](./Switch/Switch.tsx.md) — Controlled switch primitive with checked/unchecked content

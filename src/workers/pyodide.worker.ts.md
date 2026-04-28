@@ -11,7 +11,12 @@ Each exported function (except `init`) is **stateless**: it receives an `Optical
 ### Public API (Comlink)
 
 ```ts
-export async function init(): Promise<void>
+interface InitProgress {
+  readonly value: number;
+  readonly status: string;
+}
+
+export async function init(onProgress?: (progress: InitProgress) => void | Promise<void>): Promise<void>
 export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>
 export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>
 export async function plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>
@@ -45,7 +50,11 @@ export async function optimizeOpm(
 ### Injectable Variants (for testing)
 
 ```ts
-export async function _init(runPython: (code: string) => Promise<unknown>, wheelUrl: string): Promise<void>
+export async function _init(
+  runPython: (code: string) => Promise<unknown>,
+  wheelUrl: string,
+  onProgress?: (progress: InitProgress) => void | Promise<void>,
+): Promise<void>
 export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<Record<string, number>>
 export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, isDark: boolean): Promise<string>
 export async function _plotRayFan(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<string>
@@ -83,17 +92,19 @@ export function _resetPyodideForTesting(): void
 `init()` performs the following steps:
 
 1. No-ops if `pyodide` singleton is already set.
-2. Loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
-3. Calls `loadPyodide({ indexURL })` to create the Pyodide instance.
-4. Loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-5. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.2.17-py3-none-any.whl`.
-6. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl)`.
+2. Emits `0%` with `"Starting worker"`.
+3. Emits `10%` with `"Loading Pyodide script"` and loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
+4. Emits `25%` with `"Starting Pyodide runtime"` and calls `loadPyodide({ indexURL })` to create the Pyodide instance.
+5. Emits `40%` with `"Loading Pyodide packages"` and loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
+6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.2.17-py3-none-any.whl`.
+7. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl, onProgress)`.
+8. Emits `100%` with `"Ready"`.
 
 `_init(runPython, wheelUrl)` performs three `runPython` calls:
 
-1. Installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
-2. Installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
-3. Installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, and `water` glass objects, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, `rayoptics_web_utils.glass.glass`, and `rayoptics_web_utils.optimization`, including `evaluate_optimization_problem` and `optimize_opm`.
+1. Emits `60%` with `"Installing RayOptics packages"` and installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
+2. Emits `75%` with `"Installing supporting packages"` and installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
+3. Emits `85%` with `"Loading local wheel and imports"` and installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, and `water` glass objects, and imports all symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, `rayoptics_web_utils.glass.glass`, and `rayoptics_web_utils.optimization`, including `evaluate_optimization_problem` and `optimize_opm`.
 
 ## Public API
 
@@ -101,7 +112,7 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 
 | Function | Description |
 |---|---|
-| `init()` | Initializes Pyodide singleton. No-op if already initialized. |
+| `init(onProgress?)` | Initializes Pyodide singleton and optionally emits determinate startup milestones. No-op if already initialized, except it can emit `100%` ready to a supplied callback. |
 | `getFirstOrderData(model)` | Builds `opm` from model, returns optical data (EFL, f-number, etc.) as `Record<string, number>`. |
 | `plotLensLayout(model, isDark)` | Builds `opm` from model, derives `show_ray_fan_vs_wvls` from any `surface.diffractionGrating`, forwards `is_dark`, and returns a lens layout plot as a base64-encoded PNG string. |
 | `plotRayFan(model, fieldIndex)` | Builds `opm` from model, returns a transverse ray fan plot for the given field index (zero-indexed). |
@@ -133,7 +144,7 @@ Each public function has a corresponding `_*` variant that accepts `runPython` a
 
 Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)` to produce a combined Python script (model-build wrapped in `def _build_opm():` + computation using `_build_opm()`) and runs it in a single `runPython` call.
 
-- `_init(runPython, wheelUrl)` — full package installation sequence.
+- `_init(runPython, wheelUrl, onProgress?)` — full package installation sequence with package-install progress milestones.
 - `_getFirstOrderData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_first_order_data(${opm}))\`)`.
 - `_plotLensLayout(runPython, model, isDark)` — checks `model.surfaces` for any `diffractionGrating` and runs `buildScript(model, (opm) => \`plot_lens_layout(${opm}, show_ray_fan_vs_wvls=..., is_dark=...)\`)`.
 - `_plotRayFan(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`plot_ray_fan(${fieldIndex}, ${opm})\`)`.

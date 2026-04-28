@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Full-screen loading overlay with an animated spinner, a title, and a content area. Used while heavy async operations (Pyodide init, wheel download) are in progress.
+Full-screen loading overlay with an animated spinner, a title, and a neutral content area. Used while heavy async operations (Pyodide init, wheel download) are in progress.
 
 ## Props
 
@@ -24,6 +24,7 @@ interface LoadingOverlayProps {
 
 - Renders as `fixed inset-0` with `z-[200]`, covering the entire viewport above all other UI.
 - Spinner is an SVG `animate-spin` circle with `aria-hidden="true"`.
+- Renders `contents` inside a neutral `<div>`, not a paragraph, so structured content such as progress bars is valid markup.
 
 ## Usages
 

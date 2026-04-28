@@ -5,6 +5,7 @@ import { MathJaxContext } from "better-react-mathjax";
 import { usePyodide } from "@/shared/hooks/usePyodide";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
+import { Progress } from "@/shared/components/primitives/Progress";
 import { Layout } from "@/shared/components/layout/Layout";
 import { AppShellProvider } from "@/app/AppShellContext";
 import { GlassCatalogProvider } from "@/shared/components/providers/GlassCatalogProvider";
@@ -19,7 +20,7 @@ interface AppShellProps {
 }
 
 export default function AppShell({ children }: AppShellProps) {
-  const { proxy, isReady } = usePyodide();
+  const { proxy, isReady, initProgress } = usePyodide();
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [glassCatalogsResult, setGlassCatalogsResult] = useState<GlassCatalogsLoadResult | undefined>();
   const cachedGlassCatalogsResult = proxy === undefined ? undefined : peekGlassCatalogs(proxy);
@@ -91,6 +92,10 @@ export default function AppShell({ children }: AppShellProps) {
   const showLoadingOverlay =
     !isReady ||
     (proxy !== undefined && glassCatalogsLoading && glassCatalogsError === undefined);
+  const overlayProgress =
+    isReady && proxy !== undefined && glassCatalogsLoading
+      ? { value: 90, status: "Preloading glass catalogs" }
+      : initProgress;
 
   return (
     <MathJaxContext>
@@ -105,7 +110,14 @@ export default function AppShell({ children }: AppShellProps) {
         {showLoadingOverlay && (
           <LoadingOverlay
             title="Initializing Ray Optics"
-            contents="Loading Pyodide, installing packages, and preloading glass catalogs…"
+            contents={
+              <div className="flex w-72 max-w-[70vw] flex-col items-center gap-2">
+                <span className="text-center text-sm text-gray-700 dark:text-gray-300">
+                  {overlayProgress.status}
+                </span>
+                <Progress value={overlayProgress.value} ariaLabel="Initialization progress" />
+              </div>
+            }
           />
         )}
       </AppShellProvider>
