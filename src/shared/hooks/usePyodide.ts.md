@@ -7,8 +7,13 @@ Initialise the singleton Pyodide web worker and expose a typed Comlink proxy to 
 ## PyodideWorkerAPI Interface
 
 ```ts
+interface InitProgress {
+  readonly value: number;
+  readonly status: string;
+}
+
 interface PyodideWorkerAPI {
-  init(): Promise<void>;
+  init(onProgress?: (progress: InitProgress) => void | Promise<void>): Promise<void>;
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
   plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
   plotRayFan(opticalModel: OpticalModel, fieldIndex: number): Promise<string>;
@@ -47,6 +52,7 @@ interface PyodideWorkerAPI {
   proxy: PyodideWorkerAPI | undefined;  // undefined until isReady is true
   isReady: boolean;
   error: string | undefined;
+  initProgress: InitProgress;
 }
 ```
 
@@ -55,10 +61,12 @@ interface PyodideWorkerAPI {
 1. On first render the hook calls `initOnce()`, which:
    - Calls `createPyodideWorker()` once to create the underlying `Worker`.
    - Wraps the worker with `comlink.wrap<PyodideWorkerAPI>()` to produce `singletonProxy`.
-   - Calls `proxy.init()` once and stores the resulting promise in `singletonInitPromise`.
+   - Calls `proxy.init(comlink.proxy(...))` once and stores the resulting promise in `singletonInitPromise`.
+   - Fans worker progress callbacks out to all mounted hook instances.
 2. When the init promise resolves, `isReady` becomes `true` and `proxy` is returned.
 3. Subsequent hook instances (e.g. in sibling components) reuse `singletonProxy` and `singletonInitPromise` — `init()` is never called more than once.
 4. If `init()` rejects, `error` is set to the error message string and `proxy` remains `undefined`.
+5. `initProgress` starts as `{ value: 0, status: "Starting worker" }` and updates as the worker emits initialization milestones.
 
 ## Dependencies
 
@@ -85,6 +93,7 @@ interface PyodideWorkerAPI {
 - `plotLensLayout` requires the caller to provide `isDark`; the worker derives any diffraction-grating-dependent overlay from the `OpticalModel`.
 - `evaluateOptimizationProblem` and `optimizeOpm` share the same report shape, so optimization UIs can preview residuals before running the full solve.
 - `optimizeOpm` also accepts an optional streamed progress callback; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker.
+- `init` accepts an optional progress callback for determinate startup milestones; `usePyodide` owns the Comlink proxy wrapping for this callback.
 - `_resetSingleton()` is exported for test isolation only — NOT for production use.
 
 ## Usages

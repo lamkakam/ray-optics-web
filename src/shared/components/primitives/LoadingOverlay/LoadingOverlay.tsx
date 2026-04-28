@@ -48,7 +48,9 @@ export function LoadingOverlay({ title, contents }: LoadingOverlayProps) {
           />
         </svg>
         <Paragraph className="text-lg font-semibold tracking-wide">{title}</Paragraph>
-        <Paragraph>{contents}</Paragraph>
+        <div className="text-center text-sm text-gray-700 dark:text-gray-300">
+          {contents}
+        </div>
       </div>
     </div>
   );

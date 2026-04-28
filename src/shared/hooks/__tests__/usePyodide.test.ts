@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import type { InitProgress } from "@/shared/hooks/usePyodide";
 
 // Mock proxy methods
 const mockInit = jest.fn().mockResolvedValue(undefined);
@@ -20,6 +21,7 @@ jest.mock("@/workers/createPyodideWorker", () => ({
 }));
 
 jest.mock("comlink", () => ({
+  proxy: jest.fn((callback: (progress: InitProgress) => void) => callback),
   wrap: jest.fn(() => mockProxy),
 }));
 
@@ -36,6 +38,17 @@ describe("usePyodide", () => {
     expect(result.current.isReady).toBe(false);
     expect(result.current.error).toBeUndefined();
     await act(async () => {}); // flush setIsReady(true) microtask
+  });
+
+  it("exposes initial progress before ready", async () => {
+    const { result } = renderHook(() => usePyodide());
+
+    expect(result.current.initProgress).toEqual({
+      value: 0,
+      status: "Starting worker",
+    });
+
+    await act(async () => {});
   });
 
   it("calls init and sets isReady=true after mount", async () => {
@@ -76,5 +89,31 @@ describe("usePyodide", () => {
       expect(r1.current.isReady).toBe(true);
     });
     expect(mockInit).toHaveBeenCalledTimes(1);
+  });
+
+  it("forwards worker progress callback into hook state", async () => {
+    let onProgress: ((progress: InitProgress) => void) | undefined;
+    mockInit.mockImplementationOnce(async (callback?: (progress: InitProgress) => void) => {
+      onProgress = callback;
+    });
+
+    const { result } = renderHook(() => usePyodide());
+
+    await waitFor(() => {
+      expect(onProgress).toBeDefined();
+    });
+
+    act(() => {
+      onProgress?.({ value: 40, status: "Loading Pyodide packages" });
+    });
+
+    expect(result.current.initProgress).toEqual({
+      value: 40,
+      status: "Loading Pyodide packages",
+    });
+
+    await waitFor(() => {
+      expect(result.current.isReady).toBe(true);
+    });
   });
 });

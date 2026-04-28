@@ -11,6 +11,7 @@ import {
 import { type ZernikeData, type ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import { type RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
+import type { InitProgress } from "@/shared/hooks/usePyodide";
 
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
@@ -18,6 +19,16 @@ declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
 const CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full";
 
 let pyodide: any = null;
+
+type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
+
+async function emitInitProgress(
+  onProgress: InitProgressCallback | undefined,
+  value: number,
+  status: string,
+): Promise<void> {
+  await onProgress?.({ value, status });
+}
 
 /** For testing only — resets the singleton so init() can be re-tested. */
 export function _resetPyodideForTesting(): void {
@@ -30,14 +41,17 @@ export function _resetPyodideForTesting(): void {
 // export for testing
 export async function _init(
   runPython: (code: string) => Promise<unknown>,
-  wheelUrl: string
+  wheelUrl: string,
+  onProgress?: InitProgressCallback,
 ): Promise<void> {
+  await emitInitProgress(onProgress, 60, "Installing RayOptics packages");
   await runPython(`
 import micropip
 await micropip.install("rayoptics==0.9.8", deps=False)
 await micropip.install("opticalglass==1.1.1", deps=False)
 `);
 
+  await emitInitProgress(onProgress, 75, "Installing supporting packages");
   await runPython(`
 import micropip
 await micropip.install([
@@ -49,6 +63,7 @@ await micropip.install([
 ])
 `);
 
+  await emitInitProgress(onProgress, 85, "Loading local wheel and imports");
   await runPython(`
 import micropip
 await micropip.install("${wheelUrl}", deps=False)
@@ -82,12 +97,19 @@ from rayoptics_web_utils.optimization import evaluate_optimization_problem, opti
 `);
 }
 
-export async function init(): Promise<void> {
-  if (pyodide) return;
+export async function init(onProgress?: InitProgressCallback): Promise<void> {
+  if (pyodide) {
+    await emitInitProgress(onProgress, 100, "Ready");
+    return;
+  }
   try {
+    await emitInitProgress(onProgress, 0, "Starting worker");
+    await emitInitProgress(onProgress, 10, "Loading Pyodide script");
     importScripts(`${CDN}/pyodide.js`);
+    await emitInitProgress(onProgress, 25, "Starting Pyodide runtime");
     pyodide = await loadPyodide({ indexURL: `${CDN}/` });
 
+    await emitInitProgress(onProgress, 40, "Loading Pyodide packages");
     await pyodide.loadPackage([
       "micropip",
       "numpy",
@@ -105,7 +127,8 @@ export async function init(): Promise<void> {
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
     const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.2.17-py3-none-any.whl`;
 
-    await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl);
+    await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
+    await emitInitProgress(onProgress, 100, "Ready");
   } catch (err) {
     pyodide = null;
     console.error(err);

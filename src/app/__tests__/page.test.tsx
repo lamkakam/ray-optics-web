@@ -246,12 +246,17 @@ type MockUsePyodideResult = {
   proxy: PyodideWorkerAPI | undefined;
   isReady: boolean;
   error: string | undefined;
+  initProgress: {
+    value: number;
+    status: string;
+  };
 };
 
 const mockUsePyodide = jest.fn<MockUsePyodideResult, []>(() => ({
   proxy: mockProxy,
   isReady: true,
   error: undefined,
+  initProgress: { value: 100, status: "Ready" },
 }));
 
 jest.mock("@/shared/hooks/usePyodide", () => ({
@@ -332,6 +337,7 @@ describe("app shell routes", () => {
       proxy: mockProxy,
       isReady: true,
       error: undefined,
+      initProgress: { value: 100, status: "Ready" },
     });
   });
 
@@ -348,12 +354,25 @@ describe("app shell routes", () => {
       proxy: undefined,
       isReady: false,
       error: undefined,
+      initProgress: { value: 40, status: "Loading Pyodide packages" },
     });
 
     renderInAppShell(<HomePage />);
 
     expect(screen.getByText("Initializing Ray Optics")).toBeInTheDocument();
-    expect(screen.getByText("Loading Pyodide, installing packages, and preloading glass catalogs…")).toBeInTheDocument();
+    expect(screen.getByText("Loading Pyodide packages")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Initialization progress" })).toHaveAttribute("aria-valuenow", "40");
+    expect(screen.getByText("40%")).toBeInTheDocument();
+  });
+
+  it("shows the glass-catalog preload milestone while catalogs load", () => {
+    mockProxy.getAllGlassCatalogsData.mockImplementationOnce(() => new Promise(() => undefined));
+
+    renderInAppShell(<HomePage />);
+
+    expect(screen.getByText("Preloading glass catalogs")).toBeInTheDocument();
+    expect(screen.getByRole("progressbar", { name: "Initialization progress" })).toHaveAttribute("aria-valuenow", "90");
+    expect(screen.getByText("90%")).toBeInTheDocument();
   });
 
   it("registers a beforeunload handler from the shared shell", () => {

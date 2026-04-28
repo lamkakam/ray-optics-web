@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
+import { Progress } from "@/shared/components/primitives/Progress";
 
 describe("LoadingOverlay", () => {
   it("renders the title text", () => {
@@ -20,6 +21,18 @@ describe("LoadingOverlay", () => {
       />
     );
     expect(screen.getByTestId("node-content")).toBeInTheDocument();
+  });
+
+  it("supports structured contents such as Progress", () => {
+    render(
+      <LoadingOverlay
+        title="Title"
+        contents={<Progress value={25} ariaLabel="Initialization progress" />}
+      />
+    );
+
+    expect(screen.getByRole("progressbar", { name: "Initialization progress" })).toBeInTheDocument();
+    expect(screen.getByText("25%")).toBeInTheDocument();
   });
 
   it("outer container has fixed and inset-0 classes", () => {
