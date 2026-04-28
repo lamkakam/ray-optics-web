@@ -290,6 +290,30 @@ export const componentTokens = {
     },
   },
 
+  progress: {
+    color: {
+      trackBgColor: "bg-gray-200 dark:bg-gray-700",
+      indicatorBgColor: g.color.primaryColor,
+      statusTextColor: g.color.mutedText,
+    },
+    size: {
+      width: "w-full",
+      gap: "gap-1.5",
+      trackHeightSm: "h-1.5",
+      trackHeightMd: "h-2",
+      statusFontSizeSm: "text-xs",
+      statusFontSizeMd: "text-sm",
+    },
+    style: {
+      trackBorderRadius: "rounded-full",
+      indicatorBorderRadius: "rounded-full",
+      indicatorTransition: "transition-[width]",
+      transitionDuration: "duration-200",
+      transitionEase: "ease-out",
+      indicatorWillChange: "will-change-[width]",
+    },
+  },
+
   chip: {
     color: {
       borderColor: g.color.defaultBorder,

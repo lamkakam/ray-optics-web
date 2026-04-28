@@ -11,6 +11,7 @@ export * from "./LoadingOverlay";
 export * from "./Modal";
 export * from "./NavLink";
 export * from "./Paragraph";
+export * from "./Progress";
 export * from "./RadioInput";
 export * from "./Select";
 export * from "./Switch";
