@@ -8,6 +8,7 @@ import type { OpticalModel, AsphericalType } from "@/shared/lib/types/opticalMod
 import { buildExportScript } from "@/shared/lib/utils/pythonScript";
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
 import { Button } from "@/shared/components/primitives/Button";
+import { Switch } from "@/shared/components/primitives/Switch";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { Label } from "@/shared/components/primitives/Label";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
@@ -189,17 +190,17 @@ export function LensPrescriptionContainer({
       </div>
 
       <div className="mt-2 mb-2 flex items-center gap-2">
-        <Label htmlFor="auto-aperture-toggle">Semi-diameter</Label>
-        <Tooltip text={autoAperture ? "Click to toggle off Auto semi-diameter" : "Click to toggle on Auto semi-diameter"} noTouch>
-          <Button
+        <Label htmlFor="auto-aperture-toggle">Set auto semi-diameter:</Label>
+        <Tooltip text={autoAperture ? "Turn off auto semi-diameter" : "Turn on auto semi-diameter"} noTouch>
+          <Switch
             id="auto-aperture-toggle"
-            variant="secondary"
-            size={buttonSize}
-            aria-pressed={autoAperture}
-            onClick={() => store.getState().setAutoAperture(!autoAperture)}
-          >
-            {autoAperture ? "Auto" : "Manual"}
-          </Button>
+            checked={autoAperture}
+            onCheckedChange={(checked) => store.getState().setAutoAperture(checked)}
+            ariaLabel="Set auto semi-diameter"
+            checkedContent="Auto"
+            uncheckedContent="Manual"
+            size={screenSize === "screenSM" ? "sm" : "md"}
+          />
         </Tooltip>
       </div>
 
