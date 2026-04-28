@@ -636,11 +636,13 @@ function createThicknessModes(model: OpticalModel): RadiusMode[] {
 }
 
 function fingerprintFieldSpecs(model: OpticalModel): string {
-  return JSON.stringify(model.specs.field);
+  const { isWideAngle: _isWideAngle, ...fieldSpecsAffectingOptimizationSettings } = model.specs.field;
+  return JSON.stringify(fieldSpecsAffectingOptimizationSettings);
 }
 
 function fingerprintWavelengthSpecs(model: OpticalModel): string {
-  return JSON.stringify(model.specs.wavelengths);
+  const { referenceIndex: _referenceIndex, ...wavelengthSpecsAffectingOptimizationSettings } = model.specs.wavelengths;
+  return JSON.stringify(wavelengthSpecsAffectingOptimizationSettings);
 }
 
 function fingerprintPrescription(model: OpticalModel): string {

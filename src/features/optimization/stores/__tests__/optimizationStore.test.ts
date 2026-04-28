@@ -970,6 +970,32 @@ describe("optimizationStore", () => {
     expect(store.getState().radiusModes[0]).toMatchObject({ mode: "variable" });
   });
 
+  it("does not reset optimization settings when only editor wide-angle mode changes", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().setFieldWeight(0, 0.25);
+    store.getState().setFieldWeight(1, 0.5);
+    store.getState().setWavelengthWeight(0, 0.75);
+    store.getState().setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().addOperand();
+    store.getState().setOptimizerKind("differential_evolution");
+
+    store.getState().syncFromOpticalModel({
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: { ...baseModel.specs.field, isWideAngle: true },
+      },
+    });
+
+    expect(store.getState().optimizationModel?.specs.field.isWideAngle).toBe(true);
+    expect(store.getState().fieldWeights).toEqual([0.25, 0.5, 0]);
+    expect(store.getState().wavelengthWeights).toEqual([0.75, 2, 1]);
+    expect(store.getState().radiusModes[0]).toMatchObject({ mode: "variable", min: "40", max: "60" });
+    expect(store.getState().operands).toHaveLength(1);
+    expect(store.getState().optimizer.kind).toBe("differential_evolution");
+  });
+
   it("resets only wavelength weights when editor wavelength specs change", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
@@ -988,6 +1014,31 @@ describe("optimizationStore", () => {
     expect(store.getState().fieldWeights).toEqual([1, 0.5, 0]);
     expect(store.getState().wavelengthWeights).toEqual([3, 4]);
     expect(store.getState().radiusModes[0]).toMatchObject({ mode: "variable" });
+  });
+
+  it("does not reset optimization settings when only editor reference wavelength changes", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().setFieldWeight(1, 0.5);
+    store.getState().setWavelengthWeight(0, 0.75);
+    store.getState().setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().addOperand();
+    store.getState().setOptimizerKind("differential_evolution");
+
+    store.getState().syncFromOpticalModel({
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        wavelengths: { ...baseModel.specs.wavelengths, referenceIndex: 2 },
+      },
+    });
+
+    expect(store.getState().optimizationModel?.specs.wavelengths.referenceIndex).toBe(2);
+    expect(store.getState().fieldWeights).toEqual([1, 0.5, 0]);
+    expect(store.getState().wavelengthWeights).toEqual([0.75, 2, 1]);
+    expect(store.getState().radiusModes[0]).toMatchObject({ mode: "variable", min: "40", max: "60" });
+    expect(store.getState().operands).toHaveLength(1);
+    expect(store.getState().optimizer.kind).toBe("differential_evolution");
   });
 
   it("resets radius thickness and asphere modes on normal prescription sync", () => {
