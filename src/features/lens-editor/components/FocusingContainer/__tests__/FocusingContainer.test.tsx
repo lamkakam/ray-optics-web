@@ -224,6 +224,7 @@ describe("FocusingContainer", () => {
     if (lastSurface && lastSurface.kind === "surface") {
       expect(lastSurface.thickness).toBeCloseTo(41.7365, 4);
     }
+    expect(lensStore.getState().optimizationSyncPolicy).toBe("preserveOptimizationModes");
   });
 
   it("calls onError when proxy throws", async () => {

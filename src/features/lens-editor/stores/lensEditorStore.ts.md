@@ -7,6 +7,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 ## Exports
 
 - `LensEditorState` — interface describing all state fields and actions.
+- `LensEditorOptimizationSyncPolicy` — origin hint for prescription mutations that tells Optimization whether to reset or preserve prescription variable/pickup modes.
 - `createLensEditorSlice` — `StateCreator<LensEditorState>` for composition.
 
 ## State
@@ -14,6 +15,8 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 | Field | Type | Default |
 |---|---|---|
 | `rows` | `GridRow[]` | `[OBJECT_ROW, IMAGE_ROW]` |
+| `prescriptionRevision` | `number` | `0` |
+| `optimizationSyncPolicy` | `"resetOptimizationModes" \| "preserveOptimizationModes"` | `"resetOptimizationModes"` |
 | `selectedRowId` | `string \| undefined` | `undefined` |
 | `autoAperture` | `boolean` | `false` |
 | `activeBottomDrawerTabId` | `string` | `"specs"` |
@@ -27,8 +30,8 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 
 ## Actions
 
-- `setRows(rows)` — replaces the entire rows array (used when loading a model).
-- `updateRow(id, patch)` — merges `patch` into the row with the given id; `id` and `kind` are always preserved and cannot be overwritten by the patch.
+- `setRows(rows, options?)` — replaces the entire rows array (used when loading a model), increments `prescriptionRevision`, and records an optional Optimization sync policy.
+- `updateRow(id, patch, options?)` — merges `patch` into the row with the given id; `id` and `kind` are always preserved and cannot be overwritten by the patch. Successful updates increment `prescriptionRevision` and record an optional Optimization sync policy.
 - `addRowAfter(id)` — inserts a new blank surface row immediately after the row with the given id; no-op if the id is not found or the target row is the image row.
 - `deleteRow(id)` — removes the surface row with the given id; no-op for object/image rows. Clears `selectedRowId` if it matches the deleted row.
 - `setSelectedRowId(id)` — sets or clears the selected row.
@@ -47,6 +50,8 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 ## Key Conventions
 
 - Object and image rows (`kind === "object"` / `kind === "image"`) cannot be deleted or added after (image guard in `addRowAfter`).
+- Normal row replacements, row edits, row insertions, and row deletions use `optimizationSyncPolicy: "resetOptimizationModes"` so Optimization clears stale radius/thickness/asphere variable modes after ordinary editor prescription edits.
+- Optimization Apply and Focusing may pass `optimizationSyncPolicy: "preserveOptimizationModes"` because those prescription updates originate from Optimization-compatible workflows and should not clear Optimization prescription modes.
 - The default object row is `{ objectDistance: 0, medium: "air", manufacturer: "" }`.
 - New rows inserted by `addRowAfter` are seeded with `generateRowId()` and default surface values: flat (`curvatureRadius: 0`), zero thickness, `"air"` medium, `semiDiameter: 1`.
 - Modal `rowId` is reset to `""` on close.
