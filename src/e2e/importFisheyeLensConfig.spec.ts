@@ -47,9 +47,11 @@ test("import fisheye config, update system, and verify loaded prescription/specs
   await expect(updateBtn).toBeDisabled({ timeout: 5_000 });
   await expect(updateBtn).toBeEnabled({ timeout: 60_000 });
 
-  await expect(page.getByRole("button", { name: "Semi-diameter" })).toHaveText(
-    "Auto"
-  );
+  const autoSemiDiameterSwitch = page.getByRole("switch", {
+    name: "Set auto semi-diameter",
+  });
+  await expect(autoSemiDiameterSwitch).toBeChecked();
+  await expect(autoSemiDiameterSwitch).toHaveText("Auto");
 
   const prescGrid = '[aria-label="Lens prescription editor"]';
   const colIdSurface = await getColId(page, prescGrid, "Surface");

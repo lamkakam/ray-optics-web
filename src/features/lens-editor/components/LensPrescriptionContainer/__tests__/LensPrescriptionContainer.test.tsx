@@ -573,25 +573,28 @@ describe("LensPrescriptionContainer", () => {
   });
 
   // --- Auto-aperture toggle ---
-  it("renders toggle button with 'Manual' text and visible 'Semi-diameter' label initially", () => {
+  it("renders switch with 'Manual' text and visible 'Set auto semi-diameter:' label initially", () => {
     renderLPC();
-    expect(screen.getByText("Semi-diameter")).toBeInTheDocument();
-    const toggle = screen.getByRole("button", { name: "Semi-diameter" });
+    expect(screen.getByText("Set auto semi-diameter:")).toBeInTheDocument();
+    const toggle = screen.getByRole("switch", { name: "Set auto semi-diameter" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
     expect(toggle).toHaveTextContent("Manual");
   });
 
-  it("clicking toggle changes text to 'Auto'", async () => {
+  it("clicking switch changes text to 'Auto'", async () => {
     renderLPC();
-    const toggle = screen.getByRole("button", { name: "Semi-diameter" });
+    const toggle = screen.getByRole("switch", { name: "Set auto semi-diameter" });
     await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "true");
     expect(toggle).toHaveTextContent("Auto");
   });
 
-  it("clicking toggle twice reverts to 'Manual'", async () => {
+  it("clicking switch twice reverts to 'Manual'", async () => {
     renderLPC();
-    const toggle = screen.getByRole("button", { name: "Semi-diameter" });
+    const toggle = screen.getByRole("switch", { name: "Set auto semi-diameter" });
     await userEvent.click(toggle);
     await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-checked", "false");
     expect(toggle).toHaveTextContent("Manual");
   });
 

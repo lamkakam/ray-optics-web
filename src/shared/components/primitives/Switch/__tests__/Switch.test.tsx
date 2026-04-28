@@ -132,6 +132,38 @@ describe("Switch", () => {
     expect(screen.queryByText("On")).not.toBeInTheDocument();
   });
 
+  it("positions text content away from the thumb", () => {
+    const { rerender } = render(
+      <Switch
+        checked={false}
+        ariaLabel="Set auto semi-diameter"
+        onCheckedChange={jest.fn()}
+        checkedContent="Auto"
+        uncheckedContent="Manual"
+        size="sm"
+      />
+    );
+
+    const content = screen.getByTestId("switch-content");
+
+    expect(content).toHaveClass("left-6", "right-1");
+    expect(content).not.toHaveClass("inset-0");
+
+    rerender(
+      <Switch
+        checked
+        ariaLabel="Set auto semi-diameter"
+        onCheckedChange={jest.fn()}
+        checkedContent="Auto"
+        uncheckedContent="Manual"
+        size="sm"
+      />
+    );
+
+    expect(content).toHaveClass("left-1", "right-6");
+    expect(content).not.toHaveClass("inset-0");
+  });
+
   it("supports ReactNode state content", () => {
     render(
       <Switch

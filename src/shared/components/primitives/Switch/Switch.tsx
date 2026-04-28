@@ -37,6 +37,17 @@ const CONTENT_SIZE_CLASSES = {
   md: sz.contentFontSizeMd,
 } as const satisfies Record<SwitchSize, string>;
 
+const CONTENT_OFFSET_CLASSES = {
+  sm: {
+    checked: sz.contentOffsetCheckedSm,
+    unchecked: sz.contentOffsetUncheckedSm,
+  },
+  md: {
+    checked: sz.contentOffsetCheckedMd,
+    unchecked: sz.contentOffsetUncheckedMd,
+  },
+} as const satisfies Record<SwitchSize, Record<"checked" | "unchecked", string>>;
+
 export function Switch({
   checked,
   onCheckedChange,
@@ -87,8 +98,9 @@ export function Switch({
         data-testid="switch-content"
         aria-hidden="true"
         className={twMerge(clsx(
-          "pointer-events-none absolute inset-0 flex items-center justify-center font-medium leading-none",
+          "pointer-events-none absolute bottom-0 top-0 flex items-center justify-center font-medium leading-none",
           CONTENT_SIZE_CLASSES[size],
+          checked ? CONTENT_OFFSET_CLASSES[size].checked : CONTENT_OFFSET_CLASSES[size].unchecked,
           checked ? c.checkedContentColor : c.uncheckedContentColor,
           s.contentTransition,
           s.transitionDuration,

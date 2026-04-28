@@ -35,7 +35,7 @@ componentTokens
 - Dark mode variants are included inline: e.g. `"bg-gray-100 dark:bg-gray-800"`.
 - Components import via `import { componentTokens as cx } from "@/shared/tokens/styleTokens"` and destructure the relevant sub-object.
 - `button.color.toggleHoverBgColor`, `checkbox.color.hoverBgColor`, and `radio.color.hoverBgColor` all reference the same promoted global hover token.
-- `switch` tokens define checked/unchecked track colors, fixed `sm`/`md` dimensions, thumb translate offsets, transition classes, and `will-change-transform`.
+- `switch` tokens define checked/unchecked track colors, fixed `sm`/`md` dimensions, thumb translate offsets, content offsets, transition classes, and `will-change-transform`.
 - `input.style.opacity` and `input.style.cursor` reference the shared disabled-state tokens from `globalTokens.style`, matching `select` so both primitives use the same tokenized disabled behavior.
 - `switch.style.opacity` and `switch.style.cursor` also reference the shared disabled-state tokens from `globalTokens.style`.
 - `overlay` tokens have `z-[200]` — the highest z-index in the stack, above `Modal`'s `z-50`.

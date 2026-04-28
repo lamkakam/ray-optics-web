@@ -39,6 +39,7 @@ interface SwitchProps
 - Calls `onCheckedChange(!checked)` on click unless the consumer prevents the click event.
 - Relies on native button `disabled` behavior, so disabled switches do not fire click handlers.
 - Uses fixed tokenized dimensions for `sm` and `md`, so content changes do not resize the control.
+- Positions visible state content on the side opposite the thumb to prevent labels such as `Auto` and `Manual` from being covered by the thumb.
 - Applies tokenized track color, thumb translation, transition, `will-change-transform`, opacity, and disabled cursor classes.
 
 ## Usages
