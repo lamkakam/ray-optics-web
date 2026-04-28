@@ -13,7 +13,6 @@ export * from "./NavLink";
 export * from "./Paragraph";
 export * from "./RadioInput";
 export * from "./Select";
-export * from "./SetButton";
 export * from "./Switch";
 export * from "./Table";
 export * from "./Tabs";
