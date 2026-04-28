@@ -20,6 +20,7 @@ Generic, single-responsibility UI primitives. These are the base building blocks
 - [RadioInput.tsx](./RadioInput/RadioInput.tsx.md) — Radio button for mutually exclusive selections
 - [Select.tsx](./Select/Select.tsx.md) — Dropdown select with native or custom options
 - [SetButton.tsx](./SetButton/SetButton.tsx.md) — Button that sets a store value on click
+- [Switch.tsx](./Switch/Switch.tsx.md) — Controlled switch primitive with checked/unchecked content
 - [Table.tsx](./Table/Table.tsx.md) — HTML table with styled rows and cells
 - [Tabs.tsx](./Tabs/Tabs.tsx.md) — Tab switcher for section navigation
 - [Tooltip.tsx](./Tooltip/Tooltip.tsx.md) — Floating tooltip on hover
