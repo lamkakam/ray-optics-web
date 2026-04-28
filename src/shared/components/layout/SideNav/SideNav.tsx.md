@@ -1,4 +1,4 @@
-# SideNav.tsx
+# `shared/components/layout/SideNav/SideNav.tsx`
 
 ## Purpose
 Collapsible side navigation panel toggled by the hamburger button in the header. Uses Next.js App Router links for route navigation and highlights the active route from the current layout segment.

@@ -1,4 +1,4 @@
-# `shared/components/providers/ThemeProvider.tsx`
+# `shared/components/providers/ThemeProvider/ThemeProvider.tsx`
 
 ## Purpose
 

@@ -1,4 +1,4 @@
-# `shared/components/providers/ServiceWorkerRegistrar.tsx`
+# `shared/components/providers/ServiceWorkerRegistrar/ServiceWorkerRegistrar.tsx`
 
 ## Purpose
 

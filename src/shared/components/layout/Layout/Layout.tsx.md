@@ -1,4 +1,4 @@
-# Layout.tsx
+# `shared/components/layout/Layout/Layout.tsx`
 
 ## Purpose
 Composite client layout shell. Owns hamburger/side-nav open state and screen-size detection. Renders the shared app chrome and delegates route content to `children`.

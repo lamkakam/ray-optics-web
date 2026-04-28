@@ -1,4 +1,4 @@
-# `shared/components/providers/GlassCatalogProvider.tsx`
+# `shared/components/providers/GlassCatalogProvider/GlassCatalogProvider.tsx`
 
 ## Purpose
 Client-only React context for app-wide glass catalog data. The provider does not fetch data itself; it injects loader state prepared by the shared app shell so lens editor and glass map consume the same source of truth.

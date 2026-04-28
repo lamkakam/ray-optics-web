@@ -1,4 +1,4 @@
-# `shared/components/layout/BottomDrawer.tsx`
+# `shared/components/layout/BottomDrawer/BottomDrawer.tsx`
 
 ## Purpose
 
