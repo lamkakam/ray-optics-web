@@ -52,4 +52,12 @@ describe("SideNav", () => {
     expect(screen.getByRole("link", { name: "Glass Map" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Lens Editor" })).not.toHaveAttribute("aria-current");
   });
+
+  it("makes the closed nav hidden and inert", () => {
+    const { container } = render(<SideNav isOpen={false} isLG={false} onClose={jest.fn()} />);
+    const nav = container.querySelector('nav[aria-label="Side navigation"]');
+
+    expect(nav).toHaveAttribute("aria-hidden", "true");
+    expect(nav).toHaveAttribute("inert");
+  });
 });
