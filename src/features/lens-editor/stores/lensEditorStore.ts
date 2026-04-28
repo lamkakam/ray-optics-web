@@ -15,8 +15,16 @@ interface PendingMediumSelection {
   manufacturer: string;
 }
 
+export type LensEditorOptimizationSyncPolicy = "resetOptimizationModes" | "preserveOptimizationModes";
+
+interface PrescriptionMutationOptions {
+  readonly optimizationSyncPolicy?: LensEditorOptimizationSyncPolicy;
+}
+
 export interface LensEditorState {
   rows: GridRow[];
+  prescriptionRevision: number;
+  optimizationSyncPolicy: LensEditorOptimizationSyncPolicy;
   selectedRowId: string | undefined;
   autoAperture: boolean;
   activeBottomDrawerTabId: string;
@@ -28,8 +36,8 @@ export interface LensEditorState {
   diffractionGratingModal: ModalState;
   committedOpticalModel: OpticalModel | undefined;
 
-  setRows: (rows: GridRow[]) => void;
-  updateRow: (id: string, patch: Partial<GridRow>) => void;
+  setRows: (rows: GridRow[], options?: PrescriptionMutationOptions) => void;
+  updateRow: (id: string, patch: Partial<GridRow>, options?: PrescriptionMutationOptions) => void;
   addRowAfter: (id: string) => void;
   deleteRow: (id: string) => void;
   setSelectedRowId: (id: string | undefined) => void;
@@ -69,6 +77,8 @@ const DEFAULT_ROWS: GridRow[] = [
 
 export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) => ({
   rows: DEFAULT_ROWS,
+  prescriptionRevision: 0,
+  optimizationSyncPolicy: "resetOptimizationModes",
   selectedRowId: undefined,
   autoAperture: false,
   activeBottomDrawerTabId: "specs",
@@ -80,14 +90,28 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   diffractionGratingModal: { open: false, rowId: "" },
   committedOpticalModel: undefined,
 
-  setRows: (rows) => set({ rows }),
-
-  updateRow: (id, patch) =>
+  setRows: (rows, options) =>
     set((state) => ({
-      rows: state.rows.map((r) =>
-        r.id === id ? { ...r, ...patch, id: r.id, kind: r.kind } as GridRow : r
-      ),
+      rows,
+      prescriptionRevision: state.prescriptionRevision + 1,
+      optimizationSyncPolicy: options?.optimizationSyncPolicy ?? "resetOptimizationModes",
     })),
+
+  updateRow: (id, patch, options) =>
+    set((state) => {
+      const rowExists = state.rows.some((row) => row.id === id);
+      if (!rowExists) {
+        return state;
+      }
+
+      return {
+        rows: state.rows.map((r) =>
+          r.id === id ? { ...r, ...patch, id: r.id, kind: r.kind } as GridRow : r
+        ),
+        prescriptionRevision: state.prescriptionRevision + 1,
+        optimizationSyncPolicy: options?.optimizationSyncPolicy ?? "resetOptimizationModes",
+      };
+    }),
 
   addRowAfter: (id) => {
     const { rows } = get();
@@ -110,7 +134,11 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
     const newRows = [...rows];
     newRows.splice(index + 1, 0, newRow);
-    set({ rows: newRows });
+    set((state) => ({
+      rows: newRows,
+      prescriptionRevision: state.prescriptionRevision + 1,
+      optimizationSyncPolicy: "resetOptimizationModes",
+    }));
   },
 
   deleteRow: (id) => {
@@ -118,10 +146,12 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
     const row = rows.find((r) => r.id === id);
     if (!row || row.kind !== "surface") return;
 
-    set({
+    set((state) => ({
       rows: rows.filter((r) => r.id !== id),
-      selectedRowId: get().selectedRowId === id ? undefined : get().selectedRowId,
-    });
+      selectedRowId: state.selectedRowId === id ? undefined : state.selectedRowId,
+      prescriptionRevision: state.prescriptionRevision + 1,
+      optimizationSyncPolicy: "resetOptimizationModes",
+    }));
   },
 
   setSelectedRowId: (id) => set({ selectedRowId: id }),

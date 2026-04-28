@@ -80,6 +80,26 @@ describe("lensEditorStore", () => {
       store.getState().setRows(rows);
       expect(store.getState().rows).toEqual(rows);
     });
+
+    it("records prescription revision and default optimization reset policy", () => {
+      const store = makeStore();
+
+      store.getState().setRows(makeTestRows());
+
+      expect(store.getState().prescriptionRevision).toBe(1);
+      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
+    });
+
+    it("records preserve policy for optimization-origin row replacement", () => {
+      const store = makeStore();
+
+      store.getState().setRows(makeTestRows(), {
+        optimizationSyncPolicy: "preserveOptimizationModes",
+      });
+
+      expect(store.getState().prescriptionRevision).toBe(1);
+      expect(store.getState().optimizationSyncPolicy).toBe("preserveOptimizationModes");
+    });
   });
 
   describe("updateRow", () => {
@@ -89,6 +109,20 @@ describe("lensEditorStore", () => {
       store.getState().updateRow("s1", { curvatureRadius: 100 });
       const updated = store.getState().rows.find((r) => r.id === "s1");
       expect(updated).toMatchObject({ curvatureRadius: 100 });
+      expect(store.getState().prescriptionRevision).toBe(2);
+      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
+    });
+
+    it("records preserve policy for focusing-origin row updates", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+
+      store.getState().updateRow("s2", { thickness: 10 }, {
+        optimizationSyncPolicy: "preserveOptimizationModes",
+      });
+
+      expect(store.getState().prescriptionRevision).toBe(2);
+      expect(store.getState().optimizationSyncPolicy).toBe("preserveOptimizationModes");
     });
 
     it("does not modify other rows", () => {

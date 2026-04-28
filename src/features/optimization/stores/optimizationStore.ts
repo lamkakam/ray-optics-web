@@ -21,6 +21,18 @@ type OptimizerFormStateByConfig<TConfig extends SharedOptimizerConfig> = {
 type OptimizationAlgorithmState<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
   TConfig extends SharedOptimizerConfig ? OptimizerFormStateByConfig<TConfig> : never;
 
+export type OptimizationPrescriptionSyncPolicy = "resetOptimizationModes" | "preserveOptimizationModes";
+
+interface OptimizationSyncOptions {
+  readonly prescriptionSyncPolicy?: OptimizationPrescriptionSyncPolicy;
+}
+
+interface EditorSyncBaseline {
+  readonly fieldSpecs: string;
+  readonly wavelengthSpecs: string;
+  readonly prescription: string;
+}
+
 export type RadiusMode =
   | { readonly surfaceIndex: number; readonly mode: "constant" }
   | {
@@ -127,6 +139,7 @@ interface WarningModalState {
 export interface OptimizationState {
   activeTabId: string;
   optimizationModel: OpticalModel | undefined;
+  editorSyncBaseline: EditorSyncBaseline | undefined;
   optimizer: OptimizationAlgorithmState;
   fieldWeights: number[];
   wavelengthWeights: number[];
@@ -143,7 +156,7 @@ export interface OptimizationState {
   asphereModal: AsphereModalState;
 
   initializeFromOpticalModel: (model: OpticalModel) => void;
-  syncFromOpticalModel: (model: OpticalModel) => void;
+  syncFromOpticalModel: (model: OpticalModel, options?: OptimizationSyncOptions) => void;
   setActiveTabId: (tabId: string) => void;
   setFieldWeight: (index: number, value: string | number) => void;
   setWavelengthWeight: (index: number, value: string | number) => void;
@@ -544,10 +557,6 @@ function createInitialWavelengthWeights(model: OpticalModel): number[] {
   return model.specs.wavelengths.weights.map(([, weight]) => weight);
 }
 
-function reconcileWeights(previous: number[], count: number): number[] {
-  return Array.from({ length: count }, (_, index) => previous[index] ?? 1);
-}
-
 function reconcileModes(previous: RadiusMode[], next: RadiusMode[]): RadiusMode[] {
   const previousBySurfaceIndex = new Map(
     previous.map((entry) => [entry.surfaceIndex, entry] as const),
@@ -624,6 +633,32 @@ function createThicknessModes(model: OpticalModel): RadiusMode[] {
     surfaceIndex: index + 1,
     mode: "constant" as const,
   }));
+}
+
+function fingerprintFieldSpecs(model: OpticalModel): string {
+  const { isWideAngle: _isWideAngle, ...fieldSpecsAffectingOptimizationSettings } = model.specs.field;
+  return JSON.stringify(fieldSpecsAffectingOptimizationSettings);
+}
+
+function fingerprintWavelengthSpecs(model: OpticalModel): string {
+  const { referenceIndex: _referenceIndex, ...wavelengthSpecsAffectingOptimizationSettings } = model.specs.wavelengths;
+  return JSON.stringify(wavelengthSpecsAffectingOptimizationSettings);
+}
+
+function fingerprintPrescription(model: OpticalModel): string {
+  return JSON.stringify({
+    object: model.object,
+    image: model.image,
+    surfaces: model.surfaces,
+  });
+}
+
+function createEditorSyncBaseline(model: OpticalModel): EditorSyncBaseline {
+  return {
+    fieldSpecs: fingerprintFieldSpecs(model),
+    wavelengthSpecs: fingerprintWavelengthSpecs(model),
+    prescription: fingerprintPrescription(model),
+  };
 }
 
 function getOptimizerToleranceDefault<TKind extends OptimizationAlgorithmState["kind"]>(
@@ -787,6 +822,7 @@ function applyThicknessToModel(model: OpticalModel, surfaceIndex: number, value:
 export const createOptimizationSlice: StateCreator<OptimizationState> = (set, get) => ({
   activeTabId: "algorithm",
   optimizationModel: undefined,
+  editorSyncBaseline: undefined,
   optimizer: createDefaultOptimizerState(),
   fieldWeights: [],
   wavelengthWeights: [],
@@ -803,26 +839,70 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   asphereModal: { open: false, surfaceIndex: undefined },
 
   initializeFromOpticalModel: (model) =>
-    set({
-      optimizationModel: model,
-      fieldWeights: createInitialFieldWeights(model.specs.field.fields.length),
-      wavelengthWeights: createInitialWavelengthWeights(model),
-      radiusModes: createRadiusModes(model),
-      thicknessModes: createThicknessModes(model),
-      asphereStates: createAsphereStates(model),
-      operands: [],
-      lastOptimizationReport: undefined,
+    set((state) => {
+      if (state.optimizationModel !== undefined) {
+        return {
+          editorSyncBaseline: state.editorSyncBaseline ?? createEditorSyncBaseline(state.optimizationModel),
+        };
+      }
+
+      return {
+        optimizationModel: model,
+        editorSyncBaseline: createEditorSyncBaseline(model),
+        fieldWeights: createInitialFieldWeights(model.specs.field.fields.length),
+        wavelengthWeights: createInitialWavelengthWeights(model),
+        radiusModes: createRadiusModes(model),
+        thicknessModes: createThicknessModes(model),
+        asphereStates: createAsphereStates(model),
+        operands: [],
+        lastOptimizationReport: undefined,
+      };
     }),
 
-  syncFromOpticalModel: (model) =>
-    set((state) => ({
-      optimizationModel: model,
-      fieldWeights: reconcileWeights(state.fieldWeights, model.specs.field.fields.length),
-      wavelengthWeights: reconcileWeights(state.wavelengthWeights, model.specs.wavelengths.weights.length),
-      radiusModes: reconcileModes(state.radiusModes, createRadiusModes(model)),
-      thicknessModes: reconcileModes(state.thicknessModes, createThicknessModes(model)),
-      asphereStates: reconcileAsphereStates(state.asphereStates, model),
-    })),
+  syncFromOpticalModel: (model, options) =>
+    set((state) => {
+      if (state.optimizationModel === undefined) {
+        return {
+          optimizationModel: model,
+          editorSyncBaseline: createEditorSyncBaseline(model),
+          fieldWeights: createInitialFieldWeights(model.specs.field.fields.length),
+          wavelengthWeights: createInitialWavelengthWeights(model),
+          radiusModes: createRadiusModes(model),
+          thicknessModes: createThicknessModes(model),
+          asphereStates: createAsphereStates(model),
+          operands: [],
+          lastOptimizationReport: undefined,
+        };
+      }
+
+      const previousBaseline = state.editorSyncBaseline ?? createEditorSyncBaseline(state.optimizationModel);
+      const nextBaseline = createEditorSyncBaseline(model);
+      const fieldSpecsChanged = previousBaseline.fieldSpecs !== nextBaseline.fieldSpecs;
+      const wavelengthSpecsChanged = previousBaseline.wavelengthSpecs !== nextBaseline.wavelengthSpecs;
+      const prescriptionChanged = previousBaseline.prescription !== nextBaseline.prescription;
+      const shouldResetPrescriptionModes = prescriptionChanged
+        && (options?.prescriptionSyncPolicy ?? "resetOptimizationModes") === "resetOptimizationModes";
+
+      return {
+        optimizationModel: model,
+        editorSyncBaseline: nextBaseline,
+        fieldWeights: fieldSpecsChanged
+          ? createInitialFieldWeights(model.specs.field.fields.length)
+          : state.fieldWeights,
+        wavelengthWeights: wavelengthSpecsChanged
+          ? createInitialWavelengthWeights(model)
+          : state.wavelengthWeights,
+        radiusModes: shouldResetPrescriptionModes
+          ? createRadiusModes(model)
+          : reconcileModes(state.radiusModes, createRadiusModes(model)),
+        thicknessModes: shouldResetPrescriptionModes
+          ? createThicknessModes(model)
+          : reconcileModes(state.thicknessModes, createThicknessModes(model)),
+        asphereStates: shouldResetPrescriptionModes
+          ? createAsphereStates(model)
+          : reconcileAsphereStates(state.asphereStates, model),
+      };
+    }),
 
   setActiveTabId: (tabId) => set({ activeTabId: tabId }),
 

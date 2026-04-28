@@ -33,7 +33,7 @@ interface FocusingContainerProps {
    - `mono` + `wavefront` → `focusByMonoStrehl`
    - `poly` + `rmsSpot` → `focusByPolyRmsSpot`
    - `poly` + `wavefront` → `focusByPolyStrehl`
-3. Finds the last `kind === "surface"` row in `lensStore` and calls `updateRow` with `thickness + result.delta_thi`.
+3. Finds the last `kind === "surface"` row in `lensStore` and calls `updateRow` with `thickness + result.delta_thi`, using `optimizationSyncPolicy: "preserveOptimizationModes"` so Optimization keeps existing prescription variable/pickup modes.
 4. Calls `onUpdateSystem()` to recompute layout and plots.
 5. On any error, calls `onError()`.
 6. Sets `focusing=false` in `finally`.

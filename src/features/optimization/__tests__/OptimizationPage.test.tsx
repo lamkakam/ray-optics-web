@@ -10,7 +10,7 @@ import { OptimizationStoreContext } from "@/features/optimization/providers/Opti
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { createOptimizationSlice, type OptimizationState } from "@/features/optimization/stores/optimizationStore";
-import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import { gridRowsToSurfaces, surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { GlassCatalogContext, type GlassCatalogContextValue } from "@/shared/components/providers/GlassCatalogProvider";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
@@ -1116,11 +1116,18 @@ describe("OptimizationPage", () => {
 
   it("confirms Apply to Editor and overwrites the lens editor rows with the optimized model", async () => {
     const proxy = makeProxy();
-    const { lensStore } = renderOptimizationPage(proxy);
+    const { lensStore, optimizationStore } = renderOptimizationPage(proxy);
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
     await user.click(screen.getByRole("button", { name: "Add operand" }));
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+    });
     await user.click(screen.getByRole("button", { name: "Optimize" }));
     await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
 
@@ -1129,6 +1136,9 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("button", { name: "Apply" }));
 
     expect(lensStore.getState().rows[1]).toMatchObject({ curvatureRadius: 42 });
+    await waitFor(() => {
+      expect(optimizationStore.getState().radiusModes[0]).toMatchObject({ mode: "variable" });
+    });
   });
 
   it("tracks live lens-editor changes after the optimization page has mounted", async () => {
@@ -1139,6 +1149,14 @@ describe("OptimizationPage", () => {
     );
 
     act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "40",
+        max: "60",
+      });
+    });
+
+    act(() => {
       lensStore.getState().updateRow(lensStore.getState().rows[1].id, {
         curvatureRadius: 88,
       });
@@ -1147,9 +1165,13 @@ describe("OptimizationPage", () => {
     await waitFor(() =>
       expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(88),
     );
+    expect(optimizationStore.getState().radiusModes[0]).toEqual({
+      surfaceIndex: 1,
+      mode: "constant",
+    });
   });
 
-  it("reseeds persisted optimization weights from the editor when the page mounts", async () => {
+  it("preserves persisted optimization state when returning to the page without editor changes", async () => {
     const proxy = makeProxy();
     const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
     const lensStore = createStore<LensEditorState>(createLensEditorSlice);
@@ -1161,10 +1183,27 @@ describe("OptimizationPage", () => {
     lensStore.getState().setAutoAperture(false);
     lensStore.getState().setCommittedOpticalModel(baseModel);
 
+    const editorModel = {
+      setAutoAperture: "manualAperture" as const,
+      specs: specsStore.getState().toOpticalSpecs(),
+      ...gridRowsToSurfaces(lensStore.getState().rows),
+    };
+    optimizationStore.getState().initializeFromOpticalModel(editorModel);
     optimizationStore.setState({
-      optimizationModel: baseModel,
       fieldWeights: [1, 1, 1],
       wavelengthWeights: [1, 1, 1],
+      radiusModes: [
+        { surfaceIndex: 1, mode: "variable", min: "40", max: "60" },
+        { surfaceIndex: 2, mode: "constant" },
+        { surfaceIndex: 3, mode: "constant" },
+      ],
+      operands: [{ id: "existing-operand", kind: "focal_length", target: "100", weight: "3" }],
+      optimizer: {
+        kind: "differential_evolution",
+        max_nfev: "20",
+        tol: "0.01",
+        atol: "0",
+      },
     });
 
     const { OptimizationPage } = require("@/features/optimization/OptimizationPage") as typeof import("@/features/optimization/OptimizationPage");
@@ -1198,9 +1237,12 @@ describe("OptimizationPage", () => {
     );
 
     await waitFor(() => {
-      expect(optimizationStore.getState().fieldWeights).toEqual([1, 0, 0]);
-      expect(optimizationStore.getState().wavelengthWeights).toEqual([1, 2, 1]);
+      expect(optimizationStore.getState().fieldWeights).toEqual([1, 1, 1]);
+      expect(optimizationStore.getState().wavelengthWeights).toEqual([1, 1, 1]);
     });
+    expect(optimizationStore.getState().radiusModes[0]).toMatchObject({ mode: "variable" });
+    expect(optimizationStore.getState().operands).toHaveLength(1);
+    expect(optimizationStore.getState().optimizer.kind).toBe("differential_evolution");
   });
 
   it("on small screens, shows the full evaluation table without an internal vertical scrollbar", async () => {

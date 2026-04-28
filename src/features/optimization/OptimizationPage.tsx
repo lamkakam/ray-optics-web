@@ -61,6 +61,8 @@ export function OptimizationPage({
   const specsStore = useSpecsConfiguratorStore();
   const optimizationStore = useOptimizationStore();
   const editorRows = useStore(lensStore, (state) => state.rows);
+  const prescriptionRevision = useStore(lensStore, (state) => state.prescriptionRevision);
+  const optimizationSyncPolicy = useStore(lensStore, (state) => state.optimizationSyncPolicy);
   const editorAutoAperture = useStore(lensStore, (state) => state.autoAperture);
   const pupilSpace = useStore(specsStore, (state) => state.pupilSpace);
   const pupilType = useStore(specsStore, (state) => state.pupilType);
@@ -117,7 +119,6 @@ export function OptimizationPage({
   const sharedContentRef = useRef<HTMLDivElement | null>(null);
   const evaluationPanelRef = useRef<HTMLDivElement | null>(null);
   const evaluationRequestIdRef = useRef(0);
-  const initializedForMountRef = useRef(false);
 
   useLayoutEffect(() => {
     if (!isLG) {
@@ -145,15 +146,18 @@ export function OptimizationPage({
 
   useEffect(() => {
     const currentEditorModel = buildCurrentEditorModel(lensStore, specsStore);
-    if (!initializedForMountRef.current) {
-      initializedForMountRef.current = true;
+    if (optimizationStore.getState().optimizationModel === undefined) {
       optimizationStore.getState().initializeFromOpticalModel(currentEditorModel);
       return;
     }
 
-    optimizationStore.getState().syncFromOpticalModel(currentEditorModel);
+    optimizationStore.getState().syncFromOpticalModel(currentEditorModel, {
+      prescriptionSyncPolicy: optimizationSyncPolicy,
+    });
   }, [
     editorRows,
+    prescriptionRevision,
+    optimizationSyncPolicy,
     editorAutoAperture,
     pupilSpace,
     pupilType,
@@ -373,7 +377,9 @@ export function OptimizationPage({
 
     specsStore.getState().loadFromSpecs(model.specs);
     specsStore.getState().setCommittedSpecs(model.specs);
-    lensStore.getState().setRows(surfacesToGridRows(model));
+    lensStore.getState().setRows(surfacesToGridRows(model), {
+      optimizationSyncPolicy: "preserveOptimizationModes",
+    });
     lensStore.getState().setAutoAperture(model.setAutoAperture === "autoAperture");
     lensStore.getState().setCommittedOpticalModel(model);
     optimizationStore.getState().closeApplyConfirm();

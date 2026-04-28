@@ -69,6 +69,8 @@ export function FocusingContainer({
       if (lastSurface && lastSurface.kind === "surface") {
         lensStore.getState().updateRow(lastSurface.id, {
           thickness: lastSurface.thickness + result.delta_thi,
+        }, {
+          optimizationSyncPolicy: "preserveOptimizationModes",
         });
       }
 
