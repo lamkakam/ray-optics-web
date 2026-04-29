@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
@@ -38,11 +38,42 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
   const [selectedExampleKey, setSelectedExampleKey] = useState<string | undefined>();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [applying, setApplying] = useState(false);
+  const exampleButtonRefs = useRef<Record<string, HTMLButtonElement | undefined>>({});
   const exampleKeys = useMemo(() => Object.keys(ExampleSystems), []);
   const selectedDescription = selectedExampleKey === undefined
     ? "Select an example system to review its source and apply it to the Lens Editor."
     : getExampleSystemDescription(selectedExampleKey);
   const isLargeScreen = screenSize === "screenLG";
+
+  useEffect(() => {
+    if (selectedExampleKey === undefined) {
+      return;
+    }
+
+    exampleButtonRefs.current[selectedExampleKey]?.focus();
+  }, [selectedExampleKey]);
+
+  const handleExampleButtonRef = useCallback((key: string, button: HTMLButtonElement | null) => {
+    if (button === null) {
+      delete exampleButtonRefs.current[key];
+      return;
+    }
+
+    exampleButtonRefs.current[key] = button;
+  }, []);
+
+  const handleSelectExample = useCallback((key: string) => {
+    setSelectedExampleKey(key);
+  }, []);
+
+  const handleMenuKeyDown = useCallback((event: KeyboardEvent<HTMLMenuElement>) => {
+    if (event.key !== "Enter" || selectedExampleKey === undefined || applying) {
+      return;
+    }
+
+    event.preventDefault();
+    setConfirmOpen(true);
+  }, [applying, selectedExampleKey]);
 
   const handleConfirm = useCallback(async () => {
     if (selectedExampleKey === undefined || applying) {
@@ -105,6 +136,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
     return (
       <li key={key}>
         <button
+          ref={(button) => handleExampleButtonRef(key, button)}
           type="button"
           aria-label={name}
           aria-pressed={selected}
@@ -114,7 +146,8 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
               ? "bg-blue-600 text-white"
               : "text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700",
           )}
-          onClick={() => setSelectedExampleKey(key)}
+          onClick={() => handleSelectExample(key)}
+          onFocus={() => handleSelectExample(key)}
         >
           {name}
         </button>
@@ -142,6 +175,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
             <MenuContainer
               aria-label="Example systems"
               className="w-full min-h-0 flex-1 overflow-y-auto !max-h-none"
+              onKeyDown={handleMenuKeyDown}
             >
               {menuItems}
             </MenuContainer>
@@ -163,6 +197,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
           <MenuContainer
             aria-label="Example systems"
             className="h-[calc(100dvh-8rem)] w-[calc(50vw-1.5rem)] !max-h-[calc(100dvh-8rem)]"
+            onKeyDown={handleMenuKeyDown}
           >
             {menuItems}
           </MenuContainer>

@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -121,6 +121,65 @@ describe("ExampleSystemsPage", () => {
 
     expect(screen.getByRole("button", { name: "Sasian Triplet" })).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "Schmidt Camera 200mm f/5" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("clicking an example selects it and leaves focus on that example button", async () => {
+    renderPage();
+    const user = userEvent.setup();
+    const example = screen.getByRole("button", { name: "Sasian Triplet" });
+
+    await user.click(example);
+
+    expect(example).toHaveAttribute("aria-pressed", "true");
+    expect(example).toHaveFocus();
+  });
+
+  it("selects the next menu item when Tab moves focus between example buttons", async () => {
+    renderPage();
+    const user = userEvent.setup();
+    const first = screen.getByRole("button", { name: "Sasian Triplet" });
+    const second = screen.getByRole("button", { name: "Newtonian Reflector with Optical Window" });
+
+    await user.click(first);
+    await user.tab();
+
+    expect(second).toHaveFocus();
+    expect(first).toHaveAttribute("aria-pressed", "false");
+    expect(second).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("keeps arrow navigation selecting and focusing the next menu item", async () => {
+    renderPage();
+    const user = userEvent.setup();
+    const first = screen.getByRole("button", { name: "Sasian Triplet" });
+    const second = screen.getByRole("button", { name: "Newtonian Reflector with Optical Window" });
+
+    await user.click(first);
+    fireEvent.keyDown(first, { key: "ArrowDown" });
+
+    expect(second).toHaveFocus();
+    expect(first).toHaveAttribute("aria-pressed", "false");
+    expect(second).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("opens the overwrite confirmation when Enter is pressed on a chosen menu item", async () => {
+    renderPage();
+    const user = userEvent.setup();
+    const example = screen.getByRole("button", { name: "Sasian Triplet" });
+
+    await user.click(example);
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByRole("dialog", { name: "Load Example System" })).toBeInTheDocument();
+  });
+
+  it("does not open the overwrite confirmation from Enter before any example is chosen", async () => {
+    renderPage();
+    const menu = screen.getByLabelText("Example systems");
+
+    fireEvent.keyDown(menu, { key: "Enter" });
+
+    expect(screen.queryByRole("dialog", { name: "Load Example System" })).not.toBeInTheDocument();
   });
 
   it("opens and closes the overwrite confirmation from Apply", async () => {

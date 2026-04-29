@@ -12,5 +12,8 @@ Client route component for selecting and applying bundled example optical system
 - On `screenSM`, keeps the page wrapper overflow hidden to avoid route-level vertical scrolling; long menu or description content scrolls inside the corresponding panel.
 - Keeps selected example key, confirmation modal visibility, and applying state local to the component.
 - Displays example names with numeric prefixes stripped.
+- Maintains a stable button ref for each example menu item and restores focus to the selected example button when the selected key changes through menu interaction.
+- Makes selection follow focus while tabbing through example menu item buttons, so the focused menu item is also the chosen system.
+- Handles `Enter` on the page-specific Example Systems menu by opening the existing apply overwrite confirmation when an example is chosen and applying is not in progress.
 - Uses `applyExampleSystem()` to load the selected model into editor stores, compute first-order/layout/selected plot/Seidel data, commit specs/model, then route to `/`.
 - Calls `onError` and stays on `/example-systems` when applying fails.
