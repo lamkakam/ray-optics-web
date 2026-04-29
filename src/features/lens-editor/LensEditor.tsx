@@ -175,6 +175,7 @@ export function LensEditor({
     </div>
   );
 
+  const hasAnalysisControls = Boolean(seidelData || committedOpticalModel || firstOrderData);
   const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
 
   const lensLayoutPanel = (
@@ -222,10 +223,12 @@ export function LensEditor({
 
   const lgContent = (
     <>
-      <div className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}>
-        {seidelButton}
-        {zernikeButton}
-      </div>
+      {hasAnalysisControls && (
+        <div className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}>
+          {seidelButton}
+          {zernikeButton}
+        </div>
+      )}
       {firstOrderData && (
         <div className="flex shrink-0 gap-2 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
           {firstOrderChips}
@@ -249,15 +252,17 @@ export function LensEditor({
 
   const smContent = (
     <div data-testid="sm-scroll-container" className="flex-1 min-h-0 overflow-y-auto flex flex-col">
-      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-        {seidelButton}
-        {zernikeButton}
-        {firstOrderData && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {firstOrderChips}
-          </div>
-        )}
-      </div>
+      {hasAnalysisControls && (
+        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+          {seidelButton}
+          {zernikeButton}
+          {firstOrderData && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {firstOrderChips}
+            </div>
+          )}
+        </div>
+      )}
       <div data-testid="lens-layout-container" className="w-full px-2 py-3">
         {lensLayoutPanel}
       </div>

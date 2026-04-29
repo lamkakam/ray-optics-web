@@ -26,6 +26,7 @@ Read reactively via `useStore` / `useLensEditorStore`:
 - From `useAnalysisDataStore()`: `firstOrderData`, `seidelData`
 - From `useLensEditorStore()`: `committedOpticalModel`
 - From `useTheme()`: `theme`
+- `hasAnalysisControls`: true when at least one analysis control or chip can render (`seidelData`, `committedOpticalModel`, or `firstOrderData`)
 
 Imperative access to actions is via the provider hooks (`useLensEditorStore`, `useSpecsConfiguratorStore`, `useAnalysisPlotStore`, `useAnalysisDataStore`, `useLensLayoutImageStore`) and then `store.getState()`.
 
@@ -39,7 +40,7 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 ## Layout
 
 ### LG (`isLG === true`)
-- Controls row: Seidel/Zernike buttons; `border-b` applied here when `firstOrderData` is undefined. `seidelButton` is guarded by `seidelData`; `zernikeButton` is guarded by `committedOpticalModel` (not `seidelData`)
+- Controls row: omitted until `hasAnalysisControls` is true, so the header is not followed by an empty bordered row before any optical system has been computed. When rendered, it contains Seidel/Zernike buttons; `border-b` is applied here when `firstOrderData` is undefined. `seidelButton` is guarded by `seidelData`; `zernikeButton` is guarded by `committedOpticalModel` (not `seidelData`)
 - First-order chips row (border-bottom) — only rendered when `firstOrderData` is defined
 - Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%); the analysis panel wrapper has `overflow-hidden` (`data-testid="lg-analysis-plot-panel"`) to prevent content from bleeding over the BottomDrawer when viewport height is small
 - BottomDrawerContainer (`draggable={true}`)
@@ -47,7 +48,7 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 
 ### SM (`isLG === false`)
 - Outer scroll wrapper: `data-testid="sm-scroll-container"` with `flex-1 min-h-0 overflow-y-auto flex flex-col` — makes all content scrollable on small screens
-- Controls section: Seidel/Zernike buttons + first-order chips (chips wrapper only renders when `firstOrderData` is defined)
+- Controls section: omitted until `hasAnalysisControls` is true, so the header is not followed by an empty bordered section before any optical system has been computed. When rendered, it contains Seidel/Zernike buttons + first-order chips (chips wrapper only renders when `firstOrderData` is defined)
 - `data-testid="lens-layout-container"` wrapping LensLayoutPanel
 - `data-testid="analysis-plot-container"` wrapping AnalysisPlotContainer
 - BottomDrawerContainer (`draggable={false}`)

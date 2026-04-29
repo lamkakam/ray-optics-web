@@ -251,7 +251,7 @@ function renderLensEditor(overrides?: {
   const { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore } = makeStores();
   const proxy = overrides && "proxy" in overrides ? overrides.proxy : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
-  render(
+  const renderResult = render(
     <SpecsConfiguratorStoreContext.Provider value={specsStore}>
       <LensEditorStoreContext.Provider value={lensStore}>
         <AnalysisPlotStoreContext.Provider value={analysisPlotStore}>
@@ -268,7 +268,7 @@ function renderLensEditor(overrides?: {
       </LensEditorStoreContext.Provider>
     </SpecsConfiguratorStoreContext.Provider>
   );
-  return { proxy, onError, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore };
+  return { ...renderResult, proxy, onError, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore };
 }
 
 beforeEach(() => {
@@ -421,6 +421,52 @@ describe("LensEditor", () => {
     renderLensEditor();
     const panel = screen.getByTestId("lg-analysis-plot-panel");
     expect(panel).toHaveClass("overflow-hidden");
+  });
+
+  it("LG: initial render omits the empty controls row under the header", () => {
+    const { container } = renderLensEditor();
+    const firstSection = container.firstElementChild;
+    expect(firstSection).toContainElement(screen.getByTestId("lens-layout-panel-mock"));
+    expect(firstSection).toContainElement(screen.getByTestId("lg-analysis-plot-panel"));
+  });
+
+  it("SM: initial render omits the empty controls section under the header", () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+    renderLensEditor();
+    const scrollContainer = screen.getByTestId("sm-scroll-container");
+    expect(scrollContainer.firstElementChild).toBe(screen.getByTestId("lens-layout-container"));
+  });
+
+  it("LG: controls render after successful submit with buttons and first-order chips", async () => {
+    const { container } = renderLensEditor();
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => {
+      const firstSection = container.firstElementChild;
+      expect(firstSection).toContainElement(
+        screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }),
+      );
+      expect(firstSection).toContainElement(screen.getByRole("button", { name: "Zernike Terms" }));
+      expect(screen.getByTestId("first-order-chips-mock")).toBeInTheDocument();
+    });
+  });
+
+  it("SM: controls render after successful submit with buttons and first-order chips", async () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+    renderLensEditor();
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => {
+      const scrollContainer = screen.getByTestId("sm-scroll-container");
+      const controlsSection = scrollContainer.firstElementChild;
+      expect(controlsSection).toContainElement(
+        screen.getByRole("button", { name: "3rd Order Seidel Aberrations" }),
+      );
+      expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Zernike Terms" }));
+      expect(controlsSection).toContainElement(screen.getByTestId("first-order-chips-mock"));
+    });
   });
 
   it("LG: BottomDrawerContainer receives draggable={true}", () => {
