@@ -14,6 +14,7 @@ interface SideNavProps {
 
 const NAV_ITEMS = [
   { segment: null, href: "/", label: "Lens Editor" },
+  { segment: "example-systems", href: "/example-systems", label: "Example Systems" },
   { segment: "optimization", href: "/optimization", label: "Optimization" },
   { segment: "glass-map", href: "/glass-map", label: "Glass Map" },
   { segment: "settings", href: "/settings", label: "Settings" },

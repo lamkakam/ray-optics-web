@@ -18,7 +18,7 @@ Tokens are organized as:
 ```
 componentTokens
   .global            // selected references to shared global tokens
-  .<component>       // button, checkbox, radio, switch, progress, input, select, modal, header, label, chip, tooltip, tab, text, overlay
+  .<component>       // button, checkbox, radio, switch, progress, input, select, modal, header, label, chip, tooltip, tab, text, overlay, menuContainer, descriptionContainer
     .color           // text, background, border, focus-ring colors
     .size            // padding, font-size, width, margin tokens
     .style           // border-radius, font-weight, opacity, cursor, z-index tokens
@@ -40,6 +40,7 @@ componentTokens
 - `input.style.opacity` and `input.style.cursor` reference the shared disabled-state tokens from `globalTokens.style`, matching `select` so both primitives use the same tokenized disabled behavior.
 - `switch.style.opacity` and `switch.style.cursor` also reference the shared disabled-state tokens from `globalTokens.style`.
 - `overlay` tokens have `z-[200]` — the highest z-index in the stack, above `Modal`'s `z-50`.
+- `menuContainer` and `descriptionContainer` reuse global surface, border, and secondary text tokens for the example-systems page primitives.
 
 ## Usages
 

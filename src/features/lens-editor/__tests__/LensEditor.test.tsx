@@ -277,9 +277,9 @@ beforeEach(() => {
 });
 
 describe("LensEditor", () => {
-  it("LG smoke: renders example dropdown, LensLayoutPanel, AnalysisPlotContainer, BottomDrawerContainer", () => {
+  it("LG smoke: renders LensLayoutPanel, AnalysisPlotContainer, BottomDrawerContainer without the old example dropdown", () => {
     renderLensEditor();
-    expect(screen.getByRole("combobox", { name: "Example system" })).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Example system" })).not.toBeInTheDocument();
     expect(screen.getByTestId("lens-layout-panel-mock")).toBeInTheDocument();
     expect(screen.getByTestId("analysis-plot-container-mock")).toBeInTheDocument();
     expect(screen.getByTestId("bottom-drawer-container")).toBeInTheDocument();
@@ -297,46 +297,6 @@ describe("LensEditor", () => {
     renderLensEditor();
     const wrapper = screen.getByTestId("sm-scroll-container");
     expect(wrapper).toHaveClass("overflow-y-auto");
-  });
-
-  it("ConfirmOverwriteModal is closed initially", () => {
-    renderLensEditor();
-    expect(screen.queryByTestId("confirm-overwrite-modal")).not.toBeInTheDocument();
-  });
-
-  it("selecting an example opens ConfirmOverwriteModal", async () => {
-    renderLensEditor();
-    const user = userEvent.setup();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Example system" }),
-      "1: Sasian Triplet"
-    );
-    expect(screen.getByTestId("confirm-overwrite-modal")).toBeInTheDocument();
-  });
-
-  it("cancelling ConfirmOverwriteModal closes it", async () => {
-    renderLensEditor();
-    const user = userEvent.setup();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Example system" }),
-      "1: Sasian Triplet"
-    );
-    expect(screen.getByTestId("confirm-overwrite-modal")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
-    expect(screen.queryByTestId("confirm-overwrite-modal")).not.toBeInTheDocument();
-  });
-
-  it("confirming example calls proxy.plotLensLayout, proxy.getFirstOrderData, proxy.get3rdOrderSeidelData", async () => {
-    const { proxy } = renderLensEditor();
-    const user = userEvent.setup();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Example system" }),
-      "1: Sasian Triplet"
-    );
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
-    await waitFor(() => expect(proxy!.plotLensLayout).toHaveBeenCalled());
-    expect(proxy!.getFirstOrderData).toHaveBeenCalled();
-    expect(proxy!.get3rdOrderSeidelData).toHaveBeenCalled();
   });
 
   it("Update System passes isDark=true to plotLensLayout when the theme is dark", async () => {
@@ -406,56 +366,12 @@ describe("LensEditor", () => {
     expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
   });
 
-  it("confirming an example uses getWavefrontData when Wavefront Map is already selected", async () => {
-    const { proxy, analysisPlotStore } = renderLensEditor();
-    act(() => {
-      analysisPlotStore.getState().setSelectedPlotType("wavefrontMap");
-    });
-
-    const user = userEvent.setup();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Example system" }),
-      "1: Sasian Triplet"
-    );
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
-
-    await waitFor(() => {
-      expect(proxy!.getWavefrontData).toHaveBeenCalled();
-    });
-    expect(proxy!.plotWavefrontMap).not.toHaveBeenCalled();
-    expect(analysisPlotStore.getState().wavefrontMapData).toEqual(mockWavefrontMapData);
-  });
-
-  it("confirming an example uses getDiffractionPSFData when Diffraction PSF is already selected", async () => {
-    const { proxy, analysisPlotStore } = renderLensEditor();
-    act(() => {
-      analysisPlotStore.getState().setSelectedPlotType("diffractionPSF");
-    });
-
-    const user = userEvent.setup();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Example system" }),
-      "1: Sasian Triplet"
-    );
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
-
-    await waitFor(() => {
-      expect(proxy!.getDiffractionPSFData).toHaveBeenCalled();
-    });
-    expect(proxy!.plotDiffractionPSF).not.toHaveBeenCalled();
-    expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
-  });
-
   it("submit error path calls onError", async () => {
     const errorProxy = makeProxy();
     (errorProxy.plotLensLayout as jest.Mock).mockRejectedValue(new Error("compute failed"));
     const { onError } = renderLensEditor({ proxy: errorProxy });
     const user = userEvent.setup();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Example system" }),
-      "1: Sasian Triplet"
-    );
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await user.click(screen.getByTestId("update-system-btn"));
     await waitFor(() => expect(onError).toHaveBeenCalled());
   });
 
@@ -469,11 +385,7 @@ describe("LensEditor", () => {
   it("Seidel button present after successful submit", async () => {
     renderLensEditor();
     const user = userEvent.setup();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Example system" }),
-      "1: Sasian Triplet"
-    );
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await user.click(screen.getByTestId("update-system-btn"));
     await waitFor(() =>
       expect(
         screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })
@@ -484,11 +396,7 @@ describe("LensEditor", () => {
   it("clicking Seidel button opens SeidelAberrModal", async () => {
     renderLensEditor();
     const user = userEvent.setup();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Example system" }),
-      "1: Sasian Triplet"
-    );
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await user.click(screen.getByTestId("update-system-btn"));
     await waitFor(() =>
       expect(
         screen.getByRole("button", { name: "3rd Order Seidel Aberrations" })
@@ -501,11 +409,7 @@ describe("LensEditor", () => {
   it("clicking Zernike button opens ZernikeTermsModal", async () => {
     renderLensEditor();
     const user = userEvent.setup();
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: "Example system" }),
-      "1: Sasian Triplet"
-    );
-    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    await user.click(screen.getByTestId("update-system-btn"));
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Zernike Terms" })).toBeInTheDocument()
     );

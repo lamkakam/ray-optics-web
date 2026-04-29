@@ -37,7 +37,7 @@ All components (composite + container + domain cells) for the lens editor featur
 - [WavelengthConfigModal](./WavelengthConfigModal/WavelengthConfigModal.tsx.md) — Modal for setting wavelengths and weights
 - [ZernikeTermsModal](./ZernikeTermsModal/ZernikeTermsModal.tsx.md) — Modal for displaying Zernike polynomial terms
 - [SeidelAberrModal](./SeidelAberrModal/SeidelAberrModal.tsx.md) — Modal for displaying 3rd-order Seidel aberrations
-- [ConfirmOverwriteModal](./ConfirmOverwriteModal/ConfirmOverwriteModal.tsx.md) — Confirmation dialog before overwriting current model
+- [ConfirmOverwriteModal](./ConfirmOverwriteModal/ConfirmOverwriteModal.tsx.md) — Compatibility re-export for the shared example-system overwrite confirmation modal
 
 ## Containers
 

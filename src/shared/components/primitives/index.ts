@@ -1,6 +1,8 @@
 export * from "./Button";
 export * from "./CheckboxInput";
 export * from "./Chip";
+export * from "./ConfirmOverwriteModal";
+export * from "./DescriptionContainer";
 export * from "./ErrorModal";
 export * from "./Header";
 export * from "./InlineLink";
@@ -8,6 +10,7 @@ export * from "./Input";
 export * from "./Label";
 export * from "./LoadingMask";
 export * from "./LoadingOverlay";
+export * from "./MenuContainer";
 export * from "./Modal";
 export * from "./NavLink";
 export * from "./Paragraph";

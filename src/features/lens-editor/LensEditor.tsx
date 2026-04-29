@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, { useState, useCallback } from "react";
 import { useStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -8,7 +8,6 @@ import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/
 import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/lib/zernikeData";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-import { ExampleSystems } from "@/shared/lib/data/exampleSystems";
 import { loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -18,13 +17,11 @@ import { useLensLayoutImageStore } from "@/features/analysis/providers/LensLayou
 import { AnalysisPlotContainer } from "@/features/analysis/components";
 import {
   BottomDrawerContainer,
-  ConfirmOverwriteModal,
   FirstOrderChips,
   LensLayoutPanel,
   SeidelAberrModal,
   ZernikeTermsModal,
 } from "@/features/lens-editor/components";
-import { Select } from "@/shared/components/primitives/Select";
 import { Button } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
@@ -61,26 +58,6 @@ export function LensEditor({
   const [computing, setComputing] = useState(false);
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
-  const [pendingExample, setPendingExample] = useState<string | undefined>();
-  const exampleSelectRef = useRef<HTMLSelectElement>(null);
-
-  const exampleSystemNames = useMemo(() => Object.keys(ExampleSystems), []);
-
-  const handleExampleChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const name = e.target.value;
-      if (!ExampleSystems[name]) return;
-      setPendingExample(name);
-    },
-    []
-  );
-
-  const handleExampleCancel = useCallback(() => {
-    setPendingExample(undefined);
-    if (exampleSelectRef.current) {
-      exampleSelectRef.current.value = "";
-    }
-  }, []);
 
   const handleFetchZernikeData = useCallback(
     async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering): Promise<ZernikeData> => {
@@ -151,22 +128,8 @@ export function LensEditor({
       setComputing(false);
       lensLayoutImageStore.getState().setLayoutLoading(false);
       analysisPlotStore.getState().setPlotLoading(false);
-
-      if (exampleSelectRef.current) {
-        exampleSelectRef.current.value = "";
-      }
     }
   }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError, theme]);
-
-  const handleExampleConfirm = useCallback(() => {
-    if (!pendingExample) return;
-    const system = ExampleSystems[pendingExample];
-    if (!system) return;
-    specsStore.getState().loadFromSpecs(system.specs);
-    lensStore.getState().setRows(surfacesToGridRows(system));
-    setPendingExample(undefined);
-    void handleSubmit();
-  }, [pendingExample, specsStore, lensStore, handleSubmit]);
 
   const getOpticalModel = useCallback((): OpticalModel => {
     const autoAperture = lensStore.getState().autoAperture;
@@ -181,19 +144,6 @@ export function LensEditor({
     lensStore.getState().setRows(surfacesToGridRows(data));
     lensStore.getState().setAutoAperture(data.setAutoAperture === "autoAperture");
   }, [specsStore, lensStore]);
-
-  const exampleSystemDropdown = (
-    <Select
-      ref={exampleSelectRef}
-      type="compact"
-      placeholder="Select an example system..."
-      aria-label="Example system"
-      options={exampleSystemNames.map((name) => ({ value: name, label: name }))}
-      defaultValue=""
-      onChange={handleExampleChange}
-      className={isLG ? "max-w-xs" : `w-full${seidelData ?? firstOrderData ? " mb-2" : ""}`}
-    />
-  );
 
   const seidelButton = seidelData && (
     <div className={isLG ? undefined : "mb-2"}>
@@ -252,14 +202,6 @@ export function LensEditor({
     />
   );
 
-  const confirmOverwriteModal = (
-    <ConfirmOverwriteModal
-      isOpen={pendingExample !== undefined}
-      onConfirm={handleExampleConfirm}
-      onCancel={handleExampleCancel}
-    />
-  );
-
   const seidelModal = seidelData && (
     <SeidelAberrModal
       isOpen={seidelModalOpen}
@@ -281,7 +223,6 @@ export function LensEditor({
   const lgContent = (
     <>
       <div className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}>
-        {exampleSystemDropdown}
         {seidelButton}
         {zernikeButton}
       </div>
@@ -301,7 +242,6 @@ export function LensEditor({
       </div>
 
       {bottomDrawer}
-      {confirmOverwriteModal}
       {seidelModal}
       {zernikeModal}
     </>
@@ -310,7 +250,6 @@ export function LensEditor({
   const smContent = (
     <div data-testid="sm-scroll-container" className="flex-1 min-h-0 overflow-y-auto flex flex-col">
       <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-        {exampleSystemDropdown}
         {seidelButton}
         {zernikeButton}
         {firstOrderData && (
@@ -326,7 +265,6 @@ export function LensEditor({
         {analysisPlotContainer}
       </div>
       {bottomDrawer}
-      {confirmOverwriteModal}
       {seidelModal}
       {zernikeModal}
     </div>

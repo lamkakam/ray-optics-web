@@ -25,6 +25,7 @@ interface LensLayoutPanelProps {
 - Uses a plain `<img>` tag with a `data:image/png;base64,` URI (not `next/image`, which cannot optimize data URIs).
 - The loading overlay uses `dark:bg-gray-900/60` to avoid pure-white flash in dark mode.
 - The root div has `overflow-hidden` to prevent placeholder text from bleeding over the BottomDrawer when the viewport height is small (the root div is `position: relative`, which would otherwise paint it above non-positioned sibling elements).
+- The empty-state copy refers to loading an example system because example selection now lives on `/example-systems`, outside the Lens Editor page.
 
 ## Usages
 

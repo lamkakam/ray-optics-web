@@ -9,16 +9,17 @@ test("load Schmidt Camera example and download config JSON", async ({
 }) => {
   await dismissAnyOpenDialog(page);
 
-  // 1. Select the Schmidt Camera example system
-  await page
-    .locator('select[aria-label="Example system"]')
-    .selectOption("8: Schmidt Camera 200mm f/5");
+  // 1. Load the Schmidt Camera example system from the dedicated route
+  await page.goto("/example-systems");
+  await page.getByRole("button", { name: "Schmidt Camera 200mm f/5" }).click();
+  await page.getByRole("button", { name: "Apply" }).click();
 
   // 2. Confirm overwrite dialog
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", { name: "Load Example System" });
   await dialog.waitFor({ state: "visible", timeout: 10_000 });
   await dialog.getByRole("button", { name: "Load" }).click();
   await dialog.waitFor({ state: "hidden", timeout: 10_000 });
+  await page.waitForURL("**/");
 
   // 3. Navigate to Prescription tab (where Download Config lives)
   await page.getByRole("tab", { name: "Prescription" }).click();

@@ -7,6 +7,8 @@ Generic, single-responsibility UI primitives. These are the base building blocks
 - [Button.tsx](./Button/Button.tsx.md) — Themed button with variants (primary, secondary, toggle, danger, floating) and sizes
 - [CheckboxInput.tsx](./CheckboxInput/CheckboxInput.tsx.md) — Compact labelled checkbox row with shared styling
 - [Chip.tsx](./Chip/Chip.tsx.md) — Small, compact tag/badge component
+- [ConfirmOverwriteModal.tsx](./ConfirmOverwriteModal/ConfirmOverwriteModal.tsx.md) — Confirmation modal for loading an example system over the current configuration
+- [DescriptionContainer.tsx](./DescriptionContainer/DescriptionContainer.tsx.md) — Tokenized description panel
 - [ErrorModal.tsx](./ErrorModal/ErrorModal.tsx.md) — Modal for displaying error messages
 - [Header.tsx](./Header/Header.tsx.md) — Top navigation header
 - [InlineLink.tsx](./InlineLink/InlineLink.tsx.md) — Inline text-style navigation link
@@ -14,6 +16,7 @@ Generic, single-responsibility UI primitives. These are the base building blocks
 - [Label.tsx](./Label/Label.tsx.md) — Form label for inputs
 - [LoadingMask.tsx](./LoadingMask/LoadingMask.tsx.md) — Mask component for loading states
 - [LoadingOverlay.tsx](./LoadingOverlay/LoadingOverlay.tsx.md) — Overlay with loading spinner
+- [MenuContainer.tsx](./MenuContainer/MenuContainer.tsx.md) — Semantic scrollable menu container
 - [Modal.tsx](./Modal/Modal.tsx.md) — Modal dialog backdrop and container
 - [NavLink.tsx](./NavLink/NavLink.tsx.md) — Navigation link with active state styling
 - [Paragraph.tsx](./Paragraph/Paragraph.tsx.md) — Styled text paragraph

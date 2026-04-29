@@ -420,4 +420,37 @@ export const componentTokens = {
       panelShadow: g.style.overlayPanelShadow,
     },
   },
+
+  menuContainer: {
+    color: {
+      borderColor: g.color.defaultBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: g.color.secondaryText,
+    },
+    size: {
+      padding: "p-2",
+      gap: "space-y-1",
+      maxHeight: "max-h-[min(32rem,calc(100dvh-12rem))]",
+    },
+    style: {
+      borderStyle: "border",
+      borderRadius: "rounded-lg",
+      overflow: "overflow-y-auto",
+    },
+  },
+
+  descriptionContainer: {
+    color: {
+      borderColor: g.color.defaultBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: g.color.secondaryText,
+    },
+    size: {
+      padding: "p-4",
+    },
+    style: {
+      borderStyle: "border",
+      borderRadius: "rounded-lg",
+    },
+  },
 } as const;
