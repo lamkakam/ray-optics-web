@@ -7,6 +7,7 @@ Composite client layout shell. Owns hamburger/side-nav open state and screen-siz
 | Prop | Type | Description |
 |------|------|-------------|
 | `children` | `React.ReactNode` | Active view content |
+| `onNavigate` | `(href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean \| undefined` | Optional SideNav navigation interceptor supplied by the app shell |
 
 ## State
 | State | Type | Description |
@@ -16,7 +17,7 @@ Composite client layout shell. Owns hamburger/side-nav open state and screen-siz
 ## Internal behaviour
 - Calls `useScreenBreakpoint()` to derive `isLG`
 - Hamburger button (`aria-label="Open navigation"`) toggles `sideNavOpen`
-- Delegates route navigation to `SideNav`, which closes itself via `onClose`
+- Delegates route navigation to `SideNav`, forwarding `onNavigate` so the app shell can guard route changes before the nav closes
 
 ## Layouts
 
@@ -25,7 +26,7 @@ Composite client layout shell. Owns hamburger/side-nav open state and screen-siz
 <div className="flex flex-col h-full">
   <header> h-12 row: hamburger + <Header level={1}>Ray Optics Web</Header> </header>
   <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
-    <SideNav isLG={true} ... />
+    <SideNav isLG={true} onNavigate={onNavigate} ... />
     {children}
   </div>
 </div>
@@ -36,7 +37,7 @@ Composite client layout shell. Owns hamburger/side-nav open state and screen-siz
 <div className="flex flex-col h-full">
   <header> py-2 row: hamburger + <Header level={1} className="ml-2">Ray Optics Web</Header> </header>
   <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
-    <SideNav isLG={false} ... />
+    <SideNav isLG={false} onNavigate={onNavigate} ... />
     {children}
   </div>
 </div>
@@ -49,5 +50,5 @@ Composite client layout shell. Owns hamburger/side-nav open state and screen-siz
 
 ```tsx
 // In app/AppShell.tsx
-<Layout>{children}</Layout>
+<Layout onNavigate={guardedNavigate}>{children}</Layout>
 ```

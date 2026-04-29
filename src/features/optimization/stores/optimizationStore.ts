@@ -148,6 +148,7 @@ export interface OptimizationState {
   asphereStates: AsphereOptimizationState[];
   operands: OptimizationOperandRow[];
   isOptimizing: boolean;
+  hasUnappliedOptimizationResult: boolean;
   lastOptimizationReport: OptimizationReport | undefined;
   warningModal: WarningModalState;
   applyConfirmOpen: boolean;
@@ -180,6 +181,7 @@ export interface OptimizationState {
   openApplyConfirm: () => void;
   closeApplyConfirm: () => void;
   setIsOptimizing: (value: boolean) => void;
+  markOptimizationResultAppliedToEditor: () => void;
   setOptimizerKind: (kind: OptimizationAlgorithmState["kind"]) => void;
   buildOptimizationConfig: () => OptimizationConfig;
   applyOptimizationResult: (report: OptimizationReport) => void;
@@ -831,6 +833,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   asphereStates: [],
   operands: [],
   isOptimizing: false,
+  hasUnappliedOptimizationResult: false,
   lastOptimizationReport: undefined,
   warningModal: { open: false, message: "" },
   applyConfirmOpen: false,
@@ -856,6 +859,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
         asphereStates: createAsphereStates(model),
         operands: [],
         lastOptimizationReport: undefined,
+        hasUnappliedOptimizationResult: false,
       };
     }),
 
@@ -872,6 +876,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           asphereStates: createAsphereStates(model),
           operands: [],
           lastOptimizationReport: undefined,
+          hasUnappliedOptimizationResult: false,
         };
       }
 
@@ -882,10 +887,17 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       const prescriptionChanged = previousBaseline.prescription !== nextBaseline.prescription;
       const shouldResetPrescriptionModes = prescriptionChanged
         && (options?.prescriptionSyncPolicy ?? "resetOptimizationModes") === "resetOptimizationModes";
+      const clearsUnappliedOptimizationResult =
+        fieldSpecsChanged
+        || wavelengthSpecsChanged
+        || shouldResetPrescriptionModes;
 
       return {
         optimizationModel: model,
         editorSyncBaseline: nextBaseline,
+        hasUnappliedOptimizationResult: clearsUnappliedOptimizationResult
+          ? false
+          : state.hasUnappliedOptimizationResult,
         fieldWeights: fieldSpecsChanged
           ? createInitialFieldWeights(model.specs.field.fields.length)
           : state.fieldWeights,
@@ -1041,6 +1053,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   openApplyConfirm: () => set({ applyConfirmOpen: true }),
   closeApplyConfirm: () => set({ applyConfirmOpen: false }),
   setIsOptimizing: (value) => set({ isOptimizing: value }),
+  markOptimizationResultAppliedToEditor: () => set({ hasUnappliedOptimizationResult: false }),
   setOptimizerKind: (kind) => set({ optimizer: createDefaultOptimizerState(kind) }),
 
   buildOptimizationConfig: () => {
@@ -1128,6 +1141,10 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       return {
         optimizationModel: nextModel,
         lastOptimizationReport: report,
+        hasUnappliedOptimizationResult:
+          report.final_values.length > 0 || report.pickups.length > 0
+            ? true
+            : state.hasUnappliedOptimizationResult,
       };
     }),
 });

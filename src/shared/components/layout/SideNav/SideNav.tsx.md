@@ -9,6 +9,7 @@ Collapsible side navigation panel toggled by the hamburger button in the header.
 | `isOpen` | `boolean` | When `false`, nav is translated off-screen (`-translate-x-full`); always in DOM |
 | `isLG` | `boolean` | Determines width: `w-[33vw]` on LG, `w-[50vw]` on SM |
 | `onClose` | `() => void` | Called when the ✕ close button is clicked |
+| `onNavigate` | `(href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean \| undefined` | Optional navigation interceptor; returning `false` keeps the nav open and leaves route handling to the caller |
 
 ## Behaviour
 - Always rendered in the DOM — never returns `null`
@@ -23,6 +24,8 @@ Collapsible side navigation panel toggled by the hamburger button in the header.
 - Nav items rendered as `<NavLink>` links
   - Active item: `active={true}` + `aria-current="page"`
   - Root route (`/`) is active when the selected segment is `null`
+- When `onNavigate` is supplied, item clicks pass both the target `href` and click event to it before calling `onClose`.
+- If `onNavigate` returns `false`, `SideNav` does not close; this supports guarded navigation modals that keep the attempted route pending.
 - No outside-click-to-close handler (intentional)
 
 ## Nav Items
@@ -50,6 +53,7 @@ const sideNavNode = (
     isOpen={sideNavOpen}
     isLG={isLG}
     onClose={() => setSideNavOpen(false)}
+    onNavigate={guardedNavigate}
   />
 );
 

@@ -13,7 +13,7 @@ interface NavLinkProps {
   readonly "aria-label"?: string;
   readonly "aria-current"?: "page" | undefined;
   readonly className?: string;
-  readonly onClick?: () => void;
+  readonly onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 export function NavLink({

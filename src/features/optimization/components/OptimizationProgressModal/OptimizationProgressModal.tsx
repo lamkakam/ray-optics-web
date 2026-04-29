@@ -19,6 +19,8 @@ import type { OptimizationProgressEntry } from "@/features/optimization/types/op
 
 echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
+const OPTIMIZATION_PROGRESS_CHART_POINT_LIMIT = 2000;
+
 interface OptimizationProgressModalProps {
   readonly isOpen: boolean;
   readonly isOptimizing: boolean;
@@ -30,6 +32,9 @@ function buildOptimizationProgressOption(
   progress: ReadonlyArray<OptimizationProgressEntry>,
   textColor: string,
 ): EChartsCoreOption {
+  const plottedProgress = progress.slice(-OPTIMIZATION_PROGRESS_CHART_POINT_LIMIT);
+  const firstPlottedIteration = plottedProgress[0]?.iteration;
+
   return {
     animation: false,
     grid: {
@@ -43,6 +48,7 @@ function buildOptimizationProgressOption(
     },
     xAxis: {
       type: "value",
+      min: firstPlottedIteration,
       minInterval: 1,
       name: "Iteration",
       nameLocation: "middle",
@@ -65,8 +71,8 @@ function buildOptimizationProgressOption(
       {
         type: "line",
         smooth: false,
-        showSymbol: progress.length <= 1,
-        data: progress.map((entry) => [
+        showSymbol: plottedProgress.length <= 1,
+        data: plottedProgress.map((entry) => [
           entry.iteration,
           Math.max(entry.merit_function_value, MINIMUM_NON_ZERO_PLOT_VALUE),
         ]),

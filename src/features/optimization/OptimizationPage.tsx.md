@@ -64,7 +64,7 @@ interface OptimizationPageProps {
 - `Optimize` validates the store state, rejects zero-contribution configs with a warning modal even if the handler is triggered programmatically, opens `OptimizationProgressModal`, calls `proxy.optimizeOpm`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
 - The progress modal is blocking while optimization is active: there is no `OK` button and backdrop clicks are ignored until the worker promise settles.
 - After the optimization run settles, the progress modal keeps the final chart visible, exposes an `OK` button, and can then be dismissed without mutating the optimization result.
-- `Apply to Editor` opens a confirm modal, overwrites the lens-editor rows/specs/auto-aperture state with the page-local optimization snapshot, marks the row replacement with `optimizationSyncPolicy: "preserveOptimizationModes"`, updates `committedOpticalModel`, and then calls optional `onApplyToEditor(model)`.
+- `Apply to Editor` opens a confirm modal, applies the page-local optimization snapshot through `applyOptimizationModelToEditor()`, clears the store's unapplied-result marker, and then calls optional `onApplyToEditor(model)`.
 - Modal rendering is delegated to extracted wrappers:
   - `RadiusModeModal`
   - `ThicknessModeModal`
@@ -83,7 +83,7 @@ interface OptimizationPageProps {
 - The live evaluation table uses the residual `total_weight` reported by Python and hides rows whose effective weight is zero, so field/wavelength-expanded operands appear only for active contributions.
 - Large-screen evaluation height is derived from the observed page-shell height, the current live drawer height, and measured fixed overhead above the table, with a fallback reserve when DOM measurement is not yet available.
 - The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.
-- `OptimizationPage` remains responsible for deriving row data, evaluation state, modal state, worker calls, and apply-to-editor behavior.
+- `OptimizationPage` remains responsible for deriving row data, evaluation state, modal state, worker calls, and the page-level Apply to Editor confirmation. The editor mutation itself is factored into `features/optimization/lib/applyOptimizationModelToEditor.ts` so the app shell navigation warning can reuse the same apply path.
 - `BottomDrawerContainer` owns the drawer wrapper, tab assembly, active-tab state binding, optimizer handlers, field/wavelength weight handlers, prescription variable-modal handlers, and operand handlers by reading the optimization store directly.
 - Page-level optimization components are imported through their component-directory `index.ts` barrels. `BottomDrawerContainer` handles the narrow drawer-tab component imports, while `OptimizationInspectionModals` comes from its own nested directory barrel.
 - Optimization worker report/progress types are imported from `features/optimization/types/optimizationWorkerTypes.ts`.

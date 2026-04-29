@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useStore } from "zustand";
+import { createStore } from "zustand";
 import HomePage from "@/app/page";
 import AppShell from "@/app/AppShell";
 import GlassMapPage from "@/app/glass-map/page";
@@ -15,6 +16,16 @@ import { AnalysisDataStoreProvider } from "@/features/analysis/providers/Analysi
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import {
+  OptimizationStoreContext,
+  OptimizationStoreProvider,
+  useOptimizationStore,
+} from "@/features/optimization/providers/OptimizationStoreProvider";
+import {
+  createOptimizationSlice,
+  type OptimizationState,
+} from "@/features/optimization/stores/optimizationStore";
+import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
@@ -25,10 +36,14 @@ import type { ZernikeData } from "@/features/lens-editor/types/zernikeData";
 
 let mockSelectedSegment: string | null = null;
 let mockSearchParams = new URLSearchParams();
+let mockPathname = "/";
+const mockPush = jest.fn<void, [string]>();
 
 jest.mock("next/navigation", () => ({
   useSelectedLayoutSegment: () => mockSelectedSegment,
   useSearchParams: () => mockSearchParams,
+  usePathname: () => mockPathname,
+  useRouter: () => ({ push: mockPush }),
 }));
 
 jest.mock("next/link", () => {
@@ -242,6 +257,27 @@ const mockProxy = {
   }),
 } satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
+const optimizationGuardModel: OpticalModel = {
+  setAutoAperture: "manualAperture",
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 42,
+      thickness: 5,
+      medium: "BK7",
+      manufacturer: "Schott",
+      semiDiameter: 10,
+    },
+  ],
+  specs: {
+    pupil: { space: "object", type: "epd", value: 12.5 },
+    field: { space: "object", type: "angle", maxField: 20, fields: [0], isRelative: true },
+    wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
+  },
+};
+
 type MockUsePyodideResult = {
   proxy: PyodideWorkerAPI | undefined;
   isReady: boolean;
@@ -280,7 +316,23 @@ function renderWithStores(node: React.ReactNode) {
 }
 
 function renderInAppShell(node: React.ReactNode) {
-  return renderWithStores(<AppShell>{node}</AppShell>);
+  return renderWithStores(
+    <OptimizationStoreProvider>
+      <AppShell>{node}</AppShell>
+    </OptimizationStoreProvider>,
+  );
+}
+
+function renderInAppShellWithOptimizationStore(
+  node: React.ReactNode,
+  optimizationStore = createStore<OptimizationState>(createOptimizationSlice),
+) {
+  const rendered = renderWithStores(
+    <OptimizationStoreContext.Provider value={optimizationStore}>
+      <AppShell>{node}</AppShell>
+    </OptimizationStoreContext.Provider>,
+  );
+  return { ...rendered, optimizationStore };
 }
 
 function StoreProbe() {
@@ -327,12 +379,38 @@ function RouteSwitchHarness() {
   );
 }
 
+function SeedUnappliedOptimizationResult() {
+  const store = useOptimizationStore();
+
+  React.useEffect(() => {
+    store.setState({
+      optimizationModel: optimizationGuardModel,
+      hasUnappliedOptimizationResult: true,
+    });
+  }, [store]);
+
+  return <div>Optimization body</div>;
+}
+
+function LensEditorRadiusProbe() {
+  const lensStore = useLensEditorStore();
+  const radius = useStore(lensStore, (state) => {
+    const row = state.rows[1];
+    return row?.kind === "surface" || row?.kind === "image"
+      ? row.curvatureRadius
+      : undefined;
+  });
+  return <div data-testid="editor-radius">{radius ?? "missing"}</div>;
+}
+
 describe("app shell routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     _resetGlassCatalogsResourceForTest();
     mockSelectedSegment = null;
+    mockPathname = "/";
     mockSearchParams = new URLSearchParams();
+    mockPush.mockReset();
     mockUsePyodide.mockReturnValue({
       proxy: mockProxy,
       isReady: true,
@@ -375,14 +453,116 @@ describe("app shell routes", () => {
     expect(screen.getByText("90%")).toBeInTheDocument();
   });
 
-  it("registers a beforeunload handler from the shared shell", () => {
+  it("does not block beforeunload when no optimization result is waiting to be applied", () => {
     renderInAppShell(<HomePage />);
+
+    const spy = jest.spyOn(Event.prototype, "preventDefault");
+    const event = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(event);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("blocks beforeunload when an optimization result has not been applied to the editor", async () => {
+    renderInAppShell(<SeedUnappliedOptimizationResult />);
+    await screen.findByText("Optimization body");
 
     const spy = jest.spyOn(Event.prototype, "preventDefault");
     const event = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(event);
     expect(spy).toHaveBeenCalledTimes(1);
     spy.mockRestore();
+  });
+
+  it("warns before SideNav navigation leaves Optimization with an unapplied result", async () => {
+    mockPathname = "/optimization";
+    mockSelectedSegment = "optimization";
+    const user = userEvent.setup();
+    renderInAppShell(<SeedUnappliedOptimizationResult />);
+
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    await user.click(screen.getByRole("link", { name: "Glass Map" }));
+
+    expect(screen.getByRole("dialog", { name: "Unapplied Optimization Result" })).toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("does not dismiss the unapplied optimization warning from a backdrop click", async () => {
+    mockPathname = "/optimization";
+    mockSelectedSegment = "optimization";
+    const user = userEvent.setup();
+    renderInAppShell(<SeedUnappliedOptimizationResult />);
+
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    await user.click(screen.getByRole("link", { name: "Glass Map" }));
+    fireEvent.click(screen.getByTestId("modal-backdrop"));
+
+    expect(screen.getByRole("dialog", { name: "Unapplied Optimization Result" })).toBeInTheDocument();
+  });
+
+  it("keeps the user on Optimization when the warning Stay action is chosen", async () => {
+    mockPathname = "/optimization";
+    mockSelectedSegment = "optimization";
+    const user = userEvent.setup();
+    renderInAppShell(<SeedUnappliedOptimizationResult />);
+
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    await user.click(screen.getByRole("link", { name: "Glass Map" }));
+    await user.click(screen.getByRole("button", { name: "Stay" }));
+
+    expect(screen.queryByRole("dialog", { name: "Unapplied Optimization Result" })).not.toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("continues to the requested SideNav route when the warning Leave action is chosen", async () => {
+    mockPathname = "/optimization";
+    mockSelectedSegment = "optimization";
+    const user = userEvent.setup();
+    renderInAppShell(<SeedUnappliedOptimizationResult />);
+
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    await user.click(screen.getByRole("link", { name: "Glass Map" }));
+    await user.click(screen.getByRole("button", { name: "Leave" }));
+
+    expect(mockPush).toHaveBeenCalledWith("/glass-map");
+  });
+
+  it("applies the optimization result to the editor and continues navigation from the warning", async () => {
+    mockPathname = "/optimization";
+    mockSelectedSegment = "optimization";
+    const user = userEvent.setup();
+    const { optimizationStore } = renderInAppShellWithOptimizationStore(
+      <>
+        <SeedUnappliedOptimizationResult />
+        <LensEditorRadiusProbe />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    await user.click(screen.getByRole("link", { name: "Glass Map" }));
+    await user.click(screen.getByRole("button", { name: "Apply to Editor" }));
+
+    expect(screen.getByTestId("editor-radius")).toHaveTextContent("42");
+    expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(false);
+    expect(mockPush).toHaveBeenCalledWith("/glass-map");
+  });
+
+  it("warns on browser back navigation away from Optimization with an unapplied result", async () => {
+    mockPathname = "/optimization";
+    window.history.pushState({}, "", "/optimization");
+    renderInAppShell(<SeedUnappliedOptimizationResult />);
+    await screen.findByText("Optimization body");
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Unapplied Optimization Result" })).not.toBeInTheDocument();
+    });
+
+    window.history.pushState({}, "", "/");
+    fireEvent(window, new PopStateEvent("popstate"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: "Unapplied Optimization Result" })).toBeInTheDocument();
+    });
+    expect(window.location.pathname).toBe("/optimization");
   });
 
   it("renders the lens editor on the root route", () => {
