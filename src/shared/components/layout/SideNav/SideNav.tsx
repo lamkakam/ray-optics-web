@@ -1,5 +1,6 @@
 "use client";
 
+import type React from "react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { Button } from "@/shared/components/primitives/Button";
 import { NavLink } from "@/shared/components/primitives/NavLink";
@@ -8,6 +9,7 @@ interface SideNavProps {
   readonly isOpen: boolean;
   readonly isLG: boolean;
   readonly onClose: () => void;
+  readonly onNavigate?: (href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean;
 }
 
 const NAV_ITEMS = [
@@ -19,7 +21,7 @@ const NAV_ITEMS = [
   { segment: "about", href: "/about", label: "About" },
 ] as const;
 
-export function SideNav({ isOpen, isLG, onClose }: SideNavProps) {
+export function SideNav({ isOpen, isLG, onClose, onNavigate }: SideNavProps) {
   const selectedSegment = useSelectedLayoutSegment();
   const activeSegment = selectedSegment ?? null;
 
@@ -45,7 +47,12 @@ export function SideNav({ isOpen, isLG, onClose }: SideNavProps) {
               active={isActive}
               aria-label={label}
               aria-current={isActive ? "page" : undefined}
-              onClick={onClose}
+              onClick={(event) => {
+                if (onNavigate?.(href, event) === false) {
+                  return;
+                }
+                onClose();
+              }}
             >
               {label}
             </NavLink>

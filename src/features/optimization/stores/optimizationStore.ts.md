@@ -26,6 +26,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `asphereStates` — one entry per real surface, carrying the optimization asphere type plus independent constant/variable/pickup settings for conic constant, 10 coefficient slots, and toroid sweep radius
 - `operands` — add/delete operand rows for `focal_length`, `f_number`, `opd_difference`, `rms_spot_size`, `rms_wavefront_error`, and `ray_fan`; targeted operands keep editable string `target` values while target-less operands store `target: undefined`
 - `isOptimizing` — loading flag for the page-blocking overlay
+- `hasUnappliedOptimizationResult` — true after an optimization report with returned `final_values` or `pickups` updates the Optimization-local optical model and before that model is applied to the Editor
 - `warningModal`, `applyConfirmOpen`, `radiusModal`, `thicknessModal`, `asphereModal` — modal state
 - `lastOptimizationReport` — last successful worker report
 
@@ -43,8 +44,9 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `openAsphereModal(surfaceIndex)` / `closeAsphereModal()` — control the asphere variable/pickup modal
 - `addOperand()` / `deleteOperand(id)` / `updateOperand(id, patch)` / `replaceOperands(rows)` — manage operand rows
 - `setOptimizerKind(kind)` — switches optimizer kind and resets algorithm fields to that kind's defaults so method-based and methodless fields are not mixed
+- `markOptimizationResultAppliedToEditor()` — clears `hasUnappliedOptimizationResult` after the optimized model has been applied to the Editor
 - `buildOptimizationConfig()` — validates current UI state and emits the Python `OptimizationConfig`, including method-aware bounded or unbounded variable entries
-- `applyOptimizationResult(report)` — applies optimized radius/thickness values and pickups back into the page-local optical-model snapshot
+- `applyOptimizationResult(report)` — applies optimized radius/thickness/asphere values and pickups back into the page-local optical-model snapshot and marks the result as unapplied when the report contains returned values or pickups
 
 ## Internal Structure
 
@@ -89,5 +91,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`.
 - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count. `ray_fan` contributes `num_rays * 2` residuals per selected field/wavelength pair and defaults to `options.num_rays = 21`; Differential Evolution does not use this least-squares residual-count rule.
 - `applyOptimizationResult()` can create or update `surface.aspherical` on the optimization-local optical model when optimized asphere results come back from Python.
+- `syncFromOpticalModel()` clears `hasUnappliedOptimizationResult` when a normal editor sync replaces the Optimization-local snapshot through field, wavelength, or reset-policy prescription changes.
+- `syncFromOpticalModel()` preserves `hasUnappliedOptimizationResult` during Optimization-origin prescription syncs that use `prescriptionSyncPolicy: "preserveOptimizationModes"`; the apply path clears the marker explicitly after the editor has been updated.
 - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
 - `RadiusMode`, `RadiusModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.

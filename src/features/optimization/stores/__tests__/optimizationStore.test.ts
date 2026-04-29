@@ -199,6 +199,7 @@ describe("optimizationStore", () => {
       { surfaceIndex: 2, mode: "constant" },
     ]);
     expect(state.operands).toEqual([]);
+    expect(state.hasUnappliedOptimizationResult).toBe(false);
   });
 
   it("adds the default focal-length operand row on demand", () => {
@@ -891,6 +892,54 @@ describe("optimizationStore", () => {
     expect(model?.surfaces[1].curvatureRadius).toBe(-42);
     expect(model?.surfaces[1].thickness).toBe(25);
     expect(model?.image.curvatureRadius).toBe(0);
+    expect(store.getState().hasUnappliedOptimizationResult).toBe(true);
+  });
+
+  it("does not mark an optimization result as unapplied when no values or pickups are returned", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().applyOptimizationResult({
+      success: true,
+      status: "optimized",
+      message: "done",
+      optimizer: { kind: "least_squares", method: "trf" },
+      initial_values: [],
+      final_values: [],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 0, rss: 0 },
+      optimization_progress: [],
+    });
+
+    expect(store.getState().hasUnappliedOptimizationResult).toBe(false);
+  });
+
+  it("clears the unapplied optimization marker after the result is marked applied to the editor", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.setState({ hasUnappliedOptimizationResult: true });
+
+    store.getState().markOptimizationResultAppliedToEditor();
+
+    expect(store.getState().hasUnappliedOptimizationResult).toBe(false);
+  });
+
+  it("clears the unapplied optimization marker when a normal editor sync replaces the local snapshot", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.setState({ hasUnappliedOptimizationResult: true });
+
+    store.getState().syncFromOpticalModel({
+      ...baseModel,
+      surfaces: [
+        { ...baseModel.surfaces[0], curvatureRadius: 88 },
+        baseModel.surfaces[1],
+      ],
+    });
+
+    expect(store.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(88);
+    expect(store.getState().hasUnappliedOptimizationResult).toBe(false);
   });
 
   it("applies an image-surface radius result to the local optical model snapshot", () => {

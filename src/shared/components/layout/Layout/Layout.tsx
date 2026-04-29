@@ -8,9 +8,10 @@ import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
 interface LayoutProps {
   readonly children: React.ReactNode;
+  readonly onNavigate?: (href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, onNavigate }: LayoutProps) {
   const [sideNavOpen, setSideNavOpen] = useState(false);
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
@@ -31,6 +32,7 @@ export function Layout({ children }: LayoutProps) {
       isOpen={sideNavOpen}
       isLG={isLG}
       onClose={() => setSideNavOpen(false)}
+      onNavigate={onNavigate}
     />
   );
 

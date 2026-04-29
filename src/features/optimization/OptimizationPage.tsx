@@ -19,6 +19,7 @@ import {
   ThicknessModeModal,
 } from "./components";
 import { getOptimizationAlgorithmCapabilities } from "./lib/methodCapabilities";
+import { applyOptimizationModelToEditor } from "./lib/applyOptimizationModelToEditor";
 import { hasNonZeroOptimizationContribution } from "./stores/optimizationStore";
 import { createEvaluationRow, type RadiusRow, type WeightRow } from "./lib/optimizationViewModels";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
@@ -375,14 +376,9 @@ export function OptimizationPage({
       return;
     }
 
-    specsStore.getState().loadFromSpecs(model.specs);
-    specsStore.getState().setCommittedSpecs(model.specs);
-    lensStore.getState().setRows(surfacesToGridRows(model), {
-      optimizationSyncPolicy: "preserveOptimizationModes",
-    });
-    lensStore.getState().setAutoAperture(model.setAutoAperture === "autoAperture");
-    lensStore.getState().setCommittedOpticalModel(model);
+    applyOptimizationModelToEditor({ model, lensStore, specsStore });
     optimizationStore.getState().closeApplyConfirm();
+    optimizationStore.getState().markOptimizationResultAppliedToEditor();
     await onApplyToEditor?.(model);
   };
 

@@ -12,7 +12,7 @@ Micro-component for navigation links. Wraps Next.js `Link` with the app's active
 | `aria-label` | `string \| undefined` | ARIA label |
 | `aria-current` | `"page" \| undefined` | Active ARIA attribute |
 | `className` | `string \| undefined` | Optional extra Tailwind classes |
-| `onClick` | `(() => void) \| undefined` | Optional click callback (for local UI side effects such as closing the nav) |
+| `onClick` | `React.MouseEventHandler<HTMLAnchorElement> \| undefined` | Optional click callback that receives the anchor click event |
 
 ## Styling (via `componentTokens.navLink` in `styleTokens.ts`)
 - Base: `block px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer`
@@ -22,7 +22,7 @@ Micro-component for navigation links. Wraps Next.js `Link` with the app's active
 ## Behaviour
 - Renders a Next.js `Link`
 - Preserves normal route navigation through `href`
-- Invokes `onClick` when supplied, without preventing navigation
+- Invokes `onClick` when supplied and passes through the anchor click event, allowing callers to call `preventDefault()` before guarded programmatic navigation
 - Active/inactive state is controlled entirely via the `active` prop
 
 ## Usages
@@ -36,7 +36,10 @@ Micro-component for navigation links. Wraps Next.js `Link` with the app's active
     active={pathname === href}
     aria-label={label}
     aria-current={pathname === href ? "page" : undefined}
-    onClick={onClose}
+    onClick={(event) => {
+      event.preventDefault();
+      guardedNavigate(href);
+    }}
   >
     {label}
   </NavLink>
