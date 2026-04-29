@@ -124,6 +124,36 @@ describe("ExampleSystemsPage", () => {
     expect(screen.queryByRole("dialog", { name: "Load Example System" })).not.toBeInTheDocument();
   });
 
+  it("uses an always-horizontal two-column viewport layout", () => {
+    renderPage();
+
+    const menu = screen.getByLabelText("Example systems");
+    const layout = menu.parentElement;
+
+    expect(layout).toHaveClass("grid");
+    expect(layout).toHaveClass("grid-cols-[minmax(0,calc(50vw-1.5rem))_minmax(0,calc(50vw-1.5rem))]");
+    expect(layout?.className).not.toContain("lg:grid-cols");
+  });
+
+  it("sizes the example menu instance with viewport-relative dimensions", () => {
+    renderPage();
+
+    const menu = screen.getByLabelText("Example systems");
+
+    expect(menu).toHaveClass("w-[calc(50vw-1.5rem)]");
+    expect(menu).toHaveClass("h-[calc(100dvh-8rem)]");
+    expect(menu).toHaveClass("!max-h-[calc(100dvh-8rem)]");
+  });
+
+  it("sizes the description instance with viewport-relative dimensions", () => {
+    renderPage();
+
+    const description = screen.getByTestId("description-container");
+
+    expect(description).toHaveClass("w-[calc(50vw-1.5rem)]");
+    expect(description).toHaveClass("h-[50dvh]");
+  });
+
   it("confirming applies the model, computes data, and routes to the Lens Editor", async () => {
     const { proxy, lensStore, specsStore, analysisDataStore } = renderPage();
     const user = userEvent.setup();

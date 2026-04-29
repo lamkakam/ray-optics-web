@@ -86,11 +86,14 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
   ]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4">
+    <div className="flex-1 min-h-0 overflow-auto px-4 py-4">
+      <div className="flex w-full min-w-[calc(100vw-2rem)] flex-col gap-4">
         <Header level={2}>Example Systems</Header>
-        <div className="grid gap-4 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
-          <MenuContainer aria-label="Example systems">
+        <div className="grid w-full grid-cols-[minmax(0,calc(50vw-1.5rem))_minmax(0,calc(50vw-1.5rem))] gap-4">
+          <MenuContainer
+            aria-label="Example systems"
+            className="h-[calc(100dvh-8rem)] w-[calc(50vw-1.5rem)] !max-h-[calc(100dvh-8rem)]"
+          >
             {exampleKeys.map((key) => {
               const name = stripExamplePrefix(key);
               const selected = key === selectedExampleKey;
@@ -114,7 +117,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
               );
             })}
           </MenuContainer>
-          <div className="flex min-h-[20rem] flex-col gap-4">
+          <div className="flex w-[calc(50vw-1.5rem)] min-h-0 flex-col gap-4">
             <div className="flex justify-end">
               <Button
                 variant="primary"
@@ -125,7 +128,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
                 Apply
               </Button>
             </div>
-            <DescriptionContainer className="flex-1">
+            <DescriptionContainer className="h-[50dvh] w-[calc(50vw-1.5rem)] overflow-y-auto">
               <Paragraph variant="body">{selectedDescription}</Paragraph>
             </DescriptionContainer>
           </div>
