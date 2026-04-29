@@ -16,8 +16,10 @@ import { AnalysisPlotStoreContext } from "@/features/analysis/providers/Analysis
 import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { ExampleSystemsPage } from "@/features/example-systems/ExampleSystemsPage";
+import type { ScreenSize } from "@/shared/hooks/useScreenBreakpoint";
 
 const mockPush = jest.fn<void, [string]>();
+let mockScreenBreakpoint: ScreenSize = "screenLG";
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush }),
@@ -25,6 +27,10 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
+}));
+
+jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
+  useScreenBreakpoint: () => mockScreenBreakpoint,
 }));
 
 const mockSeidelData: SeidelData = {
@@ -66,7 +72,11 @@ function makeProxy(): PyodideWorkerAPI {
   } as unknown as PyodideWorkerAPI;
 }
 
-function renderPage(overrides?: { readonly proxy?: PyodideWorkerAPI; readonly onError?: () => void }) {
+function renderPage(overrides?: {
+  readonly proxy?: PyodideWorkerAPI;
+  readonly onError?: () => void;
+  readonly screenSize?: ScreenSize;
+}) {
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
   const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   const analysisPlotStore = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
@@ -74,6 +84,7 @@ function renderPage(overrides?: { readonly proxy?: PyodideWorkerAPI; readonly on
   const lensLayoutImageStore = createStore<LensLayoutImageState>(createLensLayoutImageSlice);
   const proxy = overrides?.proxy ?? makeProxy();
   const onError = overrides?.onError ?? jest.fn();
+  mockScreenBreakpoint = overrides?.screenSize ?? "screenLG";
 
   render(
     <SpecsConfiguratorStoreContext.Provider value={specsStore}>
@@ -95,6 +106,7 @@ function renderPage(overrides?: { readonly proxy?: PyodideWorkerAPI; readonly on
 describe("ExampleSystemsPage", () => {
   beforeEach(() => {
     mockPush.mockReset();
+    mockScreenBreakpoint = "screenLG";
   });
 
   it("renders example names without numeric prefixes and keeps only one selected item", async () => {
@@ -124,34 +136,71 @@ describe("ExampleSystemsPage", () => {
     expect(screen.queryByRole("dialog", { name: "Load Example System" })).not.toBeInTheDocument();
   });
 
-  it("uses an always-horizontal two-column viewport layout", () => {
-    renderPage();
+  it("keeps the large-screen two-column viewport layout with Apply above the description", () => {
+    renderPage({ screenSize: "screenLG" });
 
     const menu = screen.getByLabelText("Example systems");
     const layout = menu.parentElement;
+    const description = screen.getByTestId("description-container");
+    const rightColumn = description.parentElement;
+    const apply = screen.getByRole("button", { name: "Apply" });
 
     expect(layout).toHaveClass("grid");
     expect(layout).toHaveClass("grid-cols-[minmax(0,calc(50vw-1.5rem))_minmax(0,calc(50vw-1.5rem))]");
-    expect(layout?.className).not.toContain("lg:grid-cols");
-  });
-
-  it("sizes the example menu instance with viewport-relative dimensions", () => {
-    renderPage();
-
-    const menu = screen.getByLabelText("Example systems");
-
     expect(menu).toHaveClass("w-[calc(50vw-1.5rem)]");
     expect(menu).toHaveClass("h-[calc(100dvh-8rem)]");
     expect(menu).toHaveClass("!max-h-[calc(100dvh-8rem)]");
-  });
-
-  it("sizes the description instance with viewport-relative dimensions", () => {
-    renderPage();
-
-    const description = screen.getByTestId("description-container");
-
     expect(description).toHaveClass("w-[calc(50vw-1.5rem)]");
     expect(description).toHaveClass("h-[50dvh]");
+    expect(rightColumn?.firstElementChild).toContainElement(apply);
+    expect(rightColumn?.lastElementChild).toBe(description);
+  });
+
+  it("places Apply in the heading row on small screens", () => {
+    renderPage({ screenSize: "screenSM" });
+
+    const heading = screen.getByRole("heading", { name: "Example Systems" });
+    const headingRow = heading.parentElement;
+    const apply = screen.getByRole("button", { name: "Apply" });
+
+    expect(headingRow).toHaveClass("flex");
+    expect(headingRow).toHaveClass("items-center");
+    expect(headingRow).toHaveClass("justify-between");
+    expect(headingRow).toContainElement(apply);
+  });
+
+  it("stacks full-width menu before description with split-height panels on small screens", () => {
+    renderPage({ screenSize: "screenSM" });
+
+    const menu = screen.getByLabelText("Example systems");
+    const description = screen.getByTestId("description-container");
+    const layout = menu.parentElement;
+
+    expect(layout).toHaveClass("flex");
+    expect(layout).toHaveClass("flex-col");
+    expect(layout?.firstElementChild).toBe(menu);
+    expect(layout?.lastElementChild).toBe(description);
+    expect(menu).toHaveClass("w-full");
+    expect(menu).toHaveClass("min-h-0");
+    expect(menu).toHaveClass("flex-1");
+    expect(menu).toHaveClass("overflow-y-auto");
+    expect(description).toHaveClass("w-full");
+    expect(description).toHaveClass("min-h-0");
+    expect(description).toHaveClass("flex-1");
+    expect(description).toHaveClass("overflow-y-auto");
+    expect(menu.className).not.toContain("50vw");
+    expect(description.className).not.toContain("50vw");
+  });
+
+  it("contains small-screen vertical overflow inside the page panels", () => {
+    renderPage({ screenSize: "screenSM" });
+
+    const menu = screen.getByLabelText("Example systems");
+    const page = menu.parentElement?.parentElement;
+
+    expect(page).toHaveClass("flex-1");
+    expect(page).toHaveClass("min-h-0");
+    expect(page).toHaveClass("overflow-hidden");
   });
 
   it("confirming applies the model, computes data, and routes to the Lens Editor", async () => {

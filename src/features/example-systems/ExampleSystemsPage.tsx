@@ -19,6 +19,7 @@ import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisData
 import { useLensLayoutImageStore } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { applyExampleSystem } from "@/features/example-systems/lib/applyExampleSystem";
 import { getExampleSystemDescription, stripExamplePrefix } from "@/features/example-systems/lib/exampleSystemDescriptions";
+import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
 interface ExampleSystemsPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -28,6 +29,7 @@ interface ExampleSystemsPageProps {
 export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) {
   const router = useRouter();
   const { theme } = useTheme();
+  const screenSize = useScreenBreakpoint();
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
   const analysisPlotStore = useAnalysisPlotStore();
@@ -40,6 +42,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
   const selectedDescription = selectedExampleKey === undefined
     ? "Select an example system to review its source and apply it to the Lens Editor."
     : getExampleSystemDescription(selectedExampleKey);
+  const isLargeScreen = screenSize === "screenLG";
 
   const handleConfirm = useCallback(async () => {
     if (selectedExampleKey === undefined || applying) {
@@ -85,6 +88,73 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
     theme,
   ]);
 
+  const applyButton = (
+    <Button
+      variant="primary"
+      aria-label="Apply"
+      disabled={selectedExampleKey === undefined || applying}
+      onClick={() => setConfirmOpen(true)}
+    >
+      Apply
+    </Button>
+  );
+
+  const menuItems = exampleKeys.map((key) => {
+    const name = stripExamplePrefix(key);
+    const selected = key === selectedExampleKey;
+    return (
+      <li key={key}>
+        <button
+          type="button"
+          aria-label={name}
+          aria-pressed={selected}
+          className={clsx(
+            "w-full rounded-md px-3 py-2 text-left text-sm transition",
+            selected
+              ? "bg-blue-600 text-white"
+              : "text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700",
+          )}
+          onClick={() => setSelectedExampleKey(key)}
+        >
+          {name}
+        </button>
+      </li>
+    );
+  });
+
+  const confirmModal = (
+    <ConfirmOverwriteModal
+      isOpen={confirmOpen}
+      onConfirm={() => void handleConfirm()}
+      onCancel={() => setConfirmOpen(false)}
+    />
+  );
+
+  if (!isLargeScreen) {
+    return (
+      <div className="flex-1 min-h-0 overflow-hidden px-4 py-4">
+        <div className="flex h-full w-full min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+          <div className="flex items-center justify-between gap-4">
+            <Header level={2}>Example Systems</Header>
+            {applyButton}
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            <MenuContainer
+              aria-label="Example systems"
+              className="w-full min-h-0 flex-1 overflow-y-auto !max-h-none"
+            >
+              {menuItems}
+            </MenuContainer>
+            <DescriptionContainer className="w-full min-h-0 flex-1 overflow-y-auto">
+              <Paragraph variant="body">{selectedDescription}</Paragraph>
+            </DescriptionContainer>
+          </div>
+        </div>
+        {confirmModal}
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 min-h-0 overflow-auto px-4 py-4">
       <div className="flex w-full min-w-[calc(100vw-2rem)] flex-col gap-4">
@@ -94,39 +164,11 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
             aria-label="Example systems"
             className="h-[calc(100dvh-8rem)] w-[calc(50vw-1.5rem)] !max-h-[calc(100dvh-8rem)]"
           >
-            {exampleKeys.map((key) => {
-              const name = stripExamplePrefix(key);
-              const selected = key === selectedExampleKey;
-              return (
-                <li key={key}>
-                  <button
-                    type="button"
-                    aria-label={name}
-                    aria-pressed={selected}
-                    className={clsx(
-                      "w-full rounded-md px-3 py-2 text-left text-sm transition",
-                      selected
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-700 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-700",
-                    )}
-                    onClick={() => setSelectedExampleKey(key)}
-                  >
-                    {name}
-                  </button>
-                </li>
-              );
-            })}
+            {menuItems}
           </MenuContainer>
           <div className="flex w-[calc(50vw-1.5rem)] min-h-0 flex-col gap-4">
             <div className="flex justify-end">
-              <Button
-                variant="primary"
-                aria-label="Apply"
-                disabled={selectedExampleKey === undefined || applying}
-                onClick={() => setConfirmOpen(true)}
-              >
-                Apply
-              </Button>
+              {applyButton}
             </div>
             <DescriptionContainer className="h-[50dvh] w-[calc(50vw-1.5rem)] overflow-y-auto">
               <Paragraph variant="body">{selectedDescription}</Paragraph>
@@ -134,11 +176,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
           </div>
         </div>
       </div>
-      <ConfirmOverwriteModal
-        isOpen={confirmOpen}
-        onConfirm={() => void handleConfirm()}
-        onCancel={() => setConfirmOpen(false)}
-      />
+      {confirmModal}
     </div>
   );
 }

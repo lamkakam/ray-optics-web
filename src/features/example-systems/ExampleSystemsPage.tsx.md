@@ -4,10 +4,12 @@ Client route component for selecting and applying bundled example optical system
 
 ## Behavior
 
-- Renders an always-horizontal two-column layout with a `MenuContainer` list on the left and apply/description content on the right.
-- Uses viewport-relative column sizing so each column occupies approximately half of the available viewport width; narrow viewports keep the two columns side by side and allow page overflow instead of stacking.
-- Sizes the page-specific `MenuContainer` instance to the viewport height with an instance-level max-height override so large screens do not leave unused vertical gaps.
-- Sizes the page-specific `DescriptionContainer` instance to approximately half the viewport height and keeps the Apply button above it in the right column.
+- Uses `useScreenBreakpoint()` to choose between large-screen and small-screen layout at the project `screenLG` breakpoint.
+- On `screenLG`, renders the existing two-column layout with a `MenuContainer` list on the left and apply/description content on the right.
+- On `screenLG`, uses viewport-relative column sizing so each column occupies approximately half of the available viewport width, sizes the page-specific `MenuContainer` instance to the viewport height, and keeps the Apply button above the page-specific `DescriptionContainer` in the right column.
+- On `screenSM`, renders a contained full-width vertical layout with the page heading and Apply button in the same header row.
+- On `screenSM`, stacks `MenuContainer` before `DescriptionContainer`, gives both panels the full available route width, and splits the remaining route height between them with `min-h-0`/`flex-1`.
+- On `screenSM`, keeps the page wrapper overflow hidden to avoid route-level vertical scrolling; long menu or description content scrolls inside the corresponding panel.
 - Keeps selected example key, confirmation modal visibility, and applying state local to the component.
 - Displays example names with numeric prefixes stripped.
 - Uses `applyExampleSystem()` to load the selected model into editor stores, compute first-order/layout/selected plot/Seidel data, commit specs/model, then route to `/`.
