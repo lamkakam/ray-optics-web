@@ -376,6 +376,7 @@ export const componentTokens = {
       placeholderFontSize: "text-sm",
       captionFontSize: "text-xs",
       captionMargin: "mb-1",
+      descriptionFontSize: "text-md",
     },
     style: {
       subheadingFontWeight: "font-medium",
