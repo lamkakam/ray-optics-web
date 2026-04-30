@@ -9,7 +9,7 @@ README-derived display descriptions for bundled example optical systems.
 ## Description Map
 
 - Descriptions are keyed by `keyof typeof ExampleSystemList` and the map uses `satisfies Record<ExampleSystemName, ReactNode>`, so TypeScript reports both missing descriptions and extra description entries when the example catalogue changes.
-- `ExampleSystemName` is imported from the shared data module, keeping description keys aligned with the unprefixed example catalogue.
+- `ExampleSystemName` is imported from the feature-local catalogue module, keeping description keys aligned with the unprefixed example catalogue.
 - `getExampleSystemDescription(exampleName)` indexes the exact map directly; callers must pass a known canonical example name.
 
 ## Link Behavior

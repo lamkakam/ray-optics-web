@@ -1,4 +1,4 @@
-# `shared/lib/data/exampleSystems.ts`
+# `features/example-systems/lib/exampleSystems.ts`
 
 ## Purpose
 
@@ -26,7 +26,7 @@ type ExampleSystemName = keyof typeof ExampleSystemList;
 ## Usages
 
 ```tsx
-import { ExampleSystemList, type ExampleSystemName } from "@/shared/lib/data/exampleSystems";
+import { ExampleSystemList, type ExampleSystemName } from "@/features/example-systems/lib/exampleSystems";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 
 // In a system selector dropdown

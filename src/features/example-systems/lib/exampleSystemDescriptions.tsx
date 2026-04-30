@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { MathJax } from 'better-react-mathjax';
 import { ExternalLink, Paragraph } from '@/shared/components/primitives';
-import type { ExampleSystemName } from "@/shared/lib/data/exampleSystems";
+import type { ExampleSystemName } from "@/features/example-systems/lib/exampleSystems";
 
 const DescriptionParagraph = ({ children }: { children: ReactNode }) => (
   <Paragraph variant="description">

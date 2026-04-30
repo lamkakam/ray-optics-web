@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { ExampleSystemList, type ExampleSystemName } from "@/shared/lib/data/exampleSystems";
+import { ExampleSystemList, type ExampleSystemName } from "@/features/example-systems/lib/exampleSystems";
 import { Button } from "@/shared/components/primitives/Button";
 import { DescriptionContainer } from "@/shared/components/primitives/DescriptionContainer";
 import { Header } from "@/shared/components/primitives/Header";

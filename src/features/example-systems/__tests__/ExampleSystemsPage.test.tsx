@@ -18,8 +18,8 @@ import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensL
 import { ExampleSystemsPage } from "@/features/example-systems/ExampleSystemsPage";
 import type { ScreenSize } from "@/shared/hooks/useScreenBreakpoint";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
-import { ExampleSystemList } from "@/shared/lib/data/exampleSystems";
-import * as exampleSystemsData from "@/shared/lib/data/exampleSystems";
+import { ExampleSystemList } from "@/features/example-systems/lib/exampleSystems";
+import * as exampleSystemsData from "@/features/example-systems/lib/exampleSystems";
 
 const mockPush = jest.fn<void, [string]>();
 let mockScreenBreakpoint: ScreenSize = "screenLG";
