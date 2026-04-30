@@ -1681,7 +1681,7 @@ const reflectiveDiffractionGrating: OpticalModel = {
 
 
 
-const list: Record<string, OpticalModel> = {
+export const ExampleSystemList = {
   "Sasian Triplet": SasianTriplet,
   "Newtonian Reflector with Optical Window": ReflectorWithOpticalWindow,
   "Herschel's 40-foot Reflector": herschelReflector,
@@ -1703,9 +1703,9 @@ const list: Record<string, OpticalModel> = {
   "Cell Phone Camera Lens Example US#7,535,658": cellphoneLensExample,
   "Diffraction Grating (Transmissive) Example": transmissiveDiffractionGrating,
   "Diffraction Grating (Reflective) Example": reflectiveDiffractionGrating,
-} as const;
+} as const satisfies { [key: string]: OpticalModel };
 
-export const ExampleSystems: { [x: string]: OpticalModel } = Object.keys(list).reduce((acc, name, idx) => ({
+export const ExampleSystems: { [x: string]: OpticalModel } = (Object.keys(ExampleSystemList) as (keyof typeof ExampleSystemList)[]).reduce((acc, name, idx) => ({
   ...acc,
-  [`${idx + 1}: ${name}`]: list[name],
+  [`${idx + 1}: ${name}`]: ExampleSystemList[name],
 }), {} as { [x: string]: OpticalModel });

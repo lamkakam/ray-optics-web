@@ -7,15 +7,17 @@ Provides a catalogue of complete definitions covering a wide variety of optical 
 ## Exports
 
 ```ts
+const ExampleSystemList: Record<string, OpticalModel>;
 const ExampleSystems: { [key: string]: OpticalModel };
 ```
 
-Keys are of the form `"N: <name>"` where `N` is the 1-based index of the system in the list (e.g. `"1: Sasian Triplet"`).
+- `ExampleSystemList` is the unprefixed catalogue keyed by the canonical display names.
+- `ExampleSystems` is derived from `ExampleSystemList`; keys are of the form `"N: <name>"` where `N` is the 1-based index of the system in the list (e.g. `"1: Sasian Triplet"`).
 
 ## Edge Cases / Error Handling
 
 - The record is plain data — no lazy loading. All 17 models are in memory at module init time.
-- Keys are not guaranteed stable if new systems are inserted in the middle of `list`; the numeric prefix will shift. UI components should treat keys as opaque strings.
+- `ExampleSystems` keys are not guaranteed stable if new systems are inserted in the middle of `ExampleSystemList`; the numeric prefix will shift. UI components should treat keys as opaque strings.
 - Each example model now includes `object.distance`, `object.medium`, and `object.manufacturer`, so downloaded/imported JSON fixtures match the runtime schema.
 - Example models with aspherical surfaces use the discriminated domain shape:
   - `{ kind: "Conic", conicConstant }`
