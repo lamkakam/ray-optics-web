@@ -180,7 +180,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
               {menuItems}
             </MenuContainer>
             <DescriptionContainer className="w-full min-h-0 flex-1 overflow-y-auto">
-              <Paragraph variant="body">{selectedDescription}</Paragraph>
+              {selectedDescription}
             </DescriptionContainer>
           </div>
         </div>

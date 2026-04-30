@@ -911,7 +911,14 @@ const fraunhoferAchromatFast: OpticalModel = {
   specs: {
     pupil: { space: "object", type: "epd", value: 120 },
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
-    wavelengths: commonWavelengthConfig,
+    wavelengths: {
+    weights: [
+        [486.133, 0.18],
+        [546.073, 0.98],
+        [656.273, 0.075],
+      ],
+      referenceIndex: 1,
+    },
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
