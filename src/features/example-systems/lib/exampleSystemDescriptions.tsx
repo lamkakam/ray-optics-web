@@ -1,9 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { MathJax } from 'better-react-mathjax';
 import { ExternalLink, Paragraph } from '@/shared/components/primitives';
-import { ExampleSystemList } from "@/shared/lib/data/exampleSystems";
-
-type ExampleSystemName = keyof typeof ExampleSystemList;
+import type { ExampleSystemName } from "@/shared/lib/data/exampleSystems";
 
 const DescriptionParagraph = ({ children }: { children: ReactNode }) => (
   <Paragraph variant="description">
@@ -589,17 +587,6 @@ const DESCRIPTIONS_BY_NAME = {
   ),
 } satisfies Record<ExampleSystemName, ReactNode>;
 
-function hasExampleSystemDescription(name: string): name is ExampleSystemName {
-  return Object.prototype.hasOwnProperty.call(DESCRIPTIONS_BY_NAME, name);
-}
-
-export function stripExamplePrefix(name: string): string {
-  return name.replace(/^\d+:\s*/, "");
-}
-
-export function getExampleSystemDescription(exampleKey: string): ReactNode {
-  const name = stripExamplePrefix(exampleKey);
-  return hasExampleSystemDescription(name)
-    ? DESCRIPTIONS_BY_NAME[name]
-    : "Bundled example optical system.";
+export function getExampleSystemDescription(exampleName: ExampleSystemName): ReactNode {
+  return DESCRIPTIONS_BY_NAME[exampleName];
 }

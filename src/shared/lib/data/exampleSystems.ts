@@ -1705,7 +1705,4 @@ export const ExampleSystemList = {
   "Diffraction Grating (Reflective) Example": reflectiveDiffractionGrating,
 } as const satisfies { [key: string]: OpticalModel };
 
-export const ExampleSystems: { [x: string]: OpticalModel } = (Object.keys(ExampleSystemList) as (keyof typeof ExampleSystemList)[]).reduce((acc, name, idx) => ({
-  ...acc,
-  [`${idx + 1}: ${name}`]: ExampleSystemList[name],
-}), {} as { [x: string]: OpticalModel });
+export type ExampleSystemName = keyof typeof ExampleSystemList;

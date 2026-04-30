@@ -18,6 +18,8 @@ import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensL
 import { ExampleSystemsPage } from "@/features/example-systems/ExampleSystemsPage";
 import type { ScreenSize } from "@/shared/hooks/useScreenBreakpoint";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
+import { ExampleSystemList } from "@/shared/lib/data/exampleSystems";
+import * as exampleSystemsData from "@/shared/lib/data/exampleSystems";
 
 const mockPush = jest.fn<void, [string]>();
 let mockScreenBreakpoint: ScreenSize = "screenLG";
@@ -110,12 +112,21 @@ describe("ExampleSystemsPage", () => {
     mockScreenBreakpoint = "screenLG";
   });
 
-  it("renders example names without numeric prefixes and keeps only one selected item", async () => {
+  it("uses the unprefixed example catalogue directly", () => {
+    renderPage();
+
+    expect(exampleSystemsData).not.toHaveProperty("ExampleSystems");
+    Object.keys(ExampleSystemList).forEach((name, index) => {
+      expect(screen.getByRole("button", { name })).toBeInTheDocument();
+      expect(screen.queryByText(`${index + 1}: ${name}`)).not.toBeInTheDocument();
+    });
+  });
+
+  it("keeps only one selected item", async () => {
     renderPage();
     const user = userEvent.setup();
 
     expect(screen.getByRole("button", { name: "Sasian Triplet" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "1: Sasian Triplet" })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
     await user.click(screen.getByRole("button", { name: "Schmidt Camera 200mm f/5" }));
