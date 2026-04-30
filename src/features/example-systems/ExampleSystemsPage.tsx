@@ -179,7 +179,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
             >
               {menuItems}
             </MenuContainer>
-            <DescriptionContainer className="w-full min-h-0 flex-1 overflow-y-auto">
+            <DescriptionContainer className="w-full min-h-0 flex-1 overflow-y-auto [&>p+p]:mt-4">
               {selectedDescription}
             </DescriptionContainer>
           </div>
@@ -205,7 +205,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
             <div className="flex justify-end">
               {applyButton}
             </div>
-            <DescriptionContainer className="h-[50dvh] w-[calc(50vw-1.5rem)] overflow-y-auto">
+            <DescriptionContainer className="h-[50dvh] w-[calc(50vw-1.5rem)] overflow-y-auto [&>p+p]:mt-4">
               {selectedDescription}
             </DescriptionContainer>
           </div>

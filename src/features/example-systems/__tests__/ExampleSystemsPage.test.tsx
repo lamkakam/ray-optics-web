@@ -270,6 +270,16 @@ describe("ExampleSystemsPage", () => {
     expect(description.className).not.toContain("50vw");
   });
 
+  it("adds adjacent paragraph spacing to the page-specific description panel on all layouts", () => {
+    renderPage({ screenSize: "screenLG" });
+
+    expect(screen.getByTestId("description-container")).toHaveClass("[&>p+p]:mt-4");
+
+    renderPage({ screenSize: "screenSM" });
+
+    expect(screen.getAllByTestId("description-container")[1]).toHaveClass("[&>p+p]:mt-4");
+  });
+
   it("contains small-screen vertical overflow inside the page panels", () => {
     renderPage({ screenSize: "screenSM" });
 
