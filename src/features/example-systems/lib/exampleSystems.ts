@@ -911,7 +911,14 @@ const fraunhoferAchromatFast: OpticalModel = {
   specs: {
     pupil: { space: "object", type: "epd", value: 120 },
     field: { space: "object", type: "angle", maxField: 0.5, fields: [0, 0.707, 1], isRelative: true },
-    wavelengths: commonWavelengthConfig,
+    wavelengths: {
+    weights: [
+        [486.133, 0.18],
+        [546.073, 0.98],
+        [656.273, 0.075],
+      ],
+      referenceIndex: 1,
+    },
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },
   image: { curvatureRadius: 0 },
@@ -1674,7 +1681,7 @@ const reflectiveDiffractionGrating: OpticalModel = {
 
 
 
-const list: Record<string, OpticalModel> = {
+export const ExampleSystemList = {
   "Sasian Triplet": SasianTriplet,
   "Newtonian Reflector with Optical Window": ReflectorWithOpticalWindow,
   "Herschel's 40-foot Reflector": herschelReflector,
@@ -1696,9 +1703,6 @@ const list: Record<string, OpticalModel> = {
   "Cell Phone Camera Lens Example US#7,535,658": cellphoneLensExample,
   "Diffraction Grating (Transmissive) Example": transmissiveDiffractionGrating,
   "Diffraction Grating (Reflective) Example": reflectiveDiffractionGrating,
-} as const;
+} as const satisfies { [key: string]: OpticalModel };
 
-export const ExampleSystems: { [x: string]: OpticalModel } = Object.keys(list).reduce((acc, name, idx) => ({
-  ...acc,
-  [`${idx + 1}: ${name}`]: list[name],
-}), {} as { [x: string]: OpticalModel });
+export type ExampleSystemName = keyof typeof ExampleSystemList;

@@ -32,6 +32,7 @@ Collapsible side navigation panel toggled by the hamburger button in the header.
 | Label | Href |
 |-------|----------|
 | Lens Editor | `/` |
+| Example Systems | `/example-systems` |
 | Optimization | `/optimization` |
 | Glass Map | `/glass-map` |
 | Settings | `/settings` |

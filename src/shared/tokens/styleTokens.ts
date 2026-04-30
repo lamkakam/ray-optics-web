@@ -376,6 +376,7 @@ export const componentTokens = {
       placeholderFontSize: "text-sm",
       captionFontSize: "text-xs",
       captionMargin: "mb-1",
+      descriptionFontSize: "text-md",
     },
     style: {
       subheadingFontWeight: "font-medium",
@@ -403,6 +404,30 @@ export const componentTokens = {
     },
   },
 
+  externalLink: {
+    color: {
+      textColor: "text-blue-600 dark:text-blue-400",
+      hoverTextColor: "hover:text-blue-700 dark:hover:text-blue-300",
+      decorationColor: "decoration-blue-300 dark:decoration-blue-500",
+      focusRingColor: g.color.focusRingColor,
+    },
+    size: {
+      fontSize: "text-sm",
+      descriptionFontSize: "text-md",
+      focusRingWidth: g.size.focusRingWidth,
+    },
+    style: {
+      fontWeight: "font-medium",
+      underline: "underline",
+      underlineOffset: "underline-offset-2",
+      transition: "transition-colors",
+      outline: "focus-visible:outline-none",
+      focusRing: "focus-visible:ring-2",
+      focusRingOffset: "focus-visible:ring-offset-2",
+      focusRingOffsetColor: "focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900",
+    },
+  },
+
   overlay: {
     color: {
       backdropBgColor: g.color.backdropBgColor,
@@ -418,6 +443,39 @@ export const componentTokens = {
       backdropBlur: g.style.backdropBlur,
       panelBorderRadius: g.style.overlayPanelBorderRadius,
       panelShadow: g.style.overlayPanelShadow,
+    },
+  },
+
+  menuContainer: {
+    color: {
+      borderColor: g.color.defaultBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: g.color.secondaryText,
+    },
+    size: {
+      padding: "p-2",
+      gap: "space-y-1",
+      maxHeight: "max-h-[min(32rem,calc(100dvh-12rem))]",
+    },
+    style: {
+      borderStyle: "border",
+      borderRadius: "rounded-lg",
+      overflow: "overflow-y-auto",
+    },
+  },
+
+  descriptionContainer: {
+    color: {
+      borderColor: g.color.defaultBorder,
+      bgColor: g.color.surfaceBg,
+      textColor: g.color.secondaryText,
+    },
+    size: {
+      padding: "p-4",
+    },
+    style: {
+      borderStyle: "border",
+      borderRadius: "rounded-lg",
     },
   },
 } as const;

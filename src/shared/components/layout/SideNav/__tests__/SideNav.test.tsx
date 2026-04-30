@@ -31,6 +31,7 @@ describe("SideNav", () => {
     render(<SideNav isOpen={true} isLG={false} onClose={jest.fn()} />);
 
     expect(screen.getByRole("link", { name: "Lens Editor" })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: "Example Systems" })).toHaveAttribute("href", "/example-systems");
     expect(screen.getByRole("link", { name: "Glass Map" })).toHaveAttribute("href", "/glass-map");
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings");
     expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy-policy");
@@ -50,6 +51,15 @@ describe("SideNav", () => {
     render(<SideNav isOpen={true} isLG={false} onClose={jest.fn()} />);
 
     expect(screen.getByRole("link", { name: "Glass Map" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Lens Editor" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("marks the example systems route as active from the selected segment", () => {
+    mockSelectedSegment = "example-systems";
+
+    render(<SideNav isOpen={true} isLG={false} onClose={jest.fn()} />);
+
+    expect(screen.getByRole("link", { name: "Example Systems" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Lens Editor" })).not.toHaveAttribute("aria-current");
   });
 

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { useStore } from "zustand";
 import { createStore } from "zustand";
 import HomePage from "@/app/page";
+import ExampleSystemsRoute from "@/app/example-systems/page";
 import AppShell from "@/app/AppShell";
 import GlassMapPage from "@/app/glass-map/page";
 import SettingsPage from "@/app/settings/page";
@@ -568,8 +569,15 @@ describe("app shell routes", () => {
   it("renders the lens editor on the root route", () => {
     renderInAppShell(<HomePage />);
 
-    expect(screen.getByLabelText("Example system")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Example system")).not.toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "System Specs" })).toBeInTheDocument();
+  });
+
+  it("renders the example systems route", () => {
+    renderInAppShell(<ExampleSystemsRoute />);
+
+    expect(screen.getByRole("heading", { name: "Example Systems" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sasian Triplet" })).toBeInTheDocument();
   });
 
   it("preloads glass catalog data while rendering the home route", async () => {

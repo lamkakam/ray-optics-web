@@ -20,20 +20,22 @@ test("Sasian Triplet Seidel aberration modal — all tabs", async ({
 }) => {
   await dismissAnyOpenDialog(page);
 
-  // 1. Select "1: Sasian Triplet" example
-  await page.locator('select[aria-label="Example system"]').selectOption("1: Sasian Triplet");
+  // 1. Load the Sasian Triplet example from the dedicated route
+  await page.goto("/example-systems");
+  await page.getByRole("button", { name: "Sasian Triplet" }).click();
+  await page.getByRole("button", { name: "Apply" }).click();
 
   // 2. Confirm overwrite dialog — "Load" also triggers Update System automatically
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", { name: "Load Example System" });
   await dialog.waitFor({ state: "visible", timeout: 5_000 });
   await dialog.getByRole("button", { name: "Load" }).click();
   await dialog.waitFor({ state: "hidden", timeout: 5_000 });
+  await page.waitForURL("**/");
 
-  // 3. Navigate to Prescription tab and wait for computation to complete
+  // 3. Navigate to Prescription tab after the example apply computation completes
   await page.getByRole("tab", { name: "Prescription" }).click();
   const updateBtn = page.locator('button[aria-label="Update System"]');
-  await expect(updateBtn).toBeDisabled({ timeout: 5_000 });
-  await expect(updateBtn).toBeEnabled({ timeout: 60_000 });
+  await expect(updateBtn).toBeEnabled({ timeout: 5_000 });
 
   // 4. Open Seidel modal
   await page.locator('button[aria-label="3rd Order Seidel Aberrations"]').click();
