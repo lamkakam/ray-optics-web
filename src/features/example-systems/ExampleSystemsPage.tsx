@@ -41,7 +41,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
   const exampleButtonRefs = useRef<Record<string, HTMLButtonElement | undefined>>({});
   const exampleKeys = useMemo(() => Object.keys(ExampleSystems), []);
   const selectedDescription = selectedExampleKey === undefined
-    ? "Select an example system to review its source and apply it to the Lens Editor."
+    ? <Paragraph variant="body">Select an example system to review its source and apply it to the Lens Editor.</Paragraph>
     : getExampleSystemDescription(selectedExampleKey);
   const isLargeScreen = screenSize === "screenLG";
 
@@ -206,7 +206,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
               {applyButton}
             </div>
             <DescriptionContainer className="h-[50dvh] w-[calc(50vw-1.5rem)] overflow-y-auto">
-              <Paragraph variant="body">{selectedDescription}</Paragraph>
+              {selectedDescription}
             </DescriptionContainer>
           </div>
         </div>

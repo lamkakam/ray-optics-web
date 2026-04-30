@@ -4,6 +4,7 @@ export * from "./Chip";
 export * from "./ConfirmOverwriteModal";
 export * from "./DescriptionContainer";
 export * from "./ErrorModal";
+export * from "./ExternalLink";
 export * from "./Header";
 export * from "./InlineLink";
 export * from "./Input";

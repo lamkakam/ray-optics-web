@@ -6,3 +6,8 @@ README-derived display descriptions for bundled example optical systems.
 
 - `stripExamplePrefix(name)` removes generated numeric prefixes such as `1: ` from example keys.
 - `getExampleSystemDescription(exampleKey)` returns source summary text for the selected example.
+
+## Link Behavior
+
+- Source/reference links use `ExternalLink`, so each link is underlined, theme-aware, and opens in a new tab with `rel="noopener noreferrer"`.
+- Links provide explicit `aria-label` values, including descriptive labels for visible text such as `Link`.

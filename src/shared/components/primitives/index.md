@@ -10,6 +10,7 @@ Generic, single-responsibility UI primitives. These are the base building blocks
 - [ConfirmOverwriteModal.tsx](./ConfirmOverwriteModal/ConfirmOverwriteModal.tsx.md) — Confirmation modal for loading an example system over the current configuration
 - [DescriptionContainer.tsx](./DescriptionContainer/DescriptionContainer.tsx.md) — Tokenized description panel
 - [ErrorModal.tsx](./ErrorModal/ErrorModal.tsx.md) — Modal for displaying error messages
+- [ExternalLink.tsx](./ExternalLink/ExternalLink.tsx.md) — Plain external anchor that always opens safely in a new tab
 - [Header.tsx](./Header/Header.tsx.md) — Top navigation header
 - [InlineLink.tsx](./InlineLink/InlineLink.tsx.md) — Inline text-style navigation link
 - [Input.tsx](./Input/Input.tsx.md) — Styled text input field

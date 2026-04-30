@@ -195,6 +195,25 @@ describe("ExampleSystemsPage", () => {
     expect(screen.queryByRole("dialog", { name: "Load Example System" })).not.toBeInTheDocument();
   });
 
+  it("renders source links as safe new-tab external links", async () => {
+    renderPage();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
+
+    const sourceLink = screen.getByRole("link", {
+      name: "Web archive link to the original Lecture 4 course material, which includes the lens prescription and aberration coefficient data for this design.",
+    });
+    expect(sourceLink).toHaveAttribute(
+      "href",
+      "https://web.archive.org/web/20180219044422/http://wp.optics.arizona.edu/jsasian/wp-content/uploads/sites/33/2016/03/L4_OPTI_517_Aberration_Coefficients.pdf",
+    );
+    expect(sourceLink).toHaveAttribute("target", "_blank");
+    expect(sourceLink).toHaveAttribute("rel", "noopener noreferrer");
+    expect(sourceLink).toHaveClass("underline");
+    expect(sourceLink).toHaveClass("dark:text-blue-400");
+  });
+
   it("keeps the large-screen two-column viewport layout with Apply above the description", () => {
     renderPage({ screenSize: "screenLG" });
 

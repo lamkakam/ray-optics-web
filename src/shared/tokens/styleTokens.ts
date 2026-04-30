@@ -403,6 +403,29 @@ export const componentTokens = {
     },
   },
 
+  externalLink: {
+    color: {
+      textColor: "text-blue-600 dark:text-blue-400",
+      hoverTextColor: "hover:text-blue-700 dark:hover:text-blue-300",
+      decorationColor: "decoration-blue-300 dark:decoration-blue-500",
+      focusRingColor: g.color.focusRingColor,
+    },
+    size: {
+      fontSize: "text-sm",
+      focusRingWidth: g.size.focusRingWidth,
+    },
+    style: {
+      fontWeight: "font-medium",
+      underline: "underline",
+      underlineOffset: "underline-offset-2",
+      transition: "transition-colors",
+      outline: "focus-visible:outline-none",
+      focusRing: "focus-visible:ring-2",
+      focusRingOffset: "focus-visible:ring-offset-2",
+      focusRingOffsetColor: "focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900",
+    },
+  },
+
   overlay: {
     color: {
       backdropBgColor: g.color.backdropBgColor,
