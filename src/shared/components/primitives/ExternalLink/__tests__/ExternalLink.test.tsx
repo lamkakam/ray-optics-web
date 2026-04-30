@@ -46,6 +46,22 @@ describe("ExternalLink", () => {
     expect(link).toHaveClass(cx.externalLink.color.decorationColor);
   });
 
+  it("applies the description font-size token for the description variant", () => {
+    render(
+      <ExternalLink
+        href="https://example.com/source"
+        aria-label="Open source material"
+        variant="description"
+      >
+        Source
+      </ExternalLink>,
+    );
+
+    const link = screen.getByRole("link", { name: "Open source material" });
+    expect(link).toHaveClass(cx.externalLink.size.descriptionFontSize);
+    expect(link).not.toHaveClass(cx.externalLink.size.fontSize);
+  });
+
   it("merges a consumer className", () => {
     render(
       <ExternalLink
@@ -61,5 +77,22 @@ describe("ExternalLink", () => {
     expect(link).toHaveClass("block");
     expect(link).toHaveClass("text-lg");
     expect(link).not.toHaveClass(cx.externalLink.size.fontSize);
+  });
+
+  it("allows consumer font-size classes to override the description variant token", () => {
+    render(
+      <ExternalLink
+        href="https://example.com/source"
+        aria-label="Open source material"
+        variant="description"
+        className="text-lg"
+      >
+        Source
+      </ExternalLink>,
+    );
+
+    const link = screen.getByRole("link", { name: "Open source material" });
+    expect(link).toHaveClass("text-lg");
+    expect(link).not.toHaveClass(cx.externalLink.size.descriptionFontSize);
   });
 });

@@ -17,6 +17,7 @@ import { AnalysisDataStoreContext } from "@/features/analysis/providers/Analysis
 import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { ExampleSystemsPage } from "@/features/example-systems/ExampleSystemsPage";
 import type { ScreenSize } from "@/shared/hooks/useScreenBreakpoint";
+import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 const mockPush = jest.fn<void, [string]>();
 let mockScreenBreakpoint: ScreenSize = "screenLG";
@@ -212,6 +213,7 @@ describe("ExampleSystemsPage", () => {
     expect(sourceLink).toHaveAttribute("rel", "noopener noreferrer");
     expect(sourceLink).toHaveClass("underline");
     expect(sourceLink).toHaveClass("dark:text-blue-400");
+    expect(sourceLink).toHaveClass(cx.externalLink.size.descriptionFontSize);
   });
 
   it("keeps the large-screen two-column viewport layout with Apply above the description", () => {

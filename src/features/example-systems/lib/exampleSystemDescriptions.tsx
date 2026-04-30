@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { MathJax } from 'better-react-mathjax';
 import { ExternalLink, Paragraph } from '@/shared/components/primitives';
 
@@ -6,6 +6,10 @@ const DescriptionParagraph = ({ children }: { children: ReactNode }) => (
   <Paragraph variant="description">
     {children}
   </Paragraph>
+);
+
+const DescriptionExternalLink = (props: ComponentProps<typeof ExternalLink>) => (
+  <ExternalLink {...props} variant="description" />
 );
 
 const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
@@ -18,12 +22,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
         It provides a useful educational example for studying classical photographic lens forms, 
         aberration correction, and multi-element lens design.
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://web.archive.org/web/20180219044422/http://wp.optics.arizona.edu/jsasian/wp-content/uploads/sites/33/2016/03/L4_OPTI_517_Aberration_Coefficients.pdf"
         aria-label="Web archive link to the original Lecture 4 course material, which includes the lens prescription and aberration coefficient data for this design."
       >
         Web Archive link to the original Lecture 4 course material, which includes the lens prescription and aberration coefficient data for this design.
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
 
@@ -39,12 +43,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://telescope-optics.net/reflecting.htm"
         aria-label="Chapter 8.1 of telescope-optics.net"
       >
         Chapter 8.1 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   
@@ -62,12 +66,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://telescope-optics.net/early%20telescopes.htm"
         aria-label="Chapter 14.1 of telescope-optics.net"
       >
         Chapter 14.1 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Mike I. Jones's Improved Herschel Reflector": (
@@ -80,12 +84,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://telescope-optics.net/early%20telescopes.htm"
         aria-label="Chapter 14.1 of telescope-optics.net"
       >
         Chapter 14.1 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Tilted Houghton-Herschel 150mm f/8": (
@@ -97,12 +101,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://telescope-optics.net/miscellaneous_optics.htm"
         aria-label="Example 27 in Chapter 11 of telescope-optics.net"
       >
         Example 27 in Chapter 11 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Terry Platt's 318mm f/21 Buchroeder \"Quad-Schiefspiegler\"": (
@@ -118,12 +122,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://telescope-optics.net/ATM_telescopes.htm"
         aria-label="Chapter 14.2 of telescope-optics.net"
       >
         Chapter 14.2 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Clyde Bone Jr. 30-inch f/5 Mersenne": (
@@ -138,21 +142,21 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://telescope-optics.net/ATM_telescopes.htm"
         aria-label="Chapter 14.2 of telescope-optics.net"
       >
         Chapter 14.2 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
       <DescriptionParagraph>
         An article provides more details about the legacy of this telescope in the amateur astronomy community:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://televue.com/televueopticstalk/2019/07/11/clyde-bone-and-his-two-unusual-mersenne-telescopes/"
         aria-label="Clyde Bone and His Two Unusual Mersenne Telescopes on TeleVue website"
       >
         &quot;Clyde Bone and His Two Unusual Mersenne Telescopes&quot; on TeleVue website
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Schmidt Camera 200mm f/5": (
@@ -167,12 +171,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://telescope-optics.net/schmidt_camera_aberrations.htm"
         aria-label="Chapter 10.2.2.1 of telescope-optics.net"
       >
         Chapter 10.2.2.1 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Ortho-APO 130mm f/7.7": (
@@ -191,12 +195,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://telescope-optics.net/commercial_telescopes.htm"
         aria-label="Example 57 in Chapter 14.4 of telescope-optics.net"
       >
         Example 57 in Chapter 14.4 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Fluorite Doublet APO 130mm f/8 w/ Wide Air Gap & Aspherized Surface": (
@@ -222,12 +226,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://telescope-optics.net/commercial_telescopes.htm"
         aria-label="Example 27 in Chapter 14.4 of telescope-optics.net"
       >
         Example 27 in Chapter 14.4 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Fraunhofer Achromat 120mm f/23.6 (CA ratio = 5)": (
@@ -268,12 +272,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://www.telescope-optics.net/achromats.htm"
         aria-label="Chapter 9.1 of telescope-optics.net"
       >
         Chapter 9.1 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Fraunhofer Achromat 120mm f/7.5 (CA ratio = 1.59)": (
@@ -318,12 +322,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://www.telescope-optics.net/achromats.htm"
         aria-label="Chapter 9.1 of telescope-optics.net"
       >
         Chapter 9.1 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "APO Doublet (S-FPL53/N-ZK7) 120mm f/7.5": (
@@ -353,12 +357,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://www.telescope-optics.net/commercial_telescopes.htm"
         aria-label="Example 19 in Chapter 14.4 of telescope-optics.net"
       >
         Example 19 in Chapter 14.4 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "APO Petzval 140mm f/7": (
@@ -374,12 +378,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://www.telescope-optics.net/miscellaneous_optics.htm"
         aria-label="Example 24 in Chapter 11 of telescope-optics.net"
       >
         Example 24 in Chapter 11 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "APO Petzval 140mm f/7 (but with rear lenses removed)": (
@@ -423,12 +427,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is derived from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://www.telescope-optics.net/miscellaneous_optics.htm"
         aria-label="Example 24 in Chapter 11 of telescope-optics.net"
       >
         Example 24 in Chapter 11 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
 
@@ -481,12 +485,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is derived from:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://www.telescope-optics.net/eyepiece_raytrace.htm"
         aria-label="Chapter 12.4 of telescope-optics.net"
       >
         Chapter 12.4 of telescope-optics.net
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Fisheye Lens Example": (
@@ -504,12 +508,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from a RayOptics GitHub discussion:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://redirect.github.com/mjhoptics/ray-optics/discussions/157#discussioncomment-11589178"
         aria-label="RayOptics GitHub discussion source for the fisheye lens example"
       >
         Link
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Cell Phone Camera Lens Example US#7,535,658": (
@@ -538,12 +542,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from a RayOptics documentation:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://ray-optics.readthedocs.io/en/stable/examples/Cell_Phone_lens/Cell_Phone_lens.html"
         aria-label="RayOptics documentation source for the cell phone camera lens example"
       >
         Link
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Diffraction Grating (Transmissive) Example": (
@@ -555,12 +559,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from a RayOptics GitHub discussion:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://redirect.github.com/mjhoptics/ray-optics/discussions/156#discussioncomment-10790331"
         aria-label="RayOptics GitHub discussion source for the transmissive diffraction grating example"
       >
         Link
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
   "Diffraction Grating (Reflective) Example": (
@@ -572,12 +576,12 @@ const DESCRIPTIONS_BY_NAME: Record<string, ReactNode> = {
       <DescriptionParagraph>
         This prescription is from a RayOptics GitHub discussion:
       </DescriptionParagraph>
-      <ExternalLink
+      <DescriptionExternalLink
         href="https://redirect.github.com/mjhoptics/ray-optics/discussions/147#discussioncomment-9360602"
         aria-label="RayOptics GitHub discussion source for the reflective diffraction grating example"
       >
         Link
-      </ExternalLink>
+      </DescriptionExternalLink>
     </>
   ),
 };

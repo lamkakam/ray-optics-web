@@ -413,6 +413,7 @@ export const componentTokens = {
     },
     size: {
       fontSize: "text-sm",
+      descriptionFontSize: "text-md",
       focusRingWidth: g.size.focusRingWidth,
     },
     style: {

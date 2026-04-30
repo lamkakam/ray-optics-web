@@ -14,6 +14,7 @@ type ExternalLinkProps = Omit<
   href: string;
   children: React.ReactNode;
   "aria-label": string;
+  variant?: "default" | "description";
 };
 ```
 
@@ -21,8 +22,10 @@ type ExternalLinkProps = Omit<
 
 - Always renders `target="_blank"` and `rel="noopener noreferrer"`; consumers cannot override either attribute.
 - Requires an explicit `aria-label` so external links remain accessible when visible text is generic.
+- Uses the `"default"` variant when no variant is provided.
+- Uses `componentTokens.externalLink.size.fontSize` for the default variant and `componentTokens.externalLink.size.descriptionFontSize` for the `"description"` variant.
 - Uses `componentTokens.externalLink` for theme-aware text colors, hover colors, underline styling, transitions, and focus-visible styling.
-- Merges consumer `className` with token classes via `clsx` + `twMerge`, allowing focused overrides.
+- Merges consumer `className` with token classes via `clsx` + `twMerge`, allowing focused overrides including consumer font-size classes.
 
 ## Usages
 

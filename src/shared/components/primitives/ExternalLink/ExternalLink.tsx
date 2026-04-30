@@ -10,15 +10,22 @@ type ExternalLinkProps = Omit<
   readonly href: string;
   readonly children: React.ReactNode;
   readonly "aria-label": string;
+  readonly variant?: "default" | "description";
 };
 
 const { color, size, style } = cx.externalLink;
+
+const fontSizeByVariant: Record<NonNullable<ExternalLinkProps["variant"]>, string> = {
+  default: size.fontSize,
+  description: size.descriptionFontSize,
+};
 
 export function ExternalLink({
   href,
   children,
   className,
   "aria-label": ariaLabel,
+  variant = "default",
   ...rest
 }: ExternalLinkProps) {
   return (
@@ -33,7 +40,7 @@ export function ExternalLink({
           color.hoverTextColor,
           color.decorationColor,
           color.focusRingColor,
-          size.fontSize,
+          fontSizeByVariant[variant],
           size.focusRingWidth,
           style.fontWeight,
           style.underline,
