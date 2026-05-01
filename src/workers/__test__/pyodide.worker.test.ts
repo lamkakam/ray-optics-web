@@ -20,6 +20,7 @@ import {
   _plotGeoPSF,
   _plotDiffractionPSF,
   _getDiffractionPSFData,
+  _getDiffractionMTFData,
 } from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
@@ -255,6 +256,34 @@ describe("_getSpotDiagramData", () => {
 
     expect(pythonScript).toContain("opm = OpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_spot_data(_build_opm(), 1))");
+    expect(result).toEqual(mockData);
+  });
+});
+
+describe("_getDiffractionMTFData", () => {
+  it("should build the model script, call json.dumps(get_diffraction_mtf_data(...)) and return parsed data", async () => {
+    const mockData = {
+      fieldIdx: 2,
+      wvlIdx: 1,
+      Tangential: { x: [0, 10, 20], y: [1, 0.7, 0.2] },
+      Sagittal: { x: [0, 10, 20], y: [1, 0.65, 0.15] },
+      IdealTangential: { x: [0, 10, 20], y: [1, 0.8, 0.3] },
+      IdealSagittal: { x: [0, 10, 20], y: [1, 0.78, 0.28] },
+      unitX: "cycles/mm",
+      unitY: "",
+      cutoffTangential: 42,
+      cutoffSagittal: 40,
+      naTangential: 0.012,
+      naSagittal: 0.011,
+    };
+    let pythonScript = "";
+    const result = await _getDiffractionMTFData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 2, 1);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_diffraction_mtf_data(_build_opm(), 2, 1, num_rays=64, max_dims=256))");
     expect(result).toEqual(mockData);
   });
 });

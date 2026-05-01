@@ -37,6 +37,7 @@ export function AnalysisPlotContainer({
   const spotDiagramData = useStore(store, (s) => s.spotDiagramData);
   const geoPsfData = useStore(store, (s) => s.geoPsfData);
   const diffractionPsfData = useStore(store, (s) => s.diffractionPsfData);
+  const diffractionMtfData = useStore(store, (s) => s.diffractionMtfData);
   const wavefrontMapData = useStore(store, (s) => s.wavefrontMapData);
   const plotLoading = useStore(store, (s) => s.plotLoading);
   const selectedFieldIndex = useStore(store, (s) => s.selectedFieldIndex);
@@ -68,6 +69,11 @@ export function AnalysisPlotContainer({
 
       if (result.kind === "diffractionPSF") {
         store.getState().setDiffractionPsfData(result.diffractionPsfData);
+        return;
+      }
+
+      if (result.kind === "diffractionMTF") {
+        store.getState().setDiffractionMtfData(result.diffractionMtfData);
         return;
       }
 
@@ -147,6 +153,7 @@ export function AnalysisPlotContainer({
       spotDiagramData={spotDiagramData}
       geoPsfData={geoPsfData}
       diffractionPsfData={diffractionPsfData}
+      diffractionMtfData={diffractionMtfData}
       wavefrontMapData={wavefrontMapData}
       loading={plotLoading}
       onFieldChange={handleFieldChange}

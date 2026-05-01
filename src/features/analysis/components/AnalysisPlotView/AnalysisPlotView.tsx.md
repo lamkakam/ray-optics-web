@@ -14,7 +14,8 @@ type PlotType =
   | "surfaceBySurface3rdOrder"
   | "wavefrontMap"
   | "geoPSF"
-  | "diffractionPSF";
+  | "diffractionPSF"
+  | "diffractionMTF";
 ```
 
 ## Props
@@ -31,6 +32,7 @@ interface AnalysisPlotViewProps {
   opdFanData?: OpdFanData;
   spotDiagramData?: SpotDiagramData;
   diffractionPsfData?: DiffractionPsfData;
+  diffractionMtfData?: DiffractionMtfData;
   wavefrontMapData?: WavefrontMapData;
   loading?: boolean;
   onFieldChange: (fieldIndex: number) => void;
@@ -55,6 +57,7 @@ interface AnalysisPlotViewProps {
 | `spotDiagramData` | `SpotDiagramData` | No | Per-wavelength spot-diagram point clouds used only when `selectedPlotType === "spotDiagram"` |
 | `geoPsfData` | `GeoPsfData` | No | Geometric PSF point-cloud data used only when `selectedPlotType === "geoPSF"` |
 | `diffractionPsfData` | `DiffractionPsfData` | No | Diffraction PSF axis/intensity data used only when `selectedPlotType === "diffractionPSF"` |
+| `diffractionMtfData` | `DiffractionMtfData` | No | Diffraction MTF line data used only when `selectedPlotType === "diffractionMTF"` |
 | `wavefrontMapData` | `WavefrontMapData` | No | Wavefront-map axis/OPD data used only when `selectedPlotType === "wavefrontMap"` |
 | `loading` | `boolean` | No | Shows "Loading plot..." placeholder when `true` |
 | `onFieldChange` | `(n) => void` | Yes | Called with the new field index |
@@ -75,6 +78,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 | `wavefrontMap` | "Wavefront Map" | true | true |
 | `geoPSF` | "Geometric PSF" | true | true |
 | `diffractionPSF` | "Diffraction PSF" | true | true |
+| `diffractionMTF` | "Diffraction MTF" | true | true |
 
 ## Key Behaviors
 
@@ -92,6 +96,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
 - `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.
 - `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.
+- `diffractionMTF` renders `DiffractionMtfChart` only when `diffractionMtfData` is present.
 - `AnalysisPlotView` never imports Apache ECharts directly; chart-specific measurement, debounce, and option-building logic live in dedicated feature-local modules.
 
 ## Usages

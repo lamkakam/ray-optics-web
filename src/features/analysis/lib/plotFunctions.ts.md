@@ -16,7 +16,8 @@ type AnalysisPlotLoadResult =
   | { kind: "spotDiagram"; spotDiagramData: SpotDiagramData }
   | { kind: "geoPSF"; geoPsfData: GeoPsfData }
   | { kind: "wavefrontMap"; wavefrontMapData: WavefrontMapData }
-  | { kind: "diffractionPSF"; diffractionPsfData: DiffractionPsfData };
+  | { kind: "diffractionPSF"; diffractionPsfData: DiffractionPsfData }
+  | { kind: "diffractionMTF"; diffractionMtfData: DiffractionMtfData };
 ```
 
 Discriminated result returned by the shared analysis-plot loader. It makes the worker-call branching explicit so callers can store typed chart data without duplicating plot-type conditionals.
@@ -49,13 +50,14 @@ Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx
 - Calls `proxy.getWavefrontData(...)` for `wavefrontMap`.
 - Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
 - Calls `proxy.getDiffractionPSFData(...)` for `diffractionPSF`.
+- Calls `proxy.getDiffractionMTFData(...)` for `diffractionMTF`.
 - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
 
 ## Dependencies
 
 - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
 - `PlotType` (type-only) from `@/features/analysis/components`
-- `RayFanData`, `DiffractionPsfData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
+- `RayFanData`, `DiffractionPsfData`, `DiffractionMtfData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
 - `SeidelSurfaceBySurfaceData` (type-only) from `@/features/lens-editor/types/seidelData`
 - `PyodideWorkerAPI` (type-only) from `@/shared/hooks/usePyodide`
 

@@ -29,6 +29,7 @@ interface PyodideWorkerAPI {
   plotGeoPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
   plotDiffractionPSF(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<string>;
   getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<DiffractionPsfData>;
+  getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
   getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
@@ -76,6 +77,7 @@ interface PyodideWorkerAPI {
 - `FocusingResult` — imported from `features/lens-editor/types/focusingResult` (type only).
 - `SeidelData` — imported from `features/lens-editor/types/seidelData` (type only).
 - `DiffractionPsfData` — imported from `features/analysis/types/plotData` (type only).
+- `DiffractionMtfData` — imported from `features/analysis/types/plotData` (type only).
 - `WavefrontMapData` — imported from `features/analysis/types/plotData` (type only).
 - `GeoPsfData` — imported from `features/analysis/types/plotData` (type only).
 - `RayFanData` — imported from `features/analysis/types/plotData` (type only).

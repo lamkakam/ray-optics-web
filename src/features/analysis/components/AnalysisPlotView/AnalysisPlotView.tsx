@@ -1,4 +1,5 @@
 import React from "react";
+import { DiffractionMtfChart } from "@/features/analysis/components/DiffractionMtfChart";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
 import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
 import { OpdFanChart } from "@/features/analysis/components/OpdFanChart";
@@ -10,7 +11,7 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 export type PlotType = "rayFan"
@@ -19,7 +20,8 @@ export type PlotType = "rayFan"
   | "surfaceBySurface3rdOrder"
   | "wavefrontMap"
   | "geoPSF"
-  | "diffractionPSF";
+  | "diffractionPSF"
+  | "diffractionMTF";
 
 type FieldOption = SelectOption & { readonly value: number };
 type WavelengthOption = FieldOption;
@@ -36,6 +38,7 @@ interface AnalysisPlotViewProps {
   readonly spotDiagramData?: SpotDiagramData;
   readonly geoPsfData?: GeoPsfData;
   readonly diffractionPsfData?: DiffractionPsfData;
+  readonly diffractionMtfData?: DiffractionMtfData;
   readonly wavefrontMapData?: WavefrontMapData;
   readonly loading?: boolean;
   readonly onFieldChange: (fieldIndex: number) => void;
@@ -83,6 +86,11 @@ export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
   },
   diffractionPSF: {
     label: "Diffraction PSF",
+    fieldDependent: true,
+    wavelengthDependent: true,
+  },
+  diffractionMTF: {
+    label: "Diffraction MTF",
     fieldDependent: true,
     wavelengthDependent: true,
   },
@@ -192,6 +200,16 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
     (props, diffractionPsfData) => (
       <DiffractionPsfChart
         diffractionPsfData={diffractionPsfData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  diffractionMTF: createPlotRenderer(
+    (props) => props.diffractionMtfData !== undefined,
+    (props) => props.diffractionMtfData,
+    (props, diffractionMtfData) => (
+      <DiffractionMtfChart
+        diffractionMtfData={diffractionMtfData}
         autoHeight={props.autoHeight}
       />
     ),

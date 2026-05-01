@@ -36,6 +36,11 @@ describe("analysisPlotStore", () => {
       expect(store.getState().diffractionPsfData).toBeUndefined();
     });
 
+    it("has diffractionMtfData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().diffractionMtfData).toBeUndefined();
+    });
+
     it("has geoPsfData as undefined", () => {
       const store = makeStore();
       expect(store.getState().geoPsfData).toBeUndefined();
@@ -163,7 +168,49 @@ describe("analysisPlotStore", () => {
       expect(store.getState().geoPsfData).toBeUndefined();
       expect(store.getState().diffractionPsfData).toBeUndefined();
       expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().diffractionMtfData).toBeUndefined();
       expect(store.getState().rayFanData).toBeDefined();
+    });
+  });
+
+  describe("setDiffractionMtfData", () => {
+    it("sets diffractionMtfData and clears all other chart payloads", () => {
+      const store = makeStore();
+      store.getState().setRayFanData([
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: { x: [0], y: [0] },
+          Tangential: { x: [0], y: [0] },
+          unitX: "",
+          unitY: "mm",
+        },
+      ]);
+      store.getState().setDiffractionMtfData({
+        fieldIdx: 1,
+        wvlIdx: 2,
+        Tangential: { x: [0, 10], y: [1, 0.5] },
+        Sagittal: { x: [0, 10], y: [1, 0.4] },
+        IdealTangential: { x: [0, 10], y: [1, 0.7] },
+        IdealSagittal: { x: [0, 10], y: [1, 0.6] },
+        unitX: "cycles/mm",
+        unitY: "",
+        cutoffTangential: 42,
+        cutoffSagittal: 40,
+        naTangential: 0.012,
+        naSagittal: 0.011,
+      });
+
+      expect(store.getState().diffractionMtfData).toEqual(expect.objectContaining({
+        fieldIdx: 1,
+        wvlIdx: 2,
+      }));
+      expect(store.getState().rayFanData).toBeUndefined();
+      expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().spotDiagramData).toBeUndefined();
+      expect(store.getState().geoPsfData).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
     });
   });
 

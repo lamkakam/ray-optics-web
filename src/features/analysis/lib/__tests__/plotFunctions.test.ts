@@ -94,6 +94,7 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     plotGeoPSF: jest.fn().mockResolvedValue("geoPSF-result"),
     plotDiffractionPSF: jest.fn().mockResolvedValue("diffractionPSF-result"),
     getDiffractionPSFData: jest.fn(),
+    getDiffractionMTFData: jest.fn(),
   } as unknown as jest.Mocked<PyodideWorkerAPI>;
 }
 
@@ -207,6 +208,23 @@ describe("loadAnalysisPlot", () => {
     expect(result).toEqual({
       kind: "diffractionPSF",
       diffractionPsfData: undefined,
+    });
+  });
+
+  it("loads diffractionMTF through getDiffractionMTFData", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "diffractionMTF",
+      proxy,
+      model: mockModel,
+      fieldIndex: 2,
+      wavelengthIndex: 1,
+    });
+
+    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(mockModel, 2, 1);
+    expect(result).toEqual({
+      kind: "diffractionMTF",
+      diffractionMtfData: undefined,
     });
   });
 

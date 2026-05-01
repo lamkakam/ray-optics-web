@@ -1,7 +1,7 @@
 import { expose } from "comlink";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import {
   type OptimizationConfig,
@@ -80,7 +80,7 @@ from rayoptics.elem.surface import DecenterData
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 
-from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_geo_psf_data, get_diffraction_psf_data
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
     plot_ray_fan,
@@ -318,6 +318,23 @@ export async function _getDiffractionPSFData(
   return JSON.parse(json) as DiffractionPsfData;
 }
 
+export async function _getDiffractionMTFData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 64,
+  maxDims: number = 256,
+): Promise<DiffractionMtfData> {
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(get_diffraction_mtf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}))`,
+    ),
+  )) as string;
+  return JSON.parse(json) as DiffractionMtfData;
+}
+
 export async function _getZernikeCoefficients(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -539,6 +556,16 @@ export async function getDiffractionPSFData(
   return await _getDiffractionPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays, maxDims);
 }
 
+export async function getDiffractionMTFData(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthIndex: number,
+  numRays: number = 128,
+  maxDims: number = 256,
+): Promise<DiffractionMtfData> {
+  return await _getDiffractionMTFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays, maxDims);
+}
+
 
 export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData> {
   return await _get3rdOrderSeidelData(requirePyodide(), opticalModel);
@@ -606,6 +633,7 @@ expose({
   plotGeoPSF,
   plotDiffractionPSF,
   getDiffractionPSFData,
+  getDiffractionMTFData,
   get3rdOrderSeidelData,
   getZernikeCoefficients,
   focusByMonoRmsSpot,

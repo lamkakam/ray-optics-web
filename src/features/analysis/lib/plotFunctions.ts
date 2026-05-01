@@ -1,6 +1,6 @@
 import type { PlotType } from "@/features/analysis/components";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
@@ -11,7 +11,8 @@ export type AnalysisPlotLoadResult =
   | { readonly kind: "spotDiagram"; readonly spotDiagramData: SpotDiagramData }
   | { readonly kind: "geoPSF"; readonly geoPsfData: GeoPsfData }
   | { readonly kind: "wavefrontMap"; readonly wavefrontMapData: WavefrontMapData }
-  | { readonly kind: "diffractionPSF"; readonly diffractionPsfData: DiffractionPsfData };
+  | { readonly kind: "diffractionPSF"; readonly diffractionPsfData: DiffractionPsfData }
+  | { readonly kind: "diffractionMTF"; readonly diffractionMtfData: DiffractionMtfData };
 
 interface LoadAnalysisPlotParams {
   readonly plotType: PlotType;
@@ -76,6 +77,13 @@ export async function loadAnalysisPlot({
     return {
       kind: "diffractionPSF",
       diffractionPsfData: await proxy.getDiffractionPSFData(model, fieldIndex, wavelengthIndex),
+    };
+  }
+
+  if (plotType === "diffractionMTF") {
+    return {
+      kind: "diffractionMTF",
+      diffractionMtfData: await proxy.getDiffractionMTFData(model, fieldIndex, wavelengthIndex),
     };
   }
 }

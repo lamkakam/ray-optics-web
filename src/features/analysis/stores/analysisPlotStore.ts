@@ -1,6 +1,6 @@
 import { type StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
 
 export interface AnalysisPlotState {
   rayFanData: RayFanData | undefined;
@@ -8,6 +8,7 @@ export interface AnalysisPlotState {
   spotDiagramData: SpotDiagramData | undefined;
   geoPsfData: GeoPsfData | undefined;
   diffractionPsfData: DiffractionPsfData | undefined;
+  diffractionMtfData: DiffractionMtfData | undefined;
   wavefrontMapData: WavefrontMapData | undefined;
   plotLoading: boolean;
   selectedFieldIndex: number;
@@ -19,6 +20,7 @@ export interface AnalysisPlotState {
   setSpotDiagramData: (data: SpotDiagramData | undefined) => void;
   setGeoPsfData: (data: GeoPsfData | undefined) => void;
   setDiffractionPsfData: (data: DiffractionPsfData | undefined) => void;
+  setDiffractionMtfData: (data: DiffractionMtfData | undefined) => void;
   setWavefrontMapData: (data: WavefrontMapData | undefined) => void;
   setPlotLoading: (loading: boolean) => void;
   setSelectedFieldIndex: (index: number, maxCount?: number) => void;
@@ -32,6 +34,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
   spotDiagramData: undefined,
   geoPsfData: undefined,
   diffractionPsfData: undefined,
+  diffractionMtfData: undefined,
   wavefrontMapData: undefined,
   plotLoading: false,
   selectedFieldIndex: 0,
@@ -44,6 +47,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     spotDiagramData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
+    diffractionMtfData: undefined,
     wavefrontMapData: undefined,
   }),
   setOpdFanData: (data) => set({
@@ -52,6 +56,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     spotDiagramData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
+    diffractionMtfData: undefined,
     wavefrontMapData: undefined,
   }),
   setSpotDiagramData: (data) => set({
@@ -60,6 +65,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     opdFanData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
+    diffractionMtfData: undefined,
     wavefrontMapData: undefined,
   }),
   setGeoPsfData: (data) => set({
@@ -68,6 +74,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     opdFanData: undefined,
     spotDiagramData: undefined,
     diffractionPsfData: undefined,
+    diffractionMtfData: undefined,
     wavefrontMapData: undefined,
   }),
   setDiffractionPsfData: (data) => set({
@@ -76,6 +83,16 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     opdFanData: undefined,
     spotDiagramData: undefined,
     geoPsfData: undefined,
+    diffractionMtfData: undefined,
+    wavefrontMapData: undefined,
+  }),
+  setDiffractionMtfData: (data) => set({
+    diffractionMtfData: data,
+    rayFanData: undefined,
+    opdFanData: undefined,
+    spotDiagramData: undefined,
+    geoPsfData: undefined,
+    diffractionPsfData: undefined,
     wavefrontMapData: undefined,
   }),
   setWavefrontMapData: (data) => set({
@@ -85,6 +102,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     spotDiagramData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
+    diffractionMtfData: undefined,
   }),
   setPlotLoading: (loading) => set({ plotLoading: loading }),
   setSelectedFieldIndex: (index, maxCount) =>

@@ -29,7 +29,7 @@ import {
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -161,6 +161,22 @@ const mockGetDiffractionPSFData: jest.Mock<Promise<DiffractionPsfData>, [Optical
     unitY: "mm",
     unitZ: "",
   });
+const mockGetDiffractionMTFData: jest.Mock<Promise<DiffractionMtfData>, [OpticalModel, number, number]> = jest
+  .fn()
+  .mockResolvedValue({
+    fieldIdx: 0,
+    wvlIdx: 0,
+    Tangential: { x: [0], y: [1] },
+    Sagittal: { x: [0], y: [1] },
+    IdealTangential: { x: [0], y: [1] },
+    IdealSagittal: { x: [0], y: [1] },
+    unitX: "cycles/mm",
+    unitY: "",
+    cutoffTangential: 0,
+    cutoffSagittal: 0,
+    naTangential: 0,
+    naSagittal: 0,
+  });
 const mockGetWavefrontData: jest.Mock<Promise<WavefrontMapData>, [OpticalModel, number, number]> = jest
   .fn()
   .mockResolvedValue({
@@ -218,6 +234,7 @@ const mockProxy = {
   plotGeoPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-geopsf"),
   plotDiffractionPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-diffrpsf"),
   getDiffractionPSFData: mockGetDiffractionPSFData,
+  getDiffractionMTFData: mockGetDiffractionMTFData,
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
   getZernikeCoefficients: jest.fn<Promise<ZernikeData>, [OpticalModel, number, number, number?]>().mockResolvedValue({
     coefficients: [],

@@ -1,3 +1,8 @@
+export interface LineAxisData {
+  x: number[];
+  y: number[];
+}
+
 export interface DiffractionPsfData {
   fieldIdx: number;
   wvlIdx: number;
@@ -7,6 +12,21 @@ export interface DiffractionPsfData {
   unitX: string;
   unitY: string;
   unitZ: string;
+}
+
+export interface DiffractionMtfData {
+  fieldIdx: number;
+  wvlIdx: number;
+  Tangential: LineAxisData;
+  Sagittal: LineAxisData;
+  IdealTangential: LineAxisData;
+  IdealSagittal: LineAxisData;
+  unitX: string;
+  unitY: string;
+  cutoffTangential: number;
+  cutoffSagittal: number;
+  naTangential: number;
+  naSagittal: number;
 }
 
 export interface WavefrontMapData {
@@ -40,10 +60,7 @@ export interface SpotDiagramSeriesData {
 
 export type SpotDiagramData = SpotDiagramSeriesData[];
 
-export interface RayFanAxisData {
-  x: number[];
-  y: number[];
-}
+export type RayFanAxisData = LineAxisData;
 
 export interface RayFanSeriesData {
   fieldIdx: number;
@@ -56,10 +73,7 @@ export interface RayFanSeriesData {
 
 export type RayFanData = RayFanSeriesData[];
 
-export interface OpdFanAxisData {
-  x: number[];
-  y: number[];
-}
+export type OpdFanAxisData = LineAxisData;
 
 export interface OpdFanSeriesData {
   fieldIdx: number;
