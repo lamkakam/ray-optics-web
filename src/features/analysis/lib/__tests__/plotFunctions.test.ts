@@ -1,10 +1,27 @@
+import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { OpdFanData, RayFanData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, OpdFanData, RayFanData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
+import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
+import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 
 const mockModel = {} as OpticalModel;
+
+const diffractionMtfData: DiffractionMtfData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  Tangential: { x: [0, 10, 20], y: [1, 0.7, 0.2] },
+  Sagittal: { x: [0, 10, 20], y: [1, 0.65, 0.15] },
+  IdealTangential: { x: [0, 10, 20], y: [1, 0.8, 0.3] },
+  IdealSagittal: { x: [0, 10, 20], y: [1, 0.78, 0.28] },
+  unitX: "cycles/mm",
+  unitY: "",
+  cutoffTangential: 42,
+  cutoffSagittal: 40,
+  naTangential: 0.012,
+  naSagittal: 0.011,
+};
 
 function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
   return {
@@ -306,5 +323,34 @@ describe("loadAnalysisPlot", () => {
         ],
       },
     });
+  });
+});
+
+describe("commitAnalysisPlotResult", () => {
+  it("commits diffractionMTF data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+
+    commitAnalysisPlotResult({
+      kind: "diffractionMTF",
+      diffractionMtfData,
+    }, store);
+
+    expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
+  });
+
+  it("does not commit surfaceBySurface3rdOrder data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+    store.getState().setDiffractionMtfData(diffractionMtfData);
+
+    commitAnalysisPlotResult({
+      kind: "surfaceBySurface3rdOrder",
+      surfaceBySurface3rdOrderData: {
+        aberrTypes: ["S-I"],
+        surfaceLabels: ["S1"],
+        data: [[0.1]],
+      },
+    }, store);
+
+    expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });
 });

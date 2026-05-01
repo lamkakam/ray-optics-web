@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
@@ -183,6 +183,21 @@ const mockDiffractionPsfData: DiffractionPsfData = {
   unitZ: "",
 };
 
+const mockDiffractionMtfData: DiffractionMtfData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  Tangential: { x: [0, 10, 20], y: [1, 0.7, 0.2] },
+  Sagittal: { x: [0, 10, 20], y: [1, 0.65, 0.15] },
+  IdealTangential: { x: [0, 10, 20], y: [1, 0.8, 0.3] },
+  IdealSagittal: { x: [0, 10, 20], y: [1, 0.78, 0.28] },
+  unitX: "cycles/mm",
+  unitY: "",
+  cutoffTangential: 42,
+  cutoffSagittal: 40,
+  naTangential: 0.012,
+  naSagittal: 0.011,
+};
+
 function makeStores() {
   const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
@@ -231,6 +246,7 @@ function makeProxy(): PyodideWorkerAPI {
     plotGeoPSF: jest.fn().mockResolvedValue("plot-base64"),
     plotDiffractionPSF: jest.fn().mockResolvedValue("plot-base64"),
     getDiffractionPSFData: jest.fn().mockResolvedValue(mockDiffractionPsfData),
+    getDiffractionMTFData: jest.fn().mockResolvedValue(mockDiffractionMtfData),
     get3rdOrderSeidelData: jest.fn().mockResolvedValue(mockSeidelData),
     getZernikeCoefficients: jest.fn(),
     focusByMonoRmsSpot: jest.fn(),
@@ -364,6 +380,21 @@ describe("LensEditor", () => {
     });
     expect(proxy!.plotDiffractionPSF).not.toHaveBeenCalled();
     expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
+  });
+
+  it("Update System commits diffraction MTF data for the selected plot", async () => {
+    const { proxy, analysisPlotStore } = renderLensEditor();
+    act(() => {
+      analysisPlotStore.getState().setSelectedPlotType("diffractionMTF");
+    });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => {
+      expect(proxy!.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0);
+    });
+    expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
   });
 
   it("submit error path calls onError", async () => {

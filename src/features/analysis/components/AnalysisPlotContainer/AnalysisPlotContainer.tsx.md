@@ -38,7 +38,7 @@ All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` a
 
 ## Internal Logic
 
-All plot loading goes through `loadAnalysisPlot(...)` from `@/features/analysis/lib/plotFunctions`, which centralizes the plot-type to worker-API mapping. This keeps the panel behavior aligned with `LensEditor.tsx` submit handling.
+All plot loading goes through `loadAnalysisPlot(...)` from `@/features/analysis/lib/plotFunctions`, which centralizes the plot-type to worker-API mapping. Plot-store-backed payload commits go through `commitAnalysisPlotResult(...)`, keeping panel behavior aligned with `LensEditor.tsx` submit handling and example-system application.
 
 ### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
 
@@ -47,15 +47,9 @@ Shared async helper used by all three change handlers:
 1. Returns immediately when `proxy` or `committedOpticalModel` is missing.
 2. Sets `plotLoading(true)`.
 3. Calls `loadAnalysisPlot({ plotType, proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex })`.
-4. If the result kind is `"diffractionPSF"`, stores the payload with `setDiffractionPsfData(...)`.
-5. If the result kind is `"diffractionMTF"`, stores the payload with `setDiffractionMtfData(...)`.
-6. If the result kind is `"rayFan"`, stores the payload with `setRayFanData(...)`.
-7. If the result kind is `"opdFan"`, stores the payload with `setOpdFanData(...)`.
-8. If the result kind is `"spotDiagram"`, stores the payload with `setSpotDiagramData(...)`.
-9. If the result kind is `"geoPSF"`, stores the payload with `setGeoPsfData(...)`.
-10. If the result kind is `"wavefrontMap"`, stores the payload with `setWavefrontMapData(...)`.
-11. If the result kind is `"surfaceBySurface3rdOrder"`, updates only `analysisDataStore.seidelData.surfaceBySurface`.
-12. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
+4. If the result kind is `"surfaceBySurface3rdOrder"`, updates only `analysisDataStore.seidelData.surfaceBySurface`.
+5. Otherwise delegates to `commitAnalysisPlotResult(...)`, which stores the payload with the matching analysis plot store setter.
+6. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
 
 ### `handleFieldChange(value)`
 

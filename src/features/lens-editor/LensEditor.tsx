@@ -8,7 +8,7 @@ import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/
 import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/lib/zernikeData";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-import { loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
+import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -105,19 +105,7 @@ export function LensEditor({
 
       analysisDataStore.getState().setFirstOrderData(fod);
       lensLayoutImageStore.getState().setLayoutImage(layout);
-      if (plotResult?.kind === "wavefrontMap") {
-        analysisPlotStore.getState().setWavefrontMapData(plotResult.wavefrontMapData);
-      } else if (plotResult?.kind === "rayFan") {
-        analysisPlotStore.getState().setRayFanData(plotResult.rayFanData);
-      } else if (plotResult?.kind === "opdFan") {
-        analysisPlotStore.getState().setOpdFanData(plotResult.opdFanData);
-      } else if (plotResult?.kind === "spotDiagram") {
-        analysisPlotStore.getState().setSpotDiagramData(plotResult.spotDiagramData);
-      } else if (plotResult?.kind === "geoPSF") {
-        analysisPlotStore.getState().setGeoPsfData(plotResult.geoPsfData);
-      } else if (plotResult?.kind === "diffractionPSF") {
-        analysisPlotStore.getState().setDiffractionPsfData(plotResult.diffractionPsfData);
-      }
+      commitAnalysisPlotResult(plotResult, analysisPlotStore);
       analysisDataStore.getState().setSeidelData(seidel);
       specsStore.getState().setCommittedSpecs(specs);
       lensStore.getState().setCommittedOpticalModel(model);

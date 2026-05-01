@@ -2,7 +2,7 @@ import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import { loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
+import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
 import type { LensLayoutImageState } from "@/features/analysis/stores/lensLayoutImageStore";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
@@ -19,25 +19,6 @@ interface ApplyExampleSystemParams {
   readonly analysisPlotStore: StoreApi<AnalysisPlotState>;
   readonly analysisDataStore: StoreApi<AnalysisDataState>;
   readonly lensLayoutImageStore: StoreApi<LensLayoutImageState>;
-}
-
-function commitPlotResult(
-  plotResult: Awaited<ReturnType<typeof loadAnalysisPlot>>,
-  analysisPlotStore: StoreApi<AnalysisPlotState>,
-) {
-  if (plotResult?.kind === "wavefrontMap") {
-    analysisPlotStore.getState().setWavefrontMapData(plotResult.wavefrontMapData);
-  } else if (plotResult?.kind === "rayFan") {
-    analysisPlotStore.getState().setRayFanData(plotResult.rayFanData);
-  } else if (plotResult?.kind === "opdFan") {
-    analysisPlotStore.getState().setOpdFanData(plotResult.opdFanData);
-  } else if (plotResult?.kind === "spotDiagram") {
-    analysisPlotStore.getState().setSpotDiagramData(plotResult.spotDiagramData);
-  } else if (plotResult?.kind === "geoPSF") {
-    analysisPlotStore.getState().setGeoPsfData(plotResult.geoPsfData);
-  } else if (plotResult?.kind === "diffractionPSF") {
-    analysisPlotStore.getState().setDiffractionPsfData(plotResult.diffractionPsfData);
-  }
 }
 
 export async function applyExampleSystem({
@@ -86,7 +67,7 @@ export async function applyExampleSystem({
 
     analysisDataStore.getState().setFirstOrderData(fod);
     lensLayoutImageStore.getState().setLayoutImage(layout);
-    commitPlotResult(plotResult, analysisPlotStore);
+    commitAnalysisPlotResult(plotResult, analysisPlotStore);
     analysisDataStore.getState().setSeidelData(seidel);
     specsStore.getState().setCommittedSpecs(model.specs);
     lensStore.getState().setCommittedOpticalModel(model);

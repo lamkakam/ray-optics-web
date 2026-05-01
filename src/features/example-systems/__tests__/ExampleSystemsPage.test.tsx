@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { DiffractionMtfData } from "@/features/analysis/types/plotData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
@@ -47,6 +48,21 @@ const mockSeidelData: SeidelData = {
   curvature: { TCV: 0, SCV: 0, PCV: 0 },
 };
 
+const mockDiffractionMtfData: DiffractionMtfData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  Tangential: { x: [0, 10, 20], y: [1, 0.7, 0.2] },
+  Sagittal: { x: [0, 10, 20], y: [1, 0.65, 0.15] },
+  IdealTangential: { x: [0, 10, 20], y: [1, 0.8, 0.3] },
+  IdealSagittal: { x: [0, 10, 20], y: [1, 0.78, 0.28] },
+  unitX: "cycles/mm",
+  unitY: "",
+  cutoffTangential: 42,
+  cutoffSagittal: 40,
+  naTangential: 0.012,
+  naSagittal: 0.011,
+};
+
 function makeProxy(): PyodideWorkerAPI {
   return {
     init: jest.fn(),
@@ -65,6 +81,7 @@ function makeProxy(): PyodideWorkerAPI {
     plotGeoPSF: jest.fn(),
     plotDiffractionPSF: jest.fn(),
     getDiffractionPSFData: jest.fn().mockResolvedValue({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], z: [], unitX: "", unitY: "", unitZ: "" }),
+    getDiffractionMTFData: jest.fn().mockResolvedValue(mockDiffractionMtfData),
     get3rdOrderSeidelData: jest.fn().mockResolvedValue(mockSeidelData),
     getZernikeCoefficients: jest.fn(),
     focusByMonoRmsSpot: jest.fn(),
@@ -103,7 +120,7 @@ function renderPage(overrides?: {
     </SpecsConfiguratorStoreContext.Provider>,
   );
 
-  return { proxy, onError, lensStore, specsStore, analysisDataStore };
+  return { proxy, onError, lensStore, specsStore, analysisPlotStore, analysisDataStore };
 }
 
 describe("ExampleSystemsPage", () => {
@@ -319,6 +336,20 @@ describe("ExampleSystemsPage", () => {
     expect(lensStore.getState().autoAperture).toBe(true);
     expect(specsStore.getState().committedSpecs.pupil.value).toBe(12.5);
     expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 });
+  });
+
+  it("confirming applies and commits diffraction MTF data before routing", async () => {
+    const { proxy, analysisPlotStore } = renderPage();
+    analysisPlotStore.getState().setSelectedPlotType("diffractionMTF");
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    await user.click(screen.getByRole("button", { name: "Load" }));
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/"));
+    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0);
+    expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
   });
 
   it("shows the app error modal hook and stays on the route when apply fails", async () => {
