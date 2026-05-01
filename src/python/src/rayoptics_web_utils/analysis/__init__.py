@@ -9,6 +9,7 @@ from rayoptics_web_utils.analysis.analysis import (
     get_wavefront_data,
     get_geo_psf_data,
     get_diffraction_psf_data,
+    get_diffraction_mtf_data,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "get_wavefront_data",
     "get_geo_psf_data",
     "get_diffraction_psf_data",
+    "get_diffraction_mtf_data",
 ]

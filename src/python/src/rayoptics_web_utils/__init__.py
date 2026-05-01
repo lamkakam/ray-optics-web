@@ -19,6 +19,7 @@ _LAZY_IMPORTS = {
     'get_wavefront_data': 'rayoptics_web_utils.analysis.analysis',
     'get_geo_psf_data': 'rayoptics_web_utils.analysis.analysis',
     'get_diffraction_psf_data': 'rayoptics_web_utils.analysis.analysis',
+    'get_diffraction_mtf_data': 'rayoptics_web_utils.analysis.analysis',
     # zernike
     'get_zernike_coefficients': 'rayoptics_web_utils.zernike.zernike',
     # plotting

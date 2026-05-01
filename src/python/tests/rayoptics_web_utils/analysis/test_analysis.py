@@ -52,6 +52,15 @@ class TestGetAnalysisPlotDataSignatures:
         assert sig.parameters["num_rays"].default == 64
         assert sig.parameters["max_dims"].default == 256
 
+    def test_get_diffraction_mtf_data_accepts_opm_field_idx_wvl_idx_num_rays_and_max_dims(self):
+        from rayoptics_web_utils.analysis import get_diffraction_mtf_data
+        import inspect
+
+        sig = inspect.signature(get_diffraction_mtf_data)
+        assert list(sig.parameters.keys()) == ["opm", "field_idx", "wvl_idx", "num_rays", "max_dims"]
+        assert sig.parameters["num_rays"].default == 64
+        assert sig.parameters["max_dims"].default == 256
+
 
 class TestGetFirstOrderData:
     """Tests for get_first_order_data()."""
@@ -294,3 +303,77 @@ class TestGetDiffractionPsfData:
         result = get_diffraction_psf_data(cooke_triplet, fi=0, wvl_idx=0, num_rays=16)
 
         json.dumps(result)
+
+
+class TestGetDiffractionMtfData:
+    """Tests for get_diffraction_mtf_data()."""
+
+    def test_returns_mtf_lines_and_metadata(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_diffraction_mtf_data
+
+        result = get_diffraction_mtf_data(cooke_triplet, field_idx=1, wvl_idx=1, num_rays=16, max_dims=64)
+
+        assert result["fieldIdx"] == 1
+        assert result["wvlIdx"] == 1
+        assert result["unitX"] == f"cycles/{cooke_triplet.system_spec.dimensions}"
+        assert result["unitY"] == ""
+        assert isinstance(result["cutoffTangential"], float)
+        assert isinstance(result["cutoffSagittal"], float)
+        assert isinstance(result["naTangential"], float)
+        assert isinstance(result["naSagittal"], float)
+        assert result["cutoffTangential"] > 0.0
+        assert result["cutoffSagittal"] > 0.0
+
+        for key in ["Tangential", "Sagittal", "IdealTangential", "IdealSagittal"]:
+            assert set(result[key].keys()) == {"x", "y"}
+            assert len(result[key]["x"]) == len(result[key]["y"])
+            assert len(result[key]["x"]) > 0
+            assert all(isinstance(v, float) for v in result[key]["x"])
+            assert all(isinstance(v, float) for v in result[key]["y"])
+
+    def test_result_is_json_encodable(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_diffraction_mtf_data
+
+        result = get_diffraction_mtf_data(cooke_triplet, field_idx=0, wvl_idx=0, num_rays=16)
+
+        json.dumps(result)
+
+    def test_mtf_lines_are_normalized_at_zero_frequency(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_diffraction_mtf_data
+
+        result = get_diffraction_mtf_data(cooke_triplet, field_idx=1, wvl_idx=1, num_rays=16, max_dims=64)
+
+        assert result["Tangential"]["x"][0] == 0.0
+        assert result["Sagittal"]["x"][0] == 0.0
+        assert result["Tangential"]["y"][0] == 1.0
+        assert result["Sagittal"]["y"][0] == 1.0
+        assert result["IdealTangential"]["y"][0] == 1.0
+        assert result["IdealSagittal"]["y"][0] == 1.0
+
+    def test_ideal_mtf_curves_end_near_zero(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_diffraction_mtf_data
+
+        result = get_diffraction_mtf_data(cooke_triplet, field_idx=1, wvl_idx=1, num_rays=16, max_dims=64)
+
+        assert result["IdealTangential"]["y"][-1] <= 0.05
+        assert result["IdealSagittal"]["y"][-1] <= 0.05
+
+    def test_enforces_max_dims_floor_of_two_times_num_rays(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_diffraction_mtf_data
+
+        result = get_diffraction_mtf_data(cooke_triplet, field_idx=1, wvl_idx=1, num_rays=16, max_dims=8)
+
+        assert len(result["Tangential"]["x"]) == 16
+        assert len(result["Sagittal"]["x"]) == 16
+        assert len(result["IdealTangential"]["x"]) == 16
+        assert len(result["IdealSagittal"]["x"]) == 16
+
+    def test_uses_requested_max_dims_when_above_two_times_num_rays(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_diffraction_mtf_data
+
+        result = get_diffraction_mtf_data(cooke_triplet, field_idx=1, wvl_idx=1, num_rays=16, max_dims=80)
+
+        assert len(result["Tangential"]["x"]) == 40
+        assert len(result["Sagittal"]["x"]) == 40
+        assert len(result["IdealTangential"]["x"]) == 40
+        assert len(result["IdealSagittal"]["x"]) == 40

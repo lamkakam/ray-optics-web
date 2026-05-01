@@ -5,6 +5,7 @@ import numpy as np
 import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
 from rayoptics.raytr import trace
+from rayoptics.raytr.trace import trace_boundary_rays_at_field
 from rayoptics.raytr.waveabr import wave_abr_full_calc
 from rayoptics.raytr.analyses import RayList, calc_psf, calc_psf_scaling
 from rayoptics.raytr import sampler
@@ -332,4 +333,104 @@ def get_diffraction_psf_data(
         'unitX': _system_units(opm),
         'unitY': _system_units(opm),
         'unitZ': '',
+    }
+
+
+def _diffraction_limited_mtf(freqs, cutoff: float) -> np.ndarray:
+    """Return the incoherent circular-pupil diffraction-limited MTF."""
+    freqs = np.asarray(freqs, dtype=float)
+    if cutoff <= 0.0:
+        return np.zeros_like(freqs, dtype=float)
+
+    normalized_freqs = np.abs(freqs) / cutoff
+    mtf = np.zeros_like(normalized_freqs, dtype=float)
+    inside_cutoff = normalized_freqs <= 1.0
+    nu = normalized_freqs[inside_cutoff]
+    phi = np.arccos(nu)
+    mtf[inside_cutoff] = (2.0 / np.pi) * (phi - nu * np.sqrt(np.clip(1.0 - nu**2, 0.0, 1.0)))
+    return mtf
+
+
+def get_diffraction_mtf_data(
+    opm: OpticalModel,
+    field_idx: int,
+    wvl_idx: int,
+    num_rays: int = 64,
+    max_dims: int = 256,
+) -> dict:
+    """
+    Return type: {
+        'fieldIdx': int,
+        'wvlIdx': int,
+
+        'Tangential': {'x': float[], 'y': float[]},
+        'Sagittal': {'x': float[], 'y': float[]},
+        'IdealTangential': {'x': float[], 'y': float[]},
+        'IdealSagittal': {'x': float[], 'y': float[]},
+
+        'unitX': str, // cycles/<system unit>
+        'unitY': '',
+        'cutoffTangential': float,
+        'cutoffSagittal': float,
+        'naTangential': float,
+        'naSagittal': float,
+    }
+    """
+    osp = opm.optical_spec
+    fld = osp.field_of_view.fields[field_idx]
+    wavelength_nm = osp.spectral_region.wavelengths[wvl_idx]
+    wavelength_sys_units = opm.nm_to_sys_units(wavelength_nm)
+    effective_max_dims = max(max_dims, 2 * num_rays)
+
+    pupil_grid = make_ray_grid(opm, fi=field_idx, wavelength_nm=wavelength_nm, num_rays=num_rays)
+    psf = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, effective_max_dims)
+    mtf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(psf))))
+
+    center_idx = effective_max_dims // 2
+    center_value = mtf[center_idx, center_idx]
+    if center_value != 0.0:
+        mtf = mtf / center_value
+
+    _, delta_xp = calc_psf_scaling(pupil_grid, pupil_grid.num_rays, effective_max_dims)
+    freq_axis = np.fft.fftshift(np.fft.fftfreq(effective_max_dims, d=delta_xp))
+    positive_freqs = freq_axis[center_idx:].copy()
+    positive_freqs[0] = 0.0
+
+    tangential_mtf = mtf[center_idx:, center_idx]
+    sagittal_mtf = mtf[center_idx, center_idx:]
+
+    rim_rays = trace_boundary_rays_at_field(opm, fld, wavelength_nm, use_named_tuples=True)
+    na_sagittal = abs(float(rim_rays[1].ray[-2].d[0]))
+    na_tangential = abs(float(rim_rays[3].ray[-2].d[1]))
+    cutoff_sagittal = 2.0 * na_sagittal / wavelength_sys_units
+    cutoff_tangential = 2.0 * na_tangential / wavelength_sys_units
+
+    ideal_tangential = _diffraction_limited_mtf(positive_freqs, cutoff_tangential)
+    ideal_sagittal = _diffraction_limited_mtf(positive_freqs, cutoff_sagittal)
+
+    return {
+        'fieldIdx': field_idx,
+        'wvlIdx': wvl_idx,
+        'Tangential': {
+            'x': _json_float_list(positive_freqs),
+            'y': _json_float_list(tangential_mtf),
+        },
+        'Sagittal': {
+            'x': _json_float_list(positive_freqs),
+            'y': _json_float_list(sagittal_mtf),
+        },
+        'IdealTangential': {
+            'x': _json_float_list(positive_freqs),
+            'y': _json_float_list(ideal_tangential),
+        },
+        'IdealSagittal': {
+            'x': _json_float_list(positive_freqs),
+            'y': _json_float_list(ideal_sagittal),
+        },
+        'unitX': f"cycles/{_system_units(opm)}",
+        'unitY': '',
+        'cutoffTangential': float(cutoff_tangential),
+        'cutoffSagittal': float(cutoff_sagittal),
+        'naTangential': float(na_tangential),
+        'naSagittal': float(na_sagittal),
     }

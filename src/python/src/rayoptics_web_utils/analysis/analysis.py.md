@@ -15,6 +15,7 @@ def get_spot_data(opm: OpticalModel, fi: int) -> list[dict]: ...
 def get_wavefront_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict: ...
 def get_geo_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict: ...
 def get_diffraction_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64, max_dims: int = 256) -> dict: ...
+def get_diffraction_mtf_data(opm: OpticalModel, field_idx: int, wvl_idx: int, num_rays: int = 64, max_dims: int = 256) -> dict: ...
 ```
 
 ## Function Details
@@ -142,6 +143,32 @@ Returns diffraction PSF image-plane axes and intensity grid for one field and wa
 - Uses `make_ray_grid(...)`, `calc_psf(...)`, and `calc_psf_scaling(...)`.
 - The effective PSF grid size is `max(max_dims, 2 * num_rays)`, so the output axes and intensity grid are never smaller than twice the pupil sampling density.
 - The helper returns JSON-encodable Python data only; it does not call `json.dumps()`.
+
+### `get_diffraction_mtf_data(opm, field_idx, wvl_idx, num_rays=64, max_dims=256)`
+
+Returns diffraction MTF line data for one field and wavelength.
+
+| Field | Type | Description |
+|---|---|---|
+| `fieldIdx` | `int` | Field index |
+| `wvlIdx` | `int` | Wavelength index |
+| `Tangential` | `dict` | Tangential measured MTF line with `x` spatial frequencies and `y` normalized MTF values |
+| `Sagittal` | `dict` | Sagittal measured MTF line with `x` spatial frequencies and `y` normalized MTF values |
+| `IdealTangential` | `dict` | Diffraction-limited tangential MTF line using the tangential anamorphic cutoff |
+| `IdealSagittal` | `dict` | Diffraction-limited sagittal MTF line using the sagittal anamorphic cutoff |
+| `unitX` | `str` | `cycles/<opm.system_spec.dimensions>` |
+| `unitY` | `str` | `""` |
+| `cutoffTangential` | `float` | Tangential diffraction cutoff frequency |
+| `cutoffSagittal` | `float` | Sagittal diffraction cutoff frequency |
+| `naTangential` | `float` | Tangential numerical aperture from the y boundary ray direction |
+| `naSagittal` | `float` | Sagittal numerical aperture from the x boundary ray direction |
+
+- Uses `make_ray_grid(...)` and `calc_psf(...)`, matching the diffraction PSF data path.
+- Computes `abs(fftshift(ifft2(fftshift(psf))))`, normalizes by the zero-frequency center value, and returns only the non-negative frequency half of each centerline.
+- Tangential data is the vertical centerline and uses the y-direction numerical aperture/cutoff; sagittal data is the horizontal centerline and uses the x-direction numerical aperture/cutoff.
+- Frequency axes are derived from `np.fft.fftfreq(effective_max_dims, d=delta_xp)`, where `delta_xp` comes from `calc_psf_scaling(...)`.
+- The effective MTF grid size is `max(max_dims, 2 * num_rays)`, matching `get_diffraction_psf_data`.
+- Ideal curves use the incoherent circular-pupil MTF formula and clamp values outside cutoff to `0.0`.
 
 ## Key Conventions
 
