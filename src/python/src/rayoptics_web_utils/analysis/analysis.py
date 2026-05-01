@@ -351,6 +351,24 @@ def _diffraction_limited_mtf(freqs, cutoff: float) -> np.ndarray:
     return mtf
 
 
+def _directional_na_from_ray_dirs(chief_dir, negative_dir, positive_dir, axis: int) -> float:
+    """Return one directional NA from marginal directions relative to the chief ray."""
+    chief_dir = np.asarray(chief_dir, dtype=float)
+    marginal_dirs = [
+        np.asarray(negative_dir, dtype=float),
+        np.asarray(positive_dir, dtype=float),
+    ]
+    relative_components = [abs(float((direction - chief_dir)[axis])) for direction in marginal_dirs]
+    return max(relative_components)
+
+
+def _mtf_frequency_axis(cutoff: float, sample_count: int) -> np.ndarray:
+    """Map non-negative OTF samples onto their directional diffraction cutoff."""
+    if sample_count <= 1:
+        return np.zeros(sample_count, dtype=float)
+    return np.linspace(0.0, cutoff, sample_count, dtype=float)
+
+
 def get_diffraction_mtf_data(
     opm: OpticalModel,
     field_idx: int,
@@ -391,40 +409,49 @@ def get_diffraction_mtf_data(
     if center_value != 0.0:
         mtf = mtf / center_value
 
-    _, delta_xp = calc_psf_scaling(pupil_grid, pupil_grid.num_rays, effective_max_dims)
-    freq_axis = np.fft.fftshift(np.fft.fftfreq(effective_max_dims, d=delta_xp))
-    positive_freqs = freq_axis[center_idx:].copy()
-    positive_freqs[0] = 0.0
-
     tangential_mtf = mtf[center_idx:, center_idx]
     sagittal_mtf = mtf[center_idx, center_idx:]
 
     rim_rays = trace_boundary_rays_at_field(opm, fld, wavelength_nm, use_named_tuples=True)
-    na_sagittal = abs(float(rim_rays[1].ray[-2].d[0]))
-    na_tangential = abs(float(rim_rays[3].ray[-2].d[1]))
+    chief_dir = rim_rays[0].ray[-1].d
+    na_sagittal = _directional_na_from_ray_dirs(
+        chief_dir,
+        rim_rays[1].ray[-1].d,
+        rim_rays[2].ray[-1].d,
+        axis=0,
+    )
+    na_tangential = _directional_na_from_ray_dirs(
+        chief_dir,
+        rim_rays[3].ray[-1].d,
+        rim_rays[4].ray[-1].d,
+        axis=1,
+    )
     cutoff_sagittal = 2.0 * na_sagittal / wavelength_sys_units
     cutoff_tangential = 2.0 * na_tangential / wavelength_sys_units
 
-    ideal_tangential = _diffraction_limited_mtf(positive_freqs, cutoff_tangential)
-    ideal_sagittal = _diffraction_limited_mtf(positive_freqs, cutoff_sagittal)
+    tangential_freqs = _mtf_frequency_axis(cutoff_tangential, len(tangential_mtf))
+    sagittal_freqs = _mtf_frequency_axis(cutoff_sagittal, len(sagittal_mtf))
+
+    ideal_tangential = _diffraction_limited_mtf(tangential_freqs, cutoff_tangential)
+    ideal_sagittal = _diffraction_limited_mtf(sagittal_freqs, cutoff_sagittal)
 
     return {
         'fieldIdx': field_idx,
         'wvlIdx': wvl_idx,
         'Tangential': {
-            'x': _json_float_list(positive_freqs),
+            'x': _json_float_list(tangential_freqs),
             'y': _json_float_list(tangential_mtf),
         },
         'Sagittal': {
-            'x': _json_float_list(positive_freqs),
+            'x': _json_float_list(sagittal_freqs),
             'y': _json_float_list(sagittal_mtf),
         },
         'IdealTangential': {
-            'x': _json_float_list(positive_freqs),
+            'x': _json_float_list(tangential_freqs),
             'y': _json_float_list(ideal_tangential),
         },
         'IdealSagittal': {
-            'x': _json_float_list(positive_freqs),
+            'x': _json_float_list(sagittal_freqs),
             'y': _json_float_list(ideal_sagittal),
         },
         'unitX': f"cycles/{_system_units(opm)}",

@@ -166,7 +166,8 @@ Returns diffraction MTF line data for one field and wavelength.
 - Uses `make_ray_grid(...)` and `calc_psf(...)`, matching the diffraction PSF data path.
 - Computes `abs(fftshift(ifft2(fftshift(psf))))`, normalizes by the zero-frequency center value, and returns only the non-negative frequency half of each centerline.
 - Tangential data is the vertical centerline and uses the y-direction numerical aperture/cutoff; sagittal data is the horizontal centerline and uses the x-direction numerical aperture/cutoff.
-- Frequency axes are derived from `np.fft.fftfreq(effective_max_dims, d=delta_xp)`, where `delta_xp` comes from `calc_psf_scaling(...)`.
+- Directional NA is computed from image-side marginal ray directions relative to the chief-ray direction. This keeps tilted and folded systems from treating chief-ray fold angle as aperture cone angle.
+- Frequency axes are derived from non-negative OTF sample position scaled by each directional diffraction cutoff, so tangential and sagittal series may have distinct `x` arrays. The MTF frequency axis does not use `calc_psf_scaling(...)`, whose image-plane PSF sampling can be invalid for strongly tilted reference spheres.
 - The effective MTF grid size is `max(max_dims, 2 * num_rays)`, matching `get_diffraction_psf_data`.
 - Ideal curves use the incoherent circular-pupil MTF formula and clamp values outside cutoff to `0.0`.
 

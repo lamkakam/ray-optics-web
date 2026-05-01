@@ -1,6 +1,7 @@
 """Tests for rayoptics_web_utils.analysis module."""
 
 import json
+import pytest
 
 
 class TestGetAnalysisPlotDataSignatures:
@@ -377,3 +378,23 @@ class TestGetDiffractionMtfData:
         assert len(result["Sagittal"]["x"]) == 40
         assert len(result["IdealTangential"]["x"]) == 40
         assert len(result["IdealSagittal"]["x"]) == 40
+
+    def test_tilted_system_ideal_mtf_has_physical_cutoffs(self, tilted_houghton):
+        from rayoptics_web_utils.analysis import get_diffraction_mtf_data
+
+        result = get_diffraction_mtf_data(tilted_houghton, field_idx=0, wvl_idx=2, num_rays=32, max_dims=128)
+
+        assert result["cutoffTangential"] == pytest.approx(229.0, rel=0.1)
+        assert result["cutoffSagittal"] == pytest.approx(229.0, rel=0.1)
+        assert result["IdealTangential"]["y"][1] > 0.9
+        assert result["IdealSagittal"]["y"][1] > 0.9
+
+    def test_tilted_system_measured_and_ideal_axes_are_comparable(self, tilted_houghton):
+        from rayoptics_web_utils.analysis import get_diffraction_mtf_data
+
+        result = get_diffraction_mtf_data(tilted_houghton, field_idx=0, wvl_idx=2, num_rays=32, max_dims=128)
+
+        assert result["Tangential"]["x"] == pytest.approx(result["IdealTangential"]["x"])
+        assert result["Sagittal"]["x"] == pytest.approx(result["IdealSagittal"]["x"])
+        assert result["Tangential"]["x"][-1] == pytest.approx(result["cutoffTangential"])
+        assert result["Sagittal"]["x"][-1] == pytest.approx(result["cutoffSagittal"])
