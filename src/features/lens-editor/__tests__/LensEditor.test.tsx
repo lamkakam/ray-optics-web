@@ -212,7 +212,6 @@ function makeProxy(): PyodideWorkerAPI {
     init: jest.fn(),
     getFirstOrderData: jest.fn().mockResolvedValue({ efl: 100 }),
     plotLensLayout: jest.fn().mockResolvedValue("layout-base64"),
-    plotRayFan: jest.fn().mockResolvedValue("plot-base64"),
     getRayFanData: jest.fn().mockResolvedValue([
       {
         fieldIdx: 0,
@@ -229,11 +228,7 @@ function makeProxy(): PyodideWorkerAPI {
         unitY: "mm",
       },
     ]),
-    plotOpdFan: jest.fn().mockResolvedValue("plot-base64"),
     getOpdFanData: jest.fn().mockResolvedValue([]),
-    plotSpotDiagram: jest.fn().mockResolvedValue("plot-base64"),
-    plotSurfaceBySurface3rdOrderAberr: jest.fn().mockResolvedValue("plot-base64"),
-    plotWavefrontMap: jest.fn().mockResolvedValue("plot-base64"),
     getWavefrontData: jest.fn().mockResolvedValue(mockWavefrontMapData),
     getGeoPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
@@ -243,8 +238,6 @@ function makeProxy(): PyodideWorkerAPI {
       unitX: "mm",
       unitY: "mm",
     }),
-    plotGeoPSF: jest.fn().mockResolvedValue("plot-base64"),
-    plotDiffractionPSF: jest.fn().mockResolvedValue("plot-base64"),
     getDiffractionPSFData: jest.fn().mockResolvedValue(mockDiffractionPsfData),
     getDiffractionMTFData: jest.fn().mockResolvedValue(mockDiffractionMtfData),
     get3rdOrderSeidelData: jest.fn().mockResolvedValue(mockSeidelData),
@@ -362,7 +355,6 @@ describe("LensEditor", () => {
     await waitFor(() => {
       expect(proxy!.getWavefrontData).toHaveBeenCalled();
     });
-    expect(proxy!.plotWavefrontMap).not.toHaveBeenCalled();
     expect(analysisPlotStore.getState().wavefrontMapData).toEqual(mockWavefrontMapData);
   });
 
@@ -378,7 +370,6 @@ describe("LensEditor", () => {
     await waitFor(() => {
       expect(proxy!.getDiffractionPSFData).toHaveBeenCalled();
     });
-    expect(proxy!.plotDiffractionPSF).not.toHaveBeenCalled();
     expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
   });
 

@@ -67,7 +67,7 @@ Each list entry corresponds to one wavelength and contains:
 | `unitX` | `str` | `""` (relative pupil coordinate) |
 | `unitY` | `str` | `opm.system_spec.dimensions` |
 
-- Uses the same transverse-aberration callback as `plot_ray_fan`.
+- Uses the same transverse-aberration rayoptics callback that previously powered the legacy PNG ray-fan renderer.
 - `Sagittal.x`, `Sagittal.y`, `Tangential.x`, and `Tangential.y` are plain Python `list[float]`.
 - Fan extraction preserves per-wavelength sample lists even when RayOptics returns ragged fan lengths, instead of coercing them into a rectangular numpy array first.
 

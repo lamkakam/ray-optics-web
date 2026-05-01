@@ -52,7 +52,6 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
       curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
     } satisfies SeidelData),
     getZernikeCoefficients: jest.fn(),
-    plotRayFan: jest.fn().mockResolvedValue("rayFan-result"),
     getRayFanData: jest.fn().mockResolvedValue([
       {
         fieldIdx: 0,
@@ -69,7 +68,6 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
         unitY: "mm",
       },
     ] satisfies RayFanData),
-    plotOpdFan: jest.fn().mockResolvedValue("opdFan-result"),
     getOpdFanData: jest.fn().mockResolvedValue([
       {
         fieldIdx: 0,
@@ -86,7 +84,6 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
         unitY: "waves",
       },
     ] satisfies OpdFanData),
-    plotSpotDiagram: jest.fn().mockResolvedValue("spotDiagram-result"),
     getSpotDiagramData: jest.fn().mockResolvedValue([
       {
         fieldIdx: 0,
@@ -97,8 +94,6 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
         unitY: "mm",
       },
     ]),
-    plotSurfaceBySurface3rdOrderAberr: jest.fn().mockResolvedValue("s3rdOrder-result"),
-    plotWavefrontMap: jest.fn().mockResolvedValue("wavefront-result"),
     getWavefrontData: jest.fn(),
     getGeoPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
@@ -108,8 +103,6 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
       unitX: "mm",
       unitY: "mm",
     }),
-    plotGeoPSF: jest.fn().mockResolvedValue("geoPSF-result"),
-    plotDiffractionPSF: jest.fn().mockResolvedValue("diffractionPSF-result"),
     getDiffractionPSFData: jest.fn(),
     getDiffractionMTFData: jest.fn(),
   } as unknown as jest.Mocked<PyodideWorkerAPI>;
@@ -137,7 +130,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getWavefrontData).toHaveBeenCalledWith(mockModel, 1, 2);
-    expect(proxy.plotWavefrontMap).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "wavefrontMap",
       wavefrontMapData: undefined,
@@ -155,7 +147,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getRayFanData).toHaveBeenCalledWith(mockModel, 1);
-    expect(proxy.plotRayFan).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "rayFan",
       rayFanData: [
@@ -188,7 +179,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getOpdFanData).toHaveBeenCalledWith(mockModel, 1);
-    expect(proxy.plotOpdFan).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "opdFan",
       opdFanData: [
@@ -221,7 +211,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(mockModel, 2, 1);
-    expect(proxy.plotDiffractionPSF).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "diffractionPSF",
       diffractionPsfData: undefined,
@@ -256,7 +245,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getGeoPSFData).toHaveBeenCalledWith(mockModel, 0, 1);
-    expect(proxy.plotGeoPSF).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "geoPSF",
       geoPsfData: {
@@ -281,7 +269,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(mockModel, 0);
-    expect(proxy.plotSpotDiagram).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "spotDiagram",
       spotDiagramData: [
@@ -308,7 +295,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.get3rdOrderSeidelData).toHaveBeenCalledWith(mockModel);
-    expect(proxy.plotSurfaceBySurface3rdOrderAberr).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "surfaceBySurface3rdOrder",
       surfaceBySurface3rdOrderData: {

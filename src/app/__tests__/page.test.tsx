@@ -83,12 +83,6 @@ const mockGetFirstOrderData: jest.Mock<Promise<Record<string, number>>, [Optical
 const mockPlotLensLayout: jest.Mock<Promise<string>, [OpticalModel]> = jest
   .fn()
   .mockResolvedValue("base64-layout");
-const mockPlotRayFan: jest.Mock<Promise<string>, [OpticalModel, number]> = jest
-  .fn()
-  .mockResolvedValue("base64-rayfan");
-const mockPlotOpdFan: jest.Mock<Promise<string>, [OpticalModel, number]> = jest
-  .fn()
-  .mockResolvedValue("base64-opdfan");
 const mockGetOpdFanData: jest.Mock<Promise<{
   fieldIdx: number;
   wvlIdx: number;
@@ -108,9 +102,6 @@ const mockGetOpdFanData: jest.Mock<Promise<{
       unitY: "waves",
     },
   ]);
-const mockPlotSpotDiagram: jest.Mock<Promise<string>, [OpticalModel, number]> = jest
-  .fn()
-  .mockResolvedValue("base64-spot");
 const mockGetSpotDiagramData: jest.Mock<Promise<{
   fieldIdx: number;
   wvlIdx: number;
@@ -130,9 +121,6 @@ const mockGetSpotDiagramData: jest.Mock<Promise<{
       unitY: "mm",
     },
   ]);
-const mockPlotSurfaceBySurface3rdOrderAberr: jest.Mock<Promise<string>, [OpticalModel]> = jest
-  .fn()
-  .mockResolvedValue("base64-3rdorder");
 const mockGet3rdOrderSeidelData: jest.Mock<Promise<SeidelData>, [OpticalModel]> = jest
   .fn()
   .mockResolvedValue({
@@ -214,14 +202,9 @@ const mockProxy = {
   init: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
   getFirstOrderData: mockGetFirstOrderData,
   plotLensLayout: mockPlotLensLayout,
-  plotRayFan: mockPlotRayFan,
   getRayFanData: mockGetRayFanData,
-  plotOpdFan: mockPlotOpdFan,
   getOpdFanData: mockGetOpdFanData,
-  plotSpotDiagram: mockPlotSpotDiagram,
   getSpotDiagramData: mockGetSpotDiagramData,
-  plotSurfaceBySurface3rdOrderAberr: mockPlotSurfaceBySurface3rdOrderAberr,
-  plotWavefrontMap: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-wavefront"),
   getWavefrontData: mockGetWavefrontData,
   getGeoPSFData: jest.fn().mockResolvedValue({
     fieldIdx: 0,
@@ -231,8 +214,6 @@ const mockProxy = {
     unitX: "mm",
     unitY: "mm",
   }),
-  plotGeoPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-geopsf"),
-  plotDiffractionPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-diffrpsf"),
   getDiffractionPSFData: mockGetDiffractionPSFData,
   getDiffractionMTFData: mockGetDiffractionMTFData,
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,

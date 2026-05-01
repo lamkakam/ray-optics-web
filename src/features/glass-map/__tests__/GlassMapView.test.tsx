@@ -54,14 +54,9 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     init: jest.fn(),
     getFirstOrderData: jest.fn(),
     plotLensLayout: jest.fn(),
-    plotRayFan: jest.fn(),
     getRayFanData: jest.fn().mockResolvedValue([]),
-    plotOpdFan: jest.fn(),
     getOpdFanData: jest.fn().mockResolvedValue([]),
-    plotSpotDiagram: jest.fn(),
     getSpotDiagramData: jest.fn().mockResolvedValue([]),
-    plotSurfaceBySurface3rdOrderAberr: jest.fn(),
-    plotWavefrontMap: jest.fn(),
     getWavefrontData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
       wvlIdx: 0,
@@ -80,8 +75,6 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
       unitX: "mm",
       unitY: "mm",
     }),
-    plotGeoPSF: jest.fn(),
-    plotDiffractionPSF: jest.fn(),
     getDiffractionPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
       wvlIdx: 0,

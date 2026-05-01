@@ -36,6 +36,6 @@ Creates a `RayGrid` with `check_apertures=True` and `apply_vignetting=True` alwa
 
 ## Usages
 
-- `plotting/plotting.py` — `plot_wavefront_map` and `plot_diffraction_psf`.
+- `analysis/analysis.py` — `get_wavefront_data`, `get_diffraction_psf_data`, and `get_diffraction_mtf_data`.
 - `zernike/zernike.py` — `get_zernike_coefficients`.
 - `focusing/focusing.py` — `_compute_mono_wfe`, `_compute_poly_wfe`, `_compute_mono_strehl`, `_compute_poly_strehl`.
