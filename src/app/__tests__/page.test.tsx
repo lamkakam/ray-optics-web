@@ -409,6 +409,7 @@ describe("app shell routes", () => {
     mockSelectedSegment = null;
     mockPathname = "/";
     mockSearchParams = new URLSearchParams();
+    window.history.pushState({}, "", "/");
     mockPush.mockReset();
     mockUsePyodide.mockReturnValue({
       proxy: mockProxy,
@@ -452,13 +453,15 @@ describe("app shell routes", () => {
     expect(screen.getByText("90%")).toBeInTheDocument();
   });
 
-  it("does not block beforeunload when no optimization result is waiting to be applied", () => {
+  it("blocks beforeunload across the app even when no optimization result is waiting to be applied", () => {
     renderInAppShell(<HomePage />);
 
     const spy = jest.spyOn(Event.prototype, "preventDefault");
-    const event = new Event("beforeunload", { cancelable: true });
+    const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
+    Object.defineProperty(event, "returnValue", { value: undefined, writable: true });
     window.dispatchEvent(event);
-    expect(spy).not.toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(event.returnValue).toBe("");
     spy.mockRestore();
   });
 
@@ -549,6 +552,7 @@ describe("app shell routes", () => {
   it("warns on browser back navigation away from Optimization with an unapplied result", async () => {
     mockPathname = "/optimization";
     window.history.pushState({}, "", "/optimization");
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(false);
     renderInAppShell(<SeedUnappliedOptimizationResult />);
     await screen.findByText("Optimization body");
     await waitFor(() => {
@@ -562,6 +566,40 @@ describe("app shell routes", () => {
       expect(screen.getByRole("dialog", { name: "Unapplied Optimization Result" })).toBeInTheDocument();
     });
     expect(window.location.pathname).toBe("/optimization");
+    expect(confirmSpy).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
+  });
+
+  it("asks for native confirmation on browser history navigation from a normal app route", () => {
+    mockPathname = "/glass-map";
+    window.history.pushState({}, "", "/glass-map?catalog=Schott#details");
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(false);
+    renderInAppShell(<GlassMapPage />);
+
+    window.history.pushState({}, "", "/settings?tab=display#theme");
+    fireEvent(window, new PopStateEvent("popstate"));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(window.location.pathname).toBe("/glass-map");
+    expect(window.location.search).toBe("?catalog=Schott");
+    expect(window.location.hash).toBe("#details");
+    confirmSpy.mockRestore();
+  });
+
+  it("keeps the browser history destination when native confirmation is accepted", () => {
+    mockPathname = "/glass-map";
+    window.history.pushState({}, "", "/glass-map?catalog=Schott#details");
+    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
+    renderInAppShell(<GlassMapPage />);
+
+    window.history.pushState({}, "", "/settings?tab=display#theme");
+    fireEvent(window, new PopStateEvent("popstate"));
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(window.location.pathname).toBe("/settings");
+    expect(window.location.search).toBe("?tab=display");
+    expect(window.location.hash).toBe("#theme");
+    confirmSpy.mockRestore();
   });
 
   it("renders the lens editor on the root route", () => {
