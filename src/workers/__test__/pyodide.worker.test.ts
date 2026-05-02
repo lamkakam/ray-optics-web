@@ -6,20 +6,14 @@ import {
   _init,
   _getFirstOrderData,
   _plotLensLayout,
-  _plotRayFan,
   _getRayFanData,
-  _plotOpdFan,
   _getOpdFanData,
-  _plotSpotDiagram,
-  _plotSurfaceBySurface3rdOrderAberr,
   _get3rdOrderSeidelData,
-  _plotWavefrontMap,
   _getSpotDiagramData,
   _getWavefrontData,
   _getGeoPSFData,
-  _plotGeoPSF,
-  _plotDiffractionPSF,
   _getDiffractionPSFData,
+  _getDiffractionMTFData,
 } from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
@@ -96,29 +90,6 @@ describe("_plotLensLayout", () => {
 });
 
 
-describe("_plotRayFan", () => {
-  it("should build the model script and call plot_ray_fan with the correct field index", async () => {
-    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
-    let pythonScript = "";
-    const result = await _plotRayFan(async (code) => {
-      pythonScript = code;
-      return mockBase64;
-    }, allSphericalOpticalModel, 1);
-    expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_ray_fan(1, _build_opm())");
-    expect(result).toBe(mockBase64);
-  });
-
-  it("should pass field index 0 correctly", async () => {
-    let pythonScript = "";
-    await _plotRayFan(async (code) => {
-      pythonScript = code;
-      return "";
-    }, allSphericalOpticalModel, 0);
-    expect(pythonScript).toContain("plot_ray_fan(0, _build_opm())");
-  });
-});
-
 describe("_getRayFanData", () => {
   it("should build the model script, call json.dumps(get_ray_fan_data(...)) and return parsed data", async () => {
     const mockData = [
@@ -150,29 +121,6 @@ describe("_getRayFanData", () => {
 });
 
 
-describe("_plotOpdFan", () => {
-  it("should build the model script and call plot_opd_fan with the correct field index", async () => {
-    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
-    let pythonScript = "";
-    const result = await _plotOpdFan(async (code) => {
-      pythonScript = code;
-      return mockBase64;
-    }, allSphericalOpticalModel, 2);
-    expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_opd_fan(2, _build_opm())");
-    expect(result).toBe(mockBase64);
-  });
-
-  it("should pass field index 0 correctly", async () => {
-    let pythonScript = "";
-    await _plotOpdFan(async (code) => {
-      pythonScript = code;
-      return "";
-    }, allSphericalOpticalModel, 0);
-    expect(pythonScript).toContain("plot_opd_fan(0, _build_opm())");
-  });
-});
-
 describe("_getOpdFanData", () => {
   it("should build the model script, call json.dumps(get_opd_fan_data(...)) and return parsed data", async () => {
     const mockData = [
@@ -203,29 +151,6 @@ describe("_getOpdFanData", () => {
   });
 });
 
-
-describe("_plotSpotDiagram", () => {
-  it("should build the model script and call plot_spot_diagram with the correct field index", async () => {
-    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
-    let pythonScript = "";
-    const result = await _plotSpotDiagram(async (code) => {
-      pythonScript = code;
-      return mockBase64;
-    }, allSphericalOpticalModel, 1);
-    expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_spot_diagram(1, _build_opm())");
-    expect(result).toBe(mockBase64);
-  });
-
-  it("should pass field index 0 correctly", async () => {
-    let pythonScript = "";
-    await _plotSpotDiagram(async (code) => {
-      pythonScript = code;
-      return "";
-    }, allSphericalOpticalModel, 0);
-    expect(pythonScript).toContain("plot_spot_diagram(0, _build_opm())");
-  });
-});
 
 describe("_getSpotDiagramData", () => {
   it("should build the model script, call json.dumps(get_spot_data(...)) and return parsed data", async () => {
@@ -259,53 +184,34 @@ describe("_getSpotDiagramData", () => {
   });
 });
 
-
-describe("_plotSurfaceBySurface3rdOrderAberr", () => {
-  it("should build the model script and call plot_surface_by_surface_3rd_order_aberr(opm)", async () => {
-    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
+describe("_getDiffractionMTFData", () => {
+  it("should build the model script, call json.dumps(get_diffraction_mtf_data(...)) and return parsed data", async () => {
+    const mockData = {
+      fieldIdx: 2,
+      wvlIdx: 1,
+      Tangential: { x: [0, 10, 20], y: [1, 0.7, 0.2] },
+      Sagittal: { x: [0, 10, 20], y: [1, 0.65, 0.15] },
+      IdealTangential: { x: [0, 10, 20], y: [1, 0.8, 0.3] },
+      IdealSagittal: { x: [0, 10, 20], y: [1, 0.78, 0.28] },
+      unitX: "cycles/mm",
+      unitY: "",
+      cutoffTangential: 42,
+      cutoffSagittal: 40,
+      naTangential: 0.012,
+      naSagittal: 0.011,
+    };
     let pythonScript = "";
-    const result = await _plotSurfaceBySurface3rdOrderAberr(async (code) => {
+    const result = await _getDiffractionMTFData(async (code) => {
       pythonScript = code;
-      return mockBase64;
-    }, allSphericalOpticalModel);
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 2, 1);
+
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_surface_by_surface_3rd_order_aberr(_build_opm())");
-    expect(result).toBe(mockBase64);
+    expect(pythonScript).toContain("json.dumps(get_diffraction_mtf_data(_build_opm(), 2, 1, num_rays=64, max_dims=256))");
+    expect(result).toEqual(mockData);
   });
 });
 
-
-describe("_plotWavefrontMap", () => {
-  it("should build the model script and call plot_wavefront_map with field and wavelength index", async () => {
-    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
-    let pythonScript = "";
-    const result = await _plotWavefrontMap(async (code) => {
-      pythonScript = code;
-      return mockBase64;
-    }, allSphericalOpticalModel, 1, 2);
-    expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_wavefront_map(1, 2, _build_opm(), num_rays=64)");
-    expect(result).toBe(mockBase64);
-  });
-
-  it("should pass field index 0 and wavelength index 0 correctly", async () => {
-    let pythonScript = "";
-    await _plotWavefrontMap(async (code) => {
-      pythonScript = code;
-      return "";
-    }, allSphericalOpticalModel, 0, 0);
-    expect(pythonScript).toContain("plot_wavefront_map(0, 0, _build_opm(), num_rays=64)");
-  });
-
-  it("should use custom numRays when provided", async () => {
-    let pythonScript = "";
-    await _plotWavefrontMap(async (code) => {
-      pythonScript = code;
-      return "";
-    }, allSphericalOpticalModel, 0, 1, 32);
-    expect(pythonScript).toContain("plot_wavefront_map(0, 1, _build_opm(), num_rays=32)");
-  });
-});
 
 describe("_getWavefrontData", () => {
   it("should build the model script, call json.dumps(get_wavefront_data(...)) and return parsed data", async () => {
@@ -343,38 +249,6 @@ describe("_getWavefrontData", () => {
 });
 
 
-describe("_plotGeoPSF", () => {
-  it("should build the model script and call plot_geo_psf with field and wavelength index", async () => {
-    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
-    let pythonScript = "";
-    const result = await _plotGeoPSF(async (code) => {
-      pythonScript = code;
-      return mockBase64;
-    }, allSphericalOpticalModel, 2, 1);
-    expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_geo_psf(2, 1, _build_opm(), num_rays=64)");
-    expect(result).toBe(mockBase64);
-  });
-
-  it("should pass field index 0 and wavelength index 0 correctly", async () => {
-    let pythonScript = "";
-    await _plotGeoPSF(async (code) => {
-      pythonScript = code;
-      return "";
-    }, allSphericalOpticalModel, 0, 0);
-    expect(pythonScript).toContain("plot_geo_psf(0, 0, _build_opm(), num_rays=64)");
-  });
-
-  it("should use custom numRays when provided", async () => {
-    let pythonScript = "";
-    await _plotGeoPSF(async (code) => {
-      pythonScript = code;
-      return "";
-    }, allSphericalOpticalModel, 1, 2, 32);
-    expect(pythonScript).toContain("plot_geo_psf(1, 2, _build_opm(), num_rays=32)");
-  });
-});
-
 describe("_getGeoPSFData", () => {
   it("should build the model script, call json.dumps(get_geo_psf_data(...)) and return parsed data", async () => {
     const mockData = {
@@ -397,38 +271,6 @@ describe("_getGeoPSFData", () => {
   });
 });
 
-
-describe("_plotDiffractionPSF", () => {
-  it("should build the model script and call plot_diffraction_psf with field and wavelength index", async () => {
-    const mockBase64 = "iVBORw0KGgoAAAANSUhEUg==";
-    let pythonScript = "";
-    const result = await _plotDiffractionPSF(async (code) => {
-      pythonScript = code;
-      return mockBase64;
-    }, allSphericalOpticalModel, 1, 0);
-    expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("plot_diffraction_psf(1, 0, _build_opm(), num_rays=64, max_dims=256)");
-    expect(result).toBe(mockBase64);
-  });
-
-  it("should pass field index 0 and wavelength index 0 correctly", async () => {
-    let pythonScript = "";
-    await _plotDiffractionPSF(async (code) => {
-      pythonScript = code;
-      return "";
-    }, allSphericalOpticalModel, 0, 0);
-    expect(pythonScript).toContain("plot_diffraction_psf(0, 0, _build_opm(), num_rays=64, max_dims=256)");
-  });
-
-  it("should use custom numRays and maxDims when provided", async () => {
-    let pythonScript = "";
-    await _plotDiffractionPSF(async (code) => {
-      pythonScript = code;
-      return "";
-    }, allSphericalOpticalModel, 2, 1, 32, 128);
-    expect(pythonScript).toContain("plot_diffraction_psf(2, 1, _build_opm(), num_rays=32, max_dims=128)");
-  });
-});
 
 describe("_getDiffractionPSFData", () => {
   it("should build the model script, call json.dumps(get_diffraction_psf_data(...)) and return parsed data", async () => {
@@ -504,13 +346,13 @@ describe("_init", () => {
     // Import analysis and plotting functions
     expect(allCode).toContain("from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data");
     expect(allCode).toContain("plot_lens_layout,");
-    expect(allCode).toContain("plot_ray_fan,");
-    expect(allCode).toContain("plot_opd_fan,");
-    expect(allCode).toContain("plot_spot_diagram,");
-    expect(allCode).toContain("plot_surface_by_surface_3rd_order_aberr,");
-    expect(allCode).toContain("plot_wavefront_map,");
-    expect(allCode).toContain("plot_geo_psf,");
-    expect(allCode).toContain("plot_diffraction_psf,");
+    expect(allCode).not.toContain("plot_ray_fan,");
+    expect(allCode).not.toContain("plot_opd_fan,");
+    expect(allCode).not.toContain("plot_spot_diagram,");
+    expect(allCode).not.toContain("plot_surface_by_surface_3rd_order_aberr,");
+    expect(allCode).not.toContain("plot_wavefront_map,");
+    expect(allCode).not.toContain("plot_geo_psf,");
+    expect(allCode).not.toContain("plot_diffraction_psf,");
   });
 
   it("should install rayoptics and opticalglass", async () => {
@@ -580,7 +422,7 @@ describe("init", () => {
     await init();
 
     expect(loadPackage).toHaveBeenCalled();
-    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.2.17-py3-none-any.whl", deps=False)');
+    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.3.0-py3-none-any.whl", deps=False)');
   });
 
   it("emits ordered initialization milestones", async () => {

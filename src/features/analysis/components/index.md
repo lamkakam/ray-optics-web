@@ -11,6 +11,7 @@ Components for optical analysis plots and aberration data.
 
 ## Chart Directories
 
+- [DiffractionMtfChart/](./DiffractionMtfChart/index.md) — Diffraction MTF chart component, option builder, specs, and tests
 - [DiffractionPsfChart/](./DiffractionPsfChart/index.md) — Diffraction PSF chart component, option builder, specs, and moved tests
 - [GeoPsfChart/](./GeoPsfChart/index.md) — Geometric PSF chart component, option builder, specs, and moved tests
 - [OpdFanChart/](./OpdFanChart/index.md) — OPD fan chart component, option builder, specs, and moved tests

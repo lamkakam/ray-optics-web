@@ -134,7 +134,7 @@ describe("buildOpdFanChartOption", () => {
     expect(yAxisLabel0.formatter(1e-8)).toBe("1e-8");
   });
 
-  it("rounds axis min and max values to 2 significant figures", () => {
+  it("rounds axis min and max values to 2 significant figures with independent subplot y ranges", () => {
     const option = buildOpdFanChartOption(
       [
         {
@@ -163,8 +163,42 @@ describe("buildOpdFanChartOption", () => {
       expect.objectContaining({ min: -0.012, max: 1.2 }),
     ]);
     expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: -0.00099, max: 0.0068 }),
       expect.objectContaining({ min: -0.99, max: 0.043 }),
-      expect.objectContaining({ min: -0.99, max: 0.043 }),
+    ]);
+  });
+
+  it("falls back only for a subplot with an empty or constant finite y range", () => {
+    const option = buildOpdFanChartOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: {
+            x: [-0.5, 0.5],
+            y: [],
+          },
+          Tangential: {
+            x: [-1, 1],
+            y: [-0.04567, 0.1234],
+          },
+          unitX: "",
+          unitY: "waves",
+        },
+      ],
+      ["486.1 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual([
+      expect.objectContaining({ min: -1, max: 1 }),
+      expect.objectContaining({ min: -1, max: 1 }),
+    ]);
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: -0.046, max: 0.12 }),
+      expect.objectContaining({ min: -0.000001, max: 0.000001 }),
     ]);
   });
 

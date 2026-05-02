@@ -7,7 +7,7 @@ import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/anal
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
@@ -85,6 +85,22 @@ const diffractionPsfData: DiffractionPsfData = {
   unitY: "mm",
   unitZ: "",
 };
+
+const diffractionMtfData: DiffractionMtfData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  Tangential: { x: [0, 10, 20], y: [1, 0.7, 0.2] },
+  Sagittal: { x: [0, 10, 20], y: [1, 0.65, 0.15] },
+  IdealTangential: { x: [0, 10, 20], y: [1, 0.8, 0.3] },
+  IdealSagittal: { x: [0, 10, 20], y: [1, 0.78, 0.28] },
+  unitX: "cycles/mm",
+  unitY: "",
+  cutoffTangential: 42,
+  cutoffSagittal: 40,
+  naTangential: 0.012,
+  naSagittal: 0.011,
+};
+
 
 const wavefrontMapData: WavefrontMapData = {
   fieldIdx: 0,
@@ -213,19 +229,13 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
     init: jest.fn(),
     getFirstOrderData: jest.fn(),
     plotLensLayout: jest.fn(),
-    plotRayFan: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-rayfan"),
     getRayFanData: jest.fn<Promise<RayFanData>, [OpticalModel, number]>().mockResolvedValue(rayFanData),
-    plotOpdFan: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-opdfan"),
     getOpdFanData: jest.fn<Promise<OpdFanData>, [OpticalModel, number]>().mockResolvedValue(opdFanData),
-    plotSpotDiagram: jest.fn<Promise<string>, [OpticalModel, number]>().mockResolvedValue("base64-spot"),
     getSpotDiagramData: jest.fn<Promise<SpotDiagramData>, [OpticalModel, number]>().mockResolvedValue(spotDiagramData),
-    plotSurfaceBySurface3rdOrderAberr: jest.fn<Promise<string>, [OpticalModel]>().mockResolvedValue("base64-3rdorder"),
-    plotWavefrontMap: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-wavefront"),
     getWavefrontData: jest.fn<Promise<WavefrontMapData>, [OpticalModel, number, number]>().mockResolvedValue(wavefrontMapData),
     getGeoPSFData: jest.fn<Promise<GeoPsfData>, [OpticalModel, number, number]>().mockResolvedValue(geoPsfData),
-    plotGeoPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-geopsf"),
-    plotDiffractionPSF: jest.fn<Promise<string>, [OpticalModel, number, number]>().mockResolvedValue("base64-diffrpsf"),
     getDiffractionPSFData: jest.fn<Promise<DiffractionPsfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionPsfData),
+    getDiffractionMTFData: jest.fn<Promise<DiffractionMtfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionMtfData),
     get3rdOrderSeidelData: jest.fn(),
     getZernikeCoefficients: jest.fn(),
     focusByMonoRmsSpot: jest.fn(),
@@ -333,7 +343,6 @@ describe("AnalysisPlotContainer", () => {
     await waitFor(() => {
       expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1);
     });
-    expect(proxy.plotRayFan).not.toHaveBeenCalled();
     expect(store.getState().rayFanData).toEqual(rayFanData);
   });
 
@@ -361,7 +370,6 @@ describe("AnalysisPlotContainer", () => {
     // field select is disabled for surfaceBySurface3rdOrder — just verify it's disabled
     const fieldSelect = screen.getByLabelText("Field");
     expect(fieldSelect).toBeDisabled();
-    expect(proxy.plotSurfaceBySurface3rdOrderAberr).not.toHaveBeenCalled();
   });
 
   it("renders the surface by surface chart from analysisDataStore instead of loading a PNG", async () => {
@@ -370,7 +378,6 @@ describe("AnalysisPlotContainer", () => {
     renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
 
     expect(screen.getByTestId("surface-by-surface-3rd-order-chart")).toBeInTheDocument();
-    expect(proxy.plotSurfaceBySurface3rdOrderAberr).not.toHaveBeenCalled();
   });
 
   it("handleWavelengthChange: updates selectedWavelengthIndex and calls proxy plot fn", async () => {
@@ -396,7 +403,6 @@ describe("AnalysisPlotContainer", () => {
     await waitFor(() => {
       expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(testModel, 0);
     });
-    expect(proxy.plotSpotDiagram).not.toHaveBeenCalled();
     expect(store.getState().spotDiagramData).toEqual(spotDiagramData);
   });
 
@@ -410,7 +416,6 @@ describe("AnalysisPlotContainer", () => {
     await waitFor(() => {
       expect(proxy.getOpdFanData).toHaveBeenCalledWith(testModel, 0);
     });
-    expect(proxy.plotOpdFan).not.toHaveBeenCalled();
     expect(store.getState().opdFanData).toEqual(opdFanData);
   });
 
@@ -424,7 +429,6 @@ describe("AnalysisPlotContainer", () => {
     await waitFor(() => {
       expect(proxy.getGeoPSFData).toHaveBeenCalledWith(testModel, 0, 0);
     });
-    expect(proxy.plotGeoPSF).not.toHaveBeenCalled();
     expect(store.getState().geoPsfData).toEqual(geoPsfData);
   });
 
@@ -450,6 +454,33 @@ describe("AnalysisPlotContainer", () => {
       expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(testModel, 0, 0);
     });
     expect(store.getState().diffractionPsfData).toEqual(diffractionPsfData);
+  });
+
+  it("handlePlotTypeChange: diffractionMTF fetches data and stores it", async () => {
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "diffractionMTF");
+
+    expect(store.getState().selectedPlotType).toBe("diffractionMTF");
+    await waitFor(() => {
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(testModel, 0, 0);
+    });
+    expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
+  });
+
+  it("handleWavelengthChange: calls getDiffractionMTFData for diffractionMTF", async () => {
+    store.getState().setSelectedPlotType("diffractionMTF");
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const wlSelect = screen.getByLabelText("Wavelength");
+    await userEvent.selectOptions(wlSelect, "2");
+
+    expect(store.getState().selectedWavelengthIndex).toBe(2);
+    await waitFor(() => {
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(testModel, 0, 2);
+    });
+    expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });
 
   it("handlePlotTypeChange: wavefrontMap fetches data and stores it instead of a PNG", async () => {
@@ -529,7 +560,6 @@ describe("AnalysisPlotContainer", () => {
     await waitFor(() => {
       expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1);
     });
-    expect(proxy.plotRayFan).not.toHaveBeenCalled();
     expect(store.getState().rayFanData).toEqual(rayFanData);
   });
 });

@@ -15,6 +15,13 @@ const mockDiffractionPsfChart = jest.fn(({ autoHeight }: { readonly autoHeight?:
   />
 ));
 
+const mockDiffractionMtfChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="diffraction-mtf-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 const mockWavefrontMapChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
   <div
     data-testid="wavefront-map-chart"
@@ -59,6 +66,10 @@ const mockSurfaceBySurface3rdOrderChart = jest.fn(({ autoHeight }: { readonly au
 
 jest.mock("@/features/analysis/components/DiffractionPsfChart", () => ({
   DiffractionPsfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionPsfChart(props),
+}));
+
+jest.mock("@/features/analysis/components/DiffractionMtfChart", () => ({
+  DiffractionMtfChart: (props: { readonly autoHeight?: boolean }) => mockDiffractionMtfChart(props),
 }));
 
 jest.mock("@/features/analysis/components/WavefrontMapChart", () => ({
@@ -146,6 +157,7 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByText("Wavefront Map")).toBeInTheDocument();
     expect(screen.getByText("Geometric PSF")).toBeInTheDocument();
     expect(screen.getByText("Diffraction PSF")).toBeInTheDocument();
+    expect(screen.getByText("Diffraction MTF")).toBeInTheDocument();
   });
 
   it("field selector is enabled when selectedPlotType is rayFan", () => {
@@ -254,6 +266,34 @@ describe("AnalysisPlotView", () => {
       autoHeight: undefined,
     }));
   });
+
+  it("renders a diffraction MTF chart when data is provided", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="diffractionMTF"
+        diffractionMtfData={{
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Tangential: { x: [0, 10], y: [1, 0.5] },
+          Sagittal: { x: [0, 10], y: [1, 0.4] },
+          IdealTangential: { x: [0, 10], y: [1, 0.7] },
+          IdealSagittal: { x: [0, 10], y: [1, 0.6] },
+          unitX: "cycles/mm",
+          unitY: "",
+          cutoffTangential: 42,
+          cutoffSagittal: 40,
+          naTangential: 0.012,
+          naSagittal: 0.011,
+        }}
+      />
+    );
+    expect(screen.getByTestId("diffraction-mtf-chart")).toBeInTheDocument();
+    expect(mockDiffractionMtfChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+    }));
+  });
+
 
   it("renders a wavefront map chart when data is provided", () => {
     render(
@@ -448,6 +488,11 @@ describe("AnalysisPlotView", () => {
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
     });
 
+    it("renders wavelength selector when selectedPlotType is diffractionMTF", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionMTF" />);
+      expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
+    });
+
     it("renders wavelength options correctly", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
       expect(screen.getByText("486.1nm")).toBeInTheDocument();
@@ -483,6 +528,11 @@ describe("AnalysisPlotView", () => {
 
     it("field selector is enabled for diffractionPSF", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionPSF" />);
+      expect(screen.getByLabelText("Field")).not.toBeDisabled();
+    });
+
+    it("field selector is enabled for diffractionMTF", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionMTF" />);
       expect(screen.getByLabelText("Field")).not.toBeDisabled();
     });
   });

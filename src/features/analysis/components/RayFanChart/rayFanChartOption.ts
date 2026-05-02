@@ -66,27 +66,62 @@ function getSeriesColors(
   });
 }
 
-function getAxisExtents(rayFanData: RayFanData): { readonly xMin: number; readonly xMax: number; readonly yMin: number; readonly yMax: number } {
+interface RayFanAxisExtents {
+  readonly xMin: number;
+  readonly xMax: number;
+  readonly tangentialYMin: number;
+  readonly tangentialYMax: number;
+  readonly sagittalYMin: number;
+  readonly sagittalYMax: number;
+}
+
+function formatAxisExtent(value: number): number {
+  return Number(formatPlotValue(value));
+}
+
+function formatYExtents(yMin: number, yMax: number): { readonly yMin: number; readonly yMax: number } {
+  if (!Number.isFinite(yMin) || !Number.isFinite(yMax) || yMin === yMax) {
+    return {
+      yMin: formatAxisExtent(-1e-6),
+      yMax: formatAxisExtent(1e-6),
+    };
+  }
+
+  return {
+    yMin: formatAxisExtent(yMin),
+    yMax: formatAxisExtent(yMax),
+  };
+}
+
+function getAxisExtents(rayFanData: RayFanData): RayFanAxisExtents {
   let xMin = Number.POSITIVE_INFINITY;
   let xMax = Number.NEGATIVE_INFINITY;
-  let yMin = Number.POSITIVE_INFINITY;
-  let yMax = Number.NEGATIVE_INFINITY;
+  let tangentialYMin = Number.POSITIVE_INFINITY;
+  let tangentialYMax = Number.NEGATIVE_INFINITY;
+  let sagittalYMin = Number.POSITIVE_INFINITY;
+  let sagittalYMax = Number.NEGATIVE_INFINITY;
 
   for (const seriesData of rayFanData) {
     for (const axisData of [seriesData.Tangential, seriesData.Sagittal]) {
-      const pointCount = Math.min(axisData.x.length, axisData.y.length);
-      for (let index = 0; index < pointCount; index += 1) {
-        const x = axisData.x[index];
-        const y = axisData.y[index];
-
-        if (x !== undefined) {
+      for (const x of axisData.x) {
+        if (Number.isFinite(x)) {
           xMin = Math.min(xMin, x);
           xMax = Math.max(xMax, x);
         }
-        if (y !== undefined) {
-          yMin = Math.min(yMin, y);
-          yMax = Math.max(yMax, y);
-        }
+      }
+    }
+
+    for (const y of seriesData.Tangential.y) {
+      if (Number.isFinite(y)) {
+        tangentialYMin = Math.min(tangentialYMin, y);
+        tangentialYMax = Math.max(tangentialYMax, y);
+      }
+    }
+
+    for (const y of seriesData.Sagittal.y) {
+      if (Number.isFinite(y)) {
+        sagittalYMin = Math.min(sagittalYMin, y);
+        sagittalYMax = Math.max(sagittalYMax, y);
       }
     }
   }
@@ -96,16 +131,16 @@ function getAxisExtents(rayFanData: RayFanData): { readonly xMin: number; readon
     xMax = 1;
   }
 
-  if (!Number.isFinite(yMin) || !Number.isFinite(yMax) || yMin === yMax) {
-    yMin = -1e-6;
-    yMax = 1e-6;
-  }
+  const tangentialYExtents = formatYExtents(tangentialYMin, tangentialYMax);
+  const sagittalYExtents = formatYExtents(sagittalYMin, sagittalYMax);
 
   return {
-    xMin: Number(formatPlotValue(xMin)),
-    xMax: Number(formatPlotValue(xMax)),
-    yMin: Number(formatPlotValue(yMin)),
-    yMax: Number(formatPlotValue(yMax)),
+    xMin: formatAxisExtent(xMin),
+    xMax: formatAxisExtent(xMax),
+    tangentialYMin: tangentialYExtents.yMin,
+    tangentialYMax: tangentialYExtents.yMax,
+    sagittalYMin: sagittalYExtents.yMin,
+    sagittalYMax: sagittalYExtents.yMax,
   };
 }
 
@@ -212,8 +247,8 @@ export function buildRayFanChartOption(
     yAxis: [
       {
         type: "value",
-        min: axisExtents.yMin,
-        max: axisExtents.yMax,
+        min: axisExtents.tangentialYMin,
+        max: axisExtents.tangentialYMax,
         name: yAxisName,
         nameLocation: "middle",
         nameGap: 42,
@@ -228,8 +263,8 @@ export function buildRayFanChartOption(
       },
       {
         type: "value",
-        min: axisExtents.yMin,
-        max: axisExtents.yMax,
+        min: axisExtents.sagittalYMin,
+        max: axisExtents.sagittalYMax,
         name: "",
         nameLocation: "middle",
         nameGap: 42,

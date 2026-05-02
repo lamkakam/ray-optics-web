@@ -134,6 +134,59 @@ describe("buildRayFanChartOption", () => {
     expect(option.yAxis[0]?.axisLabel?.formatter(-5e-5)).toBe("-5e-5");
   });
 
+  it("uses a shared x range and independent y ranges for tangential and sagittal subplots", () => {
+    const option = buildRayFanChartOption(
+      rayFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual([
+      expect.objectContaining({ min: -1, max: 1 }),
+      expect.objectContaining({ min: -1, max: 1 }),
+    ]);
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: -0.3, max: 0.3 }),
+      expect.objectContaining({ min: -0.4, max: 0.4 }),
+    ]);
+  });
+
+  it("falls back only for a subplot with an empty or constant finite y range", () => {
+    const option = buildRayFanChartOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: {
+            x: [-0.5, 0.5],
+            y: [-0.01234, 0.05678],
+          },
+          Tangential: {
+            x: [-1, 1],
+            y: [0.25, 0.25],
+          },
+          unitX: "",
+          unitY: "mm",
+        },
+      ],
+      ["486.1 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.xAxis).toEqual([
+      expect.objectContaining({ min: -1, max: 1 }),
+      expect.objectContaining({ min: -1, max: 1 }),
+    ]);
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: -0.000001, max: 0.000001 }),
+      expect.objectContaining({ min: -0.012, max: 0.057 }),
+    ]);
+  });
+
   it("clamps sub-1e-9 rounded axis extents to 0", () => {
     const option = buildRayFanChartOption(
       [

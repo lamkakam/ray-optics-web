@@ -1,5 +1,6 @@
 export * from "./AnalysisPlotContainer";
 export * from "./AnalysisPlotView";
+export * from "./DiffractionMtfChart";
 export * from "./DiffractionPsfChart";
 export * from "./GeoPsfChart";
 export * from "./OpdFanChart";

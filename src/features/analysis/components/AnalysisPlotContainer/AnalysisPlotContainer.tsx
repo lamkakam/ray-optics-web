@@ -7,7 +7,7 @@ import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { useAnalysisPlotStore } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
-import { loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
+import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
 import {
   AnalysisPlotView,
   PLOT_TYPE_CONFIG,
@@ -37,6 +37,7 @@ export function AnalysisPlotContainer({
   const spotDiagramData = useStore(store, (s) => s.spotDiagramData);
   const geoPsfData = useStore(store, (s) => s.geoPsfData);
   const diffractionPsfData = useStore(store, (s) => s.diffractionPsfData);
+  const diffractionMtfData = useStore(store, (s) => s.diffractionMtfData);
   const wavefrontMapData = useStore(store, (s) => s.wavefrontMapData);
   const plotLoading = useStore(store, (s) => s.plotLoading);
   const selectedFieldIndex = useStore(store, (s) => s.selectedFieldIndex);
@@ -66,11 +67,6 @@ export function AnalysisPlotContainer({
       });
       if (!result) return;
 
-      if (result.kind === "diffractionPSF") {
-        store.getState().setDiffractionPsfData(result.diffractionPsfData);
-        return;
-      }
-
       if (result.kind === "surfaceBySurface3rdOrder") {
         const existingSeidelData = analysisDataStore.getState().seidelData;
         analysisDataStore.getState().setSeidelData({
@@ -82,30 +78,7 @@ export function AnalysisPlotContainer({
         return;
       }
 
-      if (result.kind === "rayFan") {
-        store.getState().setRayFanData(result.rayFanData);
-        return;
-      }
-
-      if (result.kind === "opdFan") {
-        store.getState().setOpdFanData(result.opdFanData);
-        return;
-      }
-
-      if (result.kind === "spotDiagram") {
-        store.getState().setSpotDiagramData(result.spotDiagramData);
-        return;
-      }
-
-      if (result.kind === "geoPSF") {
-        store.getState().setGeoPsfData(result.geoPsfData);
-        return;
-      }
-
-      if (result.kind === "wavefrontMap") {
-        store.getState().setWavefrontMapData(result.wavefrontMapData);
-        return;
-      }
+      commitAnalysisPlotResult(result, store);
     } catch {
       onError();
     } finally {
@@ -147,6 +120,7 @@ export function AnalysisPlotContainer({
       spotDiagramData={spotDiagramData}
       geoPsfData={geoPsfData}
       diffractionPsfData={diffractionPsfData}
+      diffractionMtfData={diffractionMtfData}
       wavefrontMapData={wavefrontMapData}
       loading={plotLoading}
       onFieldChange={handleFieldChange}

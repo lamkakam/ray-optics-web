@@ -1,8 +1,10 @@
+import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 
 export type AnalysisPlotLoadResult =
   | { readonly kind: "surfaceBySurface3rdOrder"; readonly surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData }
@@ -11,7 +13,8 @@ export type AnalysisPlotLoadResult =
   | { readonly kind: "spotDiagram"; readonly spotDiagramData: SpotDiagramData }
   | { readonly kind: "geoPSF"; readonly geoPsfData: GeoPsfData }
   | { readonly kind: "wavefrontMap"; readonly wavefrontMapData: WavefrontMapData }
-  | { readonly kind: "diffractionPSF"; readonly diffractionPsfData: DiffractionPsfData };
+  | { readonly kind: "diffractionPSF"; readonly diffractionPsfData: DiffractionPsfData }
+  | { readonly kind: "diffractionMTF"; readonly diffractionMtfData: DiffractionMtfData };
 
 interface LoadAnalysisPlotParams {
   readonly plotType: PlotType;
@@ -77,5 +80,49 @@ export async function loadAnalysisPlot({
       kind: "diffractionPSF",
       diffractionPsfData: await proxy.getDiffractionPSFData(model, fieldIndex, wavelengthIndex),
     };
+  }
+
+  if (plotType === "diffractionMTF") {
+    return {
+      kind: "diffractionMTF",
+      diffractionMtfData: await proxy.getDiffractionMTFData(model, fieldIndex, wavelengthIndex),
+    };
+  }
+}
+
+export function commitAnalysisPlotResult(
+  plotResult: AnalysisPlotLoadResult | undefined,
+  analysisPlotStore: StoreApi<AnalysisPlotState>,
+): void {
+  if (plotResult === undefined) return;
+
+  switch (plotResult.kind) {
+    case "surfaceBySurface3rdOrder":
+      return;
+    case "rayFan":
+      analysisPlotStore.getState().setRayFanData(plotResult.rayFanData);
+      return;
+    case "opdFan":
+      analysisPlotStore.getState().setOpdFanData(plotResult.opdFanData);
+      return;
+    case "spotDiagram":
+      analysisPlotStore.getState().setSpotDiagramData(plotResult.spotDiagramData);
+      return;
+    case "geoPSF":
+      analysisPlotStore.getState().setGeoPsfData(plotResult.geoPsfData);
+      return;
+    case "wavefrontMap":
+      analysisPlotStore.getState().setWavefrontMapData(plotResult.wavefrontMapData);
+      return;
+    case "diffractionPSF":
+      analysisPlotStore.getState().setDiffractionPsfData(plotResult.diffractionPsfData);
+      return;
+    case "diffractionMTF":
+      analysisPlotStore.getState().setDiffractionMtfData(plotResult.diffractionMtfData);
+      return;
+    default: {
+      const exhaustive: never = plotResult;
+      return exhaustive;
+    }
   }
 }

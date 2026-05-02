@@ -1,10 +1,27 @@
+import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { OpdFanData, RayFanData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, OpdFanData, RayFanData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
+import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
+import { createAnalysisPlotSlice, type AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
 
 const mockModel = {} as OpticalModel;
+
+const diffractionMtfData: DiffractionMtfData = {
+  fieldIdx: 0,
+  wvlIdx: 0,
+  Tangential: { x: [0, 10, 20], y: [1, 0.7, 0.2] },
+  Sagittal: { x: [0, 10, 20], y: [1, 0.65, 0.15] },
+  IdealTangential: { x: [0, 10, 20], y: [1, 0.8, 0.3] },
+  IdealSagittal: { x: [0, 10, 20], y: [1, 0.78, 0.28] },
+  unitX: "cycles/mm",
+  unitY: "",
+  cutoffTangential: 42,
+  cutoffSagittal: 40,
+  naTangential: 0.012,
+  naSagittal: 0.011,
+};
 
 function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
   return {
@@ -35,7 +52,6 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
       curvature: { TCV: 0.1, SCV: 0.2, PCV: 0.3 },
     } satisfies SeidelData),
     getZernikeCoefficients: jest.fn(),
-    plotRayFan: jest.fn().mockResolvedValue("rayFan-result"),
     getRayFanData: jest.fn().mockResolvedValue([
       {
         fieldIdx: 0,
@@ -52,7 +68,6 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
         unitY: "mm",
       },
     ] satisfies RayFanData),
-    plotOpdFan: jest.fn().mockResolvedValue("opdFan-result"),
     getOpdFanData: jest.fn().mockResolvedValue([
       {
         fieldIdx: 0,
@@ -69,7 +84,6 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
         unitY: "waves",
       },
     ] satisfies OpdFanData),
-    plotSpotDiagram: jest.fn().mockResolvedValue("spotDiagram-result"),
     getSpotDiagramData: jest.fn().mockResolvedValue([
       {
         fieldIdx: 0,
@@ -80,8 +94,6 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
         unitY: "mm",
       },
     ]),
-    plotSurfaceBySurface3rdOrderAberr: jest.fn().mockResolvedValue("s3rdOrder-result"),
-    plotWavefrontMap: jest.fn().mockResolvedValue("wavefront-result"),
     getWavefrontData: jest.fn(),
     getGeoPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
@@ -91,9 +103,8 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
       unitX: "mm",
       unitY: "mm",
     }),
-    plotGeoPSF: jest.fn().mockResolvedValue("geoPSF-result"),
-    plotDiffractionPSF: jest.fn().mockResolvedValue("diffractionPSF-result"),
     getDiffractionPSFData: jest.fn(),
+    getDiffractionMTFData: jest.fn(),
   } as unknown as jest.Mocked<PyodideWorkerAPI>;
 }
 
@@ -119,7 +130,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getWavefrontData).toHaveBeenCalledWith(mockModel, 1, 2);
-    expect(proxy.plotWavefrontMap).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "wavefrontMap",
       wavefrontMapData: undefined,
@@ -137,7 +147,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getRayFanData).toHaveBeenCalledWith(mockModel, 1);
-    expect(proxy.plotRayFan).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "rayFan",
       rayFanData: [
@@ -170,7 +179,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getOpdFanData).toHaveBeenCalledWith(mockModel, 1);
-    expect(proxy.plotOpdFan).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "opdFan",
       opdFanData: [
@@ -203,10 +211,26 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(mockModel, 2, 1);
-    expect(proxy.plotDiffractionPSF).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "diffractionPSF",
       diffractionPsfData: undefined,
+    });
+  });
+
+  it("loads diffractionMTF through getDiffractionMTFData", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "diffractionMTF",
+      proxy,
+      model: mockModel,
+      fieldIndex: 2,
+      wavelengthIndex: 1,
+    });
+
+    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(mockModel, 2, 1);
+    expect(result).toEqual({
+      kind: "diffractionMTF",
+      diffractionMtfData: undefined,
     });
   });
 
@@ -221,7 +245,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getGeoPSFData).toHaveBeenCalledWith(mockModel, 0, 1);
-    expect(proxy.plotGeoPSF).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "geoPSF",
       geoPsfData: {
@@ -246,7 +269,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(mockModel, 0);
-    expect(proxy.plotSpotDiagram).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "spotDiagram",
       spotDiagramData: [
@@ -273,7 +295,6 @@ describe("loadAnalysisPlot", () => {
     });
 
     expect(proxy.get3rdOrderSeidelData).toHaveBeenCalledWith(mockModel);
-    expect(proxy.plotSurfaceBySurface3rdOrderAberr).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "surfaceBySurface3rdOrder",
       surfaceBySurface3rdOrderData: {
@@ -288,5 +309,34 @@ describe("loadAnalysisPlot", () => {
         ],
       },
     });
+  });
+});
+
+describe("commitAnalysisPlotResult", () => {
+  it("commits diffractionMTF data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+
+    commitAnalysisPlotResult({
+      kind: "diffractionMTF",
+      diffractionMtfData,
+    }, store);
+
+    expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
+  });
+
+  it("does not commit surfaceBySurface3rdOrder data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+    store.getState().setDiffractionMtfData(diffractionMtfData);
+
+    commitAnalysisPlotResult({
+      kind: "surfaceBySurface3rdOrder",
+      surfaceBySurface3rdOrderData: {
+        aberrTypes: ["S-I"],
+        surfaceLabels: ["S1"],
+        data: [[0.1]],
+      },
+    }, store);
+
+    expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });
 });

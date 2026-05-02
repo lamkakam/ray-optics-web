@@ -4,4 +4,4 @@ Matplotlib plotting utilities for optical visualization.
 
 ## Modules
 
-- [plotting.py](./plotting.py.md) — Plotting functions: lens layout cross-section, spot diagram, wavefront, transverse aberration, glass scatter plot
+- [plotting.py](./plotting.py.md) — Lens layout PNG renderer used by the Pyodide worker
