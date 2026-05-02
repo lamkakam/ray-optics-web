@@ -4,6 +4,55 @@ import json
 import pytest
 
 
+class TestAnalysisConcreteModuleExports:
+    """Verify each analysis getter has a concrete module and stable re-exports."""
+
+    def test_legacy_analysis_module_is_not_available(self):
+        import importlib
+
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module("rayoptics_web_utils.analysis.analysis")
+
+    def test_first_order_module_export_matches_package_exports(self):
+        import rayoptics_web_utils as top_level_package
+        from rayoptics_web_utils.analysis import get_first_order_data as package_export
+        from rayoptics_web_utils.analysis.first_order import get_first_order_data as concrete_export
+
+        assert top_level_package.get_first_order_data is concrete_export
+        assert package_export is concrete_export
+
+    def test_seidel_module_export_matches_package_exports(self):
+        import rayoptics_web_utils as top_level_package
+        from rayoptics_web_utils.analysis import get_3rd_order_seidel_data as package_export
+        from rayoptics_web_utils.analysis.seidel import get_3rd_order_seidel_data as concrete_export
+
+        assert top_level_package.get_3rd_order_seidel_data is concrete_export
+        assert package_export is concrete_export
+
+    @pytest.mark.parametrize(
+        ("module_name", "getter_name"),
+        [
+            ("ray_fan", "get_ray_fan_data"),
+            ("opd_fan", "get_opd_fan_data"),
+            ("spot", "get_spot_data"),
+            ("wavefront", "get_wavefront_data"),
+            ("geometric_psf", "get_geo_psf_data"),
+            ("diffraction_psf", "get_diffraction_psf_data"),
+            ("diffraction_mtf", "get_diffraction_mtf_data"),
+        ],
+    )
+    def test_plot_getter_module_export_matches_package_exports(self, module_name, getter_name):
+        import importlib
+        import rayoptics_web_utils as top_level_package
+        import rayoptics_web_utils.analysis as analysis_package
+
+        concrete_module = importlib.import_module(f"rayoptics_web_utils.analysis.{module_name}")
+        concrete_export = getattr(concrete_module, getter_name)
+
+        assert getattr(top_level_package, getter_name) is concrete_export
+        assert getattr(analysis_package, getter_name) is concrete_export
+
+
 class TestGetAnalysisPlotDataSignatures:
     """Verify signatures for plot-data extraction helpers."""
 

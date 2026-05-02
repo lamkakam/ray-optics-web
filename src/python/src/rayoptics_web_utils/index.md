@@ -8,7 +8,7 @@ Internal Python package for optical computing utilities and RayOptics integratio
 
 ## Subdirectories
 
-- [analysis/](./analysis/index.md) — Analysis functions (spot diagram, wavefront, Zernike, Seidel aberrations)
+- [analysis/](./analysis/index.md) — Analysis functions (first-order, Seidel, fan, spot, wavefront, PSF, and MTF data)
 - [env/](./env/index.md) — Environment and configuration management
 - [focusing/](./focusing/index.md) — Focusing algorithms for lens optimization
 - [glass/](./glass/index.md) — Glass material data and selection utilities
