@@ -37,6 +37,8 @@ describe("strehlVsWavelengthChartOption", () => {
     );
 
     expect(option.xAxis.name).toBe("Wavelength (nm)");
+    expect(option.xAxis.min).toBe(strehlVsWavelengthData.x[0]);
+    expect(option.xAxis.max).toBe(strehlVsWavelengthData.x[strehlVsWavelengthData.x.length - 1]);
     expect(option.yAxis.name).toBe("Strehl Ratio");
     expect(option.yAxis.min).toBe(0);
     expect(option.yAxis.max).toBe(1);

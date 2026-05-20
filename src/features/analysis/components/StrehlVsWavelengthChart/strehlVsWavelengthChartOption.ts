@@ -29,6 +29,9 @@ export function buildStrehlVsWavelengthOption(
   chartHeight: number,
   textColor: string,
 ) {
+  const xAxisMin = strehlVsWavelengthData.x[0];
+  const xAxisMax = strehlVsWavelengthData.x[strehlVsWavelengthData.x.length - 1];
+
   return {
     animation: false,
     tooltip: {
@@ -47,6 +50,8 @@ export function buildStrehlVsWavelengthOption(
     },
     xAxis: {
       type: "value",
+      min: xAxisMin,
+      max: xAxisMax,
       name: strehlVsWavelengthData.unitX ? `Wavelength (${strehlVsWavelengthData.unitX})` : "Wavelength",
       nameLocation: "middle",
       nameGap: 34,
