@@ -1,6 +1,6 @@
 import { type StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 
 export interface AnalysisPlotState {
   rayFanData: RayFanData | undefined;
@@ -10,6 +10,7 @@ export interface AnalysisPlotState {
   diffractionPsfData: DiffractionPsfData | undefined;
   diffractionMtfData: DiffractionMtfData | undefined;
   wavefrontMapData: WavefrontMapData | undefined;
+  strehlVsWavelengthData: StrehlVsWavelengthData | undefined;
   plotLoading: boolean;
   selectedFieldIndex: number;
   selectedWavelengthIndex: number;
@@ -22,6 +23,7 @@ export interface AnalysisPlotState {
   setDiffractionPsfData: (data: DiffractionPsfData | undefined) => void;
   setDiffractionMtfData: (data: DiffractionMtfData | undefined) => void;
   setWavefrontMapData: (data: WavefrontMapData | undefined) => void;
+  setStrehlVsWavelengthData: (data: StrehlVsWavelengthData | undefined) => void;
   setPlotLoading: (loading: boolean) => void;
   setSelectedFieldIndex: (index: number, maxCount?: number) => void;
   setSelectedWavelengthIndex: (index: number, maxCount?: number) => void;
@@ -36,6 +38,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
   diffractionPsfData: undefined,
   diffractionMtfData: undefined,
   wavefrontMapData: undefined,
+  strehlVsWavelengthData: undefined,
   plotLoading: false,
   selectedFieldIndex: 0,
   selectedWavelengthIndex: 0,
@@ -49,6 +52,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
     wavefrontMapData: undefined,
+    strehlVsWavelengthData: undefined,
   }),
   setOpdFanData: (data) => set({
     opdFanData: data,
@@ -58,6 +62,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
     wavefrontMapData: undefined,
+    strehlVsWavelengthData: undefined,
   }),
   setSpotDiagramData: (data) => set({
     spotDiagramData: data,
@@ -67,6 +72,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
     wavefrontMapData: undefined,
+    strehlVsWavelengthData: undefined,
   }),
   setGeoPsfData: (data) => set({
     geoPsfData: data,
@@ -76,6 +82,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
     wavefrontMapData: undefined,
+    strehlVsWavelengthData: undefined,
   }),
   setDiffractionPsfData: (data) => set({
     diffractionPsfData: data,
@@ -85,6 +92,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     geoPsfData: undefined,
     diffractionMtfData: undefined,
     wavefrontMapData: undefined,
+    strehlVsWavelengthData: undefined,
   }),
   setDiffractionMtfData: (data) => set({
     diffractionMtfData: data,
@@ -94,6 +102,7 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     geoPsfData: undefined,
     diffractionPsfData: undefined,
     wavefrontMapData: undefined,
+    strehlVsWavelengthData: undefined,
   }),
   setWavefrontMapData: (data) => set({
     wavefrontMapData: data,
@@ -103,6 +112,17 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     geoPsfData: undefined,
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
+    strehlVsWavelengthData: undefined,
+  }),
+  setStrehlVsWavelengthData: (data) => set({
+    strehlVsWavelengthData: data,
+    rayFanData: undefined,
+    opdFanData: undefined,
+    spotDiagramData: undefined,
+    geoPsfData: undefined,
+    diffractionPsfData: undefined,
+    diffractionMtfData: undefined,
+    wavefrontMapData: undefined,
   }),
   setPlotLoading: (loading) => set({ plotLoading: loading }),
   setSelectedFieldIndex: (index, maxCount) =>

@@ -5,19 +5,21 @@ import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
 import { OpdFanChart } from "@/features/analysis/components/OpdFanChart";
 import { RayFanChart } from "@/features/analysis/components/RayFanChart";
 import { SpotDiagramChart } from "@/features/analysis/components/SpotDiagramChart";
+import { StrehlVsWavelengthChart } from "@/features/analysis/components/StrehlVsWavelengthChart";
 import { SurfaceBySurface3rdOrderChart } from "@/features/analysis/components/SurfaceBySurface3rdOrderChart";
 import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapChart";
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 export type PlotType = "rayFan"
   | "opdFan"
   | "spotDiagram"
   | "surfaceBySurface3rdOrder"
+  | "strehlVsWavelength"
   | "wavefrontMap"
   | "geoPSF"
   | "diffractionPSF"
@@ -40,6 +42,7 @@ interface AnalysisPlotViewProps {
   readonly diffractionPsfData?: DiffractionPsfData;
   readonly diffractionMtfData?: DiffractionMtfData;
   readonly wavefrontMapData?: WavefrontMapData;
+  readonly strehlVsWavelengthData?: StrehlVsWavelengthData;
   readonly loading?: boolean;
   readonly onFieldChange: (fieldIndex: number) => void;
   readonly onWavelengthChange: (wavelengthIndex: number) => void;
@@ -72,6 +75,11 @@ export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
   surfaceBySurface3rdOrder: {
     label: "Surface by Surface 3rd Order Aberr.",
     fieldDependent: false,
+    wavelengthDependent: false,
+  },
+  strehlVsWavelength: {
+    label: "Strehl vs Wavelength",
+    fieldDependent: true,
     wavelengthDependent: false,
   },
   wavefrontMap: {
@@ -170,6 +178,16 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
     (props, surfaceBySurface3rdOrderData) => (
       <SurfaceBySurface3rdOrderChart
         surfaceBySurface3rdOrderData={surfaceBySurface3rdOrderData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  strehlVsWavelength: createPlotRenderer(
+    (props) => props.strehlVsWavelengthData !== undefined,
+    (props) => props.strehlVsWavelengthData,
+    (props, strehlVsWavelengthData) => (
+      <StrehlVsWavelengthChart
+        strehlVsWavelengthData={strehlVsWavelengthData}
         autoHeight={props.autoHeight}
       />
     ),

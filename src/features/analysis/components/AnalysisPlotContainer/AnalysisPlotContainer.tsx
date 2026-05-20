@@ -39,6 +39,7 @@ export function AnalysisPlotContainer({
   const diffractionPsfData = useStore(store, (s) => s.diffractionPsfData);
   const diffractionMtfData = useStore(store, (s) => s.diffractionMtfData);
   const wavefrontMapData = useStore(store, (s) => s.wavefrontMapData);
+  const strehlVsWavelengthData = useStore(store, (s) => s.strehlVsWavelengthData);
   const plotLoading = useStore(store, (s) => s.plotLoading);
   const selectedFieldIndex = useStore(store, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(store, (s) => s.selectedWavelengthIndex);
@@ -122,6 +123,7 @@ export function AnalysisPlotContainer({
       diffractionPsfData={diffractionPsfData}
       diffractionMtfData={diffractionMtfData}
       wavefrontMapData={wavefrontMapData}
+      strehlVsWavelengthData={strehlVsWavelengthData}
       loading={plotLoading}
       onFieldChange={handleFieldChange}
       onWavelengthChange={handleWavelengthChange}

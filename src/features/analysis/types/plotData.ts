@@ -40,6 +40,14 @@ export interface WavefrontMapData {
   unitZ: string;
 }
 
+export interface StrehlVsWavelengthData {
+  fieldIdx: number;
+  x: number[];
+  y: number[];
+  unitX: string;
+  unitY: string;
+}
+
 export interface GeoPsfData {
   fieldIdx: number;
   wvlIdx: number;

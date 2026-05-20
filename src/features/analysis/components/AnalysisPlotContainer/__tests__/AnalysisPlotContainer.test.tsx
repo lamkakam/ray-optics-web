@@ -7,7 +7,7 @@ import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/anal
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
@@ -115,6 +115,14 @@ const wavefrontMapData: WavefrontMapData = {
   unitX: "",
   unitY: "",
   unitZ: "waves",
+};
+
+const strehlVsWavelengthData: StrehlVsWavelengthData = {
+  fieldIdx: 1,
+  x: [486.1, 587.6, 656.3],
+  y: [0.72, 0.94, 0.81],
+  unitX: "nm",
+  unitY: "",
 };
 
 const geoPsfData: GeoPsfData = {
@@ -236,6 +244,7 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
     getGeoPSFData: jest.fn<Promise<GeoPsfData>, [OpticalModel, number, number]>().mockResolvedValue(geoPsfData),
     getDiffractionPSFData: jest.fn<Promise<DiffractionPsfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionPsfData),
     getDiffractionMTFData: jest.fn<Promise<DiffractionMtfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionMtfData),
+    getStrehlVsWavelengthData: jest.fn<Promise<StrehlVsWavelengthData>, [OpticalModel, number]>().mockResolvedValue(strehlVsWavelengthData),
     get3rdOrderSeidelData: jest.fn(),
     getZernikeCoefficients: jest.fn(),
     focusByMonoRmsSpot: jest.fn(),
@@ -494,6 +503,20 @@ describe("AnalysisPlotContainer", () => {
       expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 0);
     });
     expect(store.getState().wavefrontMapData).toEqual(wavefrontMapData);
+  });
+
+  it("handlePlotTypeChange: strehlVsWavelength fetches data for the selected field and stores it", async () => {
+    store.getState().setSelectedFieldIndex(1);
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "strehlVsWavelength");
+
+    expect(store.getState().selectedPlotType).toBe("strehlVsWavelength");
+    await waitFor(() => {
+      expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(testModel, 1);
+    });
+    expect(store.getState().strehlVsWavelengthData).toEqual(strehlVsWavelengthData);
   });
 
   it("onError called when proxy throws on field change", async () => {

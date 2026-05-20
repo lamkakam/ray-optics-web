@@ -20,6 +20,7 @@ interface PyodideWorkerAPI {
   getOpdFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>;
   getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>;
   getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<WavefrontMapData>;
+  getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>;
   getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<GeoPsfData>;
   getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<DiffractionPsfData>;
   getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;
@@ -72,6 +73,7 @@ interface PyodideWorkerAPI {
 - `DiffractionPsfData` — imported from `features/analysis/types/plotData` (type only).
 - `DiffractionMtfData` — imported from `features/analysis/types/plotData` (type only).
 - `WavefrontMapData` — imported from `features/analysis/types/plotData` (type only).
+- `StrehlVsWavelengthData` — imported from `features/analysis/types/plotData` (type only).
 - `GeoPsfData` — imported from `features/analysis/types/plotData` (type only).
 - `RayFanData` — imported from `features/analysis/types/plotData` (type only).
 - `OpdFanData` — imported from `features/analysis/types/plotData` (type only).

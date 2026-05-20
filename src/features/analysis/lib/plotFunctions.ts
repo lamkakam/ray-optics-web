@@ -1,7 +1,7 @@
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
@@ -13,6 +13,7 @@ export type AnalysisPlotLoadResult =
   | { readonly kind: "spotDiagram"; readonly spotDiagramData: SpotDiagramData }
   | { readonly kind: "geoPSF"; readonly geoPsfData: GeoPsfData }
   | { readonly kind: "wavefrontMap"; readonly wavefrontMapData: WavefrontMapData }
+  | { readonly kind: "strehlVsWavelength"; readonly strehlVsWavelengthData: StrehlVsWavelengthData }
   | { readonly kind: "diffractionPSF"; readonly diffractionPsfData: DiffractionPsfData }
   | { readonly kind: "diffractionMTF"; readonly diffractionMtfData: DiffractionMtfData };
 
@@ -51,6 +52,13 @@ export async function loadAnalysisPlot({
     return {
       kind: "wavefrontMap",
       wavefrontMapData: await proxy.getWavefrontData(model, fieldIndex, wavelengthIndex),
+    };
+  }
+
+  if (plotType === "strehlVsWavelength") {
+    return {
+      kind: "strehlVsWavelength",
+      strehlVsWavelengthData: await proxy.getStrehlVsWavelengthData(model, fieldIndex),
     };
   }
 
@@ -113,6 +121,9 @@ export function commitAnalysisPlotResult(
       return;
     case "wavefrontMap":
       analysisPlotStore.getState().setWavefrontMapData(plotResult.wavefrontMapData);
+      return;
+    case "strehlVsWavelength":
+      analysisPlotStore.getState().setStrehlVsWavelengthData(plotResult.strehlVsWavelengthData);
       return;
     case "diffractionPSF":
       analysisPlotStore.getState().setDiffractionPsfData(plotResult.diffractionPsfData);

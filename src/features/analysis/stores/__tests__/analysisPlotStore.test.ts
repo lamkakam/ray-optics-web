@@ -51,6 +51,11 @@ describe("analysisPlotStore", () => {
       expect(store.getState().wavefrontMapData).toBeUndefined();
     });
 
+    it("has strehlVsWavelengthData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().strehlVsWavelengthData).toBeUndefined();
+    });
+
     it("has spotDiagramData as undefined", () => {
       const store = makeStore();
       expect(store.getState().spotDiagramData).toBeUndefined();
@@ -585,6 +590,66 @@ describe("analysisPlotStore", () => {
     });
   });
 
+  describe("setStrehlVsWavelengthData", () => {
+    it("sets strehlVsWavelengthData", () => {
+      const store = makeStore();
+      store.getState().setStrehlVsWavelengthData({
+        fieldIdx: 1,
+        x: [486.1, 587.6, 656.3],
+        y: [0.72, 0.94, 0.81],
+        unitX: "nm",
+        unitY: "",
+      });
+
+      expect(store.getState().strehlVsWavelengthData).toBeDefined();
+      expect(store.getState().strehlVsWavelengthData?.fieldIdx).toBe(1);
+    });
+
+    it("clears strehlVsWavelengthData with undefined", () => {
+      const store = makeStore();
+      store.getState().setStrehlVsWavelengthData({
+        fieldIdx: 1,
+        x: [486.1],
+        y: [0.94],
+        unitX: "nm",
+        unitY: "",
+      });
+
+      store.getState().setStrehlVsWavelengthData(undefined);
+
+      expect(store.getState().strehlVsWavelengthData).toBeUndefined();
+    });
+
+    it("clears other chart payloads when setting strehl vs wavelength data", () => {
+      const store = makeStore();
+      store.getState().setWavefrontMapData({
+        fieldIdx: 0,
+        wvlIdx: 0,
+        x: [0],
+        y: [0],
+        z: [[0]],
+        unitX: "",
+        unitY: "",
+        unitZ: "waves",
+      });
+
+      store.getState().setStrehlVsWavelengthData({
+        fieldIdx: 1,
+        x: [486.1, 587.6, 656.3],
+        y: [0.72, 0.94, 0.81],
+        unitX: "nm",
+        unitY: "",
+      });
+
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().diffractionMtfData).toBeUndefined();
+      expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().rayFanData).toBeUndefined();
+      expect(store.getState().strehlVsWavelengthData?.fieldIdx).toBe(1);
+    });
+  });
+
   describe("setPlotLoading", () => {
     it("sets plotLoading to true", () => {
       const store = makeStore();
@@ -680,16 +745,18 @@ describe("analysisPlotStore", () => {
       expect(store.getState().selectedPlotType).toBe("rayFan");
     });
 
-    it("accepts all 7 valid PlotType values", () => {
+    it("accepts all valid PlotType values", () => {
       const store = makeStore();
       const allTypes: PlotType[] = [
         "rayFan",
         "opdFan",
         "spotDiagram",
         "surfaceBySurface3rdOrder",
+        "strehlVsWavelength",
         "wavefrontMap",
         "geoPSF",
         "diffractionPSF",
+        "diffractionMTF",
       ];
       for (const t of allTypes) {
         store.getState().setSelectedPlotType(t);

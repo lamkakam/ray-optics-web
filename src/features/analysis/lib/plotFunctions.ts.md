@@ -16,6 +16,7 @@ type AnalysisPlotLoadResult =
   | { kind: "spotDiagram"; spotDiagramData: SpotDiagramData }
   | { kind: "geoPSF"; geoPsfData: GeoPsfData }
   | { kind: "wavefrontMap"; wavefrontMapData: WavefrontMapData }
+  | { kind: "strehlVsWavelength"; strehlVsWavelengthData: StrehlVsWavelengthData }
   | { kind: "diffractionPSF"; diffractionPsfData: DiffractionPsfData }
   | { kind: "diffractionMTF"; diffractionMtfData: DiffractionMtfData };
 ```
@@ -48,6 +49,7 @@ Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx
 - Calls `proxy.getOpdFanData(model, fi)` for `opdFan`.
 - Calls `proxy.getSpotDiagramData(model, fi)` for `spotDiagram`.
 - Calls `proxy.getWavefrontData(...)` for `wavefrontMap`.
+- Calls `proxy.getStrehlVsWavelengthData(model, fi)` for `strehlVsWavelength`.
 - Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
 - Calls `proxy.getDiffractionPSFData(...)` for `diffractionPSF`.
 - Calls `proxy.getDiffractionMTFData(...)` for `diffractionMTF`.
@@ -66,14 +68,14 @@ Commits a loaded analysis plot payload to the matching `AnalysisPlotState` sette
 
 - No-ops when `plotResult` is `undefined`.
 - No-ops for `"surfaceBySurface3rdOrder"` because Seidel surface-by-surface data is committed through `AnalysisDataState`.
-- Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"geoPSF"`, `"wavefrontMap"`, `"diffractionPSF"`, and `"diffractionMTF"`.
+- Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"diffractionPSF"`, and `"diffractionMTF"`.
 - Uses an exhaustive `switch` so future `AnalysisPlotLoadResult` variants must be handled explicitly.
 
 ## Dependencies
 
 - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
 - `PlotType` (type-only) from `@/features/analysis/components`
-- `RayFanData`, `DiffractionPsfData`, `DiffractionMtfData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
+- `RayFanData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
 - `SeidelSurfaceBySurfaceData` (type-only) from `@/features/lens-editor/types/seidelData`
 - `PyodideWorkerAPI` (type-only) from `@/shared/hooks/usePyodide`
 - `StoreApi` (type-only) from `zustand`

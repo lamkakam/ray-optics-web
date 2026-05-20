@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { proxy as comlinkProxy, wrap } from "comlink";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type {
   OptimizationConfig,
@@ -30,6 +30,7 @@ export interface PyodideWorkerAPI {
   getOpdFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>;
   getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>;
   getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<WavefrontMapData>;
+  getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>;
   getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<GeoPsfData>;
   getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<DiffractionPsfData>;
   getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;

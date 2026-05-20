@@ -17,5 +17,6 @@ Components for optical analysis plots and aberration data.
 - [OpdFanChart/](./OpdFanChart/index.md) — OPD fan chart component, option builder, specs, and moved tests
 - [RayFanChart/](./RayFanChart/index.md) — Ray fan chart component, option builder, specs, and moved tests
 - [SpotDiagramChart/](./SpotDiagramChart/index.md) — Spot diagram chart component, option builder, specs, and moved tests
+- [StrehlVsWavelengthChart/](./StrehlVsWavelengthChart/index.md) — Strehl vs Wavelength chart component, option builder, specs, and tests
 - [SurfaceBySurface3rdOrderChart/](./SurfaceBySurface3rdOrderChart/index.md) — Surface-by-surface Seidel chart component, option builder, specs, and moved tests
 - [WavefrontMapChart/](./WavefrontMapChart/index.md) — Wavefront map chart component, option builder, specs, and moved tests

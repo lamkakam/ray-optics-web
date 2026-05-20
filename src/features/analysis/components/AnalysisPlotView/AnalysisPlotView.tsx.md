@@ -12,6 +12,7 @@ type PlotType =
   | "opdFan"
   | "spotDiagram"
   | "surfaceBySurface3rdOrder"
+  | "strehlVsWavelength"
   | "wavefrontMap"
   | "geoPSF"
   | "diffractionPSF"
@@ -34,6 +35,7 @@ interface AnalysisPlotViewProps {
   diffractionPsfData?: DiffractionPsfData;
   diffractionMtfData?: DiffractionMtfData;
   wavefrontMapData?: WavefrontMapData;
+  strehlVsWavelengthData?: StrehlVsWavelengthData;
   loading?: boolean;
   onFieldChange: (fieldIndex: number) => void;
   onWavelengthChange: (wavelengthIndex: number) => void;
@@ -59,6 +61,7 @@ interface AnalysisPlotViewProps {
 | `diffractionPsfData` | `DiffractionPsfData` | No | Diffraction PSF axis/intensity data used only when `selectedPlotType === "diffractionPSF"` |
 | `diffractionMtfData` | `DiffractionMtfData` | No | Diffraction MTF line data used only when `selectedPlotType === "diffractionMTF"` |
 | `wavefrontMapData` | `WavefrontMapData` | No | Wavefront-map axis/OPD data used only when `selectedPlotType === "wavefrontMap"` |
+| `strehlVsWavelengthData` | `StrehlVsWavelengthData` | No | Strehl ratio vs wavelength line data used only when `selectedPlotType === "strehlVsWavelength"` |
 | `loading` | `boolean` | No | Shows "Loading plot..." placeholder when `true` |
 | `onFieldChange` | `(n) => void` | Yes | Called with the new field index |
 | `onWavelengthChange` | `(n) => void` | Yes | Called with the new wavelength index |
@@ -75,6 +78,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 | `opdFan` | "OPD Fan" | true | false |
 | `spotDiagram` | "Spot Diagram" | true | false |
 | `surfaceBySurface3rdOrder` | "Surface by Surface 3rd Order Aberr." | false | false |
+| `strehlVsWavelength` | "Strehl vs Wavelength" | true | false |
 | `wavefrontMap` | "Wavefront Map" | true | true |
 | `geoPSF` | "Geometric PSF" | true | true |
 | `diffractionPSF` | "Diffraction PSF" | true | true |
@@ -93,6 +97,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `rayFan` renders `RayFanChart` only when `rayFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `spotDiagram` renders `SpotDiagramChart` only when `spotDiagramData` is present, passing wavelength labels from `wavelengthOptions` so each series is named by the actual wavelength rather than the wavelength index.
+- `strehlVsWavelength` renders `StrehlVsWavelengthChart` only when `strehlVsWavelengthData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
 - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
 - `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.
 - `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.

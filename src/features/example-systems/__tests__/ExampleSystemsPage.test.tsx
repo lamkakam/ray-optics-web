@@ -72,6 +72,7 @@ function makeProxy(): PyodideWorkerAPI {
     getOpdFanData: jest.fn().mockResolvedValue([]),
     getSpotDiagramData: jest.fn().mockResolvedValue([]),
     getWavefrontData: jest.fn().mockResolvedValue({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], z: [], unitX: "", unitY: "", unitZ: "" }),
+    getStrehlVsWavelengthData: jest.fn().mockResolvedValue({ fieldIdx: 0, x: [], y: [], unitX: "nm", unitY: "" }),
     getGeoPSFData: jest.fn().mockResolvedValue({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], unitX: "", unitY: "" }),
     getDiffractionPSFData: jest.fn().mockResolvedValue({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], z: [], unitX: "", unitY: "", unitZ: "" }),
     getDiffractionMTFData: jest.fn().mockResolvedValue(mockDiffractionMtfData),

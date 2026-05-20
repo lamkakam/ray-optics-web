@@ -1,6 +1,6 @@
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, OpdFanData, RayFanData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, OpdFanData, RayFanData, StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
@@ -21,6 +21,14 @@ const diffractionMtfData: DiffractionMtfData = {
   cutoffSagittal: 40,
   naTangential: 0.012,
   naSagittal: 0.011,
+};
+
+const strehlVsWavelengthData: StrehlVsWavelengthData = {
+  fieldIdx: 1,
+  x: [486.1, 587.6, 656.3],
+  y: [0.72, 0.94, 0.81],
+  unitX: "nm",
+  unitY: "",
 };
 
 function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
@@ -105,6 +113,7 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     }),
     getDiffractionPSFData: jest.fn(),
     getDiffractionMTFData: jest.fn(),
+    getStrehlVsWavelengthData: jest.fn().mockResolvedValue(strehlVsWavelengthData),
   } as unknown as jest.Mocked<PyodideWorkerAPI>;
 }
 
@@ -234,6 +243,23 @@ describe("loadAnalysisPlot", () => {
     });
   });
 
+  it("loads strehlVsWavelength through getStrehlVsWavelengthData", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "strehlVsWavelength",
+      proxy,
+      model: mockModel,
+      fieldIndex: 1,
+      wavelengthIndex: 2,
+    });
+
+    expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(mockModel, 1);
+    expect(result).toEqual({
+      kind: "strehlVsWavelength",
+      strehlVsWavelengthData,
+    });
+  });
+
   it("loads geoPSF through getGeoPSFData", async () => {
     const proxy = makeMockProxy();
     const result = await loadAnalysisPlot({
@@ -322,6 +348,17 @@ describe("commitAnalysisPlotResult", () => {
     }, store);
 
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
+  });
+
+  it("commits strehlVsWavelength data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+
+    commitAnalysisPlotResult({
+      kind: "strehlVsWavelength",
+      strehlVsWavelengthData,
+    }, store);
+
+    expect(store.getState().strehlVsWavelengthData).toEqual(strehlVsWavelengthData);
   });
 
   it("does not commit surfaceBySurface3rdOrder data into the analysis plot store", () => {

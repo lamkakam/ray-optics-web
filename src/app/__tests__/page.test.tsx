@@ -206,6 +206,13 @@ const mockProxy = {
   getOpdFanData: mockGetOpdFanData,
   getSpotDiagramData: mockGetSpotDiagramData,
   getWavefrontData: mockGetWavefrontData,
+  getStrehlVsWavelengthData: jest.fn().mockResolvedValue({
+    fieldIdx: 0,
+    x: [486.1, 587.6, 656.3],
+    y: [0.72, 0.94, 0.81],
+    unitX: "nm",
+    unitY: "",
+  }),
   getGeoPSFData: jest.fn().mockResolvedValue({
     fieldIdx: 0,
     wvlIdx: 0,

@@ -6,5 +6,6 @@ export * from "./GeoPsfChart";
 export * from "./OpdFanChart";
 export * from "./RayFanChart";
 export * from "./SpotDiagramChart";
+export * from "./StrehlVsWavelengthChart";
 export * from "./SurfaceBySurface3rdOrderChart";
 export * from "./WavefrontMapChart";
