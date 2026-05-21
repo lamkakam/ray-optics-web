@@ -30,6 +30,7 @@ Package entry point. Eagerly imports `init` from `env/env.py` (safe — no rayop
 | `get_geo_psf_data` | `rayoptics_web_utils.analysis.geometric_psf` |
 | `get_diffraction_psf_data` | `rayoptics_web_utils.analysis.diffraction_psf` |
 | `get_diffraction_mtf_data` | `rayoptics_web_utils.analysis.diffraction_mtf` |
+| `get_strehl_vs_wavelength_data` | `rayoptics_web_utils.analysis.strehl_vs_wavelength` |
 | `get_zernike_coefficients` | `rayoptics_web_utils.zernike.zernike` |
 | `plot_lens_layout` | `rayoptics_web_utils.plotting.plotting` |
 | `focus_by_mono_rms_spot`, `focus_by_mono_strehl`, `focus_by_poly_rms_spot`, `focus_by_poly_strehl` | `rayoptics_web_utils.focusing.focusing` |

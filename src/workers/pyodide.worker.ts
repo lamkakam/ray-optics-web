@@ -1,7 +1,7 @@
 import { expose } from "comlink";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import {
   type OptimizationConfig,
@@ -80,7 +80,7 @@ from rayoptics.elem.surface import DecenterData
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 
-from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
 )
@@ -118,7 +118,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.3.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.4.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
@@ -224,6 +224,22 @@ export async function _getWavefrontData(
     ...parsed,
     z: parsed.z.map((row) => row.map((value) => value ?? undefined)),
   };
+}
+
+export async function _getStrehlVsWavelengthData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthSamples: number = 100,
+  numRays: number = 21,
+): Promise<StrehlVsWavelengthData> {
+  const json = (await runPython(
+    buildScript(
+      opticalModel,
+      (opm) => `json.dumps(get_strehl_vs_wavelength_data(${opm}, ${fieldIndex}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}))`,
+    ),
+  )) as string;
+  return JSON.parse(json) as StrehlVsWavelengthData;
 }
 
 export async function _getGeoPSFData(
@@ -434,6 +450,15 @@ export async function getWavefrontData(
   return await _getWavefrontData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
 }
 
+export async function getStrehlVsWavelengthData(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  wavelengthSamples: number = 100,
+  numRays: number = 21,
+): Promise<StrehlVsWavelengthData> {
+  return await _getStrehlVsWavelengthData(requirePyodide(), opticalModel, fieldIndex, wavelengthSamples, numRays);
+}
+
 export async function getGeoPSFData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -521,6 +546,7 @@ expose({
   getOpdFanData,
   getSpotDiagramData,
   getWavefrontData,
+  getStrehlVsWavelengthData,
   getGeoPSFData,
   getDiffractionPSFData,
   getDiffractionMTFData,

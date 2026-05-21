@@ -39,6 +39,7 @@ class TestAnalysisConcreteModuleExports:
             ("geometric_psf", "get_geo_psf_data"),
             ("diffraction_psf", "get_diffraction_psf_data"),
             ("diffraction_mtf", "get_diffraction_mtf_data"),
+            ("strehl_vs_wavelength", "get_strehl_vs_wavelength_data"),
         ],
     )
     def test_plot_getter_module_export_matches_package_exports(self, module_name, getter_name):
@@ -110,6 +111,15 @@ class TestGetAnalysisPlotDataSignatures:
         assert list(sig.parameters.keys()) == ["opm", "field_idx", "wvl_idx", "num_rays", "max_dims"]
         assert sig.parameters["num_rays"].default == 64
         assert sig.parameters["max_dims"].default == 256
+
+    def test_get_strehl_vs_wavelength_data_accepts_opm_field_index_samples_and_num_rays(self):
+        from rayoptics_web_utils.analysis import get_strehl_vs_wavelength_data
+        import inspect
+
+        sig = inspect.signature(get_strehl_vs_wavelength_data)
+        assert list(sig.parameters.keys()) == ["opm", "fieldIndex", "wavelength_samples", "num_rays"]
+        assert sig.parameters["wavelength_samples"].default == 32
+        assert sig.parameters["num_rays"].default == 21
 
 
 class TestGetFirstOrderData:
@@ -447,3 +457,122 @@ class TestGetDiffractionMtfData:
         assert result["Sagittal"]["x"] == pytest.approx(result["IdealSagittal"]["x"])
         assert result["Tangential"]["x"][-1] == pytest.approx(result["cutoffTangential"])
         assert result["Sagittal"]["x"][-1] == pytest.approx(result["cutoffSagittal"])
+
+
+class TestGetStrehlVsWavelengthData:
+    """Tests for get_strehl_vs_wavelength_data()."""
+
+    def test_multi_wavelength_model_samples_configured_range(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_strehl_vs_wavelength_data
+
+        result = get_strehl_vs_wavelength_data(
+            cooke_triplet,
+            fieldIndex=1,
+            wavelength_samples=5,
+            num_rays=11,
+        )
+
+        wavelengths = cooke_triplet["optical_spec"]["wvls"].wavelengths
+        assert result["fieldIdx"] == 1
+        assert result["unitX"] == "nm"
+        assert result["unitY"] == ""
+        assert len(result["x"]) == 5
+        assert len(result["y"]) == 5
+        assert result["x"][0] == pytest.approx(min(wavelengths))
+        assert result["x"][-1] == pytest.approx(max(wavelengths))
+        assert all(isinstance(v, float) for v in result["x"])
+        assert all(isinstance(v, float) for v in result["y"])
+        assert all(0.0 <= v <= 1.0 for v in result["y"])
+
+    def test_repeated_wavelength_model_samples_centered_400_nm_span(self, cooke_triplet, monkeypatch):
+        import numpy as np
+        import rayoptics_web_utils.analysis.strehl_vs_wavelength as module
+
+        spectral_region = cooke_triplet["optical_spec"]["wvls"]
+        monkeypatch.setattr(spectral_region, "wavelengths", [587.562, 587.562])
+        monkeypatch.setattr(spectral_region, "spectral_wts", [1, 2])
+        monkeypatch.setattr(spectral_region, "reference_wvl", 0)
+
+        class FakeRayGrid:
+            pass
+
+        requested_wavelengths = []
+
+        def fake_make_ray_grid(opm, fi, wavelength_nm, num_rays):
+            requested_wavelengths.append(float(wavelength_nm))
+            assert opm is cooke_triplet
+            assert fi == 2
+            assert num_rays == 7
+            return FakeRayGrid()
+
+        def fake_extract_exit_pupil_grid(rg, opm, wavelength_nm):
+            return np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
+
+        def fake_monochromatic_strehl(opd_waves):
+            return float(opd_waves[0, 0])
+
+        monkeypatch.setattr(module, "make_ray_grid", fake_make_ray_grid)
+        monkeypatch.setattr(module, "_extract_exit_pupil_grid", fake_extract_exit_pupil_grid)
+        monkeypatch.setattr(module, "_monochromatic_strehl", fake_monochromatic_strehl)
+
+        result = module.get_strehl_vs_wavelength_data(
+            cooke_triplet,
+            fieldIndex=2,
+            wavelength_samples=3,
+            num_rays=7,
+        )
+
+        assert result["x"] == pytest.approx([387.562, 587.562, 787.562])
+        assert requested_wavelengths == pytest.approx(result["x"])
+        assert result["y"] == pytest.approx([0.387562, 0.587562, 0.787562])
+
+    def test_low_repeated_wavelength_model_clips_axis_start_above_200_nm(self, cooke_triplet, monkeypatch):
+        import numpy as np
+        import rayoptics_web_utils.analysis.strehl_vs_wavelength as module
+
+        spectral_region = cooke_triplet["optical_spec"]["wvls"]
+        monkeypatch.setattr(spectral_region, "wavelengths", [300.0, 300.0])
+        monkeypatch.setattr(spectral_region, "spectral_wts", [1, 1])
+        monkeypatch.setattr(spectral_region, "reference_wvl", 0)
+
+        class FakeRayGrid:
+            pass
+
+        requested_wavelengths = []
+
+        def fake_make_ray_grid(opm, fi, wavelength_nm, num_rays):
+            requested_wavelengths.append(float(wavelength_nm))
+            return FakeRayGrid()
+
+        def fake_extract_exit_pupil_grid(rg, opm, wavelength_nm):
+            return np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
+
+        def fake_monochromatic_strehl(opd_waves):
+            return float(opd_waves[0, 0])
+
+        monkeypatch.setattr(module, "make_ray_grid", fake_make_ray_grid)
+        monkeypatch.setattr(module, "_extract_exit_pupil_grid", fake_extract_exit_pupil_grid)
+        monkeypatch.setattr(module, "_monochromatic_strehl", fake_monochromatic_strehl)
+
+        result = module.get_strehl_vs_wavelength_data(
+            cooke_triplet,
+            fieldIndex=2,
+            wavelength_samples=3,
+            num_rays=7,
+        )
+
+        assert result["x"] == pytest.approx([201.0, 350.5, 500.0])
+        assert requested_wavelengths == pytest.approx(result["x"])
+        assert result["y"] == pytest.approx([0.201, 0.3505, 0.5])
+
+    def test_result_is_json_encodable(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_strehl_vs_wavelength_data
+
+        result = get_strehl_vs_wavelength_data(
+            cooke_triplet,
+            fieldIndex=0,
+            wavelength_samples=4,
+            num_rays=11,
+        )
+
+        json.dumps(result)

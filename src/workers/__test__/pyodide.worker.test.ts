@@ -11,6 +11,7 @@ import {
   _get3rdOrderSeidelData,
   _getSpotDiagramData,
   _getWavefrontData,
+  _getStrehlVsWavelengthData,
   _getGeoPSFData,
   _getDiffractionPSFData,
   _getDiffractionMTFData,
@@ -248,6 +249,27 @@ describe("_getWavefrontData", () => {
   });
 });
 
+describe("_getStrehlVsWavelengthData", () => {
+  it("should build the model script, call json.dumps(get_strehl_vs_wavelength_data(...)) and return parsed data", async () => {
+    const mockData = {
+      fieldIdx: 1,
+      x: [486.1, 587.6, 656.3],
+      y: [0.72, 0.94, 0.81],
+      unitX: "nm",
+      unitY: "",
+    };
+    let pythonScript = "";
+    const result = await _getStrehlVsWavelengthData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 1);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_strehl_vs_wavelength_data(_build_opm(), 1, wavelength_samples=100, num_rays=21))");
+    expect(result).toEqual(mockData);
+  });
+});
+
 
 describe("_getGeoPSFData", () => {
   it("should build the model script, call json.dumps(get_geo_psf_data(...)) and return parsed data", async () => {
@@ -422,7 +444,7 @@ describe("init", () => {
     await init();
 
     expect(loadPackage).toHaveBeenCalled();
-    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.3.0-py3-none-any.whl", deps=False)');
+    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.4.0-py3-none-any.whl", deps=False)');
   });
 
   it("emits ordered initialization milestones", async () => {

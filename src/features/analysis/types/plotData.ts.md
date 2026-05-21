@@ -10,6 +10,7 @@ Defines analysis plot payload types returned by the Pyodide worker and consumed 
 - `LineAxisData`: shared paired `x/y` line samples.
 - `DiffractionMtfData`: diffraction MTF measured and ideal line curves plus cutoff metadata.
 - `WavefrontMapData`: wavefront-map axes and OPD grid; missing samples are represented as `undefined`.
+- `StrehlVsWavelengthData`: selected-field Strehl ratio samples across wavelength, with wavelength units in `unitX`.
 - `GeoPsfData`: geometric PSF point-cloud data.
 - `SpotDiagramSeriesData`: one wavelength-group spot-diagram point cloud.
 - `SpotDiagramData`: all spot-diagram series for a selected field.

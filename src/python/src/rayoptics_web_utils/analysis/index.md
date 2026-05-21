@@ -13,5 +13,6 @@ Functions for optical system analysis: aberrations, fan plots, spot diagrams, PS
 - [geometric_psf.py](./geometric_psf.py.md) — Geometric PSF point-cloud data
 - [diffraction_psf.py](./diffraction_psf.py.md) — Diffraction PSF grid data
 - [diffraction_mtf.py](./diffraction_mtf.py.md) — Diffraction MTF line data
+- [strehl_vs_wavelength.py](./strehl_vs_wavelength.py.md) — Strehl ratio vs wavelength line data
 - [_fan.py](./_fan.py.md) — Private shared fan tracing helper
 - [_mtf.py](./_mtf.py.md) — Private diffraction MTF math helpers

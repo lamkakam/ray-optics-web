@@ -29,6 +29,13 @@ const mockWavefrontMapChart = jest.fn(({ autoHeight }: { readonly autoHeight?: b
   />
 ));
 
+const mockStrehlVsWavelengthChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="strehl-vs-wavelength-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 const mockGeoPsfChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
   <div
     data-testid="geo-psf-chart"
@@ -74,6 +81,10 @@ jest.mock("@/features/analysis/components/DiffractionMtfChart", () => ({
 
 jest.mock("@/features/analysis/components/WavefrontMapChart", () => ({
   WavefrontMapChart: (props: { readonly autoHeight?: boolean }) => mockWavefrontMapChart(props),
+}));
+
+jest.mock("@/features/analysis/components/StrehlVsWavelengthChart", () => ({
+  StrehlVsWavelengthChart: (props: { readonly autoHeight?: boolean }) => mockStrehlVsWavelengthChart(props),
 }));
 
 jest.mock("@/features/analysis/components/GeoPsfChart", () => ({
@@ -146,18 +157,21 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByText("20.0°")).toBeInTheDocument();
   });
 
-  it("renders plot type selector with all seven options", () => {
+  it("renders plot type selector with Strehl vs Wavelength before Wavefront Map", () => {
     render(<AnalysisPlotView {...defaultProps} />);
     const select = screen.getByLabelText("Plot type");
     expect(select).toBeInTheDocument();
+    const optionLabels = Array.from(select.querySelectorAll("option")).map((option) => option.textContent);
     expect(screen.getByText("Ray Fan")).toBeInTheDocument();
     expect(screen.getByText("OPD Fan")).toBeInTheDocument();
     expect(screen.getByText("Spot Diagram")).toBeInTheDocument();
     expect(screen.getByText("Surface by Surface 3rd Order Aberr.")).toBeInTheDocument();
+    expect(screen.getByText("Strehl vs Wavelength")).toBeInTheDocument();
     expect(screen.getByText("Wavefront Map")).toBeInTheDocument();
     expect(screen.getByText("Geometric PSF")).toBeInTheDocument();
     expect(screen.getByText("Diffraction PSF")).toBeInTheDocument();
     expect(screen.getByText("Diffraction MTF")).toBeInTheDocument();
+    expect(optionLabels.indexOf("Strehl vs Wavelength")).toBeLessThan(optionLabels.indexOf("Wavefront Map"));
   });
 
   it("field selector is enabled when selectedPlotType is rayFan", () => {
@@ -323,6 +337,27 @@ describe("AnalysisPlotView", () => {
     }));
   });
 
+  it("renders a strehl vs wavelength chart when data is provided", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="strehlVsWavelength"
+        strehlVsWavelengthData={{
+          fieldIdx: 0,
+          x: [486.1, 587.6, 656.3],
+          y: [0.72, 0.94, 0.81],
+          unitX: "nm",
+          unitY: "",
+        }}
+      />
+    );
+
+    expect(screen.getByTestId("strehl-vs-wavelength-chart")).toBeInTheDocument();
+    expect(mockStrehlVsWavelengthChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+    }));
+  });
+
   it("renders a geometric PSF chart when data is provided", () => {
     render(
       <AnalysisPlotView
@@ -458,6 +493,11 @@ describe("AnalysisPlotView", () => {
       expect(screen.queryByLabelText("Wavelength")).not.toBeInTheDocument();
     });
 
+    it("does not render wavelength selector for strehlVsWavelength", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="strehlVsWavelength" />);
+      expect(screen.queryByLabelText("Wavelength")).not.toBeInTheDocument();
+    });
+
     it("renders wavelength selector when selectedPlotType is wavefrontMap", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
@@ -518,6 +558,11 @@ describe("AnalysisPlotView", () => {
   describe("new wavelength-dependent plot types", () => {
     it("field selector is enabled for wavefrontMap", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
+      expect(screen.getByLabelText("Field")).not.toBeDisabled();
+    });
+
+    it("field selector is enabled for strehlVsWavelength", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="strehlVsWavelength" />);
       expect(screen.getByLabelText("Field")).not.toBeDisabled();
     });
 

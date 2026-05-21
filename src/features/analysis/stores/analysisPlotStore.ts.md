@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, geometric-PSF data, wavefront-map data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
+Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
 
 ## Exports
 
@@ -20,6 +20,7 @@ Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OP
 | `diffractionPsfData` | `DiffractionPsfData \| undefined` | `undefined` |
 | `diffractionMtfData` | `DiffractionMtfData \| undefined` | `undefined` |
 | `wavefrontMapData` | `WavefrontMapData \| undefined` | `undefined` |
+| `strehlVsWavelengthData` | `StrehlVsWavelengthData \| undefined` | `undefined` |
 | `plotLoading` | `boolean` | `false` |
 | `selectedFieldIndex` | `number` | `0` |
 | `selectedWavelengthIndex` | `number` | `0` |
@@ -34,6 +35,7 @@ Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OP
 - `setDiffractionPsfData(data)` — sets or clears the diffraction PSF chart payload and clears the other typed plot payloads.
 - `setDiffractionMtfData(data)` — sets or clears the diffraction MTF chart payload and clears the other typed plot payloads.
 - `setWavefrontMapData(data)` — sets or clears the wavefront-map chart payload and clears the other typed plot payloads.
+- `setStrehlVsWavelengthData(data)` — sets or clears the Strehl-vs-wavelength chart payload and clears the other typed plot payloads.
 - `setPlotLoading(loading)` — sets the loading flag.
 - `setSelectedFieldIndex(index, maxCount?)` — sets the active field index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
 - `setSelectedWavelengthIndex(index, maxCount?)` — sets the active wavelength index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
@@ -43,4 +45,4 @@ Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OP
 
 - `create`, `StateCreator` from `zustand`.
 - `PlotType` (type-only) from `@/features/analysis/components`.
-- `RayFanData`, `OpdFanData`, `SpotDiagramData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.
+- `RayFanData`, `OpdFanData`, `SpotDiagramData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.

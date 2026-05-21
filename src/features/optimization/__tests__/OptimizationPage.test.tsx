@@ -73,6 +73,7 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     getOpdFanData: jest.fn(),
     getSpotDiagramData: jest.fn(),
     getWavefrontData: jest.fn(),
+    getStrehlVsWavelengthData: jest.fn(),
     getGeoPSFData: jest.fn(),
     getDiffractionPSFData: jest.fn(),
     get3rdOrderSeidelData: jest.fn(),

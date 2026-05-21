@@ -8,6 +8,7 @@ from rayoptics_web_utils.analysis.opd_fan import get_opd_fan_data
 from rayoptics_web_utils.analysis.ray_fan import get_ray_fan_data
 from rayoptics_web_utils.analysis.seidel import get_3rd_order_seidel_data
 from rayoptics_web_utils.analysis.spot import get_spot_data
+from rayoptics_web_utils.analysis.strehl_vs_wavelength import get_strehl_vs_wavelength_data
 from rayoptics_web_utils.analysis.wavefront import get_wavefront_data
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "get_geo_psf_data",
     "get_diffraction_psf_data",
     "get_diffraction_mtf_data",
+    "get_strehl_vs_wavelength_data",
 ]
