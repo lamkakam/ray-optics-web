@@ -118,7 +118,7 @@ class TestGetAnalysisPlotDataSignatures:
 
         sig = inspect.signature(get_strehl_vs_wavelength_data)
         assert list(sig.parameters.keys()) == ["opm", "fieldIndex", "wavelength_samples", "num_rays"]
-        assert sig.parameters["wavelength_samples"].default == 100
+        assert sig.parameters["wavelength_samples"].default == 32
         assert sig.parameters["num_rays"].default == 21
 
 

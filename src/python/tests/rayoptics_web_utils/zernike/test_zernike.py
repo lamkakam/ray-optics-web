@@ -234,6 +234,39 @@ class TestUnnormalizedToRmsNormalized:
 class TestGetZernikeCoefficients:
     """Integration tests with Cooke Triplet model."""
 
+    def test_exit_pupil_grid_scales_opd_with_system_unit_wavelength_conversion(self):
+        """OPD scaling should use OpticalModel wavelength unit conversion."""
+        from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid
+
+        class FakeSpectralRegion:
+            central_wvl = 500.0
+
+        class FakeOpticalModel:
+            def __init__(self):
+                self.converted_wavelengths = []
+
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": FakeSpectralRegion()}
+                if key == "analysis_results":
+                    return {"parax_data": type("FakeParaxData", (), {"fod": type("FakeFod", (), {"exp_radius": 1.0})()})()}
+                raise KeyError(key)
+
+            def nm_to_sys_units(self, wavelength_nm):
+                self.converted_wavelengths.append(float(wavelength_nm))
+                return float(wavelength_nm) + 100.0
+
+        class FakeRayGrid:
+            grid = np.array([[[0.0]], [[0.0]], [[2.0]]])
+            grid_pkg = (None, [[(0.0, (0.5, 0.0), None, None)]])
+
+        opm = FakeOpticalModel()
+
+        grid = _extract_exit_pupil_grid(FakeRayGrid(), opm, wavelength_nm=1000.0)
+
+        assert opm.converted_wavelengths == [500.0, 1000.0]
+        assert grid[2, 0, 0] == pytest.approx(2.0 * 600.0 / 1100.0)
+
     def test_returns_dict_with_expected_keys(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)

@@ -185,7 +185,7 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
 
     opd_grid = rg.grid.copy()
     central_wvl = opm['optical_spec']['wvls'].central_wvl
-    opd_grid[2] *= central_wvl / wavelength_nm
+    opd_grid[2] *= opm.nm_to_sys_units(central_wvl) / opm.nm_to_sys_units(wavelength_nm)
 
     # First pass: collect raw exit pupil coordinates to determine radius
     exit_px_raw = np.full((n_rows, n_cols), np.nan)

@@ -63,7 +63,7 @@ def _restore_wavelengths(opm: OpticalModel, spectral_region, original_state) -> 
 def get_strehl_vs_wavelength_data(
     opm: OpticalModel,
     fieldIndex: int,
-    wavelength_samples: int = 100,
+    wavelength_samples: int = 32,
     num_rays: int = 21,
 ) -> dict:
     """
