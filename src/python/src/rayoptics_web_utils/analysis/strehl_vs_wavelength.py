@@ -18,7 +18,7 @@ def _wavelength_axis(wavelengths, wavelength_samples: int) -> np.ndarray:
         stop = max(configured_wavelengths)
     else:
         center = configured_wavelengths[0]
-        start = center - 200.0
+        start = max(center - 200.0, 201.0)
         stop = center + 200.0
 
     return np.linspace(start, stop, wavelength_samples)

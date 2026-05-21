@@ -29,7 +29,7 @@ def get_strehl_vs_wavelength_data(
 
 - Uses `opm["optical_spec"]["wvls"].wavelengths` as the configured wavelength source.
 - If two or more distinct wavelengths are configured, samples uniformly from the shortest to the longest configured wavelength.
-- If one wavelength is configured, or all configured wavelengths repeat the same value, samples uniformly from `center - 200 nm` to `center + 200 nm`.
+- If one wavelength is configured, or all configured wavelengths repeat the same value, samples uniformly from `center - 200 nm` to `center + 200 nm`, clipping the lower bound to `201 nm` when `center - 200 nm` would be too low.
 - Temporarily extends the model spectral region with the sampled wavelengths, while preserving the original central wavelength as the reference, because RayOptics traces only wavelengths present in the sequential model index table.
 - Restores the original wavelength list, weights, and reference wavelength after tracing, including when tracing raises.
 - Uses `make_ray_grid(opm, fi=fieldIndex, wavelength_nm=wavelength, num_rays=num_rays)` for each sample.

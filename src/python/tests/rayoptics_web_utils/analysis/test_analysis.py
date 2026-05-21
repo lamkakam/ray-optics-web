@@ -526,6 +526,45 @@ class TestGetStrehlVsWavelengthData:
         assert requested_wavelengths == pytest.approx(result["x"])
         assert result["y"] == pytest.approx([0.387562, 0.587562, 0.787562])
 
+    def test_low_repeated_wavelength_model_clips_axis_start_above_200_nm(self, cooke_triplet, monkeypatch):
+        import numpy as np
+        import rayoptics_web_utils.analysis.strehl_vs_wavelength as module
+
+        spectral_region = cooke_triplet["optical_spec"]["wvls"]
+        monkeypatch.setattr(spectral_region, "wavelengths", [300.0, 300.0])
+        monkeypatch.setattr(spectral_region, "spectral_wts", [1, 1])
+        monkeypatch.setattr(spectral_region, "reference_wvl", 0)
+
+        class FakeRayGrid:
+            pass
+
+        requested_wavelengths = []
+
+        def fake_make_ray_grid(opm, fi, wavelength_nm, num_rays):
+            requested_wavelengths.append(float(wavelength_nm))
+            return FakeRayGrid()
+
+        def fake_extract_exit_pupil_grid(rg, opm, wavelength_nm):
+            return np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
+
+        def fake_monochromatic_strehl(opd_waves):
+            return float(opd_waves[0, 0])
+
+        monkeypatch.setattr(module, "make_ray_grid", fake_make_ray_grid)
+        monkeypatch.setattr(module, "_extract_exit_pupil_grid", fake_extract_exit_pupil_grid)
+        monkeypatch.setattr(module, "_monochromatic_strehl", fake_monochromatic_strehl)
+
+        result = module.get_strehl_vs_wavelength_data(
+            cooke_triplet,
+            fieldIndex=2,
+            wavelength_samples=3,
+            num_rays=7,
+        )
+
+        assert result["x"] == pytest.approx([201.0, 350.5, 500.0])
+        assert requested_wavelengths == pytest.approx(result["x"])
+        assert result["y"] == pytest.approx([0.201, 0.3505, 0.5])
+
     def test_result_is_json_encodable(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_strehl_vs_wavelength_data
 
