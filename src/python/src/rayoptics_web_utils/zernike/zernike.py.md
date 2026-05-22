@@ -16,6 +16,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 | `noll_norm_factor` | `(n: int, m: int) -> float` | Noll normalization factor N_n^m = sqrt((2 - δ_{m,0})(n + 1)) |
 | `unnormalized_to_rms_normalized` | `(coeffs: list[float], num_terms: int, ordering: str = "noll") -> list[float]` | Convert unnormalized coefficients to RMS-normalized (divide by N_n^m) |
 | `fit_zernike` | `(opd_grid: NDArray, num_terms: int = 22, ordering: str = "noll") -> NDArray` | Least-squares fit of Zernike polynomials to a (3, N, N) OPD grid |
+| `_scale_opd_grid_to_wavelength` | `(opd_grid: NDArray, opm, wavelength_nm: float) -> NDArray` | Convert OPD values from central-wavelength waves to traced-wavelength waves |
 | `_extract_exit_pupil_grid` | `(rg, opm, wavelength_nm: float) -> NDArray` | Extract pre-computed exit pupil coords from RayGrid's `upd_grid` and build (3, N, N) grid with corrected OPD |
 | `get_zernike_coefficients` | `(opm, field_index, wvl_index, num_terms=22, num_rays=64, ordering="noll") -> dict` | High-level: compute Zernike coefficients for a field/wavelength |
 
@@ -25,7 +26,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 - **Fringe ordering**: 1-based index j. Groups by c = (n + |m|) / 2; within each group ordered by |m| descending, cos (+m) before sin (−m), m=0 last. Key landmarks: j=5=(2,+2) cos-astig, j=9=(4,0) primary spherical, j=16=(6,0) secondary spherical.
 - **Normalization**: `coefficients` are unnormalized (no `sqrt(n+1)` or `sqrt(2(n+1))` factors), matching ATMOS/OSLO convention. `rms_normalized_coefficients` divide each by the Noll normalization factor (see below). The same normalization factor formula is used for both orderings since it depends only on (n, |m|).
 - **OPD units**: all coefficients and WFE values are in **waves at the traced wavelength**.
-- **Wavelength correction**: `RayGrid.focus_wavefront` internally uses `1/opm.nm_to_sys_units(central_wvl)`, so `rg.grid[2]` is already in waves at the central wavelength. An additional factor of `opm.nm_to_sys_units(central_wvl) / opm.nm_to_sys_units(wavelength_nm)` converts to waves at the traced wavelength while respecting the model's wavelength unit conversion.
+- **Wavelength correction**: `RayGrid.focus_wavefront` internally uses `1/opm.nm_to_sys_units(central_wvl)`, so `rg.grid[2]` is already in waves at the central wavelength. `_scale_opd_grid_to_wavelength(...)` applies `opm.nm_to_sys_units(central_wvl) / opm.nm_to_sys_units(wavelength_nm)` to convert to waves at the traced wavelength while respecting the model's wavelength unit conversion. OPD-only Strehl and WFE paths use this helper directly without exit-pupil coordinate extraction.
 - **Noll sign convention**: even j → positive m (cosine), odd j → negative m (sine).
 - **Exit pupil coordinates**: Zernike fitting uses exit pupil coordinates extracted from `RayGrid.grid_pkg[1]` (the `upd_grid`), where `wave_abr_pre_calc_finite_pup` already computes `p_coord` (the EIC expansion point relative to the chief ray's exit pupil point). `_extract_exit_pupil_grid` normalizes by the **maximum radial extent** of the `p_coord` data (data-driven radius), avoiding the paraxial `fod.exp_radius` which can be wildly wrong for tilted/decentered systems.
 - **Vignetting**: `RayGrid` is created with `apply_vignetting=True` so vignetted rays (those that don't reach the image plane at off-axis fields) are excluded from the OPD grid. `check_apertures=True` (already the default) ensures rays blocked by apertures are clipped. Both are set explicitly for clarity.
@@ -111,6 +112,8 @@ The reference sphere is centered at the chief ray image point (`foc=0` → chief
 
 `_extract_exit_pupil_grid` reads pre-computed exit pupil coordinates from `RayGrid.grid_pkg[1]` (the `upd_grid`). During `trace_wavefront`, rayoptics calls `wave_abr_pre_calc_finite_pup` for each ray, which computes and returns `(pre_opd, p_coord, b4_pt, b4_dir)`. The `p_coord` is the ray's EIC expansion point relative to the chief ray's exit pupil point — identical to what was previously computed manually.
 
+OPD values in the returned grid are produced by `_scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm)`, so Zernike fitting preserves the same wavelength correction used by OPD-only analyses.
+
 For finite pupil systems: `upd_grid[i][j]` is a 4-tuple; `p_coord = entry[1]`, normalized by the maximum radial extent of all valid `p_coord` values (data-driven radius). Falls back to `abs(fod.exp_radius)` only if all radii are near-zero.
 For infinite ref sphere (telecentric): `upd_grid[i][j]` is a 6-tuple; uses entrance pupil coordinates from `rg.grid` (already normalized).
 
@@ -170,7 +173,8 @@ json_result = json.dumps(zern_data)
 Internal functions used by the module:
 
 - `fit_zernike(opd_grid, num_terms=22, ordering="noll")` — fit Zernike polynomials to an OPD grid
-- `_extract_exit_pupil_grid(rg, opm, wavelength_nm)` — extract OPD grid from RayGrid data
+- `_scale_opd_grid_to_wavelength(opd_grid, opm, wavelength_nm)` — wavelength-scale OPD values without coordinate extraction
+- `_extract_exit_pupil_grid(rg, opm, wavelength_nm)` — extract exit-pupil coordinates and wavelength-scaled OPD from RayGrid data
 - `noll_to_nm(j)` — convert Noll index j (1-based) to (n, m) radial order and frequency
 - `fringe_to_nm(j)` — convert Fringe index j to (n, m)
 

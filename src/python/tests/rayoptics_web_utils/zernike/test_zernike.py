@@ -234,6 +234,36 @@ class TestUnnormalizedToRmsNormalized:
 class TestGetZernikeCoefficients:
     """Integration tests with Cooke Triplet model."""
 
+    def test_scale_opd_grid_to_wavelength_uses_system_unit_wavelength_conversion(self):
+        """OPD-only scaling should use OpticalModel wavelength unit conversion."""
+        from rayoptics_web_utils.zernike.zernike import _scale_opd_grid_to_wavelength
+
+        class FakeSpectralRegion:
+            central_wvl = 500.0
+
+        class FakeOpticalModel:
+            def __init__(self):
+                self.converted_wavelengths = []
+
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": FakeSpectralRegion()}
+                raise KeyError(key)
+
+            def nm_to_sys_units(self, wavelength_nm):
+                self.converted_wavelengths.append(float(wavelength_nm))
+                return float(wavelength_nm) + 100.0
+
+        opm = FakeOpticalModel()
+        opd_grid = np.array([[2.0, np.nan]])
+
+        result = _scale_opd_grid_to_wavelength(opd_grid, opm, wavelength_nm=1000.0)
+
+        assert opm.converted_wavelengths == [500.0, 1000.0]
+        expected = np.array([[2.0 * 600.0 / 1100.0, np.nan]], dtype=float)
+        np.testing.assert_allclose(result, expected, equal_nan=True)
+        assert result is not opd_grid
+
     def test_exit_pupil_grid_scales_opd_with_system_unit_wavelength_conversion(self):
         """OPD scaling should use OpticalModel wavelength unit conversion."""
         from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid

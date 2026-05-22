@@ -2,6 +2,7 @@
 
 import json
 
+import numpy as np
 import pytest
 
 
@@ -31,6 +32,72 @@ def fresh_cooke_triplet():
     sm.ifcs[-1].profile.r = 0
     opm.update_model()
     return opm
+
+
+class TestRmsWavefrontErrorOperand:
+    def test_uses_scaled_opd_grid_without_exit_pupil_extraction(self, monkeypatch):
+        import rayoptics_web_utils.optimization.operands as operands
+
+        class FakeOpticalModel:
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": type("FakeWavelengths", (), {"wavelengths": [500.0, 1000.0]})()}
+                raise KeyError(key)
+
+        class FakeRayGrid:
+            grid = np.array([[[0.0, 0.0]], [[0.0, 0.0]], [[1.0, 3.0]]])
+
+        opm = FakeOpticalModel()
+
+        def fake_make_ray_grid(opm_arg, fi, wavelength_nm, num_rays):
+            assert opm_arg is opm
+            assert fi == 3
+            assert wavelength_nm == 1000.0
+            assert num_rays == 5
+            return FakeRayGrid()
+
+        def fake_scale_opd_grid_to_wavelength(opd_grid, opm_arg, wavelength_nm):
+            assert opm_arg is opm
+            assert wavelength_nm == 1000.0
+            return opd_grid * 2.0
+
+        monkeypatch.setattr(operands, "make_ray_grid", fake_make_ray_grid)
+        monkeypatch.setattr(operands, "_extract_exit_pupil_grid", pytest.fail, raising=False)
+        monkeypatch.setattr(operands, "_scale_opd_grid_to_wavelength", fake_scale_opd_grid_to_wavelength)
+
+        result = operands.compute_rms_wavefront_error(
+            opm,
+            field_index=3,
+            wavelength_index=1,
+            options={"num_rays": 5},
+        )
+
+        assert result == pytest.approx(np.std(np.array([2.0, 6.0])))
+
+    def test_returns_penalty_when_scaled_opd_has_no_valid_samples(self, monkeypatch):
+        import rayoptics_web_utils.optimization.operands as operands
+
+        class FakeOpticalModel:
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": type("FakeWavelengths", (), {"wavelengths": [500.0]})()}
+                raise KeyError(key)
+
+        class FakeRayGrid:
+            grid = np.array([[[0.0]], [[0.0]], [[0.0]]])
+
+        monkeypatch.setattr(operands, "make_ray_grid", lambda *args, **kwargs: FakeRayGrid())
+        monkeypatch.setattr(operands, "_extract_exit_pupil_grid", pytest.fail, raising=False)
+        monkeypatch.setattr(operands, "_scale_opd_grid_to_wavelength", lambda *args, **kwargs: np.array([[np.nan]]))
+
+        result = operands.compute_rms_wavefront_error(
+            FakeOpticalModel(),
+            field_index=0,
+            wavelength_index=0,
+            options=None,
+        )
+
+        assert result == operands.PENALTY_RESIDUAL
 
 
 class TestEvaluateOptimizationProblem:

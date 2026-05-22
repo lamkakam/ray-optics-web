@@ -9,7 +9,7 @@ from rayoptics.environment import OpticalModel
 from rayoptics_web_utils.analysis import get_opd_fan_data
 from rayoptics_web_utils.analysis import get_ray_fan_data
 from rayoptics_web_utils.raygrid import make_ray_grid
-from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid
+from rayoptics_web_utils.zernike.zernike import _scale_opd_grid_to_wavelength
 
 from ._types import OperandEvaluator, OperandOptions, OperandSample
 from .targets import validate_surface_index
@@ -84,8 +84,8 @@ def compute_rms_wavefront_error(
     validate_surface_index(wavelengths, wavelength_index, "wavelength index")
     wavelength_nm = wavelengths[wavelength_index]
     ray_grid = make_ray_grid(opm, fi=field_index, wavelength_nm=wavelength_nm, num_rays=num_rays)
-    grid = _extract_exit_pupil_grid(ray_grid, opm, wavelength_nm)
-    valid = grid[2][~np.isnan(grid[2])]
+    opd_grid = _scale_opd_grid_to_wavelength(ray_grid.grid[2], opm, wavelength_nm)
+    valid = opd_grid[~np.isnan(opd_grid)]
     if len(valid) == 0:
         return PENALTY_RESIDUAL
     return float(np.std(valid))

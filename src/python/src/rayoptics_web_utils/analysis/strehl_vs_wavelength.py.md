@@ -33,5 +33,5 @@ def get_strehl_vs_wavelength_data(
 - Temporarily extends the model spectral region with the sampled wavelengths, while preserving the original central wavelength as the reference, because RayOptics traces only wavelengths present in the sequential model index table.
 - Restores the original wavelength list, weights, and reference wavelength after tracing, including when tracing raises.
 - Uses `make_ray_grid(opm, fi=fieldIndex, wavelength_nm=wavelength, num_rays=num_rays)` for each sample.
-- Uses `_extract_exit_pupil_grid(...)` and `_monochromatic_strehl(...)` from the Zernike module so Strehl matches existing wavefront and focusing calculations, including OPD wavelength scaling via `opm.nm_to_sys_units(...)`.
+- Uses `_scale_opd_grid_to_wavelength(ray_grid.grid[2], ...)` and `_monochromatic_strehl(...)` from the Zernike module. This path consumes only OPD samples and does not extract exit-pupil coordinates, while preserving OPD wavelength scaling via `opm.nm_to_sys_units(...)`.
 - Returns plain Python `float` values for wavelength and Strehl samples so the result is JSON encodable.
