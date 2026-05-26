@@ -240,7 +240,7 @@ Each entry contains:
 - `scipy.optimize.least_squares`
 - `rayoptics_web_utils.raygrid.make_ray_grid`
 - `rayoptics_web_utils.analysis.get_opd_fan_data`
-- `rayoptics_web_utils.zernike.zernike._extract_exit_pupil_grid`
+- `rayoptics_web_utils.zernike.zernike._scale_opd_grid_to_wavelength`
 - RayOptics sequential model access via `opm["seq_model"]`
 
 ## Usages

@@ -23,7 +23,7 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 
 import rayoptics.optical.model_constants as mc
-from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid, _monochromatic_strehl
+from rayoptics_web_utils.zernike.zernike import _monochromatic_strehl, _scale_opd_grid_to_wavelength
 
 
 def _get_paraxial_image_distance(opm) -> float:
@@ -142,8 +142,8 @@ def _compute_mono_wfe(opm, fi_list: list[int], num_rays: int) -> float:
     wfe_values = []
     for fi in fi_list:
         rg = make_ray_grid(opm, fi=fi, wavelength_nm=central_wvl, num_rays=num_rays)
-        grid = _extract_exit_pupil_grid(rg, opm, central_wvl)
-        wfe_values.append(_opd_wfe(grid[2]))
+        opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, central_wvl)
+        wfe_values.append(_opd_wfe(opd_grid))
 
     return float(np.sqrt(np.mean(np.array(wfe_values)**2)))
 
@@ -163,8 +163,8 @@ def _compute_poly_wfe(opm, fi_list: list[int], num_rays: int) -> float:
         for wi, wvl in enumerate(wavelengths):
             w = spectral_wts[wi] if wi < len(spectral_wts) else 1.0
             rg = make_ray_grid(opm, fi=fi, wavelength_nm=wvl, num_rays=num_rays)
-            grid = _extract_exit_pupil_grid(rg, opm, wvl)
-            wl_wfe.append(_opd_wfe(grid[2]))
+            opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wvl)
+            wl_wfe.append(_opd_wfe(opd_grid))
             wl_weights.append(w)
 
         total_w = sum(wl_weights)
@@ -188,8 +188,8 @@ def _compute_mono_strehl(opm, fi_list: list[int], num_rays: int) -> float:
     strehl_values = []
     for fi in fi_list:
         rg = make_ray_grid(opm, fi=fi, wavelength_nm=central_wvl, num_rays=num_rays)
-        grid = _extract_exit_pupil_grid(rg, opm, central_wvl)
-        s = _monochromatic_strehl(grid[2])
+        opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, central_wvl)
+        s = _monochromatic_strehl(opd_grid)
         strehl_values.append(s)
 
     return float(np.mean(strehl_values))
@@ -215,8 +215,8 @@ def _compute_poly_strehl(opm, fi_list: list[int], num_rays: int) -> float:
         for wi, wvl in enumerate(wavelengths):
             w = spectral_wts[wi] if wi < len(spectral_wts) else 1.0
             rg = make_ray_grid(opm, fi=fi, wavelength_nm=wvl, num_rays=num_rays)
-            grid = _extract_exit_pupil_grid(rg, opm, wvl)
-            s = _monochromatic_strehl(grid[2])
+            opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wvl)
+            s = _monochromatic_strehl(opd_grid)
             wl_strehl.append(s)
             wl_weights.append(w)
 

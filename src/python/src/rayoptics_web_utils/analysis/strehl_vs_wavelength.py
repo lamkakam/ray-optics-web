@@ -4,7 +4,7 @@ import numpy as np
 from rayoptics.environment import OpticalModel
 
 from rayoptics_web_utils.raygrid import make_ray_grid
-from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid, _monochromatic_strehl
+from rayoptics_web_utils.zernike.zernike import _monochromatic_strehl, _scale_opd_grid_to_wavelength
 
 
 def _wavelength_axis(wavelengths, wavelength_samples: int) -> np.ndarray:
@@ -77,8 +77,8 @@ def get_strehl_vs_wavelength_data(
         for wavelength_nm in wavelengths:
             wavelength = float(wavelength_nm)
             ray_grid = make_ray_grid(opm, fi=fieldIndex, wavelength_nm=wavelength, num_rays=num_rays)
-            exit_pupil_grid = _extract_exit_pupil_grid(ray_grid, opm, wavelength)
-            strehl = float(_monochromatic_strehl(exit_pupil_grid[2]))
+            opd_grid = _scale_opd_grid_to_wavelength(ray_grid.grid[2], opm, wavelength)
+            strehl = float(_monochromatic_strehl(opd_grid))
             strehl_values.append(min(max(strehl, 0.0), 1.0))
     finally:
         _restore_wavelengths(opm, spectral_region, original_state)

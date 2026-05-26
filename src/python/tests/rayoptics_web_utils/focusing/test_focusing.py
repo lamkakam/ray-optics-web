@@ -380,6 +380,143 @@ class TestRmsAggregationUsesQuadraticMean:
         assert result == pytest.approx(expected_arithmetic, rel=1e-6)
 
 
+class TestOpdOnlyPaths:
+    """Tests that Strehl/WFE paths consume OPD without exit-pupil coordinate extraction."""
+
+    @staticmethod
+    def _fake_opm():
+        class FakeWavelengths:
+            central_wvl = 500.0
+            wavelengths = [500.0, 1000.0]
+            spectral_wts = [1.0, 3.0]
+
+        class FakeOpticalModel:
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": FakeWavelengths()}
+                raise KeyError(key)
+
+        return FakeOpticalModel()
+
+    def test_mono_wfe_uses_scaled_opd_only(self, monkeypatch):
+        import rayoptics_web_utils.focusing.focusing as focusing
+        import rayoptics_web_utils.raygrid as raygrid
+
+        opm = self._fake_opm()
+        captured_opds = []
+
+        class FakeRayGrid:
+            grid = np.array([[[0.0]], [[0.0]], [[0.25]]])
+
+        def fake_make_ray_grid(opm_arg, fi, wavelength_nm, num_rays):
+            assert opm_arg is opm
+            assert fi == 4
+            assert wavelength_nm == 500.0
+            assert num_rays == 9
+            return FakeRayGrid()
+
+        def fake_scale_opd_grid_to_wavelength(opd_grid, opm_arg, wavelength_nm):
+            assert opm_arg is opm
+            assert wavelength_nm == 500.0
+            return opd_grid + 0.5
+
+        def fake_opd_wfe(opd_grid):
+            captured_opds.append(opd_grid.copy())
+            return float(opd_grid[0, 0])
+
+        monkeypatch.setattr(raygrid, "make_ray_grid", fake_make_ray_grid)
+        monkeypatch.setattr(focusing, "_extract_exit_pupil_grid", pytest.fail, raising=False)
+        monkeypatch.setattr(focusing, "_scale_opd_grid_to_wavelength", fake_scale_opd_grid_to_wavelength)
+        monkeypatch.setattr(focusing, "_opd_wfe", fake_opd_wfe)
+
+        result = focusing._compute_mono_wfe(opm, [4], num_rays=9)
+
+        assert result == pytest.approx(0.75)
+        assert captured_opds[0] == pytest.approx(np.array([[0.75]]))
+
+    def test_poly_wfe_uses_scaled_opd_only(self, monkeypatch):
+        import rayoptics_web_utils.focusing.focusing as focusing
+        import rayoptics_web_utils.raygrid as raygrid
+
+        opm = self._fake_opm()
+        scaled_wavelengths = []
+
+        class FakeRayGrid:
+            def __init__(self, wavelength_nm):
+                self.grid = np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
+
+        def fake_make_ray_grid(opm_arg, fi, wavelength_nm, num_rays):
+            assert opm_arg is opm
+            assert fi == 2
+            assert num_rays == 9
+            return FakeRayGrid(wavelength_nm)
+
+        def fake_scale_opd_grid_to_wavelength(opd_grid, opm_arg, wavelength_nm):
+            assert opm_arg is opm
+            scaled_wavelengths.append(wavelength_nm)
+            return opd_grid
+
+        monkeypatch.setattr(raygrid, "make_ray_grid", fake_make_ray_grid)
+        monkeypatch.setattr(focusing, "_extract_exit_pupil_grid", pytest.fail, raising=False)
+        monkeypatch.setattr(focusing, "_scale_opd_grid_to_wavelength", fake_scale_opd_grid_to_wavelength)
+        monkeypatch.setattr(focusing, "_opd_wfe", lambda opd_grid: float(opd_grid[0, 0]))
+
+        result = focusing._compute_poly_wfe(opm, [2], num_rays=9)
+
+        expected = np.sqrt((0.5**2 * 1.0 + 1.0**2 * 3.0) / 4.0)
+        assert result == pytest.approx(expected)
+        assert scaled_wavelengths == [500.0, 1000.0]
+
+    def test_mono_strehl_uses_scaled_opd_only(self, monkeypatch):
+        import rayoptics_web_utils.focusing.focusing as focusing
+        import rayoptics_web_utils.raygrid as raygrid
+
+        opm = self._fake_opm()
+
+        class FakeRayGrid:
+            grid = np.array([[[0.0]], [[0.0]], [[0.25]]])
+
+        monkeypatch.setattr(raygrid, "make_ray_grid", lambda *args, **kwargs: FakeRayGrid())
+        monkeypatch.setattr(focusing, "_extract_exit_pupil_grid", pytest.fail, raising=False)
+        monkeypatch.setattr(focusing, "_scale_opd_grid_to_wavelength", lambda opd, _opm, _wvl: opd + 0.25)
+        monkeypatch.setattr(focusing, "_monochromatic_strehl", lambda opd_grid: float(opd_grid[0, 0]))
+
+        result = focusing._compute_mono_strehl(opm, [0], num_rays=9)
+
+        assert result == pytest.approx(0.5)
+
+    def test_poly_strehl_uses_scaled_opd_only(self, monkeypatch):
+        import rayoptics_web_utils.focusing.focusing as focusing
+        import rayoptics_web_utils.raygrid as raygrid
+
+        opm = self._fake_opm()
+        scaled_wavelengths = []
+
+        class FakeRayGrid:
+            def __init__(self, wavelength_nm):
+                self.grid = np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
+
+        monkeypatch.setattr(
+            raygrid,
+            "make_ray_grid",
+            lambda _opm, fi, wavelength_nm, num_rays: FakeRayGrid(wavelength_nm),
+        )
+        monkeypatch.setattr(focusing, "_extract_exit_pupil_grid", pytest.fail, raising=False)
+
+        def fake_scale_opd_grid_to_wavelength(opd_grid, _opm, wavelength_nm):
+            scaled_wavelengths.append(wavelength_nm)
+            return opd_grid
+
+        monkeypatch.setattr(focusing, "_scale_opd_grid_to_wavelength", fake_scale_opd_grid_to_wavelength)
+        monkeypatch.setattr(focusing, "_monochromatic_strehl", lambda opd_grid: float(opd_grid[0, 0]))
+
+        result = focusing._compute_poly_strehl(opm, [0], num_rays=9)
+
+        expected = (0.5 * 1.0 + 1.0 * 3.0) / 4.0
+        assert result == pytest.approx(expected)
+        assert scaled_wavelengths == [500.0, 1000.0]
+
+
 class TestFocusingEdgeCases:
     """Edge case tests for focusing functions."""
 

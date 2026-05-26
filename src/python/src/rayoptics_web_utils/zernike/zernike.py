@@ -161,6 +161,13 @@ def _monochromatic_strehl(opd_waves: NDArray) -> float:
     return float(np.abs(np.mean(phase)) ** 2)
 
 
+def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) -> NDArray:
+    """Scale OPD values from the model's central wavelength to wavelength_nm."""
+    central_wvl = opm['optical_spec']['wvls'].central_wvl
+    scale = opm.nm_to_sys_units(central_wvl) / opm.nm_to_sys_units(wavelength_nm)
+    return np.asarray(opd_grid, dtype=float) * scale
+
+
 def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
     """Build (3, N, N) grid with exit pupil coordinates and corrected OPD.
 
@@ -183,9 +190,7 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
     n_rows = len(upd_grid)
     n_cols = len(upd_grid[0])
 
-    opd_grid = rg.grid.copy()
-    central_wvl = opm['optical_spec']['wvls'].central_wvl
-    opd_grid[2] *= opm.nm_to_sys_units(central_wvl) / opm.nm_to_sys_units(wavelength_nm)
+    opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm)
 
     # First pass: collect raw exit pupil coordinates to determine radius
     exit_px_raw = np.full((n_rows, n_cols), np.nan)
@@ -225,7 +230,7 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
         exit_px = exit_px_raw
         exit_py = exit_py_raw
 
-    return np.array([exit_px, exit_py, opd_grid[2]])
+    return np.array([exit_px, exit_py, opd_grid])
 
 
 def get_zernike_coefficients(

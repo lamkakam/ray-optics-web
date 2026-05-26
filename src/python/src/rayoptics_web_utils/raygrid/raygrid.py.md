@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provides a factory function `make_ray_grid` that centralises the construction of `RayGrid` instances with the standard aperture and vignetting settings used throughout the package. Eliminates the 7-argument `RayGrid(...)` duplication that previously appeared in `plotting.py` (×2), `zernike.py` (×1), and `focusing.py` (×4).
+Provides a factory function `make_ray_grid` that centralises the construction of `RayGrid` instances with the standard aperture and vignetting settings used throughout the package. Eliminates direct multi-argument `RayGrid(...)` construction at call sites that need wavefront grids.
 
 ## Exports
 
@@ -37,5 +37,7 @@ Creates a `RayGrid` with `check_apertures=True` and `apply_vignetting=True` alwa
 ## Usages
 
 - `analysis/analysis.py` — `get_wavefront_data`, `get_diffraction_psf_data`, and `get_diffraction_mtf_data`.
+- `analysis/strehl_vs_wavelength.py` — `get_strehl_vs_wavelength_data`.
 - `zernike/zernike.py` — `get_zernike_coefficients`.
 - `focusing/focusing.py` — `_compute_mono_wfe`, `_compute_poly_wfe`, `_compute_mono_strehl`, `_compute_poly_strehl`.
+- `optimization/operands.py` — `compute_rms_wavefront_error`.

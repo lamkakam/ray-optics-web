@@ -503,16 +503,20 @@ class TestGetStrehlVsWavelengthData:
             assert opm is cooke_triplet
             assert fi == 2
             assert num_rays == 7
-            return FakeRayGrid()
+            ray_grid = FakeRayGrid()
+            ray_grid.grid = np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
+            return ray_grid
 
-        def fake_extract_exit_pupil_grid(rg, opm, wavelength_nm):
-            return np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
+        def fake_scale_opd_grid_to_wavelength(opd_grid, opm, wavelength_nm):
+            assert opm is cooke_triplet
+            return opd_grid
 
         def fake_monochromatic_strehl(opd_waves):
             return float(opd_waves[0, 0])
 
         monkeypatch.setattr(module, "make_ray_grid", fake_make_ray_grid)
-        monkeypatch.setattr(module, "_extract_exit_pupil_grid", fake_extract_exit_pupil_grid)
+        monkeypatch.setattr(module, "_extract_exit_pupil_grid", pytest.fail, raising=False)
+        monkeypatch.setattr(module, "_scale_opd_grid_to_wavelength", fake_scale_opd_grid_to_wavelength)
         monkeypatch.setattr(module, "_monochromatic_strehl", fake_monochromatic_strehl)
 
         result = module.get_strehl_vs_wavelength_data(
@@ -542,16 +546,20 @@ class TestGetStrehlVsWavelengthData:
 
         def fake_make_ray_grid(opm, fi, wavelength_nm, num_rays):
             requested_wavelengths.append(float(wavelength_nm))
-            return FakeRayGrid()
+            ray_grid = FakeRayGrid()
+            ray_grid.grid = np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
+            return ray_grid
 
-        def fake_extract_exit_pupil_grid(rg, opm, wavelength_nm):
-            return np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
+        def fake_scale_opd_grid_to_wavelength(opd_grid, opm, wavelength_nm):
+            assert opm is cooke_triplet
+            return opd_grid
 
         def fake_monochromatic_strehl(opd_waves):
             return float(opd_waves[0, 0])
 
         monkeypatch.setattr(module, "make_ray_grid", fake_make_ray_grid)
-        monkeypatch.setattr(module, "_extract_exit_pupil_grid", fake_extract_exit_pupil_grid)
+        monkeypatch.setattr(module, "_extract_exit_pupil_grid", pytest.fail, raising=False)
+        monkeypatch.setattr(module, "_scale_opd_grid_to_wavelength", fake_scale_opd_grid_to_wavelength)
         monkeypatch.setattr(module, "_monochromatic_strehl", fake_monochromatic_strehl)
 
         result = module.get_strehl_vs_wavelength_data(

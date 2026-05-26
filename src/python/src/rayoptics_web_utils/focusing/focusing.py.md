@@ -75,6 +75,11 @@ The Strehl-based functions therefore:
 - **Optimize** using RMS wavefront error `std(OPD_grid)` (smooth, unimodal)
 - **Report** the true Strehl `|mean(exp(i·2π·W))|²` at the optimized position
 
+Both the WFE objective helpers and Strehl reporting helpers operate directly on
+`RayGrid.grid[2]`, using `_scale_opd_grid_to_wavelength(...)` to convert OPD from
+central-wavelength waves to traced-wavelength waves. They do not extract exit-pupil
+coordinates because these calculations only consume OPD values.
+
 ## Private helpers
 
 | Function | Returns | Used by |
@@ -94,7 +99,7 @@ The Strehl-based functions therefore:
 
 - `scipy.optimize.minimize_scalar` — bounded 1D optimizer
 - `rayoptics_web_utils.raygrid.make_ray_grid` — RayGrid factory (replaces direct `RayGrid(...)` calls)
-- `rayoptics_web_utils.zernike.zernike._extract_exit_pupil_grid` — exit pupil OPD grid
+- `rayoptics_web_utils.zernike.zernike._scale_opd_grid_to_wavelength` — OPD wavelength scaling
 - `rayoptics_web_utils.zernike.zernike._monochromatic_strehl` — true Strehl formula
 
 ## Usages
