@@ -11,9 +11,9 @@ def get_diffraction_mtf_data(
     opm: OpticalModel,
     field_idx: int,
     wvl_idx: int,
+    opd_aim_point: str = "chief_ray",
     num_rays: int = 64,
     max_dims: int = 256,
-    opd_aim_point: str = "chief_ray",
 ) -> dict: ...
 ```
 

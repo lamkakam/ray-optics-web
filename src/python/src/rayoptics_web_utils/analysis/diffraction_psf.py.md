@@ -11,9 +11,9 @@ def get_diffraction_psf_data(
     opm: OpticalModel,
     fi: int,
     wvl_idx: int,
+    opd_aim_point: str = "chief_ray",
     num_rays: int = 64,
     max_dims: int = 256,
-    opd_aim_point: str = "chief_ray",
 ) -> dict: ...
 ```
 

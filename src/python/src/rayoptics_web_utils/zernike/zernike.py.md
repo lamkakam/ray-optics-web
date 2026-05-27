@@ -18,7 +18,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 | `fit_zernike` | `(opd_grid: NDArray, num_terms: int = 22, ordering: str = "noll") -> NDArray` | Least-squares fit of Zernike polynomials to a (3, N, N) OPD grid |
 | `_scale_opd_grid_to_wavelength` | `(opd_grid: NDArray, opm, wavelength_nm: float) -> NDArray` | Convert OPD values from central-wavelength waves to traced-wavelength waves |
 | `_extract_exit_pupil_grid` | `(rg, opm, wavelength_nm: float) -> NDArray` | Extract pre-computed exit pupil coords from RayGrid's `upd_grid` and build (3, N, N) grid with corrected OPD |
-| `get_zernike_coefficients` | `(opm, field_index, wvl_index, num_terms=22, num_rays=64, ordering="noll", opd_aim_point="chief_ray") -> dict` | High-level: compute Zernike coefficients for a field/wavelength |
+| `get_zernike_coefficients` | `(opm, field_index, wvl_index, opd_aim_point="chief_ray", num_terms=22, num_rays=64, ordering="noll") -> dict` | High-level: compute Zernike coefficients for a field/wavelength |
 
 ## Conventions
 
@@ -152,6 +152,7 @@ zern_data = get_zernike_coefficients(
     opm,
     field_index,
     wavelength_index,
+    opd_aim_point="chief_ray",
     num_terms=num_terms,
     ordering=ordering
 )

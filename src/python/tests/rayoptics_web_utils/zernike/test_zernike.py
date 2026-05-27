@@ -302,6 +302,15 @@ class TestGetZernikeCoefficients:
         import inspect
 
         sig = inspect.signature(get_zernike_coefficients)
+        assert list(sig.parameters.keys()) == [
+            "opm",
+            "field_index",
+            "wvl_index",
+            "opd_aim_point",
+            "num_terms",
+            "num_rays",
+            "ordering",
+        ]
         assert sig.parameters["opd_aim_point"].default == "chief_ray"
         result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
         assert isinstance(result, dict)

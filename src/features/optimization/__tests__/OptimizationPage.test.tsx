@@ -944,7 +944,7 @@ describe("OptimizationPage", () => {
       resolveOptimization = resolve;
     });
 
-    const optimizeOpm = jest.fn().mockImplementation(async (_model, _config, onProgress) => {
+    const optimizeOpm = jest.fn().mockImplementation(async (_model, _config, _opdAimPoint, onProgress) => {
       await onProgress?.([
         { iteration: 0, merit_function_value: 100, log10_merit_function_value: 2 },
       ]);

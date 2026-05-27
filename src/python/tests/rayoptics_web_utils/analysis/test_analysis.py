@@ -84,7 +84,7 @@ class TestGetAnalysisPlotDataSignatures:
         import inspect
 
         sig = inspect.signature(get_wavefront_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "num_rays", "opd_aim_point"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "opd_aim_point", "num_rays"]
         assert sig.parameters["num_rays"].default == 64
         assert sig.parameters["opd_aim_point"].default == "chief_ray"
 
@@ -101,7 +101,7 @@ class TestGetAnalysisPlotDataSignatures:
         import inspect
 
         sig = inspect.signature(get_diffraction_psf_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "num_rays", "max_dims", "opd_aim_point"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "opd_aim_point", "num_rays", "max_dims"]
         assert sig.parameters["num_rays"].default == 64
         assert sig.parameters["max_dims"].default == 256
         assert sig.parameters["opd_aim_point"].default == "chief_ray"
@@ -111,7 +111,7 @@ class TestGetAnalysisPlotDataSignatures:
         import inspect
 
         sig = inspect.signature(get_diffraction_mtf_data)
-        assert list(sig.parameters.keys()) == ["opm", "field_idx", "wvl_idx", "num_rays", "max_dims", "opd_aim_point"]
+        assert list(sig.parameters.keys()) == ["opm", "field_idx", "wvl_idx", "opd_aim_point", "num_rays", "max_dims"]
         assert sig.parameters["num_rays"].default == 64
         assert sig.parameters["max_dims"].default == 256
         assert sig.parameters["opd_aim_point"].default == "chief_ray"
@@ -121,7 +121,7 @@ class TestGetAnalysisPlotDataSignatures:
         import inspect
 
         sig = inspect.signature(get_strehl_vs_wavelength_data)
-        assert list(sig.parameters.keys()) == ["opm", "fieldIndex", "wavelength_samples", "num_rays", "opd_aim_point"]
+        assert list(sig.parameters.keys()) == ["opm", "fieldIndex", "opd_aim_point", "wavelength_samples", "num_rays"]
         assert sig.parameters["wavelength_samples"].default == 32
         assert sig.parameters["num_rays"].default == 21
         assert sig.parameters["opd_aim_point"].default == "chief_ray"

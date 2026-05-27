@@ -67,7 +67,7 @@ export function LensEditor({
       const committedOpticalModel = lensStore.getState().committedOpticalModel;
       if (!committedOpticalModel) throw new Error("No optical model computed yet");
       const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
-      return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, numTerms, ordering, opdAimPoint);
+      return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, opdAimPoint, numTerms, ordering);
     },
     [proxy, lensStore, opdAimPoint]
   );

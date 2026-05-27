@@ -237,10 +237,10 @@ def get_zernike_coefficients(
     opm,
     field_index: int,
     wvl_index: int,
+    opd_aim_point: str = "chief_ray",
     num_terms: int = 22,
     num_rays: int = 64,
     ordering: str = "noll",
-    opd_aim_point: str = "chief_ray",
 ) -> dict:
     """Compute Zernike coefficients for a given field and wavelength.
 

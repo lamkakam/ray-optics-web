@@ -63,9 +63,9 @@ def _restore_wavelengths(opm: OpticalModel, spectral_region, original_state) -> 
 def get_strehl_vs_wavelength_data(
     opm: OpticalModel,
     fieldIndex: int,
+    opd_aim_point: str = "chief_ray",
     wavelength_samples: int = 32,
     num_rays: int = 21,
-    opd_aim_point: str = "chief_ray",
 ) -> dict:
     """
     Return Strehl ratio samples across the model wavelength range for one field.

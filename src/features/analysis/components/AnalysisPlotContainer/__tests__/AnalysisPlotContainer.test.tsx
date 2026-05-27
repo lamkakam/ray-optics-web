@@ -402,7 +402,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedWavelengthIndex).toBe(2);
     await waitFor(() => {
-      expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 2, undefined, "centroid");
+      expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 2, "centroid");
     });
   });
 
@@ -464,7 +464,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("diffractionPSF");
     await waitFor(() => {
-      expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(testModel, 0, 0, undefined, undefined, "centroid");
+      expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(testModel, 0, 0, "centroid");
     });
     expect(store.getState().diffractionPsfData).toEqual(diffractionPsfData);
   });
@@ -477,7 +477,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("diffractionMTF");
     await waitFor(() => {
-      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(testModel, 0, 0, undefined, undefined, "centroid");
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(testModel, 0, 0, "centroid");
     });
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });
@@ -491,7 +491,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedWavelengthIndex).toBe(2);
     await waitFor(() => {
-      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(testModel, 0, 2, undefined, undefined, "centroid");
+      expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(testModel, 0, 2, "centroid");
     });
     expect(store.getState().diffractionMtfData).toEqual(diffractionMtfData);
   });
@@ -504,7 +504,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("wavefrontMap");
     await waitFor(() => {
-      expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 0, undefined, "centroid");
+      expect(proxy.getWavefrontData).toHaveBeenCalledWith(testModel, 0, 0, "centroid");
     });
     expect(store.getState().wavefrontMapData).toEqual(wavefrontMapData);
   });
@@ -518,7 +518,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("strehlVsWavelength");
     await waitFor(() => {
-      expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(testModel, 1, undefined, undefined, "centroid");
+      expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(testModel, 1, "centroid");
     });
     expect(store.getState().strehlVsWavelengthData).toEqual(strehlVsWavelengthData);
   });

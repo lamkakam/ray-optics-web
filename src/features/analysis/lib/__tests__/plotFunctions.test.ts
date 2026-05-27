@@ -139,7 +139,7 @@ describe("loadAnalysisPlot", () => {
       opdAimPoint: "centroid",
     });
 
-    expect(proxy.getWavefrontData).toHaveBeenCalledWith(mockModel, 1, 2, undefined, "centroid");
+    expect(proxy.getWavefrontData).toHaveBeenCalledWith(mockModel, 1, 2, "centroid");
     expect(result).toEqual({
       kind: "wavefrontMap",
       wavefrontMapData: undefined,
@@ -222,7 +222,7 @@ describe("loadAnalysisPlot", () => {
       opdAimPoint: "centroid",
     });
 
-    expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(mockModel, 2, 1, undefined, undefined, "centroid");
+    expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(mockModel, 2, 1, "centroid");
     expect(result).toEqual({
       kind: "diffractionPSF",
       diffractionPsfData: undefined,
@@ -240,7 +240,7 @@ describe("loadAnalysisPlot", () => {
       opdAimPoint: "centroid",
     });
 
-    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(mockModel, 2, 1, undefined, undefined, "centroid");
+    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(mockModel, 2, 1, "centroid");
     expect(result).toEqual({
       kind: "diffractionMTF",
       diffractionMtfData: undefined,
@@ -258,7 +258,7 @@ describe("loadAnalysisPlot", () => {
       opdAimPoint: "centroid",
     });
 
-    expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(mockModel, 1, undefined, undefined, "centroid");
+    expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(mockModel, 1, "centroid");
     expect(result).toEqual({
       kind: "strehlVsWavelength",
       strehlVsWavelengthData,

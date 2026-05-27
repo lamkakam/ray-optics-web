@@ -394,7 +394,7 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => {
-      expect(proxy!.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, undefined, undefined, "centroid");
+      expect(proxy!.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, "centroid");
     });
     expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
   });

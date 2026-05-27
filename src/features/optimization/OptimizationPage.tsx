@@ -353,10 +353,10 @@ export function OptimizationPage({
       const report = await proxy.optimizeOpm(
         optimizationModel,
         config,
+        opdAimPoint,
         comlinkProxy((progress: ReadonlyArray<OptimizationProgressEntry>) => {
           setOptimizationProgress(progress);
         }),
-        opdAimPoint,
       );
       setOptimizationProgress(report.optimization_progress ?? []);
       optimizationStore.getState().applyOptimizationResult(report);

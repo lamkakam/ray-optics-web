@@ -54,14 +54,14 @@ export async function loadAnalysisPlot({
   if (plotType === "wavefrontMap") {
     return {
       kind: "wavefrontMap",
-      wavefrontMapData: await proxy.getWavefrontData(model, fieldIndex, wavelengthIndex, undefined, opdAimPoint),
+      wavefrontMapData: await proxy.getWavefrontData(model, fieldIndex, wavelengthIndex, opdAimPoint),
     };
   }
 
   if (plotType === "strehlVsWavelength") {
     return {
       kind: "strehlVsWavelength",
-      strehlVsWavelengthData: await proxy.getStrehlVsWavelengthData(model, fieldIndex, undefined, undefined, opdAimPoint),
+      strehlVsWavelengthData: await proxy.getStrehlVsWavelengthData(model, fieldIndex, opdAimPoint),
     };
   }
 
@@ -89,14 +89,14 @@ export async function loadAnalysisPlot({
   if (plotType === "diffractionPSF") {
     return {
       kind: "diffractionPSF",
-      diffractionPsfData: await proxy.getDiffractionPSFData(model, fieldIndex, wavelengthIndex, undefined, undefined, opdAimPoint),
+      diffractionPsfData: await proxy.getDiffractionPSFData(model, fieldIndex, wavelengthIndex, opdAimPoint),
     };
   }
 
   if (plotType === "diffractionMTF") {
     return {
       kind: "diffractionMTF",
-      diffractionMtfData: await proxy.getDiffractionMTFData(model, fieldIndex, wavelengthIndex, undefined, undefined, opdAimPoint),
+      diffractionMtfData: await proxy.getDiffractionMTFData(model, fieldIndex, wavelengthIndex, opdAimPoint),
     };
   }
 }

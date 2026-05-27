@@ -346,7 +346,7 @@ describe("ExampleSystemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Load" }));
 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/"));
-    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, undefined, undefined, "centroid");
+    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, "centroid");
     expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
   });
 

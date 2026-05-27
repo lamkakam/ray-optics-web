@@ -115,7 +115,7 @@ describe("_optimizeOpm", () => {
       variables: [],
       pickups: [],
       merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
-    }, progressCallback);
+    }, "chief_ray", progressCallback);
 
     expect(progressCallback).toHaveBeenCalledTimes(2);
     expect(progressCallback).toHaveBeenNthCalledWith(2, [

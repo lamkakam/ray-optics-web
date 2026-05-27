@@ -10,9 +10,9 @@ Return chart-ready monochromatic Strehl ratio data sampled across wavelength for
 def get_strehl_vs_wavelength_data(
     opm: OpticalModel,
     fieldIndex: int,
+    opd_aim_point: str = "chief_ray",
     wavelength_samples: int = 32,
     num_rays: int = 21,
-    opd_aim_point: str = "chief_ray",
 ) -> dict: ...
 ```
 

@@ -7,7 +7,7 @@ Return wavefront map grid data for one field and wavelength.
 ## Exports
 
 ```python
-def get_wavefront_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64, opd_aim_point: str = "chief_ray") -> dict: ...
+def get_wavefront_data(opm: OpticalModel, fi: int, wvl_idx: int, opd_aim_point: str = "chief_ray", num_rays: int = 64) -> dict: ...
 ```
 
 ## Return Shape
