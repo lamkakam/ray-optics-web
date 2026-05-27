@@ -65,6 +65,7 @@ def get_strehl_vs_wavelength_data(
     fieldIndex: int,
     wavelength_samples: int = 32,
     num_rays: int = 21,
+    opd_aim_point: str = "chief_ray",
 ) -> dict:
     """
     Return Strehl ratio samples across the model wavelength range for one field.
@@ -76,7 +77,13 @@ def get_strehl_vs_wavelength_data(
     try:
         for wavelength_nm in wavelengths:
             wavelength = float(wavelength_nm)
-            ray_grid = make_ray_grid(opm, fi=fieldIndex, wavelength_nm=wavelength, num_rays=num_rays)
+            ray_grid = make_ray_grid(
+                opm,
+                fi=fieldIndex,
+                wavelength_nm=wavelength,
+                num_rays=num_rays,
+                opd_aim_point=opd_aim_point,
+            )
             opd_grid = _scale_opd_grid_to_wavelength(ray_grid.grid[2], opm, wavelength)
             strehl = float(_monochromatic_strehl(opd_grid))
             strehl_values.append(min(max(strehl, 0.0), 1.0))

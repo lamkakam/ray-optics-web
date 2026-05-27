@@ -13,6 +13,7 @@ import {
   PLOT_TYPE_CONFIG,
   type PlotType,
 } from "@/features/analysis/components/AnalysisPlotView";
+import { useOpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
 
 
 interface AnalysisPlotContainerProps {
@@ -32,6 +33,7 @@ export function AnalysisPlotContainer({
   const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
 
   const store = useAnalysisPlotStore();
+  const { opdAimPoint } = useOpdAimPoint();
   const rayFanData = useStore(store, (s) => s.rayFanData);
   const opdFanData = useStore(store, (s) => s.opdFanData);
   const spotDiagramData = useStore(store, (s) => s.spotDiagramData);
@@ -65,6 +67,7 @@ export function AnalysisPlotContainer({
         model: committedOpticalModel,
         fieldIndex,
         wavelengthIndex,
+        opdAimPoint,
       });
       if (!result) return;
 
@@ -85,7 +88,7 @@ export function AnalysisPlotContainer({
     } finally {
       store.getState().setPlotLoading(false);
     }
-  }, [proxy, committedOpticalModel, store, onError, analysisDataStore]);
+  }, [proxy, committedOpticalModel, store, onError, analysisDataStore, opdAimPoint]);
 
   const handleFieldChange = useCallback(async (value: number) => {
     store.getState().setSelectedFieldIndex(value);

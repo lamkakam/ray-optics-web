@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent }
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
+import { useOpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { ExampleSystemList, type ExampleSystemName } from "@/features/example-systems/lib/exampleSystems";
 import { Button } from "@/shared/components/primitives/Button";
@@ -29,6 +30,7 @@ interface ExampleSystemsPageProps {
 export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) {
   const router = useRouter();
   const { theme } = useTheme();
+  const { opdAimPoint } = useOpdAimPoint();
   const screenSize = useScreenBreakpoint();
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
@@ -89,6 +91,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
         model,
         proxy,
         isDark: theme === "dark",
+        opdAimPoint,
         lensStore,
         specsStore,
         analysisPlotStore,
@@ -109,6 +112,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
     lensLayoutImageStore,
     lensStore,
     onError,
+    opdAimPoint,
     proxy,
     router,
     selectedExampleKey,

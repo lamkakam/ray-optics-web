@@ -14,13 +14,14 @@ def get_diffraction_psf_data(
     wvl_idx: int,
     num_rays: int = 64,
     max_dims: int = 256,
+    opd_aim_point: str = "chief_ray",
 ) -> dict:
     """
     Return diffraction PSF image-plane axes and intensity grid for one field and wavelength.
     """
     wavelength_nm = opm["optical_spec"]["wvls"].wavelengths[wvl_idx]
     effective_max_dims = max(max_dims, 2 * num_rays)
-    pupil_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
+    pupil_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays, opd_aim_point=opd_aim_point)
 
     psf = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, effective_max_dims)
     _, delta_xp = calc_psf_scaling(pupil_grid, pupil_grid.num_rays, effective_max_dims)

@@ -299,6 +299,10 @@ class TestGetZernikeCoefficients:
 
     def test_returns_dict_with_expected_keys(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
+        import inspect
+
+        sig = inspect.signature(get_zernike_coefficients)
+        assert sig.parameters["opd_aim_point"].default == "chief_ray"
         result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
         assert isinstance(result, dict)
         for key in ['coefficients', 'rms_wfe', 'pv_wfe', 'num_terms', 'field_index', 'wavelength_nm']:

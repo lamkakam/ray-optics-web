@@ -13,12 +13,14 @@ def get_diffraction_psf_data(
     wvl_idx: int,
     num_rays: int = 64,
     max_dims: int = 256,
+    opd_aim_point: str = "chief_ray",
 ) -> dict: ...
 ```
 
 ## Behavior
 
 - Uses `make_ray_grid(...)` to generate the pupil OPD grid.
+- Passes `opd_aim_point` to `make_ray_grid(...)` so diffraction PSF uses the app-wide OPD reference convention.
 - Computes PSF data with `calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, effective_max_dims)`.
 - Computes image-plane axis scaling with `calc_psf_scaling`.
 - Uses `effective_max_dims = max(max_dims, 2 * num_rays)`.

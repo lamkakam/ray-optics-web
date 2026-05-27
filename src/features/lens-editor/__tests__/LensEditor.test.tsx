@@ -27,6 +27,10 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn().mockReturnValue({ theme: "light", setTheme: jest.fn() }),
 }));
 
+jest.mock("@/shared/components/providers/OpdAimPointProvider", () => ({
+  useOpdAimPoint: () => ({ opdAimPoint: "centroid", setOpdAimPoint: jest.fn() }),
+}));
+
 const testImportModel: OpticalModel = {
   setAutoAperture: "autoAperture",
   object: { distance: 1e10, medium: "air", manufacturer: "" },
@@ -390,7 +394,7 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => {
-      expect(proxy!.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0);
+      expect(proxy!.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, undefined, undefined, "centroid");
     });
     expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
   });

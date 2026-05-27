@@ -136,9 +136,10 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 1,
       wavelengthIndex: 2,
+      opdAimPoint: "centroid",
     });
 
-    expect(proxy.getWavefrontData).toHaveBeenCalledWith(mockModel, 1, 2);
+    expect(proxy.getWavefrontData).toHaveBeenCalledWith(mockModel, 1, 2, undefined, "centroid");
     expect(result).toEqual({
       kind: "wavefrontMap",
       wavefrontMapData: undefined,
@@ -185,9 +186,10 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 1,
       wavelengthIndex: 2,
+      opdAimPoint: "centroid",
     });
 
-    expect(proxy.getOpdFanData).toHaveBeenCalledWith(mockModel, 1);
+    expect(proxy.getOpdFanData).toHaveBeenCalledWith(mockModel, 1, "centroid");
     expect(result).toEqual({
       kind: "opdFan",
       opdFanData: [
@@ -217,9 +219,10 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 2,
       wavelengthIndex: 1,
+      opdAimPoint: "centroid",
     });
 
-    expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(mockModel, 2, 1);
+    expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(mockModel, 2, 1, undefined, undefined, "centroid");
     expect(result).toEqual({
       kind: "diffractionPSF",
       diffractionPsfData: undefined,
@@ -234,9 +237,10 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 2,
       wavelengthIndex: 1,
+      opdAimPoint: "centroid",
     });
 
-    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(mockModel, 2, 1);
+    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(mockModel, 2, 1, undefined, undefined, "centroid");
     expect(result).toEqual({
       kind: "diffractionMTF",
       diffractionMtfData: undefined,
@@ -251,9 +255,10 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 1,
       wavelengthIndex: 2,
+      opdAimPoint: "centroid",
     });
 
-    expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(mockModel, 1);
+    expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(mockModel, 1, undefined, undefined, "centroid");
     expect(result).toEqual({
       kind: "strehlVsWavelength",
       strehlVsWavelengthData,

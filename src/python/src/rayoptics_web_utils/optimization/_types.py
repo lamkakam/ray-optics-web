@@ -396,7 +396,7 @@ class SolverResult(TypedDict):
 
 
 type OperandValue = float | list[float]
-type OperandEvaluator = Callable[[OpticalModel, int | None, int | None, OperandOptions | None], OperandValue]
+type OperandEvaluator = Callable[[OpticalModel, int | None, int | None, OperandOptions | None, str], OperandValue]
 
 
 class OptimizationProblemProtocol(Protocol):

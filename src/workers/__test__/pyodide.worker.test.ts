@@ -144,10 +144,10 @@ describe("_getOpdFanData", () => {
     const result = await _getOpdFanData(async (code) => {
       pythonScript = code;
       return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1);
+    }, allSphericalOpticalModel, 1, "centroid");
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_opd_fan_data(_build_opm(), 1))");
+    expect(pythonScript).toContain("json.dumps(get_opd_fan_data(_build_opm(), 1, opd_aim_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });
@@ -205,10 +205,10 @@ describe("_getDiffractionMTFData", () => {
     const result = await _getDiffractionMTFData(async (code) => {
       pythonScript = code;
       return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 2, 1);
+    }, allSphericalOpticalModel, 2, 1, 64, 256, "centroid");
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_diffraction_mtf_data(_build_opm(), 2, 1, num_rays=64, max_dims=256))");
+    expect(pythonScript).toContain("json.dumps(get_diffraction_mtf_data(_build_opm(), 2, 1, num_rays=64, max_dims=256, opd_aim_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });
@@ -234,10 +234,10 @@ describe("_getWavefrontData", () => {
     const result = await _getWavefrontData(async (code) => {
       pythonScript = code;
       return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1, 2);
+    }, allSphericalOpticalModel, 1, 2, 64, "centroid");
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_wavefront_data(_build_opm(), 1, 2, num_rays=64))");
+    expect(pythonScript).toContain("json.dumps(get_wavefront_data(_build_opm(), 1, 2, num_rays=64, opd_aim_point='centroid'))");
     expect(result).toEqual({
       ...mockData,
       z: [
@@ -262,10 +262,10 @@ describe("_getStrehlVsWavelengthData", () => {
     const result = await _getStrehlVsWavelengthData(async (code) => {
       pythonScript = code;
       return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1);
+    }, allSphericalOpticalModel, 1, 100, 21, "centroid");
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_strehl_vs_wavelength_data(_build_opm(), 1, wavelength_samples=100, num_rays=21))");
+    expect(pythonScript).toContain("json.dumps(get_strehl_vs_wavelength_data(_build_opm(), 1, wavelength_samples=100, num_rays=21, opd_aim_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });
@@ -314,10 +314,10 @@ describe("_getDiffractionPSFData", () => {
     const result = await _getDiffractionPSFData(async (code) => {
       pythonScript = code;
       return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1, 2);
+    }, allSphericalOpticalModel, 1, 2, 64, 256, "centroid");
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=64, max_dims=256))");
+    expect(pythonScript).toContain("json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=64, max_dims=256, opd_aim_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });

@@ -17,6 +17,7 @@ import { AnalysisDataStoreProvider } from "@/features/analysis/providers/Analysi
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { OpdAimPointProvider } from "@/shared/components/providers/OpdAimPointProvider";
 import {
   OptimizationStoreContext,
   OptimizationStoreProvider,
@@ -307,17 +308,19 @@ jest.mock("@/shared/hooks/usePyodide", () => ({
 
 function renderWithStores(node: React.ReactNode) {
   return render(
-    <SpecsConfiguratorStoreProvider>
-      <LensEditorStoreProvider>
-        <AnalysisPlotStoreProvider>
-          <AnalysisDataStoreProvider>
-            <LensLayoutImageStoreProvider>
-              <GlassMapStoreProvider>{node}</GlassMapStoreProvider>
-            </LensLayoutImageStoreProvider>
-          </AnalysisDataStoreProvider>
-        </AnalysisPlotStoreProvider>
-      </LensEditorStoreProvider>
-    </SpecsConfiguratorStoreProvider>
+    <OpdAimPointProvider>
+      <SpecsConfiguratorStoreProvider>
+        <LensEditorStoreProvider>
+          <AnalysisPlotStoreProvider>
+            <AnalysisDataStoreProvider>
+              <LensLayoutImageStoreProvider>
+                <GlassMapStoreProvider>{node}</GlassMapStoreProvider>
+              </LensLayoutImageStoreProvider>
+            </AnalysisDataStoreProvider>
+          </AnalysisPlotStoreProvider>
+        </LensEditorStoreProvider>
+      </SpecsConfiguratorStoreProvider>
+    </OpdAimPointProvider>
   );
 }
 

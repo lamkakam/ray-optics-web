@@ -33,6 +33,10 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
 }));
 
+jest.mock("@/shared/components/providers/OpdAimPointProvider", () => ({
+  useOpdAimPoint: () => ({ opdAimPoint: "centroid", setOpdAimPoint: jest.fn() }),
+}));
+
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: () => mockScreenBreakpoint,
 }));
@@ -342,7 +346,7 @@ describe("ExampleSystemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Load" }));
 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/"));
-    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0);
+    expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, undefined, undefined, "centroid");
     expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
   });
 
