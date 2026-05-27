@@ -47,8 +47,10 @@ def compute_rms_spot_size(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
 ) -> float:
     """Return RMS spot size for one field/wavelength sample."""
+    del opd_aim_point
     if field_index is None or wavelength_index is None:
         raise ValueError("rms_spot_size requires field and wavelength indices")
     num_rays = get_operand_num_rays(options)
@@ -75,6 +77,7 @@ def compute_rms_wavefront_error(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
 ) -> float:
     """Return RMS WFE in waves for one field/wavelength sample."""
     if field_index is None or wavelength_index is None:
@@ -83,7 +86,13 @@ def compute_rms_wavefront_error(
     wavelengths = opm["optical_spec"]["wvls"].wavelengths
     validate_surface_index(wavelengths, wavelength_index, "wavelength index")
     wavelength_nm = wavelengths[wavelength_index]
-    ray_grid = make_ray_grid(opm, fi=field_index, wavelength_nm=wavelength_nm, num_rays=num_rays)
+    ray_grid = make_ray_grid(
+        opm,
+        fi=field_index,
+        wavelength_nm=wavelength_nm,
+        num_rays=num_rays,
+        opd_aim_point=opd_aim_point,
+    )
     opd_grid = _scale_opd_grid_to_wavelength(ray_grid.grid[2], opm, wavelength_nm)
     valid = opd_grid[~np.isnan(opd_grid)]
     if len(valid) == 0:
@@ -96,12 +105,13 @@ def compute_opd_difference(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
 ) -> float:
     """Return mean absolute OPD deviation in waves for one field/wavelength sample."""
     if field_index is None or wavelength_index is None:
         raise ValueError("opd_difference requires field and wavelength indices")
     del options
-    fan_data = get_opd_fan_data(opm, fi=field_index)
+    fan_data = get_opd_fan_data(opm, fi=field_index, opd_aim_point=opd_aim_point)
     validate_surface_index(fan_data, wavelength_index, "wavelength index")
     wavelength_fan = fan_data[wavelength_index]
     samples = np.array(
@@ -124,9 +134,10 @@ def compute_focal_length(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
 ) -> float:
     """Return paraxial effective focal length."""
-    del field_index, wavelength_index, options
+    del field_index, wavelength_index, options, opd_aim_point
     return float(opm["analysis_results"]["parax_data"].fod.efl)
 
 
@@ -135,9 +146,10 @@ def compute_f_number(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
 ) -> float:
     """Return paraxial f-number."""
-    del field_index, wavelength_index, options
+    del field_index, wavelength_index, options, opd_aim_point
     return float(opm["analysis_results"]["parax_data"].fod.fno)
 
 
@@ -146,8 +158,10 @@ def compute_ray_fan(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
 ) -> list[float]:
     """Return combined tangential and sagittal ray-fan ordinates for one field/wavelength sample."""
+    del opd_aim_point
     if field_index is None or wavelength_index is None:
         raise ValueError("ray_fan requires field and wavelength indices")
     residual_count = get_operand_num_rays(options) * 2

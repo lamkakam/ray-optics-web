@@ -9,13 +9,16 @@ Provides the public compatibility facade for the optimization package. The publi
 ## Public API
 
 ```python
-evaluate_optimization_problem(opm: OpticalModel, config: OptimizationConfig) -> OptimizationReport
+evaluate_optimization_problem(opm: OpticalModel, config: OptimizationConfig, opd_aim_point: str = "chief_ray") -> OptimizationReport
 optimize_opm(
     opm: OpticalModel,
     config: OptimizationConfig,
+    opd_aim_point: str = "chief_ray",
     progress_reporter: ProgressReporter | None = None,
 ) -> OptimizationReport
 ```
+
+`opd_aim_point` is forwarded into `OptimizationProblem` so OPD-based operands use the app-wide reference convention.
 
 Both return JSON-serialisable dicts containing:
 

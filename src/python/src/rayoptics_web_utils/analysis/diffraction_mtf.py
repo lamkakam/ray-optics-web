@@ -18,6 +18,7 @@ def get_diffraction_mtf_data(
     opm: OpticalModel,
     field_idx: int,
     wvl_idx: int,
+    opd_aim_point: str = "chief_ray",
     num_rays: int = 64,
     max_dims: int = 256,
 ) -> dict:
@@ -30,7 +31,7 @@ def get_diffraction_mtf_data(
     wavelength_sys_units = opm.nm_to_sys_units(wavelength_nm)
     effective_max_dims = max(max_dims, 2 * num_rays)
 
-    pupil_grid = make_ray_grid(opm, fi=field_idx, wavelength_nm=wavelength_nm, num_rays=num_rays)
+    pupil_grid = make_ray_grid(opm, fi=field_idx, wavelength_nm=wavelength_nm, num_rays=num_rays, opd_aim_point=opd_aim_point)
     psf = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, effective_max_dims)
     mtf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(psf))))
 

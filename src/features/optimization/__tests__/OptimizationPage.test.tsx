@@ -18,6 +18,10 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
 }));
 
+jest.mock("@/shared/components/providers/OpdAimPointProvider", () => ({
+  useOpdAimPoint: () => ({ opdAimPoint: "centroid", setOpdAimPoint: jest.fn() }),
+}));
+
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
 }));
@@ -940,7 +944,7 @@ describe("OptimizationPage", () => {
       resolveOptimization = resolve;
     });
 
-    const optimizeOpm = jest.fn().mockImplementation(async (_model, _config, onProgress) => {
+    const optimizeOpm = jest.fn().mockImplementation(async (_model, _config, _opdAimPoint, onProgress) => {
       await onProgress?.([
         { iteration: 0, merit_function_value: 100, log10_merit_function_value: 2 },
       ]);

@@ -33,5 +33,6 @@ class OptimizationProblemProtocol(Protocol): ...
 - Captures the existing JSON-serialisable result payload shape in concrete report/progress typed dicts; residual entries may omit `target`.
 - Optimizer and solver typed dicts allow solver-specific optional fields such as `method`, `njev`, `cost`, `optimality`, and `nit` instead of forcing every solver through the least-squares shape.
 - Operand evaluators may return either one scalar residual or a list of residual samples.
+- Operand evaluators receive `opd_aim_point` as their final argument so OPD-related operands can share the app-wide reference convention.
 - Snapshot entries preserve both the original mutable target descriptor and its value so rollback can restore asphere targets without losing `asphere_kind`.
 - Keeps solver adapters decoupled from the concrete `OptimizationProblem` class via a small protocol that exposes both residual-vector and scalar-merit objectives.

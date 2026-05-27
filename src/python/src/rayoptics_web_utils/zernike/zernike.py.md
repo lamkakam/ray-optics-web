@@ -18,7 +18,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 | `fit_zernike` | `(opd_grid: NDArray, num_terms: int = 22, ordering: str = "noll") -> NDArray` | Least-squares fit of Zernike polynomials to a (3, N, N) OPD grid |
 | `_scale_opd_grid_to_wavelength` | `(opd_grid: NDArray, opm, wavelength_nm: float) -> NDArray` | Convert OPD values from central-wavelength waves to traced-wavelength waves |
 | `_extract_exit_pupil_grid` | `(rg, opm, wavelength_nm: float) -> NDArray` | Extract pre-computed exit pupil coords from RayGrid's `upd_grid` and build (3, N, N) grid with corrected OPD |
-| `get_zernike_coefficients` | `(opm, field_index, wvl_index, num_terms=22, num_rays=64, ordering="noll") -> dict` | High-level: compute Zernike coefficients for a field/wavelength |
+| `get_zernike_coefficients` | `(opm, field_index, wvl_index, opd_aim_point="chief_ray", num_terms=22, num_rays=64, ordering="noll") -> dict` | High-level: compute Zernike coefficients for a field/wavelength |
 
 ## Conventions
 
@@ -30,6 +30,7 @@ Implements Noll-ordered Zernike polynomials and least-squares fitting against OP
 - **Noll sign convention**: even j → positive m (cosine), odd j → negative m (sine).
 - **Exit pupil coordinates**: Zernike fitting uses exit pupil coordinates extracted from `RayGrid.grid_pkg[1]` (the `upd_grid`), where `wave_abr_pre_calc_finite_pup` already computes `p_coord` (the EIC expansion point relative to the chief ray's exit pupil point). `_extract_exit_pupil_grid` normalizes by the **maximum radial extent** of the `p_coord` data (data-driven radius), avoiding the paraxial `fod.exp_radius` which can be wildly wrong for tilted/decentered systems.
 - **Vignetting**: `RayGrid` is created with `apply_vignetting=True` so vignetted rays (those that don't reach the image plane at off-axis fields) are excluded from the OPD grid. `check_apertures=True` (already the default) ensures rays blocked by apertures are clipped. Both are set explicitly for clarity.
+- **OPD aim point**: `opd_aim_point` is passed to `make_ray_grid(...)`; `"chief_ray"` preserves existing Zernike output and `"centroid"` uses the shared centroid image point.
 - **NaN handling**: vignetted rays produce NaN in the OPD grid; these are filtered before fitting.
 - **Pupil mask**: only points with rho ≤ 1.0 are used in the fit.
 
@@ -151,6 +152,7 @@ zern_data = get_zernike_coefficients(
     opm,
     field_index,
     wavelength_index,
+    opd_aim_point="chief_ray",
     num_terms=num_terms,
     ordering=ordering
 )

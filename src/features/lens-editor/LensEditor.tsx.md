@@ -26,13 +26,14 @@ Read reactively via `useStore` / `useLensEditorStore`:
 - From `useAnalysisDataStore()`: `firstOrderData`, `seidelData`
 - From `useLensEditorStore()`: `committedOpticalModel`
 - From `useTheme()`: `theme`
+- From `useOpdAimPoint()`: `opdAimPoint`
 - `hasAnalysisControls`: true when at least one analysis control or chip can render (`seidelData`, `committedOpticalModel`, or `firstOrderData`)
 
 Imperative access to actions is via the provider hooks (`useLensEditorStore`, `useSpecsConfiguratorStore`, `useAnalysisPlotStore`, `useAnalysisDataStore`, `useLensLayoutImageStore`) and then `store.getState()`.
 
 ## Callbacks
-- `handleSubmit` — builds `OpticalModel`, derives `isDark` from `theme === "dark"`, clamps field/wavelength indices, loads first-order/layout/analysis/seidel data in parallel, updates committed state; calls `onError()` on failure
-- `handleFetchZernikeData` — fetches Zernike coefficients for `ZernikeTermsModal` from the committed optical model
+- `handleSubmit` — builds `OpticalModel`, derives `isDark` from `theme === "dark"`, clamps field/wavelength indices, loads first-order/layout/analysis/seidel data in parallel, passes the app-wide `opdAimPoint` into OPD-related analysis loading, updates committed state; calls `onError()` on failure
+- `handleFetchZernikeData` — fetches Zernike coefficients for `ZernikeTermsModal` from the committed optical model and passes the app-wide `opdAimPoint`
 - Zernike payload/order types are imported from `features/lens-editor/types/zernikeData`; Zernike term-count constants are imported from `features/lens-editor/lib/zernikeData`
 - `getOpticalModel` — builds the current `OpticalModel` snapshot from the provider-backed stores
 - `handleImportJson` — loads an imported `OpticalModel` into the specs and lens-editor stores

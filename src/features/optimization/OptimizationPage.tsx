@@ -28,6 +28,7 @@ import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { OptimizationProgressEntry, OptimizationReport } from "./types/optimizationWorkerTypes";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
+import { useOpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
 
 interface OptimizationPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -57,6 +58,7 @@ export function OptimizationPage({
     ? 300
     : Math.round(window.innerHeight * 0.4);
   const screenSize = useScreenBreakpoint();
+  const { opdAimPoint } = useOpdAimPoint();
   const isLG = screenSize === "screenLG";
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
@@ -295,7 +297,7 @@ export function OptimizationPage({
       }
 
       setIsEvaluating(true);
-      void proxy.evaluateOptimizationProblem(optimizationModel, config)
+      void proxy.evaluateOptimizationProblem(optimizationModel, config, opdAimPoint)
         .then((report) => {
           if (evaluationRequestIdRef.current !== requestId) {
             return;
@@ -330,6 +332,7 @@ export function OptimizationPage({
     thicknessModes,
     asphereStates,
     operands,
+    opdAimPoint,
   ]);
 
   const handleOptimize = async () => {
@@ -350,6 +353,7 @@ export function OptimizationPage({
       const report = await proxy.optimizeOpm(
         optimizationModel,
         config,
+        opdAimPoint,
         comlinkProxy((progress: ReadonlyArray<OptimizationProgressEntry>) => {
           setOptimizationProgress(progress);
         }),

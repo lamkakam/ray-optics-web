@@ -7,14 +7,20 @@ from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _json_float_grid, _json_float_list
 
 
-def get_wavefront_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict:
+def get_wavefront_data(
+    opm: OpticalModel,
+    fi: int,
+    wvl_idx: int,
+    opd_aim_point: str = "chief_ray",
+    num_rays: int = 64,
+) -> dict:
     """
     Return a wavefront map grid for one field and wavelength.
     """
     osp = opm.optical_spec
     central_wvl = osp["wvls"].central_wvl
     wavelength_nm = opm["optical_spec"]["wvls"].wavelengths[wvl_idx]
-    ray_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays)
+    ray_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays, opd_aim_point=opd_aim_point)
 
     opd_grid = ray_grid.grid.copy()
     opd_grid[2] *= central_wvl / wavelength_nm

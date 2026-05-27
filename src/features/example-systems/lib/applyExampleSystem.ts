@@ -9,11 +9,13 @@ import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specs
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
 
 interface ApplyExampleSystemParams {
   readonly model: OpticalModel;
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isDark: boolean;
+  readonly opdAimPoint: OpdAimPoint;
   readonly lensStore: StoreApi<LensEditorState>;
   readonly specsStore: StoreApi<SpecsConfiguratorState>;
   readonly analysisPlotStore: StoreApi<AnalysisPlotState>;
@@ -25,6 +27,7 @@ export async function applyExampleSystem({
   model,
   proxy,
   isDark,
+  opdAimPoint,
   lensStore,
   specsStore,
   analysisPlotStore,
@@ -61,6 +64,7 @@ export async function applyExampleSystem({
         model,
         fieldIndex: clampedFieldIndex,
         wavelengthIndex: clampedWavelengthIndex,
+        opdAimPoint,
       }),
       proxy.get3rdOrderSeidelData(model),
     ]);

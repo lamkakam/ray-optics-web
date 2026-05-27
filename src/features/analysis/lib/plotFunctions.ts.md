@@ -38,6 +38,7 @@ async function loadAnalysisPlot({
   model: OpticalModel | undefined;
   fieldIndex: number;
   wavelengthIndex: number;
+  opdAimPoint?: OpdAimPoint;
 }): Promise<AnalysisPlotLoadResult | undefined>
 ```
 
@@ -46,13 +47,13 @@ Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx
 - Returns `undefined` when `proxy` or `model` is missing.
 - Calls `proxy.getRayFanData(model, fi)` for `rayFan`.
 - Calls `proxy.get3rdOrderSeidelData(model)` for `surfaceBySurface3rdOrder` and returns `surfaceBySurface`.
-- Calls `proxy.getOpdFanData(model, fi)` for `opdFan`.
+- Calls `proxy.getOpdFanData(model, fi, opdAimPoint)` for `opdFan`.
 - Calls `proxy.getSpotDiagramData(model, fi)` for `spotDiagram`.
-- Calls `proxy.getWavefrontData(...)` for `wavefrontMap`.
-- Calls `proxy.getStrehlVsWavelengthData(model, fi)` for `strehlVsWavelength`.
+- Calls `proxy.getWavefrontData(...)` with `opdAimPoint` for `wavefrontMap`.
+- Calls `proxy.getStrehlVsWavelengthData(...)` with `opdAimPoint` for `strehlVsWavelength`.
 - Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
-- Calls `proxy.getDiffractionPSFData(...)` for `diffractionPSF`.
-- Calls `proxy.getDiffractionMTFData(...)` for `diffractionMTF`.
+- Calls `proxy.getDiffractionPSFData(...)` with `opdAimPoint` for `diffractionPSF`.
+- Calls `proxy.getDiffractionMTFData(...)` with `opdAimPoint` for `diffractionMTF`.
 - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
 
 ### `commitAnalysisPlotResult`

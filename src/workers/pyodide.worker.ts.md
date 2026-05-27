@@ -20,24 +20,25 @@ export async function init(onProgress?: (progress: InitProgress) => void | Promi
 export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>
 export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>
 export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>
-export async function getOpdFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>
+export async function getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint): Promise<OpdFanData>
 export async function getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
-export async function getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<WavefrontMapData>
-export async function getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>
+export async function getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number): Promise<WavefrontMapData>
+export async function getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>
 export async function getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<GeoPsfData>
-export async function getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
-export async function getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>
+export async function getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
+export async function getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>
 export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>
-export async function getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>
+export async function getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>
 export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>
-export async function evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>
+export async function evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, opdAimPoint?: OpdAimPoint): Promise<OptimizationReport>
 export async function optimizeOpm(
   opticalModel: OpticalModel,
   config: OptimizationConfig,
+  opdAimPoint?: OpdAimPoint,
   onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
 ): Promise<OptimizationReport>
 ```
@@ -55,13 +56,13 @@ export async function _plotLensLayout(runPython: (code: string) => Promise<unkno
 export async function _getRayFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>
 export async function _getOpdFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>
 export async function _getSpotDiagramData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
-export async function _getWavefrontData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<WavefrontMapData>
-export async function _getStrehlVsWavelengthData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>
+export async function _getWavefrontData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number): Promise<WavefrontMapData>
+export async function _getStrehlVsWavelengthData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>
 export async function _getGeoPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<GeoPsfData>
-export async function _getDiffractionPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
-export async function _getDiffractionMTFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>
+export async function _getDiffractionPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
+export async function _getDiffractionMTFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>
 export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData>
-export async function _getZernikeCoefficients(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>
+export async function _getZernikeCoefficients(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>
 export async function _focusByMonoRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _focusByMonoStrehl(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _focusByPolyRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
@@ -72,6 +73,7 @@ export async function _optimizeOpm(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   config: OptimizationConfig,
+  opdAimPoint?: OpdAimPoint,
   onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
 ): Promise<OptimizationReport>
 export function _resetPyodideForTesting(): void
@@ -86,7 +88,7 @@ export function _resetPyodideForTesting(): void
 3. Emits `10%` with `"Loading Pyodide script"` and loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
 4. Emits `25%` with `"Starting Pyodide runtime"` and calls `loadPyodide({ indexURL })` to create the Pyodide instance.
 5. Emits `40%` with `"Loading Pyodide packages"` and loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.4.1-py3-none-any.whl`.
+6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.5.0-py3-none-any.whl`.
 7. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl, onProgress)`.
 8. Emits `100%` with `"Ready"`.
 
@@ -106,22 +108,22 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `getFirstOrderData(model)` | Builds `opm` from model, returns optical data (EFL, f-number, etc.) as `Record<string, number>`. |
 | `plotLensLayout(model, isDark)` | Builds `opm` from model, derives `show_ray_fan_vs_wvls` from any `surface.diffractionGrating`, forwards `is_dark`, and returns a lens layout plot as a base64-encoded PNG string. |
 | `getRayFanData(model, fieldIndex)` | Builds `opm` from model, returns grouped transverse ray-fan line data for all wavelengths at the selected field. Used by the ECharts Ray Fan view. |
-| `getOpdFanData(model, fieldIndex)` | Builds `opm` from model, returns grouped OPD-fan line data for all wavelengths at the selected field. Used by the ECharts OPD Fan view. |
+| `getOpdFanData(model, fieldIndex, opdAimPoint?)` | Builds `opm` from model, returns grouped OPD-fan line data for all wavelengths at the selected field. Used by the ECharts OPD Fan view. |
 | `getSpotDiagramData(model, fieldIndex)` | Builds `opm` from model, returns grouped spot-diagram point clouds for all wavelengths at the selected field. Used by the ECharts Spot Diagram view. |
-| `getWavefrontData(model, fi, wi, numRays?)` | Returns `WavefrontMapData` for the given field and wavelength index using `json.dumps(get_wavefront_data(...))`. Used by the ECharts Wavefront Map view. |
-| `getStrehlVsWavelengthData(model, fi, wavelengthSamples?, numRays?)` | Returns `StrehlVsWavelengthData` for the selected field using `json.dumps(get_strehl_vs_wavelength_data(...))`. Defaults to 100 wavelength samples and 21 rays. Used by the ECharts Strehl vs Wavelength view. |
+| `getWavefrontData(model, fi, wi, opdAimPoint?, numRays?)` | Returns `WavefrontMapData` for the given field and wavelength index using `json.dumps(get_wavefront_data(...))`. Used by the ECharts Wavefront Map view. |
+| `getStrehlVsWavelengthData(model, fi, opdAimPoint?, wavelengthSamples?, numRays?)` | Returns `StrehlVsWavelengthData` for the selected field using `json.dumps(get_strehl_vs_wavelength_data(...))`. Defaults to 100 wavelength samples and 21 rays. Used by the ECharts Strehl vs Wavelength view. |
 | `getGeoPSFData(model, fi, wi, numRays?)` | Returns `GeoPsfData` for the given field and wavelength index using `json.dumps(get_geo_psf_data(...))`. Used by the ECharts Geometric PSF view. |
-| `getDiffractionPSFData(model, fi, wi, numRays?, maxDims?)` | Returns `DiffractionPsfData` for the given field and wavelength index using `json.dumps(get_diffraction_psf_data(...))`. Used by the ECharts Diffraction PSF view. |
-| `getDiffractionMTFData(model, fi, wi, numRays?, maxDims?)` | Returns `DiffractionMtfData` for the given field and wavelength index using `json.dumps(get_diffraction_mtf_data(...))`. Used by the ECharts Diffraction MTF view. |
+| `getDiffractionPSFData(model, fi, wi, opdAimPoint?, numRays?, maxDims?)` | Returns `DiffractionPsfData` for the given field and wavelength index using `json.dumps(get_diffraction_psf_data(...))`. Used by the ECharts Diffraction PSF view. |
+| `getDiffractionMTFData(model, fi, wi, opdAimPoint?, numRays?, maxDims?)` | Returns `DiffractionMtfData` for the given field and wavelength index using `json.dumps(get_diffraction_mtf_data(...))`. Used by the ECharts Diffraction MTF view. |
 | `get3rdOrderSeidelData(model)` | Builds `opm` from model, returns `SeidelData` with 3rd-order Seidel aberration data. |
-| `getZernikeCoefficients(model, fi, wi, n?, ordering?)` | Builds `opm` from model, returns `ZernikeData` with Zernike polynomial coefficients. `numTerms` defaults to 56 and `ordering` defaults to `"noll"`. |
+| `getZernikeCoefficients(model, fi, wi, opdAimPoint?, n?, ordering?)` | Builds `opm` from model, returns `ZernikeData` with Zernike polynomial coefficients. `numTerms` defaults to 56 and `ordering` defaults to `"noll"`. |
 | `focusByMonoRmsSpot(model, fieldIndex)` | Focuses by minimizing monochromatic RMS spot radius. Returns `FocusingResult` with `delta_thi` and `metric_value`. |
 | `focusByMonoStrehl(model, fieldIndex)` | Focuses by maximizing monochromatic Strehl ratio. Returns `FocusingResult`. |
 | `focusByPolyRmsSpot(model, fieldIndex)` | Focuses by minimizing polychromatic RMS spot radius. Returns `FocusingResult`. |
 | `focusByPolyStrehl(model, fieldIndex)` | Focuses by maximizing polychromatic Strehl ratio. Returns `FocusingResult`. |
 | `getAllGlassCatalogsData()` | Returns raw glass catalog data for all 6 catalogs as `RawAllGlassCatalogsData`. No optical model required. |
-| `evaluateOptimizationProblem(model, config)` | Builds `opm` from the model, calls Python `evaluate_optimization_problem(opm, config)`, and returns the parsed JSON-safe residual report without running SciPy. |
-| `optimizeOpm(model, config, onProgress?)` | Builds `opm` from the model, optionally bridges a streamed progress callback into Python, calls `optimize_opm(opm, config, ...)`, and returns the parsed JSON-safe optimization report. |
+| `evaluateOptimizationProblem(model, config, opdAimPoint?)` | Builds `opm` from the model, calls Python `evaluate_optimization_problem(opm, config, opd_aim_point=...)`, and returns the parsed JSON-safe residual report without running SciPy. |
+| `optimizeOpm(model, config, opdAimPoint?, onProgress?)` | Builds `opm` from the model, optionally bridges a streamed progress callback into Python, calls `optimize_opm(opm, config, opd_aim_point=..., ...)`, and returns the parsed JSON-safe optimization report. |
 
 ## Injectable Variants (for testing)
 
@@ -133,16 +135,16 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_getFirstOrderData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_first_order_data(${opm}))\`)`.
 - `_plotLensLayout(runPython, model, isDark)` — checks `model.surfaces` for any `diffractionGrating` and runs `buildScript(model, (opm) => \`plot_lens_layout(${opm}, show_ray_fan_vs_wvls=..., is_dark=...)\`)`.
 - `_getRayFanData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `RayFanData`.
-- `_getOpdFanData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `OpdFanData`.
+- `_getOpdFanData(runPython, model, fieldIndex, opdAimPoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, opd_aim_point=...))\`)` and parses the JSON into `OpdFanData`.
 - `_getSpotDiagramData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_spot_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `SpotDiagramData`.
-- `_getStrehlVsWavelengthData(runPython, model, fi, wavelengthSamples?, numRays?)` — runs `buildScript(model, (opm) => \`json.dumps(get_strehl_vs_wavelength_data(${opm}, ${fi}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}))\`)` and parses the JSON into `StrehlVsWavelengthData`.
+- `_getStrehlVsWavelengthData(runPython, model, fi, opdAimPoint?, wavelengthSamples?, numRays?)` — runs `buildScript(model, (opm) => \`json.dumps(get_strehl_vs_wavelength_data(${opm}, ${fi}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}, opd_aim_point=...))\`)` and parses the JSON into `StrehlVsWavelengthData`.
 - `_getGeoPSFData(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`json.dumps(get_geo_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}))\`)` and parses the JSON into `GeoPsfData`.
-- `_getDiffractionPSFData(runPython, model, fi, wi, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}))\`)` and parses the JSON into `DiffractionPsfData`.
-- `_getDiffractionMTFData(runPython, model, fi, wi, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_mtf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}))\`)` and parses the JSON into `DiffractionMtfData`.
+- `_getDiffractionPSFData(runPython, model, fi, wi, opdAimPoint?, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}, opd_aim_point=...))\`)` and parses the JSON into `DiffractionPsfData`.
+- `_getDiffractionMTFData(runPython, model, fi, wi, opdAimPoint?, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_mtf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}, opd_aim_point=...))\`)` and parses the JSON into `DiffractionMtfData`.
 - `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
-- `_getZernikeCoefficients(runPython, model, fi, wi, n?, ordering?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56 and `ordering` defaults to `"noll"`.
-- `_evaluateOptimizationProblem(runPython, model, config)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, runs `evaluate_optimization_problem`, and parses the returned report.
-- `_optimizeOpm(runPython, model, config, onProgress?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, and when a live callback is available binds `_optimization_progress_callback` through `pyodide.globals` so Python can push JSON snapshots back to JS while `optimize_opm(...)` is still running.
+- `_getZernikeCoefficients(runPython, model, fi, wi, opdAimPoint?, n?, ordering?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56 and `ordering` defaults to `"noll"`.
+- `_evaluateOptimizationProblem(runPython, model, config, opdAimPoint?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, runs `evaluate_optimization_problem(..., opd_aim_point=...)`, and parses the returned report.
+- `_optimizeOpm(runPython, model, config, opdAimPoint?, onProgress?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, and when a live callback is available binds `_optimization_progress_callback` through `pyodide.globals` so Python can push JSON snapshots back to JS while `optimize_opm(..., opd_aim_point=...)` is still running.
 - `_resetPyodideForTesting()` — sets `pyodide = null` to allow `init()` to be re-exercised in tests.
 
 ## Key Conventions

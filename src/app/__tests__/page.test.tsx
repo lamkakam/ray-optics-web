@@ -17,6 +17,7 @@ import { AnalysisDataStoreProvider } from "@/features/analysis/providers/Analysi
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { OpdAimPointProvider, type OpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
 import {
   OptimizationStoreContext,
   OptimizationStoreProvider,
@@ -33,7 +34,7 @@ import type { DiffractionMtfData, DiffractionPsfData, WavefrontMapData } from "@
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { ZernikeData } from "@/features/lens-editor/types/zernikeData";
+import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 
 let mockSelectedSegment: string | null = null;
 let mockSearchParams = new URLSearchParams();
@@ -224,7 +225,7 @@ const mockProxy = {
   getDiffractionPSFData: mockGetDiffractionPSFData,
   getDiffractionMTFData: mockGetDiffractionMTFData,
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
-  getZernikeCoefficients: jest.fn<Promise<ZernikeData>, [OpticalModel, number, number, number?]>().mockResolvedValue({
+  getZernikeCoefficients: jest.fn<Promise<ZernikeData>, [OpticalModel, number, number, OpdAimPoint?, number?, ZernikeOrdering?]>().mockResolvedValue({
     coefficients: [],
     rms_normalized_coefficients: [],
     rms_wfe: 0,
@@ -307,17 +308,19 @@ jest.mock("@/shared/hooks/usePyodide", () => ({
 
 function renderWithStores(node: React.ReactNode) {
   return render(
-    <SpecsConfiguratorStoreProvider>
-      <LensEditorStoreProvider>
-        <AnalysisPlotStoreProvider>
-          <AnalysisDataStoreProvider>
-            <LensLayoutImageStoreProvider>
-              <GlassMapStoreProvider>{node}</GlassMapStoreProvider>
-            </LensLayoutImageStoreProvider>
-          </AnalysisDataStoreProvider>
-        </AnalysisPlotStoreProvider>
-      </LensEditorStoreProvider>
-    </SpecsConfiguratorStoreProvider>
+    <OpdAimPointProvider>
+      <SpecsConfiguratorStoreProvider>
+        <LensEditorStoreProvider>
+          <AnalysisPlotStoreProvider>
+            <AnalysisDataStoreProvider>
+              <LensLayoutImageStoreProvider>
+                <GlassMapStoreProvider>{node}</GlassMapStoreProvider>
+              </LensLayoutImageStoreProvider>
+            </AnalysisDataStoreProvider>
+          </AnalysisPlotStoreProvider>
+        </LensEditorStoreProvider>
+      </SpecsConfiguratorStoreProvider>
+    </OpdAimPointProvider>
   );
 }
 

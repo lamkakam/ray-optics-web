@@ -32,8 +32,9 @@ from .targets import (
 class OptimizationProblem:
     """Validated optimization problem bound to an optical model."""
 
-    def __init__(self, opm: OpticalModel, config: OptimizationConfig):
+    def __init__(self, opm: OpticalModel, config: OptimizationConfig, opd_aim_point: str = "chief_ray"):
         self.opm = opm
+        self.opd_aim_point = opd_aim_point
         self.config: NormalizedOptimizationConfig = normalize_config(opm, config)
         self.variables = self.config["variables"]
         self.pickups = self.config["pickups"]
@@ -92,6 +93,7 @@ class OptimizationProblem:
                 operand["field_index"],
                 operand["wavelength_index"],
                 operand["options"],
+                self.opd_aim_point,
             )
             if isinstance(actual_values, list):
                 actuals = [float(value) for value in actual_values]

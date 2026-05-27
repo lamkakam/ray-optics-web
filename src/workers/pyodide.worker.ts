@@ -12,6 +12,7 @@ import { type ZernikeData, type ZernikeOrdering } from "@/features/lens-editor/t
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import { type RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { InitProgress } from "@/shared/hooks/usePyodide";
+import type { OpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
 
 declare function importScripts(...urls: string[]): void;
 declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
@@ -118,7 +119,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.4.1-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.5.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
@@ -173,9 +174,10 @@ export async function _getOpdFanData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   fieldIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
 ): Promise<OpdFanData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}))`),
+    buildScript(opticalModel, (opm) => `json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, opd_aim_point='${opdAimPoint}'))`),
   )) as string;
   return JSON.parse(json) as OpdFanData;
 }
@@ -201,12 +203,13 @@ export async function _getWavefrontData(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wavelengthIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   numRays: number = 64,
 ): Promise<WavefrontMapData> {
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(get_wavefront_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}))`,
+      (opm) => `json.dumps(get_wavefront_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, opd_aim_point='${opdAimPoint}'))`,
     ),
   )) as string;
   const parsed = JSON.parse(json) as {
@@ -230,13 +233,14 @@ export async function _getStrehlVsWavelengthData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   fieldIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   wavelengthSamples: number = 100,
   numRays: number = 21,
 ): Promise<StrehlVsWavelengthData> {
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(get_strehl_vs_wavelength_data(${opm}, ${fieldIndex}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}))`,
+      (opm) => `json.dumps(get_strehl_vs_wavelength_data(${opm}, ${fieldIndex}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}, opd_aim_point='${opdAimPoint}'))`,
     ),
   )) as string;
   return JSON.parse(json) as StrehlVsWavelengthData;
@@ -263,13 +267,14 @@ export async function _getDiffractionPSFData(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wavelengthIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   numRays: number = 64,
   maxDims: number = 256,
 ): Promise<DiffractionPsfData> {
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(get_diffraction_psf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}))`,
+      (opm) => `json.dumps(get_diffraction_psf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}, opd_aim_point='${opdAimPoint}'))`,
     ),
   )) as string;
   return JSON.parse(json) as DiffractionPsfData;
@@ -280,13 +285,14 @@ export async function _getDiffractionMTFData(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wavelengthIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   numRays: number = 64,
   maxDims: number = 256,
 ): Promise<DiffractionMtfData> {
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(get_diffraction_mtf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}))`,
+      (opm) => `json.dumps(get_diffraction_mtf_data(${opm}, ${fieldIndex}, ${wavelengthIndex}, num_rays=${numRays}, max_dims=${maxDims}, opd_aim_point='${opdAimPoint}'))`,
     ),
   )) as string;
   return JSON.parse(json) as DiffractionMtfData;
@@ -297,11 +303,12 @@ export async function _getZernikeCoefficients(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wvlIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   numTerms: number = 37,
   ordering: ZernikeOrdering = "noll",
 ): Promise<ZernikeData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}, ordering='${ordering}'))`)
+    buildScript(opticalModel, (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}, ordering='${ordering}', opd_aim_point='${opdAimPoint}'))`)
   )) as string;
   return JSON.parse(json) as ZernikeData;
 }
@@ -362,12 +369,13 @@ export async function _evaluateOptimizationProblem(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   config: OptimizationConfig,
+  opdAimPoint: OpdAimPoint = "chief_ray",
 ): Promise<OptimizationReport> {
   const configJson = JSON.stringify(config);
   const json = (await runPython(
     buildScript(
       opticalModel,
-      (opm) => `json.dumps(evaluate_optimization_problem(${opm}, json.loads(${JSON.stringify(configJson)})))`,
+      (opm) => `json.dumps(evaluate_optimization_problem(${opm}, json.loads(${JSON.stringify(configJson)}), opd_aim_point='${opdAimPoint}'))`,
     ),
   )) as string;
   return JSON.parse(json) as OptimizationReport;
@@ -377,19 +385,21 @@ export async function _optimizeOpm(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   config: OptimizationConfig,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
 ): Promise<OptimizationReport> {
+  const progressCallback = onProgress;
   const configJson = JSON.stringify(config);
   const reportProgress = (progressJson: string) => {
-    if (onProgress === undefined) {
+    if (progressCallback === undefined) {
       return;
     }
 
     const progress = JSON.parse(progressJson) as OptimizationProgressEntry[];
-    void onProgress(progress);
+    void progressCallback(progress);
   };
 
-  const canBindProgressCallback = onProgress !== undefined
+  const canBindProgressCallback = progressCallback !== undefined
     && pyodide !== null
     && typeof pyodide.globals?.set === "function"
     && typeof pyodide.globals?.delete === "function";
@@ -402,11 +412,11 @@ export async function _optimizeOpm(
       buildScript(
         opticalModel,
         (opm) => !canBindProgressCallback
-          ? `json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)})))`
+          ? `json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)}), opd_aim_point='${opdAimPoint}'))`
           : `
 def _report_optimization_progress(progress):
     _optimization_progress_callback(json.dumps(progress))
-json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)}), progress_reporter=_report_optimization_progress))
+json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)}), opd_aim_point='${opdAimPoint}', progress_reporter=_report_optimization_progress))
 `,
       ),
     )) as string;
@@ -433,8 +443,12 @@ export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: numb
   return await _getRayFanData(requirePyodide(), opticalModel, fieldIndex);
 }
 
-export async function getOpdFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData> {
-  return await _getOpdFanData(requirePyodide(), opticalModel, fieldIndex);
+export async function getOpdFanData(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
+): Promise<OpdFanData> {
+  return await _getOpdFanData(requirePyodide(), opticalModel, fieldIndex, opdAimPoint);
 }
 
 export async function getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData> {
@@ -445,18 +459,20 @@ export async function getWavefrontData(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wavelengthIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   numRays: number = 128,
 ): Promise<WavefrontMapData> {
-  return await _getWavefrontData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
+  return await _getWavefrontData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, opdAimPoint, numRays);
 }
 
 export async function getStrehlVsWavelengthData(
   opticalModel: OpticalModel,
   fieldIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   wavelengthSamples: number = 100,
   numRays: number = 21,
 ): Promise<StrehlVsWavelengthData> {
-  return await _getStrehlVsWavelengthData(requirePyodide(), opticalModel, fieldIndex, wavelengthSamples, numRays);
+  return await _getStrehlVsWavelengthData(requirePyodide(), opticalModel, fieldIndex, opdAimPoint, wavelengthSamples, numRays);
 }
 
 export async function getGeoPSFData(
@@ -472,20 +488,22 @@ export async function getDiffractionPSFData(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wavelengthIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   numRays: number = 128,
   maxDims: number = 256,
 ): Promise<DiffractionPsfData> {
-  return await _getDiffractionPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays, maxDims);
+  return await _getDiffractionPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, opdAimPoint, numRays, maxDims);
 }
 
 export async function getDiffractionMTFData(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wavelengthIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   numRays: number = 128,
   maxDims: number = 256,
 ): Promise<DiffractionMtfData> {
-  return await _getDiffractionMTFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays, maxDims);
+  return await _getDiffractionMTFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, opdAimPoint, numRays, maxDims);
 }
 
 
@@ -497,10 +515,11 @@ export async function getZernikeCoefficients(
   opticalModel: OpticalModel,
   fieldIndex: number,
   wvlIndex: number,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   numTerms?: number,
   ordering?: ZernikeOrdering,
 ): Promise<ZernikeData> {
-  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, numTerms, ordering);
+  return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, opdAimPoint, numTerms, ordering);
 }
 
 export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
@@ -526,16 +545,18 @@ export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData
 export async function evaluateOptimizationProblem(
   opticalModel: OpticalModel,
   config: OptimizationConfig,
+  opdAimPoint: OpdAimPoint = "chief_ray",
 ): Promise<OptimizationReport> {
-  return await _evaluateOptimizationProblem(requirePyodide(), opticalModel, config);
+  return await _evaluateOptimizationProblem(requirePyodide(), opticalModel, config, opdAimPoint);
 }
 
 export async function optimizeOpm(
   opticalModel: OpticalModel,
   config: OptimizationConfig,
+  opdAimPoint: OpdAimPoint = "chief_ray",
   onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
 ): Promise<OptimizationReport> {
-  return await _optimizeOpm(requirePyodide(), opticalModel, config, onProgress);
+  return await _optimizeOpm(requirePyodide(), opticalModel, config, opdAimPoint, onProgress);
 }
 
 expose({

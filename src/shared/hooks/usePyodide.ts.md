@@ -17,24 +17,25 @@ interface PyodideWorkerAPI {
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
   plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
   getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>;
-  getOpdFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>;
+  getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint): Promise<OpdFanData>;
   getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>;
-  getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<WavefrontMapData>;
-  getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>;
+  getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number): Promise<WavefrontMapData>;
+  getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>;
   getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<GeoPsfData>;
-  getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<DiffractionPsfData>;
-  getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;
+  getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>;
+  getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
-  getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
+  getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
-  evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>;
+  evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, opdAimPoint?: OpdAimPoint): Promise<OptimizationReport>;
   optimizeOpm(
     opticalModel: OpticalModel,
     config: OptimizationConfig,
+    opdAimPoint?: OpdAimPoint,
     onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
   ): Promise<OptimizationReport>;
 }
@@ -81,6 +82,7 @@ interface PyodideWorkerAPI {
 - `ZernikeData`, `ZernikeOrdering` — imported from `features/lens-editor/types/zernikeData` (type only).
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
 - `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `features/optimization/types/optimizationWorkerTypes` (type only).
+- `OpdAimPoint` — imported from `shared/components/providers/OpdAimPointProvider` (type only). OPD-related APIs default to `"chief_ray"` when omitted.
 
 ## Edge Cases / Error Handling
 

@@ -34,10 +34,10 @@ describe("_getZernikeCoefficients", () => {
     const result = await _getZernikeCoefficients(async (code) => {
       capturedCode = code;
       return JSON.stringify(mockData);
-    }, testModel, 0, 1, 56);
+    }, testModel, 0, 1, "centroid", 56, "noll");
     expect(capturedCode).toContain("opm = OpticalModel()");
     expect(capturedCode).toContain("from rayoptics_web_utils.zernike import get_zernike_coefficients");
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, num_terms=56, ordering='noll')");
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, num_terms=56, ordering='noll', opd_aim_point='centroid')");
     expect(capturedCode).toContain("json.dumps");
     expect(result).toMatchObject(mockData);
   });
@@ -57,8 +57,8 @@ describe("_getZernikeCoefficients", () => {
     await _getZernikeCoefficients(async (code) => {
       capturedCode = code;
       return JSON.stringify(mockData);
-    }, testModel, 2, 0, 22);
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, num_terms=22, ordering='noll')");
+    }, testModel, 2, 0);
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, num_terms=37, ordering='noll', opd_aim_point='chief_ray')");
   });
 
   it("defaults numTerms to 37 when not provided", async () => {
@@ -115,7 +115,7 @@ describe("_getZernikeCoefficients", () => {
     await _getZernikeCoefficients(async (code) => {
       capturedCode = code;
       return JSON.stringify(mockData);
-    }, testModel, 0, 0, 37, ordering);
+    }, testModel, 0, 0, undefined, 37, ordering);
     expect(capturedCode).toContain("ordering='fringe'");
   });
 });

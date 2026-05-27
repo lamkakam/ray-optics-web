@@ -11,6 +11,7 @@ def get_diffraction_mtf_data(
     opm: OpticalModel,
     field_idx: int,
     wvl_idx: int,
+    opd_aim_point: str = "chief_ray",
     num_rays: int = 64,
     max_dims: int = 256,
 ) -> dict: ...
@@ -31,6 +32,7 @@ def get_diffraction_mtf_data(
 ## Key Conventions
 
 - Uses the same `make_ray_grid(...)` and `calc_psf(...)` path as diffraction PSF extraction.
+- Passes `opd_aim_point` to `make_ray_grid(...)` so measured MTF uses the app-wide OPD reference convention.
 - Computes `abs(fftshift(ifft2(fftshift(psf))))`, then normalizes by the center value when nonzero.
 - Tangential data is the vertical centerline and sagittal data is the horizontal centerline.
 - Directional NA is computed from boundary ray directions relative to the chief ray.
