@@ -39,6 +39,7 @@ interface OptimizationPageProps {
 
 const ZERO_WEIGHT_WARNING_MESSAGE = "At least one effective optimization weight must be non-zero.";
 const LG_EVALUATION_RESERVED_HEIGHT_FALLBACK = 333;
+const PYODIDE_INTERRUPT_SIGNAL = 2;
 
 function buildCurrentEditorModel(lensStore: ReturnType<typeof useLensEditorStore>, specsStore: ReturnType<typeof useSpecsConfiguratorStore>) {
   const autoAperture = lensStore.getState().autoAperture;
@@ -116,12 +117,16 @@ export function OptimizationPage({
   const [optimizationProgress, setOptimizationProgress] = useState<ReadonlyArray<OptimizationProgressEntry>>([]);
   const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] = useState(false);
   const [optimizationRunComplete, setOptimizationRunComplete] = useState(false);
+  const [canStopOptimization, setCanStopOptimization] = useState(false);
+  const [isStoppingOptimization, setIsStoppingOptimization] = useState(false);
   const [liveDrawerHeight, setLiveDrawerHeight] = useState(defaultLgDrawerHeight);
   const [pageShellHeight, setPageShellHeight] = useState(0);
   const pageShellRef = useRef<HTMLDivElement | null>(null);
   const sharedContentRef = useRef<HTMLDivElement | null>(null);
   const evaluationPanelRef = useRef<HTMLDivElement | null>(null);
   const evaluationRequestIdRef = useRef(0);
+  const optimizationRunIdRef = useRef<string | undefined>(undefined);
+  const optimizationInterruptBufferRef = useRef<SharedArrayBuffer | undefined>(undefined);
 
   useLayoutEffect(() => {
     if (!isLG) {
@@ -176,6 +181,31 @@ export function OptimizationPage({
     optimizationStore,
     specsStore,
   ]);
+
+  useEffect(() => {
+    let canceled = false;
+
+    if (proxy === undefined) {
+      setCanStopOptimization(false);
+      return;
+    }
+
+    void proxy.canInterruptOptimization()
+      .then((isSupported) => {
+        if (!canceled) {
+          setCanStopOptimization(isSupported && typeof SharedArrayBuffer !== "undefined");
+        }
+      })
+      .catch(() => {
+        if (!canceled) {
+          setCanStopOptimization(false);
+        }
+      });
+
+    return () => {
+      canceled = true;
+    };
+  }, [proxy]);
 
   const fieldRows = useMemo<WeightRow[]>(() => {
     if (optimizationModel === undefined) {
@@ -340,9 +370,18 @@ export function OptimizationPage({
       return;
     }
 
+    const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `optimization-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const interruptBuffer = canStopOptimization && typeof SharedArrayBuffer !== "undefined"
+      ? new SharedArrayBuffer(4)
+      : undefined;
+    optimizationRunIdRef.current = runId;
+    optimizationInterruptBufferRef.current = interruptBuffer;
     setOptimizationProgress([]);
     setOptimizationProgressModalOpen(true);
     setOptimizationRunComplete(false);
+    setIsStoppingOptimization(false);
     optimizationStore.getState().setIsOptimizing(true);
     try {
       const config = optimizationStore.getState().buildOptimizationConfig();
@@ -357,10 +396,12 @@ export function OptimizationPage({
         comlinkProxy((progress: ReadonlyArray<OptimizationProgressEntry>) => {
           setOptimizationProgress(progress);
         }),
+        runId,
+        interruptBuffer,
       );
       setOptimizationProgress(report.optimization_progress ?? []);
       optimizationStore.getState().applyOptimizationResult(report);
-      if (!report.success) {
+      if (!report.success && report.status !== "stopped") {
         optimizationStore.getState().openWarningModal(report.message);
         return;
       }
@@ -370,8 +411,32 @@ export function OptimizationPage({
       onError();
     } finally {
       setOptimizationRunComplete(true);
+      setIsStoppingOptimization(false);
+      optimizationRunIdRef.current = undefined;
+      optimizationInterruptBufferRef.current = undefined;
       optimizationStore.getState().setIsOptimizing(false);
     }
+  };
+
+  const handleStopOptimization = () => {
+    if (proxy === undefined || isStoppingOptimization) {
+      return;
+    }
+
+    const runId = optimizationRunIdRef.current;
+    if (runId === undefined) {
+      return;
+    }
+
+    const interruptBuffer = optimizationInterruptBufferRef.current;
+    if (interruptBuffer !== undefined) {
+      Atomics.store(new Int32Array(interruptBuffer), 0, PYODIDE_INTERRUPT_SIGNAL);
+    }
+
+    setIsStoppingOptimization(true);
+    void proxy.requestOptimizationStop(runId).catch(() => {
+      setIsStoppingOptimization(false);
+    });
   };
 
   const handleApplyToEditor = async () => {
@@ -408,6 +473,9 @@ export function OptimizationPage({
         isOpen={optimizationProgressModalOpen}
         isOptimizing={isOptimizing}
         progress={optimizationProgress}
+        onStop={handleStopOptimization}
+        isStopping={isStoppingOptimization}
+        canStop={canStopOptimization}
         onClose={() => {
           if (!optimizationRunComplete) {
             return;

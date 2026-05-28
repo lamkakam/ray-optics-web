@@ -20,6 +20,11 @@ declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
 const CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full";
 
 let pyodide: any = null;
+let activeOptimizationRunId: string | undefined;
+let activeOptimizationInterruptBuffer: SharedArrayBuffer | undefined;
+let activeOptimizationInterruptView: Int32Array | undefined;
+
+const PYODIDE_INTERRUPT_SIGNAL = 2;
 
 type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
 
@@ -34,6 +39,26 @@ async function emitInitProgress(
 /** For testing only — resets the singleton so init() can be re-tested. */
 export function _resetPyodideForTesting(): void {
   pyodide = null;
+  activeOptimizationRunId = undefined;
+  activeOptimizationInterruptBuffer = undefined;
+  activeOptimizationInterruptView = undefined;
+}
+
+export function _setPyodideForTesting(nextPyodide: any | undefined): void {
+  pyodide = nextPyodide ?? null;
+  activeOptimizationRunId = undefined;
+  activeOptimizationInterruptBuffer = undefined;
+  activeOptimizationInterruptView = undefined;
+}
+
+export function _getOptimizationInterruptStateForTesting(): {
+  readonly activeRunId: string | undefined;
+  readonly interruptBuffer: SharedArrayBuffer | undefined;
+} {
+  return {
+    activeRunId: activeOptimizationRunId,
+    interruptBuffer: activeOptimizationInterruptBuffer,
+  };
 }
 
 // ─── DANGEROUS ZONE ────────────────────────────────────────────────────────────────────
@@ -387,6 +412,8 @@ export async function _optimizeOpm(
   config: OptimizationConfig,
   opdAimPoint: OpdAimPoint = "chief_ray",
   onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  runId?: string,
+  interruptBuffer?: SharedArrayBuffer,
 ): Promise<OptimizationReport> {
   const progressCallback = onProgress;
   const configJson = JSON.stringify(config);
@@ -407,6 +434,19 @@ export async function _optimizeOpm(
   if (canBindProgressCallback) {
     pyodide.globals.set("_optimization_progress_callback", reportProgress);
   }
+  const canBindInterruptBuffer = runId !== undefined
+    && interruptBuffer !== undefined
+    && pyodide !== null
+    && typeof pyodide.setInterruptBuffer === "function";
+
+  if (canBindInterruptBuffer) {
+    const interruptView = new Int32Array(interruptBuffer);
+    Atomics.store(interruptView, 0, 0);
+    activeOptimizationRunId = runId;
+    activeOptimizationInterruptBuffer = interruptBuffer;
+    activeOptimizationInterruptView = interruptView;
+    pyodide.setInterruptBuffer(interruptView);
+  }
   try {
     const json = (await runPython(
       buildScript(
@@ -422,10 +462,28 @@ json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)}), opd_a
     )) as string;
     return JSON.parse(json) as OptimizationReport;
   } finally {
+    if (canBindInterruptBuffer) {
+      pyodide.setInterruptBuffer(undefined);
+      if (activeOptimizationInterruptView !== undefined) {
+        Atomics.store(activeOptimizationInterruptView, 0, 0);
+      }
+      activeOptimizationRunId = undefined;
+      activeOptimizationInterruptBuffer = undefined;
+      activeOptimizationInterruptView = undefined;
+    }
     if (canBindProgressCallback) {
       pyodide.globals.delete("_optimization_progress_callback");
     }
   }
+}
+
+export async function _requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }> {
+  if (runId !== activeOptimizationRunId || activeOptimizationInterruptView === undefined) {
+    return { signaled: false };
+  }
+
+  Atomics.store(activeOptimizationInterruptView, 0, PYODIDE_INTERRUPT_SIGNAL);
+  return { signaled: true };
 }
 
 
@@ -542,6 +600,16 @@ export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData
   return await _getAllGlassCatalogsData(requirePyodide());
 }
 
+export async function canInterruptOptimization(): Promise<boolean> {
+  return pyodide !== null
+    && typeof pyodide.setInterruptBuffer === "function"
+    && typeof SharedArrayBuffer !== "undefined";
+}
+
+export async function requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }> {
+  return await _requestOptimizationStop(runId);
+}
+
 export async function evaluateOptimizationProblem(
   opticalModel: OpticalModel,
   config: OptimizationConfig,
@@ -555,8 +623,10 @@ export async function optimizeOpm(
   config: OptimizationConfig,
   opdAimPoint: OpdAimPoint = "chief_ray",
   onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  runId?: string,
+  interruptBuffer?: SharedArrayBuffer,
 ): Promise<OptimizationReport> {
-  return await _optimizeOpm(requirePyodide(), opticalModel, config, opdAimPoint, onProgress);
+  return await _optimizeOpm(requirePyodide(), opticalModel, config, opdAimPoint, onProgress, runId, interruptBuffer);
 }
 
 expose({
@@ -578,6 +648,8 @@ expose({
   focusByPolyRmsSpot,
   focusByPolyStrehl,
   getAllGlassCatalogsData,
+  canInterruptOptimization,
+  requestOptimizationStop,
   evaluateOptimizationProblem,
   optimizeOpm,
 });

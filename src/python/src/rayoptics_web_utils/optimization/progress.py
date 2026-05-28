@@ -19,6 +19,12 @@ class OptimizationProgress:
         self.entries: list[OptimizationProgressEntry] = []
         self._last_vector: FloatArray | None = None
 
+    @property
+    def latest_vector(self) -> FloatArray | None:
+        if self._last_vector is None:
+            return None
+        return np.array(self._last_vector, dtype=float, copy=True)
+
     def record(
         self,
         vector: FloatArray,

@@ -87,6 +87,8 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     focusByPolyRmsSpot: jest.fn(),
     focusByPolyStrehl: jest.fn(),
     getAllGlassCatalogsData: jest.fn(),
+    canInterruptOptimization: jest.fn().mockResolvedValue(true),
+    requestOptimizationStop: jest.fn().mockResolvedValue({ signaled: true }),
     evaluateOptimizationProblem: jest.fn().mockResolvedValue({
       success: true,
       status: "evaluated",
@@ -1017,6 +1019,99 @@ describe("OptimizationPage", () => {
     const chartOption = (chartInstance.setOption as jest.Mock).mock.calls.at(-1)?.[0];
     const yAxis = chartOption?.yAxis as { axisLabel?: { formatter?: (value: number) => string } } | undefined;
     expect(yAxis?.axisLabel?.formatter?.(0)).toBe("1e-9");
+  });
+
+  it("requests stop with the active run id and applies a successful stopped report without warning", async () => {
+    let resolveOptimization: ((value: {
+      success: true;
+      status: "stopped";
+      message: string;
+      optimizer: { kind: "least_squares"; method: "trf" };
+      initial_values: never[];
+      final_values: { kind: "radius"; surface_index: number; value: number; min: number; max: number }[];
+      pickups: never[];
+      residuals: never[];
+      merit_function: { sum_of_squares: number; rss: number };
+      optimization_progress: { iteration: number; merit_function_value: number; log10_merit_function_value: number }[];
+    }) => void) | undefined;
+    const optimizationPromise = new Promise<{
+      success: true;
+      status: "stopped";
+      message: string;
+      optimizer: { kind: "least_squares"; method: "trf" };
+      initial_values: never[];
+      final_values: { kind: "radius"; surface_index: number; value: number; min: number; max: number }[];
+      pickups: never[];
+      residuals: never[];
+      merit_function: { sum_of_squares: number; rss: number };
+      optimization_progress: { iteration: number; merit_function_value: number; log10_merit_function_value: number }[];
+    }>((resolve) => {
+      resolveOptimization = resolve;
+    });
+    const requestOptimizationStop = jest.fn().mockResolvedValue({ signaled: true });
+    const optimizeOpm = jest.fn().mockImplementation(async () => optimizationPromise);
+    const proxy = makeProxy({ optimizeOpm, requestOptimizationStop });
+    const { optimizationStore } = renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+
+    const stopButton = await screen.findByRole("button", { name: "Stop optimization" });
+    await user.click(stopButton);
+
+    await waitFor(() => expect(requestOptimizationStop).toHaveBeenCalledWith(expect.any(String)));
+    expect(requestOptimizationStop.mock.calls[0]?.[0]).toBe(optimizeOpm.mock.calls[0]?.[4]);
+    expect(screen.getByRole("button", { name: "Stopping optimization" })).toBeDisabled();
+
+    resolveOptimization?.({
+      success: true,
+      status: "stopped",
+      message: "Optimization stopped by user",
+      optimizer: { kind: "least_squares", method: "trf" },
+      initial_values: [],
+      final_values: [{ kind: "radius", surface_index: 1, value: 44, min: 40, max: 60 }],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 4, rss: 2 },
+      optimization_progress: [
+        { iteration: 0, merit_function_value: 9, log10_merit_function_value: Math.log10(9) },
+      ],
+    });
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument());
+    expect(screen.queryByRole("dialog", { name: "Warning" })).not.toBeInTheDocument();
+    expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(44);
+  });
+
+  it("keeps a late stop response from changing completed optimization state", async () => {
+    const requestOptimizationStop = jest.fn().mockResolvedValue({ signaled: false });
+    const optimizeOpm = jest.fn().mockResolvedValue({
+      success: true,
+      status: "optimized",
+      message: "done",
+      optimizer: { kind: "least_squares", method: "trf" },
+      initial_values: [],
+      final_values: [{ kind: "radius", surface_index: 1, value: 42, min: 40, max: 60 }],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 1, rss: 1 },
+      optimization_progress: [],
+    });
+    const proxy = makeProxy({ optimizeOpm, requestOptimizationStop });
+    const { optimizationStore } = renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument());
+
+    await proxy.requestOptimizationStop("stale-run-id");
+
+    expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
+    expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument();
   });
 
   it("floors zero merit values to the minimum non-zero plot value for the log chart", async () => {

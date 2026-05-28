@@ -90,6 +90,30 @@ def evaluate_optimization_problem(
     return report
 
 
+def _build_stopped_report(
+    problem: _OptimizationProblem,
+    initial_values,
+) -> OptimizationReport:
+    latest_vector = problem.progress.latest_vector
+    if latest_vector is None:
+        latest_vector = problem.current_vector()
+
+    report = cast(OptimizationReport, problem.evaluate(latest_vector))
+    report["success"] = True
+    report["status"] = "stopped"
+    report["message"] = "Optimization stopped by user"
+    report["initial_values"] = initial_values
+    report["optimization_progress"] = list(problem.optimization_progress)
+    report["optimizer"]["nfev"] = len(problem.optimization_progress)
+    if problem.optimizer["kind"] == "least_squares":
+        report["optimizer"]["njev"] = 0
+        report["optimizer"]["cost"] = float(report["merit_function"]["sum_of_squares"]) / 2.0
+        report["optimizer"]["optimality"] = 0.0
+    elif problem.optimizer["kind"] == "differential_evolution":
+        report["optimizer"]["nit"] = 0
+    return report
+
+
 def optimize_opm(
     opm: OpticalModel,
     config: OptimizationConfig,
@@ -123,6 +147,8 @@ def optimize_opm(
         solver = _SOLVER_REGISTRY[problem.optimizer["kind"]](problem)
         result = solver.solve(progress_reporter)
         report = problem.evaluate(result["x"])
+    except KeyboardInterrupt:
+        return _build_stopped_report(problem, initial_values)
     except Exception:
         _restore_state(opm, snapshot)
         raise

@@ -805,6 +805,70 @@ class TestEvaluateOptimizationProblem:
 
 
 class TestOptimizeOpm:
+    def test_progress_retains_latest_recorded_vector(self):
+        from rayoptics_web_utils.optimization.progress import OptimizationProgress
+
+        progress = OptimizationProgress()
+        vector = np.array([1.0, 2.0], dtype=float)
+        progress.record(
+            vector,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "initial_values": [],
+                "final_values": [],
+                "pickups": [],
+                "residuals": [],
+                "merit_function": {"sum_of_squares": 4.0, "rss": 2.0},
+                "optimization_progress": [],
+            },
+        )
+        vector[0] = 99.0
+
+        assert progress.latest_vector is not None
+        assert progress.latest_vector.tolist() == pytest.approx([1.0, 2.0])
+
+    def test_returns_stopped_report_with_latest_progress_when_interrupted(self, monkeypatch, fresh_cooke_triplet):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        config = {
+            "optimizer": {"kind": "least_squares", "method": "trf", "max_nfev": 30},
+            "variables": [
+                {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0},
+            ],
+            "pickups": [],
+            "merit_function": {
+                "operands": [
+                    {
+                        "kind": "focal_length",
+                        "target": 90.0,
+                        "weight": 1.0,
+                    }
+                ]
+            },
+        }
+
+        class FakeSolver:
+            def __init__(self, problem):
+                self.problem = problem
+
+            def solve(self, progress_reporter=None):
+                evaluation = self.problem.evaluate(np.array([42.0], dtype=float))
+                self.problem.progress.record(np.array([42.0], dtype=float), evaluation, progress_reporter)
+                raise KeyboardInterrupt
+
+        monkeypatch.setitem(optimization_module._SOLVER_REGISTRY, "least_squares", FakeSolver)
+
+        progress_snapshots = []
+        report = optimize_opm(fresh_cooke_triplet, config, progress_reporter=progress_snapshots.append)
+
+        assert report["success"] is True
+        assert report["status"] == "stopped"
+        assert report["message"] == "Optimization stopped by user"
+        assert report["final_values"][0]["value"] == pytest.approx(42.0)
+        assert report["optimization_progress"] == progress_snapshots[-1]
+        assert report["optimizer"]["nfev"] == 1
+
     def test_reports_differential_evolution_metadata_without_method(self, monkeypatch, fresh_cooke_triplet):
         import numpy as np
         import rayoptics_web_utils.optimization.optimization as optimization_module

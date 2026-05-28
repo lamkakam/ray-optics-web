@@ -31,12 +31,16 @@ interface PyodideWorkerAPI {
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
+  canInterruptOptimization(): Promise<boolean>;
+  requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>;
   evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, opdAimPoint?: OpdAimPoint): Promise<OptimizationReport>;
   optimizeOpm(
     opticalModel: OpticalModel,
     config: OptimizationConfig,
     opdAimPoint?: OpdAimPoint,
     onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+    runId?: string,
+    interruptBuffer?: SharedArrayBuffer,
   ): Promise<OptimizationReport>;
 }
 ```
@@ -91,7 +95,9 @@ interface PyodideWorkerAPI {
 - `proxy` is `undefined` while initialising, preventing callers from invoking methods before the worker is ready.
 - `plotLensLayout` requires the caller to provide `isDark`; the worker derives any diffraction-grating-dependent overlay from the `OpticalModel`.
 - `evaluateOptimizationProblem` and `optimizeOpm` share the same report shape, so optimization UIs can preview residuals before running the full solve.
-- `optimizeOpm` also accepts an optional streamed progress callback; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker.
+- `canInterruptOptimization()` reports whether the initialized worker can install a Pyodide interrupt buffer.
+- `requestOptimizationStop(runId)` asks the worker to signal the currently active optimization only when the run id still matches; late or stale run ids return `{ signaled: false }`.
+- `optimizeOpm` also accepts an optional streamed progress callback; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker. For stoppable runs, callers also pass a per-run id and a `SharedArrayBuffer` interrupt buffer.
 - `init` accepts an optional progress callback for determinate startup milestones; `usePyodide` owns the Comlink proxy wrapping for this callback.
 - `_resetSingleton()` is exported for test isolation only — NOT for production use.
 

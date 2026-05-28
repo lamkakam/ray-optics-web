@@ -1,5 +1,11 @@
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import { _evaluateOptimizationProblem, _optimizeOpm } from "@/workers/pyodide.worker";
+import {
+  _evaluateOptimizationProblem,
+  _getOptimizationInterruptStateForTesting,
+  _optimizeOpm,
+  _requestOptimizationStop,
+  _setPyodideForTesting,
+} from "@/workers/pyodide.worker";
 
 const baseModel: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -23,6 +29,10 @@ const baseModel: OpticalModel = {
 };
 
 describe("_optimizeOpm", () => {
+  beforeEach(() => {
+    _setPyodideForTesting(undefined);
+  });
+
   it("runs optimize_opm in Python and parses the JSON result", async () => {
     const runPython = jest.fn().mockResolvedValue(
       JSON.stringify({
@@ -126,6 +136,84 @@ describe("_optimizeOpm", () => {
       { iteration: 0, merit_function_value: 25, log10_merit_function_value: Math.log10(25) },
       { iteration: 1, merit_function_value: 4, log10_merit_function_value: Math.log10(4) },
     ]);
+  });
+
+  it("sets and clears interrupt state around an optimization run", async () => {
+    const setInterruptBuffer = jest.fn();
+    _setPyodideForTesting({
+      setInterruptBuffer,
+      globals: { set: jest.fn(), delete: jest.fn() },
+    });
+    const interruptBuffer = new SharedArrayBuffer(4);
+    const runPython = jest.fn().mockImplementation(async () => {
+      expect(_getOptimizationInterruptStateForTesting()).toMatchObject({
+        activeRunId: "run-1",
+        interruptBuffer,
+      });
+      return JSON.stringify({
+        success: true,
+        status: "optimized",
+        message: "done",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [],
+        merit_function: { sum_of_squares: 0, rss: 0 },
+        optimization_progress: [],
+      });
+    });
+
+    await _optimizeOpm(runPython, baseModel, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [],
+      pickups: [],
+      merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
+    }, "chief_ray", undefined, "run-1", interruptBuffer);
+
+    expect(setInterruptBuffer).toHaveBeenNthCalledWith(1, expect.any(Int32Array));
+    expect(setInterruptBuffer.mock.calls[0]?.[0].buffer).toBe(interruptBuffer);
+    expect(setInterruptBuffer).toHaveBeenLastCalledWith(undefined);
+    expect(_getOptimizationInterruptStateForTesting()).toMatchObject({
+      activeRunId: undefined,
+      interruptBuffer: undefined,
+    });
+  });
+
+  it("signals only the active matching run id and treats stale stops as no-ops", async () => {
+    const interruptBuffer = new SharedArrayBuffer(4);
+    const interruptView = new Int32Array(interruptBuffer);
+    _setPyodideForTesting({
+      setInterruptBuffer: jest.fn(),
+      globals: { set: jest.fn(), delete: jest.fn() },
+    });
+    const runPython = jest.fn().mockImplementation(async () => {
+      expect(await _requestOptimizationStop("old-run")).toEqual({ signaled: false });
+      expect(Atomics.load(interruptView, 0)).toBe(0);
+      expect(await _requestOptimizationStop("run-2")).toEqual({ signaled: true });
+      expect(Atomics.load(interruptView, 0)).toBe(2);
+      return JSON.stringify({
+        success: true,
+        status: "stopped",
+        message: "Optimization stopped by user",
+        optimizer: { kind: "least_squares", method: "trf" },
+        initial_values: [],
+        final_values: [],
+        pickups: [],
+        residuals: [],
+        merit_function: { sum_of_squares: 0, rss: 0 },
+        optimization_progress: [],
+      });
+    });
+
+    await _optimizeOpm(runPython, baseModel, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [],
+      pickups: [],
+      merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
+    }, "chief_ray", undefined, "run-2", interruptBuffer);
+
+    expect(await _requestOptimizationStop("run-2")).toEqual({ signaled: false });
   });
 });
 

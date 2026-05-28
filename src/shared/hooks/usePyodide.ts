@@ -42,12 +42,16 @@ export interface PyodideWorkerAPI {
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
+  canInterruptOptimization(): Promise<boolean>;
+  requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>;
   evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, opdAimPoint?: OpdAimPoint): Promise<OptimizationReport>;
   optimizeOpm(
     opticalModel: OpticalModel,
     config: OptimizationConfig,
     opdAimPoint?: OpdAimPoint,
     onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+    runId?: string,
+    interruptBuffer?: SharedArrayBuffer,
   ): Promise<OptimizationReport>;
 }
 

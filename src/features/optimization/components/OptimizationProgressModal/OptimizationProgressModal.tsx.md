@@ -10,6 +10,9 @@ interface OptimizationProgressModalProps {
   isOptimizing: boolean;
   progress: ReadonlyArray<OptimizationProgressEntry>;
   onClose: () => void;
+  onStop?: () => void;
+  isStopping?: boolean;
+  canStop?: boolean;
 }
 ```
 
@@ -17,7 +20,8 @@ interface OptimizationProgressModalProps {
 
 - Uses the shared `Modal` primitive with `size="4xl"` and title `Optimization Progress`.
 - Imports progress entry types from `features/optimization/types/optimizationWorkerTypes.ts`.
-- While `isOptimizing` is `true`, the backdrop is non-dismissible and the footer does not render an `OK` button.
+- While `isOptimizing` is `true`, the backdrop is non-dismissible and the footer renders a danger `Stop` button instead of `OK`.
+- The stop control calls `onStop` when enabled, uses `aria-label="Stop optimization"` normally, switches to disabled `aria-label="Stopping optimization"` while `isStopping` is true, and is disabled with `aria-label="Stop unavailable: optimization interrupts are unsupported"` when `canStop` is false.
 - After optimization completes, renders an `OK` button and allows backdrop dismissal through `onClose`.
 - Initializes one ECharts canvas instance per open modal session and updates it whenever `progress` or theme text color changes.
 - Series data is built from a chart-only window of the newest 2000 `progress` entries; the underlying optimization progress data is not mutated.
