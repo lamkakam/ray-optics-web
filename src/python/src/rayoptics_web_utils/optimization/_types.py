@@ -24,7 +24,7 @@ type AsphereKind = Literal["Conic", "EvenAspherical", "RadialPolynomial", "XToro
 type BaseTargetKey = tuple[TargetKind, int]
 type PolynomialTargetKey = tuple[Literal["asphere_polynomial_coefficient"], int, int]
 type TargetKey = BaseTargetKey | PolynomialTargetKey
-type OptimizationStatus = int | Literal["evaluated", "no_variables"]
+type OptimizationStatus = int | Literal["evaluated", "no_variables", "stopped"]
 
 
 class OperandOptions(TypedDict, total=False):

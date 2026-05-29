@@ -26,6 +26,9 @@ interface OptimizationProgressModalProps {
   readonly isOptimizing: boolean;
   readonly progress: ReadonlyArray<OptimizationProgressEntry>;
   readonly onClose: () => void;
+  readonly onStop?: () => void;
+  readonly isStopping?: boolean;
+  readonly canStop?: boolean;
 }
 
 function buildOptimizationProgressOption(
@@ -93,6 +96,9 @@ export function OptimizationProgressModal({
   isOptimizing,
   progress = [],
   onClose,
+  onStop,
+  isStopping = false,
+  canStop = false,
 }: OptimizationProgressModalProps) {
   const { theme } = useTheme();
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
@@ -147,7 +153,24 @@ export function OptimizationProgressModal({
           className="w-full rounded-lg border border-gray-200 dark:border-gray-700"
           style={{ height: "320px" }}
         />
-        {isOptimizing ? null : (
+        {isOptimizing ? (
+          <div className="flex justify-end">
+            <Button
+              variant="danger"
+              aria-label={
+                !canStop
+                  ? "Stop unavailable: optimization interrupts are unsupported"
+                  : isStopping
+                    ? "Stopping optimization"
+                    : "Stop optimization"
+              }
+              disabled={!canStop || isStopping}
+              onClick={onStop}
+            >
+              {isStopping ? "Stopping..." : "Stop"}
+            </Button>
+          </div>
+        ) : (
           <div className="flex justify-end">
             <Button variant="primary" aria-label="OK" onClick={onClose}>
               OK

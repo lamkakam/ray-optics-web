@@ -128,7 +128,7 @@ weighted_residual = total_weight * (actual_value - target)
 ## Internal Structure
 
 - `_types.py` — shared typed dicts, aliases, and protocols used across the package
-- `optimization.py` — public facade, solver dispatch, compatibility aliases
+- `optimization.py` — public facade, solver dispatch, compatibility aliases, and stopped-report construction
 - `config.py` — config normalization and validation
 - `targets.py` — mutable target access, snapshots, radius/curvature transforms
 - `operands.py` — operand registry and per-sample evaluators
@@ -185,7 +185,8 @@ weighted_residual = total_weight * (actual_value - target)
    - evaluates operand residuals
 6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) for residual solvers or a scalar `1e6` penalty for scalar solvers so SciPy can continue.
 7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`.
-8. If SciPy setup or the final evaluation fails, restores the snapshotted state and re-raises.
+8. If SciPy raises `KeyboardInterrupt`, treats it as a user stop, evaluates the latest recorded optimizer vector (or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that latest state.
+9. If SciPy setup or the final evaluation fails for any other exception, restores the snapshotted state and re-raises.
 
 If there are no variables, `optimize_opm()` skips SciPy, records one progress point from the evaluated merit report, and returns `status == "no_variables"`.
 

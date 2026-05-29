@@ -34,12 +34,16 @@ export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: 
 export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>
+export async function canInterruptOptimization(): Promise<boolean>
+export async function requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>
 export async function evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, opdAimPoint?: OpdAimPoint): Promise<OptimizationReport>
 export async function optimizeOpm(
   opticalModel: OpticalModel,
   config: OptimizationConfig,
   opdAimPoint?: OpdAimPoint,
   onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  runId?: string,
+  interruptBuffer?: SharedArrayBuffer,
 ): Promise<OptimizationReport>
 ```
 
@@ -75,8 +79,12 @@ export async function _optimizeOpm(
   config: OptimizationConfig,
   opdAimPoint?: OpdAimPoint,
   onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  runId?: string,
+  interruptBuffer?: SharedArrayBuffer,
 ): Promise<OptimizationReport>
 export function _resetPyodideForTesting(): void
+export function _setPyodideForTesting(nextPyodide: unknown | undefined): void
+export function _getOptimizationInterruptStateForTesting(): { activeRunId?: string; interruptBuffer?: SharedArrayBuffer }
 ```
 
 ## Initialization
@@ -88,7 +96,7 @@ export function _resetPyodideForTesting(): void
 3. Emits `10%` with `"Loading Pyodide script"` and loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
 4. Emits `25%` with `"Starting Pyodide runtime"` and calls `loadPyodide({ indexURL })` to create the Pyodide instance.
 5. Emits `40%` with `"Loading Pyodide packages"` and loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.5.0-py3-none-any.whl`.
+6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.6.0-py3-none-any.whl`.
 7. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl, onProgress)`.
 8. Emits `100%` with `"Ready"`.
 
@@ -122,8 +130,10 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `focusByPolyRmsSpot(model, fieldIndex)` | Focuses by minimizing polychromatic RMS spot radius. Returns `FocusingResult`. |
 | `focusByPolyStrehl(model, fieldIndex)` | Focuses by maximizing polychromatic Strehl ratio. Returns `FocusingResult`. |
 | `getAllGlassCatalogsData()` | Returns raw glass catalog data for all 6 catalogs as `RawAllGlassCatalogsData`. No optical model required. |
+| `canInterruptOptimization()` | Returns whether the initialized Pyodide instance exposes `setInterruptBuffer` and the browser exposes `SharedArrayBuffer`. |
+| `requestOptimizationStop(runId)` | Signals the active interrupt buffer only when `runId` matches the currently active optimization run; returns `{ signaled: false }` for late or stale requests. |
 | `evaluateOptimizationProblem(model, config, opdAimPoint?)` | Builds `opm` from the model, calls Python `evaluate_optimization_problem(opm, config, opd_aim_point=...)`, and returns the parsed JSON-safe residual report without running SciPy. |
-| `optimizeOpm(model, config, opdAimPoint?, onProgress?)` | Builds `opm` from the model, optionally bridges a streamed progress callback into Python, calls `optimize_opm(opm, config, opd_aim_point=..., ...)`, and returns the parsed JSON-safe optimization report. |
+| `optimizeOpm(model, config, opdAimPoint?, onProgress?, runId?, interruptBuffer?)` | Builds `opm` from the model, optionally bridges a streamed progress callback into Python, optionally installs a per-run Pyodide interrupt buffer, calls `optimize_opm(opm, config, opd_aim_point=..., ...)`, and returns the parsed JSON-safe optimization report. |
 
 ## Injectable Variants (for testing)
 
@@ -144,8 +154,9 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
 - `_getZernikeCoefficients(runPython, model, fi, wi, opdAimPoint?, n?, ordering?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56 and `ordering` defaults to `"noll"`.
 - `_evaluateOptimizationProblem(runPython, model, config, opdAimPoint?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, runs `evaluate_optimization_problem(..., opd_aim_point=...)`, and parses the returned report.
-- `_optimizeOpm(runPython, model, config, opdAimPoint?, onProgress?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, and when a live callback is available binds `_optimization_progress_callback` through `pyodide.globals` so Python can push JSON snapshots back to JS while `optimize_opm(..., opd_aim_point=...)` is still running.
-- `_resetPyodideForTesting()` — sets `pyodide = null` to allow `init()` to be re-exercised in tests.
+- `_optimizeOpm(runPython, model, config, opdAimPoint?, onProgress?, runId?, interruptBuffer?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, and when a live callback is available binds `_optimization_progress_callback` through `pyodide.globals` so Python can push JSON snapshots back to JS while `optimize_opm(..., opd_aim_point=...)` is still running. When `runId`, `interruptBuffer`, and `pyodide.setInterruptBuffer` are available, it creates an `Int32Array` view over the buffer, resets the first cell, stores the active run id, installs the typed view before the Python call, and clears all interrupt state in `finally`.
+- `_resetPyodideForTesting()` — sets `pyodide = null` and clears optimization interrupt state to allow `init()` to be re-exercised in tests.
+- `_setPyodideForTesting(...)` and `_getOptimizationInterruptStateForTesting()` are test-only helpers for interrupt lifecycle coverage.
 
 ## Key Conventions
 
@@ -153,6 +164,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **`requirePyodide()` guard**: All public functions call this helper. It throws `"Pyodide not initialized. Call init() first."` if `pyodide` is `null`.
 - **Stateless**: Each computation function builds `opm` locally from the received `OpticalModel` within a single `runPython` call. No global `opm` state persists between calls.
 - **Optimization progress bridging**: `_optimizeOpm(...)` is the only exception to the fully fire-and-return pattern; when a progress callback is supplied, it temporarily installs `_optimization_progress_callback` in Pyodide globals for that single optimization call and removes it in `finally`.
+- **Optimization stop signaling**: stoppable runs are identified by a per-run string id and a shared interrupt buffer. `_optimizeOpm(...)` installs the buffer only for the matching active run and clears it in `finally` for success, stopped, failed, and thrown-error paths. `requestOptimizationStop(...)` is idempotent and returns a no-op result for stale or late run ids.
 - **Plot return type**: `plotLensLayout` returns a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getWavefrontData`, `getStrehlVsWavelengthData`, `getGeoPSFData`, `getDiffractionPSFData`, and `getDiffractionMTFData` return typed data for frontend rendering.
 - **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, and `water` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
 

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import * as echarts from "echarts/core";
 import { OptimizationProgressModal } from "@/features/optimization/components/OptimizationProgressModal";
 import type { OptimizationProgressEntry } from "@/features/optimization/types/optimizationWorkerTypes";
@@ -66,5 +67,73 @@ describe("OptimizationProgressModal", () => {
     expect(seriesData[0]).toEqual([51, 52]);
     expect(seriesData.at(-1)).toEqual([2050, 2051]);
     expect(option.xAxis.min).toBe(51);
+  });
+
+  it("renders a danger Stop button while running and hides OK", () => {
+    render(
+      <OptimizationProgressModal
+        isOpen={true}
+        isOptimizing={true}
+        progress={makeProgress(1)}
+        onClose={jest.fn()}
+        onStop={jest.fn()}
+        isStopping={false}
+        canStop={true}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Stop optimization" })).toHaveTextContent("Stop");
+    expect(screen.queryByRole("button", { name: "OK" })).not.toBeInTheDocument();
+  });
+
+  it("calls onStop and disables Stop while the stop request is pending", async () => {
+    const onStop = jest.fn();
+    const { rerender } = render(
+      <OptimizationProgressModal
+        isOpen={true}
+        isOptimizing={true}
+        progress={makeProgress(1)}
+        onClose={jest.fn()}
+        onStop={onStop}
+        isStopping={false}
+        canStop={true}
+      />,
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Stop optimization" }));
+
+    expect(onStop).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <OptimizationProgressModal
+        isOpen={true}
+        isOptimizing={true}
+        progress={makeProgress(1)}
+        onClose={jest.fn()}
+        onStop={onStop}
+        isStopping={true}
+        canStop={true}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Stopping optimization" })).toBeDisabled();
+  });
+
+  it("renders OK and no Stop after a stopped run completes", () => {
+    render(
+      <OptimizationProgressModal
+        isOpen={true}
+        isOptimizing={false}
+        progress={makeProgress(1)}
+        onClose={jest.fn()}
+        onStop={jest.fn()}
+        isStopping={false}
+        canStop={true}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Stop optimization|Stopping optimization/ })).not.toBeInTheDocument();
   });
 });
