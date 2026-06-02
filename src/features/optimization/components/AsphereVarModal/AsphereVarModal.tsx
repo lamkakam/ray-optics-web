@@ -8,9 +8,10 @@ import { ModeSelectField } from "@/features/optimization/components/Optimization
 import { PickupModeFields } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/PickupModeFields";
 import {
   CURVATURE_RADIUS_GUIDANCE_TEXT,
-  curvatureRadiusCrossesZero,
-  getCurvatureRadiusBoundsErrorText,
+  curvatureRadiusNoZeroStraddleRule,
   getThicknessPickupSourceSurfaceOptions,
+  minLessThanMaxRule,
+  validateVariableBounds,
 } from "@/features/optimization/lib/modalHelpers";
 import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/variableModeFields";
 import { Button } from "@/shared/components/primitives/Button";
@@ -112,17 +113,22 @@ function setTermMode(state: AsphereOptimizationState, term: TermDescriptor, mode
   };
 }
 
-function isVariableInvalid(mode: AsphereMode, usesBounds: boolean): boolean {
-  if (mode.mode !== "variable" || !usesBounds) {
-    return false;
-  }
-  const min = Number.parseFloat(mode.min);
-  const max = Number.parseFloat(mode.max);
-  return !Number.isFinite(min) || !Number.isFinite(max) || min >= max;
-}
-
 function isCoefficient(kind: TermKind): kind is { coefficientIndex: number } {
   return typeof kind === "object";
+}
+
+function getTermVariableBoundsErrorText(
+  term: TermDescriptor,
+  mode: AsphereMode,
+  usesBounds: boolean,
+): string | undefined {
+  if (!usesBounds || mode.mode !== "variable") {
+    return undefined;
+  }
+
+  return validateVariableBounds(term.ariaLabel, mode.min, mode.max, term.kind === "toricSweep"
+    ? [minLessThanMaxRule, curvatureRadiusNoZeroStraddleRule]
+    : [minLessThanMaxRule]);
 }
 
 function getSourceCoefficientOptions(optimizationModel: OpticalModel, sourceSurfaceIndex: string): ReadonlyArray<SelectOption> {
@@ -205,15 +211,7 @@ function AsphereVarModalEditor({
   const termRows = getTermRows(draft.type);
   const isDoneDisabled = termRows.some((term) => {
     const mode = getTermMode(draft, term);
-
-    if (isVariableInvalid(mode, canUseBounds)) {
-      return true;
-    }
-
-    return canUseBounds
-      && term.kind === "toricSweep"
-      && mode.mode === "variable"
-      && curvatureRadiusCrossesZero(mode.min, mode.max);
+    return getTermVariableBoundsErrorText(term, mode, canUseBounds) !== undefined;
   });
 
   const handleTypeChange = (type: AsphericalType) => {
@@ -303,10 +301,7 @@ function AsphereVarModalEditor({
           <div className="space-y-3">
             {termRows.map((term) => {
               const mode = getTermMode(draft, term);
-              const variableBoundsCrossZero = canUseBounds
-                && term.kind === "toricSweep"
-                && mode.mode === "variable"
-                && curvatureRadiusCrossesZero(mode.min, mode.max);
+              const variableBoundsErrorText = getTermVariableBoundsErrorText(term, mode, canUseBounds);
               const termId = typeof term.kind === "object"
                 ? `coeff-${(term.kind as { coefficientIndex: number }).coefficientIndex}`
                 : term.kind;
@@ -335,9 +330,7 @@ function AsphereVarModalEditor({
                       guidanceText={canUseBounds && term.kind === "toricSweep"
                         ? CURVATURE_RADIUS_GUIDANCE_TEXT
                         : undefined}
-                      errorText={variableBoundsCrossZero
-                        ? getCurvatureRadiusBoundsErrorText("Toroid sweep R")
-                        : undefined}
+                      errorText={variableBoundsErrorText}
                       className="ml-36 grid gap-3 pl-3"
                       inputRowClassName="grid gap-3 md:grid-cols-2"
                       helperTextClassName="md:col-span-2"

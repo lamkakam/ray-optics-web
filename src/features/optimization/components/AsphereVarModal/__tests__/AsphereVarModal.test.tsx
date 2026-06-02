@@ -638,6 +638,7 @@ describe("AsphereVarModal", () => {
     await user.clear(maxInput);
     await user.type(maxInput, "5");
 
+    expect(screen.getByText("Conic Constant variable bounds must have Min. less than Max.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
   });
 

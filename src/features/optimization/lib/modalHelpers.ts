@@ -12,6 +12,23 @@ export const CURVATURE_RADIUS_GUIDANCE_TEXT = [
   "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
 ] as const;
 
+export type VariableBoundsValidationRule = (
+  label: string,
+  minValue: string,
+  maxValue: string,
+) => string | undefined;
+
+export const minLessThanMaxRule: VariableBoundsValidationRule = (label, minValue, maxValue) => {
+  const min = Number(minValue);
+  const max = Number(maxValue);
+
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min >= max) {
+    return `${label} variable bounds must have Min. less than Max.`;
+  }
+
+  return undefined;
+};
+
 export function curvatureRadiusCrossesZero(minValue: string, maxValue: string): boolean {
   const min = Number(minValue);
   const max = Number(maxValue);
@@ -25,6 +42,30 @@ export function curvatureRadiusCrossesZero(minValue: string, maxValue: string): 
 
 export function getCurvatureRadiusBoundsErrorText(label: string): string {
   return `${label} variable bounds must stay on one side of 0.`;
+}
+
+export const curvatureRadiusNoZeroStraddleRule: VariableBoundsValidationRule = (label, minValue, maxValue) => {
+  if (curvatureRadiusCrossesZero(minValue, maxValue)) {
+    return getCurvatureRadiusBoundsErrorText(label);
+  }
+
+  return undefined;
+};
+
+export function validateVariableBounds(
+  label: string,
+  minValue: string,
+  maxValue: string,
+  rules: ReadonlyArray<VariableBoundsValidationRule>,
+): string | undefined {
+  for (const rule of rules) {
+    const errorText = rule(label, minValue, maxValue);
+    if (errorText !== undefined) {
+      return errorText;
+    }
+  }
+
+  return undefined;
 }
 
 export function createVariableDraft(value: number): RadiusModeDraft {
