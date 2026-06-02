@@ -60,7 +60,7 @@ Provider-backed Zustand slice for the optimization route. Owns all page state, i
 ## Validation Rules
 
 - `max_nfev` must be a positive integer.
-- For least squares, `ftol`, `xtol`, and `gtol` must be positive non-zero numbers.
+- For least squares, `ftol`, `xtol`, and `gtol` must be finite positive values greater than `Number.EPSILON`, matching SciPy's double-precision machine-epsilon tolerance guard before the worker is called.
 - For Differential Evolution, `tol` must be a positive non-zero number and `atol` must be a non-negative number.
 - Operand `weight` must be a positive non-zero number.
 - For bounded optimizers such as `trf` and `differential_evolution`, variable `min` and `max` must be numeric, and `min < max`.

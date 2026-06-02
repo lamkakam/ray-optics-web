@@ -248,6 +248,15 @@ function parsePositiveFloat(value: string, label: string): number {
   return parsed;
 }
 
+function parseLeastSquaresTolerance(value: string, label: string): number {
+  const parsed = parsePositiveFloat(value, label);
+  if (parsed <= Number.EPSILON) {
+    throw new Error(`${label} must be greater than machine epsilon (${Number.EPSILON}).`);
+  }
+
+  return parsed;
+}
+
 function parseNonNegativeFloat(value: string, label: string): number {
   const parsed = Number.parseFloat(value);
   if (!Number.isFinite(parsed) || parsed < 0) {
@@ -301,9 +310,9 @@ function buildOptimizerConfig(
     kind: optimizer.kind,
     method: optimizer.method,
     max_nfev: parsePositiveInteger(optimizer.max_nfev, "Max. num of steps"),
-    ftol: parsePositiveFloat(optimizer.ftol, "Merit function change tolerance"),
-    xtol: parsePositiveFloat(optimizer.xtol, "Independent variable change tolerance"),
-    gtol: parsePositiveFloat(optimizer.gtol, "Gradient tolerance"),
+    ftol: parseLeastSquaresTolerance(optimizer.ftol, "Merit function change tolerance"),
+    xtol: parseLeastSquaresTolerance(optimizer.xtol, "Independent variable change tolerance"),
+    gtol: parseLeastSquaresTolerance(optimizer.gtol, "Gradient tolerance"),
   };
 }
 

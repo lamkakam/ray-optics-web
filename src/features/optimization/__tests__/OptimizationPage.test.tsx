@@ -897,6 +897,49 @@ describe("OptimizationPage", () => {
     expect(proxy.optimizeOpm).not.toHaveBeenCalled();
   });
 
+  it("rejects invalid least-squares tolerances before calling optimizeOpm", async () => {
+    const onError = jest.fn();
+    const proxy = makeProxy({
+      optimizeOpm: jest.fn().mockRejectedValue(
+        new Error("At least one of the tolerances must be higher than machine epsilon"),
+      ),
+    });
+    const { optimizationStore } = renderOptimizationPage(proxy, onError);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled();
+    });
+
+    act(() => {
+      optimizationStore.setState((state) => {
+        if (state.optimizer.kind !== "least_squares") {
+          throw new Error("Expected least-squares optimizer state.");
+        }
+
+        return {
+          optimizer: {
+            ...state.optimizer,
+            ftol: String(Number.EPSILON),
+          },
+        };
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+
+    expect(proxy.optimizeOpm).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+    expect(screen.queryByText("At least one of the tolerances must be higher than machine epsilon")).not.toBeInTheDocument();
+  });
+
   it("keeps Optimize enabled when at least one effective optimization weight is non-zero", async () => {
     const proxy = makeProxy();
     const { optimizationStore } = renderOptimizationPage(proxy);
