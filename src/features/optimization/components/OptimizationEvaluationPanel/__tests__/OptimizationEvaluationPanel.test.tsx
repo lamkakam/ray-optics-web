@@ -24,6 +24,31 @@ describe("OptimizationEvaluationPanel", () => {
     expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
   });
 
+  it("renders an invalid config message before the empty state text", () => {
+    render(
+      <OptimizationEvaluationPanel
+        rows={[]}
+        isEvaluating={false}
+        invalidConfigMessage="Variable minimum must be less than maximum."
+      />,
+    );
+
+    const invalidMessage = screen.getByText("Variable minimum must be less than maximum.");
+    const emptyState = screen.getByText(
+      "Evaluation results appear here when the current optimization config is valid.",
+    );
+
+    expect(invalidMessage).toBeInTheDocument();
+    cx.text.size.placeholderFontSize.split(" ").forEach((token) => {
+      expect(invalidMessage).toHaveClass(token);
+    });
+    cx.text.color.errorTextColor.split(" ").forEach((token) => {
+      expect(invalidMessage).toHaveClass(token);
+    });
+    expect(invalidMessage.compareDocumentPosition(emptyState) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
+  });
+
   it("renders the evaluation table and updating status", () => {
     render(
       <OptimizationEvaluationPanel

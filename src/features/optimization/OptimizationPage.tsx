@@ -93,6 +93,14 @@ export function OptimizationPage({
       return false;
     }
   });
+  const invalidConfigMessage = useStore(optimizationStore, (state) => {
+    try {
+      state.buildOptimizationConfig();
+      return undefined;
+    } catch (error) {
+      return error instanceof Error ? error.message : "Optimization config is invalid.";
+    }
+  });
   const hasNonZeroContribution = useStore(optimizationStore, (state) => {
     try {
       return hasNonZeroOptimizationContribution(state.buildOptimizationConfig());
@@ -496,6 +504,7 @@ export function OptimizationPage({
         <OptimizationEvaluationPanel
           rows={evaluationTableRows}
           isEvaluating={isEvaluating}
+          invalidConfigMessage={invalidConfigMessage}
           maxBodyHeight={evaluationMaxBodyHeight}
           allowBodyScroll={isLG}
         />

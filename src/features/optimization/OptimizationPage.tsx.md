@@ -24,6 +24,7 @@ interface OptimizationPageProps {
   - `Optimize`
   - `Apply to Editor`
 - Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual whose effective `total_weight` is non-zero with `Operand Type`, `Target`, `Weight`, and `Value`, formats `Weight` and `Value` with 6 decimal places, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
+- When the current store state cannot build an optimization config, passes the thrown `buildOptimizationConfig()` error message into the evaluation panel so the Operand Evaluation empty state shows the specific invalid-config reason before the existing placeholder text.
 - Delegates controlled `BottomDrawer` tab construction and rendering to `BottomDrawerContainer`, with five sections:
   - `Algorithm`
   - `Fields`
@@ -58,7 +59,7 @@ interface OptimizationPageProps {
 - When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, `BottomDrawerContainer` opens the existing warning modal with the thrown error message instead of filtering to one hardcoded `lm` warning.
 - When the user switches Optimizer Kind, `BottomDrawerContainer` delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
 - Variable-bound affordances use optimizer-kind-aware capabilities, so both bounded least-squares (`trf`) and methodless Differential Evolution can use the min/max variable UI while `lm` remains unbounded.
-- Invalid intermediate configs clear the evaluation table instead of opening the warning modal.
+- Invalid intermediate configs clear the evaluation table and show the current `buildOptimizationConfig()` error in the Operand Evaluation empty state instead of opening the warning modal.
 - `Optimize` is disabled when the current optimization config cannot be built, including fresh pages with no operands and malformed variable/pickup inputs.
 - `Optimize` is also disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
 - `Optimize` validates the store state, rejects zero-contribution configs with a warning modal even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id, creates a `SharedArrayBuffer` interrupt buffer when worker/browser support is available, calls `proxy.optimizeOpm` with the app-wide `opdAimPoint`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.

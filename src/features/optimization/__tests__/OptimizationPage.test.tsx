@@ -284,8 +284,9 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("tab", { name: "Algorithm" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
 
-    expect(await screen.findByRole("dialog", { name: "Warning" })).toBeInTheDocument();
-    expect(screen.getByText("Levenberg-Marquardt requires at least as many residuals as variables.")).toBeInTheDocument();
+    const warningDialog = await screen.findByRole("dialog", { name: "Warning" });
+    expect(warningDialog).toBeInTheDocument();
+    expect(within(warningDialog).getByText("Levenberg-Marquardt requires at least as many residuals as variables.")).toBeInTheDocument();
   });
 
   it("shows a warning modal for any config-build error triggered by method switching", async () => {
@@ -300,8 +301,9 @@ describe("OptimizationPage", () => {
 
     await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
 
-    expect(await screen.findByRole("dialog", { name: "Warning" })).toBeInTheDocument();
-    expect(screen.getByText("Weight must be a positive non-zero number.")).toBeInTheDocument();
+    const warningDialog = await screen.findByRole("dialog", { name: "Warning" });
+    expect(warningDialog).toBeInTheDocument();
+    expect(within(warningDialog).getByText("Weight must be a positive non-zero number.")).toBeInTheDocument();
   });
 
   it("renders the optimization tabs inside a draggable bottom drawer on large screens", () => {
@@ -516,6 +518,30 @@ describe("OptimizationPage", () => {
     await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
 
     expect(screen.getByText("Evaluation results appear here when the current optimization config is valid.")).toBeInTheDocument();
+    expect(screen.queryByText("Variable minimum must be less than maximum.")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
+  });
+
+  it("shows the invalid variable bounds message before the operand evaluation empty state", async () => {
+    const proxy = makeProxy();
+    const { optimizationStore } = renderOptimizationPage(proxy);
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "60",
+        max: "40",
+      });
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+      ]);
+    });
+
+    const invalidMessage = await screen.findByText("Variable minimum must be less than maximum.");
+    const emptyState = screen.getByText("Evaluation results appear here when the current optimization config is valid.");
+
+    expect(invalidMessage.compareDocumentPosition(emptyState) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(proxy.evaluateOptimizationProblem).not.toHaveBeenCalled();
     expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
   });
 

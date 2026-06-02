@@ -3,10 +3,12 @@
 import clsx from "clsx";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Table } from "@/shared/components/primitives/Table";
+import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 interface OptimizationEvaluationPanelProps {
   readonly rows: ReadonlyArray<readonly [string, string, string, string]>;
   readonly isEvaluating: boolean;
+  readonly invalidConfigMessage?: string;
   readonly maxBodyHeight?: number;
   readonly allowBodyScroll?: boolean;
 }
@@ -14,6 +16,7 @@ interface OptimizationEvaluationPanelProps {
 export function OptimizationEvaluationPanel({
   rows,
   isEvaluating,
+  invalidConfigMessage,
   maxBodyHeight,
   allowBodyScroll = true,
 }: OptimizationEvaluationPanelProps) {
@@ -43,9 +46,20 @@ export function OptimizationEvaluationPanel({
           />
         </div>
       ) : (
-        <Paragraph variant="placeholder" className="px-4 py-3">
-          Evaluation results appear here when the current optimization config is valid.
-        </Paragraph>
+        invalidConfigMessage === undefined ? (
+          <Paragraph variant="placeholder" className="px-4 py-3">
+            Evaluation results appear here when the current optimization config is valid.
+          </Paragraph>
+        ) : (
+          <div className="px-4 py-3">
+            <Paragraph variant="placeholder" className={clsx(cx.text.color.errorTextColor, "mb-1")}>
+              {invalidConfigMessage}
+            </Paragraph>
+            <Paragraph variant="placeholder">
+              Evaluation results appear here when the current optimization config is valid.
+            </Paragraph>
+          </div>
+        )
       )}
     </div>
   );
