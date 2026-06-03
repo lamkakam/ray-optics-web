@@ -8,7 +8,6 @@ export * from "./OptimizationEvaluationPanel";
 export * from "./OptimizationInspectionModals";
 export * from "./OptimizationOperandsTab";
 export * from "./OptimizationProgressModal";
-export * from "./OptimizationWarningModal";
 export * from "./OptimizationWeightsGrid";
 export * from "./RadiusModeModal";
 export * from "./ThicknessModeModal";

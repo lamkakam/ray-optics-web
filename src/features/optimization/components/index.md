@@ -24,8 +24,6 @@ Direct component directories expose an `index.ts` barrel so page-level imports c
 - [OptimizationLensPrescriptionGrid.tsx](./LensPrescriptionGrid/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid.tsx.md) — read-only prescription grid with modal-backed inspection cells
 - [OptimizationOperandsTab.tsx](./OptimizationOperandsTab/OptimizationOperandsTab.tsx.md) — editable operand grid and add/delete actions
 - [OptimizationOperandsTab/index.ts](./OptimizationOperandsTab/index.ts.md) — public directory import for the operands tab
-- [OptimizationWarningModal.tsx](./OptimizationWarningModal/OptimizationWarningModal.tsx.md) — warning dialog wrapper
-- [OptimizationWarningModal/index.ts](./OptimizationWarningModal/index.ts.md) — public directory import for the warning dialog
 - [OptimizationApplyConfirmModal.tsx](./OptimizationApplyConfirmModal/OptimizationApplyConfirmModal.tsx.md) — apply confirmation dialog wrapper
 - [OptimizationApplyConfirmModal/index.ts](./OptimizationApplyConfirmModal/index.ts.md) — public directory import for the apply confirmation dialog
 - [OptimizationProgressModal.tsx](./OptimizationProgressModal/OptimizationProgressModal.tsx.md) — blocking optimization-progress dialog with live merit chart

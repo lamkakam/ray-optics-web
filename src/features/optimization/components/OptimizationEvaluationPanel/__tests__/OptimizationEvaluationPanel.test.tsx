@@ -49,6 +49,45 @@ describe("OptimizationEvaluationPanel", () => {
     expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
   });
 
+  it("renders a warning message before the empty state text", () => {
+    render(
+      <OptimizationEvaluationPanel
+        rows={[]}
+        isEvaluating={false}
+        warningMessage="Optimization failed to converge."
+      />,
+    );
+
+    const warningMessage = screen.getByText("Optimization failed to converge.");
+    const emptyState = screen.getByText(
+      "Evaluation results appear here when the current optimization config is valid.",
+    );
+
+    cx.text.color.errorTextColor.split(" ").forEach((token) => {
+      expect(warningMessage).toHaveClass(token);
+    });
+    expect(warningMessage.compareDocumentPosition(emptyState) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
+  });
+
+  it("renders a warning message before the table when rows are present", () => {
+    render(
+      <OptimizationEvaluationPanel
+        rows={[["Paraxial focal length", "100", "1.000000", "98.500000"]]}
+        isEvaluating={false}
+        warningMessage="Optimization failed to converge."
+      />,
+    );
+
+    const warningMessage = screen.getByText("Optimization failed to converge.");
+    const table = screen.getByRole("table");
+
+    cx.text.color.errorTextColor.split(" ").forEach((token) => {
+      expect(warningMessage).toHaveClass(token);
+    });
+    expect(warningMessage.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("renders the evaluation table and updating status", () => {
     render(
       <OptimizationEvaluationPanel

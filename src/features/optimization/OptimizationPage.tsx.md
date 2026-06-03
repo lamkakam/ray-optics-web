@@ -23,8 +23,8 @@ interface OptimizationPageProps {
 - Renders the extracted `OptimizationActionBar` above the tabs with:
   - `Optimize`
   - `Apply to Editor`
-- Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual whose effective `total_weight` is non-zero with `Operand Type`, `Target`, `Weight`, and `Value`, formats `Weight` and `Value` with 6 decimal places, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
-- When the current store state cannot build an optimization config, passes the thrown `buildOptimizationConfig()` error message into the evaluation panel so the Operand Evaluation empty state shows the specific invalid-config reason before the existing placeholder text.
+- Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual whose effective `total_weight` is non-zero with `Operand Type`, `Target`, `Weight`, and `Value`, formats `Weight` and `Value` with 6 decimal places, can show a warning banner above the table or empty state, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
+- When the current store state cannot build an optimization config, passes the thrown `buildOptimizationConfig()` error message into the evaluation panel so Operand Evaluation shows the specific invalid-config reason before either the table or the existing placeholder text.
 - Delegates controlled `BottomDrawer` tab construction and rendering to `BottomDrawerContainer`, with five sections:
   - `Algorithm`
   - `Fields`
@@ -56,16 +56,16 @@ interface OptimizationPageProps {
 - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call, passes the app-wide `opdAimPoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests.
 - Radius, thickness, and asphere variable/pickup mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`. Changes to `asphereStates` are included in the evaluation dependency array so commits trigger a re-evaluation debounce.
 - The page derives one shared `canUseBounds` boolean from the selected least-squares method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from optimizer-kind/method details.
-- When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, `BottomDrawerContainer` opens the existing warning modal with the thrown error message instead of filtering to one hardcoded `lm` warning.
+- When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, `BottomDrawerContainer` reports the thrown error message through the page-local warning callback instead of filtering to one hardcoded `lm` warning.
 - When the user switches Optimizer Kind, `BottomDrawerContainer` delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
 - Variable-bound affordances use optimizer-kind-aware capabilities, so both bounded least-squares (`trf`) and methodless Differential Evolution can use the min/max variable UI while `lm` remains unbounded.
-- Invalid intermediate configs clear the evaluation table and show the current `buildOptimizationConfig()` error in the Operand Evaluation empty state instead of opening the warning modal.
+- Invalid intermediate configs clear the evaluation table and show the current `buildOptimizationConfig()` error in Operand Evaluation.
 - `Optimize` is disabled when the current optimization config cannot be built, including fresh pages with no operands and malformed variable/pickup inputs.
 - `Optimize` is also disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
-- `Optimize` validates the store state, rejects zero-contribution configs with a warning modal even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id, creates a `SharedArrayBuffer` interrupt buffer when worker/browser support is available, calls `proxy.optimizeOpm` with the app-wide `opdAimPoint`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still opens a warning modal when the returned status is unsuccessful.
+- `Optimize` validates the store state, rejects zero-contribution configs with an Operand Evaluation warning even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id, creates a `SharedArrayBuffer` interrupt buffer when worker/browser support is available, calls `proxy.optimizeOpm` with the app-wide `opdAimPoint`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still shows an Operand Evaluation warning when the returned status is unsuccessful.
 - The page checks `proxy.canInterruptOptimization()` and disables the progress modal Stop control when Pyodide interrupt support or `SharedArrayBuffer` is unavailable.
 - Clicking Stop is idempotent for the active run: it writes Pyodide's interrupt signal into the shared interrupt buffer immediately, calls `proxy.requestOptimizationStop(activeRunId)` for worker-side run validation, disables the Stop button while the run is settling, and leaves the progress modal open.
-- A stopped report with `status: "stopped"` is treated as a successful partial optimization result: the page applies its `final_values`, preserves the final chart history, switches the modal to completed `OK` controls in the normal `finally` path, and does not show a warning modal for that user-requested status.
+- A stopped report with `status: "stopped"` is treated as a successful partial optimization result: the page applies its `final_values`, preserves the final chart history, switches the modal to completed `OK` controls in the normal `finally` path, and does not show a warning for that user-requested status.
 - Late or stale stop responses are ignored by the page orchestration because only the active run's worker promise can update the completed optimization state.
 - The progress modal is blocking while optimization is active: there is no `OK` button and backdrop clicks are ignored until the worker promise settles.
 - After the optimization run settles, the progress modal keeps the final chart visible, exposes an `OK` button, and can then be dismissed without mutating the optimization result.
@@ -75,7 +75,6 @@ interface OptimizationPageProps {
   - `ThicknessModeModal`
   - `AsphereVarModal`
   - `OptimizationProgressModal`
-  - `OptimizationWarningModal`
   - `OptimizationApplyConfirmModal`
   - `OptimizationInspectionModals`
 - Modal-backed prescription columns still open the existing lens-editor dialogs in `readOnly` mode so users can inspect, but not edit, those settings from optimization.
@@ -88,11 +87,11 @@ interface OptimizationPageProps {
 - The live evaluation table uses the residual `total_weight` reported by Python and hides rows whose effective weight is zero, so field/wavelength-expanded operands appear only for active contributions.
 - Large-screen evaluation height is derived from the observed page-shell height, the current live drawer height, and measured fixed overhead above the table, with a fallback reserve when DOM measurement is not yet available.
 - The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.
-- `OptimizationPage` remains responsible for deriving row data, evaluation state, modal state, worker calls, and the page-level Apply to Editor confirmation. The editor mutation itself is factored into `features/optimization/lib/applyOptimizationModelToEditor.ts` so the app shell navigation warning can reuse the same apply path.
+- `OptimizationPage` remains responsible for deriving row data, evaluation state, warning text, modal state, worker calls, and the page-level Apply to Editor confirmation. The editor mutation itself is factored into `features/optimization/lib/applyOptimizationModelToEditor.ts` so the app shell navigation warning can reuse the same apply path.
 - `BottomDrawerContainer` owns the drawer wrapper, tab assembly, active-tab state binding, optimizer handlers, field/wavelength weight handlers, prescription variable-modal handlers, and operand handlers by reading the optimization store directly.
 - Page-level optimization components are imported through their component-directory `index.ts` barrels. `BottomDrawerContainer` handles the narrow drawer-tab component imports, while `OptimizationInspectionModals` comes from its own nested directory barrel.
 - Optimization worker report/progress types are imported from `features/optimization/types/optimizationWorkerTypes.ts`.
 - Changing the Method select updates the optimization store immediately, so evaluation config building and variable modal rendering switch between bounded `trf` and unbounded `lm` behavior in place.
-- That method-switch warning is limited to explicit method changes, but it now surfaces any config-build error produced by the switch instead of only one hardcoded residual-count message.
+- That method-switch warning is limited to explicit method changes, but it surfaces any config-build error produced by the switch inside Operand Evaluation instead of only one hardcoded residual-count message.
 - AG Grid tabs keep `domLayout="autoHeight"` and avoid their own vertical scroll wrappers so the drawer panel is the single vertical scroller on large screens.
 - The tabbed AG Grid tables also disable column reordering via `defaultColDef.suppressMovable` so users cannot swap column order between sessions or tabs.

@@ -262,7 +262,7 @@ describe("OptimizationPage", () => {
     expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
   });
 
-  it("shows a warning modal when switching to lm with fewer residuals than variables", async () => {
+  it("shows a warning in Operand Evaluation when switching to lm with fewer residuals than variables", async () => {
     const { optimizationStore } = renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
 
@@ -284,12 +284,15 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("tab", { name: "Algorithm" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
 
-    const warningDialog = await screen.findByRole("dialog", { name: "Warning" });
-    expect(warningDialog).toBeInTheDocument();
-    expect(within(warningDialog).getByText("Levenberg-Marquardt requires at least as many residuals as variables.")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Warning" })).not.toBeInTheDocument();
+    const evaluationPanel = screen.getByText("Operand Evaluation").closest("div")?.parentElement;
+    expect(evaluationPanel).not.toBeNull();
+    expect(await within(evaluationPanel as HTMLElement).findByText(
+      "Levenberg-Marquardt requires at least as many residuals as variables.",
+    )).toBeInTheDocument();
   });
 
-  it("shows a warning modal for any config-build error triggered by method switching", async () => {
+  it("shows a warning in Operand Evaluation for any config-build error triggered by method switching", async () => {
     const { optimizationStore } = renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
 
@@ -301,9 +304,12 @@ describe("OptimizationPage", () => {
 
     await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
 
-    const warningDialog = await screen.findByRole("dialog", { name: "Warning" });
-    expect(warningDialog).toBeInTheDocument();
-    expect(within(warningDialog).getByText("Weight must be a positive non-zero number.")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Warning" })).not.toBeInTheDocument();
+    const evaluationPanel = screen.getByText("Operand Evaluation").closest("div")?.parentElement;
+    expect(evaluationPanel).not.toBeNull();
+    expect(await within(evaluationPanel as HTMLElement).findByText(
+      "Weight must be a positive non-zero number.",
+    )).toBeInTheDocument();
   });
 
   it("renders the optimization tabs inside a draggable bottom drawer on large screens", () => {
@@ -1224,7 +1230,7 @@ describe("OptimizationPage", () => {
     );
   });
 
-  it("applies the returned result and still shows a warning modal when optimizeOpm returns a failed status", async () => {
+  it("applies the returned result and still shows a warning in Operand Evaluation when optimizeOpm returns a failed status", async () => {
     const proxy = makeProxy({
       optimizeOpm: jest.fn().mockResolvedValue({
         success: false,
@@ -1245,7 +1251,10 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("button", { name: "Add operand" }));
     await user.click(screen.getByRole("button", { name: "Optimize" }));
 
-    expect(await screen.findByText("bad config")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Warning" })).not.toBeInTheDocument();
+    const evaluationPanel = screen.getByText("Operand Evaluation").closest("div")?.parentElement;
+    expect(evaluationPanel).not.toBeNull();
+    expect(await within(evaluationPanel as HTMLElement).findByText("bad config")).toBeInTheDocument();
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(33);
   });
 

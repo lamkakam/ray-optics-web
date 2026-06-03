@@ -131,11 +131,6 @@ interface AsphereModalState {
   readonly surfaceIndex: number | undefined;
 }
 
-interface WarningModalState {
-  readonly open: boolean;
-  readonly message: string;
-}
-
 export interface OptimizationState {
   activeTabId: string;
   optimizationModel: OpticalModel | undefined;
@@ -150,7 +145,6 @@ export interface OptimizationState {
   isOptimizing: boolean;
   hasUnappliedOptimizationResult: boolean;
   lastOptimizationReport: OptimizationReport | undefined;
-  warningModal: WarningModalState;
   applyConfirmOpen: boolean;
   radiusModal: RadiusModalState;
   thicknessModal: ThicknessModalState;
@@ -176,8 +170,6 @@ export interface OptimizationState {
   deleteOperand: (id: string) => void;
   updateOperand: (id: string, patch: Partial<Omit<OptimizationOperandRow, "id">>) => void;
   replaceOperands: (rows: OptimizationOperandRow[]) => void;
-  openWarningModal: (message: string) => void;
-  closeWarningModal: () => void;
   openApplyConfirm: () => void;
   closeApplyConfirm: () => void;
   setIsOptimizing: (value: boolean) => void;
@@ -844,7 +836,6 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   isOptimizing: false,
   hasUnappliedOptimizationResult: false,
   lastOptimizationReport: undefined,
-  warningModal: { open: false, message: "" },
   applyConfirmOpen: false,
   radiusModal: { open: false, surfaceIndex: undefined },
   thicknessModal: { open: false, surfaceIndex: undefined },
@@ -1052,12 +1043,6 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
     })),
 
   replaceOperands: (rows) => set({ operands: rows }),
-
-  openWarningModal: (message) =>
-    set({ warningModal: { open: true, message } }),
-
-  closeWarningModal: () =>
-    set({ warningModal: { open: false, message: "" } }),
 
   openApplyConfirm: () => set({ applyConfirmOpen: true }),
   closeApplyConfirm: () => set({ applyConfirmOpen: false }),
