@@ -91,7 +91,10 @@ jest.mock("@/features/optimization/components/OptimizationOperandsTab", () => ({
   ),
 }));
 
-function renderBottomDrawerContainer(store = createStore<OptimizationState>(createOptimizationSlice)) {
+function renderBottomDrawerContainer(
+  store = createStore<OptimizationState>(createOptimizationSlice),
+  onWarning = jest.fn(),
+) {
   store.setState({
     fieldWeights: [1],
     wavelengthWeights: [1, 1],
@@ -101,6 +104,7 @@ function renderBottomDrawerContainer(store = createStore<OptimizationState>(crea
     <OptimizationStoreContext.Provider value={store}>
       <BottomDrawerContainer
         layout={{ isLG: true }}
+        onWarning={onWarning}
         fields={{ rows: [{ id: "field-row", index: 0, label: "0 deg", weight: 1 }] }}
         wavelengths={{ rows: [{ id: "wavelength-row", index: 1, label: "587 nm", weight: 1 }] }}
         prescription={{
@@ -114,13 +118,13 @@ function renderBottomDrawerContainer(store = createStore<OptimizationState>(crea
     </OptimizationStoreContext.Provider>,
   );
 
-  return store;
+  return { store, onWarning };
 }
 
 describe("BottomDrawerContainer", () => {
   it("owns optimization-store-backed tab, optimizer, weight, prescription, and operand handlers", async () => {
     const user = userEvent.setup();
-    const store = renderBottomDrawerContainer();
+    const { store } = renderBottomDrawerContainer();
 
     await user.click(screen.getByRole("button", { name: "Fields" }));
     expect(store.getState().activeTabId).toBe("fields");
@@ -143,5 +147,20 @@ describe("BottomDrawerContainer", () => {
     const initialOperandCount = store.getState().operands.length;
     await user.click(screen.getByRole("button", { name: "Add Operand" }));
     expect(store.getState().operands).toHaveLength(initialOperandCount + 1);
+  });
+
+  it("reports method-switch config-build failures through the warning callback", async () => {
+    const user = userEvent.setup();
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.setState({
+      buildOptimizationConfig: jest.fn(() => {
+        throw new Error("Weight must be a positive non-zero number.");
+      }),
+    });
+    const { onWarning } = renderBottomDrawerContainer(store);
+
+    await user.click(screen.getByRole("button", { name: "Levenberg-Marquardt" }));
+
+    expect(onWarning).toHaveBeenCalledWith("Weight must be a positive non-zero number.");
   });
 });

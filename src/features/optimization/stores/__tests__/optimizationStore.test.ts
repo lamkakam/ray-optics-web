@@ -405,6 +405,56 @@ describe("optimizationStore", () => {
     });
   });
 
+  it("rejects least-squares tolerances at or below machine epsilon with friendly validation copy", () => {
+    const toleranceCases = [
+      ["ftol", "Merit function change tolerance"],
+      ["xtol", "Independent variable change tolerance"],
+      ["gtol", "Gradient tolerance"],
+    ] as const;
+
+    toleranceCases.forEach(([toleranceKey, label]) => {
+      const store = createStore<OptimizationState>(createOptimizationSlice);
+      store.getState().initializeFromOpticalModel(baseModel);
+      store.getState().addOperand();
+      store.setState((state) => {
+        if (state.optimizer.kind !== "least_squares") {
+          throw new Error("Expected least-squares optimizer state.");
+        }
+
+        return {
+          optimizer: {
+            ...state.optimizer,
+            [toleranceKey]: String(Number.EPSILON),
+          },
+        };
+      });
+
+      expect(() => store.getState().buildOptimizationConfig()).toThrow(
+        `${label} must be greater than machine epsilon (${Number.EPSILON}).`,
+      );
+    });
+
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().addOperand();
+    store.setState((state) => {
+      if (state.optimizer.kind !== "least_squares") {
+        throw new Error("Expected least-squares optimizer state.");
+      }
+
+      return {
+        optimizer: {
+          ...state.optimizer,
+          ftol: String(Number.EPSILON * 2),
+          xtol: String(Number.EPSILON * 2),
+          gtol: String(Number.EPSILON * 2),
+        },
+      };
+    });
+
+    expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
+  });
+
   it("builds the Python optimization config using current slice state", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);

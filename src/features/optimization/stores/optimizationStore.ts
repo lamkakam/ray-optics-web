@@ -131,11 +131,6 @@ interface AsphereModalState {
   readonly surfaceIndex: number | undefined;
 }
 
-interface WarningModalState {
-  readonly open: boolean;
-  readonly message: string;
-}
-
 export interface OptimizationState {
   activeTabId: string;
   optimizationModel: OpticalModel | undefined;
@@ -150,7 +145,6 @@ export interface OptimizationState {
   isOptimizing: boolean;
   hasUnappliedOptimizationResult: boolean;
   lastOptimizationReport: OptimizationReport | undefined;
-  warningModal: WarningModalState;
   applyConfirmOpen: boolean;
   radiusModal: RadiusModalState;
   thicknessModal: ThicknessModalState;
@@ -176,8 +170,6 @@ export interface OptimizationState {
   deleteOperand: (id: string) => void;
   updateOperand: (id: string, patch: Partial<Omit<OptimizationOperandRow, "id">>) => void;
   replaceOperands: (rows: OptimizationOperandRow[]) => void;
-  openWarningModal: (message: string) => void;
-  closeWarningModal: () => void;
   openApplyConfirm: () => void;
   closeApplyConfirm: () => void;
   setIsOptimizing: (value: boolean) => void;
@@ -248,6 +240,15 @@ function parsePositiveFloat(value: string, label: string): number {
   return parsed;
 }
 
+function parseLeastSquaresTolerance(value: string, label: string): number {
+  const parsed = parsePositiveFloat(value, label);
+  if (parsed <= Number.EPSILON) {
+    throw new Error(`${label} must be greater than machine epsilon (${Number.EPSILON}).`);
+  }
+
+  return parsed;
+}
+
 function parseNonNegativeFloat(value: string, label: string): number {
   const parsed = Number.parseFloat(value);
   if (!Number.isFinite(parsed) || parsed < 0) {
@@ -301,9 +302,9 @@ function buildOptimizerConfig(
     kind: optimizer.kind,
     method: optimizer.method,
     max_nfev: parsePositiveInteger(optimizer.max_nfev, "Max. num of steps"),
-    ftol: parsePositiveFloat(optimizer.ftol, "Merit function change tolerance"),
-    xtol: parsePositiveFloat(optimizer.xtol, "Independent variable change tolerance"),
-    gtol: parsePositiveFloat(optimizer.gtol, "Gradient tolerance"),
+    ftol: parseLeastSquaresTolerance(optimizer.ftol, "Merit function change tolerance"),
+    xtol: parseLeastSquaresTolerance(optimizer.xtol, "Independent variable change tolerance"),
+    gtol: parseLeastSquaresTolerance(optimizer.gtol, "Gradient tolerance"),
   };
 }
 
@@ -835,7 +836,6 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   isOptimizing: false,
   hasUnappliedOptimizationResult: false,
   lastOptimizationReport: undefined,
-  warningModal: { open: false, message: "" },
   applyConfirmOpen: false,
   radiusModal: { open: false, surfaceIndex: undefined },
   thicknessModal: { open: false, surfaceIndex: undefined },
@@ -1043,12 +1043,6 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
     })),
 
   replaceOperands: (rows) => set({ operands: rows }),
-
-  openWarningModal: (message) =>
-    set({ warningModal: { open: true, message } }),
-
-  closeWarningModal: () =>
-    set({ warningModal: { open: false, message: "" } }),
 
   openApplyConfirm: () => set({ applyConfirmOpen: true }),
   closeApplyConfirm: () => set({ applyConfirmOpen: false }),

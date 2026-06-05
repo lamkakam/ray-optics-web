@@ -32,6 +32,7 @@ export interface BottomDrawerContainerProps {
   readonly fields: Readonly<FieldsProps>;
   readonly wavelengths: Readonly<FieldsProps>;
   readonly prescription: Readonly<PrescriptionProps>;
+  readonly onWarning: (message: string) => void;
 }
 
 export function BottomDrawerContainer({
@@ -39,6 +40,7 @@ export function BottomDrawerContainer({
   fields,
   wavelengths,
   prescription,
+  onWarning,
 }: BottomDrawerContainerProps) {
   const optimizationStore = useOptimizationStore();
   const activeTabId = useStore(optimizationStore, (state) => state.activeTabId);
@@ -63,7 +65,7 @@ export function BottomDrawerContainer({
         optimizationStore.getState().buildOptimizationConfig();
       } catch (error) {
         const message = error instanceof Error ? error.message : "Optimization config is invalid.";
-        optimizationStore.getState().openWarningModal(message);
+        onWarning(message);
       }
     }
   };

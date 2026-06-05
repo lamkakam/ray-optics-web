@@ -14,6 +14,7 @@ interface BottomDrawerContainerProps {
   };
   fields: Pick<ComponentProps<typeof OptimizationWeightsGrid>, "rows">;
   wavelengths: Pick<ComponentProps<typeof OptimizationWeightsGrid>, "rows">;
+  onWarning: (message: string) => void;
   prescription: Omit<
     OptimizationLensPrescriptionGridProps,
     | "radiusModes"
@@ -31,6 +32,7 @@ interface BottomDrawerContainerProps {
   - `onHeightChange` receives live drawer height changes when provided.
 - `fields.rows` provides derived field weight rows.
 - `wavelengths.rows` provides derived wavelength weight rows.
+- `onWarning` receives explicit method-switch config-build failures so the page can surface them in Operand Evaluation.
 - `prescription` provides derived prescription rows plus local inspection-modal callbacks. Optimization variable modal callbacks and mode state are read from the optimization store.
 
 ## Behavior
@@ -41,7 +43,7 @@ interface BottomDrawerContainerProps {
 - Passes `panelClassName="p-0"` so tab contents keep their own gutter.
 - Sets `draggable` from `layout.isLG`.
 - Reads the optimization store for active tab state, optimizer state, radius/thickness/asphere modes, operands, and all store-backed drawer callbacks.
-- Handles optimizer patch updates locally, including optimizer-kind resets through `setOptimizerKind()` and method-change config validation warnings.
+- Handles optimizer patch updates locally, including optimizer-kind resets through `setOptimizerKind()` and method-change config validation warnings through `onWarning`.
 - Updates field and wavelength weights through the optimization store.
 - Opens radius, thickness, and asphere variable modals through the optimization store while forwarding inspection-modal callbacks supplied by `OptimizationPage`.
 - Adds, deletes, and updates operands through the optimization store.

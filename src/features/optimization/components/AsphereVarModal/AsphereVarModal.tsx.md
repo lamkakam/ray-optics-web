@@ -21,7 +21,7 @@ interface AsphereVarModalProps {
 
 - Requires `optimizationModel`, `surfaceIndex`, and `asphereState` before rendering the editor; otherwise renders the closed modal placeholder.
 - Seeds draft from `asphereState` when the modal editor mounts, and resets that draft by remounting a keyed inner editor whenever the committed target surface or asphere state changes.
-- Reuses `curvatureRadiusCrossesZero()`, shared curvature-radius guidance text, and shared zero-crossing error formatting from `features/optimization/lib/modalHelpers.ts` for toroid sweep radius validation copy when `canUseBounds === true`.
+- Reuses shared bounded variable validation helpers, shared curvature-radius guidance text, and shared zero-crossing error formatting from `features/optimization/lib/modalHelpers.ts` for term validation copy when `canUseBounds === true`.
 - Reuses the `ModeSelectField` and `PickupModeFields` nested directory barrels under `features/optimization/components/LensPrescriptionGrid/`, plus the boolean-driven renderer helper in `features/optimization/lib/variableModeFields.tsx`, for the shared term-row mode selector and common variable/pickup field groups, while keeping asphere-specific type switching, term mapping, coefficient pickup wiring, and toroid validation in this modal.
 - **Type selector**: dropdown with Conic / Even Aspheric / Radial Polynomial / X Toroid / Y Toroid. Disabled when `asphereState.lockedType === true` (surface already has an aspheric configuration from the Editor). Changing the type (when unlocked) resets all term modes to `constant`.
 - **Term rows** rendered based on selected type:
@@ -33,7 +33,9 @@ interface AsphereVarModalProps {
 - Each term row has a mode selector (`constant` / `variable` / `pickup`).
   - **variable**:
     - For `canUseBounds === true`, shows Min and Max `Input` fields inline.
+    - For every bounded variable term, shows the shared inline min/max validation message and disables `Confirm` when either bound is non-finite or the numeric minimum is greater than or equal to the numeric maximum.
     - For `Toroid sweep R` when `canUseBounds === true`, also shows the shared curvature-radius guidance that `R = 0` is a flat surface (infinite radius), instructs users not to straddle `0`, and shows the shared labeled inline validation message when bounds straddle `0`.
+    - Toroid sweep validation checks min/max ordering before zero-straddling, so only one inline validation message is shown at a time.
     - For `canUseBounds === false`, renders the unbounded variable body instead of Min./Max. inputs and skips toroid zero-crossing guidance/error copy.
     - The toroid validation message styling comes from `BoundedVariableModeFields` via `Paragraph` variant `errorMessage`; this modal only supplies layout classes.
   - **pickup**: shows Source surface as a `Select`, plus Scale and Offset `Input` fields. Source surface options are real surfaces only (`optimizationModel.surfaces.length`) and omit the current target `surfaceIndex`, matching thickness pickup behavior. Switching a term into pickup mode defaults `sourceSurfaceIndex` to the first available source option instead of the target surface. Coefficient rows additionally show a native Source coefficient `Select` with plain-text option labels so iOS Safari can display the native picker correctly. The source coefficient options are based on the selected source surface: `RadialPolynomial` sources show `a_1` through `a_10`; every other source surface, including spherical/no-asphere surfaces, shows `a_2`, `a_4`, ..., `a_20`. Option values remain zero-based coefficient slots `0` through `9`, stored as `sourceTermKey = "coefficient:N"` where `N` may be `0`. Newly selected coefficient pickups default to `sourceTermKey = "coefficient:0"`.

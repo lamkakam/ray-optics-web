@@ -8,13 +8,14 @@ import { ModeSelectField } from "@/features/optimization/components/Optimization
 import { PickupModeFields } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/PickupModeFields";
 import {
   CURVATURE_RADIUS_GUIDANCE_TEXT,
+  curvatureRadiusNoZeroStraddleRule,
   createPickupDraft,
   createVariableDraft,
-  curvatureRadiusCrossesZero,
-  getCurvatureRadiusBoundsErrorText,
   getRadiusPickupSourceSurfaceOptions,
+  minLessThanMaxRule,
   serializeRadiusMode,
   toRadiusModeDraft,
+  validateVariableBounds,
 } from "@/features/optimization/lib/modalHelpers";
 import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/variableModeFields";
 import { Button } from "@/shared/components/primitives/Button";
@@ -86,9 +87,12 @@ function RadiusModeModalEditor({
     () => getRadiusPickupSourceSurfaceOptions(optimizationModel.surfaces.length, surfaceIndex),
     [optimizationModel.surfaces.length, surfaceIndex],
   );
-  const variableBoundsCrossZero = canUseBounds
-    && draftMode.mode === "variable"
-    && curvatureRadiusCrossesZero(draftMode.min, draftMode.max);
+  const variableBoundsErrorText = canUseBounds && draftMode.mode === "variable"
+    ? validateVariableBounds("Radius", draftMode.min, draftMode.max, [
+      minLessThanMaxRule,
+      curvatureRadiusNoZeroStraddleRule,
+    ])
+    : undefined;
 
   return (
     <Modal
@@ -137,7 +141,7 @@ function RadiusModeModalEditor({
               max: value,
             })}
             guidanceText={canUseBounds ? CURVATURE_RADIUS_GUIDANCE_TEXT : undefined}
-            errorText={variableBoundsCrossZero ? getCurvatureRadiusBoundsErrorText("Radius") : undefined}
+            errorText={variableBoundsErrorText}
           />
         ) : null}
 
@@ -179,7 +183,7 @@ function RadiusModeModalEditor({
           </Button>
           <Button
             variant="primary"
-            disabled={variableBoundsCrossZero}
+            disabled={variableBoundsErrorText !== undefined}
             onClick={() => {
               onSetMode(surfaceIndex, draftMode);
               onClose();

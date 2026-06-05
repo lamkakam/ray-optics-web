@@ -436,6 +436,30 @@ describe("OptimizationVariableModals", () => {
     expect(onSetMode).not.toHaveBeenCalled();
   });
 
+  it("blocks saving radius bounds when min is not less than max", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+
+    render(
+      <RadiusModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "60", max: "40" }}
+        canUseBounds
+        onSetMode={onSetMode}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Radius variable bounds must have Min. less than Max.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSetMode).not.toHaveBeenCalled();
+  });
+
   it("allows saving radius bounds that stay on one side of zero", async () => {
     const user = userEvent.setup();
     const onSetMode = jest.fn();
@@ -466,6 +490,30 @@ describe("OptimizationVariableModals", () => {
       max: "-10",
     });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("blocks saving thickness bounds when min is not less than max", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+
+    render(
+      <ThicknessModeModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", min: "10", max: "5" }}
+        canUseBounds
+        onSetMode={onSetMode}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Thickness variable bounds must have Min. less than Max.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSetMode).not.toHaveBeenCalled();
   });
 
   it("renders radius bounded or unbounded fields from canUseBounds alone", () => {

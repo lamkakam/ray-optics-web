@@ -13,7 +13,6 @@ import {
   OptimizationEvaluationPanel,
   OptimizationInspectionModals,
   OptimizationProgressModal,
-  OptimizationWarningModal,
   AsphereVarModal,
   RadiusModeModal,
   ThicknessModeModal,
@@ -93,6 +92,14 @@ export function OptimizationPage({
       return false;
     }
   });
+  const invalidConfigMessage = useStore(optimizationStore, (state) => {
+    try {
+      state.buildOptimizationConfig();
+      return undefined;
+    } catch (error) {
+      return error instanceof Error ? error.message : "Optimization config is invalid.";
+    }
+  });
   const hasNonZeroContribution = useStore(optimizationStore, (state) => {
     try {
       return hasNonZeroOptimizationContribution(state.buildOptimizationConfig());
@@ -101,7 +108,6 @@ export function OptimizationPage({
     }
   });
   const isOptimizing = useStore(optimizationStore, (state) => state.isOptimizing);
-  const warningModal = useStore(optimizationStore, (state) => state.warningModal);
   const applyConfirmOpen = useStore(optimizationStore, (state) => state.applyConfirmOpen);
   const radiusModal = useStore(optimizationStore, (state) => state.radiusModal);
   const thicknessModal = useStore(optimizationStore, (state) => state.thicknessModal);
@@ -113,6 +119,7 @@ export function OptimizationPage({
   const [decenterModalRow, setDecenterModalRow] = useState<GridRow | undefined>();
   const [diffractionGratingModalRow, setDiffractionGratingModalRow] = useState<GridRow | undefined>();
   const [evaluationReport, setEvaluationReport] = useState<OptimizationReport | undefined>();
+  const [optimizationWarningMessage, setOptimizationWarningMessage] = useState<string | undefined>();
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [optimizationProgress, setOptimizationProgress] = useState<ReadonlyArray<OptimizationProgressEntry>>([]);
   const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] = useState(false);
@@ -271,6 +278,7 @@ export function OptimizationPage({
     () => evaluationRows.map((row) => [row.operandType, row.target, row.weight, row.value] as const),
     [evaluationRows],
   );
+  const evaluationWarningMessage = invalidConfigMessage ?? optimizationWarningMessage;
 
   const canOptimize = isReady
     && proxy !== undefined
@@ -332,6 +340,7 @@ export function OptimizationPage({
           if (evaluationRequestIdRef.current !== requestId) {
             return;
           }
+          setOptimizationWarningMessage(undefined);
           setEvaluationReport(report);
         })
         .catch(() => {
@@ -378,6 +387,7 @@ export function OptimizationPage({
       : undefined;
     optimizationRunIdRef.current = runId;
     optimizationInterruptBufferRef.current = interruptBuffer;
+    setOptimizationWarningMessage(undefined);
     setOptimizationProgress([]);
     setOptimizationProgressModalOpen(true);
     setOptimizationRunComplete(false);
@@ -386,7 +396,7 @@ export function OptimizationPage({
     try {
       const config = optimizationStore.getState().buildOptimizationConfig();
       if (!hasNonZeroOptimizationContribution(config)) {
-        optimizationStore.getState().openWarningModal(ZERO_WEIGHT_WARNING_MESSAGE);
+        setOptimizationWarningMessage(ZERO_WEIGHT_WARNING_MESSAGE);
         return;
       }
       const report = await proxy.optimizeOpm(
@@ -402,12 +412,12 @@ export function OptimizationPage({
       setOptimizationProgress(report.optimization_progress ?? []);
       optimizationStore.getState().applyOptimizationResult(report);
       if (!report.success && report.status !== "stopped") {
-        optimizationStore.getState().openWarningModal(report.message);
+        setOptimizationWarningMessage(report.message);
         return;
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Optimization failed.";
-      optimizationStore.getState().openWarningModal(message);
+      setOptimizationWarningMessage(message);
       onError();
     } finally {
       setOptimizationRunComplete(true);
@@ -496,6 +506,8 @@ export function OptimizationPage({
         <OptimizationEvaluationPanel
           rows={evaluationTableRows}
           isEvaluating={isEvaluating}
+          invalidConfigMessage={invalidConfigMessage}
+          warningMessage={evaluationWarningMessage}
           maxBodyHeight={evaluationMaxBodyHeight}
           allowBodyScroll={isLG}
         />
@@ -531,12 +543,6 @@ export function OptimizationPage({
         onClose={() => optimizationStore.getState().closeAsphereModal()}
       />
 
-      <OptimizationWarningModal
-        isOpen={warningModal.open}
-        message={warningModal.message}
-        onClose={() => optimizationStore.getState().closeWarningModal()}
-      />
-
       <OptimizationApplyConfirmModal
         isOpen={applyConfirmOpen}
         onCancel={() => optimizationStore.getState().closeApplyConfirm()}
@@ -563,6 +569,7 @@ export function OptimizationPage({
         <BottomDrawerContainer
           {...bottomDrawerContent}
           layout={{ isLG, onHeightChange: setLiveDrawerHeight }}
+          onWarning={setOptimizationWarningMessage}
         />
       </div>
     );
@@ -574,6 +581,7 @@ export function OptimizationPage({
       <BottomDrawerContainer
         {...bottomDrawerContent}
         layout={{ isLG }}
+        onWarning={setOptimizationWarningMessage}
       />
     </div>
   );

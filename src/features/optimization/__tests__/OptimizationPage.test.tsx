@@ -262,7 +262,7 @@ describe("OptimizationPage", () => {
     expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
   });
 
-  it("shows a warning modal when switching to lm with fewer residuals than variables", async () => {
+  it("shows a warning in Operand Evaluation when switching to lm with fewer residuals than variables", async () => {
     const { optimizationStore } = renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
 
@@ -284,11 +284,15 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("tab", { name: "Algorithm" }));
     await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
 
-    expect(await screen.findByRole("dialog", { name: "Warning" })).toBeInTheDocument();
-    expect(screen.getByText("Levenberg-Marquardt requires at least as many residuals as variables.")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Warning" })).not.toBeInTheDocument();
+    const evaluationPanel = screen.getByText("Operand Evaluation").closest("div")?.parentElement;
+    expect(evaluationPanel).not.toBeNull();
+    expect(await within(evaluationPanel as HTMLElement).findByText(
+      "Levenberg-Marquardt requires at least as many residuals as variables.",
+    )).toBeInTheDocument();
   });
 
-  it("shows a warning modal for any config-build error triggered by method switching", async () => {
+  it("shows a warning in Operand Evaluation for any config-build error triggered by method switching", async () => {
     const { optimizationStore } = renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
 
@@ -300,8 +304,12 @@ describe("OptimizationPage", () => {
 
     await user.selectOptions(screen.getByRole("combobox", { name: "Method" }), "lm");
 
-    expect(await screen.findByRole("dialog", { name: "Warning" })).toBeInTheDocument();
-    expect(screen.getByText("Weight must be a positive non-zero number.")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Warning" })).not.toBeInTheDocument();
+    const evaluationPanel = screen.getByText("Operand Evaluation").closest("div")?.parentElement;
+    expect(evaluationPanel).not.toBeNull();
+    expect(await within(evaluationPanel as HTMLElement).findByText(
+      "Weight must be a positive non-zero number.",
+    )).toBeInTheDocument();
   });
 
   it("renders the optimization tabs inside a draggable bottom drawer on large screens", () => {
@@ -516,6 +524,30 @@ describe("OptimizationPage", () => {
     await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
 
     expect(screen.getByText("Evaluation results appear here when the current optimization config is valid.")).toBeInTheDocument();
+    expect(screen.queryByText("Variable minimum must be less than maximum.")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
+  });
+
+  it("shows the invalid variable bounds message before the operand evaluation empty state", async () => {
+    const proxy = makeProxy();
+    const { optimizationStore } = renderOptimizationPage(proxy);
+
+    act(() => {
+      optimizationStore.getState().setRadiusMode(1, {
+        mode: "variable",
+        min: "60",
+        max: "40",
+      });
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+      ]);
+    });
+
+    const invalidMessage = await screen.findByText("Variable minimum must be less than maximum.");
+    const emptyState = screen.getByText("Evaluation results appear here when the current optimization config is valid.");
+
+    expect(invalidMessage.compareDocumentPosition(emptyState) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(proxy.evaluateOptimizationProblem).not.toHaveBeenCalled();
     expect(screen.queryByTestId("optimization-evaluation-scroll")).not.toBeInTheDocument();
   });
 
@@ -897,6 +929,49 @@ describe("OptimizationPage", () => {
     expect(proxy.optimizeOpm).not.toHaveBeenCalled();
   });
 
+  it("rejects invalid least-squares tolerances before calling optimizeOpm", async () => {
+    const onError = jest.fn();
+    const proxy = makeProxy({
+      optimizeOpm: jest.fn().mockRejectedValue(
+        new Error("At least one of the tolerances must be higher than machine epsilon"),
+      ),
+    });
+    const { optimizationStore } = renderOptimizationPage(proxy, onError);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled();
+    });
+
+    act(() => {
+      optimizationStore.setState((state) => {
+        if (state.optimizer.kind !== "least_squares") {
+          throw new Error("Expected least-squares optimizer state.");
+        }
+
+        return {
+          optimizer: {
+            ...state.optimizer,
+            ftol: String(Number.EPSILON),
+          },
+        };
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+
+    expect(proxy.optimizeOpm).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+    expect(screen.queryByText("At least one of the tolerances must be higher than machine epsilon")).not.toBeInTheDocument();
+  });
+
   it("keeps Optimize enabled when at least one effective optimization weight is non-zero", async () => {
     const proxy = makeProxy();
     const { optimizationStore } = renderOptimizationPage(proxy);
@@ -1155,7 +1230,7 @@ describe("OptimizationPage", () => {
     );
   });
 
-  it("applies the returned result and still shows a warning modal when optimizeOpm returns a failed status", async () => {
+  it("applies the returned result and still shows a warning in Operand Evaluation when optimizeOpm returns a failed status", async () => {
     const proxy = makeProxy({
       optimizeOpm: jest.fn().mockResolvedValue({
         success: false,
@@ -1176,7 +1251,10 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("button", { name: "Add operand" }));
     await user.click(screen.getByRole("button", { name: "Optimize" }));
 
-    expect(await screen.findByText("bad config")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Warning" })).not.toBeInTheDocument();
+    const evaluationPanel = screen.getByText("Operand Evaluation").closest("div")?.parentElement;
+    expect(evaluationPanel).not.toBeNull();
+    expect(await within(evaluationPanel as HTMLElement).findByText("bad config")).toBeInTheDocument();
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(33);
   });
 

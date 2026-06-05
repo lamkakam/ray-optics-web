@@ -3,10 +3,13 @@
 import clsx from "clsx";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Table } from "@/shared/components/primitives/Table";
+import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 interface OptimizationEvaluationPanelProps {
   readonly rows: ReadonlyArray<readonly [string, string, string, string]>;
   readonly isEvaluating: boolean;
+  readonly invalidConfigMessage?: string;
+  readonly warningMessage?: string;
   readonly maxBodyHeight?: number;
   readonly allowBodyScroll?: boolean;
 }
@@ -14,9 +17,18 @@ interface OptimizationEvaluationPanelProps {
 export function OptimizationEvaluationPanel({
   rows,
   isEvaluating,
+  invalidConfigMessage,
+  warningMessage,
   maxBodyHeight,
   allowBodyScroll = true,
 }: OptimizationEvaluationPanelProps) {
+  const activeWarningMessage = invalidConfigMessage ?? warningMessage;
+  const warningBanner = activeWarningMessage === undefined ? null : (
+    <Paragraph variant="placeholder" className={clsx(cx.text.color.errorTextColor, "px-4 pt-3")}>
+      {activeWarningMessage}
+    </Paragraph>
+  );
+
   return (
     <div className="mb-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
@@ -27,6 +39,7 @@ export function OptimizationEvaluationPanel({
           </span>
         ) : null}
       </div>
+      {warningBanner}
       {rows.length > 0 ? (
         <div
           data-testid="optimization-evaluation-scroll"
@@ -43,7 +56,7 @@ export function OptimizationEvaluationPanel({
           />
         </div>
       ) : (
-        <Paragraph variant="placeholder" className="px-4 py-3">
+        <Paragraph variant="placeholder" className={activeWarningMessage === undefined ? "px-4 py-3" : "px-4 pb-3 pt-1"}>
           Evaluation results appear here when the current optimization config is valid.
         </Paragraph>
       )}

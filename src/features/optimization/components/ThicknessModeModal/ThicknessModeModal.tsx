@@ -10,8 +10,10 @@ import {
   createPickupDraft,
   createVariableDraft,
   getThicknessPickupSourceSurfaceOptions,
+  minLessThanMaxRule,
   serializeRadiusMode,
   toRadiusModeDraft,
+  validateVariableBounds,
 } from "@/features/optimization/lib/modalHelpers";
 import { getVariableModeFieldsRenderer } from "@/features/optimization/lib/variableModeFields";
 import { Button } from "@/shared/components/primitives/Button";
@@ -83,6 +85,9 @@ function ThicknessModeModalEditor({
     () => getThicknessPickupSourceSurfaceOptions(optimizationModel.surfaces.length, surfaceIndex),
     [optimizationModel.surfaces.length, surfaceIndex],
   );
+  const variableBoundsErrorText = canUseBounds && draftMode.mode === "variable"
+    ? validateVariableBounds("Thickness", draftMode.min, draftMode.max, [minLessThanMaxRule])
+    : undefined;
 
   return (
     <Modal
@@ -132,6 +137,8 @@ function ThicknessModeModalEditor({
             })}
             className="grid gap-4 md:grid-cols-2"
             inputRowClassName="contents"
+            errorText={variableBoundsErrorText}
+            errorTextClassName="md:col-span-2"
           />
         ) : null}
 
@@ -173,6 +180,7 @@ function ThicknessModeModalEditor({
           </Button>
           <Button
             variant="primary"
+            disabled={variableBoundsErrorText !== undefined}
             onClick={() => {
               onSetMode(surfaceIndex, draftMode);
               onClose();

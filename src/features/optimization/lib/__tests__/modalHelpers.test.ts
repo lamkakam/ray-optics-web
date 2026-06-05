@@ -6,8 +6,11 @@ import {
   createPickupDraft,
   createVariableDraft,
   getCurvatureRadiusBoundsErrorText,
+  curvatureRadiusNoZeroStraddleRule,
+  minLessThanMaxRule,
   serializeRadiusMode,
   toRadiusModeDraft,
+  validateVariableBounds,
 } from "@/features/optimization/lib/modalHelpers";
 
 describe("optimization modal helpers", () => {
@@ -24,6 +27,45 @@ describe("optimization modal helpers", () => {
     it("returns false when either bound is not finite", () => {
       expect(curvatureRadiusCrossesZero("foo", "5")).toBe(false);
       expect(curvatureRadiusCrossesZero("-5", "bar")).toBe(false);
+    });
+  });
+
+  describe("validateVariableBounds", () => {
+    it("returns the first rule error in order", () => {
+      const firstRule = jest.fn(() => "First error");
+      const secondRule = jest.fn(() => "Second error");
+
+      expect(validateVariableBounds("Radius", "10", "5", [firstRule, secondRule])).toBe("First error");
+      expect(secondRule).not.toHaveBeenCalled();
+    });
+
+    it("rejects non-finite bounds with the shared min/max rule", () => {
+      expect(validateVariableBounds("Thickness", "foo", "5", [minLessThanMaxRule])).toBe(
+        "Thickness variable bounds must have Min. less than Max.",
+      );
+      expect(validateVariableBounds("Thickness", "1", "Infinity", [minLessThanMaxRule])).toBe(
+        "Thickness variable bounds must have Min. less than Max.",
+      );
+    });
+
+    it("rejects min greater than or equal to max with the shared min/max rule", () => {
+      expect(validateVariableBounds("Radius", "5", "5", [minLessThanMaxRule])).toBe(
+        "Radius variable bounds must have Min. less than Max.",
+      );
+      expect(validateVariableBounds("Radius", "6", "5", [minLessThanMaxRule])).toBe(
+        "Radius variable bounds must have Min. less than Max.",
+      );
+    });
+
+    it("accepts finite bounds with min less than max", () => {
+      expect(validateVariableBounds("Thickness", "1", "5", [minLessThanMaxRule])).toBeUndefined();
+    });
+
+    it("rejects curvature-radius bounds that straddle zero", () => {
+      expect(validateVariableBounds("Radius", "-5", "5", [curvatureRadiusNoZeroStraddleRule])).toBe(
+        "Radius variable bounds must stay on one side of 0.",
+      );
+      expect(validateVariableBounds("Radius", "-5", "-1", [curvatureRadiusNoZeroStraddleRule])).toBeUndefined();
     });
   });
 
