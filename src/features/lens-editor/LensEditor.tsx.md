@@ -1,7 +1,7 @@
 # LensEditor.tsx
 
 ## Purpose
-Page-level component (`"use client"`). Owns the home-view lens editor workflow: manual/import submit-compute behavior, Seidel/Zernike modal state, and layout for LG and SM breakpoints. Calls `useScreenBreakpoint()` internally to derive `isLG`. Delegates the error modal to `page.tsx` via `onError`.
+Page-level component (`"use client"`). Owns the home-view lens editor workflow: manual/import submit-compute behavior, Lens Editor config toolbar placement, Seidel/Zernike modal state, and layout for LG and SM breakpoints. Calls `useScreenBreakpoint()` internally to derive `isLG`. Delegates the compute error modal to `page.tsx` via `onError`.
 Lens-editor child components are imported through the `features/lens-editor/components` root barrel so `LensEditor` depends on the component package surface rather than individual component directories.
 `AnalysisPlotContainer` is imported through the `features/analysis/components` root barrel for the same reason.
 
@@ -37,11 +37,12 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 - Zernike payload/order types are imported from `features/lens-editor/types/zernikeData`; Zernike term-count constants are imported from `features/lens-editor/lib/zernikeData`
 - `getOpticalModel` — builds the current `OpticalModel` snapshot from the provider-backed stores
 - `handleImportJson` — loads an imported `OpticalModel` into the specs and lens-editor stores
+- `configToolbar` — `LensEditorConfigToolbar` bound to `getOpticalModel`, `handleImportJson`, `handleSubmit`, and disabled when `!isReady || computing`
 
 ## Layout
 
 ### LG (`isLG === true`)
-- Controls row: omitted until `hasAnalysisControls` is true, so the header is not followed by an empty bordered row before any optical system has been computed. When rendered, it contains Seidel/Zernike buttons; `border-b` is applied here when `firstOrderData` is undefined. `seidelButton` is guarded by `seidelData`; `zernikeButton` is guarded by `committedOpticalModel` (not `seidelData`)
+- Controls row: always rendered so config actions are available before any optical system has been computed. Row order is `Update System`, `Load Config`, `Download Config`, then optional `3rd Order Seidel Aberr.` and optional `Zernike Terms`; `border-b` is applied here when `firstOrderData` is undefined. `seidelButton` is guarded by `seidelData`; `zernikeButton` is guarded by `committedOpticalModel` (not `seidelData`)
 - First-order chips row (border-bottom) — only rendered when `firstOrderData` is defined
 - Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%); the analysis panel wrapper has `overflow-hidden` (`data-testid="lg-analysis-plot-panel"`) to prevent content from bleeding over the BottomDrawer when viewport height is small
 - BottomDrawerContainer (`draggable={true}`)
@@ -49,7 +50,7 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 
 ### SM (`isLG === false`)
 - Outer scroll wrapper: `data-testid="sm-scroll-container"` with `flex-1 min-h-0 overflow-y-auto flex flex-col` — makes all content scrollable on small screens
-- Controls section: omitted until `hasAnalysisControls` is true, so the header is not followed by an empty bordered section before any optical system has been computed. When rendered, it contains Seidel/Zernike buttons + first-order chips (chips wrapper only renders when `firstOrderData` is defined)
+- Controls section: always rendered so config actions are available before any optical system has been computed. It wraps naturally and orders controls as `Update System`, `Load Config`, `Download Config`, then optional Seidel/Zernike buttons; first-order chips render below only when `firstOrderData` is defined
 - `data-testid="lens-layout-container"` wrapping LensLayoutPanel
 - `data-testid="analysis-plot-container"` wrapping AnalysisPlotContainer
 - BottomDrawerContainer (`draggable={false}`)

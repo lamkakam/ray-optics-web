@@ -12,7 +12,6 @@ import { FocusingContainer } from "@/features/lens-editor/components/FocusingCon
 
 interface BottomDrawerContainerProps {
   readonly getOpticalModel: () => OpticalModel;
-  readonly onImportJson: (data: OpticalModel) => void;
   readonly onUpdateSystem: () => Promise<void>;
   readonly isReady: boolean;
   readonly computing: boolean;
@@ -23,7 +22,6 @@ interface BottomDrawerContainerProps {
 
 export function BottomDrawerContainer({
   getOpticalModel,
-  onImportJson,
   onUpdateSystem,
   isReady,
   computing,
@@ -47,9 +45,6 @@ export function BottomDrawerContainer({
         content: (
           <LensPrescriptionContainer
             getOpticalModel={getOpticalModel}
-            onImportJson={onImportJson}
-            onUpdateSystem={onUpdateSystem}
-            isUpdateSystemDisabled={!isReady || computing}
           />
         ),
       },
@@ -68,7 +63,7 @@ export function BottomDrawerContainer({
         ),
       },
     ],
-    [getOpticalModel, onImportJson, onUpdateSystem, isReady, computing, proxy, onError]
+    [getOpticalModel, onUpdateSystem, isReady, computing, proxy, onError]
   );
 
   return (
