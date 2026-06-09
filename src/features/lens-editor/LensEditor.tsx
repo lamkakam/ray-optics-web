@@ -18,11 +18,12 @@ import { AnalysisPlotContainer } from "@/features/analysis/components";
 import {
   BottomDrawerContainer,
   FirstOrderChips,
+  LensEditorConfigToolbar,
   LensLayoutPanel,
   SeidelAberrModal,
   ZernikeTermsModal,
 } from "@/features/lens-editor/components";
-import { Button } from "@/shared/components/primitives/Button";
+import { Button, type ButtonSize } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { useOpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
@@ -40,6 +41,7 @@ export function LensEditor({
 }: LensEditorProps) {
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
+  const analysisButtonSize: ButtonSize = screenSize === "screenSM" ? "xs" : "sm";
   const { theme } = useTheme();
   const { opdAimPoint } = useOpdAimPoint();
   const lensStore = useLensEditorStore();
@@ -141,7 +143,7 @@ export function LensEditor({
       <Tooltip text="View 3rd-order Seidel aberration coefficients" position="bottom" noTouch>
         <Button
           variant="secondary"
-          size="sm"
+          size={analysisButtonSize}
           aria-label="3rd Order Seidel Aberrations"
           onClick={() => setSeidelModalOpen(true)}
         >
@@ -156,7 +158,7 @@ export function LensEditor({
       <Tooltip text="View Zernike polynomial coefficients" position="bottom" noTouch>
         <Button
           variant="secondary"
-          size="sm"
+          size={analysisButtonSize}
           aria-label="Zernike Terms"
           onClick={() => setZernikeModalOpen(true)}
         >
@@ -166,7 +168,15 @@ export function LensEditor({
     </div>
   );
 
-  const hasAnalysisControls = Boolean(seidelData || committedOpticalModel || firstOrderData);
+  const configToolbar = (
+    <LensEditorConfigToolbar
+      getOpticalModel={getOpticalModel}
+      onImportJson={handleImportJson}
+      onUpdateSystem={handleSubmit}
+      isUpdateSystemDisabled={!isReady || computing}
+    />
+  );
+  const hasAnalysisControls = Boolean(seidelData || committedOpticalModel);
   const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
 
   const lensLayoutPanel = (
@@ -184,7 +194,6 @@ export function LensEditor({
   const bottomDrawer = (
     <BottomDrawerContainer
       getOpticalModel={getOpticalModel}
-      onImportJson={handleImportJson}
       onUpdateSystem={handleSubmit}
       isReady={isReady}
       computing={computing}
@@ -216,8 +225,14 @@ export function LensEditor({
     <>
       {hasAnalysisControls && (
         <div className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}>
+          {configToolbar}
           {seidelButton}
           {zernikeButton}
+        </div>
+      )}
+      {!hasAnalysisControls && (
+        <div className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}>
+          {configToolbar}
         </div>
       )}
       {firstOrderData && (
@@ -243,17 +258,18 @@ export function LensEditor({
 
   const smContent = (
     <div data-testid="sm-scroll-container" className="flex-1 min-h-0 overflow-y-auto flex flex-col">
-      {hasAnalysisControls && (
-        <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex flex-wrap gap-2">
+          {configToolbar}
           {seidelButton}
           {zernikeButton}
-          {firstOrderData && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {firstOrderChips}
-            </div>
-          )}
         </div>
-      )}
+        {firstOrderData && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {firstOrderChips}
+          </div>
+        )}
+      </div>
       <div data-testid="lens-layout-container" className="w-full px-2 py-3">
         {lensLayoutPanel}
       </div>

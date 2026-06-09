@@ -1,31 +1,25 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel, AsphericalType } from "@/shared/lib/types/opticalModel";
 import { buildExportScript } from "@/shared/lib/utils/pythonScript";
-import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
 import { Button } from "@/shared/components/primitives/Button";
 import { Switch } from "@/shared/components/primitives/Switch";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { Label } from "@/shared/components/primitives/Label";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
-import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { LensPrescriptionGrid } from "./LensPrescriptionGrid";
 import { MediumSelectorModal } from "./MediumSelectorModal";
 import { AsphericalModal } from "./AsphericalModal";
 import { DecenterModal, type DecenterType } from "./DecenterModal";
 import { DiffractionGratingModal } from "./DiffractionGratingModal";
 import { PythonScriptModal } from "./PythonScriptModal";
-import { ConfirmImportModal } from "./ConfirmImportModal";
 
 interface LensPrescriptionContainerProps {
   readonly getOpticalModel: () => OpticalModel;
-  readonly onImportJson: (data: OpticalModel) => void;
-  readonly onUpdateSystem: () => void;
-  readonly isUpdateSystemDisabled: boolean;
 }
 
 function getInitialAsphericalType(asphericalRow: GridRow | undefined): AsphericalType {
@@ -79,9 +73,6 @@ function getInitialToricSweepRadiusOfCurvature(asphericalRow: GridRow | undefine
 
 export function LensPrescriptionContainer({
   getOpticalModel,
-  onImportJson,
-  onUpdateSystem,
-  isUpdateSystemDisabled,
 }: LensPrescriptionContainerProps) {
   const screenSize = useScreenBreakpoint();
   const buttonSize = screenSize === "screenSM" ? "xs" : "sm";
@@ -94,9 +85,6 @@ export function LensPrescriptionContainer({
   const decenterModal = useStore(store, (s) => s.decenterModal);
   const diffractionGratingModal = useStore(store, (s) => s.diffractionGratingModal);
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
-  const [importErrorOpen, setImportErrorOpen] = useState(false);
-  const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Stable callbacks — use store.getState() so they never change reference,
   // preventing unnecessary columnDefs recreation in LensPrescriptionGrid.
@@ -120,70 +108,9 @@ export function LensPrescriptionContainer({
   const diffractionGratingRow = rows.find((r) => r.id === diffractionGratingModal.rowId);
   const isObjectMediumRow = mediumRow?.kind === "object";
 
-  const handleExport = () => {
-    const json = JSON.stringify(getOpticalModel(), undefined, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "lens-config.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImportClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed: unknown = JSON.parse(event.target?.result as string);
-        if (validateImportedLensData(parsed)) {
-          setPendingImportData(parsed);
-        } else {
-          setImportErrorOpen(true);
-        }
-      } catch {
-        setImportErrorOpen(true);
-      }
-    };
-    reader.readAsText(file);
-    // Reset input so the same file can be re-imported
-    e.target.value = "";
-  };
-
-  const handleConfirmImport = () => {
-    if (pendingImportData) onImportJson(pendingImportData);
-    setPendingImportData(undefined);
-  };
-
-  const handleCancelImport = () => setPendingImportData(undefined);
-
   return (
     <div>
-      <input
-        type="file"
-        accept=".json"
-        ref={fileInputRef}
-        style={{ display: "none" }}
-        onChange={handleFileChange}
-      />
-
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
-        <Tooltip text="Compute and update the optical system" position="top-start" portal noTouch>
-          <Button variant="primary" size={buttonSize} disabled={isUpdateSystemDisabled} onClick={onUpdateSystem} aria-label="Update System">Update System</Button>
-        </Tooltip>
-        <Tooltip text="Load a previously downloaded config" position="top-start" portal noTouch>
-          <Button variant="primary" size={buttonSize} onClick={handleImportClick} aria-label="Load Config">Load Config</Button>
-        </Tooltip>
-        <Tooltip text="Download current config as JSON" portal noTouch>
-          <Button variant="primary" size={buttonSize} onClick={handleExport} aria-label="Download Config">Download Config</Button>
-        </Tooltip>
         <Tooltip text="Generate a Python script" portal noTouch>
           <Button variant="secondary" size={buttonSize} onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
         </Tooltip>
@@ -329,17 +256,6 @@ export function LensPrescriptionContainer({
         onClose={() => setPythonScriptOpen(false)}
       />
 
-      <ConfirmImportModal
-        isOpen={pendingImportData !== undefined}
-        onConfirm={handleConfirmImport}
-        onCancel={handleCancelImport}
-      />
-
-      <ErrorModal
-        isOpen={importErrorOpen}
-        message="The JSON file is invalid. Schema validation failed."
-        onClose={() => setImportErrorOpen(false)}
-      />
     </div>
   );
 }

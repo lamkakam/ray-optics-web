@@ -9,7 +9,6 @@ Container component that composes the three drawer tabs (System Specs, Prescript
 ```ts
 interface BottomDrawerContainerProps {
   getOpticalModel: () => OpticalModel;
-  onImportJson: (data: OpticalModel) => void;
   onUpdateSystem: () => Promise<void>;
   isReady: boolean;
   computing: boolean;
@@ -24,7 +23,6 @@ interface BottomDrawerContainerProps {
 | Prop | Type | Required | Description |
 |---|---|---|---|
 | `getOpticalModel` | `() => OpticalModel` | Yes | Callback to build the current optical model from store state |
-| `onImportJson` | `(data: OpticalModel) => void` | Yes | Called when user imports a JSON lens file |
 | `onUpdateSystem` | `() => Promise<void>` | Yes | Triggers a full system update (submit) |
 | `isReady` | `boolean` | Yes | Whether Pyodide is initialized |
 | `computing` | `boolean` | Yes | Whether a computation is in progress |
@@ -36,7 +34,7 @@ interface BottomDrawerContainerProps {
 
 Builds a `tabs` array via `useMemo` containing:
 1. **System Specs** — `<SpecsConfiguratorContainer />`
-2. **Prescription** — `<LensPrescriptionContainer .../>` with `isUpdateSystemDisabled={!isReady || computing}`
+2. **Prescription** — `<LensPrescriptionContainer getOpticalModel={...} />`
 3. **Focusing** — `<FocusingContainer .../>`
 
 Reads `activeBottomDrawerTabId` from the lens editor Zustand store and passes it to `BottomDrawer` as a controlled tab value. On tab change, writes the selected tab id back into `setActiveBottomDrawerTabId`, allowing Lens Editor to restore the previously selected drawer tab after navigation.

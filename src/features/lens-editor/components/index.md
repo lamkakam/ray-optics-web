@@ -11,7 +11,7 @@ All components (composite + container + domain cells) for the lens editor featur
 
 ## Lens Prescription Components
 
-- [LensPrescriptionContainer](./LensPrescriptionContainer/LensPrescriptionContainer.tsx.md) — Manages lens prescription grid state, toolbar actions, and surface updates
+- [LensPrescriptionContainer](./LensPrescriptionContainer/LensPrescriptionContainer.tsx.md) — Manages lens prescription grid state, Python export, and surface updates
 - [LensPrescriptionGrid](./LensPrescriptionContainer/LensPrescriptionGrid/LensPrescriptionGrid.tsx.md) — Internal AG Grid table for editing optical surfaces
 - [GridRowButtons](./LensPrescriptionContainer/GridRowButtons/GridRowButtons.tsx.md) — Action buttons for row operations (insert, delete); exported through `LensPrescriptionContainer`
 - [AsphericalModal](./LensPrescriptionContainer/AsphericalModal/AsphericalModal.tsx.md) — Modal for setting aspherical coefficients; exported through `LensPrescriptionContainer`
@@ -24,6 +24,7 @@ All components (composite + container + domain cells) for the lens editor featur
 ## Specs & Configuration
 
 - [SpecsConfiguratorPanel](./SpecsConfiguratorPanel/SpecsConfiguratorPanel.tsx.md) — UI for setting optical specs (pupil, field, wavelengths)
+- [LensEditorConfigToolbar](./LensEditorConfigToolbar/LensEditorConfigToolbar.tsx.md) — Lens Editor-level Update/Load/Download config actions shown before analysis controls
 - [FirstOrderChips](./FirstOrderChips/FirstOrderChips.tsx.md) — Chips showing first-order optical data (EFL, F#, BFL, etc.)
 - [FocusingPanel](./FocusingPanel/FocusingPanel.tsx.md) — Controls for focusing algorithms and best-focus thickness
 

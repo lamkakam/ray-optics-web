@@ -8,6 +8,7 @@ export * from "./FirstOrderChips";
 export * from "./FocusingContainer";
 export * from "./FocusingPanel";
 export * from "./LensLayoutPanel";
+export * from "./LensEditorConfigToolbar";
 export * from "./LensPrescriptionContainer";
 export * from "./MediumCell";
 export * from "./SeidelAberrModal";

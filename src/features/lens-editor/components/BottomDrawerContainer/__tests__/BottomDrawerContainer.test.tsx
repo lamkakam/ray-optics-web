@@ -73,7 +73,6 @@ function renderContainer(draggable: boolean, lensStore?: StoreApi<LensEditorStat
     <LensEditorStoreContext.Provider value={resolvedLensStore}>
       <BottomDrawerContainer
         getOpticalModel={() => testModel}
-        onImportJson={jest.fn()}
         onUpdateSystem={jest.fn()}
         isReady={true}
         computing={false}

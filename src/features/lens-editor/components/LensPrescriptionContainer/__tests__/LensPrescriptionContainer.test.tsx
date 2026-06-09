@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, act, within, waitFor } from "@testing-library/react";
+import { render, screen, act, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import { LensPrescriptionContainer } from "@/features/lens-editor/components/LensPrescriptionContainer";
@@ -79,7 +79,6 @@ function getOpticalModel(): OpticalModel {
   return testOpticalModel;
 }
 
-const onImportJson = jest.fn();
 const glassCatalogContextValue: GlassCatalogContextValue = {
   catalogs: {
     CDGM: {},
@@ -141,9 +140,6 @@ function renderLPC(store: ReturnType<typeof createTestStore> = createTestStore()
         <LensEditorStoreContext.Provider value={store}>
           <LensPrescriptionContainer
             getOpticalModel={getOpticalModel}
-            onImportJson={onImportJson}
-            onUpdateSystem={jest.fn()}
-            isUpdateSystemDisabled={false}
           />
         </LensEditorStoreContext.Provider>
       </GlassCatalogContext.Provider>
@@ -162,10 +158,11 @@ describe("LensPrescriptionContainer", () => {
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
-  it("renders Download Config button", () => {
+  it("does not render config action buttons moved to LensEditor", () => {
     renderLPC();
-    const btn = screen.getByText("Download Config");
-    expect(btn).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Update System" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Load Config" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Download Config" })).not.toBeInTheDocument();
   });
 
   it("renders rows from store (object + 2 surfaces + image)", () => {
@@ -598,103 +595,7 @@ describe("LensPrescriptionContainer", () => {
     expect(toggle).toHaveTextContent("Manual");
   });
 
-  // --- Load Config / Save Config ---
-  it("renders Load Config button", () => {
-    renderLPC();
-    expect(screen.getByRole("button", { name: "Load Config" })).toBeInTheDocument();
-  });
-
-  it("shows confirmation modal when valid JSON file is selected (not direct call)", async () => {
-    renderLPC();
-
-    const validData: OpticalModel = {
-      setAutoAperture: "autoAperture",
-      specs: testOpticalModel.specs,
-      object: testOpticalModel.object,
-      image: testOpticalModel.image,
-      surfaces: testOpticalModel.surfaces,
-    };
-    const jsonContent = JSON.stringify(validData);
-    const file = new File([jsonContent], "lens.json", { type: "application/json" });
-
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await userEvent.upload(fileInput, file);
-
-    // Should show confirmation modal, NOT call onImportJson directly
-    expect(onImportJson).not.toHaveBeenCalled();
-    const dialog = await waitFor(() => screen.getByRole("dialog"));
-    expect(dialog).toBeInTheDocument();
-  });
-
-  it("does not call onImportJson if user cancels the import confirmation", async () => {
-    renderLPC();
-
-    const validData: OpticalModel = {
-      setAutoAperture: "autoAperture",
-      specs: testOpticalModel.specs,
-      object: testOpticalModel.object,
-      image: testOpticalModel.image,
-      surfaces: testOpticalModel.surfaces,
-    };
-    const file = new File([JSON.stringify(validData)], "lens.json", { type: "application/json" });
-
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await userEvent.upload(fileInput, file);
-
-    await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
-    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
-
-    expect(onImportJson).not.toHaveBeenCalled();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("calls onImportJson after user confirms import", async () => {
-    renderLPC();
-
-    const validData: OpticalModel = {
-      setAutoAperture: "autoAperture",
-      specs: testOpticalModel.specs,
-      object: testOpticalModel.object,
-      image: testOpticalModel.image,
-      surfaces: testOpticalModel.surfaces,
-    };
-    const file = new File([JSON.stringify(validData)], "lens.json", { type: "application/json" });
-
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await userEvent.upload(fileInput, file);
-
-    await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
-    await userEvent.click(screen.getByRole("button", { name: "Load" }));
-
-    expect(onImportJson).toHaveBeenCalledWith(validData);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("shows error dialog when invalid JSON file is selected", async () => {
-    renderLPC();
-
-    const file = new File(['{"invalid": true}'], "bad.json", { type: "application/json" });
-
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await userEvent.upload(fileInput, file);
-
-    expect(onImportJson).not.toHaveBeenCalled();
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
-  });
-
   // --- Toolbar tooltip tests ---
-
-  it("Load Config button has a tooltip with correct text", () => {
-    renderLPC();
-    const tooltips = screen.getAllByRole("tooltip");
-    expect(tooltips.some((t) => t.textContent === "Load a previously downloaded config")).toBe(true);
-  });
-
-  it("Download Config button has a tooltip with correct text", () => {
-    renderLPC();
-    const tooltips = screen.getAllByRole("tooltip");
-    expect(tooltips.some((t) => t.textContent === "Download current config as JSON")).toBe(true);
-  });
 
   it("Export Python Script button has a tooltip with correct text", () => {
     renderLPC();

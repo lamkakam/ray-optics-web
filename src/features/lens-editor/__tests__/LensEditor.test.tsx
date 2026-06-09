@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -61,19 +61,14 @@ const testImportModelWithDiffractionGrating: OpticalModel = {
 jest.mock("@/features/lens-editor/components/BottomDrawerContainer", () => ({
   BottomDrawerContainer: ({
     draggable,
-    onImportJson,
     onUpdateSystem,
   }: {
     draggable: boolean;
-    onImportJson: (data: OpticalModel) => void;
     onUpdateSystem: () => Promise<void>;
   }) => (
     <div data-testid="bottom-drawer-container" data-draggable={String(draggable)}>
       <button data-testid="update-system-btn" onClick={() => void onUpdateSystem()}>
-        Update System
-      </button>
-      <button data-testid="import-json-btn" onClick={() => onImportJson(testImportModel)}>
-        Import JSON
+        Mock Update System
       </button>
     </div>
   ),
@@ -291,6 +286,14 @@ function renderLensEditor(overrides?: {
   return { ...renderResult, proxy, onError, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore };
 }
 
+function expectButtonsInOrder(buttonNames: string[]) {
+  const buttons = buttonNames.map((name) => screen.getByRole("button", { name }));
+  buttons.reduce((previous, current) => {
+    expect(previous.compareDocumentPosition(current) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    return current;
+  });
+}
+
 beforeEach(() => {
   jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
   jest.mocked(useTheme).mockReturnValue({ theme: "light", setTheme: jest.fn() });
@@ -456,18 +459,24 @@ describe("LensEditor", () => {
     expect(panel).toHaveClass("overflow-hidden");
   });
 
-  it("LG: initial render omits the empty controls row under the header", () => {
+  it("LG: initial render shows config toolbar before analysis controls exist", () => {
     const { container } = renderLensEditor();
     const firstSection = container.firstElementChild;
-    expect(firstSection).toContainElement(screen.getByTestId("lens-layout-panel-mock"));
-    expect(firstSection).toContainElement(screen.getByTestId("lg-analysis-plot-panel"));
+    expect(firstSection).toContainElement(screen.getByRole("button", { name: "Update System" }));
+    expect(firstSection).toContainElement(screen.getByRole("button", { name: "Load Config" }));
+    expect(firstSection).toContainElement(screen.getByRole("button", { name: "Download Config" }));
+    expect(firstSection).not.toContainElement(screen.getByTestId("lens-layout-panel-mock"));
   });
 
-  it("SM: initial render omits the empty controls section under the header", () => {
+  it("SM: initial render shows config toolbar before analysis controls exist", () => {
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
     renderLensEditor();
     const scrollContainer = screen.getByTestId("sm-scroll-container");
-    expect(scrollContainer.firstElementChild).toBe(screen.getByTestId("lens-layout-container"));
+    const controlsSection = scrollContainer.firstElementChild;
+    expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Update System" }));
+    expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Load Config" }));
+    expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Download Config" }));
+    expect(controlsSection).not.toContainElement(screen.getByTestId("lens-layout-container"));
   });
 
   it("LG: controls render after successful submit with buttons and first-order chips", async () => {
@@ -482,6 +491,13 @@ describe("LensEditor", () => {
       );
       expect(firstSection).toContainElement(screen.getByRole("button", { name: "Zernike Terms" }));
       expect(screen.getByTestId("first-order-chips-mock")).toBeInTheDocument();
+      expectButtonsInOrder([
+        "Update System",
+        "Load Config",
+        "Download Config",
+        "3rd Order Seidel Aberrations",
+        "Zernike Terms",
+      ]);
     });
   });
 
@@ -499,7 +515,87 @@ describe("LensEditor", () => {
       );
       expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Zernike Terms" }));
       expect(controlsSection).toContainElement(screen.getByTestId("first-order-chips-mock"));
+      expectButtonsInOrder([
+        "Update System",
+        "Load Config",
+        "Download Config",
+        "3rd Order Seidel Aberrations",
+        "Zernike Terms",
+      ]);
     });
+  });
+
+  it("SM: analysis buttons match Update System xs sizing after successful submit", async () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+    renderLensEditor();
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => {
+      const buttonNames = [
+        "Update System",
+        "3rd Order Seidel Aberrations",
+        "Zernike Terms",
+      ];
+      for (const name of buttonNames) {
+        const button = screen.getByRole("button", { name });
+        expect(button).toHaveClass("px-2", "py-1", "text-xs");
+        expect(button).not.toHaveClass("py-2", "text-sm");
+      }
+    });
+  });
+
+  it("shows confirmation modal when valid JSON file is selected", async () => {
+    renderLensEditor();
+
+    const file = new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" });
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText("Load Config")).toBeInTheDocument();
+  });
+
+  it("does not import if user cancels the import confirmation", async () => {
+    const { lensStore } = renderLensEditor();
+    const file = new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" });
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+
+    expect(lensStore.getState().autoAperture).toBe(false);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("imports JSON after user confirms import", async () => {
+    const { lensStore } = renderLensEditor();
+    const file = new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" });
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+    await userEvent.click(await screen.findByRole("button", { name: "Load" }));
+
+    expect(lensStore.getState().autoAperture).toBe(true);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows error dialog when invalid JSON file is selected", async () => {
+    renderLensEditor();
+    const file = new File(['{"invalid": true}'], "bad.json", { type: "application/json" });
+
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("The JSON file is invalid. Schema validation failed.")).toBeInTheDocument();
+  });
+
+  it("Download Config button has a tooltip with correct text", () => {
+    renderLensEditor();
+    const tooltips = screen.getAllByRole("tooltip");
+    expect(tooltips.some((t) => t.textContent === "Download current config as JSON")).toBe(true);
   });
 
   it("LG: BottomDrawerContainer receives draggable={true}", () => {
@@ -551,13 +647,4 @@ describe("LensEditor", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("onImportJson loads data into stores", async () => {
-    const { lensStore } = renderLensEditor();
-    const user = userEvent.setup();
-    // testImportModel has setAutoAperture: "autoAperture"
-    // default autoAperture is false, so after import it becomes true
-    expect(lensStore.getState().autoAperture).toBe(false);
-    await user.click(screen.getByTestId("import-json-btn"));
-    expect(lensStore.getState().autoAperture).toBe(true);
-  });
 });
