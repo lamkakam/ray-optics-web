@@ -6,9 +6,9 @@ import packageLockJson from "../package-lock.json";
 
 describe("version metadata", () => {
   it("keeps app package metadata at the bumped patch version", () => {
-    expect(packageJson.version).toBe("0.16.1");
-    expect(packageLockJson.version).toBe("0.16.1");
-    expect(packageLockJson.packages[""].version).toBe("0.16.1");
+    expect(packageJson.version).toBe("0.16.2");
+    expect(packageLockJson.version).toBe("0.16.2");
+    expect(packageLockJson.packages[""].version).toBe("0.16.2");
   });
 
   it("keeps the internal Python package metadata at the bumped minor version", () => {
