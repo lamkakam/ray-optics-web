@@ -13,6 +13,8 @@ const RAY_FAN_GRID_BOTTOM = 52;
 const RAY_FAN_GRID_LEFT = 60;
 const RAY_FAN_GRID_RIGHT = 28;
 const RAY_FAN_GRID_GAP = 48;
+const RAY_FAN_STACKED_GRID_GAP = 104;
+const RAY_FAN_STACKED_TITLE_OFFSET = 32;
 const RAY_FAN_TITLE_TOP = 40;
 const RAY_FAN_LEGEND_TOP = 12;
 function parseWavelengthLabel(wavelengthLabel: string | undefined): number | undefined {
@@ -150,12 +152,32 @@ export function buildRayFanChartOption(
   chartWidth: number,
   chartHeight: number,
   textColor: string,
+  isSmallScreen = false,
 ) {
-  const subplotWidth = Math.max(
+  const sideBySideSubplotWidth = Math.max(
     0,
     (chartWidth - RAY_FAN_GRID_LEFT - RAY_FAN_GRID_RIGHT - RAY_FAN_GRID_GAP) / 2,
   );
-  const subplotHeight = Math.max(0, chartHeight - RAY_FAN_GRID_TOP - RAY_FAN_GRID_BOTTOM);
+  const sideBySideSubplotHeight = Math.max(0, chartHeight - RAY_FAN_GRID_TOP - RAY_FAN_GRID_BOTTOM);
+  const stackedSubplotWidth = Math.max(0, chartWidth - RAY_FAN_GRID_LEFT - RAY_FAN_GRID_RIGHT);
+  const stackedSubplotHeight = Math.max(
+    0,
+    (chartHeight - RAY_FAN_GRID_TOP - RAY_FAN_GRID_BOTTOM - RAY_FAN_STACKED_GRID_GAP) / 2,
+  );
+  const subplotWidth = isSmallScreen ? stackedSubplotWidth : sideBySideSubplotWidth;
+  const subplotHeight = isSmallScreen ? stackedSubplotHeight : sideBySideSubplotHeight;
+  const tangentialGridLeft = RAY_FAN_GRID_LEFT;
+  const tangentialGridTop = RAY_FAN_GRID_TOP;
+  const sagittalGridLeft = isSmallScreen
+    ? RAY_FAN_GRID_LEFT
+    : RAY_FAN_GRID_LEFT + subplotWidth + RAY_FAN_GRID_GAP;
+  const sagittalGridTop = isSmallScreen
+    ? RAY_FAN_GRID_TOP + subplotHeight + RAY_FAN_STACKED_GRID_GAP
+    : RAY_FAN_GRID_TOP;
+  const tangentialTitleTop = RAY_FAN_TITLE_TOP;
+  const sagittalTitleTop = isSmallScreen
+    ? sagittalGridTop - RAY_FAN_STACKED_TITLE_OFFSET
+    : RAY_FAN_TITLE_TOP;
   const axisExtents = getAxisExtents(rayFanData);
   const legendData = rayFanData.map((seriesData) => getSeriesLabel(wavelengthLabels, seriesData.wvlIdx));
   const seriesColors = getSeriesColors(rayFanData, wavelengthLabels);
@@ -179,8 +201,8 @@ export function buildRayFanChartOption(
     title: [
       {
         text: "Tangential",
-        top: RAY_FAN_TITLE_TOP,
-        left: RAY_FAN_GRID_LEFT + subplotWidth / 2,
+        top: tangentialTitleTop,
+        left: tangentialGridLeft + subplotWidth / 2,
         textAlign: "center",
         textStyle: {
           color: textColor,
@@ -188,8 +210,8 @@ export function buildRayFanChartOption(
       },
       {
         text: "Sagittal",
-        top: RAY_FAN_TITLE_TOP,
-        left: RAY_FAN_GRID_LEFT + subplotWidth + RAY_FAN_GRID_GAP + subplotWidth / 2,
+        top: sagittalTitleTop,
+        left: sagittalGridLeft + subplotWidth / 2,
         textAlign: "center",
         textStyle: {
           color: textColor,
@@ -198,14 +220,14 @@ export function buildRayFanChartOption(
     ],
     grid: [
       {
-        left: RAY_FAN_GRID_LEFT,
-        top: RAY_FAN_GRID_TOP,
+        left: tangentialGridLeft,
+        top: tangentialGridTop,
         width: subplotWidth,
         height: subplotHeight,
       },
       {
-        left: RAY_FAN_GRID_LEFT + subplotWidth + RAY_FAN_GRID_GAP,
-        top: RAY_FAN_GRID_TOP,
+        left: sagittalGridLeft,
+        top: sagittalGridTop,
         width: subplotWidth,
         height: subplotHeight,
       },

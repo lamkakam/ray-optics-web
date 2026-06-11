@@ -134,6 +134,58 @@ describe("buildRayFanChartOption", () => {
     expect(option.yAxis[0]?.axisLabel?.formatter(-5e-5)).toBe("-5e-5");
   });
 
+  it("keeps tangential and sagittal subplots side-by-side by default", () => {
+    const option = buildRayFanChartOption(
+      rayFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.grid[0]).toEqual(expect.objectContaining({
+      left: 60,
+      top: 72,
+      width: 332,
+      height: 276,
+    }));
+    expect(option.grid[1]).toEqual(expect.objectContaining({
+      left: 440,
+      top: 72,
+      width: 332,
+      height: 276,
+    }));
+    expect(option.title[0]).toEqual(expect.objectContaining({ top: 40, left: 226 }));
+    expect(option.title[1]).toEqual(expect.objectContaining({ top: 40, left: 606 }));
+  });
+
+  it("stacks tangential above sagittal subplots on small screens", () => {
+    const option = buildRayFanChartOption(
+      rayFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      600,
+      globalTokens.echarts.text.light,
+      true,
+    );
+
+    expect(option.grid[0]).toEqual(expect.objectContaining({
+      left: 60,
+      top: 72,
+      width: 712,
+      height: 186,
+    }));
+    expect(option.grid[1]).toEqual(expect.objectContaining({
+      left: 60,
+      top: 362,
+      width: 712,
+      height: 186,
+    }));
+    expect(option.title[0]).toEqual(expect.objectContaining({ top: 40, left: 416 }));
+    expect(option.title[1]).toEqual(expect.objectContaining({ top: 330, left: 416 }));
+    expect(Number(option.title[1]?.top) - (Number(option.grid[0]?.top) + Number(option.grid[0]?.height))).toBe(72);
+  });
+
   it("uses a shared x range and independent y ranges for tangential and sagittal subplots", () => {
     const option = buildRayFanChartOption(
       rayFanData,

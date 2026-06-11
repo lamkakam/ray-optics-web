@@ -134,6 +134,58 @@ describe("buildOpdFanChartOption", () => {
     expect(yAxisLabel0.formatter(1e-8)).toBe("1e-8");
   });
 
+  it("keeps tangential and sagittal subplots side-by-side by default", () => {
+    const option = buildOpdFanChartOption(
+      opdFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.grid[0]).toEqual(expect.objectContaining({
+      left: 60,
+      top: 72,
+      width: 332,
+      height: 276,
+    }));
+    expect(option.grid[1]).toEqual(expect.objectContaining({
+      left: 440,
+      top: 72,
+      width: 332,
+      height: 276,
+    }));
+    expect(option.title[0]).toEqual(expect.objectContaining({ top: 40, left: 226 }));
+    expect(option.title[1]).toEqual(expect.objectContaining({ top: 40, left: 606 }));
+  });
+
+  it("stacks tangential above sagittal subplots on small screens", () => {
+    const option = buildOpdFanChartOption(
+      opdFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      600,
+      globalTokens.echarts.text.light,
+      true,
+    );
+
+    expect(option.grid[0]).toEqual(expect.objectContaining({
+      left: 60,
+      top: 72,
+      width: 712,
+      height: 186,
+    }));
+    expect(option.grid[1]).toEqual(expect.objectContaining({
+      left: 60,
+      top: 362,
+      width: 712,
+      height: 186,
+    }));
+    expect(option.title[0]).toEqual(expect.objectContaining({ top: 40, left: 416 }));
+    expect(option.title[1]).toEqual(expect.objectContaining({ top: 330, left: 416 }));
+    expect(Number(option.title[1]?.top) - (Number(option.grid[0]?.top) + Number(option.grid[0]?.height))).toBe(72);
+  });
+
   it("rounds axis min and max values to 2 significant figures with independent subplot y ranges", () => {
     const option = buildOpdFanChartOption(
       [

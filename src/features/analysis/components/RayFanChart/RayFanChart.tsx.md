@@ -18,8 +18,10 @@ interface RayFanChartProps {
 
 - Delegates parent measurement, debounce timing, resize handling, and chart disposal to `createAnalysisChartComponent(...)`.
 - Initializes an ECharts canvas instance lazily and reuses it until unmount.
-- Uses an injected sizing policy where `autoHeight` uses `max(round(parentWidth / 2), 320)` and fixed-height mode clamps to `min(parentHeight, max(round(parentWidth / 2), 320))` so tall containers cannot stretch the chart beyond the intended fan layout.
+- Calls `useScreenBreakpoint()` through the chart factory runtime context and treats `screenSM` as the stacked small-screen fan layout.
+- Uses an injected sizing policy where large screens keep `max(round(parentWidth / 2), 320)` and small screens use `max(round(parentWidth), 560)`; fixed-height mode clamps either policy to the parent height.
 - Reads the active app theme via `useTheme()` and passes a resolved light/dark chart text color into `buildRayFanChartOption(...)`.
+- Passes the small-screen flag into `buildRayFanChartOption(...)` so the pure option builder can choose side-by-side or stacked subplot geometry.
 - Exposes `data-testid="ray-fan-chart"` and `aria-label="Ray fan plot"`.
 
 ## Dependencies
@@ -27,3 +29,4 @@ interface RayFanChartProps {
 - `buildRayFanChartOption` from `./rayFanChartOption`
 - `RayFanData` from `@/features/analysis/types/plotData`
 - `createAnalysisChartComponent(...)` from `../../lib/createAnalysisChartComponent`
+- `useScreenBreakpoint` from `@/shared/hooks/useScreenBreakpoint`

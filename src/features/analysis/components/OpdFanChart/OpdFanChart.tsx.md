@@ -19,7 +19,9 @@ interface OpdFanChartProps {
 - Builds the chart option with `buildOpdFanChartOption(...)`.
 - Delegates parent measurement, debounce timing, resize handling, and chart disposal to `createAnalysisChartComponent(...)`.
 - Reads the active app theme via `useTheme()` and passes a resolved light/dark chart text color into `buildOpdFanChartOption(...)`.
-- Injects a sizing policy where `autoHeight` uses `max(round(parentWidth / 2), 320)` and fixed-height mode clamps to `min(parentHeight, max(round(parentWidth / 2), 320))` so tall containers cannot stretch the chart beyond the intended fan layout.
+- Calls `useScreenBreakpoint()` through the chart factory runtime context and treats `screenSM` as the stacked small-screen fan layout.
+- Injects a sizing policy where large screens keep `max(round(parentWidth / 2), 320)` and small screens use `max(round(parentWidth), 560)`; fixed-height mode clamps either policy to the parent height.
+- Passes the small-screen flag into `buildOpdFanChartOption(...)` so the pure option builder can choose side-by-side or stacked subplot geometry.
 - Exposes `data-testid="opd-fan-chart"` and `aria-label="OPD fan plot"` for tests and accessibility.
 
 ## Dependencies
@@ -27,3 +29,4 @@ interface OpdFanChartProps {
 - `buildOpdFanChartOption` from `./opdFanChartOption`
 - `OpdFanData` from `@/features/analysis/types/plotData`
 - `createAnalysisChartComponent(...)` from `../../lib/createAnalysisChartComponent`
+- `useScreenBreakpoint` from `@/shared/hooks/useScreenBreakpoint`
