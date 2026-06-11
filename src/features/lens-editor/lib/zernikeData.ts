@@ -1,10 +1,14 @@
+import type { ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+
 export const NUM_NOLL_TERMS = 56;
 
 export const NUM_FRINGE_TERMS = 37;
 
+export type ZernikeTerm = readonly [number, number];
+
 /**
  * Convert Noll index j (1-based) to radial order n and azimuthal frequency m.
- * Port of the Python noll_to_nm function.
+ * TypeScript-owned Noll ordering definition.
  */
 export function nollToNm(j: number): [number, number] {
   let n = Math.ceil((-3 + Math.sqrt(9 + 8 * (j - 1))) / 2);
@@ -31,7 +35,7 @@ export function nollToNm(j: number): [number, number] {
 
 /**
  * Convert Fringe (University of Arizona) index j (1-based) to (n, m).
- * Port of the Python fringe_to_nm function.
+ * TypeScript-owned Fringe ordering definition.
  *
  * Groups by c = (n + |m|) / 2. Group c has 2c+1 terms; cumulative
  * count through group c is (c+1)^2. Within each group, |m| descending,
@@ -47,6 +51,11 @@ export function fringeToNm(j: number): [number, number] {
   const n = 2 * c - mAbs;
   const sign = (pos - 1) % 2 === 0 ? 1 : -1;
   return [n, sign * mAbs];
+}
+
+export function zernikeTermsForOrdering(ordering: ZernikeOrdering, numTerms: number): readonly ZernikeTerm[] {
+  const indexToNm = ordering === "fringe" ? fringeToNm : nollToNm;
+  return Array.from({ length: numTerms }, (_, index) => indexToNm(index + 1));
 }
 
 /**

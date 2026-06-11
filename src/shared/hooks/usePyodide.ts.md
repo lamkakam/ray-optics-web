@@ -84,6 +84,7 @@ interface PyodideWorkerAPI {
 - `OpdFanData` — imported from `features/analysis/types/plotData` (type only).
 - `SpotDiagramData` — imported from `features/analysis/types/plotData` (type only).
 - `ZernikeData`, `ZernikeOrdering` — imported from `features/lens-editor/types/zernikeData` (type only).
+- `getZernikeCoefficients` keeps `ordering` as a frontend API parameter; the worker converts it to an explicit `(n, m)` term list before calling Python.
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
 - `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `features/optimization/types/optimizationWorkerTypes` (type only).
 - `OpdAimPoint` — imported from `shared/components/providers/OpdAimPointProvider` (type only). OPD-related APIs default to `"chief_ray"` when omitted.

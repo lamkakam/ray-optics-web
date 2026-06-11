@@ -6,6 +6,7 @@ import {
   zernikeNotation,
   NUM_NOLL_TERMS,
   NUM_FRINGE_TERMS,
+  zernikeTermsForOrdering,
 } from "../zernikeData";
 
 describe("nollToNm", () => {
@@ -142,6 +143,33 @@ describe("fringeToNm", () => {
 describe("NUM_FRINGE_TERMS", () => {
   it("equals 37", () => {
     expect(NUM_FRINGE_TERMS).toBe(37);
+  });
+});
+
+describe("zernikeTermsForOrdering", () => {
+  it("returns Noll (n,m) terms in display order", () => {
+    expect(zernikeTermsForOrdering("noll", 6)).toEqual([
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [2, 0],
+      [2, -2],
+      [2, 2],
+    ]);
+  });
+
+  it("returns Fringe (n,m) terms in display order", () => {
+    expect(zernikeTermsForOrdering("fringe", 9)).toEqual([
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [2, 0],
+      [2, 2],
+      [2, -2],
+      [3, 1],
+      [3, -1],
+      [4, 0],
+    ]);
   });
 });
 

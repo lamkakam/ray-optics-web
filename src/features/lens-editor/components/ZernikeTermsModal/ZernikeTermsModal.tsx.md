@@ -43,10 +43,11 @@ interface ZernikeTermsModalProps {
 - On mount, fetches data once for `(field=0, wavelength=0, ordering="fringe")`.
 - On any dropdown change (field, wavelength, ordering): fetches data with the new selection.
 - Race condition guard: uses a request counter ref to discard stale results from prior fetches.
-- Renders Zernike terms in a scrollable table; row count and index scheme depend on ordering:
+- Renders Zernike terms in a scrollable table; row count and index scheme depend on the frontend ordering selection:
   - Noll: 56 rows, first column "Noll j", uses `nollToNm(j)`
   - Fringe: `NUM_FRINGE_TERMS` (37) rows, first column "Fringe j", uses `fringeToNm(j)`
 - Each row shows: j index, Z notation (MathJax), classical name via `classicalName(n, m)`, unnormalized coefficient, RMS-normalized coefficient.
+- The selected ordering is passed through `onFetchData`; the worker converts it to explicit `(n, m)` terms before calling Python.
 - Imports `ZernikeData` and `ZernikeOrdering` from `features/lens-editor/types/zernikeData`, and Zernike runtime constants/helpers from `features/lens-editor/lib/zernikeData`.
 - Summary section displays P-V WFE, RMS WFE, and Strehl ratio.
 - Uses `<MathJax>` for Zernike notation; context provided by ancestor (`page.tsx`).

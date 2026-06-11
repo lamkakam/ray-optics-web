@@ -4,57 +4,20 @@ import json
 import numpy as np
 import pytest
 
+NOLL_TERMS_22 = [
+    (0, 0), (1, 1), (1, -1), (2, 0), (2, -2), (2, 2),
+    (3, -1), (3, 1), (3, -3), (3, 3), (4, 0), (4, 2),
+    (4, -2), (4, 4), (4, -4), (5, 1), (5, -1), (5, 3),
+    (5, -3), (5, 5), (5, -5), (6, 0),
+]
 
-def _noll_forward(n: int, m: int) -> int:
-    """Maple Noll(n, m): compute Noll index j from (n, m)."""
-    base = n * (n + 1) // 2 + abs(m)
-    if m >= 0 and n % 4 in (2, 3):
-        return base + 1
-    elif m <= 0 and n % 4 in (0, 1):
-        return base + 1
-    else:
-        return base
-
-
-class TestNollToNm:
-    """Test Noll index to (n, m) conversion."""
-
-    @pytest.mark.parametrize("j, expected", [
-        (1, (0, 0)),
-        (2, (1, 1)),
-        (3, (1, -1)),
-        (4, (2, 0)),
-        (5, (2, -2)),
-        (6, (2, 2)),
-        (7, (3, -1)),
-        (8, (3, 1)),
-        (9, (3, -3)),
-        (10, (3, 3)),
-        (11, (4, 0)),
-        (12, (4, 2)),
-        (13, (4, -2)),
-        (14, (4, 4)),
-        (15, (4, -4)),
-        (16, (5, 1)),
-        (17, (5, -1)),
-        (18, (5, 3)),
-        (19, (5, -3)),
-        (20, (5, 5)),
-        (21, (5, -5)),
-        (22, (6, 0)),
-    ])
-    def test_known_conversions(self, j, expected):
-        from rayoptics_web_utils.zernike import noll_to_nm
-        assert noll_to_nm(j) == expected
-
-    def test_round_trip_via_maple_formula(self):
-        from rayoptics_web_utils.zernike import noll_to_nm
-        for j in range(1, 231):  # covers n=0..20
-            n, m = noll_to_nm(j)
-            assert _noll_forward(n, m) == j, (
-                f"Round-trip failed for j={j}: noll_to_nm→({n},{m}), "
-                f"Noll({n},{m})={_noll_forward(n, m)}"
-            )
+FRINGE_TERMS_28 = [
+    (0, 0), (1, 1), (1, -1), (2, 0), (2, 2), (2, -2),
+    (3, 1), (3, -1), (4, 0), (3, 3), (3, -3), (4, 2),
+    (4, -2), (5, 1), (5, -1), (6, 0), (4, 4), (4, -4),
+    (5, 3), (5, -3), (6, 2), (6, -2), (7, 1), (7, -1),
+    (8, 0), (5, 5), (5, -5), (6, 4),
+]
 
 
 class TestZernikeRadial:
@@ -80,27 +43,27 @@ class TestZernikeRadial:
         np.testing.assert_allclose(result, expected)
 
 
-class TestZernikeNoll:
+class TestZernikePolynomial:
     """Test full Zernike polynomial evaluation."""
 
-    def test_z1_piston_is_constant(self):
-        from rayoptics_web_utils.zernike import zernike_noll
+    def test_piston_is_constant(self):
+        from rayoptics_web_utils.zernike import zernike_polynomial
         rho = np.array([0.0, 0.5, 1.0])
         theta = np.array([0.0, np.pi / 4, np.pi])
-        result = zernike_noll(1, rho, theta)
+        result = zernike_polynomial(0, 0, rho, theta)
         np.testing.assert_allclose(result, 1.0)
 
-    def test_z4_defocus_at_origin(self):
-        from rayoptics_web_utils.zernike import zernike_noll
+    def test_defocus_at_origin(self):
+        from rayoptics_web_utils.zernike import zernike_polynomial
         rho = np.array([0.0])
         theta = np.array([0.0])
-        result = zernike_noll(4, rho, theta)
+        result = zernike_polynomial(2, 0, rho, theta)
         # Unnormalized: R_2^0(0) = 2*0^2 - 1 = -1 (no sqrt(3) factor)
         np.testing.assert_allclose(result, -1.0)
 
     def test_orthogonality(self):
         """Numerical check: integral of Z_i * Z_j over unit disk ≈ pi * delta_ij."""
-        from rayoptics_web_utils.zernike import zernike_noll
+        from rayoptics_web_utils.zernike import zernike_polynomial
         N = 200
         x = np.linspace(-1, 1, N)
         y = np.linspace(-1, 1, N)
@@ -113,9 +76,9 @@ class TestZernikeNoll:
         dx = 2.0 / N
         dA = dx * dx
 
-        # Check Z4 and Z5 are orthogonal
-        z4 = zernike_noll(4, rho_m, theta_m)
-        z5 = zernike_noll(5, rho_m, theta_m)
+        # Check defocus and oblique astigmatism are orthogonal
+        z4 = zernike_polynomial(2, 0, rho_m, theta_m)
+        z5 = zernike_polynomial(2, -2, rho_m, theta_m)
         cross = np.sum(z4 * z5) * dA
         assert abs(cross) < 0.05, f"Z4·Z5 cross-integral = {cross}, expected ~0"
 
@@ -130,7 +93,7 @@ class TestFitZernike:
 
     def test_pure_defocus_recovery(self):
         """Pure defocus signal should be recovered as Z4 only."""
-        from rayoptics_web_utils.zernike import fit_zernike, zernike_noll
+        from rayoptics_web_utils.zernike import fit_zernike, zernike_polynomial
         N = 65
         x = np.linspace(-1, 1, N)
         xx, yy = np.meshgrid(x, x)
@@ -139,11 +102,11 @@ class TestFitZernike:
 
         # Build synthetic OPD grid with pure defocus (Z4)
         coeff_z4 = 1.5
-        opd = coeff_z4 * zernike_noll(4, rho, theta)
+        opd = coeff_z4 * zernike_polynomial(2, 0, rho, theta)
         opd[rho > 1.0] = np.nan
 
         grid = np.array([xx, yy, opd])
-        coeffs = fit_zernike(grid, num_terms=11)
+        coeffs = fit_zernike(grid, NOLL_TERMS_22[:11])
 
         assert abs(coeffs[3] - coeff_z4) < 0.01, f"Z4 = {coeffs[3]}, expected {coeff_z4}"
         # Other terms should be near zero
@@ -153,7 +116,7 @@ class TestFitZernike:
 
     def test_pure_piston_recovery(self):
         """Pure piston signal should be recovered as Z1 only."""
-        from rayoptics_web_utils.zernike import fit_zernike, zernike_noll
+        from rayoptics_web_utils.zernike import fit_zernike
         N = 65
         x = np.linspace(-1, 1, N)
         xx, yy = np.meshgrid(x, x)
@@ -164,7 +127,7 @@ class TestFitZernike:
         opd[rho > 1.0] = np.nan
 
         grid = np.array([xx, yy, opd])
-        coeffs = fit_zernike(grid, num_terms=11)
+        coeffs = fit_zernike(grid, NOLL_TERMS_22[:11])
 
         assert abs(coeffs[0] - coeff_z1) < 0.01, f"Z1 = {coeffs[0]}, expected {coeff_z1}"
         for j in range(1, 11):
@@ -172,7 +135,7 @@ class TestFitZernike:
 
     def test_mixed_round_trip(self):
         """Mixed Z1 + Z4 + Z11 should be recovered."""
-        from rayoptics_web_utils.zernike import fit_zernike, zernike_noll
+        from rayoptics_web_utils.zernike import fit_zernike, zernike_polynomial
         N = 65
         x = np.linspace(-1, 1, N)
         xx, yy = np.meshgrid(x, x)
@@ -182,11 +145,12 @@ class TestFitZernike:
         target = {1: 0.5, 4: 1.0, 11: -0.3}
         opd = np.zeros_like(rho)
         for j, c in target.items():
-            opd += c * zernike_noll(j, rho, theta)
+            n, m = NOLL_TERMS_22[j - 1]
+            opd += c * zernike_polynomial(n, m, rho, theta)
         opd[rho > 1.0] = np.nan
 
         grid = np.array([xx, yy, opd])
-        coeffs = fit_zernike(grid, num_terms=22)
+        coeffs = fit_zernike(grid, NOLL_TERMS_22)
 
         for j, c in target.items():
             assert abs(coeffs[j - 1] - c) < 0.02, f"Z{j} = {coeffs[j-1]}, expected {c}"
@@ -214,20 +178,20 @@ class TestUnnormalizedToRmsNormalized:
         """Pure defocus Z4=1.5 → rms[3] = 1.5 / sqrt(3)."""
         from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
         coeffs = [0.0, 0.0, 0.0, 1.5, 0.0]
-        result = unnormalized_to_rms_normalized(coeffs, 5)
+        result = unnormalized_to_rms_normalized(coeffs, NOLL_TERMS_22[:5])
         assert abs(result[3] - 1.5 / np.sqrt(3)) < 1e-12
 
     def test_all_zeros(self):
         from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
         coeffs = [0.0] * 5
-        result = unnormalized_to_rms_normalized(coeffs, 5)
+        result = unnormalized_to_rms_normalized(coeffs, NOLL_TERMS_22[:5])
         assert all(c == 0.0 for c in result)
 
     def test_piston_unchanged(self):
         """Piston N=1.0, so value is unchanged."""
         from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
         coeffs = [2.5, 0.0, 0.0, 0.0, 0.0]
-        result = unnormalized_to_rms_normalized(coeffs, 5)
+        result = unnormalized_to_rms_normalized(coeffs, NOLL_TERMS_22[:5])
         assert abs(result[0] - 2.5) < 1e-12
 
 
@@ -306,33 +270,32 @@ class TestGetZernikeCoefficients:
             "opm",
             "field_index",
             "wvl_index",
+            "zernike_terms",
             "opd_aim_point",
-            "num_terms",
             "num_rays",
-            "ordering",
         ]
         assert sig.parameters["opd_aim_point"].default == "chief_ray"
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert isinstance(result, dict)
         for key in ['coefficients', 'rms_wfe', 'pv_wfe', 'num_terms', 'field_index', 'wavelength_nm']:
             assert key in result, f"Missing key: {key}"
 
     def test_coefficients_is_list_of_float(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert isinstance(result['coefficients'], list)
         assert all(isinstance(c, float) for c in result['coefficients'])
 
     def test_json_serializable(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         json_str = json.dumps(result)
         assert isinstance(json_str, str)
 
     def test_on_axis_z11_dominant_higher_order(self, cooke_triplet):
         """On-axis, d-line: Z11 (primary spherical) should be the dominant higher-order term."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         coeffs = result['coefficients']
         # Higher-order terms are j=5 onward (index 4+)
         higher_order = [(j + 1, abs(c)) for j, c in enumerate(coeffs) if j >= 4]
@@ -342,7 +305,7 @@ class TestGetZernikeCoefficients:
     def test_on_axis_no_coma_astigmatism(self, cooke_triplet):
         """On-axis: rotational symmetry means Z5,Z6,Z7,Z8 ≈ 0."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         coeffs = result['coefficients']
         for j in [5, 6, 7, 8]:
             assert abs(coeffs[j - 1]) < 0.02, f"Z{j} = {coeffs[j-1]}, expected ~0 on-axis"
@@ -350,14 +313,14 @@ class TestGetZernikeCoefficients:
     def test_off_axis_astigmatism_significant(self, cooke_triplet):
         """Off-axis field 1: Z6 (astigmatism cos2θ) should be significant."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=1, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=1, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         coeffs = result['coefficients']
         # With corrected Noll: Z6=(2,+2)=cos(2θ), the dominant astigmatism for y-meridian field
         assert abs(coeffs[5]) > 0.1, f"Z6 = {coeffs[5]}, expected significant off-axis"
 
     def test_rms_and_pv_positive(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert result['rms_wfe'] > 0
         assert result['pv_wfe'] >= result['rms_wfe']
 
@@ -369,7 +332,7 @@ class TestGetZernikeCoefficients:
         rms_wfe excluding piston must be significantly smaller.
         """
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         piston = result['coefficients'][0]
         assert abs(piston) > 0.3, f"Expected significant piston, got {piston}"
         # With piston included, rms ≈ 0.73. Without piston it must be lower.
@@ -380,26 +343,26 @@ class TestGetZernikeCoefficients:
     def test_on_axis_rms_approx(self, cooke_triplet):
         """On-axis RMS ≈ 0.46 waves (piston-excluded, within ±0.1)."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert abs(result['rms_wfe'] - 0.46) < 0.1, f"RMS = {result['rms_wfe']}, expected ~0.46"
 
     def test_strehl_ratio_in_result(self, cooke_triplet):
         """strehl_ratio key exists and is a float."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert 'strehl_ratio' in result, "Missing key: strehl_ratio"
         assert isinstance(result['strehl_ratio'], float)
 
     def test_strehl_ratio_range(self, cooke_triplet):
         """Strehl ratio must be between 0.0 and 1.0."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert 0.0 <= result['strehl_ratio'] <= 1.0, f"Strehl = {result['strehl_ratio']}, out of range"
 
     def test_on_axis_strehl_approx(self, cooke_triplet):
         """On-axis d-line Strehl ≈ 0.096 (from spec: 0.0963, within ±0.02)."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert abs(result['strehl_ratio'] - 0.096) < 0.02, (
             f"Strehl = {result['strehl_ratio']}, expected ~0.096"
         )
@@ -407,8 +370,8 @@ class TestGetZernikeCoefficients:
     def test_strehl_decreases_off_axis(self, cooke_triplet):
         """On-axis Strehl > full-field Strehl (system degrades with field)."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        on_axis = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
-        full_field = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
+        on_axis = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
+        full_field = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert on_axis['strehl_ratio'] > full_field['strehl_ratio'], (
             f"On-axis Strehl ({on_axis['strehl_ratio']}) should be > "
             f"full-field Strehl ({full_field['strehl_ratio']})"
@@ -417,9 +380,9 @@ class TestGetZernikeCoefficients:
     def test_wavelength_correction(self, cooke_triplet):
         """Coefficients should be in waves at the traced wavelength, not central."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        f_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=0)
-        d_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
-        c_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=2)
+        f_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=0, zernike_terms=NOLL_TERMS_22)
+        d_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
+        c_line = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=2, zernike_terms=NOLL_TERMS_22)
         # Physical OPD (coeff * wavelength) should be in the same ballpark
         phys_f = abs(f_line['coefficients'][10]) * f_line['wavelength_nm']
         phys_d = abs(d_line['coefficients'][10]) * d_line['wavelength_nm']
@@ -434,7 +397,7 @@ class TestGetZernikeCoefficients:
     def test_coefficients_are_unnormalized(self, cooke_triplet):
         """On-axis d-line coefficients should match known values (unnormalized)."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         coeffs = result['coefficients']
         assert abs(coeffs[0] - 0.568) < 0.1, f"Z1 piston = {coeffs[0]}, expected ~0.568"
         assert abs(coeffs[3] - 0.788) < 0.1, f"Z4 defocus = {coeffs[3]}, expected ~0.788"
@@ -442,7 +405,7 @@ class TestGetZernikeCoefficients:
     def test_exit_pupil_coords_off_axis_z12(self, cooke_triplet):
         """Full-field: Z12 (secondary astigmatism) should be large with exit pupil coords."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         coeffs = result['coefficients']
         assert abs(coeffs[11]) > 0.5, (
             f"Z12 = {coeffs[11]}, expected > 0.5 with exit pupil coordinates"
@@ -451,7 +414,7 @@ class TestGetZernikeCoefficients:
     def test_exit_pupil_coords_off_axis_z7_coma(self, cooke_triplet):
         """Full-field: Z7 (coma Y) should increase with exit pupil coords."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         coeffs = result['coefficients']
         assert abs(coeffs[6]) > 0.28, (
             f"Z7 = {coeffs[6]}, expected > 0.28 with exit pupil coordinates"
@@ -460,7 +423,7 @@ class TestGetZernikeCoefficients:
     def test_exit_pupil_coords_off_axis_z11_spherical(self, cooke_triplet):
         """Full-field: Z11 (primary spherical) magnitude should increase with exit pupil coords."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=2, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         coeffs = result['coefficients']
         assert abs(coeffs[10]) > 0.6, (
             f"Z11 = {coeffs[10]}, expected |Z11| > 0.6 with exit pupil coordinates"
@@ -469,7 +432,7 @@ class TestGetZernikeCoefficients:
     def test_rms_normalized_key_exists(self, cooke_triplet):
         """rms_normalized_coefficients key exists and is list[float]."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert 'rms_normalized_coefficients' in result
         assert isinstance(result['rms_normalized_coefficients'], list)
         assert all(isinstance(c, float) for c in result['rms_normalized_coefficients'])
@@ -477,17 +440,17 @@ class TestGetZernikeCoefficients:
     def test_rms_normalized_length(self, cooke_triplet):
         """rms_normalized_coefficients length matches num_terms."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert len(result['rms_normalized_coefficients']) == result['num_terms']
 
     def test_rms_normalized_consistency(self, cooke_triplet):
         """rms_normalized[j-1] * N_n^m ≈ coefficients[j-1] for each j."""
-        from rayoptics_web_utils.zernike import get_zernike_coefficients, noll_to_nm, noll_norm_factor
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        from rayoptics_web_utils.zernike import get_zernike_coefficients, noll_norm_factor
+        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         coeffs = result['coefficients']
         rms = result['rms_normalized_coefficients']
         for j in range(1, result['num_terms'] + 1):
-            n, m = noll_to_nm(j)
+            n, m = NOLL_TERMS_22[j - 1]
             reconstructed = rms[j - 1] * noll_norm_factor(n, abs(m))
             assert abs(reconstructed - coeffs[j - 1]) < 1e-10, (
                 f"Z{j}: rms*N = {reconstructed}, coeff = {coeffs[j-1]}"
@@ -506,7 +469,7 @@ class TestGetZernikeCoefficients:
             return RealRayGrid(*args, **kwargs)
 
         with patch('rayoptics.raytr.analyses.RayGrid', side_effect=capturing_raygrid):
-            get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+            get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
 
         assert captured_kwargs.get('check_apertures') is True, (
             f"Expected check_apertures=True, got {captured_kwargs.get('check_apertures')}"
@@ -516,115 +479,8 @@ class TestGetZernikeCoefficients:
         )
 
 
-class TestFringeToNm:
-    """Test Fringe (University of Arizona) index to (n, m) conversion."""
-
-    @pytest.mark.parametrize("j, expected", [
-        (1,  (0,  0)),
-        (2,  (1, +1)),
-        (3,  (1, -1)),
-        (4,  (2,  0)),
-        (5,  (2, +2)),
-        (6,  (2, -2)),
-        (7,  (3, +1)),
-        (8,  (3, -1)),
-        (9,  (4,  0)),
-        (10, (3, +3)),
-        (11, (3, -3)),
-        (12, (4, +2)),
-        (13, (4, -2)),
-        (14, (5, +1)),
-        (15, (5, -1)),
-        (16, (6,  0)),
-        (17, (4, +4)),
-        (18, (4, -4)),
-        (19, (5, +3)),
-        (20, (5, -3)),
-        (21, (6, +2)),
-        (22, (6, -2)),
-        (23, (7, +1)),
-        (24, (7, -1)),
-        (25, (8,  0)),
-        (26, (5, +5)),
-        (27, (5, -5)),
-        (28, (6, +4)),
-    ])
-    def test_known_conversions(self, j, expected):
-        from rayoptics_web_utils.zernike import fringe_to_nm
-        assert fringe_to_nm(j) == expected
-
-    def test_roundtrip_via_fringe_formula(self):
-        """Round-trip: nm_to_fringe (Wikipedia formula) → fringe_to_nm must recover (n, m)."""
-        from rayoptics_web_utils.zernike import fringe_to_nm
-
-        def nm_to_fringe(n: int, m: int) -> int:
-            m_abs = abs(m)
-            sgn_m = (1 if m > 0 else -1) if m != 0 else 0
-            return (1 + (n + m_abs) // 2) ** 2 - 2 * m_abs + (1 - sgn_m) // 2
-
-        for n in range(9):  # radial orders 0–8
-            for m in range(-n, n + 1):
-                if (n - abs(m)) % 2 != 0:
-                    continue
-                j = nm_to_fringe(n, m)
-                assert fringe_to_nm(j) == (n, m), (
-                    f"Round-trip failed for (n={n}, m={m}): "
-                    f"nm_to_fringe={j}, fringe_to_nm({j})={fringe_to_nm(j)}"
-                )
-
-
-class TestZernikeFringe:
-    """Test zernike_fringe polynomial evaluation."""
-
-    def test_j1_piston_is_one_everywhere(self):
-        from rayoptics_web_utils.zernike import zernike_fringe
-        rho = np.array([0.0, 0.5, 1.0])
-        theta = np.array([0.0, np.pi / 4, np.pi])
-        result = zernike_fringe(1, rho, theta)
-        np.testing.assert_allclose(result, 1.0)
-
-    def test_j4_defocus_matches_noll_j4(self):
-        """Fringe j=4 and Noll j=4 both map to (2,0): polynomials must be identical."""
-        from rayoptics_web_utils.zernike import zernike_fringe, zernike_noll
-        N = 30
-        x = np.linspace(-1, 1, N)
-        xx, yy = np.meshgrid(x, x)
-        rho = np.sqrt(xx**2 + yy**2).ravel()
-        theta = np.arctan2(yy, xx).ravel()
-        mask = rho <= 1.0
-        np.testing.assert_allclose(
-            zernike_fringe(4, rho[mask], theta[mask]),
-            zernike_noll(4, rho[mask], theta[mask]),
-        )
-
-    def test_j5_cos_astigmatism_differs_from_noll_j5_sin(self):
-        """Fringe j=5=(2,+2) cos-astig != Noll j=5=(2,-2) sin-astig."""
-        from rayoptics_web_utils.zernike import zernike_fringe, zernike_noll
-        rho = np.array([0.7, 0.7])
-        theta = np.array([np.pi / 4, np.pi / 6])
-        fringe_vals = zernike_fringe(5, rho, theta)
-        noll_vals = zernike_noll(5, rho, theta)
-        assert not np.allclose(fringe_vals, noll_vals), (
-            "Fringe j=5 and Noll j=5 should evaluate to different polynomials"
-        )
-
-    def test_j9_primary_spherical_matches_noll_j11(self):
-        """Fringe j=9=(4,0) and Noll j=11=(4,0) map to the same polynomial."""
-        from rayoptics_web_utils.zernike import zernike_fringe, zernike_noll
-        N = 30
-        x = np.linspace(-1, 1, N)
-        xx, yy = np.meshgrid(x, x)
-        rho = np.sqrt(xx**2 + yy**2).ravel()
-        theta = np.arctan2(yy, xx).ravel()
-        mask = rho <= 1.0
-        np.testing.assert_allclose(
-            zernike_fringe(9, rho[mask], theta[mask]),
-            zernike_noll(11, rho[mask], theta[mask]),
-        )
-
-
-class TestFitZernikeFringeOrdering:
-    """Test fit_zernike with ordering='fringe'."""
+class TestFitZernikeExplicitFringeTerms:
+    """Test fit_zernike with caller-provided Fringe terms."""
 
     def _make_grid(self, opd_func, N=65):
         x = np.linspace(-1, 1, N)
@@ -636,11 +492,11 @@ class TestFitZernikeFringeOrdering:
         return np.array([xx, yy, opd])
 
     def test_pure_defocus_recovered_at_fringe_j4(self):
-        """Pure defocus (Fringe j=4 = Noll j=4) should appear at index 3."""
-        from rayoptics_web_utils.zernike import fit_zernike, zernike_fringe
+        """Pure defocus (Fringe j=4 = (2,0)) should appear at index 3."""
+        from rayoptics_web_utils.zernike import fit_zernike, zernike_polynomial
         coeff = 1.5
-        grid = self._make_grid(lambda r, t: coeff * zernike_fringe(4, r, t))
-        coeffs = fit_zernike(grid, num_terms=16, ordering='fringe')
+        grid = self._make_grid(lambda r, t: coeff * zernike_polynomial(2, 0, r, t))
+        coeffs = fit_zernike(grid, FRINGE_TERMS_28[:16])
         assert abs(coeffs[3] - coeff) < 0.01, f"Fringe Z4={coeffs[3]}, expected {coeff}"
         for j in range(16):
             if j != 3:
@@ -648,106 +504,72 @@ class TestFitZernikeFringeOrdering:
 
     def test_pure_cos_astigmatism_recovered_at_fringe_j5(self):
         """Pure (2,+2) cos-astigmatism should appear at Fringe j=5 (index 4), not j=6."""
-        from rayoptics_web_utils.zernike import fit_zernike, zernike_fringe
+        from rayoptics_web_utils.zernike import fit_zernike, zernike_polynomial
         coeff = 1.0
-        grid = self._make_grid(lambda r, t: coeff * zernike_fringe(5, r, t))
-        coeffs = fit_zernike(grid, num_terms=16, ordering='fringe')
+        grid = self._make_grid(lambda r, t: coeff * zernike_polynomial(2, 2, r, t))
+        coeffs = fit_zernike(grid, FRINGE_TERMS_28[:16])
         assert abs(coeffs[4] - coeff) < 0.01, f"Fringe Z5={coeffs[4]}, expected {coeff}"
         assert abs(coeffs[5]) < 0.05, f"Fringe Z6={coeffs[5]}, expected ~0"
 
-    def test_noll_default_ordering_unchanged(self):
-        """fit_zernike without ordering= arg still behaves as Noll."""
-        from rayoptics_web_utils.zernike import fit_zernike, zernike_noll
-        N = 65
-        x = np.linspace(-1, 1, N)
-        xx, yy = np.meshgrid(x, x)
-        rho = np.sqrt(xx**2 + yy**2)
-        theta = np.arctan2(yy, xx)
-        opd = 1.5 * zernike_noll(4, rho, theta)
-        opd[rho > 1.0] = np.nan
-        grid = np.array([xx, yy, opd])
-        coeffs = fit_zernike(grid, num_terms=11)
-        assert abs(coeffs[3] - 1.5) < 0.01, f"Noll Z4={coeffs[3]}, expected 1.5"
 
+class TestUnnormalizedToRmsNormalizedExplicitTerms:
+    """Test unnormalized_to_rms_normalized with explicit terms."""
 
-class TestUnnormalizedToRmsNormalizedFringe:
-    """Test unnormalized_to_rms_normalized with ordering='fringe'."""
-
-    def test_defocus_j4_same_for_both_orderings(self):
+    def test_defocus_j4_same_for_both_term_lists(self):
         """Fringe j=4 and Noll j=4 both map to (2,0): norm factor is identical."""
         from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
         coeffs = [0.0, 0.0, 0.0, 1.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-        fringe_rms = unnormalized_to_rms_normalized(coeffs, 11, ordering='fringe')
-        noll_rms = unnormalized_to_rms_normalized(coeffs, 11, ordering='noll')
+        fringe_rms = unnormalized_to_rms_normalized(coeffs, FRINGE_TERMS_28[:11])
+        noll_rms = unnormalized_to_rms_normalized(coeffs, NOLL_TERMS_22[:11])
         assert abs(fringe_rms[3] - noll_rms[3]) < 1e-12
 
-    def test_j9_gives_different_norm_factor_fringe_vs_noll(self):
+    def test_j9_gives_different_norm_factor_fringe_vs_noll_terms(self):
         """Fringe j=9=(4,0) N=sqrt(5); Noll j=9=(3,-3) N=sqrt(8). Results differ."""
         import math
         from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
         coeffs = [0.0] * 11
-        coeffs[8] = 1.0  # j=9, index 8
-        fringe_rms = unnormalized_to_rms_normalized(coeffs, 11, ordering='fringe')
-        noll_rms = unnormalized_to_rms_normalized(coeffs, 11, ordering='noll')
+        coeffs[8] = 1.0
+        fringe_rms = unnormalized_to_rms_normalized(coeffs, FRINGE_TERMS_28[:11])
+        noll_rms = unnormalized_to_rms_normalized(coeffs, NOLL_TERMS_22[:11])
         assert abs(fringe_rms[8] - 1.0 / math.sqrt(5)) < 1e-12
         assert abs(noll_rms[8] - 1.0 / math.sqrt(8)) < 1e-12
         assert abs(fringe_rms[8] - noll_rms[8]) > 0.01
 
-    def test_noll_default_unchanged(self):
-        """Calling without ordering= produces same result as ordering='noll'."""
-        from rayoptics_web_utils.zernike import unnormalized_to_rms_normalized
-        coeffs = [0.0, 0.0, 0.0, 1.5, 0.0]
-        result_default = unnormalized_to_rms_normalized(coeffs, 5)
-        result_noll = unnormalized_to_rms_normalized(coeffs, 5, ordering='noll')
-        assert result_default == result_noll
 
-
-class TestGetZernikeCoefficientsFringeOrdering:
-    """Integration tests for get_zernike_coefficients with ordering='fringe'."""
-
-    def test_returns_ordering_key_fringe(self, cooke_triplet):
-        from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(
-            cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
-        )
-        assert result.get('ordering') == 'fringe'
-
-    def test_default_ordering_is_noll(self, cooke_triplet):
-        from rayoptics_web_utils.zernike import get_zernike_coefficients
-        result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
-        assert result.get('ordering') == 'noll'
+class TestGetZernikeCoefficientsExplicitFringeTerms:
+    """Integration tests for get_zernike_coefficients with caller-provided Fringe terms."""
 
     def test_on_axis_fringe_j4_approx_noll_j4_defocus(self, cooke_triplet):
         """Both orderings share j=4=(2,0); values must be near-identical on-axis."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         fringe = get_zernike_coefficients(
-            cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
+            cooke_triplet, field_index=0, wvl_index=1, zernike_terms=FRINGE_TERMS_28
         )
-        noll = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        noll = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert abs(fringe['coefficients'][3] - noll['coefficients'][3]) < 0.05
 
     def test_on_axis_fringe_j9_approx_noll_j11_primary_spherical(self, cooke_triplet):
         """Fringe j=9=(4,0) and Noll j=11=(4,0): same polynomial, coefficients agree."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         fringe = get_zernike_coefficients(
-            cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
+            cooke_triplet, field_index=0, wvl_index=1, zernike_terms=FRINGE_TERMS_28
         )
-        noll = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1)
+        noll = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert abs(fringe['coefficients'][8] - noll['coefficients'][10]) < 0.05
 
     def test_off_axis_fringe_j5_differs_from_noll_j5(self, cooke_triplet):
         """Fringe j=5=(2,+2) vs Noll j=5=(2,-2): different astigmatism components."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         fringe = get_zernike_coefficients(
-            cooke_triplet, field_index=1, wvl_index=1, ordering='fringe'
+            cooke_triplet, field_index=1, wvl_index=1, zernike_terms=FRINGE_TERMS_28
         )
-        noll = get_zernike_coefficients(cooke_triplet, field_index=1, wvl_index=1)
+        noll = get_zernike_coefficients(cooke_triplet, field_index=1, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert abs(fringe['coefficients'][4] - noll['coefficients'][4]) > 0.05
 
     def test_json_serializable_fringe(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(
-            cooke_triplet, field_index=0, wvl_index=1, ordering='fringe'
+            cooke_triplet, field_index=0, wvl_index=1, zernike_terms=FRINGE_TERMS_28
         )
         assert isinstance(json.dumps(result), str)
 
@@ -759,7 +581,7 @@ class TestTiltedSystemZernike:
         """P-V WFE should be < 1 wave (known ~0.13 waves at 546nm)."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(
-            tilted_houghton, field_index=0, wvl_index=2,
+            tilted_houghton, field_index=0, wvl_index=2, zernike_terms=NOLL_TERMS_22,
         )
         assert result['pv_wfe'] < 1.0, (
             f"P-V WFE = {result['pv_wfe']} waves, expected < 1.0"
@@ -769,7 +591,7 @@ class TestTiltedSystemZernike:
         """RMS WFE should be < 0.5 waves (known ~0.055 waves)."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(
-            tilted_houghton, field_index=0, wvl_index=2,
+            tilted_houghton, field_index=0, wvl_index=2, zernike_terms=NOLL_TERMS_22,
         )
         assert result['rms_wfe'] < 0.5, (
             f"RMS WFE = {result['rms_wfe']} waves, expected < 0.5"
@@ -779,7 +601,7 @@ class TestTiltedSystemZernike:
         """All Zernike coefficients should have |value| < 10 waves."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(
-            tilted_houghton, field_index=0, wvl_index=2,
+            tilted_houghton, field_index=0, wvl_index=2, zernike_terms=NOLL_TERMS_22,
         )
         for j, c in enumerate(result['coefficients'], 1):
             assert abs(c) < 10.0, (
@@ -790,7 +612,7 @@ class TestTiltedSystemZernike:
         """Strehl > 0.9 (known ~0.97, proving the system is well-corrected)."""
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         result = get_zernike_coefficients(
-            tilted_houghton, field_index=0, wvl_index=2,
+            tilted_houghton, field_index=0, wvl_index=2, zernike_terms=NOLL_TERMS_22,
         )
         assert result['strehl_ratio'] > 0.9, (
             f"Strehl = {result['strehl_ratio']}, expected > 0.9"

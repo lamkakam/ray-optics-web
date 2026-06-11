@@ -9,6 +9,7 @@ import {
   type OptimizationReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import { type ZernikeData, type ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import { type RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { InitProgress } from "@/shared/hooks/usePyodide";
@@ -332,8 +333,12 @@ export async function _getZernikeCoefficients(
   numTerms: number = 37,
   ordering: ZernikeOrdering = "noll",
 ): Promise<ZernikeData> {
+  const zernikeTermsJson = JSON.stringify(zernikeTermsForOrdering(ordering, numTerms));
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, num_terms=${numTerms}, ordering='${ordering}', opd_aim_point='${opdAimPoint}'))`)
+    buildScript(
+      opticalModel,
+      (opm) => `from rayoptics_web_utils.zernike import get_zernike_coefficients\nzernike_terms=json.loads(${JSON.stringify(zernikeTermsJson)})\njson.dumps(get_zernike_coefficients(${opm}, ${fieldIndex}, ${wvlIndex}, zernike_terms=zernike_terms, opd_aim_point='${opdAimPoint}'))`,
+    )
   )) as string;
   return JSON.parse(json) as ZernikeData;
 }
