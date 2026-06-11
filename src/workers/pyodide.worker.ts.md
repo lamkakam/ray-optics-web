@@ -96,7 +96,7 @@ export function _getOptimizationInterruptStateForTesting(): { activeRunId?: stri
 3. Emits `10%` with `"Loading Pyodide script"` and loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
 4. Emits `25%` with `"Starting Pyodide runtime"` and calls `loadPyodide({ indexURL })` to create the Pyodide instance.
 5. Emits `40%` with `"Loading Pyodide packages"` and loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.7.0-py3-none-any.whl`.
+6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.8.0-py3-none-any.whl`.
 7. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl, onProgress)`.
 8. Emits `100%` with `"Ready"`.
 
@@ -124,7 +124,7 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `getDiffractionPSFData(model, fi, wi, opdAimPoint?, numRays?, maxDims?)` | Returns `DiffractionPsfData` for the given field and wavelength index using `json.dumps(get_diffraction_psf_data(...))`. Used by the ECharts Diffraction PSF view. |
 | `getDiffractionMTFData(model, fi, wi, opdAimPoint?, numRays?, maxDims?)` | Returns `DiffractionMtfData` for the given field and wavelength index using `json.dumps(get_diffraction_mtf_data(...))`. Used by the ECharts Diffraction MTF view. |
 | `get3rdOrderSeidelData(model)` | Builds `opm` from model, returns `SeidelData` with 3rd-order Seidel aberration data. |
-| `getZernikeCoefficients(model, fi, wi, opdAimPoint?, n?, ordering?)` | Builds `opm` from model, returns `ZernikeData` with Zernike polynomial coefficients. `numTerms` defaults to 56 and `ordering` defaults to `"noll"`. |
+| `getZernikeCoefficients(model, fi, wi, opdAimPoint?, n?, ordering?)` | Builds `opm` from model, converts `ordering`/`numTerms` to an explicit `(n, m)` term list in TypeScript, and returns `ZernikeData`. `numTerms` defaults to 37 and `ordering` defaults to `"noll"`. |
 | `focusByMonoRmsSpot(model, fieldIndex)` | Focuses by minimizing monochromatic RMS spot radius. Returns `FocusingResult` with `delta_thi` and `metric_value`. |
 | `focusByMonoStrehl(model, fieldIndex)` | Focuses by maximizing monochromatic Strehl ratio. Returns `FocusingResult`. |
 | `focusByPolyRmsSpot(model, fieldIndex)` | Focuses by minimizing polychromatic RMS spot radius. Returns `FocusingResult`. |
@@ -152,7 +152,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_getDiffractionPSFData(runPython, model, fi, wi, opdAimPoint?, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}, opd_aim_point=...))\`)` and parses the JSON into `DiffractionPsfData`.
 - `_getDiffractionMTFData(runPython, model, fi, wi, opdAimPoint?, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_mtf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}, opd_aim_point=...))\`)` and parses the JSON into `DiffractionMtfData`.
 - `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
-- `_getZernikeCoefficients(runPython, model, fi, wi, opdAimPoint?, n?, ordering?)` — runs `buildScript(model, (opm) => ...)` including the import of `get_zernike_coefficients`. `numTerms` defaults to 56 and `ordering` defaults to `"noll"`.
+- `_getZernikeCoefficients(runPython, model, fi, wi, opdAimPoint?, n?, ordering?)` — computes `zernikeTermsForOrdering(ordering, numTerms)`, reconstructs it in Python with `json.loads(...)`, and calls `get_zernike_coefficients(..., zernike_terms=zernike_terms, opd_aim_point=...)`. Python does not receive an ordering name.
 - `_evaluateOptimizationProblem(runPython, model, config, opdAimPoint?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, runs `evaluate_optimization_problem(..., opd_aim_point=...)`, and parses the returned report.
 - `_optimizeOpm(runPython, model, config, opdAimPoint?, onProgress?, runId?, interruptBuffer?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, and when a live callback is available binds `_optimization_progress_callback` through `pyodide.globals` so Python can push JSON snapshots back to JS while `optimize_opm(..., opd_aim_point=...)` is still running. When `runId`, `interruptBuffer`, and `pyodide.setInterruptBuffer` are available, it creates an `Int32Array` view over the buffer, resets the first cell, stores the active run id, installs the typed view before the Python call, and clears all interrupt state in `finally`.
 - `_resetPyodideForTesting()` — sets `pyodide = null` and clears optimization interrupt state to allow `init()` to be re-exercised in tests.
@@ -182,6 +182,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `features/lens-editor/types/focusingResult` — `FocusingResult` (type only).
 - `features/lens-editor/types/seidelData` — `SeidelData` (type only).
 - `features/lens-editor/types/zernikeData` — `ZernikeData` and `ZernikeOrdering` (type only).
+- `features/lens-editor/lib/zernikeData` — `zernikeTermsForOrdering`, the TypeScript-owned Noll/Fringe term-list generator.
 - `lib/pythonScript` — `buildScript` (generates the combined model-build + computation Python script).
 - `lib/glassMap` — `RawAllGlassCatalogsData` (type only).
 - `features/optimization/types/optimizationWorkerTypes` — optimization config, report, and progress types (type only).

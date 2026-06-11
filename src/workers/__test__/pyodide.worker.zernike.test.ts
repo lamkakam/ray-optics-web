@@ -37,7 +37,10 @@ describe("_getZernikeCoefficients", () => {
     }, testModel, 0, 1, "centroid", 56, "noll");
     expect(capturedCode).toContain("opm = OpticalModel()");
     expect(capturedCode).toContain("from rayoptics_web_utils.zernike import get_zernike_coefficients");
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, num_terms=56, ordering='noll', opd_aim_point='centroid')");
+    expect(capturedCode).toContain("zernike_terms=json.loads(");
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, zernike_terms=zernike_terms, opd_aim_point='centroid')");
+    expect(capturedCode).not.toContain("ordering=");
+    expect(capturedCode).not.toContain("num_terms=");
     expect(capturedCode).toContain("json.dumps");
     expect(result).toMatchObject(mockData);
   });
@@ -58,7 +61,7 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 2, 0);
-    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, num_terms=37, ordering='noll', opd_aim_point='chief_ray')");
+    expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 2, 0, zernike_terms=zernike_terms, opd_aim_point='chief_ray')");
   });
 
   it("defaults numTerms to 37 when not provided", async () => {
@@ -77,7 +80,7 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 0, 0);
-    expect(capturedCode).toContain("num_terms=37");
+    expect(capturedCode).toContain("[[0,0],[1,1],[1,-1],[2,0]");
   });
 
   it("defaults ordering to noll when not provided", async () => {
@@ -96,10 +99,10 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 0, 0);
-    expect(capturedCode).toContain("ordering='noll'");
+    expect(capturedCode).toContain("[[0,0],[1,1],[1,-1],[2,0],[2,-2],[2,2]");
   });
 
-  it("passes ordering=fringe to Python when specified", async () => {
+  it("passes Fringe terms to Python when specified", async () => {
     const mockData = {
       coefficients: [],
       rms_normalized_coefficients: [],
@@ -116,6 +119,7 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 0, 0, undefined, 37, ordering);
-    expect(capturedCode).toContain("ordering='fringe'");
+    expect(capturedCode).toContain("[[0,0],[1,1],[1,-1],[2,0],[2,2],[2,-2]");
+    expect(capturedCode).not.toContain("ordering='fringe'");
   });
 });

@@ -1,7 +1,7 @@
 """Zernike polynomial fitting for wavefront analysis.
 
-Implements Noll-ordered Zernike polynomials and least-squares fitting
-against OPD grids from RayOptics RayGrid.
+Fits caller-provided Zernike polynomial terms against OPD grids from RayOptics
+RayGrid.
 """
 
 import math
@@ -10,44 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-def noll_to_nm(j: int) -> tuple[int, int]:
-    """Convert Noll index j (1-based) to (n, m)."""
-    n = int(np.ceil((-3 + np.sqrt(9 + 8 * (j - 1))) / 2))
-    if (n * (n + 1)) // 2 >= j:
-        n -= 1
-    m_residual = j - (n * (n + 1)) // 2 - 1
-    m_start = 0 if n % 2 == 0 else 1
-    m_abs_list: list[int] = []
-    for mv in range(m_start, n + 1, 2):
-        if mv == 0:
-            m_abs_list.append(0)
-        else:
-            m_abs_list.append(mv)
-            m_abs_list.append(mv)
-    m_abs = m_abs_list[m_residual]
-    if m_abs == 0:
-        return n, 0
-    return (n, m_abs) if j % 2 == 0 else (n, -m_abs)
-
-
-def fringe_to_nm(j: int) -> tuple[int, int]:
-    """Convert Fringe (University of Arizona) index j (1-based) to (n, m).
-
-    Groups by c = (n + |m|) // 2. Group c has 2c+1 terms; cumulative
-    count through group c is (c+1)². Within each group, |m| descending,
-    cos (+m) before sin (−m), m=0 last.
-    """
-    c = 0
-    while (c + 1) ** 2 < j:
-        c += 1
-    pos = j - c * c  # 1-based position within group c
-    if pos == 2 * c + 1:
-        return (2 * c, 0)
-    pair_idx = (pos - 1) // 2
-    m_abs = c - pair_idx
-    n = 2 * c - m_abs
-    sign = 1 if (pos - 1) % 2 == 0 else -1
-    return (n, sign * m_abs)
+ZernikeTerm = tuple[int, int]
 
 
 def noll_norm_factor(n: int, m: int) -> float:
@@ -60,7 +23,7 @@ def noll_norm_factor(n: int, m: int) -> float:
 
 
 def unnormalized_to_rms_normalized(
-    coeffs: list[float], num_terms: int, ordering: str = "noll"
+    coeffs: list[float], zernike_terms: list[ZernikeTerm]
 ) -> list[float]:
     """Convert unnormalized Zernike coefficients to RMS-normalized.
 
@@ -68,13 +31,11 @@ def unnormalized_to_rms_normalized(
     so each output coefficient directly gives the RMS contribution of that term.
 
     Args:
-        ordering: "noll" (default) or "fringe".
+        zernike_terms: explicit ordered (n, m) terms matching coeffs.
     """
-    index_to_nm = fringe_to_nm if ordering == "fringe" else noll_to_nm
     result = []
-    for j in range(1, num_terms + 1):
-        n, m = index_to_nm(j)
-        result.append(coeffs[j - 1] / noll_norm_factor(n, abs(m)))
+    for coeff, (n, m) in zip(coeffs, zernike_terms):
+        result.append(coeff / noll_norm_factor(n, abs(m)))
     return result
 
 
@@ -93,9 +54,8 @@ def zernike_radial(n: int, m: int, rho: NDArray) -> NDArray:
     return result
 
 
-def zernike_noll(j: int, rho: NDArray, theta: NDArray) -> NDArray:
-    """Compute Zernike polynomial Z_j in Noll ordering (unnormalized)."""
-    n, m = noll_to_nm(j)
+def zernike_polynomial(n: int, m: int, rho: NDArray, theta: NDArray) -> NDArray:
+    """Compute unnormalized Zernike polynomial Z_n^m."""
     R = zernike_radial(n, m, rho)
     if m > 0:
         Z = R * np.cos(m * theta)
@@ -106,28 +66,15 @@ def zernike_noll(j: int, rho: NDArray, theta: NDArray) -> NDArray:
     return Z
 
 
-def zernike_fringe(j: int, rho: NDArray, theta: NDArray) -> NDArray:
-    """Compute Zernike polynomial Z_j in Fringe (University of Arizona) ordering
-    (unnormalized)."""
-    n, m = fringe_to_nm(j)
-    R = zernike_radial(n, m, rho)
-    if m > 0:
-        return R * np.cos(m * theta)
-    elif m < 0:
-        return R * np.sin(-m * theta)
-    return R
-
-
-def fit_zernike(opd_grid: NDArray, num_terms: int = 22, ordering: str = "noll") -> NDArray:
+def fit_zernike(opd_grid: NDArray, zernike_terms: list[ZernikeTerm]) -> NDArray:
     """Fit Zernike polynomials to a RayGrid wavefront.
 
     Args:
         opd_grid: shape (3, N, N) — [0]=pupil_x, [1]=pupil_y, [2]=OPD in waves
-        num_terms: number of Zernike terms
-        ordering: "noll" (default) or "fringe"
+        zernike_terms: explicit ordered (n, m) terms to fit
 
     Returns:
-        1-D array of Zernike coefficients in waves, length num_terms.
+        1-D array of Zernike coefficients in waves, length len(zernike_terms).
     """
     px = opd_grid[0].ravel()
     py = opd_grid[1].ravel()
@@ -142,11 +89,10 @@ def fit_zernike(opd_grid: NDArray, num_terms: int = 22, ordering: str = "noll") 
     mask = rho <= 1.0
     rho, theta, opd = rho[mask], theta[mask], opd[mask]
 
-    zernike_fn = zernike_fringe if ordering == "fringe" else zernike_noll
-
+    num_terms = len(zernike_terms)
     Z = np.zeros((len(opd), num_terms))
-    for j in range(1, num_terms + 1):
-        Z[:, j - 1] = zernike_fn(j, rho, theta)
+    for index, (n, m) in enumerate(zernike_terms):
+        Z[:, index] = zernike_polynomial(n, m, rho, theta)
 
     coeffs, _, _, _ = np.linalg.lstsq(Z, opd, rcond=None)
     return coeffs
@@ -237,10 +183,9 @@ def get_zernike_coefficients(
     opm,
     field_index: int,
     wvl_index: int,
+    zernike_terms: list[ZernikeTerm],
     opd_aim_point: str = "chief_ray",
-    num_terms: int = 22,
     num_rays: int = 64,
-    ordering: str = "noll",
 ) -> dict:
     """Compute Zernike coefficients for a given field and wavelength.
 
@@ -251,13 +196,12 @@ def get_zernike_coefficients(
         opm: OpticalModel instance (dict-accessible).
         field_index: index into osp['fov'].fields.
         wvl_index: index into osp['wvls'].wavelengths.
-        num_terms: number of Zernike terms to fit.
+        zernike_terms: explicit ordered (n, m) terms to fit.
         num_rays: RayGrid resolution.
-        ordering: "noll" (default) or "fringe".
 
     Returns:
         dict with keys: coefficients, rms_normalized_coefficients, rms_wfe, pv_wfe,
-        strehl_ratio, num_terms, field_index, wavelength_nm, ordering.
+        strehl_ratio, num_terms, field_index, wavelength_nm.
     """
     from rayoptics_web_utils.raygrid import make_ray_grid
 
@@ -274,7 +218,8 @@ def get_zernike_coefficients(
     grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)
 
     # Fit Zernike first to get piston coefficient
-    coeffs = fit_zernike(grid, num_terms=num_terms, ordering=ordering)
+    num_terms = len(zernike_terms)
+    coeffs = fit_zernike(grid, zernike_terms)
     coeffs_list = [float(c) for c in coeffs]
 
     # Compute RMS and PV on pupil-domain OPD (rho ≤ 1.0), excluding piston
@@ -285,7 +230,7 @@ def get_zernike_coefficients(
     opd_pupil = opd_flat[valid_mask] - coeffs_list[0]  # subtract piston
     rms_wfe = float(np.sqrt(np.mean(opd_pupil**2)))
     pv_wfe = float(np.max(opd_pupil) - np.min(opd_pupil))
-    rms_normalized = unnormalized_to_rms_normalized(coeffs_list, num_terms, ordering=ordering)
+    rms_normalized = unnormalized_to_rms_normalized(coeffs_list, zernike_terms)
     strehl_ratio = _monochromatic_strehl(grid[2])
 
     return {
@@ -297,5 +242,4 @@ def get_zernike_coefficients(
         'num_terms': num_terms,
         'field_index': field_index,
         'wavelength_nm': float(wavelength_nm),
-        'ordering': ordering,
     }
