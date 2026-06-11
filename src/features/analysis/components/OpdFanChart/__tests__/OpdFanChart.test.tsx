@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { OpdFanChart } from "@/features/analysis/components/OpdFanChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
+import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import type { OpdFanData } from "@/features/analysis/types/plotData";
 
 let mockBuildOpdFanChartOption: jest.Mock;
@@ -23,6 +24,10 @@ jest.mock("@/features/analysis/components/OpdFanChart/opdFanChartOption", () => 
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
+}));
+
+jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
+  useScreenBreakpoint: jest.fn(() => "screenLG"),
 }));
 
 describe("OpdFanChart", () => {
@@ -89,6 +94,7 @@ describe("OpdFanChart", () => {
       800,
       400,
       globalTokens.echarts.text.light,
+      false,
     );
     expect(mockSetOption).toHaveBeenCalled();
   });
@@ -126,6 +132,45 @@ describe("OpdFanChart", () => {
       800,
       400,
       globalTokens.echarts.text.light,
+      false,
+    );
+  });
+
+  it("uses stacked layout and a taller width-based height on small screens", () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get() {
+        return 800;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, "clientHeight", {
+      configurable: true,
+      get() {
+        return 900;
+      },
+    });
+
+    render(
+      <OpdFanChart
+        opdFanData={opdFanData}
+        wavelengthLabels={["486.1 nm", "587.6 nm", "656.3 nm"]}
+      />
+    );
+
+    jest.runAllTimers();
+
+    expect(screen.getByTestId("opd-fan-chart")).toHaveStyle({
+      width: "800px",
+      height: "800px",
+    });
+    expect(mockBuildOpdFanChartOption).toHaveBeenCalledWith(
+      opdFanData,
+      ["486.1 nm", "587.6 nm", "656.3 nm"],
+      800,
+      800,
+      globalTokens.echarts.text.light,
+      true,
     );
   });
 });

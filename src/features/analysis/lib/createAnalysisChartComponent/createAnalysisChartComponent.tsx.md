@@ -7,11 +7,12 @@ Provides a higher-order factory that returns typed analysis chart function compo
 ## Factory Contract
 
 ```ts
-createAnalysisChartComponent<Props extends { autoHeight?: boolean }, BuilderArgs>({
+createAnalysisChartComponent<Props extends { autoHeight?: boolean }, BuilderArgs, RuntimeContext>({
   displayName,
   testId,
   ariaLabel,
   debounceMs,
+  useRuntimeContext?,
   getBuilderArgs,
   getChartHeight,
   buildOption,
@@ -22,6 +23,8 @@ createAnalysisChartComponent<Props extends { autoHeight?: boolean }, BuilderArgs
 ## Key Behaviors
 
 - Measures the parent element with `ResizeObserver`.
+- Optionally calls `useRuntimeContext()` inside the generated component so chart implementations can derive hook-based context such as responsive breakpoints.
+- Passes the runtime context into `getBuilderArgs(...)` and `getChartHeight(...)`.
 - Delegates chart height calculation to the injected `getChartHeight(...)` arrow function.
 - Uses `isDimensionValid(...)` to decide whether dimensions should be committed or cleared.
 - Reads the active app theme via `useTheme()` and resolves the ECharts text color from `globalTokens`.

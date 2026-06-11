@@ -13,6 +13,7 @@ function buildRayFanChartOption(
   chartWidth: number,
   chartHeight: number,
   textColor: string,
+  isSmallScreen?: boolean,
 )
 ```
 
@@ -20,6 +21,8 @@ function buildRayFanChartOption(
 
 - Registers the required ECharts line, grid, legend, title, tooltip, and canvas renderer modules once at module load.
 - Produces two grids with titles `Tangential` and `Sagittal`.
+- Defaults to the existing large-screen side-by-side layout.
+- When `isSmallScreen` is `true`, uses full-width stacked grids with `Tangential` above `Sagittal` and extra inter-plot space so the Tangential x-axis name does not overlap the Sagittal title.
 - Uses one shared legend entry per wavelength; both subplot series for a wavelength share the same label and color.
 - Applies the caller-provided `textColor` to subplot titles, legend labels, axis names, and axis tick labels so chart chrome follows the active light/dark theme.
 - Formats visible x- and y-axis tick labels with the shared analysis plot-value formatter, including scientific notation for magnitudes between `1e-7` and `1e-4`.

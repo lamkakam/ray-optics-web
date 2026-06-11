@@ -13,6 +13,8 @@ const OPD_FAN_GRID_BOTTOM = 52;
 const OPD_FAN_GRID_LEFT = 60;
 const OPD_FAN_GRID_RIGHT = 28;
 const OPD_FAN_GRID_GAP = 48;
+const OPD_FAN_STACKED_GRID_GAP = 104;
+const OPD_FAN_STACKED_TITLE_OFFSET = 32;
 const OPD_FAN_TITLE_TOP = 40;
 const OPD_FAN_LEGEND_TOP = 12;
 function formatOpdFanAxisTick(value: number): string {
@@ -154,12 +156,32 @@ export function buildOpdFanChartOption(
   chartWidth: number,
   chartHeight: number,
   textColor: string,
+  isSmallScreen = false,
 ) {
-  const subplotWidth = Math.max(
+  const sideBySideSubplotWidth = Math.max(
     0,
     (chartWidth - OPD_FAN_GRID_LEFT - OPD_FAN_GRID_RIGHT - OPD_FAN_GRID_GAP) / 2,
   );
-  const subplotHeight = Math.max(0, chartHeight - OPD_FAN_GRID_TOP - OPD_FAN_GRID_BOTTOM);
+  const sideBySideSubplotHeight = Math.max(0, chartHeight - OPD_FAN_GRID_TOP - OPD_FAN_GRID_BOTTOM);
+  const stackedSubplotWidth = Math.max(0, chartWidth - OPD_FAN_GRID_LEFT - OPD_FAN_GRID_RIGHT);
+  const stackedSubplotHeight = Math.max(
+    0,
+    (chartHeight - OPD_FAN_GRID_TOP - OPD_FAN_GRID_BOTTOM - OPD_FAN_STACKED_GRID_GAP) / 2,
+  );
+  const subplotWidth = isSmallScreen ? stackedSubplotWidth : sideBySideSubplotWidth;
+  const subplotHeight = isSmallScreen ? stackedSubplotHeight : sideBySideSubplotHeight;
+  const tangentialGridLeft = OPD_FAN_GRID_LEFT;
+  const tangentialGridTop = OPD_FAN_GRID_TOP;
+  const sagittalGridLeft = isSmallScreen
+    ? OPD_FAN_GRID_LEFT
+    : OPD_FAN_GRID_LEFT + subplotWidth + OPD_FAN_GRID_GAP;
+  const sagittalGridTop = isSmallScreen
+    ? OPD_FAN_GRID_TOP + subplotHeight + OPD_FAN_STACKED_GRID_GAP
+    : OPD_FAN_GRID_TOP;
+  const tangentialTitleTop = OPD_FAN_TITLE_TOP;
+  const sagittalTitleTop = isSmallScreen
+    ? sagittalGridTop - OPD_FAN_STACKED_TITLE_OFFSET
+    : OPD_FAN_TITLE_TOP;
   const axisExtents = getAxisExtents(opdFanData);
   const legendData = opdFanData.map((seriesData) => getSeriesLabel(wavelengthLabels, seriesData.wvlIdx));
   const seriesColors = getSeriesColors(opdFanData, wavelengthLabels);
@@ -182,8 +204,8 @@ export function buildOpdFanChartOption(
     title: [
       {
         text: "Tangential",
-        top: OPD_FAN_TITLE_TOP,
-        left: OPD_FAN_GRID_LEFT + subplotWidth / 2,
+        top: tangentialTitleTop,
+        left: tangentialGridLeft + subplotWidth / 2,
         textAlign: "center",
         textStyle: {
           color: textColor,
@@ -191,8 +213,8 @@ export function buildOpdFanChartOption(
       },
       {
         text: "Sagittal",
-        top: OPD_FAN_TITLE_TOP,
-        left: OPD_FAN_GRID_LEFT + subplotWidth + OPD_FAN_GRID_GAP + subplotWidth / 2,
+        top: sagittalTitleTop,
+        left: sagittalGridLeft + subplotWidth / 2,
         textAlign: "center",
         textStyle: {
           color: textColor,
@@ -201,14 +223,14 @@ export function buildOpdFanChartOption(
     ],
     grid: [
       {
-        left: OPD_FAN_GRID_LEFT,
-        top: OPD_FAN_GRID_TOP,
+        left: tangentialGridLeft,
+        top: tangentialGridTop,
         width: subplotWidth,
         height: subplotHeight,
       },
       {
-        left: OPD_FAN_GRID_LEFT + subplotWidth + OPD_FAN_GRID_GAP,
-        top: OPD_FAN_GRID_TOP,
+        left: sagittalGridLeft,
+        top: sagittalGridTop,
         width: subplotWidth,
         height: subplotHeight,
       },

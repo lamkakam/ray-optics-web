@@ -20,13 +20,18 @@ type ChartDimensionValidationInput = {
   readonly height: number;
 };
 
-type CreateAnalysisChartComponentConfig<Props extends { readonly autoHeight?: boolean }, BuilderArgs> = {
+type CreateAnalysisChartComponentConfig<
+  Props extends { readonly autoHeight?: boolean },
+  BuilderArgs,
+  RuntimeContext,
+> = {
   readonly displayName: string;
   readonly testId: string;
   readonly ariaLabel: string;
   readonly debounceMs: number;
-  readonly getBuilderArgs: (props: Props) => BuilderArgs;
-  readonly getChartHeight: (input: ChartSizingInput) => number;
+  readonly useRuntimeContext?: () => RuntimeContext;
+  readonly getBuilderArgs: (props: Props, runtimeContext: RuntimeContext) => BuilderArgs;
+  readonly getChartHeight: (input: ChartSizingInput, runtimeContext: RuntimeContext) => number;
   readonly buildOption: (
     builderArgs: BuilderArgs,
     chartWidth: number,
@@ -38,25 +43,31 @@ type CreateAnalysisChartComponentConfig<Props extends { readonly autoHeight?: bo
 
 const DEFAULT_DIMENSION_VALIDATION = ({ width }: ChartDimensionValidationInput) => width > 0;
 
-export function createAnalysisChartComponent<Props extends { readonly autoHeight?: boolean }, BuilderArgs>({
+export function createAnalysisChartComponent<
+  Props extends { readonly autoHeight?: boolean },
+  BuilderArgs,
+  RuntimeContext = undefined,
+>({
   displayName,
   testId,
   ariaLabel,
   debounceMs,
+  useRuntimeContext,
   getBuilderArgs,
   getChartHeight,
   buildOption,
   isDimensionValid = DEFAULT_DIMENSION_VALIDATION,
-}: CreateAnalysisChartComponentConfig<Props, BuilderArgs>) {
+}: CreateAnalysisChartComponentConfig<Props, BuilderArgs, RuntimeContext>) {
   function AnalysisChartComponent(props: Props) {
     const { theme } = useTheme();
+    const runtimeContext = useRuntimeContext?.() as RuntimeContext;
     const chartContainerRef = useRef<HTMLDivElement | null>(null);
     const chartRef = useRef<ReturnType<typeof echarts.init> | undefined>(undefined);
     const [chartDimensions, setChartDimensions] = useState<ChartDimensions | undefined>(undefined);
     const chartTextColor = theme === "dark"
       ? globalTokens.echarts.text.dark
       : globalTokens.echarts.text.light;
-    const builderArgs = useMemo(() => getBuilderArgs(props), [props]);
+    const builderArgs = useMemo(() => getBuilderArgs(props, runtimeContext), [props, runtimeContext]);
     const chartOption = useMemo(
       () => chartDimensions === undefined
         ? undefined
@@ -75,7 +86,7 @@ export function createAnalysisChartComponent<Props extends { readonly autoHeight
           parentWidth: nextWidth,
           parentHeight: parent.clientHeight,
           autoHeight: props.autoHeight,
-        });
+        }, runtimeContext);
 
         if (isDimensionValid({ width: nextWidth, height: nextHeight })) {
           setChartDimensions({
@@ -99,7 +110,7 @@ export function createAnalysisChartComponent<Props extends { readonly autoHeight
       return () => {
         resizeObserver.disconnect();
       };
-    }, [props.autoHeight]);
+    }, [props.autoHeight, runtimeContext]);
 
     useEffect(() => {
       const container = chartContainerRef.current;
