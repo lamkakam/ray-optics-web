@@ -5,15 +5,26 @@ import packageJson from "../package.json";
 import packageLockJson from "../package-lock.json";
 
 describe("version metadata", () => {
-  it("keeps app package metadata at the bumped patch version", () => {
-    expect(packageJson.version).toBe("0.16.2");
-    expect(packageLockJson.version).toBe("0.16.2");
-    expect(packageLockJson.packages[""].version).toBe("0.16.2");
+  const readProjectFile = (path: string) => readFileSync(join(process.cwd(), path), "utf8");
+
+  const readPyprojectVersion = () => {
+    const pyproject = readProjectFile("src/python/pyproject.toml");
+    const projectVersionMatch = pyproject.match(/^\[project]\s*[\s\S]*?^version\s*=\s*"([^"]+)"\s*$/m);
+
+    expect(projectVersionMatch).not.toBeNull();
+
+    return projectVersionMatch?.[1];
+  };
+
+  it("keeps app package metadata in sync", () => {
+    expect(packageLockJson.version).toBe(packageJson.version);
+    expect(packageLockJson.packages[""].version).toBe(packageJson.version);
   });
 
-  it("keeps the internal Python package metadata at the bumped minor version", () => {
-    const pyproject = readFileSync(join(process.cwd(), "src/python/pyproject.toml"), "utf8");
+  it("keeps the Pyodide wheel filename in sync with Python package metadata", () => {
+    const pyprojectVersion = readPyprojectVersion();
+    const pyodideWorker = readProjectFile("src/workers/pyodide.worker.ts");
 
-    expect(pyproject).toContain('version = "0.8.0"');
+    expect(pyodideWorker).toContain(`rayoptics_web_utils-${pyprojectVersion}-py3-none-any.whl`);
   });
 });
