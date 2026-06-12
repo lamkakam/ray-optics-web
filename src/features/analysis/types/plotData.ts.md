@@ -14,6 +14,7 @@ Defines analysis plot payload types returned by the Pyodide worker and consumed 
 - `GeoPsfData`: geometric PSF point-cloud data.
 - `SpotDiagramSeriesData`: one wavelength-group spot-diagram point cloud.
 - `SpotDiagramData`: all spot-diagram series for a selected field.
+- `FieldCurveData`: one wavelength-specific field curvature or astigmatism curve payload with sagittal/tangential focus-shift curves and category field labels.
 - `RayFanAxisData`: alias of `LineAxisData` for one transverse ray-fan axis.
 - `RayFanSeriesData`: one wavelength-group ray-fan payload with `Tangential` and `Sagittal` curves.
 - `RayFanData`: all ray-fan series for a selected field.

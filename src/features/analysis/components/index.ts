@@ -2,6 +2,7 @@ export * from "./AnalysisPlotContainer";
 export * from "./AnalysisPlotView";
 export * from "./DiffractionMtfChart";
 export * from "./DiffractionPsfChart";
+export * from "./FieldCurveChart";
 export * from "./GeoPsfChart";
 export * from "./OpdFanChart";
 export * from "./RayFanChart";

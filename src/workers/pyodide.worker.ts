@@ -1,7 +1,7 @@
 import { expose } from "comlink";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import {
   type OptimizationConfig,
@@ -107,7 +107,7 @@ from rayoptics.elem.surface import DecenterData
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 
-from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
 )
@@ -217,6 +217,28 @@ export async function _getSpotDiagramData(
     buildScript(opticalModel, (opm) => `json.dumps(get_spot_data(${opm}, ${fieldIndex}))`),
   )) as string;
   return JSON.parse(json) as SpotDiagramData;
+}
+
+export async function _getFieldCurvatureData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  wavelengthIndex: number,
+): Promise<FieldCurveData> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(get_field_curvature_data(${opm}, ${wavelengthIndex}))`),
+  )) as string;
+  return JSON.parse(json) as FieldCurveData;
+}
+
+export async function _getAstigmatismCurveData(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  wavelengthIndex: number,
+): Promise<FieldCurveData> {
+  const json = (await runPython(
+    buildScript(opticalModel, (opm) => `json.dumps(get_astigmatism_curve_data(${opm}, ${wavelengthIndex}))`),
+  )) as string;
+  return JSON.parse(json) as FieldCurveData;
 }
 
 export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData> {
@@ -518,6 +540,14 @@ export async function getSpotDiagramData(opticalModel: OpticalModel, fieldIndex:
   return await _getSpotDiagramData(requirePyodide(), opticalModel, fieldIndex);
 }
 
+export async function getFieldCurvatureData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData> {
+  return await _getFieldCurvatureData(requirePyodide(), opticalModel, wavelengthIndex);
+}
+
+export async function getAstigmatismCurveData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData> {
+  return await _getAstigmatismCurveData(requirePyodide(), opticalModel, wavelengthIndex);
+}
+
 export async function getWavefrontData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -641,6 +671,8 @@ expose({
   getRayFanData,
   getOpdFanData,
   getSpotDiagramData,
+  getFieldCurvatureData,
+  getAstigmatismCurveData,
   getWavefrontData,
   getStrehlVsWavelengthData,
   getGeoPSFData,

@@ -14,6 +14,8 @@ type AnalysisPlotLoadResult =
   | { kind: "rayFan"; rayFanData: RayFanData }
   | { kind: "opdFan"; opdFanData: OpdFanData }
   | { kind: "spotDiagram"; spotDiagramData: SpotDiagramData }
+  | { kind: "fieldCurvature"; fieldCurvatureData: FieldCurveData }
+  | { kind: "astigmatismCurve"; astigmatismCurveData: FieldCurveData }
   | { kind: "geoPSF"; geoPsfData: GeoPsfData }
   | { kind: "wavefrontMap"; wavefrontMapData: WavefrontMapData }
   | { kind: "strehlVsWavelength"; strehlVsWavelengthData: StrehlVsWavelengthData }
@@ -49,6 +51,8 @@ Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx
 - Calls `proxy.get3rdOrderSeidelData(model)` for `surfaceBySurface3rdOrder` and returns `surfaceBySurface`.
 - Calls `proxy.getOpdFanData(model, fi, opdAimPoint)` for `opdFan`.
 - Calls `proxy.getSpotDiagramData(model, fi)` for `spotDiagram`.
+- Calls `proxy.getFieldCurvatureData(model, wavelengthIndex)` for `fieldCurvature`.
+- Calls `proxy.getAstigmatismCurveData(model, wavelengthIndex)` for `astigmatismCurve`.
 - Calls `proxy.getWavefrontData(...)` with `opdAimPoint` for `wavefrontMap`.
 - Calls `proxy.getStrehlVsWavelengthData(...)` with `opdAimPoint` for `strehlVsWavelength`.
 - Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
@@ -69,14 +73,14 @@ Commits a loaded analysis plot payload to the matching `AnalysisPlotState` sette
 
 - No-ops when `plotResult` is `undefined`.
 - No-ops for `"surfaceBySurface3rdOrder"` because Seidel surface-by-surface data is committed through `AnalysisDataState`.
-- Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"diffractionPSF"`, and `"diffractionMTF"`.
+- Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"fieldCurvature"`, `"astigmatismCurve"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"diffractionPSF"`, and `"diffractionMTF"`.
 - Uses an exhaustive `switch` so future `AnalysisPlotLoadResult` variants must be handled explicitly.
 
 ## Dependencies
 
 - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
 - `PlotType` (type-only) from `@/features/analysis/components`
-- `RayFanData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
+- `RayFanData`, `FieldCurveData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
 - `SeidelSurfaceBySurfaceData` (type-only) from `@/features/lens-editor/types/seidelData`
 - `PyodideWorkerAPI` (type-only) from `@/shared/hooks/usePyodide`
 - `StoreApi` (type-only) from `zustand`

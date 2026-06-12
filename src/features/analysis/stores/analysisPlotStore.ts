@@ -1,11 +1,13 @@
 import { type StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 
 export interface AnalysisPlotState {
   rayFanData: RayFanData | undefined;
   opdFanData: OpdFanData | undefined;
   spotDiagramData: SpotDiagramData | undefined;
+  fieldCurvatureData: FieldCurveData | undefined;
+  astigmatismCurveData: FieldCurveData | undefined;
   geoPsfData: GeoPsfData | undefined;
   diffractionPsfData: DiffractionPsfData | undefined;
   diffractionMtfData: DiffractionMtfData | undefined;
@@ -19,6 +21,8 @@ export interface AnalysisPlotState {
   setRayFanData: (data: RayFanData | undefined) => void;
   setOpdFanData: (data: OpdFanData | undefined) => void;
   setSpotDiagramData: (data: SpotDiagramData | undefined) => void;
+  setFieldCurvatureData: (data: FieldCurveData | undefined) => void;
+  setAstigmatismCurveData: (data: FieldCurveData | undefined) => void;
   setGeoPsfData: (data: GeoPsfData | undefined) => void;
   setDiffractionPsfData: (data: DiffractionPsfData | undefined) => void;
   setDiffractionMtfData: (data: DiffractionMtfData | undefined) => void;
@@ -34,6 +38,8 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
   rayFanData: undefined,
   opdFanData: undefined,
   spotDiagramData: undefined,
+  fieldCurvatureData: undefined,
+  astigmatismCurveData: undefined,
   geoPsfData: undefined,
   diffractionPsfData: undefined,
   diffractionMtfData: undefined,
@@ -48,6 +54,8 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     rayFanData: data,
     opdFanData: undefined,
     spotDiagramData: undefined,
+    fieldCurvatureData: undefined,
+    astigmatismCurveData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
@@ -58,6 +66,8 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     opdFanData: data,
     rayFanData: undefined,
     spotDiagramData: undefined,
+    fieldCurvatureData: undefined,
+    astigmatismCurveData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
@@ -68,6 +78,32 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     spotDiagramData: data,
     rayFanData: undefined,
     opdFanData: undefined,
+    fieldCurvatureData: undefined,
+    astigmatismCurveData: undefined,
+    geoPsfData: undefined,
+    diffractionPsfData: undefined,
+    diffractionMtfData: undefined,
+    wavefrontMapData: undefined,
+    strehlVsWavelengthData: undefined,
+  }),
+  setFieldCurvatureData: (data) => set({
+    fieldCurvatureData: data,
+    rayFanData: undefined,
+    opdFanData: undefined,
+    spotDiagramData: undefined,
+    astigmatismCurveData: undefined,
+    geoPsfData: undefined,
+    diffractionPsfData: undefined,
+    diffractionMtfData: undefined,
+    wavefrontMapData: undefined,
+    strehlVsWavelengthData: undefined,
+  }),
+  setAstigmatismCurveData: (data) => set({
+    astigmatismCurveData: data,
+    rayFanData: undefined,
+    opdFanData: undefined,
+    spotDiagramData: undefined,
+    fieldCurvatureData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
@@ -79,6 +115,8 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     rayFanData: undefined,
     opdFanData: undefined,
     spotDiagramData: undefined,
+    fieldCurvatureData: undefined,
+    astigmatismCurveData: undefined,
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
     wavefrontMapData: undefined,
@@ -89,6 +127,8 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     rayFanData: undefined,
     opdFanData: undefined,
     spotDiagramData: undefined,
+    fieldCurvatureData: undefined,
+    astigmatismCurveData: undefined,
     geoPsfData: undefined,
     diffractionMtfData: undefined,
     wavefrontMapData: undefined,
@@ -99,6 +139,8 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     rayFanData: undefined,
     opdFanData: undefined,
     spotDiagramData: undefined,
+    fieldCurvatureData: undefined,
+    astigmatismCurveData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
     wavefrontMapData: undefined,
@@ -109,6 +151,8 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     rayFanData: undefined,
     opdFanData: undefined,
     spotDiagramData: undefined,
+    fieldCurvatureData: undefined,
+    astigmatismCurveData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,
@@ -119,6 +163,8 @@ export const createAnalysisPlotSlice: StateCreator<AnalysisPlotState> = (set) =>
     rayFanData: undefined,
     opdFanData: undefined,
     spotDiagramData: undefined,
+    fieldCurvatureData: undefined,
+    astigmatismCurveData: undefined,
     geoPsfData: undefined,
     diffractionPsfData: undefined,
     diffractionMtfData: undefined,

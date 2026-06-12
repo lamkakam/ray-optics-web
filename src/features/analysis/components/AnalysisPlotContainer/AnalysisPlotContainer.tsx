@@ -37,6 +37,8 @@ export function AnalysisPlotContainer({
   const rayFanData = useStore(store, (s) => s.rayFanData);
   const opdFanData = useStore(store, (s) => s.opdFanData);
   const spotDiagramData = useStore(store, (s) => s.spotDiagramData);
+  const fieldCurvatureData = useStore(store, (s) => s.fieldCurvatureData);
+  const astigmatismCurveData = useStore(store, (s) => s.astigmatismCurveData);
   const geoPsfData = useStore(store, (s) => s.geoPsfData);
   const diffractionPsfData = useStore(store, (s) => s.diffractionPsfData);
   const diffractionMtfData = useStore(store, (s) => s.diffractionMtfData);
@@ -100,7 +102,7 @@ export function AnalysisPlotContainer({
   const handleWavelengthChange = useCallback(async (value: number) => {
     store.getState().setSelectedWavelengthIndex(value);
     if (!proxy) return;
-    if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
+    if (!PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent) return;
     await loadPlot(selectedPlotType, selectedFieldIndex, value);
   }, [proxy, store, selectedPlotType, selectedFieldIndex, loadPlot]);
 
@@ -122,6 +124,8 @@ export function AnalysisPlotContainer({
       rayFanData={rayFanData}
       opdFanData={opdFanData}
       spotDiagramData={spotDiagramData}
+      fieldCurvatureData={fieldCurvatureData}
+      astigmatismCurveData={astigmatismCurveData}
       geoPsfData={geoPsfData}
       diffractionPsfData={diffractionPsfData}
       diffractionMtfData={diffractionMtfData}

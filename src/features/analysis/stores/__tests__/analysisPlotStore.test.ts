@@ -61,6 +61,16 @@ describe("analysisPlotStore", () => {
       expect(store.getState().spotDiagramData).toBeUndefined();
     });
 
+    it("has fieldCurvatureData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().fieldCurvatureData).toBeUndefined();
+    });
+
+    it("has astigmatismCurveData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().astigmatismCurveData).toBeUndefined();
+    });
+
     it("has opdFanData as undefined", () => {
       const store = makeStore();
       expect(store.getState().opdFanData).toBeUndefined();
@@ -443,6 +453,47 @@ describe("analysisPlotStore", () => {
     });
   });
 
+  describe("setFieldCurveData", () => {
+    const fieldCurveData = {
+      wvlIdx: 1,
+      Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
+      Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
+      fieldLabels: ["0", "10", "20"],
+      unitX: "mm",
+      unitY: "deg",
+    };
+
+    it("sets fieldCurvatureData and clears competing payloads", () => {
+      const store = makeStore();
+      store.getState().setSpotDiagramData([
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          x: [0],
+          y: [0],
+          unitX: "mm",
+          unitY: "mm",
+        },
+      ]);
+
+      store.getState().setFieldCurvatureData(fieldCurveData);
+
+      expect(store.getState().fieldCurvatureData).toEqual(fieldCurveData);
+      expect(store.getState().spotDiagramData).toBeUndefined();
+      expect(store.getState().astigmatismCurveData).toBeUndefined();
+    });
+
+    it("sets astigmatismCurveData and clears competing payloads", () => {
+      const store = makeStore();
+      store.getState().setFieldCurvatureData(fieldCurveData);
+
+      store.getState().setAstigmatismCurveData(fieldCurveData);
+
+      expect(store.getState().astigmatismCurveData).toEqual(fieldCurveData);
+      expect(store.getState().fieldCurvatureData).toBeUndefined();
+    });
+  });
+
   describe("setDiffractionPsfData", () => {
     it("sets diffractionPsfData", () => {
       const store = makeStore();
@@ -751,6 +802,8 @@ describe("analysisPlotStore", () => {
         "rayFan",
         "opdFan",
         "spotDiagram",
+        "fieldCurvature",
+        "astigmatismCurve",
         "surfaceBySurface3rdOrder",
         "strehlVsWavelength",
         "wavefrontMap",

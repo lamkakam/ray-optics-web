@@ -2,6 +2,7 @@
 
 from rayoptics_web_utils.analysis.diffraction_mtf import get_diffraction_mtf_data
 from rayoptics_web_utils.analysis.diffraction_psf import get_diffraction_psf_data
+from rayoptics_web_utils.analysis.field_curves import get_astigmatism_curve_data, get_field_curvature_data
 from rayoptics_web_utils.analysis.first_order import get_first_order_data
 from rayoptics_web_utils.analysis.geometric_psf import get_geo_psf_data
 from rayoptics_web_utils.analysis.opd_fan import get_opd_fan_data
@@ -22,4 +23,6 @@ __all__ = [
     "get_diffraction_psf_data",
     "get_diffraction_mtf_data",
     "get_strehl_vs_wavelength_data",
+    "get_field_curvature_data",
+    "get_astigmatism_curve_data",
 ]

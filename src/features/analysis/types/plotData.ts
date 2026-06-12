@@ -68,6 +68,15 @@ export interface SpotDiagramSeriesData {
 
 export type SpotDiagramData = SpotDiagramSeriesData[];
 
+export interface FieldCurveData {
+  wvlIdx: number;
+  Sagittal: LineAxisData;
+  Tangential: LineAxisData;
+  fieldLabels: string[];
+  unitX: string;
+  unitY: string;
+}
+
 export type RayFanAxisData = LineAxisData;
 
 export interface RayFanSeriesData {

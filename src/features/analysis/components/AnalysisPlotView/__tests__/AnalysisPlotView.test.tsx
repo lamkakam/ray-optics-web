@@ -50,6 +50,13 @@ const mockSpotDiagramChart = jest.fn(({ autoHeight }: { readonly autoHeight?: bo
   />
 ));
 
+const mockFieldCurveChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="field-curve-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 const mockOpdFanChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
   <div
     data-testid="opd-fan-chart"
@@ -93,6 +100,10 @@ jest.mock("@/features/analysis/components/GeoPsfChart", () => ({
 
 jest.mock("@/features/analysis/components/SpotDiagramChart", () => ({
   SpotDiagramChart: (props: { readonly autoHeight?: boolean }) => mockSpotDiagramChart(props),
+}));
+
+jest.mock("@/features/analysis/components/FieldCurveChart", () => ({
+  FieldCurveChart: (props: { readonly autoHeight?: boolean }) => mockFieldCurveChart(props),
 }));
 
 jest.mock("@/features/analysis/components/OpdFanChart", () => ({
@@ -157,7 +168,7 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByText("20.0°")).toBeInTheDocument();
   });
 
-  it("renders plot type selector with Strehl vs Wavelength before Wavefront Map", () => {
+  it("renders plot type selector with field curves directly after Spot Diagram", () => {
     render(<AnalysisPlotView {...defaultProps} />);
     const select = screen.getByLabelText("Plot type");
     expect(select).toBeInTheDocument();
@@ -165,13 +176,27 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByText("Ray Fan")).toBeInTheDocument();
     expect(screen.getByText("OPD Fan")).toBeInTheDocument();
     expect(screen.getByText("Spot Diagram")).toBeInTheDocument();
+    expect(screen.getByText("Field Curvature")).toBeInTheDocument();
+    expect(screen.getByText("Astigmatism Curve")).toBeInTheDocument();
     expect(screen.getByText("Surface by Surface 3rd Order Aberr.")).toBeInTheDocument();
     expect(screen.getByText("Strehl vs Wavelength")).toBeInTheDocument();
     expect(screen.getByText("Wavefront Map")).toBeInTheDocument();
     expect(screen.getByText("Geometric PSF")).toBeInTheDocument();
     expect(screen.getByText("Diffraction PSF")).toBeInTheDocument();
     expect(screen.getByText("Diffraction MTF")).toBeInTheDocument();
-    expect(optionLabels.indexOf("Strehl vs Wavelength")).toBeLessThan(optionLabels.indexOf("Wavefront Map"));
+    expect(optionLabels).toEqual([
+      "Ray Fan",
+      "OPD Fan",
+      "Spot Diagram",
+      "Field Curvature",
+      "Astigmatism Curve",
+      "Surface by Surface 3rd Order Aberr.",
+      "Strehl vs Wavelength",
+      "Wavefront Map",
+      "Geometric PSF",
+      "Diffraction PSF",
+      "Diffraction MTF",
+    ]);
   });
 
   it("field selector is enabled when selectedPlotType is rayFan", () => {
@@ -180,15 +205,14 @@ describe("AnalysisPlotView", () => {
     expect(fieldSelect).not.toBeDisabled();
   });
 
-  it("field selector is disabled when selectedPlotType is surfaceBySurface3rdOrder", () => {
+  it("field selector is absent when selectedPlotType is surfaceBySurface3rdOrder", () => {
     render(
       <AnalysisPlotView
         {...defaultProps}
         selectedPlotType={"surfaceBySurface3rdOrder" as Parameters<typeof AnalysisPlotView>[0]["selectedPlotType"]}
       />
     );
-    const fieldSelect = screen.getByLabelText("Field");
-    expect(fieldSelect).toBeDisabled();
+    expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
   });
 
   it("calls onFieldChange when field is changed", async () => {
@@ -401,6 +425,50 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByTestId("spot-diagram-chart")).toBeInTheDocument();
   });
 
+  it("renders a field curvature chart when data is provided", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="fieldCurvature"
+        fieldCurvatureData={{
+          wvlIdx: 0,
+          Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
+          Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
+          fieldLabels: ["0", "10", "20"],
+          unitX: "mm",
+          unitY: "deg",
+        }}
+      />
+    );
+
+    expect(screen.getByTestId("field-curve-chart")).toBeInTheDocument();
+    expect(mockFieldCurveChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+    }));
+  });
+
+  it("renders an astigmatism curve chart when data is provided", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="astigmatismCurve"
+        astigmatismCurveData={{
+          wvlIdx: 0,
+          Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
+          Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
+          fieldLabels: ["0", "10", "20"],
+          unitX: "mm",
+          unitY: "deg",
+        }}
+      />
+    );
+
+    expect(screen.getByTestId("field-curve-chart")).toBeInTheDocument();
+    expect(mockFieldCurveChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+    }));
+  });
+
   it("renders an opd fan chart when data is provided", () => {
     render(
       <AnalysisPlotView
@@ -531,6 +599,18 @@ describe("AnalysisPlotView", () => {
     it("renders wavelength selector when selectedPlotType is diffractionMTF", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionMTF" />);
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
+    });
+
+    it("renders wavelength selector and no field selector for fieldCurvature", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="fieldCurvature" />);
+      expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
+    });
+
+    it("renders wavelength selector and no field selector for astigmatismCurve", () => {
+      render(<AnalysisPlotView {...defaultProps} selectedPlotType="astigmatismCurve" />);
+      expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
     });
 
     it("renders wavelength options correctly", () => {

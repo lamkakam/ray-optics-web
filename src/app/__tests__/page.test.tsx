@@ -206,6 +206,22 @@ const mockProxy = {
   getRayFanData: mockGetRayFanData,
   getOpdFanData: mockGetOpdFanData,
   getSpotDiagramData: mockGetSpotDiagramData,
+  getFieldCurvatureData: jest.fn().mockResolvedValue({
+    wvlIdx: 0,
+    Sagittal: { x: [0], y: [0] },
+    Tangential: { x: [0], y: [0] },
+    fieldLabels: ["0"],
+    unitX: "mm",
+    unitY: "deg",
+  }),
+  getAstigmatismCurveData: jest.fn().mockResolvedValue({
+    wvlIdx: 0,
+    Sagittal: { x: [0], y: [0] },
+    Tangential: { x: [0], y: [0] },
+    fieldLabels: ["0"],
+    unitX: "mm",
+    unitY: "deg",
+  }),
   getWavefrontData: mockGetWavefrontData,
   getStrehlVsWavelengthData: jest.fn().mockResolvedValue({
     fieldIdx: 0,

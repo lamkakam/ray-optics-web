@@ -21,6 +21,8 @@ _LAZY_IMPORTS = {
     'get_diffraction_psf_data': 'rayoptics_web_utils.analysis.diffraction_psf',
     'get_diffraction_mtf_data': 'rayoptics_web_utils.analysis.diffraction_mtf',
     'get_strehl_vs_wavelength_data': 'rayoptics_web_utils.analysis.strehl_vs_wavelength',
+    'get_field_curvature_data': 'rayoptics_web_utils.analysis.field_curves',
+    'get_astigmatism_curve_data': 'rayoptics_web_utils.analysis.field_curves',
     # zernike
     'get_zernike_coefficients': 'rayoptics_web_utils.zernike.zernike',
     # plotting
