@@ -490,7 +490,7 @@ describe("init", () => {
     await init();
 
     expect(loadPackage).toHaveBeenCalled();
-    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.8.0-py3-none-any.whl", deps=False)');
+    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.9.0-py3-none-any.whl", deps=False)');
   });
 
   it("emits ordered initialization milestones", async () => {
