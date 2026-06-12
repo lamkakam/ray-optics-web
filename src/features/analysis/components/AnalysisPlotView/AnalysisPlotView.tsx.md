@@ -11,6 +11,8 @@ type PlotType =
   | "rayFan"
   | "opdFan"
   | "spotDiagram"
+  | "fieldCurvature"
+  | "astigmatismCurve"
   | "surfaceBySurface3rdOrder"
   | "strehlVsWavelength"
   | "wavefrontMap"
@@ -32,6 +34,8 @@ interface AnalysisPlotViewProps {
   rayFanData?: RayFanData;
   opdFanData?: OpdFanData;
   spotDiagramData?: SpotDiagramData;
+  fieldCurvatureData?: FieldCurveData;
+  astigmatismCurveData?: AstigmatismCurveData;
   diffractionPsfData?: DiffractionPsfData;
   diffractionMtfData?: DiffractionMtfData;
   wavefrontMapData?: WavefrontMapData;
@@ -57,6 +61,8 @@ interface AnalysisPlotViewProps {
 | `rayFanData` | `RayFanData` | No | Per-wavelength ray-fan series used only when `selectedPlotType === "rayFan"` |
 | `opdFanData` | `OpdFanData` | No | Per-wavelength OPD fan series used only when `selectedPlotType === "opdFan"` |
 | `spotDiagramData` | `SpotDiagramData` | No | Per-wavelength spot-diagram point clouds used only when `selectedPlotType === "spotDiagram"` |
+| `fieldCurvatureData` | `FieldCurveData` | No | Wavelength-specific field-curvature data used only when `selectedPlotType === "fieldCurvature"` |
+| `astigmatismCurveData` | `AstigmatismCurveData` | No | Wavelength-specific astigmatism curve data used only when `selectedPlotType === "astigmatismCurve"` |
 | `geoPsfData` | `GeoPsfData` | No | Geometric PSF point-cloud data used only when `selectedPlotType === "geoPSF"` |
 | `diffractionPsfData` | `DiffractionPsfData` | No | Diffraction PSF axis/intensity data used only when `selectedPlotType === "diffractionPSF"` |
 | `diffractionMtfData` | `DiffractionMtfData` | No | Diffraction MTF line data used only when `selectedPlotType === "diffractionMTF"` |
@@ -77,6 +83,8 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 | `rayFan` | "Ray Fan" | true | false |
 | `opdFan` | "OPD Fan" | true | false |
 | `spotDiagram` | "Spot Diagram" | true | false |
+| `fieldCurvature` | "Field Curvature" | false | true |
+| `astigmatismCurve` | "Astigmatism Curve" | false | true |
 | `surfaceBySurface3rdOrder` | "Surface by Surface 3rd Order Aberr." | false | false |
 | `strehlVsWavelength` | "Strehl vs Wavelength" | true | false |
 | `wavefrontMap` | "Wavefront Map" | true | true |
@@ -86,7 +94,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 
 ## Key Behaviors
 
-- `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the field dropdown is disabled for non-field-dependent types.
+- `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the field dropdown is hidden for non-field-dependent types.
 - The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
 - `PLOT_RENDERERS` (module-local) maps each `PlotType` to a typed renderer config with:
@@ -97,6 +105,8 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `rayFan` renders `RayFanChart` only when `rayFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `spotDiagram` renders `SpotDiagramChart` only when `spotDiagramData` is present, passing wavelength labels from `wavelengthOptions` so each series is named by the actual wavelength rather than the wavelength index.
+- `fieldCurvature` renders `FieldCurveChart` only when `fieldCurvatureData` is present and shows the wavelength selector without a field selector.
+- `astigmatismCurve` renders `AstigmatismChart` only when `astigmatismCurveData` is present and shows the wavelength selector without a field selector.
 - `strehlVsWavelength` renders `StrehlVsWavelengthChart` only when `strehlVsWavelengthData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
 - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
 - `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.

@@ -40,6 +40,8 @@ class TestAnalysisConcreteModuleExports:
             ("diffraction_psf", "get_diffraction_psf_data"),
             ("diffraction_mtf", "get_diffraction_mtf_data"),
             ("strehl_vs_wavelength", "get_strehl_vs_wavelength_data"),
+            ("field_curves", "get_field_curvature_data"),
+            ("field_curves", "get_astigmatism_curve_data"),
         ],
     )
     def test_plot_getter_module_export_matches_package_exports(self, module_name, getter_name):
@@ -125,6 +127,15 @@ class TestGetAnalysisPlotDataSignatures:
         assert sig.parameters["wavelength_samples"].default == 32
         assert sig.parameters["num_rays"].default == 21
         assert sig.parameters["opd_aim_point"].default == "chief_ray"
+
+    @pytest.mark.parametrize("getter_name", ["get_field_curvature_data", "get_astigmatism_curve_data"])
+    def test_field_curve_getters_accept_opm_wvl_idx_and_num_points(self, getter_name):
+        import inspect
+        import rayoptics_web_utils.analysis as analysis_package
+
+        sig = inspect.signature(getattr(analysis_package, getter_name))
+        assert list(sig.parameters.keys()) == ["opm", "wvl_idx", "num_points"]
+        assert sig.parameters["num_points"].default == 21
 
 
 class TestGetFirstOrderData:
@@ -589,5 +600,90 @@ class TestGetStrehlVsWavelengthData:
             wavelength_samples=4,
             num_rays=11,
         )
+
+        json.dumps(result)
+
+
+class TestGetFieldCurveData:
+    """Tests for field curvature and astigmatism curve data."""
+
+    def test_field_curvature_returns_wavelength_specific_two_curve_payload(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_field_curvature_data
+
+        result = get_field_curvature_data(cooke_triplet, wvl_idx=2, num_points=7)
+
+        assert result["wvlIdx"] == 2
+        assert result["unitX"] == cooke_triplet.system_spec.dimensions
+        assert "unitY" in result
+        assert set(result["Sagittal"].keys()) == {"x", "y"}
+        assert set(result["Tangential"].keys()) == {"x", "y"}
+        assert len(result["fieldLabels"]) == 7
+        assert len(result["Sagittal"]["x"]) == 7
+        assert len(result["Sagittal"]["y"]) == 7
+        assert len(result["Tangential"]["x"]) == 7
+        assert len(result["Tangential"]["y"]) == 7
+        assert result["Sagittal"]["y"] == pytest.approx(list(range(7)))
+        assert result["Tangential"]["y"] == pytest.approx(list(range(7)))
+        assert all(isinstance(v, str) for v in result["fieldLabels"])
+        assert all(isinstance(v, float) for v in result["Sagittal"]["x"])
+        assert all(isinstance(v, float) for v in result["Tangential"]["x"])
+
+    def test_astigmatism_returns_wavelength_specific_separation_payload(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_astigmatism_curve_data
+
+        result = get_astigmatism_curve_data(cooke_triplet, wvl_idx=2, num_points=7)
+
+        assert result["wvlIdx"] == 2
+        assert result["unitX"] == cooke_triplet.system_spec.dimensions
+        assert "unitY" in result
+        assert set(result["Astigmatism"].keys()) == {"x", "y"}
+        assert "Sagittal" not in result
+        assert "Tangential" not in result
+        assert len(result["fieldLabels"]) == 7
+        assert len(result["Astigmatism"]["x"]) == 7
+        assert len(result["Astigmatism"]["y"]) == 7
+        assert result["Astigmatism"]["y"] == pytest.approx(list(range(7)))
+        assert all(isinstance(v, str) for v in result["fieldLabels"])
+        assert all(isinstance(v, float) for v in result["Astigmatism"]["x"])
+
+    def test_astigmatism_curve_is_tangential_minus_sagittal(self, cooke_triplet, monkeypatch):
+        import rayoptics_web_utils.analysis.field_curves as module
+
+        def fake_trace_field_curves(opm, wvl_idx, num_points=21):
+            return {
+                "wvlIdx": wvl_idx,
+                "Sagittal": {
+                    "x": [1.0, 2.5, -3.0],
+                    "y": [0.0, 1.0, 2.0],
+                },
+                "Tangential": {
+                    "x": [4.0, -1.5, -1.0],
+                    "y": [0.0, 1.0, 2.0],
+                },
+                "fieldLabels": ["0", "10", "20"],
+                "unitX": "mm",
+                "unitY": "deg",
+            }
+
+        monkeypatch.setattr(module, "_trace_field_curves", fake_trace_field_curves)
+
+        result = module.get_astigmatism_curve_data(cooke_triplet, wvl_idx=1, num_points=3)
+
+        assert result == {
+            "wvlIdx": 1,
+            "Astigmatism": {
+                "x": pytest.approx([3.0, -4.0, 2.0]),
+                "y": pytest.approx([0.0, 1.0, 2.0]),
+            },
+            "fieldLabels": ["0", "10", "20"],
+            "unitX": "mm",
+            "unitY": "deg",
+        }
+
+    @pytest.mark.parametrize("getter_name", ["get_field_curvature_data", "get_astigmatism_curve_data"])
+    def test_result_is_json_encodable(self, cooke_triplet, getter_name):
+        import rayoptics_web_utils.analysis as analysis_package
+
+        result = getattr(analysis_package, getter_name)(cooke_triplet, wvl_idx=0, num_points=5)
 
         json.dumps(result)

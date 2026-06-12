@@ -1,6 +1,8 @@
 import React from "react";
+import { AstigmatismChart } from "@/features/analysis/components/AstigmatismChart";
 import { DiffractionMtfChart } from "@/features/analysis/components/DiffractionMtfChart";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
+import { FieldCurveChart } from "@/features/analysis/components/FieldCurveChart";
 import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
 import { OpdFanChart } from "@/features/analysis/components/OpdFanChart";
 import { RayFanChart } from "@/features/analysis/components/RayFanChart";
@@ -12,12 +14,14 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 export type PlotType = "rayFan"
   | "opdFan"
   | "spotDiagram"
+  | "fieldCurvature"
+  | "astigmatismCurve"
   | "surfaceBySurface3rdOrder"
   | "strehlVsWavelength"
   | "wavefrontMap"
@@ -38,6 +42,8 @@ interface AnalysisPlotViewProps {
   readonly rayFanData?: RayFanData;
   readonly opdFanData?: OpdFanData;
   readonly spotDiagramData?: SpotDiagramData;
+  readonly fieldCurvatureData?: FieldCurveData;
+  readonly astigmatismCurveData?: AstigmatismCurveData;
   readonly geoPsfData?: GeoPsfData;
   readonly diffractionPsfData?: DiffractionPsfData;
   readonly diffractionMtfData?: DiffractionMtfData;
@@ -71,6 +77,16 @@ export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
     label: "Spot Diagram",
     fieldDependent: true,
     wavelengthDependent: false,
+  },
+  fieldCurvature: {
+    label: "Field Curvature",
+    fieldDependent: false,
+    wavelengthDependent: true,
+  },
+  astigmatismCurve: {
+    label: "Astigmatism Curve",
+    fieldDependent: false,
+    wavelengthDependent: true,
   },
   surfaceBySurface3rdOrder: {
     label: "Surface by Surface 3rd Order Aberr.",
@@ -172,6 +188,26 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
       />
     ),
   ),
+  fieldCurvature: createPlotRenderer(
+    (props) => props.fieldCurvatureData !== undefined,
+    (props) => props.fieldCurvatureData,
+    (props, fieldCurvatureData) => (
+      <FieldCurveChart
+        fieldCurveData={fieldCurvatureData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  astigmatismCurve: createPlotRenderer(
+    (props) => props.astigmatismCurveData !== undefined,
+    (props) => props.astigmatismCurveData,
+    (props, astigmatismCurveData) => (
+      <AstigmatismChart
+        astigmatismCurveData={astigmatismCurveData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
   surfaceBySurface3rdOrder: createPlotRenderer(
     (props) => props.surfaceBySurface3rdOrderData !== undefined,
     (props) => props.surfaceBySurface3rdOrderData,
@@ -250,25 +286,28 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
   const screenSize = useScreenBreakpoint();
   const selectType = screenSize === "screenSM" ? "compact" : "default";
   const fieldDisabled = !PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent;
+  const fieldVisible = PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent;
   const selectedPlotRenderer = PLOT_RENDERERS[selectedPlotType];
 
   return (
     <div className={`flex ${autoHeight ? "" : "h-full "}min-h-0 flex-col gap-3`}>
       <div className="flex gap-3">
-        <div className="flex-1">
-          <Label htmlFor="analysis-field-select">
-            Field
-          </Label>
-          <Select
-            id="analysis-field-select"
-            aria-label="Field"
-            options={fieldOptions}
-            value={selectedFieldIndex}
-            disabled={fieldDisabled}
-            type={selectType}
-            onChange={(e) => onFieldChange(Number(e.target.value))}
-          />
-        </div>
+        {fieldVisible && (
+          <div className="flex-1">
+            <Label htmlFor="analysis-field-select">
+              Field
+            </Label>
+            <Select
+              id="analysis-field-select"
+              aria-label="Field"
+              options={fieldOptions}
+              value={selectedFieldIndex}
+              disabled={fieldDisabled}
+              type={selectType}
+              onChange={(e) => onFieldChange(Number(e.target.value))}
+            />
+          </div>
+        )}
         {PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent && (
           <div className="flex-1">
             <Label htmlFor="analysis-wavelength-select">

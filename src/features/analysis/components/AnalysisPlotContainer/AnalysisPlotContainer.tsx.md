@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container component that owns all analysis-plot logic: derives field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed geometric-PSF point data, typed wavefront-map grid data, typed Strehl-vs-wavelength line data, typed diffraction-PSF grid data, or typed diffraction-MTF line data depending on the selected plot type.
+Container component that owns all analysis-plot logic: derives field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed field-curvature data, typed astigmatism-curve data, typed geometric-PSF point data, typed wavefront-map grid data, typed Strehl-vs-wavelength line data, typed diffraction-PSF grid data, or typed diffraction-MTF line data depending on the selected plot type.
 
 ## Props
 
@@ -23,7 +23,7 @@ interface AnalysisPlotContainerProps {
 ## State
 
 All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
-- `rayFanData`, `opdFanData`, `spotDiagramData`, `geoPsfData`, `wavefrontMapData`, `strehlVsWavelengthData`, `diffractionPsfData`, `diffractionMtfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
+- `rayFanData`, `opdFanData`, `spotDiagramData`, `fieldCurvatureData`, `astigmatismCurveData`, `geoPsfData`, `wavefrontMapData`, `strehlVsWavelengthData`, `diffractionPsfData`, `diffractionMtfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
 
 `committedOpticalModel` is read from `lensStore` via `useLensEditorStore` and `useStore(lensStore, (s) => s.committedOpticalModel)`.
 
@@ -61,7 +61,7 @@ Shared async helper used by all three change handlers:
 
 ### `handleWavelengthChange(value)`
 
-Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and delegates to `loadPlot(selectedPlotType, selectedFieldIndex, value)`. Only executes the plot call when `fieldDependent === true` (all wavelength-dependent plot types are also field-dependent).
+Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and delegates to `loadPlot(selectedPlotType, selectedFieldIndex, value)`. Only executes the plot call when `wavelengthDependent === true`, which includes field-independent field curvature and astigmatism curve plots.
 
 ### `handlePlotTypeChange(plotType)`
 

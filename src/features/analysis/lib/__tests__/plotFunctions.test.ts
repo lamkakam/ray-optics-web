@@ -1,6 +1,6 @@
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, OpdFanData, RayFanData, StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, FieldCurveData, OpdFanData, RayFanData, StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
@@ -29,6 +29,23 @@ const strehlVsWavelengthData: StrehlVsWavelengthData = {
   y: [0.72, 0.94, 0.81],
   unitX: "nm",
   unitY: "",
+};
+
+const fieldCurveData: FieldCurveData = {
+  wvlIdx: 2,
+  Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
+  Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
+  fieldLabels: ["0", "10", "20"],
+  unitX: "mm",
+  unitY: "deg",
+};
+
+const astigmatismCurveData: AstigmatismCurveData = {
+  wvlIdx: 2,
+  Astigmatism: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
+  fieldLabels: ["0", "10", "20"],
+  unitX: "mm",
+  unitY: "deg",
 };
 
 function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
@@ -102,6 +119,8 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
         unitY: "mm",
       },
     ]),
+    getFieldCurvatureData: jest.fn().mockResolvedValue(fieldCurveData),
+    getAstigmatismCurveData: jest.fn().mockResolvedValue(astigmatismCurveData),
     getWavefrontData: jest.fn(),
     getGeoPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
@@ -315,6 +334,40 @@ describe("loadAnalysisPlot", () => {
     });
   });
 
+  it("loads fieldCurvature through getFieldCurvatureData with only the wavelength index", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "fieldCurvature",
+      proxy,
+      model: mockModel,
+      fieldIndex: 99,
+      wavelengthIndex: 2,
+    });
+
+    expect(proxy.getFieldCurvatureData).toHaveBeenCalledWith(mockModel, 2);
+    expect(result).toEqual({
+      kind: "fieldCurvature",
+      fieldCurvatureData: fieldCurveData,
+    });
+  });
+
+  it("loads astigmatismCurve through getAstigmatismCurveData with only the wavelength index", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "astigmatismCurve",
+      proxy,
+      model: mockModel,
+      fieldIndex: 99,
+      wavelengthIndex: 1,
+    });
+
+    expect(proxy.getAstigmatismCurveData).toHaveBeenCalledWith(mockModel, 1);
+    expect(result).toEqual({
+      kind: "astigmatismCurve",
+      astigmatismCurveData,
+    });
+  });
+
   it("loads surfaceBySurface3rdOrder through get3rdOrderSeidelData instead of the PNG path", async () => {
     const proxy = makeMockProxy();
     const result = await loadAnalysisPlot({
@@ -364,6 +417,28 @@ describe("commitAnalysisPlotResult", () => {
     }, store);
 
     expect(store.getState().strehlVsWavelengthData).toEqual(strehlVsWavelengthData);
+  });
+
+  it("commits fieldCurvature data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+
+    commitAnalysisPlotResult({
+      kind: "fieldCurvature",
+      fieldCurvatureData: fieldCurveData,
+    }, store);
+
+    expect(store.getState().fieldCurvatureData).toEqual(fieldCurveData);
+  });
+
+  it("commits astigmatismCurve data into the analysis plot store", () => {
+    const store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
+
+    commitAnalysisPlotResult({
+      kind: "astigmatismCurve",
+      astigmatismCurveData,
+    }, store);
+
+    expect(store.getState().astigmatismCurveData).toEqual(astigmatismCurveData);
   });
 
   it("does not commit surfaceBySurface3rdOrder data into the analysis plot store", () => {

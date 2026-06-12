@@ -57,6 +57,21 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     getRayFanData: jest.fn().mockResolvedValue([]),
     getOpdFanData: jest.fn().mockResolvedValue([]),
     getSpotDiagramData: jest.fn().mockResolvedValue([]),
+    getFieldCurvatureData: jest.fn().mockResolvedValue({
+      wvlIdx: 0,
+      Sagittal: { x: [0], y: [0] },
+      Tangential: { x: [0], y: [0] },
+      fieldLabels: ["0"],
+      unitX: "mm",
+      unitY: "deg",
+    }),
+    getAstigmatismCurveData: jest.fn().mockResolvedValue({
+      wvlIdx: 0,
+      Astigmatism: { x: [0], y: [0] },
+      fieldLabels: ["0"],
+      unitX: "mm",
+      unitY: "deg",
+    }),
     getWavefrontData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
       wvlIdx: 0,

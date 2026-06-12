@@ -1,7 +1,7 @@
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
@@ -12,6 +12,8 @@ export type AnalysisPlotLoadResult =
   | { readonly kind: "rayFan"; readonly rayFanData: RayFanData }
   | { readonly kind: "opdFan"; readonly opdFanData: OpdFanData }
   | { readonly kind: "spotDiagram"; readonly spotDiagramData: SpotDiagramData }
+  | { readonly kind: "fieldCurvature"; readonly fieldCurvatureData: FieldCurveData }
+  | { readonly kind: "astigmatismCurve"; readonly astigmatismCurveData: AstigmatismCurveData }
   | { readonly kind: "geoPSF"; readonly geoPsfData: GeoPsfData }
   | { readonly kind: "wavefrontMap"; readonly wavefrontMapData: WavefrontMapData }
   | { readonly kind: "strehlVsWavelength"; readonly strehlVsWavelengthData: StrehlVsWavelengthData }
@@ -79,6 +81,20 @@ export async function loadAnalysisPlot({
     };
   }
 
+  if (plotType === "fieldCurvature") {
+    return {
+      kind: "fieldCurvature",
+      fieldCurvatureData: await proxy.getFieldCurvatureData(model, wavelengthIndex),
+    };
+  }
+
+  if (plotType === "astigmatismCurve") {
+    return {
+      kind: "astigmatismCurve",
+      astigmatismCurveData: await proxy.getAstigmatismCurveData(model, wavelengthIndex),
+    };
+  }
+
   if (plotType === "geoPSF") {
     return {
       kind: "geoPSF",
@@ -118,6 +134,12 @@ export function commitAnalysisPlotResult(
       return;
     case "spotDiagram":
       analysisPlotStore.getState().setSpotDiagramData(plotResult.spotDiagramData);
+      return;
+    case "fieldCurvature":
+      analysisPlotStore.getState().setFieldCurvatureData(plotResult.fieldCurvatureData);
+      return;
+    case "astigmatismCurve":
+      analysisPlotStore.getState().setAstigmatismCurveData(plotResult.astigmatismCurveData);
       return;
     case "geoPSF":
       analysisPlotStore.getState().setGeoPsfData(plotResult.geoPsfData);

@@ -7,7 +7,7 @@ import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/anal
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, DiffractionPsfData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
@@ -157,6 +157,23 @@ const spotDiagramData: SpotDiagramData = [
   },
 ];
 
+const fieldCurveData: FieldCurveData = {
+  wvlIdx: 1,
+  Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
+  Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
+  fieldLabels: ["0", "10", "20"],
+  unitX: "mm",
+  unitY: "deg",
+};
+
+const astigmatismCurveData: AstigmatismCurveData = {
+  wvlIdx: 1,
+  Astigmatism: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
+  fieldLabels: ["0", "10", "20"],
+  unitX: "mm",
+  unitY: "deg",
+};
+
 const opdFanData: OpdFanData = [
   {
     fieldIdx: 0,
@@ -244,6 +261,8 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
     getRayFanData: jest.fn<Promise<RayFanData>, [OpticalModel, number]>().mockResolvedValue(rayFanData),
     getOpdFanData: jest.fn<Promise<OpdFanData>, [OpticalModel, number]>().mockResolvedValue(opdFanData),
     getSpotDiagramData: jest.fn<Promise<SpotDiagramData>, [OpticalModel, number]>().mockResolvedValue(spotDiagramData),
+    getFieldCurvatureData: jest.fn<Promise<FieldCurveData>, [OpticalModel, number]>().mockResolvedValue(fieldCurveData),
+    getAstigmatismCurveData: jest.fn<Promise<AstigmatismCurveData>, [OpticalModel, number]>().mockResolvedValue(astigmatismCurveData),
     getWavefrontData: jest.fn<Promise<WavefrontMapData>, [OpticalModel, number, number]>().mockResolvedValue(wavefrontMapData),
     getGeoPSFData: jest.fn<Promise<GeoPsfData>, [OpticalModel, number, number]>().mockResolvedValue(geoPsfData),
     getDiffractionPSFData: jest.fn<Promise<DiffractionPsfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionPsfData),
@@ -380,9 +399,7 @@ describe("AnalysisPlotContainer", () => {
     store.getState().setSelectedPlotType("surfaceBySurface3rdOrder");
     const proxy = makeMockProxy();
     renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
-    // field select is disabled for surfaceBySurface3rdOrder — just verify it's disabled
-    const fieldSelect = screen.getByLabelText("Field");
-    expect(fieldSelect).toBeDisabled();
+    expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
   });
 
   it("renders the surface by surface chart from analysisDataStore instead of loading a PNG", async () => {
@@ -443,6 +460,49 @@ describe("AnalysisPlotContainer", () => {
       expect(proxy.getGeoPSFData).toHaveBeenCalledWith(testModel, 0, 0);
     });
     expect(store.getState().geoPsfData).toEqual(geoPsfData);
+  });
+
+  it("handlePlotTypeChange: fieldCurvature fetches by wavelength only and stores chart data", async () => {
+    store.getState().setSelectedFieldIndex(2);
+    store.getState().setSelectedWavelengthIndex(1);
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "fieldCurvature");
+
+    expect(store.getState().selectedPlotType).toBe("fieldCurvature");
+    await waitFor(() => {
+      expect(proxy.getFieldCurvatureData).toHaveBeenCalledWith(testModel, 1);
+    });
+    expect(store.getState().fieldCurvatureData).toEqual(fieldCurveData);
+  });
+
+  it("handlePlotTypeChange: astigmatismCurve fetches by wavelength only and stores chart data", async () => {
+    store.getState().setSelectedFieldIndex(2);
+    store.getState().setSelectedWavelengthIndex(1);
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const plotTypeSelect = screen.getByLabelText("Plot type");
+    await userEvent.selectOptions(plotTypeSelect, "astigmatismCurve");
+
+    expect(store.getState().selectedPlotType).toBe("astigmatismCurve");
+    await waitFor(() => {
+      expect(proxy.getAstigmatismCurveData).toHaveBeenCalledWith(testModel, 1);
+    });
+    expect(store.getState().astigmatismCurveData).toEqual(astigmatismCurveData);
+  });
+
+  it("handleWavelengthChange: reloads fieldCurvature even though it is field independent", async () => {
+    store.getState().setSelectedPlotType("fieldCurvature");
+    const proxy = makeMockProxy();
+    renderComponent(testSpecs, testModel, store, proxy);
+    const wlSelect = screen.getByLabelText("Wavelength");
+    await userEvent.selectOptions(wlSelect, "2");
+
+    expect(store.getState().selectedWavelengthIndex).toBe(2);
+    await waitFor(() => {
+      expect(proxy.getFieldCurvatureData).toHaveBeenCalledWith(testModel, 2);
+    });
   });
 
   it("handlePlotTypeChange: no-op when proxy is undefined", async () => {

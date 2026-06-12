@@ -15,6 +15,8 @@ import {
   _getGeoPSFData,
   _getDiffractionPSFData,
   _getDiffractionMTFData,
+  _getFieldCurvatureData,
+  _getAstigmatismCurveData,
 } from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
@@ -181,6 +183,49 @@ describe("_getSpotDiagramData", () => {
 
     expect(pythonScript).toContain("opm = OpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_spot_data(_build_opm(), 1))");
+    expect(result).toEqual(mockData);
+  });
+});
+
+describe("_getFieldCurvatureData", () => {
+  it("should build the model script, call json.dumps(get_field_curvature_data(...)) and return parsed data", async () => {
+    const mockData = {
+      wvlIdx: 2,
+      Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
+      Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
+      fieldLabels: ["0", "10", "20"],
+      unitX: "mm",
+      unitY: "deg",
+    };
+    let pythonScript = "";
+    const result = await _getFieldCurvatureData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 2);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_field_curvature_data(_build_opm(), 2))");
+    expect(result).toEqual(mockData);
+  });
+});
+
+describe("_getAstigmatismCurveData", () => {
+  it("should build the model script, call json.dumps(get_astigmatism_curve_data(...)) and return parsed data", async () => {
+    const mockData = {
+      wvlIdx: 1,
+      Astigmatism: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
+      fieldLabels: ["0", "10", "20"],
+      unitX: "mm",
+      unitY: "deg",
+    };
+    let pythonScript = "";
+    const result = await _getAstigmatismCurveData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel, 1);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_astigmatism_curve_data(_build_opm(), 1))");
     expect(result).toEqual(mockData);
   });
 });
@@ -367,6 +412,7 @@ describe("_init", () => {
 
     // Import analysis and plotting functions
     expect(allCode).toContain("from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data");
+    expect(allCode).toContain("get_field_curvature_data, get_astigmatism_curve_data");
     expect(allCode).toContain("plot_lens_layout,");
     expect(allCode).not.toContain("plot_ray_fan,");
     expect(allCode).not.toContain("plot_opd_fan,");
@@ -444,7 +490,7 @@ describe("init", () => {
     await init();
 
     expect(loadPackage).toHaveBeenCalled();
-    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.8.0-py3-none-any.whl", deps=False)');
+    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.9.0-py3-none-any.whl", deps=False)');
   });
 
   it("emits ordered initialization milestones", async () => {
