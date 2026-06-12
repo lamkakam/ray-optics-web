@@ -69,5 +69,23 @@ def get_field_curvature_data(opm: OpticalModel, wvl_idx: int, num_points: int = 
 
 
 def get_astigmatism_curve_data(opm: OpticalModel, wvl_idx: int, num_points: int = 21) -> dict:
-    """Return sagittal and tangential astigmatism curves for one wavelength."""
-    return _trace_field_curves(opm, wvl_idx, num_points=num_points)
+    """Return tangential-minus-sagittal astigmatic separation for one wavelength."""
+    field_curves = _trace_field_curves(opm, wvl_idx, num_points=num_points)
+    sagittal_x = field_curves["Sagittal"]["x"]
+    tangential_x = field_curves["Tangential"]["x"]
+
+    astigmatism_x = [
+        tangential - sagittal
+        for sagittal, tangential in zip(sagittal_x, tangential_x, strict=False)
+    ]
+
+    return {
+        "wvlIdx": field_curves["wvlIdx"],
+        "Astigmatism": {
+            "x": _json_float_list(astigmatism_x),
+            "y": field_curves["Sagittal"]["y"],
+        },
+        "fieldLabels": field_curves["fieldLabels"],
+        "unitX": field_curves["unitX"],
+        "unitY": field_curves["unitY"],
+    }

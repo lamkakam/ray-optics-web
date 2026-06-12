@@ -1,7 +1,7 @@
 import { expose } from "comlink";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
-import type { DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import {
   type OptimizationConfig,
@@ -234,11 +234,11 @@ export async function _getAstigmatismCurveData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   wavelengthIndex: number,
-): Promise<FieldCurveData> {
+): Promise<AstigmatismCurveData> {
   const json = (await runPython(
     buildScript(opticalModel, (opm) => `json.dumps(get_astigmatism_curve_data(${opm}, ${wavelengthIndex}))`),
   )) as string;
-  return JSON.parse(json) as FieldCurveData;
+  return JSON.parse(json) as AstigmatismCurveData;
 }
 
 export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData> {
@@ -544,7 +544,7 @@ export async function getFieldCurvatureData(opticalModel: OpticalModel, waveleng
   return await _getFieldCurvatureData(requirePyodide(), opticalModel, wavelengthIndex);
 }
 
-export async function getAstigmatismCurveData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData> {
+export async function getAstigmatismCurveData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<AstigmatismCurveData> {
   return await _getAstigmatismCurveData(requirePyodide(), opticalModel, wavelengthIndex);
 }
 

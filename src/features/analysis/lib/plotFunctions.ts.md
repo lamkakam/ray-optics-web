@@ -15,7 +15,7 @@ type AnalysisPlotLoadResult =
   | { kind: "opdFan"; opdFanData: OpdFanData }
   | { kind: "spotDiagram"; spotDiagramData: SpotDiagramData }
   | { kind: "fieldCurvature"; fieldCurvatureData: FieldCurveData }
-  | { kind: "astigmatismCurve"; astigmatismCurveData: FieldCurveData }
+  | { kind: "astigmatismCurve"; astigmatismCurveData: AstigmatismCurveData }
   | { kind: "geoPSF"; geoPsfData: GeoPsfData }
   | { kind: "wavefrontMap"; wavefrontMapData: WavefrontMapData }
   | { kind: "strehlVsWavelength"; strehlVsWavelengthData: StrehlVsWavelengthData }
@@ -80,7 +80,7 @@ Commits a loaded analysis plot payload to the matching `AnalysisPlotState` sette
 
 - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
 - `PlotType` (type-only) from `@/features/analysis/components`
-- `RayFanData`, `FieldCurveData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
+- `RayFanData`, `FieldCurveData`, `AstigmatismCurveData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
 - `SeidelSurfaceBySurfaceData` (type-only) from `@/features/lens-editor/types/seidelData`
 - `PyodideWorkerAPI` (type-only) from `@/shared/hooks/usePyodide`
 - `StoreApi` (type-only) from `zustand`

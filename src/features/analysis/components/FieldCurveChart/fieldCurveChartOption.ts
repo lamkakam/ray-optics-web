@@ -3,7 +3,7 @@ import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
-import type { FieldCurveData, LineAxisData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, FieldCurveData, LineAxisData } from "@/features/analysis/types/plotData";
 
 echarts.use([LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
 
@@ -42,11 +42,30 @@ function buildVisibleFieldCategoryPredicate(fieldLabelCount: number): (index: nu
   return (index: number) => visibleFieldCategoryIndices.has(index);
 }
 
+export interface FieldCurveSeriesDefinition {
+  readonly name: string;
+  readonly data: LineAxisData;
+}
+
+type FieldCurveChartData = FieldCurveData | AstigmatismCurveData;
+
+function buildDefaultSeriesDefinitions(fieldCurveData: FieldCurveChartData): readonly FieldCurveSeriesDefinition[] {
+  if ("Astigmatism" in fieldCurveData) {
+    return [{ name: "Astigmatism", data: fieldCurveData.Astigmatism }];
+  }
+
+  return [
+    { name: "Sagittal", data: fieldCurveData.Sagittal },
+    { name: "Tangential", data: fieldCurveData.Tangential },
+  ];
+}
+
 export function buildFieldCurveOption(
-  fieldCurveData: FieldCurveData,
+  fieldCurveData: FieldCurveChartData,
   chartWidth: number,
   chartHeight: number,
   textColor: string,
+  seriesDefinitions: readonly FieldCurveSeriesDefinition[] = buildDefaultSeriesDefinitions(fieldCurveData),
 ) {
   const isVisibleFieldCategory = buildVisibleFieldCategoryPredicate(fieldCurveData.fieldLabels.length);
 
@@ -119,19 +138,11 @@ export function buildFieldCurveOption(
         },
       },
     },
-    series: [
-      {
-        name: "Sagittal",
-        type: "line",
-        data: toLineData(fieldCurveData.Sagittal),
-        showSymbol: false,
-      },
-      {
-        name: "Tangential",
-        type: "line",
-        data: toLineData(fieldCurveData.Tangential),
-        showSymbol: false,
-      },
-    ],
+    series: seriesDefinitions.map((seriesDefinition) => ({
+      name: seriesDefinition.name,
+      type: "line",
+      data: toLineData(seriesDefinition.data),
+      showSymbol: false,
+    })),
   };
 }

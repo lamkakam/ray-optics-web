@@ -1,13 +1,13 @@
 import { type StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
-import type { DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 
 export interface AnalysisPlotState {
   rayFanData: RayFanData | undefined;
   opdFanData: OpdFanData | undefined;
   spotDiagramData: SpotDiagramData | undefined;
   fieldCurvatureData: FieldCurveData | undefined;
-  astigmatismCurveData: FieldCurveData | undefined;
+  astigmatismCurveData: AstigmatismCurveData | undefined;
   geoPsfData: GeoPsfData | undefined;
   diffractionPsfData: DiffractionPsfData | undefined;
   diffractionMtfData: DiffractionMtfData | undefined;
@@ -22,7 +22,7 @@ export interface AnalysisPlotState {
   setOpdFanData: (data: OpdFanData | undefined) => void;
   setSpotDiagramData: (data: SpotDiagramData | undefined) => void;
   setFieldCurvatureData: (data: FieldCurveData | undefined) => void;
-  setAstigmatismCurveData: (data: FieldCurveData | undefined) => void;
+  setAstigmatismCurveData: (data: AstigmatismCurveData | undefined) => void;
   setGeoPsfData: (data: GeoPsfData | undefined) => void;
   setDiffractionPsfData: (data: DiffractionPsfData | undefined) => void;
   setDiffractionMtfData: (data: DiffractionMtfData | undefined) => void;

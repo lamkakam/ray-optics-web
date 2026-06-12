@@ -462,6 +462,13 @@ describe("analysisPlotStore", () => {
       unitX: "mm",
       unitY: "deg",
     };
+    const astigmatismCurveData = {
+      wvlIdx: 1,
+      Astigmatism: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
+      fieldLabels: ["0", "10", "20"],
+      unitX: "mm",
+      unitY: "deg",
+    };
 
     it("sets fieldCurvatureData and clears competing payloads", () => {
       const store = makeStore();
@@ -487,9 +494,9 @@ describe("analysisPlotStore", () => {
       const store = makeStore();
       store.getState().setFieldCurvatureData(fieldCurveData);
 
-      store.getState().setAstigmatismCurveData(fieldCurveData);
+      store.getState().setAstigmatismCurveData(astigmatismCurveData);
 
-      expect(store.getState().astigmatismCurveData).toEqual(fieldCurveData);
+      expect(store.getState().astigmatismCurveData).toEqual(astigmatismCurveData);
       expect(store.getState().fieldCurvatureData).toBeUndefined();
     });
   });

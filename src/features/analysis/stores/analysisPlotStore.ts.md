@@ -17,7 +17,7 @@ Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OP
 | `opdFanData` | `OpdFanData \| undefined` | `undefined` |
 | `spotDiagramData` | `SpotDiagramData \| undefined` | `undefined` |
 | `fieldCurvatureData` | `FieldCurveData \| undefined` | `undefined` |
-| `astigmatismCurveData` | `FieldCurveData \| undefined` | `undefined` |
+| `astigmatismCurveData` | `AstigmatismCurveData \| undefined` | `undefined` |
 | `geoPsfData` | `GeoPsfData \| undefined` | `undefined` |
 | `diffractionPsfData` | `DiffractionPsfData \| undefined` | `undefined` |
 | `diffractionMtfData` | `DiffractionMtfData \| undefined` | `undefined` |
@@ -49,4 +49,4 @@ Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OP
 
 - `create`, `StateCreator` from `zustand`.
 - `PlotType` (type-only) from `@/features/analysis/components`.
-- `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.
+- `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `AstigmatismCurveData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.

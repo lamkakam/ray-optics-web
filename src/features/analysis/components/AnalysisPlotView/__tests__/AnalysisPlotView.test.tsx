@@ -454,8 +454,7 @@ describe("AnalysisPlotView", () => {
         selectedPlotType="astigmatismCurve"
         astigmatismCurveData={{
           wvlIdx: 0,
-          Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
-          Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
+          Astigmatism: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
           fieldLabels: ["0", "10", "20"],
           unitX: "mm",
           unitY: "deg",
@@ -466,6 +465,10 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByTestId("field-curve-chart")).toBeInTheDocument();
     expect(mockFieldCurveChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
+      seriesDefinitions: [{
+        name: "Astigmatism",
+        data: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
+      }],
     }));
   });
 

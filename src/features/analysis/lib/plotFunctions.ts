@@ -1,7 +1,7 @@
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
@@ -13,7 +13,7 @@ export type AnalysisPlotLoadResult =
   | { readonly kind: "opdFan"; readonly opdFanData: OpdFanData }
   | { readonly kind: "spotDiagram"; readonly spotDiagramData: SpotDiagramData }
   | { readonly kind: "fieldCurvature"; readonly fieldCurvatureData: FieldCurveData }
-  | { readonly kind: "astigmatismCurve"; readonly astigmatismCurveData: FieldCurveData }
+  | { readonly kind: "astigmatismCurve"; readonly astigmatismCurveData: AstigmatismCurveData }
   | { readonly kind: "geoPSF"; readonly geoPsfData: GeoPsfData }
   | { readonly kind: "wavefrontMap"; readonly wavefrontMapData: WavefrontMapData }
   | { readonly kind: "strehlVsWavelength"; readonly strehlVsWavelengthData: StrehlVsWavelengthData }

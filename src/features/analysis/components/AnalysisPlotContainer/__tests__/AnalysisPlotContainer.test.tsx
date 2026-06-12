@@ -7,7 +7,7 @@ import { createAnalysisDataSlice, type AnalysisDataState } from "@/features/anal
 import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
@@ -166,6 +166,14 @@ const fieldCurveData: FieldCurveData = {
   unitY: "deg",
 };
 
+const astigmatismCurveData: AstigmatismCurveData = {
+  wvlIdx: 1,
+  Astigmatism: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
+  fieldLabels: ["0", "10", "20"],
+  unitX: "mm",
+  unitY: "deg",
+};
+
 const opdFanData: OpdFanData = [
   {
     fieldIdx: 0,
@@ -254,7 +262,7 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
     getOpdFanData: jest.fn<Promise<OpdFanData>, [OpticalModel, number]>().mockResolvedValue(opdFanData),
     getSpotDiagramData: jest.fn<Promise<SpotDiagramData>, [OpticalModel, number]>().mockResolvedValue(spotDiagramData),
     getFieldCurvatureData: jest.fn<Promise<FieldCurveData>, [OpticalModel, number]>().mockResolvedValue(fieldCurveData),
-    getAstigmatismCurveData: jest.fn<Promise<FieldCurveData>, [OpticalModel, number]>().mockResolvedValue(fieldCurveData),
+    getAstigmatismCurveData: jest.fn<Promise<AstigmatismCurveData>, [OpticalModel, number]>().mockResolvedValue(astigmatismCurveData),
     getWavefrontData: jest.fn<Promise<WavefrontMapData>, [OpticalModel, number, number]>().mockResolvedValue(wavefrontMapData),
     getGeoPSFData: jest.fn<Promise<GeoPsfData>, [OpticalModel, number, number]>().mockResolvedValue(geoPsfData),
     getDiffractionPSFData: jest.fn<Promise<DiffractionPsfData>, [OpticalModel, number, number]>().mockResolvedValue(diffractionPsfData),
@@ -481,7 +489,7 @@ describe("AnalysisPlotContainer", () => {
     await waitFor(() => {
       expect(proxy.getAstigmatismCurveData).toHaveBeenCalledWith(testModel, 1);
     });
-    expect(store.getState().astigmatismCurveData).toEqual(fieldCurveData);
+    expect(store.getState().astigmatismCurveData).toEqual(astigmatismCurveData);
   });
 
   it("handleWavelengthChange: reloads fieldCurvature even though it is field independent", async () => {

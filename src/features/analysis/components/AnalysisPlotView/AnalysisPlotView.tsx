@@ -13,7 +13,7 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 export type PlotType = "rayFan"
@@ -42,7 +42,7 @@ interface AnalysisPlotViewProps {
   readonly opdFanData?: OpdFanData;
   readonly spotDiagramData?: SpotDiagramData;
   readonly fieldCurvatureData?: FieldCurveData;
-  readonly astigmatismCurveData?: FieldCurveData;
+  readonly astigmatismCurveData?: AstigmatismCurveData;
   readonly geoPsfData?: GeoPsfData;
   readonly diffractionPsfData?: DiffractionPsfData;
   readonly diffractionMtfData?: DiffractionMtfData;
@@ -203,6 +203,7 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
     (props, astigmatismCurveData) => (
       <FieldCurveChart
         fieldCurveData={astigmatismCurveData}
+        seriesDefinitions={[{ name: "Astigmatism", data: astigmatismCurveData.Astigmatism }]}
         autoHeight={props.autoHeight}
       />
     ),

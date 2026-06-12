@@ -20,7 +20,7 @@ interface PyodideWorkerAPI {
   getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint): Promise<OpdFanData>;
   getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>;
   getFieldCurvatureData(opticalModel: OpticalModel, wvlIndex: number): Promise<FieldCurveData>;
-  getAstigmatismCurveData(opticalModel: OpticalModel, wvlIndex: number): Promise<FieldCurveData>;
+  getAstigmatismCurveData(opticalModel: OpticalModel, wvlIndex: number): Promise<AstigmatismCurveData>;
   getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number): Promise<WavefrontMapData>;
   getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>;
   getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<GeoPsfData>;
@@ -85,7 +85,7 @@ interface PyodideWorkerAPI {
 - `RayFanData` — imported from `features/analysis/types/plotData` (type only).
 - `OpdFanData` — imported from `features/analysis/types/plotData` (type only).
 - `SpotDiagramData` — imported from `features/analysis/types/plotData` (type only).
-- `FieldCurveData` — imported from `features/analysis/types/plotData` (type only).
+- `FieldCurveData` and `AstigmatismCurveData` — imported from `features/analysis/types/plotData` (type only).
 - `ZernikeData`, `ZernikeOrdering` — imported from `features/lens-editor/types/zernikeData` (type only).
 - `getZernikeCoefficients` keeps `ordering` as a frontend API parameter; the worker converts it to an explicit `(n, m)` term list before calling Python.
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).

@@ -216,8 +216,7 @@ const mockProxy = {
   }),
   getAstigmatismCurveData: jest.fn().mockResolvedValue({
     wvlIdx: 0,
-    Sagittal: { x: [0], y: [0] },
-    Tangential: { x: [0], y: [0] },
+    Astigmatism: { x: [0], y: [0] },
     fieldLabels: ["0"],
     unitX: "mm",
     unitY: "deg",

@@ -213,8 +213,7 @@ describe("_getAstigmatismCurveData", () => {
   it("should build the model script, call json.dumps(get_astigmatism_curve_data(...)) and return parsed data", async () => {
     const mockData = {
       wvlIdx: 1,
-      Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
-      Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
+      Astigmatism: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
       fieldLabels: ["0", "10", "20"],
       unitX: "mm",
       unitY: "deg",

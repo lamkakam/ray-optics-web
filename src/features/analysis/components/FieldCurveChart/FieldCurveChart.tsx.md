@@ -6,5 +6,6 @@ Wraps the shared analysis ECharts component factory for field-curve data used by
 
 ## Props
 
-- `fieldCurveData`: `FieldCurveData` payload to render.
+- `fieldCurveData`: `FieldCurveData` or `AstigmatismCurveData` payload to render.
+- `seriesDefinitions`: optional explicit series definitions. Omit for default `Sagittal` and `Tangential` field-curvature series; pass one `Astigmatism` series for astigmatism curves.
 - `autoHeight`: optional responsive height behavior passed through to the shared chart factory.

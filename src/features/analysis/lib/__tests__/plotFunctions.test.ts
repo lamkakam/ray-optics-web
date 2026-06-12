@@ -1,6 +1,6 @@
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { DiffractionMtfData, FieldCurveData, OpdFanData, RayFanData, StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, FieldCurveData, OpdFanData, RayFanData, StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
@@ -35,6 +35,14 @@ const fieldCurveData: FieldCurveData = {
   wvlIdx: 2,
   Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
   Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
+  fieldLabels: ["0", "10", "20"],
+  unitX: "mm",
+  unitY: "deg",
+};
+
+const astigmatismCurveData: AstigmatismCurveData = {
+  wvlIdx: 2,
+  Astigmatism: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
   fieldLabels: ["0", "10", "20"],
   unitX: "mm",
   unitY: "deg",
@@ -112,7 +120,7 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
       },
     ]),
     getFieldCurvatureData: jest.fn().mockResolvedValue(fieldCurveData),
-    getAstigmatismCurveData: jest.fn().mockResolvedValue(fieldCurveData),
+    getAstigmatismCurveData: jest.fn().mockResolvedValue(astigmatismCurveData),
     getWavefrontData: jest.fn(),
     getGeoPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
@@ -356,7 +364,7 @@ describe("loadAnalysisPlot", () => {
     expect(proxy.getAstigmatismCurveData).toHaveBeenCalledWith(mockModel, 1);
     expect(result).toEqual({
       kind: "astigmatismCurve",
-      astigmatismCurveData: fieldCurveData,
+      astigmatismCurveData,
     });
   });
 
@@ -427,10 +435,10 @@ describe("commitAnalysisPlotResult", () => {
 
     commitAnalysisPlotResult({
       kind: "astigmatismCurve",
-      astigmatismCurveData: fieldCurveData,
+      astigmatismCurveData,
     }, store);
 
-    expect(store.getState().astigmatismCurveData).toEqual(fieldCurveData);
+    expect(store.getState().astigmatismCurveData).toEqual(astigmatismCurveData);
   });
 
   it("does not commit surfaceBySurface3rdOrder data into the analysis plot store", () => {

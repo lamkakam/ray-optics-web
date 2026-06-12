@@ -77,6 +77,14 @@ export interface FieldCurveData {
   unitY: string;
 }
 
+export interface AstigmatismCurveData {
+  wvlIdx: number;
+  Astigmatism: LineAxisData;
+  fieldLabels: string[];
+  unitX: string;
+  unitY: string;
+}
+
 export type RayFanAxisData = LineAxisData;
 
 export interface RayFanSeriesData {
