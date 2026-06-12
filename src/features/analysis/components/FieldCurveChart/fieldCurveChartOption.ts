@@ -11,6 +11,7 @@ const FIELD_CURVE_GRID_TOP = 36;
 const FIELD_CURVE_GRID_BOTTOM = 56;
 const FIELD_CURVE_GRID_LEFT = 72;
 const FIELD_CURVE_GRID_RIGHT = 28;
+const FIELD_CURVE_SPLIT_LINE_COLOR = "#d1d5db";
 
 function toLineData(axisData: LineAxisData): number[][] {
   const pointCount = Math.min(axisData.x.length, axisData.y.length);
@@ -63,6 +64,14 @@ export function buildFieldCurveOption(
         color: textColor,
         formatter: (value: number) => formatPlotValue(value),
       },
+      splitLine: {
+        show: true,
+        lineStyle: {
+          color: FIELD_CURVE_SPLIT_LINE_COLOR,
+          width: 1,
+          type: "solid",
+        },
+      },
     },
     yAxis: {
       type: "category",
@@ -75,6 +84,14 @@ export function buildFieldCurveOption(
       },
       axisLabel: {
         color: textColor,
+      },
+      splitLine: {
+        show: true,
+        lineStyle: {
+          color: FIELD_CURVE_SPLIT_LINE_COLOR,
+          width: 1,
+          type: "solid",
+        },
       },
     },
     series: [
