@@ -57,6 +57,13 @@ const mockFieldCurveChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boo
   />
 ));
 
+const mockAstigmatismChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="astigmatism-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 const mockOpdFanChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
   <div
     data-testid="opd-fan-chart"
@@ -104,6 +111,10 @@ jest.mock("@/features/analysis/components/SpotDiagramChart", () => ({
 
 jest.mock("@/features/analysis/components/FieldCurveChart", () => ({
   FieldCurveChart: (props: { readonly autoHeight?: boolean }) => mockFieldCurveChart(props),
+}));
+
+jest.mock("@/features/analysis/components/AstigmatismChart", () => ({
+  AstigmatismChart: (props: { readonly autoHeight?: boolean }) => mockAstigmatismChart(props),
 }));
 
 jest.mock("@/features/analysis/components/OpdFanChart", () => ({
@@ -462,14 +473,14 @@ describe("AnalysisPlotView", () => {
       />
     );
 
-    expect(screen.getByTestId("field-curve-chart")).toBeInTheDocument();
-    expect(mockFieldCurveChart).toHaveBeenCalledWith(expect.objectContaining({
+    expect(screen.getByTestId("astigmatism-chart")).toBeInTheDocument();
+    expect(mockAstigmatismChart).toHaveBeenCalledWith(expect.objectContaining({
       autoHeight: undefined,
-      seriesDefinitions: [{
-        name: "Astigmatism",
-        data: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
-      }],
+      astigmatismCurveData: expect.objectContaining({
+        Astigmatism: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
+      }),
     }));
+    expect(mockFieldCurveChart).not.toHaveBeenCalled();
   });
 
   it("renders an opd fan chart when data is provided", () => {

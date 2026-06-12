@@ -106,7 +106,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `spotDiagram` renders `SpotDiagramChart` only when `spotDiagramData` is present, passing wavelength labels from `wavelengthOptions` so each series is named by the actual wavelength rather than the wavelength index.
 - `fieldCurvature` renders `FieldCurveChart` only when `fieldCurvatureData` is present and shows the wavelength selector without a field selector.
-- `astigmatismCurve` renders `FieldCurveChart` with one `Astigmatism` series only when `astigmatismCurveData` is present and shows the wavelength selector without a field selector.
+- `astigmatismCurve` renders `AstigmatismChart` only when `astigmatismCurveData` is present and shows the wavelength selector without a field selector.
 - `strehlVsWavelength` renders `StrehlVsWavelengthChart` only when `strehlVsWavelengthData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
 - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
 - `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.

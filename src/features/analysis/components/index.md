@@ -11,6 +11,7 @@ Components for optical analysis plots and aberration data.
 
 ## Chart Directories
 
+- [AstigmatismChart/](./AstigmatismChart/index.md) — Astigmatism curve chart component, option builder, specs, and tests
 - [DiffractionMtfChart/](./DiffractionMtfChart/index.md) — Diffraction MTF chart component, option builder, specs, and tests
 - [DiffractionPsfChart/](./DiffractionPsfChart/index.md) — Diffraction PSF chart component, option builder, specs, and moved tests
 - [GeoPsfChart/](./GeoPsfChart/index.md) — Geometric PSF chart component, option builder, specs, and moved tests

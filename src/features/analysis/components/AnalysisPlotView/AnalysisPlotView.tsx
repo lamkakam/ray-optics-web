@@ -1,4 +1,5 @@
 import React from "react";
+import { AstigmatismChart } from "@/features/analysis/components/AstigmatismChart";
 import { DiffractionMtfChart } from "@/features/analysis/components/DiffractionMtfChart";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
 import { FieldCurveChart } from "@/features/analysis/components/FieldCurveChart";
@@ -201,9 +202,8 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
     (props) => props.astigmatismCurveData !== undefined,
     (props) => props.astigmatismCurveData,
     (props, astigmatismCurveData) => (
-      <FieldCurveChart
-        fieldCurveData={astigmatismCurveData}
-        seriesDefinitions={[{ name: "Astigmatism", data: astigmatismCurveData.Astigmatism }]}
+      <AstigmatismChart
+        astigmatismCurveData={astigmatismCurveData}
         autoHeight={props.autoHeight}
       />
     ),

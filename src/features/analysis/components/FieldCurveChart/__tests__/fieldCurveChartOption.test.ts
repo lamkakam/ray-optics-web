@@ -1,6 +1,6 @@
 import { buildFieldCurveOption } from "@/features/analysis/components/FieldCurveChart";
 import { globalTokens } from "@/shared/tokens/styleTokens";
-import type { AstigmatismCurveData, FieldCurveData } from "@/features/analysis/types/plotData";
+import type { FieldCurveData } from "@/features/analysis/types/plotData";
 
 jest.mock("echarts/core", () => ({
   use: jest.fn(),
@@ -25,14 +25,6 @@ describe("fieldCurveChartOption", () => {
     wvlIdx: 1,
     Sagittal: { x: [-0.1, 0, 0.1], y: [0, 1, 2] },
     Tangential: { x: [-0.2, 0, 0.2], y: [0, 1, 2] },
-    fieldLabels: ["0", "10", "20"],
-    unitX: "mm",
-    unitY: "deg",
-  };
-
-  const astigmatismCurveData: AstigmatismCurveData = {
-    wvlIdx: 1,
-    Astigmatism: { x: [0.1, 0, -0.1], y: [0, 1, 2] },
     fieldLabels: ["0", "10", "20"],
     unitX: "mm",
     unitY: "deg",
@@ -83,26 +75,6 @@ describe("fieldCurveChartOption", () => {
         type: "line",
         showSymbol: false,
         data: [[-0.2, 0], [0, 1], [0.2, 2]],
-      }),
-    ]);
-  });
-
-  it("builds one astigmatism line when explicit astigmatism series are provided", () => {
-    const option = buildFieldCurveOption(
-      astigmatismCurveData,
-      480,
-      320,
-      globalTokens.echarts.text.light,
-      [{ name: "Astigmatism", data: astigmatismCurveData.Astigmatism }],
-    );
-
-    expect(option.yAxis.data).toEqual(astigmatismCurveData.fieldLabels);
-    expect(option.series).toEqual([
-      expect.objectContaining({
-        name: "Astigmatism",
-        type: "line",
-        showSymbol: false,
-        data: [[0.1, 0], [0, 1], [-0.1, 2]],
       }),
     ]);
   });
