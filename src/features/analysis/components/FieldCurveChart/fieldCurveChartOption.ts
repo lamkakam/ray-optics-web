@@ -12,6 +12,7 @@ const FIELD_CURVE_GRID_BOTTOM = 56;
 const FIELD_CURVE_GRID_LEFT = 72;
 const FIELD_CURVE_GRID_RIGHT = 28;
 const FIELD_CURVE_SPLIT_LINE_COLOR = "#d1d5db";
+const FIELD_CURVE_MAX_VISIBLE_Y_TICKS = 5;
 
 function toLineData(axisData: LineAxisData): number[][] {
   const pointCount = Math.min(axisData.x.length, axisData.y.length);
@@ -24,12 +25,31 @@ function toLineData(axisData: LineAxisData): number[][] {
   return lineData;
 }
 
+function buildVisibleFieldCategoryPredicate(fieldLabelCount: number): (index: number) => boolean {
+  if (fieldLabelCount <= FIELD_CURVE_MAX_VISIBLE_Y_TICKS) {
+    return () => true;
+  }
+
+  const lastFieldLabelIndex = fieldLabelCount - 1;
+  const visibleFieldCategoryIndices = new Set<number>();
+
+  for (let tickIndex = 0; tickIndex < FIELD_CURVE_MAX_VISIBLE_Y_TICKS; tickIndex += 1) {
+    visibleFieldCategoryIndices.add(
+      Math.round((tickIndex * lastFieldLabelIndex) / (FIELD_CURVE_MAX_VISIBLE_Y_TICKS - 1)),
+    );
+  }
+
+  return (index: number) => visibleFieldCategoryIndices.has(index);
+}
+
 export function buildFieldCurveOption(
   fieldCurveData: FieldCurveData,
   chartWidth: number,
   chartHeight: number,
   textColor: string,
 ) {
+  const isVisibleFieldCategory = buildVisibleFieldCategoryPredicate(fieldCurveData.fieldLabels.length);
+
   return {
     animation: false,
     tooltip: {
@@ -84,9 +104,14 @@ export function buildFieldCurveOption(
       },
       axisLabel: {
         color: textColor,
+        interval: isVisibleFieldCategory,
+      },
+      axisTick: {
+        interval: isVisibleFieldCategory,
       },
       splitLine: {
         show: true,
+        interval: isVisibleFieldCategory,
         lineStyle: {
           color: FIELD_CURVE_SPLIT_LINE_COLOR,
           width: 1,

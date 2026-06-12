@@ -54,6 +54,7 @@ describe("fieldCurveChartOption", () => {
     expect(option.yAxis.data).toEqual(fieldCurveData.fieldLabels);
     expect(option.yAxis.splitLine).toEqual({
       show: true,
+      interval: option.yAxis.axisLabel.interval,
       lineStyle: {
         color: "#d1d5db",
         width: 1,
@@ -76,5 +77,66 @@ describe("fieldCurveChartOption", () => {
         data: [[-0.2, 0], [0, 1], [0.2, 2]],
       }),
     ]);
+  });
+
+  it("limits y-axis labels, ticks, and split lines to five evenly distributed categories", () => {
+    const denseFieldCurveData: FieldCurveData = {
+      ...fieldCurveData,
+      Sagittal: { x: [-0.1, 0, 0.1], y: [0, 4, 8] },
+      Tangential: { x: [-0.2, 0, 0.2], y: [0, 4, 8] },
+      fieldLabels: ["0", "5", "10", "15", "20", "25", "30", "35", "40"],
+    };
+
+    const option = buildFieldCurveOption(
+      denseFieldCurveData,
+      480,
+      320,
+      globalTokens.echarts.text.light,
+    );
+
+    const isVisibleCategory = option.yAxis.axisLabel.interval;
+    const visibleIndices = denseFieldCurveData.fieldLabels
+      .map((_, index) => index)
+      .filter((index) => isVisibleCategory(index));
+
+    expect(visibleIndices).toEqual([0, 2, 4, 6, 8]);
+    expect(option.yAxis.axisTick).toEqual({ interval: isVisibleCategory });
+    expect(option.yAxis.splitLine).toEqual({
+      show: true,
+      interval: isVisibleCategory,
+      lineStyle: {
+        color: "#d1d5db",
+        width: 1,
+        type: "solid",
+      },
+    });
+  });
+
+  it("shows every y-axis category when fewer than five field labels exist", () => {
+    const sparseFieldCurveData: FieldCurveData = {
+      ...fieldCurveData,
+      fieldLabels: ["0", "10", "20", "30"],
+    };
+
+    const option = buildFieldCurveOption(
+      sparseFieldCurveData,
+      480,
+      320,
+      globalTokens.echarts.text.light,
+    );
+
+    const isVisibleCategory = option.yAxis.axisLabel.interval;
+
+    expect(sparseFieldCurveData.fieldLabels.every((_, index) => isVisibleCategory(index))).toBe(true);
+    expect(option.yAxis.axisTick).toEqual({ interval: isVisibleCategory });
+    expect(option.yAxis.splitLine).toEqual({
+      show: true,
+      interval: isVisibleCategory,
+      lineStyle: {
+        color: "#d1d5db",
+        width: 1,
+        type: "solid",
+      },
+    });
   });
 });
