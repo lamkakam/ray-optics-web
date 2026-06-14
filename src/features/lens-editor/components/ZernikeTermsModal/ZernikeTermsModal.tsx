@@ -8,6 +8,7 @@ import { Select } from "@/shared/components/primitives/Select";
 import type { SelectOption } from "@/shared/components/primitives/Select";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { LoadingMask } from "@/shared/components/primitives/LoadingMask";
+import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import {
   NUM_NOLL_TERMS,
   NUM_FRINGE_TERMS,
@@ -48,8 +49,10 @@ function ZernikeTermsModalContent({
   onFetchData,
   onClose,
 }: Omit<ZernikeTermsModalProps, "isOpen">) {
+  const specsStore = useSpecsConfiguratorStore();
+  const committedReferenceWvlIndex = specsStore.getState().committedSpecs.wavelengths.referenceIndex;
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
-  const [selectedWvlIndex, setSelectedWvlIndex] = useState(0);
+  const [selectedWvlIndex, setSelectedWvlIndex] = useState(committedReferenceWvlIndex);
   const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("fringe");
   const [data, setData] = useState<ZernikeData | undefined>();
   const [loading, setLoading] = useState(true);
@@ -74,13 +77,13 @@ function ZernikeTermsModalContent({
     requestCounter.current += 1;
     const requestId = requestCounter.current;
 
-    onFetchData(0, 0, "fringe").then((result) => {
+    onFetchData(0, committedReferenceWvlIndex, "fringe").then((result) => {
       if (requestCounter.current === requestId) {
         setData(result);
         setLoading(false);
       }
     });
-  }, [onFetchData]);
+  }, [committedReferenceWvlIndex, onFetchData]);
 
   const handleFieldChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
