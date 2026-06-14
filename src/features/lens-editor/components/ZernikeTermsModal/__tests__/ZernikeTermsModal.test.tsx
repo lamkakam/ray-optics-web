@@ -1,10 +1,17 @@
 import React from "react";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createStore, type StoreApi } from "zustand";
 import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
+import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
+import {
+  createSpecsConfiguratorSlice,
+  type SpecsConfiguratorState,
+} from "@/features/lens-editor/stores/specsConfiguratorStore";
 import type { ZernikeData } from "@/features/lens-editor/types/zernikeData";
 import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/lib/zernikeData";
 import type { SelectOption } from "@/shared/components/primitives/Select";
+import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
@@ -40,6 +47,30 @@ const wavelengthOptions: SelectOption[] = [
   { value: 2, label: "486.1 nm" },
 ];
 
+const committedSpecs: OpticalSpecs = {
+  pupil: { space: "object", type: "epd", value: 10 },
+  field: { space: "object", type: "angle", maxField: 20, fields: [0, 0.7, 1], isRelative: true },
+  wavelengths: { weights: [[656.3, 1], [587.0, 2], [486.1, 1]], referenceIndex: 1 },
+};
+
+const createSpecsStore = (specs: OpticalSpecs = committedSpecs): StoreApi<SpecsConfiguratorState> => {
+  const store = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
+  store.getState().setCommittedSpecs(specs);
+  return store;
+};
+
+const renderWithSpecsStore = (
+  ui: React.ReactElement,
+  store: StoreApi<SpecsConfiguratorState> = createSpecsStore(),
+) => {
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
+    <SpecsConfiguratorStoreContext.Provider value={store}>
+      {children}
+    </SpecsConfiguratorStoreContext.Provider>
+  );
+  return render(ui, { wrapper: Wrapper });
+};
+
 const createMockFetchData = (data: ZernikeData = mockZernikeData) => {
   return jest.fn().mockResolvedValue(data);
 };
@@ -58,41 +89,48 @@ describe("ZernikeTermsModal", () => {
   });
 
   it("does not render when isOpen is false", () => {
-    render(<ZernikeTermsModal {...defaultProps} isOpen={false} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} isOpen={false} />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("renders a dialog when isOpen is true", async () => {
-    render(<ZernikeTermsModal {...defaultProps} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     await act(async () => {});
   });
 
   it("renders the title 'Zernike Terms'", async () => {
-    render(<ZernikeTermsModal {...defaultProps} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} />);
     expect(screen.getByText("Zernike Terms")).toBeInTheDocument();
     await act(async () => {});
   });
 
   it("renders Field and Wavelength dropdowns with labels", async () => {
-    render(<ZernikeTermsModal {...defaultProps} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} />);
     expect(screen.getByLabelText("Field")).toBeInTheDocument();
     expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
     await act(async () => {});
   });
 
-  it("calls onFetchData(0, 0, 'fringe') on open", async () => {
+  it("calls onFetchData with the committed reference wavelength on open", async () => {
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
+      expect(onFetchData).toHaveBeenCalledWith(0, 1, "fringe");
     });
     await act(async () => {}); // flush pending .then() state updates
   });
 
+  it("initially displays the committed reference wavelength option", async () => {
+    const onFetchData = createMockFetchData();
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    expect(screen.getByLabelText("Wavelength")).toHaveDisplayValue("587.0 nm");
+    await act(async () => {});
+  });
+
   it("renders table column headers (Fringe ordering by default)", async () => {
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     expect(screen.getByRole("columnheader", { name: "Fringe j" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Notation" })).toBeInTheDocument();
@@ -103,7 +141,7 @@ describe("ZernikeTermsModal", () => {
 
   it("renders NUM_FRINGE_TERMS data rows in the table (fringe by default)", async () => {
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     const table = screen.getByRole("table");
     const rows = within(table).getAllByRole("row");
@@ -113,7 +151,7 @@ describe("ZernikeTermsModal", () => {
 
   it("shows P-V WFE, RMS WFE, and Strehl ratio in summary", async () => {
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     expect(screen.getByText(/P-V WFE/)).toBeInTheDocument();
     expect(screen.getByText(/RMS WFE/)).toBeInTheDocument();
@@ -125,20 +163,20 @@ describe("ZernikeTermsModal", () => {
 
   it("dropdown changes call onFetchData with new indices and current ordering", async () => {
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     const fieldSelect = screen.getByLabelText("Field");
     await userEvent.selectOptions(fieldSelect, "2");
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(2, 0, "fringe");
+      expect(onFetchData).toHaveBeenCalledWith(2, 1, "fringe");
     });
     await act(async () => {});
   });
 
   it("wavelength dropdown change calls onFetchData with new wavelength index and current ordering", async () => {
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     const wvlSelect = screen.getByLabelText("Wavelength");
@@ -152,7 +190,7 @@ describe("ZernikeTermsModal", () => {
   it("shows loading indicator while fetching", async () => {
     // Create a promise that never resolves during test
     const onFetchData = jest.fn().mockReturnValue(new Promise(() => {}));
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => {
       expect(screen.getByText("Loading…")).toBeInTheDocument();
     });
@@ -168,7 +206,7 @@ describe("ZernikeTermsModal", () => {
       .mockReturnValueOnce(firstFetch)
       .mockReturnValue(new Promise(() => {})); // never resolves
 
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
 
     // Resolve the first fetch so data is populated
     await act(async () => {
@@ -187,7 +225,7 @@ describe("ZernikeTermsModal", () => {
 
   it("loading mask is absent when not loading with data", async () => {
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     expect(screen.queryByTestId("loading-mask")).not.toBeInTheDocument();
   });
@@ -195,24 +233,24 @@ describe("ZernikeTermsModal", () => {
   it("Ok button calls onClose", async () => {
     const onClose = jest.fn();
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} onClose={onClose} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} onClose={onClose} />);
     await waitFor(() => expect(onFetchData).toHaveBeenCalled());
     await act(async () => {});
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("re-open resets indices to 0 and fetches again", async () => {
+  it("re-open resets indices to field 0 and the committed reference wavelength", async () => {
     const onFetchData = createMockFetchData();
-    const { rerender } = render(
-      <ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={false} />
+    const { rerender } = renderWithSpecsStore(
+      <ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={false} />,
     );
     expect(onFetchData).not.toHaveBeenCalled();
 
     // Open the modal
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />);
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
+      expect(onFetchData).toHaveBeenCalledWith(0, 1, "fringe");
     });
 
     // Close and reopen
@@ -220,26 +258,56 @@ describe("ZernikeTermsModal", () => {
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={false} />);
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />);
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
+      expect(onFetchData).toHaveBeenCalledWith(0, 1, "fringe");
     });
     await act(async () => {});
   });
 
+  it("re-open re-reads the latest committed reference wavelength", async () => {
+    const onFetchData = createMockFetchData();
+    const specsStore = createSpecsStore();
+    const { rerender } = renderWithSpecsStore(
+      <ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />,
+      specsStore,
+    );
+    await waitFor(() => {
+      expect(onFetchData).toHaveBeenCalledWith(0, 1, "fringe");
+    });
+
+    const nextSpecs: OpticalSpecs = {
+      ...committedSpecs,
+      wavelengths: { ...committedSpecs.wavelengths, referenceIndex: 2 },
+    };
+    act(() => {
+      specsStore.getState().setCommittedSpecs(nextSpecs);
+    });
+
+    onFetchData.mockClear();
+    rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={false} />);
+    rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />);
+
+    await waitFor(() => {
+      expect(onFetchData).toHaveBeenCalledWith(0, 2, "fringe");
+    });
+    expect(screen.getByLabelText("Wavelength")).toHaveDisplayValue("486.1 nm");
+    await act(async () => {});
+  });
+
   it("renders Ordering dropdown with label", async () => {
-    render(<ZernikeTermsModal {...defaultProps} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} />);
     expect(screen.getByLabelText("Ordering")).toBeInTheDocument();
     await act(async () => {});
   });
 
   it("selecting Noll ordering calls onFetchData with noll", async () => {
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe"));
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 1, "fringe"));
 
     const orderingSelect = screen.getByLabelText("Ordering");
     await userEvent.selectOptions(orderingSelect, "noll");
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll");
+      expect(onFetchData).toHaveBeenCalledWith(0, 1, "noll");
     });
     await act(async () => {});
   });
@@ -255,7 +323,7 @@ describe("ZernikeTermsModal", () => {
     const onFetchData = jest.fn()
       .mockResolvedValueOnce(fringeData)
       .mockResolvedValue(mockZernikeData);
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     const orderingSelect = screen.getByLabelText("Ordering");
@@ -277,12 +345,12 @@ describe("ZernikeTermsModal", () => {
     const onFetchData = jest.fn()
       .mockResolvedValueOnce(fringeData)
       .mockResolvedValue(mockZernikeData);
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     const orderingSelect = screen.getByLabelText("Ordering");
     await userEvent.selectOptions(orderingSelect, "noll");
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll"));
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 1, "noll"));
 
     const table = screen.getByRole("table");
     const rows = within(table).getAllByRole("row");
@@ -304,7 +372,7 @@ describe("ZernikeTermsModal", () => {
       .mockResolvedValueOnce(mockZernikeData)   // switch to Noll
       .mockReturnValue(new Promise(() => {}));   // switch back to Fringe — never resolves
 
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     const orderingSelect = screen.getByLabelText("Ordering");
@@ -330,12 +398,12 @@ describe("ZernikeTermsModal", () => {
       .mockResolvedValueOnce(fringeData)
       .mockResolvedValue(mockZernikeData);
 
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     const orderingSelect = screen.getByLabelText("Ordering");
     await userEvent.selectOptions(orderingSelect, "noll");
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll"));
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 1, "noll"));
 
     // Noll j=5 → n=2, m=-2 → \(Z_{2}^{-2}\)
     // Fringe j=5 → n=2, m=2 → \(Z_{2}^{2}\)
@@ -346,7 +414,7 @@ describe("ZernikeTermsModal", () => {
 
   it("table scroll container uses viewport-relative height (not fixed 60vh)", async () => {
     const onFetchData = createMockFetchData();
-    render(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     const scrollContainer = screen.getByTestId("zernike-table-scroll");
     expect(scrollContainer.className).not.toContain("60vh");
@@ -354,29 +422,29 @@ describe("ZernikeTermsModal", () => {
   });
 
   it("does not wrap its content in its own MathJaxContext", async () => {
-    render(<ZernikeTermsModal {...defaultProps} />);
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} />);
     await act(async () => {});
     expect(screen.queryByTestId("mathjax-context")).not.toBeInTheDocument();
   });
 
   it("re-open resets ordering to fringe", async () => {
     const onFetchData = createMockFetchData();
-    const { rerender } = render(
-      <ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />
+    const { rerender } = renderWithSpecsStore(
+      <ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />,
     );
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     // Switch to Noll
     const orderingSelect = screen.getByLabelText("Ordering");
     await userEvent.selectOptions(orderingSelect, "noll");
-    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 0, "noll"));
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 1, "noll"));
 
     // Close and reopen
     onFetchData.mockClear();
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={false} />);
     rerender(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} isOpen={true} />);
     await waitFor(() => {
-      expect(onFetchData).toHaveBeenCalledWith(0, 0, "fringe");
+      expect(onFetchData).toHaveBeenCalledWith(0, 1, "fringe");
     });
     await act(async () => {});
   });

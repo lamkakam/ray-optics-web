@@ -31,7 +31,7 @@ interface ZernikeTermsModalProps {
 | State | Type | Description |
 |-------|------|-------------|
 | `selectedFieldIndex` | `number` | Currently selected field index (reset to 0 on each open) |
-| `selectedWvlIndex` | `number` | Currently selected wavelength index (reset to 0 on each open) |
+| `selectedWvlIndex` | `number` | Currently selected wavelength index (initialized from `committedSpecs.wavelengths.referenceIndex` on each open) |
 | `selectedOrdering` | `ZernikeOrdering` | "noll" or "fringe" (reset to "fringe" on each open) |
 | `data` | `ZernikeData \| undefined` | Fetched Zernike data |
 | `loading` | `boolean` | Whether a fetch is in progress |
@@ -39,9 +39,11 @@ interface ZernikeTermsModalProps {
 
 ## Key Behaviors
 
-- Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh inner editor with default selection state (`0`, `0`, `"fringe"`).
-- On mount, fetches data once for `(field=0, wavelength=0, ordering="fringe")`.
+- Reads `SpecsConfiguratorStore` via `useSpecsConfiguratorStore()` inside the mounted modal content and uses `store.getState().committedSpecs.wavelengths.referenceIndex` as the initial wavelength index. This is intentionally imperative/non-reactive: the modal is initialized from the last committed optical system when it opens.
+- Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh inner editor with default selection state (`0`, latest committed reference wavelength index, `"fringe"`).
+- On mount, fetches data once for `(field=0, wavelength=committed reference index, ordering="fringe")`.
 - On any dropdown change (field, wavelength, ordering): fetches data with the new selection.
+- After opening, the Wavelength dropdown is user-controlled; later committed-spec changes do not reset the selection until the modal is closed and reopened.
 - Race condition guard: uses a request counter ref to discard stale results from prior fetches.
 - Renders Zernike terms in a scrollable table; row count and index scheme depend on the frontend ordering selection:
   - Noll: 56 rows, first column "Noll j", uses `nollToNm(j)`
