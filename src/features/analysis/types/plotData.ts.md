@@ -16,6 +16,8 @@ Defines analysis plot payload types returned by the Pyodide worker and consumed 
 - `SpotDiagramData`: all spot-diagram series for a selected field.
 - `FieldCurveData`: one wavelength-specific field curvature payload with sagittal/tangential focus-shift curves and category field labels.
 - `AstigmatismCurveData`: one wavelength-specific astigmatism payload with one `Astigmatism` focal-separation curve and category field labels.
+- `LongitudinalSphericalAberrationSeriesData`: one wavelength-group longitudinal spherical aberration payload with an `LSA` curve.
+- `LongitudinalSphericalAberrationData`: all longitudinal spherical aberration series for all configured wavelengths.
 - `RayFanAxisData`: alias of `LineAxisData` for one transverse ray-fan axis.
 - `RayFanSeriesData`: one wavelength-group ray-fan payload with `Tangential` and `Sagittal` curves.
 - `RayFanData`: all ray-fan series for a selected field.

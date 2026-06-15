@@ -72,6 +72,7 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
       unitX: "mm",
       unitY: "deg",
     }),
+    getLSAData: jest.fn().mockResolvedValue([]),
     getWavefrontData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
       wvlIdx: 0,

@@ -64,6 +64,13 @@ const mockAstigmatismChart = jest.fn(({ autoHeight }: { readonly autoHeight?: bo
   />
 ));
 
+const mockLongitudinalSphericalAberrationChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
+  <div
+    data-testid="longitudinal-spherical-aberration-chart"
+    data-auto-height={autoHeight ? "true" : "false"}
+  />
+));
+
 const mockOpdFanChart = jest.fn(({ autoHeight }: { readonly autoHeight?: boolean }) => (
   <div
     data-testid="opd-fan-chart"
@@ -115,6 +122,10 @@ jest.mock("@/features/analysis/components/FieldCurveChart", () => ({
 
 jest.mock("@/features/analysis/components/AstigmatismChart", () => ({
   AstigmatismChart: (props: { readonly autoHeight?: boolean }) => mockAstigmatismChart(props),
+}));
+
+jest.mock("@/features/analysis/components/LongitudinalSphericalAberrationChart", () => ({
+  LongitudinalSphericalAberrationChart: (props: { readonly autoHeight?: boolean }) => mockLongitudinalSphericalAberrationChart(props),
 }));
 
 jest.mock("@/features/analysis/components/OpdFanChart", () => ({
@@ -189,6 +200,7 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByText("Spot Diagram")).toBeInTheDocument();
     expect(screen.getByText("Field Curvature")).toBeInTheDocument();
     expect(screen.getByText("Astigmatism Curve")).toBeInTheDocument();
+    expect(screen.getByText("Longitudinal Spherical Aberration")).toBeInTheDocument();
     expect(screen.getByText("Surface by Surface 3rd Order Aberr.")).toBeInTheDocument();
     expect(screen.getByText("Strehl vs Wavelength")).toBeInTheDocument();
     expect(screen.getByText("Wavefront Map")).toBeInTheDocument();
@@ -201,6 +213,7 @@ describe("AnalysisPlotView", () => {
       "Spot Diagram",
       "Field Curvature",
       "Astigmatism Curve",
+      "Longitudinal Spherical Aberration",
       "Surface by Surface 3rd Order Aberr.",
       "Strehl vs Wavelength",
       "Wavefront Map",
@@ -224,6 +237,19 @@ describe("AnalysisPlotView", () => {
       />
     );
     expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
+  });
+
+  it("field and wavelength selectors are absent when selectedPlotType is longitudinalSphericalAberration", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="longitudinalSphericalAberration"
+      />
+    );
+
+    expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Wavelength")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Plot type")).toBeInTheDocument();
   });
 
   it("calls onFieldChange when field is changed", async () => {
@@ -481,6 +507,29 @@ describe("AnalysisPlotView", () => {
       }),
     }));
     expect(mockFieldCurveChart).not.toHaveBeenCalled();
+  });
+
+  it("renders a longitudinal spherical aberration chart when data is provided", () => {
+    render(
+      <AnalysisPlotView
+        {...defaultProps}
+        selectedPlotType="longitudinalSphericalAberration"
+        longitudinalSphericalAberrationData={[
+          {
+            wvlIdx: 0,
+            LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
+            unitX: "mm",
+            unitY: "",
+          },
+        ]}
+      />
+    );
+
+    expect(screen.getByTestId("longitudinal-spherical-aberration-chart")).toBeInTheDocument();
+    expect(mockLongitudinalSphericalAberrationChart).toHaveBeenCalledWith(expect.objectContaining({
+      autoHeight: undefined,
+      wavelengthLabels: ["486.1nm", "587.6nm", "656.3nm"],
+    }));
   });
 
   it("renders an opd fan chart when data is provided", () => {

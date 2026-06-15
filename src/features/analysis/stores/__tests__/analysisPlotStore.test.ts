@@ -71,6 +71,11 @@ describe("analysisPlotStore", () => {
       expect(store.getState().astigmatismCurveData).toBeUndefined();
     });
 
+    it("has longitudinalSphericalAberrationData as undefined", () => {
+      const store = makeStore();
+      expect(store.getState().longitudinalSphericalAberrationData).toBeUndefined();
+    });
+
     it("has opdFanData as undefined", () => {
       const store = makeStore();
       expect(store.getState().opdFanData).toBeUndefined();
@@ -811,6 +816,7 @@ describe("analysisPlotStore", () => {
         "spotDiagram",
         "fieldCurvature",
         "astigmatismCurve",
+        "longitudinalSphericalAberration",
         "surfaceBySurface3rdOrder",
         "strehlVsWavelength",
         "wavefrontMap",
@@ -822,6 +828,45 @@ describe("analysisPlotStore", () => {
         store.getState().setSelectedPlotType(t);
         expect(store.getState().selectedPlotType).toBe(t);
       }
+    });
+  });
+
+  describe("setLongitudinalSphericalAberrationData", () => {
+    it("sets longitudinalSphericalAberrationData and clears other chart payloads", () => {
+      const store = makeStore();
+      store.getState().setRayFanData([
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: { x: [0], y: [0] },
+          Tangential: { x: [0], y: [0] },
+          unitX: "",
+          unitY: "mm",
+        },
+      ]);
+
+      store.getState().setLongitudinalSphericalAberrationData([
+        {
+          wvlIdx: 1,
+          LSA: { x: [0, -0.02], y: [0, 1] },
+          unitX: "mm",
+          unitY: "",
+        },
+      ]);
+
+      expect(store.getState().longitudinalSphericalAberrationData).toEqual([
+        expect.objectContaining({ wvlIdx: 1 }),
+      ]);
+      expect(store.getState().rayFanData).toBeUndefined();
+      expect(store.getState().opdFanData).toBeUndefined();
+      expect(store.getState().spotDiagramData).toBeUndefined();
+      expect(store.getState().fieldCurvatureData).toBeUndefined();
+      expect(store.getState().astigmatismCurveData).toBeUndefined();
+      expect(store.getState().geoPsfData).toBeUndefined();
+      expect(store.getState().diffractionPsfData).toBeUndefined();
+      expect(store.getState().diffractionMtfData).toBeUndefined();
+      expect(store.getState().wavefrontMapData).toBeUndefined();
+      expect(store.getState().strehlVsWavelengthData).toBeUndefined();
     });
   });
 });

@@ -16,6 +16,7 @@ type AnalysisPlotLoadResult =
   | { kind: "spotDiagram"; spotDiagramData: SpotDiagramData }
   | { kind: "fieldCurvature"; fieldCurvatureData: FieldCurveData }
   | { kind: "astigmatismCurve"; astigmatismCurveData: AstigmatismCurveData }
+  | { kind: "longitudinalSphericalAberration"; longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData }
   | { kind: "geoPSF"; geoPsfData: GeoPsfData }
   | { kind: "wavefrontMap"; wavefrontMapData: WavefrontMapData }
   | { kind: "strehlVsWavelength"; strehlVsWavelengthData: StrehlVsWavelengthData }
@@ -53,6 +54,7 @@ Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx
 - Calls `proxy.getSpotDiagramData(model, fi)` for `spotDiagram`.
 - Calls `proxy.getFieldCurvatureData(model, wavelengthIndex)` for `fieldCurvature`.
 - Calls `proxy.getAstigmatismCurveData(model, wavelengthIndex)` for `astigmatismCurve`.
+- Calls `proxy.getLSAData(model)` for `longitudinalSphericalAberration`; the worker returns all wavelength series, so no field or wavelength selector index is used.
 - Calls `proxy.getWavefrontData(...)` with `opdAimPoint` for `wavefrontMap`.
 - Calls `proxy.getStrehlVsWavelengthData(...)` with `opdAimPoint` for `strehlVsWavelength`.
 - Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
@@ -73,7 +75,7 @@ Commits a loaded analysis plot payload to the matching `AnalysisPlotState` sette
 
 - No-ops when `plotResult` is `undefined`.
 - No-ops for `"surfaceBySurface3rdOrder"` because Seidel surface-by-surface data is committed through `AnalysisDataState`.
-- Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"fieldCurvature"`, `"astigmatismCurve"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"diffractionPSF"`, and `"diffractionMTF"`.
+- Calls the matching plot-store setter for `"rayFan"`, `"opdFan"`, `"spotDiagram"`, `"fieldCurvature"`, `"astigmatismCurve"`, `"longitudinalSphericalAberration"`, `"geoPSF"`, `"wavefrontMap"`, `"strehlVsWavelength"`, `"diffractionPSF"`, and `"diffractionMTF"`.
 - Uses an exhaustive `switch` so future `AnalysisPlotLoadResult` variants must be handled explicitly.
 
 ## Dependencies

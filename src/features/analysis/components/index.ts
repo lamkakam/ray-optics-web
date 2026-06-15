@@ -5,6 +5,7 @@ export * from "./DiffractionMtfChart";
 export * from "./DiffractionPsfChart";
 export * from "./FieldCurveChart";
 export * from "./GeoPsfChart";
+export * from "./LongitudinalSphericalAberrationChart";
 export * from "./OpdFanChart";
 export * from "./RayFanChart";
 export * from "./SpotDiagramChart";

@@ -1,6 +1,6 @@
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { AstigmatismCurveData, DiffractionMtfData, FieldCurveData, OpdFanData, RayFanData, StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, FieldCurveData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
@@ -47,6 +47,15 @@ const astigmatismCurveData: AstigmatismCurveData = {
   unitX: "mm",
   unitY: "deg",
 };
+
+const longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData = [
+  {
+    wvlIdx: 0,
+    LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
+    unitX: "mm",
+    unitY: "",
+  },
+];
 
 function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
   return {
@@ -121,6 +130,7 @@ function makeMockProxy(): jest.Mocked<PyodideWorkerAPI> {
     ]),
     getFieldCurvatureData: jest.fn().mockResolvedValue(fieldCurveData),
     getAstigmatismCurveData: jest.fn().mockResolvedValue(astigmatismCurveData),
+    getLSAData: jest.fn().mockResolvedValue(longitudinalSphericalAberrationData),
     getWavefrontData: jest.fn(),
     getGeoPSFData: jest.fn().mockResolvedValue({
       fieldIdx: 0,
@@ -365,6 +375,23 @@ describe("loadAnalysisPlot", () => {
     expect(result).toEqual({
       kind: "astigmatismCurve",
       astigmatismCurveData,
+    });
+  });
+
+  it("loads longitudinalSphericalAberration through getLSAData without field or wavelength indices", async () => {
+    const proxy = makeMockProxy();
+    const result = await loadAnalysisPlot({
+      plotType: "longitudinalSphericalAberration",
+      proxy,
+      model: mockModel,
+      fieldIndex: 99,
+      wavelengthIndex: 88,
+    });
+
+    expect(proxy.getLSAData).toHaveBeenCalledWith(mockModel);
+    expect(result).toEqual({
+      kind: "longitudinalSphericalAberration",
+      longitudinalSphericalAberrationData,
     });
   });
 

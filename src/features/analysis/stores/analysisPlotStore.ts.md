@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, field-curvature data, astigmatism-curve data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
+Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, field-curvature data, astigmatism-curve data, longitudinal-spherical-aberration data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
 
 ## Exports
 
@@ -18,6 +18,7 @@ Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OP
 | `spotDiagramData` | `SpotDiagramData \| undefined` | `undefined` |
 | `fieldCurvatureData` | `FieldCurveData \| undefined` | `undefined` |
 | `astigmatismCurveData` | `AstigmatismCurveData \| undefined` | `undefined` |
+| `longitudinalSphericalAberrationData` | `LongitudinalSphericalAberrationData \| undefined` | `undefined` |
 | `geoPsfData` | `GeoPsfData \| undefined` | `undefined` |
 | `diffractionPsfData` | `DiffractionPsfData \| undefined` | `undefined` |
 | `diffractionMtfData` | `DiffractionMtfData \| undefined` | `undefined` |
@@ -35,6 +36,7 @@ Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OP
 - `setSpotDiagramData(data)` — sets or clears the ECharts Spot Diagram payload and clears the other typed plot payloads.
 - `setFieldCurvatureData(data)` — sets or clears the field-curvature chart payload and clears the other typed plot payloads.
 - `setAstigmatismCurveData(data)` — sets or clears the astigmatism-curve chart payload and clears the other typed plot payloads.
+- `setLongitudinalSphericalAberrationData(data)` — sets or clears the longitudinal spherical aberration chart payload and clears the other typed plot payloads.
 - `setGeoPsfData(data)` — sets or clears the geometric PSF chart payload and clears the other typed plot payloads.
 - `setDiffractionPsfData(data)` — sets or clears the diffraction PSF chart payload and clears the other typed plot payloads.
 - `setDiffractionMtfData(data)` — sets or clears the diffraction MTF chart payload and clears the other typed plot payloads.
@@ -49,4 +51,4 @@ Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OP
 
 - `create`, `StateCreator` from `zustand`.
 - `PlotType` (type-only) from `@/features/analysis/components`.
-- `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `AstigmatismCurveData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.
+- `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `AstigmatismCurveData`, `LongitudinalSphericalAberrationData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.

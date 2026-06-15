@@ -42,6 +42,7 @@ class TestAnalysisConcreteModuleExports:
             ("strehl_vs_wavelength", "get_strehl_vs_wavelength_data"),
             ("field_curves", "get_field_curvature_data"),
             ("field_curves", "get_astigmatism_curve_data"),
+            ("longitudinal_spherical_aberration", "get_lsa_data"),
         ],
     )
     def test_plot_getter_module_export_matches_package_exports(self, module_name, getter_name):
@@ -136,6 +137,53 @@ class TestGetAnalysisPlotDataSignatures:
         sig = inspect.signature(getattr(analysis_package, getter_name))
         assert list(sig.parameters.keys()) == ["opm", "wvl_idx", "num_points"]
         assert sig.parameters["num_points"].default == 21
+
+    def test_get_lsa_data_accepts_opm_and_num_points(self):
+        from rayoptics_web_utils.analysis import get_lsa_data
+        import inspect
+
+        sig = inspect.signature(get_lsa_data)
+        assert list(sig.parameters.keys()) == ["opm", "num_points"]
+        assert sig.parameters["num_points"].default == 21
+
+
+class TestGetLongitudinalSphericalAberrationData:
+    """Tests for get_lsa_data()."""
+
+    def test_returns_per_wavelength_lsa_entries(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_lsa_data
+
+        result = get_lsa_data(cooke_triplet)
+
+        assert isinstance(result, list)
+        assert len(result) == len(cooke_triplet["optical_spec"]["wvls"].wavelengths)
+        entry = result[0]
+        assert entry["wvlIdx"] == 0
+        assert entry["unitX"] == "mm"
+        assert entry["unitY"] == ""
+        assert set(entry["LSA"].keys()) == {"x", "y"}
+        assert len(entry["LSA"]["x"]) == 21
+        assert len(entry["LSA"]["y"]) == 21
+        assert entry["LSA"]["y"][0] == 0.0
+        assert entry["LSA"]["y"][-1] == 1.0
+        assert entry["LSA"]["x"][0] == 0.0
+        assert all(isinstance(v, float) for v in entry["LSA"]["x"])
+        assert all(isinstance(v, float) for v in entry["LSA"]["y"])
+
+    def test_num_points_controls_rho_sampling(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_lsa_data
+
+        result = get_lsa_data(cooke_triplet, num_points=5)
+
+        assert result[0]["LSA"]["y"] == [0.0, 0.25, 0.5, 0.75, 1.0]
+        assert len(result[0]["LSA"]["x"]) == 5
+
+    def test_result_is_json_encodable(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_lsa_data
+
+        result = get_lsa_data(cooke_triplet, num_points=3)
+
+        json.dumps(result)
 
 
 class TestGetFirstOrderData:

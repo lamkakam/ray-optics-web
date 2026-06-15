@@ -24,6 +24,7 @@ from rayoptics_web_utils.analysis import get_diffraction_mtf_data
 | `get_strehl_vs_wavelength_data` | `rayoptics_web_utils.analysis.strehl_vs_wavelength` |
 | `get_field_curvature_data` | `rayoptics_web_utils.analysis.field_curves` |
 | `get_astigmatism_curve_data` | `rayoptics_web_utils.analysis.field_curves` |
+| `get_lsa_data` | `rayoptics_web_utils.analysis.longitudinal_spherical_aberration` |
 
 ## Key Conventions
 

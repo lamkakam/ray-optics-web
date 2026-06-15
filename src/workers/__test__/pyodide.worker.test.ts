@@ -17,6 +17,7 @@ import {
   _getDiffractionMTFData,
   _getFieldCurvatureData,
   _getAstigmatismCurveData,
+  _getLSAData,
 } from "../pyodide.worker";
 
 const allSphericalOpticalModel: OpticalModel = {
@@ -226,6 +227,34 @@ describe("_getAstigmatismCurveData", () => {
 
     expect(pythonScript).toContain("opm = OpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_astigmatism_curve_data(_build_opm(), 1))");
+    expect(result).toEqual(mockData);
+  });
+});
+
+describe("_getLSAData", () => {
+  it("should build the model script, call json.dumps(get_lsa_data(...)) and return parsed data", async () => {
+    const mockData = [
+      {
+        wvlIdx: 0,
+        LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
+        unitX: "mm",
+        unitY: "",
+      },
+      {
+        wvlIdx: 1,
+        LSA: { x: [0, -0.01, -0.05], y: [0, 0.5, 1] },
+        unitX: "mm",
+        unitY: "",
+      },
+    ];
+    let pythonScript = "";
+    const result = await _getLSAData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_lsa_data(_build_opm()))");
     expect(result).toEqual(mockData);
   });
 });
