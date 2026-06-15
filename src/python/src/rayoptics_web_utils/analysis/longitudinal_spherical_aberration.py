@@ -20,7 +20,7 @@ def _focus_shift_from_ray(ray) -> float:
 def get_lsa_data(opm: OpticalModel, num_points: int = 21) -> list[dict]:
     """Return on-axis longitudinal spherical aberration curves for all wavelengths."""
     osp = opm["optical_spec"]
-    rho_values = [float(value) for value in np.linspace(0.0, 1.0, num=num_points)]
+    rho_values = [float(value) for value in np.linspace(0.01, 1.0, num=num_points)]
     data: list[dict] = []
 
     for wvl_idx in range(len(osp["wvls"].wavelengths)):
@@ -28,10 +28,6 @@ def get_lsa_data(opm: OpticalModel, num_points: int = 21) -> list[dict]:
         focus_shifts: list[float] = []
 
         for rho in rho_values:
-            if rho == 0.0:
-                focus_shifts.append(0.0)
-                continue
-
             ray_pkg = trace_ray(opm, [0.0, rho], fld, wvl, foc=foc)[0]
             ray = ray_pkg[mc.ray]
             focus_shifts.append(_focus_shift_from_ray(ray))

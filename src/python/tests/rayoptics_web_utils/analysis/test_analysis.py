@@ -164,9 +164,9 @@ class TestGetLongitudinalSphericalAberrationData:
         assert set(entry["LSA"].keys()) == {"x", "y"}
         assert len(entry["LSA"]["x"]) == 21
         assert len(entry["LSA"]["y"]) == 21
-        assert entry["LSA"]["y"][0] == 0.0
+        assert entry["LSA"]["y"][0] == 0.01
         assert entry["LSA"]["y"][-1] == 1.0
-        assert entry["LSA"]["x"][0] == 0.0
+        assert all(v > 0.0 for v in entry["LSA"]["y"])
         assert all(isinstance(v, float) for v in entry["LSA"]["x"])
         assert all(isinstance(v, float) for v in entry["LSA"]["y"])
 
@@ -175,7 +175,7 @@ class TestGetLongitudinalSphericalAberrationData:
 
         result = get_lsa_data(cooke_triplet, num_points=5)
 
-        assert result[0]["LSA"]["y"] == [0.0, 0.25, 0.5, 0.75, 1.0]
+        assert result[0]["LSA"]["y"] == [0.01, 0.2575, 0.505, 0.7525, 1.0]
         assert len(result[0]["LSA"]["x"]) == 5
 
     def test_result_is_json_encodable(self, cooke_triplet):
