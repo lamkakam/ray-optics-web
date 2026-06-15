@@ -85,6 +85,15 @@ export interface AstigmatismCurveData {
   unitY: string;
 }
 
+export interface LongitudinalSphericalAberrationSeriesData {
+  wvlIdx: number;
+  LSA: LineAxisData;
+  unitX: string;
+  unitY: string;
+}
+
+export type LongitudinalSphericalAberrationData = LongitudinalSphericalAberrationSeriesData[];
+
 export type RayFanAxisData = LineAxisData;
 
 export interface RayFanSeriesData {

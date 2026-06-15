@@ -239,6 +239,7 @@ const mockProxy = {
   }),
   getDiffractionPSFData: mockGetDiffractionPSFData,
   getDiffractionMTFData: mockGetDiffractionMTFData,
+  getLSAData: jest.fn().mockResolvedValue([]),
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
   getZernikeCoefficients: jest.fn<Promise<ZernikeData>, [OpticalModel, number, number, OpdAimPoint?, number?, ZernikeOrdering?]>().mockResolvedValue({
     coefficients: [],

@@ -39,6 +39,7 @@ export function AnalysisPlotContainer({
   const spotDiagramData = useStore(store, (s) => s.spotDiagramData);
   const fieldCurvatureData = useStore(store, (s) => s.fieldCurvatureData);
   const astigmatismCurveData = useStore(store, (s) => s.astigmatismCurveData);
+  const longitudinalSphericalAberrationData = useStore(store, (s) => s.longitudinalSphericalAberrationData);
   const geoPsfData = useStore(store, (s) => s.geoPsfData);
   const diffractionPsfData = useStore(store, (s) => s.diffractionPsfData);
   const diffractionMtfData = useStore(store, (s) => s.diffractionMtfData);
@@ -126,6 +127,7 @@ export function AnalysisPlotContainer({
       spotDiagramData={spotDiagramData}
       fieldCurvatureData={fieldCurvatureData}
       astigmatismCurveData={astigmatismCurveData}
+      longitudinalSphericalAberrationData={longitudinalSphericalAberrationData}
       geoPsfData={geoPsfData}
       diffractionPsfData={diffractionPsfData}
       diffractionMtfData={diffractionMtfData}

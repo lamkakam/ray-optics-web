@@ -4,6 +4,7 @@ import { DiffractionMtfChart } from "@/features/analysis/components/DiffractionM
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
 import { FieldCurveChart } from "@/features/analysis/components/FieldCurveChart";
 import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
+import { LongitudinalSphericalAberrationChart } from "@/features/analysis/components/LongitudinalSphericalAberrationChart";
 import { OpdFanChart } from "@/features/analysis/components/OpdFanChart";
 import { RayFanChart } from "@/features/analysis/components/RayFanChart";
 import { SpotDiagramChart } from "@/features/analysis/components/SpotDiagramChart";
@@ -14,7 +15,7 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
 export type PlotType = "rayFan"
@@ -22,6 +23,7 @@ export type PlotType = "rayFan"
   | "spotDiagram"
   | "fieldCurvature"
   | "astigmatismCurve"
+  | "longitudinalSphericalAberration"
   | "surfaceBySurface3rdOrder"
   | "strehlVsWavelength"
   | "wavefrontMap"
@@ -44,6 +46,7 @@ interface AnalysisPlotViewProps {
   readonly spotDiagramData?: SpotDiagramData;
   readonly fieldCurvatureData?: FieldCurveData;
   readonly astigmatismCurveData?: AstigmatismCurveData;
+  readonly longitudinalSphericalAberrationData?: LongitudinalSphericalAberrationData;
   readonly geoPsfData?: GeoPsfData;
   readonly diffractionPsfData?: DiffractionPsfData;
   readonly diffractionMtfData?: DiffractionMtfData;
@@ -87,6 +90,11 @@ export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
     label: "Astigmatism Curve",
     fieldDependent: false,
     wavelengthDependent: true,
+  },
+  longitudinalSphericalAberration: {
+    label: "Longitudinal Spherical Aberration",
+    fieldDependent: false,
+    wavelengthDependent: false,
   },
   surfaceBySurface3rdOrder: {
     label: "Surface by Surface 3rd Order Aberr.",
@@ -204,6 +212,17 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
     (props, astigmatismCurveData) => (
       <AstigmatismChart
         astigmatismCurveData={astigmatismCurveData}
+        autoHeight={props.autoHeight}
+      />
+    ),
+  ),
+  longitudinalSphericalAberration: createPlotRenderer(
+    (props) => props.longitudinalSphericalAberrationData !== undefined,
+    (props) => props.longitudinalSphericalAberrationData,
+    (props, longitudinalSphericalAberrationData) => (
+      <LongitudinalSphericalAberrationChart
+        longitudinalSphericalAberrationData={longitudinalSphericalAberrationData}
+        wavelengthLabels={props.wavelengthOptions.map((option) => option.label)}
         autoHeight={props.autoHeight}
       />
     ),

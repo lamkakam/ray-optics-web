@@ -24,6 +24,7 @@ export async function getOpdFanData(opticalModel: OpticalModel, fieldIndex: numb
 export async function getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
 export async function getFieldCurvatureData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData>
 export async function getAstigmatismCurveData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<AstigmatismCurveData>
+export async function getLSAData(opticalModel: OpticalModel): Promise<LongitudinalSphericalAberrationData>
 export async function getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number): Promise<WavefrontMapData>
 export async function getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>
 export async function getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<GeoPsfData>
@@ -64,6 +65,7 @@ export async function _getOpdFanData(runPython: (code: string) => Promise<unknow
 export async function _getSpotDiagramData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
 export async function _getFieldCurvatureData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData>
 export async function _getAstigmatismCurveData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, wavelengthIndex: number): Promise<AstigmatismCurveData>
+export async function _getLSAData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<LongitudinalSphericalAberrationData>
 export async function _getWavefrontData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number): Promise<WavefrontMapData>
 export async function _getStrehlVsWavelengthData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>
 export async function _getGeoPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<GeoPsfData>
@@ -100,7 +102,7 @@ export function _getOptimizationInterruptStateForTesting(): { activeRunId?: stri
 3. Emits `10%` with `"Loading Pyodide script"` and loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
 4. Emits `25%` with `"Starting Pyodide runtime"` and calls `loadPyodide({ indexURL })` to create the Pyodide instance.
 5. Emits `40%` with `"Loading Pyodide packages"` and loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.9.0-py3-none-any.whl`.
+6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.10.0-py3-none-any.whl`.
 7. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl, onProgress)`.
 8. Emits `100%` with `"Ready"`.
 
@@ -155,6 +157,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_getSpotDiagramData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_spot_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `SpotDiagramData`.
 - `_getFieldCurvatureData(runPython, model, wi)` — runs `buildScript(model, (opm) => \`json.dumps(get_field_curvature_data(${opm}, ${wi}))\`)` and parses the JSON into `FieldCurveData`.
 - `_getAstigmatismCurveData(runPython, model, wi)` — runs `buildScript(model, (opm) => \`json.dumps(get_astigmatism_curve_data(${opm}, ${wi}))\`)` and parses the JSON into `AstigmatismCurveData`.
+- `_getLSAData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_lsa_data(${opm}))\`)` and parses all wavelength series into `LongitudinalSphericalAberrationData`.
 - `_getStrehlVsWavelengthData(runPython, model, fi, opdAimPoint?, wavelengthSamples?, numRays?)` — runs `buildScript(model, (opm) => \`json.dumps(get_strehl_vs_wavelength_data(${opm}, ${fi}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}, opd_aim_point=...))\`)` and parses the JSON into `StrehlVsWavelengthData`.
 - `_getGeoPSFData(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`json.dumps(get_geo_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}))\`)` and parses the JSON into `GeoPsfData`.
 - `_getDiffractionPSFData(runPython, model, fi, wi, opdAimPoint?, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}, opd_aim_point=...))\`)` and parses the JSON into `DiffractionPsfData`.
@@ -173,7 +176,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **Stateless**: Each computation function builds `opm` locally from the received `OpticalModel` within a single `runPython` call. No global `opm` state persists between calls.
 - **Optimization progress bridging**: `_optimizeOpm(...)` is the only exception to the fully fire-and-return pattern; when a progress callback is supplied, it temporarily installs `_optimization_progress_callback` in Pyodide globals for that single optimization call and removes it in `finally`.
 - **Optimization stop signaling**: stoppable runs are identified by a per-run string id and a shared interrupt buffer. `_optimizeOpm(...)` installs the buffer only for the matching active run and clears it in `finally` for success, stopped, failed, and thrown-error paths. `requestOptimizationStop(...)` is idempotent and returns a no-op result for stale or late run ids.
-- **Plot return type**: `plotLensLayout` returns a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getFieldCurvatureData`, `getAstigmatismCurveData`, `getWavefrontData`, `getStrehlVsWavelengthData`, `getGeoPSFData`, `getDiffractionPSFData`, and `getDiffractionMTFData` return typed data for frontend rendering.
+- **Plot return type**: `plotLensLayout` returns a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getFieldCurvatureData`, `getAstigmatismCurveData`, `getLSAData`, `getWavefrontData`, `getStrehlVsWavelengthData`, `getGeoPSFData`, `getDiffractionPSFData`, and `getDiffractionMTFData` return typed data for frontend rendering.
 - **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, and `water` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
 
 ## Edge Cases / Error Handling

@@ -1,7 +1,7 @@
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
+import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
@@ -14,6 +14,7 @@ export type AnalysisPlotLoadResult =
   | { readonly kind: "spotDiagram"; readonly spotDiagramData: SpotDiagramData }
   | { readonly kind: "fieldCurvature"; readonly fieldCurvatureData: FieldCurveData }
   | { readonly kind: "astigmatismCurve"; readonly astigmatismCurveData: AstigmatismCurveData }
+  | { readonly kind: "longitudinalSphericalAberration"; readonly longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData }
   | { readonly kind: "geoPSF"; readonly geoPsfData: GeoPsfData }
   | { readonly kind: "wavefrontMap"; readonly wavefrontMapData: WavefrontMapData }
   | { readonly kind: "strehlVsWavelength"; readonly strehlVsWavelengthData: StrehlVsWavelengthData }
@@ -95,6 +96,13 @@ export async function loadAnalysisPlot({
     };
   }
 
+  if (plotType === "longitudinalSphericalAberration") {
+    return {
+      kind: "longitudinalSphericalAberration",
+      longitudinalSphericalAberrationData: await proxy.getLSAData(model),
+    };
+  }
+
   if (plotType === "geoPSF") {
     return {
       kind: "geoPSF",
@@ -140,6 +148,9 @@ export function commitAnalysisPlotResult(
       return;
     case "astigmatismCurve":
       analysisPlotStore.getState().setAstigmatismCurveData(plotResult.astigmatismCurveData);
+      return;
+    case "longitudinalSphericalAberration":
+      analysisPlotStore.getState().setLongitudinalSphericalAberrationData(plotResult.longitudinalSphericalAberrationData);
       return;
     case "geoPSF":
       analysisPlotStore.getState().setGeoPsfData(plotResult.geoPsfData);

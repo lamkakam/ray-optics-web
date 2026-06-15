@@ -1,4 +1,6 @@
 import { describe, it, expect, afterEach } from "@jest/globals";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { type OpticalModel } from "@/shared/lib/types/opticalModel";
 import {
   init,
@@ -17,7 +19,17 @@ import {
   _getDiffractionMTFData,
   _getFieldCurvatureData,
   _getAstigmatismCurveData,
+  _getLSAData,
 } from "../pyodide.worker";
+
+const readPyprojectVersion = (): string => {
+  const pyproject = readFileSync(join(process.cwd(), "src/python/pyproject.toml"), "utf8");
+  const projectVersionMatch = pyproject.match(/^\[project]\s*[\s\S]*?^version\s*=\s*"([^"]+)"\s*$/m);
+
+  expect(projectVersionMatch).not.toBeNull();
+
+  return projectVersionMatch?.[1] ?? "";
+};
 
 const allSphericalOpticalModel: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -226,6 +238,34 @@ describe("_getAstigmatismCurveData", () => {
 
     expect(pythonScript).toContain("opm = OpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_astigmatism_curve_data(_build_opm(), 1))");
+    expect(result).toEqual(mockData);
+  });
+});
+
+describe("_getLSAData", () => {
+  it("should build the model script, call json.dumps(get_lsa_data(...)) and return parsed data", async () => {
+    const mockData = [
+      {
+        wvlIdx: 0,
+        LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
+        unitX: "mm",
+        unitY: "",
+      },
+      {
+        wvlIdx: 1,
+        LSA: { x: [0, -0.01, -0.05], y: [0, 0.5, 1] },
+        unitX: "mm",
+        unitY: "",
+      },
+    ];
+    let pythonScript = "";
+    const result = await _getLSAData(async (code) => {
+      pythonScript = code;
+      return JSON.stringify(mockData);
+    }, allSphericalOpticalModel);
+
+    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("json.dumps(get_lsa_data(_build_opm()))");
     expect(result).toEqual(mockData);
   });
 });
@@ -471,6 +511,7 @@ describe("init", () => {
 
   it("constructs wheel URL with base path", async () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/ray-optics-web";
+    const pyprojectVersion = readPyprojectVersion();
     const scripts: string[] = [];
     const loadPackage = jest.fn().mockResolvedValue(undefined);
     const runPythonAsync = jest.fn().mockImplementation(async (code: string) => {
@@ -490,7 +531,7 @@ describe("init", () => {
     await init();
 
     expect(loadPackage).toHaveBeenCalled();
-    expect(scripts.join("\n")).toContain('micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-0.9.0-py3-none-any.whl", deps=False)');
+    expect(scripts.join("\n")).toContain(`micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-${pyprojectVersion}-py3-none-any.whl", deps=False)`);
   });
 
   it("emits ordered initialization milestones", async () => {
