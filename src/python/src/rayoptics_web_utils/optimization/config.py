@@ -282,7 +282,7 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
         "weight": float(operand.get("weight", 1.0)),
         "options": deepcopy(operand.get("options") or {}),
     }
-    if kind != "ray_fan":
+    if kind not in {"ray_fan", "ray_fan_tangential", "ray_fan_sagittal"}:
         base["target"] = float(operand.get("target", 0.0))
 
     if kind in {"focal_length", "f_number"}:

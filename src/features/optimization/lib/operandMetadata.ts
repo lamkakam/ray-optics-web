@@ -27,6 +27,22 @@ export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMet
     getNominalResidualCountPerSample: () => 1,
   },
   {
+    kind: "opd_difference_tangential",
+    label: "OPD Difference (Tangential)",
+    requiresTarget: true,
+    defaultTarget: "0",
+    expandsByFieldAndWavelength: true,
+    getNominalResidualCountPerSample: () => 1,
+  },
+  {
+    kind: "opd_difference_sagittal",
+    label: "OPD Difference (Sagittal)",
+    requiresTarget: true,
+    defaultTarget: "0",
+    expandsByFieldAndWavelength: true,
+    getNominalResidualCountPerSample: () => 1,
+  },
+  {
     kind: "rms_spot_size",
     label: "RMS Spot Size",
     requiresTarget: true,
@@ -49,6 +65,22 @@ export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMet
     defaultOptions: { num_rays: 21 },
     expandsByFieldAndWavelength: true,
     getNominalResidualCountPerSample: (options) => (options?.num_rays ?? 21) * 2,
+  },
+  {
+    kind: "ray_fan_tangential",
+    label: "Ray Fan (Tangential)",
+    requiresTarget: false,
+    defaultOptions: { num_rays: 21 },
+    expandsByFieldAndWavelength: true,
+    getNominalResidualCountPerSample: (options) => options?.num_rays ?? 21,
+  },
+  {
+    kind: "ray_fan_sagittal",
+    label: "Ray Fan (Sagittal)",
+    requiresTarget: false,
+    defaultOptions: { num_rays: 21 },
+    expandsByFieldAndWavelength: true,
+    getNominalResidualCountPerSample: (options) => options?.num_rays ?? 21,
   },
 ] as const;
 

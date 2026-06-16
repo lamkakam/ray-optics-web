@@ -84,4 +84,31 @@ describe("createEvaluationRow", () => {
       value: "0.250000",
     });
   });
+
+  it("resolves labels for axis-specific operands", () => {
+    expect(createEvaluationRow({
+      kind: "opd_difference_tangential",
+      target: 0,
+      value: 0.25,
+      field_index: 1,
+      wavelength_index: 2,
+      operand_weight: 1,
+      field_weight: 1,
+      wavelength_weight: 1,
+      total_weight: 1,
+      weighted_residual: 0.25,
+    }, 0)?.operandType).toBe("OPD Difference (Tangential)");
+
+    expect(createEvaluationRow({
+      kind: "ray_fan_sagittal",
+      value: 0.5,
+      field_index: 1,
+      wavelength_index: 2,
+      operand_weight: 1,
+      field_weight: 1,
+      wavelength_weight: 1,
+      total_weight: 1,
+      weighted_residual: 0.5,
+    }, 1)?.operandType).toBe("Ray Fan (Sagittal)");
+  });
 });

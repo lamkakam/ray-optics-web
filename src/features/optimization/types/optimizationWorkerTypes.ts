@@ -6,9 +6,13 @@ export type OptimizationOperandKind =
   | "focal_length"
   | "f_number"
   | "opd_difference"
+  | "opd_difference_tangential"
+  | "opd_difference_sagittal"
   | "rms_spot_size"
   | "rms_wavefront_error"
-  | "ray_fan";
+  | "ray_fan"
+  | "ray_fan_tangential"
+  | "ray_fan_sagittal";
 
 export type OptimizationOperandConfig =
   | {

@@ -24,9 +24,11 @@ def get_operand_num_rays(options: OperandOptions | None, default: int = 21) -> i
 
 def get_nominal_operand_sample_residual_count(sample: OperandSample) -> int:
     """Return the stable residual count contributed by one normalized operand sample."""
-    if sample["kind"] != "ray_fan":
-        return 1
-    return get_operand_num_rays(sample.get("options")) * 2
+    if sample["kind"] == "ray_fan":
+        return get_operand_num_rays(sample.get("options")) * 2
+    if sample["kind"] in {"ray_fan_tangential", "ray_fan_sagittal"}:
+        return get_operand_num_rays(sample.get("options"))
+    return 1
 
 
 def _spot_fn(p, wi, ray_pkg, fld, wvl, foc):
@@ -100,12 +102,22 @@ def compute_rms_wavefront_error(
     return float(np.std(valid))
 
 
-def compute_opd_difference(
+def _select_fan_samples(wavelength_fan: dict, axis: str | None) -> list[float]:
+    if axis is None:
+        return [
+            *wavelength_fan["Tangential"]["y"],
+            *wavelength_fan["Sagittal"]["y"],
+        ]
+    return list(wavelength_fan[axis]["y"])
+
+
+def _compute_opd_difference_for_axis(
     opm: OpticalModel,
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
     opd_aim_point: str = "chief_ray",
+    axis: str | None = None,
 ) -> float:
     """Return mean absolute OPD deviation in waves for one field/wavelength sample."""
     if field_index is None or wavelength_index is None:
@@ -114,19 +126,46 @@ def compute_opd_difference(
     fan_data = get_opd_fan_data(opm, fi=field_index, opd_aim_point=opd_aim_point)
     validate_surface_index(fan_data, wavelength_index, "wavelength index")
     wavelength_fan = fan_data[wavelength_index]
-    samples = np.array(
-        [
-            *wavelength_fan["Tangential"]["y"],
-            *wavelength_fan["Sagittal"]["y"],
-        ],
-        dtype=float,
-    )
+    samples = np.array(_select_fan_samples(wavelength_fan, axis), dtype=float)
     valid = samples[np.isfinite(samples)]
     if len(valid) == 0:
         return PENALTY_RESIDUAL
 
     mean = float(np.mean(valid))
     return float(np.mean(np.abs(valid - mean)))
+
+
+def compute_opd_difference(
+    opm: OpticalModel,
+    field_index: int | None,
+    wavelength_index: int | None,
+    options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
+) -> float:
+    """Return combined tangential and sagittal mean absolute OPD deviation."""
+    return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, opd_aim_point)
+
+
+def compute_opd_difference_tangential(
+    opm: OpticalModel,
+    field_index: int | None,
+    wavelength_index: int | None,
+    options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
+) -> float:
+    """Return tangential mean absolute OPD deviation."""
+    return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, opd_aim_point, "Tangential")
+
+
+def compute_opd_difference_sagittal(
+    opm: OpticalModel,
+    field_index: int | None,
+    wavelength_index: int | None,
+    options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
+) -> float:
+    """Return sagittal mean absolute OPD deviation."""
+    return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, opd_aim_point, "Sagittal")
 
 
 def compute_focal_length(
@@ -153,25 +192,23 @@ def compute_f_number(
     return float(opm["analysis_results"]["parax_data"].fod.fno)
 
 
-def compute_ray_fan(
+def _compute_ray_fan_for_axis(
     opm: OpticalModel,
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
     opd_aim_point: str = "chief_ray",
+    axis: str | None = None,
 ) -> list[float]:
-    """Return combined tangential and sagittal ray-fan ordinates for one field/wavelength sample."""
+    """Return ray-fan ordinates for one field/wavelength sample."""
     del opd_aim_point
     if field_index is None or wavelength_index is None:
         raise ValueError("ray_fan requires field and wavelength indices")
-    residual_count = get_operand_num_rays(options) * 2
+    residual_count = get_operand_num_rays(options) * (2 if axis is None else 1)
     ray_fan_data = get_ray_fan_data(opm, fi=field_index)
     validate_surface_index(ray_fan_data, wavelength_index, "wavelength index")
     wavelength_fan = ray_fan_data[wavelength_index]
-    samples = [
-        *wavelength_fan["Tangential"]["y"],
-        *wavelength_fan["Sagittal"]["y"],
-    ]
+    samples = _select_fan_samples(wavelength_fan, axis)
     padded_samples = list(samples[:residual_count])
     while len(padded_samples) < residual_count:
         padded_samples.append(float("nan"))
@@ -181,11 +218,48 @@ def compute_ray_fan(
     ]
 
 
+def compute_ray_fan(
+    opm: OpticalModel,
+    field_index: int | None,
+    wavelength_index: int | None,
+    options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
+) -> list[float]:
+    """Return combined tangential and sagittal ray-fan ordinates for one field/wavelength sample."""
+    return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, opd_aim_point)
+
+
+def compute_ray_fan_tangential(
+    opm: OpticalModel,
+    field_index: int | None,
+    wavelength_index: int | None,
+    options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
+) -> list[float]:
+    """Return tangential ray-fan ordinates for one field/wavelength sample."""
+    return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, opd_aim_point, "Tangential")
+
+
+def compute_ray_fan_sagittal(
+    opm: OpticalModel,
+    field_index: int | None,
+    wavelength_index: int | None,
+    options: OperandOptions | None,
+    opd_aim_point: str = "chief_ray",
+) -> list[float]:
+    """Return sagittal ray-fan ordinates for one field/wavelength sample."""
+    return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, opd_aim_point, "Sagittal")
+
+
 OPERAND_REGISTRY: dict[str, OperandEvaluator] = {
     "rms_spot_size": compute_rms_spot_size,
     "rms_wavefront_error": compute_rms_wavefront_error,
     "opd_difference": compute_opd_difference,
+    "opd_difference_tangential": compute_opd_difference_tangential,
+    "opd_difference_sagittal": compute_opd_difference_sagittal,
     "focal_length": compute_focal_length,
     "f_number": compute_f_number,
     "ray_fan": compute_ray_fan,
+    "ray_fan_tangential": compute_ray_fan_tangential,
+    "ray_fan_sagittal": compute_ray_fan_sagittal,
 }
