@@ -34,7 +34,11 @@ describe("OptimizationOperandsTab", () => {
     ]);
 
     expect(screen.getByRole("option", { name: "OPD Difference" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "OPD Difference (Tangential)" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "OPD Difference (Sagittal)" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Ray Fan" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Ray Fan (Tangential)" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Ray Fan (Sagittal)" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Add operand" }));
     expect(onAddOperand).toHaveBeenCalledTimes(1);

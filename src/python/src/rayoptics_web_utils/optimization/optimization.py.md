@@ -92,17 +92,21 @@ The public facade is backed by an internal solver registry. `least_squares` uses
 - `rms_spot_size`
 - `rms_wavefront_error`
 - `opd_difference`
+- `opd_difference_tangential`
+- `opd_difference_sagittal`
 - `focal_length`
 - `f_number`
 - `ray_fan`
+- `ray_fan_tangential`
+- `ray_fan_sagittal`
 
 ## Weighting Rules
 
 - `focal_length` and `f_number` are field-independent and wavelength-independent; any `fields` or `wavelengths` entries are ignored.
 - Field-dependent scalar operands expand into one residual per selected field/wavelength pair.
-- `ray_fan` expands into a fixed `42` residual samples per selected field/wavelength pair (`21` tangential + `21` sagittal). Missing or non-finite analysis samples are padded with `1e6` penalties so SciPy `lm` finite differencing always receives vectors with stable dimensions.
-- `opd_difference` reuses `rayoptics_web_utils.analysis.get_opd_fan_data(opm, fi)` and computes one scalar per field/wavelength sample as `mean(abs(OPD_i - mean(OPD)))` across the combined tangential and sagittal OPD fan ordinates, after dropping non-finite values.
-- `ray_fan` reuses `rayoptics_web_utils.analysis.get_ray_fan_data(opm, fi)` and exposes the combined tangential and sagittal ordinates as target-less residual samples.
+- `ray_fan` expands into a fixed `42` residual samples per selected field/wavelength pair (`21` tangential + `21` sagittal). Axis-specific Ray Fan operands expand into `21` residual samples for the selected axis. Missing or non-finite analysis samples are padded with `1e6` penalties so SciPy `lm` finite differencing always receives vectors with stable dimensions.
+- `opd_difference` reuses `rayoptics_web_utils.analysis.get_opd_fan_data(opm, fi)` and computes one scalar per field/wavelength sample as `mean(abs(OPD_i - mean(OPD)))` across the combined tangential and sagittal OPD fan ordinates, after dropping non-finite values. Axis-specific OPD Difference operands use the same formula on only the selected fan axis.
+- `ray_fan` reuses `rayoptics_web_utils.analysis.get_ray_fan_data(opm, fi)` and exposes the combined tangential and sagittal ordinates as target-less residual samples. Axis-specific Ray Fan operands expose only the selected axis.
 - Each residual uses:
 
 ```python

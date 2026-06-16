@@ -36,6 +36,18 @@ const baseModel: OpticalModel = {
   },
 };
 
+const singleSampleModel: OpticalModel = {
+  ...baseModel,
+  surfaces: Array.from({ length: 11 }, (_, index): OpticalModel["surfaces"][number] => ({
+    ...baseModel.surfaces[index % baseModel.surfaces.length],
+  })),
+  specs: {
+    ...baseModel.specs,
+    field: { ...baseModel.specs.field, fields: [0] },
+    wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
+  },
+};
+
 const asphericModel: OpticalModel = {
   ...baseModel,
   surfaces: [
@@ -230,6 +242,23 @@ describe("optimizationStore", () => {
     ]);
   });
 
+  it("resets targets for axis-specific OPD operands and omits targets for axis-specific ray_fan operands", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().replaceOperands([
+      { id: "operand-1", kind: "focal_length", target: "125", weight: "2" },
+      { id: "operand-2", kind: "focal_length", target: "150", weight: "3" },
+    ]);
+
+    store.getState().updateOperand("operand-1", { kind: "opd_difference_tangential" });
+    store.getState().updateOperand("operand-2", { kind: "ray_fan_sagittal" });
+
+    expect(store.getState().operands).toEqual([
+      { id: "operand-1", kind: "opd_difference_tangential", target: "0", weight: "2" },
+      { id: "operand-2", kind: "ray_fan_sagittal", target: undefined, weight: "3" },
+    ]);
+  });
+
   it("omits target from Python config for target-less ray_fan operands", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
@@ -267,6 +296,30 @@ describe("optimizationStore", () => {
           },
         ],
       },
+    });
+  });
+
+  it("omits target from Python config for axis-specific target-less ray_fan operands", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().replaceOperands([
+      { id: "operand-1", kind: "ray_fan_tangential", target: undefined, weight: "2.5" },
+    ]);
+
+    expect(store.getState().buildOptimizationConfig().merit_function.operands[0]).toEqual({
+      kind: "ray_fan_tangential",
+      weight: 2.5,
+      options: { num_rays: 21 },
+      fields: [
+        { index: 0, weight: 1 },
+        { index: 1, weight: 0 },
+        { index: 2, weight: 0 },
+      ],
+      wavelengths: [
+        { index: 0, weight: 1 },
+        { index: 1, weight: 2 },
+        { index: 2, weight: 1 },
+      ],
     });
   });
 
@@ -583,6 +636,32 @@ describe("optimizationStore", () => {
       optimizer: { ...state.optimizer, method: "lm" },
     }));
 
+    expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
+  });
+
+  it("counts axis-specific ray_fan as num_rays and combined ray_fan as num_rays times two for lm validation", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(singleSampleModel);
+    store.setState((state) => ({
+      optimizer: { ...state.optimizer, method: "lm" },
+    }));
+    Array.from({ length: 12 }, (_, index) => index + 1).forEach((surfaceIndex) => {
+      store.getState().setRadiusMode(surfaceIndex, { mode: "variable", min: "40", max: "60" });
+    });
+    Array.from({ length: 11 }, (_, index) => index + 1).forEach((surfaceIndex) => {
+      store.getState().setThicknessMode(surfaceIndex, { mode: "variable", min: "4", max: "8" });
+    });
+
+    store.getState().replaceOperands([
+      { id: "operand-1", kind: "ray_fan_tangential", target: undefined, weight: "1" },
+    ]);
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(
+      "Levenberg-Marquardt requires at least as many residuals as variables.",
+    );
+
+    store.getState().replaceOperands([
+      { id: "operand-1", kind: "ray_fan", target: undefined, weight: "1" },
+    ]);
     expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
   });
 

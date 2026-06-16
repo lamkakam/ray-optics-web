@@ -51,7 +51,7 @@ interface OptimizationPageProps {
   - read-only `Medium`, `Semi-diam.`, `Asph.` columns
   - a third `Var.` column after `Asph.` for asphere variable/pickup configuration (real surface rows only; opens `AsphereVarModal`)
   - read-only `Tilt & Decenter` and `Diffraction Grating` columns
-- `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including an `OPD Difference` operand option whose default target is `0`.
+- `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
 - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
 - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call, passes the app-wide `opdAimPoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests.
 - Radius, thickness, and asphere variable/pickup mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`. Changes to `asphereStates` are included in the evaluation dependency array so commits trigger a re-evaluation debounce.

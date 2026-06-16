@@ -8,7 +8,7 @@ TypeScript types for the optimization UI and the Pyodide worker boundary.
 
 - `OptimizerKind` — `"least_squares" | "differential_evolution"`
 - `LeastSquaresMethod` — `"trf" | "lm"`
-- `OptimizationOperandKind` — `"focal_length" | "f_number" | "opd_difference" | "rms_spot_size" | "rms_wavefront_error" | "ray_fan"`
+- `OptimizationOperandKind` — `"focal_length" | "f_number" | "opd_difference" | "opd_difference_tangential" | "opd_difference_sagittal" | "rms_spot_size" | "rms_wavefront_error" | "ray_fan" | "ray_fan_tangential" | "ray_fan_sagittal"`
 - `OptimizationOperandConfig` — one merit-function operand config, supporting both targeted scalar operands and target-less operands such as `ray_fan`
 - `OptimizationConfig` — JSON-safe config sent to Python `optimize_opm`, with optimizer-specific config keys
 - `OptimizationVariableConfig` — one variable entry in `OptimizationConfig.variables`, with optional `min` / `max` so least-squares configs can represent both bounded and unbounded variables
