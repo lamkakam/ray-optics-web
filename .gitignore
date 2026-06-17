@@ -41,3 +41,6 @@ src/python/build/
 *.whl
 __pycache__/
 *.pyc
+
+# External data for testings
+src/__tests__/data/photons-to-photos/
