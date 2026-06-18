@@ -169,6 +169,51 @@ describe("parsePhotonsToPhotosText", () => {
     });
   });
 
+  it("parses finite microscope objectives with NA and image-height specs", () => {
+    const result = parsePhotonsToPhotosText(readFixture("microscope-objective-finite.txt"));
+
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+
+    expect(validateImportedLensData(result.model)).toBe(true);
+    expect(result.model.object.distance).toBe(0);
+    expect(result.model.specs.pupil).toEqual({ space: "object", type: "NA", value: 1.35 });
+    expect(result.model.specs.field).toEqual({
+      space: "image",
+      type: "height",
+      maxField: 20,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+      isWideAngle: true,
+    });
+  });
+
+  it("parses imaging microscope objectives with flat FS rows", () => {
+    const result = parsePhotonsToPhotosText(readFixture("microscope-objective-imaging.txt"));
+
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+
+    expect(validateImportedLensData(result.model)).toBe(true);
+    expect(result.model.specs.pupil).toEqual({ space: "object", type: "NA", value: 0.8 });
+    expect(result.model.specs.field).toEqual({
+      space: "image",
+      type: "height",
+      maxField: 12,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+      isWideAngle: true,
+    });
+    expect(result.model.surfaces[12]).toMatchObject({
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 1.5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5e9,
+    });
+  });
+
   it("parses zoom files and resolves selected variable-distance columns", () => {
     const result = parsePhotonsToPhotosText(readFixture("zoom-wide-angle-aspherical-no-glass-type.txt"));
 

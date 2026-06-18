@@ -1,5 +1,5 @@
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
-import type { OpticalModel, Surface } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel, OpticalSpecs, Surface } from "@/shared/lib/types/opticalModel";
 
 export interface PhotonsToPhotosFocalLengthChoice {
   readonly index: number;
@@ -125,7 +125,7 @@ function parseLensRows(rows: readonly string[][]): readonly LensRow[] {
       radiusToken: requiredCell(row, 1, "lens radius"),
       thicknessToken: requiredCell(row, 2, "lens thickness"),
       nd: row[3] ?? "",
-      aperture: parseFiniteNumber(requiredCell(row, 4, "lens aperture")),
+      aperture: parseNumberToken(requiredCell(row, 4, "lens aperture")),
       vd: row[5] ?? "",
       glassName: row[6] ?? "",
       catalog: row[7] ?? "",
@@ -178,8 +178,9 @@ function buildOpticalModel(
     };
   }
 
-  const fullAngleOfView = getVariableValue(variableDistances, "Angle of View", choiceIndex);
-  const fieldHalfAngle = fullAngleOfView / 2;
+  const pupil = buildPupilSpec(variableDistances, choiceIndex);
+  const field = buildFieldSpec(variableDistances, choiceIndex, pupil);
+
   return {
     setAutoAperture: "manualAperture",
     object: {
@@ -190,24 +191,57 @@ function buildOpticalModel(
     image: { curvatureRadius: 0 },
     surfaces,
     specs: {
-      pupil: {
-        space: "image",
-        type: "f/#",
-        value: getVariableValue(variableDistances, "F-Number", choiceIndex),
-      },
-      field: {
-        space: "object",
-        type: "angle",
-        maxField: fieldHalfAngle,
-        fields: [0, 0.707, 1],
-        isRelative: true,
-        isWideAngle: fullAngleOfView >= 80,
-      },
+      pupil,
+      field,
       wavelengths: {
         weights: [[587.562, 2], [486.133, 1], [656.273, 1]],
         referenceIndex: 0,
       },
     },
+  };
+}
+
+function buildPupilSpec(
+  variableDistances: ReadonlyMap<string, readonly number[]>,
+  choiceIndex: number,
+): OpticalSpecs["pupil"] {
+  const fNumber = getOptionalVariableValue(variableDistances, "F-Number", choiceIndex);
+  if (fNumber !== undefined) {
+    return { space: "image", type: "f/#", value: fNumber };
+  }
+
+  return {
+    space: "object",
+    type: "NA",
+    value: getVariableValue(variableDistances, "NA", choiceIndex),
+  };
+}
+
+function buildFieldSpec(
+  variableDistances: ReadonlyMap<string, readonly number[]>,
+  choiceIndex: number,
+  pupil: OpticalSpecs["pupil"],
+): OpticalSpecs["field"] {
+  const fullAngleOfView = getOptionalVariableValue(variableDistances, "Angle of View", choiceIndex);
+  if (fullAngleOfView !== undefined) {
+    return {
+      space: "object",
+      type: "angle",
+      maxField: fullAngleOfView / 2,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+      isWideAngle: fullAngleOfView >= 80,
+    };
+  }
+
+  const imageHeight = getVariableValue(variableDistances, "Image Height", choiceIndex);
+  return {
+    space: "image",
+    type: "height",
+    maxField: imageHeight / 2,
+    fields: [0, 0.707, 1],
+    isRelative: true,
+    isWideAngle: pupil.type === "NA" ? pupil.value >= 0.5 : false,
   };
 }
 
@@ -218,8 +252,12 @@ function parseSurfaceNumber(token: string): number {
 }
 
 function parseRadius(token: string): number {
-  if (isApertureStop(token) || /^CG$/i.test(token) || /^Infinity$/i.test(token)) return 0;
+  if (isApertureStop(token) || isFlatSurface(token)) return 0;
   return parseFiniteNumber(token);
+}
+
+function isFlatSurface(token: string): boolean {
+  return /^(CG|FS|Infinity)$/i.test(token);
 }
 
 function resolveDistance(
@@ -303,6 +341,17 @@ function getVariableValue(
     throw new Error(`Variable distance "${key}" has no value for focal-length column ${choiceIndex + 1}.`);
   }
   return value;
+}
+
+function getOptionalVariableValue(
+  variableDistances: ReadonlyMap<string, readonly number[]>,
+  key: string,
+  choiceIndex: number,
+): number | undefined {
+  if (!variableDistances.has(key)) {
+    return undefined;
+  }
+  return getVariableValue(variableDistances, key, choiceIndex);
 }
 
 function parseNumberToken(token: string): number {
