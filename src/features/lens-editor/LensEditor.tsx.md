@@ -38,12 +38,12 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 - Zernike payload/order types are imported from `features/lens-editor/types/zernikeData`; Zernike term-count constants are imported from `features/lens-editor/lib/zernikeData`
 - `getOpticalModel` — builds the current `OpticalModel` snapshot from the provider-backed stores
 - `handleImportJson` — loads an imported `OpticalModel` into the specs and lens-editor stores
-- `configToolbar` — `LensEditorConfigToolbar` bound to `getOpticalModel`, `handleImportJson`, `handleSubmit`, and disabled when `!isReady || computing`
+- `configToolbar` — `LensEditorConfigToolbar` bound to `getOpticalModel`, `handleImportJson`, `handleSubmit`, and disabled when `!isReady || computing`; the toolbar owns both JSON config import and Photons to Photos TXT import before delegating validated models to `handleImportJson`
 
 ## Layout
 
 ### LG (`isLG === true`)
-- Controls row: always rendered so config actions are available before any optical system has been computed. Row order is `Update System`, `Load Config`, `Download Config`, then optional `3rd Order Seidel Aberr.` and optional `Zernike Terms`; `border-b` is applied here when `firstOrderData` is undefined. `seidelButton` is guarded by `seidelData`; `zernikeButton` is guarded by `committedOpticalModel` (not `seidelData`)
+- Controls row: always rendered so config actions are available before any optical system has been computed. Row order is `Update System`, `Load Config`, `Import a file from Photons to Photos`, `Download Config`, then optional `3rd Order Seidel Aberr.` and optional `Zernike Terms`; `border-b` is applied here when `firstOrderData` is undefined. `seidelButton` is guarded by `seidelData`; `zernikeButton` is guarded by `committedOpticalModel` (not `seidelData`)
 - First-order chips row (border-bottom) — only rendered when `firstOrderData` is defined
 - Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%); the analysis panel wrapper has `overflow-hidden` (`data-testid="lg-analysis-plot-panel"`) to prevent content from bleeding over the BottomDrawer when viewport height is small
 - BottomDrawerContainer (`draggable={true}`)
@@ -51,7 +51,7 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 
 ### SM (`isLG === false`)
 - Outer scroll wrapper: `data-testid="sm-scroll-container"` with `flex-1 min-h-0 overflow-y-auto flex flex-col` — makes all content scrollable on small screens
-- Controls section: always rendered so config actions are available before any optical system has been computed. It wraps naturally and orders controls as `Update System`, `Load Config`, `Download Config`, then optional Seidel/Zernike buttons; first-order chips render below only when `firstOrderData` is defined
+- Controls section: always rendered so config actions are available before any optical system has been computed. It wraps naturally and orders controls as `Update System`, `Load Config`, `Import a file from Photons to Photos`, `Download Config`, then optional Seidel/Zernike buttons; first-order chips render below only when `firstOrderData` is defined
 - `data-testid="lens-layout-container"` wrapping LensLayoutPanel
 - `data-testid="analysis-plot-container"` wrapping AnalysisPlotContainer
 - BottomDrawerContainer (`draggable={false}`)

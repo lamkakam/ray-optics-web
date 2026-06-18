@@ -1,5 +1,7 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { readFileSync } from "fs";
+import path from "path";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { DiffractionMtfData, DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
@@ -57,6 +59,12 @@ const testImportModelWithDiffractionGrating: OpticalModel = {
     },
   ],
 };
+
+const photonsToPhotosDataDir = path.join(process.cwd(), "src/__tests__/data/photons-to-photos");
+
+function readPhotonsFixture(name: string): string {
+  return readFileSync(path.join(photonsToPhotosDataDir, name), "utf8");
+}
 
 jest.mock("@/features/lens-editor/components/BottomDrawerContainer", () => ({
   BottomDrawerContainer: ({
@@ -464,6 +472,7 @@ describe("LensEditor", () => {
     const firstSection = container.firstElementChild;
     expect(firstSection).toContainElement(screen.getByRole("button", { name: "Update System" }));
     expect(firstSection).toContainElement(screen.getByRole("button", { name: "Load Config" }));
+    expect(firstSection).toContainElement(screen.getByRole("button", { name: "Import a file from Photons to Photos" }));
     expect(firstSection).toContainElement(screen.getByRole("button", { name: "Download Config" }));
     expect(firstSection).not.toContainElement(screen.getByTestId("lens-layout-panel-mock"));
   });
@@ -475,6 +484,7 @@ describe("LensEditor", () => {
     const controlsSection = scrollContainer.firstElementChild;
     expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Update System" }));
     expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Load Config" }));
+    expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Import a file from Photons to Photos" }));
     expect(controlsSection).toContainElement(screen.getByRole("button", { name: "Download Config" }));
     expect(controlsSection).not.toContainElement(screen.getByTestId("lens-layout-container"));
   });
@@ -494,6 +504,7 @@ describe("LensEditor", () => {
       expectButtonsInOrder([
         "Update System",
         "Load Config",
+        "Import a file from Photons to Photos",
         "Download Config",
         "3rd Order Seidel Aberrations",
         "Zernike Terms",
@@ -518,6 +529,7 @@ describe("LensEditor", () => {
       expectButtonsInOrder([
         "Update System",
         "Load Config",
+        "Import a file from Photons to Photos",
         "Download Config",
         "3rd Order Seidel Aberrations",
         "Zernike Terms",
@@ -550,7 +562,7 @@ describe("LensEditor", () => {
 
     const file = new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" });
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await userEvent.upload(fileInput, file);
+    await userEvent.upload(fileInput, file, { applyAccept: false });
 
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toBeInTheDocument();
@@ -562,7 +574,7 @@ describe("LensEditor", () => {
     const file = new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" });
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    await userEvent.upload(fileInput, file);
+    await userEvent.upload(fileInput, file, { applyAccept: false });
     await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
 
     expect(lensStore.getState().autoAperture).toBe(false);
@@ -579,6 +591,95 @@ describe("LensEditor", () => {
 
     expect(lensStore.getState().autoAperture).toBe(true);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("shows an error dialog when a non-txt file is selected for Photons to Photos import", async () => {
+    renderLensEditor();
+    const file = new File(["not txt"], "lens.csv", { type: "text/csv" });
+
+    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file, { applyAccept: false });
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText("Photons to Photos import requires a .txt file.")).toBeInTheDocument();
+  });
+
+  it("imports a prime Photons to Photos txt file after confirmation", async () => {
+    const { specsStore, lensStore } = renderLensEditor();
+    const file = new File(
+      [readPhotonsFixture("prime-no-glass-type.txt")],
+      "prime-no-glass-type.txt",
+      { type: "text/plain" },
+    );
+
+    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+    await userEvent.click(await screen.findByRole("button", { name: "Load" }));
+
+    expect(specsStore.getState().pupilType).toBe("f/#");
+    expect(specsStore.getState().pupilValue).toBe(4);
+    expect(lensStore.getState().autoAperture).toBe(false);
+    expect(lensStore.getState().rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "surface", label: "Stop", thickness: 4.16 }),
+      ]),
+    );
+  });
+
+  it("uses a non-backdrop-dismissible focal-length modal before importing zoom Photons to Photos txt", async () => {
+    const { specsStore, lensStore } = renderLensEditor();
+    const file = new File(
+      [readPhotonsFixture("zoom-wide-angle-aspherical-no-glass-type.txt")],
+      "zoom-wide-angle-aspherical-no-glass-type.txt",
+      { type: "text/plain" },
+    );
+
+    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+
+    const focalDialog = await screen.findByRole("dialog", { name: "Select Focal Length" });
+    expect(within(focalDialog).getByRole("radio", { name: "9.193 mm" })).toBeChecked();
+    await userEvent.click(screen.getByTestId("modal-backdrop"));
+    expect(screen.getByRole("dialog", { name: "Select Focal Length" })).toBeInTheDocument();
+
+    await userEvent.click(within(focalDialog).getByRole("radio", { name: "24.376 mm" }));
+    await userEvent.click(within(focalDialog).getByRole("button", { name: "Confirm" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Load" }));
+
+    expect(specsStore.getState().maxField).toBe(16.779);
+    expect(specsStore.getState().isWideAngle).toBe(false);
+    expect(lensStore.getState().rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "surface", curvatureRadius: 149.486, thickness: 18.225 }),
+      ]),
+    );
+  });
+
+  it("cancels zoom Photons to Photos import from the focal-length modal", async () => {
+    const { lensStore } = renderLensEditor();
+    const file = new File(
+      [readPhotonsFixture("zoom-wide-angle-aspherical-no-glass-type.txt")],
+      "zoom-wide-angle-aspherical-no-glass-type.txt",
+      { type: "text/plain" },
+    );
+
+    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(lensStore.getState().rows).toHaveLength(2);
+  });
+
+  it("shows an error dialog when Photons to Photos parsing fails", async () => {
+    renderLensEditor();
+    const file = new File(["[descriptive data]\ntitle\tBad"], "bad.txt", { type: "text/plain" });
+
+    const fileInput = document.querySelector('input[accept=".txt"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, file);
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText(/Photons to Photos import failed:/)).toBeInTheDocument();
   });
 
   it("shows error dialog when invalid JSON file is selected", async () => {
