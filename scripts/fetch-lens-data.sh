@@ -9,3 +9,7 @@ curl -o "$SCRIPT_DIR/../src/__tests__/data/photons-to-photos/prime-no-glass-type
 curl -o "$SCRIPT_DIR/../src/__tests__/data/photons-to-photos/prime-with-glass-type.txt" https://www.photonstophotos.net/GeneralTopics/Lenses/OpticalBench/Data/CN216526482_Example01P.txt
 curl -o "$SCRIPT_DIR/../src/__tests__/data/photons-to-photos/zoom-wide-angle-aspherical-no-glass-type.txt" https://www.photonstophotos.net/GeneralTopics/Lenses/OpticalBench/Data/US20140354857_Example07P.txt
 curl -o "$SCRIPT_DIR/../src/__tests__/data/photons-to-photos/prime-fisheye-aspherical-no-glass-type.txt" https://www.photonstophotos.net/GeneralTopics/Lenses/OpticalBench/Data/US003524697_Example02.txt
+
+
+curl -o "$SCRIPT_DIR/../src/__tests__/data/photons-to-photos/microscope-objective-finite.txt" https://www.photonstophotos.net/GeneralTopics/Lenses/OpticalBench/Data/US003912378_Example02.txt
+curl -o "$SCRIPT_DIR/../src/__tests__/data/photons-to-photos/microscope-objective-imaging.txt" https://www.photonstophotos.net/GeneralTopics/Lenses/OpticalBench/Data/US006441966_Example02.txt

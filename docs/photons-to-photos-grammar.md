@@ -175,14 +175,14 @@ const opticalModal: OpticalModel = {
   setAutoAperture: false,
   specs: {
     pupil: {
-      space: "image", // always defined over image space
-      type: "f/#", // always use F-Number
+      space: "image", // always defined over image space if F-Number is used
+      type: "f/#", // always use F-Number if F-Number is provided
       value: 5.6,
     },
 
     field: {
-      space: "object"; // always defined over object space
-      type: "angle"; // always use Angle of View
+      space: "object"; // always defined over object space when Angle of View is used. If Image Height is used, it's defined over image space ("image")
+      type: "angle"; // always use Angle of View if Angle of View exists and isn't undefined. If not, use "height".
       maxField: (270/2),
       fields: [0, 0.707, 1], // always
       isRelative: true, // always true
@@ -230,6 +230,65 @@ d12	25.033	9.558	4.784
 d20	2.974	6.090	4.759
 d22	6.789	17.332	29.926
 Bf	0	0	0
+```
+
+### 2.3 Example of a finite conjugated microscope objective
+
+```
+[variable distances]
+Focal Length	1.752
+NA	1.35
+Image Height	40
+Magnification	-100
+WD	0.100
+d0	0
+Bf	169.23
+```
+
+The parsed `OpticalSpecs` instance would be:
+```typescript
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+
+const opticalModal: OpticalModel = {
+  setAutoAperture: false,
+  specs: {
+    pupil: {
+      space: "object", // always defined over image space when NA is used
+      type: "NA",
+      value: 1.35,
+    },
+
+    field: {
+      space: "image"; // always defined over image space when Image Height is used
+      type: "height";
+      maxField: (40/2), // must be halved because the value for this web app defines half-field
+      fields: [0, 0.707, 1], // always
+      isRelative: true, // always true
+      isWideAngle: true, // true when NA >= 0.5, false when NA < 0.5
+    },
+
+    // always defined like this for wavelength config
+    wavelengths: {
+      weights: [[587.562, 2], [486.133, 1],[656.273, 1]],
+      referenceIndex: 0,
+    },
+    //
+  },
+
+  object: {
+    distance: 0, // d0 is 0 in this example
+    medium: "air", // always air
+    manufacturer: "", // always empty string for "air"
+  },
+
+  image: {
+    curvatureRadius: 0, // always flat
+  },
+
+  // parsed rows from the section [lens data] and an optional section [aspherical data]
+  surfaces: [...],
+};
+
 ```
 
 
