@@ -181,8 +181,8 @@ const opticalModal: OpticalModel = {
     },
 
     field: {
-      space: "object"; // always defined over object space when Angle of View is used. If Image Height is used, it's defined over image space ("image")
-      type: "angle"; // always use Angle of View if Angle of View exists and isn't undefined. If not, use "height".
+      space: "object", // always defined over object space when Angle of View is used. If Image Height is used, it's defined over image space ("image")
+      type: "angle", // always use Angle of View if Angle of View exists and isn't undefined. If not, use "height".
       maxField: (270/2),
       fields: [0, 0.707, 1], // always
       isRelative: true, // always true
@@ -259,8 +259,8 @@ const opticalModal: OpticalModel = {
     },
 
     field: {
-      space: "image"; // always defined over image space when Image Height is used
-      type: "height";
+      space: "image", // always defined over image space when Image Height is used
+      type: "height",
       maxField: (40/2), // must be halved because the value for this web app defines half-field
       fields: [0, 0.707, 1], // always
       isRelative: true, // always true
