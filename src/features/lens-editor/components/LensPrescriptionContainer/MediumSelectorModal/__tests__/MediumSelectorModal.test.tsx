@@ -78,6 +78,7 @@ describe("MediumSelectorModal", () => {
         },
       },
     },
+    lookupMaps: undefined,
     error: undefined,
     isLoaded: true,
     isLoading: false,

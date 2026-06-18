@@ -127,6 +127,7 @@ const glassCatalogContextValue: GlassCatalogContextValue = {
       },
     },
   },
+  lookupMaps: undefined,
   error: undefined,
   isLoaded: true,
   isLoading: false,

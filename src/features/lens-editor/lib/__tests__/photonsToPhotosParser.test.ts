@@ -1,5 +1,6 @@
 import { readFileSync } from "fs";
 import path from "path";
+import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import { parsePhotonsToPhotosText } from "@/features/lens-editor/lib/photonsToPhotosParser";
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
 
@@ -8,6 +9,52 @@ const dataDir = path.join(process.cwd(), "src/__tests__/data/photons-to-photos")
 function readFixture(name: string): string {
   return readFileSync(path.join(dataDir, name), "utf8");
 }
+
+function makeSingleSurfaceText({
+  nd,
+  vd,
+  glassName,
+  catalog,
+}: {
+  readonly nd: string;
+  readonly vd: string;
+  readonly glassName: string;
+  readonly catalog: string;
+}): string {
+  return [
+    "[descriptive data]",
+    "title\tParser material test",
+    "[variable distances]",
+    "Focal Length\t50",
+    "F-Number\t4",
+    "Angle of View\t20",
+    "d0\tInfinity",
+    "[lens data]",
+    ["1", "100", "5", nd, "20", vd, glassName, catalog].join("\t"),
+  ].join("\n");
+}
+
+function parseSingleSurfaceMaterial(
+  row: Parameters<typeof makeSingleSurfaceText>[0],
+  lookupMaps?: GlassLookupMaps,
+) {
+  const result = parsePhotonsToPhotosText(makeSingleSurfaceText(row), lookupMaps);
+  expect(result.kind).toBe("prime");
+  if (result.kind !== "prime") throw new Error("Expected prime result");
+  return result.model.surfaces[0];
+}
+
+const lookupMaps: GlassLookupMaps = {
+  manufacturerMap: new Map([["hoya", "Hoya"]]),
+  mediumMap: new Map([
+    ["hoya:h-lak52", { medium: "H-LaK52", manufacturer: "Hoya" }],
+    ["caf2", { medium: "CaF2", manufacturer: "" }],
+    ["fused silica", { medium: "Fused silica", manufacturer: "" }],
+    ["water", { medium: "Water", manufacturer: "" }],
+    ["fluorite", { medium: "CaF2", manufacturer: "" }],
+    ["fluorspar", { medium: "CaF2", manufacturer: "" }],
+  ]),
+};
 
 describe("parsePhotonsToPhotosText", () => {
   it("parses a prime file without glass names", () => {
@@ -61,6 +108,48 @@ describe("parsePhotonsToPhotosText", () => {
       medium: "air",
       manufacturer: "",
     });
+  });
+
+  it("resolves lowercase catalogs to canonical manufacturers from lookup maps", () => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "1.713", vd: "53.8", glassName: "H-LaK52", catalog: "hoya" },
+      lookupMaps,
+    );
+
+    expect(surface).toMatchObject({ medium: "H-LaK52", manufacturer: "Hoya" });
+  });
+
+  it("resolves case-mismatched glass names to canonical media from lookup maps", () => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "1.713", vd: "53.8", glassName: "H-LAK52", catalog: "HOYA" },
+      lookupMaps,
+    );
+
+    expect(surface).toMatchObject({ medium: "H-LaK52", manufacturer: "Hoya" });
+  });
+
+  it.each([
+    ["fluorite", "CaF2"],
+    ["fluorspar", "CaF2"],
+    ["CaF2", "CaF2"],
+    ["Fused silica", "Fused silica"],
+    ["Water", "Water"],
+  ])("parses special medium %s without a manufacturer", (glassName, expectedMedium) => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "1.433", vd: "95.2", glassName, catalog: "" },
+      lookupMaps,
+    );
+
+    expect(surface).toMatchObject({ medium: expectedMedium, manufacturer: "" });
+  });
+
+  it("falls back to model glass when a named glass is unsupported", () => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "1.654", vd: "39.1", glassName: "UNKNOWN", catalog: "HOYA" },
+      lookupMaps,
+    );
+
+    expect(surface).toMatchObject({ medium: "1.654", manufacturer: "39.1" });
   });
 
   it("parses inline aspherical stop rows in fisheye prime data", () => {

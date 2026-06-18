@@ -1,4 +1,5 @@
 import {
+  buildGlassLookupMaps,
   normalizeGlassData,
   normalizeAllCatalogsData,
   computePlotPoints,
@@ -27,11 +28,11 @@ const rawGlass: RawGlassData = {
 const rawCatalogsData: RawAllGlassCatalogsData = {
   CDGM: { BK7: rawGlass },
   Hikari: {},
-  Hoya: {},
+  Hoya: { "H-LaK52": rawGlass },
   Ohara: {},
   Schott: { "N-BK7": rawGlass },
   Sumita: {},
-  Special: {},
+  Special: { CaF2: rawGlass },
 };
 
 describe("CATALOG_NAMES", () => {
@@ -99,6 +100,41 @@ describe("normalizeAllCatalogsData", () => {
   it("returns empty object for empty catalog", () => {
     const result = normalizeAllCatalogsData(rawCatalogsData);
     expect(result.Hikari).toEqual({});
+  });
+});
+
+describe("buildGlassLookupMaps", () => {
+  it("maps manufacturer casing to canonical catalog names", () => {
+    const result = buildGlassLookupMaps(normalizeAllCatalogsData(rawCatalogsData));
+
+    expect(result.manufacturerMap.get("hoya")).toBe("Hoya");
+  });
+
+  it("maps catalog glass casing to canonical app values", () => {
+    const result = buildGlassLookupMaps(normalizeAllCatalogsData(rawCatalogsData));
+
+    expect(result.mediumMap.get("hoya:h-lak52")).toEqual({
+      medium: "H-LaK52",
+      manufacturer: "Hoya",
+    });
+  });
+
+  it("maps special media aliases without a manufacturer", () => {
+    const result = buildGlassLookupMaps(normalizeAllCatalogsData(rawCatalogsData));
+
+    expect(result.mediumMap.get("fluorite")).toEqual({ medium: "CaF2", manufacturer: "" });
+    expect(result.mediumMap.get("fluorspar")).toEqual({ medium: "CaF2", manufacturer: "" });
+    expect(result.mediumMap.get("caf2")).toEqual({ medium: "CaF2", manufacturer: "" });
+  });
+
+  it("does not add a lowercase alias for reflective media", () => {
+    const catalogsData = normalizeAllCatalogsData({
+      ...rawCatalogsData,
+      Special: { REFL: rawGlass },
+    });
+    const result = buildGlassLookupMaps(catalogsData);
+
+    expect(result.mediumMap.get("refl")).toBeUndefined();
   });
 });
 

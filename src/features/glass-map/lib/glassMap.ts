@@ -4,6 +4,7 @@ import {
   type AllGlassCatalogsData,
   type CatalogName,
   type GlassData,
+  type GlassLookupMaps,
   type GlassMapPlotType,
   type PartialDispersionType,
   type PlotPoint,
@@ -20,6 +21,13 @@ export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {
   Sumita: "#ec4899",
   Special: "#f97316",
 };
+
+const BUILT_IN_SPECIAL_MEDIA = ["CaF2", "Fused silica", "Water"] as const;
+const CAF2_ALIASES = ["fluorite", "fluorspar"] as const;
+
+function normalizeLookupKey(value: string): string {
+  return value.trim().toLowerCase();
+}
 
 export function normalizeGlassData(raw: RawGlassData): GlassData {
   return {
@@ -48,6 +56,39 @@ export function normalizeAllCatalogsData(raw: RawAllGlassCatalogsData): AllGlass
     result[catalogName] = catalog;
   }
   return result as AllGlassCatalogsData;
+}
+
+export function buildGlassLookupMaps(catalogsData: AllGlassCatalogsData): GlassLookupMaps {
+  const manufacturerMap = new Map<string, CatalogName>();
+  const mediumMap = new Map<string, { medium: string; manufacturer: string }>();
+
+  for (const catalogName of CATALOG_NAMES) {
+    manufacturerMap.set(normalizeLookupKey(catalogName), catalogName);
+
+    for (const glassName of Object.keys(catalogsData[catalogName])) {
+      if (catalogName === "Special") {
+        if (glassName !== "REFL") {
+          mediumMap.set(normalizeLookupKey(glassName), { medium: glassName, manufacturer: "" });
+        }
+        continue;
+      }
+
+      mediumMap.set(`${normalizeLookupKey(catalogName)}:${normalizeLookupKey(glassName)}`, {
+        medium: glassName,
+        manufacturer: catalogName,
+      });
+    }
+  }
+
+  for (const medium of BUILT_IN_SPECIAL_MEDIA) {
+    mediumMap.set(normalizeLookupKey(medium), { medium, manufacturer: "" });
+  }
+
+  for (const alias of CAF2_ALIASES) {
+    mediumMap.set(normalizeLookupKey(alias), { medium: "CaF2", manufacturer: "" });
+  }
+
+  return { manufacturerMap, mediumMap };
 }
 
 export function computePlotPoints(

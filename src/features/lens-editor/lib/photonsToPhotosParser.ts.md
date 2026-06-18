@@ -6,7 +6,7 @@ Parses Photons to Photos lens prescription `.txt` files into app `OpticalModel` 
 
 ## API
 
-- `parsePhotonsToPhotosText(text)` returns either:
+- `parsePhotonsToPhotosText(text, lookupMaps?)` returns either:
   - `{ kind: "prime", model }` for single-focal-length files.
   - `{ kind: "zoom", focalLengthChoices, resolve }` for multi-column zoom files; `resolve(choiceIndex)` builds the selected focal-length `OpticalModel`.
 
@@ -16,7 +16,9 @@ Parses Photons to Photos lens prescription `.txt` files into app `OpticalModel` 
 - `Infinity` radii, `AS`, and `CG` radii become flat surfaces (`curvatureRadius: 0`). `Infinity` object distances become `1e10`.
 - Lens-data aperture values become `semiDiameter = aperture / 2`.
 - Rows with `AS` radius are aperture stops (`label: "Stop"`).
-- Glass name/catalog columns take precedence and map to `medium` plus uppercase `manufacturer`. Without glass names, `nd` and `vd` are preserved as string `medium` and `manufacturer`; blank material data maps to air.
+- Glass name/catalog columns take precedence. When lookup maps are provided, special media and catalog glasses resolve case-insensitively to canonical app names. Special media `CaF2`, `Fused silica`, and `Water` use an empty manufacturer, and `fluorite` / `fluorspar` resolve to `CaF2`.
+- If lookup maps are provided and a named glass is unsupported, parser falls back to model-glass `nd` / `vd` strings when `nd` is present. Without lookup maps, named glasses keep the legacy behavior: `medium` is the imported glass name and `manufacturer` is the uppercased catalog.
+- Without glass names, `nd` and `vd` are preserved as string `medium` and `manufacturer`; blank material data maps to air.
 - Variable thickness tokens such as `Bf`, `d5`, and `d12` resolve from the selected variable-distance column.
 - `[aspherical data]` rows attach `EvenAspherical` configs to matching surfaces and reject radius disagreement beyond a small tolerance.
 - Imported specs use image-space `f/#` (the System Specs UI-supported f-number option), object angle fields `[0, 0.707, 1]`, Fraunhofer d/F/C wavelengths, and `setAutoAperture: "manualAperture"`.
@@ -24,4 +26,4 @@ Parses Photons to Photos lens prescription `.txt` files into app `OpticalModel` 
 
 ## Tests
 
-Covered by `photonsToPhotosParser.test.ts` with prime, glass, fisheye stop, zoom column selection, unresolved variables, missing sections, and aspherical radius disagreement.
+Covered by `photonsToPhotosParser.test.ts` with prime, glass, case-insensitive lookup resolution, special material aliases, unsupported named-glass fallback, fisheye stop, zoom column selection, unresolved variables, missing sections, and aspherical radius disagreement.

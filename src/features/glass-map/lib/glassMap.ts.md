@@ -19,6 +19,14 @@ Converts snake_case Python API response data to camelCase TypeScript data.
 Iterates over all known catalog names from `CATALOG_NAMES` and normalizes each glass entry.
 Gracefully handles missing catalogs by returning an empty object for them.
 
+#### `buildGlassLookupMaps(catalogsData: AllGlassCatalogsData): GlassLookupMaps`
+Builds app-wide case-insensitive lookup maps from normalized catalog data:
+- `manufacturerMap` maps trimmed lowercase catalog names to canonical `CatalogName` values.
+- `mediumMap` maps trimmed lowercase special-media names, aliases, and `catalog:glass` keys to canonical `{ medium, manufacturer }` values.
+- Catalog glasses use keys like `hoya:h-lak52`.
+- Special media use an empty manufacturer and include built-ins `CaF2`, `Fused silica`, and `Water`, loaded non-`REFL` `Special` entries, and `fluorite` / `fluorspar` aliases for `CaF2`.
+- `REFL` is intentionally not exposed through a lowercase special-media alias.
+
 #### `computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType): PlotPoint[]`
 Computes scatter plot points based on current filter and axis settings:
 - Skips disabled catalogs
@@ -31,12 +39,14 @@ Computes scatter plot points based on current filter and axis settings:
 ```tsx
 import {
   CATALOG_COLOR_MAP,
+  buildGlassLookupMaps,
   computePlotPoints,
   normalizeAllCatalogsData,
 } from "@/features/glass-map/lib/glassMap";
 import type { AllGlassCatalogsData, CatalogName } from "@/features/glass-map/types/glassMap";
 
 const catalogsData = normalizeAllCatalogsData(rawData);
+const lookupMaps = buildGlassLookupMaps(catalogsData);
 
 const plotPoints = computePlotPoints(
   catalogsData,

@@ -344,12 +344,34 @@ Therefore, the parsed `Surface` instance is:
   label: "Default",
   curvatureRadius: 32.92,
   thickness: 1.65,
-  medium: "H-LAK52",
-  manufacturer: "CDGM",
+  medium: "H-LAK52", // canonical glass name when it matches loaded catalog data
+  manufacturer: "CDGM", // canonical catalog name when it matches loaded catalog data
   semiDiameter: (29.02/2),
 }
 
 ```
+
+Glass name and catalog matching is case-insensitive when the app-wide glass catalogs have loaded. The imported manufacturer and glass strings are resolved to the canonical app values from the catalog data, so casing variants such as `hoya` and `H-LAK52` can import as `Hoya` and the loaded canonical glass name.
+
+Special media names `CaF2`, `Fused silica`, and `Water` are also matched case-insensitively and parsed with an empty manufacturer:
+```typescript
+{
+  medium: "CaF2",
+  manufacturer: "",
+}
+```
+
+The aliases `fluorite` and `fluorspar` resolve to canonical `CaF2`. Reflective material `REFL` is not accepted through lowercase aliasing.
+
+If a row provides a named glass that does not exist in the lookup maps, and the row also includes `nd`, the parser falls back to the Photons to Photos model-glass values:
+```typescript
+{
+  medium: "1.654", // nd
+  manufacturer: "39.1", // vd
+}
+```
+
+If the glass catalogs are unavailable, named-glass rows keep legacy parsing: the imported glass name is used as `medium` and the imported catalog is uppercased as `manufacturer`.
 
 ## 4. Examples of aspheric lens surfaces and air surfaces
 The following examples have aspheric surfaces, i.e. the `surface_id` appears under `[aspherical data]`.

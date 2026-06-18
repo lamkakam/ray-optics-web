@@ -20,6 +20,10 @@ import { AnalysisPlotStoreContext } from "@/features/analysis/providers/Analysis
 import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
+import {
+  GlassCatalogContext,
+  type GlassCatalogContextValue,
+} from "@/shared/components/providers/GlassCatalogProvider";
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
@@ -274,17 +278,27 @@ function renderLensEditor(overrides?: {
   const { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore } = makeStores();
   const proxy = overrides && "proxy" in overrides ? overrides.proxy : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
+  const glassCatalogContextValue: GlassCatalogContextValue = {
+    catalogs: undefined,
+    lookupMaps: undefined,
+    error: undefined,
+    isLoaded: false,
+    isLoading: false,
+    preload: jest.fn(),
+  };
   const renderResult = render(
     <SpecsConfiguratorStoreContext.Provider value={specsStore}>
       <LensEditorStoreContext.Provider value={lensStore}>
         <AnalysisPlotStoreContext.Provider value={analysisPlotStore}>
           <AnalysisDataStoreContext value={analysisDataStore}>
             <LensLayoutImageStoreContext value={lensLayoutImageStore}>
-              <LensEditor
-                proxy={proxy}
-                isReady={overrides?.isReady ?? true}
-                onError={onError}
-              />
+              <GlassCatalogContext.Provider value={glassCatalogContextValue}>
+                <LensEditor
+                  proxy={proxy}
+                  isReady={overrides?.isReady ?? true}
+                  onError={onError}
+                />
+              </GlassCatalogContext.Provider>
             </LensLayoutImageStoreContext>
           </AnalysisDataStoreContext>
         </AnalysisPlotStoreContext.Provider>

@@ -1,3 +1,4 @@
+import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { OpticalModel, Surface } from "@/shared/lib/types/opticalModel";
 
 export interface PhotonsToPhotosFocalLengthChoice {
@@ -44,7 +45,10 @@ const REQUIRED_SECTIONS: readonly SectionName[] = ["descriptive data", "variable
 const IGNORED_SECTIONS = new Set<SectionName>(["figure", "notes"]);
 const RADIUS_TOLERANCE = 1e-6;
 
-export function parsePhotonsToPhotosText(text: string): PhotonsToPhotosParseResult {
+export function parsePhotonsToPhotosText(
+  text: string,
+  lookupMaps?: GlassLookupMaps,
+): PhotonsToPhotosParseResult {
   const sections = parseSections(text);
   for (const sectionName of REQUIRED_SECTIONS) {
     if (!sections.has(sectionName)) {
@@ -60,14 +64,20 @@ export function parsePhotonsToPhotosText(text: string): PhotonsToPhotosParseResu
   if (focalLengths.length <= 1) {
     return {
       kind: "prime",
-      model: buildOpticalModel(variableDistances, lensRows, asphericalRows, 0),
+      model: buildOpticalModel(variableDistances, lensRows, asphericalRows, 0, lookupMaps),
     };
   }
 
   return {
     kind: "zoom",
     focalLengthChoices: focalLengths.map((focalLength, index) => ({ index, focalLength })),
-    resolve: (choiceIndex) => buildOpticalModel(variableDistances, lensRows, asphericalRows, choiceIndex),
+    resolve: (choiceIndex) => buildOpticalModel(
+      variableDistances,
+      lensRows,
+      asphericalRows,
+      choiceIndex,
+      lookupMaps,
+    ),
   };
 }
 
@@ -138,11 +148,12 @@ function buildOpticalModel(
   lensRows: readonly LensRow[],
   asphericalRows: readonly AsphericalRow[],
   choiceIndex: number,
+  lookupMaps: GlassLookupMaps | undefined,
 ): OpticalModel {
   const surfaces = lensRows.map((row): Surface => {
     const radius = parseRadius(row.radiusToken);
     const thickness = resolveDistance(row.thicknessToken, variableDistances, choiceIndex);
-    const material = resolveMaterial(row);
+    const material = resolveMaterial(row, lookupMaps);
     return {
       label: isApertureStop(row.radiusToken) ? "Stop" : "Default",
       curvatureRadius: radius,
@@ -225,14 +236,49 @@ function resolveDistance(
   return getVariableValue(variableDistances, token, choiceIndex);
 }
 
-function resolveMaterial(row: LensRow): Pick<Surface, "medium" | "manufacturer"> {
+function resolveMaterial(
+  row: LensRow,
+  lookupMaps: GlassLookupMaps | undefined,
+): Pick<Surface, "medium" | "manufacturer"> {
   if (row.glassName !== "") {
+    const resolvedMaterial = resolveNamedMaterial(row, lookupMaps);
+    if (resolvedMaterial !== undefined) {
+      return resolvedMaterial;
+    }
+    if (lookupMaps !== undefined && row.nd !== "") {
+      return { medium: row.nd, manufacturer: row.vd };
+    }
     return { medium: row.glassName, manufacturer: row.catalog.toUpperCase() };
   }
   if (row.nd !== "") {
     return { medium: row.nd, manufacturer: row.vd };
   }
   return { medium: "air", manufacturer: "" };
+}
+
+function resolveNamedMaterial(
+  row: LensRow,
+  lookupMaps: GlassLookupMaps | undefined,
+): Pick<Surface, "medium" | "manufacturer"> | undefined {
+  if (lookupMaps === undefined) {
+    return undefined;
+  }
+
+  const specialMaterial = lookupMaps.mediumMap.get(normalizeLookupKey(row.glassName));
+  if (specialMaterial !== undefined) {
+    return specialMaterial;
+  }
+
+  const canonicalManufacturer = lookupMaps.manufacturerMap.get(normalizeLookupKey(row.catalog));
+  if (canonicalManufacturer === undefined) {
+    return undefined;
+  }
+
+  return lookupMaps.mediumMap.get(`${normalizeLookupKey(canonicalManufacturer)}:${normalizeLookupKey(row.glassName)}`);
+}
+
+function normalizeLookupKey(value: string): string {
+  return value.trim().toLowerCase();
 }
 
 function getRequiredVariable(
