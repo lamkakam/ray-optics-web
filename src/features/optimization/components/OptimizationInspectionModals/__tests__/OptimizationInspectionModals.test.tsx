@@ -36,6 +36,7 @@ const glassCatalogValue: GlassCatalogContextValue = {
     Sumita: {},
     Special: {},
   },
+  lookupMaps: undefined,
   error: undefined,
   isLoaded: true,
   isLoading: false,

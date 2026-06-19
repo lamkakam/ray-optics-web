@@ -34,6 +34,16 @@ export interface RawGlassData {
 export type AllGlassCatalogsData = Record<CatalogName, Record<string, GlassData>>;
 export type RawAllGlassCatalogsData = Record<string, Record<string, RawGlassData>>;
 
+export interface GlassMediumLookupValue {
+  readonly medium: string;
+  readonly manufacturer: string;
+}
+
+export interface GlassLookupMaps {
+  readonly manufacturerMap: ReadonlyMap<string, CatalogName>;
+  readonly mediumMap: ReadonlyMap<string, GlassMediumLookupValue>;
+}
+
 export type AbbeNumCenterLine = 'd' | 'e';
 export type PartialDispersionType = 'P_F_d' | 'P_F_e' | 'P_g_F';
 export type GlassMapPlotType = 'refractiveIndex' | 'partialDispersion';

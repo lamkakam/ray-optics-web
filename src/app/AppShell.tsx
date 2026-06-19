@@ -189,6 +189,9 @@ export default function AppShell({ children }: AppShellProps) {
   const glassCatalogContextValue = useMemo(
     () => ({
       catalogs: effectiveGlassCatalogsResult?.data,
+      lookupMaps: effectiveGlassCatalogsResult?.data === undefined
+        ? undefined
+        : effectiveGlassCatalogsResult.lookupMaps,
       error: effectiveGlassCatalogsResult?.error,
       isLoaded: effectiveGlassCatalogsResult?.data !== undefined,
       isLoading: glassCatalogsLoading,

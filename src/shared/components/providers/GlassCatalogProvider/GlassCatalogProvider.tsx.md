@@ -8,6 +8,7 @@ Client-only React context for app-wide glass catalog data. The provider does not
 ```ts
 interface GlassCatalogContextValue {
   catalogs: AllGlassCatalogsData | undefined;
+  lookupMaps: GlassLookupMaps | undefined;
   error: string | undefined;
   isLoaded: boolean;
   isLoading: boolean;
@@ -17,6 +18,7 @@ interface GlassCatalogContextValue {
 
 ## Behaviour
 - `catalogs` contains normalized worker-backed glass catalog data once loaded
+- `lookupMaps` contains the case-insensitive manufacturer and medium maps built from the same loaded catalog data
 - `error` contains the last load failure message, if any
 - `isLoaded` is `true` after the preload settles successfully
 - `isLoading` is `true` while the shared shell preload is in flight
