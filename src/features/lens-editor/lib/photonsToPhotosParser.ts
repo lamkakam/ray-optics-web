@@ -312,11 +312,12 @@ function resolveMaterial(
     if (resolvedMaterial !== undefined) {
       return resolvedMaterial;
     }
-    if (lookupMaps !== undefined && row.nd !== "") {
-      return { medium: row.nd, manufacturer: row.vd };
-    }
-    return { medium: row.glassName, manufacturer: row.catalog.toUpperCase() };
+    return fallbackModelGlassMaterial(row);
   }
+  return fallbackModelGlassMaterial(row);
+}
+
+function fallbackModelGlassMaterial(row: LensRow): Pick<Surface, "medium" | "manufacturer"> {
   if (row.nd !== "") {
     return { medium: row.nd, manufacturer: row.vd };
   }

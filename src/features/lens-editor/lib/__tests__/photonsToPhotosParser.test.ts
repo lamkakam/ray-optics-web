@@ -34,6 +34,31 @@ function makeSingleSurfaceText({
   ].join("\n");
 }
 
+function makeObjectSideText({
+  nd,
+  vd,
+  glassName,
+  catalog,
+}: {
+  readonly nd: string;
+  readonly vd: string;
+  readonly glassName: string;
+  readonly catalog: string;
+}): string {
+  return [
+    "[descriptive data]",
+    "title\tParser object-side material test",
+    "[variable distances]",
+    "Focal Length\t50",
+    "F-Number\t4",
+    "Angle of View\t20",
+    "d0\t0",
+    "[lens data]",
+    ["1", "Infinity", "5", nd, "20", vd, glassName, catalog].join("\t"),
+    ["2", "100", "5", "1.5", "20", "60", "", ""].join("\t"),
+  ].join("\n");
+}
+
 function parseSingleSurfaceMaterial(
   row: Parameters<typeof makeSingleSurfaceText>[0],
   lookupMaps?: GlassLookupMaps,
@@ -99,8 +124,8 @@ describe("parsePhotonsToPhotosText", () => {
 
     expect(validateImportedLensData(result.model)).toBe(true);
     expect(result.model.surfaces[0]).toMatchObject({
-      medium: "H-ZF7LAGT",
-      manufacturer: "CDGM",
+      medium: "1.805189",
+      manufacturer: "25.47729",
     });
     expect(result.model.surfaces[10]).toMatchObject({
       label: "Stop",
@@ -152,6 +177,44 @@ describe("parsePhotonsToPhotosText", () => {
     expect(surface).toMatchObject({ medium: "1.654", manufacturer: "39.1" });
   });
 
+  it("falls back to model glass when unsupported named glass has model-glass values without lookup maps", () => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "1.654", vd: "39.1", glassName: "UNKNOWN", catalog: "HOYA" },
+    );
+
+    expect(surface).toMatchObject({ medium: "1.654", manufacturer: "39.1" });
+  });
+
+  it("falls back to blank manufacturer when unsupported named glass has nd but no vd", () => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "1.654", vd: "", glassName: "UNKNOWN", catalog: "HOYA" },
+    );
+
+    expect(surface).toMatchObject({ medium: "1.654", manufacturer: "" });
+  });
+
+  it("falls back to air when unsupported named glass has no model-glass values", () => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "", vd: "", glassName: "sample", catalog: "" },
+    );
+
+    expect(surface).toMatchObject({ medium: "air", manufacturer: "" });
+  });
+
+  it("falls back to air for unsupported object-side glass without model-glass values", () => {
+    const result = parsePhotonsToPhotosText(
+      makeObjectSideText({ nd: "", vd: "", glassName: "sample", catalog: "" }),
+    );
+
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+    expect(result.model.object).toEqual({
+      distance: 5,
+      medium: "air",
+      manufacturer: "",
+    });
+  });
+
   it("parses inline aspherical stop rows in fisheye prime data", () => {
     const result = parsePhotonsToPhotosText(readFixture("prime-fisheye-aspherical-no-glass-type.txt"));
 
@@ -178,7 +241,7 @@ describe("parsePhotonsToPhotosText", () => {
     expect(validateImportedLensData(result.model)).toBe(true);
     expect(result.model.object).toEqual({
       distance: 0.17,
-      medium: "Cover Glass",
+      medium: "1.51502",
       manufacturer: "",
     });
     expect(result.model.surfaces[0]).toMatchObject({
@@ -207,8 +270,8 @@ describe("parsePhotonsToPhotosText", () => {
     expect(validateImportedLensData(result.model)).toBe(true);
     expect(result.model.object).toEqual({
       distance: 0.12,
-      medium: "protective transparent member",
-      manufacturer: "",
+      medium: "1.48749",
+      manufacturer: "70.23",
     });
     expect(result.model.surfaces[0]).toMatchObject({
       thickness: 0.3,
