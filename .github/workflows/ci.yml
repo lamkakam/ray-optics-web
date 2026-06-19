@@ -27,6 +27,8 @@ jobs:
         run: bash scripts/run-python-tests.sh
       - run: bash scripts/build-python-wheel.sh
       - run: npm ci
+      - name: Fetch lens data fixtures
+        run: bash scripts/fetch-lens-data.sh
       - run: npm run type-check
       - run: npm run lint
       - run: npm run test
