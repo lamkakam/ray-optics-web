@@ -180,16 +180,13 @@ function buildOpticalModel(
 
   const pupil = buildPupilSpec(variableDistances, choiceIndex);
   const field = buildFieldSpec(variableDistances, choiceIndex, pupil);
+  const objectSide = buildObjectSide(variableDistances, choiceIndex, surfaces);
 
   return {
     setAutoAperture: "manualAperture",
-    object: {
-      distance: getVariableValue(variableDistances, "d0", choiceIndex),
-      medium: "air",
-      manufacturer: "",
-    },
+    object: objectSide.object,
     image: { curvatureRadius: 0 },
-    surfaces,
+    surfaces: objectSide.surfaces,
     specs: {
       pupil,
       field,
@@ -198,6 +195,38 @@ function buildOpticalModel(
         referenceIndex: 0,
       },
     },
+  };
+}
+
+function buildObjectSide(
+  variableDistances: ReadonlyMap<string, readonly number[]>,
+  choiceIndex: number,
+  surfaces: Surface[],
+): Pick<OpticalModel, "object" | "surfaces"> {
+  const d0 = getVariableValue(variableDistances, "d0", choiceIndex);
+  if (d0 !== 0) {
+    return {
+      object: { distance: d0, medium: "air", manufacturer: "" },
+      surfaces,
+    };
+  }
+
+  const objectSurfaceIndex = surfaces.findIndex((surface) => surface.thickness !== 0);
+  const objectSurface = surfaces[objectSurfaceIndex];
+  if (objectSurface === undefined) {
+    return {
+      object: { distance: d0, medium: "air", manufacturer: "" },
+      surfaces,
+    };
+  }
+
+  return {
+    object: {
+      distance: objectSurface.thickness,
+      medium: objectSurface.medium,
+      manufacturer: objectSurface.manufacturer,
+    },
+    surfaces: surfaces.slice(objectSurfaceIndex + 1),
   };
 }
 

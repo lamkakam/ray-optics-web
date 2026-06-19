@@ -243,6 +243,9 @@ Magnification	-100
 WD	0.100
 d0	0
 Bf	169.23
+[lens data]
+0	Infinity	0.17	1.51502	3.00		Cover Glass
+...
 ```
 
 The parsed `OpticalSpecs` instance would be:
@@ -276,16 +279,22 @@ const opticalModal: OpticalModel = {
   },
 
   object: {
-    distance: 0, // d0 is 0 in this example
-    medium: "air", // always air
-    manufacturer: "", // always empty string for "air"
+    // d0 is 0 in this example, so object data is copied from the first parsed surface with non-zero thickness.
+    distance: 0.17,
+
+    // medium of the first parsed surface with non-zero thickness after material resolution.
+    medium: "1.51502",
+
+    // manufacturer of the first parsed surface with non-zero thickness after material resolution.
+    manufacturer: "",
   },
 
   image: {
     curvatureRadius: 0, // always flat
   },
 
-  // parsed rows from the section [lens data] and an optional section [aspherical data]
+  // parsed rows from the section [lens data] and an optional section [aspherical data].
+  // Because d0 is 0, the surface used for object data and every row before it are omitted.
   surfaces: [...],
 };
 

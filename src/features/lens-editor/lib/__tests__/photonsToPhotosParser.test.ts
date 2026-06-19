@@ -176,7 +176,17 @@ describe("parsePhotonsToPhotosText", () => {
     if (result.kind !== "prime") throw new Error("Expected prime result");
 
     expect(validateImportedLensData(result.model)).toBe(true);
-    expect(result.model.object.distance).toBe(0);
+    expect(result.model.object).toEqual({
+      distance: 0.17,
+      medium: "Cover Glass",
+      manufacturer: "",
+    });
+    expect(result.model.surfaces[0]).toMatchObject({
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 1.5,
+    });
     expect(result.model.specs.pupil).toEqual({ space: "object", type: "NA", value: 1.35 });
     expect(result.model.specs.field).toEqual({
       space: "image",
@@ -195,6 +205,17 @@ describe("parsePhotonsToPhotosText", () => {
     if (result.kind !== "prime") throw new Error("Expected prime result");
 
     expect(validateImportedLensData(result.model)).toBe(true);
+    expect(result.model.object).toEqual({
+      distance: 0.12,
+      medium: "protective transparent member",
+      manufacturer: "",
+    });
+    expect(result.model.surfaces[0]).toMatchObject({
+      thickness: 0.3,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 1.8,
+    });
     expect(result.model.specs.pupil).toEqual({ space: "object", type: "NA", value: 0.8 });
     expect(result.model.specs.field).toEqual({
       space: "image",
@@ -204,7 +225,7 @@ describe("parsePhotonsToPhotosText", () => {
       isRelative: true,
       isWideAngle: true,
     });
-    expect(result.model.surfaces[12]).toMatchObject({
+    expect(result.model.surfaces[11]).toMatchObject({
       label: "Default",
       curvatureRadius: 0,
       thickness: 1.5,
