@@ -3,6 +3,7 @@ import {
   createLensEditorSlice,
   type LensEditorState,
 } from "@/features/lens-editor/stores/lensEditorStore";
+import { OBJECT_DISTANCE_INFINITY_THRESHOLD } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
 
@@ -58,7 +59,13 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       const rows = store.getState().rows;
       expect(rows).toHaveLength(2);
-      expect(rows[0]).toMatchObject({ id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" });
+      expect(rows[0]).toMatchObject({
+        id: OBJECT_ROW_ID,
+        kind: "object",
+        objectDistance: OBJECT_DISTANCE_INFINITY_THRESHOLD,
+        medium: "air",
+        manufacturer: "",
+      });
       expect(rows[1]).toMatchObject({ id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 });
     });
 

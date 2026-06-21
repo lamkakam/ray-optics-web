@@ -2,6 +2,7 @@ import { type StateCreator } from "zustand";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import { OBJECT_DISTANCE_INFINITY_THRESHOLD } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 interface ModalState {
@@ -84,7 +85,13 @@ function derivePendingMediumSelection(rows: GridRow[], rowId: string): PendingMe
 }
 
 const DEFAULT_ROWS: GridRow[] = [
-  { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" },
+  {
+    id: OBJECT_ROW_ID,
+    kind: "object",
+    objectDistance: OBJECT_DISTANCE_INFINITY_THRESHOLD,
+    medium: "air",
+    manufacturer: "",
+  },
   { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
 ];
 

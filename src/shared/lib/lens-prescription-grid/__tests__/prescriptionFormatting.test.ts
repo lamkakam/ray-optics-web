@@ -2,6 +2,7 @@ import {
   buildReverseSurfaceOptions,
   buildScaleSurfaceOptions,
   formatPrescriptionRows,
+  OBJECT_DISTANCE_INFINITY_THRESHOLD,
   reverseRows,
   scaleRows,
 } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
@@ -14,7 +15,7 @@ function surfaceRows(rows: GridRow[]): Extract<GridRow, { kind: "surface" }>[] {
 }
 
 const baseSurfaces: Surfaces = {
-  object: { distance: 1e6, medium: "air", manufacturer: "" },
+  object: { distance: OBJECT_DISTANCE_INFINITY_THRESHOLD, medium: "air", manufacturer: "" },
   image: {
     curvatureRadius: 9,
     decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 0, offsetX: 3, offsetY: 4 },
@@ -68,6 +69,10 @@ const baseSurfaces: Surfaces = {
 };
 
 describe("prescriptionFormatting", () => {
+  it("exports the object distance infinity threshold", () => {
+    expect(OBJECT_DISTANCE_INFINITY_THRESHOLD).toBe(1e10);
+  });
+
   it("builds scale and reverse surface selector options", () => {
     const rows = surfacesToGridRows(baseSurfaces);
 
@@ -88,11 +93,11 @@ describe("prescriptionFormatting", () => {
     ]);
   });
 
-  it("scales the full Object-to-Image range while preserving object distances at or above 1e6", () => {
+  it("scales the full Object-to-Image range while preserving object distances at or above 1e10", () => {
     const rows = surfacesToGridRows(baseSurfaces);
     const result = scaleRows(rows, { first: 0, last: 5, factor: 2 });
 
-    expect(result[0].kind === "object" ? result[0].objectDistance : undefined).toBe(1e6);
+    expect(result[0].kind === "object" ? result[0].objectDistance : undefined).toBe(OBJECT_DISTANCE_INFINITY_THRESHOLD);
     expect(surfaceRows(result).map((row) => row.curvatureRadius)).toEqual([20, -40, 60, -80]);
     expect(surfaceRows(result).map((row) => row.thickness)).toEqual([2, 4, 6, 8]);
     expect(surfaceRows(result).map((row) => row.semiDiameter)).toEqual([10, 12, 14, 16]);
@@ -100,7 +105,7 @@ describe("prescriptionFormatting", () => {
     expect(image?.kind === "image" ? image.curvatureRadius : undefined).toBe(18);
   });
 
-  it("scales object distance below 1e6 and image decenter offsets when Image is included", () => {
+  it("scales object distance below 1e10 and image decenter offsets when Image is included", () => {
     const rows = surfacesToGridRows({
       ...baseSurfaces,
       object: { distance: 500, medium: "air", manufacturer: "" },

@@ -8,6 +8,7 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 
 - `buildScaleSurfaceOptions(rows)` — returns selector options from `Object` through each surface and `Image`.
 - `buildReverseSurfaceOptions(rows)` — returns selector options from `Object` through the last 1-based surface; `Image` is intentionally excluded.
+- `OBJECT_DISTANCE_INFINITY_THRESHOLD` — object distances at or above `1e10` are treated as infinity-like and preserved during scale formatting.
 - `scaleRows(rows, { first, last, factor })` — scales selected prescription rows.
 - `reverseRows(rows, { first, last })` — reverses selected surface rows and boundary gaps.
 - `formatPrescriptionRows(rows, options)` — validates selection/factor, builds the candidate array, and rejects invalid or overflowing numeric results atomically.
@@ -17,7 +18,7 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 - `first` and `last` are selector indices: `0` for Object, `1..n` for surfaces, and `n + 1` for Image.
 - Surface `curvatureRadius`, `thickness`, `semiDiameter`, and decenter `offsetX`/`offsetY` are multiplied by `factor`.
 - Image `curvatureRadius` and image decenter offsets are multiplied when Image is in the selected range.
-- Object distance is multiplied only when it is below `1e6`; larger object distances are preserved.
+- Object distance is multiplied only when it is below `1e10`; larger object distances are preserved.
 - Toroid sweep radius is multiplied for `XToroid`/`YToroid`.
 - Radial Polynomial coefficients use orders `1..10`; other coefficient-bearing aspheres use even orders `2..20`. Each coefficient is divided by `factor ** (order - 1)`.
 

@@ -26,7 +26,7 @@ export type FormattingRowsResult =
   | { readonly ok: false; readonly rows: GridRow[]; readonly error: string };
 
 const OBJECT_SELECTOR_INDEX = 0;
-const OBJECT_DISTANCE_INFINITY_THRESHOLD = 1e6;
+export const OBJECT_DISTANCE_INFINITY_THRESHOLD = 1e10;
 
 interface GapProperties {
   readonly thickness: number;

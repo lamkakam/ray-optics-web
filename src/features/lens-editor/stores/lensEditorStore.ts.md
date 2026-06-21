@@ -62,7 +62,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - Object and image rows (`kind === "object"` / `kind === "image"`) cannot be deleted or added after (image guard in `addRowAfter`).
 - Normal row replacements, row edits, row insertions, and row deletions use `optimizationSyncPolicy: "resetOptimizationModes"` so Optimization clears stale radius/thickness/asphere variable modes after ordinary editor prescription edits.
 - Optimization Apply and Focusing may pass `optimizationSyncPolicy: "preserveOptimizationModes"` because those prescription updates originate from Optimization-compatible workflows and should not clear Optimization prescription modes.
-- The default object row is `{ objectDistance: 0, medium: "air", manufacturer: "" }`.
+- The default object row is `{ objectDistance: OBJECT_DISTANCE_INFINITY_THRESHOLD, medium: "air", manufacturer: "" }`, currently `1e10`.
 - New rows inserted by `addRowAfter` are seeded with `generateRowId()` and default surface values: flat (`curvatureRadius: 0`), zero thickness, `"air"` medium, `semiDiameter: 1`.
 - Modal `rowId` is reset to `""` on close.
 - `pendingMediumSelection` persists unconfirmed catalog-glass choices across route changes while the root store provider remains mounted.
