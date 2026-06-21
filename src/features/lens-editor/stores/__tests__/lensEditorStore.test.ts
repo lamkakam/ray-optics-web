@@ -71,6 +71,49 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       expect(store.getState().bottomDrawerHeight).toBeUndefined();
     });
+
+    it("defaults formatting controls to scale from Object to Image", () => {
+      const store = makeStore();
+      expect(store.getState().formattingMode).toBe("scale");
+      expect(store.getState().formattingScaleFactor).toBe("1");
+      expect(store.getState().formattingScaleFirstSurface).toBe(0);
+      expect(store.getState().formattingScaleLastSurface).toBe(1);
+      expect(store.getState().formattingReverseFirstSurface).toBe(0);
+      expect(store.getState().formattingReverseLastSurface).toBe(0);
+    });
+  });
+
+  describe("formatting controls", () => {
+    it("updates formatting mode without changing other formatting values", () => {
+      const store = makeStore();
+      const before = store.getState();
+
+      store.getState().setFormattingMode("reverse");
+
+      expect(store.getState().formattingMode).toBe("reverse");
+      expect(store.getState().formattingScaleFactor).toBe(before.formattingScaleFactor);
+      expect(store.getState().formattingScaleFirstSurface).toBe(before.formattingScaleFirstSurface);
+      expect(store.getState().formattingScaleLastSurface).toBe(before.formattingScaleLastSurface);
+      expect(store.getState().formattingReverseFirstSurface).toBe(before.formattingReverseFirstSurface);
+      expect(store.getState().formattingReverseLastSurface).toBe(before.formattingReverseLastSurface);
+    });
+
+    it("updates each formatting draft value independently", () => {
+      const store = makeStore();
+
+      store.getState().setFormattingScaleFactor("2.5");
+      store.getState().setFormattingScaleFirstSurface(1);
+      store.getState().setFormattingScaleLastSurface(2);
+      store.getState().setFormattingReverseFirstSurface(1);
+      store.getState().setFormattingReverseLastSurface(1);
+
+      expect(store.getState().formattingScaleFactor).toBe("2.5");
+      expect(store.getState().formattingScaleFirstSurface).toBe(1);
+      expect(store.getState().formattingScaleLastSurface).toBe(2);
+      expect(store.getState().formattingReverseFirstSurface).toBe(1);
+      expect(store.getState().formattingReverseLastSurface).toBe(1);
+      expect(store.getState().formattingMode).toBe("scale");
+    });
   });
 
   describe("setRows", () => {
@@ -79,6 +122,29 @@ describe("lensEditorStore", () => {
       const rows = makeTestRows();
       store.getState().setRows(rows);
       expect(store.getState().rows).toEqual(rows);
+    });
+
+    it("seeds formatting default ranges from the first loaded row set", () => {
+      const store = makeStore();
+
+      store.getState().setRows(makeTestRows());
+
+      expect(store.getState().formattingScaleFirstSurface).toBe(0);
+      expect(store.getState().formattingScaleLastSurface).toBe(3);
+      expect(store.getState().formattingReverseFirstSurface).toBe(0);
+      expect(store.getState().formattingReverseLastSurface).toBe(2);
+    });
+
+    it("preserves formatting ranges after the first loaded row set", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().setFormattingScaleLastSurface(1);
+      store.getState().setFormattingReverseLastSurface(1);
+
+      store.getState().setRows(makeTestRows());
+
+      expect(store.getState().formattingScaleLastSurface).toBe(1);
+      expect(store.getState().formattingReverseLastSurface).toBe(1);
     });
 
     it("records prescription revision and default optimization reset policy", () => {

@@ -86,6 +86,12 @@ export function LensPrescriptionContainer({
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
   const decenterModal = useStore(store, (s) => s.decenterModal);
   const diffractionGratingModal = useStore(store, (s) => s.diffractionGratingModal);
+  const formattingMode = useStore(store, (s) => s.formattingMode);
+  const formattingScaleFactor = useStore(store, (s) => s.formattingScaleFactor);
+  const formattingScaleFirstSurface = useStore(store, (s) => s.formattingScaleFirstSurface);
+  const formattingScaleLastSurface = useStore(store, (s) => s.formattingScaleLastSurface);
+  const formattingReverseFirstSurface = useStore(store, (s) => s.formattingReverseFirstSurface);
+  const formattingReverseLastSurface = useStore(store, (s) => s.formattingReverseLastSurface);
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
   const [formattingOpen, setFormattingOpen] = useState(false);
   const [formattingError, setFormattingError] = useState<string | undefined>(undefined);
@@ -264,9 +270,24 @@ export function LensPrescriptionContainer({
       />
 
       <FormattingModal
-        key={formattingOpen ? `formatting-open-${rows.length}` : "formatting-closed"}
         isOpen={formattingOpen}
         rows={rows}
+        draft={{
+          mode: formattingMode,
+          scaleFactor: formattingScaleFactor,
+          scaleFirstSurface: formattingScaleFirstSurface,
+          scaleLastSurface: formattingScaleLastSurface,
+          reverseFirstSurface: formattingReverseFirstSurface,
+          reverseLastSurface: formattingReverseLastSurface,
+        }}
+        draftActions={{
+          setMode: (mode) => store.getState().setFormattingMode(mode),
+          setScaleFactor: (factor) => store.getState().setFormattingScaleFactor(factor),
+          setScaleFirstSurface: (surface) => store.getState().setFormattingScaleFirstSurface(surface),
+          setScaleLastSurface: (surface) => store.getState().setFormattingScaleLastSurface(surface),
+          setReverseFirstSurface: (surface) => store.getState().setFormattingReverseFirstSurface(surface),
+          setReverseLastSurface: (surface) => store.getState().setFormattingReverseLastSurface(surface),
+        }}
         onConfirm={(updatedRows) => {
           store.getState().setRows(updatedRows);
           setFormattingOpen(false);

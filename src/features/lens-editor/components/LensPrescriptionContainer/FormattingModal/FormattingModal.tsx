@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
@@ -14,11 +14,31 @@ import {
 } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
-type FormattingMode = "scale" | "reverse";
+export type FormattingMode = "scale" | "reverse";
+
+export interface FormattingDraft {
+  readonly mode: FormattingMode;
+  readonly scaleFactor: string;
+  readonly scaleFirstSurface: number;
+  readonly scaleLastSurface: number;
+  readonly reverseFirstSurface: number;
+  readonly reverseLastSurface: number;
+}
+
+export interface FormattingDraftActions {
+  readonly setMode: (mode: FormattingMode) => void;
+  readonly setScaleFactor: (factor: string) => void;
+  readonly setScaleFirstSurface: (surface: number) => void;
+  readonly setScaleLastSurface: (surface: number) => void;
+  readonly setReverseFirstSurface: (surface: number) => void;
+  readonly setReverseLastSurface: (surface: number) => void;
+}
 
 interface FormattingModalProps {
   readonly isOpen: boolean;
   readonly rows: readonly GridRow[];
+  readonly draft: FormattingDraft;
+  readonly draftActions: FormattingDraftActions;
   readonly onConfirm: (rows: GridRow[]) => void;
   readonly onCancel: () => void;
   readonly onError: (message: string) => void;
@@ -26,46 +46,54 @@ interface FormattingModalProps {
 
 const FORMAT_MODE_OPTIONS = [
   { value: "scale" as const, label: "Scale" },
-  { value: "reverse" as const, label: "Reverse" },
+  { value: "reverse" as const, label: "Reverse (also reversing thickness and medium)" },
 ];
 
 function lastSurfaceIndex(rows: readonly GridRow[]): number {
   return rows.filter((row) => row.kind === "surface").length;
 }
 
+function clampSurfaceIndex(value: number, max: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(Math.max(value, 0), max);
+}
+
 export function FormattingModal({
   isOpen,
   rows,
+  draft,
+  draftActions,
   onConfirm,
   onCancel,
   onError,
 }: FormattingModalProps) {
   const imageSelectorIndex = lastSurfaceIndex(rows) + 1;
-  const [mode, setMode] = useState<FormattingMode>("scale");
-  const [factor, setFactor] = useState("1");
-  const [firstSurface, setFirstSurface] = useState(0);
-  const [lastSurface, setLastSurface] = useState(imageSelectorIndex);
-
   const scaleOptions = useMemo(() => buildScaleSurfaceOptions(rows), [rows]);
   const reverseOptions = useMemo(() => buildReverseSurfaceOptions(rows), [rows]);
-  const currentOptions = mode === "scale" ? scaleOptions : reverseOptions;
-
-  function handleModeChange(nextMode: FormattingMode) {
-    setMode(nextMode);
-    setFirstSurface(0);
-    setLastSurface(nextMode === "scale" ? imageSelectorIndex : lastSurfaceIndex(rows));
-  }
+  const currentOptions = draft.mode === "scale" ? scaleOptions : reverseOptions;
+  const maxSurfaceIndex = draft.mode === "scale" ? imageSelectorIndex : lastSurfaceIndex(rows);
+  const firstSurface = clampSurfaceIndex(
+    draft.mode === "scale" ? draft.scaleFirstSurface : draft.reverseFirstSurface,
+    maxSurfaceIndex
+  );
+  const lastSurface = clampSurfaceIndex(
+    draft.mode === "scale" ? draft.scaleLastSurface : draft.reverseLastSurface,
+    maxSurfaceIndex
+  );
 
   function handleConfirm() {
-    const result = mode === "scale"
+    const result = draft.mode === "scale"
       ? formatPrescriptionRows(rows, {
-          mode,
+          mode: draft.mode,
           first: firstSurface,
           last: lastSurface,
-          factor: Number(factor),
+          factor: Number(draft.scaleFactor),
         })
       : formatPrescriptionRows(rows, {
-          mode,
+          mode: draft.mode,
           first: firstSurface,
           last: lastSurface,
         });
@@ -85,11 +113,11 @@ export function FormattingModal({
           name="lens-prescription-formatting-mode"
           label="Mode"
           options={FORMAT_MODE_OPTIONS}
-          value={mode}
-          onChange={handleModeChange}
+          value={draft.mode}
+          onChange={draftActions.setMode}
         />
 
-        {mode === "scale" && (
+        {draft.mode === "scale" && (
           <div>
             <Label htmlFor="formatting-factor">Factor</Label>
             <Input
@@ -98,8 +126,8 @@ export function FormattingModal({
               type="number"
               min="0"
               step="any"
-              value={factor}
-              onChange={(event) => setFactor(event.target.value)}
+              value={draft.scaleFactor}
+              onChange={(event) => draftActions.setScaleFactor(event.target.value)}
             />
           </div>
         )}
@@ -112,7 +140,15 @@ export function FormattingModal({
               aria-label="First Surface"
               options={currentOptions}
               value={firstSurface}
-              onChange={(event) => setFirstSurface(Number(event.target.value))}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (draft.mode === "scale") {
+                  draftActions.setScaleFirstSurface(value);
+                  return;
+                }
+
+                draftActions.setReverseFirstSurface(value);
+              }}
             />
           </div>
           <div>
@@ -122,7 +158,15 @@ export function FormattingModal({
               aria-label="Last Surface"
               options={currentOptions}
               value={lastSurface}
-              onChange={(event) => setLastSurface(Number(event.target.value))}
+              onChange={(event) => {
+                const value = Number(event.target.value);
+                if (draft.mode === "scale") {
+                  draftActions.setScaleLastSurface(value);
+                  return;
+                }
+
+                draftActions.setReverseLastSurface(value);
+              }}
             />
           </div>
         </div>

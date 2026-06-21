@@ -16,6 +16,7 @@ interface PendingMediumSelection {
 }
 
 export type LensEditorOptimizationSyncPolicy = "resetOptimizationModes" | "preserveOptimizationModes";
+export type FormattingMode = "scale" | "reverse";
 
 interface PrescriptionMutationOptions {
   readonly optimizationSyncPolicy?: LensEditorOptimizationSyncPolicy;
@@ -35,6 +36,12 @@ export interface LensEditorState {
   decenterModal: ModalState;
   diffractionGratingModal: ModalState;
   committedOpticalModel: OpticalModel | undefined;
+  formattingMode: FormattingMode;
+  formattingScaleFactor: string;
+  formattingScaleFirstSurface: number;
+  formattingScaleLastSurface: number;
+  formattingReverseFirstSurface: number;
+  formattingReverseLastSurface: number;
 
   setRows: (rows: GridRow[], options?: PrescriptionMutationOptions) => void;
   updateRow: (id: string, patch: Partial<GridRow>, options?: PrescriptionMutationOptions) => void;
@@ -55,6 +62,12 @@ export interface LensEditorState {
   openDiffractionGratingModal: (rowId: string) => void;
   closeDiffractionGratingModal: () => void;
   setCommittedOpticalModel: (model: OpticalModel) => void;
+  setFormattingMode: (mode: FormattingMode) => void;
+  setFormattingScaleFactor: (factor: string) => void;
+  setFormattingScaleFirstSurface: (surface: number) => void;
+  setFormattingScaleLastSurface: (surface: number) => void;
+  setFormattingReverseFirstSurface: (surface: number) => void;
+  setFormattingReverseLastSurface: (surface: number) => void;
 }
 
 function derivePendingMediumSelection(rows: GridRow[], rowId: string): PendingMediumSelection | undefined {
@@ -75,6 +88,10 @@ const DEFAULT_ROWS: GridRow[] = [
   { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
 ];
 
+function getLastSurfaceIndex(rows: readonly GridRow[]): number {
+  return rows.filter((row) => row.kind === "surface").length;
+}
+
 export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) => ({
   rows: DEFAULT_ROWS,
   prescriptionRevision: 0,
@@ -89,13 +106,32 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   decenterModal: { open: false, rowId: "" },
   diffractionGratingModal: { open: false, rowId: "" },
   committedOpticalModel: undefined,
+  formattingMode: "scale",
+  formattingScaleFactor: "1",
+  formattingScaleFirstSurface: 0,
+  formattingScaleLastSurface: 1,
+  formattingReverseFirstSurface: 0,
+  formattingReverseLastSurface: 0,
 
   setRows: (rows, options) =>
-    set((state) => ({
-      rows,
-      prescriptionRevision: state.prescriptionRevision + 1,
-      optimizationSyncPolicy: options?.optimizationSyncPolicy ?? "resetOptimizationModes",
-    })),
+    set((state) => {
+      const shouldSeedFormattingRanges = state.rows === DEFAULT_ROWS;
+      const lastSurface = getLastSurfaceIndex(rows);
+
+      return {
+        rows,
+        prescriptionRevision: state.prescriptionRevision + 1,
+        optimizationSyncPolicy: options?.optimizationSyncPolicy ?? "resetOptimizationModes",
+        ...(shouldSeedFormattingRanges
+          ? {
+              formattingScaleFirstSurface: 0,
+              formattingScaleLastSurface: lastSurface + 1,
+              formattingReverseFirstSurface: 0,
+              formattingReverseLastSurface: lastSurface,
+            }
+          : {}),
+      };
+    }),
 
   updateRow: (id, patch, options) =>
     set((state) => {
@@ -248,4 +284,16 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
     set({ diffractionGratingModal: { open: false, rowId: "" } }),
 
   setCommittedOpticalModel: (model) => set({ committedOpticalModel: model }),
+
+  setFormattingMode: (mode) => set({ formattingMode: mode }),
+
+  setFormattingScaleFactor: (factor) => set({ formattingScaleFactor: factor }),
+
+  setFormattingScaleFirstSurface: (surface) => set({ formattingScaleFirstSurface: surface }),
+
+  setFormattingScaleLastSurface: (surface) => set({ formattingScaleLastSurface: surface }),
+
+  setFormattingReverseFirstSurface: (surface) => set({ formattingReverseFirstSurface: surface }),
+
+  setFormattingReverseLastSurface: (surface) => set({ formattingReverseLastSurface: surface }),
 });
