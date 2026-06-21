@@ -38,6 +38,20 @@ export function LensPrescriptionGrid({
 }: LensPrescriptionGridProps) {
   const gridTheme = useAgGridTheme();
 
+  const surfaceIndexByRowId = useMemo(() => {
+    const indexByRowId = new Map<string, number>();
+    let surfaceIndex = 1;
+
+    for (const row of rows) {
+      if (row.kind === "surface") {
+        indexByRowId.set(row.id, surfaceIndex);
+        surfaceIndex += 1;
+      }
+    }
+
+    return indexByRowId;
+  }, [rows]);
+
   const columnDefs = useMemo<ColDef<GridRow>[]>(() => [
     {
       headerName: "",
@@ -52,6 +66,17 @@ export function LensPrescriptionGrid({
           />
         );
       },
+    },
+    {
+      headerName: "Index",
+      valueGetter: (params) => {
+        if (!params.data || params.data.kind !== "surface") {
+          return undefined;
+        }
+
+        return surfaceIndexByRowId.get(params.data.id);
+      },
+      width: 80,
     },
     ...createLensPrescriptionCommonColumns<GridRow>({
       getGridRow: (row) => row,
@@ -71,7 +96,7 @@ export function LensPrescriptionGrid({
       onOpenDecenterModal: (row) => onOpenDecenterModal(row.id),
       onOpenDiffractionGratingModal: (row) => onOpenDiffractionGratingModal(row.id),
     }),
-  ], [semiDiameterReadonly, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenDecenterModal, onOpenDiffractionGratingModal, onAddRowAfter, onDeleteRow]);
+  ], [surfaceIndexByRowId, semiDiameterReadonly, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenDecenterModal, onOpenDiffractionGratingModal, onAddRowAfter, onDeleteRow]);
 
   return (
     <div
