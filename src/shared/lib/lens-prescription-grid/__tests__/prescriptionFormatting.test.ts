@@ -152,6 +152,103 @@ describe("prescriptionFormatting", () => {
     expect(result.rows).toBe(rows);
   });
 
+  it("rejects dimensional precision underflow atomically", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{ ...baseSurfaces.surfaces[0], curvatureRadius: 0.1 }],
+    });
+
+    const result = formatPrescriptionRows(rows, {
+      mode: "scale",
+      first: 1,
+      last: 1,
+      factor: Number.MIN_VALUE,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      rows,
+      error: "Formatting was not applied because one or more nonzero transformed numeric values underflowed to zero.",
+    });
+    expect(result.rows).toBe(rows);
+  });
+
+  it("rejects high-order aspheric coefficient precision underflow atomically", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{
+        ...baseSurfaces.surfaces[0],
+        curvatureRadius: 0,
+        thickness: 0,
+        semiDiameter: 0,
+        decenter: undefined,
+        aspherical: {
+          kind: "EvenAspherical",
+          conicConstant: 0,
+          polynomialCoefficients: [0, 1],
+        },
+      }],
+    });
+
+    const result = formatPrescriptionRows(rows, {
+      mode: "scale",
+      first: 1,
+      last: 1,
+      factor: Number.MAX_VALUE,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.rows).toBe(rows);
+    expect(result.ok ? undefined : result.error).toMatch(/underflowed to zero/);
+  });
+
+  it("rejects aspheric coefficient overflow caused by a tiny factor", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{
+        ...baseSurfaces.surfaces[0],
+        aspherical: {
+          kind: "EvenAspherical",
+          conicConstant: 0,
+          polynomialCoefficients: [1],
+        },
+      }],
+    });
+
+    const result = formatPrescriptionRows(rows, {
+      mode: "scale",
+      first: 1,
+      last: 1,
+      factor: Number.MIN_VALUE,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.rows).toBe(rows);
+    expect(result.ok ? undefined : result.error).toMatch(/invalid or exceed/);
+  });
+
+  it("allows selected source values that are already zero to remain zero", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{
+        ...baseSurfaces.surfaces[0],
+        curvatureRadius: 0,
+        thickness: 0,
+        semiDiameter: 0,
+      }],
+    });
+
+    const result = formatPrescriptionRows(rows, {
+      mode: "scale",
+      first: 1,
+      last: 1,
+      factor: Number.MIN_VALUE,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.rows).not.toBe(rows);
+  });
+
   it("reverses surface range 2..4 with boundary gaps", () => {
     const result = reverseRows(surfacesToGridRows(baseSurfaces), { first: 2, last: 4 });
     const surfaces = surfaceRows(result);

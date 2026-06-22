@@ -267,10 +267,20 @@ function numericValues(row: GridRow): number[] {
   return values;
 }
 
-function validateRows(rows: readonly GridRow[]): string | undefined {
+function validateRows(rows: readonly GridRow[], sourceRows?: readonly GridRow[]): string | undefined {
   const invalidValue = rows.flatMap((row) => numericValues(row)).find((value) => !isFiniteNumber(value));
   if (invalidValue !== undefined) {
     return "Formatting was not applied because one or more transformed numeric values are invalid or exceed JavaScript finite number limits.";
+  }
+
+  if (sourceRows !== undefined) {
+    const underflowed = rows.some((row, rowIndex) => {
+      const sourceValues = numericValues(sourceRows[rowIndex]);
+      return numericValues(row).some((value, valueIndex) => value === 0 && sourceValues[valueIndex] !== 0);
+    });
+    if (underflowed) {
+      return "Formatting was not applied because one or more nonzero transformed numeric values underflowed to zero.";
+    }
   }
 
   return undefined;
@@ -286,7 +296,7 @@ export function formatPrescriptionRows(rows: readonly GridRow[], options: Format
     }
 
     const scaledRows = scaleRows(rows, options);
-    const error = validateRows(scaledRows);
+    const error = validateRows(scaledRows, rows);
     return error === undefined ? { ok: true, rows: scaledRows } : { ok: false, rows: rows as GridRow[], error };
   }
 

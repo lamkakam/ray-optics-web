@@ -11,7 +11,7 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 - `OBJECT_DISTANCE_INFINITY_THRESHOLD` — object distances at or above `1e10` are treated as infinity-like and preserved during scale formatting.
 - `scaleRows(rows, { first, last, factor })` — scales selected prescription rows.
 - `reverseRows(rows, { first, last })` — reverses selected surface rows and boundary gaps.
-- `formatPrescriptionRows(rows, options)` — validates selection/factor, builds the candidate array, and rejects invalid or overflowing numeric results atomically.
+- `formatPrescriptionRows(rows, options)` — validates selection/factor, builds the candidate array, and rejects invalid, overflowing, or precision-underflowing numeric results atomically.
 
 ## Scale Behavior
 
@@ -34,4 +34,4 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 
 ## Validation
 
-`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check.
+`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check. Scaling is also rejected atomically with a precision-underflow error when any nonzero source numeric value, including an aspheric coefficient, becomes zero. Source values that are already zero remain valid.
