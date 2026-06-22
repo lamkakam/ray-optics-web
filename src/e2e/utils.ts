@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export const PYODIDE_TIMEOUT = 120_000;
 
@@ -101,6 +101,126 @@ export async function insertRowAfter(
   await page
     .locator(`${gridSel} .ag-row[row-index="${rowIndex + 1}"]`)
     .waitFor({ state: "attached", timeout: 3_000 });
+}
+
+function exactCellText(value: number): RegExp {
+  return new RegExp(`^\\s*${value}\\s*$`);
+}
+
+export async function getPrescriptionSurfaceRow(
+  page: Page,
+  gridSel: string,
+  surfaceIndex: number
+): Promise<Locator> {
+  const indexColId = await getColId(page, gridSel, "Index");
+  const row = page.locator(`${gridSel} .ag-row`, {
+    has: page.locator(`.ag-cell[col-id="${indexColId}"]`, {
+      hasText: exactCellText(surfaceIndex),
+    }),
+  });
+  await expect(row).toHaveCount(1, { timeout: 3_000 });
+  return row.first();
+}
+
+export async function waitForPrescriptionSurfaceCount(
+  page: Page,
+  gridSel: string,
+  expectedCount: number
+): Promise<void> {
+  const indexColId = await getColId(page, gridSel, "Index");
+  const surfaceIndexCells = page
+    .locator(`${gridSel} .ag-cell[col-id="${indexColId}"]`)
+    .filter({ hasText: /^\s*\d+\s*$/ });
+  await expect(surfaceIndexCells).toHaveCount(expectedCount, {
+    timeout: 3_000,
+  });
+}
+
+async function getGridCellByHeaderText(
+  page: Page,
+  gridSel: string,
+  row: Locator,
+  headerText: string
+): Promise<Locator> {
+  const headers = page.locator(`${gridSel} [role="columnheader"]`);
+  const headerCount = await headers.count();
+  for (let index = 0; index < headerCount; index += 1) {
+    if ((await headers.nth(index).textContent())?.trim() === headerText) {
+      return row.getByRole("gridcell").nth(index);
+    }
+  }
+
+  throw new Error(`Column with header "${headerText}" not found`);
+}
+
+export async function insertPrescriptionSurfaceAtEnd(
+  page: Page,
+  gridSel: string,
+  expectedSurfaceCount: number
+): Promise<void> {
+  const insertButtons = page
+    .locator(`${gridSel} .ag-row`)
+    .getByRole("button", { name: "Insert row" });
+  await insertButtons.last().click();
+  await waitForPrescriptionSurfaceCount(page, gridSel, expectedSurfaceCount);
+}
+
+export async function editPrescriptionNumberCell(
+  page: Page,
+  gridSel: string,
+  surfaceIndex: number,
+  headerText: string,
+  value: string
+): Promise<void> {
+  const row = await getPrescriptionSurfaceRow(page, gridSel, surfaceIndex);
+  const cell = await getGridCellByHeaderText(page, gridSel, row, headerText);
+  await expect(cell).toBeAttached({ timeout: 3_000 });
+  await cell.scrollIntoViewIfNeeded();
+  await cell.dblclick();
+  const input = cell.locator("input").first();
+  await input.waitFor({ state: "visible", timeout: 3_000 });
+  await input.fill(value);
+  await input.press("Enter");
+  await page.waitForTimeout(100);
+}
+
+export async function selectPrescriptionGridOption(
+  page: Page,
+  gridSel: string,
+  surfaceIndex: number,
+  headerText: string,
+  option: string
+): Promise<void> {
+  const row = await getPrescriptionSurfaceRow(page, gridSel, surfaceIndex);
+  const cell = await getGridCellByHeaderText(page, gridSel, row, headerText);
+  await expect(cell).toBeAttached({ timeout: 3_000 });
+  await cell.scrollIntoViewIfNeeded();
+  await cell.click();
+  await page.keyboard.press("Enter");
+  const opt = page
+    .locator(`.ag-popup .ag-list-item:has-text("${option}")`)
+    .first();
+  await opt.waitFor({ state: "visible", timeout: 3_000 });
+  await opt.click();
+  await page.waitForTimeout(100);
+}
+
+export async function setPrescriptionMedium(
+  page: Page,
+  gridSel: string,
+  surfaceIndex: number,
+  manufacturer: string,
+  glass: string
+): Promise<void> {
+  const row = await getPrescriptionSurfaceRow(page, gridSel, surfaceIndex);
+  await row.hover();
+  await row.getByRole("button", { name: "Edit medium" }).click();
+  const modal = page.getByRole("dialog", { name: "Select Medium" });
+  await modal.waitFor({ state: "visible", timeout: 3_000 });
+  await modal.getByLabel("Manufacturer").selectOption(manufacturer);
+  await modal.getByLabel("Glass", { exact: true }).selectOption(glass);
+  await modal.getByRole("button", { name: "Confirm" }).click();
+  await modal.waitFor({ state: "hidden", timeout: 5_000 });
 }
 
 // Helper: open MediumSelectorModal, pick manufacturer+glass, Confirm

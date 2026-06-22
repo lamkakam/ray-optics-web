@@ -20,6 +20,7 @@ All components (composite + container + domain cells) for the lens editor featur
 - [MediumSelectorModal](./LensPrescriptionContainer/MediumSelectorModal/MediumSelectorModal.tsx.md) — Modal for selecting optical media; exported through `LensPrescriptionContainer`
 - [ConfirmImportModal](./LensPrescriptionContainer/ConfirmImportModal/ConfirmImportModal.tsx.md) — Internal confirmation dialog before importing a lens file
 - [PythonScriptModal](./LensPrescriptionContainer/PythonScriptModal/PythonScriptModal.tsx.md) — Internal modal for viewing/editing Python scripts
+- [FormattingModal](./LensPrescriptionContainer/FormattingModal/FormattingModal.tsx.md) — Internal modal for scaling or reversing selected prescription rows
 
 ## Specs & Configuration
 

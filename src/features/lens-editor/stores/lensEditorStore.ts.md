@@ -27,10 +27,16 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 | `decenterModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `diffractionGratingModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `committedOpticalModel` | `OpticalModel \| undefined` | `undefined` |
+| `formattingMode` | `"scale" \| "reverse"` | `"scale"` |
+| `formattingScaleFactor` | `string` | `"1"` |
+| `formattingScaleFirstSurface` | `number` | `0` |
+| `formattingScaleLastSurface` | `number` | `1` |
+| `formattingReverseFirstSurface` | `number` | `0` |
+| `formattingReverseLastSurface` | `number` | `0` |
 
 ## Actions
 
-- `setRows(rows, options?)` — replaces the entire rows array (used when loading a model), increments `prescriptionRevision`, and records an optional Optimization sync policy.
+- `setRows(rows, options?)` — replaces the entire rows array (used when loading a model), increments `prescriptionRevision`, and records an optional Optimization sync policy. When replacing the initial built-in Object/Image rows, it seeds the default Formatting ranges from the loaded row count (`Scale: Object` to `Image`; `Reverse: Object` to last surface).
 - `updateRow(id, patch, options?)` — merges `patch` into the row with the given id; `id` and `kind` are always preserved and cannot be overwritten by the patch. Successful updates increment `prescriptionRevision` and record an optional Optimization sync policy.
 - `addRowAfter(id)` — inserts a new blank surface row immediately after the row with the given id; no-op if the id is not found or the target row is the image row.
 - `deleteRow(id)` — removes the surface row with the given id; no-op for object/image rows. Clears `selectedRowId` if it matches the deleted row.
@@ -46,18 +52,23 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `openDecenterModal(rowId)` / `closeDecenterModal()` — open/close the surface decenter modal.
 - `openDiffractionGratingModal(rowId)` / `closeDiffractionGratingModal()` — open/close the surface diffraction grating modal.
 - `setCommittedOpticalModel(model)` — stores the last successfully submitted `OpticalModel` snapshot. Used by `AnalysisPlotContainer` and other consumers that need the most recently committed model.
+- `setFormattingMode(mode)` — records the selected Lens Prescription Formatting mode.
+- `setFormattingScaleFactor(factor)` — records the Scale mode factor draft as editable text.
+- `setFormattingScaleFirstSurface(surface)` / `setFormattingScaleLastSurface(surface)` — record the Scale mode surface range draft.
+- `setFormattingReverseFirstSurface(surface)` / `setFormattingReverseLastSurface(surface)` — record the Reverse mode surface range draft.
 
 ## Key Conventions
 
 - Object and image rows (`kind === "object"` / `kind === "image"`) cannot be deleted or added after (image guard in `addRowAfter`).
 - Normal row replacements, row edits, row insertions, and row deletions use `optimizationSyncPolicy: "resetOptimizationModes"` so Optimization clears stale radius/thickness/asphere variable modes after ordinary editor prescription edits.
 - Optimization Apply and Focusing may pass `optimizationSyncPolicy: "preserveOptimizationModes"` because those prescription updates originate from Optimization-compatible workflows and should not clear Optimization prescription modes.
-- The default object row is `{ objectDistance: 0, medium: "air", manufacturer: "" }`.
+- The default object row is `{ objectDistance: OBJECT_DISTANCE_INFINITY_THRESHOLD, medium: "air", manufacturer: "" }`, currently `1e10`.
 - New rows inserted by `addRowAfter` are seeded with `generateRowId()` and default surface values: flat (`curvatureRadius: 0`), zero thickness, `"air"` medium, `semiDiameter: 1`.
 - Modal `rowId` is reset to `""` on close.
 - `pendingMediumSelection` persists unconfirmed catalog-glass choices across route changes while the root store provider remains mounted.
 - `activeBottomDrawerTabId` and `bottomDrawerHeight` are feature-owned UI state. They persist as long as the root store provider remains mounted.
 - `bottomDrawerHeight` is persistence-only state for route restoration; `BottomDrawer` still owns live drag state locally to avoid store-driven re-renders on every pointer move.
+- Formatting draft controls persist as long as the root store provider remains mounted. Scale and Reverse keep independent first/last surface selections so switching modes restores each mode's previous range. The Scale factor remains a string so incomplete numeric input stays editable until Formatting confirm validation. The first loaded prescription seeds the initial default ranges; later row replacements preserve valid user-selected range drafts and let the modal clamp out-of-range values at display/confirm time.
 
 ## Dependencies
 

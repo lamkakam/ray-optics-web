@@ -2,7 +2,7 @@
 
 ## Purpose
 
-AG Grid table for editing the lens prescription. Displays and edits surface rows (object, surface, image) with columns for surface label, radius of curvature, thickness, medium, semi-diameter, aspherical, tilt/decenter, and diffraction grating. Row action buttons appear in a leading column.
+AG Grid table for editing the lens prescription. Displays and edits surface rows (object, surface, image) with columns for surface index, surface label, radius of curvature, thickness, medium, semi-diameter, aspherical, tilt/decenter, and diffraction grating. Row action buttons appear in a leading column.
 
 ## Props
 
@@ -38,6 +38,8 @@ interface LensPrescriptionGridProps {
 
 - Column definitions are memoized with `useMemo` over the callback props to avoid unnecessary AG Grid re-renders.
 - The leading row action column remains editor-specific.
+- A read-only `Index` column appears immediately after the leading row action column and before `Surface`.
+- The `Index` column is display-only. It derives continuous one-based numbering from the current `rows` order, counting only `surface` rows; Object and Image rows render blank index cells.
 - Common prescription columns are composed from `shared/lib/lens-prescription-grid` so Lens Editor and Optimization use the same value getters, numeric parsing, cell renderers, and AG Grid defaults.
 - Shared `MediumCell`, `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` render inside `LensPrescriptionActionWrapper`, which opens the modal when the non-interactive cell body is clicked.
 - `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` display text labels (`None`, asphere type labels, decenter strategy values, and `${lpmm} lp/mm`) instead of set/unset status text.

@@ -1,11 +1,10 @@
 import { test, expect } from "./fixtures";
 import {
   reloadAndWait,
-  getColId,
-  editNumberCell,
-  selectGridOption,
-  insertRowAfter,
-  setMedium,
+  editPrescriptionNumberCell,
+  selectPrescriptionGridOption,
+  insertPrescriptionSurfaceAtEnd,
+  setPrescriptionMedium,
   editFieldRow,
   selectFraunhofer,
   editWeightCell,
@@ -97,36 +96,32 @@ test("manually input Sasian Triplet and update system", async ({
   // 4. Prescription tab — add 6 surfaces
   await page.getByRole("tab", { name: "Prescription" }).click();
   const prescGrid = '[aria-label="Lens prescription editor"]';
-  // Discover col-ids from headers
-  const colIdSurface = await getColId(page, prescGrid, "Surface");
-  const colIdRadius = await getColId(page, prescGrid, "Radius of Curvature");
-  const colIdThickness = await getColId(page, prescGrid, "Thickness");
-  // Insert all 6 rows first, then edit (avoids row-index shifting issues)
-  for (let i = 0; i < 6; i++) {
-    await insertRowAfter(page, prescGrid, i); // inserts after row i; new row appears at i+1
+  // Insert all 6 rows first, then edit by visible surface index.
+  for (let surfaceCount = 1; surfaceCount <= 6; surfaceCount++) {
+    await insertPrescriptionSurfaceAtEnd(page, prescGrid, surfaceCount);
   }
   // S1: Default, R=23.713, t=4.831, N-LAK9/Schott
-  await editNumberCell(page, prescGrid, 1, colIdRadius, "23.713");
-  await editNumberCell(page, prescGrid, 1, colIdThickness, "4.831");
-  await setMedium(page, prescGrid, 1, "Schott", "N-LAK9");
+  await editPrescriptionNumberCell(page, prescGrid, 1, "Radius of Curvature", "23.713");
+  await editPrescriptionNumberCell(page, prescGrid, 1, "Thickness", "4.831");
+  await setPrescriptionMedium(page, prescGrid, 1, "Schott", "N-LAK9");
   // S2: Default, R=7331.288, t=5.86, air (no medium change)
-  await editNumberCell(page, prescGrid, 2, colIdRadius, "7331.288");
-  await editNumberCell(page, prescGrid, 2, colIdThickness, "5.86");
+  await editPrescriptionNumberCell(page, prescGrid, 2, "Radius of Curvature", "7331.288");
+  await editPrescriptionNumberCell(page, prescGrid, 2, "Thickness", "5.86");
   // S3: Stop, R=-24.456, t=0.975, N-SF5/Schott
-  await selectGridOption(page, prescGrid, 3, colIdSurface, "Stop");
-  await editNumberCell(page, prescGrid, 3, colIdRadius, "-24.456");
-  await editNumberCell(page, prescGrid, 3, colIdThickness, "0.975");
-  await setMedium(page, prescGrid, 3, "Schott", "N-SF5");
+  await selectPrescriptionGridOption(page, prescGrid, 3, "Surface", "Stop");
+  await editPrescriptionNumberCell(page, prescGrid, 3, "Radius of Curvature", "-24.456");
+  await editPrescriptionNumberCell(page, prescGrid, 3, "Thickness", "0.975");
+  await setPrescriptionMedium(page, prescGrid, 3, "Schott", "N-SF5");
   // S4: Default, R=21.896, t=4.822, air
-  await editNumberCell(page, prescGrid, 4, colIdRadius, "21.896");
-  await editNumberCell(page, prescGrid, 4, colIdThickness, "4.822");
+  await editPrescriptionNumberCell(page, prescGrid, 4, "Radius of Curvature", "21.896");
+  await editPrescriptionNumberCell(page, prescGrid, 4, "Thickness", "4.822");
   // S5: Default, R=86.759, t=3.127, N-LAK9/Schott
-  await editNumberCell(page, prescGrid, 5, colIdRadius, "86.759");
-  await editNumberCell(page, prescGrid, 5, colIdThickness, "3.127");
-  await setMedium(page, prescGrid, 5, "Schott", "N-LAK9");
+  await editPrescriptionNumberCell(page, prescGrid, 5, "Radius of Curvature", "86.759");
+  await editPrescriptionNumberCell(page, prescGrid, 5, "Thickness", "3.127");
+  await setPrescriptionMedium(page, prescGrid, 5, "Schott", "N-LAK9");
   // S6: Default, R=-20.4942, t=41.2365, air
-  await editNumberCell(page, prescGrid, 6, colIdRadius, "-20.4942");
-  await editNumberCell(page, prescGrid, 6, colIdThickness, "41.2365");
+  await editPrescriptionNumberCell(page, prescGrid, 6, "Radius of Curvature", "-20.4942");
+  await editPrescriptionNumberCell(page, prescGrid, 6, "Thickness", "41.2365");
 
   // 5. Click Update System
   const updateBtn = page.locator('button[aria-label="Update System"]');

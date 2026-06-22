@@ -555,6 +555,123 @@ describe("LensPrescriptionContainer", () => {
     expect(screen.getByRole("button", { name: "Export Python Script" })).toBeInTheDocument();
   });
 
+  it("renders Formatting beside Export Python Script", () => {
+    renderLPC();
+    const toolbar = screen.getByRole("toolbar", { name: "Grid toolbar" });
+
+    expect(within(toolbar).getByRole("button", { name: "Export Python Script" })).toBeInTheDocument();
+    expect(within(toolbar).getByRole("button", { name: "Formatting" })).toBeInTheDocument();
+  });
+
+  it("opens Formatting modal and does not close it on backdrop click", async () => {
+    renderLPC();
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    expect(screen.getByRole("dialog", { name: "Formatting" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByTestId("modal-backdrop"));
+    expect(screen.getByRole("dialog", { name: "Formatting" })).toBeInTheDocument();
+  });
+
+  it("closes Formatting modal when Cancel is clicked", async () => {
+    renderLPC();
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("dialog", { name: "Formatting" })).not.toBeInTheDocument();
+  });
+
+  it("shows Factor in Scale mode and hides it in Reverse mode", async () => {
+    renderLPC();
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    expect(screen.getByRole("spinbutton", { name: "Factor" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    expect(screen.queryByRole("spinbutton", { name: "Factor" })).not.toBeInTheDocument();
+  });
+
+  it("restores Scale factor and range after Formatting is cancelled and reopened", async () => {
+    renderLPC();
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "2.5");
+    await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
+    await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "2");
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+
+    expect(screen.getByRole("radio", { name: "Scale" })).toBeChecked();
+    expect(screen.getByRole("spinbutton", { name: "Factor" })).toHaveValue(2.5);
+    expect(screen.getByLabelText("First Surface")).toHaveValue("1");
+    expect(screen.getByLabelText("Last Surface")).toHaveValue("2");
+  });
+
+  it("restores Reverse mode and keeps the previous Scale range after switching back", async () => {
+    renderLPC();
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "3");
+    await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
+    await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "2");
+
+    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
+    await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "1");
+    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+
+    expect(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" })).toBeChecked();
+    expect(screen.queryByRole("spinbutton", { name: "Factor" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("First Surface")).toHaveValue("1");
+    expect(screen.getByLabelText("Last Surface")).toHaveValue("1");
+
+    await userEvent.click(screen.getByRole("radio", { name: "Scale" }));
+
+    expect(screen.getByRole("spinbutton", { name: "Factor" })).toHaveValue(3);
+    expect(screen.getByLabelText("First Surface")).toHaveValue("1");
+    expect(screen.getByLabelText("Last Surface")).toHaveValue("2");
+  });
+
+  it("updates store rows and closes Formatting modal on valid Confirm", async () => {
+    const { store } = renderLPC();
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "2");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const firstSurface = store.getState().rows.find((row) => row.kind === "surface");
+    expect(firstSurface?.kind === "surface" ? firstSurface.curvatureRadius : undefined).toBe(100);
+    expect(screen.queryByRole("dialog", { name: "Formatting" })).not.toBeInTheDocument();
+  });
+
+  it("opens ErrorModal and leaves rows unchanged when Formatting overflows", async () => {
+    const store = createTestStore();
+    const originalRows = store.getState().rows;
+    const firstSurface = originalRows.find((row) => row.kind === "surface");
+    if (firstSurface?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+    store.getState().updateRow(firstSurface.id, { curvatureRadius: Number.MAX_VALUE });
+    const rowsBeforeFormatting = store.getState().rows;
+
+    renderLPC(store);
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "2");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(screen.getByRole("dialog", { name: "Error" })).toBeInTheDocument();
+    expect(store.getState().rows).toBe(rowsBeforeFormatting);
+  });
+
   it("clicking 'Export Python Script' opens a dialog with title 'Python Script'", async () => {
     renderLPC();
     await userEvent.click(screen.getByRole("button", { name: "Export Python Script" }));

@@ -7,6 +7,7 @@ import { type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridType
 import type { OpticalModel, AsphericalType } from "@/shared/lib/types/opticalModel";
 import { buildExportScript } from "@/shared/lib/utils/pythonScript";
 import { Button } from "@/shared/components/primitives/Button";
+import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { Switch } from "@/shared/components/primitives/Switch";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { Label } from "@/shared/components/primitives/Label";
@@ -16,6 +17,7 @@ import { MediumSelectorModal } from "./MediumSelectorModal";
 import { AsphericalModal } from "./AsphericalModal";
 import { DecenterModal, type DecenterType } from "./DecenterModal";
 import { DiffractionGratingModal } from "./DiffractionGratingModal";
+import { FormattingModal } from "./FormattingModal";
 import { PythonScriptModal } from "./PythonScriptModal";
 
 interface LensPrescriptionContainerProps {
@@ -84,7 +86,15 @@ export function LensPrescriptionContainer({
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
   const decenterModal = useStore(store, (s) => s.decenterModal);
   const diffractionGratingModal = useStore(store, (s) => s.diffractionGratingModal);
+  const formattingMode = useStore(store, (s) => s.formattingMode);
+  const formattingScaleFactor = useStore(store, (s) => s.formattingScaleFactor);
+  const formattingScaleFirstSurface = useStore(store, (s) => s.formattingScaleFirstSurface);
+  const formattingScaleLastSurface = useStore(store, (s) => s.formattingScaleLastSurface);
+  const formattingReverseFirstSurface = useStore(store, (s) => s.formattingReverseFirstSurface);
+  const formattingReverseLastSurface = useStore(store, (s) => s.formattingReverseLastSurface);
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
+  const [formattingOpen, setFormattingOpen] = useState(false);
+  const [formattingError, setFormattingError] = useState<string | undefined>(undefined);
 
   // Stable callbacks — use store.getState() so they never change reference,
   // preventing unnecessary columnDefs recreation in LensPrescriptionGrid.
@@ -113,6 +123,9 @@ export function LensPrescriptionContainer({
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
         <Tooltip text="Generate a Python script" portal noTouch>
           <Button variant="secondary" size={buttonSize} onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
+        </Tooltip>
+        <Tooltip text="Format selected prescription rows" portal noTouch>
+          <Button variant="secondary" size={buttonSize} onClick={() => setFormattingOpen(true)}>Formatting</Button>
         </Tooltip>
       </div>
 
@@ -254,6 +267,39 @@ export function LensPrescriptionContainer({
         isOpen={pythonScriptOpen}
         script={pythonScriptOpen ? buildExportScript(getOpticalModel()) : ""}
         onClose={() => setPythonScriptOpen(false)}
+      />
+
+      <FormattingModal
+        isOpen={formattingOpen}
+        rows={rows}
+        draft={{
+          mode: formattingMode,
+          scaleFactor: formattingScaleFactor,
+          scaleFirstSurface: formattingScaleFirstSurface,
+          scaleLastSurface: formattingScaleLastSurface,
+          reverseFirstSurface: formattingReverseFirstSurface,
+          reverseLastSurface: formattingReverseLastSurface,
+        }}
+        draftActions={{
+          setMode: (mode) => store.getState().setFormattingMode(mode),
+          setScaleFactor: (factor) => store.getState().setFormattingScaleFactor(factor),
+          setScaleFirstSurface: (surface) => store.getState().setFormattingScaleFirstSurface(surface),
+          setScaleLastSurface: (surface) => store.getState().setFormattingScaleLastSurface(surface),
+          setReverseFirstSurface: (surface) => store.getState().setFormattingReverseFirstSurface(surface),
+          setReverseLastSurface: (surface) => store.getState().setFormattingReverseLastSurface(surface),
+        }}
+        onConfirm={(updatedRows) => {
+          store.getState().setRows(updatedRows);
+          setFormattingOpen(false);
+        }}
+        onCancel={() => setFormattingOpen(false)}
+        onError={setFormattingError}
+      />
+
+      <ErrorModal
+        isOpen={formattingError !== undefined}
+        message={formattingError}
+        onClose={() => setFormattingError(undefined)}
       />
 
     </div>

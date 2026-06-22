@@ -78,6 +78,7 @@ describe("LensPrescriptionGrid", () => {
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
     const headerTexts = Array.from(headers).map((h) => h.textContent);
 
+    expect(headerTexts.slice(0, 3)).toEqual(["", "Index", "Surface"]);
     expect(headerTexts).toContain("Surface");
     expect(headerTexts).toContain("Radius of Curvature");
     expect(headerTexts).toContain("Thickness");
@@ -85,6 +86,51 @@ describe("LensPrescriptionGrid", () => {
     expect(headerTexts).toContain("Semi-diam.");
     expect(headerTexts).toContain("Tilt & Decenter");
     expect(headerTexts).toContain("Diffraction Grating");
+  });
+
+  it("renders blank index cells for object and image rows and one-based indices for surface rows", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const indexValues = Array.from(rows, (row) => row.querySelectorAll("td")[1].textContent);
+
+    expect(indexValues).toEqual(["", "1", "2", ""]);
+  });
+
+  it("renumbers surface indices continuously after inserting a surface row", () => {
+    const insertedRows: GridRow[] = [
+      testRows[0],
+      testRows[1],
+      {
+        id: "inserted",
+        kind: "surface",
+        label: "Default",
+        curvatureRadius: 12,
+        thickness: 2,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 6,
+      },
+      testRows[2],
+      testRows[3],
+    ];
+    const { rerender } = render(<LensPrescriptionGrid {...defaultProps} />);
+
+    rerender(<LensPrescriptionGrid {...defaultProps} rows={insertedRows} />);
+
+    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const indexValues = Array.from(rows, (row) => row.querySelectorAll("td")[1].textContent);
+    expect(indexValues).toEqual(["", "1", "2", "3", ""]);
+  });
+
+  it("renumbers surface indices continuously after deleting a surface row", () => {
+    const deletedRows: GridRow[] = [testRows[0], testRows[2], testRows[3]];
+    const { rerender } = render(<LensPrescriptionGrid {...defaultProps} />);
+
+    rerender(<LensPrescriptionGrid {...defaultProps} rows={deletedRows} />);
+
+    const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const indexValues = Array.from(rows, (row) => row.querySelectorAll("td")[1].textContent);
+    expect(indexValues).toEqual(["", "1", ""]);
   });
 
   it("has an aria-label on the wrapper", () => {
@@ -164,12 +210,12 @@ describe("LensPrescriptionGrid", () => {
     const s1Cells = rows[1].querySelectorAll("td");
     const s2Cells = rows[2].querySelectorAll("td");
 
-    expect(Array.from([s1Cells[6], s1Cells[7], s1Cells[8]], (cell) => cell.textContent)).toEqual([
+    expect(Array.from([s1Cells[7], s1Cells[8], s1Cells[9]], (cell) => cell.textContent)).toEqual([
       "None",
       "decenter",
       "600 lp/mm",
     ]);
-    expect(Array.from([s2Cells[6], s2Cells[7], s2Cells[8]], (cell) => cell.textContent)).toEqual([
+    expect(Array.from([s2Cells[7], s2Cells[8], s2Cells[9]], (cell) => cell.textContent)).toEqual([
       "Conic",
       "None",
       "None",
