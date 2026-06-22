@@ -1,4 +1,5 @@
 import { expose } from "comlink";
+import { loadPyodide, version } from "pyodide";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
@@ -14,11 +15,9 @@ import { buildScript } from "@/shared/lib/utils/pythonScript";
 import { type RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { InitProgress } from "@/shared/hooks/usePyodide";
 import type { OpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
+import { loadPyodideModule } from "@/workers/loadPyodideModule";
 
-declare function importScripts(...urls: string[]): void;
-declare function loadPyodide(opts: { indexURL: string }): Promise<any>;
-
-const CDN = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full";
+const CDN = `https://cdn.jsdelivr.net/pyodide/v${version}/full`;
 
 let pyodide: any = null;
 let activeOptimizationRunId: string | undefined;
@@ -124,10 +123,13 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
   }
   try {
     await emitInitProgress(onProgress, 0, "Starting worker");
-    await emitInitProgress(onProgress, 10, "Loading Pyodide script");
-    importScripts(`${CDN}/pyodide.js`);
+    await emitInitProgress(onProgress, 10, "Loading Pyodide loader");
     await emitInitProgress(onProgress, 25, "Starting Pyodide runtime");
-    pyodide = await loadPyodide({ indexURL: `${CDN}/` });
+    const createPyodideModule = await loadPyodideModule(CDN);
+    pyodide = await loadPyodide({
+      indexURL: `${CDN}/`,
+      createPyodideModule,
+    });
 
     await emitInitProgress(onProgress, 40, "Loading Pyodide packages");
     await pyodide.loadPackage([

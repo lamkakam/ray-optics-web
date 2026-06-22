@@ -10,3 +10,6 @@ Configures the Next.js application for a fully static export.
   - `Cross-Origin-Opener-Policy: same-origin`
   - `Cross-Origin-Embedder-Policy: require-corp`
 - Preserves the worker public path under the configured base path so Web Workers created with `new Worker(new URL(..., import.meta.url))` load from the correct `_next` asset path.
+- Disables webpack chunk splitting so the Pyodide worker remains self-contained. Webpack's default web-worker chunk loader uses `importScripts`, which is unavailable in module workers.
+- Enables webpack module output for client builds so the emitted worker preserves `{ type: "module" }` instead of rewriting it to a classic worker. Server output remains CommonJS-compatible for Next's page-data collection.
+- Ignores `node:` and `ws` imports in browser bundles. Pyodide 314's universal npm loader contains these imports behind a Node-runtime guard, but webpack otherwise resolves them (and emits an async `ws` chunk) while building the module worker.

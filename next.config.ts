@@ -21,9 +21,19 @@ const nextConfig: NextConfig = {
       headers: crossOriginIsolationHeaders,
     },
   ],
-  webpack: (config) => {
+  webpack: (config, { isServer, webpack }) => {
     // Allow Web Workers using the `new Worker(new URL(..., import.meta.url))` pattern
     config.output.workerPublicPath = `${basePath}/_next/`;
+    if (!isServer) {
+      config.experiments.outputModule = true;
+      config.output.module = true;
+    }
+    // Module workers cannot use webpack's default importScripts chunk loader.
+    config.optimization.splitChunks = false;
+    // Pyodide's universal loader guards these imports behind its Node runtime check.
+    config.plugins.push(
+      new webpack.IgnorePlugin({ resourceRegExp: /^(?:node:|ws$)/ }),
+    );
     return config;
   },
 };

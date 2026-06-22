@@ -5,6 +5,7 @@
  */
 export function createPyodideWorker(): Worker {
   return new Worker(
-    new URL("./pyodide.worker.ts", import.meta.url)
+    new URL("./pyodide.worker.ts", import.meta.url),
+    { type: "module" },
   );
 }

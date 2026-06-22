@@ -60,7 +60,7 @@ self.addEventListener("fetch", (event: FetchEvent) => {
 
 // In unit tests
 test("caches Pyodide bundle from CDN", () => {
-  const url = "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js";
+  const url = "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/pyodide.asm.wasm";
   expect(shouldCache(url)).toBe(true);
 });
 

@@ -92,7 +92,7 @@ npm run serve
 
 ## Architecture
 
-RayOptics computations are CPU-intensive. The app runs the Python runtime ([Pyodide v0.27.7](https://pyodide.org/)) inside a **Web Worker** so the main thread (and the UI) stays responsive. Communication between the React frontend and the worker uses [Comlink](https://github.com/GoogleChromeLabs/comlink) for typed async RPC — raw `postMessage` is never used directly.
+RayOptics computations are CPU-intensive. The app runs the Python runtime ([Pyodide v314.0.0](https://pyodide.org/)) inside a **module Web Worker** so the main thread (and the UI) stays responsive. The loader is bundled from the npm package, while runtime assets are served from the matching versioned jsDelivr path. Communication between the React frontend and the worker uses [Comlink](https://github.com/GoogleChromeLabs/comlink) for typed async RPC — raw `postMessage` is never used directly.
 
 ```
 Browser

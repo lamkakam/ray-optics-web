@@ -34,7 +34,7 @@
     "comlink": "^4.4.2",
     "echarts": "^6.0.0",
     "next": "^16.0.0",
-    "pyodide": "0.27.7",
+    "pyodide": "314.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.5.0",

@@ -12,7 +12,7 @@ description: Project tech stack, architecture, known issues and gotchas for ray-
 | UI | React + TypeScript |
 | UI global state management | Zustand |
 | Styling | Tailwind CSS |
-| Python runtime | Pyodide v0.27.7 |
+| Python runtime | Pyodide v314.0.0 |
 | Worker communication | Comlink |
 | Internal Python package | in `<project-root>/src/python/` |
 | Package manager | npm |
@@ -22,7 +22,7 @@ description: Project tech stack, architecture, known issues and gotchas for ray-
 
 ### Core Concept: Pyodide in a Web Worker
 
-RayOptics computations are CPU-intensive. **Never run Pyodide on the main thread.** The version of Pyodide must be exactly v0.27.7.
+RayOptics computations are CPU-intensive. **Never run Pyodide on the main thread.** The version of Pyodide must be exactly v314.0.0. Import the loader from the npm package, run it in a module worker, and load runtime assets from the matching versioned jsDelivr path.
 
 ### Worker Lifecycle
 
