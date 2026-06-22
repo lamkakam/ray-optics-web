@@ -6,6 +6,16 @@ function readProjectFile(relativePath: string): string {
 }
 
 describe("Pyodide 314 migration", () => {
+  it("builds the current Python wheel before every E2E run", () => {
+    const packageJson = JSON.parse(readProjectFile("package.json")) as {
+      scripts?: Record<string, string>;
+    };
+
+    expect(packageJson.scripts?.["pretest:e2e"]).toBe(
+      "bash scripts/build-python-wheel.sh",
+    );
+  });
+
   it("loads the npm loader against the versioned 314.0.0 CDN", () => {
     const worker = readProjectFile("src/workers/pyodide.worker.ts");
     const moduleLoader = readProjectFile("src/workers/loadPyodideModule.ts");
