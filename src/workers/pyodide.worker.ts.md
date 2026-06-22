@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Pyodide web worker that runs RayOptics computations off the main thread. Loads Pyodide v0.27.7, installs `rayoptics_web_utils` (internal Python package in `python/`), `rayoptics` and supporting packages, and exposes a typed API to React components via Comlink. This Pyodide web worker is long living.
+Pyodide module worker that runs RayOptics computations off the main thread. Loads Pyodide v314.0.0, installs `rayoptics_web_utils` (internal Python package in `python/`), `rayoptics` and supporting packages, and exposes a typed API to React components via Comlink. This Pyodide web worker is long living.
 
 Each exported function (except `init`) is **stateless**: it receives an `OpticalModel`, builds the Python `opm` locally in a single `runPython` call (using `buildScript` from `lib/pythonScript`), runs the computation, and returns the result. No global optical-model state persists between calls.
 
@@ -99,10 +99,10 @@ export function _getOptimizationInterruptStateForTesting(): { activeRunId?: stri
 
 1. No-ops if `pyodide` singleton is already set.
 2. Emits `0%` with `"Starting worker"`.
-3. Emits `10%` with `"Loading Pyodide script"` and loads Pyodide v0.27.7 via `importScripts` from jsDelivr CDN (`https://cdn.jsdelivr.net/pyodide/v0.27.7/full`).
-4. Emits `25%` with `"Starting Pyodide runtime"` and calls `loadPyodide({ indexURL })` to create the Pyodide instance.
+3. Emits `10%` with `"Loading Pyodide loader"`. The worker imports `loadPyodide` and `version` from the pinned npm package; it does not use `importScripts`.
+4. Emits `25%` with `"Starting Pyodide runtime"`, natively imports `pyodide.asm.mjs` from `https://cdn.jsdelivr.net/pyodide/v314.0.0/full/` with webpack processing disabled, and passes its module factory to `loadPyodide({ indexURL, createPyodideModule })`. This prevents webpack from converting Pyodide's computed CDN import into a local context lookup.
 5. Emits `40%` with `"Loading Pyodide packages"` and loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.11.0-py3-none-any.whl`.
+6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.12.0-py3-none-any.whl`.
 7. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl, onProgress)`.
 8. Emits `100%` with `"Ready"`.
 
@@ -183,7 +183,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 
 - `init()` sets `pyodide = null` and re-throws on any failure, so a failed init can be retried.
 - `NEXT_PUBLIC_BASE_PATH` env var is used to prefix the wheel URL path; defaults to `""` when not set.
-- Pyodide version is pinned to **v0.27.7** from the jsDelivr CDN — do not change this version.
+- Pyodide is pinned to **v314.0.0**. The npm package supplies the bundled loader and its exported `version` builds the matching jsDelivr runtime URL.
 - `_init` is marked as a "dangerous zone" in comments — package versions are pinned and must not be changed without careful testing.
 
 ## Dependencies

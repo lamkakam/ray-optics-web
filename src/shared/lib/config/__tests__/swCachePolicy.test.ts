@@ -1,18 +1,23 @@
 import { shouldCache } from "../swCachePolicy";
 
 describe("shouldCache", () => {
-  it("returns true for Pyodide CDN URLs", () => {
+  it("returns true for representative Pyodide 314.0.0 CDN assets", () => {
     expect(
-      shouldCache("https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js")
+      shouldCache("https://cdn.jsdelivr.net/pyodide/v314.0.0/full/pyodide.asm.wasm")
     ).toBe(true);
     expect(
       shouldCache(
-        "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.asm.wasm"
+        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/python_stdlib.zip"
       )
     ).toBe(true);
     expect(
       shouldCache(
-        "https://cdn.jsdelivr.net/pyodide/v0.27.7/full/numpy-1.26.4-cp312-cp312-pyodide_2024_0_wasm32.whl"
+        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/pyodide-lock.json"
+      )
+    ).toBe(true);
+    expect(
+      shouldCache(
+        "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/numpy-2.4.2-cp314-cp314-pyodide_2026_0_wasm32.whl"
       )
     ).toBe(true);
   });

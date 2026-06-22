@@ -12,10 +12,10 @@ Returns a new `Worker` instance backed by `workers/pyodide.worker.ts`.
 Constructs the worker using the Next.js-required pattern:
 
 ```ts
-new Worker(new URL("./pyodide.worker.ts", import.meta.url))
+new Worker(new URL("./pyodide.worker.ts", import.meta.url), { type: "module" })
 ```
 
-The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bundler uses it to locate and bundle the worker script correctly. DO NOT USE string paths.
+The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bundler uses it to locate and bundle the worker script correctly. The `{ type: "module" }` option is required because the worker imports the Pyodide npm loader. DO NOT USE string paths or a classic worker.
 
 ## Edge Cases / Error Handling
 

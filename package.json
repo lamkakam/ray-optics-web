@@ -1,6 +1,6 @@
 {
   "name": "ray-optics-web",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "license": "BSD-3-Clause",
   "private": true,
   "scripts": {
@@ -12,6 +12,7 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "test": "jest",
+    "pretest:e2e": "bash scripts/build-python-wheel.sh",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -34,30 +35,30 @@
     "comlink": "^4.4.2",
     "echarts": "^6.0.0",
     "next": "^16.0.0",
-    "pyodide": "0.27.7",
+    "pyodide": "314.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@jest/globals": "^30.3.0",
+    "@jest/globals": "30.4.1",
     "@playwright/test": "^1.49.0",
     "@tailwindcss/postcss": "^4.0.0",
-    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.0",
-    "@types/jest": "^30.0.0",
+    "@types/jest": "30.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.0.0",
-    "jest": "^30.3.0",
-    "jest-environment-jsdom": "^30.3.0",
+    "jest": "30.4.2",
+    "jest-environment-jsdom": "30.4.1",
     "postcss": "^8.4.0",
     "tailwindcss": "^4.0.0",
-    "ts-jest": "^29.2.0",
+    "ts-jest": "29.4.11",
     "ts-node": "^10.9.0",
     "typescript": "^5.7.0"
   }

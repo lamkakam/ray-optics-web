@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rayoptics-web-utils"
-version = "0.11.0"
+version = "0.12.0"
 requires-python = ">=3.12"
 dependencies = [
     "rayoptics==0.9.8",
@@ -14,10 +14,10 @@ dependencies = [
     "json-tricks==3.17.3",
     "openpyxl==3.1.5",
     "parsimonious==0.10.0",
-    "matplotlib",
-    "numpy",
+    "matplotlib==3.10.8",
+    "numpy==2.4.3",
     "pyyaml",
-    "scipy",
+    "scipy==1.17.1",
 ]
 
 [tool.setuptools.packages.find]

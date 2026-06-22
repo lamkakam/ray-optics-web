@@ -2,6 +2,11 @@ import { describe, it, expect, afterEach } from "@jest/globals";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { type OpticalModel } from "@/shared/lib/types/opticalModel";
+import { loadPyodide } from "pyodide";
+
+jest.mock("@/workers/loadPyodideModule", () => ({
+  loadPyodideModule: jest.fn().mockResolvedValue(jest.fn()),
+}));
 import {
   init,
   _resetPyodideForTesting,
@@ -518,7 +523,7 @@ describe("init", () => {
       scripts.push(code);
       return undefined;
     });
-    (global as unknown as Record<string, unknown>).loadPyodide = jest.fn().mockResolvedValue({
+    jest.mocked(loadPyodide).mockResolvedValueOnce({
       loadPackage,
       runPythonAsync,
       globals: new Map(),
@@ -526,7 +531,7 @@ describe("init", () => {
         mkdirTree: jest.fn(),
         writeFile: jest.fn(),
       },
-    });
+    } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
 
     await init();
 
@@ -543,7 +548,7 @@ describe("init", () => {
 
     expect(progress).toEqual([
       { value: 0, status: "Starting worker" },
-      { value: 10, status: "Loading Pyodide script" },
+      { value: 10, status: "Loading Pyodide loader" },
       { value: 25, status: "Starting Pyodide runtime" },
       { value: 40, status: "Loading Pyodide packages" },
       { value: 60, status: "Installing RayOptics packages" },

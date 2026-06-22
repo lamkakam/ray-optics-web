@@ -1,0 +1,55 @@
+{
+  "setAutoAperture": "manualAperture",
+  "specs": {
+    "pupil": {
+      "space": "object",
+      "type": "epd",
+      "value": 8.24376066870238
+    },
+    "field": {
+      "space": "object",
+      "type": "height",
+      "maxField": 0,
+      "fields": [
+        0
+      ],
+      "isRelative": true,
+      "isWideAngle": false
+    },
+    "wavelengths": {
+      "weights": [
+        [
+          546.073,
+          1
+        ]
+      ],
+      "referenceIndex": 0
+    }
+  },
+  "object": {
+    "distance": 10000000000,
+    "medium": "air",
+    "manufacturer": ""
+  },
+  "image": {
+    "curvatureRadius": 0
+  },
+  "surfaces": [
+    {
+      "label": "Default",
+      "curvatureRadius": 9.729,
+      "thickness": 1.3831362939477625,
+      "medium": "1.4512",
+      "manufacturer": "",
+      "semiDiameter": 5
+    },
+    {
+      "label": "Default",
+      "curvatureRadius": 0,
+      "thickness": 20.60940167175595,
+      "medium": "air",
+      "manufacturer": "",
+      "semiDiameter": 5
+    }
+  ]
+}
