@@ -14,10 +14,10 @@ dependencies = [
     "json-tricks==3.17.3",
     "openpyxl==3.1.5",
     "parsimonious==0.10.0",
-    "matplotlib",
-    "numpy",
+    "matplotlib==3.10.8",
+    "numpy==2.4.3",
     "pyyaml",
-    "scipy",
+    "scipy==1.17.1",
 ]
 
 [tool.setuptools.packages.find]
