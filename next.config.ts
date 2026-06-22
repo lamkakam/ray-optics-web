@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
     if (!isServer) {
       config.experiments.outputModule = true;
       config.output.module = true;
+      config.output.library = {
+        type: "assign",
+        name: ["globalThis", "_N_E"],
+      };
     }
     // Module workers cannot use webpack's default importScripts chunk loader.
     config.optimization.splitChunks = false;

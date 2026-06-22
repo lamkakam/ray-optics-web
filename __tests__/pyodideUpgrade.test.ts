@@ -33,6 +33,10 @@ describe("Pyodide 314 migration", () => {
     expect(nextConfig).toContain("config.optimization.splitChunks = false");
     expect(nextConfig).toContain("config.experiments.outputModule = true");
     expect(nextConfig).toContain("config.output.module = true");
+    expect(nextConfig).toContain(`config.output.library = {
+        type: "assign",
+        name: ["globalThis", "_N_E"],
+      }`);
   });
 
   it("uses a new cache version and evicts obsolete cache entries", () => {
