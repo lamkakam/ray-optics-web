@@ -34,4 +34,4 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 
 ## Validation
 
-`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value in the candidate rows is `NaN`, infinite, or has `Math.abs(value) > Number.MAX_VALUE`.
+`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check.

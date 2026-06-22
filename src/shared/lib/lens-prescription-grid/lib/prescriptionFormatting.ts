@@ -234,8 +234,8 @@ export function reverseRows(rows: readonly GridRow[], { first, last }: ReverseRo
   return reversedRows;
 }
 
-function isValidNumber(value: number): boolean {
-  return Number.isFinite(value) && Math.abs(value) <= Number.MAX_VALUE;
+function isFiniteNumber(value: number): boolean {
+  return Number.isFinite(value);
 }
 
 function numericValues(row: GridRow): number[] {
@@ -268,7 +268,7 @@ function numericValues(row: GridRow): number[] {
 }
 
 function validateRows(rows: readonly GridRow[]): string | undefined {
-  const invalidValue = rows.flatMap((row) => numericValues(row)).find((value) => !isValidNumber(value));
+  const invalidValue = rows.flatMap((row) => numericValues(row)).find((value) => !isFiniteNumber(value));
   if (invalidValue !== undefined) {
     return "Formatting was not applied because one or more transformed numeric values are invalid or exceed JavaScript finite number limits.";
   }
