@@ -17,6 +17,8 @@ new Worker(new URL("./pyodide.worker.ts", import.meta.url), { type: "module" })
 
 The `new URL(..., import.meta.url)` form is mandatory — Next.js's webpack bundler uses it to locate and bundle the worker script correctly. The `{ type: "module" }` option is required because the worker imports the Pyodide npm loader. DO NOT USE string paths or a classic worker.
 
+Both `next dev` and production builds must preserve this option in the emitted App Router browser bundle. The development regression test exercises the running browser because webpack otherwise rewrites the option to `type: undefined`, which makes Pyodide reject the resulting classic worker.
+
 ## Edge Cases / Error Handling
 
 - Each call returns a **new** `Worker` instance. Callers (i.e. `usePyodide`) are responsible for ensuring this is only called once (singleton pattern).
