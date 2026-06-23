@@ -24,13 +24,15 @@ const nextConfig: NextConfig = {
   webpack: (config, { isServer, webpack }) => {
     // Allow Web Workers using the `new Worker(new URL(..., import.meta.url))` pattern
     config.output.workerPublicPath = `${basePath}/_next/`;
+    config.experiments.outputModule = true;
     if (!isServer) {
-      config.experiments.outputModule = true;
       config.output.module = true;
       config.output.library = {
         type: "assign",
         name: ["globalThis", "_N_E"],
       };
+    } else {
+      config.output.module = false;
     }
     // Module workers cannot use webpack's default importScripts chunk loader.
     config.optimization.splitChunks = false;

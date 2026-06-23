@@ -17,13 +17,26 @@ explicit. A separate worker build would duplicate and diverge from Next's
 existing webpack pipeline. Configuring the library target fixes the generated
 assignment at its source while preserving Next's export semantics.
 
+## Development compilation
+
+Next.js development compilations share transformed App Router modules between
+the server and browser compilers. Webpack's module-output experiment must
+therefore be enabled for every compilation before that shared transformation
+occurs. Server `output.module` is explicitly set to `false`, while browser
+`output.module` is set to `true`; this preserves CommonJS server bundles and
+emits the browser worker constructor with `type: "module"` instead of
+`type: undefined`.
+
 ## Verification and compatibility
 
-A production build must retain module output, the base-path-aware worker public
-path, disabled chunk splitting, and ignored Node-only imports. Inspect the
-emitted worker and confirm it contains an explicit `globalThis._N_E` assignment
-and no unqualified `_N_E =` assignment. Serve the static export and verify in a
-browser that Pyodide initializes without page-console or worker errors.
+Development and production builds must retain module output, the
+base-path-aware worker public path, disabled chunk splitting, and ignored
+Node-only imports. Inspect the development App Router browser chunk and confirm
+the emitted worker constructor contains `type: "module"` and not
+`type: undefined`. Inspect the production worker and confirm it contains an
+explicit `globalThis._N_E` assignment and no unqualified `_N_E =` assignment.
+Run both outputs in a browser and verify that Pyodide initializes without
+page-console or worker errors.
 
 This override applies only to client webpack output. Server output must remain
 compatible with Next.js page-data collection, and the application must continue
