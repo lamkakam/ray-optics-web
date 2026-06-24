@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. The manufacturer dropdown and searchable glass datalist are populated from the app-wide `GlassCatalogProvider`, which uses the same Pyodide-backed catalog source as the glass map.
+Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. The manufacturer dropdown, Special-media dropdown, and searchable catalog-glass datalist are populated from the app-wide `GlassCatalogProvider`, which uses the same Pyodide-backed catalog source as the glass map.
 
 ## Props
 
@@ -49,13 +49,14 @@ interface MediumSelectorModalProps {
 ## Key Behaviors
 
 - When manufacturer changes to `"Special"`, medium resets to `"air"`.
-- Glass is a searchable native datalist whose suggestions are limited to the selected manufacturer's catalog, including built-in and provider-backed Special media.
+- Glass is a shared `Select` dropdown for the `"Special"` manufacturer, containing built-in and provider-backed Special media.
+- Glass is a searchable native datalist for catalog manufacturers, with suggestions limited to the selected manufacturer's catalog.
 - Typed glass values must completely match an available suggestion, with case-insensitive comparison. Valid matches are canonicalized to the catalog's original spelling before draft updates, confirmation, and glass-map navigation.
 - An unmatched catalog value remains visible for continued searching, disables Confirm without showing an error, and hides the glass-map link.
 - Manufacturer options come from loaded provider catalogs with `"Special"` prefixed and empty catalogs omitted.
 - The `"Special"` glass list combines built-in non-glass media (`"air"`, `"REFL"`) with provider-backed special glasses such as `"CaF2"`.
 - When `allowReflective` is `false`, `"REFL"` is excluded from the Special media list so object-space media cannot be set to reflective.
-- When manufacturer changes to a catalog, the first glass in that provider-backed list is selected if the current selection is not in the new catalog.
+- Whenever manufacturer changes to a catalog, the visible Glass value and draft medium are cleared, `onSelectionChange` reports `("", manufacturer)`, Confirm is disabled, and the glass-map link is hidden until a valid catalog glass is entered.
 - When `selectedMedium` / `selectedManufacturer` are provided, valid catalog-glass drafts are controlled by the parent so unconfirmed choices can survive route changes.
 - `onSelectionChange` fires for catalog-glass changes and reports `"Special"` for the special manufacturer option.
 - `onConfirm` passes an empty string for manufacturer when `"Special"` is selected.

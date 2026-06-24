@@ -158,11 +158,7 @@ export function MediumSelectorModal({
                   if (newMfr === "Special") {
                     updateCatalogSelection("air", newMfr);
                   } else {
-                    const list = getCatalogGlassNames(newMfr);
-                    const nextMedium = list.length > 0 && !list.includes(medium)
-                      ? list[0]
-                      : medium;
-                    updateCatalogSelection(nextMedium, newMfr);
+                    updateCatalogSelection("", newMfr);
                   }
                 }}
               />
@@ -172,23 +168,34 @@ export function MediumSelectorModal({
               <Label htmlFor="medium-select">
                 Glass
               </Label>
-              <Datalist
-                id="medium-select"
-                aria-label="Glass"
-                options={mediaOptions.map((g) => ({ value: g, label: g }))}
-                value={glassInput}
-                disabled={readOnly || !canSelectCatalogGlass}
-                onChange={(e) => {
-                  const typedValue = e.target.value;
-                  const match = mediaOptions.find(
-                    (option) => option.toLocaleLowerCase() === typedValue.toLocaleLowerCase(),
-                  );
-                  setGlassInput(match ?? typedValue);
-                  if (match !== undefined) {
-                    updateCatalogSelection(match, manufacturer);
-                  }
-                }}
-              />
+              {isSpecial ? (
+                <Select
+                  id="medium-select"
+                  aria-label="Glass"
+                  options={specialMediaOptions.map((g) => ({ value: g, label: g }))}
+                  value={glassInput}
+                  disabled={readOnly || !canSelectCatalogGlass}
+                  onChange={(e) => updateCatalogSelection(e.target.value, manufacturer)}
+                />
+              ) : (
+                <Datalist
+                  id="medium-select"
+                  aria-label="Glass"
+                  options={mediaOptions.map((g) => ({ value: g, label: g }))}
+                  value={glassInput}
+                  disabled={readOnly || !canSelectCatalogGlass}
+                  onChange={(e) => {
+                    const typedValue = e.target.value;
+                    const match = mediaOptions.find(
+                      (option) => option.toLocaleLowerCase() === typedValue.toLocaleLowerCase(),
+                    );
+                    setGlassInput(match ?? typedValue);
+                    if (match !== undefined) {
+                      updateCatalogSelection(match, manufacturer);
+                    }
+                  }}
+                />
+              )}
               {glassMapHref && (
                 <div className="mt-2">
                   <InlineLink href={glassMapHref} aria-label="View in glass map">
