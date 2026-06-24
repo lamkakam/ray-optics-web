@@ -329,6 +329,41 @@ describe("MediumSelectorModal", () => {
     expect(screen.getByLabelText("Abbe Number")).toBeInTheDocument();
   });
 
+  it("resets the controlled catalog selection when model-glass mode is disabled", async () => {
+    const onSelectionChange = jest.fn();
+
+    function ControlledModal() {
+      const [selection, setSelection] = React.useState({
+        medium: "1.5168",
+        manufacturer: "64.17",
+      });
+
+      return (
+        <MediumSelectorModal
+          {...defaultProps}
+          initialMedium="1.5168"
+          initialManufacturer="64.17"
+          selectedMedium={selection.medium}
+          selectedManufacturer={selection.manufacturer}
+          onSelectionChange={(medium, manufacturer) => {
+            onSelectionChange(medium, manufacturer);
+            setSelection({ medium, manufacturer });
+          }}
+        />
+      );
+    }
+
+    renderWithCatalogs(<ControlledModal />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+
+    expect(screen.queryByLabelText("Refractive index at d-line")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Abbe Number")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Manufacturer")).toHaveValue("Special");
+    expect(screen.getByLabelText("Glass")).toHaveValue("air");
+    expect(onSelectionChange).toHaveBeenLastCalledWith("air", "Special");
+  });
+
   it("restores the Abbe Number when Single refractive index is unchecked", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 

@@ -124,6 +124,13 @@ export function MediumSelectorModal({
     onSelectionChange?.(nextMedium, nextManufacturer);
   };
 
+  const handleUseModelGlassChange = (nextUseModelGlass: boolean) => {
+    setUseModelGlass(nextUseModelGlass);
+    if (!nextUseModelGlass) {
+      updateCatalogSelection("air", "Special");
+    }
+  };
+
   const glassMapHref = (() => {
     if (useModelGlass || isSpecial || canonicalMedium === undefined) {
       return undefined;
@@ -148,7 +155,7 @@ export function MediumSelectorModal({
           checked={useModelGlass}
           label="Use model glass"
           disabled={readOnly}
-          onChange={setUseModelGlass}
+          onChange={handleUseModelGlassChange}
         />
 
         {!useModelGlass && (

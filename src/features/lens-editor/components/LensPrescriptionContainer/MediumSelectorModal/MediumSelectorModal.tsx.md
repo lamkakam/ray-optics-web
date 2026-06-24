@@ -61,6 +61,7 @@ interface MediumSelectorModalProps {
 - `onSelectionChange` fires for catalog-glass changes and reports `"Special"` for the special manufacturer option.
 - `onConfirm` passes an empty string for manufacturer when `"Special"` is selected.
 - When `Use model glass` is unchecked and a catalog glass is selected, an inline `View in glass map` link appears below the glass dropdown.
+- Disabling `Use model glass` resets the catalog draft to Manufacturer `"Special"` and Glass `"air"`, including controlled parent state through `onSelectionChange`, while preserving the model-glass input values for a later toggle back to model-glass mode.
 - The glass-map link targets `/glass-map` with query params `source=medium-selector`, `catalog=<manufacturer>`, and `glass=<medium>`.
 - The glass-map link is hidden for `"Special"` media and for model-glass mode.
 - If catalog data is still loading or failed, the modal shows a status message and disables the manufacturer select and glass datalist instead of assuming static bundled data.
