@@ -1,5 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 
 jest.mock("next/link", () => {
@@ -31,5 +32,18 @@ describe("InlineLink", () => {
     );
 
     expect(screen.getByRole("link", { name: "Back to lens editor" })).toHaveClass("custom-class");
+  });
+
+  it("forwards a typed click handler", async () => {
+    const onClick = jest.fn();
+    render(
+      <InlineLink href="/" onClick={onClick}>
+        Use selected glass
+      </InlineLink>,
+    );
+
+    await userEvent.click(screen.getByRole("link", { name: "Use selected glass" }));
+
+    expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

@@ -9,6 +9,7 @@ Page-level container for the Glass Map feature. Reads preloaded or lazily loaded
 | `proxy` | `PyodideWorkerAPI \| undefined` | Worker proxy for data fetching |
 | `isReady` | `boolean` | Whether the Pyodide worker is ready |
 | `routeIntent` | `GlassMapRouteIntent \| undefined` | Optional route-level selection intent from another page |
+| `onUseSelectedGlass` | `((glass: SelectedGlass) => void) \| undefined` | Optional decoupled action for applying the effective selection to the originating workflow |
 
 ```ts
 interface GlassMapRouteIntent {
@@ -30,6 +31,8 @@ interface GlassMapRouteIntent {
 - The route-intent override is dismissed after user interaction with the plot controls or plot selection, after which the persistent store state is authoritative again
 - When `routeIntent.source === "medium-selector"`, the back link is shown above the controls panel
 - Renders a `Back to lens editor` inline link above the controls panel when opened from `MediumSelectorModal`
+- Renders `Use selected glass` next to the back link only for medium-selector route intent when the selected glass is valid and the route supplied an apply callback
+- Invokes `onUseSelectedGlass` with the effective selection (the route glass initially or a subsequently selected point) before the link navigates to `/`
 
 ## Layout
 - **Error state** (`readGlassCatalogs(proxy).error`): centered red error message

@@ -35,6 +35,7 @@ import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import { OBJECT_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 let mockSelectedSegment: string | null = null;
 let mockSearchParams = new URLSearchParams();
@@ -430,6 +431,26 @@ function LensEditorRadiusProbe() {
   return <div data-testid="editor-radius">{radius ?? "missing"}</div>;
 }
 
+function SeedPendingMediumSelection() {
+  const store = useLensEditorStore();
+  const pendingSelection = useStore(store, (state) => state.pendingMediumSelection);
+  const objectRow = useStore(store, (state) => state.rows[0]);
+
+  React.useEffect(() => {
+    store.getState().openMediumModal(OBJECT_ROW_ID);
+  }, [store]);
+
+  return (
+    <>
+      <div data-testid="pending-medium">{pendingSelection?.medium ?? "none"}</div>
+      <div data-testid="pending-manufacturer">{pendingSelection?.manufacturer || "none"}</div>
+      <div data-testid="confirmed-medium">
+        {objectRow?.kind === "object" ? objectRow.medium : "missing"}
+      </div>
+    </>
+  );
+}
+
 describe("app shell routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -683,6 +704,53 @@ describe("app shell routes", () => {
     await waitFor(() => {
       expect(screen.getByRole("link", { name: "Back to lens editor" })).toHaveAttribute("href", "/");
     });
+  });
+
+  it("copies the selected glass into the pending modal draft without committing the row", async () => {
+    mockSearchParams = new URLSearchParams("source=medium-selector&catalog=Schott&glass=N-BK7");
+    mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce({
+      Schott: {
+        "N-BK7": {
+          refractive_index_d: 1.5168,
+          refractive_index_e: 1.519,
+          abbe_number_d: 64.17,
+          abbe_number_e: 63.96,
+          partial_dispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+          dispersion_coeff_kind: "Sellmeier3T",
+          dispersion_coeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+        },
+      },
+      CDGM: {}, Hikari: {}, Hoya: {}, Ohara: {}, Sumita: {},
+    });
+    renderInAppShell(
+      <>
+        <SeedPendingMediumSelection />
+        <GlassMapPage />
+      </>,
+    );
+    await waitFor(() => expect(screen.getByTestId("pending-medium")).toHaveTextContent("air"));
+
+    await userEvent.click(await screen.findByRole("link", { name: "Use selected glass" }));
+
+    expect(screen.getByTestId("pending-medium")).toHaveTextContent("N-BK7");
+    expect(screen.getByTestId("pending-manufacturer")).toHaveTextContent("Schott");
+    expect(screen.getByTestId("confirmed-medium")).toHaveTextContent("air");
+  });
+
+  it("keeps the pending modal draft unchanged when using Back to lens editor", async () => {
+    mockSearchParams = new URLSearchParams("source=medium-selector&catalog=Schott&glass=N-BK7");
+    renderInAppShell(
+      <>
+        <SeedPendingMediumSelection />
+        <GlassMapPage />
+      </>,
+    );
+    await waitFor(() => expect(screen.getByTestId("pending-medium")).toHaveTextContent("air"));
+
+    await userEvent.click(await screen.findByRole("link", { name: "Back to lens editor" }));
+
+    expect(screen.getByTestId("pending-medium")).toHaveTextContent("air");
+    expect(screen.getByTestId("pending-manufacturer")).toHaveTextContent("none");
   });
 
   it("renders the glass-map Suspense fallback inside the store provider", () => {

@@ -2,9 +2,12 @@
 
 import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { useStore } from "zustand";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
 import type { GlassMapRouteIntent } from "@/features/glass-map/stores/glassMapStore";
 import { useAppShell } from "@/app/AppShellContext";
+import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
+import type { SelectedGlass } from "@/features/glass-map/types/glassMap";
 
 interface GlassMapPageContentProps {
   readonly proxy: ReturnType<typeof useAppShell>["proxy"];
@@ -23,6 +26,11 @@ function GlassMapLoadingFallback({
 }
 
 function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {
+  const lensEditorStore = useLensEditorStore();
+  const hasPendingMediumSelection = useStore(
+    lensEditorStore,
+    (state) => state.pendingMediumSelection !== undefined,
+  );
   const searchParams = useSearchParams();
   const routeIntent = useMemo<GlassMapRouteIntent | undefined>(() => {
     const source = searchParams.get("source");
@@ -38,6 +46,14 @@ function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {
   const routeIntentKey = routeIntent === undefined
     ? "default"
     : `${routeIntent.source}:${routeIntent.catalog}:${routeIntent.glass}`;
+  const handleUseSelectedGlass = hasPendingMediumSelection
+    ? (glass: SelectedGlass) => {
+        lensEditorStore.getState().updatePendingMediumSelection({
+          medium: glass.glassName,
+          manufacturer: glass.catalogName,
+        });
+      }
+    : undefined;
 
   return (
     <Suspense fallback={<GlassMapLoadingFallback proxy={proxy} isReady={isReady} />}>
@@ -46,6 +62,7 @@ function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {
         proxy={proxy}
         isReady={isReady}
         routeIntent={routeIntent}
+        onUseSelectedGlass={handleUseSelectedGlass}
       />
     </Suspense>
   );
