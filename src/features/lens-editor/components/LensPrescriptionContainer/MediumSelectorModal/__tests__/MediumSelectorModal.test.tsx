@@ -157,9 +157,8 @@ describe("MediumSelectorModal", () => {
 
     expect(screen.getByLabelText("Glass")).toBeInTheDocument();
     const glassSelect = screen.getByLabelText("Glass");
-    const options = Array.from(
-      (glassSelect as HTMLSelectElement).options
-    ).map((o) => o.value);
+    const list = document.getElementById(glassSelect.getAttribute("list") ?? "");
+    const options = Array.from(list?.querySelectorAll("option") ?? []).map((o) => o.value);
     expect(options).toContain("air");
     expect(options).toContain("REFL");
     expect(options).toContain("CaF2");
@@ -171,9 +170,8 @@ describe("MediumSelectorModal", () => {
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
 
     const glassSelect = screen.getByLabelText("Glass");
-    const options = Array.from(
-      (glassSelect as HTMLSelectElement).options
-    ).map((o) => o.value);
+    const list = document.getElementById(glassSelect.getAttribute("list") ?? "");
+    const options = Array.from(list?.querySelectorAll("option") ?? []).map((o) => o.value);
     expect(options).toContain("N-BK7");
     expect(options).toContain("N-SF6");
   });
@@ -182,7 +180,8 @@ describe("MediumSelectorModal", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-BK7");
+    await userEvent.clear(screen.getByLabelText("Glass"));
+    await userEvent.type(screen.getByLabelText("Glass"), "N-BK7");
 
     expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
       "href",
@@ -194,7 +193,8 @@ describe("MediumSelectorModal", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.clear(screen.getByLabelText("Glass"));
+    await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Ohara");
 
     expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
@@ -229,10 +229,59 @@ describe("MediumSelectorModal", () => {
       />
     );
 
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "REFL");
+    await userEvent.clear(screen.getByLabelText("Glass"));
+    await userEvent.type(screen.getByLabelText("Glass"), "REFL");
     await userEvent.click(screen.getByText("Confirm"));
 
     expect(onConfirm).toHaveBeenCalledWith("REFL", "");
+  });
+
+  it("canonicalizes a complete case-insensitive glass match", async () => {
+    const onSelectionChange = jest.fn();
+    const onConfirm = jest.fn();
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialManufacturer="Schott"
+        initialMedium="N-BK7"
+        onSelectionChange={onSelectionChange}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    const glass = screen.getByLabelText("Glass");
+    await userEvent.clear(glass);
+    await userEvent.type(glass, "n-sf6");
+
+    expect(glass).toHaveValue("N-SF6");
+    expect(onSelectionChange).toHaveBeenLastCalledWith("N-SF6", "Schott");
+    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+      "href",
+      "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(onConfirm).toHaveBeenCalledWith("N-SF6", "Schott");
+  });
+
+  it("blocks confirmation and hides the glass-map link for an unmatched value", async () => {
+    const onConfirm = jest.fn();
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialManufacturer="Schott"
+        initialMedium="N-BK7"
+        onConfirm={onConfirm}
+      />,
+    );
+
+    const glass = screen.getByLabelText("Glass");
+    await userEvent.clear(glass);
+    await userEvent.type(glass, "N-B");
+
+    expect(glass).toHaveValue("N-B");
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("replaces dropdowns with model-glass controls when Use model glass is checked", async () => {

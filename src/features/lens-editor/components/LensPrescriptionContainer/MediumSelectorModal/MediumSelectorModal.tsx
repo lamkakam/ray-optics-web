@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
+import { Datalist } from "@/shared/components/primitives/Datalist";
 import { Input } from "@/shared/components/primitives/Input";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import { Label } from "@/shared/components/primitives/Label";
@@ -66,6 +67,7 @@ export function MediumSelectorModal({
   const { catalogs, error, isLoaded } = useGlassCatalogs();
   const [localManufacturer, setLocalManufacturer] = useState(initialMfr);
   const [localMedium, setLocalMedium] = useState(initialMedium);
+  const [glassInput, setGlassInput] = useState(selectedMedium ?? initialMedium);
   const [useModelGlass, setUseModelGlass] = useState(initialUseModelGlass);
   const [singleRefractiveIndex, setSingleRefractiveIndex] = useState(
     initialUseModelGlass && !initialHasAbbeNumber,
@@ -93,24 +95,29 @@ export function MediumSelectorModal({
   const mediaOptions = isSpecial
     ? specialMediaOptions
     : getCatalogGlassNames(manufacturer);
+  const canonicalMedium = mediaOptions.find(
+    (option) => option.toLocaleLowerCase() === glassInput.toLocaleLowerCase(),
+  );
+  const hasValidCatalogMedium = canonicalMedium !== undefined;
   const showAbbeNumber = useModelGlass && !singleRefractiveIndex;
   const canSelectCatalogGlass = error === undefined && isLoaded;
 
   const updateCatalogSelection = (nextMedium: string, nextManufacturer: string) => {
+    setGlassInput(nextMedium);
     setLocalMedium(nextMedium);
     setLocalManufacturer(nextManufacturer);
     onSelectionChange?.(nextMedium, nextManufacturer);
   };
 
   const glassMapHref = (() => {
-    if (useModelGlass || isSpecial || medium === "") {
+    if (useModelGlass || isSpecial || canonicalMedium === undefined) {
       return undefined;
     }
 
     const params = new URLSearchParams({
       source: "medium-selector",
       catalog: manufacturer,
-      glass: medium,
+      glass: canonicalMedium,
     });
 
     return `/glass-map?${params.toString()}`;
@@ -165,13 +172,22 @@ export function MediumSelectorModal({
               <Label htmlFor="medium-select">
                 Glass
               </Label>
-              <Select
+              <Datalist
                 id="medium-select"
                 aria-label="Glass"
                 options={mediaOptions.map((g) => ({ value: g, label: g }))}
-                value={medium}
+                value={glassInput}
                 disabled={readOnly || !canSelectCatalogGlass}
-                onChange={(e) => updateCatalogSelection(e.target.value, manufacturer)}
+                onChange={(e) => {
+                  const typedValue = e.target.value;
+                  const match = mediaOptions.find(
+                    (option) => option.toLocaleLowerCase() === typedValue.toLocaleLowerCase(),
+                  );
+                  setGlassInput(match ?? typedValue);
+                  if (match !== undefined) {
+                    updateCatalogSelection(match, manufacturer);
+                  }
+                }}
               />
               {glassMapHref && (
                 <div className="mt-2">
@@ -242,10 +258,11 @@ export function MediumSelectorModal({
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
             <Button
               variant="primary"
+              disabled={!useModelGlass && !hasValidCatalogMedium}
               onClick={() => onConfirm(
                 useModelGlass
                   ? refractiveIndexAtDLine
-                  : medium,
+                  : canonicalMedium ?? medium,
                 useModelGlass
                   ? (singleRefractiveIndex ? "" : abbeNumber)
                   : (isSpecial ? "" : manufacturer),

@@ -9,6 +9,7 @@ Generic, single-responsibility UI primitives. These are the base building blocks
 - [Chip.tsx](./Chip/Chip.tsx.md) — Small, compact tag/badge component
 - [ConfirmOverwriteModal.tsx](./ConfirmOverwriteModal/ConfirmOverwriteModal.tsx.md) — Confirmation modal for loading an example system over the current configuration
 - [DescriptionContainer.tsx](./DescriptionContainer/DescriptionContainer.tsx.md) — Tokenized description panel
+- [Datalist.tsx](./Datalist/Datalist.tsx.md) — Searchable native datalist with Select-equivalent styling
 - [ErrorModal.tsx](./ErrorModal/ErrorModal.tsx.md) — Modal for displaying error messages
 - [ExternalLink.tsx](./ExternalLink/ExternalLink.tsx.md) — Plain external anchor that always opens safely in a new tab
 - [Header.tsx](./Header/Header.tsx.md) — Top navigation header

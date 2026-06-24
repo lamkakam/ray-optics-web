@@ -3,6 +3,7 @@ export * from "./CheckboxInput";
 export * from "./Chip";
 export * from "./ConfirmOverwriteModal";
 export * from "./DescriptionContainer";
+export * from "./Datalist";
 export * from "./ErrorModal";
 export * from "./ExternalLink";
 export * from "./Header";
