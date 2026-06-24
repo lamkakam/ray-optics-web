@@ -307,6 +307,18 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("sm.add_surface([30, 1.1, water], sd=10)");
   });
 
+  it("should set a surface with D263TECO correctly", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        { label: "Default", curvatureRadius: 30, thickness: 1.1, medium: "D263TECO", manufacturer: "", semiDiameter: 10 },
+        { label: "Default", curvatureRadius: 0, thickness: 70, medium: "air", manufacturer: "", semiDiameter: 10 },
+      ],
+    };
+    const script = buildOpticalModelScript(model);
+    expect(script).toContain("sm.add_surface([30, 1.1, d263teco], sd=10)");
+  });
+
   it("should set a model glass surface without manufacturer when medium is numeric and manufacturer is empty", () => {
     const model: OpticalModel = {
       ...baseModel,
@@ -360,6 +372,12 @@ describe("buildExportScript", () => {
     const script = buildExportScript(baseModel);
     expect(script).toContain("water_url = 'https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C.yml'");
     expect(script).toContain('water = create_glass(water_url, "rindexinfo")');
+  });
+
+  it("defines the D263TECO material in the export preamble", () => {
+    const script = buildExportScript(baseModel);
+    expect(script).toContain("d263teco_url = 'https://refractiveindex.info/database/data/specs/schott/misc/D263TECO.yml'");
+    expect(script).toContain('d263teco = create_glass(d263teco_url, "rindexinfo")');
   });
 });
 

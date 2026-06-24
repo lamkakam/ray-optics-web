@@ -307,9 +307,11 @@ class TestGetAllGlassCatalogsData:
         assert "CaF2" in result["Special"]
         assert "Fused Silica" in result["Special"]
         assert "Water" in result["Special"]
+        assert "D263TECO" in result["Special"]
         assert REQUIRED_KEYS == set(result["Special"]["CaF2"].keys())
         assert REQUIRED_KEYS == set(result["Special"]["Fused Silica"].keys())
         assert REQUIRED_KEYS == set(result["Special"]["Water"].keys())
+        assert REQUIRED_KEYS == set(result["Special"]["D263TECO"].keys())
 
     @pytest.mark.parametrize("catalog_name", CATALOG_NAMES)
     def test_each_catalog_value_matches_single_catalog_contract(

@@ -8,4 +8,5 @@ export const nonBuiltInSpecialMaterial: ReadonlyMap<string, string> = new Map([
   ["CaF2", "caf2"],
   ["Fused Silica", "fused_silica"],
   ["Water", "water"],
+  ["D263TECO", "d263teco"],
 ]);

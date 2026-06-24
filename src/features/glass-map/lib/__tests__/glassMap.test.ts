@@ -127,6 +127,16 @@ describe("buildGlassLookupMaps", () => {
     expect(result.mediumMap.get("caf2")).toEqual({ medium: "CaF2", manufacturer: "" });
   });
 
+  it("maps provider-backed D263TECO Special lookup without a manufacturer", () => {
+    const catalogsData = normalizeAllCatalogsData({
+      ...rawCatalogsData,
+      Special: { D263TECO: rawGlass },
+    });
+    const result = buildGlassLookupMaps(catalogsData);
+
+    expect(result.mediumMap.get("d263teco")).toEqual({ medium: "D263TECO", manufacturer: "" });
+  });
+
   it("does not add a lowercase alias for reflective media", () => {
     const catalogsData = normalizeAllCatalogsData({
       ...rawCatalogsData,

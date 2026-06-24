@@ -454,6 +454,7 @@ describe("_init", () => {
     expect(allCode).toContain("caf2 = _rwu_init_result['caf2']");
     expect(allCode).toContain("fused_silica = _rwu_init_result['fused_silica']");
     expect(allCode).toContain("water = _rwu_init_result['water']");
+    expect(allCode).toContain("d263teco = _rwu_init_result['d263teco']");
 
     // Import analysis and plotting functions
     expect(allCode).toContain("from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data");

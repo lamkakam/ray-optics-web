@@ -98,6 +98,7 @@ _rwu_init_result = _rwu_init()
 caf2 = _rwu_init_result['caf2']
 fused_silica = _rwu_init_result['fused_silica']
 water = _rwu_init_result['water']
+d263teco = _rwu_init_result['d263teco']
 
 import json
 from rayoptics.environment import *

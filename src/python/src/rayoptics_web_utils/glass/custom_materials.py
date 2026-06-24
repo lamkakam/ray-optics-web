@@ -89,6 +89,9 @@ def _build_sellmeier_special_material_data(
     ng = dispersion_fn(raw_dispersion_coeffs, _WL_G)
     abbe_number_d = (nd - 1) / (nF - nC)
     abbe_number_e = (ne - 1) / (nF - nC)
+    properties = material.yaml_data.get('PROPERTIES', {})
+    nd = float(properties.get('nd', nd))
+    abbe_number_d = float(properties.get('Vd', abbe_number_d))
 
     denom = nF - nC
     partial_dispersions = {
@@ -138,12 +141,17 @@ def _get_water_data() -> dict:
     return _build_sellmeier_special_material_data('Water_Daimon-20.0C.yml', 'Water')
 
 
+def _get_d263teco_data() -> dict:
+    return _build_sellmeier_special_material_data('D263TECO.yml', 'D263TECO')
+
+
 def get_special_materials_data() -> dict[str, dict[str, dict]]:
-    """Return {"Special": {"CaF2": glass_entry, "Fused Silica": glass_entry, "Water": glass_entry}} for special materials."""
+    """Return the Special catalog entries for bundled custom materials."""
     return {
         "Special": {
             "CaF2": _get_caf2_data(),
             "Fused Silica": _get_fused_silica_data(),
             "Water": _get_water_data(),
+            "D263TECO": _get_d263teco_data(),
         }
     }
