@@ -312,7 +312,8 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openMediumModal(surfaceRow.id);
     });
 
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.clear(screen.getByLabelText("Glass"));
+    await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
     expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
       "href",
       "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
@@ -342,7 +343,8 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openMediumModal(surfaceRow.id);
     });
 
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.clear(screen.getByLabelText("Glass"));
+    await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     const updatedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
@@ -370,7 +372,8 @@ describe("LensPrescriptionContainer", () => {
     });
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.clear(screen.getByLabelText("Glass"));
+    await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     const updatedRow = store.getState().rows.find((row) => row.id === store.getState().rows[0].id);

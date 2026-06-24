@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. Manufacturer and glass dropdowns are populated from the app-wide `GlassCatalogProvider`, which uses the same Pyodide-backed catalog source as the glass map.
+Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. The manufacturer dropdown, Special-media dropdown, and searchable catalog-glass datalist are populated from the app-wide `GlassCatalogProvider`, which uses the same Pyodide-backed catalog source as the glass map.
 
 ## Props
 
@@ -49,29 +49,37 @@ interface MediumSelectorModalProps {
 ## Key Behaviors
 
 - When manufacturer changes to `"Special"`, medium resets to `"air"`.
+- Glass is a shared `Select` dropdown for the `"Special"` manufacturer, containing built-in and provider-backed Special media.
+- Glass is a searchable native datalist for catalog manufacturers, with suggestions limited to the selected manufacturer's catalog.
+- Typed glass values must completely match an available suggestion, with case-insensitive comparison. Valid matches are canonicalized to the catalog's original spelling before draft updates, confirmation, and glass-map navigation.
+- An unmatched catalog value remains visible for continued searching, disables Confirm without showing an error, and hides the glass-map link.
 - Manufacturer options come from loaded provider catalogs with `"Special"` prefixed and empty catalogs omitted.
 - The `"Special"` glass list combines built-in non-glass media (`"air"`, `"REFL"`) with provider-backed special glasses such as `"CaF2"`.
 - When `allowReflective` is `false`, `"REFL"` is excluded from the Special media list so object-space media cannot be set to reflective.
-- When manufacturer changes to a catalog, the first glass in that provider-backed list is selected if the current selection is not in the new catalog.
-- When `selectedMedium` / `selectedManufacturer` are provided, the catalog-glass dropdowns are controlled by the parent so unconfirmed choices can survive route changes.
+- Whenever manufacturer changes to a catalog, the visible Glass value and draft medium are cleared, `onSelectionChange` reports `("", manufacturer)`, Confirm is disabled, and the glass-map link is hidden until a valid catalog glass is entered.
+- When `selectedMedium` / `selectedManufacturer` are provided, valid catalog-glass drafts are controlled by the parent so unconfirmed choices can survive route changes.
 - `onSelectionChange` fires for catalog-glass changes and reports `"Special"` for the special manufacturer option.
 - `onConfirm` passes an empty string for manufacturer when `"Special"` is selected.
 - When `Use model glass` is unchecked and a catalog glass is selected, an inline `View in glass map` link appears below the glass dropdown.
+- Disabling `Use model glass` resets the catalog draft to Manufacturer `"Special"` and Glass `"air"`, including controlled parent state through `onSelectionChange`, while preserving the model-glass input values for a later toggle back to model-glass mode.
 - The glass-map link targets `/glass-map` with query params `source=medium-selector`, `catalog=<manufacturer>`, and `glass=<medium>`.
 - The glass-map link is hidden for `"Special"` media and for model-glass mode.
-- If catalog data is still loading or failed, the modal shows a status message and disables the manufacturer/glass selects instead of assuming static bundled data.
+- If catalog data is still loading or failed, the modal shows a status message and disables the manufacturer select and glass datalist instead of assuming static bundled data.
 - A shared compact `CheckboxInput` labelled `Use model glass` appears above the catalog controls and defaults to unchecked for non-numeric initial values.
 - When `Use model glass` is checked, the manufacturer and glass dropdowns are replaced by:
   - a `Single refractive index` checkbox rendered with the shared checkbox primitive
   - a `Refractive index at d-line` input
   - an `Abbe Number` input when `Single refractive index` is unchecked
-- When `Single refractive index` is checked, the Abbe Number value is cleared and the Abbe Number input is hidden.
+- When `Single refractive index` is checked, the Abbe Number input is hidden without clearing its value. Unchecking it restores the value held in component state.
 - If `initialMedium` parses to a float, the modal auto-enters model-glass mode and seeds the refractive-index input with the original `initialMedium` string.
 - If `initialManufacturer` also parses to a float, the modal seeds the Abbe Number input and leaves `Single refractive index` unchecked.
 - If `initialMedium` is numeric but `initialManufacturer` is not, the modal starts in model-glass mode with `Single refractive index` checked.
 - On blur, `Refractive index at d-line` is normalized to a positive numeric string; parse failure, `NaN`, zero, or negative values reset it to `"1.0"`.
 - On blur, `Abbe Number` is normalized to either a numeric string or the empty string; parse failure or `NaN` resets it to `""`.
 - In model-glass mode, `onConfirm` passes `(refractiveIndexAtDLine, abbeNumber)` or `(refractiveIndexAtDLine, "")` when `Single refractive index` is checked.
+- In model-glass mode, Confirm is enabled only when the refractive index is a non-empty, finite numeric value greater than or equal to `1`.
+- When `Single refractive index` is unchecked, Confirm additionally requires a non-empty, finite numeric Abbe Number greater than `0`; single-index mode ignores the Abbe Number.
+- Model-glass validity is evaluated immediately while editing, before blur normalization. Catalog-glass Confirm validation remains based on an exact available-medium match.
 - In `readOnly` mode, all checkboxes, selects, and inputs are disabled and the footer renders a single `Close` action instead of `Cancel` / `Confirm`.
 - Uses `key` prop at the call site (in `LensPrescriptionContainer`) to reset state when the modal re-opens for a different row.
 

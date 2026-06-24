@@ -146,7 +146,7 @@ describe("MediumSelectorModal", () => {
     expect(options).toHaveLength(3);
   });
 
-  it("shows special options (air, REFL) when Special manufacturer selected", async () => {
+  it("renders Special media as a dropdown with built-in and provider options", () => {
     renderWithCatalogs(
       <MediumSelectorModal
         {...defaultProps}
@@ -156,10 +156,9 @@ describe("MediumSelectorModal", () => {
     );
 
     expect(screen.getByLabelText("Glass")).toBeInTheDocument();
-    const glassSelect = screen.getByLabelText("Glass");
-    const options = Array.from(
-      (glassSelect as HTMLSelectElement).options
-    ).map((o) => o.value);
+    const glassSelect = screen.getByLabelText("Glass") as HTMLSelectElement;
+    expect(glassSelect.tagName).toBe("SELECT");
+    const options = Array.from(glassSelect.options).map((o) => o.value);
     expect(options).toContain("air");
     expect(options).toContain("REFL");
     expect(options).toContain("CaF2");
@@ -171,9 +170,9 @@ describe("MediumSelectorModal", () => {
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
 
     const glassSelect = screen.getByLabelText("Glass");
-    const options = Array.from(
-      (glassSelect as HTMLSelectElement).options
-    ).map((o) => o.value);
+    expect(glassSelect.tagName).toBe("INPUT");
+    const list = document.getElementById(glassSelect.getAttribute("list") ?? "");
+    const options = Array.from(list?.querySelectorAll("option") ?? []).map((o) => o.value);
     expect(options).toContain("N-BK7");
     expect(options).toContain("N-SF6");
   });
@@ -182,7 +181,8 @@ describe("MediumSelectorModal", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-BK7");
+    await userEvent.clear(screen.getByLabelText("Glass"));
+    await userEvent.type(screen.getByLabelText("Glass"), "N-BK7");
 
     expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
       "href",
@@ -190,17 +190,50 @@ describe("MediumSelectorModal", () => {
     );
   });
 
-  it("updates the glass map link when the selected manufacturer and glass change", async () => {
+  it("clears Glass and invalidates selection when changing between catalogs", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
-    await userEvent.selectOptions(screen.getByLabelText("Glass"), "N-SF6");
+    await userEvent.clear(screen.getByLabelText("Glass"));
+    await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Ohara");
 
-    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
-      "href",
-      "/glass-map?source=medium-selector&catalog=Ohara&glass=S-FPL51",
+    expect(screen.getByLabelText("Glass")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+  });
+
+  it("clears Glass and notifies the parent when changing from Special to a catalog", async () => {
+    const onSelectionChange = jest.fn();
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} onSelectionChange={onSelectionChange} />,
     );
+
+    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+
+    expect(screen.getByLabelText("Glass")).toHaveValue("");
+    expect(onSelectionChange).toHaveBeenLastCalledWith("", "Schott");
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+  });
+
+  it("clears Glass and notifies the parent when changing between catalogs", async () => {
+    const onSelectionChange = jest.fn();
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialManufacturer="Schott"
+        initialMedium="N-BK7"
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Ohara");
+
+    expect(screen.getByLabelText("Glass")).toHaveValue("");
+    expect(onSelectionChange).toHaveBeenLastCalledWith("", "Ohara");
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
   });
 
   it("does not render the glass map link for Special media", () => {
@@ -213,6 +246,7 @@ describe("MediumSelectorModal", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.type(screen.getByLabelText("Glass"), "N-BK7");
     expect(screen.getByRole("link", { name: "View in glass map" })).toBeInTheDocument();
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
@@ -235,6 +269,54 @@ describe("MediumSelectorModal", () => {
     expect(onConfirm).toHaveBeenCalledWith("REFL", "");
   });
 
+  it("canonicalizes a complete case-insensitive glass match", async () => {
+    const onSelectionChange = jest.fn();
+    const onConfirm = jest.fn();
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialManufacturer="Schott"
+        initialMedium="N-BK7"
+        onSelectionChange={onSelectionChange}
+        onConfirm={onConfirm}
+      />,
+    );
+
+    const glass = screen.getByLabelText("Glass");
+    await userEvent.clear(glass);
+    await userEvent.type(glass, "n-sf6");
+
+    expect(glass).toHaveValue("N-SF6");
+    expect(onSelectionChange).toHaveBeenLastCalledWith("N-SF6", "Schott");
+    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+      "href",
+      "/glass-map?source=medium-selector&catalog=Schott&glass=N-SF6",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(onConfirm).toHaveBeenCalledWith("N-SF6", "Schott");
+  });
+
+  it("blocks confirmation and hides the glass-map link for an unmatched value", async () => {
+    const onConfirm = jest.fn();
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialManufacturer="Schott"
+        initialMedium="N-BK7"
+        onConfirm={onConfirm}
+      />,
+    );
+
+    const glass = screen.getByLabelText("Glass");
+    await userEvent.clear(glass);
+    await userEvent.type(glass, "N-B");
+
+    expect(glass).toHaveValue("N-B");
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("replaces dropdowns with model-glass controls when Use model glass is checked", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
@@ -247,26 +329,53 @@ describe("MediumSelectorModal", () => {
     expect(screen.getByLabelText("Abbe Number")).toBeInTheDocument();
   });
 
-  it("clears and hides Abbe Number when Single refractive index is checked", async () => {
-    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
+  it("resets the controlled catalog selection when model-glass mode is disabled", async () => {
+    const onSelectionChange = jest.fn();
+
+    function ControlledModal() {
+      const [selection, setSelection] = React.useState({
+        medium: "1.5168",
+        manufacturer: "64.17",
+      });
+
+      return (
+        <MediumSelectorModal
+          {...defaultProps}
+          initialMedium="1.5168"
+          initialManufacturer="64.17"
+          selectedMedium={selection.medium}
+          selectedManufacturer={selection.manufacturer}
+          onSelectionChange={(medium, manufacturer) => {
+            onSelectionChange(medium, manufacturer);
+            setSelection({ medium, manufacturer });
+          }}
+        />
+      );
+    }
+
+    renderWithCatalogs(<ControlledModal />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
-    await userEvent.type(screen.getByLabelText("Abbe Number"), "64.1");
-    await userEvent.click(screen.getByLabelText("Single refractive index"));
 
-    expect(screen.getByLabelText("Single refractive index")).toBeChecked();
+    expect(screen.queryByLabelText("Refractive index at d-line")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Abbe Number")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Manufacturer")).toHaveValue("Special");
+    expect(screen.getByLabelText("Glass")).toHaveValue("air");
+    expect(onSelectionChange).toHaveBeenLastCalledWith("air", "Special");
   });
 
-  it("shows an empty Abbe Number input again when Single refractive index is unchecked", async () => {
+  it("restores the Abbe Number when Single refractive index is unchecked", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     await userEvent.type(screen.getByLabelText("Abbe Number"), "64.1");
     await userEvent.click(screen.getByLabelText("Single refractive index"));
+
+    expect(screen.queryByLabelText("Abbe Number")).not.toBeInTheDocument();
+
     await userEvent.click(screen.getByLabelText("Single refractive index"));
 
-    expect(screen.getByLabelText("Abbe Number")).toHaveValue("");
+    expect(screen.getByLabelText("Abbe Number")).toHaveValue("64.1");
   });
 
   it("calls onConfirm with refractive index and Abbe number in model-glass mode", async () => {
@@ -279,6 +388,90 @@ describe("MediumSelectorModal", () => {
     await userEvent.click(screen.getByText("Confirm"));
 
     expect(onConfirm).toHaveBeenCalledWith("1.5168", "64.17");
+  });
+
+  it.each(["0.99", "", "abc"])(
+    "disables Confirm for invalid model-glass refractive index %p",
+    async (refractiveIndex) => {
+      renderWithCatalogs(
+        <MediumSelectorModal
+          {...defaultProps}
+          initialMedium="1.5"
+          initialManufacturer="64"
+        />,
+      );
+
+      const input = screen.getByLabelText("Refractive index at d-line");
+      await userEvent.clear(input);
+      if (refractiveIndex !== "") {
+        await userEvent.type(input, refractiveIndex);
+      }
+
+      expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    },
+  );
+
+  it("enables Confirm for a refractive index of exactly 1 in single-index mode", () => {
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialMedium="1"
+        initialManufacturer=""
+      />,
+    );
+
+    expect(screen.getByLabelText("Single refractive index")).toBeChecked();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+  });
+
+  it.each(["0", "-1", "", "abc"])(
+    "disables Confirm for invalid model-glass Abbe Number %p",
+    async (abbeNumber) => {
+      renderWithCatalogs(
+        <MediumSelectorModal
+          {...defaultProps}
+          initialMedium="1.5"
+          initialManufacturer="64"
+        />,
+      );
+
+      const input = screen.getByLabelText("Abbe Number");
+      await userEvent.clear(input);
+      if (abbeNumber !== "") {
+        await userEvent.type(input, abbeNumber);
+      }
+
+      expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    },
+  );
+
+  it("enables Confirm for a valid refractive index and positive Abbe Number", () => {
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialMedium="1.5"
+        initialManufacturer="64"
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+  });
+
+  it("ignores Abbe Number validity in single-index mode", async () => {
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialMedium="1.5"
+        initialManufacturer="64"
+      />,
+    );
+
+    await userEvent.clear(screen.getByLabelText("Abbe Number"));
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+
+    await userEvent.click(screen.getByLabelText("Single refractive index"));
+
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
   });
 
   it("normalizes an invalid refractive index to 1.0 on blur", async () => {
