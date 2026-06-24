@@ -236,8 +236,27 @@ describe("MediumSelectorModal", () => {
     expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
   });
 
-  it("does not render the glass map link for Special media", () => {
+  it("renders a glass map link for a provider-backed Special glass", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Glass"), "CaF2");
+
+    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+      "href",
+      "/glass-map?source=medium-selector&catalog=Special&glass=CaF2",
+    );
+  });
+
+  it("does not render the glass map link for air", () => {
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
+
+    expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
+  });
+
+  it("does not render the glass map link for REFL", async () => {
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Glass"), "REFL");
 
     expect(screen.queryByRole("link", { name: "View in glass map" })).not.toBeInTheDocument();
   });

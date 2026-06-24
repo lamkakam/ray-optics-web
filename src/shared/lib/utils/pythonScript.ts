@@ -1,17 +1,6 @@
 
 import type { OpticalModel, AsphericalPolynomialCoeffs } from "@/shared/lib/types/opticalModel";
-
-const builtInSpecialMaterial = new Set<string>([
-  "air",
-  "REFL",
-]);
-
-// the value(s) refer to the Python variable(s) defined in `init()` in rayoptics-web-utils
-const nonBuiltInSpecialMaterial = new Map<string, string>([
-  ["CaF2", "caf2"],
-  ["Fused Silica", "fused_silica"],
-  ["Water", "water"],
-]);
+import { builtInSpecialMaterial, nonBuiltInSpecialMaterial } from "./specialMaterials";
 
 type PythonLine = string;
 type SurfaceMutationLine = PythonLine;
