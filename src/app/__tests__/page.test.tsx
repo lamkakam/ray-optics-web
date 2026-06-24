@@ -41,12 +41,13 @@ let mockSelectedSegment: string | null = null;
 let mockSearchParams = new URLSearchParams();
 let mockPathname = "/";
 const mockPush = jest.fn<void, [string]>();
+const mockReplace = jest.fn<void, [string]>();
 
 jest.mock("next/navigation", () => ({
   useSelectedLayoutSegment: () => mockSelectedSegment,
   useSearchParams: () => mockSearchParams,
   usePathname: () => mockPathname,
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 jest.mock("next/link", () => {
@@ -460,6 +461,7 @@ describe("app shell routes", () => {
     mockSearchParams = new URLSearchParams();
     window.history.pushState({}, "", "/");
     mockPush.mockReset();
+    mockReplace.mockReset();
     mockUsePyodide.mockReturnValue({
       proxy: mockProxy,
       isReady: true,
@@ -598,56 +600,117 @@ describe("app shell routes", () => {
     expect(mockPush).toHaveBeenCalledWith("/glass-map");
   });
 
-  it("warns on browser back navigation away from Optimization with an unapplied result", async () => {
+  it("intercepts guarded browser history before Next routing handles it", async () => {
     mockPathname = "/optimization";
-    window.history.pushState({}, "", "/optimization");
+    const optimizationHistoryState = { __NA: true, tree: ["optimization"] };
+    window.history.pushState(optimizationHistoryState, "", "/optimization?mode=local#results");
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(false);
+    const nextRouterPopstateListener = jest.fn();
+    window.addEventListener("popstate", nextRouterPopstateListener);
+    const nativePushState = window.history.pushState.bind(window.history);
+    const nextPatchedPushState = jest
+      .spyOn(window.history, "pushState")
+      .mockImplementation((state: unknown, unused: string, url?: string | URL | null) => {
+        nativePushState(state, unused, url);
+        if (!(typeof state === "object" && state !== null && "__NA" in state)) {
+          nextRouterPopstateListener();
+        }
+      });
+
+    try {
+      renderInAppShell(<SeedUnappliedOptimizationResult />);
+      await screen.findByText("Optimization body");
+
+      nativePushState({ __NA: true, tree: ["editor"] }, "", "/");
+      fireEvent(window, new PopStateEvent("popstate", {
+        state: { __NA: true, tree: ["editor"] },
+      }));
+
+      expect(screen.getByRole("dialog", { name: "Unapplied Optimization Result" })).toBeInTheDocument();
+      expect(screen.getByText("Optimization body")).toBeInTheDocument();
+      expect(window.location.pathname).toBe("/optimization");
+      expect(window.location.search).toBe("?mode=local");
+      expect(window.location.hash).toBe("#results");
+      expect(window.history.state).toEqual(optimizationHistoryState);
+      expect(nextRouterPopstateListener).not.toHaveBeenCalled();
+      expect(mockReplace).not.toHaveBeenCalled();
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(confirmSpy).not.toHaveBeenCalled();
+    } finally {
+      nextPatchedPushState.mockRestore();
+      window.removeEventListener("popstate", nextRouterPopstateListener);
+      confirmSpy.mockRestore();
+    }
+  });
+
+  it("stays on Optimization after cancelling guarded browser history navigation", async () => {
+    mockPathname = "/optimization";
+    window.history.pushState({}, "", "/optimization?mode=local#results");
+    const user = userEvent.setup();
     renderInAppShell(<SeedUnappliedOptimizationResult />);
     await screen.findByText("Optimization body");
-    await waitFor(() => {
-      expect(screen.queryByRole("dialog", { name: "Unapplied Optimization Result" })).not.toBeInTheDocument();
-    });
 
-    window.history.pushState({}, "", "/");
-    fireEvent(window, new PopStateEvent("popstate"));
-
-    await waitFor(() => {
-      expect(screen.getByRole("dialog", { name: "Unapplied Optimization Result" })).toBeInTheDocument();
-    });
-    expect(window.location.pathname).toBe("/optimization");
-    expect(confirmSpy).not.toHaveBeenCalled();
-    confirmSpy.mockRestore();
-  });
-
-  it("asks for native confirmation on browser history navigation from a normal app route", () => {
-    mockPathname = "/glass-map";
     window.history.pushState({}, "", "/glass-map?catalog=Schott#details");
-    const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(false);
-    renderInAppShell(<GlassMapPage />);
-
-    window.history.pushState({}, "", "/settings?tab=display#theme");
     fireEvent(window, new PopStateEvent("popstate"));
+    await user.click(await screen.findByRole("button", { name: "Stay" }));
 
-    expect(confirmSpy).toHaveBeenCalledTimes(1);
-    expect(window.location.pathname).toBe("/glass-map");
-    expect(window.location.search).toBe("?catalog=Schott");
-    expect(window.location.hash).toBe("#details");
-    confirmSpy.mockRestore();
+    expect(screen.queryByRole("dialog", { name: "Unapplied Optimization Result" })).not.toBeInTheDocument();
+    expect(window.location.href).toContain("/optimization?mode=local#results");
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it("keeps the browser history destination when native confirmation is accepted", () => {
+  it("leaves for the saved browser history destination after confirmation", async () => {
+    mockPathname = "/optimization";
+    window.history.pushState({}, "", "/optimization");
+    const user = userEvent.setup();
+    renderInAppShell(<SeedUnappliedOptimizationResult />);
+    await screen.findByText("Optimization body");
+
+    window.history.pushState({}, "", "/glass-map?catalog=Schott#details");
+    fireEvent(window, new PopStateEvent("popstate"));
+    await user.click(await screen.findByRole("button", { name: "Leave" }));
+
+    expect(mockPush).toHaveBeenCalledWith("/glass-map?catalog=Schott#details");
+  });
+
+  it("applies the result before leaving for the saved browser history destination", async () => {
+    mockPathname = "/optimization";
+    window.history.pushState({}, "", "/optimization");
+    const user = userEvent.setup();
+    const { optimizationStore } = renderInAppShellWithOptimizationStore(
+      <>
+        <SeedUnappliedOptimizationResult />
+        <LensEditorRadiusProbe />
+      </>,
+    );
+    await screen.findByText("Optimization body");
+
+    window.history.pushState({}, "", "/?view=editor#surface-data");
+    fireEvent(window, new PopStateEvent("popstate"));
+    await user.click(await screen.findByRole("button", { name: "Apply to Editor" }));
+
+    expect(screen.getByTestId("editor-radius")).toHaveTextContent("42");
+    expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(false);
+    expect(mockPush).toHaveBeenCalledWith("/?view=editor#surface-data");
+  });
+
+  it("allows browser history navigation within the app without native confirmation", () => {
     mockPathname = "/glass-map";
     window.history.pushState({}, "", "/glass-map?catalog=Schott#details");
     const confirmSpy = jest.spyOn(window, "confirm").mockReturnValue(true);
     renderInAppShell(<GlassMapPage />);
 
     window.history.pushState({}, "", "/settings?tab=display#theme");
+    const downstreamPopstateListener = jest.fn();
+    window.addEventListener("popstate", downstreamPopstateListener);
     fireEvent(window, new PopStateEvent("popstate"));
 
-    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(downstreamPopstateListener).toHaveBeenCalledTimes(1);
     expect(window.location.pathname).toBe("/settings");
     expect(window.location.search).toBe("?tab=display");
     expect(window.location.hash).toBe("#theme");
+    window.removeEventListener("popstate", downstreamPopstateListener);
     confirmSpy.mockRestore();
   });
 

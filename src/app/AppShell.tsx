@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { MathJaxContext } from "better-react-mathjax";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "zustand";
@@ -34,6 +35,11 @@ function getPathnameFromHref(href: string) {
   return new URL(href, window.location.origin).pathname;
 }
 
+interface HistoryEntry {
+  readonly href: string;
+  readonly state: unknown;
+}
+
 export default function AppShell({ children }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -48,7 +54,7 @@ export default function AppShell({ children }: AppShellProps) {
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [pendingNavigationHref, setPendingNavigationHref] = useState<string | undefined>();
   const [glassCatalogsResult, setGlassCatalogsResult] = useState<GlassCatalogsLoadResult | undefined>();
-  const previousHrefRef = useRef(pathname);
+  const activeHistoryEntryRef = useRef<HistoryEntry>({ href: pathname, state: undefined });
   const cachedGlassCatalogsResult = proxy === undefined ? undefined : peekGlassCatalogs(proxy);
   const effectiveGlassCatalogsResult = glassCatalogsResult ?? cachedGlassCatalogsResult;
   const glassCatalogsLoading =
@@ -123,35 +129,37 @@ export default function AppShell({ children }: AppShellProps) {
   }, []);
 
   useEffect(() => {
-    previousHrefRef.current = getCurrentWindowHref();
+    activeHistoryEntryRef.current = {
+      href: getCurrentWindowHref(),
+      state: window.history.state,
+    };
   }, [pathname]);
 
   useEffect(() => {
-    const handler = () => {
+    const handler = (event: PopStateEvent) => {
       const nextHref = getCurrentWindowHref();
-      const previousHref = previousHrefRef.current;
-      const previousPathname = getPathnameFromHref(previousHref);
+      const activeEntry = activeHistoryEntryRef.current;
+      const previousPathname = getPathnameFromHref(activeEntry.href);
       const nextPathname = getPathnameFromHref(nextHref);
       if (
         previousPathname === "/optimization"
         && nextPathname !== "/optimization"
         && optimizationStore.getState().hasUnappliedOptimizationResult
       ) {
-        window.history.pushState(null, "", previousHref);
-        setPendingNavigationHref(nextHref);
+        event.stopImmediatePropagation();
+        window.history.pushState(activeEntry.state, "", activeEntry.href);
+        flushSync(() => setPendingNavigationHref(nextHref));
         return;
       }
 
-      if (!window.confirm("Leave Ray Optics Web? Changes may not be saved.")) {
-        window.history.pushState(null, "", previousHref);
-        return;
-      }
-
-      previousHrefRef.current = nextHref;
+      activeHistoryEntryRef.current = {
+        href: nextHref,
+        state: event.state,
+      };
     };
 
-    window.addEventListener("popstate", handler);
-    return () => window.removeEventListener("popstate", handler);
+    window.addEventListener("popstate", handler, { capture: true });
+    return () => window.removeEventListener("popstate", handler, { capture: true });
   }, [optimizationStore]);
 
   useEffect(() => {
