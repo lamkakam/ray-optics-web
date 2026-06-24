@@ -230,12 +230,7 @@ export function MediumSelectorModal({
               checked={singleRefractiveIndex}
               label="Single refractive index"
               disabled={readOnly}
-              onChange={(checked) => {
-                setSingleRefractiveIndex(checked);
-                if (checked) {
-                  setAbbeNumber("");
-                }
-              }}
+              onChange={setSingleRefractiveIndex}
             />
 
             <div>

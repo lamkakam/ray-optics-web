@@ -69,7 +69,7 @@ interface MediumSelectorModalProps {
   - a `Single refractive index` checkbox rendered with the shared checkbox primitive
   - a `Refractive index at d-line` input
   - an `Abbe Number` input when `Single refractive index` is unchecked
-- When `Single refractive index` is checked, the Abbe Number value is cleared and the Abbe Number input is hidden.
+- When `Single refractive index` is checked, the Abbe Number input is hidden without clearing its value. Unchecking it restores the value held in component state.
 - If `initialMedium` parses to a float, the modal auto-enters model-glass mode and seeds the refractive-index input with the original `initialMedium` string.
 - If `initialManufacturer` also parses to a float, the modal seeds the Abbe Number input and leaves `Single refractive index` unchecked.
 - If `initialMedium` is numeric but `initialManufacturer` is not, the modal starts in model-glass mode with `Single refractive index` checked.

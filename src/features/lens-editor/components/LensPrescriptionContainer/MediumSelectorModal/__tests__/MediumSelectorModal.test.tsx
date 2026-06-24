@@ -329,26 +329,18 @@ describe("MediumSelectorModal", () => {
     expect(screen.getByLabelText("Abbe Number")).toBeInTheDocument();
   });
 
-  it("clears and hides Abbe Number when Single refractive index is checked", async () => {
+  it("restores the Abbe Number when Single refractive index is unchecked", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
     await userEvent.type(screen.getByLabelText("Abbe Number"), "64.1");
     await userEvent.click(screen.getByLabelText("Single refractive index"));
 
-    expect(screen.getByLabelText("Single refractive index")).toBeChecked();
     expect(screen.queryByLabelText("Abbe Number")).not.toBeInTheDocument();
-  });
 
-  it("shows an empty Abbe Number input again when Single refractive index is unchecked", async () => {
-    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
-
-    await userEvent.click(screen.getByLabelText("Use model glass"));
-    await userEvent.type(screen.getByLabelText("Abbe Number"), "64.1");
-    await userEvent.click(screen.getByLabelText("Single refractive index"));
     await userEvent.click(screen.getByLabelText("Single refractive index"));
 
-    expect(screen.getByLabelText("Abbe Number")).toHaveValue("");
+    expect(screen.getByLabelText("Abbe Number")).toHaveValue("64.1");
   });
 
   it("calls onConfirm with refractive index and Abbe number in model-glass mode", async () => {
