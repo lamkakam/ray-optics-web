@@ -34,6 +34,16 @@ function isNumericString(value: string): boolean {
   return !Number.isNaN(parseFloat(value));
 }
 
+function isFiniteNumberAtLeast(value: string, minimum: number): boolean {
+  const trimmed = value.trim();
+  if (trimmed === "") {
+    return false;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) && parsed >= minimum;
+}
+
 function normalizePositiveNumericString(value: string): string {
   const parsed = parseFloat(value.trim());
   return Number.isFinite(parsed) && parsed > 0 ? value.trim() : "1.0";
@@ -100,6 +110,11 @@ export function MediumSelectorModal({
   );
   const hasValidCatalogMedium = canonicalMedium !== undefined;
   const showAbbeNumber = useModelGlass && !singleRefractiveIndex;
+  const hasValidModelGlass = isFiniteNumberAtLeast(refractiveIndexAtDLine, 1)
+    && (singleRefractiveIndex || (
+      isFiniteNumberAtLeast(abbeNumber, 0) && Number(abbeNumber.trim()) > 0
+    ));
+  const canConfirm = useModelGlass ? hasValidModelGlass : hasValidCatalogMedium;
   const canSelectCatalogGlass = error === undefined && isLoaded;
 
   const updateCatalogSelection = (nextMedium: string, nextManufacturer: string) => {
@@ -265,7 +280,7 @@ export function MediumSelectorModal({
             <Button variant="secondary" onClick={onClose}>Cancel</Button>
             <Button
               variant="primary"
-              disabled={!useModelGlass && !hasValidCatalogMedium}
+              disabled={!canConfirm}
               onClick={() => onConfirm(
                 useModelGlass
                   ? refractiveIndexAtDLine

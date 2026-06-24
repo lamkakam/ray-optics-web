@@ -76,6 +76,9 @@ interface MediumSelectorModalProps {
 - On blur, `Refractive index at d-line` is normalized to a positive numeric string; parse failure, `NaN`, zero, or negative values reset it to `"1.0"`.
 - On blur, `Abbe Number` is normalized to either a numeric string or the empty string; parse failure or `NaN` resets it to `""`.
 - In model-glass mode, `onConfirm` passes `(refractiveIndexAtDLine, abbeNumber)` or `(refractiveIndexAtDLine, "")` when `Single refractive index` is checked.
+- In model-glass mode, Confirm is enabled only when the refractive index is a non-empty, finite numeric value greater than or equal to `1`.
+- When `Single refractive index` is unchecked, Confirm additionally requires a non-empty, finite numeric Abbe Number greater than `0`; single-index mode ignores the Abbe Number.
+- Model-glass validity is evaluated immediately while editing, before blur normalization. Catalog-glass Confirm validation remains based on an exact available-medium match.
 - In `readOnly` mode, all checkboxes, selects, and inputs are disabled and the footer renders a single `Close` action instead of `Cancel` / `Confirm`.
 - Uses `key` prop at the call site (in `LensPrescriptionContainer`) to reset state when the modal re-opens for a different row.
 

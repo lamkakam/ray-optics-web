@@ -363,6 +363,90 @@ describe("MediumSelectorModal", () => {
     expect(onConfirm).toHaveBeenCalledWith("1.5168", "64.17");
   });
 
+  it.each(["0.99", "", "abc"])(
+    "disables Confirm for invalid model-glass refractive index %p",
+    async (refractiveIndex) => {
+      renderWithCatalogs(
+        <MediumSelectorModal
+          {...defaultProps}
+          initialMedium="1.5"
+          initialManufacturer="64"
+        />,
+      );
+
+      const input = screen.getByLabelText("Refractive index at d-line");
+      await userEvent.clear(input);
+      if (refractiveIndex !== "") {
+        await userEvent.type(input, refractiveIndex);
+      }
+
+      expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    },
+  );
+
+  it("enables Confirm for a refractive index of exactly 1 in single-index mode", () => {
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialMedium="1"
+        initialManufacturer=""
+      />,
+    );
+
+    expect(screen.getByLabelText("Single refractive index")).toBeChecked();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+  });
+
+  it.each(["0", "-1", "", "abc"])(
+    "disables Confirm for invalid model-glass Abbe Number %p",
+    async (abbeNumber) => {
+      renderWithCatalogs(
+        <MediumSelectorModal
+          {...defaultProps}
+          initialMedium="1.5"
+          initialManufacturer="64"
+        />,
+      );
+
+      const input = screen.getByLabelText("Abbe Number");
+      await userEvent.clear(input);
+      if (abbeNumber !== "") {
+        await userEvent.type(input, abbeNumber);
+      }
+
+      expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+    },
+  );
+
+  it("enables Confirm for a valid refractive index and positive Abbe Number", () => {
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialMedium="1.5"
+        initialManufacturer="64"
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+  });
+
+  it("ignores Abbe Number validity in single-index mode", async () => {
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialMedium="1.5"
+        initialManufacturer="64"
+      />,
+    );
+
+    await userEvent.clear(screen.getByLabelText("Abbe Number"));
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+
+    await userEvent.click(screen.getByLabelText("Single refractive index"));
+
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+  });
+
   it("normalizes an invalid refractive index to 1.0 on blur", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
