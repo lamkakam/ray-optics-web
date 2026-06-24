@@ -28,7 +28,8 @@ interface GlassMapRouteIntent {
 - Derives axis labels from `plotType`, `abbeNumCenterLine`, `partialDispersionType`
 - Treats `routeIntent` as a render-time override instead of synchronizing it into the store
 - If `routeIntent` resolves to a valid glass, that glass is shown initially and its catalog is forced visible in the controls
-- The route-intent override is dismissed after user interaction with the plot controls or plot selection, after which the persistent store state is authoritative again
+- Plot radios and catalog checkboxes update their respective plot/filter state without dismissing the route-intent selection
+- The route-intent override is dismissed only when the user selects a chart point, after which that point and the persistent store state are authoritative
 - When `routeIntent.source === "medium-selector"`, the back link is shown above the controls panel
 - Renders a `Back to lens editor` inline link above the controls panel when opened from `MediumSelectorModal`
 - Renders `Use selected glass` next to the back link only for medium-selector route intent when the selected glass is valid and the route supplied an apply callback

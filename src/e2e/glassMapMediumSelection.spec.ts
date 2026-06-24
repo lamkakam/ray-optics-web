@@ -40,7 +40,13 @@ test("returns to the uncommitted medium draft without changing the glass-map sel
 }) => {
   const objectRow = await selectSchottNbk7AndOpenGlassMap(page);
 
-  await page.getByRole("link", { name: "Back to lens editor" }).click();
+  await page.getByRole("radio", { name: "Partial Dispersion" }).click();
+  await page.getByRole("radio", { name: "e", exact: true }).click();
+  await page.getByRole("radio", { name: "P_F,e", exact: true }).click();
+  await page.getByRole("checkbox", { name: "Hoya" }).click();
+  await expect(page.getByRole("heading", { name: "N-BK7" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Use selected glass" }).click();
 
   await expect(page).toHaveURL(/\/$/);
   const modal = page.getByRole("dialog", { name: "Select Medium" });
