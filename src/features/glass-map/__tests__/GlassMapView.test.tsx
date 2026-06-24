@@ -1,5 +1,5 @@
 import React, { Suspense, act } from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand/vanilla";
 import { GlassMapView } from "@/features/glass-map/GlassMapView";
@@ -357,9 +357,8 @@ describe("GlassMapView", () => {
     );
   });
 
-  it("applies the newly selected glass instead of the original route glass", async () => {
+  it("preserves and applies the route-intent glass after control changes", async () => {
     const onUseSelectedGlass = jest.fn();
-    const store = makeStore();
     renderWithStore(
       <GlassMapView
         proxy={makeProxy()}
@@ -367,25 +366,55 @@ describe("GlassMapView", () => {
         routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
         onUseSelectedGlass={onUseSelectedGlass}
       />,
-      store,
+    );
+
+    await screen.findByRole("heading", { name: "N-BK7" });
+    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
+    await userEvent.click(screen.getByRole("radio", { name: "e" }));
+    await userEvent.click(screen.getByRole("radio", { name: "P_F,e" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "Hoya" }));
+
+    expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("link", { name: "Use selected glass" }));
+
+    expect(onUseSelectedGlass).toHaveBeenCalledWith(
+      expect.objectContaining({ glassName: "N-BK7", catalogName: "Schott" }),
+    );
+  });
+
+  it("applies the newly selected glass instead of the original route glass", async () => {
+    const onUseSelectedGlass = jest.fn();
+    const proxy = makeProxy({
+      getAllGlassCatalogsData: jest.fn().mockResolvedValue({
+        ...rawData,
+        Ohara: {
+          "S-TIH6": {
+            refractive_index_d: 1.80518,
+            refractive_index_e: 1.8163,
+            abbe_number_d: 25.36,
+            abbe_number_e: 25.2,
+            partial_dispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
+            dispersion_coeff_kind: "Sellmeier3T" as const,
+            dispersion_coeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+          },
+        },
+      }),
+    });
+    renderWithStore(
+      <GlassMapView
+        proxy={proxy}
+        isReady={true}
+        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        onUseSelectedGlass={onUseSelectedGlass}
+      />,
     );
     await screen.findByRole("heading", { name: "N-BK7" });
-    act(() => {
-      store.getState().setSelectedGlass({
-        catalogName: "Ohara",
-        glassName: "S-TIH6",
-        data: {
-          refractiveIndexD: 1.80518,
-          refractiveIndexE: 1.8163,
-          abbeNumberD: 25.36,
-          abbeNumberE: 25.2,
-          partialDispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
-          dispersionCoeffKind: "Sellmeier3T",
-          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
-        },
-      });
-    });
-    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
+    const unselectedPoint = screen
+      .getAllByTestId("glass-point")
+      .find((point) => point.getAttribute("stroke") === "none");
+    expect(unselectedPoint).toBeDefined();
+    fireEvent.click(unselectedPoint!);
 
     await userEvent.click(screen.getByRole("link", { name: "Use selected glass" }));
 
@@ -477,23 +506,11 @@ describe("GlassMapView", () => {
       expect(screen.getByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
     });
 
-    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
-
-    act(() => {
-      store.getState().setSelectedGlass({
-        catalogName: "Schott",
-        glassName: "N-SF6",
-        data: {
-          refractiveIndexD: 1.80518,
-          refractiveIndexE: 1.8163,
-          abbeNumberD: 25.36,
-          abbeNumberE: 25.2,
-          partialDispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
-          dispersionCoeffKind: "Sellmeier3T",
-          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
-        },
-      });
-    });
+    const unselectedPoint = screen
+      .getAllByTestId("glass-point")
+      .find((point) => point.getAttribute("stroke") === "none");
+    expect(unselectedPoint).toBeDefined();
+    fireEvent.click(unselectedPoint!);
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "N-SF6" })).toBeInTheDocument();

@@ -116,26 +116,6 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
     setSelectedGlass(glass);
   };
 
-  const handlePlotTypeChange = (value: GlassMapStore["plotType"]) => {
-    setRouteIntentDismissed(true);
-    setPlotType(value);
-  };
-
-  const handleAbbeNumCenterLineChange = (value: GlassMapStore["abbeNumCenterLine"]) => {
-    setRouteIntentDismissed(true);
-    setAbbeNumCenterLine(value);
-  };
-
-  const handlePartialDispersionTypeChange = (value: GlassMapStore["partialDispersionType"]) => {
-    setRouteIntentDismissed(true);
-    setPartialDispersionType(value);
-  };
-
-  const handleToggleCatalog = (name: CatalogName) => {
-    setRouteIntentDismissed(true);
-    toggleCatalog(name);
-  };
-
   return (
     <div className="flex flex-col lg:flex-row h-full overflow-hidden">
       {/* Plot area */}
@@ -173,10 +153,10 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
           abbeNumCenterLine={abbeNumCenterLine}
           partialDispersionType={partialDispersionType}
           enabledCatalogs={effectiveEnabledCatalogs}
-          onPlotTypeChange={handlePlotTypeChange}
-          onAbbeNumCenterLineChange={handleAbbeNumCenterLineChange}
-          onPartialDispersionTypeChange={handlePartialDispersionTypeChange}
-          onToggleCatalog={handleToggleCatalog}
+          onPlotTypeChange={setPlotType}
+          onAbbeNumCenterLineChange={setAbbeNumCenterLine}
+          onPartialDispersionTypeChange={setPartialDispersionType}
+          onToggleCatalog={toggleCatalog}
         />
         <GlassDetailPanel selectedGlass={effectiveSelectedGlass} />
       </div>
