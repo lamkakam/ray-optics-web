@@ -62,13 +62,28 @@ test("optimize a singlet with even-aspheric coefficients and apply it to the edi
   await progressDialog.getByRole("button", { name: "OK" }).click();
   await expect(progressDialog).toBeHidden();
 
-  await page.getByRole("button", { name: "Apply to Editor" }).click();
-  const applyDialog = page.getByRole("dialog", { name: "Apply to Editor" });
-  await applyDialog.getByRole("button", { name: "Apply" }).click();
-  await expect(applyDialog).toBeHidden();
+  await page.evaluate(() => window.history.back());
+  const unappliedResultDialog = page.getByRole("dialog", {
+    name: "Unapplied Optimization Result",
+  });
+  await expect(unappliedResultDialog).toBeVisible();
+  await expect(page).toHaveURL(/\/optimization$/);
+  await expect(
+    page
+      .getByTestId("optimization-shared-content-wrapper")
+      .getByRole("button", { name: "Apply to Editor" }),
+  ).toBeVisible();
+  await unappliedResultDialog.getByRole("button", { name: "Stay" }).click();
+  await expect(unappliedResultDialog).toBeHidden();
 
-  await page.getByRole("button", { name: "Open navigation" }).click();
-  await page.locator('a[href="/"]').click();
+  await page.evaluate(() => window.history.back());
+  await expect(unappliedResultDialog).toBeVisible();
+  await expect(page).toHaveURL(/\/optimization$/);
+  await unappliedResultDialog
+    .getByRole("button", { name: "Apply to Editor" })
+    .click();
+  await expect(page).toHaveURL(/\/$/);
+
   await page.getByRole("tab", { name: "Prescription" }).click();
   const prescriptionGrid = '[aria-label="Lens prescription editor"]';
   const surface2 = await getPrescriptionSurfaceRow(page, prescriptionGrid, 2);

@@ -10,8 +10,7 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
-
-const SPECIAL_MEDIA = ["air", "REFL"];
+import { builtInSpecialMaterial } from "@/shared/lib/utils/specialMaterials";
 
 interface MediumSelectorModalProps {
   readonly isOpen: boolean;
@@ -98,7 +97,9 @@ export function MediumSelectorModal({
       .map(([catalogName]) => catalogName),
   ];
   const specialMediaOptions = [
-    ...SPECIAL_MEDIA.filter((medium) => allowReflective || medium.toUpperCase() !== "REFL"),
+    ...Array.from(builtInSpecialMaterial).filter(
+      (medium) => allowReflective || medium.toUpperCase() !== "REFL",
+    ),
     ...Object.keys(catalogs?.Special ?? {}),
   ];
   const isSpecial = manufacturer === "Special";
@@ -132,7 +133,11 @@ export function MediumSelectorModal({
   };
 
   const glassMapHref = (() => {
-    if (useModelGlass || isSpecial || canonicalMedium === undefined) {
+    if (
+      useModelGlass
+      || canonicalMedium === undefined
+      || (isSpecial && builtInSpecialMaterial.has(canonicalMedium))
+    ) {
       return undefined;
     }
 

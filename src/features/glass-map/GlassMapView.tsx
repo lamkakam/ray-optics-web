@@ -19,6 +19,7 @@ interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly routeIntent?: GlassMapRouteIntent;
+  readonly onUseSelectedGlass?: (glass: SelectedGlass) => void;
 }
 
 function axisLabels(
@@ -38,7 +39,7 @@ function axisLabels(
   return { xLabel, yLabel: yLabelMap[partialDispersionType] };
 }
 
-export function GlassMapView({ proxy, isReady, routeIntent }: GlassMapViewProps) {
+export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }: GlassMapViewProps) {
   const store = useGlassMapStore();
   const plotType = useStore(store, (s) => s.plotType);
   const abbeNumCenterLine = useStore(store, (s) => s.abbeNumCenterLine);
@@ -152,10 +153,19 @@ export function GlassMapView({ proxy, isReady, routeIntent }: GlassMapViewProps)
       {/* Controls + detail */}
       <div className="lg:w-[40%] overflow-y-auto border-l border-gray-200 dark:border-gray-700 flex flex-col">
         {routeIntent?.source === "medium-selector" && (
-          <div className="px-4 pt-4">
+          <div className="flex gap-4 px-4 pt-4">
             <InlineLink href="/" aria-label="Back to lens editor">
               Back to lens editor
             </InlineLink>
+            {effectiveSelectedGlass !== undefined && onUseSelectedGlass !== undefined && (
+              <InlineLink
+                href="/"
+                aria-label="Use selected glass"
+                onClick={() => onUseSelectedGlass(effectiveSelectedGlass)}
+              >
+                Use selected glass
+              </InlineLink>
+            )}
           </div>
         )}
         <GlassMapControls

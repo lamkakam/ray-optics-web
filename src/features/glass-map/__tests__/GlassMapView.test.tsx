@@ -339,6 +339,79 @@ describe("GlassMapView", () => {
     });
   });
 
+  it("applies the valid route-intent glass through the injected callback", async () => {
+    const onUseSelectedGlass = jest.fn();
+    renderWithStore(
+      <GlassMapView
+        proxy={makeProxy()}
+        isReady={true}
+        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        onUseSelectedGlass={onUseSelectedGlass}
+      />,
+    );
+
+    await userEvent.click(await screen.findByRole("link", { name: "Use selected glass" }));
+
+    expect(onUseSelectedGlass).toHaveBeenCalledWith(
+      expect.objectContaining({ glassName: "N-BK7", catalogName: "Schott" }),
+    );
+  });
+
+  it("applies the newly selected glass instead of the original route glass", async () => {
+    const onUseSelectedGlass = jest.fn();
+    const store = makeStore();
+    renderWithStore(
+      <GlassMapView
+        proxy={makeProxy()}
+        isReady={true}
+        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+        onUseSelectedGlass={onUseSelectedGlass}
+      />,
+      store,
+    );
+    await screen.findByRole("heading", { name: "N-BK7" });
+    act(() => {
+      store.getState().setSelectedGlass({
+        catalogName: "Ohara",
+        glassName: "S-TIH6",
+        data: {
+          refractiveIndexD: 1.80518,
+          refractiveIndexE: 1.8163,
+          abbeNumberD: 25.36,
+          abbeNumberE: 25.2,
+          partialDispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+        },
+      });
+    });
+    await userEvent.click(screen.getByRole("radio", { name: "Partial Dispersion" }));
+
+    await userEvent.click(screen.getByRole("link", { name: "Use selected glass" }));
+
+    expect(onUseSelectedGlass).toHaveBeenCalledWith(
+      expect.objectContaining({ glassName: "S-TIH6", catalogName: "Ohara" }),
+    );
+  });
+
+  it.each([
+    ["without route intent", undefined, jest.fn()],
+    ["without pending selection callback", { source: "medium-selector" as const, catalog: "Schott", glass: "N-BK7" }, undefined],
+    ["without a valid selected glass", { source: "medium-selector" as const, catalog: "Schott", glass: "Missing" }, jest.fn()],
+  ])("hides Use selected glass %s", async (_label, routeIntent, onUseSelectedGlass) => {
+    renderWithStore(
+      <GlassMapView
+        proxy={makeProxy()}
+        isReady={true}
+        routeIntent={routeIntent}
+        onUseSelectedGlass={onUseSelectedGlass}
+      />,
+    );
+    await waitFor(() => expect(makeProxy).toBeDefined());
+
+    expect(screen.queryByRole("link", { name: "Use selected glass" })).not.toBeInTheDocument();
+  });
+
   it("does not render a back link without MediumSelectorModal route intent", async () => {
     const proxy = makeProxy();
     renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);

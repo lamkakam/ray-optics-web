@@ -8,7 +8,7 @@ Client wrapper for the shared runtime shell. Owns Pyodide initialization, app-wi
 - Displays determinate initialization progress from `usePyodide().initProgress`
 - Preloads normalized glass catalog data once per worker proxy via `preloadGlassCatalogs()`
 - Registers an app-wide `beforeunload` guard for reload, tab close, typed URL, and external navigation
-- Guards app-wide browser back/forward navigation with native confirmation, while keeping the Optimization unapplied-result modal as the higher-priority browser-history guard
+- Allows browser back/forward navigation between app routes without native confirmation, while keeping the Optimization unapplied-result modal as the browser-history guard for unapplied results
 - Guards in-app SideNav navigation away from `/optimization` when an optimized result has not been applied to the Editor
 - Provides `proxy`, `isReady`, and `openErrorModal` through `AppShellProvider`
 - Injects app-wide glass catalog state through `GlassCatalogProvider`
@@ -51,5 +51,5 @@ Client wrapper for the shared runtime shell. Owns Pyodide initialization, app-wi
 - `Stay` clears the pending route and remains on Optimization.
 - `Leave` pushes the pending route without applying the Optimization-local model.
 - `Apply to Editor` applies the Optimization-local optical model through `applyOptimizationModelToEditor()`, clears the optimization store's unapplied-result marker, then pushes the pending route.
-- Browser back/forward navigation that leaves `/optimization` with an unapplied Optimization result restores the full current URL, including query and hash, with `history.pushState(...)`, stores the attempted destination, and shows the same React warning modal without calling `window.confirm`.
-- Browser back/forward navigation outside that Optimization modal path calls `window.confirm`; rejecting the prompt restores the full previous URL with `history.pushState(...)`, and accepting the prompt leaves the browser history destination in place.
+- The browser-history guard tracks the complete active Optimization history entry: its full URL (including query and hash) and its original `history.state`, including Next.js App Router's `__NA` state. It listens for `popstate` in capture phase and, when navigation leaves `/optimization` with an unapplied result, stops immediate propagation before Next.js handles the event, restores that exact entry with `history.pushState(...)`, stores the attempted destination, and synchronously shows the same React warning modal without starting a router transition. Reusing the original Next history state prevents Next's patched `pushState` from dispatching a router restore.
+- Browser back/forward navigation outside that Optimization modal path leaves the full history destination, including path, query, and hash, in place without calling `window.confirm`, and updates the tracked current URL for subsequent history navigation.

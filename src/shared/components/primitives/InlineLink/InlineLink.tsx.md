@@ -12,6 +12,7 @@ interface InlineLinkProps {
   children: React.ReactNode;
   className?: string;
   "aria-label"?: string;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 ```
 
@@ -21,6 +22,7 @@ interface InlineLinkProps {
 - Uses inline text-link styling with underline and theme-aware colours
 - Merges consumer `className` with the default classes via `clsx` + `twMerge`
 - Supports explicit `aria-label` for accessibility when the visible label is not enough
+- Forwards an optional typed anchor click handler for navigation actions that also update client state
 
 ## Usages
 

@@ -13,4 +13,7 @@ Glass Map route page (`/glass-map`).
 - Uses a stable `routeIntentKey` so route-intent-local UI override state resets when the URL intent changes
 - Keeps `GlassMapView` under the same long-lived store instance, so plot filters and selection survive page switches
 - Renders `GlassMapView` with the shared Pyodide worker state and the optional route intent
+- Reads whether a pending medium selection still exists from the lens-editor store
+- Injects `onUseSelectedGlass` only while that pending modal draft exists; the callback copies the selected glass's canonical name and catalog into the draft without committing the prescription row
+- Leaves navigation to `/` to the Glass Map inline links, so `Back to lens editor` remains a state-preserving navigation while `Use selected glass` updates the draft first
 - Uses the same loading placeholder for both search-param suspense and catalog-resource suspense
