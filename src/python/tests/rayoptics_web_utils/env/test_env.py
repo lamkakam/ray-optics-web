@@ -38,6 +38,8 @@ class TestInit:
         assert result['fused_silica'] is not None
         assert 'water' in result
         assert result['water'] is not None
+        assert 'd263teco' in result
+        assert result['d263teco'] is not None
 
     def test_init_sets_matplotlib_backend(self):
         """init() should set the matplotlib backend to Agg."""

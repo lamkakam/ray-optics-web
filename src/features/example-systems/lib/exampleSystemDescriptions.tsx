@@ -585,6 +585,66 @@ const DESCRIPTIONS_BY_NAME = {
       </DescriptionExternalLink>
     </>
   ),
+  "Reversed Tracing of Superachromatic High NA Immersion Microscope Objective US#9,645,380 Example 1 (2013)": (
+    <>
+      <DescriptionParagraph>
+        Rolf Wartmann disclosed a high-NA oil-immersion microscope objective designed for confocal microscopy in US#9,645,380 (Example 1) 
+        with aberrations corrected from 365 nm to 900 nm. 
+        This superachromatic objective is specified as 40x, NA 1.3, with a 25 mm image field diameter.
+        The lens prescription here is from Lens Design website by Dr. Daniel J. Reiley, 
+        who converted the patent’s disclosed material refractive indices and dispersion data into real glass models. 
+        In this reversed tracing, the image space half-field is 0.3125mm and the image space f-number is 0.319.
+      </DescriptionParagraph>
+      <DescriptionParagraph>
+        The patent can be read on Google Patents:
+      </DescriptionParagraph>
+      <DescriptionExternalLink
+        href="https://patents.google.com/patent/US9645380B2/"
+        aria-label="Google Patents webpage for US#9,645,380"
+      >
+        Link to Google Patents for US#9,645,380
+      </DescriptionExternalLink>
+      <DescriptionParagraph>
+        The Lens Design website provides the lens prescription in Zemax format:
+      </DescriptionParagraph>
+      <DescriptionExternalLink
+        href="https://www.lens-designs.com/microscopes"
+        aria-label="Lens Design webpage for microscope objective examples in Zemax format"
+      >
+        Link to Lens Design
+      </DescriptionExternalLink>
+    </>
+  ),
+  "Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)": (
+    <>
+      <DescriptionParagraph>
+        Masahiro Sakakura and Yasushi Fujimoto disclosed an air microscope objective in US#7,158,310 (Example 3) 
+        with aberrations corrected from visible region to t-line (λ=1013.98 nm). 
+        This superachromatic objective is specified as 4x, NA 0.16, working distance of 13.074 mm, with a 26.5 mm image field diameter.
+        The lens prescription here is from Lens Design website by Dr. Daniel J. Reiley, 
+        who converted the patent’s disclosed material refractive indices and dispersion data into real glass models. 
+        In this reversed tracing, the image space half-field is 4 mm and the image space f-number is 3.5.
+      </DescriptionParagraph>
+      <DescriptionParagraph>
+        The patent can be read on Google Patents:
+      </DescriptionParagraph>
+      <DescriptionExternalLink
+        href="https://patents.google.com/patent/US7158310B2/"
+        aria-label="Google Patents webpage for US#7,158,310"
+      >
+        Link to Google Patents for US#7,158,310
+      </DescriptionExternalLink>
+      <DescriptionParagraph>
+        The Lens Design website provides the lens prescription in Zemax format:
+      </DescriptionParagraph>
+      <DescriptionExternalLink
+        href="https://www.lens-designs.com/microscopes"
+        aria-label="Lens Design webpage for microscope objective examples in Zemax format"
+      >
+        Link to Lens Design
+      </DescriptionExternalLink>
+    </>
+  ),
 } satisfies Record<ExampleSystemName, ReactNode>;
 
 export function getExampleSystemDescription(exampleName: ExampleSystemName): ReactNode {

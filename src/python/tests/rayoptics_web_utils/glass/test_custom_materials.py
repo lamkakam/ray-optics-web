@@ -171,6 +171,46 @@ class TestGetWaterData:
         assert abs(C4 - 10.69792721) < 1e-10
 
 
+class TestGetD263TECOData:
+    """Tests for _get_d263teco_data()."""
+
+    @pytest.fixture(scope="class")
+    def d263teco_data(self):
+        from rayoptics_web_utils.glass.custom_materials import _get_d263teco_data
+        return _get_d263teco_data()
+
+    def test_returns_dict_with_required_keys(self, d263teco_data):
+        assert isinstance(d263teco_data, dict)
+        assert REQUIRED_CaF2_KEYS == set(d263teco_data.keys())
+
+    def test_dispersion_coeff_kind_is_sellmeier3t(self, d263teco_data):
+        assert d263teco_data["dispersion_coeff_kind"] == "Sellmeier3T"
+
+    def test_dispersion_coeffs_has_six_finite_floats(self, d263teco_data):
+        coeffs = d263teco_data["dispersion_coeffs"]
+        assert isinstance(coeffs, list)
+        assert len(coeffs) == 6
+        for i, c in enumerate(coeffs):
+            assert isinstance(c, float), f"coeff[{i}] not float"
+            assert math.isfinite(c), f"coeff[{i}]={c} not finite"
+
+    def test_refractive_index_d_approx(self, d263teco_data):
+        assert abs(d263teco_data["refractive_index_d"] - 1.523303) < 1e-6
+
+    def test_abbe_number_d_approx(self, d263teco_data):
+        assert abs(d263teco_data["abbe_number_d"] - 54.5172) < 1e-4
+
+    def test_dispersion_coeffs_order_is_B1_B2_B3_C1_C2_C3(self, d263teco_data):
+        coeffs = d263teco_data["dispersion_coeffs"]
+        B1, B2, B3, C1, C2, C3 = coeffs
+        assert abs(B1 - 1.23795755) < 1e-8
+        assert abs(B2 - 0.0466468888) < 1e-10
+        assert abs(B3 - 2.46700556) < 1e-8
+        assert abs(C1 - 0.00863080926) < 1e-11
+        assert abs(C2 - 0.0469074501) < 1e-10
+        assert abs(C3 - 264.146296) < 1e-6
+
+
 class TestGetSpecialMaterialsData:
     """Tests for get_special_materials_data()."""
 
@@ -189,6 +229,7 @@ class TestGetSpecialMaterialsData:
         assert "CaF2" in catalog
         assert "Fused Silica" in catalog
         assert "Water" in catalog
+        assert "D263TECO" in catalog
 
     def test_caf2_entry_has_required_keys(self, special_data):
         entry = special_data["Special"]["CaF2"]
@@ -200,4 +241,8 @@ class TestGetSpecialMaterialsData:
 
     def test_water_entry_has_required_keys(self, special_data):
         entry = special_data["Special"]["Water"]
+        assert REQUIRED_CaF2_KEYS == set(entry.keys())
+
+    def test_d263teco_entry_has_required_keys(self, special_data):
+        entry = special_data["Special"]["D263TECO"]
         assert REQUIRED_CaF2_KEYS == set(entry.keys())

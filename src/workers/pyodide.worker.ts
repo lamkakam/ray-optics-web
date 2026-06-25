@@ -98,6 +98,7 @@ _rwu_init_result = _rwu_init()
 caf2 = _rwu_init_result['caf2']
 fused_silica = _rwu_init_result['fused_silica']
 water = _rwu_init_result['water']
+d263teco = _rwu_init_result['d263teco']
 
 import json
 from rayoptics.environment import *
@@ -147,7 +148,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.12.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.13.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");

@@ -76,6 +76,15 @@ describe("MediumSelectorModal", () => {
           dispersionCoeffKind: "Sellmeier3T",
           dispersionCoeffs: [1, 2, 3, 4, 5, 6],
         },
+        D263TECO: {
+          refractiveIndexD: 1.523303,
+          refractiveIndexE: 1.526,
+          abbeNumberD: 54.5172,
+          abbeNumberE: 54.1,
+          partialDispersions: { P_F_d: 0.41, P_F_e: 0.4, P_g_F: 0.535 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1.23795755, 0.0466468888, 2.46700556, 0.00863080926, 0.0469074501, 264.146296],
+        },
       },
     },
     lookupMaps: undefined,
@@ -162,6 +171,7 @@ describe("MediumSelectorModal", () => {
     expect(options).toContain("air");
     expect(options).toContain("REFL");
     expect(options).toContain("CaF2");
+    expect(options).toContain("D263TECO");
   });
 
   it("shows glass options synchronously when a real manufacturer is selected", async () => {
@@ -245,6 +255,21 @@ describe("MediumSelectorModal", () => {
       "href",
       "/glass-map?source=medium-selector&catalog=Special&glass=CaF2",
     );
+  });
+
+  it("confirms D263TECO as a provider-backed Special glass", async () => {
+    const onConfirm = jest.fn();
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} onConfirm={onConfirm} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Glass"), "D263TECO");
+
+    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute(
+      "href",
+      "/glass-map?source=medium-selector&catalog=Special&glass=D263TECO",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(onConfirm).toHaveBeenCalledWith("D263TECO", "");
   });
 
   it("does not render the glass map link for air", () => {

@@ -136,6 +136,15 @@ The refractive index data for water used in this app is sourced from [refractive
 - M. Daimon and A. Masumura. Measurement of the refractive index of distilled water from the near-infrared region to the ultraviolet region. [*Appl. Opt.* **46**, 3811-3820 (2007)](https://opg.optica.org/ao/abstract.cfm?uri=ao-46-18-3811)
 - M. N. Polyanskiy. Refractiveindex.info database of optical constants. *Sci. Data* **11**, 94 (2024). https://doi.org/10.1038/s41597-023-02898-2
 
+### Schott D 263® T eco refractive index data
+The refractive index data for Schott D 263® T eco used in this app is sourced from [refractiveindex.info](https://refractiveindex.info/?shelf=specs&book=SCHOTT-misc&page=D263TECO) and is at `src/python/src/rayoptics_web_utils/data/D263TECO.yml`.
+
+- Source file: https://refractiveindex.info/database/data/specs/schott/misc/D263TECO.yml
+
+**Citations:**
+- Schott AG. [Technical Details of D 263®](https://www.schott.com/en-gb/products/d-263-p1000318/technical-details?tab=498c0589188c466196b726e78d1c8d4a).
+- M. N. Polyanskiy. Refractiveindex.info database of optical constants. *Sci. Data* **11**, 94 (2024). https://doi.org/10.1038/s41597-023-02898-2
+
 ### License for Third-Party Refractive Index Data ###
 
 [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) — these aforementioned third-party refractive index data files are **not** subject to the license of this repository.
@@ -162,7 +171,8 @@ The bundled example optical systems are derived or adapted from the following so
 - **Cell Phone Camera Lens** - from the [RayOptics example gallery](https://ray-optics.readthedocs.io/en/stable/examples/Cell_Phone_lens/Cell_Phone_lens.html), which cites U.S. Patent 7,535,658
 - **Diffraction Grating (Transmissive) Example** - from a [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/156#discussioncomment-10790331)
 - **Diffraction Grating (Reflective) Example** - from a [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/147#discussioncomment-9360602)
-
+- **Reversed Tracing of Superachromatic High NA Immersion Microscope Objective US#9,645,380 Example 1 (2013)** - from [Lens Design: Microscopes and objectives](https://www.lens-designs.com/microscopes)
+- **Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)** - from [Lens Design: Microscopes and objectives](https://www.lens-designs.com/microscopes)
 
 ## License
 

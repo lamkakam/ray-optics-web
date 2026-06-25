@@ -240,6 +240,9 @@ fused_silica = create_glass(fused_silica_url, "rindexinfo")
 
 water_url = 'https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C.yml'
 water = create_glass(water_url, "rindexinfo")
+
+d263teco_url = 'https://refractiveindex.info/database/data/specs/schott/misc/D263TECO.yml'
+d263teco = create_glass(d263teco_url, "rindexinfo")
 `;
 }
 
