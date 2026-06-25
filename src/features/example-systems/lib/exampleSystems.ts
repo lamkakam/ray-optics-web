@@ -1683,7 +1683,7 @@ const reflectiveDiffractionGrating: OpticalModel = {
 // in reverse tracing
 // Modified by Daniel J. Reiley (https://www.lens-designs.com/microscopes)
 // 40x, 12.5mm image half-field, NA 1.3
-const highNAImmersionMicroscopeObjective: OpticalModel = {
+const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
   setAutoAperture: "manualAperture",
   specs: {
     pupil: {
@@ -1929,6 +1929,156 @@ const highNAImmersionMicroscopeObjective: OpticalModel = {
   ],
 };
 
+const superachromaticAirMicroscopeObjective: OpticalModel = {
+  setAutoAperture: "manualAperture",
+  specs: {
+    pupil: {
+      space: "image",
+      type: "f/#",
+      value: 3.5,
+    },
+    field: {
+      space: "image",
+      type: "height",
+      maxField: 4,
+      fields: [0, 0.707, 1],
+      isRelative: true,
+      isWideAngle: true,
+    },
+    wavelengths: {
+      weights: [
+        [546.073, 1],
+        [486.133, 1],
+        [656.273, 1],
+        [435.835, 1],
+        [365.015, 1],
+        [1013.98, 1],
+      ],
+      referenceIndex: 0,
+    },
+  },
+  object: {
+    distance: 1e10,
+    medium: "air",
+    manufacturer: "",
+  },
+  image: { curvatureRadius: 0 },
+  surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: -0.585158,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 6.4285,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 27.2037,
+      thickness: 4.5524,
+      medium: "S-FPL53",
+      manufacturer: "Ohara",
+      semiDiameter: 7.59,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -13.7643,
+      thickness: 1.7263,
+      medium: "S-FSL 5",
+      manufacturer: "Ohara",
+      semiDiameter: 7.45,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0.1456,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 7.45,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 12.8532,
+      thickness: 4.8337,
+      medium: "S-FPL51",
+      manufacturer: "Ohara",
+      semiDiameter: 7.31,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -807.1999,
+      thickness: 0.3428,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5.9141,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 7.6436,
+      thickness: 3.2984,
+      medium: "S-FPL53",
+      manufacturer: "Ohara",
+      semiDiameter: 5.94,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 29.6562,
+      thickness: 1.7813,
+      medium: "S-LAL61",
+      manufacturer: "Ohara",
+      semiDiameter: 5.28,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 4.747,
+      thickness: 5.0716,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 4.02,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -8.4888,
+      thickness: 1.4344,
+      medium: "S-LAL61",
+      manufacturer: "Ohara",
+      semiDiameter: 3.89,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 9.747,
+      thickness: 8.0632,
+      medium: "S-FPL51",
+      manufacturer: "Ohara",
+      semiDiameter: 4.12,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -15.3969,
+      thickness: 0.97,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5.53,
+    },
+    {
+      label: "Default",
+      curvatureRadius: 24.8478,
+      thickness: 2.4262,
+      medium: "S-BSL 7",
+      manufacturer: "Ohara",
+      semiDiameter: 6,
+    },
+    {
+      label: "Default",
+      curvatureRadius: -15.4116,
+      thickness: 13.186,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 6,
+    },
+  ],
+};
+
 
 
 export const ExampleSystemList = {
@@ -1953,7 +2103,8 @@ export const ExampleSystemList = {
   "Cell Phone Camera Lens Example US#7,535,658": cellphoneLensExample,
   "Diffraction Grating (Transmissive) Example": transmissiveDiffractionGrating,
   "Diffraction Grating (Reflective) Example": reflectiveDiffractionGrating,
-  "Reversed Tracing of Superachromatic High NA Immersion Microscope Objective US#9,645,380 Example 1 (2013)": highNAImmersionMicroscopeObjective,
+  "Reversed Tracing of Superachromatic High NA Immersion Microscope Objective US#9,645,380 Example 1 (2013)": superachromaticHighNAImmersionMicroscopeObjective,
+  "Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)": superachromaticAirMicroscopeObjective,
 } as const satisfies { [key: string]: OpticalModel };
 
 export type ExampleSystemName = keyof typeof ExampleSystemList;

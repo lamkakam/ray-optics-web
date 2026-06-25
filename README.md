@@ -172,7 +172,7 @@ The bundled example optical systems are derived or adapted from the following so
 - **Diffraction Grating (Transmissive) Example** - from a [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/156#discussioncomment-10790331)
 - **Diffraction Grating (Reflective) Example** - from a [GitHub discussion](https://redirect.github.com/mjhoptics/ray-optics/discussions/147#discussioncomment-9360602)
 - **Reversed Tracing of Superachromatic High NA Immersion Microscope Objective US#9,645,380 Example 1 (2013)** - from [Lens Design: Microscopes and objectives](https://www.lens-designs.com/microscopes)
-
+- **Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)** - from [Lens Design: Microscopes and objectives](https://www.lens-designs.com/microscopes)
 
 ## License
 
