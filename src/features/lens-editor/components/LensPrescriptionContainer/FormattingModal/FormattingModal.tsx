@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
@@ -16,29 +16,9 @@ import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridType
 
 export type FormattingMode = "scale" | "reverse";
 
-export interface FormattingDraft {
-  readonly mode: FormattingMode;
-  readonly scaleFactor: string;
-  readonly scaleFirstSurface: number;
-  readonly scaleLastSurface: number;
-  readonly reverseFirstSurface: number;
-  readonly reverseLastSurface: number;
-}
-
-export interface FormattingDraftActions {
-  readonly setMode: (mode: FormattingMode) => void;
-  readonly setScaleFactor: (factor: string) => void;
-  readonly setScaleFirstSurface: (surface: number) => void;
-  readonly setScaleLastSurface: (surface: number) => void;
-  readonly setReverseFirstSurface: (surface: number) => void;
-  readonly setReverseLastSurface: (surface: number) => void;
-}
-
 interface FormattingModalProps {
   readonly isOpen: boolean;
   readonly rows: readonly GridRow[];
-  readonly draft: FormattingDraft;
-  readonly draftActions: FormattingDraftActions;
   readonly onConfirm: (rows: GridRow[]) => void;
   readonly onCancel: () => void;
   readonly onError: (message: string) => void;
@@ -64,36 +44,40 @@ function clampSurfaceIndex(value: number, max: number): number {
 export function FormattingModal({
   isOpen,
   rows,
-  draft,
-  draftActions,
   onConfirm,
   onCancel,
   onError,
 }: FormattingModalProps) {
   const imageSelectorIndex = lastSurfaceIndex(rows) + 1;
+  const [mode, setMode] = useState<FormattingMode>("scale");
+  const [scaleFactor, setScaleFactor] = useState("1");
+  const [scaleFirstSurface, setScaleFirstSurface] = useState(0);
+  const [scaleLastSurface, setScaleLastSurface] = useState(imageSelectorIndex);
+  const [reverseFirstSurface, setReverseFirstSurface] = useState(0);
+  const [reverseLastSurface, setReverseLastSurface] = useState(lastSurfaceIndex(rows));
   const scaleOptions = useMemo(() => buildScaleSurfaceOptions(rows), [rows]);
   const reverseOptions = useMemo(() => buildReverseSurfaceOptions(rows), [rows]);
-  const currentOptions = draft.mode === "scale" ? scaleOptions : reverseOptions;
-  const maxSurfaceIndex = draft.mode === "scale" ? imageSelectorIndex : lastSurfaceIndex(rows);
+  const currentOptions = mode === "scale" ? scaleOptions : reverseOptions;
+  const maxSurfaceIndex = mode === "scale" ? imageSelectorIndex : lastSurfaceIndex(rows);
   const firstSurface = clampSurfaceIndex(
-    draft.mode === "scale" ? draft.scaleFirstSurface : draft.reverseFirstSurface,
+    mode === "scale" ? scaleFirstSurface : reverseFirstSurface,
     maxSurfaceIndex
   );
   const lastSurface = clampSurfaceIndex(
-    draft.mode === "scale" ? draft.scaleLastSurface : draft.reverseLastSurface,
+    mode === "scale" ? scaleLastSurface : reverseLastSurface,
     maxSurfaceIndex
   );
 
   function handleConfirm() {
-    const result = draft.mode === "scale"
+    const result = mode === "scale"
       ? formatPrescriptionRows(rows, {
-          mode: draft.mode,
+          mode,
           first: firstSurface,
           last: lastSurface,
-          factor: Number(draft.scaleFactor),
+          factor: Number(scaleFactor),
         })
       : formatPrescriptionRows(rows, {
-          mode: draft.mode,
+          mode,
           first: firstSurface,
           last: lastSurface,
         });
@@ -113,11 +97,11 @@ export function FormattingModal({
           name="lens-prescription-formatting-mode"
           label="Mode"
           options={FORMAT_MODE_OPTIONS}
-          value={draft.mode}
-          onChange={draftActions.setMode}
+          value={mode}
+          onChange={setMode}
         />
 
-        {draft.mode === "scale" && (
+        {mode === "scale" && (
           <div>
             <Label htmlFor="formatting-factor">Factor</Label>
             <Input
@@ -126,8 +110,8 @@ export function FormattingModal({
               type="number"
               min="0"
               step="any"
-              value={draft.scaleFactor}
-              onChange={(event) => draftActions.setScaleFactor(event.target.value)}
+              value={scaleFactor}
+              onChange={(event) => setScaleFactor(event.target.value)}
             />
           </div>
         )}
@@ -142,12 +126,12 @@ export function FormattingModal({
               value={firstSurface}
               onChange={(event) => {
                 const value = Number(event.target.value);
-                if (draft.mode === "scale") {
-                  draftActions.setScaleFirstSurface(value);
+                if (mode === "scale") {
+                  setScaleFirstSurface(value);
                   return;
                 }
 
-                draftActions.setReverseFirstSurface(value);
+                setReverseFirstSurface(value);
               }}
             />
           </div>
@@ -160,12 +144,12 @@ export function FormattingModal({
               value={lastSurface}
               onChange={(event) => {
                 const value = Number(event.target.value);
-                if (draft.mode === "scale") {
-                  draftActions.setScaleLastSurface(value);
+                if (mode === "scale") {
+                  setScaleLastSurface(value);
                   return;
                 }
 
-                draftActions.setReverseLastSurface(value);
+                setReverseLastSurface(value);
               }}
             />
           </div>

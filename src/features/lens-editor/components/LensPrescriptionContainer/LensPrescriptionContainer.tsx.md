@@ -18,7 +18,6 @@ Lens store state is consumed via `LensEditorStoreContext`:
 - `pythonScriptOpen: boolean` — controls `PythonScriptModal`.
 - `formattingOpen: boolean` — controls `FormattingModal`.
 - `formattingError: string | undefined` — controls the shared `ErrorModal` shown when formatting validation fails.
-- Formatting draft controls (`formattingMode`, Scale factor/range, Reverse range) are read from `lensEditorStore` so they persist across Formatting modal close/open cycles while the store provider remains mounted.
 
 ## Key Behaviors
 
@@ -31,8 +30,8 @@ Lens store state is consumed via `LensEditorStoreContext`:
 - `DiffractionGratingModal` only applies to `surface` rows and writes `surface.diffractionGrating` back into the row state on confirm.
 - `PythonScriptModal` receives an empty string for `script` when closed, generating the script only when open.
 - The `Formatting` toolbar button opens `FormattingModal` beside `Export Python Script`. Successful confirms call `store.getState().setRows(updatedRows)` so the prescription revision and Optimization sync policy follow normal prescription mutation behavior.
-- `FormattingModal` is controlled by Lens Editor store formatting draft state and is not keyed across open/closed transitions. Cancel/close leaves the draft controls intact for the next open.
-- Scale and Reverse formatting ranges are stored independently, so switching modes restores the last range used for that mode.
+- `FormattingModal` is rendered only while `formattingOpen` is true. Closing it via Cancel or successful Confirm unmounts its local draft controls, so reopening starts from defaults derived from the current prescription rows.
+- Scale and Reverse formatting ranges are local to one open modal session, so switching modes during that session restores the last range used for each mode.
 - Formatting errors are surfaced through the shared `ErrorModal`; failed formatting leaves the existing store rows unchanged.
 - The visible `Set auto semi-diameter:` label is paired with an Auto/Manual switch that updates `autoAperture` in the store and passes `semiDiameterReadonly` to the grid.
 - `LensPrescriptionGrid`, `PythonScriptModal`, and `FormattingModal` are internal to this directory; the nested barrel only exports components used outside `LensPrescriptionContainer/` (`MediumSelectorModal`, `AsphericalModal`, `DecenterModal`, `DiffractionGratingModal`, and `GridRowButtons`). `ConfirmImportModal` remains colocated here but is used by `LensEditorConfigToolbar`.

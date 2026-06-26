@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Modal for scaling or reversing selected lens prescription rows from the Lens Editor toolbar. It receives store-backed draft controls from the parent and delegates all row transformation to the pure `prescriptionFormatting` helper.
+Modal for scaling or reversing selected lens prescription rows from the Lens Editor toolbar. It owns draft controls for the current modal session and delegates all row transformation to the pure `prescriptionFormatting` helper.
 
 ## Props
 
@@ -10,22 +10,6 @@ Modal for scaling or reversing selected lens prescription rows from the Lens Edi
 interface FormattingModalProps {
   isOpen: boolean;
   rows: readonly GridRow[];
-  draft: {
-    mode: "scale" | "reverse";
-    scaleFactor: string;
-    scaleFirstSurface: number;
-    scaleLastSurface: number;
-    reverseFirstSurface: number;
-    reverseLastSurface: number;
-  };
-  draftActions: {
-    setMode: (mode: "scale" | "reverse") => void;
-    setScaleFactor: (factor: string) => void;
-    setScaleFirstSurface: (surface: number) => void;
-    setScaleLastSurface: (surface: number) => void;
-    setReverseFirstSurface: (surface: number) => void;
-    setReverseLastSurface: (surface: number) => void;
-  };
   onConfirm: (rows: GridRow[]) => void;
   onCancel: () => void;
   onError: (message: string) => void;
@@ -35,10 +19,11 @@ interface FormattingModalProps {
 ## Behavior
 
 - Uses the shared `Modal` without `onBackdropClick`, so backdrop clicks do not dismiss the dialog.
-- Displays the store-backed draft mode, factor, and per-mode first/last surface selections.
+- Initializes local draft controls on mount from the current rows: Scale mode, factor `1`, Scale `Object` to `Image`, and Reverse `Object` to the last surface.
 - Scale mode shows `Factor`, includes Image in the selectors, and uses the Scale range draft.
 - Reverse mode is labeled `Reverse (also reversing thickness and medium)`, hides `Factor`, excludes Image from the selectors, and uses the Reverse range draft.
-- If a stored surface index is outside the current row range, the rendered selector value and confirm input are clamped to the nearest valid index. Valid persisted selections are not rewritten while rendering.
+- Scale and Reverse first/last surface selections are independent within one mounted modal session.
+- If a local surface index is outside the current row range, the rendered selector value and confirm input are clamped to the nearest valid index. Valid local selections are not rewritten while rendering.
 - `Cancel` calls `onCancel` without producing rows.
 - `Confirm` calls `formatPrescriptionRows`; valid results are passed to `onConfirm`, while invalid or overflowing results call `onError` and do not mutate rows.
 
