@@ -40,6 +40,20 @@ function editorRows(rows: GridRow[]): Array<
   });
 }
 
+function canonicalEditorRows(rows: GridRow[]): Array<
+  | { readonly row: "OBJ"; readonly thickness: number; readonly medium: string }
+  | { readonly row: string; readonly curvatureRadius: number; readonly thickness: number; readonly medium: string }
+  | { readonly row: "IMG" }
+> {
+  return editorRows(rows).map((row) => "curvatureRadius" in row
+    ? { ...row, row: "SURF" }
+    : row);
+}
+
+function surfaceRowsWithoutIds(rows: GridRow[]): Array<Omit<Extract<GridRow, { kind: "surface" }>, "id">> {
+  return surfaceRows(rows).map(({ id: _id, ...row }) => row);
+}
+
 const baseSurfaces: Surfaces = {
   object: { distance: OBJECT_DISTANCE_INFINITY_THRESHOLD, medium: "air", manufacturer: "" },
   image: {
@@ -384,18 +398,18 @@ describe("prescriptionFormatting", () => {
     expect(surfaces[1]).toEqual(originalFirstSurface);
   });
 
-  it("reverses Object through mirror surfaces while keeping reflective media on mirror surfaces", () => {
+  it("reverses Object through folded mirror surfaces while preserving mirror count and propagation media", () => {
     const rows = surfacesToGridRows({
       object: { distance: 1e10, medium: "air", manufacturer: "" },
-      image: { curvatureRadius: 0 },
+      image: { curvatureRadius: -1370 },
       surfaces: [
         {
-          label: "Default",
+          label: "Stop",
           curvatureRadius: 0,
           thickness: 6,
           medium: "N-BK7",
-          manufacturer: "",
-          semiDiameter: 0,
+          manufacturer: "Schott",
+          semiDiameter: 100,
         },
         {
           label: "Default",
@@ -403,7 +417,7 @@ describe("prescriptionFormatting", () => {
           thickness: 860,
           medium: "air",
           manufacturer: "",
-          semiDiameter: 0,
+          semiDiameter: 100.034477,
         },
         {
           label: "Default",
@@ -411,15 +425,27 @@ describe("prescriptionFormatting", () => {
           thickness: -800,
           medium: "REFL",
           manufacturer: "",
-          semiDiameter: 0,
+          semiDiameter: 107.539583,
+          aspherical: {
+            kind: "Conic",
+            conicConstant: -1,
+          },
         },
         {
           label: "Default",
           curvatureRadius: 0,
-          thickness: 200,
+          thickness: 200.000100215,
           medium: "REFL",
           manufacturer: "",
-          semiDiameter: 0,
+          semiDiameter: 28.489411,
+          decenter: {
+            coordinateSystemStrategy: "bend",
+            alpha: 45,
+            beta: 0,
+            gamma: 0,
+            offsetX: 0,
+            offsetY: 0,
+          },
         },
       ],
     });
@@ -429,18 +455,46 @@ describe("prescriptionFormatting", () => {
       { row: "SURF1", curvatureRadius: 0, thickness: 6, medium: "N-BK7" },
       { row: "SURF2", curvatureRadius: 0, thickness: 860, medium: "air" },
       { row: "SURF3", curvatureRadius: -2000, thickness: -800, medium: "REFL" },
-      { row: "SURF4", curvatureRadius: 0, thickness: 200, medium: "REFL" },
+      { row: "SURF4", curvatureRadius: 0, thickness: 200.000100215, medium: "REFL" },
       { row: "IMG" },
     ]);
 
-    expect(editorRows(reverseRows(rows, { first: 0, last: 4 }))).toEqual([
-      { row: "OBJ", thickness: 200, medium: "air" },
+    const result = reverseRows(rows, { first: 0, last: 4 });
+    const resultSurfaces = surfaceRows(result);
+
+    expect(resultSurfaces.filter((row) => row.medium === "REFL")).toHaveLength(2);
+    expect(resultSurfaces[1].aspherical).toEqual({ kind: "Conic", conicConstant: -1 });
+    expect(resultSurfaces[2]).toEqual({
+      id: expect.any(String),
+      kind: "surface",
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 860,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 107.539583,
+    });
+    expect(editorRows(result)).toEqual([
+      { row: "OBJ", thickness: 200.000100215, medium: "air" },
       { row: "SURF1", curvatureRadius: 0, thickness: -800, medium: "REFL" },
-      { row: "SURF2", curvatureRadius: 2000, thickness: 860, medium: "REFL" },
-      { row: "SURF3", curvatureRadius: 0, thickness: 6, medium: "N-BK7" },
-      { row: "SURF4", curvatureRadius: 0, thickness: 1e10, medium: "air" },
+      { row: "SURF2", curvatureRadius: 2000, thickness: 0, medium: "REFL" },
+      { row: "SURF3", curvatureRadius: 0, thickness: 860, medium: "air" },
+      { row: "SURF4", curvatureRadius: 0, thickness: 6, medium: "N-BK7" },
+      { row: "SURF5", curvatureRadius: 0, thickness: 1e10, medium: "air" },
       { row: "IMG" },
     ]);
+
+    const formatted = formatPrescriptionRows(rows, { mode: "reverse", first: 0, last: 4 });
+    expect(formatted.ok).toBe(true);
+    expect(formatted.ok ? editorRows(formatted.rows) : undefined).toEqual(editorRows(result));
+
+    const reversedBack = reverseRows(result, { first: 0, last: 5 });
+    expect(canonicalEditorRows(reversedBack)).toEqual(canonicalEditorRows(rows));
+    expect(surfaceRowsWithoutIds(reversedBack)).toEqual(surfaceRowsWithoutIds(rows));
+
+    const formattedBack = formatPrescriptionRows(result, { mode: "reverse", first: 0, last: 5 });
+    expect(formattedBack.ok).toBe(true);
+    expect(formattedBack.ok ? canonicalEditorRows(formattedBack.rows) : undefined).toEqual(canonicalEditorRows(rows));
   });
 
   it("rejects same and invalid Reverse selections", () => {
