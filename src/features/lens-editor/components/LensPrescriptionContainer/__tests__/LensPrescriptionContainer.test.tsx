@@ -595,7 +595,7 @@ describe("LensPrescriptionContainer", () => {
     expect(screen.queryByRole("spinbutton", { name: "Factor" })).not.toBeInTheDocument();
   });
 
-  it("restores Scale factor and range after Formatting is cancelled and reopened", async () => {
+  it("resets Scale factor and range to current defaults after Formatting is cancelled and reopened", async () => {
     renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
@@ -608,12 +608,12 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
 
     expect(screen.getByRole("radio", { name: "Scale" })).toBeChecked();
-    expect(screen.getByRole("spinbutton", { name: "Factor" })).toHaveValue(2.5);
-    expect(screen.getByLabelText("First Surface")).toHaveValue("1");
-    expect(screen.getByLabelText("Last Surface")).toHaveValue("2");
+    expect(screen.getByRole("spinbutton", { name: "Factor" })).toHaveValue(1);
+    expect(screen.getByLabelText("First Surface")).toHaveValue("0");
+    expect(screen.getByLabelText("Last Surface")).toHaveValue("3");
   });
 
-  it("restores Reverse mode and keeps the previous Scale range after switching back", async () => {
+  it("keeps independent Scale and Reverse drafts within the same Formatting session", async () => {
     renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
@@ -625,9 +625,6 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
     await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
     await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "1");
-    await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
-
-    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
 
     expect(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" })).toBeChecked();
     expect(screen.queryByRole("spinbutton", { name: "Factor" })).not.toBeInTheDocument();
@@ -652,6 +649,24 @@ describe("LensPrescriptionContainer", () => {
     const firstSurface = store.getState().rows.find((row) => row.kind === "surface");
     expect(firstSurface?.kind === "surface" ? firstSurface.curvatureRadius : undefined).toBe(100);
     expect(screen.queryByRole("dialog", { name: "Formatting" })).not.toBeInTheDocument();
+  });
+
+  it("resets Formatting controls to current defaults after valid Confirm and reopen", async () => {
+    renderLPC();
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "2");
+    await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
+    await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "2");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+
+    expect(screen.getByRole("radio", { name: "Scale" })).toBeChecked();
+    expect(screen.getByRole("spinbutton", { name: "Factor" })).toHaveValue(1);
+    expect(screen.getByLabelText("First Surface")).toHaveValue("0");
+    expect(screen.getByLabelText("Last Surface")).toHaveValue("3");
   });
 
   it("opens ErrorModal and leaves rows unchanged when Formatting overflows", async () => {

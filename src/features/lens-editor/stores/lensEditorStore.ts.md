@@ -27,16 +27,10 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 | `decenterModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `diffractionGratingModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
 | `committedOpticalModel` | `OpticalModel \| undefined` | `undefined` |
-| `formattingMode` | `"scale" \| "reverse"` | `"scale"` |
-| `formattingScaleFactor` | `string` | `"1"` |
-| `formattingScaleFirstSurface` | `number` | `0` |
-| `formattingScaleLastSurface` | `number` | `1` |
-| `formattingReverseFirstSurface` | `number` | `0` |
-| `formattingReverseLastSurface` | `number` | `0` |
 
 ## Actions
 
-- `setRows(rows, options?)` — replaces the entire rows array (used when loading a model), increments `prescriptionRevision`, and records an optional Optimization sync policy. When replacing the initial built-in Object/Image rows, it seeds the default Formatting ranges from the loaded row count (`Scale: Object` to `Image`; `Reverse: Object` to last surface).
+- `setRows(rows, options?)` — replaces the entire rows array (used when loading a model), increments `prescriptionRevision`, and records an optional Optimization sync policy.
 - `updateRow(id, patch, options?)` — merges `patch` into the row with the given id; `id` and `kind` are always preserved and cannot be overwritten by the patch. Successful updates increment `prescriptionRevision` and record an optional Optimization sync policy.
 - `addRowAfter(id)` — inserts a new blank surface row immediately after the row with the given id; no-op if the id is not found or the target row is the image row.
 - `deleteRow(id)` — removes the surface row with the given id; no-op for object/image rows. Clears `selectedRowId` if it matches the deleted row.
@@ -52,10 +46,6 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `openDecenterModal(rowId)` / `closeDecenterModal()` — open/close the surface decenter modal.
 - `openDiffractionGratingModal(rowId)` / `closeDiffractionGratingModal()` — open/close the surface diffraction grating modal.
 - `setCommittedOpticalModel(model)` — stores the last successfully submitted `OpticalModel` snapshot. Used by `AnalysisPlotContainer` and other consumers that need the most recently committed model.
-- `setFormattingMode(mode)` — records the selected Lens Prescription Formatting mode.
-- `setFormattingScaleFactor(factor)` — records the Scale mode factor draft as editable text.
-- `setFormattingScaleFirstSurface(surface)` / `setFormattingScaleLastSurface(surface)` — record the Scale mode surface range draft.
-- `setFormattingReverseFirstSurface(surface)` / `setFormattingReverseLastSurface(surface)` — record the Reverse mode surface range draft.
 
 ## Key Conventions
 
@@ -68,7 +58,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `pendingMediumSelection` persists unconfirmed catalog-glass choices across route changes while the root store provider remains mounted.
 - `activeBottomDrawerTabId` and `bottomDrawerHeight` are feature-owned UI state. They persist as long as the root store provider remains mounted.
 - `bottomDrawerHeight` is persistence-only state for route restoration; `BottomDrawer` still owns live drag state locally to avoid store-driven re-renders on every pointer move.
-- Formatting draft controls persist as long as the root store provider remains mounted. Scale and Reverse keep independent first/last surface selections so switching modes restores each mode's previous range. The Scale factor remains a string so incomplete numeric input stays editable until Formatting confirm validation. The first loaded prescription seeds the initial default ranges; later row replacements preserve valid user-selected range drafts and let the modal clamp out-of-range values at display/confirm time.
+- Formatting draft controls are intentionally not stored here. `FormattingModal` owns them locally so Cancel and successful Confirm discard drafts when the modal unmounts, and reopening recomputes defaults from current rows.
 
 ## Dependencies
 
