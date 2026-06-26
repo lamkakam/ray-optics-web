@@ -186,6 +186,14 @@ const herschelReflector: OpticalModel = {
   image: { curvatureRadius: -1.2e4 },
   surfaces: [
     {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 600,
+    },
+    {
       label: "Stop",
       curvatureRadius: -2.4e4,
       thickness: -1.2e4,
@@ -233,9 +241,17 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
       gamma: 0,
       offsetX: 0,
       offsetY: 0.02777,
-    }
+    },
   },
   surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 609.6,
+    },
     {
       label: "Stop",
       curvatureRadius: -24384,
@@ -347,11 +363,11 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
     {
       label: "Default",
       curvatureRadius: 0,
-      thickness: -557.1,
+      thickness: -554.4056397092694,
       medium: "air",
       manufacturer: "",
       semiDiameter: 39.242722,
-    }
+    },
   ]
 } as const;
 
@@ -363,8 +379,8 @@ const tiltedHoughton: OpticalModel = {
     field: {
       space: "object",
       type: "angle",
-      maxField: -0.5,
-      fields: [0, 0.707, 1],
+      maxField: 0.5,
+      fields: [0, 0.707, 1, -0.707, -1],
       isRelative: true,
     },
     wavelengths: commonWavelengthConfig,
@@ -379,13 +395,13 @@ const tiltedHoughton: OpticalModel = {
   image: {
     curvatureRadius: 2600,
     decenter: {
-      coordinateSystemStrategy: "bend",
+      coordinateSystemStrategy: "decenter",
       alpha: 5.66,
       beta: 0,
       gamma: 0,
       offsetX: 0,
       offsetY: 0,
-    }
+    },
   },
 
   surfaces: [
@@ -456,7 +472,7 @@ const tiltedHoughton: OpticalModel = {
     {
       label: "Default",
       curvatureRadius: 0,
-      thickness: 153.195342,
+      thickness: 153.16587342796777,
       medium: "REFL",
       manufacturer: "",
       semiDiameter: 19.846683,
@@ -495,15 +511,23 @@ const quadSchiefspiegler: OpticalModel = {
   image: {
     curvatureRadius: 0,
     decenter: {
-      coordinateSystemStrategy: "dec and return",
+      coordinateSystemStrategy: "decenter",
       alpha: -9.15,
       beta: 0,
       gamma: 0,
       offsetX: 0,
       offsetY: 0,
-    }
+    },
   },
   surfaces: [
+    {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 159,
+    },
     {
       label: "Stop",
       curvatureRadius: -7620,
@@ -554,8 +578,8 @@ const quadSchiefspiegler: OpticalModel = {
         gamma: 0,
         offsetX: 0,
         offsetY: 0,
-      }
-    }
+      },
+    },
   ]
 } as const;
 
