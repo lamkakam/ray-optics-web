@@ -1,25 +1,76 @@
-# Rayoptics Tilted Mirror Dummy Surface OPD Behavior
+# Rayoptics Tilted or Decentered First Surface OPD Behavior
 
 This note records a rayoptics 0.9.8 behavior observed while investigating
-tilted and folded mirror systems on branch `fix/example-tilted-systems`.
+optical systems with the first surface after the object tilted or decentered.
 
 ## Reproduction Context
 
-- Project branch: `fix/example-tilted-systems`
-- Python environment: project venv under `src/python/.venv`
 - rayoptics version: `0.9.8`
-- System comparison: physically equivalent tilted powered mirror systems, one
-  with a dummy planar air surface before the mirror and one without it
+- System comparison: physically equivalent tilted systems, one
+  without a dummy planar air surface with no tilt or decenter before the titled mirror and one with it
 
-The dummy-surface version inserts a planar air/reference surface immediately
-before the first physical mirror, for example:
+
+### Scripts for an optical system with the first surface tilted
+In this example, the tilted surface (mirroe) is the first physical surface in the sequential model:
 
 ```python
-sm.add_surface([0, 0, "air"], sd=125)
+### common config
+opm = OpticalModel()
+sm  = opm['seq_model']
+osp = opm['optical_spec']
+pm  = opm['parax_model']
+
+opm.system_spec.dimensions = 'mm'
+
+osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=250)
+osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=0.5, flds=[0,1], is_relative=True)
+osp['wvls'] = WvlSpec([(546.073, 1)], ref_wl=0)
+
+opm.radius_mode = True
+sm.do_apertures = False
+### end of common config
+
+
+sm.gaps[0].thi=10000000000
+sm.gaps[0].medium = decode_medium("air")
+
+### first surface is tilted
+sm.add_surface([-2000, -1000, "REFL"], sd=125)
+sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=-2000, cc=-1)
+sm.ifcs[sm.cur_surface].decenter = DecenterData("bend", alpha=0.13, beta=0, gamma=0, x=0, y=0)
+###
+
+sm.ifcs[-1].profile.r = 0
+
+opm.update_model()
+set_vig(opm)
+
 ```
 
-The no-dummy version removes that reference surface so the tilted powered
-mirror is the first physical surface in the sequential model.
+### Scripts for the same system but with a dummy air surface added before tilted surface
+The dummy-surface version inserts a planar air/reference surface immediately
+before the first physical surface (mirror in this example):
+
+```python
+sm.gaps[0].thi=10000000000
+sm.gaps[0].medium = decode_medium("air")
+
+### dummy surface added before the tilted surface
+sm.add_surface([0, 0, "air"], sd=125)
+###
+
+### tilted surface
+sm.add_surface([-2000, -1000, "REFL"], sd=125)
+sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=-2000, cc=-1)
+sm.ifcs[sm.cur_surface].decenter = DecenterData("bend", alpha=0.13, beta=0, gamma=0, x=0, y=0)
+###
+
+sm.ifcs[-1].profile.r = 0
+
+opm.update_model()
+set_vig(opm)
+
+```
 
 ## Observed Behavior
 
@@ -28,7 +79,7 @@ The two systems are physically equivalent for transverse ray tracing:
 - Transverse ray fans match.
 - The ray intersections and geometric fan behavior are consistent.
 
-The OPD fan is not equivalent:
+Nevertheless, the OPD fan is not equivalent:
 
 | System topology | Tangential OPD fan scale |
 |-----------------|--------------------------|
@@ -72,7 +123,7 @@ immediately before that surface.
 
 This is especially important for:
 
-- Tilted powered mirrors
+- Tilted surfaces
 - Folded mirror systems
 - First-surface reflective systems
 - Decentered first physical surfaces
@@ -86,8 +137,8 @@ wrong for the sequence topology.
 ## Implementation Implication
 
 Code that builds rayoptics prescriptions for tilted or folded systems should
-preserve an existing dummy planar air surface before the first powered,
-decentered, tilted, or reflective surface when wavefront output is used.
+preserve an existing dummy planar air surface before the first decentered or
+tilted surface when wavefront output is used.
 
 If such a system does not have a dummy reference surface and OPD data are
 required, add one explicitly rather than simplifying it away as an apparently
