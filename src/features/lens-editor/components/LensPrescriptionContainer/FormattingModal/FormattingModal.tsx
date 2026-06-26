@@ -19,7 +19,7 @@ export type FormattingMode = "scale" | "reverse";
 interface FormattingModalProps {
   readonly isOpen: boolean;
   readonly rows: readonly GridRow[];
-  readonly onConfirm: (rows: GridRow[]) => void;
+  readonly onConfirm: (result: { readonly mode: FormattingMode; readonly rows: GridRow[] }) => void;
   readonly onCancel: () => void;
   readonly onError: (message: string) => void;
 }
@@ -87,7 +87,7 @@ export function FormattingModal({
       return;
     }
 
-    onConfirm(result.rows);
+    onConfirm({ mode, rows: result.rows });
   }
 
   return (

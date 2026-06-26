@@ -21,6 +21,7 @@ All components (composite + container + domain cells) for the lens editor featur
 - [ConfirmImportModal](./LensPrescriptionContainer/ConfirmImportModal/ConfirmImportModal.tsx.md) — Internal confirmation dialog before importing a lens file
 - [PythonScriptModal](./LensPrescriptionContainer/PythonScriptModal/PythonScriptModal.tsx.md) — Internal modal for viewing/editing Python scripts
 - [FormattingModal](./LensPrescriptionContainer/FormattingModal/FormattingModal.tsx.md) — Internal modal for scaling or reversing selected prescription rows
+- [AddReferenceSurfaceModal](./LensPrescriptionContainer/AddReferenceSurfaceModal/AddReferenceSurfaceModal.tsx.md) — Internal Reverse follow-up prompt for adding a flat air reference surface
 
 ## Specs & Configuration
 

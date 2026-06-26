@@ -1,4 +1,5 @@
 import type { AsphericalType, DecenterConfig } from "@/shared/lib/types/opticalModel";
+import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { IMAGE_ROW_ID, OBJECT_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 export interface SurfaceSelectorOption {
@@ -36,6 +37,43 @@ interface GapProperties {
 
 function surfaceCount(rows: readonly GridRow[]): number {
   return rows.filter((row) => row.kind === "surface").length;
+}
+
+export function firstSurfaceNeedsReferenceSurface(rows: readonly GridRow[]): boolean {
+  const firstSurface = rows.find((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
+  if (firstSurface?.decenter === undefined) {
+    return false;
+  }
+
+  return [
+    firstSurface.decenter.alpha,
+    firstSurface.decenter.beta,
+    firstSurface.decenter.gamma,
+    firstSurface.decenter.offsetX,
+    firstSurface.decenter.offsetY,
+  ].some((value) => value !== 0);
+}
+
+export function insertReferenceSurfaceAfterObject(rows: readonly GridRow[]): GridRow[] {
+  const firstSurface = rows.find((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
+  const referenceSurface: Extract<GridRow, { kind: "surface" }> = {
+    id: generateRowId(),
+    kind: "surface",
+    label: "Default",
+    curvatureRadius: 0,
+    thickness: 0,
+    medium: "air",
+    manufacturer: "",
+    semiDiameter: firstSurface?.semiDiameter ?? 0,
+  };
+  const objectIndex = rows.findIndex((row) => row.kind === "object" || row.id === OBJECT_ROW_ID);
+  const insertIndex = objectIndex === -1 ? 0 : objectIndex + 1;
+
+  return [
+    ...rows.slice(0, insertIndex),
+    referenceSurface,
+    ...rows.slice(insertIndex),
+  ];
 }
 
 export function buildScaleSurfaceOptions(rows: readonly GridRow[]): SurfaceSelectorOption[] {

@@ -651,6 +651,111 @@ describe("LensPrescriptionContainer", () => {
     expect(screen.queryByRole("dialog", { name: "Formatting" })).not.toBeInTheDocument();
   });
 
+  it("prompts for a reference surface after Reverse creates a decentered first surface and delays row mutation", async () => {
+    const store = createTestStore();
+    const originalRows = store.getState().rows;
+    const lastSurface = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
+      row.kind === "surface"
+    ).at(-1);
+    if (lastSurface === undefined) {
+      throw new Error("Expected a surface row");
+    }
+    store.getState().updateRow(lastSurface.id, {
+      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 0, offsetX: 1, offsetY: 0 },
+    });
+    const rowsBeforeReverse = store.getState().rows;
+
+    renderLPC(store);
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(screen.queryByRole("dialog", { name: "Formatting" })).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Add Reference Surface?" })).toBeInTheDocument();
+    expect(store.getState().rows).toBe(rowsBeforeReverse);
+    expect(store.getState().rows).not.toBe(originalRows);
+  });
+
+  it("applies prompted Reverse rows without a reference surface when No is clicked", async () => {
+    const store = createTestStore();
+    const lastSurface = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
+      row.kind === "surface"
+    ).at(-1);
+    if (lastSurface === undefined) {
+      throw new Error("Expected a surface row");
+    }
+    store.getState().updateRow(lastSurface.id, {
+      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 5, offsetX: 0, offsetY: 0 },
+    });
+
+    renderLPC(store);
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    await userEvent.click(screen.getByRole("button", { name: "No" }));
+
+    const surfaces = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
+      row.kind === "surface"
+    );
+    expect(surfaces).toHaveLength(2);
+    expect(surfaces[0].curvatureRadius).toBe(30);
+    expect(surfaces[0].decenter?.gamma).toBe(5);
+    expect(screen.queryByRole("dialog", { name: "Add Reference Surface?" })).not.toBeInTheDocument();
+  });
+
+  it("applies prompted Reverse rows with a reference surface when Yes is clicked", async () => {
+    const store = createTestStore();
+    const lastSurface = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
+      row.kind === "surface"
+    ).at(-1);
+    if (lastSurface === undefined) {
+      throw new Error("Expected a surface row");
+    }
+    store.getState().updateRow(lastSurface.id, {
+      decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 0, offsetX: 2, offsetY: 0 },
+    });
+
+    renderLPC(store);
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    await userEvent.click(screen.getByRole("button", { name: "Yes" }));
+
+    const surfaces = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
+      row.kind === "surface"
+    );
+    expect(surfaces).toHaveLength(3);
+    expect(surfaces[0]).toEqual(expect.objectContaining({
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 8,
+    }));
+    expect(surfaces[0].decenter).toBeUndefined();
+    expect(surfaces[1].curvatureRadius).toBe(30);
+    expect(surfaces[1].decenter?.offsetX).toBe(2);
+    expect(screen.queryByRole("dialog", { name: "Add Reference Surface?" })).not.toBeInTheDocument();
+  });
+
+  it("applies Reverse immediately when the resulting first surface is not tilted or decentered", async () => {
+    const { store } = renderLPC();
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const surfaces = store.getState().rows.filter((row): row is Extract<typeof row, { kind: "surface" }> =>
+      row.kind === "surface"
+    );
+    expect(screen.queryByRole("dialog", { name: "Add Reference Surface?" })).not.toBeInTheDocument();
+    expect(surfaces).toHaveLength(2);
+    expect(surfaces[0].curvatureRadius).toBe(30);
+  });
+
   it("resets Formatting controls to current defaults after valid Confirm and reopen", async () => {
     renderLPC();
 

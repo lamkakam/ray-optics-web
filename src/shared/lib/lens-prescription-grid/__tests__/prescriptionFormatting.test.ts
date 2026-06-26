@@ -2,6 +2,8 @@ import {
   buildReverseSurfaceOptions,
   buildScaleSurfaceOptions,
   formatPrescriptionRows,
+  firstSurfaceNeedsReferenceSurface,
+  insertReferenceSurfaceAfterObject,
   OBJECT_DISTANCE_INFINITY_THRESHOLD,
   reverseRows,
   scaleRows,
@@ -300,6 +302,86 @@ describe("prescriptionFormatting", () => {
     expect(surfaces.map((row) => row.thickness)).toEqual([3, 2, 1, 100]);
     expect(surfaces.map((row) => row.medium)).toEqual(["F2", "N-BK7", "air", "air"]);
     expect(image?.kind === "image" ? image.curvatureRadius : undefined).toBe(0);
+  });
+
+  it("detects nonzero first-surface tilt or decenter", () => {
+    const rowsWithTilt = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [
+        {
+          ...baseSurfaces.surfaces[0],
+          decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 1, gamma: 0, offsetX: 0, offsetY: 0 },
+        },
+      ],
+    });
+    const rowsWithDecenter = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [
+        {
+          ...baseSurfaces.surfaces[0],
+          decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 0, offsetX: -2, offsetY: 0 },
+        },
+      ],
+    });
+
+    expect(firstSurfaceNeedsReferenceSurface(rowsWithTilt)).toBe(true);
+    expect(firstSurfaceNeedsReferenceSurface(rowsWithDecenter)).toBe(true);
+  });
+
+  it("does not detect a needed reference surface when first-surface decenter is absent or all zero", () => {
+    const rowsWithoutDecenter = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{ ...baseSurfaces.surfaces[0], decenter: undefined }],
+    });
+    const rowsWithZeroDecenter = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [
+        {
+          ...baseSurfaces.surfaces[0],
+          decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 0, offsetX: 0, offsetY: 0 },
+        },
+      ],
+    });
+
+    expect(firstSurfaceNeedsReferenceSurface(rowsWithoutDecenter)).toBe(false);
+    expect(firstSurfaceNeedsReferenceSurface(rowsWithZeroDecenter)).toBe(false);
+  });
+
+  it("inserts one flat air reference surface after Object while preserving the original first surface", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [
+        {
+          ...baseSurfaces.surfaces[0],
+          semiDiameter: 12,
+          decenter: { coordinateSystemStrategy: "decenter", alpha: 3, beta: 0, gamma: 0, offsetX: 2, offsetY: 0 },
+          aspherical: { kind: "Conic", conicConstant: -1 },
+          diffractionGrating: { lpmm: 600, order: 1 },
+        },
+        ...baseSurfaces.surfaces.slice(1),
+      ],
+    });
+    const originalFirstSurface = surfaceRows(rows)[0];
+
+    const result = insertReferenceSurfaceAfterObject(rows);
+    const surfaces = surfaceRows(result);
+
+    expect(result[0]).toBe(rows[0]);
+    expect(surfaces).toHaveLength(surfaceRows(rows).length + 1);
+    expect(surfaces[0]).toEqual({
+      id: expect.any(String),
+      kind: "surface",
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 0,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 12,
+    });
+    expect(surfaces[0].decenter).toBeUndefined();
+    expect(surfaces[0].aspherical).toBeUndefined();
+    expect(surfaces[0].diffractionGrating).toBeUndefined();
+    expect(surfaces[1]).toEqual(originalFirstSurface);
   });
 
   it("reverses Object through mirror surfaces while keeping reflective media on mirror surfaces", () => {

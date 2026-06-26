@@ -10,7 +10,7 @@ Modal for scaling or reversing selected lens prescription rows from the Lens Edi
 interface FormattingModalProps {
   isOpen: boolean;
   rows: readonly GridRow[];
-  onConfirm: (rows: GridRow[]) => void;
+  onConfirm: (result: { mode: FormattingMode; rows: GridRow[] }) => void;
   onCancel: () => void;
   onError: (message: string) => void;
 }
@@ -25,7 +25,7 @@ interface FormattingModalProps {
 - Scale and Reverse first/last surface selections are independent within one mounted modal session.
 - If a local surface index is outside the current row range, the rendered selector value and confirm input are clamped to the nearest valid index. Valid local selections are not rewritten while rendering.
 - `Cancel` calls `onCancel` without producing rows.
-- `Confirm` calls `formatPrescriptionRows`; valid results are passed to `onConfirm`, while invalid or overflowing results call `onError` and do not mutate rows.
+- `Confirm` calls `formatPrescriptionRows`; valid results are passed to `onConfirm` with the active formatting mode, while invalid or overflowing results call `onError` and do not mutate rows.
 
 ## Dependencies
 
