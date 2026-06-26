@@ -234,6 +234,14 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
   },
   image: {
     curvatureRadius: 0,
+    decenter: {
+      coordinateSystemStrategy: "decenter",
+      alpha: 2.995768,
+      beta: 0,
+      gamma: 0,
+      offsetX: 0,
+      offsetY: 0.02777,
+    },
   },
   surfaces: [
     {
@@ -360,22 +368,6 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
       manufacturer: "",
       semiDiameter: 39.242722,
     },
-    {
-      label: "Default",
-      curvatureRadius: 0,
-      thickness: 0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 39.242722,
-      decenter: {
-        coordinateSystemStrategy: "decenter",
-        alpha: 2.995768,
-        beta: 0,
-        gamma: 0,
-        offsetX: 0,
-        offsetY: 0.02777,
-      },
-    },
   ]
 } as const;
 
@@ -402,6 +394,14 @@ const tiltedHoughton: OpticalModel = {
 
   image: {
     curvatureRadius: 2600,
+    decenter: {
+      coordinateSystemStrategy: "decenter",
+      alpha: 5.66,
+      beta: 0,
+      gamma: 0,
+      offsetX: 0,
+      offsetY: 0,
+    },
   },
 
   surfaces: [
@@ -472,29 +472,13 @@ const tiltedHoughton: OpticalModel = {
     {
       label: "Default",
       curvatureRadius: 0,
-      thickness: 153.195342,
+      thickness: 153.16587342796777,
       medium: "REFL",
       manufacturer: "",
       semiDiameter: 19.846683,
       decenter: {
         coordinateSystemStrategy: "bend",
         alpha: -48,
-        beta: 0,
-        gamma: 0,
-        offsetX: 0,
-        offsetY: 0,
-      },
-    },
-    {
-      label: "Default",
-      curvatureRadius: 0,
-      thickness: 0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 19.846683,
-      decenter: {
-        coordinateSystemStrategy: "decenter",
-        alpha: 5.66,
         beta: 0,
         gamma: 0,
         offsetX: 0,
@@ -526,6 +510,14 @@ const quadSchiefspiegler: OpticalModel = {
   },
   image: {
     curvatureRadius: 0,
+    decenter: {
+      coordinateSystemStrategy: "decenter",
+      alpha: -9.15,
+      beta: 0,
+      gamma: 0,
+      offsetX: 0,
+      offsetY: 0,
+    },
   },
   surfaces: [
     {
@@ -582,22 +574,6 @@ const quadSchiefspiegler: OpticalModel = {
       decenter: {
         coordinateSystemStrategy: "bend",
         alpha: 38.55,
-        beta: 0,
-        gamma: 0,
-        offsetX: 0,
-        offsetY: 0,
-      },
-    },
-    {
-      label: "Default",
-      curvatureRadius: 0,
-      thickness: 0,
-      medium: "air",
-      manufacturer: "",
-      semiDiameter: 38.475044,
-      decenter: {
-        coordinateSystemStrategy: "decenter",
-        alpha: -9.15,
         beta: 0,
         gamma: 0,
         offsetX: 0,
