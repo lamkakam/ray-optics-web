@@ -29,8 +29,11 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 - Reversed surface rows keep surface-owned data with the surface: semi-diameter, asphere, decenter, diffraction grating, and label.
 - Gap-owned data moves with the reversed gap: object distance or surface thickness, plus `medium` and `manufacturer`.
 - Curvature radius is multiplied by `-1` for each included surface.
+- Flat reversed radii remain `0` rather than `-0`.
 - Boundary gaps are reversed with the selected span: object distance or the preceding surface thickness is the leading gap, and the selected surfaces' thickness values complete the gap list.
 - Reversing `Object` through the last surface sets image `curvatureRadius` to `0`.
+- Mirror surfaces are identified by medium `REFL` case-insensitively. When reversing, transformed mirror surfaces keep canonical medium `REFL` instead of receiving the reversed gap medium.
+- When a full `Object`-through-last-surface reverse starts from an old last surface whose medium is `REFL`, the transformed Object medium comes from the old last non-mirror surface before it. If no such surface exists, the old Object medium is retained so the transformed Object row does not become reflective.
 
 ## Validation
 

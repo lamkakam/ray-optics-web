@@ -76,6 +76,15 @@ function scaleNumber(value: number, factor: number): number {
   return value * factor;
 }
 
+function negateNumber(value: number): number {
+  const negated = -value;
+  return Object.is(negated, -0) ? 0 : negated;
+}
+
+function isMirrorMedium(medium: string): boolean {
+  return medium.toUpperCase() === "REFL";
+}
+
 function scaleAspherical(
   aspherical: Extract<GridRow, { kind: "surface" }>["aspherical"],
   factor: number,
@@ -196,12 +205,12 @@ function setGap(rows: GridRow[], surfaceSelectorIndex: number, gap: GapPropertie
 }
 
 export function reverseRows(rows: readonly GridRow[], { first, last }: ReverseRowsOptions): GridRow[] {
+  const surfaces = rows.filter((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
   const selectedSurfaceCount = last - Math.max(first, 1) + 1;
-  const selectedSurfaces = rows
-    .filter((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface")
+  const selectedSurfaces = surfaces
     .slice(Math.max(first, 1) - 1, Math.max(first, 1) - 1 + selectedSurfaceCount)
     .reverse()
-    .map((row) => ({ ...row, curvatureRadius: -row.curvatureRadius }));
+    .map((row) => ({ ...row, curvatureRadius: negateNumber(row.curvatureRadius) }));
 
   let replacementIndex = 0;
   let currentSurfaceIndex = 0;
@@ -229,6 +238,41 @@ export function reverseRows(rows: readonly GridRow[], { first, last }: ReverseRo
 
   if (first === OBJECT_SELECTOR_INDEX && last === surfaceCount(rows)) {
     reversedRows = reversedRows.map((row) => row.kind === "image" ? { ...row, curvatureRadius: 0 } : row);
+  }
+
+  currentSurfaceIndex = 0;
+  replacementIndex = 0;
+  reversedRows = reversedRows.map((row): GridRow => {
+    if (row.kind !== "surface") {
+      return row;
+    }
+
+    currentSurfaceIndex += 1;
+    if (currentSurfaceIndex < Math.max(first, 1) || currentSurfaceIndex > last) {
+      return row;
+    }
+
+    const replacement = selectedSurfaces[replacementIndex];
+    replacementIndex += 1;
+    return isMirrorMedium(replacement.medium)
+      ? { ...row, medium: "REFL", manufacturer: replacement.manufacturer }
+      : row;
+  });
+
+  const oldLastSurface = surfaces[last - 1];
+  if (first === OBJECT_SELECTOR_INDEX && oldLastSurface !== undefined && isMirrorMedium(oldLastSurface.medium)) {
+    const objectRow = rows.find((row): row is Extract<GridRow, { kind: "object" }> => row.kind === "object");
+    const objectMediumSource = surfaces
+      .slice(0, last - 1)
+      .reverse()
+      .find((surface) => !isMirrorMedium(surface.medium));
+    reversedRows = reversedRows.map((row) => row.kind === "object"
+      ? {
+        ...row,
+        medium: objectMediumSource?.medium ?? objectRow?.medium ?? row.medium,
+        manufacturer: objectMediumSource?.manufacturer ?? objectRow?.manufacturer ?? row.manufacturer,
+      }
+      : row);
   }
 
   return reversedRows;
