@@ -150,6 +150,16 @@ describe("GlassMapControls", () => {
     }
   });
 
+  it("renders catalog checkboxes in three columns", () => {
+    render(<GlassMapControls {...defaultProps} />);
+    expect(getOptionsGrid("Catalogs")).toHaveClass("grid-cols-3");
+  });
+
+  it("renders catalog checkboxes with compact layout", () => {
+    render(<GlassMapControls {...defaultProps} />);
+    expect(getOptionsGrid("Catalogs")).toHaveClass("inline-grid", "gap-x-6", "gap-y-1");
+  });
+
   it("CDGM checkbox is checked when enabled", () => {
     render(<GlassMapControls {...defaultProps} />);
     expect(screen.getByRole("checkbox", { name: "CDGM" })).toBeChecked();

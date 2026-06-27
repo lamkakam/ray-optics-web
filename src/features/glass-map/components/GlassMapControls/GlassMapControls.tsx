@@ -84,7 +84,7 @@ export function GlassMapControls({
         <legend className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
           Catalogs
         </legend>
-        <div className="flex flex-col gap-1">
+        <div className="inline-grid grid-cols-3 gap-x-6 gap-y-1">
           {CATALOG_NAMES.map((name) => (
             <CheckboxInput
               key={name}
