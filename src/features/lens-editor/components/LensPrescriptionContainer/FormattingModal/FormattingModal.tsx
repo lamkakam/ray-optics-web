@@ -108,8 +108,8 @@ export function FormattingModal({
               id="formatting-factor"
               aria-label="Factor"
               type="number"
-              min="0"
-              step="any"
+              min="1e-10"
+              step="0.5"
               value={scaleFactor}
               onChange={(event) => setScaleFactor(event.target.value)}
             />

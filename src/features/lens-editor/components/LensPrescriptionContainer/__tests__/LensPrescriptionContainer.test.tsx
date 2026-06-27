@@ -589,7 +589,10 @@ describe("LensPrescriptionContainer", () => {
     renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    expect(screen.getByRole("spinbutton", { name: "Factor" })).toBeInTheDocument();
+    const factorInput = screen.getByRole("spinbutton", { name: "Factor" });
+    expect(factorInput).toBeInTheDocument();
+    expect(factorInput).toHaveAttribute("step", "0.5");
+    expect(factorInput).toHaveAttribute("min", "1e-10");
 
     await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
     expect(screen.queryByRole("spinbutton", { name: "Factor" })).not.toBeInTheDocument();
