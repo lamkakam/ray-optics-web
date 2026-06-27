@@ -19,6 +19,11 @@ import { DecenterModal, type DecenterType } from "./DecenterModal";
 import { DiffractionGratingModal } from "./DiffractionGratingModal";
 import { FormattingModal } from "./FormattingModal";
 import { PythonScriptModal } from "./PythonScriptModal";
+import { AddReferenceSurfaceModal } from "./AddReferenceSurfaceModal";
+import {
+  firstSurfaceNeedsReferenceSurface,
+  insertReferenceSurfaceAfterObject,
+} from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
 
 interface LensPrescriptionContainerProps {
   readonly getOpticalModel: () => OpticalModel;
@@ -89,6 +94,7 @@ export function LensPrescriptionContainer({
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
   const [formattingOpen, setFormattingOpen] = useState(false);
   const [formattingError, setFormattingError] = useState<string | undefined>(undefined);
+  const [pendingReferenceSurfaceRows, setPendingReferenceSurfaceRows] = useState<GridRow[] | undefined>(undefined);
 
   // Stable callbacks — use store.getState() so they never change reference,
   // preventing unnecessary columnDefs recreation in LensPrescriptionGrid.
@@ -267,7 +273,13 @@ export function LensPrescriptionContainer({
         <FormattingModal
           isOpen={formattingOpen}
           rows={rows}
-          onConfirm={(updatedRows) => {
+          onConfirm={({ mode, rows: updatedRows }) => {
+            if (mode === "reverse" && firstSurfaceNeedsReferenceSurface(updatedRows)) {
+              setPendingReferenceSurfaceRows(updatedRows);
+              setFormattingOpen(false);
+              return;
+            }
+
             store.getState().setRows(updatedRows);
             setFormattingOpen(false);
           }}
@@ -275,6 +287,22 @@ export function LensPrescriptionContainer({
           onError={setFormattingError}
         />
       )}
+
+      <AddReferenceSurfaceModal
+        isOpen={pendingReferenceSurfaceRows !== undefined}
+        onCancel={() => {
+          if (pendingReferenceSurfaceRows !== undefined) {
+            store.getState().setRows(pendingReferenceSurfaceRows);
+          }
+          setPendingReferenceSurfaceRows(undefined);
+        }}
+        onConfirm={() => {
+          if (pendingReferenceSurfaceRows !== undefined) {
+            store.getState().setRows(insertReferenceSurfaceAfterObject(pendingReferenceSurfaceRows));
+          }
+          setPendingReferenceSurfaceRows(undefined);
+        }}
+      />
 
       <ErrorModal
         isOpen={formattingError !== undefined}

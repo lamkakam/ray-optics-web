@@ -1,4 +1,5 @@
 import type { AsphericalType, DecenterConfig } from "@/shared/lib/types/opticalModel";
+import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { IMAGE_ROW_ID, OBJECT_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 export interface SurfaceSelectorOption {
@@ -34,8 +35,52 @@ interface GapProperties {
   readonly manufacturer: string;
 }
 
+interface NormalizedReverseRows {
+  readonly rows: GridRow[];
+  readonly first: number;
+  readonly last: number;
+  readonly gapOverridesBySurfaceIndex: ReadonlyMap<number, GapProperties>;
+}
+
 function surfaceCount(rows: readonly GridRow[]): number {
   return rows.filter((row) => row.kind === "surface").length;
+}
+
+export function firstSurfaceNeedsReferenceSurface(rows: readonly GridRow[]): boolean {
+  const firstSurface = rows.find((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
+  if (firstSurface?.decenter === undefined) {
+    return false;
+  }
+
+  return [
+    firstSurface.decenter.alpha,
+    firstSurface.decenter.beta,
+    firstSurface.decenter.gamma,
+    firstSurface.decenter.offsetX,
+    firstSurface.decenter.offsetY,
+  ].some((value) => value !== 0);
+}
+
+export function insertReferenceSurfaceAfterObject(rows: readonly GridRow[]): GridRow[] {
+  const firstSurface = rows.find((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
+  const referenceSurface: Extract<GridRow, { kind: "surface" }> = {
+    id: generateRowId(),
+    kind: "surface",
+    label: "Default",
+    curvatureRadius: 0,
+    thickness: 0,
+    medium: "air",
+    manufacturer: "",
+    semiDiameter: firstSurface?.semiDiameter ?? 0,
+  };
+  const objectIndex = rows.findIndex((row) => row.kind === "object" || row.id === OBJECT_ROW_ID);
+  const insertIndex = objectIndex === -1 ? 0 : objectIndex + 1;
+
+  return [
+    ...rows.slice(0, insertIndex),
+    referenceSurface,
+    ...rows.slice(insertIndex),
+  ];
 }
 
 export function buildScaleSurfaceOptions(rows: readonly GridRow[]): SurfaceSelectorOption[] {
@@ -83,6 +128,90 @@ function negateNumber(value: number): number {
 
 function isMirrorMedium(medium: string): boolean {
   return medium.toUpperCase() === "REFL";
+}
+
+function needsSeparatePropagationGap(
+  surface: Extract<GridRow, { kind: "surface" }>,
+  assignedGap: GapProperties | undefined,
+): assignedGap is GapProperties {
+  return isMirrorMedium(surface.medium)
+    && assignedGap !== undefined
+    && !isMirrorMedium(assignedGap.medium)
+    && assignedGap.thickness > 0;
+}
+
+function buildPropagationGapSurface(
+  gap: GapProperties,
+  semiDiameter: number,
+): Extract<GridRow, { kind: "surface" }> {
+  return {
+    id: generateRowId(),
+    kind: "surface",
+    label: "Default",
+    curvatureRadius: 0,
+    thickness: gap.thickness,
+    medium: gap.medium,
+    manufacturer: gap.manufacturer,
+    semiDiameter,
+  };
+}
+
+function isInsertedPropagationGapSurface(
+  row: Extract<GridRow, { kind: "surface" }>,
+  previousSurface: Extract<GridRow, { kind: "surface" }> | undefined,
+): boolean {
+  return previousSurface !== undefined
+    && isMirrorMedium(previousSurface.medium)
+    && previousSurface.thickness === 0
+    && row.label === "Default"
+    && row.curvatureRadius === 0
+    && !isMirrorMedium(row.medium)
+    && row.thickness > 0
+    && row.semiDiameter === previousSurface.semiDiameter
+    && row.aspherical === undefined
+    && row.decenter === undefined
+    && row.diffractionGrating === undefined;
+}
+
+function normalizeReverseRows(rows: readonly GridRow[], { first, last }: ReverseRowsOptions): NormalizedReverseRows {
+  const normalizedRows: GridRow[] = [];
+  const sourceSurfaceIndexToPhysicalIndex = new Map<number, number>();
+  const gapOverridesBySurfaceIndex = new Map<number, GapProperties>();
+  let sourceSurfaceIndex = 0;
+  let physicalSurfaceIndex = 0;
+  let previousPhysicalSurface: Extract<GridRow, { kind: "surface" }> | undefined;
+  let previousPhysicalSurfaceIndex = 0;
+
+  rows.forEach((row) => {
+    if (row.kind !== "surface") {
+      normalizedRows.push(row);
+      return;
+    }
+
+    sourceSurfaceIndex += 1;
+    if (isInsertedPropagationGapSurface(row, previousPhysicalSurface)) {
+      sourceSurfaceIndexToPhysicalIndex.set(sourceSurfaceIndex, previousPhysicalSurfaceIndex);
+      gapOverridesBySurfaceIndex.set(previousPhysicalSurfaceIndex, {
+        thickness: row.thickness,
+        medium: row.medium,
+        manufacturer: row.manufacturer,
+      });
+      return;
+    }
+
+    physicalSurfaceIndex += 1;
+    sourceSurfaceIndexToPhysicalIndex.set(sourceSurfaceIndex, physicalSurfaceIndex);
+    normalizedRows.push(row);
+    previousPhysicalSurface = row;
+    previousPhysicalSurfaceIndex = physicalSurfaceIndex;
+  });
+
+  return {
+    rows: normalizedRows,
+    first: first === OBJECT_SELECTOR_INDEX ? OBJECT_SELECTOR_INDEX : sourceSurfaceIndexToPhysicalIndex.get(first) ?? physicalSurfaceIndex,
+    last: sourceSurfaceIndexToPhysicalIndex.get(last) ?? physicalSurfaceIndex,
+    gapOverridesBySurfaceIndex,
+  };
 }
 
 function scaleAspherical(
@@ -166,7 +295,11 @@ export function scaleRows(rows: readonly GridRow[], { first, last, factor }: Sca
   });
 }
 
-function getGap(rows: readonly GridRow[], surfaceSelectorIndex: number): GapProperties {
+function getGap(
+  rows: readonly GridRow[],
+  surfaceSelectorIndex: number,
+  gapOverridesBySurfaceIndex?: ReadonlyMap<number, GapProperties>,
+): GapProperties {
   if (surfaceSelectorIndex === OBJECT_SELECTOR_INDEX) {
     const objectRow = rows.find((row): row is Extract<GridRow, { kind: "object" }> => row.kind === "object");
     return {
@@ -174,6 +307,11 @@ function getGap(rows: readonly GridRow[], surfaceSelectorIndex: number): GapProp
       medium: objectRow?.medium ?? "air",
       manufacturer: objectRow?.manufacturer ?? "",
     };
+  }
+
+  const override = gapOverridesBySurfaceIndex?.get(surfaceSelectorIndex);
+  if (override !== undefined) {
+    return override;
   }
 
   const surfaces = rows.filter((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
@@ -205,22 +343,24 @@ function setGap(rows: GridRow[], surfaceSelectorIndex: number, gap: GapPropertie
 }
 
 export function reverseRows(rows: readonly GridRow[], { first, last }: ReverseRowsOptions): GridRow[] {
-  const surfaces = rows.filter((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
-  const selectedSurfaceCount = last - Math.max(first, 1) + 1;
+  const normalized = normalizeReverseRows(rows, { first, last });
+  const sourceRows = normalized.rows;
+  const surfaces = sourceRows.filter((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
+  const selectedSurfaceCount = normalized.last - Math.max(normalized.first, 1) + 1;
   const selectedSurfaces = surfaces
-    .slice(Math.max(first, 1) - 1, Math.max(first, 1) - 1 + selectedSurfaceCount)
+    .slice(Math.max(normalized.first, 1) - 1, Math.max(normalized.first, 1) - 1 + selectedSurfaceCount)
     .reverse()
     .map((row) => ({ ...row, curvatureRadius: negateNumber(row.curvatureRadius) }));
 
   let replacementIndex = 0;
   let currentSurfaceIndex = 0;
-  let reversedRows = rows.map((row): GridRow => {
+  let reversedRows = sourceRows.map((row): GridRow => {
     if (row.kind !== "surface") {
       return row;
     }
 
     currentSurfaceIndex += 1;
-    if (currentSurfaceIndex < Math.max(first, 1) || currentSurfaceIndex > last) {
+    if (currentSurfaceIndex < Math.max(normalized.first, 1) || currentSurfaceIndex > normalized.last) {
       return row;
     }
 
@@ -229,41 +369,57 @@ export function reverseRows(rows: readonly GridRow[], { first, last }: ReverseRo
     return replacement;
   });
 
-  const firstGapIndex = first === OBJECT_SELECTOR_INDEX ? OBJECT_SELECTOR_INDEX : first - 1;
-  const gapIndices = Array.from({ length: last - firstGapIndex + 1 }, (_, index) => firstGapIndex + index);
-  const reversedGaps = gapIndices.map((gapIndex) => getGap(rows, gapIndex)).reverse();
+  const firstGapIndex = normalized.first === OBJECT_SELECTOR_INDEX ? OBJECT_SELECTOR_INDEX : normalized.first - 1;
+  const gapIndices = Array.from({ length: normalized.last - firstGapIndex + 1 }, (_, index) => firstGapIndex + index);
+  const reversedGaps = gapIndices
+    .map((gapIndex) => getGap(sourceRows, gapIndex, normalized.gapOverridesBySurfaceIndex))
+    .reverse();
+  const assignedGapsBySelectorIndex = new Map<number, GapProperties>();
   gapIndices.forEach((gapIndex, index) => {
-    reversedRows = setGap(reversedRows, gapIndex, reversedGaps[index]);
+    const gap = reversedGaps[index];
+    assignedGapsBySelectorIndex.set(gapIndex, gap);
+    reversedRows = setGap(reversedRows, gapIndex, gap);
   });
 
-  if (first === OBJECT_SELECTOR_INDEX && last === surfaceCount(rows)) {
+  if (normalized.first === OBJECT_SELECTOR_INDEX && normalized.last === surfaceCount(sourceRows)) {
     reversedRows = reversedRows.map((row) => row.kind === "image" ? { ...row, curvatureRadius: 0 } : row);
   }
 
   currentSurfaceIndex = 0;
   replacementIndex = 0;
-  reversedRows = reversedRows.map((row): GridRow => {
+  reversedRows = reversedRows.flatMap((row): GridRow[] => {
     if (row.kind !== "surface") {
-      return row;
+      return [row];
     }
 
     currentSurfaceIndex += 1;
-    if (currentSurfaceIndex < Math.max(first, 1) || currentSurfaceIndex > last) {
-      return row;
+    if (currentSurfaceIndex < Math.max(normalized.first, 1) || currentSurfaceIndex > normalized.last) {
+      return [row];
     }
 
     const replacement = selectedSurfaces[replacementIndex];
     replacementIndex += 1;
-    return isMirrorMedium(replacement.medium)
-      ? { ...row, medium: "REFL", manufacturer: replacement.manufacturer }
-      : row;
+    if (!isMirrorMedium(replacement.medium)) {
+      return [row];
+    }
+
+    const assignedGap = assignedGapsBySelectorIndex.get(currentSurfaceIndex);
+    const mirrorRow = { ...row, medium: "REFL", manufacturer: replacement.manufacturer };
+    if (currentSurfaceIndex < normalized.last && needsSeparatePropagationGap(replacement, assignedGap)) {
+      return [
+        { ...mirrorRow, thickness: 0 },
+        buildPropagationGapSurface(assignedGap, row.semiDiameter),
+      ];
+    }
+
+    return [mirrorRow];
   });
 
-  const oldLastSurface = surfaces[last - 1];
-  if (first === OBJECT_SELECTOR_INDEX && oldLastSurface !== undefined && isMirrorMedium(oldLastSurface.medium)) {
-    const objectRow = rows.find((row): row is Extract<GridRow, { kind: "object" }> => row.kind === "object");
+  const oldLastSurface = surfaces[normalized.last - 1];
+  if (normalized.first === OBJECT_SELECTOR_INDEX && oldLastSurface !== undefined && isMirrorMedium(oldLastSurface.medium)) {
+    const objectRow = sourceRows.find((row): row is Extract<GridRow, { kind: "object" }> => row.kind === "object");
     const objectMediumSource = surfaces
-      .slice(0, last - 1)
+      .slice(0, normalized.last - 1)
       .reverse()
       .find((surface) => !isMirrorMedium(surface.medium));
     reversedRows = reversedRows.map((row) => row.kind === "object"

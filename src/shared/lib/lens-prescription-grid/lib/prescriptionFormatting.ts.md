@@ -11,6 +11,8 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 - `OBJECT_DISTANCE_INFINITY_THRESHOLD` — object distances at or above `1e10` are treated as infinity-like and preserved during scale formatting.
 - `scaleRows(rows, { first, last, factor })` — scales selected prescription rows.
 - `reverseRows(rows, { first, last })` — reverses selected surface rows and boundary gaps.
+- `firstSurfaceNeedsReferenceSurface(rows)` — returns true when the first surface has a decenter config and at least one tilt/decenter numeric field is nonzero.
+- `insertReferenceSurfaceAfterObject(rows)` — inserts a flat zero-thickness air reference surface immediately after Object, copying semi-diameter from the first existing surface.
 - `formatPrescriptionRows(rows, options)` — validates selection/factor, builds the candidate array, and rejects invalid, overflowing, or precision-underflowing numeric results atomically.
 
 ## Scale Behavior
@@ -32,8 +34,18 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 - Flat reversed radii remain `0` rather than `-0`.
 - Boundary gaps are reversed with the selected span: object distance or the preceding surface thickness is the leading gap, and the selected surfaces' thickness values complete the gap list.
 - Reversing `Object` through the last surface sets image `curvatureRadius` to `0`.
-- Mirror surfaces are identified by medium `REFL` case-insensitively. When reversing, transformed mirror surfaces keep canonical medium `REFL` instead of receiving the reversed gap medium.
+- Mirror surfaces are identified by medium `REFL` case-insensitively. When reversing, transformed mirror surfaces keep canonical medium `REFL` so a reversed system preserves its physical mirror count.
+- When a reversed mirror surface also needs to hand off to a positive non-reflective propagation gap, the mirror row is kept as `REFL` with zero thickness and a generated flat spacer surface is inserted immediately after it to carry that gap's `thickness`, `medium`, and `manufacturer`.
+- A positive air/glass gap between folded mirror interactions remains a normal propagation medium after reversal; for example, the Newtonian reflector's intermediate `860` air gap is represented by an inserted flat air spacer instead of becoming an extra `REFL` row or removing the primary mirror marker.
+- Before reversing, generated flat propagation spacer rows after zero-thickness `REFL` mirrors are normalized away: the spacer is removed from the physical surface list and its gap data is used as the preceding mirror's gap. This keeps reverse formatting involutive for folded mirror systems, so applying the same full reverse twice restores the original physical surface sequence.
 - When a full `Object`-through-last-surface reverse starts from an old last surface whose medium is `REFL`, the transformed Object medium comes from the old last non-mirror surface before it. If no such surface exists, the old Object medium is retained so the transformed Object row does not become reflective.
+
+## Reference Surface Helpers
+
+- A first surface needs a reference surface only when `decenter` is present and one of `alpha`, `beta`, `gamma`, `offsetX`, or `offsetY` is nonzero. A missing decenter config, or an all-zero decenter config, returns false.
+- The inserted reference surface is a standard flat air surface with `curvatureRadius: 0`, `thickness: 0`, `medium: "air"`, `manufacturer: ""`, label `Default`, and no decenter, aspherical, or diffraction grating data.
+- The reference surface copies `semiDiameter` from the original first surface so aperture display remains consistent before any auto-aperture recalculation.
+- The helper returns a new row array and preserves all original row objects.
 
 ## Validation
 
