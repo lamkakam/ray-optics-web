@@ -151,7 +151,37 @@ export function MediumSelectorModal({
   })();
 
   return (
-    <Modal isOpen={isOpen} title="Select Medium" titleId="medium-modal-title" size="md">
+    <Modal
+      isOpen={isOpen}
+      title="Select Medium"
+      titleId="medium-modal-title"
+      size="md"
+      footer={(
+        <div className="flex items-center justify-end gap-3">
+          {readOnly ? (
+            <Button variant="secondary" onClick={onClose}>Close</Button>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button
+                variant="primary"
+                disabled={!canConfirm}
+                onClick={() => onConfirm(
+                  useModelGlass
+                    ? refractiveIndexAtDLine
+                    : canonicalMedium ?? medium,
+                  useModelGlass
+                    ? (singleRefractiveIndex ? "" : abbeNumber)
+                    : (isSpecial ? "" : manufacturer),
+                )}
+              >
+                Confirm
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+    >
       {/* ── Form fields ── */}
       <div className="space-y-4 mb-4">
         <CheckboxInput
@@ -274,31 +304,6 @@ export function MediumSelectorModal({
                 />
               </div>
             )}
-          </>
-        )}
-      </div>
-
-      {/* ── Actions ── */}
-      <div className="flex items-center justify-end gap-3 pt-4">
-        {readOnly ? (
-          <Button variant="secondary" onClick={onClose}>Close</Button>
-        ) : (
-          <>
-            <Button variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button
-              variant="primary"
-              disabled={!canConfirm}
-              onClick={() => onConfirm(
-                useModelGlass
-                  ? refractiveIndexAtDLine
-                  : canonicalMedium ?? medium,
-                useModelGlass
-                  ? (singleRefractiveIndex ? "" : abbeNumber)
-                  : (isSpecial ? "" : manufacturer),
-              )}
-            >
-              Confirm
-            </Button>
           </>
         )}
       </div>

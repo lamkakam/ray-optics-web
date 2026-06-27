@@ -137,7 +137,17 @@ function ZernikeTermsModalContent({
   }, [data, numTerms, toNm]);
 
   return (
-    <Modal isOpen={true} title="Zernike Terms" titleId="zernike-modal-title" size="4xl">
+    <Modal
+      isOpen={true}
+      title="Zernike Terms"
+      titleId="zernike-modal-title"
+      size="4xl"
+      footer={(
+        <div className="flex justify-end">
+          <Button variant="primary" onClick={onClose}>Ok</Button>
+        </div>
+      )}
+    >
         <div className="flex items-center gap-4 mb-2">
           <div className="flex items-center gap-2">
             <Label htmlFor="zernike-field-select">Field</Label>
@@ -194,10 +204,6 @@ function ZernikeTermsModalContent({
             {loading && <LoadingMask />}
           </div>
         )}
-
-        <div className="flex justify-end pt-4">
-          <Button variant="primary" onClick={onClose}>Ok</Button>
-        </div>
       </Modal>
   );
 }

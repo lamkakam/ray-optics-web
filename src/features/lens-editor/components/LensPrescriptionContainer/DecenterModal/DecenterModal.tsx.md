@@ -68,3 +68,6 @@ return (
   </>
 );
 ```
+## Modal Footer
+
+- Close, Remove Decenter, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while decenter fields scroll.

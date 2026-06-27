@@ -69,3 +69,6 @@ return (
   </>
 );
 ```
+## Modal Footer
+
+- Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while the wavelength grid scrolls.

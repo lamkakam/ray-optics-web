@@ -12,18 +12,23 @@ interface ConfirmImportModalProps {
 
 export function ConfirmImportModal({ isOpen, onConfirm, onCancel }: ConfirmImportModalProps) {
   return (
-    <Modal isOpen={isOpen} title="Load Config">
+    <Modal
+      isOpen={isOpen}
+      title="Load Config"
+      footer={(
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={onConfirm}>
+            Load
+          </Button>
+        </div>
+      )}
+    >
       <Paragraph variant="body" className="mb-6">
         This will overwrite your current System Specs and Lens Prescription. Continue?
       </Paragraph>
-      <div className="flex justify-end gap-3">
-        <Button variant="secondary" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button variant="primary" onClick={onConfirm}>
-          Load
-        </Button>
-      </div>
     </Modal>
   );
 }

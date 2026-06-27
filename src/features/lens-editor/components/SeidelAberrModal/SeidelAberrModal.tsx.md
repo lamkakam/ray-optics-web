@@ -59,3 +59,6 @@ return (
   </div>
 );
 ```
+## Modal Footer
+
+- The Ok action is passed to `Modal.footer` so it remains fixed while Seidel aberration content scrolls.

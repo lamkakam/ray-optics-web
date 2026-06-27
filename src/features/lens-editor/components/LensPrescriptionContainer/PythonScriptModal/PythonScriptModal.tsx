@@ -23,7 +23,16 @@ export function PythonScriptModal({ isOpen, script, onClose }: PythonScriptModal
   };
 
   return (
-    <Modal isOpen={isOpen} title="Python Script" size="4xl">
+    <Modal
+      isOpen={isOpen}
+      title="Python Script"
+      size="4xl"
+      footer={(
+        <div className="flex justify-end">
+          <Button variant="primary" onClick={onClose}>Ok</Button>
+        </div>
+      )}
+    >
       <div className="relative w-full mb-4">
         <div className="overflow-auto max-h-[60vh] w-full">
           <pre className="text-xs font-mono whitespace-pre w-full"><code>{script}</code></pre>
@@ -35,9 +44,6 @@ export function PythonScriptModal({ isOpen, script, onClose }: PythonScriptModal
             </Button>
           </Tooltip>
         </div>
-      </div>
-      <div className="flex justify-end">
-        <Button variant="primary" onClick={onClose}>Ok</Button>
       </div>
     </Modal>
   );

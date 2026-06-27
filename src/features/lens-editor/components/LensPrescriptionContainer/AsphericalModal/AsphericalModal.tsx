@@ -267,7 +267,28 @@ export function AsphericalModal({
   };
 
   return (
-    <Modal isOpen={isOpen} title="Aspherical Parameters" titleId="aspherical-modal-title" size="md">
+    <Modal
+      isOpen={isOpen}
+      title="Aspherical Parameters"
+      titleId="aspherical-modal-title"
+      size="md"
+      footer={(
+        <div className="flex items-center gap-3">
+          {readOnly ? (
+            <div className="flex justify-end w-full">
+              <Button variant="secondary" onClick={onClose}>Close</Button>
+            </div>
+          ) : (
+            <>
+              <Button variant="danger" onClick={onRemove}>Remove Aspherical</Button>
+              <span className="flex-1" />
+              <Button variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+            </>
+          )}
+        </div>
+      )}
+    >
         {/* ── Conic constant + Type (2-col grid) ── */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
@@ -341,22 +362,6 @@ export function AsphericalModal({
             </div>
           </div>
         )}
-
-        {/* ── Actions ── */}
-        <div className="flex items-center gap-3 pt-4">
-          {readOnly ? (
-            <div className="flex justify-end w-full">
-              <Button variant="secondary" onClick={onClose}>Close</Button>
-            </div>
-          ) : (
-            <>
-              <Button variant="danger" onClick={onRemove}>Remove Aspherical</Button>
-              <span className="flex-1" />
-              <Button variant="secondary" onClick={onClose}>Cancel</Button>
-              <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
-            </>
-          )}
-        </div>
       </Modal>
   );
 }

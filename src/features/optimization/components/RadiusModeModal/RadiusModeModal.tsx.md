@@ -17,3 +17,6 @@ Renders the radius variable/pickup modal with modal-local draft state.
 - Commits the latest draft through `onSetMode(surfaceIndex, draft)` only when the user presses `Confirm`.
 - Clicking or touching outside the modal does not close it.
 - Pressing `Escape` does not close it.
+## Modal Footer
+
+- Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while radius mode controls scroll.

@@ -98,6 +98,23 @@ function RadiusModeModalEditor({
     <Modal
       isOpen
       title="Radius Variable / Pickup"
+      footer={(
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            disabled={variableBoundsErrorText !== undefined}
+            onClick={() => {
+              onSetMode(surfaceIndex, draftMode);
+              onClose();
+            }}
+          >
+            Confirm
+          </Button>
+        </div>
+      )}
     >
       <div className="space-y-4">
         <Paragraph>
@@ -176,22 +193,6 @@ function RadiusModeModalEditor({
             })}
           />
         ) : null}
-
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            disabled={variableBoundsErrorText !== undefined}
-            onClick={() => {
-              onSetMode(surfaceIndex, draftMode);
-              onClose();
-            }}
-          >
-            Confirm
-          </Button>
-        </div>
       </div>
     </Modal>
   );

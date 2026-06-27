@@ -108,3 +108,6 @@ return (
   </>
 );
 ```
+## Modal Footer
+
+- Close, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while medium selection controls scroll.

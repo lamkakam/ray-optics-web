@@ -31,3 +31,6 @@ interface FormattingModalProps {
 
 - UI primitives: `Modal`, `RadioInput`, `Input`, `Select`, `Button`, and `Label`.
 - Formatting logic: `buildScaleSurfaceOptions`, `buildReverseSurfaceOptions`, and `formatPrescriptionRows`.
+## Modal Footer
+
+- Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while formatting controls scroll.

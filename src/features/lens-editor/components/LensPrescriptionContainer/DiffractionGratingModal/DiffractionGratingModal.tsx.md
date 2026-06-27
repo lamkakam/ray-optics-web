@@ -25,3 +25,6 @@ interface DiffractionGratingModalProps {
 - Invalid `order` values fall back to the initial integer value.
 - `Remove` clears the stored diffraction grating config.
 - In `readOnly` mode, both inputs are disabled and the footer renders only `Close`.
+## Modal Footer
+
+- Close, Remove, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while diffraction grating fields scroll.

@@ -52,3 +52,6 @@ interface AsphereVarModalProps {
 - Source coefficient pickup labels are intentionally plain text (`a_1`, `a_2`, etc.) instead of MathJax because they render inside a native `Select`.
 - Conic and toricSweep pickups do not require a `sourceTermKey`.
 - Uses `<MathJax inline>` for coefficient labels only; this component does not own a `MathJaxContext` and relies on the app-level provider.
+## Modal Footer
+
+- Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while asphere variable controls scroll.

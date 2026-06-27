@@ -51,3 +51,6 @@ return (
   </>
 );
 ```
+## Modal Footer
+
+- Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.

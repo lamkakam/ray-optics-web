@@ -91,7 +91,17 @@ export function FormattingModal({
   }
 
   return (
-    <Modal isOpen={isOpen} title="Formatting" size="md">
+    <Modal
+      isOpen={isOpen}
+      title="Formatting"
+      size="md"
+      footer={(
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+          <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+        </div>
+      )}
+    >
       <div className="space-y-4">
         <RadioInput
           name="lens-prescription-formatting-mode"
@@ -152,11 +162,6 @@ export function FormattingModal({
               }}
             />
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onCancel}>Cancel</Button>
-          <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
         </div>
       </div>
     </Modal>

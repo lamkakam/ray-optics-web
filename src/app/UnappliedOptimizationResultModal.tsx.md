@@ -21,3 +21,6 @@ interface UnappliedOptimizationResultModalProps {
 - Warns that the optimized optical model has not been applied to the Editor and may be lost if the user leaves Optimization.
 - Offers explicit `Stay`, `Leave`, and `Apply to Editor` actions.
 - Does not pass `onBackdropClick`, so backdrop clicks do not dismiss the dialog.
+## Modal Footer
+
+- Stay, Leave, and Apply to Editor actions are passed to `Modal.footer` so they remain fixed while the modal body scrolls.

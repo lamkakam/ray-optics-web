@@ -93,6 +93,23 @@ function ThicknessModeModalEditor({
     <Modal
       isOpen
       title="Thickness Variable / Pickup"
+      footer={(
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            disabled={variableBoundsErrorText !== undefined}
+            onClick={() => {
+              onSetMode(surfaceIndex, draftMode);
+              onClose();
+            }}
+          >
+            Confirm
+          </Button>
+        </div>
+      )}
     >
       <div className="space-y-4">
         <Paragraph>
@@ -173,22 +190,6 @@ function ThicknessModeModalEditor({
             })}
           />
         ) : null}
-
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            disabled={variableBoundsErrorText !== undefined}
-            onClick={() => {
-              onSetMode(surfaceIndex, draftMode);
-              onClose();
-            }}
-          >
-            Confirm
-          </Button>
-        </div>
       </div>
     </Modal>
   );

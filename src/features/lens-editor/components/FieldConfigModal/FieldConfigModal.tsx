@@ -155,7 +155,18 @@ function FieldConfigModalContent({
   ];
 
   return (
-    <Modal isOpen={true} title="Field" titleId="field-modal-title" size="lg">
+    <Modal
+      isOpen={true}
+      title="Field"
+      titleId="field-modal-title"
+      size="lg"
+      footer={(
+        <div className="flex items-center justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={handleApply}>Apply</Button>
+        </div>
+      )}
+    >
       <div className="mb-4 grid grid-cols-2 sm:grid-cols-3 gap-3 items-end">
         <div>
           <Label htmlFor="field-space">Field space</Label>
@@ -222,11 +233,6 @@ function FieldConfigModalContent({
             labelClassName="mb-0"
           />
         </div>
-      </div>
-
-      <div className="flex items-center justify-end gap-3 pt-4">
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" onClick={handleApply}>Apply</Button>
       </div>
     </Modal>
   );

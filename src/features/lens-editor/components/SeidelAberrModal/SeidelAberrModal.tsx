@@ -115,7 +115,17 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
   );
 
   return (
-    <Modal isOpen={isOpen} title="3rd Order Seidel Aberrations" titleId="seidel-modal-title" size="4xl">
+    <Modal
+      isOpen={isOpen}
+      title="3rd Order Seidel Aberrations"
+      titleId="seidel-modal-title"
+      size="4xl"
+      footer={(
+        <div className="flex justify-end">
+          <Button variant="primary" onClick={onClose}>Ok</Button>
+        </div>
+      )}
+    >
       <Paragraph className="mb-4">
         Note: Third-order Seidel aberration approximation only captures the effect of
         higher-order aspheric surface up to the 4th order
@@ -125,9 +135,6 @@ export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProp
         is outside the scope of this approximation.
       </Paragraph>
       <Tabs tabs={tabs} panelClassName="h-72 overflow-y-auto" />
-      <div className="flex justify-end pt-4">
-        <Button variant="primary" onClick={onClose}>Ok</Button>
-      </div>
     </Modal>
   );
 }

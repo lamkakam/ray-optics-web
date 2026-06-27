@@ -103,3 +103,6 @@ return (
   </>
 );
 ```
+## Modal Footer
+
+- The Ok action is passed to `Modal.footer` so it remains fixed while Zernike result content scrolls.
