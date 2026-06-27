@@ -16,6 +16,7 @@ interface FocusingPanelProps {
   readonly onMetricChange: (value: "rmsSpot" | "wavefront") => void;
   readonly onFieldIndexChange: (value: number) => void;
   readonly onFocus: () => void;
+  readonly focusButtonSize: ButtonSize;
   readonly disabled: boolean;
 }
 ```
@@ -25,7 +26,7 @@ interface FocusingPanelProps {
 1. `RadioInput` for chromaticity: options `[{ value: "mono", label: "Monochromatic" }, { value: "poly", label: "Polychromatic" }]`, rendered with `columns={2}`
 2. `RadioInput` for metric: options `[{ value: "rmsSpot", label: "Minimize RMS Spot Radius" }, { value: "wavefront", label: "Minimize Wavefront Error" }]`
 3. `Label` + `Select` (aria-label="Field") for field index selection
-4. `Button` variant `"primary"` text "Focus", `aria-label="Focus"`, `disabled={disabled}`
+4. `Button` variant `"primary"` text "Focus", `aria-label="Focus"`, `size={focusButtonSize}`, `disabled={disabled}`
 
 All inputs and the button are disabled when `disabled=true`.
 
@@ -60,6 +61,7 @@ return (
     onMetricChange={setMetric}
     onFieldIndexChange={setFieldIndex}
     onFocus={handleFocus}
+    focusButtonSize={screenSize === "screenSM" ? "xs" : "sm"}
     disabled={!isReady || computing}
   />
 );

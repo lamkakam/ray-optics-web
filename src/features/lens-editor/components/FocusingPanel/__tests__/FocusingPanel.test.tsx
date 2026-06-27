@@ -17,6 +17,7 @@ const defaultProps = {
   onMetricChange: jest.fn(),
   onFieldIndexChange: jest.fn(),
   onFocus: jest.fn(),
+  focusButtonSize: "sm" as const,
   disabled: false,
 };
 
@@ -69,6 +70,16 @@ describe("FocusingPanel", () => {
   it("renders Focus button", () => {
     render(<FocusingPanel {...defaultProps} />);
     expect(screen.getByRole("button", { name: "Focus" })).toBeInTheDocument();
+  });
+
+  it("renders Focus button with sm size token classes", () => {
+    render(<FocusingPanel {...defaultProps} focusButtonSize="sm" />);
+    expect(screen.getByRole("button", { name: "Focus" })).toHaveClass("px-3", "py-1.5", "text-sm");
+  });
+
+  it("renders Focus button with xs size token classes", () => {
+    render(<FocusingPanel {...defaultProps} focusButtonSize="xs" />);
+    expect(screen.getByRole("button", { name: "Focus" })).toHaveClass("px-2", "py-1", "text-xs");
   });
 
   it("Focus button calls onFocus on click", async () => {
