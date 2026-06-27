@@ -589,21 +589,24 @@ describe("LensPrescriptionContainer", () => {
     renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    const factorInput = screen.getByRole("spinbutton", { name: "Factor" });
+    const factorInput = screen.getByRole("textbox", { name: "Factor" });
     expect(factorInput).toBeInTheDocument();
-    expect(factorInput).toHaveAttribute("step", "0.5");
-    expect(factorInput).toHaveAttribute("min", "1e-10");
+    expect(factorInput).toHaveAttribute("type", "text");
+    expect(factorInput).not.toHaveAttribute("type", "number");
+    expect(factorInput).toHaveAttribute("inputMode", "decimal");
+    expect(factorInput).not.toHaveAttribute("step");
+    expect(factorInput).not.toHaveAttribute("min");
 
     await userEvent.click(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" }));
-    expect(screen.queryByRole("spinbutton", { name: "Factor" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Factor" })).not.toBeInTheDocument();
   });
 
   it("resets Scale factor and range to current defaults after Formatting is cancelled and reopened", async () => {
     renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
-    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "2.5");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Factor" }), "2.5");
     await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
     await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "2");
     await userEvent.click(screen.getByRole("button", { name: "Cancel" }));
@@ -611,7 +614,7 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
 
     expect(screen.getByRole("radio", { name: "Scale" })).toBeChecked();
-    expect(screen.getByRole("spinbutton", { name: "Factor" })).toHaveValue(1);
+    expect(screen.getByRole("textbox", { name: "Factor" })).toHaveValue("1");
     expect(screen.getByLabelText("First Surface")).toHaveValue("0");
     expect(screen.getByLabelText("Last Surface")).toHaveValue("3");
   });
@@ -620,8 +623,8 @@ describe("LensPrescriptionContainer", () => {
     renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
-    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "3");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Factor" }), "3");
     await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
     await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "2");
 
@@ -630,13 +633,13 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "1");
 
     expect(screen.getByRole("radio", { name: "Reverse (also reversing thickness and medium)" })).toBeChecked();
-    expect(screen.queryByRole("spinbutton", { name: "Factor" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Factor" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("First Surface")).toHaveValue("1");
     expect(screen.getByLabelText("Last Surface")).toHaveValue("1");
 
     await userEvent.click(screen.getByRole("radio", { name: "Scale" }));
 
-    expect(screen.getByRole("spinbutton", { name: "Factor" })).toHaveValue(3);
+    expect(screen.getByRole("textbox", { name: "Factor" })).toHaveValue("3");
     expect(screen.getByLabelText("First Surface")).toHaveValue("1");
     expect(screen.getByLabelText("Last Surface")).toHaveValue("2");
   });
@@ -645,8 +648,8 @@ describe("LensPrescriptionContainer", () => {
     const { store } = renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
-    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "2");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Factor" }), "2");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     const firstSurface = store.getState().rows.find((row) => row.kind === "surface");
@@ -763,8 +766,8 @@ describe("LensPrescriptionContainer", () => {
     renderLPC();
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
-    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "2");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Factor" }), "2");
     await userEvent.selectOptions(screen.getByLabelText("First Surface"), "1");
     await userEvent.selectOptions(screen.getByLabelText("Last Surface"), "2");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
@@ -772,7 +775,7 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
 
     expect(screen.getByRole("radio", { name: "Scale" })).toBeChecked();
-    expect(screen.getByRole("spinbutton", { name: "Factor" })).toHaveValue(1);
+    expect(screen.getByRole("textbox", { name: "Factor" })).toHaveValue("1");
     expect(screen.getByLabelText("First Surface")).toHaveValue("0");
     expect(screen.getByLabelText("Last Surface")).toHaveValue("3");
   });
@@ -790,11 +793,25 @@ describe("LensPrescriptionContainer", () => {
     renderLPC(store);
 
     await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
-    await userEvent.clear(screen.getByRole("spinbutton", { name: "Factor" }));
-    await userEvent.type(screen.getByRole("spinbutton", { name: "Factor" }), "2");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Factor" }), "2");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(screen.getByRole("dialog", { name: "Error" })).toBeInTheDocument();
+    expect(store.getState().rows).toBe(rowsBeforeFormatting);
+  });
+
+  it("opens ErrorModal and leaves rows unchanged when Formatting factor is invalid text", async () => {
+    const { store } = renderLPC();
+    const rowsBeforeFormatting = store.getState().rows;
+
+    await userEvent.click(screen.getByRole("button", { name: "Formatting" }));
+    await userEvent.clear(screen.getByRole("textbox", { name: "Factor" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Factor" }), "abc");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(screen.getByRole("dialog", { name: "Error" })).toBeInTheDocument();
+    expect(screen.getByText("Formatting was not applied because the scale factor must be a positive finite number.")).toBeInTheDocument();
     expect(store.getState().rows).toBe(rowsBeforeFormatting);
   });
 

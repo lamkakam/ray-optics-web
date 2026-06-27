@@ -20,12 +20,12 @@ interface FormattingModalProps {
 
 - Uses the shared `Modal` without `onBackdropClick`, so backdrop clicks do not dismiss the dialog.
 - Initializes local draft controls on mount from the current rows: Scale mode, factor `1`, Scale `Object` to `Image`, and Reverse `Object` to the last surface.
-- Scale mode shows `Factor` as a number input with `min="1e-10"` and `step="0.5"`, includes Image in the selectors, and uses the Scale range draft.
+- Scale mode shows `Factor` as a controlled text input with `inputMode="decimal"` for decimal keyboard ergonomics, includes Image in the selectors, and uses the Scale range draft.
 - Reverse mode is labeled `Reverse (also reversing thickness and medium)`, hides `Factor`, excludes Image from the selectors, and uses the Reverse range draft.
 - Scale and Reverse first/last surface selections are independent within one mounted modal session.
 - If a local surface index is outside the current row range, the rendered selector value and confirm input are clamped to the nearest valid index. Valid local selections are not rewritten while rendering.
 - `Cancel` calls `onCancel` without producing rows.
-- `Confirm` calls `formatPrescriptionRows`; valid results are passed to `onConfirm` with the active formatting mode, while invalid or overflowing results call `onError` and do not mutate rows.
+- `Confirm` converts the Factor draft with `Number(scaleFactor)` and calls `formatPrescriptionRows`; valid results are passed to `onConfirm` with the active formatting mode, while invalid, non-positive, non-finite, or overflowing results call `onError` and do not mutate rows.
 
 ## Dependencies
 
