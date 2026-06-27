@@ -7,6 +7,13 @@ Shared column and AG Grid configuration for lens prescription grids.
 - `numberValueParser` — accepts finite decimal/scientific notation input and restores `oldValue` for blank or invalid input.
 - `lensPrescriptionGridDefaultColDef` — `{ sortable: false, suppressMovable: true }`.
 - `LENS_PRESCRIPTION_GRID_DOM_LAYOUT` — `"autoHeight"`.
+- `LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS` — shared initial widths for prescription columns:
+  - `surface`: `85`
+  - `index`: `80`
+  - `radiusOfCurvature`: `170`
+  - `thickness`: `130`
+  - `medium`: `115`
+  - `semiDiameter`: `115`
 - `createSurfaceColumn`
 - `createRadiusOfCurvatureColumn`
 - `createThicknessColumn`
@@ -20,6 +27,8 @@ Shared column and AG Grid configuration for lens prescription grids.
 ## Design
 
 Builders accept `getGridRow(data)` so feature grids can adapt their own row model to `GridRow` without coupling `shared/` to feature state. Modal and edit behavior is injected through optional callbacks. When edit callbacks are omitted, numeric and select columns remain read-only.
+
+`LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS` is the shared source for the `Surface`, `Index`, `Radius of Curvature`, `Thickness`, `Medium`, and `Semi-diam.` initial widths used by Lens Editor and Optimization. `createSurfaceColumn` applies `surface`, `createRadiusOfCurvatureColumn` applies `radiusOfCurvature`, `createThicknessColumn` applies `thickness`, `createMediumColumn` applies `medium`, and `createSemiDiameterColumn` applies `semiDiameter`; feature grids apply `index` to their local read-only `Index` column.
 
 `createLensPrescriptionCommonColumns` returns the common column order used by the Lens Editor. Optimization uses the individual builders so its local `Var.` columns can stay interleaved after Radius, Thickness, and Asph.
 

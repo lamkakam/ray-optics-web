@@ -9,6 +9,7 @@ import { GridRowButtons } from "../GridRowButtons";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import {
   createLensPrescriptionCommonColumns,
+  LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS,
   LENS_PRESCRIPTION_GRID_DOM_LAYOUT,
   lensPrescriptionGridDefaultColDef,
 } from "@/shared/lib/lens-prescription-grid";
@@ -76,7 +77,7 @@ export function LensPrescriptionGrid({
 
         return surfaceIndexByRowId.get(params.data.id);
       },
-      width: 80,
+      width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.index,
     },
     ...createLensPrescriptionCommonColumns<GridRow>({
       getGridRow: (row) => row,

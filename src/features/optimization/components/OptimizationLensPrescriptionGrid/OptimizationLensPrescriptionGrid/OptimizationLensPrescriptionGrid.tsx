@@ -17,6 +17,7 @@ import {
   createSemiDiameterColumn,
   createSurfaceColumn,
   createThicknessColumn,
+  LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS,
   LENS_PRESCRIPTION_GRID_DOM_LAYOUT,
   LensPrescriptionActionWrapper,
   lensPrescriptionGridDefaultColDef,
@@ -109,7 +110,7 @@ export function OptimizationLensPrescriptionGrid({
   const lensColumns = useMemo<ColDef<RadiusRow>[]>(() => [
     {
       headerName: "Index",
-      width: 95,
+      width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.index,
       valueGetter: (params) => {
         if (params.data?.row.kind !== "surface") {
           return undefined;
