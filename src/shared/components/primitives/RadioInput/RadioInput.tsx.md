@@ -14,6 +14,7 @@ interface RadioInputProps<T extends string> {
   readonly value: T;              // Currently selected value
   readonly onChange: (value: T) => void;
   readonly disabled?: boolean;    // Disables all inputs when true
+  readonly columns?: 1 | 2 | 3 | 4; // Number of grid columns for options; defaults to 1
 }
 
 type RadioOption<T extends string> = {
@@ -30,12 +31,14 @@ type RadioOption<T extends string> = {
 - Calls `onChange(option.value)` when a radio is clicked.
 - When `disabled=true`, all radio inputs have the `disabled` attribute.
 - `labelNode` allows rich content (e.g. MathJax nodes) while keeping plain-text accessibility.
+- `columns` controls the option grid layout. Accepted values are `1`, `2`, `3`, and `4`; the default is `1`.
 
 ## Styling
 
 Uses Tailwind CSS.
 
 - Group label text color uses `cx.label.color.textColor`.
+- The option container uses a fixed Tailwind grid class based on `columns`, avoiding dynamic class generation.
 - Each option row uses `componentTokens.radio`, including the shared hover background token reused from `CheckboxInput`.
 - The radio control accent color comes from `componentTokens.radio.color.checkedColor`.
 
@@ -65,6 +68,21 @@ Uses Tailwind CSS.
   ]}
   value={metric}
   onChange={onMetricChange}
+/>
+
+// Two-column option layout
+<RadioInput
+  name="viewMode"
+  label="View Mode"
+  options={[
+    { value: "spot", label: "Spot" },
+    { value: "wavefront", label: "Wavefront" },
+    { value: "field", label: "Field" },
+    { value: "distortion", label: "Distortion" },
+  ]}
+  value={viewMode}
+  onChange={onViewModeChange}
+  columns={2}
 />
 
 // Radio group with MathJax content

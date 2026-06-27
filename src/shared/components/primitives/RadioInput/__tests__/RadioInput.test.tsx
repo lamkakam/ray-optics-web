@@ -107,6 +107,33 @@ describe("RadioInput", () => {
     );
   });
 
+  it("renders options in a one-column grid by default", () => {
+    render(<RadioInput {...defaultProps} />);
+
+    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
+
+    expect(optionContainer).not.toBeNull();
+    expectClasses(optionContainer as HTMLElement, "grid grid-cols-1 gap-1");
+  });
+
+  it("renders options in two columns when columns=2", () => {
+    render(<RadioInput {...defaultProps} columns={2} />);
+
+    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
+
+    expect(optionContainer).not.toBeNull();
+    expectClasses(optionContainer as HTMLElement, "grid grid-cols-2 gap-1");
+  });
+
+  it("renders options in four columns when columns=4", () => {
+    render(<RadioInput {...defaultProps} columns={4} />);
+
+    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
+
+    expect(optionContainer).not.toBeNull();
+    expectClasses(optionContainer as HTMLElement, "grid grid-cols-4 gap-1");
+  });
+
   it("renders labelNode as visual content when provided, keeping label as aria-label", () => {
     const options: ReadonlyArray<{ value: Fruit; label: string; labelNode?: React.ReactNode }> = [
       { value: "apple", label: "Apple", labelNode: <span data-testid="custom-apple">🍎 Custom</span> },

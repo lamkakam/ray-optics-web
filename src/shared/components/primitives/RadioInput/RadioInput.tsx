@@ -13,6 +13,13 @@ const OPTION_ROW_CLASSES = [
   cx.radio.style.cursor,
 ] as const;
 
+const OPTION_GRID_CLASSES = {
+  1: "grid grid-cols-1 gap-1",
+  2: "grid grid-cols-2 gap-1",
+  3: "grid grid-cols-3 gap-1",
+  4: "grid grid-cols-4 gap-1",
+} as const;
+
 export type RadioOption<T extends string> = {
   value: T;
   label: string;
@@ -27,6 +34,7 @@ interface RadioInputProps<T extends string> {
   readonly value: T;
   readonly onChange: (value: T) => void;
   readonly disabled?: boolean;
+  readonly columns?: 1 | 2 | 3 | 4;
 }
 
 export function RadioInput<T extends string>({
@@ -36,13 +44,14 @@ export function RadioInput<T extends string>({
   value,
   onChange,
   disabled = false,
+  columns = 1,
 }: RadioInputProps<T>) {
   return (
     <fieldset className="mb-3">
       <legend className={`block text-sm font-medium mb-1 ${cx.label.color.textColor}`}>
         {label}
       </legend>
-      <div className="flex flex-col gap-1">
+      <div className={OPTION_GRID_CLASSES[columns]}>
         {options.map((opt) => (
           <label key={opt.value} className={OPTION_ROW_CLASSES.join(" ")}>
             <input
