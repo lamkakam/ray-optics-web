@@ -14,11 +14,21 @@ const OPTION_ROW_CLASSES = [
 ] as const;
 
 const OPTION_GRID_CLASSES = {
-  1: "grid grid-cols-1 gap-1",
-  2: "grid grid-cols-2 gap-1",
-  3: "grid grid-cols-3 gap-1",
-  4: "grid grid-cols-4 gap-1",
+  full: {
+    1: "grid grid-cols-1 gap-1",
+    2: "grid grid-cols-2 gap-1",
+    3: "grid grid-cols-3 gap-1",
+    4: "grid grid-cols-4 gap-1",
+  },
+  compact: {
+    1: "inline-grid grid-cols-1 gap-x-6 gap-y-1",
+    2: "inline-grid grid-cols-2 gap-x-6 gap-y-1",
+    3: "inline-grid grid-cols-3 gap-x-6 gap-y-1",
+    4: "inline-grid grid-cols-4 gap-x-6 gap-y-1",
+  },
 } as const;
+
+type RadioInputLayout = keyof typeof OPTION_GRID_CLASSES;
 
 export type RadioOption<T extends string> = {
   value: T;
@@ -35,6 +45,7 @@ interface RadioInputProps<T extends string> {
   readonly onChange: (value: T) => void;
   readonly disabled?: boolean;
   readonly columns?: 1 | 2 | 3 | 4;
+  readonly layout?: RadioInputLayout;
 }
 
 export function RadioInput<T extends string>({
@@ -45,13 +56,14 @@ export function RadioInput<T extends string>({
   onChange,
   disabled = false,
   columns = 1,
+  layout = "full",
 }: RadioInputProps<T>) {
   return (
     <fieldset className="mb-3">
       <legend className={`block text-sm font-medium mb-1 ${cx.label.color.textColor}`}>
         {label}
       </legend>
-      <div className={OPTION_GRID_CLASSES[columns]}>
+      <div className={OPTION_GRID_CLASSES[layout][columns]}>
         {options.map((opt) => (
           <label key={opt.value} className={OPTION_ROW_CLASSES.join(" ")}>
             <input

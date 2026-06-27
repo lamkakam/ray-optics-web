@@ -116,6 +116,16 @@ describe("RadioInput", () => {
     expectClasses(optionContainer as HTMLElement, "grid grid-cols-1 gap-1");
   });
 
+  it("uses full layout by default", () => {
+    render(<RadioInput {...defaultProps} />);
+
+    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
+
+    expect(optionContainer).not.toBeNull();
+    expectClasses(optionContainer as HTMLElement, "grid grid-cols-1 gap-1");
+    expect(optionContainer).not.toHaveClass("inline-grid");
+  });
+
   it("renders options in two columns when columns=2", () => {
     render(<RadioInput {...defaultProps} columns={2} />);
 
@@ -123,6 +133,26 @@ describe("RadioInput", () => {
 
     expect(optionContainer).not.toBeNull();
     expectClasses(optionContainer as HTMLElement, "grid grid-cols-2 gap-1");
+  });
+
+  it("renders options with compact layout when layout=compact", () => {
+    render(<RadioInput {...defaultProps} layout="compact" />);
+
+    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
+
+    expect(optionContainer).not.toBeNull();
+    expectClasses(optionContainer as HTMLElement, "inline-grid grid-cols-1 gap-x-6 gap-y-1");
+    expect(optionContainer).not.toHaveClass("grid");
+    expect(optionContainer).not.toHaveClass("gap-1");
+  });
+
+  it("keeps the requested column count with compact layout", () => {
+    render(<RadioInput {...defaultProps} columns={3} layout="compact" />);
+
+    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
+
+    expect(optionContainer).not.toBeNull();
+    expectClasses(optionContainer as HTMLElement, "inline-grid grid-cols-3 gap-x-6 gap-y-1");
   });
 
   it("renders options in four columns when columns=4", () => {

@@ -48,6 +48,7 @@ export function FocusingPanel({
         value={chromaticity}
         onChange={onChromaticityChange}
         disabled={disabled}
+        columns={2}
       />
       <RadioInput
         name="metric"

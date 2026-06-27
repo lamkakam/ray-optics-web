@@ -16,9 +16,9 @@ Pure presentational component that renders all filter/selector controls for the 
 | `onToggleCatalog` | `(name: CatalogName) => void` | Called when a catalog checkbox changes |
 
 ## Sections
-1. **Plot Type** — `RadioInput` group (`refractiveIndex` / `partialDispersion`)
-2. **Centre Wavelength** — `RadioInput` group (`d` / `e`), labelled "Centre Wavelength"; options rendered via `MathJax inline`
-3. **Partial Dispersion** (only visible when `plotType='partialDispersion'`) — `RadioInput` group for `P_F,d`, `P_F,e`, `P_g,F`; option labels rendered via `MathJax inline` (`\(P_{F,d}\)` etc.)
+1. **Plot Type** — `RadioInput` group (`refractiveIndex` / `partialDispersion`) rendered with `columns={2}` and `layout="compact"`
+2. **Centre Wavelength** — `RadioInput` group (`d` / `e`) rendered with `columns={2}` and `layout="compact"`, labelled "Centre Wavelength"; options rendered via `MathJax inline`
+3. **Partial Dispersion** (only visible when `plotType='partialDispersion'`) — `RadioInput` group for `P_F,d`, `P_F,e`, `P_g,F` rendered with `columns={3}` and `layout="compact"`; option labels rendered via `MathJax inline` (`\(P_{F,d}\)` etc.)
 4. **Catalogs** — shared compact checkbox per catalog with a JSX-composed label that includes a colored dot indicator using `CATALOG_COLOR_MAP` from `features/glass-map/lib/glassMap`; the checkbox keeps a plain-text `aria-label` equal to the catalog name
 
 ## MathJax

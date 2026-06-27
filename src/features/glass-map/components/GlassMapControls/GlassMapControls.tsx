@@ -53,6 +53,8 @@ export function GlassMapControls({
         options={PLOT_TYPE_OPTIONS}
         value={plotType}
         onChange={onPlotTypeChange}
+        columns={2}
+        layout="compact"
       />
 
       <RadioInput
@@ -61,6 +63,8 @@ export function GlassMapControls({
         options={ABBE_LINE_OPTIONS}
         value={abbeNumCenterLine}
         onChange={onAbbeNumCenterLineChange}
+        columns={2}
+        layout="compact"
       />
 
       {plotType === "partialDispersion" && (
@@ -70,6 +74,8 @@ export function GlassMapControls({
           options={PARTIAL_DISPERSION_OPTIONS}
           value={partialDispersionType}
           onChange={onPartialDispersionTypeChange}
+          columns={3}
+          layout="compact"
         />
       )}
 

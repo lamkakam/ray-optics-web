@@ -25,6 +25,12 @@ describe("FocusingPanel", () => {
     jest.clearAllMocks();
   });
 
+  it("renders chromaticity options in two columns", () => {
+    render(<FocusingPanel {...defaultProps} />);
+    const optionsGrid = screen.getByText("Chromaticity").nextElementSibling;
+    expect(optionsGrid).toHaveClass("grid-cols-2");
+  });
+
   it("renders chromaticity radio group with correct options", () => {
     render(<FocusingPanel {...defaultProps} />);
     expect(screen.getByLabelText("Monochromatic")).toBeInTheDocument();

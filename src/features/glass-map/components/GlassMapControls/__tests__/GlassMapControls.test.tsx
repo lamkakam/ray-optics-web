@@ -36,7 +36,25 @@ const defaultProps = {
 
 beforeEach(() => jest.clearAllMocks());
 
+function getOptionsGrid(label: string): Element {
+  const optionsGrid = screen.getByRole("group", { name: label }).querySelector(":scope > div");
+  if (!optionsGrid) {
+    throw new Error(`Options grid for ${label} not found`);
+  }
+  return optionsGrid;
+}
+
 describe("GlassMapControls", () => {
+  it("renders plot type options in two columns", () => {
+    render(<GlassMapControls {...defaultProps} />);
+    expect(getOptionsGrid("Plot Type")).toHaveClass("grid-cols-2");
+  });
+
+  it("renders plot type options with compact layout", () => {
+    render(<GlassMapControls {...defaultProps} />);
+    expect(getOptionsGrid("Plot Type")).toHaveClass("inline-grid", "gap-x-6", "gap-y-1");
+  });
+
   it("renders plot type radios", () => {
     render(<GlassMapControls {...defaultProps} />);
     expect(screen.getByRole("radio", { name: /refractive index/i })).toBeInTheDocument();
@@ -71,6 +89,16 @@ describe("GlassMapControls", () => {
     expect(screen.getByRole("radio", { name: /\be\b/i })).toBeInTheDocument();
   });
 
+  it("renders centre wavelength options in two columns", () => {
+    render(<GlassMapControls {...defaultProps} />);
+    expect(getOptionsGrid("Centre Wavelength")).toHaveClass("grid-cols-2");
+  });
+
+  it("renders centre wavelength options with compact layout", () => {
+    render(<GlassMapControls {...defaultProps} />);
+    expect(getOptionsGrid("Centre Wavelength")).toHaveClass("inline-grid", "gap-x-6", "gap-y-1");
+  });
+
   it("d radio is checked when abbeLine=d", () => {
     render(<GlassMapControls {...defaultProps} />);
     expect(screen.getByRole("radio", { name: /\bd\b/i })).toBeChecked();
@@ -92,6 +120,16 @@ describe("GlassMapControls", () => {
     expect(screen.getByRole("radio", { name: /P_F,d/i })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /P_F,e/i })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: /P_g,F/i })).toBeInTheDocument();
+  });
+
+  it("renders partial dispersion options in three columns", () => {
+    render(<GlassMapControls {...defaultProps} plotType="partialDispersion" />);
+    expect(getOptionsGrid("Partial Dispersion")).toHaveClass("grid-cols-3");
+  });
+
+  it("renders partial dispersion options with compact layout", () => {
+    render(<GlassMapControls {...defaultProps} plotType="partialDispersion" />);
+    expect(getOptionsGrid("Partial Dispersion")).toHaveClass("inline-grid", "gap-x-6", "gap-y-1");
   });
 
   it("hides partial dispersion type selector when plotType=refractiveIndex", () => {

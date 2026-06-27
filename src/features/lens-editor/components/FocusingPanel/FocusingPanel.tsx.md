@@ -22,7 +22,7 @@ interface FocusingPanelProps {
 
 ## Layout
 
-1. `RadioInput` for chromaticity: options `[{ value: "mono", label: "Monochromatic" }, { value: "poly", label: "Polychromatic" }]`
+1. `RadioInput` for chromaticity: options `[{ value: "mono", label: "Monochromatic" }, { value: "poly", label: "Polychromatic" }]`, rendered with `columns={2}`
 2. `RadioInput` for metric: options `[{ value: "rmsSpot", label: "Minimize RMS Spot Radius" }, { value: "wavefront", label: "Minimize Wavefront Error" }]`
 3. `Label` + `Select` (aria-label="Field") for field index selection
 4. `Button` variant `"primary"` text "Focus", `aria-label="Focus"`, `disabled={disabled}`
