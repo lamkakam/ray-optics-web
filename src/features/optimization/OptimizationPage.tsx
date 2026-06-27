@@ -28,6 +28,7 @@ import type { OptimizationProgressEntry, OptimizationReport } from "./types/opti
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { useOpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
+import type { ButtonSize } from "@/shared/components/primitives/Button";
 
 interface OptimizationPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -60,6 +61,7 @@ export function OptimizationPage({
   const screenSize = useScreenBreakpoint();
   const { opdAimPoint } = useOpdAimPoint();
   const isLG = screenSize === "screenLG";
+  const actionButtonSize: ButtonSize = screenSize === "screenSM" ? "xs" : "sm";
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
   const optimizationStore = useOptimizationStore();
@@ -498,6 +500,7 @@ export function OptimizationPage({
         canOptimize={canOptimize}
         canApplyToEditor={optimizationModel !== undefined}
         isOptimizing={isOptimizing}
+        buttonSize={actionButtonSize}
         onOptimize={() => void handleOptimize()}
         onApplyToEditor={() => optimizationStore.getState().openApplyConfirm()}
       />
