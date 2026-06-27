@@ -51,7 +51,7 @@ interface ZernikeTermsModalProps {
 - Each row shows: j index, Z notation (MathJax), classical name via `classicalName(n, m)`, unnormalized coefficient, RMS-normalized coefficient.
 - The selected ordering is passed through `onFetchData`; the worker converts it to explicit `(n, m)` terms before calling Python.
 - Imports `ZernikeData` and `ZernikeOrdering` from `features/lens-editor/types/zernikeData`, and Zernike runtime constants/helpers from `features/lens-editor/lib/zernikeData`.
-- Summary section displays P-V WFE, RMS WFE, and Strehl ratio.
+- Summary section displays P-V WFE, RMS WFE, and Strehl ratio as `Chip` components.
 - Uses `<MathJax>` for Zernike notation; context provided by ancestor (`page.tsx`).
 - **Loading states**:
   - Initial load (`loading && !data`): shows "Loading…" text, no table.
@@ -66,7 +66,7 @@ interface ZernikeTermsModalProps {
 - Scrollable table area (`max-h-[calc(90dvh-20rem)] overflow-y-auto`) — viewport-relative height reserves ~20rem for static overhead (title, dropdowns, summary, button, padding), preventing double scrollbar when the modal approaches the `90dvh` cap
 - Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
   - First column header is "Noll j" or "Fringe j" depending on ordering
-- Summary: P-V WFE, RMS WFE, Strehl ratio
+- Summary: wrapping flex row of `Chip` components for P-V WFE, RMS WFE, and Strehl ratio
 - `<LoadingMask />` rendered inside the `relative` wrapper only when `loading && data`
 - Ok button aligned right
 
