@@ -417,12 +417,15 @@ describe("ZernikeTermsModal", () => {
     expect(dataRows[4].textContent).toContain("\\(Z_{2}^{-2}\\)");
   });
 
-  it("table scroll container uses viewport-relative height (not fixed 60vh)", async () => {
+  it("table scroll container uses a bounded viewport-relative height cap", async () => {
     const onFetchData = createMockFetchData();
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     const scrollContainer = screen.getByTestId("zernike-table-scroll");
+    expect(scrollContainer.className).toContain("max-h-[clamp(5rem,calc(90dvh-26rem),32rem)]");
+    expect(scrollContainer.className).toContain("overflow-y-auto");
     expect(scrollContainer.className).not.toContain("60vh");
+    expect(scrollContainer.className).not.toContain("20rem");
     expect(scrollContainer.className).toContain("90dvh");
   });
 

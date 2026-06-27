@@ -188,7 +188,7 @@ function ZernikeTermsModalContent({
 
         {data && (
           <div className="relative">
-            <div data-testid="zernike-table-scroll" className="max-h-[calc(90dvh-20rem)] overflow-y-auto">
+            <div data-testid="zernike-table-scroll" className="max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto">
               <Table headers={headers} rows={rows} />
             </div>
             <div className="flex flex-wrap gap-2 mt-4">
