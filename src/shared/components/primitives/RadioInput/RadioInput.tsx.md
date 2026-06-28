@@ -14,6 +14,8 @@ interface RadioInputProps<T extends string> {
   readonly value: T;              // Currently selected value
   readonly onChange: (value: T) => void;
   readonly disabled?: boolean;    // Disables all inputs when true
+  readonly columns?: 1 | 2 | 3 | 4; // Number of grid columns for options; defaults to 1
+  readonly layout?: "full" | "compact"; // Option grid width and gutter behavior; defaults to "full"
 }
 
 type RadioOption<T extends string> = {
@@ -30,12 +32,16 @@ type RadioOption<T extends string> = {
 - Calls `onChange(option.value)` when a radio is clicked.
 - When `disabled=true`, all radio inputs have the `disabled` attribute.
 - `labelNode` allows rich content (e.g. MathJax nodes) while keeping plain-text accessibility.
+- `columns` controls the option grid layout. Accepted values are `1`, `2`, `3`, and `4`; the default is `1`.
+- `layout` controls whether the option grid stretches to the full available width (`"full"`, default) or shrinks to content width with compact horizontal gutters (`"compact"`).
 
 ## Styling
 
 Uses Tailwind CSS.
 
 - Group label text color uses `cx.label.color.textColor`.
+- The option container uses fixed Tailwind grid classes based on `layout` and `columns`, avoiding dynamic class generation.
+- `layout="full"` uses `grid grid-cols-* gap-1`; `layout="compact"` uses `inline-grid grid-cols-* gap-x-6 gap-y-1`.
 - Each option row uses `componentTokens.radio`, including the shared hover background token reused from `CheckboxInput`.
 - The radio control accent color comes from `componentTokens.radio.color.checkedColor`.
 
@@ -65,6 +71,35 @@ Uses Tailwind CSS.
   ]}
   value={metric}
   onChange={onMetricChange}
+/>
+
+// Two-column option layout
+<RadioInput
+  name="viewMode"
+  label="View Mode"
+  options={[
+    { value: "spot", label: "Spot" },
+    { value: "wavefront", label: "Wavefront" },
+    { value: "field", label: "Field" },
+    { value: "distortion", label: "Distortion" },
+  ]}
+  value={viewMode}
+  onChange={onViewModeChange}
+  columns={2}
+/>
+
+// Compact two-column option layout
+<RadioInput
+  name="plotType"
+  label="Plot Type"
+  options={[
+    { value: "refractiveIndex", label: "Refractive Index" },
+    { value: "partialDispersion", label: "Partial Dispersion" },
+  ]}
+  value={plotType}
+  onChange={onPlotTypeChange}
+  columns={2}
+  layout="compact"
 />
 
 // Radio group with MathJax content

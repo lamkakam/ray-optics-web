@@ -19,3 +19,4 @@ End-to-end coverage for importing `fisheye-lens-config.json`, explicitly running
 
 - The test reads the prescription grid after `Update System` to ensure the imported model survives the compute cycle.
 - The final surface thickness assertion uses the full stored numeric string because the imported JSON contains a long floating-point value.
+- Prescription row assertions identify each surface by its displayed `Index` value, then read cells from the matching center-row container so the pinned `Index` column does not create duplicate-row selector failures.

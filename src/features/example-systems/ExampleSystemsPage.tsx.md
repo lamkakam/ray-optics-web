@@ -17,5 +17,6 @@ Client route component for selecting and applying bundled example optical system
 - Makes selection follow focus while tabbing through example menu item buttons, so the focused menu item is also the chosen system.
 - Handles `Enter` on the page-specific Example Systems menu by opening the existing apply overwrite confirmation when an example is chosen and applying is not in progress.
 - Renders the placeholder copy as a `Paragraph`, then renders selected description React nodes directly so description fragments can contain paragraphs and links without nested paragraph markup.
-- Uses `ExampleSystemList[selectedExampleKey]` and `applyExampleSystem()` to load the selected model into editor stores, compute first-order/layout/selected plot/Seidel data with the app-wide `opdAimPoint`, commit specs/model, then route to `/`.
-- Calls `onError` and stays on `/example-systems` when applying fails.
+- Uses `ExampleSystemList[selectedExampleKey]` and starts `applyExampleSystem()` after overwrite confirmation, then routes to `/` immediately so the Lens Editor can show store-backed loading states while worker computations continue.
+- Keeps background apply completion attached after navigation: `applyExampleSystem()` continues computing first-order/layout/selected plot/Seidel data with the app-wide `opdAimPoint`, commits specs/model when ready, and clears local applying state only if the page remains mounted.
+- Calls `onError` when the background apply promise rejects after navigation; the route is not moved back to `/example-systems`.

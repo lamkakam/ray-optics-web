@@ -51,7 +51,7 @@ interface ZernikeTermsModalProps {
 - Each row shows: j index, Z notation (MathJax), classical name via `classicalName(n, m)`, unnormalized coefficient, RMS-normalized coefficient.
 - The selected ordering is passed through `onFetchData`; the worker converts it to explicit `(n, m)` terms before calling Python.
 - Imports `ZernikeData` and `ZernikeOrdering` from `features/lens-editor/types/zernikeData`, and Zernike runtime constants/helpers from `features/lens-editor/lib/zernikeData`.
-- Summary section displays P-V WFE, RMS WFE, and Strehl ratio.
+- Summary section displays P-V WFE, RMS WFE, and Strehl ratio as `Chip` components.
 - Uses `<MathJax>` for Zernike notation; context provided by ancestor (`page.tsx`).
 - **Loading states**:
   - Initial load (`loading && !data`): shows "Loading…" text, no table.
@@ -63,10 +63,10 @@ interface ZernikeTermsModalProps {
 - Row 1: Field + Wavelength dropdowns in a flex row
 - Row 2: Ordering dropdown (below Field+Wavelength)
 - `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
-- Scrollable table area (`max-h-[calc(90dvh-20rem)] overflow-y-auto`) — viewport-relative height reserves ~20rem for static overhead (title, dropdowns, summary, button, padding), preventing double scrollbar when the modal approaches the `90dvh` cap
+- Scrollable table area (`max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto`) — viewport-relative height reserves ~26rem for static overhead (title, dropdowns, summary chips, fixed footer, and modal padding), preventing the table from pushing modal content beyond the dialog height on smaller screens. The clamp keeps at least 5rem of table space when the viewport is tight and caps the table at 32rem on larger screens.
 - Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
   - First column header is "Noll j" or "Fringe j" depending on ordering
-- Summary: P-V WFE, RMS WFE, Strehl ratio
+- Summary: wrapping flex row of `Chip` components for P-V WFE, RMS WFE, and Strehl ratio
 - `<LoadingMask />` rendered inside the `relative` wrapper only when `loading && data`
 - Ok button aligned right
 
@@ -103,3 +103,6 @@ return (
   </>
 );
 ```
+## Modal Footer
+
+- The Ok action is passed to `Modal.footer` so it remains fixed while Zernike result content scrolls.

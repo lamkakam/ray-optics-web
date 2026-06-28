@@ -65,3 +65,6 @@ try {
   setErrorOpen(true);
 }
 ```
+## Modal Footer
+
+- The OK action is passed to `Modal.footer` so it remains fixed outside the message body.

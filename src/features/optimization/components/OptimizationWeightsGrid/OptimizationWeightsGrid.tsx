@@ -8,11 +8,13 @@ import type { WeightRow } from "@/features/optimization/lib/optimizationViewMode
 
 interface OptimizationWeightsGridProps {
   readonly rows: ReadonlyArray<WeightRow>;
+  readonly valueColumnWidth: number;
   readonly onUpdateWeight: (index: number, value: number) => void;
 }
 
 export function OptimizationWeightsGrid({
   rows,
+  valueColumnWidth,
   onUpdateWeight,
 }: OptimizationWeightsGridProps) {
   const gridTheme = useAgGridTheme();
@@ -20,14 +22,17 @@ export function OptimizationWeightsGrid({
   const weightColumns = useMemo<ColDef<WeightRow>[]>(() => [
     {
       headerName: "Index",
+      width: 80,
       valueGetter: (params) => params.data?.index,
     },
     {
       headerName: "Value",
+      width: valueColumnWidth,
       valueGetter: (params) => params.data?.label,
     },
     {
       headerName: "Weight",
+      width: 90,
       editable: true,
       valueGetter: (params) => params.data?.weight,
       valueParser: (params) => Number.parseFloat(params.newValue),
@@ -40,7 +45,7 @@ export function OptimizationWeightsGrid({
         return true;
       },
     },
-  ], [onUpdateWeight]);
+  ], [onUpdateWeight, valueColumnWidth]);
 
   return (
     <div data-testid="optimization-weights-grid" className="overflow-x-auto">

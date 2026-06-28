@@ -40,12 +40,21 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
   const [selectedExampleKey, setSelectedExampleKey] = useState<ExampleSystemName | undefined>();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [applying, setApplying] = useState(false);
+  const mountedRef = useRef(true);
   const exampleButtonRefs = useRef<Partial<Record<ExampleSystemName, HTMLButtonElement>>>({});
   const exampleKeys = useMemo(() => Object.keys(ExampleSystemList) as ExampleSystemName[], []);
   const selectedDescription = selectedExampleKey === undefined
     ? <Paragraph variant="body">Select an example system to review its source and apply it to the Lens Editor.</Paragraph>
     : getExampleSystemDescription(selectedExampleKey);
   const isLargeScreen = screenSize === "screenLG";
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (selectedExampleKey === undefined) {
@@ -77,7 +86,7 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
     setConfirmOpen(true);
   }, [applying, selectedExampleKey]);
 
-  const handleConfirm = useCallback(async () => {
+  const handleConfirm = useCallback(() => {
     if (selectedExampleKey === undefined || applying) {
       return;
     }
@@ -86,25 +95,29 @@ export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) 
 
     setApplying(true);
     setConfirmOpen(false);
-    try {
-      await applyExampleSystem({
-        model,
-        proxy,
-        isDark: theme === "dark",
-        opdAimPoint,
-        lensStore,
-        specsStore,
-        analysisPlotStore,
-        analysisDataStore,
-        lensLayoutImageStore,
+    const applyPromise = applyExampleSystem({
+      model,
+      proxy,
+      isDark: theme === "dark",
+      opdAimPoint,
+      lensStore,
+      specsStore,
+      analysisPlotStore,
+      analysisDataStore,
+      lensLayoutImageStore,
+    })
+      .catch((error: unknown) => {
+        console.log("Apply example system failed:", error);
+        onError();
+      })
+      .finally(() => {
+        if (mountedRef.current) {
+          setApplying(false);
+        }
       });
-      router.push("/");
-    } catch (error) {
-      console.log("Apply example system failed:", error);
-      onError();
-    } finally {
-      setApplying(false);
-    }
+
+    void applyPromise;
+    router.push("/");
   }, [
     analysisDataStore,
     analysisPlotStore,

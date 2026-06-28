@@ -26,7 +26,24 @@ export function FocalLengthSelectionModal({
   }));
 
   return (
-    <Modal isOpen={isOpen} title="Select Focal Length">
+    <Modal
+      isOpen={isOpen}
+      title="Select Focal Length"
+      footer={(
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onCancel} aria-label="Cancel">
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => onConfirm(Number(selectedIndex))}
+            aria-label="Confirm"
+          >
+            Confirm
+          </Button>
+        </div>
+      )}
+    >
       <RadioInput
         name="photons-to-photos-focal-length"
         label="Focal Length"
@@ -34,18 +51,6 @@ export function FocalLengthSelectionModal({
         value={selectedIndex}
         onChange={setSelectedIndex}
       />
-      <div className="flex justify-end gap-3">
-        <Button variant="secondary" onClick={onCancel} aria-label="Cancel">
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          onClick={() => onConfirm(Number(selectedIndex))}
-          aria-label="Confirm"
-        >
-          Confirm
-        </Button>
-      </div>
     </Modal>
   );
 }

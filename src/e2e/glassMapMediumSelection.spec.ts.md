@@ -13,5 +13,5 @@ Playwright end-to-end coverage for returning from Glass Map to an open `Select M
 
 - Uses the worker-scoped Pyodide page fixture and reloads before each scenario.
 - Locates the Object row by its visible grid-cell label.
-- Reuses the accessible modal, field, and link names plus `data-testid="glass-point"` from the Glass Map chart.
+- Reuses the accessible modal, Catalog/Glass field, and link names plus `data-testid="glass-point"` from the Glass Map chart.
 - Treats the route URL, restored modal visibility, draft values, and prescription commit boundary as acceptance criteria.

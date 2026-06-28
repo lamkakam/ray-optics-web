@@ -18,3 +18,6 @@ Toolbar-local modal for choosing a focal-length column when importing a zoom Pho
 - Renders a non-backdrop-dismissible `Modal` titled `Select Focal Length`.
 - Uses shared `RadioInput` with labels like `24.376 mm`; the first choice is selected initially.
 - `Cancel` closes without importing. `Confirm` passes the selected choice index back to the toolbar.
+## Modal Footer
+
+- Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while the focal-length choices scroll.

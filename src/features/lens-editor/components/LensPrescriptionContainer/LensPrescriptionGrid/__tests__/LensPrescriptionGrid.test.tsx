@@ -88,6 +88,14 @@ describe("LensPrescriptionGrid", () => {
     expect(headerTexts).toContain("Diffraction Grating");
   });
 
+  it("pins the Index column to the left", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
+
+    expect(headers[1]).toHaveTextContent("Index");
+    expect(headers[1]).toHaveAttribute("data-pinned", "left");
+  });
+
   it("renders blank index cells for object and image rows and one-based indices for surface rows", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");

@@ -20,7 +20,7 @@ async function selectSchottNbk7AndOpenGlassMap(
   page: Parameters<typeof reloadAndWait>[0]
 ) {
   const { modal, objectRow } = await openObjectMediumSelector(page);
-  await modal.getByLabel("Manufacturer").selectOption("Schott");
+  await modal.getByLabel("Catalog").selectOption("Schott");
   await modal.getByLabel("Glass", { exact: true }).fill("N-BK7");
   await modal.getByRole("link", { name: "View in glass map" }).click();
 
@@ -51,7 +51,7 @@ test("returns to the uncommitted medium draft without changing the glass-map sel
   await expect(page).toHaveURL(/\/$/);
   const modal = page.getByRole("dialog", { name: "Select Medium" });
   await expect(modal).toBeVisible();
-  await expect(modal.getByLabel("Manufacturer")).toHaveValue("Schott");
+  await expect(modal.getByLabel("Catalog")).toHaveValue("Schott");
   await expect(modal.getByLabel("Glass", { exact: true })).toHaveValue("N-BK7");
   await expect(objectRow).not.toContainText("N-BK7");
 });
@@ -76,7 +76,7 @@ test("returns with a newly selected glass and commits it only after confirmation
   await expect(page).toHaveURL(/\/$/);
   const modal = page.getByRole("dialog", { name: "Select Medium" });
   await expect(modal).toBeVisible();
-  await expect(modal.getByLabel("Manufacturer")).toHaveValue(selectedCatalog!.trim());
+  await expect(modal.getByLabel("Catalog")).toHaveValue(selectedCatalog!.trim());
   await expect(modal.getByLabel("Glass", { exact: true })).toHaveValue(selectedGlass!.trim());
   await expect(objectRow).not.toContainText(selectedGlass!.trim());
 

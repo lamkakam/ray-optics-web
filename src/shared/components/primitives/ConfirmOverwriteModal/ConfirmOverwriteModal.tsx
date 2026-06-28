@@ -12,18 +12,23 @@ interface ConfirmOverwriteModalProps {
 
 export function ConfirmOverwriteModal({ isOpen, onConfirm, onCancel }: ConfirmOverwriteModalProps) {
   return (
-    <Modal isOpen={isOpen} title="Load Example System">
+    <Modal
+      isOpen={isOpen}
+      title="Load Example System"
+      footer={(
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={onConfirm}>
+            Load
+          </Button>
+        </div>
+      )}
+    >
       <Paragraph variant="body" className="mb-6">
         This will overwrite your current configuration. Continue?
       </Paragraph>
-      <div className="flex justify-end gap-3">
-        <Button variant="secondary" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button variant="primary" onClick={onConfirm}>
-          Load
-        </Button>
-      </div>
     </Modal>
   );
 }

@@ -7,6 +7,7 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
 import type { SelectOption } from "@/shared/components/primitives/Select";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
+import { Chip } from "@/shared/components/primitives/Chip";
 import { LoadingMask } from "@/shared/components/primitives/LoadingMask";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import {
@@ -137,7 +138,17 @@ function ZernikeTermsModalContent({
   }, [data, numTerms, toNm]);
 
   return (
-    <Modal isOpen={true} title="Zernike Terms" titleId="zernike-modal-title" size="4xl">
+    <Modal
+      isOpen={true}
+      title="Zernike Terms"
+      titleId="zernike-modal-title"
+      size="4xl"
+      footer={(
+        <div className="flex justify-end">
+          <Button variant="primary" onClick={onClose}>Ok</Button>
+        </div>
+      )}
+    >
         <div className="flex items-center gap-4 mb-2">
           <div className="flex items-center gap-2">
             <Label htmlFor="zernike-field-select">Field</Label>
@@ -177,27 +188,23 @@ function ZernikeTermsModalContent({
 
         {data && (
           <div className="relative">
-            <div data-testid="zernike-table-scroll" className="max-h-[calc(90dvh-20rem)] overflow-y-auto">
+            <div data-testid="zernike-table-scroll" className="max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto">
               <Table headers={headers} rows={rows} />
             </div>
-            <div className="flex gap-6 mt-4">
-              <Paragraph>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <Chip>
                 <strong>P-V WFE:</strong> {data.pv_wfe.toFixed(4)} waves
-              </Paragraph>
-              <Paragraph>
+              </Chip>
+              <Chip>
                 <strong>RMS WFE:</strong> {data.rms_wfe.toFixed(4)} waves
-              </Paragraph>
-              <Paragraph>
+              </Chip>
+              <Chip>
                 <strong>Strehl Ratio:</strong> {data.strehl_ratio.toFixed(4)}
-              </Paragraph>
+              </Chip>
             </div>
             {loading && <LoadingMask />}
           </div>
         )}
-
-        <div className="flex justify-end pt-4">
-          <Button variant="primary" onClick={onClose}>Ok</Button>
-        </div>
       </Modal>
   );
 }

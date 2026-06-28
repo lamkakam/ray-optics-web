@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Accessible modal dialog shell. Renders a backdrop, a scrollable panel, and a title. Does not manage its own open/close state — callers pass `isOpen`.
+Accessible modal dialog shell. Renders a backdrop, a fixed title, a scrollable body region, and an optional fixed footer. Does not manage its own open/close state — callers pass `isOpen`.
 
 ## Props
 
@@ -15,6 +15,7 @@ interface ModalProps {
   titleId?: string;
   size?: ModalSize;
   onBackdropClick?: () => void;
+  footer?: React.ReactNode;
   children: React.ReactNode;
 }
 ```
@@ -28,6 +29,7 @@ interface ModalProps {
 | `titleId` | `string` | No | Custom id for the title element. Auto-generated with `useId` if omitted |
 | `size` | `ModalSize` | No | Max-width of the panel. Defaults to `"md"` |
 | `onBackdropClick` | `() => void` | No | Called when the semi-transparent backdrop is clicked |
+| `footer` | `React.ReactNode` | No | Optional fixed footer content rendered outside the scrollable body region |
 
 ## Key Behaviors
 
@@ -35,7 +37,9 @@ interface ModalProps {
 - Panel carries `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`.
 - `onKeyDown` on the outer wrapper calls `stopPropagation` to prevent key events from leaking to the page.
 - Panel animates in via `animate-modal-enter` CSS class.
-- Panel is scrollable (`overflow-y-auto`) with a max height of 90dvh.
+- Panel is a flex column with `max-h-[90dvh]` and `overflow-hidden`.
+- Children render inside `data-testid="modal-body"`, which owns vertical scrolling via `overflow-y-auto`.
+- When `footer` is provided, it renders in `data-testid="modal-footer"` below the body with a top border and is not part of the scrollable body.
 
 ## Usages
 
@@ -47,6 +51,16 @@ interface ModalProps {
   titleId="medium-modal-title"
   size="md"
   onBackdropClick={onClose}
+  footer={(
+    <div className="flex gap-2 justify-end">
+      <Button variant="secondary" onClick={onClose}>
+        Cancel
+      </Button>
+      <Button variant="primary" onClick={onConfirm}>
+        Confirm
+      </Button>
+    </div>
+  )}
 >
   <div className="space-y-4 mb-4">
     <div>
@@ -60,14 +74,6 @@ interface ModalProps {
         onChange={handleManufacturerChange}
       />
     </div>
-  </div>
-  <div className="flex gap-2 justify-end">
-    <Button variant="secondary" onClick={onClose}>
-      Cancel
-    </Button>
-    <Button variant="primary" onClick={onConfirm}>
-      Confirm
-    </Button>
   </div>
 </Modal>
 

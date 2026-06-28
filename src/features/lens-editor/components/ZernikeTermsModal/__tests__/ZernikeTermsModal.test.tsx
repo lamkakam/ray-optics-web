@@ -24,6 +24,12 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
 }));
 
+jest.mock("@/shared/components/primitives/Chip", () => ({
+  Chip: ({ children }: { children: React.ReactNode }) => (
+    <span data-testid="chip-mock">{children}</span>
+  ),
+}));
+
 const mockZernikeData: ZernikeData = {
   coefficients: Array.from({ length: NUM_NOLL_TERMS }, (_, i) => (i + 1) * 0.001),
   rms_normalized_coefficients: Array.from({ length: NUM_NOLL_TERMS }, (_, i) => (i + 1) * 0.0005),
@@ -153,12 +159,11 @@ describe("ZernikeTermsModal", () => {
     const onFetchData = createMockFetchData();
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
-    expect(screen.getByText(/P-V WFE/)).toBeInTheDocument();
-    expect(screen.getByText(/RMS WFE/)).toBeInTheDocument();
-    expect(screen.getByText(/Strehl Ratio/)).toBeInTheDocument();
-    expect(screen.getByText(/0\.1842/)).toBeInTheDocument();
-    expect(screen.getByText(/0\.0523/)).toBeInTheDocument();
-    expect(screen.getByText(/0\.8912/)).toBeInTheDocument();
+    const chips = screen.getAllByTestId("chip-mock");
+    expect(chips).toHaveLength(3);
+    expect(chips[0]).toHaveTextContent("P-V WFE: 0.1842 waves");
+    expect(chips[1]).toHaveTextContent("RMS WFE: 0.0523 waves");
+    expect(chips[2]).toHaveTextContent("Strehl Ratio: 0.8912");
   });
 
   it("dropdown changes call onFetchData with new indices and current ordering", async () => {
@@ -412,12 +417,15 @@ describe("ZernikeTermsModal", () => {
     expect(dataRows[4].textContent).toContain("\\(Z_{2}^{-2}\\)");
   });
 
-  it("table scroll container uses viewport-relative height (not fixed 60vh)", async () => {
+  it("table scroll container uses a bounded viewport-relative height cap", async () => {
     const onFetchData = createMockFetchData();
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
     const scrollContainer = screen.getByTestId("zernike-table-scroll");
+    expect(scrollContainer.className).toContain("max-h-[clamp(5rem,calc(90dvh-26rem),32rem)]");
+    expect(scrollContainer.className).toContain("overflow-y-auto");
     expect(scrollContainer.className).not.toContain("60vh");
+    expect(scrollContainer.className).not.toContain("20rem");
     expect(scrollContainer.className).toContain("90dvh");
   });
 

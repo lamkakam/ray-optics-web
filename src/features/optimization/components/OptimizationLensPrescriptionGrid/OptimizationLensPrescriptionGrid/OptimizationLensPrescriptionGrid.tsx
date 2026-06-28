@@ -20,6 +20,7 @@ import {
   LENS_PRESCRIPTION_GRID_DOM_LAYOUT,
   LensPrescriptionActionWrapper,
   lensPrescriptionGridDefaultColDef,
+  lensPrescriptionGridIndexColumnDef,
 } from "@/shared/lib/lens-prescription-grid";
 
 const OPTIMIZATION_VAR_COLUMN_WIDTH = 60;
@@ -108,8 +109,7 @@ export function OptimizationLensPrescriptionGrid({
 
   const lensColumns = useMemo<ColDef<RadiusRow>[]>(() => [
     {
-      headerName: "Index",
-      width: 95,
+      ...lensPrescriptionGridIndexColumnDef,
       valueGetter: (params) => {
         if (params.data?.row.kind !== "surface") {
           return undefined;

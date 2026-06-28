@@ -1,6 +1,11 @@
 import path from "path";
 import { test, expect } from "./fixtures";
-import { dismissAnyOpenDialog, getColId } from "./utils";
+import {
+  dismissAnyOpenDialog,
+  getGridCellByHeaderText,
+  getPrescriptionActionButton,
+  getPrescriptionSurfaceRow,
+} from "./utils";
 
 const expectedSurfaces = [
   ["Default", "4.7745", "0.1299", "1.713", "2"],
@@ -54,38 +59,45 @@ test("import fisheye config, update system, and verify loaded prescription/specs
   await expect(autoSemiDiameterSwitch).toHaveText("Auto");
 
   const prescGrid = '[aria-label="Lens prescription editor"]';
-  const colIdSurface = await getColId(page, prescGrid, "Surface");
-  const colIdRadius = await getColId(page, prescGrid, "Radius of Curvature");
-  const colIdThickness = await getColId(page, prescGrid, "Thickness");
-  const colIdMedium = await getColId(page, prescGrid, "Medium");
-  const colIdSemiDiam = await getColId(page, prescGrid, "Semi-diam.");
 
   for (const [index, surface] of expectedSurfaces.entries()) {
-    const rowIndex = index + 1;
-    const row = page.locator(`${prescGrid} .ag-row[row-index="${rowIndex}"]`);
+    const surfaceIndex = index + 1;
+    const row = await getPrescriptionSurfaceRow(page, prescGrid, surfaceIndex);
 
     await expect(
-      row.locator(`.ag-cell[col-id="${colIdSurface}"]`)
+      await getGridCellByHeaderText(page, prescGrid, row, "Surface")
     ).toContainText(surface[0]);
     await expect(
-      row.locator(`.ag-cell[col-id="${colIdRadius}"]`)
+      await getGridCellByHeaderText(page, prescGrid, row, "Radius of Curvature")
     ).toContainText(surface[1]);
     await expect(
-      row.locator(`.ag-cell[col-id="${colIdThickness}"]`)
+      await getGridCellByHeaderText(page, prescGrid, row, "Thickness")
     ).toContainText(surface[2]);
     await expect(
-      row.locator(`.ag-cell[col-id="${colIdMedium}"]`)
+      await getGridCellByHeaderText(page, prescGrid, row, "Medium")
     ).toContainText(surface[3]);
     await expect(
-      row.locator(`.ag-cell[col-id="${colIdSemiDiam}"]`)
+      await getGridCellByHeaderText(page, prescGrid, row, "Semi-diam.")
     ).toContainText(surface[4]);
 
     await row.hover();
     await expect(
-      row.locator('[aria-label="Edit aspherical parameters"]')
+      await getPrescriptionActionButton(
+        page,
+        prescGrid,
+        surfaceIndex,
+        "Asph.",
+        "Edit aspherical parameters"
+      )
     ).toHaveText("None");
     await expect(
-      row.locator('[aria-label="Edit decenter and tilt"]')
+      await getPrescriptionActionButton(
+        page,
+        prescGrid,
+        surfaceIndex,
+        "Tilt & Decenter",
+        "Edit decenter and tilt"
+      )
     ).toHaveText("None");
   }
 

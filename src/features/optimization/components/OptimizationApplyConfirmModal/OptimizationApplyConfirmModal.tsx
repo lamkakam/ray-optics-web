@@ -16,18 +16,23 @@ export function OptimizationApplyConfirmModal({
   onConfirm,
 }: OptimizationApplyConfirmModalProps) {
   return (
-    <Modal isOpen={isOpen} title="Apply to Editor">
+    <Modal
+      isOpen={isOpen}
+      title="Apply to Editor"
+      footer={(
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={onConfirm}>
+            Apply
+          </Button>
+        </div>
+      )}
+    >
       <Paragraph className="mb-6">
         This will overwrite the lens prescription in the editor. Continue?
       </Paragraph>
-      <div className="flex justify-end gap-3">
-        <Button variant="secondary" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button variant="primary" onClick={onConfirm}>
-          Apply
-        </Button>
-      </div>
     </Modal>
   );
 }

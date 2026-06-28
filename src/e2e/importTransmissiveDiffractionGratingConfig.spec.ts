@@ -1,6 +1,11 @@
 import path from "path";
 import { test, expect } from "./fixtures";
-import { dismissAnyOpenDialog, getColId } from "./utils";
+import {
+  dismissAnyOpenDialog,
+  getPrescriptionActionButton,
+  getPrescriptionCell,
+  getPrescriptionSpecialCell,
+} from "./utils";
 
 test("import transmissive diffraction grating config and verify grating plus tilt/decenter", async ({
   pyodidePage: page,
@@ -22,63 +27,59 @@ test("import transmissive diffraction grating config and verify grating plus til
   await importDialog.waitFor({ state: "hidden", timeout: 5_000 });
 
   const prescriptionGrid = '[aria-label="Lens prescription editor"]';
-  const surfaceColId = await getColId(page, prescriptionGrid, "Surface");
-  const mediumColId = await getColId(page, prescriptionGrid, "Medium");
-  const decenterColId = await getColId(page, prescriptionGrid, "Tilt & Decenter");
-  const diffractionGratingColId = await getColId(
+
+  await expect(
+    await getPrescriptionSpecialCell(page, prescriptionGrid, "Object", "Medium")
+  ).toContainText("air");
+
+  const decenterButtonRow4 = await getPrescriptionActionButton(
     page,
     prescriptionGrid,
+    4,
+    "Tilt & Decenter",
+    "Edit decenter and tilt"
+  );
+  const diffractionGratingButtonRow6 = await getPrescriptionActionButton(
+    page,
+    prescriptionGrid,
+    6,
+    "Diffraction Grating",
+    "Edit diffraction grating"
+  );
+  const decenterButtonRow9 = await getPrescriptionActionButton(
+    page,
+    prescriptionGrid,
+    9,
+    "Tilt & Decenter",
+    "Edit decenter and tilt"
+  );
+  const decenterCellRow4 = await getPrescriptionCell(
+    page,
+    prescriptionGrid,
+    4,
+    "Tilt & Decenter"
+  );
+  const diffractionGratingCellRow6 = await getPrescriptionCell(
+    page,
+    prescriptionGrid,
+    6,
     "Diffraction Grating"
   );
 
   await expect(
-    page.locator(`${prescriptionGrid} .ag-row[row-index="0"] .ag-cell[col-id="${mediumColId}"]`)
-  ).toContainText("air");
-
-  const decenterRow4 = page
-    .locator(`${prescriptionGrid} .ag-row[row-index="4"]:not(.ag-opacity-zero)`)
-    .first();
-  const gratingRow6 = page
-    .locator(`${prescriptionGrid} .ag-row[row-index="6"]:not(.ag-opacity-zero)`)
-    .first();
-  const decenterRow9 = page
-    .locator(`${prescriptionGrid} .ag-row[row-index="9"]:not(.ag-opacity-zero)`)
-    .first();
-  const decenterButtonRow4 = decenterRow4
-    .locator(`.ag-cell[col-id="${decenterColId}"]`)
-    .getByRole("button", { name: "Edit decenter and tilt" })
-    .first();
-  const diffractionGratingButtonRow6 = gratingRow6
-    .locator(`.ag-cell[col-id="${diffractionGratingColId}"]`)
-    .getByRole("button", { name: "Edit diffraction grating" })
-    .first();
-  const decenterButtonRow9 = decenterRow9
-    .locator(`.ag-cell[col-id="${decenterColId}"]`)
-    .getByRole("button", { name: "Edit decenter and tilt" })
-    .first();
-  const decenterCellRow4 = decenterRow4.locator(`.ag-cell[col-id="${decenterColId}"]`);
-  const diffractionGratingCellRow6 = gratingRow6.locator(`.ag-cell[col-id="${diffractionGratingColId}"]`);
-
-  await expect(
-    decenterRow4.locator(`.ag-cell[col-id="${surfaceColId}"]`)
+    await getPrescriptionCell(page, prescriptionGrid, 4, "Surface")
   ).toContainText("Default");
-  await expect(
-    decenterButtonRow4
-  ).toHaveText("dec and return");
+  await expect(decenterButtonRow4).toHaveText("dec and return");
 
   await expect(
-    gratingRow6.locator(`.ag-cell[col-id="${mediumColId}"]`)
+    await getPrescriptionCell(page, prescriptionGrid, 6, "Medium")
   ).toContainText("SF10");
-  await expect(
-    diffractionGratingButtonRow6
-  ).toHaveText("600 lp/mm");
+  await expect(diffractionGratingButtonRow6).toHaveText("600 lp/mm");
 
   await expect(
-    decenterRow9.locator(`.ag-cell[col-id="${surfaceColId}"]`)
+    await getPrescriptionCell(page, prescriptionGrid, 9, "Surface")
   ).toContainText("Default");
-  await expect(
-    decenterButtonRow9
-  ).toHaveText("dec and return");
+  await expect(decenterButtonRow9).toHaveText("dec and return");
 
   await diffractionGratingCellRow6.hover();
   await diffractionGratingCellRow6.click();

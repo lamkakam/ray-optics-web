@@ -3,6 +3,38 @@ import userEvent from "@testing-library/user-event";
 import { OptimizationActionBar } from "@/features/optimization/components/OptimizationActionBar/OptimizationActionBar";
 
 describe("OptimizationActionBar", () => {
+  it("applies sm sizing to both action buttons", () => {
+    render(
+      <OptimizationActionBar
+        canOptimize
+        canApplyToEditor
+        isOptimizing={false}
+        buttonSize="sm"
+        onOptimize={jest.fn()}
+        onApplyToEditor={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Optimize" })).toHaveClass("px-3", "py-1.5", "text-sm");
+    expect(screen.getByRole("button", { name: "Apply to Editor" })).toHaveClass("px-3", "py-1.5", "text-sm");
+  });
+
+  it("applies xs sizing to both action buttons", () => {
+    render(
+      <OptimizationActionBar
+        canOptimize
+        canApplyToEditor
+        isOptimizing={false}
+        buttonSize="xs"
+        onOptimize={jest.fn()}
+        onApplyToEditor={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Optimize" })).toHaveClass("px-2", "py-1", "text-xs");
+    expect(screen.getByRole("button", { name: "Apply to Editor" })).toHaveClass("px-2", "py-1", "text-xs");
+  });
+
   it("renders action buttons and forwards clicks", async () => {
     const user = userEvent.setup();
     const onOptimize = jest.fn();
@@ -13,6 +45,7 @@ describe("OptimizationActionBar", () => {
         canOptimize
         canApplyToEditor
         isOptimizing={false}
+        buttonSize="sm"
         onOptimize={onOptimize}
         onApplyToEditor={onApplyToEditor}
       />,
@@ -31,6 +64,7 @@ describe("OptimizationActionBar", () => {
         canOptimize={false}
         canApplyToEditor={false}
         isOptimizing={false}
+        buttonSize="sm"
         onOptimize={jest.fn()}
         onApplyToEditor={jest.fn()}
       />,

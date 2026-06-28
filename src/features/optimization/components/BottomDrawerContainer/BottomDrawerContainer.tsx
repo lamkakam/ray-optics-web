@@ -101,6 +101,7 @@ export function BottomDrawerContainer({
       content: (
         <OptimizationWeightsGrid
           rows={fields.rows}
+          valueColumnWidth={95}
           onUpdateWeight={(index, value) => optimizationStore.getState().setFieldWeight(index, value)}
         />
       ),
@@ -111,6 +112,7 @@ export function BottomDrawerContainer({
       content: (
         <OptimizationWeightsGrid
           rows={wavelengths.rows}
+          valueColumnWidth={130}
           onUpdateWeight={(index, value) => optimizationStore.getState().setWavelengthWeight(index, value)}
         />
       ),

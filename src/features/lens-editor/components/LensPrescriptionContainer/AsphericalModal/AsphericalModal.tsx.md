@@ -113,3 +113,6 @@ return (
   </>
 );
 ```
+## Modal Footer
+
+- Close, Remove Aspherical, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while aspherical fields scroll.

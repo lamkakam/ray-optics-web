@@ -141,6 +141,7 @@ function WavelengthConfigModalContent({
     {
       headerName: "Fraunhofer",
       field: "fraunhofer",
+      width: 110,
       editable: true,
       cellEditor: "agSelectCellEditor",
       cellEditorParams: {
@@ -157,6 +158,7 @@ function WavelengthConfigModalContent({
     {
       headerName: "Wavelength (nm)",
       field: "wavelength",
+      width: 150,
       editable: true,
       valueGetter: (params) => {
         if (!params.data) return 0;
@@ -177,6 +179,7 @@ function WavelengthConfigModalContent({
     {
       headerName: "Weight",
       field: "weight",
+      width: 85,
       editable: true,
       valueGetter: (params) => {
         if (!params.data) return 0;
@@ -212,7 +215,18 @@ function WavelengthConfigModalContent({
   ];
 
   return (
-    <Modal isOpen={true} title="Wavelengths" titleId="wavelength-modal-title" size="4xl">
+    <Modal
+      isOpen={true}
+      title="Wavelengths"
+      titleId="wavelength-modal-title"
+      size="4xl"
+      footer={(
+        <div className="flex items-center justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={handleApply}>Apply</Button>
+        </div>
+      )}
+    >
       <div className="mb-4" style={{ width: "100%" }}>
         <Paragraph variant="caption">Maximum 7 wavelengths</Paragraph>
         <AgGridProvider modules={[AllCommunityModule]}>
@@ -225,11 +239,6 @@ function WavelengthConfigModalContent({
             getRowId={(params: { data: Record<string, unknown> }) => (params.data as unknown as WavelengthRow).id}
           />
         </AgGridProvider>
-      </div>
-
-      <div className="flex items-center justify-end gap-3 pt-4">
-        <Button variant="secondary" onClick={onClose}>Cancel</Button>
-        <Button variant="primary" onClick={handleApply}>Apply</Button>
       </div>
     </Modal>
   );

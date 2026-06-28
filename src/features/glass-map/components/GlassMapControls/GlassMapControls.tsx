@@ -53,6 +53,8 @@ export function GlassMapControls({
         options={PLOT_TYPE_OPTIONS}
         value={plotType}
         onChange={onPlotTypeChange}
+        columns={2}
+        layout="compact"
       />
 
       <RadioInput
@@ -61,6 +63,8 @@ export function GlassMapControls({
         options={ABBE_LINE_OPTIONS}
         value={abbeNumCenterLine}
         onChange={onAbbeNumCenterLineChange}
+        columns={2}
+        layout="compact"
       />
 
       {plotType === "partialDispersion" && (
@@ -70,6 +74,8 @@ export function GlassMapControls({
           options={PARTIAL_DISPERSION_OPTIONS}
           value={partialDispersionType}
           onChange={onPartialDispersionTypeChange}
+          columns={3}
+          layout="compact"
         />
       )}
 
@@ -78,7 +84,7 @@ export function GlassMapControls({
         <legend className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
           Catalogs
         </legend>
-        <div className="flex flex-col gap-1">
+        <div className="inline-grid grid-cols-3 gap-x-6 gap-y-1">
           {CATALOG_NAMES.map((name) => (
             <CheckboxInput
               key={name}

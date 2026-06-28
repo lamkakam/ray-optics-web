@@ -70,6 +70,39 @@ describe("Modal", () => {
     expect(screen.getByText("hello children")).toBeInTheDocument();
   });
 
+  it("renders footer content when provided", () => {
+    render(
+      <Modal
+        isOpen={true}
+        title="Test Modal"
+        footer={<button type="button">Save</button>}
+      >
+        <p>content</p>
+      </Modal>
+    );
+
+    expect(screen.getByTestId("modal-footer")).toContainElement(screen.getByRole("button", { name: "Save" }));
+  });
+
+  it("renders footer outside the scrollable body region", () => {
+    render(
+      <Modal
+        isOpen={true}
+        title="Test Modal"
+        footer={<button type="button">Apply</button>}
+      >
+        <p>scrollable content</p>
+      </Modal>
+    );
+
+    const body = screen.getByTestId("modal-body");
+    const footer = screen.getByTestId("modal-footer");
+
+    expect(body).toContainElement(screen.getByText("scrollable content"));
+    expect(body).not.toContainElement(footer);
+    expect(footer).toContainElement(screen.getByRole("button", { name: "Apply" }));
+  });
+
   it("uses the provided titleId for h2 and aria-labelledby", () => {
     render(
       <Modal isOpen={true} title="Test Modal" titleId="my-title-id">
@@ -98,5 +131,13 @@ describe("Modal", () => {
   it("backdrop has touch-none class to prevent background scroll on mobile", () => {
     render(<Modal isOpen={true} title="Test Modal"><p>content</p></Modal>);
     expect(screen.getByTestId("modal-backdrop")).toHaveClass("touch-none");
+  });
+
+  it("keeps vertical scrolling on the body instead of the dialog panel", () => {
+    render(<Modal isOpen={true} title="Test Modal"><p>content</p></Modal>);
+
+    expect(screen.getByRole("dialog")).not.toHaveClass("overflow-y-auto");
+    expect(screen.getByRole("dialog")).toHaveClass("overflow-hidden");
+    expect(screen.getByTestId("modal-body")).toHaveClass("overflow-y-auto");
   });
 });

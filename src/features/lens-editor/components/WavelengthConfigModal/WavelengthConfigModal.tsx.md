@@ -39,6 +39,14 @@ interface WavelengthConfigModalProps {
 - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for wavelength row insertion and deletion controls.
 - When a row is deleted, `referenceIndex` is adjusted to remain valid.
 
+## Grid Columns
+
+- Row actions: 100px.
+- Fraunhofer: 110px.
+- Wavelength (nm): 150px.
+- Weight: 85px.
+- Reference: 100px.
+
 ## Usages
 
 ```tsx
@@ -69,3 +77,6 @@ return (
   </>
 );
 ```
+## Modal Footer
+
+- Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while the wavelength grid scrolls.

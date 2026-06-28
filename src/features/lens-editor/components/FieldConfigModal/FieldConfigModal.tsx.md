@@ -46,6 +46,11 @@ interface FieldConfigModalProps {
 - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
 - Row ids use a module-level counter for stable AG Grid `getRowId`.
 
+## Grid Columns
+
+- Row actions: 100px.
+- Relative Field: 125px.
+
 ## Usages
 
 ```tsx
@@ -88,3 +93,6 @@ return (
   </>
 );
 ```
+## Modal Footer
+
+- Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while field settings and the field grid scroll.

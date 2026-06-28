@@ -9,3 +9,5 @@ End-to-end coverage for importing `lens-config.json` through the `Load Config` b
 3. Verify the Prescription grid values for key rows, including visible aspherical/decenter text labels (`Conic`, `None`, `bend`, `decenter`, `reverse`).
 4. Open the aspherical and decenter modals from prescription cells and verify the imported modal values.
 5. Update the system and verify output metrics appear.
+
+Prescription assertions resolve surface rows by displayed `Index` values and resolve the `Object`/`Image` rows by their displayed labels. The helpers bridge from AG Grid's pinned `Index` row to the matching center-row container before reading non-index cells or clicking action buttons.

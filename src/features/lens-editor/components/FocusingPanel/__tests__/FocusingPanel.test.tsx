@@ -17,12 +17,19 @@ const defaultProps = {
   onMetricChange: jest.fn(),
   onFieldIndexChange: jest.fn(),
   onFocus: jest.fn(),
+  focusButtonSize: "sm" as const,
   disabled: false,
 };
 
 describe("FocusingPanel", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it("renders chromaticity options in two columns", () => {
+    render(<FocusingPanel {...defaultProps} />);
+    const optionsGrid = screen.getByText("Chromaticity").nextElementSibling;
+    expect(optionsGrid).toHaveClass("grid-cols-2");
   });
 
   it("renders chromaticity radio group with correct options", () => {
@@ -63,6 +70,16 @@ describe("FocusingPanel", () => {
   it("renders Focus button", () => {
     render(<FocusingPanel {...defaultProps} />);
     expect(screen.getByRole("button", { name: "Focus" })).toBeInTheDocument();
+  });
+
+  it("renders Focus button with sm size token classes", () => {
+    render(<FocusingPanel {...defaultProps} focusButtonSize="sm" />);
+    expect(screen.getByRole("button", { name: "Focus" })).toHaveClass("px-3", "py-1.5", "text-sm");
+  });
+
+  it("renders Focus button with xs size token classes", () => {
+    render(<FocusingPanel {...defaultProps} focusButtonSize="xs" />);
+    expect(screen.getByRole("button", { name: "Focus" })).toHaveClass("px-2", "py-1", "text-xs");
   });
 
   it("Focus button calls onFocus on click", async () => {

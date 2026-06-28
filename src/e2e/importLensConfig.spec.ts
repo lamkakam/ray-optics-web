@@ -1,6 +1,13 @@
 import path from "path";
 import { test, expect } from "./fixtures";
-import { dismissAnyOpenDialog, getColId } from "./utils";
+import {
+  dismissAnyOpenDialog,
+  getPrescriptionActionButton,
+  getPrescriptionCell,
+  getPrescriptionSpecialActionButton,
+  getPrescriptionSpecialCell,
+  getPrescriptionSurfaceRow,
+} from "./utils";
 
 test("import lens-config.json and verify System Specs and Prescription", async ({
   pyodidePage: page,
@@ -95,133 +102,144 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   await page.getByRole("tab", { name: "Prescription" }).click();
   const prescGrid = '[aria-label="Lens prescription editor"]';
 
-  const colIdSurface = await getColId(page, prescGrid, "Surface");
-  const colIdRadius = await getColId(page, prescGrid, "Radius of Curvature");
-  const colIdThickness = await getColId(page, prescGrid, "Thickness");
-  const colIdMedium = await getColId(page, prescGrid, "Medium");
-  const colIdSemiDiam = await getColId(page, prescGrid, "Semi-diam.");
-  const colIdAspherical = await getColId(page, prescGrid, "Asph.");
-  const colIdDecenter = await getColId(page, prescGrid, "Tilt & Decenter");
-
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="0"] .ag-cell[col-id="${colIdMedium}"]`
-    )
+    await getPrescriptionSpecialCell(page, prescGrid, "Object", "Medium")
   ).toContainText("air");
 
   // Row 1: Stop — aspherical + decenter
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="1"] .ag-cell[col-id="${colIdSurface}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 1, "Surface")
   ).toContainText("Stop");
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="1"] .ag-cell[col-id="${colIdRadius}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 1, "Radius of Curvature")
   ).toContainText("-24384");
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="1"] .ag-cell[col-id="${colIdThickness}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 1, "Thickness")
   ).toContainText("-11600");
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="1"] .ag-cell[col-id="${colIdMedium}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 1, "Medium")
   ).toContainText("REFL");
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="1"] .ag-cell[col-id="${colIdSemiDiam}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 1, "Semi-diam.")
   ).toContainText("609.6");
 
-  const row1 = page.locator(`${prescGrid} .ag-row[row-index="1"]`);
+  const row1 = await getPrescriptionSurfaceRow(page, prescGrid, 1);
   await row1.hover();
   await expect(
-    row1.locator('[aria-label="Edit aspherical parameters"]')
+    await getPrescriptionActionButton(
+      page,
+      prescGrid,
+      1,
+      "Asph.",
+      "Edit aspherical parameters"
+    )
   ).toHaveText("Conic");
   await expect(
-    row1.locator('[aria-label="Edit decenter and tilt"]')
+    await getPrescriptionActionButton(
+      page,
+      prescGrid,
+      1,
+      "Tilt & Decenter",
+      "Edit decenter and tilt"
+    )
   ).toHaveText("bend");
 
   // Row 3: Default, N-BK7, decenter only
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="3"] .ag-cell[col-id="${colIdRadius}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 3, "Radius of Curvature")
   ).toContainText("0");
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="3"] .ag-cell[col-id="${colIdThickness}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 3, "Thickness")
   ).toContainText("-9");
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="3"] .ag-cell[col-id="${colIdMedium}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 3, "Medium")
   ).toContainText("N-BK7");
 
-  const row3 = page.locator(`${prescGrid} .ag-row[row-index="3"]`);
+  const row3 = await getPrescriptionSurfaceRow(page, prescGrid, 3);
   await row3.hover();
   await expect(
-    row3.locator('[aria-label="Edit decenter and tilt"]')
+    await getPrescriptionActionButton(
+      page,
+      prescGrid,
+      3,
+      "Tilt & Decenter",
+      "Edit decenter and tilt"
+    )
   ).toHaveText("decenter");
   await expect(
-    row3.locator('[aria-label="Edit aspherical parameters"]')
+    await getPrescriptionActionButton(
+      page,
+      prescGrid,
+      3,
+      "Asph.",
+      "Edit aspherical parameters"
+    )
   ).toHaveText("None");
 
   // Row 4: Default, R=-556.536, air, reverse decenter
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="4"] .ag-cell[col-id="${colIdRadius}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 4, "Radius of Curvature")
   ).toContainText("-556.536");
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="4"] .ag-cell[col-id="${colIdMedium}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 4, "Medium")
   ).toContainText("air");
 
-  const row4 = page.locator(`${prescGrid} .ag-row[row-index="4"]`);
+  const row4 = await getPrescriptionSurfaceRow(page, prescGrid, 4);
   await row4.hover();
   await expect(
-    row4.locator('[aria-label="Edit decenter and tilt"]')
+    await getPrescriptionActionButton(
+      page,
+      prescGrid,
+      4,
+      "Tilt & Decenter",
+      "Edit decenter and tilt"
+    )
   ).toHaveText("reverse");
 
   // Row 7: Default, R=-514.2, N-BK7, decenter
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="7"] .ag-cell[col-id="${colIdRadius}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 7, "Radius of Curvature")
   ).toContainText("-514.2");
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="7"] .ag-cell[col-id="${colIdThickness}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 7, "Thickness")
   ).toContainText("-11");
   await expect(
-    page.locator(
-      `${prescGrid} .ag-row[row-index="7"] .ag-cell[col-id="${colIdMedium}"]`
-    )
+    await getPrescriptionCell(page, prescGrid, 7, "Medium")
   ).toContainText("N-BK7");
 
-  const row7 = page.locator(`${prescGrid} .ag-row[row-index="7"]`);
+  const row7 = await getPrescriptionSurfaceRow(page, prescGrid, 7);
   await row7.hover();
   await expect(
-    row7.locator('[aria-label="Edit decenter and tilt"]')
+    await getPrescriptionActionButton(
+      page,
+      prescGrid,
+      7,
+      "Tilt & Decenter",
+      "Edit decenter and tilt"
+    )
   ).toHaveText("decenter");
 
   // Row 10: Image — decenter set
-  const row10 = page.locator(`${prescGrid} .ag-row[row-index="10"]`);
+  const row10 = await getPrescriptionSpecialCell(
+    page,
+    prescGrid,
+    "Image",
+    "Tilt & Decenter"
+  );
   await row10.hover();
   await expect(
-    row10.locator('[aria-label="Edit decenter and tilt"]')
+    await getPrescriptionSpecialActionButton(
+      page,
+      prescGrid,
+      "Image",
+      "Tilt & Decenter",
+      "Edit decenter and tilt"
+    )
   ).toHaveText("decenter");
 
   // 7. Verify Aspherical modal for row 1 (Stop)
   await row1.hover();
-  await row1.locator(`.ag-cell[col-id="${colIdAspherical}"]`).click();
+  await (await getPrescriptionCell(page, prescGrid, 1, "Asph.")).click();
   const asphModal = page.locator('[role="dialog"][aria-labelledby="aspherical-modal-title"]');
   await asphModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(asphModal.getByLabel("Conic constant")).toHaveValue("-1");
@@ -231,7 +249,7 @@ test("import lens-config.json and verify System Specs and Prescription", async (
 
   // 8. Verify Decenter modal for row 1 (Stop — bend)
   await row1.hover();
-  await row1.locator(`.ag-cell[col-id="${colIdDecenter}"]`).click();
+  await (await getPrescriptionCell(page, prescGrid, 1, "Tilt & Decenter")).click();
   const decModal = page.locator('[role="dialog"][aria-labelledby="decenter-modal-title"]');
   await decModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(
@@ -243,7 +261,15 @@ test("import lens-config.json and verify System Specs and Prescription", async (
 
   // 9. Verify Decenter modal for row 3 (S2 — decenter with offsetY)
   await row3.hover();
-  await row3.locator('[aria-label="Edit decenter and tilt"]').click();
+  await (
+    await getPrescriptionActionButton(
+      page,
+      prescGrid,
+      3,
+      "Tilt & Decenter",
+      "Edit decenter and tilt"
+    )
+  ).click();
   await decModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(
     page.getByLabel("Coordinate system for this and following surfaces")
@@ -255,7 +281,15 @@ test("import lens-config.json and verify System Specs and Prescription", async (
 
   // 10. Verify Decenter modal for row 10 (Image)
   await row10.hover();
-  await row10.locator('[aria-label="Edit decenter and tilt"]').click();
+  await (
+    await getPrescriptionSpecialActionButton(
+      page,
+      prescGrid,
+      "Image",
+      "Tilt & Decenter",
+      "Edit decenter and tilt"
+    )
+  ).click();
   await decModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(
     page.getByLabel("Coordinate system for this and following surfaces")

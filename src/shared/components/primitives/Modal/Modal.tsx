@@ -19,10 +19,11 @@ interface ModalProps {
   readonly titleId?: string;
   readonly size?: ModalSize;
   readonly onBackdropClick?: () => void;
+  readonly footer?: React.ReactNode;
   readonly children: React.ReactNode;
 }
 
-export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, children }: ModalProps) {
+export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, footer, children }: ModalProps) {
   const generatedId = useId();
   const resolvedTitleId = titleId ?? generatedId;
 
@@ -42,10 +43,17 @@ export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, ch
         role="dialog"
         aria-modal="true"
         aria-labelledby={resolvedTitleId}
-        className={`relative z-10 border animate-modal-enter ${panel} ${sizeClasses[size]} mx-4 sm:mx-0 max-h-[90dvh] overflow-y-auto`}
+        className={`relative z-10 flex max-h-[90dvh] flex-col overflow-hidden border animate-modal-enter ${panel} ${sizeClasses[size]} mx-4 sm:mx-0`}
       >
         <Header level={2} id={resolvedTitleId} className={clsx(titleBorderClass, cx.modal.size.titlePadding, cx.modal.size.titleMargin)}>{title}</Header>
-        {children}
+        <div data-testid="modal-body" className="min-h-0 flex-1 overflow-y-auto">
+          {children}
+        </div>
+        {footer === undefined ? undefined : (
+          <div data-testid="modal-footer" className={clsx("mt-4 border-t pt-4", cx.modal.color.titleBorderColor)}>
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -15,6 +15,6 @@ End-to-end coverage for importing `transmissive-diffraction-grating.json` throug
 
 ## Notes
 
-- The assertions use the imported row positions from this JSON fixture: row `4` and row `9` for tilt/decenter, row `6` for diffraction grating.
+- The assertions use the imported displayed surface indices from this JSON fixture: surface `4` and surface `9` for tilt/decenter, surface `6` for diffraction grating.
 - The test validates the state displayed in the text action cells and the modals triggered from those cells, which is the acceptance target for this import path.
-- The selectors scope each text action button to the specific AG Grid column cell so duplicate button renderers in the same row do not cause Playwright strict-mode failures.
+- The selectors scope each text action button to the specific AG Grid column cell after resolving the row through the pinned `Index` column, so duplicate pinned/center row containers do not cause Playwright strict-mode failures.

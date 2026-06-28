@@ -112,14 +112,72 @@ export async function getPrescriptionSurfaceRow(
   gridSel: string,
   surfaceIndex: number
 ): Promise<Locator> {
-  const indexColId = await getColId(page, gridSel, "Index");
-  const row = page.locator(`${gridSel} .ag-row`, {
-    has: page.locator(`.ag-cell[col-id="${indexColId}"]`, {
-      hasText: exactCellText(surfaceIndex),
+  return getPrescriptionRowByIndexText(page, gridSel, exactCellText(surfaceIndex));
+}
+
+export async function getPrescriptionSpecialRow(
+  page: Page,
+  gridSel: string,
+  rowLabel: "Object" | "Image"
+): Promise<Locator> {
+  const surfaceColId = await getColId(page, gridSel, "Surface");
+  const row = page.locator(`${gridSel} .ag-center-cols-container .ag-row`, {
+    has: page.locator(`.ag-cell[col-id="${surfaceColId}"]`, {
+      hasText: new RegExp(`^\\s*${rowLabel}\\s*$`),
     }),
   });
   await expect(row).toHaveCount(1, { timeout: 3_000 });
   return row.first();
+}
+
+export async function getPrescriptionSpecialRowByEndpoint(
+  page: Page,
+  gridSel: string,
+  rowLabel: "Object" | "Image"
+): Promise<Locator> {
+  const indexColId = await getColId(page, gridSel, "Index");
+  const indexRows = page.locator(
+    `${gridSel} .ag-pinned-left-cols-container .ag-row`,
+    {
+      has: page.locator(`.ag-cell[col-id="${indexColId}"]`, {
+        hasText: /^\s*$/,
+      }),
+    }
+  );
+  const indexRow = rowLabel === "Object" ? indexRows.first() : indexRows.last();
+  await expect(indexRow).toBeAttached({ timeout: 3_000 });
+
+  const rowIndex = await indexRow.getAttribute("row-index");
+  if (!rowIndex) throw new Error(`row-index not found for ${rowLabel}`);
+
+  const centerRow = page.locator(
+    `${gridSel} .ag-center-cols-container .ag-row[row-index="${rowIndex}"]`
+  );
+  await expect(centerRow).toHaveCount(1, { timeout: 3_000 });
+  return centerRow.first();
+}
+
+async function getPrescriptionRowByIndexText(
+  page: Page,
+  gridSel: string,
+  indexText: RegExp
+): Promise<Locator> {
+  const indexColId = await getColId(page, gridSel, "Index");
+  const indexRow = page.locator(`${gridSel} .ag-pinned-left-cols-container .ag-row`, {
+    has: page.locator(`.ag-cell[col-id="${indexColId}"]`, {
+      hasText: indexText,
+    }),
+  });
+  await expect(indexRow).toHaveCount(1, { timeout: 3_000 });
+
+  const rowIndex = await indexRow.first().getAttribute("row-index");
+  if (!rowIndex) throw new Error(`row-index not found for ${indexText}`);
+
+  const centerRow = page.locator(
+    `${gridSel} .ag-center-cols-container .ag-row[row-index="${rowIndex}"]`
+  );
+  await expect(centerRow).toHaveCount(1, { timeout: 3_000 });
+  return centerRow.first();
 }
 
 export async function waitForPrescriptionSurfaceCount(
@@ -129,28 +187,72 @@ export async function waitForPrescriptionSurfaceCount(
 ): Promise<void> {
   const indexColId = await getColId(page, gridSel, "Index");
   const surfaceIndexCells = page
-    .locator(`${gridSel} .ag-cell[col-id="${indexColId}"]`)
+    .locator(
+      `${gridSel} .ag-pinned-left-cols-container .ag-cell[col-id="${indexColId}"]`
+    )
     .filter({ hasText: /^\s*\d+\s*$/ });
   await expect(surfaceIndexCells).toHaveCount(expectedCount, {
     timeout: 3_000,
   });
 }
 
-async function getGridCellByHeaderText(
+export async function getGridCellByHeaderText(
   page: Page,
   gridSel: string,
   row: Locator,
   headerText: string
 ): Promise<Locator> {
-  const headers = page.locator(`${gridSel} [role="columnheader"]`);
-  const headerCount = await headers.count();
-  for (let index = 0; index < headerCount; index += 1) {
-    if ((await headers.nth(index).textContent())?.trim() === headerText) {
-      return row.getByRole("gridcell").nth(index);
-    }
-  }
+  const colId = await getColId(page, gridSel, headerText);
+  return row.locator(`.ag-cell[col-id="${colId}"]`);
+}
 
-  throw new Error(`Column with header "${headerText}" not found`);
+export async function getPrescriptionCell(
+  page: Page,
+  gridSel: string,
+  surfaceIndex: number,
+  headerText: string
+): Promise<Locator> {
+  const row = await getPrescriptionSurfaceRow(page, gridSel, surfaceIndex);
+  const cell = await getGridCellByHeaderText(page, gridSel, row, headerText);
+  await expect(cell).toBeAttached({ timeout: 3_000 });
+  return cell;
+}
+
+export async function getPrescriptionSpecialCell(
+  page: Page,
+  gridSel: string,
+  rowLabel: "Object" | "Image",
+  headerText: string
+): Promise<Locator> {
+  const row =
+    headerText === "Surface"
+      ? await getPrescriptionSpecialRow(page, gridSel, rowLabel)
+      : await getPrescriptionSpecialRowByEndpoint(page, gridSel, rowLabel);
+  const cell = await getGridCellByHeaderText(page, gridSel, row, headerText);
+  await expect(cell).toBeAttached({ timeout: 3_000 });
+  return cell;
+}
+
+export async function getPrescriptionActionButton(
+  page: Page,
+  gridSel: string,
+  surfaceIndex: number,
+  headerText: string,
+  buttonName: string
+): Promise<Locator> {
+  const cell = await getPrescriptionCell(page, gridSel, surfaceIndex, headerText);
+  return cell.getByRole("button", { name: buttonName });
+}
+
+export async function getPrescriptionSpecialActionButton(
+  page: Page,
+  gridSel: string,
+  rowLabel: "Object" | "Image",
+  headerText: string,
+  buttonName: string
+): Promise<Locator> {
+  const cell = await getPrescriptionSpecialCell(page, gridSel, rowLabel, headerText);
+  return cell.getByRole("button", { name: buttonName });
 }
 
 export async function insertPrescriptionSurfaceAtEnd(
@@ -172,9 +274,7 @@ export async function editPrescriptionNumberCell(
   headerText: string,
   value: string
 ): Promise<void> {
-  const row = await getPrescriptionSurfaceRow(page, gridSel, surfaceIndex);
-  const cell = await getGridCellByHeaderText(page, gridSel, row, headerText);
-  await expect(cell).toBeAttached({ timeout: 3_000 });
+  const cell = await getPrescriptionCell(page, gridSel, surfaceIndex, headerText);
   await cell.scrollIntoViewIfNeeded();
   await cell.dblclick();
   const input = cell.locator("input").first();
@@ -191,9 +291,7 @@ export async function selectPrescriptionGridOption(
   headerText: string,
   option: string
 ): Promise<void> {
-  const row = await getPrescriptionSurfaceRow(page, gridSel, surfaceIndex);
-  const cell = await getGridCellByHeaderText(page, gridSel, row, headerText);
-  await expect(cell).toBeAttached({ timeout: 3_000 });
+  const cell = await getPrescriptionCell(page, gridSel, surfaceIndex, headerText);
   await cell.scrollIntoViewIfNeeded();
   await cell.click();
   await page.keyboard.press("Enter");
@@ -217,7 +315,7 @@ export async function setPrescriptionMedium(
   await row.getByRole("button", { name: "Edit medium" }).click();
   const modal = page.getByRole("dialog", { name: "Select Medium" });
   await modal.waitFor({ state: "visible", timeout: 3_000 });
-  await modal.getByLabel("Manufacturer").selectOption(manufacturer);
+  await modal.getByLabel("Catalog").selectOption(manufacturer);
   await modal.getByLabel("Glass", { exact: true }).fill(glass);
   await modal.getByRole("button", { name: "Confirm" }).click();
   await modal.waitFor({ state: "hidden", timeout: 5_000 });
@@ -236,7 +334,7 @@ export async function setMedium(
   await row.getByRole("button", { name: "Edit medium" }).click();
   const modal = page.getByRole("dialog", { name: "Select Medium" });
   await modal.waitFor({ state: "visible", timeout: 3_000 });
-  await modal.getByLabel("Manufacturer").selectOption(manufacturer);
+  await modal.getByLabel("Catalog").selectOption(manufacturer);
   await modal.getByLabel("Glass", { exact: true }).fill(glass);
   await modal.getByRole("button", { name: "Confirm" }).click();
   await modal.waitFor({ state: "hidden", timeout: 5_000 });

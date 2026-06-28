@@ -17,6 +17,24 @@ export const lensPrescriptionGridDefaultColDef = {
 
 export const LENS_PRESCRIPTION_GRID_DOM_LAYOUT = "autoHeight";
 
+export const LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS = {
+  surface: 85,
+  index: 80,
+  radiusOfCurvature: 170,
+  thickness: 130,
+  medium: 115,
+  semiDiameter: 115,
+  aspherical: 140,
+  decenter: 135,
+  diffractionGrating: 165,
+} as const;
+
+export const lensPrescriptionGridIndexColumnDef = {
+  headerName: "Index",
+  width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.index,
+  pinned: "left",
+} satisfies ColDef;
+
 const VALID_NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
 
 export function numberValueParser(params: { readonly newValue: string; readonly oldValue: unknown }) {
@@ -76,6 +94,7 @@ export function createSurfaceColumn<TData>({
 }: SurfaceColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Surface",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.surface,
     valueGetter: (params) => {
       if (params.data === undefined) return "";
       const row = getGridRow(params.data);
@@ -103,6 +122,7 @@ export function createRadiusOfCurvatureColumn<TData>({
 }: RadiusColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Radius of Curvature",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.radiusOfCurvature,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
@@ -128,6 +148,7 @@ export function createThicknessColumn<TData>({
 }: ThicknessColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Thickness",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.thickness,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
@@ -155,6 +176,7 @@ export function createMediumColumn<TData>({
 }: MediumColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Medium",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.medium,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
@@ -185,6 +207,7 @@ export function createSemiDiameterColumn<TData>({
 }: SemiDiameterColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Semi-diam.",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.semiDiameter,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
@@ -216,6 +239,7 @@ export function createAsphericalColumn<TData>({
 }: AsphericalColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Asph.",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aspherical,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
@@ -246,6 +270,7 @@ export function createDecenterColumn<TData>({
 }: DecenterColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Tilt & Decenter",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.decenter,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
@@ -276,6 +301,7 @@ export function createDiffractionGratingColumn<TData>({
 }: DiffractionGratingColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Diffraction Grating",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.diffractionGrating,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);

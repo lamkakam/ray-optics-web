@@ -67,6 +67,17 @@ const mockDiffractionMtfData: DiffractionMtfData = {
   naSagittal: 0.011,
 };
 
+function createDeferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, resolve, reject };
+}
+
 function makeProxy(): PyodideWorkerAPI {
   return {
     init: jest.fn(),
@@ -118,7 +129,7 @@ function renderPage(overrides?: {
     </SpecsConfiguratorStoreContext.Provider>,
   );
 
-  return { proxy, onError, lensStore, specsStore, analysisPlotStore, analysisDataStore };
+  return { proxy, onError, lensStore, specsStore, analysisPlotStore, analysisDataStore, lensLayoutImageStore };
 }
 
 describe("ExampleSystemsPage", () => {
@@ -319,25 +330,41 @@ describe("ExampleSystemsPage", () => {
     expect(page).toHaveClass("overflow-hidden");
   });
 
-  it("confirming applies the model, computes data, and routes to the Lens Editor", async () => {
-    const { proxy, lensStore, specsStore, analysisDataStore } = renderPage();
+  it("confirming starts applying the model and routes to the Lens Editor before worker data resolves", async () => {
+    const firstOrderDeferred = createDeferred<{ efl: number }>();
+    const proxy = makeProxy();
+    (proxy.getFirstOrderData as jest.Mock).mockReturnValue(firstOrderDeferred.promise);
+    const { lensStore, specsStore, analysisPlotStore, analysisDataStore, lensLayoutImageStore } = renderPage({ proxy });
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
     await user.click(screen.getByRole("button", { name: "Apply" }));
     await user.click(screen.getByRole("button", { name: "Load" }));
 
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/"));
+    expect(mockPush).toHaveBeenCalledWith("/");
     expect(proxy.getFirstOrderData).toHaveBeenCalledWith(expect.objectContaining<Partial<OpticalModel>>({ setAutoAperture: "autoAperture" }));
     expect(proxy.plotLensLayout).toHaveBeenCalled();
     expect(proxy.get3rdOrderSeidelData).toHaveBeenCalled();
     expect(lensStore.getState().autoAperture).toBe(true);
+    expect(lensStore.getState().rows.length).toBeGreaterThan(0);
+    expect(specsStore.getState().pupilValue).toBe(12.5);
+    expect(lensLayoutImageStore.getState().layoutLoading).toBe(true);
+    expect(analysisPlotStore.getState().plotLoading).toBe(true);
+    expect(analysisDataStore.getState().firstOrderData).toBeUndefined();
+
+    firstOrderDeferred.resolve({ efl: 100 });
+
+    await waitFor(() => expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 }));
     expect(specsStore.getState().committedSpecs.pupil.value).toBe(12.5);
-    expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 });
+    expect(lensLayoutImageStore.getState().layoutLoading).toBe(false);
+    expect(analysisPlotStore.getState().plotLoading).toBe(false);
   });
 
-  it("confirming applies and commits diffraction MTF data before routing", async () => {
-    const { proxy, analysisPlotStore } = renderPage();
+  it("confirming applies and commits diffraction MTF data after immediate routing", async () => {
+    const diffractionMtfDeferred = createDeferred<DiffractionMtfData>();
+    const proxy = makeProxy();
+    (proxy.getDiffractionMTFData as jest.Mock).mockReturnValue(diffractionMtfDeferred.promise);
+    const { analysisPlotStore } = renderPage({ proxy });
     analysisPlotStore.getState().setSelectedPlotType("diffractionMTF");
     const user = userEvent.setup();
 
@@ -345,14 +372,32 @@ describe("ExampleSystemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Apply" }));
     await user.click(screen.getByRole("button", { name: "Load" }));
 
-    await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/"));
+    expect(mockPush).toHaveBeenCalledWith("/");
     expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, "centroid");
-    expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
+    expect(analysisPlotStore.getState().diffractionMtfData).toBeUndefined();
+
+    diffractionMtfDeferred.resolve(mockDiffractionMtfData);
+
+    await waitFor(() => expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData));
   });
 
-  it("shows the app error modal hook and stays on the route when apply fails", async () => {
+  it("commits first-order data after background example loading finishes", async () => {
+    const { proxy, analysisDataStore } = renderPage();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("button", { name: "Sasian Triplet" }));
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    await user.click(screen.getByRole("button", { name: "Load" }));
+
+    await waitFor(() => expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 }));
+    expect(mockPush).toHaveBeenCalledWith("/");
+    expect(proxy.getFirstOrderData).toHaveBeenCalled();
+  });
+
+  it("shows the app error modal hook after routing when background apply fails", async () => {
+    const layoutDeferred = createDeferred<string>();
     const proxy = makeProxy();
-    (proxy.plotLensLayout as jest.Mock).mockRejectedValue(new Error("failed"));
+    (proxy.plotLensLayout as jest.Mock).mockReturnValue(layoutDeferred.promise);
     const onError = jest.fn();
     renderPage({ proxy, onError });
     const user = userEvent.setup();
@@ -361,7 +406,11 @@ describe("ExampleSystemsPage", () => {
     await user.click(screen.getByRole("button", { name: "Apply" }));
     await user.click(screen.getByRole("button", { name: "Load" }));
 
+    expect(mockPush).toHaveBeenCalledWith("/");
+    expect(onError).not.toHaveBeenCalled();
+
+    layoutDeferred.reject(new Error("failed"));
+
     await waitFor(() => expect(onError).toHaveBeenCalled());
-    expect(mockPush).not.toHaveBeenCalled();
   });
 });

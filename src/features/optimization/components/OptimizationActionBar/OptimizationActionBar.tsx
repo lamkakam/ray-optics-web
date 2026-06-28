@@ -1,11 +1,12 @@
 "use client";
 
-import { Button } from "@/shared/components/primitives/Button";
+import { Button, type ButtonSize } from "@/shared/components/primitives/Button";
 
 interface OptimizationActionBarProps {
   readonly canOptimize: boolean;
   readonly canApplyToEditor: boolean;
   readonly isOptimizing: boolean;
+  readonly buttonSize: ButtonSize;
   readonly onOptimize: () => void;
   readonly onApplyToEditor: () => void;
 }
@@ -14,6 +15,7 @@ export function OptimizationActionBar({
   canOptimize,
   canApplyToEditor,
   isOptimizing,
+  buttonSize,
   onOptimize,
   onApplyToEditor,
 }: OptimizationActionBarProps) {
@@ -24,6 +26,7 @@ export function OptimizationActionBar({
         aria-label="Optimize"
         onClick={onOptimize}
         disabled={!canOptimize || isOptimizing}
+        size={buttonSize}
       >
         Optimize
       </Button>
@@ -32,6 +35,7 @@ export function OptimizationActionBar({
         aria-label="Apply to Editor"
         onClick={onApplyToEditor}
         disabled={!canApplyToEditor}
+        size={buttonSize}
       >
         Apply to Editor
       </Button>

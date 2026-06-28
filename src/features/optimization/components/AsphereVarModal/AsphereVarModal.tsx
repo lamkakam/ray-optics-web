@@ -282,7 +282,28 @@ function AsphereVarModalEditor({
   };
 
   return (
-    <Modal isOpen title="Asphere Variable / Pickup" size="lg">
+    <Modal
+      isOpen
+      title="Asphere Variable / Pickup"
+      size="lg"
+      footer={(
+        <div className="flex justify-end gap-3">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            disabled={isDoneDisabled}
+            onClick={() => {
+              onSave(surfaceIndex, draft);
+              onClose();
+            }}
+          >
+            Confirm
+          </Button>
+        </div>
+      )}
+    >
       <div className="space-y-4">
         <div>
           <Label htmlFor="asphere-type">Type</Label>
@@ -371,22 +392,6 @@ function AsphereVarModalEditor({
             })}
           </div>
         )}
-
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            disabled={isDoneDisabled}
-            onClick={() => {
-              onSave(surfaceIndex, draft);
-              onClose();
-            }}
-          >
-            Confirm
-          </Button>
-        </div>
       </div>
     </Modal>
   );

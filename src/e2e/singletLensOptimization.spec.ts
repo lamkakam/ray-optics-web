@@ -1,4 +1,5 @@
 import path from "path";
+import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import {
   dismissAnyOpenDialog,
@@ -6,6 +7,13 @@ import {
   getPrescriptionSurfaceRow,
   selectGridOption,
 } from "./utils";
+
+async function navigateToLensEditorFromMenu(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Open navigation" }).click();
+  await page.locator('nav a[aria-label="Lens Editor"]').evaluate((link) => {
+    link.click();
+  });
+}
 
 test("optimize a singlet with even-aspheric coefficients and apply it to the editor", async ({
   pyodidePage: page,
@@ -62,7 +70,7 @@ test("optimize a singlet with even-aspheric coefficients and apply it to the edi
   await progressDialog.getByRole("button", { name: "OK" }).click();
   await expect(progressDialog).toBeHidden();
 
-  await page.evaluate(() => window.history.back());
+  await navigateToLensEditorFromMenu(page);
   const unappliedResultDialog = page.getByRole("dialog", {
     name: "Unapplied Optimization Result",
   });
@@ -76,7 +84,7 @@ test("optimize a singlet with even-aspheric coefficients and apply it to the edi
   await unappliedResultDialog.getByRole("button", { name: "Stay" }).click();
   await expect(unappliedResultDialog).toBeHidden();
 
-  await page.evaluate(() => window.history.back());
+  await navigateToLensEditorFromMenu(page);
   await expect(unappliedResultDialog).toBeVisible();
   await expect(page).toHaveURL(/\/optimization$/);
   await unappliedResultDialog

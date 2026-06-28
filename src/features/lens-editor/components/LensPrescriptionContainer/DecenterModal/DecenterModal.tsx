@@ -70,7 +70,28 @@ export function DecenterModal({
   };
 
   return (
-    <Modal isOpen={isOpen} title="Tilt & Decenter" titleId="decenter-modal-title" size="md">
+    <Modal
+      isOpen={isOpen}
+      title="Tilt & Decenter"
+      titleId="decenter-modal-title"
+      size="md"
+      footer={(
+        <div className="flex items-center gap-3">
+          {readOnly ? (
+            <div className="flex justify-end w-full">
+              <Button variant="secondary" onClick={onClose}>Close</Button>
+            </div>
+          ) : (
+            <>
+              <Button variant="danger" onClick={onRemove}>Remove Decenter</Button>
+              <span className="flex-1" />
+              <Button variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
+            </>
+          )}
+        </div>
+      )}
+    >
       {/* Position & Orientation */}
       <div className="mb-4">
         <Label htmlFor="pos-and-orientation">Coordinate system for this and following surfaces</Label>
@@ -145,22 +166,6 @@ export function DecenterModal({
             onChange={(e) => setOffsetYStr(e.target.value)}
           />
         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-3 pt-4">
-        {readOnly ? (
-          <div className="flex justify-end w-full">
-            <Button variant="secondary" onClick={onClose}>Close</Button>
-          </div>
-        ) : (
-          <>
-            <Button variant="danger" onClick={onRemove}>Remove Decenter</Button>
-            <span className="flex-1" />
-            <Button variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button variant="primary" onClick={handleConfirm}>Confirm</Button>
-          </>
-        )}
       </div>
     </Modal>
   );

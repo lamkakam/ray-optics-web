@@ -36,3 +36,6 @@ interface OptimizationProgressModalProps {
 - `yAxis.axisLabel.formatter` uses the shared log-scale plot formatter so `0` and sub-floor values display as `1e-9`.
 - Uses a single blue line series with tooltip support and no animation so streamed updates stay stable.
 - Keeps all points through 2000 progress entries. Starting at 2001 entries, the oldest entries are dropped from the rendered ECharts series so only the newest 2000 points are plotted.
+## Modal Footer
+
+- Stop and OK actions are passed to `Modal.footer` so the active action remains fixed while progress content scrolls.
