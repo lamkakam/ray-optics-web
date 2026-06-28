@@ -13,7 +13,7 @@ import type {
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 import type { RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
-import type { OpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
+import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
 
 export interface InitProgress {
@@ -28,18 +28,18 @@ export interface PyodideWorkerAPI {
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
   plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
   getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>;
-  getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint): Promise<OpdFanData>;
-  getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>;
+  getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<OpdFanData>;
+  getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<SpotDiagramData>;
   getFieldCurvatureData(opticalModel: OpticalModel, wvlIndex: number): Promise<FieldCurveData>;
   getAstigmatismCurveData(opticalModel: OpticalModel, wvlIndex: number): Promise<AstigmatismCurveData>;
   getLSAData(opticalModel: OpticalModel): Promise<LongitudinalSphericalAberrationData>;
-  getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number): Promise<WavefrontMapData>;
-  getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, opdAimPoint?: OpdAimPoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>;
+  getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numRays?: number): Promise<WavefrontMapData>;
+  getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>;
   getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<GeoPsfData>;
-  getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>;
-  getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;
+  getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>;
+  getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
-  getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, opdAimPoint?: OpdAimPoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
+  getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
@@ -47,11 +47,11 @@ export interface PyodideWorkerAPI {
   getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
   canInterruptOptimization(): Promise<boolean>;
   requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>;
-  evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, opdAimPoint?: OpdAimPoint): Promise<OptimizationReport>;
+  evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, imagePoint?: ImagePoint): Promise<OptimizationReport>;
   optimizeOpm(
     opticalModel: OpticalModel,
     config: OptimizationConfig,
-    opdAimPoint?: OpdAimPoint,
+    imagePoint?: ImagePoint,
     onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
     runId?: string,
     interruptBuffer?: SharedArrayBuffer,

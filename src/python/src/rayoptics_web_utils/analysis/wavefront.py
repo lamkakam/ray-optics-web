@@ -11,7 +11,7 @@ def get_wavefront_data(
     opm: OpticalModel,
     fi: int,
     wvl_idx: int,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
     num_rays: int = 64,
 ) -> dict:
     """
@@ -20,7 +20,7 @@ def get_wavefront_data(
     osp = opm.optical_spec
     central_wvl = osp["wvls"].central_wvl
     wavelength_nm = opm["optical_spec"]["wvls"].wavelengths[wvl_idx]
-    ray_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays, opd_aim_point=opd_aim_point)
+    ray_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays, image_point=image_point)
 
     opd_grid = ray_grid.grid.copy()
     opd_grid[2] *= central_wvl / wavelength_nm

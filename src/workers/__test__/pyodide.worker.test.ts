@@ -166,7 +166,7 @@ describe("_getOpdFanData", () => {
     }, allSphericalOpticalModel, 1, "centroid");
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_opd_fan_data(_build_opm(), 1, opd_aim_point='centroid'))");
+    expect(pythonScript).toContain("json.dumps(get_opd_fan_data(_build_opm(), 1, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });
@@ -196,10 +196,10 @@ describe("_getSpotDiagramData", () => {
     const result = await _getSpotDiagramData(async (code) => {
       pythonScript = code;
       return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1);
+    }, allSphericalOpticalModel, 1, "centroid");
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_spot_data(_build_opm(), 1))");
+    expect(pythonScript).toContain("json.dumps(get_spot_data(_build_opm(), 1, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });
@@ -298,7 +298,7 @@ describe("_getDiffractionMTFData", () => {
     }, allSphericalOpticalModel, 2, 1, "centroid", 64, 256);
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_diffraction_mtf_data(_build_opm(), 2, 1, num_rays=64, max_dims=256, opd_aim_point='centroid'))");
+    expect(pythonScript).toContain("json.dumps(get_diffraction_mtf_data(_build_opm(), 2, 1, num_rays=64, max_dims=256, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });
@@ -327,7 +327,7 @@ describe("_getWavefrontData", () => {
     }, allSphericalOpticalModel, 1, 2, "centroid", 64);
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_wavefront_data(_build_opm(), 1, 2, num_rays=64, opd_aim_point='centroid'))");
+    expect(pythonScript).toContain("json.dumps(get_wavefront_data(_build_opm(), 1, 2, num_rays=64, image_point='centroid'))");
     expect(result).toEqual({
       ...mockData,
       z: [
@@ -355,7 +355,7 @@ describe("_getStrehlVsWavelengthData", () => {
     }, allSphericalOpticalModel, 1, "centroid", 100, 21);
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_strehl_vs_wavelength_data(_build_opm(), 1, wavelength_samples=100, num_rays=21, opd_aim_point='centroid'))");
+    expect(pythonScript).toContain("json.dumps(get_strehl_vs_wavelength_data(_build_opm(), 1, wavelength_samples=100, num_rays=21, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });
@@ -407,7 +407,7 @@ describe("_getDiffractionPSFData", () => {
     }, allSphericalOpticalModel, 1, 2, "centroid", 64, 256);
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=64, max_dims=256, opd_aim_point='centroid'))");
+    expect(pythonScript).toContain("json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=64, max_dims=256, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });

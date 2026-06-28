@@ -7,7 +7,7 @@ Shared ragged-safe fan tracing helper for ray fan and OPD fan getters.
 ## Exports
 
 ```python
-def _trace_fan_series(opm: OpticalModel, fi: int, xy: int, fan_filter, opd_aim_point: str = "chief_ray") -> tuple[list[list[float]], list[list[float]]]: ...
+def _trace_fan_series(opm: OpticalModel, fi: int, xy: int, fan_filter, image_point: str = "chief_ray") -> tuple[list[list[float]], list[list[float]]]: ...
 ```
 
 ## Behavior

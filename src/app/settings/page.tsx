@@ -3,7 +3,7 @@
 import React from "react";
 import type { Theme } from "@/shared/tokens/theme";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
-import { type OpdAimPoint, useOpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
+import { type ImagePoint, useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { Header } from "@/shared/components/primitives/Header";
 import { Select } from "@/shared/components/primitives/Select";
 
@@ -12,14 +12,14 @@ const themeOptions: { value: Theme; label: string }[] = [
   { value: "dark", label: "Dark" },
 ];
 
-const opdAimPointOptions: { value: OpdAimPoint; label: string }[] = [
+const imagePointOptions: { value: ImagePoint; label: string }[] = [
   { value: "chief_ray", label: "Chief ray" },
   { value: "centroid", label: "Centroid" },
 ];
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { opdAimPoint, setOpdAimPoint } = useOpdAimPoint();
+  const { imagePoint, setImagePoint } = useImagePoint();
 
   const handleThemeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedTheme = event.target.value as Theme;
@@ -28,10 +28,10 @@ export default function SettingsPage() {
     }
   };
 
-  const handleOpdAimPointChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedOpdAimPoint = event.target.value as OpdAimPoint;
-    if (selectedOpdAimPoint !== opdAimPoint) {
-      setOpdAimPoint(selectedOpdAimPoint);
+  const handleImagePointChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedImagePoint = event.target.value as ImagePoint;
+    if (selectedImagePoint !== imagePoint) {
+      setImagePoint(selectedImagePoint);
     }
   };
 
@@ -52,15 +52,15 @@ export default function SettingsPage() {
         />
       </div>
       <div className="mb-6">
-        <label htmlFor="settings-opd-aim-point-select" className="block text-sm font-medium mb-2">
-          OPD aim point
+        <label htmlFor="settings-image-point-select" className="block text-sm font-medium mb-2">
+          Image point
         </label>
         <Select
-          id="settings-opd-aim-point-select"
-          aria-label="OPD aim point"
-          options={opdAimPointOptions}
-          value={opdAimPoint}
-          onChange={handleOpdAimPointChange}
+          id="settings-image-point-select"
+          aria-label="Image point"
+          options={imagePointOptions}
+          value={imagePoint}
+          onChange={handleImagePointChange}
           className="max-w-[12em]"
         />
       </div>

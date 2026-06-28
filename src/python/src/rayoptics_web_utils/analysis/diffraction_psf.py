@@ -12,7 +12,7 @@ def get_diffraction_psf_data(
     opm: OpticalModel,
     fi: int,
     wvl_idx: int,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
     num_rays: int = 64,
     max_dims: int = 256,
 ) -> dict:
@@ -21,7 +21,7 @@ def get_diffraction_psf_data(
     """
     wavelength_nm = opm["optical_spec"]["wvls"].wavelengths[wvl_idx]
     effective_max_dims = max(max_dims, 2 * num_rays)
-    pupil_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays, opd_aim_point=opd_aim_point)
+    pupil_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays, image_point=image_point)
 
     psf = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, effective_max_dims)
     _, delta_xp = calc_psf_scaling(pupil_grid, pupil_grid.num_rays, effective_max_dims)

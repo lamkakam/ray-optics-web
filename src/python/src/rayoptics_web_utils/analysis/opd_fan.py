@@ -8,7 +8,7 @@ from rayoptics_web_utils.analysis._fan import _trace_fan_series
 from rayoptics_web_utils.utils import _json_float_list
 
 
-def get_opd_fan_data(opm: OpticalModel, fi: int, opd_aim_point: str = "chief_ray") -> list[dict]:
+def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]:
     """
     Return OPD fan data for all wavelengths at field index ``fi``.
     """
@@ -20,8 +20,8 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, opd_aim_point: str = "chief_ray
             return opd_val / opm.nm_to_sys_units(wvl)
         return None
 
-    sagittal_x, sagittal_y = _trace_fan_series(opm, fi, 0, _opd_abr, opd_aim_point=opd_aim_point)
-    tangential_x, tangential_y = _trace_fan_series(opm, fi, 1, _opd_abr, opd_aim_point=opd_aim_point)
+    sagittal_x, sagittal_y = _trace_fan_series(opm, fi, 0, _opd_abr, image_point=image_point)
+    tangential_x, tangential_y = _trace_fan_series(opm, fi, 1, _opd_abr, image_point=image_point)
 
     data: list[dict] = []
     for wvl_idx in range(len(sagittal_x)):

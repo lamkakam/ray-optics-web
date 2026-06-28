@@ -1,6 +1,7 @@
 """Tests for rayoptics_web_utils.analysis module."""
 
 import json
+import numpy as np
 import pytest
 
 
@@ -72,24 +73,25 @@ class TestGetAnalysisPlotDataSignatures:
         import inspect
 
         sig = inspect.signature(get_opd_fan_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "opd_aim_point"]
-        assert sig.parameters["opd_aim_point"].default == "chief_ray"
+        assert list(sig.parameters.keys()) == ["opm", "fi", "image_point"]
+        assert sig.parameters["image_point"].default == "chief_ray"
 
     def test_get_spot_data_accepts_opm_and_fi(self):
         from rayoptics_web_utils.analysis import get_spot_data
         import inspect
 
         sig = inspect.signature(get_spot_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "image_point"]
+        assert sig.parameters["image_point"].default == "chief_ray"
 
     def test_get_wavefront_data_accepts_opm_fi_wvl_idx_num_rays(self):
         from rayoptics_web_utils.analysis import get_wavefront_data
         import inspect
 
         sig = inspect.signature(get_wavefront_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "opd_aim_point", "num_rays"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "image_point", "num_rays"]
         assert sig.parameters["num_rays"].default == 64
-        assert sig.parameters["opd_aim_point"].default == "chief_ray"
+        assert sig.parameters["image_point"].default == "chief_ray"
 
     def test_get_geo_psf_data_accepts_opm_fi_wvl_idx_num_rays(self):
         from rayoptics_web_utils.analysis import get_geo_psf_data
@@ -104,30 +106,30 @@ class TestGetAnalysisPlotDataSignatures:
         import inspect
 
         sig = inspect.signature(get_diffraction_psf_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "opd_aim_point", "num_rays", "max_dims"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "image_point", "num_rays", "max_dims"]
         assert sig.parameters["num_rays"].default == 64
         assert sig.parameters["max_dims"].default == 256
-        assert sig.parameters["opd_aim_point"].default == "chief_ray"
+        assert sig.parameters["image_point"].default == "chief_ray"
 
     def test_get_diffraction_mtf_data_accepts_opm_field_idx_wvl_idx_num_rays_and_max_dims(self):
         from rayoptics_web_utils.analysis import get_diffraction_mtf_data
         import inspect
 
         sig = inspect.signature(get_diffraction_mtf_data)
-        assert list(sig.parameters.keys()) == ["opm", "field_idx", "wvl_idx", "opd_aim_point", "num_rays", "max_dims"]
+        assert list(sig.parameters.keys()) == ["opm", "field_idx", "wvl_idx", "image_point", "num_rays", "max_dims"]
         assert sig.parameters["num_rays"].default == 64
         assert sig.parameters["max_dims"].default == 256
-        assert sig.parameters["opd_aim_point"].default == "chief_ray"
+        assert sig.parameters["image_point"].default == "chief_ray"
 
     def test_get_strehl_vs_wavelength_data_accepts_opm_field_index_samples_and_num_rays(self):
         from rayoptics_web_utils.analysis import get_strehl_vs_wavelength_data
         import inspect
 
         sig = inspect.signature(get_strehl_vs_wavelength_data)
-        assert list(sig.parameters.keys()) == ["opm", "fieldIndex", "opd_aim_point", "wavelength_samples", "num_rays"]
+        assert list(sig.parameters.keys()) == ["opm", "fieldIndex", "image_point", "wavelength_samples", "num_rays"]
         assert sig.parameters["wavelength_samples"].default == 32
         assert sig.parameters["num_rays"].default == 21
-        assert sig.parameters["opd_aim_point"].default == "chief_ray"
+        assert sig.parameters["image_point"].default == "chief_ray"
 
     @pytest.mark.parametrize("getter_name", ["get_field_curvature_data", "get_astigmatism_curve_data"])
     def test_field_curve_getters_accept_opm_wvl_idx_and_num_points(self, getter_name):
@@ -326,6 +328,15 @@ class TestGetSpotData:
         result = get_spot_data(cooke_triplet, fi=0)
 
         json.dumps(result)
+
+    def test_centroid_image_point_recenters_each_wavelength_cloud(self, cooke_triplet):
+        from rayoptics_web_utils.analysis import get_spot_data
+
+        result = get_spot_data(cooke_triplet, fi=1, image_point="centroid")
+
+        for entry in result:
+            assert np.mean(entry["x"]) == pytest.approx(0.0, abs=1e-12)
+            assert np.mean(entry["y"]) == pytest.approx(0.0, abs=1e-12)
 
 
 class TestGetWavefrontData:
@@ -562,12 +573,12 @@ class TestGetStrehlVsWavelengthData:
 
         requested_wavelengths = []
 
-        def fake_make_ray_grid(opm, fi, wavelength_nm, num_rays, opd_aim_point="chief_ray"):
+        def fake_make_ray_grid(opm, fi, wavelength_nm, num_rays, image_point="chief_ray"):
             requested_wavelengths.append(float(wavelength_nm))
             assert opm is cooke_triplet
             assert fi == 2
             assert num_rays == 7
-            assert opd_aim_point == "chief_ray"
+            assert image_point == "chief_ray"
             ray_grid = FakeRayGrid()
             ray_grid.grid = np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
             return ray_grid
@@ -609,9 +620,9 @@ class TestGetStrehlVsWavelengthData:
 
         requested_wavelengths = []
 
-        def fake_make_ray_grid(opm, fi, wavelength_nm, num_rays, opd_aim_point="chief_ray"):
+        def fake_make_ray_grid(opm, fi, wavelength_nm, num_rays, image_point="chief_ray"):
             requested_wavelengths.append(float(wavelength_nm))
-            assert opd_aim_point == "chief_ray"
+            assert image_point == "chief_ray"
             ray_grid = FakeRayGrid()
             ray_grid.grid = np.array([[[0.0]], [[0.0]], [[wavelength_nm / 1000.0]]])
             return ray_grid

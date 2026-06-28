@@ -271,10 +271,10 @@ class TestGetZernikeCoefficients:
             "field_index",
             "wvl_index",
             "zernike_terms",
-            "opd_aim_point",
+            "image_point",
             "num_rays",
         ]
-        assert sig.parameters["opd_aim_point"].default == "chief_ray"
+        assert sig.parameters["image_point"].default == "chief_ray"
         result = get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
         assert isinstance(result, dict)
         for key in ['coefficients', 'rms_wfe', 'pv_wfe', 'num_terms', 'field_index', 'wavelength_nm']:

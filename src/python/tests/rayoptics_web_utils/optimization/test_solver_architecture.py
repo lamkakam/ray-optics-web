@@ -426,7 +426,7 @@ def test_axis_specific_opd_difference_uses_selected_fan_axis(monkeypatch):
 
     monkeypatch.setattr(
         "rayoptics_web_utils.optimization.operands.get_opd_fan_data",
-        lambda opm, fi, opd_aim_point="chief_ray": [{
+        lambda opm, fi, image_point="chief_ray": [{
             "Tangential": {"y": [1.0, 3.0, 5.0]},
             "Sagittal": {"y": [10.0, 14.0]},
         }],
@@ -442,7 +442,7 @@ def test_axis_specific_opd_difference_returns_penalty_when_selected_axis_has_no_
 
     monkeypatch.setattr(
         "rayoptics_web_utils.optimization.operands.get_opd_fan_data",
-        lambda opm, fi, opd_aim_point="chief_ray": [{
+        lambda opm, fi, image_point="chief_ray": [{
             "Tangential": {"y": [float("nan"), float("inf")]},
             "Sagittal": {"y": [1.0, 2.0]},
         }],

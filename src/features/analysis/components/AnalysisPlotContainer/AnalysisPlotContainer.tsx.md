@@ -40,7 +40,7 @@ All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` a
 
 All plot loading goes through `loadAnalysisPlot(...)` from `@/features/analysis/lib/plotFunctions`, which centralizes the plot-type to worker-API mapping. Plot-store-backed payload commits go through `commitAnalysisPlotResult(...)`, keeping panel behavior aligned with `LensEditor.tsx` submit handling and example-system application.
 
-The container also reads `opdAimPoint` from `OpdAimPointProvider` and passes it into `loadAnalysisPlot` so OPD fan, wavefront map, Strehl vs wavelength, diffraction PSF, and diffraction MTF use the app-wide OPD reference convention.
+The container also reads `imagePoint` from `ImagePointProvider` and passes it into `loadAnalysisPlot` so OPD fan, wavefront map, Strehl vs wavelength, diffraction PSF, and diffraction MTF use the app-wide OPD reference convention.
 
 ### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
 
@@ -48,7 +48,7 @@ Shared async helper used by all three change handlers:
 
 1. Returns immediately when `proxy` or `committedOpticalModel` is missing.
 2. Sets `plotLoading(true)`.
-3. Calls `loadAnalysisPlot({ plotType, proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex, opdAimPoint })`.
+3. Calls `loadAnalysisPlot({ plotType, proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex, imagePoint })`.
 4. If the result kind is `"surfaceBySurface3rdOrder"`, updates only `analysisDataStore.seidelData.surfaceBySurface`.
 5. Otherwise delegates to `commitAnalysisPlotResult(...)`, which stores the payload with the matching analysis plot store setter.
 6. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.

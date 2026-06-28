@@ -4,7 +4,7 @@ import numpy as np
 from rayoptics.environment import OpticalModel
 from rayoptics.raytr import trace
 
-from rayoptics_web_utils.raygrid import _resolve_opd_image_point
+from rayoptics_web_utils.raygrid import _resolve_image_point
 
 
 def _trace_fan_series(
@@ -12,7 +12,7 @@ def _trace_fan_series(
     fi: int,
     xy: int,
     fan_filter,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> tuple[list[list[float]], list[list[float]]]:
     """Trace one pupil fan per wavelength while preserving ragged sample counts."""
     osp = opm.optical_spec
@@ -20,13 +20,13 @@ def _trace_fan_series(
     central_wvl = opm.seq_model.central_wavelength()
     foc = osp.defocus.get_focus()
 
-    image_pt = _resolve_opd_image_point(
+    image_pt = _resolve_image_point(
         opm,
         fi=fi,
         wavelength_nm=central_wvl,
         foc=foc,
         num_rays=21,
-        opd_aim_point=opd_aim_point,
+        image_point=image_point,
     )
     ref_sphere, chief_ray = trace.setup_pupil_coords(opm, fld, central_wvl, foc, image_pt=image_pt)
     fld.chief_ray = chief_ray

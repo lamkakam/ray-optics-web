@@ -19,8 +19,8 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
 }));
 
-jest.mock("@/shared/components/providers/OpdAimPointProvider", () => ({
-  useOpdAimPoint: () => ({ opdAimPoint: "centroid", setOpdAimPoint: jest.fn() }),
+jest.mock("@/shared/components/providers/ImagePointProvider", () => ({
+  useImagePoint: () => ({ imagePoint: "centroid", setImagePoint: jest.fn() }),
 }));
 
 jest.mock("echarts/core", () => ({
@@ -431,7 +431,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedPlotType).toBe("spotDiagram");
     await waitFor(() => {
-      expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(testModel, 0);
+      expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(testModel, 0, "centroid");
     });
     expect(store.getState().spotDiagramData).toEqual(spotDiagramData);
   });

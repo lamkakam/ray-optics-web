@@ -49,12 +49,12 @@ class TestRmsWavefrontErrorOperand:
 
         opm = FakeOpticalModel()
 
-        def fake_make_ray_grid(opm_arg, fi, wavelength_nm, num_rays, opd_aim_point="chief_ray"):
+        def fake_make_ray_grid(opm_arg, fi, wavelength_nm, num_rays, image_point="chief_ray"):
             assert opm_arg is opm
             assert fi == 3
             assert wavelength_nm == 1000.0
             assert num_rays == 5
-            assert opd_aim_point == "chief_ray"
+            assert image_point == "chief_ray"
             return FakeRayGrid()
 
         def fake_scale_opd_grid_to_wavelength(opd_grid, opm_arg, wavelength_nm):
@@ -71,7 +71,7 @@ class TestRmsWavefrontErrorOperand:
             field_index=3,
             wavelength_index=1,
             options={"num_rays": 5},
-            opd_aim_point="chief_ray",
+            image_point="chief_ray",
         )
 
         assert result == pytest.approx(np.std(np.array([2.0, 6.0])))
@@ -97,12 +97,12 @@ class TestRmsWavefrontErrorOperand:
             field_index=0,
             wavelength_index=0,
             options=None,
-            opd_aim_point="chief_ray",
+            image_point="chief_ray",
         )
 
         assert result == operands.PENALTY_RESIDUAL
 
-    def test_passes_opd_aim_point_to_ray_grid(self, monkeypatch):
+    def test_passes_image_point_to_ray_grid(self, monkeypatch):
         import rayoptics_web_utils.optimization.operands as operands
 
         class FakeOpticalModel:
@@ -128,22 +128,22 @@ class TestRmsWavefrontErrorOperand:
             field_index=0,
             wavelength_index=0,
             options=None,
-            opd_aim_point="centroid",
+            image_point="centroid",
         )
 
-        assert captured_kwargs["opd_aim_point"] == "centroid"
+        assert captured_kwargs["image_point"] == "centroid"
 
 
 class TestEvaluateOptimizationProblem:
-    def test_defaults_opd_aim_point_to_chief_ray(self):
+    def test_defaults_image_point_to_chief_ray(self):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_opm
         import inspect
 
         evaluate_sig = inspect.signature(evaluate_optimization_problem)
         optimize_sig = inspect.signature(optimize_opm)
 
-        assert evaluate_sig.parameters["opd_aim_point"].default == "chief_ray"
-        assert optimize_sig.parameters["opd_aim_point"].default == "chief_ray"
+        assert evaluate_sig.parameters["image_point"].default == "chief_ray"
+        assert optimize_sig.parameters["image_point"].default == "chief_ray"
 
     def test_accepts_ray_fan_without_target(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
@@ -559,9 +559,9 @@ class TestEvaluateOptimizationProblem:
         import rayoptics_web_utils.optimization.optimization as optimization_module
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
 
-        def fake_get_opd_fan_data(opm, fi, opd_aim_point="chief_ray"):
+        def fake_get_opd_fan_data(opm, fi, image_point="chief_ray"):
             del opm, fi
-            assert opd_aim_point == "chief_ray"
+            assert image_point == "chief_ray"
             return [
                 {
                     "fieldIdx": 0,

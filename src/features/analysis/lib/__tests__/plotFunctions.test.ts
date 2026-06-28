@@ -165,7 +165,7 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 1,
       wavelengthIndex: 2,
-      opdAimPoint: "centroid",
+      imagePoint: "centroid",
     });
 
     expect(proxy.getWavefrontData).toHaveBeenCalledWith(mockModel, 1, 2, "centroid");
@@ -215,7 +215,7 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 1,
       wavelengthIndex: 2,
-      opdAimPoint: "centroid",
+      imagePoint: "centroid",
     });
 
     expect(proxy.getOpdFanData).toHaveBeenCalledWith(mockModel, 1, "centroid");
@@ -248,7 +248,7 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 2,
       wavelengthIndex: 1,
-      opdAimPoint: "centroid",
+      imagePoint: "centroid",
     });
 
     expect(proxy.getDiffractionPSFData).toHaveBeenCalledWith(mockModel, 2, 1, "centroid");
@@ -266,7 +266,7 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 2,
       wavelengthIndex: 1,
-      opdAimPoint: "centroid",
+      imagePoint: "centroid",
     });
 
     expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(mockModel, 2, 1, "centroid");
@@ -284,7 +284,7 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 1,
       wavelengthIndex: 2,
-      opdAimPoint: "centroid",
+      imagePoint: "centroid",
     });
 
     expect(proxy.getStrehlVsWavelengthData).toHaveBeenCalledWith(mockModel, 1, "centroid");
@@ -326,9 +326,10 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 0,
       wavelengthIndex: 1,
+      imagePoint: "centroid",
     });
 
-    expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(mockModel, 0);
+    expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(mockModel, 0, "centroid");
     expect(result).toEqual({
       kind: "spotDiagram",
       spotDiagramData: [

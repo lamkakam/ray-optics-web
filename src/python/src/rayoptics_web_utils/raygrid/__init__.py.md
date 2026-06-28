@@ -5,4 +5,4 @@ Package re-export surface for raygrid helpers.
 Exports:
 
 - `make_ray_grid`
-- `_resolve_opd_image_point`
+- `_resolve_image_point`

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ServiceWorkerRegistrar from "@/shared/components/providers/ServiceWorkerRegistrar";
 import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
-import { OpdAimPointProvider } from "@/shared/components/providers/OpdAimPointProvider";
+import { ImagePointProvider } from "@/shared/components/providers/ImagePointProvider";
 import { SpecsConfiguratorStoreProvider } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
@@ -26,7 +26,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
         <ThemeProvider>
-          <OpdAimPointProvider>
+          <ImagePointProvider>
             <ServiceWorkerRegistrar />
             <SpecsConfiguratorStoreProvider>
               <LensEditorStoreProvider>
@@ -43,7 +43,7 @@ export default function RootLayout({
                 </AnalysisPlotStoreProvider>
               </LensEditorStoreProvider>
             </SpecsConfiguratorStoreProvider>
-          </OpdAimPointProvider>
+          </ImagePointProvider>
         </ThemeProvider>
       </body>
     </html>

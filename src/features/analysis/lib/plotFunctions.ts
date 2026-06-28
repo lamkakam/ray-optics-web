@@ -5,7 +5,7 @@ import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, Fiel
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotStore";
-import type { OpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
+import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
 export type AnalysisPlotLoadResult =
   | { readonly kind: "surfaceBySurface3rdOrder"; readonly surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData }
@@ -27,7 +27,7 @@ interface LoadAnalysisPlotParams {
   readonly model: OpticalModel | undefined;
   readonly fieldIndex: number;
   readonly wavelengthIndex: number;
-  readonly opdAimPoint?: OpdAimPoint;
+  readonly imagePoint?: ImagePoint;
 }
 
 export async function loadAnalysisPlot({
@@ -36,7 +36,7 @@ export async function loadAnalysisPlot({
   model,
   fieldIndex,
   wavelengthIndex,
-  opdAimPoint = "chief_ray",
+  imagePoint = "chief_ray",
 }: LoadAnalysisPlotParams): Promise<AnalysisPlotLoadResult | undefined> {
   if (!proxy || !model) return undefined;
 
@@ -57,28 +57,28 @@ export async function loadAnalysisPlot({
   if (plotType === "wavefrontMap") {
     return {
       kind: "wavefrontMap",
-      wavefrontMapData: await proxy.getWavefrontData(model, fieldIndex, wavelengthIndex, opdAimPoint),
+      wavefrontMapData: await proxy.getWavefrontData(model, fieldIndex, wavelengthIndex, imagePoint),
     };
   }
 
   if (plotType === "strehlVsWavelength") {
     return {
       kind: "strehlVsWavelength",
-      strehlVsWavelengthData: await proxy.getStrehlVsWavelengthData(model, fieldIndex, opdAimPoint),
+      strehlVsWavelengthData: await proxy.getStrehlVsWavelengthData(model, fieldIndex, imagePoint),
     };
   }
 
   if (plotType === "opdFan") {
     return {
       kind: "opdFan",
-      opdFanData: await proxy.getOpdFanData(model, fieldIndex, opdAimPoint),
+      opdFanData: await proxy.getOpdFanData(model, fieldIndex, imagePoint),
     };
   }
 
   if (plotType === "spotDiagram") {
     return {
       kind: "spotDiagram",
-      spotDiagramData: await proxy.getSpotDiagramData(model, fieldIndex),
+      spotDiagramData: await proxy.getSpotDiagramData(model, fieldIndex, imagePoint),
     };
   }
 
@@ -113,14 +113,14 @@ export async function loadAnalysisPlot({
   if (plotType === "diffractionPSF") {
     return {
       kind: "diffractionPSF",
-      diffractionPsfData: await proxy.getDiffractionPSFData(model, fieldIndex, wavelengthIndex, opdAimPoint),
+      diffractionPsfData: await proxy.getDiffractionPSFData(model, fieldIndex, wavelengthIndex, imagePoint),
     };
   }
 
   if (plotType === "diffractionMTF") {
     return {
       kind: "diffractionMTF",
-      diffractionMtfData: await proxy.getDiffractionMTFData(model, fieldIndex, wavelengthIndex, opdAimPoint),
+      diffractionMtfData: await proxy.getDiffractionMTFData(model, fieldIndex, wavelengthIndex, imagePoint),
     };
   }
 }

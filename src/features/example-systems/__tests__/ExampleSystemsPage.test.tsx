@@ -33,8 +33,8 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
 }));
 
-jest.mock("@/shared/components/providers/OpdAimPointProvider", () => ({
-  useOpdAimPoint: () => ({ opdAimPoint: "centroid", setOpdAimPoint: jest.fn() }),
+jest.mock("@/shared/components/providers/ImagePointProvider", () => ({
+  useImagePoint: () => ({ imagePoint: "centroid", setImagePoint: jest.fn() }),
 }));
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
