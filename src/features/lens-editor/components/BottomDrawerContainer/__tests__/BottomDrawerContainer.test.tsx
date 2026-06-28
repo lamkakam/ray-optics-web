@@ -21,6 +21,10 @@ jest.mock("@/features/lens-editor/components/FocusingContainer", () => ({
   FocusingContainer: () => <div data-testid="focusing-content">Focusing Content</div>,
 }));
 
+jest.mock("@/features/lens-editor/components/ImageReferencePanel", () => ({
+  ImageReferencePanel: () => <div data-testid="image-reference-content">Image Reference Content</div>,
+}));
+
 // Mock useScreenBreakpoint (used inside BottomDrawer -> Tabs)
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: () => "screenLG",
@@ -98,11 +102,12 @@ describe("BottomDrawerContainer", () => {
     });
   });
 
-  it("renders all three drawer tab labels", () => {
+  it("renders all drawer tab labels", () => {
     renderContainer(true);
     expect(screen.getByRole("tab", { name: "System Specs" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Prescription" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Focusing" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Image Reference" })).toBeInTheDocument();
   });
 
   it("with draggable=true: drag handle is present", () => {
@@ -126,9 +131,9 @@ describe("BottomDrawerContainer", () => {
     const lensStore = createStore<LensEditorState>(createLensEditorSlice);
     renderContainer(true, lensStore);
 
-    await userEvent.click(screen.getByRole("tab", { name: "Focusing" }));
+    await userEvent.click(screen.getByRole("tab", { name: "Image Reference" }));
 
-    expect(lensStore.getState().activeBottomDrawerTabId).toBe("focusing");
+    expect(lensStore.getState().activeBottomDrawerTabId).toBe("image-reference");
   });
 
   it("restores the previously active tab after remounting with the same lens store", async () => {
@@ -136,14 +141,14 @@ describe("BottomDrawerContainer", () => {
     const user = userEvent.setup();
     const initialRender = renderContainer(true, lensStore);
 
-    await user.click(screen.getByRole("tab", { name: "Prescription" }));
-    expect(screen.getByTestId("prescription-content")).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: "Image Reference" }));
+    expect(screen.getByTestId("image-reference-content")).toBeInTheDocument();
 
     initialRender.unmount();
     renderContainer(true, lensStore);
 
-    expect(screen.getByTestId("prescription-content")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Prescription" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("image-reference-content")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Image Reference" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("stores the committed drawer height in the lens editor slice", async () => {

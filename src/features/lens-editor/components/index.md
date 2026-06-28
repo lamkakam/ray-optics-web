@@ -29,6 +29,7 @@ All components (composite + container + domain cells) for the lens editor featur
 - [LensEditorConfigToolbar](./LensEditorConfigToolbar/LensEditorConfigToolbar.tsx.md) — Lens Editor-level Update/Load/Download config actions shown before analysis controls
 - [FirstOrderChips](./FirstOrderChips/FirstOrderChips.tsx.md) — Chips showing first-order optical data (EFL, F#, BFL, etc.)
 - [FocusingPanel](./FocusingPanel/FocusingPanel.tsx.md) — Controls for focusing algorithms and best-focus thickness
+- [ImageReferencePanel](./ImageReferencePanel/ImageReferencePanel.tsx.md) — Selects the app-wide image reference convention from the Lens Editor drawer
 
 ## Visualisation
 

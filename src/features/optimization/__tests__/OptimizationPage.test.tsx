@@ -360,6 +360,11 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("button", { name: "Add operand" }));
 
     await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+    expect(proxy.evaluateOptimizationProblem).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.anything(),
+      "centroid",
+    );
 
     expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveClass("overflow-y-auto");
     const headers = screen.getAllByRole("columnheader");
@@ -881,6 +886,14 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("button", { name: "Optimize" }));
 
     await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
+    expect(proxy.optimizeOpm).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      "centroid",
+      expect.any(Function),
+      expect.any(String),
+      expect.any(SharedArrayBuffer),
+    );
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
   });
 

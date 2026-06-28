@@ -3,14 +3,9 @@ import userEvent from "@testing-library/user-event";
 import SettingsPage from "@/app/settings/page";
 
 const mockSetTheme = jest.fn();
-const mockSetImagePoint = jest.fn();
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: mockSetTheme }),
-}));
-
-jest.mock("@/shared/components/providers/ImagePointProvider", () => ({
-  useImagePoint: () => ({ imagePoint: "chief_ray", setImagePoint: mockSetImagePoint }),
 }));
 
 describe("SettingsPage", () => {
@@ -42,16 +37,8 @@ describe("SettingsPage", () => {
     expect(select.parentElement).toHaveClass("max-w-[12em]");
   });
 
-  it("renders Image point select with chief ray as the default", () => {
+  it("does not render the Image point selector", () => {
     render(<SettingsPage />);
-    const select = screen.getByLabelText("Image point") as HTMLSelectElement;
-    expect(select).toBeInTheDocument();
-    expect(select.value).toBe("chief_ray");
-  });
-
-  it("updates the Image point on change", async () => {
-    render(<SettingsPage />);
-    await userEvent.selectOptions(screen.getByLabelText("Image point"), "centroid");
-    expect(mockSetImagePoint).toHaveBeenCalledWith("centroid");
+    expect(screen.queryByLabelText("Image point")).not.toBeInTheDocument();
   });
 });
