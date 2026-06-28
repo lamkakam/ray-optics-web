@@ -45,6 +45,7 @@ interface BottomDrawerContainerProps {
 - Reads the optimization store for active tab state, optimizer state, radius/thickness/asphere modes, operands, and all store-backed drawer callbacks.
 - Handles optimizer patch updates locally, including optimizer-kind resets through `setOptimizerKind()` and method-change config validation warnings through `onWarning`.
 - Updates field and wavelength weights through the optimization store.
+- Renders the shared weight grid with tab-specific `Value` column widths: `95px` for fields and `130px` for wavelengths.
 - Opens radius, thickness, and asphere variable modals through the optimization store while forwarding inspection-modal callbacks supplied by `OptimizationPage`.
 - Adds, deletes, and updates operands through the optimization store.
 

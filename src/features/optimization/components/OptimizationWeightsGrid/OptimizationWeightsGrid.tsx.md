@@ -5,3 +5,5 @@ Shared AG Grid wrapper for field and wavelength weight rows with a single numeri
 - Wraps the grid in a horizontal-overflow container and relies on parent layout padding instead of adding its own outer `p-4`.
 - Keeps AG Grid in `domLayout="autoHeight"` without adding its own vertical scroll container so parent layout containers can own vertical scrolling.
 - Applies `defaultColDef={{ sortable: false, suppressMovable: true }}` so Optimization field and wavelength columns keep a fixed order.
+- Sets fixed AG Grid column widths for `Index` (`80px`) and `Weight` (`90px`).
+- Requires callers to provide `valueColumnWidth` so the shared `Value` column can use tab-specific initial widths.
