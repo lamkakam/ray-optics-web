@@ -11,7 +11,7 @@ Playwright end-to-end coverage for the complete singlet optimization workflow, f
 3. Configure displayed surface index `2` as Even Aspheric, with `a_4`, `a_6`, `a_8`, and `a_10` variable.
 4. Add a Ray Fan operand with weight `100`.
 5. Run optimization, wait for completion, and dismiss the progress dialog.
-6. Apply the optimized model through the confirmation dialog.
+6. Attempt to leave Optimization through the app navigation, stay on the first unapplied-result prompt, then leave again and apply the optimized model through the confirmation dialog.
 7. Return to the Lens Editor and inspect displayed surface index `2`.
 
 ## Assertions

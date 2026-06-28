@@ -17,4 +17,5 @@ Playwright end-to-end test that manually builds the Sasian Triplet lens from a b
 
 - Field and wavelength modal grids are small modal-local AG Grid instances; their helpers use AG Grid `row-index`.
 - The lens prescription grid uses helpers from `utils.ts` that locate rows by the rendered `Index` column. The `Index` column is the stable user-facing surface identity and skips Object/Image rows.
+- Prescription helpers first locate the pinned `Index` row, then read or edit cells from the matching center-row container for the same AG Grid `row-index`.
 - Prescription row insertion waits for the expected count of visible surface indices instead of assuming a specific AG Grid physical row position.
