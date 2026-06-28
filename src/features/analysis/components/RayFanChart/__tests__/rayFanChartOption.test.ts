@@ -219,6 +219,34 @@ describe("buildRayFanChartOption", () => {
     expect(Number(option.title[1]?.top) - (Number(option.grid[0]?.top) + Number(option.grid[0]?.height))).toBe(72);
   });
 
+  it("centers wide one-row wavelength legends over the plot band", () => {
+    const sixWavelengthRayFanData: RayFanData = Array.from({ length: 6 }, (_, index) => ({
+      fieldIdx: 0,
+      wvlIdx: index,
+      Sagittal: {
+        x: [-1, 0, 1],
+        y: [-0.2, 0, 0.2],
+      },
+      Tangential: {
+        x: [-1, 0, 1],
+        y: [-0.1, 0, 0.1],
+      },
+      unitX: "",
+      unitY: "mm",
+    }));
+
+    const option = buildRayFanChartOption(
+      sixWavelengthRayFanData,
+      ["486.1 nm", "500.0 nm", "532.0 nm", "587.6 nm", "610.0 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.legend).toEqual(expect.objectContaining({ left: 98, right: 66 }));
+    expect(option.grid[0]).toEqual(expect.objectContaining({ top: 72 }));
+  });
+
   it("uses a shared x range and independent y ranges for tangential and sagittal subplots", () => {
     const option = buildRayFanChartOption(
       rayFanData,

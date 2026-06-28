@@ -34,6 +34,10 @@ function estimateLegendRowCount(labels: readonly string[], availableWidth: numbe
   return rowCount;
 }
 
+function estimateLegendRowWidth(labels: readonly string[]): number {
+  return labels.reduce((totalWidth, label) => totalWidth + estimateLegendItemWidth(label), 0);
+}
+
 export function buildLegendWrapLayout(
   labels: readonly string[],
   chartWidth: number,
@@ -41,7 +45,18 @@ export function buildLegendWrapLayout(
   right: number,
 ): LegendWrapLayout {
   const availableWidth = Math.max(0, chartWidth - left - right);
+  const oneRowWidth = estimateLegendRowWidth(labels);
   const rowCount = estimateLegendRowCount(labels, availableWidth);
+
+  if (labels.length > 0 && oneRowWidth <= availableWidth) {
+    const sideInset = Math.floor((availableWidth - oneRowWidth) / 2);
+
+    return {
+      left: left + sideInset,
+      right: right + sideInset,
+      extraTop: 0,
+    };
+  }
 
   return {
     left,

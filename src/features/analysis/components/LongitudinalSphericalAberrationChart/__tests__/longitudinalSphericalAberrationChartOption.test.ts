@@ -96,4 +96,24 @@ describe("longitudinalSphericalAberrationChartOption", () => {
       height: 260,
     }));
   });
+
+  it("centers wide one-row wavelength legends over the plot band", () => {
+    const sixWavelengthLsaData: LongitudinalSphericalAberrationData = Array.from({ length: 6 }, (_, index) => ({
+      wvlIdx: index,
+      LSA: { x: [0, -0.02, -0.08], y: [0, 0.5, 1] },
+      unitX: "mm",
+      unitY: "",
+    }));
+
+    const option = buildLongitudinalSphericalAberrationOption(
+      sixWavelengthLsaData,
+      ["486.1 nm", "500.0 nm", "532.0 nm", "587.6 nm", "610.0 nm", "656.3 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.legend).toEqual(expect.objectContaining({ left: 104, right: 60 }));
+    expect(option.grid).toEqual(expect.objectContaining({ top: 36 }));
+  });
 });
