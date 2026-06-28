@@ -7,6 +7,7 @@ Observed package:
 - `rayoptics 0.9.8`
 - `src/python/.venv/lib/python3.12/site-packages/rayoptics/elem/surface.py`
 - Related paths:
+  - `rayoptics/optical/opticalmodel.py`
   - `rayoptics/raytr/raytrace.py`
   - `rayoptics/raytr/vigcalc.py`
   - `rayoptics/seq/interface.py`
@@ -226,6 +227,96 @@ So if `sd` is applied through `set_max_aperture()`, existing clear apertures are
 mutated to match it. But if a larger clear aperture is assigned after that, or
 otherwise exists independently, ray clipping follows the larger clear aperture.
 
+## Interaction With `do_apertures`
+
+`opm['seq_model'].do_apertures` is handled during model updates, not during the
+ray-trace aperture check itself.
+
+The update chain is:
+
+```python
+OpticalModel.update_optical_properties()
+SequentialModel.update_optical_properties()
+SequentialModel.set_clear_apertures()
+Surface.set_max_aperture(max_ap)
+```
+
+`OpticalModel.update_optical_properties()` calls
+`self['seq_model'].update_optical_properties(**kwargs)`. The sequential model
+then does:
+
+```python
+if self.do_apertures:
+    if len(self.ifcs) > 2:
+        self.set_clear_apertures()
+```
+
+`SequentialModel.set_clear_apertures()` traces boundary rays, computes the
+largest radial ray coordinate at each interface, and calls:
+
+```python
+s.set_max_aperture(max_ap)
+```
+
+On `Surface`, that call updates `max_aperture` and resizes every existing
+`clear_aperture`:
+
+```python
+super().set_max_aperture(max_ap)
+for ap in self.clear_apertures:
+    ap.set_dimension(max_ap, max_ap)
+```
+
+It does not update `edge_apertures`.
+
+Therefore, if all three of `sd`, `clear_apertures`, and `edge_apertures` exist
+and `do_apertures` is `True`, the next optical model update can overwrite the
+existing clear aperture dimensions with the boundary-ray-derived `max_ap`.
+After that update:
+
+- Ray clipping uses the resized `clear_apertures`.
+- `max_aperture` stores the same recalculated scalar aperture.
+- `edge_apertures` remain unchanged.
+- `surface_od()` and `get_y_aperture_extent()` still prefer
+  `edge_apertures`, so listed/rendered surface size can still differ from the
+  actual ray-clipping aperture.
+
+Example behavior observed in the venv with the exact method that
+`do_apertures=True` eventually calls:
+
+```python
+s = Surface(
+    max_ap=2,
+    clear_apertures=[Circular(5)],
+    edge_apertures=[Circular(3)],
+)
+
+s.set_max_aperture(7)
+```
+
+Results:
+
+- Before the call, `max_aperture` is `2`, clear radius is `5`, edge radius is
+  `3`, `surface_od()` is `3`, and `point_inside(4, 0)` is `True`.
+- After the call, `max_aperture` is `7`, clear radius is `7`, edge radius is
+  still `3`, `surface_od()` is still `3`, `point_inside(6, 0)` is `True`, and
+  `point_inside(8, 0)` is `False`.
+
+So `do_apertures=True` can make the actual optical pass aperture disagree with
+the displayed/listed aperture whenever an `edge_aperture` is present. In that
+state, the actual clipping aperture is the recalculated clear aperture, not
+`sd` and not the edge aperture.
+
+`set_clear_apertures()` traces its boundary rays without passing
+`check_apertures=True`, so it is not constrained by the current
+`clear_apertures`, `edge_apertures`, or `sd` clipping state while deriving the
+new scalar aperture. It is a recalculation from the optical specification's
+boundary rays.
+
+The Zemax and CODE V importers account for this by setting
+`sm.do_apertures = False` when imported clear aperture records exist. Otherwise,
+a later model update could resize imported clear apertures.
+
 ## Interaction With `set_vig(opm)`
 
 `set_vig(opm)` is implemented in `rayoptics.raytr.vigcalc`. It computes field
@@ -278,6 +369,9 @@ Avoid `Elliptical` for clipping in this venv unless it is fixed.
 
 Use `edge_apertures` only when the mechanical or rendered surface edge differs
 from the optical clear aperture.
+
+If preserving imported or user-authored clear apertures matters, keep
+`do_apertures` disabled for that model.
 
 Keep the hierarchy physically consistent:
 
