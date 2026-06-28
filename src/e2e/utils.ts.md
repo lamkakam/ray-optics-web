@@ -11,7 +11,7 @@ Shared Playwright helpers for ray-optics-web end-to-end tests.
 
 ## AG Grid Editing Helpers
 
-- `editNumberCell`, `selectGridOption`, `insertRowAfter`, and `setMedium` address rows by AG Grid `row-index`; medium helpers select the manufacturer and fill the searchable Glass datalist before confirming.
+- `editNumberCell`, `selectGridOption`, `insertRowAfter`, and `setMedium` address rows by AG Grid `row-index`; medium helpers select the Catalog field and fill the searchable Glass datalist before confirming.
 - `editFieldRow`, `selectFraunhofer`, and `editWeightCell` are modal-grid helpers and also address rows by AG Grid `row-index`.
 
 ## Prescription Grid Helpers

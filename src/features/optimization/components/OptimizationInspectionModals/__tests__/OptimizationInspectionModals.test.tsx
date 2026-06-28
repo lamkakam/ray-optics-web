@@ -153,7 +153,7 @@ describe("OptimizationInspectionModals", () => {
       onCloseDiffractionGratingModal: jest.fn(),
     });
 
-    expect(screen.getByLabelText("Manufacturer")).toHaveValue("Schott");
+    expect(screen.getByLabelText("Catalog")).toHaveValue("Schott");
     expect(screen.getByLabelText("Glass")).toHaveValue("N-SK11");
 
     rerender(
@@ -171,7 +171,7 @@ describe("OptimizationInspectionModals", () => {
       </GlassCatalogContext.Provider>,
     );
 
-    expect(screen.getByLabelText("Manufacturer")).toHaveValue("Ohara");
+    expect(screen.getByLabelText("Catalog")).toHaveValue("Ohara");
     expect(screen.getByLabelText("Glass")).toHaveValue("S-FPL53");
   });
 });

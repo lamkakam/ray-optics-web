@@ -360,7 +360,7 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openMediumModal(store.getState().rows[0].id);
     });
 
-    expect(screen.getByLabelText("Manufacturer")).toHaveValue("Special");
+    expect(screen.getByLabelText("Catalog")).toHaveValue("Special");
     expect(screen.getByLabelText("Glass")).toHaveValue("air");
   });
 
@@ -371,7 +371,7 @@ describe("LensPrescriptionContainer", () => {
       store.getState().openMediumModal(store.getState().rows[0].id);
     });
 
-    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Schott");
     await userEvent.clear(screen.getByLabelText("Glass"));
     await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));

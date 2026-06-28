@@ -315,7 +315,7 @@ export async function setPrescriptionMedium(
   await row.getByRole("button", { name: "Edit medium" }).click();
   const modal = page.getByRole("dialog", { name: "Select Medium" });
   await modal.waitFor({ state: "visible", timeout: 3_000 });
-  await modal.getByLabel("Manufacturer").selectOption(manufacturer);
+  await modal.getByLabel("Catalog").selectOption(manufacturer);
   await modal.getByLabel("Glass", { exact: true }).fill(glass);
   await modal.getByRole("button", { name: "Confirm" }).click();
   await modal.waitFor({ state: "hidden", timeout: 5_000 });
@@ -334,7 +334,7 @@ export async function setMedium(
   await row.getByRole("button", { name: "Edit medium" }).click();
   const modal = page.getByRole("dialog", { name: "Select Medium" });
   await modal.waitFor({ state: "visible", timeout: 3_000 });
-  await modal.getByLabel("Manufacturer").selectOption(manufacturer);
+  await modal.getByLabel("Catalog").selectOption(manufacturer);
   await modal.getByLabel("Glass", { exact: true }).fill(glass);
   await modal.getByRole("button", { name: "Confirm" }).click();
   await modal.waitFor({ state: "hidden", timeout: 5_000 });

@@ -202,11 +202,11 @@ export function MediumSelectorModal({
             )}
             <div>
               <Label htmlFor="manufacturer-select">
-                Manufacturer
+                Catalog
               </Label>
               <Select
                 id="manufacturer-select"
-                aria-label="Manufacturer"
+                aria-label="Catalog"
                 options={manufacturers.map((m) => ({ value: m, label: m }))}
                 value={manufacturer}
                 disabled={readOnly || !canSelectCatalogGlass}

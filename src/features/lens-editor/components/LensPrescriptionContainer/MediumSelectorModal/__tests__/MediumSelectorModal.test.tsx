@@ -134,15 +134,15 @@ describe("MediumSelectorModal", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} readOnly />);
 
     expect(screen.getByLabelText("Use model glass")).toBeDisabled();
-    expect(screen.getByLabelText("Manufacturer")).toBeDisabled();
+    expect(screen.getByLabelText("Catalog")).toBeDisabled();
     expect(screen.getByLabelText("Glass")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
   });
 
-  it("has a manufacturer dropdown with Special and manufacturers from provider data", () => {
+  it("has a Catalog dropdown with Special and provider catalogs", () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
-    const select = screen.getByLabelText("Manufacturer");
+    const select = screen.getByLabelText("Catalog");
     expect(select).toBeInTheDocument();
     expect(screen.getByLabelText("Use model glass")).not.toBeChecked();
 
@@ -177,7 +177,7 @@ describe("MediumSelectorModal", () => {
   it("shows glass options synchronously when a real manufacturer is selected", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
-    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Schott");
 
     const glassSelect = screen.getByLabelText("Glass");
     expect(glassSelect.tagName).toBe("INPUT");
@@ -190,7 +190,7 @@ describe("MediumSelectorModal", () => {
   it("renders a glass map link for a selected catalog glass", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
-    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Schott");
     await userEvent.clear(screen.getByLabelText("Glass"));
     await userEvent.type(screen.getByLabelText("Glass"), "N-BK7");
 
@@ -203,10 +203,10 @@ describe("MediumSelectorModal", () => {
   it("clears Glass and invalidates selection when changing between catalogs", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
-    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Schott");
     await userEvent.clear(screen.getByLabelText("Glass"));
     await userEvent.type(screen.getByLabelText("Glass"), "N-SF6");
-    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Ohara");
+    await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Ohara");
 
     expect(screen.getByLabelText("Glass")).toHaveValue("");
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
@@ -219,7 +219,7 @@ describe("MediumSelectorModal", () => {
       <MediumSelectorModal {...defaultProps} onSelectionChange={onSelectionChange} />,
     );
 
-    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Schott");
 
     expect(screen.getByLabelText("Glass")).toHaveValue("");
     expect(onSelectionChange).toHaveBeenLastCalledWith("", "Schott");
@@ -238,7 +238,7 @@ describe("MediumSelectorModal", () => {
       />,
     );
 
-    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Ohara");
+    await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Ohara");
 
     expect(screen.getByLabelText("Glass")).toHaveValue("");
     expect(onSelectionChange).toHaveBeenLastCalledWith("", "Ohara");
@@ -289,7 +289,7 @@ describe("MediumSelectorModal", () => {
   it("hides the glass map link when Use model glass is checked", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
-    await userEvent.selectOptions(screen.getByLabelText("Manufacturer"), "Schott");
+    await userEvent.selectOptions(screen.getByLabelText("Catalog"), "Schott");
     await userEvent.type(screen.getByLabelText("Glass"), "N-BK7");
     expect(screen.getByRole("link", { name: "View in glass map" })).toBeInTheDocument();
 
@@ -366,7 +366,7 @@ describe("MediumSelectorModal", () => {
 
     await userEvent.click(screen.getByLabelText("Use model glass"));
 
-    expect(screen.queryByLabelText("Manufacturer")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Catalog")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Glass")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Single refractive index")).not.toBeChecked();
     expect(screen.getByLabelText("Refractive index at d-line")).toBeInTheDocument();
@@ -403,7 +403,7 @@ describe("MediumSelectorModal", () => {
 
     expect(screen.queryByLabelText("Refractive index at d-line")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Abbe Number")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Manufacturer")).toHaveValue("Special");
+    expect(screen.getByLabelText("Catalog")).toHaveValue("Special");
     expect(screen.getByLabelText("Glass")).toHaveValue("air");
     expect(onSelectionChange).toHaveBeenLastCalledWith("air", "Special");
   });
