@@ -13,7 +13,7 @@ def make_ray_grid(
     wavelength_nm: float,
     foc: float = 0.0,
     num_rays: int = 64,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> RayGrid: ...
 ```
 
@@ -28,12 +28,12 @@ Creates a `RayGrid` with `check_apertures=True` and `apply_vignetting=True` alwa
 - `wavelength_nm`: wavelength in nm — callers retrieve this via `opm['optical_spec']['wvls'].wavelengths[i]`.
 - `foc`: defocus value in system units (default `0.0`).
 - `num_rays`: grid resolution (default `64`).
-- `opd_aim_point`: `"chief_ray"` preserves RayOptics' default reference; `"centroid"` computes and passes a shared centroid `image_pt_2d`.
+- `image_point`: `"chief_ray"` preserves RayOptics' default reference; `"centroid"` computes and passes a shared centroid `image_pt_2d`.
 
 ## Key Conventions
 
 - `check_apertures=True` and `apply_vignetting=True` are always set — never pass `False` to these; the rest of the package assumes these semantics.
-- Chief-ray mode does not pass `image_pt_2d`; centroid mode gets the image point from `opd_reference._resolve_opd_image_point`.
+- Chief-ray mode does not pass `image_pt_2d`; centroid mode gets the image point from `opd_reference._resolve_image_point`.
 - `wavelength_nm` must be a raw float in nm, not a Pyodide proxy or numpy scalar.
 - The function does a lazy import of `RayGrid` (`from rayoptics.raytr.analyses import RayGrid`) so it is safe to import `make_ray_grid` before `init()` has run, as long as `make_ray_grid(...)` is not called before `init()`.
 

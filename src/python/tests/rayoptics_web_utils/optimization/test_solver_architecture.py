@@ -402,9 +402,11 @@ def test_differential_evolution_adapter_defaults_missing_scipy_status(monkeypatc
 def test_compute_ray_fan_uses_operand_num_rays_for_padding(monkeypatch):
     from rayoptics_web_utils.optimization.operands import PENALTY_RESIDUAL, compute_ray_fan
 
+    calls = []
+
     monkeypatch.setattr(
         "rayoptics_web_utils.optimization.operands.get_ray_fan_data",
-        lambda opm, fi: [{
+        lambda opm, fi, image_point="chief_ray": calls.append((opm, fi, image_point)) or [{
             "Tangential": {"y": [1.0]},
             "Sagittal": {"y": [2.0]},
         }],
@@ -415,8 +417,10 @@ def test_compute_ray_fan_uses_operand_num_rays_for_padding(monkeypatch):
         field_index=0,
         wavelength_index=0,
         options={"num_rays": 3},
+        image_point="centroid",
     )
 
+    assert calls == [(None, 0, "centroid")]
     assert residuals == [1.0, 2.0, PENALTY_RESIDUAL, PENALTY_RESIDUAL, PENALTY_RESIDUAL, PENALTY_RESIDUAL]
 
 
@@ -426,7 +430,7 @@ def test_axis_specific_opd_difference_uses_selected_fan_axis(monkeypatch):
 
     monkeypatch.setattr(
         "rayoptics_web_utils.optimization.operands.get_opd_fan_data",
-        lambda opm, fi, opd_aim_point="chief_ray": [{
+        lambda opm, fi, image_point="chief_ray": [{
             "Tangential": {"y": [1.0, 3.0, 5.0]},
             "Sagittal": {"y": [10.0, 14.0]},
         }],
@@ -442,7 +446,7 @@ def test_axis_specific_opd_difference_returns_penalty_when_selected_axis_has_no_
 
     monkeypatch.setattr(
         "rayoptics_web_utils.optimization.operands.get_opd_fan_data",
-        lambda opm, fi, opd_aim_point="chief_ray": [{
+        lambda opm, fi, image_point="chief_ray": [{
             "Tangential": {"y": [float("nan"), float("inf")]},
             "Sagittal": {"y": [1.0, 2.0]},
         }],
@@ -456,16 +460,19 @@ def test_axis_specific_ray_fan_uses_selected_fan_axis_and_num_rays_padding(monke
     from rayoptics_web_utils.optimization.operands import compute_ray_fan_sagittal
     from rayoptics_web_utils.optimization.operands import compute_ray_fan_tangential
 
+    calls = []
+
     monkeypatch.setattr(
         "rayoptics_web_utils.optimization.operands.get_ray_fan_data",
-        lambda opm, fi: [{
+        lambda opm, fi, image_point="chief_ray": calls.append((opm, fi, image_point)) or [{
             "Tangential": {"y": [1.0, 2.0, 3.0]},
             "Sagittal": {"y": [4.0]},
         }],
     )
 
-    assert compute_ray_fan_tangential(None, 0, 0, {"num_rays": 4}) == [1.0, 2.0, 3.0, PENALTY_RESIDUAL]
-    assert compute_ray_fan_sagittal(None, 0, 0, {"num_rays": 4}) == [4.0, PENALTY_RESIDUAL, PENALTY_RESIDUAL, PENALTY_RESIDUAL]
+    assert compute_ray_fan_tangential(None, 0, 0, {"num_rays": 4}, image_point="centroid") == [1.0, 2.0, 3.0, PENALTY_RESIDUAL]
+    assert compute_ray_fan_sagittal(None, 0, 0, {"num_rays": 4}, image_point="centroid") == [4.0, PENALTY_RESIDUAL, PENALTY_RESIDUAL, PENALTY_RESIDUAL]
+    assert calls == [(None, 0, "centroid"), (None, 0, "centroid")]
 
 
 def test_axis_specific_ray_fan_replaces_non_finite_and_missing_samples_with_penalties(monkeypatch):
@@ -474,7 +481,7 @@ def test_axis_specific_ray_fan_replaces_non_finite_and_missing_samples_with_pena
 
     monkeypatch.setattr(
         "rayoptics_web_utils.optimization.operands.get_ray_fan_data",
-        lambda opm, fi: [{
+        lambda opm, fi, image_point="chief_ray": [{
             "Tangential": {"y": [float("nan"), float("inf")]},
             "Sagittal": {"y": [1.0, 2.0]},
         }],

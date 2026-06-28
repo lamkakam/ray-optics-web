@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container component that composes the three drawer tabs (System Specs, Prescription, Focusing) and renders them inside `BottomDrawer`. Extracts `drawerTabs` construction from `page.tsx` to encapsulate bottom-drawer concerns.
+Container component that composes the four drawer tabs (System Specs, Prescription, Focusing, Image Reference) and renders them inside `BottomDrawer`. Extracts `drawerTabs` construction from `page.tsx` to encapsulate bottom-drawer concerns.
 
 ## Props
 
@@ -36,6 +36,7 @@ Builds a `tabs` array via `useMemo` containing:
 1. **System Specs** — `<SpecsConfiguratorContainer />`
 2. **Prescription** — `<LensPrescriptionContainer getOpticalModel={...} />`
 3. **Focusing** — `<FocusingContainer .../>`
+4. **Image Reference** — `<ImageReferencePanel />`
 
 Reads `activeBottomDrawerTabId` from the lens editor Zustand store and passes it to `BottomDrawer` as a controlled tab value. On tab change, writes the selected tab id back into `setActiveBottomDrawerTabId`, allowing Lens Editor to restore the previously selected drawer tab after navigation.
 

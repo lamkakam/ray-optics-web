@@ -49,10 +49,10 @@ def compute_rms_spot_size(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> float:
     """Return RMS spot size for one field/wavelength sample."""
-    del opd_aim_point
+    del image_point
     if field_index is None or wavelength_index is None:
         raise ValueError("rms_spot_size requires field and wavelength indices")
     num_rays = get_operand_num_rays(options)
@@ -79,7 +79,7 @@ def compute_rms_wavefront_error(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> float:
     """Return RMS WFE in waves for one field/wavelength sample."""
     if field_index is None or wavelength_index is None:
@@ -93,7 +93,7 @@ def compute_rms_wavefront_error(
         fi=field_index,
         wavelength_nm=wavelength_nm,
         num_rays=num_rays,
-        opd_aim_point=opd_aim_point,
+        image_point=image_point,
     )
     opd_grid = _scale_opd_grid_to_wavelength(ray_grid.grid[2], opm, wavelength_nm)
     valid = opd_grid[~np.isnan(opd_grid)]
@@ -116,14 +116,14 @@ def _compute_opd_difference_for_axis(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
     axis: str | None = None,
 ) -> float:
     """Return mean absolute OPD deviation in waves for one field/wavelength sample."""
     if field_index is None or wavelength_index is None:
         raise ValueError("opd_difference requires field and wavelength indices")
     del options
-    fan_data = get_opd_fan_data(opm, fi=field_index, opd_aim_point=opd_aim_point)
+    fan_data = get_opd_fan_data(opm, fi=field_index, image_point=image_point)
     validate_surface_index(fan_data, wavelength_index, "wavelength index")
     wavelength_fan = fan_data[wavelength_index]
     samples = np.array(_select_fan_samples(wavelength_fan, axis), dtype=float)
@@ -140,10 +140,10 @@ def compute_opd_difference(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> float:
     """Return combined tangential and sagittal mean absolute OPD deviation."""
-    return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, opd_aim_point)
+    return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, image_point)
 
 
 def compute_opd_difference_tangential(
@@ -151,10 +151,10 @@ def compute_opd_difference_tangential(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> float:
     """Return tangential mean absolute OPD deviation."""
-    return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, opd_aim_point, "Tangential")
+    return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, image_point, "Tangential")
 
 
 def compute_opd_difference_sagittal(
@@ -162,10 +162,10 @@ def compute_opd_difference_sagittal(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> float:
     """Return sagittal mean absolute OPD deviation."""
-    return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, opd_aim_point, "Sagittal")
+    return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, image_point, "Sagittal")
 
 
 def compute_focal_length(
@@ -173,10 +173,10 @@ def compute_focal_length(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> float:
     """Return paraxial effective focal length."""
-    del field_index, wavelength_index, options, opd_aim_point
+    del field_index, wavelength_index, options, image_point
     return float(opm["analysis_results"]["parax_data"].fod.efl)
 
 
@@ -185,10 +185,10 @@ def compute_f_number(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> float:
     """Return paraxial f-number."""
-    del field_index, wavelength_index, options, opd_aim_point
+    del field_index, wavelength_index, options, image_point
     return float(opm["analysis_results"]["parax_data"].fod.fno)
 
 
@@ -197,15 +197,14 @@ def _compute_ray_fan_for_axis(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
     axis: str | None = None,
 ) -> list[float]:
     """Return ray-fan ordinates for one field/wavelength sample."""
-    del opd_aim_point
     if field_index is None or wavelength_index is None:
         raise ValueError("ray_fan requires field and wavelength indices")
     residual_count = get_operand_num_rays(options) * (2 if axis is None else 1)
-    ray_fan_data = get_ray_fan_data(opm, fi=field_index)
+    ray_fan_data = get_ray_fan_data(opm, fi=field_index, image_point=image_point)
     validate_surface_index(ray_fan_data, wavelength_index, "wavelength index")
     wavelength_fan = ray_fan_data[wavelength_index]
     samples = _select_fan_samples(wavelength_fan, axis)
@@ -223,10 +222,10 @@ def compute_ray_fan(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> list[float]:
     """Return combined tangential and sagittal ray-fan ordinates for one field/wavelength sample."""
-    return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, opd_aim_point)
+    return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, image_point)
 
 
 def compute_ray_fan_tangential(
@@ -234,10 +233,10 @@ def compute_ray_fan_tangential(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> list[float]:
     """Return tangential ray-fan ordinates for one field/wavelength sample."""
-    return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, opd_aim_point, "Tangential")
+    return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, image_point, "Tangential")
 
 
 def compute_ray_fan_sagittal(
@@ -245,10 +244,10 @@ def compute_ray_fan_sagittal(
     field_index: int | None,
     wavelength_index: int | None,
     options: OperandOptions | None,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> list[float]:
     """Return sagittal ray-fan ordinates for one field/wavelength sample."""
-    return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, opd_aim_point, "Sagittal")
+    return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, image_point, "Sagittal")
 
 
 OPERAND_REGISTRY: dict[str, OperandEvaluator] = {

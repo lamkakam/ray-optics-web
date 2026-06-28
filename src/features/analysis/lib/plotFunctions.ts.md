@@ -41,25 +41,25 @@ async function loadAnalysisPlot({
   model: OpticalModel | undefined;
   fieldIndex: number;
   wavelengthIndex: number;
-  opdAimPoint?: OpdAimPoint;
+  imagePoint?: ImagePoint;
 }): Promise<AnalysisPlotLoadResult | undefined>
 ```
 
 Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx`.
 
 - Returns `undefined` when `proxy` or `model` is missing.
-- Calls `proxy.getRayFanData(model, fi)` for `rayFan`.
+- Calls `proxy.getRayFanData(model, fi, imagePoint)` for `rayFan`.
 - Calls `proxy.get3rdOrderSeidelData(model)` for `surfaceBySurface3rdOrder` and returns `surfaceBySurface`.
-- Calls `proxy.getOpdFanData(model, fi, opdAimPoint)` for `opdFan`.
-- Calls `proxy.getSpotDiagramData(model, fi)` for `spotDiagram`.
+- Calls `proxy.getOpdFanData(model, fi, imagePoint)` for `opdFan`.
+- Calls `proxy.getSpotDiagramData(model, fi, imagePoint)` for `spotDiagram`.
 - Calls `proxy.getFieldCurvatureData(model, wavelengthIndex)` for `fieldCurvature`.
 - Calls `proxy.getAstigmatismCurveData(model, wavelengthIndex)` for `astigmatismCurve`.
 - Calls `proxy.getLSAData(model)` for `longitudinalSphericalAberration`; the worker returns all wavelength series, so no field or wavelength selector index is used.
-- Calls `proxy.getWavefrontData(...)` with `opdAimPoint` for `wavefrontMap`.
-- Calls `proxy.getStrehlVsWavelengthData(...)` with `opdAimPoint` for `strehlVsWavelength`.
+- Calls `proxy.getWavefrontData(...)` with `imagePoint` for `wavefrontMap`.
+- Calls `proxy.getStrehlVsWavelengthData(...)` with `imagePoint` for `strehlVsWavelength`.
 - Calls `proxy.getGeoPSFData(...)` for `geoPSF`.
-- Calls `proxy.getDiffractionPSFData(...)` with `opdAimPoint` for `diffractionPSF`.
-- Calls `proxy.getDiffractionMTFData(...)` with `opdAimPoint` for `diffractionMTF`.
+- Calls `proxy.getDiffractionPSFData(...)` with `imagePoint` for `diffractionPSF`.
+- Calls `proxy.getDiffractionMTFData(...)` with `imagePoint` for `diffractionMTF`.
 - Centralizes the plot-type to worker-API mapping so submit-time updates and in-panel plot changes stay consistent.
 
 ### `commitAnalysisPlotResult`

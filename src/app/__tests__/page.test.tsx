@@ -17,7 +17,7 @@ import { AnalysisDataStoreProvider } from "@/features/analysis/providers/Analysi
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
-import { OpdAimPointProvider, type OpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
+import { ImagePointProvider, type ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import {
   OptimizationStoreContext,
   OptimizationStoreProvider,
@@ -243,7 +243,7 @@ const mockProxy = {
   getDiffractionMTFData: mockGetDiffractionMTFData,
   getLSAData: jest.fn().mockResolvedValue([]),
   get3rdOrderSeidelData: mockGet3rdOrderSeidelData,
-  getZernikeCoefficients: jest.fn<Promise<ZernikeData>, [OpticalModel, number, number, OpdAimPoint?, number?, ZernikeOrdering?]>().mockResolvedValue({
+  getZernikeCoefficients: jest.fn<Promise<ZernikeData>, [OpticalModel, number, number, ImagePoint?, number?, ZernikeOrdering?]>().mockResolvedValue({
     coefficients: [],
     rms_normalized_coefficients: [],
     rms_wfe: 0,
@@ -328,7 +328,7 @@ jest.mock("@/shared/hooks/usePyodide", () => ({
 
 function renderWithStores(node: React.ReactNode) {
   return render(
-    <OpdAimPointProvider>
+    <ImagePointProvider>
       <SpecsConfiguratorStoreProvider>
         <LensEditorStoreProvider>
           <AnalysisPlotStoreProvider>
@@ -340,7 +340,7 @@ function renderWithStores(node: React.ReactNode) {
           </AnalysisPlotStoreProvider>
         </LensEditorStoreProvider>
       </SpecsConfiguratorStoreProvider>
-    </OpdAimPointProvider>
+    </ImagePointProvider>
   );
 }
 

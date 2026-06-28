@@ -1,4 +1,4 @@
-"""Shared OPD reference image-point selection."""
+"""Shared image-point selection."""
 
 from __future__ import annotations
 
@@ -9,26 +9,26 @@ import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
 from rayoptics.raytr.analyses import trace_ray_grid
 
-type OpdAimPoint = Literal["chief_ray", "centroid"]
+type ImagePoint = Literal["chief_ray", "centroid"]
 
 
-def _validate_opd_aim_point(opd_aim_point: str) -> OpdAimPoint:
-    if opd_aim_point == "chief_ray" or opd_aim_point == "centroid":
-        return opd_aim_point
-    raise ValueError(f"Unsupported OPD aim point: {opd_aim_point}")
+def _validate_image_point(image_point: str) -> ImagePoint:
+    if image_point == "chief_ray" or image_point == "centroid":
+        return image_point
+    raise ValueError(f"Unsupported image point: {image_point}")
 
 
-def _resolve_opd_image_point(
+def _resolve_image_point(
     opm: OpticalModel,
     fi: int,
     wavelength_nm: float,
     foc: float,
     num_rays: int,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ):
-    """Return RayOptics image_pt_2d override for the requested OPD aim point."""
-    validated_aim_point = _validate_opd_aim_point(opd_aim_point)
-    if validated_aim_point == "chief_ray":
+    """Return RayOptics image_pt_2d override for the requested image point."""
+    validated_image_point = _validate_image_point(image_point)
+    if validated_image_point == "chief_ray":
         return None
 
     osp = opm.optical_spec
@@ -50,12 +50,16 @@ def _resolve_opd_image_point(
         for _, _, ray_pkg in row:
             if ray_pkg is None:
                 continue
-            image_point = np.asarray(ray_pkg[mc.ray][-1][mc.p], dtype=float)
-            if image_point.shape[0] < 2 or not np.all(np.isfinite(image_point[:2])):
+            ray = ray_pkg[mc.ray]
+            traced_image_point = np.asarray(ray[-1][mc.p], dtype=float)
+            ray_direction = np.asarray(ray[-1][mc.d], dtype=float)
+            if ray_direction.ndim > 0 and ray_direction.shape[0] >= 3 and ray_direction[2] != 0:
+                traced_image_point = traced_image_point + (foc / ray_direction[2]) * ray_direction
+            if traced_image_point.shape[0] < 2 or not np.all(np.isfinite(traced_image_point[:2])):
                 continue
-            points.append(image_point[:2])
+            points.append(traced_image_point[:2])
 
     if not points:
-        raise ValueError("No valid rays are available to compute centroid OPD aim point.")
+        raise ValueError("No valid rays are available to compute centroid image point.")
 
     return np.mean(np.asarray(points, dtype=float), axis=0)

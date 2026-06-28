@@ -18,8 +18,8 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", setTheme: jest.fn() }),
 }));
 
-jest.mock("@/shared/components/providers/OpdAimPointProvider", () => ({
-  useOpdAimPoint: () => ({ opdAimPoint: "centroid", setOpdAimPoint: jest.fn() }),
+jest.mock("@/shared/components/providers/ImagePointProvider", () => ({
+  useImagePoint: () => ({ imagePoint: "centroid", setImagePoint: jest.fn() }),
 }));
 
 jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
@@ -360,6 +360,11 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("button", { name: "Add operand" }));
 
     await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+    expect(proxy.evaluateOptimizationProblem).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.anything(),
+      "centroid",
+    );
 
     expect(screen.getByTestId("optimization-evaluation-scroll")).toHaveClass("overflow-y-auto");
     const headers = screen.getAllByRole("columnheader");
@@ -881,6 +886,14 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("button", { name: "Optimize" }));
 
     await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
+    expect(proxy.optimizeOpm).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      "centroid",
+      expect.any(Function),
+      expect.any(String),
+      expect.any(SharedArrayBuffer),
+    );
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
   });
 
@@ -1022,7 +1035,7 @@ describe("OptimizationPage", () => {
       resolveOptimization = resolve;
     });
 
-    const optimizeOpm = jest.fn().mockImplementation(async (_model, _config, _opdAimPoint, onProgress) => {
+    const optimizeOpm = jest.fn().mockImplementation(async (_model, _config, _imagePoint, onProgress) => {
       await onProgress?.([
         { iteration: 0, merit_function_value: 100, log10_merit_function_value: 2 },
       ]);

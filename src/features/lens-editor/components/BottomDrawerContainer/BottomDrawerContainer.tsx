@@ -9,6 +9,7 @@ import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorS
 import { SpecsConfiguratorContainer } from "@/features/lens-editor/components/SpecsConfiguratorContainer";
 import { LensPrescriptionContainer } from "@/features/lens-editor/components/LensPrescriptionContainer";
 import { FocusingContainer } from "@/features/lens-editor/components/FocusingContainer";
+import { ImageReferencePanel } from "@/features/lens-editor/components/ImageReferencePanel";
 
 interface BottomDrawerContainerProps {
   readonly getOpticalModel: () => OpticalModel;
@@ -61,6 +62,11 @@ export function BottomDrawerContainer({
             onError={onError}
           />
         ),
+      },
+      {
+        id: "image-reference",
+        label: "Image Reference",
+        content: <ImageReferencePanel />,
       },
     ],
     [getOpticalModel, onUpdateSystem, isReady, computing, proxy, onError]

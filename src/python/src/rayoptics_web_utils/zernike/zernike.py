@@ -184,7 +184,7 @@ def get_zernike_coefficients(
     field_index: int,
     wvl_index: int,
     zernike_terms: list[ZernikeTerm],
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
     num_rays: int = 64,
 ) -> dict:
     """Compute Zernike coefficients for a given field and wavelength.
@@ -212,7 +212,7 @@ def get_zernike_coefficients(
         fi=field_index,
         wavelength_nm=wavelength_nm,
         num_rays=num_rays,
-        opd_aim_point=opd_aim_point,
+        image_point=image_point,
     )
 
     grid = _extract_exit_pupil_grid(rg, opm, wavelength_nm)

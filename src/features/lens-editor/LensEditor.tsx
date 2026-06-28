@@ -26,7 +26,7 @@ import {
 import { Button, type ButtonSize } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
-import { useOpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
+import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
 export interface LensEditorProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -43,7 +43,7 @@ export function LensEditor({
   const isLG = screenSize === "screenLG";
   const analysisButtonSize: ButtonSize = screenSize === "screenSM" ? "xs" : "sm";
   const { theme } = useTheme();
-  const { opdAimPoint } = useOpdAimPoint();
+  const { imagePoint } = useImagePoint();
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
   const analysisPlotStore = useAnalysisPlotStore();
@@ -69,9 +69,9 @@ export function LensEditor({
       const committedOpticalModel = lensStore.getState().committedOpticalModel;
       if (!committedOpticalModel) throw new Error("No optical model computed yet");
       const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
-      return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, opdAimPoint, numTerms, ordering);
+      return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, imagePoint, numTerms, ordering);
     },
-    [proxy, lensStore, opdAimPoint]
+    [proxy, lensStore, imagePoint]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -103,7 +103,7 @@ export function LensEditor({
           model,
           fieldIndex: clampedFieldIndex,
           wavelengthIndex: clampedWavelengthIndex,
-          opdAimPoint,
+          imagePoint,
         }),
         proxy.get3rdOrderSeidelData(model),
       ]);
@@ -122,7 +122,7 @@ export function LensEditor({
       lensLayoutImageStore.getState().setLayoutLoading(false);
       analysisPlotStore.getState().setPlotLoading(false);
     }
-  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError, theme, opdAimPoint]);
+  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError, theme, imagePoint]);
 
   const getOpticalModel = useCallback((): OpticalModel => {
     const autoAperture = lensStore.getState().autoAperture;

@@ -69,11 +69,11 @@ class _OptimizationProblem(OptimizationProblem):
 def evaluate_optimization_problem(
     opm: OpticalModel,
     config: OptimizationConfig,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
 ) -> OptimizationReport:
     """Evaluate a dict-driven optimization problem without running SciPy."""
     _sync_legacy_hooks()
-    problem = _OptimizationProblem(opm, config, opd_aim_point=opd_aim_point)
+    problem = _OptimizationProblem(opm, config, image_point=image_point)
     snapshot = _snapshot_state(opm, problem.variables, problem.pickups)
     initial_values = problem.variable_state()
     try:
@@ -117,12 +117,12 @@ def _build_stopped_report(
 def optimize_opm(
     opm: OpticalModel,
     config: OptimizationConfig,
-    opd_aim_point: str = "chief_ray",
+    image_point: str = "chief_ray",
     progress_reporter: ProgressReporter | None = None,
 ) -> OptimizationReport:
     """Optimize a rayoptics optical model using a dict-driven config."""
     _sync_legacy_hooks()
-    problem = _OptimizationProblem(opm, config, opd_aim_point=opd_aim_point)
+    problem = _OptimizationProblem(opm, config, image_point=image_point)
     snapshot = _snapshot_state(opm, problem.variables, problem.pickups)
     initial_values = problem.variable_state()
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -13,7 +13,7 @@ import {
   PLOT_TYPE_CONFIG,
   type PlotType,
 } from "@/features/analysis/components/AnalysisPlotView";
-import { useOpdAimPoint } from "@/shared/components/providers/OpdAimPointProvider";
+import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
 
 interface AnalysisPlotContainerProps {
@@ -33,7 +33,7 @@ export function AnalysisPlotContainer({
   const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
 
   const store = useAnalysisPlotStore();
-  const { opdAimPoint } = useOpdAimPoint();
+  const { imagePoint } = useImagePoint();
   const rayFanData = useStore(store, (s) => s.rayFanData);
   const opdFanData = useStore(store, (s) => s.opdFanData);
   const spotDiagramData = useStore(store, (s) => s.spotDiagramData);
@@ -49,6 +49,8 @@ export function AnalysisPlotContainer({
   const selectedFieldIndex = useStore(store, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(store, (s) => s.selectedWavelengthIndex);
   const selectedPlotType = useStore(store, (s) => s.selectedPlotType);
+  const hasMountedRef = useRef(false);
+  const previousImagePointRef = useRef(imagePoint);
 
   const specsStore = useSpecsConfiguratorStore();
   useStore(specsStore, (s) => s.committedSpecs);
@@ -70,7 +72,7 @@ export function AnalysisPlotContainer({
         model: committedOpticalModel,
         fieldIndex,
         wavelengthIndex,
-        opdAimPoint,
+        imagePoint,
       });
       if (!result) return;
 
@@ -91,7 +93,7 @@ export function AnalysisPlotContainer({
     } finally {
       store.getState().setPlotLoading(false);
     }
-  }, [proxy, committedOpticalModel, store, onError, analysisDataStore, opdAimPoint]);
+  }, [proxy, committedOpticalModel, store, onError, analysisDataStore, imagePoint]);
 
   const handleFieldChange = useCallback(async (value: number) => {
     store.getState().setSelectedFieldIndex(value);
@@ -113,6 +115,18 @@ export function AnalysisPlotContainer({
     if (plotType === "surfaceBySurface3rdOrder") return;
     await loadPlot(plotType, selectedFieldIndex, selectedWavelengthIndex);
   }, [proxy, store, selectedFieldIndex, selectedWavelengthIndex, loadPlot]);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      previousImagePointRef.current = imagePoint;
+      return;
+    }
+    if (previousImagePointRef.current === imagePoint) return;
+    previousImagePointRef.current = imagePoint;
+    if (selectedPlotType === "surfaceBySurface3rdOrder") return;
+    void loadPlot(selectedPlotType, selectedFieldIndex, selectedWavelengthIndex);
+  }, [imagePoint, selectedPlotType, selectedFieldIndex, selectedWavelengthIndex, loadPlot]);
 
   return (
     <AnalysisPlotView

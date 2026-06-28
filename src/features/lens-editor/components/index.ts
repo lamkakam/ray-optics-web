@@ -7,6 +7,7 @@ export * from "./FieldConfigModal";
 export * from "./FirstOrderChips";
 export * from "./FocusingContainer";
 export * from "./FocusingPanel";
+export * from "./ImageReferencePanel";
 export * from "./LensLayoutPanel";
 export * from "./LensEditorConfigToolbar";
 export * from "./LensPrescriptionContainer";

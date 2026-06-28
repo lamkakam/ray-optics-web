@@ -52,13 +52,13 @@ class TestMakeRayGrid:
         sig = inspect.signature(make_ray_grid)
         assert sig.parameters['foc'].default == 0.0
 
-    def test_default_opd_aim_point_is_chief_ray(self):
+    def test_default_image_point_is_chief_ray(self):
         """make_ray_grid should preserve RayOptics chief-ray default unless asked otherwise."""
         from rayoptics_web_utils.raygrid import make_ray_grid
         import inspect
 
         sig = inspect.signature(make_ray_grid)
-        assert sig.parameters["opd_aim_point"].default == "chief_ray"
+        assert sig.parameters["image_point"].default == "chief_ray"
 
     def test_chief_ray_mode_does_not_pass_image_point_override(self, monkeypatch):
         """chief_ray mode should not provide image_pt_2d to RayGrid."""
@@ -70,7 +70,7 @@ class TestMakeRayGrid:
             def __init__(self, *args, **kwargs):
                 captured_kwargs.update(kwargs)
 
-        monkeypatch.setattr(module, "_resolve_opd_image_point", lambda *args, **kwargs: pytest.fail("unexpected centroid helper"))
+        monkeypatch.setattr(module, "_resolve_image_point", lambda *args, **kwargs: pytest.fail("unexpected centroid helper"))
         monkeypatch.setattr("rayoptics.raytr.analyses.RayGrid", FakeRayGrid)
 
         make_ray_grid = module.make_ray_grid
@@ -89,21 +89,21 @@ class TestMakeRayGrid:
             def __init__(self, *args, **kwargs):
                 captured_kwargs.update(kwargs)
 
-        monkeypatch.setattr(module, "_resolve_opd_image_point", lambda *args, **kwargs: np.array([1.25, -2.5]))
+        monkeypatch.setattr(module, "_resolve_image_point", lambda *args, **kwargs: np.array([1.25, -2.5]))
         monkeypatch.setattr("rayoptics.raytr.analyses.RayGrid", FakeRayGrid)
 
-        module.make_ray_grid(opm, fi=2, wavelength_nm=656.0, num_rays=9, opd_aim_point="centroid")
+        module.make_ray_grid(opm, fi=2, wavelength_nm=656.0, num_rays=9, image_point="centroid")
 
         assert captured_kwargs["image_pt_2d"] == pytest.approx([1.25, -2.5])
 
 
-class TestResolveOpdImagePoint:
-    """Tests for OPD reference image-point selection."""
+class TestResolveImagePoint:
+    """Tests for image-point selection."""
 
     def test_chief_ray_returns_none(self, cooke_triplet):
-        from rayoptics_web_utils.raygrid.opd_reference import _resolve_opd_image_point
+        from rayoptics_web_utils.raygrid.opd_reference import _resolve_image_point
 
-        result = _resolve_opd_image_point(cooke_triplet, fi=0, wavelength_nm=587.562, foc=0.0, num_rays=5, opd_aim_point="chief_ray")
+        result = _resolve_image_point(cooke_triplet, fi=0, wavelength_nm=587.562, foc=0.0, num_rays=5, image_point="chief_ray")
 
         assert result is None
 
@@ -136,13 +136,13 @@ class TestResolveOpdImagePoint:
 
         monkeypatch.setattr(module, "trace_ray_grid", lambda *args, **kwargs: grid)
 
-        result = module._resolve_opd_image_point(
+        result = module._resolve_image_point(
             FakeOpticalModel(),
             fi=0,
             wavelength_nm=587.0,
             foc=0.0,
             num_rays=3,
-            opd_aim_point="centroid",
+            image_point="centroid",
         )
 
         assert result == pytest.approx([2.0, 4.0])
@@ -169,11 +169,11 @@ class TestResolveOpdImagePoint:
         monkeypatch.setattr(module, "trace_ray_grid", lambda *args, **kwargs: [[[0.0, 0.0, None]]])
 
         with pytest.raises(ValueError, match="No valid rays"):
-            module._resolve_opd_image_point(
+            module._resolve_image_point(
                 FakeOpticalModel(),
                 fi=0,
                 wavelength_nm=587.0,
                 foc=0.0,
                 num_rays=3,
-                opd_aim_point="centroid",
+                image_point="centroid",
             )
