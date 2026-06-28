@@ -40,7 +40,7 @@ All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` a
 
 All plot loading goes through `loadAnalysisPlot(...)` from `@/features/analysis/lib/plotFunctions`, which centralizes the plot-type to worker-API mapping. Plot-store-backed payload commits go through `commitAnalysisPlotResult(...)`, keeping panel behavior aligned with `LensEditor.tsx` submit handling and example-system application.
 
-The container also reads `imagePoint` from `ImagePointProvider` and passes it into `loadAnalysisPlot` so OPD fan, wavefront map, Strehl vs wavelength, diffraction PSF, and diffraction MTF use the app-wide OPD reference convention.
+The container also reads `imagePoint` from `ImagePointProvider` and passes it into `loadAnalysisPlot` so OPD fan, spot diagram, wavefront map, Strehl vs wavelength, diffraction PSF, and diffraction MTF use the app-wide image reference convention.
 
 ### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
 
@@ -69,6 +69,10 @@ Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and de
 2. If `proxy` is undefined, returns.
 3. Returns immediately for `surfaceBySurface3rdOrder`; the view reuses already-fetched `seidelData.surfaceBySurface` and does not refetch or use the legacy PNG path.
 4. Delegates to `loadPlot(plotType, selectedFieldIndex, selectedWavelengthIndex)` for the remaining plot types.
+
+### Image-point refresh
+
+After the initial render, a change to the app-wide `imagePoint` refreshes the currently selected plot by calling `loadPlot(selectedPlotType, selectedFieldIndex, selectedWavelengthIndex)`. This uses the last committed optical model and does not run the full Update System workflow, so lens layout, first-order data, and non-selected analysis data are left unchanged. `surfaceBySurface3rdOrder` remains a no-op on image-point changes and continues to reuse existing Seidel data.
 
 ## Usages
 

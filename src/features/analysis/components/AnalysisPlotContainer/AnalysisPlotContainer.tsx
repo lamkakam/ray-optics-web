@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useStore } from "zustand";
 import { useAnalysisDataStore } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -49,6 +49,8 @@ export function AnalysisPlotContainer({
   const selectedFieldIndex = useStore(store, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(store, (s) => s.selectedWavelengthIndex);
   const selectedPlotType = useStore(store, (s) => s.selectedPlotType);
+  const hasMountedRef = useRef(false);
+  const previousImagePointRef = useRef(imagePoint);
 
   const specsStore = useSpecsConfiguratorStore();
   useStore(specsStore, (s) => s.committedSpecs);
@@ -113,6 +115,18 @@ export function AnalysisPlotContainer({
     if (plotType === "surfaceBySurface3rdOrder") return;
     await loadPlot(plotType, selectedFieldIndex, selectedWavelengthIndex);
   }, [proxy, store, selectedFieldIndex, selectedWavelengthIndex, loadPlot]);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      previousImagePointRef.current = imagePoint;
+      return;
+    }
+    if (previousImagePointRef.current === imagePoint) return;
+    previousImagePointRef.current = imagePoint;
+    if (selectedPlotType === "surfaceBySurface3rdOrder") return;
+    void loadPlot(selectedPlotType, selectedFieldIndex, selectedWavelengthIndex);
+  }, [imagePoint, selectedPlotType, selectedFieldIndex, selectedWavelengthIndex, loadPlot]);
 
   return (
     <AnalysisPlotView

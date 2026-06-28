@@ -19,8 +19,10 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: jest.fn(() => ({ theme: "light" })),
 }));
 
+let mockImagePoint = "centroid";
+
 jest.mock("@/shared/components/providers/ImagePointProvider", () => ({
-  useImagePoint: () => ({ imagePoint: "centroid", setImagePoint: jest.fn() }),
+  useImagePoint: () => ({ imagePoint: mockImagePoint, setImagePoint: jest.fn() }),
 }));
 
 jest.mock("echarts/core", () => ({
@@ -330,6 +332,7 @@ describe("AnalysisPlotContainer", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockImagePoint = "centroid";
     store = createStore<AnalysisPlotState>(createAnalysisPlotSlice);
   });
 
@@ -434,6 +437,77 @@ describe("AnalysisPlotContainer", () => {
       expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(testModel, 0, "centroid");
     });
     expect(store.getState().spotDiagramData).toEqual(spotDiagramData);
+  });
+
+  it("reloads the selected image-point-sensitive plot when imagePoint changes", async () => {
+    store.getState().setSelectedPlotType("spotDiagram");
+    store.getState().setSelectedFieldIndex(1);
+    mockImagePoint = "chief_ray";
+    const proxy = makeMockProxy();
+    const { rerender } = renderComponent(testSpecs, testModel, store, proxy);
+
+    expect(proxy.getSpotDiagramData).not.toHaveBeenCalled();
+
+    mockImagePoint = "centroid";
+    rerender(
+      <SpecsConfiguratorStoreContext.Provider value={makeSpecsStore(testSpecs)}>
+        <LensEditorStoreContext.Provider value={makeLensStore(testModel)}>
+          <AnalysisDataStoreContext.Provider value={makeAnalysisDataStore()}>
+            <AnalysisPlotStoreContext.Provider value={store}>
+              <AnalysisPlotContainer
+                proxy={proxy}
+                onError={jest.fn()}
+              />
+            </AnalysisPlotStoreContext.Provider>
+          </AnalysisDataStoreContext.Provider>
+        </LensEditorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>
+    );
+
+    await waitFor(() => {
+      expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(testModel, 1, "centroid");
+    });
+    expect(proxy.getSpotDiagramData).toHaveBeenCalledTimes(1);
+    expect(proxy.getFirstOrderData).not.toHaveBeenCalled();
+    expect(proxy.plotLensLayout).not.toHaveBeenCalled();
+    expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
+  });
+
+  it("does not load surfaceBySurface3rdOrder when imagePoint changes", async () => {
+    store.getState().setSelectedPlotType("surfaceBySurface3rdOrder");
+    mockImagePoint = "chief_ray";
+    const proxy = makeMockProxy();
+    const { rerender } = renderComponent(
+      testSpecs,
+      testModel,
+      store,
+      proxy,
+      jest.fn(),
+      makeAnalysisDataStore(seidelData),
+    );
+
+    mockImagePoint = "centroid";
+    rerender(
+      <SpecsConfiguratorStoreContext.Provider value={makeSpecsStore(testSpecs)}>
+        <LensEditorStoreContext.Provider value={makeLensStore(testModel)}>
+          <AnalysisDataStoreContext.Provider value={makeAnalysisDataStore(seidelData)}>
+            <AnalysisPlotStoreContext.Provider value={store}>
+              <AnalysisPlotContainer
+                proxy={proxy}
+                onError={jest.fn()}
+              />
+            </AnalysisPlotStoreContext.Provider>
+          </AnalysisDataStoreContext.Provider>
+        </LensEditorStoreContext.Provider>
+      </SpecsConfiguratorStoreContext.Provider>
+    );
+
+    await waitFor(() => {
+      expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
+    });
+    expect(proxy.getSpotDiagramData).not.toHaveBeenCalled();
+    expect(proxy.getFirstOrderData).not.toHaveBeenCalled();
+    expect(proxy.plotLensLayout).not.toHaveBeenCalled();
   });
 
   it("loads opdFan through getOpdFanData and stores chart data instead of a PNG", async () => {
