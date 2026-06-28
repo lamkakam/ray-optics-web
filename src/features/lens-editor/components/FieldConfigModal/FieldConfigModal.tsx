@@ -137,6 +137,7 @@ function FieldConfigModalContent({
     {
       headerName: "Relative Field",
       field: "value",
+      width: 125,
       editable: true,
       valueGetter: (params) => {
         if (!params.data) return 0;

@@ -141,6 +141,7 @@ function WavelengthConfigModalContent({
     {
       headerName: "Fraunhofer",
       field: "fraunhofer",
+      width: 110,
       editable: true,
       cellEditor: "agSelectCellEditor",
       cellEditorParams: {
@@ -157,6 +158,7 @@ function WavelengthConfigModalContent({
     {
       headerName: "Wavelength (nm)",
       field: "wavelength",
+      width: 150,
       editable: true,
       valueGetter: (params) => {
         if (!params.data) return 0;
@@ -177,6 +179,7 @@ function WavelengthConfigModalContent({
     {
       headerName: "Weight",
       field: "weight",
+      width: 85,
       editable: true,
       valueGetter: (params) => {
         if (!params.data) return 0;
