@@ -19,7 +19,7 @@ interface InitProgress {
 export async function init(onProgress?: (progress: InitProgress) => void | Promise<void>): Promise<void>
 export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>
 export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>
-export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>
+export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<RayFanData>
 export async function getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<OpdFanData>
 export async function getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
 export async function getFieldCurvatureData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData>
@@ -60,7 +60,7 @@ export async function _init(
 ): Promise<void>
 export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<Record<string, number>>
 export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, isDark: boolean): Promise<string>
-export async function _getRayFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>
+export async function _getRayFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<RayFanData>
 export async function _getOpdFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>
 export async function _getSpotDiagramData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
 export async function _getFieldCurvatureData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData>
@@ -121,7 +121,7 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `init(onProgress?)` | Initializes Pyodide singleton and optionally emits determinate startup milestones. No-op if already initialized, except it can emit `100%` ready to a supplied callback. |
 | `getFirstOrderData(model)` | Builds `opm` from model, returns optical data (EFL, f-number, etc.) as `Record<string, number>`. |
 | `plotLensLayout(model, isDark)` | Builds `opm` from model, derives `show_ray_fan_vs_wvls` from any `surface.diffractionGrating`, forwards `is_dark`, and returns a lens layout plot as a base64-encoded PNG string. |
-| `getRayFanData(model, fieldIndex)` | Builds `opm` from model, returns grouped transverse ray-fan line data for all wavelengths at the selected field. Used by the ECharts Ray Fan view. |
+| `getRayFanData(model, fieldIndex, imagePoint?)` | Builds `opm` from model, returns grouped transverse ray-fan line data for all wavelengths at the selected field and image reference. Used by the ECharts Ray Fan view. |
 | `getOpdFanData(model, fieldIndex, imagePoint?)` | Builds `opm` from model, returns grouped OPD-fan line data for all wavelengths at the selected field. Used by the ECharts OPD Fan view. |
 | `getSpotDiagramData(model, fieldIndex, imagePoint?)` | Returns per-wavelength spot-diagram point clouds using `json.dumps(get_spot_data(..., image_point=...))`. Used by the ECharts Spot Diagram view. |
 | `getFieldCurvatureData(model, wi)` | Returns `FieldCurveData` with sagittal/tangential focus-shift curves for the selected wavelength. |
@@ -152,7 +152,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_init(runPython, wheelUrl, onProgress?)` — full package installation sequence with package-install progress milestones.
 - `_getFirstOrderData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_first_order_data(${opm}))\`)`.
 - `_plotLensLayout(runPython, model, isDark)` — checks `model.surfaces` for any `diffractionGrating` and runs `buildScript(model, (opm) => \`plot_lens_layout(${opm}, show_ray_fan_vs_wvls=..., is_dark=...)\`)`.
-- `_getRayFanData(runPython, model, fieldIndex)` — runs `buildScript(model, (opm) => \`json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}))\`)` and parses the JSON into `RayFanData`.
+- `_getRayFanData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point=...))\`)` and parses the JSON into `RayFanData`.
 - `_getOpdFanData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point=...))\`)` and parses the JSON into `OpdFanData`.
 - `_getSpotDiagramData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_spot_data(${opm}, ${fieldIndex}, image_point=...))\`)` and parses the JSON into `SpotDiagramData`.
 - `_getFieldCurvatureData(runPython, model, wi)` — runs `buildScript(model, (opm) => \`json.dumps(get_field_curvature_data(${opm}, ${wi}))\`)` and parses the JSON into `FieldCurveData`.

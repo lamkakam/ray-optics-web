@@ -7,7 +7,7 @@ Return transverse ray-fan plot data for all wavelengths at one field.
 ## Exports
 
 ```python
-def get_ray_fan_data(opm: OpticalModel, fi: int) -> list[dict]: ...
+def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]: ...
 ```
 
 ## Return Shape
@@ -21,4 +21,5 @@ Each list entry represents one wavelength and contains `fieldIdx`, `wvlIdx`, `Sa
 ## Key Conventions
 
 - Use `_trace_fan_series` so vignetted or curved-image systems can return ragged fan sample counts.
+- Pass `image_point` through to `_trace_fan_series`; supported values match the app-wide convention (`"chief_ray"` and `"centroid"`), with `"chief_ray"` preserving historical default behavior.
 - Normalize numeric arrays through `_json_float_list`.

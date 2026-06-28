@@ -132,10 +132,10 @@ describe("_getRayFanData", () => {
     const result = await _getRayFanData(async (code) => {
       pythonScript = code;
       return JSON.stringify(mockData);
-    }, allSphericalOpticalModel, 1);
+    }, allSphericalOpticalModel, 1, "centroid");
 
     expect(pythonScript).toContain("opm = OpticalModel()");
-    expect(pythonScript).toContain("json.dumps(get_ray_fan_data(_build_opm(), 1))");
+    expect(pythonScript).toContain("json.dumps(get_ray_fan_data(_build_opm(), 1, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
 });

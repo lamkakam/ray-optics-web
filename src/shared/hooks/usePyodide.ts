@@ -27,7 +27,7 @@ export interface PyodideWorkerAPI {
   init(onProgress?: InitProgressCallback): Promise<void>;
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
   plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
-  getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>;
+  getRayFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<RayFanData>;
   getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<OpdFanData>;
   getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<SpotDiagramData>;
   getFieldCurvatureData(opticalModel: OpticalModel, wvlIndex: number): Promise<FieldCurveData>;

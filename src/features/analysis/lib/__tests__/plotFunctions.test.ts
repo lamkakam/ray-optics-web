@@ -183,9 +183,10 @@ describe("loadAnalysisPlot", () => {
       model: mockModel,
       fieldIndex: 1,
       wavelengthIndex: 2,
+      imagePoint: "centroid",
     });
 
-    expect(proxy.getRayFanData).toHaveBeenCalledWith(mockModel, 1);
+    expect(proxy.getRayFanData).toHaveBeenCalledWith(mockModel, 1, "centroid");
     expect(result).toEqual({
       kind: "rayFan",
       rayFanData: [

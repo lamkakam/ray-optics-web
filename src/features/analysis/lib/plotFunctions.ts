@@ -43,7 +43,7 @@ export async function loadAnalysisPlot({
   if (plotType === "rayFan") {
     return {
       kind: "rayFan",
-      rayFanData: await proxy.getRayFanData(model, fieldIndex),
+      rayFanData: await proxy.getRayFanData(model, fieldIndex, imagePoint),
     };
   }
 

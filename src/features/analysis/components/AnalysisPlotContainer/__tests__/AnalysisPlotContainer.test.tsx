@@ -10,6 +10,7 @@ import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { AnalysisDataStoreContext } from "@/features/analysis/providers/AnalysisDataStoreProvider";
@@ -260,7 +261,7 @@ function makeMockProxy(overrides: Partial<PyodideWorkerAPI> = {}): PyodideWorker
     init: jest.fn(),
     getFirstOrderData: jest.fn(),
     plotLensLayout: jest.fn(),
-    getRayFanData: jest.fn<Promise<RayFanData>, [OpticalModel, number]>().mockResolvedValue(rayFanData),
+    getRayFanData: jest.fn<Promise<RayFanData>, [OpticalModel, number, ImagePoint?]>().mockResolvedValue(rayFanData),
     getOpdFanData: jest.fn<Promise<OpdFanData>, [OpticalModel, number]>().mockResolvedValue(opdFanData),
     getSpotDiagramData: jest.fn<Promise<SpotDiagramData>, [OpticalModel, number]>().mockResolvedValue(spotDiagramData),
     getFieldCurvatureData: jest.fn<Promise<FieldCurveData>, [OpticalModel, number]>().mockResolvedValue(fieldCurveData),
@@ -376,7 +377,7 @@ describe("AnalysisPlotContainer", () => {
 
     expect(store.getState().selectedFieldIndex).toBe(1);
     await waitFor(() => {
-      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1);
+      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1, "centroid");
     });
     expect(store.getState().rayFanData).toEqual(rayFanData);
   });
@@ -440,13 +441,13 @@ describe("AnalysisPlotContainer", () => {
   });
 
   it("reloads the selected image-point-sensitive plot when imagePoint changes", async () => {
-    store.getState().setSelectedPlotType("spotDiagram");
+    store.getState().setSelectedPlotType("rayFan");
     store.getState().setSelectedFieldIndex(1);
     mockImagePoint = "chief_ray";
     const proxy = makeMockProxy();
     const { rerender } = renderComponent(testSpecs, testModel, store, proxy);
 
-    expect(proxy.getSpotDiagramData).not.toHaveBeenCalled();
+    expect(proxy.getRayFanData).not.toHaveBeenCalled();
 
     mockImagePoint = "centroid";
     rerender(
@@ -465,9 +466,9 @@ describe("AnalysisPlotContainer", () => {
     );
 
     await waitFor(() => {
-      expect(proxy.getSpotDiagramData).toHaveBeenCalledWith(testModel, 1, "centroid");
+      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1, "centroid");
     });
-    expect(proxy.getSpotDiagramData).toHaveBeenCalledTimes(1);
+    expect(proxy.getRayFanData).toHaveBeenCalledTimes(1);
     expect(proxy.getFirstOrderData).not.toHaveBeenCalled();
     expect(proxy.plotLensLayout).not.toHaveBeenCalled();
     expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
@@ -719,7 +720,7 @@ describe("AnalysisPlotContainer", () => {
     await userEvent.selectOptions(fieldSelect, "1");
 
     await waitFor(() => {
-      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1);
+      expect(proxy.getRayFanData).toHaveBeenCalledWith(testModel, 1, "centroid");
     });
     expect(store.getState().rayFanData).toEqual(rayFanData);
   });

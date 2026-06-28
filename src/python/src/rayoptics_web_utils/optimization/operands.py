@@ -201,11 +201,10 @@ def _compute_ray_fan_for_axis(
     axis: str | None = None,
 ) -> list[float]:
     """Return ray-fan ordinates for one field/wavelength sample."""
-    del image_point
     if field_index is None or wavelength_index is None:
         raise ValueError("ray_fan requires field and wavelength indices")
     residual_count = get_operand_num_rays(options) * (2 if axis is None else 1)
-    ray_fan_data = get_ray_fan_data(opm, fi=field_index)
+    ray_fan_data = get_ray_fan_data(opm, fi=field_index, image_point=image_point)
     validate_surface_index(ray_fan_data, wavelength_index, "wavelength index")
     wavelength_fan = ray_fan_data[wavelength_index]
     samples = _select_fan_samples(wavelength_fan, axis)

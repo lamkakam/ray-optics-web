@@ -40,7 +40,7 @@ All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` a
 
 All plot loading goes through `loadAnalysisPlot(...)` from `@/features/analysis/lib/plotFunctions`, which centralizes the plot-type to worker-API mapping. Plot-store-backed payload commits go through `commitAnalysisPlotResult(...)`, keeping panel behavior aligned with `LensEditor.tsx` submit handling and example-system application.
 
-The container also reads `imagePoint` from `ImagePointProvider` and passes it into `loadAnalysisPlot` so OPD fan, spot diagram, wavefront map, Strehl vs wavelength, diffraction PSF, and diffraction MTF use the app-wide image reference convention.
+The container also reads `imagePoint` from `ImagePointProvider` and passes it into `loadAnalysisPlot` so Ray Fan, OPD fan, spot diagram, wavefront map, Strehl vs wavelength, diffraction PSF, and diffraction MTF use the app-wide image reference convention.
 
 ### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
 

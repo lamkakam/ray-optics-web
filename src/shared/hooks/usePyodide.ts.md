@@ -16,7 +16,7 @@ interface PyodideWorkerAPI {
   init(onProgress?: (progress: InitProgress) => void | Promise<void>): Promise<void>;
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
   plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
-  getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData>;
+  getRayFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<RayFanData>;
   getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<OpdFanData>;
   getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>;
   getFieldCurvatureData(opticalModel: OpticalModel, wvlIndex: number): Promise<FieldCurveData>;
@@ -91,7 +91,7 @@ interface PyodideWorkerAPI {
 - `getZernikeCoefficients` keeps `ordering` as a frontend API parameter; the worker converts it to an explicit `(n, m)` term list before calling Python.
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
 - `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `features/optimization/types/optimizationWorkerTypes` (type only).
-- `ImagePoint` — imported from `shared/components/providers/ImagePointProvider` (type only). OPD-related APIs default to `"chief_ray"` when omitted.
+- `ImagePoint` — imported from `shared/components/providers/ImagePointProvider` (type only). Image-point-aware APIs default to `"chief_ray"` when omitted.
 
 ## Edge Cases / Error Handling
 

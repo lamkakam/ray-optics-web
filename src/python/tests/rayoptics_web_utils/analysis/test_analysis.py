@@ -66,7 +66,8 @@ class TestGetAnalysisPlotDataSignatures:
         import inspect
 
         sig = inspect.signature(get_ray_fan_data)
-        assert list(sig.parameters.keys()) == ["opm", "fi"]
+        assert list(sig.parameters.keys()) == ["opm", "fi", "image_point"]
+        assert sig.parameters["image_point"].default == "chief_ray"
 
     def test_get_opd_fan_data_accepts_opm_and_fi(self):
         from rayoptics_web_utils.analysis import get_opd_fan_data
@@ -252,10 +253,10 @@ class TestGetRayFanData:
         assert all(isinstance(v, float) for v in entry["Tangential"]["x"])
         assert all(isinstance(v, float) for v in entry["Tangential"]["y"])
 
-    def test_result_is_json_encodable(self, cooke_triplet):
+    def test_centroid_result_is_json_encodable(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_ray_fan_data
 
-        result = get_ray_fan_data(cooke_triplet, fi=0)
+        result = get_ray_fan_data(cooke_triplet, fi=0, image_point="centroid")
 
         json.dumps(result)
 

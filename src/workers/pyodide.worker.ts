@@ -192,9 +192,10 @@ export async function _getRayFanData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   fieldIndex: number,
+  imagePoint: ImagePoint = "chief_ray",
 ): Promise<RayFanData> {
   const json = (await runPython(
-    buildScript(opticalModel, (opm) => `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}))`),
+    buildScript(opticalModel, (opm) => `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`),
   )) as string;
   return JSON.parse(json) as RayFanData;
 }
@@ -538,8 +539,12 @@ export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean
   return await _plotLensLayout(requirePyodide(), opticalModel, isDark);
 }
 
-export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: number): Promise<RayFanData> {
-  return await _getRayFanData(requirePyodide(), opticalModel, fieldIndex);
+export async function getRayFanData(
+  opticalModel: OpticalModel,
+  fieldIndex: number,
+  imagePoint: ImagePoint = "chief_ray",
+): Promise<RayFanData> {
+  return await _getRayFanData(requirePyodide(), opticalModel, fieldIndex, imagePoint);
 }
 
 export async function getOpdFanData(

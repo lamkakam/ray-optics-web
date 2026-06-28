@@ -48,7 +48,7 @@ async function loadAnalysisPlot({
 Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx`.
 
 - Returns `undefined` when `proxy` or `model` is missing.
-- Calls `proxy.getRayFanData(model, fi)` for `rayFan`.
+- Calls `proxy.getRayFanData(model, fi, imagePoint)` for `rayFan`.
 - Calls `proxy.get3rdOrderSeidelData(model)` for `surfaceBySurface3rdOrder` and returns `surfaceBySurface`.
 - Calls `proxy.getOpdFanData(model, fi, imagePoint)` for `opdFan`.
 - Calls `proxy.getSpotDiagramData(model, fi, imagePoint)` for `spotDiagram`.

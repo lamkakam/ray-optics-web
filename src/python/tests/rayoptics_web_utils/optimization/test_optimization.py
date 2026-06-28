@@ -602,8 +602,8 @@ class TestEvaluateOptimizationProblem:
         import rayoptics_web_utils.optimization.operands as operands_module
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
 
-        def fake_get_ray_fan_data(opm, fi):
-            del opm, fi
+        def fake_get_ray_fan_data(opm, fi, image_point="chief_ray"):
+            del opm, fi, image_point
             return [
                 {
                     "fieldIdx": 0,
@@ -690,8 +690,8 @@ class TestEvaluateOptimizationProblem:
         import rayoptics_web_utils.optimization.operands as operands_module
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
 
-        def fake_get_ray_fan_data(opm, fi):
-            del opm, fi
+        def fake_get_ray_fan_data(opm, fi, image_point="chief_ray"):
+            del opm, fi, image_point
             return [
                 {
                     "fieldIdx": 0,
@@ -756,7 +756,7 @@ class TestEvaluateOptimizationProblem:
             ],
         ])
 
-        monkeypatch.setattr(operands_module, "get_ray_fan_data", lambda opm, fi: next(responses))
+        monkeypatch.setattr(operands_module, "get_ray_fan_data", lambda opm, fi, image_point="chief_ray": next(responses))
 
         problem = OptimizationProblem(
             fresh_cooke_triplet,
