@@ -10,6 +10,7 @@ import {
   FIELD_CATEGORY_LINE_SPLIT_LINE_COLOR,
   toFieldCategoryLineData,
 } from "@/features/analysis/components/fieldCategoryLineChartOption";
+import { buildLegendWrapLayout } from "@/features/analysis/components/legendLayout";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { LongitudinalSphericalAberrationData } from "@/features/analysis/types/plotData";
 
@@ -23,6 +24,14 @@ export function buildLongitudinalSphericalAberrationOption(
   textColor: string,
 ) {
   const unitX = lsaData[0]?.unitX;
+  const legendData = lsaData.map((seriesData) => wavelengthLabels[seriesData.wvlIdx] ?? `Wavelength ${seriesData.wvlIdx + 1}`);
+  const legendLayout = buildLegendWrapLayout(
+    legendData,
+    chartWidth,
+    FIELD_CATEGORY_LINE_GRID_LEFT,
+    FIELD_CATEGORY_LINE_GRID_RIGHT,
+  );
+  const gridTop = FIELD_CATEGORY_LINE_GRID_TOP + legendLayout.extraTop;
 
   return {
     animation: false,
@@ -34,6 +43,9 @@ export function buildLongitudinalSphericalAberrationOption(
     },
     legend: {
       top: 0,
+      left: legendLayout.left,
+      right: legendLayout.right,
+      data: legendData,
       textStyle: {
         color: textColor,
       },
@@ -41,10 +53,10 @@ export function buildLongitudinalSphericalAberrationOption(
     grid: {
       left: FIELD_CATEGORY_LINE_GRID_LEFT,
       right: FIELD_CATEGORY_LINE_GRID_RIGHT,
-      top: FIELD_CATEGORY_LINE_GRID_TOP,
+      top: gridTop,
       bottom: FIELD_CATEGORY_LINE_GRID_BOTTOM,
       width: Math.max(0, chartWidth - FIELD_CATEGORY_LINE_GRID_LEFT - FIELD_CATEGORY_LINE_GRID_RIGHT),
-      height: Math.max(0, chartHeight - FIELD_CATEGORY_LINE_GRID_TOP - FIELD_CATEGORY_LINE_GRID_BOTTOM),
+      height: Math.max(0, chartHeight - gridTop - FIELD_CATEGORY_LINE_GRID_BOTTOM),
     },
     xAxis: {
       type: "value",
@@ -90,8 +102,8 @@ export function buildLongitudinalSphericalAberrationOption(
         },
       },
     },
-    series: lsaData.map((seriesData) => ({
-      name: wavelengthLabels[seriesData.wvlIdx] ?? `Wavelength ${seriesData.wvlIdx + 1}`,
+    series: lsaData.map((seriesData, index) => ({
+      name: legendData[index],
       type: "line",
       data: toFieldCategoryLineData(seriesData.LSA),
       showSymbol: false,

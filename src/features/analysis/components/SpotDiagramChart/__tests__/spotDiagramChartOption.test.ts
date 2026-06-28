@@ -151,6 +151,33 @@ describe("buildSpotDiagramOption", () => {
     }));
   });
 
+  it("reserves extra top space for wrapped wavelength legends while keeping the plot square", () => {
+    const sixWavelengthSpotDiagramData: SpotDiagramData = Array.from({ length: 6 }, (_, index) => ({
+      fieldIdx: 0,
+      wvlIdx: index,
+      x: [-0.02, 0, 0.02],
+      y: [-0.01, 0, 0.01],
+      unitX: "mm",
+      unitY: "mm",
+    }));
+
+    const option = buildSpotDiagramOption(
+      sixWavelengthSpotDiagramData,
+      ["486.1 nm", "500.0 nm", "532.0 nm", "587.6 nm", "610.0 nm", "656.3 nm"],
+      320,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.legend).toEqual(expect.objectContaining({ left: 72, right: 32 }));
+    expect(option.grid).toEqual(expect.objectContaining({
+      top: 96,
+      width: 216,
+      height: 216,
+    }));
+    expect(option.grid.width).toBe(option.grid.height);
+  });
+
   it("clamps sub-1e-9 rounded axis extents to 0", () => {
     const option = buildSpotDiagramOption(
       [

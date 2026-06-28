@@ -3,6 +3,7 @@ import { ScatterChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
+import { buildLegendWrapLayout } from "@/features/analysis/components/legendLayout";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { SpotDiagramData } from "@/features/analysis/types/plotData";
 
@@ -88,11 +89,18 @@ export function buildSpotDiagramOption(
   textColor: string,
 ) {
   const axisExtent = getAxisExtent(spotDiagramData);
+  const legendData = spotDiagramData.map((seriesData) => getSeriesLabel(wavelengthLabels, seriesData.wvlIdx));
+  const legendLayout = buildLegendWrapLayout(
+    legendData,
+    chartWidth,
+    SPOT_DIAGRAM_GRID_LEFT,
+    SPOT_DIAGRAM_GRID_RIGHT,
+  );
+  const gridTop = SPOT_DIAGRAM_GRID_TOP + legendLayout.extraTop;
   const maxPlotWidth = chartWidth - SPOT_DIAGRAM_GRID_LEFT - SPOT_DIAGRAM_GRID_RIGHT;
-  const maxPlotHeight = chartHeight - SPOT_DIAGRAM_GRID_TOP - SPOT_DIAGRAM_GRID_BOTTOM;
+  const maxPlotHeight = chartHeight - gridTop - SPOT_DIAGRAM_GRID_BOTTOM;
   const plotSide = Math.max(0, Math.min(maxPlotWidth, maxPlotHeight));
   const extraHorizontalSpace = Math.max(0, maxPlotWidth - plotSide);
-  const legendData = spotDiagramData.map((seriesData) => getSeriesLabel(wavelengthLabels, seriesData.wvlIdx));
   const seriesColors = getSeriesColors(spotDiagramData, wavelengthLabels);
 
   return {
@@ -105,6 +113,8 @@ export function buildSpotDiagramOption(
     },
     legend: {
       top: 12,
+      left: legendLayout.left,
+      right: legendLayout.right,
       data: legendData,
       textStyle: {
         color: textColor,
@@ -113,7 +123,7 @@ export function buildSpotDiagramOption(
     grid: {
       left: SPOT_DIAGRAM_GRID_LEFT + extraHorizontalSpace / 2,
       right: SPOT_DIAGRAM_GRID_RIGHT - extraHorizontalSpace / 2,
-      top: SPOT_DIAGRAM_GRID_TOP,
+      top: gridTop,
       width: plotSide,
       height: plotSide,
     },

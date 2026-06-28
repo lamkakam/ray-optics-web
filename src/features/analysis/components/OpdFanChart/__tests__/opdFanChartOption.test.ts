@@ -186,6 +186,39 @@ describe("buildOpdFanChartOption", () => {
     expect(Number(option.title[1]?.top) - (Number(option.grid[0]?.top) + Number(option.grid[0]?.height))).toBe(72);
   });
 
+  it("reserves extra top space for wrapped wavelength legends on narrow small screens", () => {
+    const sixWavelengthOpdFanData: OpdFanData = Array.from({ length: 6 }, (_, index) => ({
+      fieldIdx: 0,
+      wvlIdx: index,
+      Sagittal: {
+        x: [-1, 0, 1],
+        y: [-0.2, 0, 0.2],
+      },
+      Tangential: {
+        x: [-1, 0, 1],
+        y: [-0.1, 0, 0.1],
+      },
+      unitX: "",
+      unitY: "waves",
+    }));
+
+    const option = buildOpdFanChartOption(
+      sixWavelengthOpdFanData,
+      ["486.1 nm", "500.0 nm", "532.0 nm", "587.6 nm", "610.0 nm", "656.3 nm"],
+      320,
+      600,
+      globalTokens.echarts.text.light,
+      true,
+    );
+
+    expect(option.legend).toEqual(expect.objectContaining({ left: 60, right: 28 }));
+    expect(option.title[0]).toEqual(expect.objectContaining({ top: 88 }));
+    expect(option.grid[0]).toEqual(expect.objectContaining({ top: 120, height: 162 }));
+    expect(option.title[1]).toEqual(expect.objectContaining({ top: 354 }));
+    expect(option.grid[1]).toEqual(expect.objectContaining({ top: 386, height: 162 }));
+    expect(Number(option.title[1]?.top) - (Number(option.grid[0]?.top) + Number(option.grid[0]?.height))).toBe(72);
+  });
+
   it("rounds axis min and max values to 2 significant figures with independent subplot y ranges", () => {
     const option = buildOpdFanChartOption(
       [

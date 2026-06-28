@@ -3,6 +3,7 @@ import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
+import { buildLegendWrapLayout } from "@/features/analysis/components/legendLayout";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { RayFanData } from "@/features/analysis/types/plotData";
 
@@ -154,32 +155,40 @@ export function buildRayFanChartOption(
   textColor: string,
   isSmallScreen = false,
 ) {
+  const legendData = rayFanData.map((seriesData) => getSeriesLabel(wavelengthLabels, seriesData.wvlIdx));
+  const legendLayout = buildLegendWrapLayout(
+    legendData,
+    chartWidth,
+    RAY_FAN_GRID_LEFT,
+    RAY_FAN_GRID_RIGHT,
+  );
+  const gridTop = RAY_FAN_GRID_TOP + legendLayout.extraTop;
+  const titleTop = RAY_FAN_TITLE_TOP + legendLayout.extraTop;
   const sideBySideSubplotWidth = Math.max(
     0,
     (chartWidth - RAY_FAN_GRID_LEFT - RAY_FAN_GRID_RIGHT - RAY_FAN_GRID_GAP) / 2,
   );
-  const sideBySideSubplotHeight = Math.max(0, chartHeight - RAY_FAN_GRID_TOP - RAY_FAN_GRID_BOTTOM);
+  const sideBySideSubplotHeight = Math.max(0, chartHeight - gridTop - RAY_FAN_GRID_BOTTOM);
   const stackedSubplotWidth = Math.max(0, chartWidth - RAY_FAN_GRID_LEFT - RAY_FAN_GRID_RIGHT);
   const stackedSubplotHeight = Math.max(
     0,
-    (chartHeight - RAY_FAN_GRID_TOP - RAY_FAN_GRID_BOTTOM - RAY_FAN_STACKED_GRID_GAP) / 2,
+    (chartHeight - gridTop - RAY_FAN_GRID_BOTTOM - RAY_FAN_STACKED_GRID_GAP) / 2,
   );
   const subplotWidth = isSmallScreen ? stackedSubplotWidth : sideBySideSubplotWidth;
   const subplotHeight = isSmallScreen ? stackedSubplotHeight : sideBySideSubplotHeight;
   const tangentialGridLeft = RAY_FAN_GRID_LEFT;
-  const tangentialGridTop = RAY_FAN_GRID_TOP;
+  const tangentialGridTop = gridTop;
   const sagittalGridLeft = isSmallScreen
     ? RAY_FAN_GRID_LEFT
     : RAY_FAN_GRID_LEFT + subplotWidth + RAY_FAN_GRID_GAP;
   const sagittalGridTop = isSmallScreen
-    ? RAY_FAN_GRID_TOP + subplotHeight + RAY_FAN_STACKED_GRID_GAP
-    : RAY_FAN_GRID_TOP;
-  const tangentialTitleTop = RAY_FAN_TITLE_TOP;
+    ? gridTop + subplotHeight + RAY_FAN_STACKED_GRID_GAP
+    : gridTop;
+  const tangentialTitleTop = titleTop;
   const sagittalTitleTop = isSmallScreen
     ? sagittalGridTop - RAY_FAN_STACKED_TITLE_OFFSET
-    : RAY_FAN_TITLE_TOP;
+    : titleTop;
   const axisExtents = getAxisExtents(rayFanData);
-  const legendData = rayFanData.map((seriesData) => getSeriesLabel(wavelengthLabels, seriesData.wvlIdx));
   const seriesColors = getSeriesColors(rayFanData, wavelengthLabels);
   const yAxisName = rayFanData[0]?.unitY ? `Transverse Aberr. (${rayFanData[0].unitY})` : "Transverse Aberr.";
 
@@ -193,6 +202,8 @@ export function buildRayFanChartOption(
     },
     legend: {
       top: RAY_FAN_LEGEND_TOP,
+      left: legendLayout.left,
+      right: legendLayout.right,
       data: legendData,
       textStyle: {
         color: textColor,
