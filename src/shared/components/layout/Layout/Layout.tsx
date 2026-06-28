@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Header } from "@/shared/components/primitives/Header";
 import { SideNav } from "@/shared/components/layout/SideNav";
@@ -13,27 +13,59 @@ interface LayoutProps {
 
 export function Layout({ children, onNavigate }: LayoutProps) {
   const [sideNavOpen, setSideNavOpen] = useState(false);
+  const hamburgerRef = useRef<HTMLSpanElement>(null);
+  const sideNavRef = useRef<HTMLDivElement>(null);
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
 
+  useEffect(() => {
+    if (!sideNavOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (sideNavRef.current?.contains(target) || hamburgerRef.current?.contains(target)) {
+        return;
+      }
+
+      setSideNavOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, [sideNavOpen]);
+
   const hamburgerButton = (
-    <Button
-      variant="secondary"
-      size="sm"
-      aria-label="Open navigation"
-      onClick={() => setSideNavOpen((prev) => !prev)}
-    >
-      ☰
-    </Button>
+    <span ref={hamburgerRef}>
+      <Button
+        variant="secondary"
+        size="sm"
+        aria-label="Open navigation"
+        onClick={() => setSideNavOpen((prev) => !prev)}
+      >
+        ☰
+      </Button>
+    </span>
   );
 
   const sideNavNode = (
-    <SideNav
-      isOpen={sideNavOpen}
-      isLG={isLG}
-      onClose={() => setSideNavOpen(false)}
-      onNavigate={onNavigate}
-    />
+    <div ref={sideNavRef} className="contents">
+      <SideNav
+        isOpen={sideNavOpen}
+        isLG={isLG}
+        onClose={() => setSideNavOpen(false)}
+        onNavigate={onNavigate}
+      />
+    </div>
   );
 
   if (isLG) {

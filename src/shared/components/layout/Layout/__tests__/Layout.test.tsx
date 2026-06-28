@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Layout } from "@/shared/components/layout/Layout";
 
@@ -20,6 +20,7 @@ jest.mock("@/shared/components/layout/SideNav", () => ({
   }) =>
     isOpen ? (
       <nav aria-label="Side navigation">
+        <button>Inside navigation</button>
         <button onClick={onClose}>Close navigation</button>
       </nav>
     ) : null,
@@ -73,6 +74,28 @@ describe("Layout", () => {
     expect(
       screen.queryByRole("navigation", { name: "Side navigation" })
     ).not.toBeInTheDocument();
+  });
+
+  it("closes side nav on pointer interaction with child content outside the nav", async () => {
+    render(<Layout {...defaultProps} />);
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+
+    fireEvent.pointerDown(screen.getByText("child content"));
+
+    expect(
+      screen.queryByRole("navigation", { name: "Side navigation" })
+    ).not.toBeInTheDocument();
+  });
+
+  it("keeps side nav open on pointer interaction inside the nav", async () => {
+    render(<Layout {...defaultProps} />);
+    await userEvent.click(screen.getByRole("button", { name: "Open navigation" }));
+
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Inside navigation" }));
+
+    expect(
+      screen.getByRole("navigation", { name: "Side navigation" })
+    ).toBeInTheDocument();
   });
 
   it("side nav closes when its close handler is triggered", async () => {

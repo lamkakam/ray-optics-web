@@ -26,7 +26,7 @@ Collapsible side navigation panel toggled by the hamburger button in the header.
   - Root route (`/`) is active when the selected segment is `null`
 - When `onNavigate` is supplied, item clicks pass both the target `href` and click event to it before calling `onClose`.
 - If `onNavigate` returns `false`, `SideNav` does not close; this supports guarded navigation modals that keep the attempted route pending.
-- No outside-click-to-close handler (intentional)
+- Outside pointer dismissal is owned by `Layout`; `SideNav` only exposes `onClose` for close-button and accepted navigation actions.
 
 ## Nav Items
 | Label | Href |
