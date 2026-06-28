@@ -24,6 +24,9 @@ export const LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS = {
   thickness: 130,
   medium: 115,
   semiDiameter: 115,
+  aspherical: 140,
+  decenter: 135,
+  diffractionGrating: 165,
 } as const;
 
 const VALID_NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
@@ -230,6 +233,7 @@ export function createAsphericalColumn<TData>({
 }: AsphericalColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Asph.",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aspherical,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
@@ -260,6 +264,7 @@ export function createDecenterColumn<TData>({
 }: DecenterColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Tilt & Decenter",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.decenter,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
@@ -290,6 +295,7 @@ export function createDiffractionGratingColumn<TData>({
 }: DiffractionGratingColumnOptions<TData>): ColDef<TData> {
   return {
     headerName: "Diffraction Grating",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.diffractionGrating,
     valueGetter: (params) => {
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);

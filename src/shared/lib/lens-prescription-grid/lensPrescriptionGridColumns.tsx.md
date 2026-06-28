@@ -14,6 +14,9 @@ Shared column and AG Grid configuration for lens prescription grids.
   - `thickness`: `130`
   - `medium`: `115`
   - `semiDiameter`: `115`
+  - `aspherical`: `140`
+  - `decenter`: `135`
+  - `diffractionGrating`: `165`
 - `createSurfaceColumn`
 - `createRadiusOfCurvatureColumn`
 - `createThicknessColumn`
@@ -28,8 +31,8 @@ Shared column and AG Grid configuration for lens prescription grids.
 
 Builders accept `getGridRow(data)` so feature grids can adapt their own row model to `GridRow` without coupling `shared/` to feature state. Modal and edit behavior is injected through optional callbacks. When edit callbacks are omitted, numeric and select columns remain read-only.
 
-`LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS` is the shared source for the `Surface`, `Index`, `Radius of Curvature`, `Thickness`, `Medium`, and `Semi-diam.` initial widths used by Lens Editor and Optimization. `createSurfaceColumn` applies `surface`, `createRadiusOfCurvatureColumn` applies `radiusOfCurvature`, `createThicknessColumn` applies `thickness`, `createMediumColumn` applies `medium`, and `createSemiDiameterColumn` applies `semiDiameter`; feature grids apply `index` to their local read-only `Index` column.
+`LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS` is the shared source for the `Surface`, `Index`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths used by Lens Editor and Optimization. `createSurfaceColumn` applies `surface`, `createRadiusOfCurvatureColumn` applies `radiusOfCurvature`, `createThicknessColumn` applies `thickness`, `createMediumColumn` applies `medium`, `createSemiDiameterColumn` applies `semiDiameter`, `createAsphericalColumn` applies `aspherical`, `createDecenterColumn` applies `decenter`, and `createDiffractionGratingColumn` applies `diffractionGrating`; feature grids apply `index` to their local read-only `Index` column.
 
 `createLensPrescriptionCommonColumns` returns the common column order used by the Lens Editor. Optimization uses the individual builders so its local `Var.` columns can stay interleaved after Radius, Thickness, and Asph.
 
-The modal-backed `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` builders pass the row's actual optional config into the shared text action cells. Those cells display `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels while keeping the existing modal callbacks.
+The modal-backed `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` builders apply shared initial widths and pass the row's actual optional config into the shared text action cells. Those cells display `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels while keeping the existing modal callbacks.
