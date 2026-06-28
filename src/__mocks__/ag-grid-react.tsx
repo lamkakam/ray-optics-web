@@ -110,7 +110,9 @@ export function AgGridReact({ rowData, columnDefs, defaultColDef, theme, domLayo
       <thead>
         <tr>
           {columnDefs?.map((col, i) => (
-            <th key={i}>{col.headerName ?? col.field ?? ""}</th>
+            <th key={i} data-pinned={typeof col.pinned === "string" ? col.pinned : undefined}>
+              {col.headerName ?? col.field ?? ""}
+            </th>
           ))}
         </tr>
       </thead>

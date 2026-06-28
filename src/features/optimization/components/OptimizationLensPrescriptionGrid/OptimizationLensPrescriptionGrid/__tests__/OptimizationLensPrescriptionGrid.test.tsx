@@ -92,6 +92,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "Tilt & Decenter",
       "Diffraction Grating",
     ]);
+    expect(headers[0]).toHaveAttribute("data-pinned", "left");
 
     expect(screen.getAllByText("Var.")).toHaveLength(3);
     expect(screen.getByText("Medium")).toBeInTheDocument();

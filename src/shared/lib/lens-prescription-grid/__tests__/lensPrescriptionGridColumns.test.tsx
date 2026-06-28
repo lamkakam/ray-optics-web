@@ -3,6 +3,7 @@ import {
   createSemiDiameterColumn,
   createThicknessColumn,
   LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS,
+  lensPrescriptionGridIndexColumnDef,
 } from "@/shared/lib/lens-prescription-grid";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
@@ -21,5 +22,13 @@ describe("lens prescription grid column widths", () => {
     expect(createThicknessColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.thickness);
     expect(createMediumColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.medium);
     expect(createSemiDiameterColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.semiDiameter);
+  });
+
+  it("keeps the shared Index column pinned left with its shared width", () => {
+    expect(lensPrescriptionGridIndexColumnDef).toMatchObject({
+      headerName: "Index",
+      pinned: "left",
+      width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.index,
+    });
   });
 });

@@ -26,5 +26,6 @@ export {
   LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS,
   LENS_PRESCRIPTION_GRID_DOM_LAYOUT,
   lensPrescriptionGridDefaultColDef,
+  lensPrescriptionGridIndexColumnDef,
   numberValueParser,
 } from "@/shared/lib/lens-prescription-grid/lensPrescriptionGridColumns";

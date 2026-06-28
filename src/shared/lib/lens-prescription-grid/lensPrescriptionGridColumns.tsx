@@ -29,6 +29,12 @@ export const LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS = {
   diffractionGrating: 165,
 } as const;
 
+export const lensPrescriptionGridIndexColumnDef = {
+  headerName: "Index",
+  width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.index,
+  pinned: "left",
+} satisfies ColDef;
+
 const VALID_NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
 
 export function numberValueParser(params: { readonly newValue: string; readonly oldValue: unknown }) {

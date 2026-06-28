@@ -38,10 +38,10 @@ interface LensPrescriptionGridProps {
 
 - Column definitions are memoized with `useMemo` over the callback props to avoid unnecessary AG Grid re-renders.
 - The leading row action column remains editor-specific.
-- A read-only `Index` column appears immediately after the leading row action column and before `Surface`.
+- A read-only `Index` column appears immediately after the leading row action column and before `Surface`; it is pinned left through the shared lens prescription grid `Index` column config.
 - The `Index` column is display-only. It derives continuous one-based numbering from the current `rows` order, counting only `surface` rows; Object and Image rows render blank index cells.
 - Common prescription columns are composed from `shared/lib/lens-prescription-grid` so Lens Editor and Optimization use the same value getters, numeric parsing, cell renderers, and AG Grid defaults.
-- The `Index`, `Surface`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS` in `shared/lib/lens-prescription-grid`; the leading row action column remains editor-specific at `100px`.
+- The `Index`, `Surface`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`; the leading row action column remains editor-specific at `100px`.
 - Shared `MediumCell`, `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` render inside `LensPrescriptionActionWrapper`, which opens the modal when the non-interactive cell body is clicked.
 - `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` display text labels (`None`, asphere type labels, decenter strategy values, and `${lpmm} lp/mm`) instead of set/unset status text.
 - The Medium column renders for the Object row and all surface rows; the Image row remains blank in that column.
