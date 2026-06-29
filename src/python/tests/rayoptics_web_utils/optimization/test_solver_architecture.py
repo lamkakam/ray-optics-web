@@ -482,12 +482,13 @@ def test_axis_specific_ray_fan_replaces_non_finite_and_missing_samples_with_pena
     monkeypatch.setattr(
         "rayoptics_web_utils.optimization.operands.get_ray_fan_data",
         lambda opm, fi, image_point="chief_ray": [{
-            "Tangential": {"y": [float("nan"), float("inf")]},
+            "Tangential": {"y": [float("nan"), None, float("inf")]},
             "Sagittal": {"y": [1.0, 2.0]},
         }],
     )
 
-    assert compute_ray_fan_tangential(None, 0, 0, {"num_rays": 3}) == [
+    assert compute_ray_fan_tangential(None, 0, 0, {"num_rays": 4}) == [
+        PENALTY_RESIDUAL,
         PENALTY_RESIDUAL,
         PENALTY_RESIDUAL,
         PENALTY_RESIDUAL,

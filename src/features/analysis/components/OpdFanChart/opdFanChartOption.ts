@@ -86,6 +86,10 @@ function formatAxisExtent(value: number): number {
   return Number(formatPlotValue(value));
 }
 
+function formatSeriesPoint(x: number, y: number | undefined): [number, number | null] {
+  return [x, y === undefined ? null : y];
+}
+
 function formatYExtents(yMin: number, yMax: number): { readonly yMin: number; readonly yMax: number } {
   if (!Number.isFinite(yMin) || !Number.isFinite(yMax) || yMin === yMax) {
     return {
@@ -119,14 +123,14 @@ function getAxisExtents(opdFanData: OpdFanData): OpdFanAxisExtents {
     }
 
     for (const y of seriesData.Tangential.y) {
-      if (Number.isFinite(y)) {
+      if (typeof y === "number" && Number.isFinite(y)) {
         tangentialYMin = Math.min(tangentialYMin, y);
         tangentialYMax = Math.max(tangentialYMax, y);
       }
     }
 
     for (const y of seriesData.Sagittal.y) {
-      if (Number.isFinite(y)) {
+      if (typeof y === "number" && Number.isFinite(y)) {
         sagittalYMin = Math.min(sagittalYMin, y);
         sagittalYMax = Math.max(sagittalYMax, y);
       }
@@ -323,7 +327,7 @@ export function buildOpdFanChartOption(
           xAxisIndex: 0,
           yAxisIndex: 0,
           showSymbol: false,
-          data: seriesData.Tangential.x.map((x, pointIndex) => [x, seriesData.Tangential.y[pointIndex] ?? 0]),
+          data: seriesData.Tangential.x.map((x, pointIndex) => formatSeriesPoint(x, seriesData.Tangential.y[pointIndex])),
           lineStyle: {
             color,
           },
@@ -337,7 +341,7 @@ export function buildOpdFanChartOption(
           xAxisIndex: 1,
           yAxisIndex: 1,
           showSymbol: false,
-          data: seriesData.Sagittal.x.map((x, pointIndex) => [x, seriesData.Sagittal.y[pointIndex] ?? 0]),
+          data: seriesData.Sagittal.x.map((x, pointIndex) => formatSeriesPoint(x, seriesData.Sagittal.y[pointIndex])),
           lineStyle: {
             color,
           },

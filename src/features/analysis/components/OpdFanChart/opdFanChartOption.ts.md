@@ -30,6 +30,7 @@ function buildOpdFanChartOption(
 - Formats y-axis tick labels with the shared analysis plot-value formatter.
 - Sets `tooltip.trigger` to `"none"` and `tooltip.axisPointer.type` to `"cross"`.
 - Sets `showSymbol: false` on every line series.
+- Converts `undefined` fan ordinates to ECharts `null` points so aperture-blocked samples render as visible line gaps instead of zero-valued points.
 - Parses numeric wavelengths from UI labels so lower/higher wavelengths map consistently onto `ANALYSIS_HEATMAP_COLOR_PALETTE`.
 - Falls back to stable palette ordering when a wavelength label is not numeric.
 - Computes one shared x-axis min/max extent from both subplots and assigns it to both x axes.

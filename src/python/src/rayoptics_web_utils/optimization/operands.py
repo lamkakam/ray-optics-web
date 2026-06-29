@@ -102,7 +102,7 @@ def compute_rms_wavefront_error(
     return float(np.std(valid))
 
 
-def _select_fan_samples(wavelength_fan: dict, axis: str | None) -> list[float]:
+def _select_fan_samples(wavelength_fan: dict, axis: str | None) -> list[float | None]:
     if axis is None:
         return [
             *wavelength_fan["Tangential"]["y"],
@@ -212,7 +212,7 @@ def _compute_ray_fan_for_axis(
     while len(padded_samples) < residual_count:
         padded_samples.append(float("nan"))
     return [
-        float(sample) if np.isfinite(sample) else PENALTY_RESIDUAL
+        float(sample) if sample is not None and np.isfinite(sample) else PENALTY_RESIDUAL
         for sample in padded_samples
     ]
 

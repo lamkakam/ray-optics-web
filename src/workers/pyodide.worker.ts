@@ -27,6 +27,18 @@ let activeOptimizationInterruptView: Int32Array | undefined;
 const PYODIDE_INTERRUPT_SIGNAL = 2;
 
 type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
+type RawFanAxisData = {
+  readonly x: number[];
+  readonly y: ReadonlyArray<number | null | undefined>;
+};
+type RawFanSeriesData = {
+  readonly fieldIdx: number;
+  readonly wvlIdx: number;
+  readonly Sagittal: RawFanAxisData;
+  readonly Tangential: RawFanAxisData;
+  readonly unitX: string;
+  readonly unitY: string;
+};
 
 async function emitInitProgress(
   onProgress: InitProgressCallback | undefined,
@@ -167,6 +179,24 @@ function requirePyodide(): (code: string) => Promise<unknown> {
   return pyodide.runPythonAsync.bind(pyodide);
 }
 
+function normalizeFanAxis(axis: RawFanAxisData): {
+  readonly x: number[];
+  readonly y: Array<number | undefined>;
+} {
+  return {
+    x: axis.x,
+    y: axis.y.map((value) => value ?? undefined),
+  };
+}
+
+function normalizeFanData<TFanData extends RayFanData | OpdFanData>(rawData: RawFanSeriesData[]): TFanData {
+  return rawData.map((entry) => ({
+    ...entry,
+    Sagittal: normalizeFanAxis(entry.Sagittal),
+    Tangential: normalizeFanAxis(entry.Tangential),
+  })) as TFanData;
+}
+
 
 // ─── Injectable variants for testing ─────────────────────────────────────────
 
@@ -198,7 +228,7 @@ export async function _getRayFanData(
   const json = (await runPython(
     buildScript(opticalModel, (opm) => `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`),
   )) as string;
-  return JSON.parse(json) as RayFanData;
+  return normalizeFanData<RayFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
 
 export async function _getOpdFanData(
@@ -210,7 +240,7 @@ export async function _getOpdFanData(
   const json = (await runPython(
     buildScript(opticalModel, (opm) => `json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`),
   )) as string;
-  return JSON.parse(json) as OpdFanData;
+  return normalizeFanData<OpdFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
 
 export async function _getSpotDiagramData(

@@ -3,6 +3,11 @@ export interface LineAxisData {
   y: number[];
 }
 
+export interface FanLineAxisData {
+  x: number[];
+  y: Array<number | undefined>;
+}
+
 export interface DiffractionPsfData {
   fieldIdx: number;
   wvlIdx: number;
@@ -94,7 +99,7 @@ export interface LongitudinalSphericalAberrationSeriesData {
 
 export type LongitudinalSphericalAberrationData = LongitudinalSphericalAberrationSeriesData[];
 
-export type RayFanAxisData = LineAxisData;
+export type RayFanAxisData = FanLineAxisData;
 
 export interface RayFanSeriesData {
   fieldIdx: number;
@@ -107,7 +112,7 @@ export interface RayFanSeriesData {
 
 export type RayFanData = RayFanSeriesData[];
 
-export type OpdFanAxisData = LineAxisData;
+export type OpdFanAxisData = FanLineAxisData;
 
 export interface OpdFanSeriesData {
   fieldIdx: number;

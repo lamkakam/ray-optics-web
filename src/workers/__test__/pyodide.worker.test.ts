@@ -138,6 +138,30 @@ describe("_getRayFanData", () => {
     expect(pythonScript).toContain("json.dumps(get_ray_fan_data(_build_opm(), 1, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
+
+  it("normalizes null ray fan samples to undefined gaps", async () => {
+    const mockData = [
+      {
+        fieldIdx: 1,
+        wvlIdx: 0,
+        Sagittal: {
+          x: [-1, 0, 1],
+          y: [-0.2, null, 0.2],
+        },
+        Tangential: {
+          x: [-1, 0, 1],
+          y: [-0.1, null, 0.1],
+        },
+        unitX: "",
+        unitY: "mm",
+      },
+    ];
+
+    const result = await _getRayFanData(async () => JSON.stringify(mockData), allSphericalOpticalModel, 1);
+
+    expect(result[0].Sagittal.y).toEqual([-0.2, undefined, 0.2]);
+    expect(result[0].Tangential.y).toEqual([-0.1, undefined, 0.1]);
+  });
 });
 
 
@@ -168,6 +192,30 @@ describe("_getOpdFanData", () => {
     expect(pythonScript).toContain("opm = OpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_opd_fan_data(_build_opm(), 1, image_point='centroid'))");
     expect(result).toEqual(mockData);
+  });
+
+  it("normalizes null OPD fan samples to undefined gaps", async () => {
+    const mockData = [
+      {
+        fieldIdx: 1,
+        wvlIdx: 0,
+        Sagittal: {
+          x: [-1, 0, 1],
+          y: [-0.2, null, 0.2],
+        },
+        Tangential: {
+          x: [-1, 0, 1],
+          y: [-0.1, null, 0.1],
+        },
+        unitX: "",
+        unitY: "waves",
+      },
+    ];
+
+    const result = await _getOpdFanData(async () => JSON.stringify(mockData), allSphericalOpticalModel, 1);
+
+    expect(result[0].Sagittal.y).toEqual([-0.2, undefined, 0.2]);
+    expect(result[0].Tangential.y).toEqual([-0.1, undefined, 0.1]);
   });
 });
 
