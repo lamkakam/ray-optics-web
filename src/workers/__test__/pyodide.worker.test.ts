@@ -460,6 +460,7 @@ describe("_init", () => {
     expect(allCode).toContain("from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data");
     expect(allCode).toContain("get_field_curvature_data, get_astigmatism_curve_data");
     expect(allCode).toContain("plot_lens_layout,");
+    expect(allCode).toContain("from rayoptics_web_utils.aperture import OffsetCircular");
     expect(allCode).not.toContain("plot_ray_fan,");
     expect(allCode).not.toContain("plot_opd_fan,");
     expect(allCode).not.toContain("plot_spot_diagram,");

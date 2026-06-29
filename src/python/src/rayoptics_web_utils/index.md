@@ -9,6 +9,7 @@ Internal Python package for optical computing utilities and RayOptics integratio
 ## Subdirectories
 
 - [analysis/](./analysis/index.md) — Analysis functions (first-order, Seidel, fan, spot, wavefront, PSF, and MTF data)
+- [aperture/](./aperture/index.md) — Aperture helper classes for generated RayOptics scripts
 - [env/](./env/index.md) — Environment and configuration management
 - [focusing/](./focusing/index.md) — Focusing algorithms for lens optimization
 - [glass/](./glass/index.md) — Glass material data and selection utilities

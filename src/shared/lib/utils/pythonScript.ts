@@ -131,7 +131,8 @@ function formatCircularApertureAssignment(
   offsetX: number,
   offsetY: number,
 ): PythonLine {
-  return `${targetExpr}.${apertureKind} = [Circular(radius=${radius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
+  const apertureClass = offsetX === 0 && offsetY === 0 ? "Circular" : "OffsetCircular";
+  return `${targetExpr}.${apertureKind} = [${apertureClass}(radius=${radius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
 }
 
 function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBuildStep {
@@ -272,6 +273,13 @@ from rayoptics.elem.surface import DecenterData, Circular
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 from opticalglass.rindexinfo import create_material
+
+class OffsetCircular(Circular):
+    def edge_pt_target(self, rel_dir):
+        return [
+            self.x_offset + self.radius * rel_dir[0],
+            self.y_offset + self.radius * rel_dir[1],
+        ]
 
 caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'
 caf2 = create_glass(caf2_url, "rindexinfo")

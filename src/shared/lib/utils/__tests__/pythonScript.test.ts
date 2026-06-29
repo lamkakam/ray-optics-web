@@ -286,7 +286,7 @@ describe("buildOpticalModelScript", () => {
     );
   });
 
-  it("should emit explicit clear and edge circular apertures after adding a surface", () => {
+  it("should emit OffsetCircular for nonzero clear and edge aperture offsets", () => {
     const model: OpticalModel = {
       ...baseModel,
       surfaces: [
@@ -304,10 +304,35 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain(
       [
         "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
-        "sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=3, x_offset=-0.5, y_offset=1.25)]",
-        "sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=2.5, x_offset=0.75, y_offset=-1.5)]",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [OffsetCircular(radius=3, x_offset=-0.5, y_offset=1.25)]",
+        "sm.ifcs[sm.cur_surface].edge_apertures = [OffsetCircular(radius=2.5, x_offset=0.75, y_offset=-1.5)]",
       ].join("\n"),
     );
+  });
+
+  it("should keep Circular for zero-offset clear and edge apertures", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 3,
+          clear_aperture: { shape: "circular", offsetX: 0, offsetY: 0 },
+          edge_aperture: { shape: "circular", radius: 2.5, offsetX: 0, offsetY: 0 },
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      [
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=3, x_offset=0, y_offset=0)]",
+        "sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=2.5, x_offset=0, y_offset=0)]",
+      ].join("\n"),
+    );
+    expect(script).not.toContain("OffsetCircular(radius=3");
   });
 
   it("should omit clear aperture for non-positive semi-diameter and edge aperture for default follow-clear", () => {
@@ -418,6 +443,14 @@ describe("buildExportScript", () => {
   it("imports Circular in the export preamble", () => {
     const script = buildExportScript(baseModel);
     expect(script).toContain("from rayoptics.elem.surface import DecenterData, Circular");
+  });
+
+  it("defines OffsetCircular inline in the export preamble", () => {
+    const script = buildExportScript(baseModel);
+    expect(script).toContain("class OffsetCircular(Circular):");
+    expect(script).toContain("def edge_pt_target(self, rel_dir):");
+    expect(script).toContain("self.x_offset + self.radius * rel_dir[0]");
+    expect(script).toContain("self.y_offset + self.radius * rel_dir[1]");
   });
 
   it("defines the water material in the export preamble", () => {

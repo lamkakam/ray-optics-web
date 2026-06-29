@@ -110,7 +110,7 @@ export function _getOptimizationInterruptStateForTesting(): { activeRunId?: stri
 
 1. Emits `60%` with `"Installing RayOptics packages"` and installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
 2. Emits `75%` with `"Installing supporting packages"` and installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
-3. Emits `85%` with `"Loading local wheel and imports"` and installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, `water`, and `d263teco` glass objects, and imports the needed symbols from `rayoptics.environment`, `rayoptics.elem.surface` (`DecenterData`, `Circular`), `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, `rayoptics_web_utils.glass.glass`, and `rayoptics_web_utils.optimization`, including `evaluate_optimization_problem` and `optimize_opm`.
+3. Emits `85%` with `"Loading local wheel and imports"` and installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, `water`, and `d263teco` glass objects, and imports the needed symbols from `rayoptics.environment`, `rayoptics.elem.surface` (`DecenterData`, `Circular`), `rayoptics_web_utils.aperture` (`OffsetCircular`), `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, `rayoptics_web_utils.glass.glass`, and `rayoptics_web_utils.optimization`, including `evaluate_optimization_problem` and `optimize_opm`.
 
 ## Public API
 
@@ -178,6 +178,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **Optimization stop signaling**: stoppable runs are identified by a per-run string id and a shared interrupt buffer. `_optimizeOpm(...)` installs the buffer only for the matching active run and clears it in `finally` for success, stopped, failed, and thrown-error paths. `requestOptimizationStop(...)` is idempotent and returns a no-op result for stale or late run ids.
 - **Plot return type**: `plotLensLayout` returns a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getFieldCurvatureData`, `getAstigmatismCurveData`, `getLSAData`, `getWavefrontData`, `getStrehlVsWavelengthData`, `getGeoPSFData`, `getDiffractionPSFData`, and `getDiffractionMTFData` return typed data for frontend rendering.
 - **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, `water`, and `d263teco` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
+- **Offset aperture globals**: `_init()` imports `OffsetCircular` from `rayoptics_web_utils.aperture` so generated worker-side scripts can use offset-aware circular aperture edge targets.
 
 ## Edge Cases / Error Handling
 
