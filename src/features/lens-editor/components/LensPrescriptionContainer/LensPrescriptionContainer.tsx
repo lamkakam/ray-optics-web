@@ -275,7 +275,11 @@ export function LensPrescriptionContainer({
         initialClearAperture={apertureRow?.kind === "surface" ? apertureRow.clear_aperture : undefined}
         initialEdgeAperture={apertureRow?.kind === "surface" ? apertureRow.edge_aperture : undefined}
         onConfirm={({ clear_aperture, edge_aperture }) => {
-          store.getState().updateRow(apertureModal.rowId, { clear_aperture, edge_aperture });
+          store.getState().updateRow(apertureModal.rowId, {
+            clear_aperture,
+            edge_aperture,
+            ...(clear_aperture.shape === "rectangular" ? { semiDiameter: 0 } : {}),
+          });
           store.getState().closeApertureModal();
         }}
         onClose={() => store.getState().closeApertureModal()}

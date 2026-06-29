@@ -183,6 +183,53 @@ describe("prescriptionFormatting", () => {
     });
   });
 
+  it("scales rectangular aperture half widths and offsets while preserving rotation", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [
+        {
+          ...baseSurfaces.surfaces[0],
+          clear_aperture: {
+            shape: "rectangular",
+            xHalfWidth: 4,
+            yHalfWidth: 2,
+            rotation: 15,
+            offsetX: -1,
+            offsetY: 1.5,
+          },
+          edge_aperture: {
+            shape: "rectangular",
+            xHalfWidth: 5,
+            yHalfWidth: 3,
+            rotation: -30,
+            offsetX: 0.5,
+            offsetY: -0.75,
+          },
+        },
+      ],
+    });
+
+    const result = scaleRows(rows, { first: 1, last: 1, factor: 2 });
+    const surfaces = surfaceRows(result);
+
+    expect(surfaces[0].clear_aperture).toEqual({
+      shape: "rectangular",
+      xHalfWidth: 8,
+      yHalfWidth: 4,
+      rotation: 15,
+      offsetX: -2,
+      offsetY: 3,
+    });
+    expect(surfaces[0].edge_aperture).toEqual({
+      shape: "rectangular",
+      xHalfWidth: 10,
+      yHalfWidth: 6,
+      rotation: -30,
+      offsetX: 1,
+      offsetY: -1.5,
+    });
+  });
+
   it("scales object distance below 1e10 and image decenter offsets when Image is included", () => {
     const rows = surfacesToGridRows({
       ...baseSurfaces,

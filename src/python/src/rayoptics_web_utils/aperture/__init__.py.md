@@ -8,3 +8,4 @@ Package re-export surface for aperture helpers.
 
 - `OffsetCircular` from `offset_circular.py`
 - `Annular` from `annular.py`
+- `OffsetRotatedRectangular` from `offset_rotated_rectangular.py`

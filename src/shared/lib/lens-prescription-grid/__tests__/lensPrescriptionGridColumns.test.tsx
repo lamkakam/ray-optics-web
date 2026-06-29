@@ -59,4 +59,34 @@ describe("lens prescription grid column widths", () => {
       "Annu obs 1.25, offset (-1, 2); Edge Cir 3.5, offset (0.5, -0.75)",
     );
   });
+
+  it("blanks and disables semi-diameter for rectangular clear apertures", () => {
+    const row: GridRow = {
+      kind: "surface",
+      id: "surface-1",
+      label: "Default",
+      curvatureRadius: 10,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0,
+      clear_aperture: {
+        shape: "rectangular",
+        xHalfWidth: 4,
+        yHalfWidth: 2,
+        rotation: 0,
+        offsetX: 0,
+        offsetY: 0,
+      },
+    };
+    const onSemiDiameterChange = jest.fn();
+    const column = createSemiDiameterColumn({ getGridRow, onSemiDiameterChange });
+
+    expect(typeof column.valueGetter).toBe("function");
+    expect(typeof column.editable).toBe("function");
+    if (typeof column.valueGetter !== "function" || typeof column.editable !== "function") return;
+
+    expect(column.valueGetter({ data: row } as ValueGetterParams<GridRow>)).toBeUndefined();
+    expect(column.editable({ data: row } as never)).toBe(false);
+  });
 });

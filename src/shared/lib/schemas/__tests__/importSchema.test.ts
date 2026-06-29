@@ -311,6 +311,72 @@ describe("validateImportedLensData", () => {
     expect(validateImportedLensData(model)).toBe(true);
   });
 
+  it("accepts rectangular clear and edge aperture fields on a surface", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 0,
+          clear_aperture: {
+            shape: "rectangular",
+            xHalfWidth: 4,
+            yHalfWidth: 2,
+            rotation: 15,
+            offsetX: -1,
+            offsetY: 2,
+          },
+          edge_aperture: {
+            shape: "rectangular",
+            xHalfWidth: 5,
+            yHalfWidth: 3,
+            rotation: -30,
+            offsetX: 0.5,
+            offsetY: -0.75,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it.each([
+    ["xHalfWidth", 0],
+    ["yHalfWidth", -1],
+    ["rotation", Number.POSITIVE_INFINITY],
+    ["offsetX", Number.NaN],
+  ])("rejects invalid rectangular aperture field %s=%s", (field, value) => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 0,
+          clear_aperture: {
+            shape: "rectangular",
+            xHalfWidth: 4,
+            yHalfWidth: 2,
+            rotation: 0,
+            offsetX: 0,
+            offsetY: 0,
+            [field]: value,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
   it.each([0, -1, 5, 6, Number.POSITIVE_INFINITY])("rejects annular obstruction radius %s", (obstructionRadius) => {
     const model = {
       ...baseModel,

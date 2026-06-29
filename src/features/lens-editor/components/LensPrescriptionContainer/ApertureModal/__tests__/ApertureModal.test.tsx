@@ -228,6 +228,129 @@ describe("ApertureModal", () => {
     });
   });
 
+  it("saves rectangular clear and edge aperture values", async () => {
+    const onConfirm = jest.fn();
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "rectangular");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Half-Length" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Half-Length" }), "4.5");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Half-Width" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Half-Width" }), "2.25");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Rotation" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Rotation" }), "15");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Offset X" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Offset X" }), "-1");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Offset Y" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Offset Y" }), "2");
+
+    await userEvent.selectOptions(screen.getByLabelText("Edge Aperture Shape"), "rectangular");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Edge Half-Length" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Edge Half-Length" }), "5");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Edge Half-Width" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Edge Half-Width" }), "3");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Edge Rotation" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Edge Rotation" }), "-30");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Edge Offset X" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Edge Offset X" }), "0.5");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Edge Offset Y" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Edge Offset Y" }), "-0.75");
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      clear_aperture: {
+        shape: "rectangular",
+        xHalfWidth: 4.5,
+        yHalfWidth: 2.25,
+        rotation: 15,
+        offsetX: -1,
+        offsetY: 2,
+      },
+      edge_aperture: {
+        shape: "rectangular",
+        xHalfWidth: 5,
+        yHalfWidth: 3,
+        rotation: -30,
+        offsetX: 0.5,
+        offsetY: -0.75,
+      },
+    });
+  });
+
+  it("preloads and disables rectangular aperture controls in read-only mode", () => {
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={9}
+        readOnly
+        initialClearAperture={{
+          shape: "rectangular",
+          xHalfWidth: 4,
+          yHalfWidth: 2,
+          rotation: 12,
+          offsetX: 1,
+          offsetY: -1,
+        }}
+        initialEdgeAperture={{
+          shape: "rectangular",
+          xHalfWidth: 5,
+          yHalfWidth: 3,
+          rotation: -8,
+          offsetX: 2,
+          offsetY: -2,
+        }}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Clear Aperture Shape")).toHaveValue("rectangular");
+    expect(screen.getByRole("textbox", { name: "Clear Half-Length" })).toHaveValue("4");
+    expect(screen.getByRole("textbox", { name: "Clear Half-Width" })).toHaveValue("2");
+    expect(screen.getByRole("textbox", { name: "Clear Rotation" })).toHaveValue("12");
+    expect(screen.getByRole("textbox", { name: "Edge Half-Length" })).toHaveValue("5");
+    expect(screen.getByRole("textbox", { name: "Edge Half-Width" })).toHaveValue("3");
+    expect(screen.getByRole("textbox", { name: "Edge Rotation" })).toHaveValue("-8");
+    expect(screen.getByRole("textbox", { name: "Clear Half-Length" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Edge Half-Length" })).toBeDisabled();
+  });
+
+  it.each([
+    ["Clear Half-Length", "0", "Half-Length and Half-Width must be greater than 0."],
+    ["Clear Half-Width", "-1", "Half-Length and Half-Width must be greater than 0."],
+    ["Clear Rotation", "Infinity", "Rotation must be a finite number."],
+  ])("rejects invalid rectangular clear aperture field %s=%s", async (fieldName, value, errorMessage) => {
+    const onConfirm = jest.fn();
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "rectangular");
+    await userEvent.clear(screen.getByRole("textbox", { name: fieldName }));
+    await userEvent.type(screen.getByRole("textbox", { name: fieldName }), value);
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText(errorMessage)).toBeInTheDocument();
+  });
+
   it("preloads and disables annular clear aperture controls in read-only mode", () => {
     render(
       <ApertureModal

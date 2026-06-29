@@ -50,6 +50,29 @@ describe("LensPrescriptionGridCells", () => {
     expect(formatApertureLabel(annularClear(1.5, -1, 2), circularEdge(3.25, 0.5, -0.75))).toBe(
       "Annu obs 1.5, offset (-1, 2); Edge Cir 3.25, offset (0.5, -0.75)",
     );
+    expect(formatApertureLabel({
+      shape: "rectangular",
+      xHalfWidth: 4,
+      yHalfWidth: 2,
+      rotation: 0,
+      offsetX: 0,
+      offsetY: 0,
+    }, undefined)).toBe("Rect (4,2)");
+    expect(formatApertureLabel({
+      shape: "rectangular",
+      xHalfWidth: 4,
+      yHalfWidth: 2,
+      rotation: 15,
+      offsetX: -1,
+      offsetY: 2,
+    }, {
+      shape: "rectangular",
+      xHalfWidth: 5,
+      yHalfWidth: 3,
+      rotation: -30,
+      offsetX: 0.5,
+      offsetY: -0.75,
+    })).toBe("Rect (4,2), rot 15°, offset (-1, 2); Edge Rect (5,3), rot -30°, offset (0.5, -0.75)");
   });
 
   it("renders aperture labels and opens the modal", async () => {

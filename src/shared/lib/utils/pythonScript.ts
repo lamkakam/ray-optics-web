@@ -140,9 +140,17 @@ function formatClearApertureAssignment(
   targetExpr: string,
   semiDiameter: number,
   clearAperture: ClearAperture | undefined,
-): PythonLine {
+): PythonLine | undefined {
   const offsetX = clearAperture === undefined ? 0 : clearAperture.offsetX;
   const offsetY = clearAperture === undefined ? 0 : clearAperture.offsetY;
+
+  if (clearAperture?.shape === "rectangular") {
+    return `${targetExpr}.clear_apertures = [OffsetRotatedRectangular(x_half_width=${clearAperture.xHalfWidth}, y_half_width=${clearAperture.yHalfWidth}, x_offset=${offsetX}, y_offset=${offsetY}, rotation=${clearAperture.rotation})]`;
+  }
+
+  if (semiDiameter <= 0) {
+    return undefined;
+  }
 
   if (clearAperture?.shape === "annular") {
     return `${targetExpr}.clear_apertures = [Annular(radius=${semiDiameter}, obstruction_radius=${clearAperture.obstructionRadius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
@@ -161,6 +169,10 @@ function formatEdgeApertureAssignment(
   targetExpr: string,
   edgeAperture: EdgeAperture,
 ): PythonLine {
+  if (edgeAperture.shape === "rectangular") {
+    return `${targetExpr}.edge_apertures = [OffsetRotatedRectangular(x_half_width=${edgeAperture.xHalfWidth}, y_half_width=${edgeAperture.yHalfWidth}, x_offset=${edgeAperture.offsetX}, y_offset=${edgeAperture.offsetY}, rotation=${edgeAperture.rotation})]`;
+  }
+
   return formatCircularApertureAssignment(
     targetExpr,
     "edge_apertures",
@@ -188,8 +200,9 @@ function buildSurfaceStep(surface: Surface): SurfaceBuildStep {
   const mutationLines: SurfaceMutationLine[] = [];
   const currentSurfaceExpr = "sm.ifcs[sm.cur_surface]";
 
-  if (semiDiameter > 0) {
-    mutationLines.push(formatClearApertureAssignment(currentSurfaceExpr, semiDiameter, clear_aperture));
+  const clearApertureAssignment = formatClearApertureAssignment(currentSurfaceExpr, semiDiameter, clear_aperture);
+  if (clearApertureAssignment !== undefined) {
+    mutationLines.push(clearApertureAssignment);
   }
 
   if (edge_aperture !== undefined) {
@@ -292,11 +305,11 @@ function buildExportPreamble(): string {
 isdark = False
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
-from rayoptics.elem.surface import DecenterData, Circular, Aperture
+from rayoptics.elem.surface import DecenterData, Circular, Aperture, Rectangular
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 from opticalglass.rindexinfo import create_material
-from math import sqrt
+from math import cos, radians, sin, sqrt
 
 class Annular(Aperture):
     def __init__(self, radius=1.0, obstruction_radius=0.5, **kwargs):
@@ -346,6 +359,40 @@ class OffsetCircular(Circular):
             self.x_offset + self.radius * rel_dir[0],
             self.y_offset + self.radius * rel_dir[1],
         ]
+
+class OffsetRotatedRectangular(Rectangular):
+    def _to_local(self, x, y):
+        x -= self.x_offset
+        y -= self.y_offset
+        angle = radians(self.rotation)
+        cos_angle = cos(angle)
+        sin_angle = sin(angle)
+        return (
+            x * cos_angle + y * sin_angle,
+            -x * sin_angle + y * cos_angle,
+        )
+
+    def _to_global(self, x, y):
+        angle = radians(self.rotation)
+        cos_angle = cos(angle)
+        sin_angle = sin(angle)
+        return [
+            self.x_offset + x * cos_angle - y * sin_angle,
+            self.y_offset + x * sin_angle + y * cos_angle,
+        ]
+
+    def point_inside(self, x, y, fuzz=1e-5):
+        local_x, local_y = self._to_local(x, y)
+        return (
+            abs(local_x) <= self.x_half_width + fuzz
+            and abs(local_y) <= self.y_half_width + fuzz
+        )
+
+    def edge_pt_target(self, rel_dir):
+        return self._to_global(
+            self.x_half_width * rel_dir[0],
+            self.y_half_width * rel_dir[1],
+        )
 
 caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'
 caf2 = create_glass(caf2_url, "rindexinfo")

@@ -199,6 +199,36 @@ describe("LensPrescriptionContainer", () => {
     expect(surfaces.surfaces[0].curvatureRadius).toBe(50);
   });
 
+  it("sets semi-diameter to 0 when a rectangular clear aperture is confirmed", async () => {
+    const { store } = renderLPC();
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    if (surfaceRow?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+
+    act(() => {
+      store.getState().openApertureModal(surfaceRow.id);
+    });
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "rectangular");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Half-Length" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Half-Length" }), "4");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Half-Width" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Half-Width" }), "2");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const updatedRow = store.getState().rows.find((row) => row.id === surfaceRow.id);
+    expect(updatedRow?.kind === "surface" ? updatedRow.semiDiameter : undefined).toBe(0);
+    expect(updatedRow?.kind === "surface" ? updatedRow.clear_aperture : undefined).toEqual({
+      shape: "rectangular",
+      xHalfWidth: 4,
+      yHalfWidth: 2,
+      rotation: 0,
+      offsetX: 0,
+      offsetY: 0,
+    });
+  });
+
   it("renders DecenterModal when decenterModal is open", () => {
     const { store } = renderLPC();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

@@ -277,6 +277,16 @@ function scaleClearAperture(
     };
   }
 
+  if (aperture.shape === "rectangular") {
+    return {
+      ...aperture,
+      xHalfWidth: scaleNumber(aperture.xHalfWidth, factor),
+      yHalfWidth: scaleNumber(aperture.yHalfWidth, factor),
+      offsetX: scaleNumber(aperture.offsetX, factor),
+      offsetY: scaleNumber(aperture.offsetY, factor),
+    };
+  }
+
   return {
     ...aperture,
     offsetX: scaleNumber(aperture.offsetX, factor),
@@ -290,6 +300,16 @@ function scaleEdgeAperture(
 ): EdgeAperture | undefined {
   if (aperture === undefined) {
     return undefined;
+  }
+
+  if (aperture.shape === "rectangular") {
+    return {
+      ...aperture,
+      xHalfWidth: scaleNumber(aperture.xHalfWidth, factor),
+      yHalfWidth: scaleNumber(aperture.yHalfWidth, factor),
+      offsetX: scaleNumber(aperture.offsetX, factor),
+      offsetY: scaleNumber(aperture.offsetY, factor),
+    };
   }
 
   return {
@@ -500,9 +520,22 @@ function numericValues(row: GridRow): number[] {
       if (row.clear_aperture.shape === "annular") {
         values.push(row.clear_aperture.obstructionRadius);
       }
+      if (row.clear_aperture.shape === "rectangular") {
+        values.push(row.clear_aperture.xHalfWidth, row.clear_aperture.yHalfWidth, row.clear_aperture.rotation);
+      }
     }
     if (row.edge_aperture !== undefined) {
-      values.push(row.edge_aperture.radius, row.edge_aperture.offsetX, row.edge_aperture.offsetY);
+      if (row.edge_aperture.shape === "rectangular") {
+        values.push(
+          row.edge_aperture.xHalfWidth,
+          row.edge_aperture.yHalfWidth,
+          row.edge_aperture.rotation,
+          row.edge_aperture.offsetX,
+          row.edge_aperture.offsetY,
+        );
+      } else {
+        values.push(row.edge_aperture.radius, row.edge_aperture.offsetX, row.edge_aperture.offsetY);
+      }
     }
     if (row.aspherical !== undefined) {
       values.push(row.aspherical.conicConstant);

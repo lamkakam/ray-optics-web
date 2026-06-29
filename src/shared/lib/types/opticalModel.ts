@@ -49,14 +49,21 @@ export type AnnularAperture = {
   obstructionRadius: number,
 };
 
+export type RectangularAperture = {
+  shape: "rectangular",
+  xHalfWidth: number,
+  yHalfWidth: number,
+  rotation: number,
+};
+
 export type ClearAperture = ({
   shape: "circular",
-} | AnnularAperture) & BaseAperture;
+} | AnnularAperture | RectangularAperture) & BaseAperture;
 
-export type EdgeAperture = {
+export type EdgeAperture = ({
   shape: "circular",
   radius: number,
-} & BaseAperture;
+} | RectangularAperture) & BaseAperture;
 
 export type AsphericalPolynomialCoeffs = number[];
 

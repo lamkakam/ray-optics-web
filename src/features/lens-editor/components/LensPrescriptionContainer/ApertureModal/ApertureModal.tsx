@@ -10,7 +10,7 @@ import { Select } from "@/shared/components/primitives/Select";
 import type { ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalModel";
 
 type ClearApertureShape = ClearAperture["shape"];
-type EdgeApertureShape = "default" | "circular";
+type EdgeApertureShape = "default" | EdgeAperture["shape"];
 type StringSetter = React.Dispatch<React.SetStateAction<string>>;
 type ClearApertureSectionValue = { readonly value: ClearAperture } | { readonly error: string };
 type EdgeApertureSectionValue = { readonly value: EdgeAperture | undefined } | { readonly error: string };
@@ -73,6 +73,23 @@ interface EdgeCircularFieldsProps {
   readonly setEdgeRadius: StringSetter;
   readonly setEdgeOffsetX: StringSetter;
   readonly setEdgeOffsetY: StringSetter;
+  readonly clearError: () => void;
+}
+
+interface RectangularFieldsProps {
+  readonly idPrefix: string;
+  readonly ariaPrefix: string;
+  readonly xHalfWidth: string;
+  readonly yHalfWidth: string;
+  readonly rotation: string;
+  readonly offsetX: string;
+  readonly offsetY: string;
+  readonly readOnly: boolean;
+  readonly setXHalfWidth: StringSetter;
+  readonly setYHalfWidth: StringSetter;
+  readonly setRotation: StringSetter;
+  readonly setOffsetX: StringSetter;
+  readonly setOffsetY: StringSetter;
   readonly clearError: () => void;
 }
 
@@ -222,20 +239,120 @@ function EdgeCircularFields({
   );
 }
 
+function RectangularFields({
+  idPrefix,
+  ariaPrefix,
+  xHalfWidth,
+  yHalfWidth,
+  rotation,
+  offsetX,
+  offsetY,
+  readOnly,
+  setXHalfWidth,
+  setYHalfWidth,
+  setRotation,
+  setOffsetX,
+  setOffsetY,
+  clearError,
+}: RectangularFieldsProps) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor={`${idPrefix}-x-half-width`}>Half-Length</Label>
+          <Input
+            id={`${idPrefix}-x-half-width`}
+            aria-label={`${ariaPrefix} Half-Length`}
+            type="text"
+            value={xHalfWidth}
+            disabled={readOnly}
+            onChange={(event) => {
+              setXHalfWidth(event.target.value);
+              clearError();
+            }}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`${idPrefix}-y-half-width`}>Half-Width</Label>
+          <Input
+            id={`${idPrefix}-y-half-width`}
+            aria-label={`${ariaPrefix} Half-Width`}
+            type="text"
+            value={yHalfWidth}
+            disabled={readOnly}
+            onChange={(event) => {
+              setYHalfWidth(event.target.value);
+              clearError();
+            }}
+          />
+        </div>
+      </div>
+      <div>
+        <Label htmlFor={`${idPrefix}-rotation`}>Rotation (°)</Label>
+        <Input
+          id={`${idPrefix}-rotation`}
+          aria-label={`${ariaPrefix} Rotation`}
+          type="text"
+          value={rotation}
+          disabled={readOnly}
+          onChange={(event) => {
+            setRotation(event.target.value);
+            clearError();
+          }}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor={`${idPrefix}-offset-x`}>Offset X</Label>
+          <Input
+            id={`${idPrefix}-offset-x`}
+            aria-label={`${ariaPrefix} Offset X`}
+            type="text"
+            value={offsetX}
+            disabled={readOnly}
+            onChange={(event) => {
+              setOffsetX(event.target.value);
+              clearError();
+            }}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`${idPrefix}-offset-y`}>Offset Y</Label>
+          <Input
+            id={`${idPrefix}-offset-y`}
+            aria-label={`${ariaPrefix} Offset Y`}
+            type="text"
+            value={offsetY}
+            disabled={readOnly}
+            onChange={(event) => {
+              setOffsetY(event.target.value);
+              clearError();
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const CLEAR_APERTURE_SHAPE_COMPONENTS = {
   circular: ClearCircularFields,
   annular: ClearAnnularFields,
+  rectangular: RectangularFields,
 } satisfies {
   readonly circular: React.ComponentType<ClearCircularFieldsProps>;
   readonly annular: React.ComponentType<ClearAnnularFieldsProps>;
+  readonly rectangular: React.ComponentType<RectangularFieldsProps>;
 };
 
 const EDGE_APERTURE_SHAPE_COMPONENTS = {
   default: EdgeDefaultFields,
   circular: EdgeCircularFields,
+  rectangular: RectangularFields,
 } satisfies {
   readonly default: React.ComponentType;
   readonly circular: React.ComponentType<EdgeCircularFieldsProps>;
+  readonly rectangular: React.ComponentType<RectangularFieldsProps>;
 };
 
 const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertureSectionProps>(function ClearApertureSection(
@@ -253,6 +370,15 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
   ));
   const [clearOffsetX, setClearOffsetX] = useState(String(initialClearAperture?.offsetX ?? 0));
   const [clearOffsetY, setClearOffsetY] = useState(String(initialClearAperture?.offsetY ?? 0));
+  const [clearXHalfWidth, setClearXHalfWidth] = useState(String(
+    initialClearAperture?.shape === "rectangular" ? initialClearAperture.xHalfWidth : semiDiameter,
+  ));
+  const [clearYHalfWidth, setClearYHalfWidth] = useState(String(
+    initialClearAperture?.shape === "rectangular" ? initialClearAperture.yHalfWidth : semiDiameter,
+  ));
+  const [clearRotation, setClearRotation] = useState(String(
+    initialClearAperture?.shape === "rectangular" ? initialClearAperture.rotation : 0,
+  ));
 
   useImperativeHandle(ref, () => ({
     getValue: () => {
@@ -278,9 +404,33 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
         };
       }
 
+      if (clearShape === "rectangular") {
+        const parsedXHalfWidth = parsePositiveFiniteNumber(clearXHalfWidth);
+        const parsedYHalfWidth = parsePositiveFiniteNumber(clearYHalfWidth);
+        if (parsedXHalfWidth === undefined || parsedYHalfWidth === undefined) {
+          return { error: "Half-Length and Half-Width must be greater than 0." };
+        }
+
+        const parsedRotation = parseFiniteNumber(clearRotation);
+        if (parsedRotation === undefined) {
+          return { error: "Rotation must be a finite number." };
+        }
+
+        return {
+          value: {
+            shape: "rectangular",
+            xHalfWidth: parsedXHalfWidth,
+            yHalfWidth: parsedYHalfWidth,
+            rotation: parsedRotation,
+            offsetX: parsedClearOffsetX,
+            offsetY: parsedClearOffsetY,
+          },
+        };
+      }
+
       return { value: { shape: "circular", offsetX: parsedClearOffsetX, offsetY: parsedClearOffsetY } };
     },
-  }), [clearOffsetX, clearOffsetY, clearShape, obstructionRadius, semiDiameter]);
+  }), [clearOffsetX, clearOffsetY, clearRotation, clearShape, clearXHalfWidth, clearYHalfWidth, obstructionRadius, semiDiameter]);
 
   return (
     <section className="space-y-3">
@@ -295,6 +445,7 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
           options={[
             { value: "circular", label: "Circular" },
             { value: "annular", label: "Annular" },
+            { value: "rectangular", label: "Rectangular" },
           ]}
           onChange={(event) => {
             setClearShape(event.target.value as ClearApertureShape);
@@ -311,6 +462,23 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
           setClearOffsetX={setClearOffsetX}
           setClearOffsetY={setClearOffsetY}
           setObstructionRadius={setObstructionRadius}
+          clearError={clearError}
+        />
+      ) : clearShape === "rectangular" ? (
+        <CLEAR_APERTURE_SHAPE_COMPONENTS.rectangular
+          idPrefix="clear-aperture"
+          ariaPrefix="Clear"
+          xHalfWidth={clearXHalfWidth}
+          yHalfWidth={clearYHalfWidth}
+          rotation={clearRotation}
+          offsetX={clearOffsetX}
+          offsetY={clearOffsetY}
+          readOnly={readOnly}
+          setXHalfWidth={setClearXHalfWidth}
+          setYHalfWidth={setClearYHalfWidth}
+          setRotation={setClearRotation}
+          setOffsetX={setClearOffsetX}
+          setOffsetY={setClearOffsetY}
           clearError={clearError}
         />
       ) : (
@@ -336,19 +504,23 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
   ref,
 ) {
   const [edgeShape, setEdgeShape] = useState<EdgeApertureShape>(initialEdgeAperture?.shape ?? "default");
-  const [edgeRadius, setEdgeRadius] = useState(String(initialEdgeAperture?.radius ?? 1));
+  const [edgeRadius, setEdgeRadius] = useState(String(initialEdgeAperture?.shape === "circular" ? initialEdgeAperture.radius : 1));
   const [edgeOffsetX, setEdgeOffsetX] = useState(String(initialEdgeAperture?.offsetX ?? 0));
   const [edgeOffsetY, setEdgeOffsetY] = useState(String(initialEdgeAperture?.offsetY ?? 0));
+  const [edgeXHalfWidth, setEdgeXHalfWidth] = useState(String(
+    initialEdgeAperture?.shape === "rectangular" ? initialEdgeAperture.xHalfWidth : 1,
+  ));
+  const [edgeYHalfWidth, setEdgeYHalfWidth] = useState(String(
+    initialEdgeAperture?.shape === "rectangular" ? initialEdgeAperture.yHalfWidth : 1,
+  ));
+  const [edgeRotation, setEdgeRotation] = useState(String(
+    initialEdgeAperture?.shape === "rectangular" ? initialEdgeAperture.rotation : 0,
+  ));
 
   useImperativeHandle(ref, () => ({
     getValue: () => {
       if (edgeShape === "default") {
         return { value: undefined };
-      }
-
-      const radius = parsePositiveFiniteNumber(edgeRadius);
-      if (radius === undefined) {
-        return { error: "Radius must be greater than 0." };
       }
 
       const parsedEdgeOffsetX = parseFiniteNumber(edgeOffsetX);
@@ -357,9 +529,38 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
         return { error: "Offsets must be finite numbers." };
       }
 
+      if (edgeShape === "rectangular") {
+        const parsedXHalfWidth = parsePositiveFiniteNumber(edgeXHalfWidth);
+        const parsedYHalfWidth = parsePositiveFiniteNumber(edgeYHalfWidth);
+        if (parsedXHalfWidth === undefined || parsedYHalfWidth === undefined) {
+          return { error: "Half-Length and Half-Width must be greater than 0." };
+        }
+
+        const parsedRotation = parseFiniteNumber(edgeRotation);
+        if (parsedRotation === undefined) {
+          return { error: "Rotation must be a finite number." };
+        }
+
+        return {
+          value: {
+            shape: "rectangular",
+            xHalfWidth: parsedXHalfWidth,
+            yHalfWidth: parsedYHalfWidth,
+            rotation: parsedRotation,
+            offsetX: parsedEdgeOffsetX,
+            offsetY: parsedEdgeOffsetY,
+          },
+        };
+      }
+
+      const radius = parsePositiveFiniteNumber(edgeRadius);
+      if (radius === undefined) {
+        return { error: "Radius must be greater than 0." };
+      }
+
       return { value: { shape: "circular", radius, offsetX: parsedEdgeOffsetX, offsetY: parsedEdgeOffsetY } };
     },
-  }), [edgeOffsetX, edgeOffsetY, edgeRadius, edgeShape]);
+  }), [edgeOffsetX, edgeOffsetY, edgeRadius, edgeRotation, edgeShape, edgeXHalfWidth, edgeYHalfWidth]);
 
   return (
     <section className="space-y-3">
@@ -374,6 +575,7 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
           options={[
             { value: "default", label: "Default (Follow Clear Aperture)" },
             { value: "circular", label: "Circular" },
+            { value: "rectangular", label: "Rectangular" },
           ]}
           onChange={(event) => {
             setEdgeShape(event.target.value as EdgeApertureShape);
@@ -381,7 +583,24 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
           }}
         />
       </div>
-      {edgeShape === "circular" ? (
+      {edgeShape === "rectangular" ? (
+        <EDGE_APERTURE_SHAPE_COMPONENTS.rectangular
+          idPrefix="edge-aperture"
+          ariaPrefix="Edge"
+          xHalfWidth={edgeXHalfWidth}
+          yHalfWidth={edgeYHalfWidth}
+          rotation={edgeRotation}
+          offsetX={edgeOffsetX}
+          offsetY={edgeOffsetY}
+          readOnly={readOnly}
+          setXHalfWidth={setEdgeXHalfWidth}
+          setYHalfWidth={setEdgeYHalfWidth}
+          setRotation={setEdgeRotation}
+          setOffsetX={setEdgeOffsetX}
+          setOffsetY={setEdgeOffsetY}
+          clearError={clearError}
+        />
+      ) : edgeShape === "circular" ? (
         <EDGE_APERTURE_SHAPE_COMPONENTS.circular
           edgeRadius={edgeRadius}
           edgeOffsetX={edgeOffsetX}

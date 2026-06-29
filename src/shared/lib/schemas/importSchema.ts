@@ -2,6 +2,21 @@ import Ajv from "ajv";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 const ajv = new Ajv({ $data: true });
+ajv.addKeyword({
+  keyword: "finiteNumber",
+  type: "number",
+  validate: (_schema: boolean, data: number) => Number.isFinite(data),
+});
+
+const finiteNumberSchema = {
+  type: "number",
+  finiteNumber: true,
+} as const;
+
+const positiveFiniteNumberSchema = {
+  ...finiteNumberSchema,
+  exclusiveMinimum: 0,
+} as const;
 
 const decenterConfigSchema = {
   type: "object",
@@ -12,11 +27,11 @@ const decenterConfigSchema = {
       type: "string",
       enum: ["bend", "dec and return", "decenter", "reverse"],
     },
-    alpha: { type: "number" },
-    beta: { type: "number" },
-    gamma: { type: "number" },
-    offsetX: { type: "number" },
-    offsetY: { type: "number" },
+    alpha: finiteNumberSchema,
+    beta: finiteNumberSchema,
+    gamma: finiteNumberSchema,
+    offsetX: finiteNumberSchema,
+    offsetY: finiteNumberSchema,
   },
 };
 
@@ -25,7 +40,7 @@ const diffractionGratingSchema = {
   required: ["lpmm", "order"],
   additionalProperties: false,
   properties: {
-    lpmm: { type: "number" },
+    lpmm: finiteNumberSchema,
     order: { type: "integer" },
   },
 };
@@ -36,8 +51,8 @@ const circularClearApertureSchema = {
   additionalProperties: false,
   properties: {
     shape: { type: "string", const: "circular" },
-    offsetX: { type: "number" },
-    offsetY: { type: "number" },
+    offsetX: finiteNumberSchema,
+    offsetY: finiteNumberSchema,
   },
 };
 
@@ -47,26 +62,53 @@ const annularClearApertureSchema = {
   additionalProperties: false,
   properties: {
     shape: { type: "string", const: "annular" },
-    obstructionRadius: { type: "number", exclusiveMinimum: 0, exclusiveMaximum: { $data: "2/semiDiameter" } },
-    offsetX: { type: "number" },
-    offsetY: { type: "number" },
+    obstructionRadius: { ...positiveFiniteNumberSchema, exclusiveMaximum: { $data: "2/semiDiameter" } },
+    offsetX: finiteNumberSchema,
+    offsetY: finiteNumberSchema,
   },
 };
 
-const clearApertureSchema = {
-  oneOf: [circularClearApertureSchema, annularClearApertureSchema],
+const rectangularApertureProperties = {
+  shape: { type: "string", const: "rectangular" },
+  xHalfWidth: positiveFiniteNumberSchema,
+  yHalfWidth: positiveFiniteNumberSchema,
+  rotation: finiteNumberSchema,
+  offsetX: finiteNumberSchema,
+  offsetY: finiteNumberSchema,
 };
 
-const edgeApertureSchema = {
+const rectangularClearApertureSchema = {
+  type: "object",
+  required: ["shape", "xHalfWidth", "yHalfWidth", "rotation", "offsetX", "offsetY"],
+  additionalProperties: false,
+  properties: rectangularApertureProperties,
+};
+
+const rectangularEdgeApertureSchema = {
+  type: "object",
+  required: ["shape", "xHalfWidth", "yHalfWidth", "rotation", "offsetX", "offsetY"],
+  additionalProperties: false,
+  properties: rectangularApertureProperties,
+};
+
+const circularEdgeApertureSchema = {
   type: "object",
   required: ["shape", "radius", "offsetX", "offsetY"],
   additionalProperties: false,
   properties: {
     shape: { type: "string", const: "circular" },
-    radius: { type: "number", exclusiveMinimum: 0 },
-    offsetX: { type: "number" },
-    offsetY: { type: "number" },
+    radius: positiveFiniteNumberSchema,
+    offsetX: finiteNumberSchema,
+    offsetY: finiteNumberSchema,
   },
+};
+
+const clearApertureSchema = {
+  oneOf: [circularClearApertureSchema, annularClearApertureSchema, rectangularClearApertureSchema],
+};
+
+const edgeApertureSchema = {
+  oneOf: [circularEdgeApertureSchema, rectangularEdgeApertureSchema],
 };
 
 const conicAsphericalSchema = {
@@ -75,7 +117,7 @@ const conicAsphericalSchema = {
   additionalProperties: false,
   properties: {
     kind: { type: "string", const: "Conic" },
-    conicConstant: { type: "number" },
+    conicConstant: finiteNumberSchema,
   },
 };
 
@@ -85,10 +127,10 @@ const evenAsphericalSchema = {
   additionalProperties: false,
   properties: {
     kind: { type: "string", const: "EvenAspherical" },
-    conicConstant: { type: "number" },
+    conicConstant: finiteNumberSchema,
     polynomialCoefficients: {
       type: "array",
-      items: { type: "number" },
+      items: finiteNumberSchema,
       maxItems: 10,
     },
   },
@@ -100,10 +142,10 @@ const radialPolynomialSchema = {
   additionalProperties: false,
   properties: {
     kind: { type: "string", const: "RadialPolynomial" },
-    conicConstant: { type: "number" },
+    conicConstant: finiteNumberSchema,
     polynomialCoefficients: {
       type: "array",
-      items: { type: "number" },
+      items: finiteNumberSchema,
       maxItems: 10,
     },
   },
@@ -115,11 +157,11 @@ const xToroidSchema = {
   additionalProperties: false,
   properties: {
     kind: { type: "string", const: "XToroid" },
-    conicConstant: { type: "number" },
-    toricSweepRadiusOfCurvature: { type: "number" },
+    conicConstant: finiteNumberSchema,
+    toricSweepRadiusOfCurvature: finiteNumberSchema,
     polynomialCoefficients: {
       type: "array",
-      items: { type: "number" },
+      items: finiteNumberSchema,
       maxItems: 10,
     },
   },
@@ -131,11 +173,11 @@ const yToroidSchema = {
   additionalProperties: false,
   properties: {
     kind: { type: "string", const: "YToroid" },
-    conicConstant: { type: "number" },
-    toricSweepRadiusOfCurvature: { type: "number" },
+    conicConstant: finiteNumberSchema,
+    toricSweepRadiusOfCurvature: finiteNumberSchema,
     polynomialCoefficients: {
       type: "array",
-      items: { type: "number" },
+      items: finiteNumberSchema,
       maxItems: 10,
     },
   },
@@ -147,11 +189,11 @@ const surfaceSchema = {
   additionalProperties: false,
   properties: {
     label: { type: "string", enum: ["Default", "Stop"] },
-    curvatureRadius: { type: "number" },
-    thickness: { type: "number" },
+    curvatureRadius: finiteNumberSchema,
+    thickness: finiteNumberSchema,
     medium: { type: "string" },
     manufacturer: { type: "string" },
-    semiDiameter: { type: "number" },
+    semiDiameter: finiteNumberSchema,
     aspherical: {
       oneOf: [conicAsphericalSchema, evenAsphericalSchema, radialPolynomialSchema, xToroidSchema, yToroidSchema],
     },
@@ -180,7 +222,7 @@ const importedLensDataSchema = {
           properties: {
             space: { type: "string", enum: ["object", "image"] },
             type: { type: "string", enum: ["epd", "f/#", "NA"] },
-            value: { type: "number" },
+            value: finiteNumberSchema,
           },
         },
         field: {
@@ -190,8 +232,8 @@ const importedLensDataSchema = {
           properties: {
             space: { type: "string", enum: ["object", "image"] },
             type: { type: "string", enum: ["angle", "height"] },
-            maxField: { type: "number" },
-            fields: { type: "array", items: { type: "number" } },
+            maxField: finiteNumberSchema,
+            fields: { type: "array", items: finiteNumberSchema },
             isRelative: { type: "boolean" },
             isWideAngle: { type: "boolean" },
           },
@@ -205,12 +247,12 @@ const importedLensDataSchema = {
               type: "array",
               items: {
                 type: "array",
-                items: { type: "number" },
+                items: finiteNumberSchema,
                 minItems: 2,
                 maxItems: 2,
               },
             },
-            referenceIndex: { type: "number" },
+            referenceIndex: finiteNumberSchema,
           },
         },
       },
@@ -220,7 +262,7 @@ const importedLensDataSchema = {
       required: ["distance", "medium", "manufacturer"],
       additionalProperties: false,
       properties: {
-        distance: { type: "number" },
+        distance: finiteNumberSchema,
         medium: { type: "string", not: { enum: ["REFL", "refl"] } },
         manufacturer: { type: "string" },
       },
@@ -230,7 +272,7 @@ const importedLensDataSchema = {
       required: ["curvatureRadius"],
       additionalProperties: false,
       properties: {
-        curvatureRadius: { type: "number" },
+        curvatureRadius: finiteNumberSchema,
         decenter: decenterConfigSchema,
       },
     },

@@ -359,6 +359,44 @@ describe("buildOpticalModelScript", () => {
     );
   });
 
+  it("should emit OffsetRotatedRectangular for rectangular clear and edge apertures", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 0,
+          clear_aperture: {
+            shape: "rectangular",
+            xHalfWidth: 4.5,
+            yHalfWidth: 2.25,
+            rotation: 15,
+            offsetX: -1,
+            offsetY: 2,
+          },
+          edge_aperture: {
+            shape: "rectangular",
+            xHalfWidth: 5,
+            yHalfWidth: 3,
+            rotation: -30,
+            offsetX: 0.5,
+            offsetY: -0.75,
+          },
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      [
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [OffsetRotatedRectangular(x_half_width=4.5, y_half_width=2.25, x_offset=-1, y_offset=2, rotation=15)]",
+        "sm.ifcs[sm.cur_surface].edge_apertures = [OffsetRotatedRectangular(x_half_width=5, y_half_width=3, x_offset=0.5, y_offset=-0.75, rotation=-30)]",
+      ].join("\n"),
+    );
+  });
+
   it("should omit clear aperture for non-positive semi-diameter and edge aperture for default follow-clear", () => {
     const model: OpticalModel = {
       ...baseModel,
@@ -464,9 +502,9 @@ describe("buildOpticalModelScript", () => {
 });
 
 describe("buildExportScript", () => {
-  it("imports Circular in the export preamble", () => {
+  it("imports Circular and Rectangular in the export preamble", () => {
     const script = buildExportScript(baseModel);
-    expect(script).toContain("from rayoptics.elem.surface import DecenterData, Circular, Aperture");
+    expect(script).toContain("from rayoptics.elem.surface import DecenterData, Circular, Aperture, Rectangular");
   });
 
   it("defines OffsetCircular and Annular inline in the export preamble", () => {
@@ -478,6 +516,14 @@ describe("buildExportScript", () => {
     expect(script).toContain("class Annular(Aperture):");
     expect(script).toContain("obstruction_radius");
     expect(script).toContain("return self.obstruction_radius - fuzz <= radius <= self.radius + fuzz");
+  });
+
+  it("defines OffsetRotatedRectangular inline in the export preamble", () => {
+    const script = buildExportScript(baseModel);
+    expect(script).toContain("class OffsetRotatedRectangular(Rectangular):");
+    expect(script).toContain("angle = radians(self.rotation)");
+    expect(script).toContain("def point_inside(self, x, y, fuzz=1e-5):");
+    expect(script).toContain("def edge_pt_target(self, rel_dir):");
   });
 
   it("defines the water material in the export preamble", () => {

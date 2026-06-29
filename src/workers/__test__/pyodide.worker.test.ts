@@ -58,6 +58,18 @@ const allSphericalOpticalModel: OpticalModel = {
 
 
 describe("_getFirstOrderData", () => {
+  it("imports the rectangular aperture helper during initialization", async () => {
+    const scripts: string[] = [];
+    await _init(async (code) => {
+      scripts.push(code);
+      return undefined;
+    }, "/rayoptics_web_utils-test.whl");
+
+    expect(scripts.join("\n")).toContain(
+      "from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular",
+    );
+  });
+
   it("should build the full model script and include the computation", async () => {
     let pythonScript = "";
     const result = await _getFirstOrderData(async (code) => {

@@ -44,6 +44,15 @@ function formatOffset(aperture: Pick<ClearAperture, "offsetX" | "offsetY">): str
   return `offset (${aperture.offsetX}, ${aperture.offsetY})`;
 }
 
+function formatRectangularSuffix(aperture: Extract<ClearAperture | EdgeAperture, { shape: "rectangular" }>): string {
+  const suffixes = [
+    aperture.rotation !== 0 ? `rot ${aperture.rotation}°` : undefined,
+    hasOffset(aperture) ? formatOffset(aperture) : undefined,
+  ].filter((suffix): suffix is string => suffix !== undefined);
+
+  return suffixes.length === 0 ? "" : `, ${suffixes.join(", ")}`;
+}
+
 function formatClearApertureLabel(clearAperture: ClearAperture | undefined): string {
   if (clearAperture === undefined) return "Default";
 
@@ -51,11 +60,19 @@ function formatClearApertureLabel(clearAperture: ClearAperture | undefined): str
     return hasOffset(clearAperture) ? `Cir ${formatOffset(clearAperture)}` : "Default";
   }
 
+  if (clearAperture.shape === "rectangular") {
+    return `Rect (${clearAperture.xHalfWidth},${clearAperture.yHalfWidth})${formatRectangularSuffix(clearAperture)}`;
+  }
+
   const baseLabel = `Annu obs ${clearAperture.obstructionRadius}`;
   return hasOffset(clearAperture) ? `${baseLabel}, ${formatOffset(clearAperture)}` : baseLabel;
 }
 
 function formatEdgeApertureLabel(edgeAperture: EdgeAperture): string {
+  if (edgeAperture.shape === "rectangular") {
+    return `Edge Rect (${edgeAperture.xHalfWidth},${edgeAperture.yHalfWidth})${formatRectangularSuffix(edgeAperture)}`;
+  }
+
   const baseLabel = `Edge Cir ${edgeAperture.radius}`;
   return hasOffset(edgeAperture) ? `${baseLabel}, ${formatOffset(edgeAperture)}` : baseLabel;
 }

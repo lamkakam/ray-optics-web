@@ -213,6 +213,9 @@ export function createSemiDiameterColumn<TData>({
   semiDiameterReadonly = false,
   onSemiDiameterChange,
 }: SemiDiameterColumnOptions<TData>): ColDef<TData> {
+  const isRectangularClearApertureRow = (row: GridRow): boolean =>
+    row.kind === "surface" && row.clear_aperture?.shape === "rectangular";
+
   return {
     headerName: "Semi-diam.",
     width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.semiDiameter,
@@ -220,16 +223,20 @@ export function createSemiDiameterColumn<TData>({
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
       if (row.kind !== "surface") return undefined;
+      if (isRectangularClearApertureRow(row)) return undefined;
       return row.semiDiameter;
     },
     editable: (params) => {
       if (params.data === undefined || onSemiDiameterChange === undefined || semiDiameterReadonly) return false;
-      return getGridRow(params.data).kind === "surface";
+      const row = getGridRow(params.data);
+      return row.kind === "surface" && !isRectangularClearApertureRow(row);
     },
     cellStyle: (params) => {
       if (params.data === undefined) return { opacity: 0.5 };
       const row = getGridRow(params.data);
-      return !semiDiameterReadonly && row.kind === "surface" ? undefined : { opacity: 0.5 };
+      return !semiDiameterReadonly && row.kind === "surface" && !isRectangularClearApertureRow(row)
+        ? undefined
+        : { opacity: 0.5 };
     },
     valueParser: numberValueParser,
     valueSetter: (params) => {
