@@ -1,5 +1,6 @@
 import type {
   AsphericalType,
+  ClearAperture,
   DecenterConfig,
   DiffractionGrating,
   EdgeAperture,
@@ -35,6 +36,34 @@ export function formatDiffractionGratingLabel(diffractionGrating: DiffractionGra
     : `${diffractionGrating.lpmm} lp/mm`;
 }
 
-export function formatApertureLabel(edgeAperture: EdgeAperture | undefined): string {
-  return edgeAperture === undefined ? "Default" : `Circular ${edgeAperture.radius}`;
+function hasOffset(aperture: Pick<ClearAperture, "offsetX" | "offsetY">): boolean {
+  return aperture.offsetX !== 0 || aperture.offsetY !== 0;
+}
+
+function formatOffset(aperture: Pick<ClearAperture, "offsetX" | "offsetY">): string {
+  return `offset (${aperture.offsetX}, ${aperture.offsetY})`;
+}
+
+function formatClearApertureLabel(clearAperture: ClearAperture | undefined): string {
+  if (clearAperture === undefined) return "Default";
+
+  if (clearAperture.shape === "circular") {
+    return hasOffset(clearAperture) ? `Cir ${formatOffset(clearAperture)}` : "Default";
+  }
+
+  const baseLabel = `Annu obs ${clearAperture.obstructionRadius}`;
+  return hasOffset(clearAperture) ? `${baseLabel}, ${formatOffset(clearAperture)}` : baseLabel;
+}
+
+function formatEdgeApertureLabel(edgeAperture: EdgeAperture): string {
+  const baseLabel = `Edge Cir ${edgeAperture.radius}`;
+  return hasOffset(edgeAperture) ? `${baseLabel}, ${formatOffset(edgeAperture)}` : baseLabel;
+}
+
+export function formatApertureLabel(
+  clearAperture: ClearAperture | undefined,
+  edgeAperture: EdgeAperture | undefined,
+): string {
+  const clearLabel = formatClearApertureLabel(clearAperture);
+  return edgeAperture === undefined ? clearLabel : `${clearLabel}; ${formatEdgeApertureLabel(edgeAperture)}`;
 }

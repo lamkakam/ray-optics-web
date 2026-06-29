@@ -8,7 +8,7 @@ import {
   MediumCell,
   formatApertureLabel,
 } from "@/shared/lib/lens-prescription-grid";
-import type { DecenterConfig } from "@/shared/lib/types/opticalModel";
+import type { ClearAperture, DecenterConfig, EdgeAperture } from "@/shared/lib/types/opticalModel";
 
 const baseDecenter = {
   alpha: 0,
@@ -20,18 +20,56 @@ const baseDecenter = {
 
 describe("LensPrescriptionGridCells", () => {
   it("formats aperture labels", () => {
-    expect(formatApertureLabel(undefined)).toBe("Default");
-    expect(formatApertureLabel({ shape: "circular", radius: 3.25, offsetX: 0, offsetY: 0 })).toBe("Circular 3.25");
+    const circularClear = (offsetX: number, offsetY: number): ClearAperture => ({
+      shape: "circular",
+      offsetX,
+      offsetY,
+    });
+    const annularClear = (obstructionRadius: number, offsetX: number, offsetY: number): ClearAperture => ({
+      shape: "annular",
+      obstructionRadius,
+      offsetX,
+      offsetY,
+    });
+    const circularEdge = (radius: number, offsetX: number, offsetY: number): EdgeAperture => ({
+      shape: "circular",
+      radius,
+      offsetX,
+      offsetY,
+    });
+
+    expect(formatApertureLabel(undefined, undefined)).toBe("Default");
+    expect(formatApertureLabel(circularClear(0, 0), undefined)).toBe("Default");
+    expect(formatApertureLabel(circularClear(-1.25, 2.5), undefined)).toBe("Cir offset (-1.25, 2.5)");
+    expect(formatApertureLabel(annularClear(1.5, 0, 0), undefined)).toBe("Annu obs 1.5");
+    expect(formatApertureLabel(annularClear(1.5, -1, 2), undefined)).toBe("Annu obs 1.5, offset (-1, 2)");
+    expect(formatApertureLabel(undefined, circularEdge(3.25, 0, 0))).toBe("Default; Edge Cir 3.25");
+    expect(formatApertureLabel(undefined, circularEdge(3.25, 0.5, -0.75))).toBe(
+      "Default; Edge Cir 3.25, offset (0.5, -0.75)",
+    );
+    expect(formatApertureLabel(annularClear(1.5, -1, 2), circularEdge(3.25, 0.5, -0.75))).toBe(
+      "Annu obs 1.5, offset (-1, 2); Edge Cir 3.25, offset (0.5, -0.75)",
+    );
   });
 
   it("renders aperture labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
-    const { rerender } = render(<ApertureCell edgeAperture={undefined} onOpenModal={onOpenModal} />);
+    const { rerender } = render(
+      <ApertureCell clearAperture={undefined} edgeAperture={undefined} onOpenModal={onOpenModal} />,
+    );
 
     expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent("Default");
 
-    rerender(<ApertureCell edgeAperture={{ shape: "circular", radius: 4, offsetX: 0, offsetY: 0 }} onOpenModal={onOpenModal} />);
-    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent("Circular 4");
+    rerender(
+      <ApertureCell
+        clearAperture={{ shape: "circular", offsetX: -1, offsetY: 2 }}
+        edgeAperture={{ shape: "circular", radius: 4, offsetX: 0, offsetY: 0 }}
+        onOpenModal={onOpenModal}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent(
+      "Cir offset (-1, 2); Edge Cir 4",
+    );
 
     await userEvent.click(screen.getByRole("button", { name: "Edit aperture" }));
     expect(onOpenModal).toHaveBeenCalledTimes(1);

@@ -17,7 +17,7 @@ Reusable prescription grid cell UI that is safe for `shared/` because it depends
 - Medium, aspherical, decenter, and diffraction grating tooltip-backed action cells do not apply `touch-action: none`, so native touch scrolling can start over those controls in iOS Safari.
 - Aspherical, decenter, and diffraction grating cells use `triggerClassName="flex h-full w-full"` so the tooltip trigger fills the cell action area.
 - Empty aspherical, decenter, and diffraction grating values display `None`.
-- Aperture values display `Default` when no explicit edge aperture is set, or `Circular <radius>` when `edge_aperture` is circular.
+- Aperture values are formatted from both `clear_aperture` and `edge_aperture`: missing clear aperture and centered circular clear aperture display `Default` when edge aperture is missing/default; circular clear aperture with nonzero offset displays `Cir offset (<x>, <y>)`; annular clear aperture displays `Annu obs <radius>` with an optional offset suffix; explicit circular edge aperture appends `; Edge Cir <radius>` with an optional offset suffix.
 - Aspherical values display the shared asphere type label (`Conic`, `Even Aspherical`, `Radial Polynomial`, `X Toroid`, `Y Toroid`).
 - Decenter values display `coordinateSystemStrategy` directly.
 - Diffraction grating values display `${lpmm} lp/mm`.

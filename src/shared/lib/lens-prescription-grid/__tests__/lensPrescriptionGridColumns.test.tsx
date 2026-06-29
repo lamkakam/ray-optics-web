@@ -7,6 +7,7 @@ import {
   lensPrescriptionGridIndexColumnDef,
 } from "@/shared/lib/lens-prescription-grid";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import type { ValueGetterParams } from "ag-grid-community";
 
 const getGridRow = (row: GridRow) => row;
 
@@ -33,5 +34,29 @@ describe("lens prescription grid column widths", () => {
       pinned: "left",
       width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.index,
     });
+  });
+
+  it("returns the formatted aperture label from the aperture value getter", () => {
+    const row: GridRow = {
+      kind: "surface",
+      id: "surface-1",
+      label: "Default",
+      curvatureRadius: 10,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+      clear_aperture: { shape: "annular", obstructionRadius: 1.25, offsetX: -1, offsetY: 2 },
+      edge_aperture: { shape: "circular", radius: 3.5, offsetX: 0.5, offsetY: -0.75 },
+    };
+    const column = createApertureColumn({ getGridRow });
+    const valueGetter = column.valueGetter;
+
+    expect(typeof valueGetter).toBe("function");
+    if (typeof valueGetter !== "function") return;
+
+    expect(valueGetter({ data: row } as ValueGetterParams<GridRow>)).toBe(
+      "Annu obs 1.25, offset (-1, 2); Edge Cir 3.5, offset (0.5, -0.75)",
+    );
   });
 });

@@ -10,6 +10,7 @@ import {
   LensPrescriptionActionWrapper,
   MediumCell,
 } from "@/shared/lib/lens-prescription-grid/LensPrescriptionGridCells";
+import { formatApertureLabel } from "@/shared/lib/lens-prescription-grid/displayLabels";
 
 export const lensPrescriptionGridDefaultColDef = {
   sortable: false,
@@ -251,7 +252,7 @@ export function createApertureColumn<TData>({
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
       if (row.kind !== "surface") return undefined;
-      return row.edge_aperture;
+      return formatApertureLabel(row.clear_aperture, row.edge_aperture);
     },
     cellRenderer: (params: { readonly data?: TData }) => {
       if (params.data === undefined || onOpenApertureModal === undefined) return undefined;
@@ -260,6 +261,7 @@ export function createApertureColumn<TData>({
       return (
         <LensPrescriptionActionWrapper onAction={() => onOpenApertureModal(row)}>
           <ApertureCell
+            clearAperture={row.clear_aperture}
             edgeAperture={row.edge_aperture}
             onOpenModal={() => onOpenApertureModal(row)}
             tooltipText={tooltipText}
