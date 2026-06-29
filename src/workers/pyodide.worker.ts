@@ -103,7 +103,7 @@ d263teco = _rwu_init_result['d263teco']
 import json
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
-from rayoptics.elem.surface import DecenterData
+from rayoptics.elem.surface import DecenterData, Circular
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 

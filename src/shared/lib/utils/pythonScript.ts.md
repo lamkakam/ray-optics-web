@@ -33,7 +33,9 @@ export function buildExportScript(opticalModel: OpticalModel): string;
 6. Calls `sm.add_surface(...)` for each surface in order. Per surface:
    - Passes `[curvatureRadius, thickness, medium, manufacturer]` (manufacturer omitted for `"air"`, `"REFL"`, `"CaF2"`, `"Fused Silica"`, `"Water"`, and `"D263TECO"`).
    - Handles `medium = "CaF2"`, `"Fused Silica"`, `"Water"`, and `"D263TECO"` by emitting the variable names `caf2`, `fused_silica`, `water`, and `d263teco` respectively (defined in the export script preamble).
-   - Appends `sd=semiDiameter` when non-zero.
+   - Does not pass `sd=` to `sm.add_surface(...)`.
+   - Emits `sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=<semiDiameter>)]` after `sm.add_surface(...)` when `semiDiameter > 0`.
+   - Emits `sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=<edge radius>)]` only when `edge_aperture` is explicitly set.
    - Surface-specific follow-up mutations are emitted after `sm.add_surface(...)`, in order, so multiple mutations may coexist on the same surface.
    - If `aspherical.kind === "Conic"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=...)`.
    - If `aspherical.kind === "EvenAspherical"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=..., coefs=[...])`.
@@ -68,7 +70,7 @@ The last expression in the combined script is the return value of `runPythonAsyn
 Returns a string with:
 > **Warning**: Not for execution inside the Pyodide worker. This script is intended for copy-paste into a Jupyter / RayOptics notebook environment.
 
-1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface`, and `opticalglass.rindexinfo`. It also creates `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`.
+1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface` (`DecenterData`, `Circular`), and `opticalglass.rindexinfo`. It also creates `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`.
 2. The full output of `buildOpticalModelScript(model)`.
 3. Calls to `sm.list_model()`, `pm.first_order_data()`, and `plt.figure(FigureClass=InteractiveLayout, ...)`.
 
@@ -76,7 +78,8 @@ The import preamble is built separately from the model-construction lines so fut
 
 ## Edge Cases / Error Handling
 
-- The argument for semi-diameter is omitted from `sm.add_surface(...)` when `semiDiameter` is falsy (zero) — this lets RayOptics use the default value defined by RayOptics itself.
+- Semi-diameter is never emitted as an `sd=` argument. Positive semi-diameters are emitted as explicit circular clear apertures after each surface is added. Non-positive semi-diameters omit the clear aperture assignment.
+- Edge aperture assignments are omitted when `edge_aperture` is unset, which represents the default/follow-clear behavior.
 - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
 - Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.
 - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.

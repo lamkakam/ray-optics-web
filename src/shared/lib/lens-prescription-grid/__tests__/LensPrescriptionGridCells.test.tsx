@@ -1,10 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
+  ApertureCell,
   AsphericalCell,
   DecenterCell,
   DiffractionGratingCell,
   MediumCell,
+  formatApertureLabel,
 } from "@/shared/lib/lens-prescription-grid";
 import type { DecenterConfig } from "@/shared/lib/types/opticalModel";
 
@@ -17,6 +19,24 @@ const baseDecenter = {
 } satisfies Omit<DecenterConfig, "coordinateSystemStrategy">;
 
 describe("LensPrescriptionGridCells", () => {
+  it("formats aperture labels", () => {
+    expect(formatApertureLabel(undefined)).toBe("Default");
+    expect(formatApertureLabel({ shape: "circular", radius: 3.25 })).toBe("Circular 3.25");
+  });
+
+  it("renders aperture labels and opens the modal", async () => {
+    const onOpenModal = jest.fn();
+    const { rerender } = render(<ApertureCell edgeAperture={undefined} onOpenModal={onOpenModal} />);
+
+    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent("Default");
+
+    rerender(<ApertureCell edgeAperture={{ shape: "circular", radius: 4 }} onOpenModal={onOpenModal} />);
+    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent("Circular 4");
+
+    await userEvent.click(screen.getByRole("button", { name: "Edit aperture" }));
+    expect(onOpenModal).toHaveBeenCalledTimes(1);
+  });
+
   it("renders aspherical labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
     const { rerender } = render(<AsphericalCell aspherical={undefined} onOpenModal={onOpenModal} />);

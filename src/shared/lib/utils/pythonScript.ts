@@ -124,12 +124,23 @@ function formatDiffractionGrating(
   return `${targetExpr}.phase_element = DiffractionGrating(grating_lpmm=${lpmm}, order=${order})`;
 }
 
+function formatCircularApertureAssignment(targetExpr: string, apertureKind: "clear_apertures" | "edge_apertures", radius: number): PythonLine {
+  return `${targetExpr}.${apertureKind} = [Circular(radius=${radius})]`;
+}
+
 function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBuildStep {
-  const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter, diffractionGrating } = surface;
-  const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
+  const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, edge_aperture, aspherical, decenter, diffractionGrating } = surface;
   const { medium: mediumOption, glassManufacturer } = formattedMedium(medium, manufacturer);
   const mutationLines: SurfaceMutationLine[] = [];
   const currentSurfaceExpr = "sm.ifcs[sm.cur_surface]";
+
+  if (semiDiameter > 0) {
+    mutationLines.push(formatCircularApertureAssignment(currentSurfaceExpr, "clear_apertures", semiDiameter));
+  }
+
+  if (edge_aperture !== undefined) {
+    mutationLines.push(formatCircularApertureAssignment(currentSurfaceExpr, "edge_apertures", edge_aperture.radius));
+  }
 
   if (aspherical !== undefined) {
     mutationLines.push(formatAsphereAssignment(currentSurfaceExpr, curvatureRadius, aspherical));
@@ -148,7 +159,7 @@ function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBui
   }
 
   return {
-    addSurfaceLine: `sm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}]${semiDiameterArg})`,
+    addSurfaceLine: `sm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}])`,
     mutationLines,
   };
 }
@@ -227,7 +238,7 @@ function buildExportPreamble(): string {
 isdark = False
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
-from rayoptics.elem.surface import DecenterData
+from rayoptics.elem.surface import DecenterData, Circular
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 from opticalglass.rindexinfo import create_material

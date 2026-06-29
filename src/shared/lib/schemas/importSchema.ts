@@ -30,6 +30,25 @@ const diffractionGratingSchema = {
   },
 };
 
+const clearApertureSchema = {
+  type: "object",
+  required: ["shape"],
+  additionalProperties: false,
+  properties: {
+    shape: { type: "string", const: "circular" },
+  },
+};
+
+const edgeApertureSchema = {
+  type: "object",
+  required: ["shape", "radius"],
+  additionalProperties: false,
+  properties: {
+    shape: { type: "string", const: "circular" },
+    radius: { type: "number", exclusiveMinimum: 0 },
+  },
+};
+
 const conicAsphericalSchema = {
   type: "object",
   required: ["kind", "conicConstant"],
@@ -118,6 +137,8 @@ const surfaceSchema = {
     },
     decenter: decenterConfigSchema,
     diffractionGrating: diffractionGratingSchema,
+    clear_aperture: clearApertureSchema,
+    edge_aperture: edgeApertureSchema,
   },
 };
 

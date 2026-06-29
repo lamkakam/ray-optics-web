@@ -87,10 +87,12 @@ describe("OptimizationInspectionModals", () => {
     const { rerender } = renderInspectionModals({
       mediumModalRow: undefined,
       asphericalModalRow: conicRow,
+      apertureModalRow: undefined,
       decenterModalRow: undefined,
       diffractionGratingModalRow: undefined,
       onCloseMediumModal: jest.fn(),
       onCloseAsphericalModal: jest.fn(),
+      onCloseApertureModal: jest.fn(),
       onCloseDecenterModal: jest.fn(),
       onCloseDiffractionGratingModal: jest.fn(),
     });
@@ -105,10 +107,12 @@ describe("OptimizationInspectionModals", () => {
         <OptimizationInspectionModals
           mediumModalRow={undefined}
           asphericalModalRow={evenAsphereRow}
+          apertureModalRow={undefined}
           decenterModalRow={undefined}
           diffractionGratingModalRow={undefined}
           onCloseMediumModal={jest.fn()}
           onCloseAsphericalModal={jest.fn()}
+          onCloseApertureModal={jest.fn()}
           onCloseDecenterModal={jest.fn()}
           onCloseDiffractionGratingModal={jest.fn()}
         />
@@ -145,10 +149,12 @@ describe("OptimizationInspectionModals", () => {
     const { rerender } = renderInspectionModals({
       mediumModalRow: firstMediumRow,
       asphericalModalRow: undefined,
+      apertureModalRow: undefined,
       decenterModalRow: undefined,
       diffractionGratingModalRow: undefined,
       onCloseMediumModal: jest.fn(),
       onCloseAsphericalModal: jest.fn(),
+      onCloseApertureModal: jest.fn(),
       onCloseDecenterModal: jest.fn(),
       onCloseDiffractionGratingModal: jest.fn(),
     });
@@ -161,10 +167,12 @@ describe("OptimizationInspectionModals", () => {
         <OptimizationInspectionModals
           mediumModalRow={secondMediumRow}
           asphericalModalRow={undefined}
+          apertureModalRow={undefined}
           decenterModalRow={undefined}
           diffractionGratingModalRow={undefined}
           onCloseMediumModal={jest.fn()}
           onCloseAsphericalModal={jest.fn()}
+          onCloseApertureModal={jest.fn()}
           onCloseDecenterModal={jest.fn()}
           onCloseDiffractionGratingModal={jest.fn()}
         />
@@ -173,5 +181,38 @@ describe("OptimizationInspectionModals", () => {
 
     expect(screen.getByLabelText("Catalog")).toHaveValue("Ohara");
     expect(screen.getByLabelText("Glass")).toHaveValue("S-FPL53");
+  });
+
+  it("renders aperture inspection as read-only", () => {
+    const row: GridRow = {
+      id: "surface-1",
+      kind: "surface",
+      label: "Default",
+      curvatureRadius: 50,
+      thickness: 5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 10,
+      clear_aperture: { shape: "circular" },
+      edge_aperture: { shape: "circular", radius: 6 },
+    };
+    renderInspectionModals({
+      mediumModalRow: undefined,
+      asphericalModalRow: undefined,
+      apertureModalRow: row,
+      decenterModalRow: undefined,
+      diffractionGratingModalRow: undefined,
+      onCloseMediumModal: jest.fn(),
+      onCloseAsphericalModal: jest.fn(),
+      onCloseApertureModal: jest.fn(),
+      onCloseDecenterModal: jest.fn(),
+      onCloseDiffractionGratingModal: jest.fn(),
+    });
+
+    expect(screen.getByLabelText("Clear Aperture Shape")).toBeDisabled();
+    expect(screen.getByLabelText("Edge Aperture Shape")).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Radius" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
   });
 });

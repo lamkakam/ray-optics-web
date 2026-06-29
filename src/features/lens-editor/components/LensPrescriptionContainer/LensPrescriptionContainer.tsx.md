@@ -25,10 +25,11 @@ Lens store state is consumed via `LensEditorStoreContext`:
 - All grid callbacks (`handleRowChange`, `handleOpenMediumModal`, etc.) are wrapped in `useCallback` with `[store]` dependency where `store = useLensEditorStore()` — accessing `store.getState()` directly prevents grid column def recreation.
 - `MediumSelectorModal` is wired to `pendingMediumSelection` in the lens editor store so unconfirmed catalog-glass choices survive route changes and are only written to the object or surface row on confirm.
 - When the medium modal targets the Object row, it seeds from the object row’s medium/manufacturer and disables reflective (`REFL`) selection.
-- The `MediumSelectorModal`, `AsphericalModal`, `DecenterModal`, and `DiffractionGratingModal` each use a `key` prop that changes when the modal opens for a different row, ensuring local state is reset.
+- The `MediumSelectorModal`, `AsphericalModal`, `DecenterModal`, `DiffractionGratingModal`, and `ApertureModal` each use a `key` prop that changes when the modal opens for a different row, ensuring local state is reset.
 - `AsphericalModal` uses UI labels (`"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, `"YToroid"`), while this container maps them to the domain `Surface["aspherical"]` union.
 - `getInitialAsphericalType`, `getInitialAsphericalCoefficients`, and `getInitialToricSweepRadiusOfCurvature` preload modal state from the selected row so toroidal and radial polynomial surfaces reopen with the correct draft values.
 - `DiffractionGratingModal` only applies to `surface` rows and writes `surface.diffractionGrating` back into the row state on confirm.
+- `ApertureModal` only applies to `surface` rows. Confirm writes `clear_aperture: { shape: "circular" }`; it writes an explicit circular `edge_aperture` when selected and clears `edge_aperture` when Edge Aperture follows Clear Aperture.
 - `PythonScriptModal` receives an empty string for `script` when closed, generating the script only when open.
 - The `Formatting` toolbar button opens `FormattingModal` beside `Export Python Script`. Successful Scale confirms call `store.getState().setRows(updatedRows)` immediately so the prescription revision and Optimization sync policy follow normal prescription mutation behavior.
 - Successful Reverse confirms first check the resulting first physical surface. If it has nonzero tilt or decenter, the container closes `FormattingModal`, stores the reversed rows in `pendingReferenceSurfaceRows`, and opens `AddReferenceSurfaceModal` without mutating the store.

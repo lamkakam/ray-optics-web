@@ -35,6 +35,7 @@ export interface LensEditorState {
   asphericalModal: ModalState;
   decenterModal: ModalState;
   diffractionGratingModal: ModalState;
+  apertureModal: ModalState;
   committedOpticalModel: OpticalModel | undefined;
 
   setRows: (rows: GridRow[], options?: PrescriptionMutationOptions) => void;
@@ -55,6 +56,8 @@ export interface LensEditorState {
   closeDecenterModal: () => void;
   openDiffractionGratingModal: (rowId: string) => void;
   closeDiffractionGratingModal: () => void;
+  openApertureModal: (rowId: string) => void;
+  closeApertureModal: () => void;
   setCommittedOpticalModel: (model: OpticalModel) => void;
 }
 
@@ -95,6 +98,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   asphericalModal: { open: false, rowId: "" },
   decenterModal: { open: false, rowId: "" },
   diffractionGratingModal: { open: false, rowId: "" },
+  apertureModal: { open: false, rowId: "" },
   committedOpticalModel: undefined,
 
   setRows: (rows, options) =>
@@ -255,6 +259,12 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
 
   closeDiffractionGratingModal: () =>
     set({ diffractionGratingModal: { open: false, rowId: "" } }),
+
+  openApertureModal: (rowId) =>
+    set({ apertureModal: { open: true, rowId } }),
+
+  closeApertureModal: () =>
+    set({ apertureModal: { open: false, rowId: "" } }),
 
   setCommittedOpticalModel: (model) => set({ committedOpticalModel: model }),
 });

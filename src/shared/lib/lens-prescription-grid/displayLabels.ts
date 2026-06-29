@@ -2,6 +2,7 @@ import type {
   AsphericalType,
   DecenterConfig,
   DiffractionGrating,
+  EdgeAperture,
   Surface,
 } from "@/shared/lib/types/opticalModel";
 
@@ -32,4 +33,8 @@ export function formatDiffractionGratingLabel(diffractionGrating: DiffractionGra
   return diffractionGrating === undefined
     ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL
     : `${diffractionGrating.lpmm} lp/mm`;
+}
+
+export function formatApertureLabel(edgeAperture: EdgeAperture | undefined): string {
+  return edgeAperture === undefined ? "Default" : `Circular ${edgeAperture.radius}`;
 }

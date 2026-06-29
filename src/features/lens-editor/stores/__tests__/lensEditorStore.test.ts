@@ -272,6 +272,26 @@ describe("lensEditorStore", () => {
       const store = makeStore();
       expect(store.getState().diffractionGratingModal).toEqual({ open: false, rowId: "" });
     });
+
+    it("opens and closes aperture modal", () => {
+      const store = makeStore();
+      store.getState().openApertureModal("s1");
+      expect(store.getState().apertureModal).toEqual({
+        open: true,
+        rowId: "s1",
+      });
+
+      store.getState().closeApertureModal();
+      expect(store.getState().apertureModal).toEqual({
+        open: false,
+        rowId: "",
+      });
+    });
+
+    it("initializes aperture modal as closed", () => {
+      const store = makeStore();
+      expect(store.getState().apertureModal).toEqual({ open: false, rowId: "" });
+    });
   });
 
   describe("addRowAfter", () => {

@@ -2,6 +2,7 @@
 
 import {
   AsphericalModal,
+  ApertureModal,
   DecenterModal,
   DiffractionGratingModal,
   MediumSelectorModal,
@@ -11,10 +12,12 @@ import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridType
 interface OptimizationInspectionModalsProps {
   readonly mediumModalRow: GridRow | undefined;
   readonly asphericalModalRow: GridRow | undefined;
+  readonly apertureModalRow: GridRow | undefined;
   readonly decenterModalRow: GridRow | undefined;
   readonly diffractionGratingModalRow: GridRow | undefined;
   readonly onCloseMediumModal: () => void;
   readonly onCloseAsphericalModal: () => void;
+  readonly onCloseApertureModal: () => void;
   readonly onCloseDecenterModal: () => void;
   readonly onCloseDiffractionGratingModal: () => void;
 }
@@ -22,10 +25,12 @@ interface OptimizationInspectionModalsProps {
 export function OptimizationInspectionModals({
   mediumModalRow,
   asphericalModalRow,
+  apertureModalRow,
   decenterModalRow,
   diffractionGratingModalRow,
   onCloseMediumModal,
   onCloseAsphericalModal,
+  onCloseApertureModal,
   onCloseDecenterModal,
   onCloseDiffractionGratingModal,
 }: OptimizationInspectionModalsProps) {
@@ -61,6 +66,16 @@ export function OptimizationInspectionModals({
         onConfirm={() => undefined}
         onClose={onCloseAsphericalModal}
         onRemove={() => undefined}
+      />
+
+      <ApertureModal
+        key={apertureModalRow?.id ?? "aperture-closed"}
+        isOpen={apertureModalRow?.kind === "surface"}
+        readOnly
+        initialClearAperture={apertureModalRow?.kind === "surface" ? apertureModalRow.clear_aperture : undefined}
+        initialEdgeAperture={apertureModalRow?.kind === "surface" ? apertureModalRow.edge_aperture : undefined}
+        onConfirm={() => undefined}
+        onClose={onCloseApertureModal}
       />
 
       <DecenterModal

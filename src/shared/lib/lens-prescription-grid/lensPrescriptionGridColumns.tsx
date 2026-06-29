@@ -4,6 +4,7 @@ import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import {
   AsphericalCell,
+  ApertureCell,
   DecenterCell,
   DiffractionGratingCell,
   LensPrescriptionActionWrapper,
@@ -24,6 +25,7 @@ export const LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS = {
   thickness: 130,
   medium: 115,
   semiDiameter: 115,
+  aperture: 115,
   aspherical: 140,
   decenter: 135,
   diffractionGrating: 165,
@@ -71,6 +73,11 @@ interface MediumColumnOptions<TData> extends BaseColumnOptions<TData> {
 interface SemiDiameterColumnOptions<TData> extends BaseColumnOptions<TData> {
   readonly semiDiameterReadonly?: boolean;
   readonly onSemiDiameterChange?: (row: GridRow, semiDiameter: number) => void;
+}
+
+interface ApertureColumnOptions<TData> extends BaseColumnOptions<TData> {
+  readonly onOpenApertureModal?: GridRowModalCallback;
+  readonly tooltipText?: string;
 }
 
 interface AsphericalColumnOptions<TData> extends BaseColumnOptions<TData> {
@@ -232,6 +239,37 @@ export function createSemiDiameterColumn<TData>({
   };
 }
 
+export function createApertureColumn<TData>({
+  getGridRow,
+  onOpenApertureModal,
+  tooltipText,
+}: ApertureColumnOptions<TData>): ColDef<TData> {
+  return {
+    headerName: "Aperture",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aperture,
+    valueGetter: (params) => {
+      if (params.data === undefined) return undefined;
+      const row = getGridRow(params.data);
+      if (row.kind !== "surface") return undefined;
+      return row.edge_aperture;
+    },
+    cellRenderer: (params: { readonly data?: TData }) => {
+      if (params.data === undefined || onOpenApertureModal === undefined) return undefined;
+      const row = getGridRow(params.data);
+      if (row.kind !== "surface") return undefined;
+      return (
+        <LensPrescriptionActionWrapper onAction={() => onOpenApertureModal(row)}>
+          <ApertureCell
+            edgeAperture={row.edge_aperture}
+            onOpenModal={() => onOpenApertureModal(row)}
+            tooltipText={tooltipText}
+          />
+        </LensPrescriptionActionWrapper>
+      );
+    },
+  };
+}
+
 export function createAsphericalColumn<TData>({
   getGridRow,
   onOpenAsphericalModal,
@@ -331,6 +369,7 @@ interface CommonColumnOptions<TData>
     ThicknessColumnOptions<TData>,
     MediumColumnOptions<TData>,
     SemiDiameterColumnOptions<TData>,
+    ApertureColumnOptions<TData>,
     AsphericalColumnOptions<TData>,
     DecenterColumnOptions<TData>,
     DiffractionGratingColumnOptions<TData> {}
@@ -344,6 +383,7 @@ export function createLensPrescriptionCommonColumns<TData>(
     createThicknessColumn(options),
     createMediumColumn(options),
     createSemiDiameterColumn(options),
+    createApertureColumn(options),
     createAsphericalColumn(options),
     createDecenterColumn(options),
     createDiffractionGratingColumn(options),

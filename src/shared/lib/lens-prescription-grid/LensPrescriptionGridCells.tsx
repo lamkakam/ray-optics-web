@@ -4,10 +4,11 @@ import React from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import {
   formatAsphericalLabel,
+  formatApertureLabel,
   formatDecenterLabel,
   formatDiffractionGratingLabel,
 } from "@/shared/lib/lens-prescription-grid/displayLabels";
-import type { DecenterConfig, DiffractionGrating, Surface } from "@/shared/lib/types/opticalModel";
+import type { DecenterConfig, DiffractionGrating, EdgeAperture, Surface } from "@/shared/lib/types/opticalModel";
 
 interface ActionWrapperProps {
   readonly children: React.ReactNode;
@@ -93,6 +94,26 @@ export function AsphericalCell({
     <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
       <TextActionButton ariaLabel="Edit aspherical parameters" onClick={onOpenModal}>
         {formatAsphericalLabel(aspherical)}
+      </TextActionButton>
+    </Tooltip>
+  );
+}
+
+interface ApertureCellProps {
+  readonly edgeAperture: EdgeAperture | undefined;
+  readonly onOpenModal: () => void;
+  readonly tooltipText?: string;
+}
+
+export function ApertureCell({
+  edgeAperture,
+  onOpenModal,
+  tooltipText = "Click to set aperture",
+}: ApertureCellProps) {
+  return (
+    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
+      <TextActionButton ariaLabel="Edit aperture" onClick={onOpenModal}>
+        {formatApertureLabel(edgeAperture)}
       </TextActionButton>
     </Tooltip>
   );

@@ -55,6 +55,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     const onOpenAsphereVarModalMock = jest.fn();
     const onOpenDecenterModal = jest.fn();
     const onOpenDiffractionGratingModal = jest.fn();
+    const onOpenApertureModal = jest.fn();
     const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
     const asphereStates: AsphereOptimizationState[] = [makeAsphereState()];
 
@@ -71,6 +72,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenAsphereVarModal={onOpenAsphereVarModalMock}
         onOpenDecenterModal={onOpenDecenterModal}
         onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
+        onOpenApertureModal={onOpenApertureModal}
       />,
     );
 
@@ -87,6 +89,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "Var.",
       "Medium",
       "Semi-diam.",
+      "Aperture",
       "Asph.",
       "Var.",
       "Tilt & Decenter",
@@ -97,6 +100,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(screen.getAllByText("Var.")).toHaveLength(3);
     expect(screen.getByText("Medium")).toBeInTheDocument();
     expect(screen.getByText("Semi-diam.")).toBeInTheDocument();
+    expect(screen.getByText("Aperture")).toBeInTheDocument();
     expect(screen.getByText("Asph.")).toBeInTheDocument();
     expect(screen.getByText("Tilt & Decenter")).toBeInTheDocument();
     expect(screen.getByText("Diffraction Grating")).toBeInTheDocument();
@@ -112,6 +116,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     await user.click(screen.getByRole("button", { name: "Edit aspherical parameters" }));
     expect(onOpenAsphericalModal).toHaveBeenCalledWith(surfaceRow);
+
+    await user.click(screen.getByRole("button", { name: "Edit aperture" }));
+    expect(onOpenApertureModal).toHaveBeenCalledWith(surfaceRow);
 
     await user.click(screen.getByRole("button", { name: "Asphere mode for surface 1" }));
     expect(onOpenAsphereVarModalMock).toHaveBeenCalledWith(1);
@@ -148,6 +155,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -165,6 +173,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "",
       "",
       "",
+      "",
     ]);
     expect(Array.from(rows[1].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
       "1",
@@ -175,6 +184,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "C",
       "BK7",
       "10",
+      "Default",
       "None",
       "C",
       "None",
@@ -185,6 +195,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "Image",
       "0",
       "C",
+      "",
       "",
       "",
       "",
@@ -225,6 +236,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -262,6 +274,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -286,6 +299,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -307,6 +321,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -330,6 +345,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -352,6 +368,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
       />,
     );
 
@@ -375,6 +392,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenThicknessModal={onOpenThicknessModal}
         onOpenMediumModal={jest.fn()}
         onOpenAsphericalModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
         onOpenAsphereVarModal={onOpenAsphereVarModal}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
@@ -389,7 +407,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     await user.click(rowCells[5].firstElementChild!);
     expect(onOpenThicknessModal).toHaveBeenCalledWith(1);
 
-    await user.click(rowCells[9].firstElementChild!);
+    await user.click(rowCells[10].firstElementChild!);
     expect(onOpenAsphereVarModal).toHaveBeenCalledWith(1);
   });
 
@@ -408,6 +426,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenThicknessModal={jest.fn()}
         onOpenMediumModal={jest.fn()}
         onOpenAsphericalModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
@@ -422,6 +441,10 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(screen.getByText("Click to view aspherical parameters")).toHaveClass("opacity-100");
 
     await user.unhover(screen.getByRole("button", { name: "Edit aspherical parameters" }));
+    await user.hover(screen.getByRole("button", { name: "Edit aperture" }));
+    expect(screen.getByText("Click to view aperture")).toHaveClass("opacity-100");
+
+    await user.unhover(screen.getByRole("button", { name: "Edit aperture" }));
     await user.hover(screen.getByRole("button", { name: "Edit diffraction grating" }));
     expect(screen.getByText("Click to view diffraction grating")).toHaveClass("opacity-100");
   });
@@ -440,6 +463,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenThicknessModal={jest.fn()}
         onOpenMediumModal={jest.fn()}
         onOpenAsphericalModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
         onOpenAsphereVarModal={jest.fn()}
         onOpenDecenterModal={jest.fn()}
         onOpenDiffractionGratingModal={jest.fn()}
@@ -449,7 +473,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     const rowCells = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr")[0].querySelectorAll("td");
     const radiusTooltipTrigger = rowCells[3].firstElementChild!.firstElementChild!;
     const thicknessTooltipTrigger = rowCells[5].firstElementChild!.firstElementChild!;
-    const asphereTooltipTrigger = rowCells[9].firstElementChild!.firstElementChild!;
+    const asphereTooltipTrigger = rowCells[10].firstElementChild!.firstElementChild!;
 
     await user.hover(radiusTooltipTrigger);
     expect(screen.getByText("Click to configure radius variable or pickup")).toHaveClass("opacity-100");

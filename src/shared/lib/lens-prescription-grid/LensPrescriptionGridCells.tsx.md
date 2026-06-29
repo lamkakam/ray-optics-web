@@ -6,6 +6,7 @@ Reusable prescription grid cell UI that is safe for `shared/` because it depends
 
 - `LensPrescriptionActionWrapper` — fills an AG Grid cell and calls `onAction` when the non-interactive cell body is clicked.
 - `MediumCell` — renders a medium/glass button with configurable tooltip text.
+- `ApertureCell` — renders a full-width text action button for aperture settings with configurable tooltip text.
 - `AsphericalCell` — renders a full-width text action button for aspherical parameters with configurable tooltip text.
 - `DecenterCell` — renders a full-width text action button for tilt/decenter settings with configurable tooltip text.
 - `DiffractionGratingCell` — renders a full-width text action button for diffraction grating settings with configurable tooltip text.
@@ -16,6 +17,7 @@ Reusable prescription grid cell UI that is safe for `shared/` because it depends
 - Medium, aspherical, decenter, and diffraction grating tooltip-backed action cells do not apply `touch-action: none`, so native touch scrolling can start over those controls in iOS Safari.
 - Aspherical, decenter, and diffraction grating cells use `triggerClassName="flex h-full w-full"` so the tooltip trigger fills the cell action area.
 - Empty aspherical, decenter, and diffraction grating values display `None`.
+- Aperture values display `Default` when no explicit edge aperture is set, or `Circular <radius>` when `edge_aperture` is circular.
 - Aspherical values display the shared asphere type label (`Conic`, `Even Aspherical`, `Radial Polynomial`, `X Toroid`, `Y Toroid`).
 - Decenter values display `coordinateSystemStrategy` directly.
 - Diffraction grating values display `${lpmm} lp/mm`.

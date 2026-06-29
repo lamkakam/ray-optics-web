@@ -4,4 +4,5 @@ export { AsphericalModal } from "./AsphericalModal";
 export { DecenterModal } from "./DecenterModal";
 export type { DecenterType } from "./DecenterModal";
 export { DiffractionGratingModal } from "./DiffractionGratingModal";
+export { ApertureModal } from "./ApertureModal";
 export { GridRowButtons } from "./GridRowButtons";

@@ -21,6 +21,7 @@ interface LensPrescriptionGridProps {
   readonly onOpenAsphericalModal: (rowId: string) => void;
   readonly onOpenDecenterModal: (rowId: string) => void;
   readonly onOpenDiffractionGratingModal: (rowId: string) => void;
+  readonly onOpenApertureModal: (rowId: string) => void;
   readonly onAddRowAfter: (rowId: string) => void;
   readonly onDeleteRow: (rowId: string) => void;
   readonly semiDiameterReadonly?: boolean;
@@ -33,6 +34,7 @@ export function LensPrescriptionGrid({
   onOpenAsphericalModal,
   onOpenDecenterModal,
   onOpenDiffractionGratingModal,
+  onOpenApertureModal,
   onAddRowAfter,
   onDeleteRow,
   semiDiameterReadonly = false,
@@ -92,11 +94,12 @@ export function LensPrescriptionGrid({
       onOpenMediumModal: (row) => onOpenMediumModal(row.id),
       onSemiDiameterChange: (row, semiDiameter) => onRowChange(row.id, { semiDiameter }),
       semiDiameterReadonly,
+      onOpenApertureModal: (row) => onOpenApertureModal(row.id),
       onOpenAsphericalModal: (row) => onOpenAsphericalModal(row.id),
       onOpenDecenterModal: (row) => onOpenDecenterModal(row.id),
       onOpenDiffractionGratingModal: (row) => onOpenDiffractionGratingModal(row.id),
     }),
-  ], [surfaceIndexByRowId, semiDiameterReadonly, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenDecenterModal, onOpenDiffractionGratingModal, onAddRowAfter, onDeleteRow]);
+  ], [surfaceIndexByRowId, semiDiameterReadonly, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenApertureModal, onOpenDecenterModal, onOpenDiffractionGratingModal, onAddRowAfter, onDeleteRow]);
 
   return (
     <div

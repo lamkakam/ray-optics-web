@@ -1,4 +1,5 @@
 import {
+  createApertureColumn,
   createMediumColumn,
   createSemiDiameterColumn,
   createThicknessColumn,
@@ -15,6 +16,7 @@ describe("lens prescription grid column widths", () => {
       thickness: 130,
       medium: 115,
       semiDiameter: 115,
+      aperture: 115,
     });
   });
 
@@ -22,6 +24,7 @@ describe("lens prescription grid column widths", () => {
     expect(createThicknessColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.thickness);
     expect(createMediumColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.medium);
     expect(createSemiDiameterColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.semiDiameter);
+    expect(createApertureColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aperture);
   });
 
   it("keeps the shared Index column pinned left with its shared width", () => {

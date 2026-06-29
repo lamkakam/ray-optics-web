@@ -272,6 +272,79 @@ describe("validateImportedLensData", () => {
     expect(validateImportedLensData(model)).toBe(true);
   });
 
+  it("accepts circular aperture fields on a surface", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          clear_aperture: { shape: "circular" },
+          edge_aperture: { shape: "circular", radius: 4 },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it.each([0, -1, Number.POSITIVE_INFINITY])("rejects edge aperture radius %s", (radius) => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          edge_aperture: { shape: "circular", radius },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects unsupported aperture shape and unexpected aperture keys", () => {
+    const invalidShapeModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          clear_aperture: { shape: "rectangular" },
+        },
+      ],
+    };
+    const extraKeyModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          edge_aperture: { shape: "circular", radius: 4, mode: "local" },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(invalidShapeModel)).toBe(false);
+    expect(validateImportedLensData(extraKeyModel)).toBe(false);
+  });
+
   it("rejects diffraction grating with non-numeric lpmm", () => {
     const model = {
       ...baseModel,
