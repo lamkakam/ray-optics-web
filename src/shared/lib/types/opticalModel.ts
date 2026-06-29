@@ -39,14 +39,19 @@ export type DiffractionGrating = {
   order: number,
 };
 
+type BaseAperture = {
+  offsetX: number,
+  offsetY: number,
+};
+
 export type ClearAperture = {
   shape: "circular",
-};
+} & BaseAperture;
 
 export type EdgeAperture = {
   shape: "circular",
   radius: number,
-};
+} & BaseAperture;
 
 export type AsphericalPolynomialCoeffs = number[];
 

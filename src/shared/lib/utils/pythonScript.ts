@@ -124,22 +124,52 @@ function formatDiffractionGrating(
   return `${targetExpr}.phase_element = DiffractionGrating(grating_lpmm=${lpmm}, order=${order})`;
 }
 
-function formatCircularApertureAssignment(targetExpr: string, apertureKind: "clear_apertures" | "edge_apertures", radius: number): PythonLine {
-  return `${targetExpr}.${apertureKind} = [Circular(radius=${radius})]`;
+function formatCircularApertureAssignment(
+  targetExpr: string,
+  apertureKind: "clear_apertures" | "edge_apertures",
+  radius: number,
+  offsetX: number,
+  offsetY: number,
+): PythonLine {
+  return `${targetExpr}.${apertureKind} = [Circular(radius=${radius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
 }
 
 function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBuildStep {
-  const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, edge_aperture, aspherical, decenter, diffractionGrating } = surface;
+  const {
+    label,
+    curvatureRadius,
+    thickness,
+    medium,
+    manufacturer,
+    semiDiameter,
+    clear_aperture,
+    edge_aperture,
+    aspherical,
+    decenter,
+    diffractionGrating,
+  } = surface;
   const { medium: mediumOption, glassManufacturer } = formattedMedium(medium, manufacturer);
   const mutationLines: SurfaceMutationLine[] = [];
   const currentSurfaceExpr = "sm.ifcs[sm.cur_surface]";
 
   if (semiDiameter > 0) {
-    mutationLines.push(formatCircularApertureAssignment(currentSurfaceExpr, "clear_apertures", semiDiameter));
+    mutationLines.push(formatCircularApertureAssignment(
+      currentSurfaceExpr,
+      "clear_apertures",
+      semiDiameter,
+      clear_aperture?.offsetX ?? 0,
+      clear_aperture?.offsetY ?? 0,
+    ));
   }
 
   if (edge_aperture !== undefined) {
-    mutationLines.push(formatCircularApertureAssignment(currentSurfaceExpr, "edge_apertures", edge_aperture.radius));
+    mutationLines.push(formatCircularApertureAssignment(
+      currentSurfaceExpr,
+      "edge_apertures",
+      edge_aperture.radius,
+      edge_aperture.offsetX,
+      edge_aperture.offsetY,
+    ));
   }
 
   if (aspherical !== undefined) {

@@ -193,8 +193,8 @@ describe("OptimizationInspectionModals", () => {
       medium: "air",
       manufacturer: "",
       semiDiameter: 10,
-      clear_aperture: { shape: "circular" },
-      edge_aperture: { shape: "circular", radius: 6 },
+      clear_aperture: { shape: "circular", offsetX: -1, offsetY: 2 },
+      edge_aperture: { shape: "circular", radius: 6, offsetX: 3, offsetY: -4 },
     };
     renderInspectionModals({
       mediumModalRow: undefined,
@@ -212,6 +212,10 @@ describe("OptimizationInspectionModals", () => {
     expect(screen.getByLabelText("Clear Aperture Shape")).toBeDisabled();
     expect(screen.getByLabelText("Edge Aperture Shape")).toBeDisabled();
     expect(screen.getByRole("textbox", { name: "Radius" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Clear Offset X" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Clear Offset Y" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Edge Offset X" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Edge Offset Y" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
   });

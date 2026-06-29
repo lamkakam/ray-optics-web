@@ -21,7 +21,7 @@ const baseDecenter = {
 describe("LensPrescriptionGridCells", () => {
   it("formats aperture labels", () => {
     expect(formatApertureLabel(undefined)).toBe("Default");
-    expect(formatApertureLabel({ shape: "circular", radius: 3.25 })).toBe("Circular 3.25");
+    expect(formatApertureLabel({ shape: "circular", radius: 3.25, offsetX: 0, offsetY: 0 })).toBe("Circular 3.25");
   });
 
   it("renders aperture labels and opens the modal", async () => {
@@ -30,7 +30,7 @@ describe("LensPrescriptionGridCells", () => {
 
     expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent("Default");
 
-    rerender(<ApertureCell edgeAperture={{ shape: "circular", radius: 4 }} onOpenModal={onOpenModal} />);
+    rerender(<ApertureCell edgeAperture={{ shape: "circular", radius: 4, offsetX: 0, offsetY: 0 }} onOpenModal={onOpenModal} />);
     expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent("Circular 4");
 
     await userEvent.click(screen.getByRole("button", { name: "Edit aperture" }));

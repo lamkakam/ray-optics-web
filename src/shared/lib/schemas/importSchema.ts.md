@@ -29,8 +29,8 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 - Supported `aspherical.kind` values are `"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
 - Toroid shapes require `toricSweepRadiusOfCurvature`; all coefficient-bearing shapes limit `polynomialCoefficients` to at most 10 items.
 - Surface `diffractionGrating` is optional and, when present, must contain numeric `lpmm` and integer `order`.
-- Surface `clear_aperture` is optional and, when present, must be `{ shape: "circular" }`.
-- Surface `edge_aperture` is optional and, when present, must be `{ shape: "circular"; radius: number }` with `radius > 0`.
+- Surface `clear_aperture` is optional and, when present, must be `{ shape: "circular"; offsetX: number; offsetY: number }`.
+- Surface `edge_aperture` is optional and, when present, must be `{ shape: "circular"; radius: number; offsetX: number; offsetY: number }` with `radius > 0`.
 
 - **`additionalProperties: false`** is set on every schema object — any unknown key causes validation failure.
 
@@ -46,7 +46,8 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 - `specs.field.isWideAngle` may be omitted, but if present it must be a boolean.
 - Legacy aspherical payloads without `kind` are rejected.
 - `XToroid` and `YToroid` payloads are rejected unless `toricSweepRadiusOfCurvature` is present and numeric.
-- Edge aperture payloads reject unsupported shapes, non-positive radius values, and extra keys.
+- Aperture payloads reject missing offsets, non-numeric offsets, unsupported shapes, non-positive edge radius values, and extra keys.
+- Legacy circular aperture payloads without `offsetX` and `offsetY` are rejected.
 - `additionalProperties: false` means evolved schemas (extra fields added by newer app versions) will fail validation against old validators; schema versioning should be considered if the format changes.
 - The AJV instance and compiled validator are module singletons — compilation happens once at import time, not per call.
 

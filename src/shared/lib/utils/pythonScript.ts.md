@@ -34,8 +34,8 @@ export function buildExportScript(opticalModel: OpticalModel): string;
    - Passes `[curvatureRadius, thickness, medium, manufacturer]` (manufacturer omitted for `"air"`, `"REFL"`, `"CaF2"`, `"Fused Silica"`, `"Water"`, and `"D263TECO"`).
    - Handles `medium = "CaF2"`, `"Fused Silica"`, `"Water"`, and `"D263TECO"` by emitting the variable names `caf2`, `fused_silica`, `water`, and `d263teco` respectively (defined in the export script preamble).
    - Does not pass `sd=` to `sm.add_surface(...)`.
-   - Emits `sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=<semiDiameter>)]` after `sm.add_surface(...)` when `semiDiameter > 0`.
-   - Emits `sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=<edge radius>)]` only when `edge_aperture` is explicitly set.
+   - Emits `sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=<semiDiameter>, x_offset=<offsetX>, y_offset=<offsetY>)]` after `sm.add_surface(...)` when `semiDiameter > 0`. If `clear_aperture` is omitted, offsets default to `0`.
+   - Emits `sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=<edge radius>, x_offset=<offsetX>, y_offset=<offsetY>)]` only when `edge_aperture` is explicitly set.
    - Surface-specific follow-up mutations are emitted after `sm.add_surface(...)`, in order, so multiple mutations may coexist on the same surface.
    - If `aspherical.kind === "Conic"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=...)`.
    - If `aspherical.kind === "EvenAspherical"`, emits `sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=..., cc=..., coefs=[...])`.
@@ -78,7 +78,7 @@ The import preamble is built separately from the model-construction lines so fut
 
 ## Edge Cases / Error Handling
 
-- Semi-diameter is never emitted as an `sd=` argument. Positive semi-diameters are emitted as explicit circular clear apertures after each surface is added. Non-positive semi-diameters omit the clear aperture assignment.
+- Semi-diameter is never emitted as an `sd=` argument. Positive semi-diameters are emitted as explicit circular clear apertures after each surface is added, with clear aperture offsets when present and `0, 0` otherwise. Non-positive semi-diameters omit the clear aperture assignment.
 - Edge aperture assignments are omitted when `edge_aperture` is unset, which represents the default/follow-clear behavior.
 - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
 - Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.

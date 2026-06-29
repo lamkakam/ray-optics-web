@@ -32,20 +32,24 @@ const diffractionGratingSchema = {
 
 const clearApertureSchema = {
   type: "object",
-  required: ["shape"],
+  required: ["shape", "offsetX", "offsetY"],
   additionalProperties: false,
   properties: {
     shape: { type: "string", const: "circular" },
+    offsetX: { type: "number" },
+    offsetY: { type: "number" },
   },
 };
 
 const edgeApertureSchema = {
   type: "object",
-  required: ["shape", "radius"],
+  required: ["shape", "radius", "offsetX", "offsetY"],
   additionalProperties: false,
   properties: {
     shape: { type: "string", const: "circular" },
     radius: { type: "number", exclusiveMinimum: 0 },
+    offsetX: { type: "number" },
+    offsetY: { type: "number" },
   },
 };
 

@@ -14,8 +14,8 @@ describe("gridTransform", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 5,
-          clear_aperture: { shape: "circular" },
-          edge_aperture: { shape: "circular", radius: 4.5 },
+          clear_aperture: { shape: "circular", offsetX: -1, offsetY: 2 },
+          edge_aperture: { shape: "circular", radius: 4.5, offsetX: 3, offsetY: -4 },
         },
       ],
     };
@@ -24,12 +24,12 @@ describe("gridTransform", () => {
     const surfaceRow = rows.find((row) => row.kind === "surface");
 
     expect(surfaceRow).toMatchObject({
-      clear_aperture: { shape: "circular" },
-      edge_aperture: { shape: "circular", radius: 4.5 },
+      clear_aperture: { shape: "circular", offsetX: -1, offsetY: 2 },
+      edge_aperture: { shape: "circular", radius: 4.5, offsetX: 3, offsetY: -4 },
     });
     expect(gridRowsToSurfaces(rows).surfaces[0]).toMatchObject({
-      clear_aperture: { shape: "circular" },
-      edge_aperture: { shape: "circular", radius: 4.5 },
+      clear_aperture: { shape: "circular", offsetX: -1, offsetY: 2 },
+      edge_aperture: { shape: "circular", radius: 4.5, offsetX: 3, offsetY: -4 },
     });
   });
 });

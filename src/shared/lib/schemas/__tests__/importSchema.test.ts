@@ -283,13 +283,64 @@ describe("validateImportedLensData", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 5,
+          clear_aperture: { shape: "circular", offsetX: -1.25, offsetY: 2.5 },
+          edge_aperture: { shape: "circular", radius: 4, offsetX: 0, offsetY: -3.5 },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it("rejects legacy circular aperture fields without offsets", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
           clear_aperture: { shape: "circular" },
           edge_aperture: { shape: "circular", radius: 4 },
         },
       ],
     };
 
-    expect(validateImportedLensData(model)).toBe(true);
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it.each([
+    ["clear_aperture", "offsetX", "1"],
+    ["clear_aperture", "offsetY", Number.POSITIVE_INFINITY],
+    ["edge_aperture", "offsetX", "1"],
+    ["edge_aperture", "offsetY", Number.POSITIVE_INFINITY],
+  ] as const)("rejects %s with invalid %s", (apertureKey, offsetKey, offsetValue) => {
+    const clearAperture = { shape: "circular", offsetX: 0, offsetY: 0 };
+    const edgeAperture = { shape: "circular", radius: 4, offsetX: 0, offsetY: 0 };
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          clear_aperture: apertureKey === "clear_aperture"
+            ? { ...clearAperture, [offsetKey]: offsetValue }
+            : clearAperture,
+          edge_aperture: apertureKey === "edge_aperture"
+            ? { ...edgeAperture, [offsetKey]: offsetValue }
+            : edgeAperture,
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
   });
 
   it.each([0, -1, Number.POSITIVE_INFINITY])("rejects edge aperture radius %s", (radius) => {
@@ -303,7 +354,7 @@ describe("validateImportedLensData", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 5,
-          edge_aperture: { shape: "circular", radius },
+          edge_aperture: { shape: "circular", radius, offsetX: 0, offsetY: 0 },
         },
       ],
     };
@@ -336,7 +387,7 @@ describe("validateImportedLensData", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 5,
-          edge_aperture: { shape: "circular", radius: 4, mode: "local" },
+          edge_aperture: { shape: "circular", radius: 4, offsetX: 0, offsetY: 0, mode: "local" },
         },
       ],
     };

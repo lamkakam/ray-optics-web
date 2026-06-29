@@ -31,6 +31,12 @@ function parsePositiveFiniteNumber(value: string): number | undefined {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
+function parseFiniteNumber(value: string): number | undefined {
+  const trimmed = value.trim();
+  const parsed = Number(trimmed);
+  return trimmed !== "" && Number.isFinite(parsed) ? parsed : undefined;
+}
+
 export function ApertureModal({
   isOpen,
   initialClearAperture,
@@ -42,12 +48,23 @@ export function ApertureModal({
   const [clearShape, setClearShape] = useState<ClearApertureShape>(initialClearAperture?.shape ?? "circular");
   const [edgeShape, setEdgeShape] = useState<EdgeApertureShape>(initialEdgeAperture?.shape ?? "default");
   const [edgeRadius, setEdgeRadius] = useState(String(initialEdgeAperture?.radius ?? 1));
+  const [clearOffsetX, setClearOffsetX] = useState(String(initialClearAperture?.offsetX ?? 0));
+  const [clearOffsetY, setClearOffsetY] = useState(String(initialClearAperture?.offsetY ?? 0));
+  const [edgeOffsetX, setEdgeOffsetX] = useState(String(initialEdgeAperture?.offsetX ?? 0));
+  const [edgeOffsetY, setEdgeOffsetY] = useState(String(initialEdgeAperture?.offsetY ?? 0));
   const [error, setError] = useState<string | undefined>(undefined);
 
   const handleConfirm = () => {
+    const parsedClearOffsetX = parseFiniteNumber(clearOffsetX);
+    const parsedClearOffsetY = parseFiniteNumber(clearOffsetY);
+    if (parsedClearOffsetX === undefined || parsedClearOffsetY === undefined) {
+      setError("Offsets must be finite numbers.");
+      return;
+    }
+
     if (edgeShape === "default") {
       onConfirm({
-        clear_aperture: { shape: clearShape },
+        clear_aperture: { shape: clearShape, offsetX: parsedClearOffsetX, offsetY: parsedClearOffsetY },
         edge_aperture: undefined,
       });
       return;
@@ -59,34 +76,101 @@ export function ApertureModal({
       return;
     }
 
+    const parsedEdgeOffsetX = parseFiniteNumber(edgeOffsetX);
+    const parsedEdgeOffsetY = parseFiniteNumber(edgeOffsetY);
+    if (parsedEdgeOffsetX === undefined || parsedEdgeOffsetY === undefined) {
+      setError("Offsets must be finite numbers.");
+      return;
+    }
+
     onConfirm({
-      clear_aperture: { shape: clearShape },
-      edge_aperture: { shape: "circular", radius },
+      clear_aperture: { shape: clearShape, offsetX: parsedClearOffsetX, offsetY: parsedClearOffsetY },
+      edge_aperture: { shape: "circular", radius, offsetX: parsedEdgeOffsetX, offsetY: parsedEdgeOffsetY },
     });
   };
 
   const clearShapeContent: Record<ClearApertureShape, React.ReactNode> = {
-    circular: undefined,
+    circular: (
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="clear-aperture-offset-x">Offset X</Label>
+          <Input
+            id="clear-aperture-offset-x"
+            aria-label="Clear Offset X"
+            type="text"
+            value={clearOffsetX}
+            disabled={readOnly}
+            onChange={(event) => {
+              setClearOffsetX(event.target.value);
+              setError(undefined);
+            }}
+          />
+        </div>
+        <div>
+          <Label htmlFor="clear-aperture-offset-y">Offset Y</Label>
+          <Input
+            id="clear-aperture-offset-y"
+            aria-label="Clear Offset Y"
+            type="text"
+            value={clearOffsetY}
+            disabled={readOnly}
+            onChange={(event) => {
+              setClearOffsetY(event.target.value);
+              setError(undefined);
+            }}
+          />
+        </div>
+      </div>
+    ),
   };
   const edgeShapeContent: Record<EdgeApertureShape, React.ReactNode> = {
     default: undefined,
     circular: (
-      <div>
-        <Label htmlFor="edge-aperture-radius">Radius</Label>
-        <Input
-          id="edge-aperture-radius"
-          aria-label="Radius"
-          type="text"
-          value={edgeRadius}
-          disabled={readOnly}
-          onChange={(event) => {
-            setEdgeRadius(event.target.value);
-            setError(undefined);
-          }}
-        />
-        {error === undefined ? undefined : (
-          <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>
-        )}
+      <div className="space-y-3">
+        <div>
+          <Label htmlFor="edge-aperture-radius">Radius</Label>
+          <Input
+            id="edge-aperture-radius"
+            aria-label="Radius"
+            type="text"
+            value={edgeRadius}
+            disabled={readOnly}
+            onChange={(event) => {
+              setEdgeRadius(event.target.value);
+              setError(undefined);
+            }}
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="edge-aperture-offset-x">Offset X</Label>
+            <Input
+              id="edge-aperture-offset-x"
+              aria-label="Edge Offset X"
+              type="text"
+              value={edgeOffsetX}
+              disabled={readOnly}
+              onChange={(event) => {
+                setEdgeOffsetX(event.target.value);
+                setError(undefined);
+              }}
+            />
+          </div>
+          <div>
+            <Label htmlFor="edge-aperture-offset-y">Offset Y</Label>
+            <Input
+              id="edge-aperture-offset-y"
+              aria-label="Edge Offset Y"
+              type="text"
+              value={edgeOffsetY}
+              disabled={readOnly}
+              onChange={(event) => {
+                setEdgeOffsetY(event.target.value);
+                setError(undefined);
+              }}
+            />
+          </div>
+        </div>
       </div>
     ),
   };
@@ -152,6 +236,9 @@ export function ApertureModal({
           {edgeShapeContent[edgeShape]}
         </section>
       </div>
+      {error === undefined ? undefined : (
+        <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>
+      )}
     </Modal>
   );
 }
