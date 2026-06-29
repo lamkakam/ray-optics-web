@@ -183,6 +183,27 @@ describe("prescriptionFormatting", () => {
     });
   });
 
+  it("scales circular clear aperture offsets on selected surfaces", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [
+        {
+          ...baseSurfaces.surfaces[0],
+          clear_aperture: { shape: "circular", offsetX: 2, offsetY: -3 },
+        },
+      ],
+    });
+
+    const result = scaleRows(rows, { first: 1, last: 1, factor: 1.5 });
+    const surfaces = surfaceRows(result);
+
+    expect(surfaces[0].clear_aperture).toEqual({
+      shape: "circular",
+      offsetX: 3,
+      offsetY: -4.5,
+    });
+  });
+
   it("scales rectangular aperture half widths and offsets while preserving rotation", () => {
     const rows = surfacesToGridRows({
       ...baseSurfaces,
