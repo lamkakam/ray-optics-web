@@ -7,7 +7,8 @@ Defines core TypeScript domain types for the optical model, including system spe
 ## Exports
 - `DecenterConfig`: shared tilt/decenter configuration for image and surface rows.
 - `DiffractionGrating`: surface diffraction grating configuration with `lpmm` and integer `order`.
-- `ClearAperture`: clear aperture configuration. Currently `{ shape: "circular"; offsetX: number; offsetY: number }`.
+- `AnnularAperture`: annular clear aperture shape data with `shape: "annular"` and `obstructionRadius`.
+- `ClearAperture`: clear aperture configuration. Supports circular clear apertures and annular clear apertures; both include `offsetX` and `offsetY`.
 - `EdgeAperture`: edge aperture configuration. Currently `{ shape: "circular"; radius: number; offsetX: number; offsetY: number }`.
 - `OpticalModel`: interface for all information (system specs, surfaces, and aperture flag) needed for RayOptics. Includes `setAutoAperture: SetAutoApertureFlag`.
 ## Key Conventions
@@ -24,7 +25,7 @@ Defines core TypeScript domain types for the optical model, including system spe
   - `{ kind: "XToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
   - `{ kind: "YToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
 - `diffractionGrating`, when present on a surface, is `{ lpmm: number; order: number }`.
-- `clear_aperture`, when present on a surface, records the clear aperture shape and signed X/Y offsets. The clear aperture radius is derived from `semiDiameter`.
+- `clear_aperture`, when present on a surface, records the clear aperture shape and signed X/Y offsets. The outer clear aperture radius is derived from `semiDiameter`; annular clear apertures additionally store `obstructionRadius`.
 - `edge_aperture`, when present on a surface, records an explicit circular edge aperture radius and signed X/Y offsets. When omitted, the edge aperture follows the clear aperture.
 - `OpticalModel` extends `Surfaces`, so all surface data is directly on the model object.
 - `setAutoAperture: "autoAperture"` tells RayOptics to recompute semi-diameters; `"manualAperture"` preserves them.

@@ -29,7 +29,8 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 - Supported `aspherical.kind` values are `"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
 - Toroid shapes require `toricSweepRadiusOfCurvature`; all coefficient-bearing shapes limit `polynomialCoefficients` to at most 10 items.
 - Surface `diffractionGrating` is optional and, when present, must contain numeric `lpmm` and integer `order`.
-- Surface `clear_aperture` is optional and, when present, must be `{ shape: "circular"; offsetX: number; offsetY: number }`.
+- Surface `clear_aperture` is optional and, when present, must be either `{ shape: "circular"; offsetX: number; offsetY: number }` or `{ shape: "annular"; obstructionRadius: number; offsetX: number; offsetY: number }`.
+- Annular `obstructionRadius` must be greater than `0` and smaller than that surface's `semiDiameter`.
 - Surface `edge_aperture` is optional and, when present, must be `{ shape: "circular"; radius: number; offsetX: number; offsetY: number }` with `radius > 0`.
 
 - **`additionalProperties: false`** is set on every schema object — any unknown key causes validation failure.

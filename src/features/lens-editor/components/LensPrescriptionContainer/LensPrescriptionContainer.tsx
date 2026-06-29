@@ -271,6 +271,7 @@ export function LensPrescriptionContainer({
       <ApertureModal
         key={apertureModal.open ? apertureModal.rowId : "aperture-closed"}
         isOpen={apertureModal.open}
+        semiDiameter={apertureRow?.kind === "surface" ? apertureRow.semiDiameter : 1}
         initialClearAperture={apertureRow?.kind === "surface" ? apertureRow.clear_aperture : undefined}
         initialEdgeAperture={apertureRow?.kind === "surface" ? apertureRow.edge_aperture : undefined}
         onConfirm={({ clear_aperture, edge_aperture }) => {

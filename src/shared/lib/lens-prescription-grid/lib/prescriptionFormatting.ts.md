@@ -18,7 +18,7 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 ## Scale Behavior
 
 - `first` and `last` are selector indices: `0` for Object, `1..n` for surfaces, and `n + 1` for Image.
-- Surface `curvatureRadius`, `thickness`, `semiDiameter`, and decenter `offsetX`/`offsetY` are multiplied by `factor`.
+- Surface `curvatureRadius`, `thickness`, `semiDiameter`, clear aperture `offsetX`/`offsetY`, annular `obstructionRadius`, edge aperture `radius`, edge aperture `offsetX`/`offsetY`, and decenter `offsetX`/`offsetY` are multiplied by `factor`.
 - Image `curvatureRadius` and image decenter offsets are multiplied when Image is in the selected range.
 - Object distance is multiplied only when it is below `1e10`; larger object distances are preserved.
 - Toroid sweep radius is multiplied for `XToroid`/`YToroid`.
@@ -49,4 +49,4 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 
 ## Validation
 
-`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check. Scaling is also rejected atomically with a precision-underflow error when any nonzero source numeric value, including an aspheric coefficient, becomes zero. Source values that are already zero remain valid.
+`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check. Scaling is also rejected atomically with a precision-underflow error when any nonzero source numeric value, including an aperture dimension or aspheric coefficient, becomes zero. Source values that are already zero remain valid.

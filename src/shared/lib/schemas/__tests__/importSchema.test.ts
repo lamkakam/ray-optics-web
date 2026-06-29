@@ -292,6 +292,69 @@ describe("validateImportedLensData", () => {
     expect(validateImportedLensData(model)).toBe(true);
   });
 
+  it("accepts annular clear aperture fields on a surface", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          clear_aperture: { shape: "annular", obstructionRadius: 2, offsetX: -1.25, offsetY: 2.5 },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it.each([0, -1, 5, 6, Number.POSITIVE_INFINITY])("rejects annular obstruction radius %s", (obstructionRadius) => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          clear_aperture: { shape: "annular", obstructionRadius, offsetX: 0, offsetY: 0 },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects annular clear aperture with unexpected keys", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          clear_aperture: {
+            shape: "annular",
+            obstructionRadius: 2,
+            offsetX: 0,
+            offsetY: 0,
+            radius: 5,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
   it("rejects legacy circular aperture fields without offsets", () => {
     const model = {
       ...baseModel,

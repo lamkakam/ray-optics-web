@@ -1,4 +1,4 @@
-import type { AsphericalType, DecenterConfig } from "@/shared/lib/types/opticalModel";
+import type { AsphericalType, ClearAperture, DecenterConfig, EdgeAperture } from "@/shared/lib/types/opticalModel";
 import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { IMAGE_ROW_ID, OBJECT_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
@@ -260,6 +260,46 @@ function scaleDecenter(
   };
 }
 
+function scaleClearAperture(
+  aperture: ClearAperture | undefined,
+  factor: number,
+): ClearAperture | undefined {
+  if (aperture === undefined) {
+    return undefined;
+  }
+
+  if (aperture.shape === "annular") {
+    return {
+      ...aperture,
+      obstructionRadius: scaleNumber(aperture.obstructionRadius, factor),
+      offsetX: scaleNumber(aperture.offsetX, factor),
+      offsetY: scaleNumber(aperture.offsetY, factor),
+    };
+  }
+
+  return {
+    ...aperture,
+    offsetX: scaleNumber(aperture.offsetX, factor),
+    offsetY: scaleNumber(aperture.offsetY, factor),
+  };
+}
+
+function scaleEdgeAperture(
+  aperture: EdgeAperture | undefined,
+  factor: number,
+): EdgeAperture | undefined {
+  if (aperture === undefined) {
+    return undefined;
+  }
+
+  return {
+    ...aperture,
+    radius: scaleNumber(aperture.radius, factor),
+    offsetX: scaleNumber(aperture.offsetX, factor),
+    offsetY: scaleNumber(aperture.offsetY, factor),
+  };
+}
+
 export function scaleRows(rows: readonly GridRow[], { first, last, factor }: ScaleRowsOptions): GridRow[] {
   return rows.map((row) => {
     const selectorIndex = selectorIndexForRow(rows, row);
@@ -284,11 +324,16 @@ export function scaleRows(rows: readonly GridRow[], { first, last, factor }: Sca
       };
     }
 
+    const scaledClearAperture = scaleClearAperture(row.clear_aperture, factor);
+    const scaledEdgeAperture = scaleEdgeAperture(row.edge_aperture, factor);
+
     return {
       ...row,
       curvatureRadius: scaleNumber(row.curvatureRadius, factor),
       thickness: scaleNumber(row.thickness, factor),
       semiDiameter: scaleNumber(row.semiDiameter, factor),
+      ...(scaledClearAperture !== undefined ? { clear_aperture: scaledClearAperture } : {}),
+      ...(scaledEdgeAperture !== undefined ? { edge_aperture: scaledEdgeAperture } : {}),
       aspherical: scaleAspherical(row.aspherical, factor),
       decenter: scaleDecenter(row.decenter, factor),
     };
@@ -450,6 +495,15 @@ function numericValues(row: GridRow): number[] {
 
   if (row.kind === "surface") {
     values.push(row.thickness, row.semiDiameter);
+    if (row.clear_aperture !== undefined) {
+      values.push(row.clear_aperture.offsetX, row.clear_aperture.offsetY);
+      if (row.clear_aperture.shape === "annular") {
+        values.push(row.clear_aperture.obstructionRadius);
+      }
+    }
+    if (row.edge_aperture !== undefined) {
+      values.push(row.edge_aperture.radius, row.edge_aperture.offsetX, row.edge_aperture.offsetY);
+    }
     if (row.aspherical !== undefined) {
       values.push(row.aspherical.conicConstant);
       if (row.aspherical.kind !== "Conic") {

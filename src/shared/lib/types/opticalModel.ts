@@ -44,9 +44,14 @@ type BaseAperture = {
   offsetY: number,
 };
 
-export type ClearAperture = {
+export type AnnularAperture = {
+  shape: "annular",
+  obstructionRadius: number,
+};
+
+export type ClearAperture = ({
   shape: "circular",
-} & BaseAperture;
+} | AnnularAperture) & BaseAperture;
 
 export type EdgeAperture = {
   shape: "circular",

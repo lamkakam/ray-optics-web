@@ -145,6 +145,44 @@ describe("prescriptionFormatting", () => {
     expect(image?.kind === "image" ? image.curvatureRadius : undefined).toBe(18);
   });
 
+  it("scales aperture dimensional fields on selected surfaces", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [
+        {
+          ...baseSurfaces.surfaces[0],
+          clear_aperture: { shape: "annular", obstructionRadius: 2, offsetX: -1, offsetY: 1.5 },
+          edge_aperture: { shape: "circular", radius: 4, offsetX: 0.5, offsetY: -0.75 },
+        },
+        {
+          ...baseSurfaces.surfaces[1],
+          clear_aperture: { shape: "circular", offsetX: 2, offsetY: 3 },
+        },
+      ],
+    });
+
+    const result = scaleRows(rows, { first: 1, last: 1, factor: 2 });
+    const surfaces = surfaceRows(result);
+
+    expect(surfaces[0].clear_aperture).toEqual({
+      shape: "annular",
+      obstructionRadius: 4,
+      offsetX: -2,
+      offsetY: 3,
+    });
+    expect(surfaces[0].edge_aperture).toEqual({
+      shape: "circular",
+      radius: 8,
+      offsetX: 1,
+      offsetY: -1.5,
+    });
+    expect(surfaces[1].clear_aperture).toEqual({
+      shape: "circular",
+      offsetX: 2,
+      offsetY: 3,
+    });
+  });
+
   it("scales object distance below 1e10 and image decenter offsets when Image is included", () => {
     const rows = surfacesToGridRows({
       ...baseSurfaces,
@@ -235,6 +273,31 @@ describe("prescriptionFormatting", () => {
       first: 1,
       last: 1,
       factor: Number.MAX_VALUE,
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.rows).toBe(rows);
+    expect(result.ok ? undefined : result.error).toMatch(/underflowed to zero/);
+  });
+
+  it("rejects aperture dimensional precision underflow atomically", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{
+        ...baseSurfaces.surfaces[0],
+        curvatureRadius: 0,
+        thickness: 0,
+        semiDiameter: 0,
+        decenter: undefined,
+        clear_aperture: { shape: "annular", obstructionRadius: 0.1, offsetX: 0, offsetY: 0 },
+      }],
+    });
+
+    const result = formatPrescriptionRows(rows, {
+      mode: "scale",
+      first: 1,
+      last: 1,
+      factor: Number.MIN_VALUE,
     });
 
     expect(result.ok).toBe(false);

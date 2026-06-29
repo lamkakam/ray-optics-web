@@ -72,6 +72,7 @@ export function OptimizationInspectionModals({
         key={apertureModalRow?.id ?? "aperture-closed"}
         isOpen={apertureModalRow?.kind === "surface"}
         readOnly
+        semiDiameter={apertureModalRow?.kind === "surface" ? apertureModalRow.semiDiameter : 1}
         initialClearAperture={apertureModalRow?.kind === "surface" ? apertureModalRow.clear_aperture : undefined}
         initialEdgeAperture={apertureModalRow?.kind === "surface" ? apertureModalRow.edge_aperture : undefined}
         onConfirm={() => undefined}

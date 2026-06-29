@@ -335,6 +335,30 @@ describe("buildOpticalModelScript", () => {
     expect(script).not.toContain("OffsetCircular(radius=3");
   });
 
+  it("should emit Annular for annular clear aperture", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 6,
+          clear_aperture: { shape: "annular", obstructionRadius: 2.25, offsetX: -0.5, offsetY: 1.25 },
+          edge_aperture: { shape: "circular", radius: 5, offsetX: 0, offsetY: 0 },
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      [
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [Annular(radius=6, obstruction_radius=2.25, x_offset=-0.5, y_offset=1.25)]",
+        "sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=5, x_offset=0, y_offset=0)]",
+      ].join("\n"),
+    );
+  });
+
   it("should omit clear aperture for non-positive semi-diameter and edge aperture for default follow-clear", () => {
     const model: OpticalModel = {
       ...baseModel,
@@ -442,15 +466,18 @@ describe("buildOpticalModelScript", () => {
 describe("buildExportScript", () => {
   it("imports Circular in the export preamble", () => {
     const script = buildExportScript(baseModel);
-    expect(script).toContain("from rayoptics.elem.surface import DecenterData, Circular");
+    expect(script).toContain("from rayoptics.elem.surface import DecenterData, Circular, Aperture");
   });
 
-  it("defines OffsetCircular inline in the export preamble", () => {
+  it("defines OffsetCircular and Annular inline in the export preamble", () => {
     const script = buildExportScript(baseModel);
     expect(script).toContain("class OffsetCircular(Circular):");
     expect(script).toContain("def edge_pt_target(self, rel_dir):");
     expect(script).toContain("self.x_offset + self.radius * rel_dir[0]");
     expect(script).toContain("self.y_offset + self.radius * rel_dir[1]");
+    expect(script).toContain("class Annular(Aperture):");
+    expect(script).toContain("obstruction_radius");
+    expect(script).toContain("return self.obstruction_radius - fuzz <= radius <= self.radius + fuzz");
   });
 
   it("defines the water material in the export preamble", () => {

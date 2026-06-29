@@ -1,7 +1,7 @@
 import Ajv from "ajv";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
-const ajv = new Ajv();
+const ajv = new Ajv({ $data: true });
 
 const decenterConfigSchema = {
   type: "object",
@@ -30,7 +30,7 @@ const diffractionGratingSchema = {
   },
 };
 
-const clearApertureSchema = {
+const circularClearApertureSchema = {
   type: "object",
   required: ["shape", "offsetX", "offsetY"],
   additionalProperties: false,
@@ -39,6 +39,22 @@ const clearApertureSchema = {
     offsetX: { type: "number" },
     offsetY: { type: "number" },
   },
+};
+
+const annularClearApertureSchema = {
+  type: "object",
+  required: ["shape", "obstructionRadius", "offsetX", "offsetY"],
+  additionalProperties: false,
+  properties: {
+    shape: { type: "string", const: "annular" },
+    obstructionRadius: { type: "number", exclusiveMinimum: 0, exclusiveMaximum: { $data: "2/semiDiameter" } },
+    offsetX: { type: "number" },
+    offsetY: { type: "number" },
+  },
+};
+
+const clearApertureSchema = {
+  oneOf: [circularClearApertureSchema, annularClearApertureSchema],
 };
 
 const edgeApertureSchema = {
