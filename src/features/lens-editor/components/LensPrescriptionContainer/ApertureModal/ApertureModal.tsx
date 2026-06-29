@@ -11,6 +11,7 @@ import type { ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalMode
 
 type ClearApertureShape = ClearAperture["shape"];
 type EdgeApertureShape = "default" | "circular";
+type StringSetter = React.Dispatch<React.SetStateAction<string>>;
 
 interface ApertureConfirmValue {
   readonly clear_aperture: ClearAperture;
@@ -27,6 +28,28 @@ interface ApertureModalProps {
   readonly onClose: () => void;
 }
 
+interface ClearApertureShapeComponentProps {
+  readonly clearOffsetX: string;
+  readonly clearOffsetY: string;
+  readonly obstructionRadius: string;
+  readonly readOnly: boolean;
+  readonly setClearOffsetX: StringSetter;
+  readonly setClearOffsetY: StringSetter;
+  readonly setObstructionRadius: StringSetter;
+  readonly clearError: () => void;
+}
+
+interface EdgeApertureShapeComponentProps {
+  readonly edgeRadius: string;
+  readonly edgeOffsetX: string;
+  readonly edgeOffsetY: string;
+  readonly readOnly: boolean;
+  readonly setEdgeRadius: StringSetter;
+  readonly setEdgeOffsetX: StringSetter;
+  readonly setEdgeOffsetY: StringSetter;
+  readonly clearError: () => void;
+}
+
 function parsePositiveFiniteNumber(value: string): number | undefined {
   const parsed = Number(value.trim());
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
@@ -37,6 +60,157 @@ function parseFiniteNumber(value: string): number | undefined {
   const parsed = Number(trimmed);
   return trimmed !== "" && Number.isFinite(parsed) ? parsed : undefined;
 }
+
+function ClearCircularFields({
+  clearOffsetX,
+  clearOffsetY,
+  readOnly,
+  setClearOffsetX,
+  setClearOffsetY,
+  clearError,
+}: ClearApertureShapeComponentProps) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div>
+        <Label htmlFor="clear-aperture-offset-x">Offset X</Label>
+        <Input
+          id="clear-aperture-offset-x"
+          aria-label="Clear Offset X"
+          type="text"
+          value={clearOffsetX}
+          disabled={readOnly}
+          onChange={(event) => {
+            setClearOffsetX(event.target.value);
+            clearError();
+          }}
+        />
+      </div>
+      <div>
+        <Label htmlFor="clear-aperture-offset-y">Offset Y</Label>
+        <Input
+          id="clear-aperture-offset-y"
+          aria-label="Clear Offset Y"
+          type="text"
+          value={clearOffsetY}
+          disabled={readOnly}
+          onChange={(event) => {
+            setClearOffsetY(event.target.value);
+            clearError();
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ClearAnnularFields(props: ClearApertureShapeComponentProps) {
+  const {
+    obstructionRadius,
+    readOnly,
+    setObstructionRadius,
+    clearError,
+  } = props;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label htmlFor="clear-aperture-obstruction-radius">Central Obstruction Radius</Label>
+        <Input
+          id="clear-aperture-obstruction-radius"
+          aria-label="Central Obstruction Radius"
+          type="text"
+          value={obstructionRadius}
+          disabled={readOnly}
+          onChange={(event) => {
+            setObstructionRadius(event.target.value);
+            clearError();
+          }}
+        />
+      </div>
+      <ClearCircularFields {...props} />
+    </div>
+  );
+}
+
+function EdgeDefaultFields() {
+  return undefined;
+}
+
+function EdgeCircularFields({
+  edgeRadius,
+  edgeOffsetX,
+  edgeOffsetY,
+  readOnly,
+  setEdgeRadius,
+  setEdgeOffsetX,
+  setEdgeOffsetY,
+  clearError,
+}: EdgeApertureShapeComponentProps) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label htmlFor="edge-aperture-radius">Radius</Label>
+        <Input
+          id="edge-aperture-radius"
+          aria-label="Radius"
+          type="text"
+          value={edgeRadius}
+          disabled={readOnly}
+          onChange={(event) => {
+            setEdgeRadius(event.target.value);
+            clearError();
+          }}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="edge-aperture-offset-x">Offset X</Label>
+          <Input
+            id="edge-aperture-offset-x"
+            aria-label="Edge Offset X"
+            type="text"
+            value={edgeOffsetX}
+            disabled={readOnly}
+            onChange={(event) => {
+              setEdgeOffsetX(event.target.value);
+              clearError();
+            }}
+          />
+        </div>
+        <div>
+          <Label htmlFor="edge-aperture-offset-y">Offset Y</Label>
+          <Input
+            id="edge-aperture-offset-y"
+            aria-label="Edge Offset Y"
+            type="text"
+            value={edgeOffsetY}
+            disabled={readOnly}
+            onChange={(event) => {
+              setEdgeOffsetY(event.target.value);
+              clearError();
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const CLEAR_APERTURE_SHAPE_COMPONENTS: Record<
+  ClearApertureShape,
+  React.ComponentType<ClearApertureShapeComponentProps>
+> = {
+  circular: ClearCircularFields,
+  annular: ClearAnnularFields,
+};
+
+const EDGE_APERTURE_SHAPE_COMPONENTS: Record<
+  EdgeApertureShape,
+  React.ComponentType<EdgeApertureShapeComponentProps>
+> = {
+  default: EdgeDefaultFields,
+  circular: EdgeCircularFields,
+};
 
 export function ApertureModal({
   isOpen,
@@ -58,6 +232,11 @@ export function ApertureModal({
   const [edgeOffsetX, setEdgeOffsetX] = useState(String(initialEdgeAperture?.offsetX ?? 0));
   const [edgeOffsetY, setEdgeOffsetY] = useState(String(initialEdgeAperture?.offsetY ?? 0));
   const [error, setError] = useState<string | undefined>(undefined);
+  const ClearShapeComponent = CLEAR_APERTURE_SHAPE_COMPONENTS[clearShape];
+  const EdgeShapeComponent = EDGE_APERTURE_SHAPE_COMPONENTS[edgeShape];
+  const clearError = () => {
+    setError(undefined);
+  };
 
   const handleConfirm = () => {
     const parsedClearOffsetX = parseFiniteNumber(clearOffsetX);
@@ -113,113 +292,6 @@ export function ApertureModal({
     });
   };
 
-  const clearOffsetInputs = (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <div>
-        <Label htmlFor="clear-aperture-offset-x">Offset X</Label>
-        <Input
-          id="clear-aperture-offset-x"
-          aria-label="Clear Offset X"
-          type="text"
-          value={clearOffsetX}
-          disabled={readOnly}
-          onChange={(event) => {
-            setClearOffsetX(event.target.value);
-            setError(undefined);
-          }}
-        />
-      </div>
-      <div>
-        <Label htmlFor="clear-aperture-offset-y">Offset Y</Label>
-        <Input
-          id="clear-aperture-offset-y"
-          aria-label="Clear Offset Y"
-          type="text"
-          value={clearOffsetY}
-          disabled={readOnly}
-          onChange={(event) => {
-            setClearOffsetY(event.target.value);
-            setError(undefined);
-          }}
-        />
-      </div>
-    </div>
-  );
-
-  const clearShapeContent: Record<ClearApertureShape, React.ReactNode> = {
-    circular: clearOffsetInputs,
-    annular: (
-      <div className="space-y-3">
-        <div>
-          <Label htmlFor="clear-aperture-obstruction-radius">Central Obstruction Radius</Label>
-          <Input
-            id="clear-aperture-obstruction-radius"
-            aria-label="Central Obstruction Radius"
-            type="text"
-            value={obstructionRadius}
-            disabled={readOnly}
-            onChange={(event) => {
-              setObstructionRadius(event.target.value);
-              setError(undefined);
-            }}
-          />
-        </div>
-        {clearOffsetInputs}
-      </div>
-    ),
-  };
-  const edgeShapeContent: Record<EdgeApertureShape, React.ReactNode> = {
-    default: undefined,
-    circular: (
-      <div className="space-y-3">
-        <div>
-          <Label htmlFor="edge-aperture-radius">Radius</Label>
-          <Input
-            id="edge-aperture-radius"
-            aria-label="Radius"
-            type="text"
-            value={edgeRadius}
-            disabled={readOnly}
-            onChange={(event) => {
-              setEdgeRadius(event.target.value);
-              setError(undefined);
-            }}
-          />
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="edge-aperture-offset-x">Offset X</Label>
-            <Input
-              id="edge-aperture-offset-x"
-              aria-label="Edge Offset X"
-              type="text"
-              value={edgeOffsetX}
-              disabled={readOnly}
-              onChange={(event) => {
-                setEdgeOffsetX(event.target.value);
-                setError(undefined);
-              }}
-            />
-          </div>
-          <div>
-            <Label htmlFor="edge-aperture-offset-y">Offset Y</Label>
-            <Input
-              id="edge-aperture-offset-y"
-              aria-label="Edge Offset Y"
-              type="text"
-              value={edgeOffsetY}
-              disabled={readOnly}
-              onChange={(event) => {
-                setEdgeOffsetY(event.target.value);
-                setError(undefined);
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    ),
-  };
-
   return (
     <Modal
       isOpen={isOpen}
@@ -258,11 +330,20 @@ export function ApertureModal({
               ]}
               onChange={(event) => {
                 setClearShape(event.target.value as ClearApertureShape);
-                setError(undefined);
+                clearError();
               }}
             />
           </div>
-          {clearShapeContent[clearShape]}
+          <ClearShapeComponent
+            clearOffsetX={clearOffsetX}
+            clearOffsetY={clearOffsetY}
+            obstructionRadius={obstructionRadius}
+            readOnly={readOnly}
+            setClearOffsetX={setClearOffsetX}
+            setClearOffsetY={setClearOffsetY}
+            setObstructionRadius={setObstructionRadius}
+            clearError={clearError}
+          />
         </section>
 
         <section className="space-y-3">
@@ -280,11 +361,20 @@ export function ApertureModal({
               ]}
               onChange={(event) => {
                 setEdgeShape(event.target.value as EdgeApertureShape);
-                setError(undefined);
+                clearError();
               }}
             />
           </div>
-          {edgeShapeContent[edgeShape]}
+          <EdgeShapeComponent
+            edgeRadius={edgeRadius}
+            edgeOffsetX={edgeOffsetX}
+            edgeOffsetY={edgeOffsetY}
+            readOnly={readOnly}
+            setEdgeRadius={setEdgeRadius}
+            setEdgeOffsetX={setEdgeOffsetX}
+            setEdgeOffsetY={setEdgeOffsetY}
+            clearError={clearError}
+          />
         </section>
       </div>
       {error === undefined ? undefined : (

@@ -1,8 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import fs from "node:fs";
+import path from "node:path";
 import { ApertureModal } from "../";
 
 describe("ApertureModal", () => {
+  it("declares aperture shape component maps at module scope before ApertureModal", () => {
+    const source = fs.readFileSync(path.join(__dirname, "../ApertureModal.tsx"), "utf8");
+    const modalDeclarationIndex = source.indexOf("export function ApertureModal");
+    const clearMapIndex = source.indexOf("const CLEAR_APERTURE_SHAPE_COMPONENTS");
+    const edgeMapIndex = source.indexOf("const EDGE_APERTURE_SHAPE_COMPONENTS");
+
+    expect(clearMapIndex).toBeGreaterThan(-1);
+    expect(edgeMapIndex).toBeGreaterThan(-1);
+    expect(clearMapIndex).toBeLessThan(modalDeclarationIndex);
+    expect(edgeMapIndex).toBeLessThan(modalDeclarationIndex);
+  });
+
   it("does not render when closed", () => {
     render(
       <ApertureModal

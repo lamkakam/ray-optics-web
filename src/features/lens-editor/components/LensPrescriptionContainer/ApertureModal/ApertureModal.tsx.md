@@ -27,4 +27,4 @@ Modal for editing or inspecting a surface's aperture configuration.
 - Annular central obstruction radius must parse to a finite number greater than `0` and smaller than `semiDiameter`; invalid values keep the modal open and show an inline error.
 - Circular edge radius must parse to a finite number greater than `0`; invalid values keep the modal open and show an inline error.
 - Circular offsets must parse to finite signed numbers; `0` and negative values are accepted.
-- Shape-specific content is selected through two `Record<shape, React.ReactNode>` maps.
+- Shape-specific content is selected through two module-scope component maps: one for clear aperture shapes and one for edge aperture shapes.
