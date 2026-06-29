@@ -15,6 +15,9 @@ Modal for editing or inspecting a surface's aperture configuration.
 ## Behavior
 
 - Renders Clear Aperture and Edge Aperture as two sections.
+- `ApertureModal` owns the modal shell, footer, inline error display, close/cancel handling, and confirm orchestration.
+- Clear Aperture draft state lives in `ClearApertureSection`, including selected shape, signed X/Y offsets, and annular central obstruction radius.
+- Edge Aperture draft state lives in `EdgeApertureSection`, including selected shape, circular radius, and signed X/Y offsets.
 - Clear Aperture shape supports `Circular` and `Annular`; outer radius is derived from `semiDiameter`, while signed X/Y offsets are stored on `clear_aperture`.
 - Edge Aperture shape supports `Default (Follow Clear Aperture)` and `Circular`.
 - Clear `Circular` shows Offset X and Offset Y text inputs.
@@ -24,7 +27,8 @@ Modal for editing or inspecting a surface's aperture configuration.
 - Confirm writes circular or annular `clear_aperture` based on the selected clear aperture shape.
 - Confirm writes `edge_aperture: { shape: "circular", radius, offsetX, offsetY }` only when Edge Aperture is Circular.
 - Confirm clears `edge_aperture` by returning `undefined` when Edge Aperture is Default.
+- On confirm, `ApertureModal` reads clear and edge values through internal section refs. Clear Aperture validates first; Edge Aperture validates only after Clear Aperture succeeds.
 - Annular central obstruction radius must parse to a finite number greater than `0` and smaller than `semiDiameter`; invalid values keep the modal open and show an inline error.
 - Circular edge radius must parse to a finite number greater than `0`; invalid values keep the modal open and show an inline error.
 - Circular offsets must parse to finite signed numbers; `0` and negative values are accepted.
-- Shape-specific content is selected through two module-scope component maps: one for clear aperture shapes and one for edge aperture shapes.
+- Shape-specific field content is selected through two module-scope component maps: one for clear aperture shapes and one for edge aperture shapes.

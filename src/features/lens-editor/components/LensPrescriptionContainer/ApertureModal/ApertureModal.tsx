@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import type React from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";
@@ -12,6 +12,8 @@ import type { ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalMode
 type ClearApertureShape = ClearAperture["shape"];
 type EdgeApertureShape = "default" | "circular";
 type StringSetter = React.Dispatch<React.SetStateAction<string>>;
+type ClearApertureSectionValue = { readonly value: ClearAperture } | { readonly error: string };
+type EdgeApertureSectionValue = { readonly value: EdgeAperture | undefined } | { readonly error: string };
 
 interface ApertureConfirmValue {
   readonly clear_aperture: ClearAperture;
@@ -28,18 +30,42 @@ interface ApertureModalProps {
   readonly onClose: () => void;
 }
 
-interface ClearApertureShapeComponentProps {
-  readonly clearOffsetX: string;
-  readonly clearOffsetY: string;
-  readonly obstructionRadius: string;
+interface ClearApertureSectionHandle {
+  readonly getValue: () => ClearApertureSectionValue;
+}
+
+interface EdgeApertureSectionHandle {
+  readonly getValue: () => EdgeApertureSectionValue;
+}
+
+interface ClearApertureSectionProps {
+  readonly semiDiameter: number;
+  readonly initialClearAperture: ClearAperture | undefined;
   readonly readOnly: boolean;
-  readonly setClearOffsetX: StringSetter;
-  readonly setClearOffsetY: StringSetter;
-  readonly setObstructionRadius: StringSetter;
   readonly clearError: () => void;
 }
 
-interface EdgeApertureShapeComponentProps {
+interface EdgeApertureSectionProps {
+  readonly initialEdgeAperture: EdgeAperture | undefined;
+  readonly readOnly: boolean;
+  readonly clearError: () => void;
+}
+
+interface ClearCircularFieldsProps {
+  readonly clearOffsetX: string;
+  readonly clearOffsetY: string;
+  readonly readOnly: boolean;
+  readonly setClearOffsetX: StringSetter;
+  readonly setClearOffsetY: StringSetter;
+  readonly clearError: () => void;
+}
+
+interface ClearAnnularFieldsProps extends ClearCircularFieldsProps {
+  readonly obstructionRadius: string;
+  readonly setObstructionRadius: StringSetter;
+}
+
+interface EdgeCircularFieldsProps {
   readonly edgeRadius: string;
   readonly edgeOffsetX: string;
   readonly edgeOffsetY: string;
@@ -68,7 +94,7 @@ function ClearCircularFields({
   setClearOffsetX,
   setClearOffsetY,
   clearError,
-}: ClearApertureShapeComponentProps) {
+}: ClearCircularFieldsProps) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <div>
@@ -103,7 +129,7 @@ function ClearCircularFields({
   );
 }
 
-function ClearAnnularFields(props: ClearApertureShapeComponentProps) {
+function ClearAnnularFields(props: ClearAnnularFieldsProps) {
   const {
     obstructionRadius,
     readOnly,
@@ -145,7 +171,7 @@ function EdgeCircularFields({
   setEdgeOffsetX,
   setEdgeOffsetY,
   clearError,
-}: EdgeApertureShapeComponentProps) {
+}: EdgeCircularFieldsProps) {
   return (
     <div className="space-y-3">
       <div>
@@ -196,21 +222,182 @@ function EdgeCircularFields({
   );
 }
 
-const CLEAR_APERTURE_SHAPE_COMPONENTS: Record<
-  ClearApertureShape,
-  React.ComponentType<ClearApertureShapeComponentProps>
-> = {
+const CLEAR_APERTURE_SHAPE_COMPONENTS = {
   circular: ClearCircularFields,
   annular: ClearAnnularFields,
+} satisfies {
+  readonly circular: React.ComponentType<ClearCircularFieldsProps>;
+  readonly annular: React.ComponentType<ClearAnnularFieldsProps>;
 };
 
-const EDGE_APERTURE_SHAPE_COMPONENTS: Record<
-  EdgeApertureShape,
-  React.ComponentType<EdgeApertureShapeComponentProps>
-> = {
+const EDGE_APERTURE_SHAPE_COMPONENTS = {
   default: EdgeDefaultFields,
   circular: EdgeCircularFields,
+} satisfies {
+  readonly default: React.ComponentType;
+  readonly circular: React.ComponentType<EdgeCircularFieldsProps>;
 };
+
+const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertureSectionProps>(function ClearApertureSection(
+  {
+    semiDiameter,
+    initialClearAperture,
+    readOnly,
+    clearError,
+  },
+  ref,
+) {
+  const [clearShape, setClearShape] = useState<ClearApertureShape>(initialClearAperture?.shape ?? "circular");
+  const [obstructionRadius, setObstructionRadius] = useState(String(
+    initialClearAperture?.shape === "annular" ? initialClearAperture.obstructionRadius : semiDiameter / 2,
+  ));
+  const [clearOffsetX, setClearOffsetX] = useState(String(initialClearAperture?.offsetX ?? 0));
+  const [clearOffsetY, setClearOffsetY] = useState(String(initialClearAperture?.offsetY ?? 0));
+
+  useImperativeHandle(ref, () => ({
+    getValue: () => {
+      const parsedClearOffsetX = parseFiniteNumber(clearOffsetX);
+      const parsedClearOffsetY = parseFiniteNumber(clearOffsetY);
+      if (parsedClearOffsetX === undefined || parsedClearOffsetY === undefined) {
+        return { error: "Offsets must be finite numbers." };
+      }
+
+      if (clearShape === "annular") {
+        const parsedObstructionRadius = parsePositiveFiniteNumber(obstructionRadius);
+        if (parsedObstructionRadius === undefined || parsedObstructionRadius >= semiDiameter) {
+          return { error: "Central obstruction radius must be greater than 0 and smaller than the clear aperture radius." };
+        }
+
+        return {
+          value: {
+            shape: "annular",
+            obstructionRadius: parsedObstructionRadius,
+            offsetX: parsedClearOffsetX,
+            offsetY: parsedClearOffsetY,
+          },
+        };
+      }
+
+      return { value: { shape: "circular", offsetX: parsedClearOffsetX, offsetY: parsedClearOffsetY } };
+    },
+  }), [clearOffsetX, clearOffsetY, clearShape, obstructionRadius, semiDiameter]);
+
+  return (
+    <section className="space-y-3">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Clear Aperture</h3>
+      <div>
+        <Label htmlFor="clear-aperture-shape">Aperture Shape</Label>
+        <Select
+          id="clear-aperture-shape"
+          aria-label="Clear Aperture Shape"
+          value={clearShape}
+          disabled={readOnly}
+          options={[
+            { value: "circular", label: "Circular" },
+            { value: "annular", label: "Annular" },
+          ]}
+          onChange={(event) => {
+            setClearShape(event.target.value as ClearApertureShape);
+            clearError();
+          }}
+        />
+      </div>
+      {clearShape === "annular" ? (
+        <CLEAR_APERTURE_SHAPE_COMPONENTS.annular
+          clearOffsetX={clearOffsetX}
+          clearOffsetY={clearOffsetY}
+          obstructionRadius={obstructionRadius}
+          readOnly={readOnly}
+          setClearOffsetX={setClearOffsetX}
+          setClearOffsetY={setClearOffsetY}
+          setObstructionRadius={setObstructionRadius}
+          clearError={clearError}
+        />
+      ) : (
+        <CLEAR_APERTURE_SHAPE_COMPONENTS.circular
+          clearOffsetX={clearOffsetX}
+          clearOffsetY={clearOffsetY}
+          readOnly={readOnly}
+          setClearOffsetX={setClearOffsetX}
+          setClearOffsetY={setClearOffsetY}
+          clearError={clearError}
+        />
+      )}
+    </section>
+  );
+});
+
+const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSectionProps>(function EdgeApertureSection(
+  {
+    initialEdgeAperture,
+    readOnly,
+    clearError,
+  },
+  ref,
+) {
+  const [edgeShape, setEdgeShape] = useState<EdgeApertureShape>(initialEdgeAperture?.shape ?? "default");
+  const [edgeRadius, setEdgeRadius] = useState(String(initialEdgeAperture?.radius ?? 1));
+  const [edgeOffsetX, setEdgeOffsetX] = useState(String(initialEdgeAperture?.offsetX ?? 0));
+  const [edgeOffsetY, setEdgeOffsetY] = useState(String(initialEdgeAperture?.offsetY ?? 0));
+
+  useImperativeHandle(ref, () => ({
+    getValue: () => {
+      if (edgeShape === "default") {
+        return { value: undefined };
+      }
+
+      const radius = parsePositiveFiniteNumber(edgeRadius);
+      if (radius === undefined) {
+        return { error: "Radius must be greater than 0." };
+      }
+
+      const parsedEdgeOffsetX = parseFiniteNumber(edgeOffsetX);
+      const parsedEdgeOffsetY = parseFiniteNumber(edgeOffsetY);
+      if (parsedEdgeOffsetX === undefined || parsedEdgeOffsetY === undefined) {
+        return { error: "Offsets must be finite numbers." };
+      }
+
+      return { value: { shape: "circular", radius, offsetX: parsedEdgeOffsetX, offsetY: parsedEdgeOffsetY } };
+    },
+  }), [edgeOffsetX, edgeOffsetY, edgeRadius, edgeShape]);
+
+  return (
+    <section className="space-y-3">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Edge Aperture</h3>
+      <div>
+        <Label htmlFor="edge-aperture-shape">Aperture Shape</Label>
+        <Select
+          id="edge-aperture-shape"
+          aria-label="Edge Aperture Shape"
+          value={edgeShape}
+          disabled={readOnly}
+          options={[
+            { value: "default", label: "Default (Follow Clear Aperture)" },
+            { value: "circular", label: "Circular" },
+          ]}
+          onChange={(event) => {
+            setEdgeShape(event.target.value as EdgeApertureShape);
+            clearError();
+          }}
+        />
+      </div>
+      {edgeShape === "circular" ? (
+        <EDGE_APERTURE_SHAPE_COMPONENTS.circular
+          edgeRadius={edgeRadius}
+          edgeOffsetX={edgeOffsetX}
+          edgeOffsetY={edgeOffsetY}
+          readOnly={readOnly}
+          setEdgeRadius={setEdgeRadius}
+          setEdgeOffsetX={setEdgeOffsetX}
+          setEdgeOffsetY={setEdgeOffsetY}
+          clearError={clearError}
+        />
+      ) : (
+        <EDGE_APERTURE_SHAPE_COMPONENTS.default />
+      )}
+    </section>
+  );
+});
 
 export function ApertureModal({
   isOpen,
@@ -221,74 +408,35 @@ export function ApertureModal({
   onConfirm,
   onClose,
 }: ApertureModalProps) {
-  const [clearShape, setClearShape] = useState<ClearApertureShape>(initialClearAperture?.shape ?? "circular");
-  const [edgeShape, setEdgeShape] = useState<EdgeApertureShape>(initialEdgeAperture?.shape ?? "default");
-  const [edgeRadius, setEdgeRadius] = useState(String(initialEdgeAperture?.radius ?? 1));
-  const [obstructionRadius, setObstructionRadius] = useState(String(
-    initialClearAperture?.shape === "annular" ? initialClearAperture.obstructionRadius : semiDiameter / 2,
-  ));
-  const [clearOffsetX, setClearOffsetX] = useState(String(initialClearAperture?.offsetX ?? 0));
-  const [clearOffsetY, setClearOffsetY] = useState(String(initialClearAperture?.offsetY ?? 0));
-  const [edgeOffsetX, setEdgeOffsetX] = useState(String(initialEdgeAperture?.offsetX ?? 0));
-  const [edgeOffsetY, setEdgeOffsetY] = useState(String(initialEdgeAperture?.offsetY ?? 0));
+  const clearSectionRef = useRef<ClearApertureSectionHandle>(null);
+  const edgeSectionRef = useRef<EdgeApertureSectionHandle>(null);
   const [error, setError] = useState<string | undefined>(undefined);
-  const ClearShapeComponent = CLEAR_APERTURE_SHAPE_COMPONENTS[clearShape];
-  const EdgeShapeComponent = EDGE_APERTURE_SHAPE_COMPONENTS[edgeShape];
   const clearError = () => {
     setError(undefined);
   };
 
   const handleConfirm = () => {
-    const parsedClearOffsetX = parseFiniteNumber(clearOffsetX);
-    const parsedClearOffsetY = parseFiniteNumber(clearOffsetY);
-    if (parsedClearOffsetX === undefined || parsedClearOffsetY === undefined) {
-      setError("Offsets must be finite numbers.");
+    const clearResult = clearSectionRef.current?.getValue();
+    if (clearResult === undefined) {
+      return;
+    }
+    if ("error" in clearResult) {
+      setError(clearResult.error);
       return;
     }
 
-    const clear_aperture: ClearAperture | undefined = clearShape === "annular"
-      ? (() => {
-          const parsedObstructionRadius = parsePositiveFiniteNumber(obstructionRadius);
-          if (parsedObstructionRadius === undefined || parsedObstructionRadius >= semiDiameter) {
-            setError("Central obstruction radius must be greater than 0 and smaller than the clear aperture radius.");
-            return undefined;
-          }
-          return {
-            shape: "annular",
-            obstructionRadius: parsedObstructionRadius,
-            offsetX: parsedClearOffsetX,
-            offsetY: parsedClearOffsetY,
-          };
-        })()
-      : { shape: "circular", offsetX: parsedClearOffsetX, offsetY: parsedClearOffsetY };
-    if (clear_aperture === undefined) {
+    const edgeResult = edgeSectionRef.current?.getValue();
+    if (edgeResult === undefined) {
       return;
     }
-
-    if (edgeShape === "default") {
-      onConfirm({
-        clear_aperture,
-        edge_aperture: undefined,
-      });
-      return;
-    }
-
-    const radius = parsePositiveFiniteNumber(edgeRadius);
-    if (radius === undefined) {
-      setError("Radius must be greater than 0.");
-      return;
-    }
-
-    const parsedEdgeOffsetX = parseFiniteNumber(edgeOffsetX);
-    const parsedEdgeOffsetY = parseFiniteNumber(edgeOffsetY);
-    if (parsedEdgeOffsetX === undefined || parsedEdgeOffsetY === undefined) {
-      setError("Offsets must be finite numbers.");
+    if ("error" in edgeResult) {
+      setError(edgeResult.error);
       return;
     }
 
     onConfirm({
-      clear_aperture,
-      edge_aperture: { shape: "circular", radius, offsetX: parsedEdgeOffsetX, offsetY: parsedEdgeOffsetY },
+      clear_aperture: clearResult.value,
+      edge_aperture: edgeResult.value,
     });
   };
 
@@ -315,67 +463,19 @@ export function ApertureModal({
       )}
     >
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Clear Aperture</h3>
-          <div>
-            <Label htmlFor="clear-aperture-shape">Aperture Shape</Label>
-            <Select
-              id="clear-aperture-shape"
-              aria-label="Clear Aperture Shape"
-              value={clearShape}
-              disabled={readOnly}
-              options={[
-                { value: "circular", label: "Circular" },
-                { value: "annular", label: "Annular" },
-              ]}
-              onChange={(event) => {
-                setClearShape(event.target.value as ClearApertureShape);
-                clearError();
-              }}
-            />
-          </div>
-          <ClearShapeComponent
-            clearOffsetX={clearOffsetX}
-            clearOffsetY={clearOffsetY}
-            obstructionRadius={obstructionRadius}
-            readOnly={readOnly}
-            setClearOffsetX={setClearOffsetX}
-            setClearOffsetY={setClearOffsetY}
-            setObstructionRadius={setObstructionRadius}
-            clearError={clearError}
-          />
-        </section>
-
-        <section className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Edge Aperture</h3>
-          <div>
-            <Label htmlFor="edge-aperture-shape">Aperture Shape</Label>
-            <Select
-              id="edge-aperture-shape"
-              aria-label="Edge Aperture Shape"
-              value={edgeShape}
-              disabled={readOnly}
-              options={[
-                { value: "default", label: "Default (Follow Clear Aperture)" },
-                { value: "circular", label: "Circular" },
-              ]}
-              onChange={(event) => {
-                setEdgeShape(event.target.value as EdgeApertureShape);
-                clearError();
-              }}
-            />
-          </div>
-          <EdgeShapeComponent
-            edgeRadius={edgeRadius}
-            edgeOffsetX={edgeOffsetX}
-            edgeOffsetY={edgeOffsetY}
-            readOnly={readOnly}
-            setEdgeRadius={setEdgeRadius}
-            setEdgeOffsetX={setEdgeOffsetX}
-            setEdgeOffsetY={setEdgeOffsetY}
-            clearError={clearError}
-          />
-        </section>
+        <ClearApertureSection
+          ref={clearSectionRef}
+          semiDiameter={semiDiameter}
+          initialClearAperture={initialClearAperture}
+          readOnly={readOnly}
+          clearError={clearError}
+        />
+        <EdgeApertureSection
+          ref={edgeSectionRef}
+          initialEdgeAperture={initialEdgeAperture}
+          readOnly={readOnly}
+          clearError={clearError}
+        />
       </div>
       {error === undefined ? undefined : (
         <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>

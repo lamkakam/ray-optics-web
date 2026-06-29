@@ -17,6 +17,20 @@ describe("ApertureModal", () => {
     expect(edgeMapIndex).toBeLessThan(modalDeclarationIndex);
   });
 
+  it("keeps aperture draft state inside clear and edge section components", () => {
+    const source = fs.readFileSync(path.join(__dirname, "../ApertureModal.tsx"), "utf8");
+    const clearSectionIndex = source.indexOf("const ClearApertureSection");
+    const edgeSectionIndex = source.indexOf("const EdgeApertureSection");
+    const modalDeclarationIndex = source.indexOf("export function ApertureModal");
+    const modalSource = source.slice(modalDeclarationIndex);
+
+    expect(clearSectionIndex).toBeGreaterThan(-1);
+    expect(edgeSectionIndex).toBeGreaterThan(-1);
+    expect(clearSectionIndex).toBeLessThan(modalDeclarationIndex);
+    expect(edgeSectionIndex).toBeLessThan(modalDeclarationIndex);
+    expect(modalSource).not.toMatch(/\[\s*(clearShape|edgeShape|clearOffsetX|clearOffsetY|edgeRadius|edgeOffsetX|edgeOffsetY|obstructionRadius)\s*,/);
+  });
+
   it("does not render when closed", () => {
     render(
       <ApertureModal
