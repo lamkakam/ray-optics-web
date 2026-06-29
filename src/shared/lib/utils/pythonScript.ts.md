@@ -51,6 +51,7 @@ export function buildExportScript(opticalModel: OpticalModel): string;
 9. Calls `opm.update_model()` then `set_vig(opm)`.
 - The object-side setup is isolated in its own builder phase so future object-gap mutations such as `sm.gaps[0].medium = ...` can be added without changing surface-step logic.
 - The surface-step structure is intentionally extensible so future interface mutations such as `sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(...)` can be appended alongside asphere and decenter lines for the same surface.
+- Clear and edge aperture assignments are formatted through dedicated helpers. The clear-aperture helper accepts an optional aperture and defaults omitted offsets to `0`, while the edge-aperture helper requires a present edge aperture before reading its radius and offsets.
 
 ### `buildScript(model, computation)`
 

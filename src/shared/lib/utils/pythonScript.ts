@@ -1,5 +1,5 @@
 
-import type { OpticalModel, AsphericalPolynomialCoeffs } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel, AsphericalPolynomialCoeffs, ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalModel";
 import { builtInSpecialMaterial, nonBuiltInSpecialMaterial } from "./specialMaterials";
 
 type PythonLine = string;
@@ -9,6 +9,7 @@ type SurfaceBuildStep = {
   addSurfaceLine: PythonLine;
   mutationLines: SurfaceMutationLine[];
 };
+type Surface = OpticalModel["surfaces"][number];
 
 function formattedMedium(medium: string, glassManufacturer: string): { medium: string | number, glassManufacturer: string | number } {
   const refractiveIdxForModalGlass = parseFloat(medium);
@@ -135,7 +136,37 @@ function formatCircularApertureAssignment(
   return `${targetExpr}.${apertureKind} = [${apertureClass}(radius=${radius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
 }
 
-function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBuildStep {
+function formatClearApertureAssignment(
+  targetExpr: string,
+  semiDiameter: number,
+  clearAperture: ClearAperture | undefined,
+): PythonLine {
+  const offsetX = clearAperture === undefined ? 0 : clearAperture.offsetX;
+  const offsetY = clearAperture === undefined ? 0 : clearAperture.offsetY;
+
+  return formatCircularApertureAssignment(
+    targetExpr,
+    "clear_apertures",
+    semiDiameter,
+    offsetX,
+    offsetY,
+  );
+}
+
+function formatEdgeApertureAssignment(
+  targetExpr: string,
+  edgeAperture: EdgeAperture,
+): PythonLine {
+  return formatCircularApertureAssignment(
+    targetExpr,
+    "edge_apertures",
+    edgeAperture.radius,
+    edgeAperture.offsetX,
+    edgeAperture.offsetY,
+  );
+}
+
+function buildSurfaceStep(surface: Surface): SurfaceBuildStep {
   const {
     label,
     curvatureRadius,
@@ -154,23 +185,11 @@ function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBui
   const currentSurfaceExpr = "sm.ifcs[sm.cur_surface]";
 
   if (semiDiameter > 0) {
-    mutationLines.push(formatCircularApertureAssignment(
-      currentSurfaceExpr,
-      "clear_apertures",
-      semiDiameter,
-      clear_aperture?.offsetX ?? 0,
-      clear_aperture?.offsetY ?? 0,
-    ));
+    mutationLines.push(formatClearApertureAssignment(currentSurfaceExpr, semiDiameter, clear_aperture));
   }
 
   if (edge_aperture !== undefined) {
-    mutationLines.push(formatCircularApertureAssignment(
-      currentSurfaceExpr,
-      "edge_apertures",
-      edge_aperture.radius,
-      edge_aperture.offsetX,
-      edge_aperture.offsetY,
-    ));
+    mutationLines.push(formatEdgeApertureAssignment(currentSurfaceExpr, edge_aperture));
   }
 
   if (aspherical !== undefined) {
