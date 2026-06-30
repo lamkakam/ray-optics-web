@@ -381,6 +381,54 @@ class OffsetRotatedRectangular(Rectangular):
             self.y_offset + x * sin_angle + y * cos_angle,
         ]
 
+    def _rotated_corner_vectors(self, x_half_width, y_half_width):
+        angle = radians(self.rotation)
+        cos_angle = cos(angle)
+        sin_angle = sin(angle)
+        return [
+            (
+                rel_x * x_half_width * cos_angle - rel_y * y_half_width * sin_angle,
+                rel_x * x_half_width * sin_angle + rel_y * y_half_width * cos_angle,
+            )
+            for rel_x in (-1, 1)
+            for rel_y in (-1, 1)
+        ]
+
+    def set_dimension(self, x, y):
+        if x != y:
+            self.x_half_width = abs(x)
+            self.y_half_width = abs(y)
+            return
+
+        target = abs(x)
+        x_half_width = abs(self.x_half_width)
+        y_half_width = abs(self.y_half_width)
+        corner_radius_sq = x_half_width * x_half_width + y_half_width * y_half_width
+        if corner_radius_sq == 0:
+            self.x_half_width = 0
+            self.y_half_width = 0
+            return
+
+        offset_radius_sq = self.x_offset * self.x_offset + self.y_offset * self.y_offset
+        if target * target <= offset_radius_sq:
+            scale = 0
+        else:
+            max_projection = max(
+                self.x_offset * corner_x + self.y_offset * corner_y
+                for corner_x, corner_y in self._rotated_corner_vectors(
+                    x_half_width,
+                    y_half_width,
+                )
+            )
+            discriminant = max_projection * max_projection + corner_radius_sq * (
+                target * target - offset_radius_sq
+            )
+            scale = (-max_projection + sqrt(max(discriminant, 0))) / corner_radius_sq
+
+        scale = max(scale, 0)
+        self.x_half_width = x_half_width * scale
+        self.y_half_width = y_half_width * scale
+
     def point_inside(self, x, y, fuzz=1e-5):
         local_x, local_y = self._to_local(x, y)
         return (

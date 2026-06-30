@@ -74,7 +74,7 @@ The last expression in the combined script is the return value of `runPythonAsyn
 Returns a string with:
 > **Warning**: Not for execution inside the Pyodide worker. This script is intended for copy-paste into a Jupyter / RayOptics notebook environment.
 
-1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface` (`DecenterData`, `Circular`, `Aperture`, `Rectangular`), `math.sqrt`, and `opticalglass.rindexinfo`. It defines standalone `Annular(Aperture)`, `OffsetCircular(Circular)`, and `OffsetRotatedRectangular(Rectangular)` classes for copied notebook use and creates `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`.
+1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface` (`DecenterData`, `Circular`, `Aperture`, `Rectangular`), `math.cos`, `math.radians`, `math.sin`, `math.sqrt`, and `opticalglass.rindexinfo`. It defines standalone `Annular(Aperture)`, `OffsetCircular(Circular)`, and `OffsetRotatedRectangular(Rectangular)` classes for copied notebook use and creates `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`.
 2. The full output of `buildOpticalModelScript(model)`.
 3. Calls to `sm.list_model()`, `pm.first_order_data()`, and `plt.figure(FigureClass=InteractiveLayout, ...)`.
 
@@ -84,6 +84,7 @@ The import preamble is built separately from the model-construction lines so fut
 
 - Semi-diameter is never emitted as an `sd=` argument. Positive semi-diameters are emitted as explicit clear aperture assignments after each surface is added, with clear aperture offsets when present and `0, 0` otherwise. Circular centered apertures use RayOptics `Circular`; nonzero-offset circular apertures use `OffsetCircular`; annular clear apertures use `Annular`; rectangular clear apertures use `OffsetRotatedRectangular` and do not depend on `semiDiameter`.
 - Edge aperture assignments are omitted when `edge_aperture` is unset, which represents the default/follow-clear behavior. Centered edge apertures use `Circular`; nonzero-offset edge apertures use `OffsetCircular`; rectangular edge apertures use `OffsetRotatedRectangular`.
+- Exported `OffsetRotatedRectangular.set_dimension(x, y)` matches the worker helper: non-equal values directly set explicit half widths, while equal values are interpreted as RayOptics auto-aperture radius targets and uniformly scale the existing rectangle so the farthest rotated, offset corner reaches `abs(x)` without changing offsets or rotation.
 - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
 - Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.
 - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.

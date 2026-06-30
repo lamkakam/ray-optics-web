@@ -524,6 +524,9 @@ describe("buildExportScript", () => {
     expect(script).toContain("angle = radians(self.rotation)");
     expect(script).toContain("def point_inside(self, x, y, fuzz=1e-5):");
     expect(script).toContain("def edge_pt_target(self, rel_dir):");
+    expect(script).toMatch(
+      /class OffsetRotatedRectangular\(Rectangular\):[\s\S]*def set_dimension\(self, x, y\):[\s\S]*target = abs\(x\)[\s\S]*max_projection = max\(/,
+    );
   });
 
   it("defines the water material in the export preamble", () => {
