@@ -21,3 +21,12 @@ class OffsetRotatedRectangular(Rectangular): ...
 - When `set_dimension(x, y)` is called with equal values, it treats `abs(x)` as a target radius from the surface origin to the farthest rotated, offset rectangle corner. It uniformly scales the current half widths so the existing half-width ratio is preserved.
 - Equal-value `set_dimension` computes all four rotated corner vectors and solves for the scale where `max(||offset + scale * corner||)` reaches the target radius. If the target is at or inside the offset radius, the aperture clamps to zero size while leaving offsets and rotation unchanged.
 - `apply_scale_factor(scale_factor)` is inherited from `Rectangular`, which scales offsets and half widths while leaving rotation unchanged.
+
+## Coordinate Convention
+
+- Global coordinates are RayOptics surface coordinates: `x` and `y` are transverse surface coordinates and `z` is the optical axis.
+- `x_offset` and `y_offset` are aperture-center offsets in the RayOptics surface `x` and `y` directions.
+- The rectangle-local frame has its origin at `(x_offset, y_offset)`. Its unrotated local `+x` axis corresponds to `x_half_width`; its unrotated local `+y` axis corresponds to `y_half_width`.
+- `rotation` is an in-plane angle in degrees, measured from the RayOptics surface `+x` axis toward the surface `+y` axis. Equivalently, it is a positive rotation about the surface `+z` axis.
+- This is consistent with RayOptics decenter/tilt coordinates for the surface frame. RayOptics' `DecenterData` uses `dec = [x, y, z]`; its Euler `gamma` is the comparable rotation about `z`. RayOptics applies optical-design sign handling to `alpha` and `beta`, but not to `gamma`.
+- For the usual RayOptics field convention where the meridional plane is the `y-z` plane, surface `x` is the sagittal direction and surface `y` is the tangential/meridional direction.
