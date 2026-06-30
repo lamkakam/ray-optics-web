@@ -17,12 +17,14 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 
 ## Scale Behavior
 
+- Scaleable numeric fields and preservation rules are centralized in `surfaceValueScaling.ts`; this module delegates selected-row scaling and validation numeric collection to that helper.
 - `first` and `last` are selector indices: `0` for Object, `1..n` for surfaces, and `n + 1` for Image.
 - Surface `curvatureRadius`, `thickness`, `semiDiameter`, clear aperture `offsetX`/`offsetY`, annular `obstructionRadius`, rectangular `xHalfWidth`/`yHalfWidth`, edge aperture `radius`, edge aperture `offsetX`/`offsetY`, rectangular edge `xHalfWidth`/`yHalfWidth`, and decenter `offsetX`/`offsetY` are multiplied by `factor`. Rectangular aperture `rotation` is an angle and is not scaled.
 - Image `curvatureRadius` and image decenter offsets are multiplied when Image is in the selected range.
 - Object distance is multiplied only when it is below `1e10`; larger object distances are preserved.
 - Toroid sweep radius is multiplied for `XToroid`/`YToroid`.
 - Radial Polynomial coefficients use orders `1..10`; other coefficient-bearing aspheres use even orders `2..20`. Each coefficient is divided by `factor ** (order - 1)`.
+- Diffraction grating `lpmm` and `order`, conic constants, and decenter angular fields are preserved.
 
 ## Reverse Behavior
 
@@ -49,4 +51,4 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 
 ## Validation
 
-`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check. Scaling is also rejected atomically with a precision-underflow error when any nonzero source numeric value, including an aperture dimension or aspheric coefficient, becomes zero. Source values that are already zero remain valid.
+`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value collected by `surfaceValueScaling.ts` in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check. Scaling is also rejected atomically with a precision-underflow error when any nonzero source numeric value, including an aperture dimension, aspheric coefficient, or preserved dimensionless value, becomes zero. Source values that are already zero remain valid.

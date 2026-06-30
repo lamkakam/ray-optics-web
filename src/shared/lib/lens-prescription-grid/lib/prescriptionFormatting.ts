@@ -1,6 +1,12 @@
-import type { AsphericalType, ClearAperture, DecenterConfig, EdgeAperture } from "@/shared/lib/types/opticalModel";
 import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { IMAGE_ROW_ID, OBJECT_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import {
+  collectSurfaceScalingNumericValues,
+  OBJECT_DISTANCE_INFINITY_THRESHOLD,
+  scaleSurfaceValueRow,
+} from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
+
+export { OBJECT_DISTANCE_INFINITY_THRESHOLD } from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
 
 export interface SurfaceSelectorOption {
   readonly value: number;
@@ -27,7 +33,6 @@ export type FormattingRowsResult =
   | { readonly ok: false; readonly rows: GridRow[]; readonly error: string };
 
 const OBJECT_SELECTOR_INDEX = 0;
-export const OBJECT_DISTANCE_INFINITY_THRESHOLD = 1e10;
 
 interface GapProperties {
   readonly thickness: number;
@@ -115,10 +120,6 @@ function selectorIndexForRow(rows: readonly GridRow[], row: GridRow): number {
   }
 
   return rows.slice(0, rows.indexOf(row) + 1).filter((item) => item.kind === "surface").length;
-}
-
-function scaleNumber(value: number, factor: number): number {
-  return value * factor;
 }
 
 function negateNumber(value: number): number {
@@ -214,112 +215,6 @@ function normalizeReverseRows(rows: readonly GridRow[], { first, last }: Reverse
   };
 }
 
-function scaleAspherical(
-  aspherical: Extract<GridRow, { kind: "surface" }>["aspherical"],
-  factor: number,
-): Extract<GridRow, { kind: "surface" }>["aspherical"] {
-  if (aspherical === undefined || aspherical.kind === "Conic") {
-    return aspherical;
-  }
-
-  const scaleCoefficient = (coefficient: number, index: number, kind: AsphericalType): number => {
-    const order = kind === "RadialPolynomial" ? index + 1 : (index + 1) * 2;
-    return coefficient / (factor ** (order - 1));
-  };
-
-  if (aspherical.kind === "XToroid" || aspherical.kind === "YToroid") {
-    return {
-      ...aspherical,
-      toricSweepRadiusOfCurvature: scaleNumber(aspherical.toricSweepRadiusOfCurvature, factor),
-      polynomialCoefficients: aspherical.polynomialCoefficients.map((coefficient, index) =>
-        scaleCoefficient(coefficient, index, aspherical.kind)
-      ),
-    };
-  }
-
-  return {
-    ...aspherical,
-    polynomialCoefficients: aspherical.polynomialCoefficients.map((coefficient, index) =>
-      scaleCoefficient(coefficient, index, aspherical.kind)
-    ),
-  };
-}
-
-function scaleDecenter(
-  decenter: DecenterConfig | undefined,
-  factor: number,
-): DecenterConfig | undefined {
-  if (decenter === undefined) {
-    return undefined;
-  }
-
-  return {
-    ...decenter,
-    offsetX: scaleNumber(decenter.offsetX, factor),
-    offsetY: scaleNumber(decenter.offsetY, factor),
-  };
-}
-
-function scaleClearAperture(
-  aperture: ClearAperture | undefined,
-  factor: number,
-): ClearAperture | undefined {
-  if (aperture === undefined) {
-    return undefined;
-  }
-
-  if (aperture.shape === "annular") {
-    return {
-      ...aperture,
-      obstructionRadius: scaleNumber(aperture.obstructionRadius, factor),
-      offsetX: scaleNumber(aperture.offsetX, factor),
-      offsetY: scaleNumber(aperture.offsetY, factor),
-    };
-  }
-
-  if (aperture.shape === "rectangular") {
-    return {
-      ...aperture,
-      xHalfWidth: scaleNumber(aperture.xHalfWidth, factor),
-      yHalfWidth: scaleNumber(aperture.yHalfWidth, factor),
-      offsetX: scaleNumber(aperture.offsetX, factor),
-      offsetY: scaleNumber(aperture.offsetY, factor),
-    };
-  }
-
-  return {
-    ...aperture,
-    offsetX: scaleNumber(aperture.offsetX, factor),
-    offsetY: scaleNumber(aperture.offsetY, factor),
-  };
-}
-
-function scaleEdgeAperture(
-  aperture: EdgeAperture | undefined,
-  factor: number,
-): EdgeAperture | undefined {
-  if (aperture === undefined) {
-    return undefined;
-  }
-
-  if (aperture.shape === "rectangular") {
-    return {
-      ...aperture,
-      xHalfWidth: scaleNumber(aperture.xHalfWidth, factor),
-      yHalfWidth: scaleNumber(aperture.yHalfWidth, factor),
-      offsetX: scaleNumber(aperture.offsetX, factor),
-      offsetY: scaleNumber(aperture.offsetY, factor),
-    };
-  }
-
-  return {
-    ...aperture,
-    radius: scaleNumber(aperture.radius, factor),
-    offsetX: scaleNumber(aperture.offsetX, factor),
-    offsetY: scaleNumber(aperture.offsetY, factor),
-  };
-}
-
 export function scaleRows(rows: readonly GridRow[], { first, last, factor }: ScaleRowsOptions): GridRow[] {
   return rows.map((row) => {
     const selectorIndex = selectorIndexForRow(rows, row);
@@ -327,36 +222,7 @@ export function scaleRows(rows: readonly GridRow[], { first, last, factor }: Sca
       return row;
     }
 
-    if (row.kind === "object") {
-      return {
-        ...row,
-        objectDistance: row.objectDistance < OBJECT_DISTANCE_INFINITY_THRESHOLD
-          ? scaleNumber(row.objectDistance, factor)
-          : row.objectDistance,
-      };
-    }
-
-    if (row.kind === "image") {
-      return {
-        ...row,
-        curvatureRadius: scaleNumber(row.curvatureRadius, factor),
-        decenter: scaleDecenter(row.decenter, factor),
-      };
-    }
-
-    const scaledClearAperture = scaleClearAperture(row.clear_aperture, factor);
-    const scaledEdgeAperture = scaleEdgeAperture(row.edge_aperture, factor);
-
-    return {
-      ...row,
-      curvatureRadius: scaleNumber(row.curvatureRadius, factor),
-      thickness: scaleNumber(row.thickness, factor),
-      semiDiameter: scaleNumber(row.semiDiameter, factor),
-      ...(scaledClearAperture !== undefined ? { clear_aperture: scaledClearAperture } : {}),
-      ...(scaledEdgeAperture !== undefined ? { edge_aperture: scaledEdgeAperture } : {}),
-      aspherical: scaleAspherical(row.aspherical, factor),
-      decenter: scaleDecenter(row.decenter, factor),
-    };
+    return scaleSurfaceValueRow(row, factor);
   });
 }
 
@@ -503,67 +369,16 @@ function isFiniteNumber(value: number): boolean {
   return Number.isFinite(value);
 }
 
-function numericValues(row: GridRow): number[] {
-  if (row.kind === "object") {
-    return [row.objectDistance];
-  }
-
-  const values = [row.curvatureRadius];
-  if (row.decenter !== undefined) {
-    values.push(row.decenter.alpha, row.decenter.beta, row.decenter.gamma, row.decenter.offsetX, row.decenter.offsetY);
-  }
-
-  if (row.kind === "surface") {
-    values.push(row.thickness, row.semiDiameter);
-    if (row.clear_aperture !== undefined) {
-      values.push(row.clear_aperture.offsetX, row.clear_aperture.offsetY);
-      if (row.clear_aperture.shape === "annular") {
-        values.push(row.clear_aperture.obstructionRadius);
-      }
-      if (row.clear_aperture.shape === "rectangular") {
-        values.push(row.clear_aperture.xHalfWidth, row.clear_aperture.yHalfWidth, row.clear_aperture.rotation);
-      }
-    }
-    if (row.edge_aperture !== undefined) {
-      if (row.edge_aperture.shape === "rectangular") {
-        values.push(
-          row.edge_aperture.xHalfWidth,
-          row.edge_aperture.yHalfWidth,
-          row.edge_aperture.rotation,
-          row.edge_aperture.offsetX,
-          row.edge_aperture.offsetY,
-        );
-      } else {
-        values.push(row.edge_aperture.radius, row.edge_aperture.offsetX, row.edge_aperture.offsetY);
-      }
-    }
-    if (row.aspherical !== undefined) {
-      values.push(row.aspherical.conicConstant);
-      if (row.aspherical.kind !== "Conic") {
-        values.push(...row.aspherical.polynomialCoefficients);
-      }
-      if (row.aspherical.kind === "XToroid" || row.aspherical.kind === "YToroid") {
-        values.push(row.aspherical.toricSweepRadiusOfCurvature);
-      }
-    }
-    if (row.diffractionGrating !== undefined) {
-      values.push(row.diffractionGrating.lpmm, row.diffractionGrating.order);
-    }
-  }
-
-  return values;
-}
-
 function validateRows(rows: readonly GridRow[], sourceRows?: readonly GridRow[]): string | undefined {
-  const invalidValue = rows.flatMap((row) => numericValues(row)).find((value) => !isFiniteNumber(value));
+  const invalidValue = rows.flatMap((row) => collectSurfaceScalingNumericValues(row)).find((value) => !isFiniteNumber(value));
   if (invalidValue !== undefined) {
     return "Formatting was not applied because one or more transformed numeric values are invalid or exceed JavaScript finite number limits.";
   }
 
   if (sourceRows !== undefined) {
     const underflowed = rows.some((row, rowIndex) => {
-      const sourceValues = numericValues(sourceRows[rowIndex]);
-      return numericValues(row).some((value, valueIndex) => value === 0 && sourceValues[valueIndex] !== 0);
+      const sourceValues = collectSurfaceScalingNumericValues(sourceRows[rowIndex]);
+      return collectSurfaceScalingNumericValues(row).some((value, valueIndex) => value === 0 && sourceValues[valueIndex] !== 0);
     });
     if (underflowed) {
       return "Formatting was not applied because one or more nonzero transformed numeric values underflowed to zero.";

@@ -8,6 +8,15 @@ import {
   reverseRows,
   scaleRows,
 } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
+import {
+  collectSurfaceScalingNumericValues,
+  IMAGE_VALUE_SCALERS,
+  OBJECT_VALUE_SCALERS,
+  OBJECT_DISTANCE_INFINITY_THRESHOLD as SURFACE_VALUE_SCALING_INFINITY_THRESHOLD,
+  scaleSurfaceValueRow,
+  SURFACE_VALUE_SCALERS,
+  SURFACE_VALUE_SCALING_POLICY,
+} from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { Surfaces } from "@/shared/lib/types/opticalModel";
@@ -111,6 +120,109 @@ const baseSurfaces: Surfaces = {
 describe("prescriptionFormatting", () => {
   it("exports the object distance infinity threshold", () => {
     expect(OBJECT_DISTANCE_INFINITY_THRESHOLD).toBe(1e10);
+  });
+
+  it("re-exports the centralized object distance infinity threshold", () => {
+    expect(OBJECT_DISTANCE_INFINITY_THRESHOLD).toBe(SURFACE_VALUE_SCALING_INFINITY_THRESHOLD);
+  });
+
+  it("keeps scaleable surface values and validation values in one central policy", () => {
+    expect(SURFACE_VALUE_SCALING_POLICY.object).toEqual({
+      distance: expect.any(Function),
+    });
+    expect(SURFACE_VALUE_SCALING_POLICY.image).toMatchObject({
+      curvatureRadius: expect.any(Function),
+      decenter: {
+        alpha: undefined,
+        beta: undefined,
+        gamma: undefined,
+        offsetX: expect.any(Function),
+        offsetY: expect.any(Function),
+      },
+    });
+    expect(SURFACE_VALUE_SCALING_POLICY.surface).toMatchObject({
+      curvatureRadius: expect.any(Function),
+      thickness: expect.any(Function),
+      semiDiameter: expect.any(Function),
+      diffractionGrating: {
+        lpmm: undefined,
+        order: undefined,
+      },
+    });
+  });
+
+  it("uses optical model keyed scaler maps for executable scale behavior", () => {
+    expect(Object.keys(OBJECT_VALUE_SCALERS)).toEqual(["distance"]);
+    expect(Object.keys(IMAGE_VALUE_SCALERS)).toEqual(["curvatureRadius", "decenter"]);
+    expect(Object.keys(SURFACE_VALUE_SCALERS)).toEqual([
+      "curvatureRadius",
+      "thickness",
+      "semiDiameter",
+      "clear_aperture",
+      "edge_aperture",
+      "aspherical",
+      "decenter",
+      "diffractionGrating",
+    ]);
+
+    expect(OBJECT_VALUE_SCALERS.distance(500, 2)).toBe(1000);
+    expect(SURFACE_VALUE_SCALERS.diffractionGrating).toEqual({ lpmm: undefined, order: undefined });
+  });
+
+  it("scales a surface row from the centralized policy while preserving grating values", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{
+        ...baseSurfaces.surfaces[0],
+        diffractionGrating: { lpmm: 600, order: 1 },
+      }],
+    });
+    const surface = surfaceRows(rows)[0];
+
+    const result = scaleSurfaceValueRow(surface, 2);
+
+    expect(result).toMatchObject({
+      curvatureRadius: 20,
+      thickness: 2,
+      semiDiameter: 10,
+      diffractionGrating: { lpmm: 600, order: 1 },
+    });
+  });
+
+  it("collects validation numeric values from the centralized policy", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{
+        ...baseSurfaces.surfaces[0],
+        clear_aperture: {
+          shape: "rectangular",
+          xHalfWidth: 4,
+          yHalfWidth: 2,
+          rotation: 15,
+          offsetX: -1,
+          offsetY: 1.5,
+        },
+        diffractionGrating: { lpmm: 600, order: 1 },
+      }],
+    });
+
+    expect(collectSurfaceScalingNumericValues(surfaceRows(rows)[0])).toEqual(expect.arrayContaining([
+      10,
+      1,
+      5,
+      1,
+      2,
+      3,
+      6,
+      8,
+      4,
+      2,
+      15,
+      -1,
+      1.5,
+      600,
+      1,
+    ]));
   });
 
   it("builds scale and reverse surface selector options", () => {
