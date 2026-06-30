@@ -53,11 +53,11 @@ export function MediumCell({
   tooltipText = "Click to set medium or glass",
 }: MediumCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch>
+    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
       <button
         type="button"
         aria-label="Edit medium"
-        className="cursor-pointer"
+        className="w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-left"
         onClick={onOpenModal}
       >
         {medium}
@@ -77,7 +77,7 @@ function TextActionButton({ ariaLabel, children, onClick }: TextActionButtonProp
     <button
       type="button"
       aria-label={ariaLabel}
-      className="h-full w-full cursor-pointer text-left"
+      className="h-full w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-left"
       onClick={onClick}
     >
       {children}

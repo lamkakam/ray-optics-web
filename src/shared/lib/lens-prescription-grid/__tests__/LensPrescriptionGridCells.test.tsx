@@ -172,6 +172,41 @@ describe("LensPrescriptionGridCells", () => {
     );
   });
 
+  it("uses single-line ellipsis for overflowing action cell text", () => {
+    const expectedClasses = ["overflow-hidden", "text-ellipsis", "whitespace-nowrap"];
+    const { rerender } = render(<MediumCell medium="N-SF11 with a very long catalog display name" onOpenModal={() => {}} />);
+
+    expect(screen.getByRole("button", { name: "Edit medium" })).toHaveClass(...expectedClasses);
+
+    rerender(
+      <ApertureCell
+        clearAperture={{ shape: "circular", offsetX: -12.345, offsetY: 67.89 }}
+        edgeAperture={{ shape: "circular", radius: 123.456, offsetX: 0.12, offsetY: -0.34 }}
+        onOpenModal={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveClass(...expectedClasses);
+
+    rerender(
+      <AsphericalCell
+        aspherical={{ kind: "EvenAspherical", conicConstant: -1, polynomialCoefficients: [0.1] }}
+        onOpenModal={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Edit aspherical parameters" })).toHaveClass(...expectedClasses);
+
+    rerender(
+      <DecenterCell
+        decenter={{ ...baseDecenter, coordinateSystemStrategy: "dec and return" }}
+        onOpenModal={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Edit decenter and tilt" })).toHaveClass(...expectedClasses);
+
+    rerender(<DiffractionGratingCell diffractionGrating={{ lpmm: 1200, order: 1 }} onOpenModal={() => {}} />);
+    expect(screen.getByRole("button", { name: "Edit diffraction grating" })).toHaveClass(...expectedClasses);
+  });
+
   it("keeps portal tooltips mouse-hover only for the full trigger", () => {
     render(<DiffractionGratingCell diffractionGrating={{ lpmm: 600, order: 1 }} onOpenModal={() => {}} />);
     const tooltipTrigger = screen.getByRole("button", { name: "Edit diffraction grating" }).parentElement!;
