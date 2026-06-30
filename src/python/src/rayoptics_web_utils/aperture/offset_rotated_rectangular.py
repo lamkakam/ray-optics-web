@@ -9,6 +9,13 @@ class OffsetRotatedRectangular(Rectangular):
     """Rectangular aperture whose geometry respects offsets and rotation."""
 
     def _to_local(self, x, y):
+        # RayOptics passes points in the global surface coordinate frame, whose
+        # origin is the surface origin. The rectangular aperture center is
+        # (x_offset, y_offset) in that frame. The rectangle-local frame has its
+        # origin at that aperture center, with axes aligned to the unrotated
+        # x_half_width and y_half_width directions. Translate to the aperture
+        # center, then undo the rectangle rotation so containment can be tested
+        # against the axis-aligned local half widths.
         x -= self.x_offset
         y -= self.y_offset
         angle = radians(self.rotation)
@@ -20,6 +27,10 @@ class OffsetRotatedRectangular(Rectangular):
         )
 
     def _to_global(self, x, y):
+        # The input point is in the rectangle-local frame: origin at the
+        # aperture center, +x along x_half_width, and +y along y_half_width.
+        # Rotate it into the global surface axes, then translate by the aperture
+        # center offset to recover the absolute surface coordinate.
         angle = radians(self.rotation)
         cos_angle = cos(angle)
         sin_angle = sin(angle)
@@ -29,6 +40,11 @@ class OffsetRotatedRectangular(Rectangular):
         ]
 
     def _rotated_corner_vectors(self, x_half_width, y_half_width):
+        # Start from the four rectangle-local corners:
+        # (+/-x_half_width, +/-y_half_width). Rotate each around the local
+        # origin, but do not add x_offset/y_offset; the result remains a vector
+        # from the aperture center. set_dimension() combines these with
+        # offset + scale * vector when solving for the farthest absolute corner.
         angle = radians(self.rotation)
         cos_angle = cos(angle)
         sin_angle = sin(angle)

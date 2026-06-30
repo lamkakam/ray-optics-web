@@ -74,7 +74,7 @@ The last expression in the combined script is the return value of `runPythonAsyn
 Returns a string with:
 > **Warning**: Not for execution inside the Pyodide worker. This script is intended for copy-paste into a Jupyter / RayOptics notebook environment.
 
-1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface` (`DecenterData`, `Circular`, `Aperture`, `Rectangular`), `math.cos`, `math.radians`, `math.sin`, `math.sqrt`, and `opticalglass.rindexinfo`. It defines standalone `Annular(Aperture)`, `OffsetCircular(Circular)`, and `OffsetRotatedRectangular(Rectangular)` classes for copied notebook use and creates `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`.
+1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface` (`DecenterData`, `Circular`, `Aperture`, `Rectangular`), `math.cos`, `math.radians`, `math.sin`, `math.sqrt`, and `opticalglass.rindexinfo`. It defines standalone `Annular(Aperture)`, `OffsetCircular(Circular)`, and `OffsetRotatedRectangular(Rectangular)` classes for copied notebook use and creates `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`. The inline `OffsetRotatedRectangular` helper comments describe the surface-origin global frame, aperture-centered rectangle-local frame, global-to-local transform, local-to-global transform, and rotated corner-vector calculation.
 2. The full output of `buildOpticalModelScript(model)`.
 3. Calls to `sm.list_model()`, `pm.first_order_data()`, and `plt.figure(FigureClass=InteractiveLayout, ...)`.
 
