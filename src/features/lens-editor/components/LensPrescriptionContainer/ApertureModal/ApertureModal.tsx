@@ -63,8 +63,9 @@ interface ClearCircularFieldsProps {
 }
 
 interface ClearAnnularFieldsProps extends ClearCircularFieldsProps {
-  readonly obstructionRadius: string;
-  readonly setObstructionRadius: StringSetter;
+  readonly autoAperture: boolean;
+  readonly obstructionValue: string;
+  readonly setObstructionValue: StringSetter;
 }
 
 interface EdgeCircularFieldsProps {
@@ -106,6 +107,30 @@ function parseFiniteNumber(value: string): number | undefined {
   const trimmed = value.trim();
   const parsed = Number(trimmed);
   return trimmed !== "" && Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function getInitialObstructionValue(
+  initialClearAperture: ClearAperture | undefined,
+  autoAperture: boolean,
+  semiDiameter: number,
+): string {
+  const obstructionRadius = initialClearAperture?.shape === "annular"
+    ? initialClearAperture.obstructionRadius
+    : semiDiameter / 2;
+  return String(autoAperture ? obstructionRadius / semiDiameter : obstructionRadius);
+}
+
+function convertObstructionValue(value: string, fromAutoAperture: boolean, toAutoAperture: boolean, semiDiameter: number): string {
+  if (fromAutoAperture === toAutoAperture) {
+    return value;
+  }
+
+  const parsedValue = parseFiniteNumber(value);
+  if (parsedValue === undefined) {
+    return value;
+  }
+
+  return String(toAutoAperture ? parsedValue / semiDiameter : parsedValue * semiDiameter);
 }
 
 function ClearCircularFields({
@@ -152,24 +177,27 @@ function ClearCircularFields({
 
 function ClearAnnularFields(props: ClearAnnularFieldsProps) {
   const {
-    obstructionRadius,
+    autoAperture,
+    obstructionValue,
     readOnly,
-    setObstructionRadius,
+    setObstructionValue,
     clearError,
   } = props;
+  const obstructionLabel = autoAperture ? "Central Obstruction Ratio" : "Central Obstruction Radius";
+  const obstructionId = autoAperture ? "clear-aperture-obstruction-ratio" : "clear-aperture-obstruction-radius";
 
   return (
     <div className="space-y-3">
       <div>
-        <Label htmlFor="clear-aperture-obstruction-radius">Central Obstruction Radius</Label>
+        <Label htmlFor={obstructionId}>{obstructionLabel}</Label>
         <Input
-          id="clear-aperture-obstruction-radius"
-          aria-label="Central Obstruction Radius"
+          id={obstructionId}
+          aria-label={obstructionLabel}
           type="text"
-          value={obstructionRadius}
+          value={obstructionValue}
           disabled={readOnly}
           onChange={(event) => {
-            setObstructionRadius(event.target.value);
+            setObstructionValue(event.target.value);
             clearError();
           }}
         />
@@ -372,9 +400,10 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
   ref,
 ) {
   const [clearShape, setClearShape] = useState<ClearApertureShape>(initialClearAperture?.shape ?? "circular");
-  const [obstructionRadius, setObstructionRadius] = useState(String(
-    initialClearAperture?.shape === "annular" ? initialClearAperture.obstructionRadius : semiDiameter / 2,
-  ));
+  const [obstructionDraft, setObstructionDraft] = useState({
+    autoAperture,
+    value: getInitialObstructionValue(initialClearAperture, autoAperture, semiDiameter),
+  });
   const [clearOffsetX, setClearOffsetX] = useState(String(initialClearAperture?.offsetX ?? 0));
   const [clearOffsetY, setClearOffsetY] = useState(String(initialClearAperture?.offsetY ?? 0));
   const [clearXHalfWidth, setClearXHalfWidth] = useState(String(
@@ -386,6 +415,26 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
   const [clearRotation, setClearRotation] = useState(String(
     initialClearAperture?.shape === "rectangular" ? initialClearAperture.rotation : 0,
   ));
+  const obstructionValue = convertObstructionValue(
+    obstructionDraft.value,
+    obstructionDraft.autoAperture,
+    autoAperture,
+    semiDiameter,
+  );
+  const setObstructionValue: StringSetter = (nextValue) => {
+    setObstructionDraft((currentDraft) => {
+      const currentValue = convertObstructionValue(
+        currentDraft.value,
+        currentDraft.autoAperture,
+        autoAperture,
+        semiDiameter,
+      );
+      return {
+        autoAperture,
+        value: typeof nextValue === "function" ? nextValue(currentValue) : nextValue,
+      };
+    });
+  };
 
   useImperativeHandle(ref, () => ({
     getValue: () => {
@@ -396,15 +445,30 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
       }
 
       if (clearShape === "annular") {
-        const parsedObstructionRadius = parsePositiveFiniteNumber(obstructionRadius);
-        if (parsedObstructionRadius === undefined || parsedObstructionRadius >= semiDiameter) {
+        const parsedObstructionValue = parsePositiveFiniteNumber(obstructionValue);
+        if (autoAperture) {
+          if (parsedObstructionValue === undefined || parsedObstructionValue >= 1) {
+            return { error: "Central obstruction ratio must be greater than 0 and smaller than 1." };
+          }
+
+          return {
+            value: {
+              shape: "annular",
+              obstructionRadius: parsedObstructionValue * semiDiameter,
+              offsetX: parsedClearOffsetX,
+              offsetY: parsedClearOffsetY,
+            },
+          };
+        }
+
+        if (parsedObstructionValue === undefined || parsedObstructionValue >= semiDiameter) {
           return { error: "Central obstruction radius must be greater than 0 and smaller than the clear aperture radius." };
         }
 
         return {
           value: {
             shape: "annular",
-            obstructionRadius: parsedObstructionRadius,
+            obstructionRadius: parsedObstructionValue,
             offsetX: parsedClearOffsetX,
             offsetY: parsedClearOffsetY,
           },
@@ -437,7 +501,7 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
 
       return { value: { shape: "circular", offsetX: parsedClearOffsetX, offsetY: parsedClearOffsetY } };
     },
-  }), [clearOffsetX, clearOffsetY, clearRotation, clearShape, clearXHalfWidth, clearYHalfWidth, obstructionRadius, semiDiameter]);
+  }), [autoAperture, clearOffsetX, clearOffsetY, clearRotation, clearShape, clearXHalfWidth, clearYHalfWidth, obstructionValue, semiDiameter]);
 
   return (
     <section className="space-y-3">
@@ -462,13 +526,14 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
       </div>
       {clearShape === "annular" ? (
         <CLEAR_APERTURE_SHAPE_COMPONENTS.annular
+          autoAperture={autoAperture}
           clearOffsetX={clearOffsetX}
           clearOffsetY={clearOffsetY}
-          obstructionRadius={obstructionRadius}
+          obstructionValue={obstructionValue}
           readOnly={readOnly}
           setClearOffsetX={setClearOffsetX}
           setClearOffsetY={setClearOffsetY}
-          setObstructionRadius={setObstructionRadius}
+          setObstructionValue={setObstructionValue}
           clearError={clearError}
         />
       ) : clearShape === "rectangular" ? (

@@ -431,6 +431,135 @@ describe("ApertureModal", () => {
     expect(screen.getByRole("textbox", { name: "Clear Offset Y" })).toBeDisabled();
   });
 
+  it("shows central obstruction ratio for annular clear aperture when auto aperture is enabled", async () => {
+    render(
+      <ApertureModal
+        isOpen
+        autoAperture
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "annular");
+
+    expect(screen.getByRole("textbox", { name: "Central Obstruction Ratio" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Central Obstruction Radius" })).not.toBeInTheDocument();
+  });
+
+  it("preloads annular obstruction radius as a ratio when auto aperture is enabled", () => {
+    render(
+      <ApertureModal
+        isOpen
+        autoAperture
+        semiDiameter={8}
+        initialClearAperture={{ shape: "annular", obstructionRadius: 2, offsetX: 0, offsetY: 0 }}
+        initialEdgeAperture={undefined}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Central Obstruction Ratio" })).toHaveValue("0.25");
+  });
+
+  it("saves auto aperture annular obstruction ratio as an obstruction radius", async () => {
+    const onConfirm = jest.fn();
+    render(
+      <ApertureModal
+        isOpen
+        autoAperture
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "annular");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Central Obstruction Ratio" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Central Obstruction Ratio" }), "0.5");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      clear_aperture: { shape: "annular", obstructionRadius: 4, offsetX: 0, offsetY: 0 },
+      edge_aperture: undefined,
+    });
+  });
+
+  it.each(["0", "-1", "abc", "1"])("rejects invalid auto aperture annular obstruction ratio %s", async (obstructionRatio) => {
+    const onConfirm = jest.fn();
+    render(
+      <ApertureModal
+        isOpen
+        autoAperture
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "annular");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Central Obstruction Ratio" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Central Obstruction Ratio" }), obstructionRatio);
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText("Central obstruction ratio must be greater than 0 and smaller than 1.")).toBeInTheDocument();
+  });
+
+  it("converts annular obstruction draft when auto aperture changes while open", async () => {
+    const defaultProps = {
+      isOpen: true,
+      semiDiameter: 8,
+      initialClearAperture: undefined,
+      initialEdgeAperture: undefined,
+      onConfirm: jest.fn(),
+      onClose: jest.fn(),
+    };
+    const { rerender } = render(<ApertureModal {...defaultProps} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "annular");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Central Obstruction Radius" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Central Obstruction Radius" }), "2");
+
+    rerender(<ApertureModal {...defaultProps} autoAperture />);
+
+    expect(screen.getByRole("textbox", { name: "Central Obstruction Ratio" })).toHaveValue("0.25");
+
+    await userEvent.clear(screen.getByRole("textbox", { name: "Central Obstruction Ratio" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Central Obstruction Ratio" }), "0.5");
+
+    rerender(<ApertureModal {...defaultProps} />);
+
+    expect(screen.getByRole("textbox", { name: "Central Obstruction Radius" })).toHaveValue("4");
+  });
+
+  it("displays and disables annular obstruction ratio in read-only auto aperture mode", () => {
+    render(
+      <ApertureModal
+        isOpen
+        autoAperture
+        semiDiameter={8}
+        readOnly
+        initialClearAperture={{ shape: "annular", obstructionRadius: 2, offsetX: 1, offsetY: -1 }}
+        initialEdgeAperture={undefined}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: "Central Obstruction Ratio" })).toHaveValue("0.25");
+    expect(screen.getByRole("textbox", { name: "Central Obstruction Ratio" })).toBeDisabled();
+    expect(screen.queryByRole("textbox", { name: "Central Obstruction Radius" })).not.toBeInTheDocument();
+  });
+
   it.each([
     ["0", "Central obstruction radius must be greater than 0 and smaller than the clear aperture radius."],
     ["-1", "Central obstruction radius must be greater than 0 and smaller than the clear aperture radius."],
