@@ -4,10 +4,17 @@ import React from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import {
   formatAsphericalLabel,
+  formatApertureLabel,
   formatDecenterLabel,
   formatDiffractionGratingLabel,
 } from "@/shared/lib/lens-prescription-grid/displayLabels";
-import type { DecenterConfig, DiffractionGrating, Surface } from "@/shared/lib/types/opticalModel";
+import type {
+  ClearAperture,
+  DecenterConfig,
+  DiffractionGrating,
+  EdgeAperture,
+  Surface,
+} from "@/shared/lib/types/opticalModel";
 
 interface ActionWrapperProps {
   readonly children: React.ReactNode;
@@ -46,11 +53,11 @@ export function MediumCell({
   tooltipText = "Click to set medium or glass",
 }: MediumCellProps) {
   return (
-    <Tooltip text={tooltipText} position="top" portal noTouch>
+    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
       <button
         type="button"
         aria-label="Edit medium"
-        className="cursor-pointer"
+        className="w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-left"
         onClick={onOpenModal}
       >
         {medium}
@@ -70,7 +77,7 @@ function TextActionButton({ ariaLabel, children, onClick }: TextActionButtonProp
     <button
       type="button"
       aria-label={ariaLabel}
-      className="h-full w-full cursor-pointer text-left"
+      className="h-full w-full cursor-pointer overflow-hidden text-ellipsis whitespace-nowrap text-left"
       onClick={onClick}
     >
       {children}
@@ -93,6 +100,28 @@ export function AsphericalCell({
     <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
       <TextActionButton ariaLabel="Edit aspherical parameters" onClick={onOpenModal}>
         {formatAsphericalLabel(aspherical)}
+      </TextActionButton>
+    </Tooltip>
+  );
+}
+
+interface ApertureCellProps {
+  readonly clearAperture: ClearAperture | undefined;
+  readonly edgeAperture: EdgeAperture | undefined;
+  readonly onOpenModal: () => void;
+  readonly tooltipText?: string;
+}
+
+export function ApertureCell({
+  clearAperture,
+  edgeAperture,
+  onOpenModal,
+  tooltipText = "Click to set aperture",
+}: ApertureCellProps) {
+  return (
+    <Tooltip text={tooltipText} position="top" portal noTouch triggerClassName="flex h-full w-full">
+      <TextActionButton ariaLabel="Edit aperture" onClick={onOpenModal}>
+        {formatApertureLabel(clearAperture, edgeAperture)}
       </TextActionButton>
     </Tooltip>
   );

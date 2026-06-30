@@ -249,9 +249,9 @@ class TestGetRayFanData:
         assert len(entry["Sagittal"]["x"]) == len(entry["Sagittal"]["y"])
         assert len(entry["Tangential"]["x"]) == len(entry["Tangential"]["y"])
         assert all(isinstance(v, float) for v in entry["Sagittal"]["x"])
-        assert all(isinstance(v, float) for v in entry["Sagittal"]["y"])
+        assert all(v is None or isinstance(v, float) for v in entry["Sagittal"]["y"])
         assert all(isinstance(v, float) for v in entry["Tangential"]["x"])
-        assert all(isinstance(v, float) for v in entry["Tangential"]["y"])
+        assert all(v is None or isinstance(v, float) for v in entry["Tangential"]["y"])
 
     def test_centroid_result_is_json_encodable(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_ray_fan_data
@@ -259,6 +259,38 @@ class TestGetRayFanData:
         result = get_ray_fan_data(cooke_triplet, fi=0, image_point="centroid")
 
         json.dumps(result)
+
+    def test_annular_stop_returns_central_gaps(self):
+        from rayoptics.environment import OpticalModel
+        from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
+        from rayoptics.raytr.vigcalc import set_vig
+        from rayoptics_web_utils.analysis import get_ray_fan_data
+        from rayoptics_web_utils.aperture import Annular
+
+        opm = OpticalModel()
+        osp = opm["optical_spec"]
+        sm = opm["seq_model"]
+        opm.system_spec.dimensions = "mm"
+        osp["pupil"] = PupilSpec(osp, key=["object", "epd"], value=100)
+        osp["fov"] = FieldSpec(osp, key=["object", "angle"], value=0, flds=[0], is_relative=True)
+        osp["wvls"] = WvlSpec([(587.562, 1)], ref_wl=0)
+        opm.radius_mode = True
+        sm.do_apertures = False
+        sm.gaps[0].thi = 1e10
+        sm.add_surface([0, 100, "air"], sd=50)
+        sm.ifcs[sm.cur_surface].clear_apertures = [Annular(radius=50, obstruction_radius=20)]
+        sm.set_stop()
+        sm.ifcs[-1].profile.r = 0
+        opm.update_model()
+        set_vig(opm)
+
+        result = get_ray_fan_data(opm, fi=0)
+        tangential = result[0]["Tangential"]
+
+        assert tangential["x"] == pytest.approx([index / 10 for index in range(-10, 11)])
+        assert tangential["y"][10] is None
+        assert any(value is None for value in tangential["y"])
+        assert any(value is not None for value in tangential["y"])
 
 
 class TestGetOpdFanData:
@@ -279,8 +311,8 @@ class TestGetOpdFanData:
         assert entry["unitY"] == "waves"
         assert set(entry["Sagittal"].keys()) == {"x", "y"}
         assert set(entry["Tangential"].keys()) == {"x", "y"}
-        assert all(isinstance(v, float) for v in entry["Sagittal"]["y"])
-        assert all(isinstance(v, float) for v in entry["Tangential"]["y"])
+        assert all(v is None or isinstance(v, float) for v in entry["Sagittal"]["y"])
+        assert all(v is None or isinstance(v, float) for v in entry["Tangential"]["y"])
 
     def test_result_is_json_encodable(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_opd_fan_data
@@ -300,6 +332,38 @@ class TestGetOpdFanData:
         assert isinstance(result, list)
         assert len(result) == len(sasian_triplet_autoaperture["optical_spec"]["wvls"].wavelengths)
         json.dumps(result)
+
+    def test_annular_stop_returns_central_gaps(self):
+        from rayoptics.environment import OpticalModel
+        from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
+        from rayoptics.raytr.vigcalc import set_vig
+        from rayoptics_web_utils.analysis import get_opd_fan_data
+        from rayoptics_web_utils.aperture import Annular
+
+        opm = OpticalModel()
+        osp = opm["optical_spec"]
+        sm = opm["seq_model"]
+        opm.system_spec.dimensions = "mm"
+        osp["pupil"] = PupilSpec(osp, key=["object", "epd"], value=100)
+        osp["fov"] = FieldSpec(osp, key=["object", "angle"], value=0, flds=[0], is_relative=True)
+        osp["wvls"] = WvlSpec([(587.562, 1)], ref_wl=0)
+        opm.radius_mode = True
+        sm.do_apertures = False
+        sm.gaps[0].thi = 1e10
+        sm.add_surface([0, 100, "air"], sd=50)
+        sm.ifcs[sm.cur_surface].clear_apertures = [Annular(radius=50, obstruction_radius=20)]
+        sm.set_stop()
+        sm.ifcs[-1].profile.r = 0
+        opm.update_model()
+        set_vig(opm)
+
+        result = get_opd_fan_data(opm, fi=0)
+        tangential = result[0]["Tangential"]
+
+        assert tangential["x"] == pytest.approx([index / 10 for index in range(-10, 11)])
+        assert tangential["y"][10] is None
+        assert any(value is None for value in tangential["y"])
+        assert any(value is not None for value in tangential["y"])
 
 
 class TestGetSpotData:

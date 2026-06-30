@@ -4,11 +4,13 @@ import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import {
   AsphericalCell,
+  ApertureCell,
   DecenterCell,
   DiffractionGratingCell,
   LensPrescriptionActionWrapper,
   MediumCell,
 } from "@/shared/lib/lens-prescription-grid/LensPrescriptionGridCells";
+import { formatApertureLabel } from "@/shared/lib/lens-prescription-grid/displayLabels";
 
 export const lensPrescriptionGridDefaultColDef = {
   sortable: false,
@@ -24,6 +26,7 @@ export const LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS = {
   thickness: 130,
   medium: 115,
   semiDiameter: 115,
+  aperture: 115,
   aspherical: 140,
   decenter: 135,
   diffractionGrating: 165,
@@ -71,6 +74,11 @@ interface MediumColumnOptions<TData> extends BaseColumnOptions<TData> {
 interface SemiDiameterColumnOptions<TData> extends BaseColumnOptions<TData> {
   readonly semiDiameterReadonly?: boolean;
   readonly onSemiDiameterChange?: (row: GridRow, semiDiameter: number) => void;
+}
+
+interface ApertureColumnOptions<TData> extends BaseColumnOptions<TData> {
+  readonly onOpenApertureModal?: GridRowModalCallback;
+  readonly tooltipText?: string;
 }
 
 interface AsphericalColumnOptions<TData> extends BaseColumnOptions<TData> {
@@ -205,6 +213,9 @@ export function createSemiDiameterColumn<TData>({
   semiDiameterReadonly = false,
   onSemiDiameterChange,
 }: SemiDiameterColumnOptions<TData>): ColDef<TData> {
+  const isRectangularClearApertureRow = (row: GridRow): boolean =>
+    row.kind === "surface" && row.clear_aperture?.shape === "rectangular";
+
   return {
     headerName: "Semi-diam.",
     width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.semiDiameter,
@@ -212,22 +223,58 @@ export function createSemiDiameterColumn<TData>({
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
       if (row.kind !== "surface") return undefined;
+      if (isRectangularClearApertureRow(row)) return undefined;
       return row.semiDiameter;
     },
     editable: (params) => {
       if (params.data === undefined || onSemiDiameterChange === undefined || semiDiameterReadonly) return false;
-      return getGridRow(params.data).kind === "surface";
+      const row = getGridRow(params.data);
+      return row.kind === "surface" && !isRectangularClearApertureRow(row);
     },
     cellStyle: (params) => {
       if (params.data === undefined) return { opacity: 0.5 };
       const row = getGridRow(params.data);
-      return !semiDiameterReadonly && row.kind === "surface" ? undefined : { opacity: 0.5 };
+      return !semiDiameterReadonly && row.kind === "surface" && !isRectangularClearApertureRow(row)
+        ? undefined
+        : { opacity: 0.5 };
     },
     valueParser: numberValueParser,
     valueSetter: (params) => {
       if (params.data === undefined || onSemiDiameterChange === undefined) return false;
       onSemiDiameterChange(getGridRow(params.data), params.newValue as number);
       return true;
+    },
+  };
+}
+
+export function createApertureColumn<TData>({
+  getGridRow,
+  onOpenApertureModal,
+  tooltipText,
+}: ApertureColumnOptions<TData>): ColDef<TData> {
+  return {
+    headerName: "Aperture",
+    width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aperture,
+    valueGetter: (params) => {
+      if (params.data === undefined) return undefined;
+      const row = getGridRow(params.data);
+      if (row.kind !== "surface") return undefined;
+      return formatApertureLabel(row.clear_aperture, row.edge_aperture);
+    },
+    cellRenderer: (params: { readonly data?: TData }) => {
+      if (params.data === undefined || onOpenApertureModal === undefined) return undefined;
+      const row = getGridRow(params.data);
+      if (row.kind !== "surface") return undefined;
+      return (
+        <LensPrescriptionActionWrapper onAction={() => onOpenApertureModal(row)}>
+          <ApertureCell
+            clearAperture={row.clear_aperture}
+            edgeAperture={row.edge_aperture}
+            onOpenModal={() => onOpenApertureModal(row)}
+            tooltipText={tooltipText}
+          />
+        </LensPrescriptionActionWrapper>
+      );
     },
   };
 }
@@ -331,6 +378,7 @@ interface CommonColumnOptions<TData>
     ThicknessColumnOptions<TData>,
     MediumColumnOptions<TData>,
     SemiDiameterColumnOptions<TData>,
+    ApertureColumnOptions<TData>,
     AsphericalColumnOptions<TData>,
     DecenterColumnOptions<TData>,
     DiffractionGratingColumnOptions<TData> {}
@@ -344,6 +392,7 @@ export function createLensPrescriptionCommonColumns<TData>(
     createThicknessColumn(options),
     createMediumColumn(options),
     createSemiDiameterColumn(options),
+    createApertureColumn(options),
     createAsphericalColumn(options),
     createDecenterColumn(options),
     createDiffractionGratingColumn(options),

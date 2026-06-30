@@ -37,9 +37,9 @@ def _json_float(value) -> float | None:
     return value
 
 
-def _json_float_list(values) -> list[float]:
-    """Convert an iterable of numeric-like values to plain Python floats."""
-    return [float(value) for value in values]
+def _json_float_list(values) -> list[float | None]:
+    """Convert an iterable of numeric-like values to JSON-safe floats."""
+    return [None if value is None else _json_float(value) for value in values]
 
 
 def _json_float_grid(values) -> list[list[float | None]]:

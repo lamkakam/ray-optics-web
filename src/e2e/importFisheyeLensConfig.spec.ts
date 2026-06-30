@@ -53,7 +53,7 @@ test("import fisheye config, update system, and verify loaded prescription/specs
   await expect(updateBtn).toBeEnabled({ timeout: 60_000 });
 
   const autoSemiDiameterSwitch = page.getByRole("switch", {
-    name: "Set auto semi-diameter",
+    name: "Set auto aperture dimensions",
   });
   await expect(autoSemiDiameterSwitch).toBeChecked();
   await expect(autoSemiDiameterSwitch).toHaveText("Auto");

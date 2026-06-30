@@ -33,7 +33,7 @@ interface BottomDrawerContainerProps {
 - `fields.rows` provides derived field weight rows.
 - `wavelengths.rows` provides derived wavelength weight rows.
 - `onWarning` receives explicit method-switch config-build failures so the page can surface them in Operand Evaluation.
-- `prescription` provides derived prescription rows plus local inspection-modal callbacks. Optimization variable modal callbacks and mode state are read from the optimization store.
+- `prescription` provides derived prescription rows plus local inspection-modal callbacks, including aperture inspection. Optimization variable modal callbacks and mode state are read from the optimization store.
 
 ## Behavior
 

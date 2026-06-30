@@ -50,6 +50,7 @@ interface OptimizationPageProps {
   - a `Var.` column after `Radius of Curvature` for radius variable/pickup configuration
   - a second `Var.` column after `Thickness` for thickness variable/pickup configuration
   - read-only `Medium`, `Semi-diam.`, `Asph.` columns
+  - read-only `Aperture` column after `Semi-diam.` that opens the aperture inspection modal
   - a third `Var.` column after `Asph.` for asphere variable/pickup configuration (real surface rows only; opens `AsphereVarModal`)
   - read-only `Tilt & Decenter` and `Diffraction Grating` columns
 - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
@@ -78,7 +79,7 @@ interface OptimizationPageProps {
   - `OptimizationProgressModal`
   - `OptimizationApplyConfirmModal`
   - `OptimizationInspectionModals`
-- Modal-backed prescription columns still open the existing lens-editor dialogs in `readOnly` mode so users can inspect, but not edit, those settings from optimization.
+- Modal-backed prescription columns still open the existing lens-editor dialogs in `readOnly` mode so users can inspect, but not edit, those settings from optimization, including aperture settings.
 
 ## Key Conventions
 

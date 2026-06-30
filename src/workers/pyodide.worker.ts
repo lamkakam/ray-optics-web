@@ -27,6 +27,18 @@ let activeOptimizationInterruptView: Int32Array | undefined;
 const PYODIDE_INTERRUPT_SIGNAL = 2;
 
 type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
+type RawFanAxisData = {
+  readonly x: number[];
+  readonly y: ReadonlyArray<number | null | undefined>;
+};
+type RawFanSeriesData = {
+  readonly fieldIdx: number;
+  readonly wvlIdx: number;
+  readonly Sagittal: RawFanAxisData;
+  readonly Tangential: RawFanAxisData;
+  readonly unitX: string;
+  readonly unitY: string;
+};
 
 async function emitInitProgress(
   onProgress: InitProgressCallback | undefined,
@@ -103,10 +115,11 @@ d263teco = _rwu_init_result['d263teco']
 import json
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
-from rayoptics.elem.surface import DecenterData
+from rayoptics.elem.surface import DecenterData, Circular
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 
+from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular
 from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data, get_lsa_data
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
@@ -148,7 +161,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.14.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.15.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
@@ -164,6 +177,24 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
 function requirePyodide(): (code: string) => Promise<unknown> {
   if (!pyodide) throw new Error("Pyodide not initialized. Call init() first.");
   return pyodide.runPythonAsync.bind(pyodide);
+}
+
+function normalizeFanAxis(axis: RawFanAxisData): {
+  readonly x: number[];
+  readonly y: Array<number | undefined>;
+} {
+  return {
+    x: axis.x,
+    y: axis.y.map((value) => value ?? undefined),
+  };
+}
+
+function normalizeFanData<TFanData extends RayFanData | OpdFanData>(rawData: RawFanSeriesData[]): TFanData {
+  return rawData.map((entry) => ({
+    ...entry,
+    Sagittal: normalizeFanAxis(entry.Sagittal),
+    Tangential: normalizeFanAxis(entry.Tangential),
+  })) as TFanData;
 }
 
 
@@ -197,7 +228,7 @@ export async function _getRayFanData(
   const json = (await runPython(
     buildScript(opticalModel, (opm) => `json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`),
   )) as string;
-  return JSON.parse(json) as RayFanData;
+  return normalizeFanData<RayFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
 
 export async function _getOpdFanData(
@@ -209,7 +240,7 @@ export async function _getOpdFanData(
   const json = (await runPython(
     buildScript(opticalModel, (opm) => `json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point='${imagePoint}'))`),
   )) as string;
-  return JSON.parse(json) as OpdFanData;
+  return normalizeFanData<OpdFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
 
 export async function _getSpotDiagramData(

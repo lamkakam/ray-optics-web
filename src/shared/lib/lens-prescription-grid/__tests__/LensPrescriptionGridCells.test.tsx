@@ -1,12 +1,14 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
+  ApertureCell,
   AsphericalCell,
   DecenterCell,
   DiffractionGratingCell,
   MediumCell,
+  formatApertureLabel,
 } from "@/shared/lib/lens-prescription-grid";
-import type { DecenterConfig } from "@/shared/lib/types/opticalModel";
+import type { ClearAperture, DecenterConfig, EdgeAperture } from "@/shared/lib/types/opticalModel";
 
 const baseDecenter = {
   alpha: 0,
@@ -17,6 +19,85 @@ const baseDecenter = {
 } satisfies Omit<DecenterConfig, "coordinateSystemStrategy">;
 
 describe("LensPrescriptionGridCells", () => {
+  it("formats aperture labels", () => {
+    const circularClear = (offsetX: number, offsetY: number): ClearAperture => ({
+      shape: "circular",
+      offsetX,
+      offsetY,
+    });
+    const annularClear = (obstructionRadius: number, offsetX: number, offsetY: number): ClearAperture => ({
+      shape: "annular",
+      obstructionRadius,
+      offsetX,
+      offsetY,
+    });
+    const circularEdge = (radius: number, offsetX: number, offsetY: number): EdgeAperture => ({
+      shape: "circular",
+      radius,
+      offsetX,
+      offsetY,
+    });
+
+    expect(formatApertureLabel(undefined, undefined)).toBe("Default");
+    expect(formatApertureLabel(circularClear(0, 0), undefined)).toBe("Default");
+    expect(formatApertureLabel(circularClear(-1.25, 2.5), undefined)).toBe("Cir offset (-1.25, 2.5)");
+    expect(formatApertureLabel(annularClear(1.5, 0, 0), undefined)).toBe("Annu obs 1.5");
+    expect(formatApertureLabel(annularClear(1.5, -1, 2), undefined)).toBe("Annu obs 1.5, offset (-1, 2)");
+    expect(formatApertureLabel(undefined, circularEdge(3.25, 0, 0))).toBe("Default; Edge Cir 3.25");
+    expect(formatApertureLabel(undefined, circularEdge(3.25, 0.5, -0.75))).toBe(
+      "Default; Edge Cir 3.25, offset (0.5, -0.75)",
+    );
+    expect(formatApertureLabel(annularClear(1.5, -1, 2), circularEdge(3.25, 0.5, -0.75))).toBe(
+      "Annu obs 1.5, offset (-1, 2); Edge Cir 3.25, offset (0.5, -0.75)",
+    );
+    expect(formatApertureLabel({
+      shape: "rectangular",
+      xHalfWidth: 4,
+      yHalfWidth: 2,
+      rotation: 0,
+      offsetX: 0,
+      offsetY: 0,
+    }, undefined)).toBe("Rect (4,2)");
+    expect(formatApertureLabel({
+      shape: "rectangular",
+      xHalfWidth: 4,
+      yHalfWidth: 2,
+      rotation: 15,
+      offsetX: -1,
+      offsetY: 2,
+    }, {
+      shape: "rectangular",
+      xHalfWidth: 5,
+      yHalfWidth: 3,
+      rotation: -30,
+      offsetX: 0.5,
+      offsetY: -0.75,
+    })).toBe("Rect (4,2), rot 15°, offset (-1, 2); Edge Rect (5,3), rot -30°, offset (0.5, -0.75)");
+  });
+
+  it("renders aperture labels and opens the modal", async () => {
+    const onOpenModal = jest.fn();
+    const { rerender } = render(
+      <ApertureCell clearAperture={undefined} edgeAperture={undefined} onOpenModal={onOpenModal} />,
+    );
+
+    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent("Default");
+
+    rerender(
+      <ApertureCell
+        clearAperture={{ shape: "circular", offsetX: -1, offsetY: 2 }}
+        edgeAperture={{ shape: "circular", radius: 4, offsetX: 0, offsetY: 0 }}
+        onOpenModal={onOpenModal}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveTextContent(
+      "Cir offset (-1, 2); Edge Cir 4",
+    );
+
+    await userEvent.click(screen.getByRole("button", { name: "Edit aperture" }));
+    expect(onOpenModal).toHaveBeenCalledTimes(1);
+  });
+
   it("renders aspherical labels and opens the modal", async () => {
     const onOpenModal = jest.fn();
     const { rerender } = render(<AsphericalCell aspherical={undefined} onOpenModal={onOpenModal} />);
@@ -89,6 +170,41 @@ describe("LensPrescriptionGridCells", () => {
     expect(screen.getByRole("button", { name: "Edit diffraction grating" }).parentElement!.style.touchAction).not.toBe(
       "none",
     );
+  });
+
+  it("uses single-line ellipsis for overflowing action cell text", () => {
+    const expectedClasses = ["overflow-hidden", "text-ellipsis", "whitespace-nowrap"];
+    const { rerender } = render(<MediumCell medium="N-SF11 with a very long catalog display name" onOpenModal={() => {}} />);
+
+    expect(screen.getByRole("button", { name: "Edit medium" })).toHaveClass(...expectedClasses);
+
+    rerender(
+      <ApertureCell
+        clearAperture={{ shape: "circular", offsetX: -12.345, offsetY: 67.89 }}
+        edgeAperture={{ shape: "circular", radius: 123.456, offsetX: 0.12, offsetY: -0.34 }}
+        onOpenModal={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Edit aperture" })).toHaveClass(...expectedClasses);
+
+    rerender(
+      <AsphericalCell
+        aspherical={{ kind: "EvenAspherical", conicConstant: -1, polynomialCoefficients: [0.1] }}
+        onOpenModal={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Edit aspherical parameters" })).toHaveClass(...expectedClasses);
+
+    rerender(
+      <DecenterCell
+        decenter={{ ...baseDecenter, coordinateSystemStrategy: "dec and return" }}
+        onOpenModal={() => {}}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Edit decenter and tilt" })).toHaveClass(...expectedClasses);
+
+    rerender(<DiffractionGratingCell diffractionGrating={{ lpmm: 1200, order: 1 }} onOpenModal={() => {}} />);
+    expect(screen.getByRole("button", { name: "Edit diffraction grating" })).toHaveClass(...expectedClasses);
   });
 
   it("keeps portal tooltips mouse-hover only for the full trigger", () => {

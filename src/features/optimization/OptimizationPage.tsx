@@ -118,6 +118,7 @@ export function OptimizationPage({
   const asphereModal = useStore(optimizationStore, (state) => state.asphereModal);
   const [mediumModalRow, setMediumModalRow] = useState<GridRow | undefined>();
   const [asphericalModalRow, setAsphericalModalRow] = useState<GridRow | undefined>();
+  const [apertureModalRow, setApertureModalRow] = useState<GridRow | undefined>();
   const [decenterModalRow, setDecenterModalRow] = useState<GridRow | undefined>();
   const [diffractionGratingModalRow, setDiffractionGratingModalRow] = useState<GridRow | undefined>();
   const [evaluationReport, setEvaluationReport] = useState<OptimizationReport | undefined>();
@@ -474,6 +475,7 @@ export function OptimizationPage({
       rows: radiusRows,
       onOpenMediumModal: setMediumModalRow,
       onOpenAsphericalModal: setAsphericalModalRow,
+      onOpenApertureModal: setApertureModalRow,
       onOpenDecenterModal: setDecenterModalRow,
       onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
     },
@@ -555,10 +557,12 @@ export function OptimizationPage({
       <OptimizationInspectionModals
         mediumModalRow={mediumModalRow}
         asphericalModalRow={asphericalModalRow}
+        apertureModalRow={apertureModalRow}
         decenterModalRow={decenterModalRow}
         diffractionGratingModalRow={diffractionGratingModalRow}
         onCloseMediumModal={() => setMediumModalRow(undefined)}
         onCloseAsphericalModal={() => setAsphericalModalRow(undefined)}
+        onCloseApertureModal={() => setApertureModalRow(undefined)}
         onCloseDecenterModal={() => setDecenterModalRow(undefined)}
         onCloseDiffractionGratingModal={() => setDiffractionGratingModalRow(undefined)}
       />

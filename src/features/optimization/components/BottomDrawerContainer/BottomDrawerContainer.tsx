@@ -79,6 +79,7 @@ export function BottomDrawerContainer({
     onOpenThicknessModal: (surfaceIndex: number) => optimizationStore.getState().openThicknessModal(surfaceIndex),
     onOpenMediumModal: prescription.onOpenMediumModal,
     onOpenAsphericalModal: prescription.onOpenAsphericalModal,
+    onOpenApertureModal: prescription.onOpenApertureModal,
     onOpenAsphereVarModal: (surfaceIndex: number) => optimizationStore.getState().openAsphereModal(surfaceIndex),
     onOpenDecenterModal: prescription.onOpenDecenterModal,
     onOpenDiffractionGratingModal: prescription.onOpenDiffractionGratingModal,

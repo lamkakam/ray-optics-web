@@ -1,4 +1,5 @@
 import {
+  createApertureColumn,
   createMediumColumn,
   createSemiDiameterColumn,
   createThicknessColumn,
@@ -6,6 +7,7 @@ import {
   lensPrescriptionGridIndexColumnDef,
 } from "@/shared/lib/lens-prescription-grid";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import type { ValueGetterParams } from "ag-grid-community";
 
 const getGridRow = (row: GridRow) => row;
 
@@ -15,6 +17,7 @@ describe("lens prescription grid column widths", () => {
       thickness: 130,
       medium: 115,
       semiDiameter: 115,
+      aperture: 115,
     });
   });
 
@@ -22,6 +25,7 @@ describe("lens prescription grid column widths", () => {
     expect(createThicknessColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.thickness);
     expect(createMediumColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.medium);
     expect(createSemiDiameterColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.semiDiameter);
+    expect(createApertureColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aperture);
   });
 
   it("keeps the shared Index column pinned left with its shared width", () => {
@@ -30,5 +34,59 @@ describe("lens prescription grid column widths", () => {
       pinned: "left",
       width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.index,
     });
+  });
+
+  it("returns the formatted aperture label from the aperture value getter", () => {
+    const row: GridRow = {
+      kind: "surface",
+      id: "surface-1",
+      label: "Default",
+      curvatureRadius: 10,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+      clear_aperture: { shape: "annular", obstructionRadius: 1.25, offsetX: -1, offsetY: 2 },
+      edge_aperture: { shape: "circular", radius: 3.5, offsetX: 0.5, offsetY: -0.75 },
+    };
+    const column = createApertureColumn({ getGridRow });
+    const valueGetter = column.valueGetter;
+
+    expect(typeof valueGetter).toBe("function");
+    if (typeof valueGetter !== "function") return;
+
+    expect(valueGetter({ data: row } as ValueGetterParams<GridRow>)).toBe(
+      "Annu obs 1.25, offset (-1, 2); Edge Cir 3.5, offset (0.5, -0.75)",
+    );
+  });
+
+  it("blanks and disables semi-diameter for rectangular clear apertures", () => {
+    const row: GridRow = {
+      kind: "surface",
+      id: "surface-1",
+      label: "Default",
+      curvatureRadius: 10,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 0,
+      clear_aperture: {
+        shape: "rectangular",
+        xHalfWidth: 4,
+        yHalfWidth: 2,
+        rotation: 0,
+        offsetX: 0,
+        offsetY: 0,
+      },
+    };
+    const onSemiDiameterChange = jest.fn();
+    const column = createSemiDiameterColumn({ getGridRow, onSemiDiameterChange });
+
+    expect(typeof column.valueGetter).toBe("function");
+    expect(typeof column.editable).toBe("function");
+    if (typeof column.valueGetter !== "function" || typeof column.editable !== "function") return;
+
+    expect(column.valueGetter({ data: row } as ValueGetterParams<GridRow>)).toBeUndefined();
+    expect(column.editable({ data: row } as never)).toBe(false);
   });
 });

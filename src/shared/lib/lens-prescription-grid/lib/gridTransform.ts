@@ -25,6 +25,8 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
     medium: s.medium,
     manufacturer: s.manufacturer,
     semiDiameter: s.semiDiameter,
+    ...(s.clear_aperture !== undefined ? { clear_aperture: s.clear_aperture } : {}),
+    ...(s.edge_aperture !== undefined ? { edge_aperture: s.edge_aperture } : {}),
     ...(s.aspherical !== undefined ? { aspherical: s.aspherical } : {}),
     ...(s.decenter !== undefined ? { decenter: s.decenter } : {}),
     ...(s.diffractionGrating !== undefined ? { diffractionGrating: s.diffractionGrating } : {}),
@@ -56,6 +58,12 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
     };
     if (r.aspherical !== undefined) {
       surface.aspherical = r.aspherical;
+    }
+    if (r.clear_aperture !== undefined) {
+      surface.clear_aperture = r.clear_aperture;
+    }
+    if (r.edge_aperture !== undefined) {
+      surface.edge_aperture = r.edge_aperture;
     }
     if (r.decenter !== undefined) {
       surface.decenter = r.decenter;

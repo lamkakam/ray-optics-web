@@ -102,7 +102,7 @@ export function _getOptimizationInterruptStateForTesting(): { activeRunId?: stri
 3. Emits `10%` with `"Loading Pyodide loader"`. The worker imports `loadPyodide` and `version` from the pinned npm package; it does not use `importScripts`.
 4. Emits `25%` with `"Starting Pyodide runtime"`, natively imports `pyodide.asm.mjs` from `https://cdn.jsdelivr.net/pyodide/v314.0.0/full/` with webpack processing disabled, and passes its module factory to `loadPyodide({ indexURL, createPyodideModule })`. This prevents webpack from converting Pyodide's computed CDN import into a local context lookup.
 5. Emits `40%` with `"Loading Pyodide packages"` and loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.14.0-py3-none-any.whl`.
+6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.15.0-py3-none-any.whl`.
 7. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl, onProgress)`.
 8. Emits `100%` with `"Ready"`.
 
@@ -110,7 +110,7 @@ export function _getOptimizationInterruptStateForTesting(): { activeRunId?: stri
 
 1. Emits `60%` with `"Installing RayOptics packages"` and installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
 2. Emits `75%` with `"Installing supporting packages"` and installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
-3. Emits `85%` with `"Loading local wheel and imports"` and installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, `water`, and `d263teco` glass objects, and imports the needed symbols from `rayoptics.environment`, `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, `rayoptics_web_utils.glass.glass`, and `rayoptics_web_utils.optimization`, including `evaluate_optimization_problem` and `optimize_opm`.
+3. Emits `85%` with `"Loading local wheel and imports"` and installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, `water`, and `d263teco` glass objects, and imports the needed symbols from `rayoptics.environment`, `rayoptics.elem.surface` (`DecenterData`, `Circular`), `rayoptics_web_utils.aperture` (`Annular`, `OffsetCircular`, `OffsetRotatedRectangular`), `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, `rayoptics_web_utils.glass.glass`, and `rayoptics_web_utils.optimization`, including `evaluate_optimization_problem` and `optimize_opm`.
 
 ## Public API
 
@@ -121,8 +121,8 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `init(onProgress?)` | Initializes Pyodide singleton and optionally emits determinate startup milestones. No-op if already initialized, except it can emit `100%` ready to a supplied callback. |
 | `getFirstOrderData(model)` | Builds `opm` from model, returns optical data (EFL, f-number, etc.) as `Record<string, number>`. |
 | `plotLensLayout(model, isDark)` | Builds `opm` from model, derives `show_ray_fan_vs_wvls` from any `surface.diffractionGrating`, forwards `is_dark`, and returns a lens layout plot as a base64-encoded PNG string. |
-| `getRayFanData(model, fieldIndex, imagePoint?)` | Builds `opm` from model, returns grouped transverse ray-fan line data for all wavelengths at the selected field and image reference. Used by the ECharts Ray Fan view. |
-| `getOpdFanData(model, fieldIndex, imagePoint?)` | Builds `opm` from model, returns grouped OPD-fan line data for all wavelengths at the selected field. Used by the ECharts OPD Fan view. |
+| `getRayFanData(model, fieldIndex, imagePoint?)` | Builds `opm` from model, returns grouped transverse ray-fan line data for all wavelengths at the selected field and image reference. Blocked samples are normalized to `undefined` gaps for ECharts. Used by the ECharts Ray Fan view. |
+| `getOpdFanData(model, fieldIndex, imagePoint?)` | Builds `opm` from model, returns grouped OPD-fan line data for all wavelengths at the selected field. Blocked samples are normalized to `undefined` gaps for ECharts. Used by the ECharts OPD Fan view. |
 | `getSpotDiagramData(model, fieldIndex, imagePoint?)` | Returns per-wavelength spot-diagram point clouds using `json.dumps(get_spot_data(..., image_point=...))`. Used by the ECharts Spot Diagram view. |
 | `getFieldCurvatureData(model, wi)` | Returns `FieldCurveData` with sagittal/tangential focus-shift curves for the selected wavelength. |
 | `getAstigmatismCurveData(model, wi)` | Returns `AstigmatismCurveData` with one `Astigmatism` separation curve for the selected wavelength. |
@@ -152,8 +152,8 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_init(runPython, wheelUrl, onProgress?)` — full package installation sequence with package-install progress milestones.
 - `_getFirstOrderData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_first_order_data(${opm}))\`)`.
 - `_plotLensLayout(runPython, model, isDark)` — checks `model.surfaces` for any `diffractionGrating` and runs `buildScript(model, (opm) => \`plot_lens_layout(${opm}, show_ray_fan_vs_wvls=..., is_dark=...)\`)`.
-- `_getRayFanData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point=...))\`)` and parses the JSON into `RayFanData`.
-- `_getOpdFanData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point=...))\`)` and parses the JSON into `OpdFanData`.
+- `_getRayFanData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point=...))\`)`, parses the JSON, and normalizes JSON `null` fan ordinates to `undefined` gaps.
+- `_getOpdFanData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point=...))\`)`, parses the JSON, and normalizes JSON `null` fan ordinates to `undefined` gaps.
 - `_getSpotDiagramData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_spot_data(${opm}, ${fieldIndex}, image_point=...))\`)` and parses the JSON into `SpotDiagramData`.
 - `_getFieldCurvatureData(runPython, model, wi)` — runs `buildScript(model, (opm) => \`json.dumps(get_field_curvature_data(${opm}, ${wi}))\`)` and parses the JSON into `FieldCurveData`.
 - `_getAstigmatismCurveData(runPython, model, wi)` — runs `buildScript(model, (opm) => \`json.dumps(get_astigmatism_curve_data(${opm}, ${wi}))\`)` and parses the JSON into `AstigmatismCurveData`.
@@ -178,6 +178,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **Optimization stop signaling**: stoppable runs are identified by a per-run string id and a shared interrupt buffer. `_optimizeOpm(...)` installs the buffer only for the matching active run and clears it in `finally` for success, stopped, failed, and thrown-error paths. `requestOptimizationStop(...)` is idempotent and returns a no-op result for stale or late run ids.
 - **Plot return type**: `plotLensLayout` returns a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getFieldCurvatureData`, `getAstigmatismCurveData`, `getLSAData`, `getWavefrontData`, `getStrehlVsWavelengthData`, `getGeoPSFData`, `getDiffractionPSFData`, and `getDiffractionMTFData` return typed data for frontend rendering.
 - **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, `water`, and `d263teco` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
+- **Offset aperture globals**: `_init()` imports `OffsetCircular` from `rayoptics_web_utils.aperture` so generated worker-side scripts can use offset-aware circular aperture edge targets.
 
 ## Edge Cases / Error Handling
 

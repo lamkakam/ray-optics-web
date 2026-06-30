@@ -136,7 +136,7 @@ describe("Switch", () => {
     const { rerender } = render(
       <Switch
         checked={false}
-        ariaLabel="Set auto semi-diameter"
+        ariaLabel="Set auto aperture dimensions"
         onCheckedChange={jest.fn()}
         checkedContent="Auto"
         uncheckedContent="Manual"
@@ -152,7 +152,7 @@ describe("Switch", () => {
     rerender(
       <Switch
         checked
-        ariaLabel="Set auto semi-diameter"
+        ariaLabel="Set auto aperture dimensions"
         onCheckedChange={jest.fn()}
         checkedContent="Auto"
         uncheckedContent="Manual"

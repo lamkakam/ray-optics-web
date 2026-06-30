@@ -10,6 +10,7 @@ import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import {
   createAsphericalColumn,
+  createApertureColumn,
   createDecenterColumn,
   createDiffractionGratingColumn,
   createMediumColumn,
@@ -87,6 +88,7 @@ export interface OptimizationLensPrescriptionGridProps {
   readonly onOpenThicknessModal: (surfaceIndex: number) => void;
   readonly onOpenMediumModal: (row: GridRow) => void;
   readonly onOpenAsphericalModal: (row: GridRow) => void;
+  readonly onOpenApertureModal: (row: GridRow) => void;
   readonly onOpenAsphereVarModal: (surfaceIndex: number) => void;
   readonly onOpenDecenterModal: (row: GridRow) => void;
   readonly onOpenDiffractionGratingModal: (row: GridRow) => void;
@@ -101,6 +103,7 @@ export function OptimizationLensPrescriptionGrid({
   onOpenThicknessModal,
   onOpenMediumModal,
   onOpenAsphericalModal,
+  onOpenApertureModal,
   onOpenAsphereVarModal,
   onOpenDecenterModal,
   onOpenDiffractionGratingModal,
@@ -185,6 +188,11 @@ export function OptimizationLensPrescriptionGrid({
       tooltipText: "Click to view medium or glass",
     }),
     createSemiDiameterColumn<RadiusRow>({ getGridRow: (data) => data.row }),
+    createApertureColumn<RadiusRow>({
+      getGridRow: (data) => data.row,
+      onOpenApertureModal,
+      tooltipText: "Click to view aperture",
+    }),
     createAsphericalColumn<RadiusRow>({
       getGridRow: (data) => data.row,
       onOpenAsphericalModal,
@@ -232,6 +240,7 @@ export function OptimizationLensPrescriptionGrid({
   ], [
     asphereStates,
     onOpenAsphericalModal,
+    onOpenApertureModal,
     onOpenAsphereVarModal,
     onOpenDecenterModal,
     onOpenDiffractionGratingModal,

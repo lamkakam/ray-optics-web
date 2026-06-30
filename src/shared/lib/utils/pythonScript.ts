@@ -1,5 +1,6 @@
 
-import type { OpticalModel, AsphericalPolynomialCoeffs } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel, AsphericalPolynomialCoeffs, ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalModel";
+import { pythonExportApertureHelpers } from "./generated/pythonExportApertureHelpers";
 import { builtInSpecialMaterial, nonBuiltInSpecialMaterial } from "./specialMaterials";
 
 type PythonLine = string;
@@ -9,6 +10,7 @@ type SurfaceBuildStep = {
   addSurfaceLine: PythonLine;
   mutationLines: SurfaceMutationLine[];
 };
+type Surface = OpticalModel["surfaces"][number];
 
 function formattedMedium(medium: string, glassManufacturer: string): { medium: string | number, glassManufacturer: string | number } {
   const refractiveIdxForModalGlass = parseFloat(medium);
@@ -124,12 +126,89 @@ function formatDiffractionGrating(
   return `${targetExpr}.phase_element = DiffractionGrating(grating_lpmm=${lpmm}, order=${order})`;
 }
 
-function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBuildStep {
-  const { label, curvatureRadius, thickness, medium, manufacturer, semiDiameter, aspherical, decenter, diffractionGrating } = surface;
-  const semiDiameterArg = semiDiameter ? `, sd=${semiDiameter}` : "";
+function formatCircularApertureAssignment(
+  targetExpr: string,
+  apertureKind: "clear_apertures" | "edge_apertures",
+  radius: number,
+  offsetX: number,
+  offsetY: number,
+): PythonLine {
+  const apertureClass = offsetX === 0 && offsetY === 0 ? "Circular" : "OffsetCircular";
+  return `${targetExpr}.${apertureKind} = [${apertureClass}(radius=${radius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
+}
+
+function formatClearApertureAssignment(
+  targetExpr: string,
+  semiDiameter: number,
+  clearAperture: ClearAperture | undefined,
+): PythonLine | undefined {
+  const offsetX = clearAperture === undefined ? 0 : clearAperture.offsetX;
+  const offsetY = clearAperture === undefined ? 0 : clearAperture.offsetY;
+
+  if (clearAperture?.shape === "rectangular") {
+    return `${targetExpr}.clear_apertures = [OffsetRotatedRectangular(x_half_width=${clearAperture.xHalfWidth}, y_half_width=${clearAperture.yHalfWidth}, x_offset=${offsetX}, y_offset=${offsetY}, rotation=${clearAperture.rotation})]`;
+  }
+
+  if (semiDiameter <= 0) {
+    return undefined;
+  }
+
+  if (clearAperture?.shape === "annular") {
+    return `${targetExpr}.clear_apertures = [Annular(radius=${semiDiameter}, obstruction_radius=${clearAperture.obstructionRadius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
+  }
+
+  return formatCircularApertureAssignment(
+    targetExpr,
+    "clear_apertures",
+    semiDiameter,
+    offsetX,
+    offsetY,
+  );
+}
+
+function formatEdgeApertureAssignment(
+  targetExpr: string,
+  edgeAperture: EdgeAperture,
+): PythonLine {
+  if (edgeAperture.shape === "rectangular") {
+    return `${targetExpr}.edge_apertures = [OffsetRotatedRectangular(x_half_width=${edgeAperture.xHalfWidth}, y_half_width=${edgeAperture.yHalfWidth}, x_offset=${edgeAperture.offsetX}, y_offset=${edgeAperture.offsetY}, rotation=${edgeAperture.rotation})]`;
+  }
+
+  return formatCircularApertureAssignment(
+    targetExpr,
+    "edge_apertures",
+    edgeAperture.radius,
+    edgeAperture.offsetX,
+    edgeAperture.offsetY,
+  );
+}
+
+function buildSurfaceStep(surface: Surface): SurfaceBuildStep {
+  const {
+    label,
+    curvatureRadius,
+    thickness,
+    medium,
+    manufacturer,
+    semiDiameter,
+    clear_aperture,
+    edge_aperture,
+    aspherical,
+    decenter,
+    diffractionGrating,
+  } = surface;
   const { medium: mediumOption, glassManufacturer } = formattedMedium(medium, manufacturer);
   const mutationLines: SurfaceMutationLine[] = [];
   const currentSurfaceExpr = "sm.ifcs[sm.cur_surface]";
+
+  const clearApertureAssignment = formatClearApertureAssignment(currentSurfaceExpr, semiDiameter, clear_aperture);
+  if (clearApertureAssignment !== undefined) {
+    mutationLines.push(clearApertureAssignment);
+  }
+
+  if (edge_aperture !== undefined) {
+    mutationLines.push(formatEdgeApertureAssignment(currentSurfaceExpr, edge_aperture));
+  }
 
   if (aspherical !== undefined) {
     mutationLines.push(formatAsphereAssignment(currentSurfaceExpr, curvatureRadius, aspherical));
@@ -148,7 +227,7 @@ function buildSurfaceStep(surface: OpticalModel["surfaces"][number]): SurfaceBui
   }
 
   return {
-    addSurfaceLine: `sm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}]${semiDiameterArg})`,
+    addSurfaceLine: `sm.add_surface([${curvatureRadius}, ${thickness}, ${mediumOption}${glassManufacturer}])`,
     mutationLines,
   };
 }
@@ -227,10 +306,12 @@ function buildExportPreamble(): string {
 isdark = False
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
-from rayoptics.elem.surface import DecenterData
+from rayoptics.elem.surface import DecenterData, Circular, Aperture, Rectangular
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 from opticalglass.rindexinfo import create_material
+
+${pythonExportApertureHelpers}
 
 caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'
 caf2 = create_glass(caf2_url, "rindexinfo")

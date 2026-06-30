@@ -1,4 +1,5 @@
 export {
+  ApertureCell,
   AsphericalCell,
   DecenterCell,
   DiffractionGratingCell,
@@ -10,10 +11,12 @@ export {
   ASPHERICAL_TYPE_OPTIONS,
   EMPTY_LENS_PRESCRIPTION_CELL_LABEL,
   formatAsphericalLabel,
+  formatApertureLabel,
   formatDecenterLabel,
   formatDiffractionGratingLabel,
 } from "@/shared/lib/lens-prescription-grid/displayLabels";
 export {
+  createApertureColumn,
   createAsphericalColumn,
   createDecenterColumn,
   createDiffractionGratingColumn,

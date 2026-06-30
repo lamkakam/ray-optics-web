@@ -281,6 +281,50 @@ describe("buildOpdFanChartOption", () => {
     ]);
   });
 
+  it("renders missing fan samples as line gaps instead of zero-valued points", () => {
+    const option = buildOpdFanChartOption(
+      [
+        {
+          fieldIdx: 0,
+          wvlIdx: 0,
+          Sagittal: {
+            x: [-1, -0.5, 0, 0.5, 1],
+            y: [-0.2, undefined, undefined, 0.1, 0.2],
+          },
+          Tangential: {
+            x: [-1, -0.5, 0, 0.5, 1],
+            y: [-0.1, undefined, undefined, 0.05, 0.1],
+          },
+          unitX: "",
+          unitY: "waves",
+        },
+      ],
+      ["486.1 nm"],
+      800,
+      400,
+      globalTokens.echarts.text.light,
+    );
+
+    expect(option.series[0]?.data).toEqual([
+      [-1, -0.1],
+      [-0.5, null],
+      [0, null],
+      [0.5, 0.05],
+      [1, 0.1],
+    ]);
+    expect(option.series[1]?.data).toEqual([
+      [-1, -0.2],
+      [-0.5, null],
+      [0, null],
+      [0.5, 0.1],
+      [1, 0.2],
+    ]);
+    expect(option.yAxis).toEqual([
+      expect.objectContaining({ min: -0.1, max: 0.1 }),
+      expect.objectContaining({ min: -0.2, max: 0.2 }),
+    ]);
+  });
+
   it("falls back only for a subplot with an empty or constant finite y range", () => {
     const option = buildOpdFanChartOption(
       [

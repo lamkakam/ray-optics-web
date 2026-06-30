@@ -1,18 +1,23 @@
 {
   "name": "ray-optics-web",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "license": "BSD-3-Clause",
   "private": true,
   "scripts": {
-    "predev": "bash scripts/build-python-wheel.sh",
+    "generate:python-export-helpers": "node scripts/generate-python-export-helpers.mjs",
+    "postinstall": "npm run generate:python-export-helpers",
+    "predev": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
     "dev": "next dev --webpack",
-    "prebuild": "bash scripts/build-python-wheel.sh",
+    "prebuild": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
     "build": "next build --webpack",
     "serve": "npx serve out",
+    "pretype-check": "npm run generate:python-export-helpers",
     "type-check": "tsc --noEmit",
+    "prelint": "npm run generate:python-export-helpers",
     "lint": "eslint .",
+    "pretest": "npm run generate:python-export-helpers",
     "test": "jest",
-    "pretest:e2e": "bash scripts/build-python-wheel.sh",
+    "pretest:e2e": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
     "test:e2e": "playwright test"
   },
   "dependencies": {

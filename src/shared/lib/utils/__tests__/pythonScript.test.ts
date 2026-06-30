@@ -1,5 +1,20 @@
 import { buildOpticalModelScript, buildScript, buildExportScript } from "../pythonScript";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pythonExportApertureHelpers } from "../generated/pythonExportApertureHelpers";
+
+const apertureHelperSourceFiles = [
+  "src/python/src/rayoptics_web_utils/aperture/annular.py",
+  "src/python/src/rayoptics_web_utils/aperture/offset_circular.py",
+  "src/python/src/rayoptics_web_utils/aperture/offset_rotated_rectangular.py",
+];
+
+function readPythonApertureHelperSources(): string {
+  return apertureHelperSourceFiles
+    .map((filePath) => readFileSync(resolve(process.cwd(), filePath), "utf8"))
+    .join("\n");
+}
 
 const baseModel: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -40,12 +55,13 @@ describe("buildOpticalModelScript", () => {
 
   it("should add surfaces including stop", () => {
     const script = buildOpticalModelScript(baseModel);
-    expect(script).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)");
-    expect(script).toContain("sm.add_surface([7331.288, 5.86, \"air\"], sd=8.9483)");
-    expect(script).toContain("sm.add_surface([-24.456, 0.975, \"N-SF5\", \"Schott\"], sd=4.7918)\nsm.set_stop()");
-    expect(script).toContain("sm.add_surface([21.896, 4.822, \"air\"], sd=4.776)");
-    expect(script).toContain("sm.add_surface([86.759, 3.127, \"N-LAK9\", \"Schott\"], sd=8.0218)");
-    expect(script).toContain("sm.add_surface([-20.4942, 41.2365, \"air\"], sd=8.3321)");
+    expect(script).not.toContain("sd=");
+    expect(script).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10.009, x_offset=0, y_offset=0)]");
+    expect(script).toContain("sm.add_surface([7331.288, 5.86, \"air\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=8.9483, x_offset=0, y_offset=0)]");
+    expect(script).toContain("sm.add_surface([-24.456, 0.975, \"N-SF5\", \"Schott\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=4.7918, x_offset=0, y_offset=0)]\nsm.set_stop()");
+    expect(script).toContain("sm.add_surface([21.896, 4.822, \"air\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=4.776, x_offset=0, y_offset=0)]");
+    expect(script).toContain("sm.add_surface([86.759, 3.127, \"N-LAK9\", \"Schott\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=8.0218, x_offset=0, y_offset=0)]");
+    expect(script).toContain("sm.add_surface([-20.4942, 41.2365, \"air\"])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=8.3321, x_offset=0, y_offset=0)]");
   });
 
   it("should set the object distance correctly", () => {
@@ -103,7 +119,8 @@ describe("buildOpticalModelScript", () => {
         "",
         "sm.gaps[0].thi=10000000000",
         "sm.gaps[0].medium = decode_medium(\"air\")",
-        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"], sd=10.009)",
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10.009, x_offset=0, y_offset=0)]",
       ].join("\n")
     );
   });
@@ -253,7 +270,8 @@ describe("buildOpticalModelScript", () => {
 
     expect(script).toContain(
       [
-        "sm.add_surface([23.713, 1.2, \"air\"], sd=5.5)",
+        "sm.add_surface([23.713, 1.2, \"air\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=5.5, x_offset=0, y_offset=0)]",
         "sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=23.713, cc=-1, coefs=[0,0.02])",
         "sm.ifcs[sm.cur_surface].decenter = DecenterData(\"decenter\", alpha=1, beta=2, gamma=3, x=0.1, y=0.2)",
         "sm.set_stop()",
@@ -283,6 +301,137 @@ describe("buildOpticalModelScript", () => {
     );
   });
 
+  it("should emit OffsetCircular for nonzero clear and edge aperture offsets", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 3,
+          clear_aperture: { shape: "circular", offsetX: -0.5, offsetY: 1.25 },
+          edge_aperture: { shape: "circular", radius: 2.5, offsetX: 0.75, offsetY: -1.5 },
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      [
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [OffsetCircular(radius=3, x_offset=-0.5, y_offset=1.25)]",
+        "sm.ifcs[sm.cur_surface].edge_apertures = [OffsetCircular(radius=2.5, x_offset=0.75, y_offset=-1.5)]",
+      ].join("\n"),
+    );
+  });
+
+  it("should keep Circular for zero-offset clear and edge apertures", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 3,
+          clear_aperture: { shape: "circular", offsetX: 0, offsetY: 0 },
+          edge_aperture: { shape: "circular", radius: 2.5, offsetX: 0, offsetY: 0 },
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      [
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=3, x_offset=0, y_offset=0)]",
+        "sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=2.5, x_offset=0, y_offset=0)]",
+      ].join("\n"),
+    );
+    expect(script).not.toContain("OffsetCircular(radius=3");
+  });
+
+  it("should emit Annular for annular clear aperture", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 6,
+          clear_aperture: { shape: "annular", obstructionRadius: 2.25, offsetX: -0.5, offsetY: 1.25 },
+          edge_aperture: { shape: "circular", radius: 5, offsetX: 0, offsetY: 0 },
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      [
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [Annular(radius=6, obstruction_radius=2.25, x_offset=-0.5, y_offset=1.25)]",
+        "sm.ifcs[sm.cur_surface].edge_apertures = [Circular(radius=5, x_offset=0, y_offset=0)]",
+      ].join("\n"),
+    );
+  });
+
+  it("should emit OffsetRotatedRectangular for rectangular clear and edge apertures", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 0,
+          clear_aperture: {
+            shape: "rectangular",
+            xHalfWidth: 4.5,
+            yHalfWidth: 2.25,
+            rotation: 15,
+            offsetX: -1,
+            offsetY: 2,
+          },
+          edge_aperture: {
+            shape: "rectangular",
+            xHalfWidth: 5,
+            yHalfWidth: 3,
+            rotation: -30,
+            offsetX: 0.5,
+            offsetY: -0.75,
+          },
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      [
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [OffsetRotatedRectangular(x_half_width=4.5, y_half_width=2.25, x_offset=-1, y_offset=2, rotation=15)]",
+        "sm.ifcs[sm.cur_surface].edge_apertures = [OffsetRotatedRectangular(x_half_width=5, y_half_width=3, x_offset=0.5, y_offset=-0.75, rotation=-30)]",
+      ].join("\n"),
+    );
+  });
+
+  it("should omit clear aperture for non-positive semi-diameter and edge aperture for default follow-clear", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 0,
+          clear_aperture: { shape: "circular", offsetX: 1, offsetY: 2 },
+          edge_aperture: undefined,
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain("sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])");
+    expect(script).not.toContain("clear_apertures");
+    expect(script).not.toContain("edge_apertures");
+  });
+
   it("should set a surface with fluorite correctly", () => {
     const model: OpticalModel = {
       ...baseModel,
@@ -292,7 +441,7 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, caf2], sd=10)");
+    expect(script).toContain("sm.add_surface([30, 1.1, caf2])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
   });
 
   it("should set a surface with water correctly", () => {
@@ -304,7 +453,7 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, water], sd=10)");
+    expect(script).toContain("sm.add_surface([30, 1.1, water])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
   });
 
   it("should set a surface with D263TECO correctly", () => {
@@ -316,7 +465,7 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, d263teco], sd=10)");
+    expect(script).toContain("sm.add_surface([30, 1.1, d263teco])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
   });
 
   it("should set a model glass surface without manufacturer when medium is numeric and manufacturer is empty", () => {
@@ -328,7 +477,7 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, 1.42], sd=10)");
+    expect(script).toContain("sm.add_surface([30, 1.1, 1.42])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
   });
 
   it("should set a model glass surface with abbe number when medium and manufacturer are numeric", () => {
@@ -340,7 +489,7 @@ describe("buildOpticalModelScript", () => {
       ],
     };
     const script = buildOpticalModelScript(model);
-    expect(script).toContain("sm.add_surface([30, 1.1, 1.42, 84.1], sd=10)");
+    expect(script).toContain("sm.add_surface([30, 1.1, 1.42, 84.1])\nsm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=10, x_offset=0, y_offset=0)]");
   });
 
   it("should call opm.update_model()", () => {
@@ -368,6 +517,46 @@ describe("buildOpticalModelScript", () => {
 });
 
 describe("buildExportScript", () => {
+  it("keeps the generated aperture helper block in sync with the Python source files", () => {
+    expect(pythonExportApertureHelpers).toBe(readPythonApertureHelperSources());
+  });
+
+  it("places the generated aperture helper block before model construction", () => {
+    const script = buildExportScript(baseModel);
+    const helpersIdx = script.indexOf(pythonExportApertureHelpers);
+    const modelIdx = script.indexOf("opm = OpticalModel()");
+
+    expect(helpersIdx).toBeGreaterThan(-1);
+    expect(modelIdx).toBeGreaterThan(helpersIdx);
+  });
+
+  it("imports Circular and Rectangular in the export preamble", () => {
+    const script = buildExportScript(baseModel);
+    expect(script).toContain("from rayoptics.elem.surface import DecenterData, Circular, Aperture, Rectangular");
+  });
+
+  it("defines OffsetCircular and Annular inline in the export preamble", () => {
+    const script = buildExportScript(baseModel);
+    expect(script).toContain("class OffsetCircular(Circular):");
+    expect(script).toContain("def edge_pt_target(self, rel_dir):");
+    expect(script).toContain("self.x_offset + self.radius * rel_dir[0]");
+    expect(script).toContain("self.y_offset + self.radius * rel_dir[1]");
+    expect(script).toContain("class Annular(Aperture):");
+    expect(script).toContain("obstruction_radius");
+    expect(script).toContain("return self.obstruction_radius - fuzz <= radius <= self.radius + fuzz");
+  });
+
+  it("defines OffsetRotatedRectangular inline in the export preamble", () => {
+    const script = buildExportScript(baseModel);
+    expect(script).toContain("class OffsetRotatedRectangular(Rectangular):");
+    expect(script).toContain("angle = radians(self.rotation)");
+    expect(script).toContain("def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:");
+    expect(script).toContain("def edge_pt_target(self, rel_dir):");
+    expect(script).toMatch(
+      /class OffsetRotatedRectangular\(Rectangular\):[\s\S]*def set_dimension\(self, x, y\):[\s\S]*target = abs\(x\)[\s\S]*max_projection = max\(/,
+    );
+  });
+
   it("defines the water material in the export preamble", () => {
     const script = buildExportScript(baseModel);
     expect(script).toContain("water_url = 'https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C.yml'");

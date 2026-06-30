@@ -39,6 +39,31 @@ export type DiffractionGrating = {
   order: number,
 };
 
+type BaseAperture = {
+  offsetX: number,
+  offsetY: number,
+};
+
+export type AnnularAperture = {
+  shape: "annular",
+  obstructionRadius: number,
+};
+
+export type RectangularAperture = {
+  shape: "rectangular",
+  xHalfWidth: number,
+  yHalfWidth: number,
+  rotation: number,
+};
+
+export type ClearAperture = ({
+  shape: "circular",
+} | AnnularAperture | RectangularAperture) & BaseAperture;
+
+export type EdgeAperture = ({
+  shape: "circular",
+  radius: number,
+} | RectangularAperture) & BaseAperture;
 
 export type AsphericalPolynomialCoeffs = number[];
 
@@ -72,6 +97,8 @@ export interface Surface {
   medium: string; // can be "air" or "REFL"
   manufacturer: string; // if medium is "air" or "REFL", manufacturer is ""
   semiDiameter: number;
+  clear_aperture?: ClearAperture;
+  edge_aperture?: EdgeAperture;
   aspherical?: AsphericalConfig;
   decenter?: DecenterConfig,
   diffractionGrating?: DiffractionGrating,

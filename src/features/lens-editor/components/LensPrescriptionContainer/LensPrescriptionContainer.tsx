@@ -17,6 +17,7 @@ import { MediumSelectorModal } from "./MediumSelectorModal";
 import { AsphericalModal } from "./AsphericalModal";
 import { DecenterModal, type DecenterType } from "./DecenterModal";
 import { DiffractionGratingModal } from "./DiffractionGratingModal";
+import { ApertureModal } from "./ApertureModal";
 import { FormattingModal } from "./FormattingModal";
 import { PythonScriptModal } from "./PythonScriptModal";
 import { AddReferenceSurfaceModal } from "./AddReferenceSurfaceModal";
@@ -91,6 +92,7 @@ export function LensPrescriptionContainer({
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
   const decenterModal = useStore(store, (s) => s.decenterModal);
   const diffractionGratingModal = useStore(store, (s) => s.diffractionGratingModal);
+  const apertureModal = useStore(store, (s) => s.apertureModal);
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
   const [formattingOpen, setFormattingOpen] = useState(false);
   const [formattingError, setFormattingError] = useState<string | undefined>(undefined);
@@ -109,6 +111,7 @@ export function LensPrescriptionContainer({
     (rowId: string) => store.getState().openDiffractionGratingModal(rowId),
     [store]
   );
+  const handleOpenApertureModal = useCallback((rowId: string) => store.getState().openApertureModal(rowId), [store]);
   const handleAddRowAfter = useCallback((rowId: string) => store.getState().addRowAfter(rowId), [store]);
   const handleDeleteRow = useCallback((rowId: string) => store.getState().deleteRow(rowId), [store]);
 
@@ -116,6 +119,7 @@ export function LensPrescriptionContainer({
   const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);
   const decenterRow = rows.find((r) => r.id === decenterModal.rowId);
   const diffractionGratingRow = rows.find((r) => r.id === diffractionGratingModal.rowId);
+  const apertureRow = rows.find((r) => r.id === apertureModal.rowId);
   const isObjectMediumRow = mediumRow?.kind === "object";
 
   return (
@@ -130,13 +134,13 @@ export function LensPrescriptionContainer({
       </div>
 
       <div className="mt-2 mb-2 flex items-center gap-2">
-        <Label htmlFor="auto-aperture-toggle">Set auto semi-diameter:</Label>
-        <Tooltip text={autoAperture ? "Turn off auto semi-diameter" : "Turn on auto semi-diameter"} noTouch>
+        <Label htmlFor="auto-aperture-toggle">Set auto aperture dimensions:</Label>
+        <Tooltip text={autoAperture ? "Turn off auto aperture dimensions" : "Turn on auto aperture dimensions"} noTouch>
           <Switch
             id="auto-aperture-toggle"
             checked={autoAperture}
             onCheckedChange={(checked) => store.getState().setAutoAperture(checked)}
-            ariaLabel="Set auto semi-diameter"
+            ariaLabel="Set auto aperture dimensions"
             checkedContent="Auto"
             uncheckedContent="Manual"
             size={screenSize === "screenSM" ? "sm" : "md"}
@@ -151,6 +155,7 @@ export function LensPrescriptionContainer({
         onOpenAsphericalModal={handleOpenAsphericalModal}
         onOpenDecenterModal={handleOpenDecenterModal}
         onOpenDiffractionGratingModal={handleOpenDiffractionGratingModal}
+        onOpenApertureModal={handleOpenApertureModal}
         onAddRowAfter={handleAddRowAfter}
         onDeleteRow={handleDeleteRow}
         semiDiameterReadonly={autoAperture}
@@ -261,6 +266,24 @@ export function LensPrescriptionContainer({
           store.getState().updateRow(diffractionGratingModal.rowId, { diffractionGrating: undefined });
           store.getState().closeDiffractionGratingModal();
         }}
+      />
+
+      <ApertureModal
+        key={apertureModal.open ? apertureModal.rowId : "aperture-closed"}
+        isOpen={apertureModal.open}
+        autoAperture={autoAperture}
+        semiDiameter={apertureRow?.kind === "surface" ? apertureRow.semiDiameter : 1}
+        initialClearAperture={apertureRow?.kind === "surface" ? apertureRow.clear_aperture : undefined}
+        initialEdgeAperture={apertureRow?.kind === "surface" ? apertureRow.edge_aperture : undefined}
+        onConfirm={({ clear_aperture, edge_aperture }) => {
+          store.getState().updateRow(apertureModal.rowId, {
+            clear_aperture,
+            edge_aperture,
+            ...(clear_aperture.shape === "rectangular" ? { semiDiameter: 0 } : {}),
+          });
+          store.getState().closeApertureModal();
+        }}
+        onClose={() => store.getState().closeApertureModal()}
       />
 
       <PythonScriptModal

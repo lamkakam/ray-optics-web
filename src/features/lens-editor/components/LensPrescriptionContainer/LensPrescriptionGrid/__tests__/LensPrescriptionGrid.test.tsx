@@ -54,6 +54,7 @@ describe("LensPrescriptionGrid", () => {
     onOpenAsphericalModal: jest.fn(),
     onOpenDecenterModal: jest.fn(),
     onOpenDiffractionGratingModal: jest.fn(),
+    onOpenApertureModal: jest.fn(),
     onAddRowAfter: jest.fn(),
     onDeleteRow: jest.fn(),
   };
@@ -84,6 +85,10 @@ describe("LensPrescriptionGrid", () => {
     expect(headerTexts).toContain("Thickness");
     expect(headerTexts).toContain("Medium");
     expect(headerTexts).toContain("Semi-diam.");
+    expect(headerTexts.slice(headerTexts.indexOf("Semi-diam."), headerTexts.indexOf("Semi-diam.") + 2)).toEqual([
+      "Semi-diam.",
+      "Aperture",
+    ]);
     expect(headerTexts).toContain("Tilt & Decenter");
     expect(headerTexts).toContain("Diffraction Grating");
   });
@@ -218,12 +223,12 @@ describe("LensPrescriptionGrid", () => {
     const s1Cells = rows[1].querySelectorAll("td");
     const s2Cells = rows[2].querySelectorAll("td");
 
-    expect(Array.from([s1Cells[7], s1Cells[8], s1Cells[9]], (cell) => cell.textContent)).toEqual([
+    expect(Array.from([s1Cells[8], s1Cells[9], s1Cells[10]], (cell) => cell.textContent)).toEqual([
       "None",
       "decenter",
       "600 lp/mm",
     ]);
-    expect(Array.from([s2Cells[7], s2Cells[8], s2Cells[9]], (cell) => cell.textContent)).toEqual([
+    expect(Array.from([s2Cells[8], s2Cells[9], s2Cells[10]], (cell) => cell.textContent)).toEqual([
       "Conic",
       "None",
       "None",
@@ -305,6 +310,19 @@ describe("LensPrescriptionGrid", () => {
     await userEvent.click(cellWrapper);
 
     expect(onOpenAsphericalModal).toHaveBeenCalledWith("s1");
+  });
+
+  it("opens aperture modal when clicking the aperture button and surrounding cell area", async () => {
+    const onOpenApertureModal = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onOpenApertureModal={onOpenApertureModal} />);
+    const buttons = screen.getAllByRole("button", { name: "Edit aperture" });
+
+    await userEvent.click(buttons[0]);
+    expect(onOpenApertureModal).toHaveBeenCalledWith("s1");
+
+    const cellWrapper = buttons[1].closest("[data-cell-wrapper]")!;
+    await userEvent.click(cellWrapper);
+    expect(onOpenApertureModal).toHaveBeenCalledWith("s2");
   });
 
   // --- Add/Delete row buttons ---
