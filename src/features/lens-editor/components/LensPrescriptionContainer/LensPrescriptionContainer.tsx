@@ -134,13 +134,13 @@ export function LensPrescriptionContainer({
       </div>
 
       <div className="mt-2 mb-2 flex items-center gap-2">
-        <Label htmlFor="auto-aperture-toggle">Set auto semi-diameter:</Label>
-        <Tooltip text={autoAperture ? "Turn off auto semi-diameter" : "Turn on auto semi-diameter"} noTouch>
+        <Label htmlFor="auto-aperture-toggle">Set auto aperture dimensions:</Label>
+        <Tooltip text={autoAperture ? "Turn off auto aperture dimensions" : "Turn on auto aperture dimensions"} noTouch>
           <Switch
             id="auto-aperture-toggle"
             checked={autoAperture}
             onCheckedChange={(checked) => store.getState().setAutoAperture(checked)}
-            ariaLabel="Set auto semi-diameter"
+            ariaLabel="Set auto aperture dimensions"
             checkedContent="Auto"
             uncheckedContent="Manual"
             size={screenSize === "screenSM" ? "sm" : "md"}

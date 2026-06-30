@@ -861,25 +861,25 @@ describe("LensPrescriptionContainer", () => {
   });
 
   // --- Auto-aperture toggle ---
-  it("renders switch with 'Manual' text and visible 'Set auto semi-diameter:' label initially", () => {
+  it("renders switch with 'Manual' text and visible 'Set auto aperture dimensions:' label initially", () => {
     renderLPC();
-    expect(screen.getByText("Set auto semi-diameter:")).toBeInTheDocument();
-    const toggle = screen.getByRole("switch", { name: "Set auto semi-diameter" });
+    expect(screen.getByText("Set auto aperture dimensions:")).toBeInTheDocument();
+    const toggle = screen.getByRole("switch", { name: "Set auto aperture dimensions" });
     expect(toggle).toHaveAttribute("aria-checked", "false");
     expect(toggle).toHaveTextContent("Manual");
   });
 
   it("clicking switch changes text to 'Auto'", async () => {
     renderLPC();
-    const toggle = screen.getByRole("switch", { name: "Set auto semi-diameter" });
+    const toggle = screen.getByRole("switch", { name: "Set auto aperture dimensions" });
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-checked", "true");
     expect(toggle).toHaveTextContent("Auto");
   });
 
-  it("shows clear rectangular aperture ratio labels when auto semi-diameter is enabled", async () => {
+  it("shows clear rectangular aperture ratio labels when auto aperture dimensions are enabled", async () => {
     const { store } = renderLPC();
-    const toggle = screen.getByRole("switch", { name: "Set auto semi-diameter" });
+    const toggle = screen.getByRole("switch", { name: "Set auto aperture dimensions" });
     const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
     if (surfaceRow?.kind !== "surface") {
       throw new Error("Expected a surface row");
@@ -897,7 +897,7 @@ describe("LensPrescriptionContainer", () => {
 
   it("clicking switch twice reverts to 'Manual'", async () => {
     renderLPC();
-    const toggle = screen.getByRole("switch", { name: "Set auto semi-diameter" });
+    const toggle = screen.getByRole("switch", { name: "Set auto aperture dimensions" });
     await userEvent.click(toggle);
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-checked", "false");
