@@ -877,6 +877,24 @@ describe("LensPrescriptionContainer", () => {
     expect(toggle).toHaveTextContent("Auto");
   });
 
+  it("shows clear rectangular aperture ratio labels when auto semi-diameter is enabled", async () => {
+    const { store } = renderLPC();
+    const toggle = screen.getByRole("switch", { name: "Set auto semi-diameter" });
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    if (surfaceRow?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+
+    await userEvent.click(toggle);
+    act(() => {
+      store.getState().openApertureModal(surfaceRow.id);
+    });
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "rectangular");
+
+    expect(screen.getByRole("textbox", { name: "Clear Length Ratio" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Clear Width Ratio" })).toBeInTheDocument();
+  });
+
   it("clicking switch twice reverts to 'Manual'", async () => {
     renderLPC();
     const toggle = screen.getByRole("switch", { name: "Set auto semi-diameter" });

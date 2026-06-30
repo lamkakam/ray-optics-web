@@ -22,6 +22,7 @@ interface ApertureConfirmValue {
 
 interface ApertureModalProps {
   readonly isOpen: boolean;
+  readonly autoAperture?: boolean;
   readonly semiDiameter: number;
   readonly initialClearAperture: ClearAperture | undefined;
   readonly initialEdgeAperture: EdgeAperture | undefined;
@@ -39,6 +40,7 @@ interface EdgeApertureSectionHandle {
 }
 
 interface ClearApertureSectionProps {
+  readonly autoAperture: boolean;
   readonly semiDiameter: number;
   readonly initialClearAperture: ClearAperture | undefined;
   readonly readOnly: boolean;
@@ -79,6 +81,8 @@ interface EdgeCircularFieldsProps {
 interface RectangularFieldsProps {
   readonly idPrefix: string;
   readonly ariaPrefix: string;
+  readonly xLabel: string;
+  readonly yLabel: string;
   readonly xHalfWidth: string;
   readonly yHalfWidth: string;
   readonly rotation: string;
@@ -242,6 +246,8 @@ function EdgeCircularFields({
 function RectangularFields({
   idPrefix,
   ariaPrefix,
+  xLabel,
+  yLabel,
   xHalfWidth,
   yHalfWidth,
   rotation,
@@ -259,10 +265,10 @@ function RectangularFields({
     <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
-          <Label htmlFor={`${idPrefix}-x-half-width`}>Half-Length</Label>
+          <Label htmlFor={`${idPrefix}-x-half-width`}>{xLabel}</Label>
           <Input
             id={`${idPrefix}-x-half-width`}
-            aria-label={`${ariaPrefix} Half-Length`}
+            aria-label={`${ariaPrefix} ${xLabel}`}
             type="text"
             value={xHalfWidth}
             disabled={readOnly}
@@ -273,10 +279,10 @@ function RectangularFields({
           />
         </div>
         <div>
-          <Label htmlFor={`${idPrefix}-y-half-width`}>Half-Width</Label>
+          <Label htmlFor={`${idPrefix}-y-half-width`}>{yLabel}</Label>
           <Input
             id={`${idPrefix}-y-half-width`}
-            aria-label={`${ariaPrefix} Half-Width`}
+            aria-label={`${ariaPrefix} ${yLabel}`}
             type="text"
             value={yHalfWidth}
             disabled={readOnly}
@@ -357,6 +363,7 @@ const EDGE_APERTURE_SHAPE_COMPONENTS = {
 
 const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertureSectionProps>(function ClearApertureSection(
   {
+    autoAperture,
     semiDiameter,
     initialClearAperture,
     readOnly,
@@ -468,6 +475,8 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
         <CLEAR_APERTURE_SHAPE_COMPONENTS.rectangular
           idPrefix="clear-aperture"
           ariaPrefix="Clear"
+          xLabel={autoAperture ? "Length Ratio" : "Half-Length"}
+          yLabel={autoAperture ? "Width Ratio" : "Half-Width"}
           xHalfWidth={clearXHalfWidth}
           yHalfWidth={clearYHalfWidth}
           rotation={clearRotation}
@@ -587,6 +596,8 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
         <EDGE_APERTURE_SHAPE_COMPONENTS.rectangular
           idPrefix="edge-aperture"
           ariaPrefix="Edge"
+          xLabel="Half-Length"
+          yLabel="Half-Width"
           xHalfWidth={edgeXHalfWidth}
           yHalfWidth={edgeYHalfWidth}
           rotation={edgeRotation}
@@ -620,6 +631,7 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
 
 export function ApertureModal({
   isOpen,
+  autoAperture = false,
   semiDiameter,
   initialClearAperture,
   initialEdgeAperture,
@@ -684,6 +696,7 @@ export function ApertureModal({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <ClearApertureSection
           ref={clearSectionRef}
+          autoAperture={autoAperture}
           semiDiameter={semiDiameter}
           initialClearAperture={initialClearAperture}
           readOnly={readOnly}

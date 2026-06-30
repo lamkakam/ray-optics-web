@@ -5,6 +5,7 @@ Modal for editing or inspecting a surface's aperture configuration.
 ## Props
 
 - `isOpen`: controls visibility.
+- `autoAperture`: optional flag that switches Clear Rectangular size labels from half dimensions to ratios. Defaults to `false`.
 - `semiDiameter`: outer clear aperture radius for the selected surface, used to validate annular obstruction radius.
 - `initialClearAperture`: optional current clear aperture. Supports circular, annular, and rectangular clear apertures.
 - `initialEdgeAperture`: optional current edge aperture. When omitted, Edge Aperture uses `Default (Follow Clear Aperture)`.
@@ -22,9 +23,9 @@ Modal for editing or inspecting a surface's aperture configuration.
 - Edge Aperture shape supports `Default (Follow Clear Aperture)`, `Circular`, and `Rectangular`.
 - Clear `Circular` shows Offset X and Offset Y text inputs.
 - Clear `Annular` shows Central Obstruction Radius above Offset X and Offset Y.
-- Clear `Rectangular` shows Half-Length, Half-Width, Rotation (°), Offset X, and Offset Y.
+- Clear `Rectangular` shows Half-Length, Half-Width, Rotation (°), Offset X, and Offset Y when `autoAperture` is `false`; it shows Length Ratio and Width Ratio instead of Half-Length and Half-Width when `autoAperture` is `true`.
 - Edge `Circular` shows Radius, Offset X, and Offset Y text inputs.
-- Edge `Rectangular` shows Half-Length, Half-Width, Rotation (°), Offset X, and Offset Y.
+- Edge `Rectangular` always shows Half-Length, Half-Width, Rotation (°), Offset X, and Offset Y.
 - Missing initial offsets default to `0`.
 - Confirm writes circular, annular, or rectangular `clear_aperture` based on the selected clear aperture shape.
 - Confirm writes `edge_aperture: { shape: "circular", radius, offsetX, offsetY }` when Edge Aperture is Circular and `edge_aperture: { shape: "rectangular", xHalfWidth, yHalfWidth, rotation, offsetX, offsetY }` when Edge Aperture is Rectangular.

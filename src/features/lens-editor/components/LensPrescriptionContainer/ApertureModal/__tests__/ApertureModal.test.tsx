@@ -287,6 +287,66 @@ describe("ApertureModal", () => {
     });
   });
 
+  it("shows Half-Length and Half-Width for clear rectangular aperture when auto aperture is disabled", async () => {
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "rectangular");
+
+    expect(screen.getByRole("textbox", { name: "Clear Half-Length" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Clear Half-Width" })).toBeInTheDocument();
+  });
+
+  it("shows Length Ratio and Width Ratio for clear rectangular aperture when auto aperture is enabled", async () => {
+    render(
+      <ApertureModal
+        isOpen
+        autoAperture
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "rectangular");
+
+    expect(screen.getByRole("textbox", { name: "Clear Length Ratio" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Clear Width Ratio" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Clear Half-Length" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Clear Half-Width" })).not.toBeInTheDocument();
+  });
+
+  it("keeps Half-Length and Half-Width labels for rectangular edge aperture when auto aperture is enabled", async () => {
+    render(
+      <ApertureModal
+        isOpen
+        autoAperture
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Edge Aperture Shape"), "rectangular");
+
+    expect(screen.getByRole("textbox", { name: "Edge Half-Length" })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Edge Half-Width" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Edge Length Ratio" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Edge Width Ratio" })).not.toBeInTheDocument();
+  });
+
   it("preloads and disables rectangular aperture controls in read-only mode", () => {
     render(
       <ApertureModal
