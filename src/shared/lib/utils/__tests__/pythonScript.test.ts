@@ -1,5 +1,20 @@
 import { buildOpticalModelScript, buildScript, buildExportScript } from "../pythonScript";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pythonExportApertureHelpers } from "../generated/pythonExportApertureHelpers";
+
+const apertureHelperSourceFiles = [
+  "src/python/src/rayoptics_web_utils/aperture/annular.py",
+  "src/python/src/rayoptics_web_utils/aperture/offset_circular.py",
+  "src/python/src/rayoptics_web_utils/aperture/offset_rotated_rectangular.py",
+];
+
+function readPythonApertureHelperSources(): string {
+  return apertureHelperSourceFiles
+    .map((filePath) => readFileSync(resolve(process.cwd(), filePath), "utf8"))
+    .join("\n");
+}
 
 const baseModel: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -502,6 +517,19 @@ describe("buildOpticalModelScript", () => {
 });
 
 describe("buildExportScript", () => {
+  it("keeps the generated aperture helper block in sync with the Python source files", () => {
+    expect(pythonExportApertureHelpers).toBe(readPythonApertureHelperSources());
+  });
+
+  it("places the generated aperture helper block before model construction", () => {
+    const script = buildExportScript(baseModel);
+    const helpersIdx = script.indexOf(pythonExportApertureHelpers);
+    const modelIdx = script.indexOf("opm = OpticalModel()");
+
+    expect(helpersIdx).toBeGreaterThan(-1);
+    expect(modelIdx).toBeGreaterThan(helpersIdx);
+  });
+
   it("imports Circular and Rectangular in the export preamble", () => {
     const script = buildExportScript(baseModel);
     expect(script).toContain("from rayoptics.elem.surface import DecenterData, Circular, Aperture, Rectangular");
@@ -522,7 +550,7 @@ describe("buildExportScript", () => {
     const script = buildExportScript(baseModel);
     expect(script).toContain("class OffsetRotatedRectangular(Rectangular):");
     expect(script).toContain("angle = radians(self.rotation)");
-    expect(script).toContain("def point_inside(self, x, y, fuzz=1e-5):");
+    expect(script).toContain("def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:");
     expect(script).toContain("def edge_pt_target(self, rel_dir):");
     expect(script).toMatch(
       /class OffsetRotatedRectangular\(Rectangular\):[\s\S]*def set_dimension\(self, x, y\):[\s\S]*target = abs\(x\)[\s\S]*max_projection = max\(/,

@@ -29,6 +29,7 @@ npm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+src/shared/lib/utils/generated/pythonExportApertureHelpers.ts
 
 # playwright
 test-results/
