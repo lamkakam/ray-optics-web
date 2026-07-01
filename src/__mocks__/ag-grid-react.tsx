@@ -20,6 +20,8 @@ interface AgGridReactProps {
   defaultColDef?: ColDef;
   getRowId?: (params: { data: Record<string, unknown> }) => string;
   onRowSelected?: (event: unknown) => void;
+  onCellEditingStarted?: (event: unknown) => void;
+  onCellEditingStopped?: (event: unknown) => void;
   stopEditingWhenCellsLoseFocus?: boolean;
   theme?: unknown;
   domLayout?: string;
@@ -61,23 +63,46 @@ function EditableCell({
   row,
   value,
   stopEditingWhenCellsLoseFocus,
+  onCellEditingStarted,
+  onCellEditingStopped,
 }: {
   col: ColDef;
   row: Record<string, unknown>;
   value: unknown;
   stopEditingWhenCellsLoseFocus: boolean;
+  onCellEditingStarted?: (event: unknown) => void;
+  onCellEditingStopped?: (event: unknown) => void;
 }) {
   const [inputValue, setInputValue] = useState(String(value ?? ""));
+  const isEditingRef = useRef(false);
+
+  const startEditing = () => {
+    if (isEditingRef.current) {
+      return;
+    }
+    isEditingRef.current = true;
+    onCellEditingStarted?.({ data: row, value, colDef: col });
+  };
+
+  const stopEditing = () => {
+    if (!isEditingRef.current) {
+      return;
+    }
+    isEditingRef.current = false;
+    onCellEditingStopped?.({ data: row, value, colDef: col });
+  };
 
   const handleBlur = () => {
     if (stopEditingWhenCellsLoseFocus) {
       commitValue(col, row, value, inputValue);
     }
+    stopEditing();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       commitValue(col, row, value, inputValue);
+      stopEditing();
     }
   };
 
@@ -85,6 +110,7 @@ function EditableCell({
     <input
       type="text"
       value={inputValue}
+      onFocus={startEditing}
       onChange={(e) => setInputValue(e.target.value)}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
@@ -97,13 +123,34 @@ function SelectCell({
   row,
   value,
   headerName,
+  onCellEditingStarted,
+  onCellEditingStopped,
 }: {
   col: ColDef;
   row: Record<string, unknown>;
   value: unknown;
   headerName: string;
+  onCellEditingStarted?: (event: unknown) => void;
+  onCellEditingStopped?: (event: unknown) => void;
 }) {
   const values = col.cellEditorParams?.values ?? [];
+  const isEditingRef = useRef(false);
+
+  const startEditing = () => {
+    if (isEditingRef.current) {
+      return;
+    }
+    isEditingRef.current = true;
+    onCellEditingStarted?.({ data: row, value, colDef: col });
+  };
+
+  const stopEditing = () => {
+    if (!isEditingRef.current) {
+      return;
+    }
+    isEditingRef.current = false;
+    onCellEditingStopped?.({ data: row, value, colDef: col });
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = e.target.value;
@@ -111,13 +158,16 @@ function SelectCell({
     if (col.valueSetter) {
       col.valueSetter({ data: row, newValue, oldValue });
     }
+    stopEditing();
   };
 
   return (
     <select
       aria-label={headerName}
       value={String(value ?? "")}
+      onFocus={startEditing}
       onChange={handleChange}
+      onBlur={stopEditing}
     >
       {values.map((v) => (
         <option key={String(v)} value={String(v)}>
@@ -137,6 +187,8 @@ export function AgGridReact({
   columnDefs,
   defaultColDef,
   getRowId,
+  onCellEditingStarted,
+  onCellEditingStopped,
   stopEditingWhenCellsLoseFocus = false,
   theme,
   domLayout,
@@ -168,6 +220,8 @@ export function AgGridReact({
       data-stop-editing-when-cells-lose-focus={String(stopEditingWhenCellsLoseFocus)}
       data-default-col-def-suppress-movable={String(defaultColDef?.suppressMovable === true)}
       data-default-col-def-sortable={String(defaultColDef?.sortable === true)}
+      data-has-on-cell-editing-started={String(onCellEditingStarted !== undefined)}
+      data-has-on-cell-editing-stopped={String(onCellEditingStopped !== undefined)}
     >
       <thead>
         <tr>
@@ -203,7 +257,16 @@ export function AgGridReact({
                     {col.cellRenderer
                       ? col.cellRenderer({ data: row, value })
                       : isEditable && isSelectEditor
-                        ? <SelectCell col={col} row={row} value={value} headerName={col.headerName ?? col.field ?? ""} />
+                        ? (
+                            <SelectCell
+                              col={col}
+                              row={row}
+                              value={value}
+                              headerName={col.headerName ?? col.field ?? ""}
+                              onCellEditingStarted={onCellEditingStarted}
+                              onCellEditingStopped={onCellEditingStopped}
+                            />
+                          )
                         : isEditable
                           ? (
                               <EditableCell
@@ -211,6 +274,8 @@ export function AgGridReact({
                                 row={row}
                                 value={value}
                                 stopEditingWhenCellsLoseFocus={stopEditingWhenCellsLoseFocus}
+                                onCellEditingStarted={onCellEditingStarted}
+                                onCellEditingStopped={onCellEditingStopped}
                               />
                             )
                           : col.valueFormatter

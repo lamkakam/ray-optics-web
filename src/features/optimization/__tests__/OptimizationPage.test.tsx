@@ -461,8 +461,10 @@ describe("OptimizationPage", () => {
 
       await user.click(screen.getByRole("tab", { name: scenario.tabName }));
       const input = screen.getAllByRole("textbox")[scenario.inputIndex];
-      input.focus();
-      fireEvent.change(input, { target: { value: scenario.nextValue } });
+      await act(async () => {
+        input.focus();
+        fireEvent.change(input, { target: { value: scenario.nextValue } });
+      });
       expect(input).toHaveFocus();
       expect(input).toHaveValue(scenario.nextValue);
 
@@ -998,7 +1000,7 @@ describe("OptimizationPage", () => {
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
   });
 
-  it("submits the latest unblurred field, wavelength, and operand edits when Optimize is clicked", async () => {
+  it("keeps Optimize disabled while grid edits and post-edit evaluation are pending", async () => {
     type Scenario = {
       readonly tabName: string;
       readonly inputIndex: number;
@@ -1044,30 +1046,58 @@ describe("OptimizationPage", () => {
       },
     ];
 
-    for (const scenario of scenarios) {
-      const proxy = makeProxy();
-      const user = userEvent.setup();
-      const { unmount } = renderOptimizationPage(proxy);
+    jest.useFakeTimers();
 
-      await user.click(screen.getByRole("tab", { name: "Operands" }));
-      await user.click(screen.getByRole("button", { name: "Add operand" }));
-      if (scenario.expandsByFieldAndWavelength === true) {
-        await user.selectOptions(screen.getByRole("combobox", { name: "Operand Kind" }), "rms_spot_size");
+    try {
+      for (const scenario of scenarios) {
+        const proxy = makeProxy();
+        const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
+        const { unmount } = renderOptimizationPage(proxy);
+
+        await user.click(screen.getByRole("tab", { name: "Operands" }));
+        await user.click(screen.getByRole("button", { name: "Add operand" }));
+        if (scenario.expandsByFieldAndWavelength === true) {
+          await user.selectOptions(screen.getByRole("combobox", { name: "Operand Kind" }), "rms_spot_size");
+        }
+        await act(async () => {
+          jest.advanceTimersByTime(250);
+        });
+        await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled());
+
+        await user.click(screen.getByRole("tab", { name: scenario.tabName }));
+
+        const input = screen.getAllByRole("textbox")[scenario.inputIndex];
+        await act(async () => {
+          input.focus();
+          fireEvent.change(input, { target: { value: scenario.nextValue } });
+        });
+        expect(input).toHaveFocus();
+        expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+
+        fireEvent.click(screen.getByRole("button", { name: "Optimize" }));
+        expect(proxy.optimizeOpm).not.toHaveBeenCalled();
+
+        await act(async () => {
+          fireEvent.blur(input);
+        });
+        expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+
+        await act(async () => {
+          jest.advanceTimersByTime(250);
+        });
+        await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled());
+
+        fireEvent.click(screen.getByRole("button", { name: "Optimize" }));
+        await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalledTimes(1));
+        const config = (proxy.optimizeOpm as jest.Mock).mock.calls[0]?.[1] as OptimizationConfig;
+        scenario.assertConfig(config);
+
+        unmount();
       }
-      await user.click(screen.getByRole("tab", { name: scenario.tabName }));
-
-      const input = screen.getAllByRole("textbox")[scenario.inputIndex];
-      input.focus();
-      fireEvent.change(input, { target: { value: scenario.nextValue } });
-      expect(input).toHaveFocus();
-
-      fireEvent.click(screen.getByRole("button", { name: "Optimize" }));
-
-      await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
-      const config = (proxy.optimizeOpm as jest.Mock).mock.calls[0]?.[1] as OptimizationConfig;
-      scenario.assertConfig(config);
-
-      unmount();
+    } finally {
+      jest.useRealTimers();
     }
   });
 

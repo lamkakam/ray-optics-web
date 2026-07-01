@@ -93,6 +93,8 @@ export interface OptimizationLensPrescriptionGridProps {
   readonly onOpenAsphereVarModal: (surfaceIndex: number) => void;
   readonly onOpenDecenterModal: (row: GridRow) => void;
   readonly onOpenDiffractionGratingModal: (row: GridRow) => void;
+  readonly onCellEditingStarted?: () => void;
+  readonly onCellEditingStopped?: () => void;
 }
 
 export function OptimizationLensPrescriptionGrid({
@@ -108,6 +110,8 @@ export function OptimizationLensPrescriptionGrid({
   onOpenAsphereVarModal,
   onOpenDecenterModal,
   onOpenDiffractionGratingModal,
+  onCellEditingStarted,
+  onCellEditingStopped,
 }: OptimizationLensPrescriptionGridProps) {
   const gridTheme = useAgGridTheme();
 
@@ -261,6 +265,8 @@ export function OptimizationLensPrescriptionGrid({
           columnDefs={lensColumns}
           defaultColDef={lensPrescriptionGridDefaultColDef}
           domLayout={LENS_PRESCRIPTION_GRID_DOM_LAYOUT}
+          onCellEditingStarted={onCellEditingStarted}
+          onCellEditingStopped={onCellEditingStopped}
         />
       </AgGridProvider>
     </div>

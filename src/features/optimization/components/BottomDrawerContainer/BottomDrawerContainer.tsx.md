@@ -14,6 +14,7 @@ interface BottomDrawerContainerProps {
   };
   fields: Pick<ComponentProps<typeof OptimizationWeightsGrid>, "rows">;
   wavelengths: Pick<ComponentProps<typeof OptimizationWeightsGrid>, "rows">;
+  gridEditLifecycle?: Pick<ComponentProps<typeof OptimizationWeightsGrid>, "onCellEditingStarted" | "onCellEditingStopped">;
   onWarning: (message: string) => void;
   prescription: Omit<
     OptimizationLensPrescriptionGridProps,
@@ -23,6 +24,8 @@ interface BottomDrawerContainerProps {
     | "onOpenRadiusModal"
     | "onOpenThicknessModal"
     | "onOpenAsphereVarModal"
+    | "onCellEditingStarted"
+    | "onCellEditingStopped"
   >;
 }
 ```
@@ -32,6 +35,7 @@ interface BottomDrawerContainerProps {
   - `onHeightChange` receives live drawer height changes when provided.
 - `fields.rows` provides derived field weight rows.
 - `wavelengths.rows` provides derived wavelength weight rows.
+- `gridEditLifecycle` optionally provides page-level AG Grid edit start/stop callbacks shared by all Optimization grids.
 - `onWarning` receives explicit method-switch config-build failures so the page can surface them in Operand Evaluation.
 - `prescription` provides derived prescription rows plus local inspection-modal callbacks, including aperture inspection. Optimization variable modal callbacks and mode state are read from the optimization store.
 
@@ -45,6 +49,7 @@ interface BottomDrawerContainerProps {
 - Reads the optimization store for active tab state, optimizer state, radius/thickness/asphere modes, operands, and all store-backed drawer callbacks.
 - Handles optimizer patch updates locally, including optimizer-kind resets through `setOptimizerKind()` and method-change config validation warnings through `onWarning`.
 - Updates field and wavelength weights through the optimization store.
+- Forwards shared AG Grid edit lifecycle callbacks into Half-Fields, Wavelengths, Lens Prescription, and Operands grids so `OptimizationPage` can disable Optimize while edits and post-edit evaluations are pending.
 - Renders the shared weight grid with tab-specific `Value` column widths: `95px` for fields and `130px` for wavelengths.
 - Opens radius, thickness, and asphere variable modals through the optimization store while forwarding inspection-modal callbacks supplied by `OptimizationPage`.
 - Adds, deletes, and updates operands through the optimization store.

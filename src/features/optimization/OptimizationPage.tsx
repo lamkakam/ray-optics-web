@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { proxy as comlinkProxy } from "comlink";
 import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -47,21 +47,6 @@ function buildCurrentEditorModel(lensStore: ReturnType<typeof useLensEditorStore
   const specs = specsStore.getState().toOpticalSpecs();
   const surfaces = gridRowsToSurfaces(lensStore.getState().rows);
   return { setAutoAperture, specs, ...surfaces };
-}
-
-function blurActiveEditableElement() {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  const activeElement = document.activeElement;
-  if (!(activeElement instanceof HTMLElement)) {
-    return;
-  }
-
-  if (activeElement.matches("input, textarea, select, [contenteditable='true']") || activeElement.isContentEditable) {
-    activeElement.blur();
-  }
 }
 
 export function OptimizationPage({
@@ -139,6 +124,9 @@ export function OptimizationPage({
   const [evaluationReport, setEvaluationReport] = useState<OptimizationReport | undefined>();
   const [optimizationWarningMessage, setOptimizationWarningMessage] = useState<string | undefined>();
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [activeGridEditCount, setActiveGridEditCount] = useState(0);
+  const [isPostEditEvaluationPending, setIsPostEditEvaluationPending] = useState(false);
+  const [gridEditStopRevision, setGridEditStopRevision] = useState(0);
   const [optimizationProgress, setOptimizationProgress] = useState<ReadonlyArray<OptimizationProgressEntry>>([]);
   const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] = useState(false);
   const [optimizationRunComplete, setOptimizationRunComplete] = useState(false);
@@ -298,11 +286,15 @@ export function OptimizationPage({
   );
   const evaluationWarningMessage = invalidConfigMessage ?? optimizationWarningMessage;
 
+  const hasActiveGridEdit = activeGridEditCount > 0;
   const canOptimize = isReady
     && proxy !== undefined
     && optimizationModel !== undefined
     && canBuildOptimizationConfig
-    && hasNonZeroContribution;
+    && hasNonZeroContribution
+    && !hasActiveGridEdit
+    && !isPostEditEvaluationPending
+    && !isEvaluating;
   const { canUseBounds } = getOptimizationAlgorithmCapabilities(
     optimizer.kind === "least_squares"
       ? { kind: optimizer.kind, method: optimizer.method }
@@ -332,9 +324,10 @@ export function OptimizationPage({
   }, [evaluationReservedHeight, isLG, liveDrawerHeight, pageShellHeight]);
 
   useEffect(() => {
-    if (!isReady || proxy === undefined || optimizationModel === undefined) {
+    if (!isReady || proxy === undefined || optimizationModel === undefined || !canBuildOptimizationConfig) {
       setEvaluationReport(undefined);
       setIsEvaluating(false);
+      setIsPostEditEvaluationPending(false);
       return;
     }
 
@@ -348,6 +341,7 @@ export function OptimizationPage({
         if (evaluationRequestIdRef.current === requestId) {
           setEvaluationReport(undefined);
           setIsEvaluating(false);
+          setIsPostEditEvaluationPending(false);
         }
         return;
       }
@@ -370,6 +364,7 @@ export function OptimizationPage({
         .finally(() => {
           if (evaluationRequestIdRef.current === requestId) {
             setIsEvaluating(false);
+            setIsPostEditEvaluationPending(false);
           }
         });
     }, 200);
@@ -382,6 +377,7 @@ export function OptimizationPage({
     proxy,
     optimizationModel,
     optimizationStore,
+    canBuildOptimizationConfig,
     optimizer,
     fieldWeights,
     wavelengthWeights,
@@ -389,15 +385,24 @@ export function OptimizationPage({
     thicknessModes,
     asphereStates,
     operands,
+    gridEditStopRevision,
     imagePoint,
   ]);
 
+  const handleGridCellEditingStarted = useCallback(() => {
+    setActiveGridEditCount((count) => count + 1);
+  }, []);
+
+  const handleGridCellEditingStopped = useCallback(() => {
+    setActiveGridEditCount((count) => Math.max(0, count - 1));
+    setIsPostEditEvaluationPending(true);
+    setGridEditStopRevision((revision) => revision + 1);
+  }, []);
+
   const handleOptimize = async () => {
-    if (proxy === undefined || optimizationModel === undefined) {
+    if (!canOptimize || proxy === undefined || optimizationModel === undefined) {
       return;
     }
-
-    blurActiveEditableElement();
 
     const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
@@ -505,6 +510,11 @@ export function OptimizationPage({
     [isLG],
   );
 
+  const gridEditLifecycle = useMemo(() => ({
+    onCellEditingStarted: handleGridCellEditingStarted,
+    onCellEditingStopped: handleGridCellEditingStopped,
+  }), [handleGridCellEditingStarted, handleGridCellEditingStopped]);
+
   const sharedContent = (
     <div ref={sharedContentRef} data-testid="optimization-shared-content-wrapper" className="p-4 pb-0">
       <OptimizationProgressModal
@@ -602,6 +612,7 @@ export function OptimizationPage({
           wavelengths={bottomDrawerWavelengths}
           prescription={bottomDrawerPrescription}
           layout={bottomDrawerLayout}
+          gridEditLifecycle={gridEditLifecycle}
           onWarning={setOptimizationWarningMessage}
         />
       </div>
@@ -616,6 +627,7 @@ export function OptimizationPage({
         wavelengths={bottomDrawerWavelengths}
         prescription={bottomDrawerPrescription}
         layout={bottomDrawerLayout}
+        gridEditLifecycle={gridEditLifecycle}
         onWarning={setOptimizationWarningMessage}
       />
     </div>

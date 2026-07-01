@@ -16,6 +16,8 @@ interface OptimizationOperandsTabProps {
   readonly onAddOperand: () => void;
   readonly onDeleteOperand: (id: string) => void;
   readonly onUpdateOperand: (id: string, patch: Partial<Omit<OptimizationOperandRow, "id">>) => void;
+  readonly onCellEditingStarted?: () => void;
+  readonly onCellEditingStopped?: () => void;
 }
 
 export function OptimizationOperandsTab({
@@ -23,6 +25,8 @@ export function OptimizationOperandsTab({
   onAddOperand,
   onDeleteOperand,
   onUpdateOperand,
+  onCellEditingStarted,
+  onCellEditingStopped,
 }: OptimizationOperandsTabProps) {
   const gridTheme = useAgGridTheme();
 
@@ -110,6 +114,8 @@ export function OptimizationOperandsTab({
           getRowId={(params) => params.data.id}
           defaultColDef={{ sortable: false, suppressMovable: true }}
           domLayout="autoHeight"
+          onCellEditingStarted={onCellEditingStarted}
+          onCellEditingStopped={onCellEditingStopped}
         />
       </AgGridProvider>
     </div>

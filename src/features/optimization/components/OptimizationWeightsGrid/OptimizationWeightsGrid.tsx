@@ -11,12 +11,16 @@ interface OptimizationWeightsGridProps {
   readonly rows: ReadonlyArray<WeightRow>;
   readonly valueColumnWidth: number;
   readonly onUpdateWeight: (index: number, value: number) => void;
+  readonly onCellEditingStarted?: () => void;
+  readonly onCellEditingStopped?: () => void;
 }
 
 export function OptimizationWeightsGrid({
   rows,
   valueColumnWidth,
   onUpdateWeight,
+  onCellEditingStarted,
+  onCellEditingStopped,
 }: OptimizationWeightsGridProps) {
   const gridTheme = useAgGridTheme();
 
@@ -58,6 +62,8 @@ export function OptimizationWeightsGrid({
           getRowId={(params) => params.data.id}
           defaultColDef={{ sortable: false, suppressMovable: true }}
           domLayout="autoHeight"
+          onCellEditingStarted={onCellEditingStarted}
+          onCellEditingStopped={onCellEditingStopped}
         />
       </AgGridProvider>
     </div>

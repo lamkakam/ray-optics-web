@@ -14,6 +14,7 @@ import { OptimizationOperandsTab } from "@/features/optimization/components/Opti
 
 type OptimizerPatch = Parameters<ComponentProps<typeof OptimizationAlgorithmTab>["onChangeOptimizer"]>[0];
 type FieldsProps = Pick<ComponentProps<typeof OptimizationWeightsGrid>, "rows">;
+type GridEditLifecycleProps = Pick<ComponentProps<typeof OptimizationWeightsGrid>, "onCellEditingStarted" | "onCellEditingStopped">;
 type PrescriptionProps = Omit<
   OptimizationLensPrescriptionGridProps,
   | "radiusModes"
@@ -22,6 +23,8 @@ type PrescriptionProps = Omit<
   | "onOpenRadiusModal"
   | "onOpenThicknessModal"
   | "onOpenAsphereVarModal"
+  | "onCellEditingStarted"
+  | "onCellEditingStopped"
 >;
 
 export interface BottomDrawerContainerProps {
@@ -32,6 +35,7 @@ export interface BottomDrawerContainerProps {
   readonly fields: Readonly<FieldsProps>;
   readonly wavelengths: Readonly<FieldsProps>;
   readonly prescription: Readonly<PrescriptionProps>;
+  readonly gridEditLifecycle?: Readonly<GridEditLifecycleProps>;
   readonly onWarning: (message: string) => void;
 }
 
@@ -40,6 +44,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   fields,
   wavelengths,
   prescription,
+  gridEditLifecycle,
   onWarning,
 }: BottomDrawerContainerProps) {
   const optimizationStore = useOptimizationStore();
@@ -119,8 +124,12 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     onOpenAsphereVarModal: handleOpenAsphereModal,
     onOpenDecenterModal: prescription.onOpenDecenterModal,
     onOpenDiffractionGratingModal: prescription.onOpenDiffractionGratingModal,
+    onCellEditingStarted: gridEditLifecycle?.onCellEditingStarted,
+    onCellEditingStopped: gridEditLifecycle?.onCellEditingStopped,
   }), [
     asphereStates,
+    gridEditLifecycle?.onCellEditingStarted,
+    gridEditLifecycle?.onCellEditingStopped,
     handleOpenAsphereModal,
     handleOpenRadiusModal,
     handleOpenThicknessModal,
@@ -153,6 +162,8 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
           rows={fields.rows}
           valueColumnWidth={95}
           onUpdateWeight={handleUpdateFieldWeight}
+          onCellEditingStarted={gridEditLifecycle?.onCellEditingStarted}
+          onCellEditingStopped={gridEditLifecycle?.onCellEditingStopped}
         />
       ),
     },
@@ -164,6 +175,8 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
           rows={wavelengths.rows}
           valueColumnWidth={130}
           onUpdateWeight={handleUpdateWavelengthWeight}
+          onCellEditingStarted={gridEditLifecycle?.onCellEditingStarted}
+          onCellEditingStopped={gridEditLifecycle?.onCellEditingStopped}
         />
       ),
     },
@@ -183,6 +196,8 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
           onAddOperand={handleAddOperand}
           onDeleteOperand={handleDeleteOperand}
           onUpdateOperand={handleUpdateOperand}
+          onCellEditingStarted={gridEditLifecycle?.onCellEditingStarted}
+          onCellEditingStopped={gridEditLifecycle?.onCellEditingStopped}
         />
       ),
     },
@@ -194,6 +209,8 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     handleUpdateFieldWeight,
     handleUpdateOperand,
     handleUpdateWavelengthWeight,
+    gridEditLifecycle?.onCellEditingStarted,
+    gridEditLifecycle?.onCellEditingStopped,
     operands,
     optimizer,
     prescriptionProps,
