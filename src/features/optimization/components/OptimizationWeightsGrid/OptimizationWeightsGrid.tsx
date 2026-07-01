@@ -55,6 +55,7 @@ export function OptimizationWeightsGrid({
           theme={gridTheme}
           rowData={[...rows]}
           columnDefs={weightColumns}
+          getRowId={(params) => params.data.id}
           defaultColDef={{ sortable: false, suppressMovable: true }}
           domLayout="autoHeight"
         />

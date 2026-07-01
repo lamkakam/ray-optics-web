@@ -48,9 +48,11 @@ interface BottomDrawerContainerProps {
 - Renders the shared weight grid with tab-specific `Value` column widths: `95px` for fields and `130px` for wavelengths.
 - Opens radius, thickness, and asphere variable modals through the optimization store while forwarding inspection-modal callbacks supplied by `OptimizationPage`.
 - Adds, deletes, and updates operands through the optimization store.
+- Is wrapped in `React.memo` and memoizes store-backed callbacks, prescription props, and the drawer `tabs` array so unrelated `OptimizationPage` state changes, including Operand Evaluation loading and completion, do not recreate AG Grid column definitions or reset active grid editors.
 
 ## Key Conventions
 
 - This component preserves drawer tab labels, test IDs, padding, and tab component behavior from the previous page-local drawer implementation.
 - Props are grouped to keep the component interface below the project prop-count limit while making tab ownership explicit.
 - `OptimizationPage` remains responsible for deriving row data and owning local inspection-modal row state; store-backed drawer actions live here.
+- Grid-relevant callback identities should stay stable unless their actual data dependencies change, because the Jest AG Grid mock and real AG Grid both model editor loss when column definitions are recreated during active editing.

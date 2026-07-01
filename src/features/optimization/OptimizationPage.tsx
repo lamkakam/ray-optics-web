@@ -49,6 +49,21 @@ function buildCurrentEditorModel(lensStore: ReturnType<typeof useLensEditorStore
   return { setAutoAperture, specs, ...surfaces };
 }
 
+function blurActiveEditableElement() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const activeElement = document.activeElement;
+  if (!(activeElement instanceof HTMLElement)) {
+    return;
+  }
+
+  if (activeElement.matches("input, textarea, select, [contenteditable='true']") || activeElement.isContentEditable) {
+    activeElement.blur();
+  }
+}
+
 export function OptimizationPage({
   proxy,
   isReady,
@@ -382,6 +397,8 @@ export function OptimizationPage({
       return;
     }
 
+    blurActiveEditableElement();
+
     const runId = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
       : `optimization-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -464,22 +481,29 @@ export function OptimizationPage({
     await onApplyToEditor?.(model);
   };
 
-  const bottomDrawerContent = {
-    fields: {
-      rows: fieldRows,
-    },
-    wavelengths: {
-      rows: wavelengthRows,
-    },
-    prescription: {
-      rows: radiusRows,
-      onOpenMediumModal: setMediumModalRow,
-      onOpenAsphericalModal: setAsphericalModalRow,
-      onOpenApertureModal: setApertureModalRow,
-      onOpenDecenterModal: setDecenterModalRow,
-      onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
-    },
-  };
+  const bottomDrawerFields = useMemo(() => ({
+    rows: fieldRows,
+  }), [fieldRows]);
+
+  const bottomDrawerWavelengths = useMemo(() => ({
+    rows: wavelengthRows,
+  }), [wavelengthRows]);
+
+  const bottomDrawerPrescription = useMemo(() => ({
+    rows: radiusRows,
+    onOpenMediumModal: setMediumModalRow,
+    onOpenAsphericalModal: setAsphericalModalRow,
+    onOpenApertureModal: setApertureModalRow,
+    onOpenDecenterModal: setDecenterModalRow,
+    onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
+  }), [radiusRows]);
+
+  const bottomDrawerLayout = useMemo(
+    () => isLG
+      ? { isLG, onHeightChange: setLiveDrawerHeight }
+      : { isLG },
+    [isLG],
+  );
 
   const sharedContent = (
     <div ref={sharedContentRef} data-testid="optimization-shared-content-wrapper" className="p-4 pb-0">
@@ -574,8 +598,10 @@ export function OptimizationPage({
       <div ref={pageShellRef} className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
         {sharedContent}
         <BottomDrawerContainer
-          {...bottomDrawerContent}
-          layout={{ isLG, onHeightChange: setLiveDrawerHeight }}
+          fields={bottomDrawerFields}
+          wavelengths={bottomDrawerWavelengths}
+          prescription={bottomDrawerPrescription}
+          layout={bottomDrawerLayout}
           onWarning={setOptimizationWarningMessage}
         />
       </div>
@@ -586,8 +612,10 @@ export function OptimizationPage({
     <div className="relative flex flex-1 min-h-0 flex-col overflow-y-auto">
       {sharedContent}
       <BottomDrawerContainer
-        {...bottomDrawerContent}
-        layout={{ isLG }}
+        fields={bottomDrawerFields}
+        wavelengths={bottomDrawerWavelengths}
+        prescription={bottomDrawerPrescription}
+        layout={bottomDrawerLayout}
         onWarning={setOptimizationWarningMessage}
       />
     </div>

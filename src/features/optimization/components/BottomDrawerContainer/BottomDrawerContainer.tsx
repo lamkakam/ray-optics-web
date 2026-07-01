@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentProps } from "react";
+import { memo, useCallback, useMemo, type ComponentProps } from "react";
 import { useStore } from "zustand";
 import { BottomDrawer, type TabItem } from "@/shared/components/layout/BottomDrawer";
 import { useOptimizationStore } from "@/features/optimization/providers/OptimizationStoreProvider";
@@ -35,7 +35,7 @@ export interface BottomDrawerContainerProps {
   readonly onWarning: (message: string) => void;
 }
 
-export function BottomDrawerContainer({
+export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   layout,
   fields,
   wavelengths,
@@ -50,7 +50,7 @@ export function BottomDrawerContainer({
   const asphereStates = useStore(optimizationStore, (state) => state.asphereStates);
   const operands = useStore(optimizationStore, (state) => state.operands);
 
-  const handleChangeOptimizer = (patch: OptimizerPatch) => {
+  const handleChangeOptimizer = useCallback((patch: OptimizerPatch) => {
     if (patch.kind !== undefined && patch.kind !== optimizationStore.getState().optimizer.kind) {
       optimizationStore.getState().setOptimizerKind(patch.kind);
       return;
@@ -68,24 +68,73 @@ export function BottomDrawerContainer({
         onWarning(message);
       }
     }
-  };
+  }, [onWarning, optimizationStore]);
 
-  const prescriptionProps: OptimizationLensPrescriptionGridProps = {
+  const handleOpenRadiusModal = useCallback((surfaceIndex: number) => {
+    optimizationStore.getState().openRadiusModal(surfaceIndex);
+  }, [optimizationStore]);
+
+  const handleOpenThicknessModal = useCallback((surfaceIndex: number) => {
+    optimizationStore.getState().openThicknessModal(surfaceIndex);
+  }, [optimizationStore]);
+
+  const handleOpenAsphereModal = useCallback((surfaceIndex: number) => {
+    optimizationStore.getState().openAsphereModal(surfaceIndex);
+  }, [optimizationStore]);
+
+  const handleUpdateFieldWeight = useCallback((index: number, value: number) => {
+    optimizationStore.getState().setFieldWeight(index, value);
+  }, [optimizationStore]);
+
+  const handleUpdateWavelengthWeight = useCallback((index: number, value: number) => {
+    optimizationStore.getState().setWavelengthWeight(index, value);
+  }, [optimizationStore]);
+
+  const handleAddOperand = useCallback(() => {
+    optimizationStore.getState().addOperand();
+  }, [optimizationStore]);
+
+  const handleDeleteOperand = useCallback((id: string) => {
+    optimizationStore.getState().deleteOperand(id);
+  }, [optimizationStore]);
+
+  const handleUpdateOperand = useCallback((id: string, patch: Partial<Omit<typeof operands[number], "id">>) => {
+    optimizationStore.getState().updateOperand(id, patch);
+  }, [optimizationStore]);
+
+  const handleTabChange = useCallback((tabId: string) => {
+    optimizationStore.getState().setActiveTabId(tabId);
+  }, [optimizationStore]);
+
+  const prescriptionProps = useMemo<OptimizationLensPrescriptionGridProps>(() => ({
     rows: prescription.rows,
     radiusModes,
     thicknessModes,
     asphereStates,
-    onOpenRadiusModal: (surfaceIndex: number) => optimizationStore.getState().openRadiusModal(surfaceIndex),
-    onOpenThicknessModal: (surfaceIndex: number) => optimizationStore.getState().openThicknessModal(surfaceIndex),
+    onOpenRadiusModal: handleOpenRadiusModal,
+    onOpenThicknessModal: handleOpenThicknessModal,
     onOpenMediumModal: prescription.onOpenMediumModal,
     onOpenAsphericalModal: prescription.onOpenAsphericalModal,
     onOpenApertureModal: prescription.onOpenApertureModal,
-    onOpenAsphereVarModal: (surfaceIndex: number) => optimizationStore.getState().openAsphereModal(surfaceIndex),
+    onOpenAsphereVarModal: handleOpenAsphereModal,
     onOpenDecenterModal: prescription.onOpenDecenterModal,
     onOpenDiffractionGratingModal: prescription.onOpenDiffractionGratingModal,
-  };
+  }), [
+    asphereStates,
+    handleOpenAsphereModal,
+    handleOpenRadiusModal,
+    handleOpenThicknessModal,
+    prescription.onOpenApertureModal,
+    prescription.onOpenAsphericalModal,
+    prescription.onOpenDecenterModal,
+    prescription.onOpenDiffractionGratingModal,
+    prescription.onOpenMediumModal,
+    prescription.rows,
+    radiusModes,
+    thicknessModes,
+  ]);
 
-  const tabs: TabItem[] = [
+  const tabs = useMemo<TabItem[]>(() => [
     {
       id: "algorithm",
       label: "Algorithm",
@@ -103,7 +152,7 @@ export function BottomDrawerContainer({
         <OptimizationWeightsGrid
           rows={fields.rows}
           valueColumnWidth={95}
-          onUpdateWeight={(index, value) => optimizationStore.getState().setFieldWeight(index, value)}
+          onUpdateWeight={handleUpdateFieldWeight}
         />
       ),
     },
@@ -114,7 +163,7 @@ export function BottomDrawerContainer({
         <OptimizationWeightsGrid
           rows={wavelengths.rows}
           valueColumnWidth={130}
-          onUpdateWeight={(index, value) => optimizationStore.getState().setWavelengthWeight(index, value)}
+          onUpdateWeight={handleUpdateWavelengthWeight}
         />
       ),
     },
@@ -131,13 +180,25 @@ export function BottomDrawerContainer({
       content: (
         <OptimizationOperandsTab
           operands={operands}
-          onAddOperand={() => optimizationStore.getState().addOperand()}
-          onDeleteOperand={(id) => optimizationStore.getState().deleteOperand(id)}
-          onUpdateOperand={(id, patch) => optimizationStore.getState().updateOperand(id, patch)}
+          onAddOperand={handleAddOperand}
+          onDeleteOperand={handleDeleteOperand}
+          onUpdateOperand={handleUpdateOperand}
         />
       ),
     },
-  ];
+  ], [
+    fields.rows,
+    handleAddOperand,
+    handleChangeOptimizer,
+    handleDeleteOperand,
+    handleUpdateFieldWeight,
+    handleUpdateOperand,
+    handleUpdateWavelengthWeight,
+    operands,
+    optimizer,
+    prescriptionProps,
+    wavelengths.rows,
+  ]);
 
   return (
     <div
@@ -149,9 +210,11 @@ export function BottomDrawerContainer({
         draggable={layout.isLG}
         panelClassName="p-0"
         activeTabId={activeTabId}
-        onTabChange={(tabId) => optimizationStore.getState().setActiveTabId(tabId)}
+        onTabChange={handleTabChange}
         onHeightChange={layout.onHeightChange}
       />
     </div>
   );
-}
+});
+
+BottomDrawerContainer.displayName = "BottomDrawerContainer";

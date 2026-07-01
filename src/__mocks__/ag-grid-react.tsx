@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 
 interface ColDef {
   headerName?: string;
@@ -24,6 +24,25 @@ interface AgGridReactProps {
   theme?: unknown;
   domLayout?: string;
   [key: string]: unknown;
+}
+
+const rowObjectIds = new WeakMap<Record<string, unknown>, string>();
+let nextRowObjectId = 0;
+
+function getRowKey(row: Record<string, unknown>, rowIdx: number, getRowId: AgGridReactProps["getRowId"]) {
+  if (getRowId !== undefined) {
+    return getRowId({ data: row });
+  }
+
+  const existingId = rowObjectIds.get(row);
+  if (existingId !== undefined) {
+    return existingId;
+  }
+
+  const nextId = `row-object-${rowIdx}-${nextRowObjectId}`;
+  nextRowObjectId += 1;
+  rowObjectIds.set(row, nextId);
+  return nextId;
 }
 
 function commitValue(col: ColDef, row: Record<string, unknown>, value: unknown, inputValue: string) {
@@ -117,13 +136,32 @@ export function AgGridReact({
   rowData,
   columnDefs,
   defaultColDef,
+  getRowId,
   stopEditingWhenCellsLoseFocus = false,
   theme,
   domLayout,
 }: AgGridReactProps) {
+  const tableRef = useRef<HTMLTableElement | null>(null);
+  const previousColumnDefsRef = useRef<ColDef[] | undefined>(undefined);
   const themeName = theme && typeof theme === "object" && "_name" in theme ? (theme as { _name: string })._name : undefined;
+
+  useLayoutEffect(() => {
+    const previousColumnDefs = previousColumnDefsRef.current;
+    previousColumnDefsRef.current = columnDefs;
+
+    if (previousColumnDefs === undefined || previousColumnDefs === columnDefs) {
+      return;
+    }
+
+    const activeElement = document.activeElement;
+    if (activeElement instanceof HTMLElement && tableRef.current?.contains(activeElement) === true) {
+      activeElement.blur();
+    }
+  }, [columnDefs]);
+
   return (
     <table
+      ref={tableRef}
       data-testid="ag-grid-mock"
       data-theme={themeName}
       data-dom-layout={domLayout}
@@ -141,45 +179,49 @@ export function AgGridReact({
         </tr>
       </thead>
       <tbody>
-        {rowData?.map((row, rowIdx) => (
-          <tr key={rowIdx}>
-            {columnDefs?.map((col, colIdx) => {
-              const value = col.valueGetter
-                ? col.valueGetter({ data: row })
-                : col.field
-                  ? row[col.field]
-                  : undefined;
+        {rowData?.map((row, rowIdx) => {
+          const rowKey = getRowKey(row, rowIdx, getRowId);
 
-              const isEditable =
-                typeof col.editable === "function"
-                  ? col.editable({ data: row })
-                  : col.editable === true;
+          return (
+            <tr key={rowKey}>
+              {columnDefs?.map((col, colIdx) => {
+                const value = col.valueGetter
+                  ? col.valueGetter({ data: row })
+                  : col.field
+                    ? row[col.field]
+                    : undefined;
 
-              const isSelectEditor = col.cellEditor === "agSelectCellEditor";
+                const isEditable =
+                  typeof col.editable === "function"
+                    ? col.editable({ data: row })
+                    : col.editable === true;
 
-              return (
-                <td key={colIdx}>
-                  {col.cellRenderer
-                    ? col.cellRenderer({ data: row, value })
-                    : isEditable && isSelectEditor
-                      ? <SelectCell col={col} row={row} value={value} headerName={col.headerName ?? col.field ?? ""} />
-                      : isEditable
-                        ? (
-                            <EditableCell
-                              col={col}
-                              row={row}
-                              value={value}
-                              stopEditingWhenCellsLoseFocus={stopEditingWhenCellsLoseFocus}
-                            />
-                          )
-                        : col.valueFormatter
-                          ? col.valueFormatter({ value })
-                          : String(value ?? "")}
-                </td>
-              );
-            })}
-          </tr>
-        ))}
+                const isSelectEditor = col.cellEditor === "agSelectCellEditor";
+
+                return (
+                  <td key={colIdx}>
+                    {col.cellRenderer
+                      ? col.cellRenderer({ data: row, value })
+                      : isEditable && isSelectEditor
+                        ? <SelectCell col={col} row={row} value={value} headerName={col.headerName ?? col.field ?? ""} />
+                        : isEditable
+                          ? (
+                              <EditableCell
+                                col={col}
+                                row={row}
+                                value={value}
+                                stopEditingWhenCellsLoseFocus={stopEditingWhenCellsLoseFocus}
+                              />
+                            )
+                          : col.valueFormatter
+                            ? col.valueFormatter({ value })
+                            : String(value ?? "")}
+                  </td>
+                );
+              })}
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

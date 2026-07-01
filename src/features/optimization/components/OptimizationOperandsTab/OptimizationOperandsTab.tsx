@@ -107,6 +107,7 @@ export function OptimizationOperandsTab({
           theme={gridTheme}
           rowData={[...operands]}
           columnDefs={operandColumns}
+          getRowId={(params) => params.data.id}
           defaultColDef={{ sortable: false, suppressMovable: true }}
           domLayout="autoHeight"
         />

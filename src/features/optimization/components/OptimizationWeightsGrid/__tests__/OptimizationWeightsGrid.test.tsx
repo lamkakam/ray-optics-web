@@ -32,4 +32,33 @@ describe("OptimizationWeightsGrid", () => {
     expect(onUpdateWeight).toHaveBeenCalledWith(0, 4.5);
     expect(onAction).toHaveBeenCalledTimes(1);
   });
+
+  it("preserves uncommitted weight text across parent rerenders with replacement row objects", async () => {
+    const user = userEvent.setup();
+    const onUpdateWeight = jest.fn();
+    const firstRows = [{ id: "weight-0", index: 0, label: "0.7", weight: 1 }];
+    const secondRows = [{ id: "weight-0", index: 0, label: "0.7", weight: 1 }];
+
+    const { rerender } = render(
+      <OptimizationWeightsGrid
+        rows={firstRows}
+        valueColumnWidth={120}
+        onUpdateWeight={onUpdateWeight}
+      />,
+    );
+
+    await user.clear(screen.getByRole("textbox"));
+    await user.type(screen.getByRole("textbox"), "4.5");
+
+    rerender(
+      <OptimizationWeightsGrid
+        rows={secondRows}
+        valueColumnWidth={120}
+        onUpdateWeight={onUpdateWeight}
+      />,
+    );
+
+    expect(screen.getByRole("textbox")).toHaveValue("4.5");
+    expect(onUpdateWeight).not.toHaveBeenCalled();
+  });
 });

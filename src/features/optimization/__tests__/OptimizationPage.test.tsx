@@ -4,6 +4,7 @@ import { createStore } from "zustand";
 import * as echarts from "echarts/core";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import type { OptimizationConfig } from "@/features/optimization/types/optimizationWorkerTypes";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { OptimizationStoreContext } from "@/features/optimization/providers/OptimizationStoreProvider";
@@ -124,6 +125,31 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     }),
     ...overrides,
   } as unknown as PyodideWorkerAPI;
+}
+
+function makeEvaluationReport() {
+  return {
+    success: true,
+    status: "evaluated",
+    message: "ok",
+    optimizer: { kind: "least_squares", method: "trf" },
+    initial_values: [],
+    final_values: [],
+    pickups: [],
+    residuals: [
+      {
+        kind: "focal_length",
+        target: 100,
+        value: 98.5,
+        operand_weight: 1,
+        field_weight: 1,
+        wavelength_weight: 1,
+        total_weight: 1,
+        weighted_residual: -1.5,
+      },
+    ],
+    merit_function: { sum_of_squares: 2.25, rss: 1.5 },
+  };
 }
 
 function mockPointerCapture(element: HTMLElement) {
@@ -378,6 +404,79 @@ describe("OptimizationPage", () => {
     expect(within(evaluationScroll).getByText("Paraxial focal length")).toBeInTheDocument();
     expect(within(evaluationScroll).getByText("1.000000")).toBeInTheDocument();
     expect(within(evaluationScroll).getByText("98.500000")).toBeInTheDocument();
+  });
+
+  it("keeps active drawer grid editors focused when operand evaluation loading completes", async () => {
+    type Scenario = {
+      readonly tabName: string;
+      readonly inputIndex: number;
+      readonly nextValue: string;
+      readonly expandsByFieldAndWavelength?: boolean;
+    };
+
+    const scenarios: readonly Scenario[] = [
+      {
+        tabName: "Half-Fields",
+        inputIndex: 1,
+        nextValue: "3.5",
+        expandsByFieldAndWavelength: true,
+      },
+      {
+        tabName: "Wavelengths",
+        inputIndex: 0,
+        nextValue: "4.25",
+        expandsByFieldAndWavelength: true,
+      },
+      {
+        tabName: "Operands",
+        inputIndex: 0,
+        nextValue: "125",
+      },
+      {
+        tabName: "Operands",
+        inputIndex: 1,
+        nextValue: "2.75",
+      },
+    ];
+
+    for (const scenario of scenarios) {
+      let resolveEvaluation: (report: ReturnType<typeof makeEvaluationReport>) => void = () => undefined;
+      const evaluationPromise = new Promise<ReturnType<typeof makeEvaluationReport>>((resolve) => {
+        resolveEvaluation = resolve;
+      });
+      const proxy = makeProxy({
+        canInterruptOptimization: jest.fn().mockReturnValue(new Promise(() => undefined)),
+        evaluateOptimizationProblem: jest.fn().mockReturnValue(evaluationPromise),
+      });
+      const user = userEvent.setup();
+      const { unmount } = renderOptimizationPage(proxy);
+
+      await user.click(screen.getByRole("tab", { name: "Operands" }));
+      await user.click(screen.getByRole("button", { name: "Add operand" }));
+      if (scenario.expandsByFieldAndWavelength === true) {
+        await user.selectOptions(screen.getByRole("combobox", { name: "Operand Kind" }), "rms_spot_size");
+      }
+      await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+      expect(screen.getByRole("status")).toHaveTextContent("Updating evaluation");
+
+      await user.click(screen.getByRole("tab", { name: scenario.tabName }));
+      const input = screen.getAllByRole("textbox")[scenario.inputIndex];
+      input.focus();
+      fireEvent.change(input, { target: { value: scenario.nextValue } });
+      expect(input).toHaveFocus();
+      expect(input).toHaveValue(scenario.nextValue);
+
+      await act(async () => {
+        resolveEvaluation(makeEvaluationReport());
+        await evaluationPromise;
+      });
+
+      await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+      expect(input).toHaveFocus();
+      expect(input).toHaveValue(scenario.nextValue);
+
+      unmount();
+    }
   });
 
   it("renders multiple ray_fan evaluation rows and keeps zero-weight rows hidden", async () => {
@@ -897,6 +996,79 @@ describe("OptimizationPage", () => {
       expect.any(SharedArrayBuffer),
     );
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
+  });
+
+  it("submits the latest unblurred field, wavelength, and operand edits when Optimize is clicked", async () => {
+    type Scenario = {
+      readonly tabName: string;
+      readonly inputIndex: number;
+      readonly nextValue: string;
+      readonly expandsByFieldAndWavelength?: boolean;
+      readonly assertConfig: (config: OptimizationConfig) => void;
+    };
+
+    const scenarios: readonly Scenario[] = [
+      {
+        tabName: "Half-Fields",
+        inputIndex: 1,
+        nextValue: "3.5",
+        expandsByFieldAndWavelength: true,
+        assertConfig: (config) => {
+          expect(config.merit_function.operands[0]?.fields?.[1]).toEqual({ index: 1, weight: 3.5 });
+        },
+      },
+      {
+        tabName: "Wavelengths",
+        inputIndex: 0,
+        nextValue: "4.25",
+        expandsByFieldAndWavelength: true,
+        assertConfig: (config) => {
+          expect(config.merit_function.operands[0]?.wavelengths?.[0]).toEqual({ index: 0, weight: 4.25 });
+        },
+      },
+      {
+        tabName: "Operands",
+        inputIndex: 0,
+        nextValue: "125",
+        assertConfig: (config) => {
+          expect(config.merit_function.operands[0]).toMatchObject({ target: 125 });
+        },
+      },
+      {
+        tabName: "Operands",
+        inputIndex: 1,
+        nextValue: "2.75",
+        assertConfig: (config) => {
+          expect(config.merit_function.operands[0]).toMatchObject({ weight: 2.75 });
+        },
+      },
+    ];
+
+    for (const scenario of scenarios) {
+      const proxy = makeProxy();
+      const user = userEvent.setup();
+      const { unmount } = renderOptimizationPage(proxy);
+
+      await user.click(screen.getByRole("tab", { name: "Operands" }));
+      await user.click(screen.getByRole("button", { name: "Add operand" }));
+      if (scenario.expandsByFieldAndWavelength === true) {
+        await user.selectOptions(screen.getByRole("combobox", { name: "Operand Kind" }), "rms_spot_size");
+      }
+      await user.click(screen.getByRole("tab", { name: scenario.tabName }));
+
+      const input = screen.getAllByRole("textbox")[scenario.inputIndex];
+      input.focus();
+      fireEvent.change(input, { target: { value: scenario.nextValue } });
+      expect(input).toHaveFocus();
+
+      fireEvent.click(screen.getByRole("button", { name: "Optimize" }));
+
+      await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
+      const config = (proxy.optimizeOpm as jest.Mock).mock.calls[0]?.[1] as OptimizationConfig;
+      scenario.assertConfig(config);
+
+      unmount();
+    }
   });
 
   it("disables Optimize when every effective optimization weight is zero", async () => {
