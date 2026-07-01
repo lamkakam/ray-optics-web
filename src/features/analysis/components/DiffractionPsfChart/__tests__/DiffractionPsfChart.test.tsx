@@ -107,6 +107,20 @@ describe("DiffractionPsfChart", () => {
     expect(screen.getAllByText("0.02").length).toBeGreaterThan(0);
   });
 
+  it("keeps the y-axis label aligned with a horizontally centered plot", () => {
+    Object.defineProperty(HTMLElement.prototype, "clientWidth", {
+      configurable: true,
+      get: () => 600,
+    });
+
+    render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
+
+    const yAxisLabel = screen.getByText("y (mm)");
+
+    expect(yAxisLabel).toHaveAttribute("x", "50");
+    expect(yAxisLabel).toHaveAttribute("transform", "rotate(-90 50 180)");
+  });
+
   it("uses theme-aware currentColor fills for SVG overlay text", () => {
     render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
 

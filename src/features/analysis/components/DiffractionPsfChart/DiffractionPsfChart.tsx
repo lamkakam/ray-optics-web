@@ -112,6 +112,7 @@ export function DiffractionPsfChart({
     Math.min(size.width - CHART_LEFT - CHART_RIGHT - LEGEND_WIDTH, size.height - CHART_TOP - CHART_BOTTOM),
   );
   const plotLeft = CHART_LEFT + Math.max(0, size.width - CHART_LEFT - CHART_RIGHT - LEGEND_WIDTH - plotSide) / 2;
+  const yAxisLabelX = plotLeft - 54;
   const plotTop = CHART_TOP;
   const axisTicks = useMemo(() => buildTicks(preparedData.axisExtent), [preparedData.axisExtent]);
   const colorRange = useMemo(
@@ -242,12 +243,12 @@ export function DiffractionPsfChart({
             {diffractionPsfData.unitX ? `x (${diffractionPsfData.unitX})` : "x"}
           </text>
           <text
-            x={18}
+            x={yAxisLabelX}
             y={plotTop + plotSide / 2}
             textAnchor="middle"
             fontSize="12"
             fill="currentColor"
-            transform={`rotate(-90 18 ${plotTop + plotSide / 2})`}
+            transform={`rotate(-90 ${yAxisLabelX} ${plotTop + plotSide / 2})`}
           >
             {diffractionPsfData.unitY ? `y (${diffractionPsfData.unitY})` : "y"}
           </text>
