@@ -203,7 +203,13 @@ export function DiffractionPsfChart({
                   y2={plotTop + plotSide + 4}
                   stroke="currentColor"
                 />
-                <text x={plotLeft + offset} y={plotTop + plotSide + 18} textAnchor="middle" fontSize="11">
+                <text
+                  x={plotLeft + offset}
+                  y={plotTop + plotSide + 18}
+                  textAnchor="middle"
+                  fontSize="11"
+                  fill="currentColor"
+                >
                   {formatPlotValue(tick)}
                 </text>
               </g>
@@ -214,13 +220,25 @@ export function DiffractionPsfChart({
             return (
               <g key={`y-${tick}`}>
                 <line x1={plotLeft - 4} y1={plotTop + offset} x2={plotLeft} y2={plotTop + offset} stroke="currentColor" />
-                <text x={plotLeft - 10} y={plotTop + offset + 4} textAnchor="end" fontSize="11">
+                <text
+                  x={plotLeft - 10}
+                  y={plotTop + offset + 4}
+                  textAnchor="end"
+                  fontSize="11"
+                  fill="currentColor"
+                >
                   {formatPlotValue(tick)}
                 </text>
               </g>
             );
           })}
-          <text x={plotLeft + plotSide / 2} y={size.height - 12} textAnchor="middle" fontSize="12">
+          <text
+            x={plotLeft + plotSide / 2}
+            y={size.height - 12}
+            textAnchor="middle"
+            fontSize="12"
+            fill="currentColor"
+          >
             {diffractionPsfData.unitX ? `x (${diffractionPsfData.unitX})` : "x"}
           </text>
           <text
@@ -228,6 +246,7 @@ export function DiffractionPsfChart({
             y={plotTop + plotSide / 2}
             textAnchor="middle"
             fontSize="12"
+            fill="currentColor"
             transform={`rotate(-90 18 ${plotTop + plotSide / 2})`}
           >
             {diffractionPsfData.unitY ? `y (${diffractionPsfData.unitY})` : "y"}
@@ -250,10 +269,15 @@ export function DiffractionPsfChart({
             height={Math.min(152, plotSide)}
             fill="url(#diffraction-psf-color-bar)"
           />
-          <text x={plotLeft + plotSide + 46} y={plotTop + 10} fontSize="11">
+          <text x={plotLeft + plotSide + 46} y={plotTop + 10} fontSize="11" fill="currentColor">
             {formatDiffractionPsfFluxLabel(preparedData.maxLogFlux)}
           </text>
-          <text x={plotLeft + plotSide + 46} y={plotTop + Math.min(152, plotSide)} fontSize="11">
+          <text
+            x={plotLeft + plotSide + 46}
+            y={plotTop + Math.min(152, plotSide)}
+            fontSize="11"
+            fill="currentColor"
+          >
             {formatDiffractionPsfFluxLabel(Math.min(DIFFRACTION_PSF_LOG_FLOOR, preparedData.minLogFlux))}
           </text>
           <text
@@ -261,6 +285,7 @@ export function DiffractionPsfChart({
             y={plotTop + Math.min(152, plotSide) / 2}
             textAnchor="middle"
             fontSize="12"
+            fill="currentColor"
             transform={`rotate(-90 ${plotLeft + plotSide + 66} ${plotTop + Math.min(152, plotSide) / 2})`}
           >
             Normalized flux/bin

@@ -25,6 +25,7 @@ interface DiffractionPsfChartProps {
 - Resets the controlled view state to `target: [0, 0, 0]` when the PSF extent or plot side changes.
 - Computes initial zoom as `log2(plotSide / (2 * axisExtent * 1.12))` so the full symmetric PSF extent fits in the square viewport.
 - Draws x-axis, y-axis, tick labels, axis labels, and a vertical color bar as an SVG overlay aligned to the deck.gl viewport.
+- Uses `currentColor` for SVG strokes and text fills so axis chrome, tick labels, axis labels, and color-bar labels inherit the chart container's theme-aware text color.
 - Labels the color bar in normalized flux per physical bin.
 - Keeps `data-testid="diffraction-psf-chart"` and `aria-label="Diffraction PSF plot"`.
 

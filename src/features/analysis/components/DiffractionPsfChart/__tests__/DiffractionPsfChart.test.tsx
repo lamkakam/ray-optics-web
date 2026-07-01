@@ -107,6 +107,18 @@ describe("DiffractionPsfChart", () => {
     expect(screen.getAllByText("0.02").length).toBeGreaterThan(0);
   });
 
+  it("uses theme-aware currentColor fills for SVG overlay text", () => {
+    render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
+
+    expect(screen.getByText("x (mm)")).toHaveAttribute("fill", "currentColor");
+    expect(screen.getByText("y (mm)")).toHaveAttribute("fill", "currentColor");
+    expect(screen.getByText("Normalized flux/bin")).toHaveAttribute("fill", "currentColor");
+
+    for (const tickLabel of screen.getAllByText("-0.02")) {
+      expect(tickLabel).toHaveAttribute("fill", "currentColor");
+    }
+  });
+
   it("uses a square auto-height chart when requested", () => {
     render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} autoHeight />);
 
