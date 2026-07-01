@@ -37,7 +37,7 @@ interface BottomDrawerContainerProps {
 
 ## Behavior
 
-- Builds the drawer tabs in the fixed order `Algorithm`, `Fields`, `Wavelengths`, `Lens Prescription`, and `Operands`.
+- Builds the drawer tabs in the fixed order `Algorithm`, `Half-Fields`, `Wavelengths`, `Lens Prescription`, and `Operands`.
 - Keeps `data-testid="optimization-bottom-drawer-wrapper"` on the wrapper for existing page tests.
 - Uses `mt-auto pb-4` on large screens and `pb-4` on smaller screens.
 - Passes `panelClassName="p-0"` so tab contents keep their own gutter.

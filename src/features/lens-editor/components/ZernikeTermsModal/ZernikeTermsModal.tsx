@@ -151,9 +151,10 @@ function ZernikeTermsModalContent({
     >
         <div className="flex items-center gap-4 mb-2">
           <div className="flex items-center gap-2">
-            <Label htmlFor="zernike-field-select">Field</Label>
+            <Label htmlFor="zernike-field-select">Half-Field</Label>
             <Select
               id="zernike-field-select"
+              aria-label="Half-Field"
               options={fieldOptions as SelectOption[]}
               value={selectedFieldIndex}
               onChange={handleFieldChange}

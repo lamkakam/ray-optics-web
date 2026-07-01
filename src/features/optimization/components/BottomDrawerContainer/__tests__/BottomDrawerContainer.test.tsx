@@ -127,7 +127,7 @@ describe("BottomDrawerContainer", () => {
     const user = userEvent.setup();
     const { store } = renderBottomDrawerContainer();
 
-    await user.click(screen.getByRole("button", { name: "Fields" }));
+    await user.click(screen.getByRole("button", { name: "Half-Fields" }));
     expect(store.getState().activeTabId).toBe("fields");
 
     await user.click(screen.getByRole("button", { name: "Differential Evolution" }));

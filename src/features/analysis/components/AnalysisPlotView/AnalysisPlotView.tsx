@@ -314,11 +314,11 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
         {fieldVisible && (
           <div className="flex-1">
             <Label htmlFor="analysis-field-select">
-              Field
+              Half-Field
             </Label>
             <Select
               id="analysis-field-select"
-              aria-label="Field"
+              aria-label="Half-Field"
               options={fieldOptions}
               value={selectedFieldIndex}
               disabled={fieldDisabled}

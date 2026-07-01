@@ -211,7 +211,7 @@ describe("OptimizationPage", () => {
     expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Apply to Editor" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Algorithm" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Fields" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Half-Fields" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Wavelengths" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Lens Prescription" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Operands" })).toBeInTheDocument();
@@ -658,7 +658,7 @@ describe("OptimizationPage", () => {
 
     expect(screen.getByTestId("optimization-algorithm-tab")).not.toHaveClass("p-4");
 
-    await user.click(screen.getByRole("tab", { name: "Fields" }));
+    await user.click(screen.getByRole("tab", { name: "Half-Fields" }));
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
     expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("p-4");

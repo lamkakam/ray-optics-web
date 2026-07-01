@@ -78,7 +78,7 @@ export function SpecsConfiguratorPanel({
 
       {/* Field */}
       <section>
-        <Header level={3} className="mb-2">Field</Header>
+        <Header level={3} className="mb-2">Half-Field</Header>
         <Tooltip text="Click to configure field settings" position="top-start" noTouch>
           <Button
             variant="toggle"

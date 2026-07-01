@@ -98,7 +98,7 @@ export function BottomDrawerContainer({
     },
     {
       id: "fields",
-      label: "Fields",
+      label: "Half-Fields",
       content: (
         <OptimizationWeightsGrid
           rows={fields.rows}

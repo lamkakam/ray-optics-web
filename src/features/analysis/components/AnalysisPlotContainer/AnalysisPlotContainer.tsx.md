@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Container component that owns all analysis-plot logic: derives field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed field-curvature data, typed astigmatism-curve data, typed longitudinal-spherical-aberration data, typed geometric-PSF point data, typed wavefront-map grid data, typed Strehl-vs-wavelength line data, typed diffraction-PSF grid data, or typed diffraction-MTF line data depending on the selected plot type.
+Container component that owns all analysis-plot logic: derives Half-Field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed field-curvature data, typed astigmatism-curve data, typed longitudinal-spherical-aberration data, typed geometric-PSF point data, typed wavefront-map grid data, typed Strehl-vs-wavelength line data, typed diffraction-PSF grid data, or typed diffraction-MTF line data depending on the selected plot type.
 
 ## Props
 
@@ -33,7 +33,7 @@ All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` a
 
 ## Derived Data
 
-- **`fieldOptions`** — obtained by calling `specsStore.getState().getFieldOptions()` directly in the render body (re-evaluated on each render triggered by `committedSpecs` change). Unit is `°` for `"angle"`, ` mm` for `"height"`.
+- **`fieldOptions`** — options for the visible Half-Field selector, obtained by calling `specsStore.getState().getFieldOptions()` directly in the render body (re-evaluated on each render triggered by `committedSpecs` change). Unit is `°` for `"angle"`, ` mm` for `"height"`.
 - **`wavelengthOptions`** — obtained by calling `specsStore.getState().getWavelengthOptions()` directly in the render body.
 
 ## Internal Logic

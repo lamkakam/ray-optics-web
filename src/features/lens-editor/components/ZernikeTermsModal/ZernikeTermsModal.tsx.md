@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Modal that displays Zernike polynomial coefficients for a selected field, wavelength, and ordering (Noll or Fringe). Data is fetched lazily when the modal opens or when any dropdown selection changes.
+Modal that displays Zernike polynomial coefficients for a selected Half-Field, wavelength, and ordering (Noll or Fringe). Data is fetched lazily when the modal opens or when any dropdown selection changes.
 
 ## Props
 
@@ -21,7 +21,7 @@ interface ZernikeTermsModalProps {
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | `isOpen` | `boolean` | Yes | Controls visibility |
-| `fieldOptions` | `readonly SelectOption[]` | Yes | Options for the Field dropdown |
+| `fieldOptions` | `readonly SelectOption[]` | Yes | Options for the Half-Field dropdown |
 | `wavelengthOptions` | `readonly SelectOption[]` | Yes | Options for the Wavelength dropdown |
 | `onFetchData` | `(fieldIndex, wvlIndex, ordering) => Promise<ZernikeData>` | Yes | Callback to fetch Zernike data. Called on open and on any dropdown change. |
 | `onClose` | `() => void` | Yes | Called when the Ok button is clicked |
@@ -60,8 +60,8 @@ interface ZernikeTermsModalProps {
 
 ## Layout
 
-- Row 1: Field + Wavelength dropdowns in a flex row
-- Row 2: Ordering dropdown (below Field+Wavelength)
+- Row 1: Half-Field + Wavelength dropdowns in a flex row
+- Row 2: Ordering dropdown (below Half-Field + Wavelength)
 - `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
 - Scrollable table area (`max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto`) — viewport-relative height reserves ~26rem for static overhead (title, dropdowns, summary chips, fixed footer, and modal padding), preventing the table from pushing modal content beyond the dialog height on smaller screens. The clamp keeps at least 5rem of table space when the viewport is tight and caps the table at 32rem on larger screens.
 - Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))

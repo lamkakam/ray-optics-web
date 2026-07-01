@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Displays an analysis plot alongside plot-type, field, and wavelength selectors. All supported analysis plot types delegate to dedicated ECharts chart components that render typed data.
+Displays an analysis plot alongside plot-type, Half-Field, and wavelength selectors. All supported analysis plot types delegate to dedicated ECharts chart components that render typed data.
 
 ## PlotType
 
@@ -54,7 +54,7 @@ interface AnalysisPlotViewProps {
 
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
-| `fieldOptions` | `readonly FieldOption[]` | Yes | Selectable field points for the field dropdown |
+| `fieldOptions` | `readonly FieldOption[]` | Yes | Selectable field points for the Half-Field dropdown |
 | `wavelengthOptions` | `readonly WavelengthOption[]` | Yes | Selectable wavelengths for the wavelength dropdown |
 | `selectedFieldIndex` | `number` | Yes | Currently selected field index |
 | `selectedWavelengthIndex` | `number` | Yes | Currently selected wavelength index |
@@ -98,7 +98,7 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 
 ## Key Behaviors
 
-- `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the field dropdown is hidden for non-field-dependent types.
+- `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the Half-Field dropdown is hidden for non-field-dependent types.
 - The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
 - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
 - `PLOT_RENDERERS` (module-local) maps each `PlotType` to a typed renderer config with:
@@ -109,8 +109,8 @@ Exported config record mapping each `PlotType` to `{ label, fieldDependent, wave
 - `rayFan` renders `RayFanChart` only when `rayFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
 - `spotDiagram` renders `SpotDiagramChart` only when `spotDiagramData` is present, passing wavelength labels from `wavelengthOptions` so each series is named by the actual wavelength rather than the wavelength index.
-- `fieldCurvature` renders `FieldCurveChart` only when `fieldCurvatureData` is present and shows the wavelength selector without a field selector.
-- `astigmatismCurve` renders `AstigmatismChart` only when `astigmatismCurveData` is present and shows the wavelength selector without a field selector.
+- `fieldCurvature` renders `FieldCurveChart` only when `fieldCurvatureData` is present and shows the wavelength selector without a Half-Field selector.
+- `astigmatismCurve` renders `AstigmatismChart` only when `astigmatismCurveData` is present and shows the wavelength selector without a Half-Field selector.
 - `longitudinalSphericalAberration` renders `LongitudinalSphericalAberrationChart` only when `longitudinalSphericalAberrationData` is present, passes wavelength labels to name each series, and hides both field and wavelength selectors because the worker always traces field 0 for all wavelengths.
 - `strehlVsWavelength` renders `StrehlVsWavelengthChart` only when `strehlVsWavelengthData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
 - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.

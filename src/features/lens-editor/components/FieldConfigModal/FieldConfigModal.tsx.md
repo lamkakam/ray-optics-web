@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Modal for configuring optical field settings: field space, field type, max field value, a list of relative field positions, and the optional wide-angle ray-aiming mode. Uses AG Grid for the editable field table.
+Modal for configuring optical field settings: field space, field type, max half-field value, a list of relative field positions, and the optional wide-angle ray-aiming mode. Uses AG Grid for the editable field table.
 
 ## Props
 
@@ -26,7 +26,7 @@ interface FieldConfigModalProps {
 | `isOpen` | `boolean` | Yes | Controls visibility |
 | `initialSpace` | `FieldSpace` | Yes | `"object"` or `"image"` |
 | `initialType` | `FieldType` | Yes | `"height"` or `"angle"` |
-| `initialMaxField` | `number` | Yes | Max field value in mm or degrees |
+| `initialMaxField` | `number` | Yes | Max half-field value in mm or degrees |
 | `initialRelativeFields` | `readonly number[]` | Yes | List of relative field values (0–1) |
 | `initialIsWideAngle` | `boolean` | Yes | Initial state for the wide-angle ray-aiming checkbox |
 | `onApply` | `(result) => void` | Yes | Called with the final config on Apply |

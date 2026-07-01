@@ -159,7 +159,7 @@ function FieldConfigModalContent({
   return (
     <Modal
       isOpen={true}
-      title="Field"
+      title="Half-Field"
       titleId="field-modal-title"
       size="lg"
       footer={(
@@ -199,11 +199,11 @@ function FieldConfigModalContent({
           />
         </div>
         <div className="col-span-2 sm:col-span-1">
-          <Label htmlFor="field-max">Max field value</Label>
+          <Label htmlFor="field-max">Max half-field value</Label>
           <Input
             id="field-max"
             type="text"
-            aria-label="Max field value"
+            aria-label="Max half-field value"
             variant="compact"
             value={maxFieldStr}
             onChange={(e) => setMaxFieldStr(e.target.value)}

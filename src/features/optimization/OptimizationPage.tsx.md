@@ -28,7 +28,7 @@ interface OptimizationPageProps {
 - When the current store state cannot build an optimization config, passes the thrown `buildOptimizationConfig()` error message into the evaluation panel so Operand Evaluation shows the specific invalid-config reason before either the table or the existing placeholder text.
 - Delegates controlled `BottomDrawer` tab construction and rendering to `BottomDrawerContainer`, with five sections:
   - `Algorithm`
-  - `Fields`
+  - `Half-Fields`
   - `Wavelengths`
   - `Lens Prescription`
   - `Operands`
@@ -41,7 +41,7 @@ interface OptimizationPageProps {
   - the optimization page passes `panelClassName="p-0"` to `BottomDrawer` so each tab keeps a single `p-4` content gutter that matches the rest of the page layout instead of stacking drawer padding with per-tab padding
 - The tabs delegate their view rendering to feature components:
   - `OptimizationAlgorithmTab`
-  - `OptimizationWeightsGrid` for `Fields` and `Wavelengths`
+  - `OptimizationWeightsGrid` for `Half-Fields` and `Wavelengths`
   - `OptimizationLensPrescriptionGrid`
   - `OptimizationOperandsTab`
 - The field and wavelength grid components render AG Grid tables where only the `Weight` column is editable.
