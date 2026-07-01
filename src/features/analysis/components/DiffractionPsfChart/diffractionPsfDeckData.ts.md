@@ -29,7 +29,7 @@ function formatDiffractionPsfFluxLabel(log10Flux: number): string
 - Normalizes positive flux linearly against the brightest positive bin so the maximum `normalizedFlux` value is `1`.
 - Uses one output datum per physical PSF bin so deck.gl `GridLayer` `SUM` aggregation preserves the intended bin value.
 - Converts normalized flux to `log10` display weights after normalization.
-- Uses `DIFFRACTION_PSF_LOG_FLOOR` for zero-flux bins and as the lower log-scale display floor, avoiding `NaN` and infinities.
+- Uses `DIFFRACTION_PSF_LOG_FLOOR` (`log10(5e-4)`) for zero-flux bins, missing or negative flux bins, and positive normalized flux below `5e-4`, avoiding `NaN` and infinities while keeping the lower log-scale display floor at `5e-4`.
 - Derives `cellSize` from the minimum median positive spacing across the physical `x` and `y` axes, falling back to `1` when no spacing exists.
 - Computes a symmetric `axisExtent` from the largest absolute physical coordinate, falling back to `1`.
 - Formats color-bar labels back from log-scale values to normalized linear flux with the shared plot-value formatter.

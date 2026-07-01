@@ -28,7 +28,8 @@ interface DiffractionPsfChartProps {
 - Computes SVG x/y tick labels from the currently controlled orthographic viewport, so pan and zoom keep the axes on the plot frame while labels reflect the visible physical coordinate range.
 - Positions the y-axis label relative to the centered plot viewport (`plotLeft - 54`) so it stays adjacent to the plotted y-axis when the chart container is wider than the square plot.
 - Uses `currentColor` for SVG strokes and text fills so axis chrome, tick labels, axis labels, and color-bar labels inherit the chart container's theme-aware text color.
-- Labels the color bar in normalized flux per physical bin.
+- Labels the color bar in normalized flux per physical bin, with the lower label coming from the shared `DIFFRACTION_PSF_LOG_FLOOR` (`5e-4`).
+- Passes the shared `DIFFRACTION_PSF_LOG_FLOOR` as the lower deck.gl `GridLayer.colorDomain` value so grid weights and color-bar labels use the same normalized-flux floor.
 - Keeps `data-testid="diffraction-psf-chart"` and `aria-label="Diffraction PSF plot"`.
 
 ## Dependencies

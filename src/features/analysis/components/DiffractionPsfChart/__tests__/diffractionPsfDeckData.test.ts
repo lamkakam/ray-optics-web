@@ -21,6 +21,10 @@ describe("diffractionPsfDeckData", () => {
     unitZ: "",
   };
 
+  it("uses 5e-4 as the normalized-flux log floor", () => {
+    expect(formatDiffractionPsfFluxLabel(DIFFRACTION_PSF_LOG_FLOOR)).toBe("5e-4");
+  });
+
   it("peak-normalizes positive flux across physical bins", () => {
     const prepared = buildDiffractionPsfBins(diffractionPsfData);
 
@@ -46,6 +50,42 @@ describe("diffractionPsfDeckData", () => {
     expect(prepared.bins.every((bin) => bin.normalizedFlux === 0)).toBe(true);
     expect(prepared.bins.every((bin) => Number.isFinite(bin.logScaledFlux))).toBe(true);
     expect(prepared.bins.every((bin) => bin.logScaledFlux === DIFFRACTION_PSF_LOG_FLOOR)).toBe(true);
+  });
+
+  it("maps below-floor, zero, missing, and negative flux samples to the log floor", () => {
+    const prepared = buildDiffractionPsfBins({
+      ...diffractionPsfData,
+      x: [0, 1, 2, 3, 4],
+      y: [0],
+      z: [
+        [1],
+        [1e-4],
+        [0],
+        [],
+        [-1],
+      ],
+    });
+
+    expect(prepared.bins[0]?.normalizedFlux).toBe(1);
+    expect(prepared.bins[0]?.logScaledFlux).toBe(0);
+    for (const bin of prepared.bins.slice(1)) {
+      expect(bin.logScaledFlux).toBe(DIFFRACTION_PSF_LOG_FLOOR);
+    }
+  });
+
+  it("uses actual log10 values for normalized flux above the floor", () => {
+    const prepared = buildDiffractionPsfBins({
+      ...diffractionPsfData,
+      x: [0, 1],
+      y: [0],
+      z: [
+        [1],
+        [1e-3],
+      ],
+    });
+
+    expect(prepared.bins[1]?.normalizedFlux).toBeCloseTo(1e-3);
+    expect(prepared.bins[1]?.logScaledFlux).toBeCloseTo(-3);
   });
 
   it("derives cell size from the median positive physical axis spacing", () => {

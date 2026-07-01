@@ -1,5 +1,6 @@
 import { act, render, screen } from "@testing-library/react";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
+import { DIFFRACTION_PSF_LOG_FLOOR } from "@/features/analysis/components/DiffractionPsfChart/diffractionPsfDeckData";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
 interface MockDeckGLProps {
@@ -86,10 +87,12 @@ describe("DiffractionPsfChart", () => {
       readonly data: readonly unknown[];
       readonly getPosition: (datum: { readonly x: number; readonly y: number }) => [number, number];
       readonly getColorWeight: (datum: { readonly logScaledFlux: number }) => number;
+      readonly colorDomain: readonly [number, number];
     };
     expect(layerProps.data).toHaveLength(9);
     expect(layerProps.getPosition({ x: 0.02, y: -0.01 })).toEqual([0.02, -0.01]);
     expect(layerProps.getColorWeight({ logScaledFlux: -3 })).toBe(-3);
+    expect(layerProps.colorDomain[0]).toBe(DIFFRACTION_PSF_LOG_FLOOR);
   });
 
   it("uses an OrthographicView and initial zoom that fits the symmetric PSF extent", () => {
@@ -176,6 +179,7 @@ describe("DiffractionPsfChart", () => {
     expect(screen.getByText("x (mm)")).toBeInTheDocument();
     expect(screen.getByText("y (mm)")).toBeInTheDocument();
     expect(screen.getByText("Normalized flux/bin")).toBeInTheDocument();
+    expect(screen.getByText("5e-4")).toBeInTheDocument();
     expect(screen.getAllByText("-0.022").length).toBeGreaterThan(0);
     expect(screen.getAllByText("0").length).toBeGreaterThan(0);
     expect(screen.getAllByText("0.022").length).toBeGreaterThan(0);

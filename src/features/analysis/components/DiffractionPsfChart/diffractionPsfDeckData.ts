@@ -1,7 +1,7 @@
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
-export const DIFFRACTION_PSF_LOG_FLOOR = -9;
+export const DIFFRACTION_PSF_LOG_FLOOR = Math.log10(5e-4);
 
 export interface DiffractionPsfBin {
   readonly x: number;
