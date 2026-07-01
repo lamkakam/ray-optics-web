@@ -26,6 +26,7 @@ import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridType
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { OptimizationProgressEntry, OptimizationReport } from "./types/optimizationWorkerTypes";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import type { ButtonSize } from "@/shared/components/primitives/Button";
@@ -323,8 +324,61 @@ export function OptimizationPage({
     return Math.max(120, pageShellHeight - liveDrawerHeight - evaluationReservedHeight);
   }, [evaluationReservedHeight, isLG, liveDrawerHeight, pageShellHeight]);
 
+  const {
+    run: runDebouncedEvaluation,
+    cancel: cancelDebouncedEvaluation,
+  } = useDebouncedCallback((
+    requestId: number,
+    model: OpticalModel,
+    currentImagePoint: typeof imagePoint,
+  ) => {
+    let config;
+    try {
+      config = optimizationStore.getState().buildOptimizationConfig();
+    } catch {
+      if (evaluationRequestIdRef.current === requestId) {
+        setEvaluationReport(undefined);
+        setIsEvaluating(false);
+        setIsPostEditEvaluationPending(false);
+      }
+      return;
+    }
+
+    if (proxy === undefined) {
+      if (evaluationRequestIdRef.current === requestId) {
+        setEvaluationReport(undefined);
+        setIsEvaluating(false);
+        setIsPostEditEvaluationPending(false);
+      }
+      return;
+    }
+
+    setIsEvaluating(true);
+    void proxy.evaluateOptimizationProblem(model, config, currentImagePoint)
+      .then((report) => {
+        if (evaluationRequestIdRef.current !== requestId) {
+          return;
+        }
+        setOptimizationWarningMessage(undefined);
+        setEvaluationReport(report);
+      })
+      .catch(() => {
+        if (evaluationRequestIdRef.current !== requestId) {
+          return;
+        }
+        setEvaluationReport(undefined);
+      })
+      .finally(() => {
+        if (evaluationRequestIdRef.current === requestId) {
+          setIsEvaluating(false);
+          setIsPostEditEvaluationPending(false);
+        }
+      });
+  }, 200);
+
   useEffect(() => {
     if (!isReady || proxy === undefined || optimizationModel === undefined || !canBuildOptimizationConfig) {
+      cancelDebouncedEvaluation();
       setEvaluationReport(undefined);
       setIsEvaluating(false);
       setIsPostEditEvaluationPending(false);
@@ -333,44 +387,10 @@ export function OptimizationPage({
 
     const requestId = evaluationRequestIdRef.current + 1;
     evaluationRequestIdRef.current = requestId;
-    const timeoutId = window.setTimeout(() => {
-      let config;
-      try {
-        config = optimizationStore.getState().buildOptimizationConfig();
-      } catch {
-        if (evaluationRequestIdRef.current === requestId) {
-          setEvaluationReport(undefined);
-          setIsEvaluating(false);
-          setIsPostEditEvaluationPending(false);
-        }
-        return;
-      }
-
-      setIsEvaluating(true);
-      void proxy.evaluateOptimizationProblem(optimizationModel, config, imagePoint)
-        .then((report) => {
-          if (evaluationRequestIdRef.current !== requestId) {
-            return;
-          }
-          setOptimizationWarningMessage(undefined);
-          setEvaluationReport(report);
-        })
-        .catch(() => {
-          if (evaluationRequestIdRef.current !== requestId) {
-            return;
-          }
-          setEvaluationReport(undefined);
-        })
-        .finally(() => {
-          if (evaluationRequestIdRef.current === requestId) {
-            setIsEvaluating(false);
-            setIsPostEditEvaluationPending(false);
-          }
-        });
-    }, 200);
+    runDebouncedEvaluation(requestId, optimizationModel, imagePoint);
 
     return () => {
-      window.clearTimeout(timeoutId);
+      cancelDebouncedEvaluation();
     };
   }, [
     isReady,
@@ -387,6 +407,8 @@ export function OptimizationPage({
     operands,
     gridEditStopRevision,
     imagePoint,
+    runDebouncedEvaluation,
+    cancelDebouncedEvaluation,
   ]);
 
   const handleGridCellEditingStarted = useCallback(() => {

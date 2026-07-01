@@ -30,11 +30,12 @@ createAnalysisChartComponent<Props extends { autoHeight?: boolean }, BuilderArgs
 - Reads the active app theme via `useTheme()` and resolves the ECharts text color from `globalTokens`.
 - Lazily initializes one canvas-based ECharts instance and reuses it until unmount.
 - Resizes an already-initialized ECharts instance immediately when measured dimensions change so drag-resized containers do not leave the canvas at a stale size between debounced option rebuilds.
-- Debounces `echarts.init(...)/setOption(...)/resize()` using the supplied `debounceMs`.
+- Debounces `echarts.init(...)/setOption(...)/resize()` using `useDebouncedCallback(...)` and the supplied `debounceMs`.
 - Resizes the live chart instance on window resize and disposes it during cleanup.
 
 ## Dependencies
 
 - `echarts/core`
 - `useTheme()` from `shared/components/providers/ThemeProvider`
+- `useDebouncedCallback()` from `shared/hooks/useDebouncedCallback`
 - `globalTokens` from `shared/tokens/styleTokens`

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
+import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
 import { globalTokens } from "@/shared/tokens/styleTokens";
 
 type ChartDimensions = {
@@ -74,6 +75,19 @@ export function createAnalysisChartComponent<
         : buildOption(builderArgs, chartDimensions.width, chartDimensions.height, chartTextColor),
       [builderArgs, chartDimensions, chartTextColor],
     );
+    const {
+      run: runDebouncedChartUpdate,
+      cancel: cancelDebouncedChartUpdate,
+    } = useDebouncedCallback((
+      container: HTMLDivElement,
+      nextChartOption: EChartsCoreOption,
+    ) => {
+      if (!chartRef.current) {
+        chartRef.current = echarts.init(container, undefined, { renderer: "canvas" });
+      }
+      chartRef.current.setOption(nextChartOption, true);
+      chartRef.current.resize();
+    }, debounceMs);
 
     useEffect(() => {
       const container = chartContainerRef.current;
@@ -116,18 +130,11 @@ export function createAnalysisChartComponent<
       const container = chartContainerRef.current;
       if (!container || chartOption === undefined) return undefined;
 
-      const timeoutId = window.setTimeout(() => {
-        if (!chartRef.current) {
-          chartRef.current = echarts.init(container, undefined, { renderer: "canvas" });
-        }
-        chartRef.current.setOption(chartOption, true);
-        chartRef.current.resize();
-      }, debounceMs);
-
+      runDebouncedChartUpdate(container, chartOption);
       return () => {
-        window.clearTimeout(timeoutId);
+        cancelDebouncedChartUpdate();
       };
-    }, [chartOption]);
+    }, [chartOption, runDebouncedChartUpdate, cancelDebouncedChartUpdate]);
 
     useEffect(() => {
       if (chartRef.current === undefined || chartDimensions === undefined) {
