@@ -32,6 +32,11 @@ interface ViewStateOverride {
   readonly viewState: OrthographicViewState;
 }
 
+interface AxisDomain {
+  readonly min: number;
+  readonly max: number;
+}
+
 const PLOT_PADDING_FACTOR = 1.12;
 const CHART_TOP = 16;
 const CHART_BOTTOM = 56;
@@ -89,11 +94,30 @@ function useMeasuredSize(autoHeight: boolean | undefined): [React.RefObject<HTML
   return [containerRef, size];
 }
 
-function buildTicks(axisExtent: number): readonly number[] {
+function getVisibleAxisDomains(plotSide: number, viewState: OrthographicViewState): {
+  readonly x: AxisDomain;
+  readonly y: AxisDomain;
+} {
+  const scale = 2 ** viewState.zoom;
+  const visibleHalfRange = scale > 0 ? plotSide / (2 * scale) : 0;
+
+  return {
+    x: {
+      min: viewState.target[0] - visibleHalfRange,
+      max: viewState.target[0] + visibleHalfRange,
+    },
+    y: {
+      min: viewState.target[1] - visibleHalfRange,
+      max: viewState.target[1] + visibleHalfRange,
+    },
+  };
+}
+
+function buildTicks(axisDomain: AxisDomain): readonly number[] {
   const ticks: number[] = [];
   for (let index = 0; index < TICK_COUNT; index += 1) {
     const ratio = index / (TICK_COUNT - 1);
-    ticks.push(-axisExtent + (axisExtent * 2 * ratio));
+    ticks.push(axisDomain.min + ((axisDomain.max - axisDomain.min) * ratio));
   }
   return ticks;
 }
@@ -114,7 +138,6 @@ export function DiffractionPsfChart({
   const plotLeft = CHART_LEFT + Math.max(0, size.width - CHART_LEFT - CHART_RIGHT - LEGEND_WIDTH - plotSide) / 2;
   const yAxisLabelX = plotLeft - 54;
   const plotTop = CHART_TOP;
-  const axisTicks = useMemo(() => buildTicks(preparedData.axisExtent), [preparedData.axisExtent]);
   const colorRange = useMemo(
     () => ANALYSIS_HEATMAP_COLOR_PALETTE.map((color) => hexToRgb(color)),
     [],
@@ -128,6 +151,9 @@ export function DiffractionPsfChart({
   const viewState = viewStateOverride?.extentKey === extentKey
     ? viewStateOverride.viewState
     : initialViewState;
+  const axisDomains = useMemo(() => getVisibleAxisDomains(plotSide, viewState), [plotSide, viewState]);
+  const xAxisTicks = useMemo(() => buildTicks(axisDomains.x), [axisDomains.x]);
+  const yAxisTicks = useMemo(() => buildTicks(axisDomains.y), [axisDomains.y]);
 
   const layers = useMemo(() => [
     new GridLayer<DiffractionPsfBin>({
@@ -193,10 +219,10 @@ export function DiffractionPsfChart({
             stroke="currentColor"
           />
           <line x1={plotLeft} y1={plotTop} x2={plotLeft} y2={plotTop + plotSide} stroke="currentColor" />
-          {axisTicks.map((tick) => {
-            const offset = ((tick + preparedData.axisExtent) / (preparedData.axisExtent * 2)) * plotSide;
+          {xAxisTicks.map((tick, index) => {
+            const offset = (index / (TICK_COUNT - 1)) * plotSide;
             return (
-              <g key={`x-${tick}`}>
+              <g key={`x-${index}`}>
                 <line
                   x1={plotLeft + offset}
                   y1={plotTop + plotSide}
@@ -216,10 +242,10 @@ export function DiffractionPsfChart({
               </g>
             );
           })}
-          {axisTicks.map((tick) => {
-            const offset = ((preparedData.axisExtent - tick) / (preparedData.axisExtent * 2)) * plotSide;
+          {yAxisTicks.map((tick, index) => {
+            const offset = (1 - (index / (TICK_COUNT - 1))) * plotSide;
             return (
-              <g key={`y-${tick}`}>
+              <g key={`y-${index}`}>
                 <line x1={plotLeft - 4} y1={plotTop + offset} x2={plotLeft} y2={plotTop + offset} stroke="currentColor" />
                 <text
                   x={plotLeft - 10}

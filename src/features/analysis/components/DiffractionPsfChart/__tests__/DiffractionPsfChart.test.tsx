@@ -2,7 +2,21 @@ import { act, render, screen } from "@testing-library/react";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
-const mockDeckGL = jest.fn(({ children }: { readonly children?: React.ReactNode }) => (
+interface MockDeckGLProps {
+  readonly children?: React.ReactNode;
+  readonly onViewStateChange?: (event: {
+    readonly viewState: {
+      readonly target: readonly [number, number, number];
+      readonly zoom?: number;
+    };
+  }) => void;
+  readonly viewState?: Record<string, {
+    readonly target: readonly [number, number, number];
+    readonly zoom: number;
+  }>;
+}
+
+const mockDeckGL = jest.fn(({ children }: MockDeckGLProps) => (
   <div data-testid="deck-gl">{children}</div>
 ));
 const mockGridLayer = jest.fn((props: unknown) => ({ id: "grid-layer", props }));
@@ -12,7 +26,7 @@ jest.mock("deck.gl", () => ({
   COORDINATE_SYSTEM: {
     CARTESIAN: "cartesian",
   },
-  DeckGL: (props: { readonly children?: React.ReactNode }) => mockDeckGL(props),
+  DeckGL: (props: MockDeckGLProps) => mockDeckGL(props),
   GridLayer: function GridLayer(props: unknown) {
     return mockGridLayer(props);
   },
@@ -96,15 +110,75 @@ describe("DiffractionPsfChart", () => {
     }));
   });
 
+  it("keeps DeckGL view state controlled under the diffraction PSF view id after panning", () => {
+    render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
+
+    const deckProps = mockDeckGL.mock.lastCall?.[0] as MockDeckGLProps;
+    act(() => {
+      deckProps.onViewStateChange?.({
+        viewState: {
+          target: [0.01, -0.01, 0],
+          zoom: Math.log2(192 / (2 * 0.02)),
+        },
+      });
+    });
+
+    expect(mockDeckGL).toHaveBeenLastCalledWith(expect.objectContaining({
+      viewState: {
+        "diffraction-psf-view": {
+          target: [0.01, -0.01, 0],
+          zoom: Math.log2(192 / (2 * 0.02)),
+        },
+      },
+    }));
+  });
+
+  it("updates x and y tick labels from the panned orthographic viewport", () => {
+    render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
+
+    const deckProps = mockDeckGL.mock.lastCall?.[0] as MockDeckGLProps;
+    act(() => {
+      deckProps.onViewStateChange?.({
+        viewState: {
+          target: [0.01, -0.01, 0],
+          zoom: Math.log2(192 / (2 * 0.02)),
+        },
+      });
+    });
+
+    expect(screen.getAllByText("-0.03").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("-0.02").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.03").length).toBeGreaterThan(0);
+  });
+
+  it("updates x and y tick labels from the zoomed orthographic viewport", () => {
+    render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
+
+    const deckProps = mockDeckGL.mock.lastCall?.[0] as MockDeckGLProps;
+    act(() => {
+      deckProps.onViewStateChange?.({
+        viewState: {
+          target: [0, 0, 0],
+          zoom: Math.log2(192 / (2 * 0.01)),
+        },
+      });
+    });
+
+    expect(screen.getAllByText("-0.01").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("-0.005").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.005").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.01").length).toBeGreaterThan(0);
+  });
+
   it("displays axis labels, ticks, and the normalized flux color-bar label", () => {
     render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
 
     expect(screen.getByText("x (mm)")).toBeInTheDocument();
     expect(screen.getByText("y (mm)")).toBeInTheDocument();
     expect(screen.getByText("Normalized flux/bin")).toBeInTheDocument();
-    expect(screen.getAllByText("-0.02").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("-0.022").length).toBeGreaterThan(0);
     expect(screen.getAllByText("0").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("0.02").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.022").length).toBeGreaterThan(0);
   });
 
   it("keeps the y-axis label aligned with a horizontally centered plot", () => {
@@ -128,7 +202,7 @@ describe("DiffractionPsfChart", () => {
     expect(screen.getByText("y (mm)")).toHaveAttribute("fill", "currentColor");
     expect(screen.getByText("Normalized flux/bin")).toHaveAttribute("fill", "currentColor");
 
-    for (const tickLabel of screen.getAllByText("-0.02")) {
+    for (const tickLabel of screen.getAllByText("-0.022")) {
       expect(tickLabel).toHaveAttribute("fill", "currentColor");
     }
   });
