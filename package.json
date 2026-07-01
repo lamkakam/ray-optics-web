@@ -38,6 +38,7 @@
     "better-react-mathjax": "^3.0.1",
     "clsx": "^2.1.1",
     "comlink": "^4.4.2",
+    "deck.gl": "^9.3.5",
     "echarts": "^6.0.0",
     "next": "^16.0.0",
     "pyodide": "314.0.0",

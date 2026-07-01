@@ -4,6 +4,6 @@ Diffraction PSF chart module.
 
 ## Contents
 
-- [DiffractionPsfChart.tsx](./DiffractionPsfChart.tsx.md) — ECharts-backed Diffraction PSF renderer
-- [diffractionPsfChartOption.ts](./diffractionPsfChartOption.ts.md) — Diffraction PSF option builder
-- [`__tests__/`](./__tests__) — Moved unit tests for the chart component and option builder
+- [DiffractionPsfChart.tsx](./DiffractionPsfChart.tsx.md) — deck.gl-backed Diffraction PSF renderer
+- [diffractionPsfDeckData.ts](./diffractionPsfDeckData.ts.md) — Diffraction PSF bin preparation and log-scale label formatting
+- [`__tests__/`](./__tests__) — Unit tests for the chart component and data preparation helper
