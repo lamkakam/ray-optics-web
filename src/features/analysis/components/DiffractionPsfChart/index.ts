@@ -1,2 +1,2 @@
 export * from "./DiffractionPsfChart";
-export * from "./diffractionPsfChartOption";
+export * from "./diffractionPsfDeckData";
