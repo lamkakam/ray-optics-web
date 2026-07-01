@@ -28,7 +28,7 @@ interface OptimizationPageProps {
 - When the current store state cannot build an optimization config, passes the thrown `buildOptimizationConfig()` error message into the evaluation panel so Operand Evaluation shows the specific invalid-config reason before either the table or the existing placeholder text.
 - Delegates controlled `BottomDrawer` tab construction and rendering to `BottomDrawerContainer`, with five sections:
   - `Algorithm`
-  - `Fields`
+  - `Half-Fields`
   - `Wavelengths`
   - `Lens Prescription`
   - `Operands`
@@ -41,7 +41,7 @@ interface OptimizationPageProps {
   - the optimization page passes `panelClassName="p-0"` to `BottomDrawer` so each tab keeps a single `p-4` content gutter that matches the rest of the page layout instead of stacking drawer padding with per-tab padding
 - The tabs delegate their view rendering to feature components:
   - `OptimizationAlgorithmTab`
-  - `OptimizationWeightsGrid` for `Fields` and `Wavelengths`
+  - `OptimizationWeightsGrid` for `Half-Fields` and `Wavelengths`
   - `OptimizationLensPrescriptionGrid`
   - `OptimizationOperandsTab`
 - The field and wavelength grid components render AG Grid tables where only the `Weight` column is editable.
@@ -62,8 +62,12 @@ interface OptimizationPageProps {
 - When the user switches Optimizer Kind, `BottomDrawerContainer` delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
 - Variable-bound affordances use optimizer-kind-aware capabilities, so both bounded least-squares (`trf`) and methodless Differential Evolution can use the min/max variable UI while `lm` remains unbounded.
 - Invalid intermediate configs clear the evaluation table and show the current `buildOptimizationConfig()` error in Operand Evaluation.
+- Operand Evaluation loading and completion state updates must not re-render the bottom drawer grid subtree or reset active AG Grid editors; the page passes memoized drawer `layout`, `fields`, `wavelengths`, and `prescription` prop objects, with `onHeightChange` present only for large-screen drawer mode.
 - `Optimize` is disabled when the current optimization config cannot be built, including fresh pages with no operands and malformed variable/pickup inputs.
 - `Optimize` is also disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
+- `Optimize` is disabled while any Optimization AG Grid cell edit is active, while a post-edit Operand Evaluation refresh is pending, and while Operand Evaluation is currently evaluating.
+- Page-level AG Grid edit lifecycle tracking increments on `onCellEditingStarted`, decrements on `onCellEditingStopped`, increments an edit-stop revision so even no-op edits schedule a refresh, and marks the committed post-edit state as pending until the next debounced Operand Evaluation request settles; invalid config or missing worker prerequisites clear that pending gate without running an evaluation.
+- `Optimize` does not blur active AG Grid editors to force a commit. If the handler is triggered programmatically while editing, waiting for post-edit evaluation, evaluating, invalid, or zero-contribution, it returns without calling `optimizeOpm`.
 - `Optimize` validates the store state, rejects zero-contribution configs with an Operand Evaluation warning even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id, creates a `SharedArrayBuffer` interrupt buffer when worker/browser support is available, calls `proxy.optimizeOpm` with the app-wide `imagePoint`, streams merit-history updates into the modal chart through a Comlink progress callback, always applies the returned optimization report back into the page-local model, and still shows an Operand Evaluation warning when the returned status is unsuccessful.
 - The page checks `proxy.canInterruptOptimization()` and disables the progress modal Stop control when Pyodide interrupt support or `SharedArrayBuffer` is unavailable.
 - Clicking Stop is idempotent for the active run: it writes Pyodide's interrupt signal into the shared interrupt buffer immediately, calls `proxy.requestOptimizationStop(activeRunId)` for worker-side run validation, disables the Stop button while the run is settling, and leaves the progress modal open.
@@ -90,7 +94,7 @@ interface OptimizationPageProps {
 - Large-screen evaluation height is derived from the observed page-shell height, the current live drawer height, and measured fixed overhead above the table, with a fallback reserve when DOM measurement is not yet available.
 - The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.
 - `OptimizationPage` remains responsible for deriving row data, evaluation state, warning text, modal state, worker calls, and the page-level Apply to Editor confirmation. The editor mutation itself is factored into `features/optimization/lib/applyOptimizationModelToEditor.ts` so the app shell navigation warning can reuse the same apply path.
-- `BottomDrawerContainer` owns the drawer wrapper, tab assembly, active-tab state binding, optimizer handlers, field/wavelength weight handlers, prescription variable-modal handlers, and operand handlers by reading the optimization store directly.
+- `BottomDrawerContainer` owns the drawer wrapper, tab assembly, active-tab state binding, optimizer handlers, field/wavelength weight handlers, prescription variable-modal handlers, operand handlers, and AG Grid edit lifecycle callback forwarding by reading the optimization store directly and receiving page-level lifecycle callbacks.
 - Page-level optimization components are imported through their component-directory `index.ts` barrels. `BottomDrawerContainer` handles the narrow drawer-tab component imports, while `OptimizationInspectionModals` comes from its own nested directory barrel.
 - Optimization worker report/progress types are imported from `features/optimization/types/optimizationWorkerTypes.ts`.
 - Changing the Method select updates the optimization store immediately, so evaluation config building and variable modal rendering switch between bounded `trf` and unbounded `lm` behavior in place.

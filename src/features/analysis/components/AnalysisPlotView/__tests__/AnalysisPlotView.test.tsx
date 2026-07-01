@@ -183,7 +183,7 @@ describe("AnalysisPlotView", () => {
 
   it("renders field selector with correct options", () => {
     render(<AnalysisPlotView {...defaultProps} />);
-    const select = screen.getByLabelText("Field");
+    const select = screen.getByLabelText("Half-Field");
     expect(select).toBeInTheDocument();
     expect(screen.getByText("0.0°")).toBeInTheDocument();
     expect(screen.getByText("14.0°")).toBeInTheDocument();
@@ -225,7 +225,7 @@ describe("AnalysisPlotView", () => {
 
   it("field selector is enabled when selectedPlotType is rayFan", () => {
     render(<AnalysisPlotView {...defaultProps} selectedPlotType="rayFan" />);
-    const fieldSelect = screen.getByLabelText("Field");
+    const fieldSelect = screen.getByLabelText("Half-Field");
     expect(fieldSelect).not.toBeDisabled();
   });
 
@@ -236,7 +236,7 @@ describe("AnalysisPlotView", () => {
         selectedPlotType={"surfaceBySurface3rdOrder" as Parameters<typeof AnalysisPlotView>[0]["selectedPlotType"]}
       />
     );
-    expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
   });
 
   it("field and wavelength selectors are absent when selectedPlotType is longitudinalSphericalAberration", () => {
@@ -247,7 +247,7 @@ describe("AnalysisPlotView", () => {
       />
     );
 
-    expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Wavelength")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Plot type")).toBeInTheDocument();
   });
@@ -255,7 +255,7 @@ describe("AnalysisPlotView", () => {
   it("calls onFieldChange when field is changed", async () => {
     const onFieldChange = jest.fn();
     render(<AnalysisPlotView {...defaultProps} onFieldChange={onFieldChange} />);
-    const select = screen.getByLabelText("Field");
+    const select = screen.getByLabelText("Half-Field");
     await userEvent.selectOptions(select, "2");
     expect(onFieldChange).toHaveBeenCalledWith(2);
   });
@@ -577,7 +577,7 @@ describe("AnalysisPlotView", () => {
     it("uses compact selects on small screens", () => {
       (useScreenBreakpoint as jest.Mock).mockReturnValue("screenSM");
       render(<AnalysisPlotView {...defaultProps} />);
-      const field = screen.getByLabelText("Field");
+      const field = screen.getByLabelText("Half-Field");
       const plotType = screen.getByLabelText("Plot type");
       expect(field).toHaveClass("px-2");
       expect(field).not.toHaveClass("px-3");
@@ -588,7 +588,7 @@ describe("AnalysisPlotView", () => {
     it("uses default selects on large screens", () => {
       (useScreenBreakpoint as jest.Mock).mockReturnValue("screenLG");
       render(<AnalysisPlotView {...defaultProps} />);
-      const field = screen.getByLabelText("Field");
+      const field = screen.getByLabelText("Half-Field");
       const plotType = screen.getByLabelText("Plot type");
       expect(field).toHaveClass("w-full");
       expect(field).not.toHaveClass("px-2");
@@ -667,13 +667,13 @@ describe("AnalysisPlotView", () => {
     it("renders wavelength selector and no field selector for fieldCurvature", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="fieldCurvature" />);
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
-      expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
     });
 
     it("renders wavelength selector and no field selector for astigmatismCurve", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="astigmatismCurve" />);
       expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
-      expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
     });
 
     it("renders wavelength options correctly", () => {
@@ -701,27 +701,27 @@ describe("AnalysisPlotView", () => {
   describe("new wavelength-dependent plot types", () => {
     it("field selector is enabled for wavefrontMap", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="wavefrontMap" />);
-      expect(screen.getByLabelText("Field")).not.toBeDisabled();
+      expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
     });
 
     it("field selector is enabled for strehlVsWavelength", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="strehlVsWavelength" />);
-      expect(screen.getByLabelText("Field")).not.toBeDisabled();
+      expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
     });
 
     it("field selector is enabled for geoPSF", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="geoPSF" />);
-      expect(screen.getByLabelText("Field")).not.toBeDisabled();
+      expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
     });
 
     it("field selector is enabled for diffractionPSF", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionPSF" />);
-      expect(screen.getByLabelText("Field")).not.toBeDisabled();
+      expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
     });
 
     it("field selector is enabled for diffractionMTF", () => {
       render(<AnalysisPlotView {...defaultProps} selectedPlotType="diffractionMTF" />);
-      expect(screen.getByLabelText("Field")).not.toBeDisabled();
+      expect(screen.getByLabelText("Half-Field")).not.toBeDisabled();
     });
   });
 });

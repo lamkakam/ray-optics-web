@@ -269,6 +269,27 @@ describe("LensPrescriptionGrid", () => {
     expect(onRowChange).toHaveBeenCalledWith("s1", { curvatureRadius: 100 });
   });
 
+  it("commits a pending numeric edit before another grid action is handled", async () => {
+    const user = userEvent.setup();
+    const onRowChange = jest.fn();
+    const onOpenMediumModal = jest.fn();
+    render(
+      <LensPrescriptionGrid
+        {...defaultProps}
+        onRowChange={onRowChange}
+        onOpenMediumModal={onOpenMediumModal}
+      />
+    );
+    const inputs = screen.getAllByRole("textbox");
+
+    await user.clear(inputs[1]);
+    await user.type(inputs[1], "125");
+    await user.click(screen.getAllByRole("button", { name: "Edit medium" })[1]);
+
+    expect(onRowChange).toHaveBeenCalledWith("s1", { curvatureRadius: 125 });
+    expect(onOpenMediumModal).toHaveBeenCalledWith("s1");
+  });
+
   // --- Object row thickness (object distance) ---
   it("renders a thickness input for the Object row", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);

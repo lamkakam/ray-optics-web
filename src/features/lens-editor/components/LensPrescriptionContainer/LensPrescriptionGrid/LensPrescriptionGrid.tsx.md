@@ -51,6 +51,7 @@ interface LensPrescriptionGridProps {
 - The diffraction grating column renders only for `surface` rows.
 - The aperture column renders immediately after `Semi-diam.` and only for `surface` rows.
 - Number parsing rejects non-numeric input and restores the old value.
+- Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending numeric cell edits are committed before another grid action such as opening a modal or inserting/deleting a row is handled.
 - Applies shared AG Grid config: `defaultColDef={{ sortable: false, suppressMovable: true }}` and `domLayout="autoHeight"`.
 
 ## Usages

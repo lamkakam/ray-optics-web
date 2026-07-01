@@ -339,13 +339,13 @@ describe("AnalysisPlotContainer", () => {
 
   it("renders AnalysisPlotView (smoke test)", () => {
     renderComponent(testSpecs, testModel, store, makeMockProxy());
-    expect(screen.getByLabelText("Field")).toBeInTheDocument();
+    expect(screen.getByLabelText("Half-Field")).toBeInTheDocument();
     expect(screen.getByLabelText("Plot type")).toBeInTheDocument();
   });
 
   it("derives fieldOptions from committedSpecs with angle type", () => {
     renderComponent(testSpecs, testModel, store, makeMockProxy());
-    const fieldSelect = screen.getByLabelText("Field") as HTMLSelectElement;
+    const fieldSelect = screen.getByLabelText("Half-Field") as HTMLSelectElement;
     expect(fieldSelect).toContainHTML("0.00°");
     expect(fieldSelect).toContainHTML("14.0°");
     expect(fieldSelect).toContainHTML("20.0°");
@@ -353,7 +353,7 @@ describe("AnalysisPlotContainer", () => {
 
   it("derives fieldOptions from committedSpecs with height type", () => {
     renderComponent(testSpecsHeight, testModel, store, makeMockProxy());
-    const fieldSelect = screen.getByLabelText("Field") as HTMLSelectElement;
+    const fieldSelect = screen.getByLabelText("Half-Field") as HTMLSelectElement;
     expect(fieldSelect).toContainHTML("0.00 mm");
     expect(fieldSelect).toContainHTML("5.00 mm");
     expect(fieldSelect).toContainHTML("10.0 mm");
@@ -372,7 +372,7 @@ describe("AnalysisPlotContainer", () => {
   it("handleFieldChange: updates selectedFieldIndex in store and calls getRayFanData for ray fan", async () => {
     const proxy = makeMockProxy();
     renderComponent(testSpecs, testModel, store, proxy);
-    const fieldSelect = screen.getByLabelText("Field");
+    const fieldSelect = screen.getByLabelText("Half-Field");
     await userEvent.selectOptions(fieldSelect, "1");
 
     expect(store.getState().selectedFieldIndex).toBe(1);
@@ -390,7 +390,7 @@ describe("AnalysisPlotContainer", () => {
       ),
     });
     renderComponent(testSpecs, testModel, store, proxy);
-    const fieldSelect = screen.getByLabelText("Field");
+    const fieldSelect = screen.getByLabelText("Half-Field");
     const selectPromise = userEvent.selectOptions(fieldSelect, "1");
 
     await waitFor(() => expect(store.getState().plotLoading).toBe(true));
@@ -403,7 +403,7 @@ describe("AnalysisPlotContainer", () => {
     store.getState().setSelectedPlotType("surfaceBySurface3rdOrder");
     const proxy = makeMockProxy();
     renderComponent(testSpecs, testModel, store, proxy, jest.fn(), makeAnalysisDataStore(seidelData));
-    expect(screen.queryByLabelText("Field")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Half-Field")).not.toBeInTheDocument();
   });
 
   it("renders the surface by surface chart from analysisDataStore instead of loading a PNG", async () => {
@@ -664,7 +664,7 @@ describe("AnalysisPlotContainer", () => {
       getRayFanData: jest.fn().mockRejectedValue(new Error("fail")),
     });
     renderComponent(testSpecs, testModel, store, proxy, onError);
-    const fieldSelect = screen.getByLabelText("Field");
+    const fieldSelect = screen.getByLabelText("Half-Field");
     await userEvent.selectOptions(fieldSelect, "1");
     await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
   });
@@ -708,7 +708,7 @@ describe("AnalysisPlotContainer", () => {
       getRayFanData: jest.fn().mockRejectedValue(new Error("fail")),
     });
     renderComponent(testSpecs, testModel, store, proxy);
-    const fieldSelect = screen.getByLabelText("Field");
+    const fieldSelect = screen.getByLabelText("Half-Field");
     await userEvent.selectOptions(fieldSelect, "1");
     await waitFor(() => expect(store.getState().plotLoading).toBe(false));
   });
@@ -716,7 +716,7 @@ describe("AnalysisPlotContainer", () => {
   it("loads rayFan through getRayFanData and stores chart data instead of a PNG", async () => {
     const proxy = makeMockProxy();
     renderComponent(testSpecs, testModel, store, proxy);
-    const fieldSelect = screen.getByLabelText("Field");
+    const fieldSelect = screen.getByLabelText("Half-Field");
     await userEvent.selectOptions(fieldSelect, "1");
 
     await waitFor(() => {

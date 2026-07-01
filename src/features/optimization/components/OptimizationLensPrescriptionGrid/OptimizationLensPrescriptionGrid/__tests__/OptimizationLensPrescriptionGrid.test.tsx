@@ -73,11 +73,15 @@ describe("OptimizationLensPrescriptionGrid", () => {
         onOpenDecenterModal={onOpenDecenterModal}
         onOpenDiffractionGratingModal={onOpenDiffractionGratingModal}
         onOpenApertureModal={onOpenApertureModal}
+        onCellEditingStarted={jest.fn()}
+        onCellEditingStopped={jest.fn()}
       />,
     );
 
     expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("overflow-y-auto");
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-has-on-cell-editing-started", "true");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-has-on-cell-editing-stopped", "true");
 
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
     expect(Array.from(headers, (header) => header.textContent)).toEqual([

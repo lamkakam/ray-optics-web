@@ -25,12 +25,12 @@ test("manually input Sasian Triplet and update system", async ({
 
   // 2. Field modal
   await page.getByLabel("Configure field").click();
-  const fieldModal = page.getByRole("dialog", { name: "Field" });
+  const fieldModal = page.getByRole("dialog", { name: "Half-Field" });
   await fieldModal.waitFor({ state: "visible", timeout: 3_000 });
   await page.getByLabel("Field type").selectOption("angle");
-  await page.getByLabel("Max field value").clear();
-  await page.getByLabel("Max field value").fill("20");
-  await page.getByLabel("Max field value").blur();
+  await page.getByLabel("Max half-field value").clear();
+  await page.getByLabel("Max half-field value").fill("20");
+  await page.getByLabel("Max half-field value").blur();
   // Row 0 already value=0 — skip. Add row 1 (0.707) and row 2 (1.0)
   await fieldModal
     .locator('.ag-row[row-index="0"]')

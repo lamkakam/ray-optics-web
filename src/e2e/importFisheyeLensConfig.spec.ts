@@ -110,10 +110,10 @@ test("import fisheye config, update system, and verify loaded prescription/specs
   );
 
   await page.getByLabel("Configure field").click();
-  const fieldModal = page.getByRole("dialog", { name: "Field" });
+  const fieldModal = page.getByRole("dialog", { name: "Half-Field" });
   await fieldModal.waitFor({ state: "visible", timeout: 5_000 });
   await expect(page.getByLabel("Field type")).toHaveValue("angle");
-  await expect(page.getByLabel("Max field value")).toHaveValue("90");
+  await expect(page.getByLabel("Max half-field value")).toHaveValue("90");
   await expect(
     page.getByLabel("Use wide angle mode for more robust ray aiming")
   ).toBeChecked();

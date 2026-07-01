@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { OptimizationOperandsTab } from "@/features/optimization/components/OptimizationOperandsTab/OptimizationOperandsTab";
 
@@ -73,5 +73,61 @@ describe("OptimizationOperandsTab", () => {
 
     expect(screen.getByText("N/A")).toBeInTheDocument();
     expect(screen.getAllByRole("textbox")).toHaveLength(1);
+  });
+
+  it("commits a pending operand edit before a row action is handled", async () => {
+    const user = userEvent.setup();
+    const onDeleteOperand = jest.fn();
+    const onUpdateOperand = jest.fn();
+
+    render(
+      <OptimizationOperandsTab
+        operands={[{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={onDeleteOperand}
+        onUpdateOperand={onUpdateOperand}
+      />,
+    );
+
+    const inputs = screen.getAllByRole("textbox");
+    await user.clear(inputs[1]);
+    await user.type(inputs[1], "3.25");
+    await user.click(screen.getByRole("button", { name: "Delete operand operand-1" }));
+
+    expect(onUpdateOperand).toHaveBeenCalledWith("operand-1", { weight: "3.25" });
+    expect(onDeleteOperand).toHaveBeenCalledWith("operand-1");
+  });
+
+  it("preserves uncommitted target and weight text across parent rerenders with replacement operand objects", async () => {
+    const onUpdateOperand = jest.fn();
+    const firstOperands = [{ id: "operand-1", kind: "focal_length" as const, target: "100", weight: "1" }];
+    const secondOperands = [{ id: "operand-1", kind: "focal_length" as const, target: "100", weight: "1" }];
+
+    const { rerender } = render(
+      <OptimizationOperandsTab
+        operands={firstOperands}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={jest.fn()}
+        onUpdateOperand={onUpdateOperand}
+      />,
+    );
+
+    let inputs = screen.getAllByRole("textbox");
+    fireEvent.change(inputs[0], { target: { value: "125" } });
+    fireEvent.change(inputs[1], { target: { value: "2.75" } });
+
+    rerender(
+      <OptimizationOperandsTab
+        operands={secondOperands}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={jest.fn()}
+        onUpdateOperand={onUpdateOperand}
+      />,
+    );
+
+    inputs = screen.getAllByRole("textbox");
+    expect(inputs[0]).toHaveValue("125");
+    expect(inputs[1]).toHaveValue("2.75");
+    expect(onUpdateOperand).not.toHaveBeenCalled();
   });
 });

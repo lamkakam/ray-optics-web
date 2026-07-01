@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Presentational panel for editing optical system specifications: system aperture (type + value), field summary, and wavelength summary. Calls back to the container for all state changes; holds only a local draft string for the aperture value input.
+Presentational panel for editing optical system specifications: system aperture (type + value), visible Half-Field summary, and wavelength summary. Calls back to the container for all state changes; holds only a local draft string for the aperture value input.
 
 ## Props
 
@@ -39,7 +39,7 @@ interface SpecsConfiguratorPanelProps {
 ## Key Behaviors
 
 - Aperture dropdown selects from three pre-defined combinations of `pupilSpace`+`pupilType`.
-- Field and wavelength sections show their summaries as toggle-style buttons that open the respective modals.
+- Half-Field and wavelength sections show their summaries as toggle-style buttons that open the respective modals.
 
 ## Usages
 

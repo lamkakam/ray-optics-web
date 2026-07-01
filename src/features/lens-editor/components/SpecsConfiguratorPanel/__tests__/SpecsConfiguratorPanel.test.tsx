@@ -44,9 +44,9 @@ describe("SpecsConfiguratorPanel", () => {
       expect(input).toHaveValue("25");
     });
 
-    it("renders Field label and button with summary", () => {
+    it("renders Half-Field label and button with summary", () => {
       render(<SpecsConfiguratorPanel {...defaultProps} />);
-      expect(screen.getByText("Field")).toBeInTheDocument();
+      expect(screen.getByText("Half-Field")).toBeInTheDocument();
       const btn = screen.getByRole("button", { name: /field/i });
       expect(btn).toHaveTextContent("3 fields, 20° max");
     });

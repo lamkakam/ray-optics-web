@@ -52,11 +52,11 @@ test("import lens-config.json and verify System Specs and Prescription", async (
   // 4. Verify Field modal
   await page.getByLabel("Configure field").click();
   const fieldModal = page.getByRole("dialog", {
-    name: "Field",
+    name: "Half-Field",
   });
   await fieldModal.waitFor({ state: "visible", timeout: 3_000 });
   await expect(page.getByLabel("Field type")).toHaveValue("angle");
-  await expect(page.getByLabel("Max field value")).toHaveValue("0.05");
+  await expect(page.getByLabel("Max half-field value")).toHaveValue("0.05");
 
   const fieldGrid = '[role="dialog"][aria-labelledby="field-modal-title"]';
   await expect(

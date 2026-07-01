@@ -111,9 +111,9 @@ describe("ZernikeTermsModal", () => {
     await act(async () => {});
   });
 
-  it("renders Field and Wavelength dropdowns with labels", async () => {
+  it("renders Half-Field and Wavelength dropdowns with labels", async () => {
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} />);
-    expect(screen.getByLabelText("Field")).toBeInTheDocument();
+    expect(screen.getByLabelText("Half-Field")).toBeInTheDocument();
     expect(screen.getByLabelText("Wavelength")).toBeInTheDocument();
     await act(async () => {});
   });
@@ -171,7 +171,7 @@ describe("ZernikeTermsModal", () => {
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
-    const fieldSelect = screen.getByLabelText("Field");
+    const fieldSelect = screen.getByLabelText("Half-Field");
     await userEvent.selectOptions(fieldSelect, "2");
     await waitFor(() => {
       expect(onFetchData).toHaveBeenCalledWith(2, 1, "fringe");
@@ -220,7 +220,7 @@ describe("ZernikeTermsModal", () => {
     await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
 
     // Trigger a re-fetch via dropdown change
-    const fieldSelect = screen.getByLabelText("Field");
+    const fieldSelect = screen.getByLabelText("Half-Field");
     await userEvent.selectOptions(fieldSelect, "1");
 
     // Table stays visible and loading mask appears

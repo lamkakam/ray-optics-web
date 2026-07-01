@@ -59,9 +59,9 @@ describe("SpecsConfiguratorContainer", () => {
     expect(screen.getByText("System Aperture")).toBeInTheDocument();
   });
 
-  it("renders the panel with Field section", () => {
+  it("renders the panel with Half-Field section", () => {
     renderWithContext();
-    expect(screen.getByText("Field")).toBeInTheDocument();
+    expect(screen.getByText("Half-Field")).toBeInTheDocument();
   });
 
   it("renders the panel with Wavelengths section", () => {

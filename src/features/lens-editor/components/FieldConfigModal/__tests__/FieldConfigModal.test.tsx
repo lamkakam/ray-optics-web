@@ -33,9 +33,9 @@ describe("FieldConfigModal", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("renders Field title", () => {
+  it("renders Half-Field title", () => {
     render(<FieldConfigModal {...defaultProps} />);
-    expect(screen.getByText("Field")).toBeInTheDocument();
+    expect(screen.getByText("Half-Field")).toBeInTheDocument();
   });
 
   it("renders field space dropdown with Object/Image options", () => {
@@ -58,9 +58,9 @@ describe("FieldConfigModal", () => {
     expect(options[1]).toHaveTextContent("Angle");
   });
 
-  it("renders max field textbox with initial value", () => {
+  it("renders max half-field textbox with initial value", () => {
     render(<FieldConfigModal {...defaultProps} />);
-    const input = screen.getByLabelText("Max field value");
+    const input = screen.getByLabelText("Max half-field value");
     expect(input).toHaveValue("20");
   });
 
@@ -152,6 +152,25 @@ describe("FieldConfigModal", () => {
       type: "angle",
       maxField: 20,
       relativeFields: [0, 0.7, 1],
+      isWideAngle: false,
+    });
+  });
+
+  it("commits a pending relative field edit before Apply is handled", async () => {
+    const user = userEvent.setup();
+    const onApply = jest.fn();
+    render(<FieldConfigModal {...defaultProps} onApply={onApply} />);
+
+    const inputs = screen.getAllByRole("textbox");
+    await user.clear(inputs[1]);
+    await user.type(inputs[1], "0.25");
+    await user.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith({
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      relativeFields: [0.25, 0.7, 1],
       isWideAngle: false,
     });
   });
@@ -288,7 +307,7 @@ describe("FieldConfigModal", () => {
 
   it("keeps the current draft while open when parent props change", async () => {
     const { rerender } = render(<FieldConfigModal {...defaultProps} />);
-    const input = screen.getByLabelText("Max field value");
+    const input = screen.getByLabelText("Max half-field value");
 
     await userEvent.clear(input);
     await userEvent.type(input, "45");
@@ -302,6 +321,6 @@ describe("FieldConfigModal", () => {
       />
     );
 
-    expect(screen.getByLabelText("Max field value")).toHaveValue("45");
+    expect(screen.getByLabelText("Max half-field value")).toHaveValue("45");
   });
 });

@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { AgGridProvider, AgGridReact } from "ag-grid-react";
+import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
+import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import type { WeightRow } from "@/features/optimization/lib/optimizationViewModels";
 
@@ -10,12 +11,16 @@ interface OptimizationWeightsGridProps {
   readonly rows: ReadonlyArray<WeightRow>;
   readonly valueColumnWidth: number;
   readonly onUpdateWeight: (index: number, value: number) => void;
+  readonly onCellEditingStarted?: () => void;
+  readonly onCellEditingStopped?: () => void;
 }
 
 export function OptimizationWeightsGrid({
   rows,
   valueColumnWidth,
   onUpdateWeight,
+  onCellEditingStarted,
+  onCellEditingStopped,
 }: OptimizationWeightsGridProps) {
   const gridTheme = useAgGridTheme();
 
@@ -50,12 +55,15 @@ export function OptimizationWeightsGrid({
   return (
     <div data-testid="optimization-weights-grid" className="overflow-x-auto">
       <AgGridProvider modules={[AllCommunityModule]}>
-        <AgGridReact
+        <EditableAgGridReact<WeightRow>
           theme={gridTheme}
           rowData={[...rows]}
           columnDefs={weightColumns}
+          getRowId={(params) => params.data.id}
           defaultColDef={{ sortable: false, suppressMovable: true }}
           domLayout="autoHeight"
+          onCellEditingStarted={onCellEditingStarted}
+          onCellEditingStopped={onCellEditingStopped}
         />
       </AgGridProvider>
     </div>

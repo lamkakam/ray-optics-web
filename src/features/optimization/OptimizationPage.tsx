@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { proxy as comlinkProxy } from "comlink";
 import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -124,6 +124,9 @@ export function OptimizationPage({
   const [evaluationReport, setEvaluationReport] = useState<OptimizationReport | undefined>();
   const [optimizationWarningMessage, setOptimizationWarningMessage] = useState<string | undefined>();
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [activeGridEditCount, setActiveGridEditCount] = useState(0);
+  const [isPostEditEvaluationPending, setIsPostEditEvaluationPending] = useState(false);
+  const [gridEditStopRevision, setGridEditStopRevision] = useState(0);
   const [optimizationProgress, setOptimizationProgress] = useState<ReadonlyArray<OptimizationProgressEntry>>([]);
   const [optimizationProgressModalOpen, setOptimizationProgressModalOpen] = useState(false);
   const [optimizationRunComplete, setOptimizationRunComplete] = useState(false);
@@ -283,11 +286,15 @@ export function OptimizationPage({
   );
   const evaluationWarningMessage = invalidConfigMessage ?? optimizationWarningMessage;
 
+  const hasActiveGridEdit = activeGridEditCount > 0;
   const canOptimize = isReady
     && proxy !== undefined
     && optimizationModel !== undefined
     && canBuildOptimizationConfig
-    && hasNonZeroContribution;
+    && hasNonZeroContribution
+    && !hasActiveGridEdit
+    && !isPostEditEvaluationPending
+    && !isEvaluating;
   const { canUseBounds } = getOptimizationAlgorithmCapabilities(
     optimizer.kind === "least_squares"
       ? { kind: optimizer.kind, method: optimizer.method }
@@ -317,9 +324,10 @@ export function OptimizationPage({
   }, [evaluationReservedHeight, isLG, liveDrawerHeight, pageShellHeight]);
 
   useEffect(() => {
-    if (!isReady || proxy === undefined || optimizationModel === undefined) {
+    if (!isReady || proxy === undefined || optimizationModel === undefined || !canBuildOptimizationConfig) {
       setEvaluationReport(undefined);
       setIsEvaluating(false);
+      setIsPostEditEvaluationPending(false);
       return;
     }
 
@@ -333,6 +341,7 @@ export function OptimizationPage({
         if (evaluationRequestIdRef.current === requestId) {
           setEvaluationReport(undefined);
           setIsEvaluating(false);
+          setIsPostEditEvaluationPending(false);
         }
         return;
       }
@@ -355,6 +364,7 @@ export function OptimizationPage({
         .finally(() => {
           if (evaluationRequestIdRef.current === requestId) {
             setIsEvaluating(false);
+            setIsPostEditEvaluationPending(false);
           }
         });
     }, 200);
@@ -367,6 +377,7 @@ export function OptimizationPage({
     proxy,
     optimizationModel,
     optimizationStore,
+    canBuildOptimizationConfig,
     optimizer,
     fieldWeights,
     wavelengthWeights,
@@ -374,11 +385,22 @@ export function OptimizationPage({
     thicknessModes,
     asphereStates,
     operands,
+    gridEditStopRevision,
     imagePoint,
   ]);
 
+  const handleGridCellEditingStarted = useCallback(() => {
+    setActiveGridEditCount((count) => count + 1);
+  }, []);
+
+  const handleGridCellEditingStopped = useCallback(() => {
+    setActiveGridEditCount((count) => Math.max(0, count - 1));
+    setIsPostEditEvaluationPending(true);
+    setGridEditStopRevision((revision) => revision + 1);
+  }, []);
+
   const handleOptimize = async () => {
-    if (proxy === undefined || optimizationModel === undefined) {
+    if (!canOptimize || proxy === undefined || optimizationModel === undefined) {
       return;
     }
 
@@ -464,22 +486,34 @@ export function OptimizationPage({
     await onApplyToEditor?.(model);
   };
 
-  const bottomDrawerContent = {
-    fields: {
-      rows: fieldRows,
-    },
-    wavelengths: {
-      rows: wavelengthRows,
-    },
-    prescription: {
-      rows: radiusRows,
-      onOpenMediumModal: setMediumModalRow,
-      onOpenAsphericalModal: setAsphericalModalRow,
-      onOpenApertureModal: setApertureModalRow,
-      onOpenDecenterModal: setDecenterModalRow,
-      onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
-    },
-  };
+  const bottomDrawerFields = useMemo(() => ({
+    rows: fieldRows,
+  }), [fieldRows]);
+
+  const bottomDrawerWavelengths = useMemo(() => ({
+    rows: wavelengthRows,
+  }), [wavelengthRows]);
+
+  const bottomDrawerPrescription = useMemo(() => ({
+    rows: radiusRows,
+    onOpenMediumModal: setMediumModalRow,
+    onOpenAsphericalModal: setAsphericalModalRow,
+    onOpenApertureModal: setApertureModalRow,
+    onOpenDecenterModal: setDecenterModalRow,
+    onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
+  }), [radiusRows]);
+
+  const bottomDrawerLayout = useMemo(
+    () => isLG
+      ? { isLG, onHeightChange: setLiveDrawerHeight }
+      : { isLG },
+    [isLG],
+  );
+
+  const gridEditLifecycle = useMemo(() => ({
+    onCellEditingStarted: handleGridCellEditingStarted,
+    onCellEditingStopped: handleGridCellEditingStopped,
+  }), [handleGridCellEditingStarted, handleGridCellEditingStopped]);
 
   const sharedContent = (
     <div ref={sharedContentRef} data-testid="optimization-shared-content-wrapper" className="p-4 pb-0">
@@ -574,8 +608,11 @@ export function OptimizationPage({
       <div ref={pageShellRef} className="relative flex flex-1 min-h-0 flex-col overflow-hidden">
         {sharedContent}
         <BottomDrawerContainer
-          {...bottomDrawerContent}
-          layout={{ isLG, onHeightChange: setLiveDrawerHeight }}
+          fields={bottomDrawerFields}
+          wavelengths={bottomDrawerWavelengths}
+          prescription={bottomDrawerPrescription}
+          layout={bottomDrawerLayout}
+          gridEditLifecycle={gridEditLifecycle}
           onWarning={setOptimizationWarningMessage}
         />
       </div>
@@ -586,8 +623,11 @@ export function OptimizationPage({
     <div className="relative flex flex-1 min-h-0 flex-col overflow-y-auto">
       {sharedContent}
       <BottomDrawerContainer
-        {...bottomDrawerContent}
-        layout={{ isLG }}
+        fields={bottomDrawerFields}
+        wavelengths={bottomDrawerWavelengths}
+        prescription={bottomDrawerPrescription}
+        layout={bottomDrawerLayout}
+        gridEditLifecycle={gridEditLifecycle}
         onWarning={setOptimizationWarningMessage}
       />
     </div>
