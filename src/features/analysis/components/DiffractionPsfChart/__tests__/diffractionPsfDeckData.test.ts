@@ -21,13 +21,19 @@ describe("diffractionPsfDeckData", () => {
     unitZ: "",
   };
 
-  it("normalizes total positive flux to one across physical bins", () => {
+  it("peak-normalizes positive flux across physical bins", () => {
     const prepared = buildDiffractionPsfBins(diffractionPsfData);
 
     expect(prepared.bins).toHaveLength(9);
-    expect(prepared.bins.reduce((sum, bin) => sum + bin.normalizedFlux, 0)).toBeCloseTo(1);
+    expect(Math.max(...prepared.bins.map((bin) => bin.normalizedFlux))).toBe(1);
     expect(prepared.bins.find((bin) => bin.x === 0 && bin.y === 0)?.normalizedFlux).toBeCloseTo(
-      1 / 1.0224,
+      1,
+    );
+    expect(prepared.bins.find((bin) => bin.x === 0 && bin.y === -0.01)?.normalizedFlux).toBeCloseTo(
+      0.01,
+    );
+    expect(prepared.bins.find((bin) => bin.x === -0.02 && bin.y === -0.01)?.normalizedFlux).toBeCloseTo(
+      0.0001,
     );
   });
 

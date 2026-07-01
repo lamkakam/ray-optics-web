@@ -25,8 +25,8 @@ function formatDiffractionPsfFluxLabel(log10Flux: number): string
 
 - Flattens only `DiffractionPsfData.x`, `DiffractionPsfData.y`, and `DiffractionPsfData.z` into physical PSF bin records.
 - Does not consume geometric PSF ray data or `GeoPsfData`.
-- Clamps negative or missing flux samples to zero before total-flux normalization.
-- Normalizes positive total flux linearly so the sum of all bin `normalizedFlux` values is `1`.
+- Clamps negative or missing flux samples to zero before peak normalization.
+- Normalizes positive flux linearly against the brightest positive bin so the maximum `normalizedFlux` value is `1`.
 - Uses one output datum per physical PSF bin so deck.gl `GridLayer` `SUM` aggregation preserves the intended bin value.
 - Converts normalized flux to `log10` display weights after normalization.
 - Uses `DIFFRACTION_PSF_LOG_FLOOR` for zero-flux bins and as the lower log-scale display floor, avoiding `NaN` and infinities.

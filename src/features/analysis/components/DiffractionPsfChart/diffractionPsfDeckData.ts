@@ -42,7 +42,7 @@ export function formatDiffractionPsfFluxLabel(log10Flux: number): string {
 export function buildDiffractionPsfBins(
   diffractionPsfData: DiffractionPsfData,
 ): DiffractionPsfPreparedData {
-  let totalFlux = 0;
+  let peakFlux = 0;
   let axisExtent = 0;
   const rawBins: Array<Pick<DiffractionPsfBin, "x" | "y"> & { readonly flux: number }> = [];
 
@@ -54,7 +54,7 @@ export function buildDiffractionPsfBins(
       const y = diffractionPsfData.y[yIndex];
       const flux = Math.max(0, diffractionPsfData.z[xIndex]?.[yIndex] ?? 0);
       axisExtent = Math.max(axisExtent, Math.abs(y));
-      totalFlux += flux;
+      peakFlux = Math.max(peakFlux, flux);
       rawBins.push({ x, y, flux });
     }
   }
@@ -62,7 +62,7 @@ export function buildDiffractionPsfBins(
   let minLogFlux = 0;
   let maxLogFlux = DIFFRACTION_PSF_LOG_FLOOR;
   const bins = rawBins.map((bin) => {
-    const normalizedFlux = totalFlux > 0 ? bin.flux / totalFlux : 0;
+    const normalizedFlux = peakFlux > 0 ? bin.flux / peakFlux : 0;
     const logScaledFlux = normalizedFlux > 0
       ? Math.max(DIFFRACTION_PSF_LOG_FLOOR, Math.log10(normalizedFlux))
       : DIFFRACTION_PSF_LOG_FLOOR;
