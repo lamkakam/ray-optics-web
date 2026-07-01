@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { AgGridReact, AgGridProvider } from "ag-grid-react";
+import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule } from "ag-grid-community";
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { GridRowButtons } from "../GridRowButtons";
+import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import {
   createLensPrescriptionCommonColumns,
@@ -106,7 +107,7 @@ export function LensPrescriptionGrid({
       aria-label="Lens prescription editor"
     >
       <AgGridProvider modules={[AllCommunityModule]}>
-        <AgGridReact
+        <EditableAgGridReact<GridRow>
           theme={gridTheme}
           rowData={rows}
           columnDefs={columnDefs}

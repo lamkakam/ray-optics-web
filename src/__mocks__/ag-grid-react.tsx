@@ -20,30 +20,45 @@ interface AgGridReactProps {
   defaultColDef?: ColDef;
   getRowId?: (params: { data: Record<string, unknown> }) => string;
   onRowSelected?: (event: unknown) => void;
+  stopEditingWhenCellsLoseFocus?: boolean;
   theme?: unknown;
   domLayout?: string;
   [key: string]: unknown;
+}
+
+function commitValue(col: ColDef, row: Record<string, unknown>, value: unknown, inputValue: string) {
+  const oldValue = value;
+  let newValue: unknown = inputValue;
+  if (col.valueParser) {
+    newValue = col.valueParser({ newValue: inputValue, oldValue });
+  }
+  if (col.valueSetter) {
+    col.valueSetter({ data: row, newValue, oldValue });
+  }
 }
 
 function EditableCell({
   col,
   row,
   value,
+  stopEditingWhenCellsLoseFocus,
 }: {
   col: ColDef;
   row: Record<string, unknown>;
   value: unknown;
+  stopEditingWhenCellsLoseFocus: boolean;
 }) {
   const [inputValue, setInputValue] = useState(String(value ?? ""));
 
   const handleBlur = () => {
-    const oldValue = value;
-    let newValue: unknown = inputValue;
-    if (col.valueParser) {
-      newValue = col.valueParser({ newValue: inputValue, oldValue });
+    if (stopEditingWhenCellsLoseFocus) {
+      commitValue(col, row, value, inputValue);
     }
-    if (col.valueSetter) {
-      col.valueSetter({ data: row, newValue, oldValue });
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      commitValue(col, row, value, inputValue);
     }
   };
 
@@ -53,6 +68,7 @@ function EditableCell({
       value={inputValue}
       onChange={(e) => setInputValue(e.target.value)}
       onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
     />
   );
 }
@@ -97,13 +113,21 @@ export function AgGridProvider({ children }: { children: React.ReactNode; module
   return <>{children}</>;
 }
 
-export function AgGridReact({ rowData, columnDefs, defaultColDef, theme, domLayout }: AgGridReactProps) {
+export function AgGridReact({
+  rowData,
+  columnDefs,
+  defaultColDef,
+  stopEditingWhenCellsLoseFocus = false,
+  theme,
+  domLayout,
+}: AgGridReactProps) {
   const themeName = theme && typeof theme === "object" && "_name" in theme ? (theme as { _name: string })._name : undefined;
   return (
     <table
       data-testid="ag-grid-mock"
       data-theme={themeName}
       data-dom-layout={domLayout}
+      data-stop-editing-when-cells-lose-focus={String(stopEditingWhenCellsLoseFocus)}
       data-default-col-def-suppress-movable={String(defaultColDef?.suppressMovable === true)}
       data-default-col-def-sortable={String(defaultColDef?.sortable === true)}
     >
@@ -140,7 +164,14 @@ export function AgGridReact({ rowData, columnDefs, defaultColDef, theme, domLayo
                     : isEditable && isSelectEditor
                       ? <SelectCell col={col} row={row} value={value} headerName={col.headerName ?? col.field ?? ""} />
                       : isEditable
-                        ? <EditableCell col={col} row={row} value={value} />
+                        ? (
+                            <EditableCell
+                              col={col}
+                              row={row}
+                              value={value}
+                              stopEditingWhenCellsLoseFocus={stopEditingWhenCellsLoseFocus}
+                            />
+                          )
                         : col.valueFormatter
                           ? col.valueFormatter({ value })
                           : String(value ?? "")}

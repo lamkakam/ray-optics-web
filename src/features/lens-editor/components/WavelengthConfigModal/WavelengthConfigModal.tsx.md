@@ -38,6 +38,7 @@ interface WavelengthConfigModalProps {
 - Row limit is 7 (HARD LIMIT FROM RayOptics); the first row cannot be deleted.
 - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for wavelength row insertion and deletion controls.
 - When a row is deleted, `referenceIndex` is adjusted to remain valid.
+- Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending wavelength or weight edits are committed before footer actions such as Apply read the draft rows.
 
 ## Grid Columns
 

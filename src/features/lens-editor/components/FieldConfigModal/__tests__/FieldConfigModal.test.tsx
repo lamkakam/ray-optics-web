@@ -156,6 +156,25 @@ describe("FieldConfigModal", () => {
     });
   });
 
+  it("commits a pending relative field edit before Apply is handled", async () => {
+    const user = userEvent.setup();
+    const onApply = jest.fn();
+    render(<FieldConfigModal {...defaultProps} onApply={onApply} />);
+
+    const inputs = screen.getAllByRole("textbox");
+    await user.clear(inputs[1]);
+    await user.type(inputs[1], "0.25");
+    await user.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith({
+      space: "object",
+      type: "angle",
+      maxField: 20,
+      relativeFields: [0.25, 0.7, 1],
+      isWideAngle: false,
+    });
+  });
+
   it("does not call onClose when Escape is pressed", async () => {
     const onClose = jest.fn();
     render(<FieldConfigModal {...defaultProps} onClose={onClose} />);

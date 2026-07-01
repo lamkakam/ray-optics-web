@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
-import { AgGridReact, AgGridProvider } from "ag-grid-react";
+import { AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
 import { GridRowButtons } from "@/features/lens-editor/components/LensPrescriptionContainer";
+import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { Button } from "@/shared/components/primitives/Button";
 import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
 import { Modal } from "@/shared/components/primitives/Modal";
@@ -214,13 +215,13 @@ function FieldConfigModalContent({
       <div className="mb-4" style={{ width: "100%" }}>
         <Paragraph variant="caption">Maximum 10 relative fields</Paragraph>
         <AgGridProvider modules={[AllCommunityModule]}>
-          <AgGridReact
+          <EditableAgGridReact<FieldRow>
             theme={gridTheme}
-            rowData={rows as unknown as Record<string, unknown>[]}
-            columnDefs={columnDefs as unknown as ColDef[]}
+            rowData={rows}
+            columnDefs={columnDefs}
             defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
             domLayout="autoHeight"
-            getRowId={(params: { data: Record<string, unknown> }) => (params.data as unknown as FieldRow).id}
+            getRowId={(params) => params.data.id}
           />
         </AgGridProvider>
 

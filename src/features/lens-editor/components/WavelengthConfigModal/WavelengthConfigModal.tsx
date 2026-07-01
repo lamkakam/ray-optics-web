@@ -1,8 +1,9 @@
 import { useState, useCallback } from "react";
-import { AgGridReact, AgGridProvider } from "ag-grid-react";
+import { AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
 import { GridRowButtons } from "@/features/lens-editor/components/LensPrescriptionContainer";
+import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
@@ -230,13 +231,13 @@ function WavelengthConfigModalContent({
       <div className="mb-4" style={{ width: "100%" }}>
         <Paragraph variant="caption">Maximum 7 wavelengths</Paragraph>
         <AgGridProvider modules={[AllCommunityModule]}>
-          <AgGridReact
+          <EditableAgGridReact<WavelengthRow>
             theme={gridTheme}
-            rowData={rows as unknown as Record<string, unknown>[]}
-            columnDefs={columnDefs as unknown as ColDef[]}
+            rowData={rows}
+            columnDefs={columnDefs}
             defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
             domLayout="autoHeight"
-            getRowId={(params: { data: Record<string, unknown> }) => (params.data as unknown as WavelengthRow).id}
+            getRowId={(params) => params.data.id}
           />
         </AgGridProvider>
       </div>

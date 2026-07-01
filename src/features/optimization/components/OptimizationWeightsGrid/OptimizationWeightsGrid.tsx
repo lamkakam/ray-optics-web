@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { AgGridProvider, AgGridReact } from "ag-grid-react";
+import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
+import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import type { WeightRow } from "@/features/optimization/lib/optimizationViewModels";
 
@@ -50,7 +51,7 @@ export function OptimizationWeightsGrid({
   return (
     <div data-testid="optimization-weights-grid" className="overflow-x-auto">
       <AgGridProvider modules={[AllCommunityModule]}>
-        <AgGridReact
+        <EditableAgGridReact<WeightRow>
           theme={gridTheme}
           rowData={[...rows]}
           columnDefs={weightColumns}

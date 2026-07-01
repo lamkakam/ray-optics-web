@@ -150,6 +150,26 @@ describe("WavelengthConfigModal", () => {
     });
   });
 
+  it("commits a pending wavelength weight edit before Apply is handled", async () => {
+    const user = userEvent.setup();
+    const onApply = jest.fn();
+    render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
+
+    const inputs = screen.getAllByRole("textbox");
+    await user.clear(inputs[1]);
+    await user.type(inputs[1], "2.5");
+    await user.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith({
+      weights: [
+        [486.133, 2.5],
+        [587.562, 1],
+        [656.273, 1],
+      ],
+      referenceIndex: 1,
+    });
+  });
+
   it("calls onClose when Cancel is clicked", async () => {
     const onClose = jest.fn();
     render(<WavelengthConfigModal {...defaultProps} onClose={onClose} />);

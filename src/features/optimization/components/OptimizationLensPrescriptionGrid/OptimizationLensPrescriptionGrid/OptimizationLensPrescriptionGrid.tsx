@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import { AgGridProvider, AgGridReact } from "ag-grid-react";
+import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
 import type { RadiusMode, AsphereOptimizationState } from "@/features/optimization/stores/optimizationStore";
 import type { RadiusRow } from "@/features/optimization/lib/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import {
@@ -254,7 +255,7 @@ export function OptimizationLensPrescriptionGrid({
   return (
     <div data-testid="optimization-lens-prescription-grid" className="overflow-x-auto">
       <AgGridProvider modules={[AllCommunityModule]}>
-        <AgGridReact
+        <EditableAgGridReact<RadiusRow>
           theme={gridTheme}
           rowData={[...rows]}
           columnDefs={lensColumns}

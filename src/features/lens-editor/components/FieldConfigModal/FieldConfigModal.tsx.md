@@ -45,6 +45,7 @@ interface FieldConfigModalProps {
 - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for field row insertion and deletion controls.
 - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
 - Row ids use a module-level counter for stable AG Grid `getRowId`.
+- Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
 
 ## Grid Columns
 

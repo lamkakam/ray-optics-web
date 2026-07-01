@@ -6,6 +6,7 @@ Renders the optimization lens prescription grid, including a read-only surface `
 - Uses a horizontal-overflow wrapper for the wide prescription table and relies on parent layout padding instead of adding its own outer `p-4`.
 - Leaves vertical overflow to the parent drawer/page layout by using the shared `LENS_PRESCRIPTION_GRID_DOM_LAYOUT` value (`"autoHeight"`) and not introducing an inner vertical scroller.
 - Applies the shared `lensPrescriptionGridDefaultColDef` (`{ sortable: false, suppressMovable: true }`) so the prescription columns stay in their prescribed order across the Optimization tabs.
+- Uses `EditableAgGridReact`, matching the other editable AG Grid surfaces so any future editable prescription cells commit pending edits when focus moves to an optimization action.
 - Composes common prescription columns from `shared/lib/lens-prescription-grid` with `getGridRow: (data) => data.row`; optimization-only columns remain local.
 - Passes optimization-specific tooltip copy for the read-only `Medium`, `Asph.`, and `Diffraction Grating` inspection cells so they say `Click to view ...` without changing the editor page grid.
 - Prepends an `Index` column before `Surface`; it is blank for `Object` and `Image`, shows `1..N` for real surface rows using the existing optimization surface numbering, and uses the shared lens prescription grid `Index` config so it has the shared initial width and is pinned left.

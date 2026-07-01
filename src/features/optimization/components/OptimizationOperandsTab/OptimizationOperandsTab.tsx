@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { AgGridProvider, AgGridReact } from "ag-grid-react";
+import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
 import type { OptimizationOperandKind } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { OptimizationOperandRow } from "@/features/optimization/stores/optimizationStore";
 import { getOperandLabel } from "@/features/optimization/lib/optimizationViewModels";
 import { OPTIMIZATION_OPERAND_METADATA, getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
+import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { Button } from "@/shared/components/primitives/Button";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 
@@ -102,7 +103,7 @@ export function OptimizationOperandsTab({
         Add Operand
       </Button>
       <AgGridProvider modules={[AllCommunityModule]}>
-        <AgGridReact
+        <EditableAgGridReact<OptimizationOperandRow>
           theme={gridTheme}
           rowData={[...operands]}
           columnDefs={operandColumns}
