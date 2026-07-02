@@ -22,6 +22,7 @@ const config: Config = {
     "^echarts/charts$": "<rootDir>/src/__mocks__/echarts/charts.ts",
     "^echarts/components$": "<rootDir>/src/__mocks__/echarts/components.ts",
     "^echarts/renderers$": "<rootDir>/src/__mocks__/echarts/renderers.ts",
+    "^deck\\.gl$": "<rootDir>/src/__mocks__/deck.gl.tsx",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/", "<rootDir>/src/e2e/"],

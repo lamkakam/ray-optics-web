@@ -23,7 +23,7 @@ def get_diffraction_psf_data(
     effective_max_dims = max(max_dims, 2 * num_rays)
     pupil_grid = make_ray_grid(opm, fi=fi, wavelength_nm=wavelength_nm, num_rays=num_rays, image_point=image_point)
 
-    psf = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, effective_max_dims)
+    psf = calc_psf(pupil_grid.grid[2], num_rays, effective_max_dims)
     _, delta_xp = calc_psf_scaling(pupil_grid, pupil_grid.num_rays, effective_max_dims)
     image_scale = delta_xp * effective_max_dims
     axis = np.linspace(-image_scale, image_scale, effective_max_dims)

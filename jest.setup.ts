@@ -1,4 +1,8 @@
 import "@testing-library/jest-dom";
+import { TextDecoder, TextEncoder } from "util";
+
+global.TextDecoder = TextDecoder as typeof global.TextDecoder;
+global.TextEncoder = TextEncoder as typeof global.TextEncoder;
 
 // Mock ResizeObserver (not available in jsdom, required by @visx/responsive)
 global.ResizeObserver = class ResizeObserver {

@@ -13,7 +13,7 @@ Components for optical analysis plots and aberration data.
 
 - [AstigmatismChart/](./AstigmatismChart/index.md) — Astigmatism curve chart component, option builder, specs, and tests
 - [DiffractionMtfChart/](./DiffractionMtfChart/index.md) — Diffraction MTF chart component, option builder, specs, and tests
-- [DiffractionPsfChart/](./DiffractionPsfChart/index.md) — Diffraction PSF chart component, option builder, specs, and moved tests
+- [DiffractionPsfChart/](./DiffractionPsfChart/index.md) — Diffraction PSF chart component, deck.gl data helper, specs, and tests
 - [GeoPsfChart/](./GeoPsfChart/index.md) — Geometric PSF chart component, option builder, specs, and moved tests
 - [OpdFanChart/](./OpdFanChart/index.md) — OPD fan chart component, option builder, specs, and moved tests
 - [RayFanChart/](./RayFanChart/index.md) — Ray fan chart component, option builder, specs, and moved tests
