@@ -11,6 +11,25 @@ global.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
+// Mock ImageData (not available in jsdom, required by deck.gl bitmap charts)
+class MockImageData {
+  readonly data: Uint8ClampedArray;
+  readonly width: number;
+  readonly height: number;
+
+  constructor(data: Uint8ClampedArray, width: number, height: number) {
+    this.data = data;
+    this.width = width;
+    this.height = height;
+  }
+}
+
+Object.defineProperty(globalThis, "ImageData", {
+  configurable: true,
+  writable: true,
+  value: MockImageData,
+});
+
 // Mock window.matchMedia for jsdom (not implemented by default)
 Object.defineProperty(window, "matchMedia", {
   writable: true,
