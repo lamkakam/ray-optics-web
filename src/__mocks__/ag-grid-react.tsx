@@ -3,6 +3,7 @@ import React, { useLayoutEffect, useRef, useState } from "react";
 interface ColDef {
   headerName?: string;
   field?: string;
+  width?: number;
   editable?: boolean | ((params: { data: Record<string, unknown> }) => boolean);
   cellEditor?: string;
   cellEditorParams?: { values?: unknown[] };
@@ -226,7 +227,11 @@ export function AgGridReact({
       <thead>
         <tr>
           {columnDefs?.map((col, i) => (
-            <th key={i} data-pinned={typeof col.pinned === "string" ? col.pinned : undefined}>
+            <th
+              key={i}
+              data-pinned={typeof col.pinned === "string" ? col.pinned : undefined}
+              data-width={col.width}
+            >
               {col.headerName ?? col.field ?? ""}
             </th>
           ))}
