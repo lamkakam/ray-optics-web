@@ -33,6 +33,7 @@ export function OptimizationOperandsTab({
   const operandColumns = useMemo<ColDef<OptimizationOperandRow>[]>(() => [
     {
       headerName: "Operand Kind",
+      width: 215,
       editable: true,
       cellEditor: "agSelectCellEditor",
       cellEditorParams: {
@@ -51,6 +52,7 @@ export function OptimizationOperandsTab({
     },
     {
       headerName: "Target",
+      width: 85,
       editable: (params) =>
         params.data !== undefined
         && getOptimizationOperandMetadata(params.data.kind).requiresTarget,
@@ -75,6 +77,7 @@ export function OptimizationOperandsTab({
     },
     {
       headerName: "Weight",
+      width: 90,
       editable: true,
       valueGetter: (params) => params.data?.weight,
       valueSetter: (params) => {
@@ -88,6 +91,7 @@ export function OptimizationOperandsTab({
     },
     {
       headerName: "",
+      width: 90,
       cellRenderer: (params: { data: OptimizationOperandRow }) => (
         <Button
           variant="danger"
