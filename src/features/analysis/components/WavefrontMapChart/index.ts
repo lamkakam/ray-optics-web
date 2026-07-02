@@ -1,2 +1,2 @@
 export * from "./WavefrontMapChart";
-export * from "./wavefrontMapChartOption";
+export * from "./wavefrontMapDeckData";

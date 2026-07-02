@@ -1,2 +1,2 @@
 export * from "./GeoPsfChart";
-export * from "./geoPsfChartOption";
+export * from "./geoPsfDeckData";

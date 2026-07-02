@@ -12,7 +12,7 @@ export function DeckGL({ children }: DeckGLMockProps) {
   return <div data-testid="deck-gl">{children}</div>;
 }
 
-export class GridLayer<TData> {
+class MockDeckConstructible {
   readonly id: string | undefined;
   readonly props: unknown;
 
@@ -24,14 +24,10 @@ export class GridLayer<TData> {
   }
 }
 
-export class OrthographicView {
-  readonly id: string | undefined;
-  readonly props: unknown;
+export class GridLayer<TData> extends MockDeckConstructible {}
 
-  constructor(props: unknown) {
-    this.props = props;
-    this.id = typeof props === "object" && props !== null && "id" in props
-      ? String(props.id)
-      : undefined;
-  }
-}
+export class BitmapLayer<TData> extends MockDeckConstructible {}
+
+export class ScatterplotLayer<TData> extends MockDeckConstructible {}
+
+export class OrthographicView extends MockDeckConstructible {}

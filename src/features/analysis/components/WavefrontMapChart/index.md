@@ -4,6 +4,6 @@ Wavefront map chart module.
 
 ## Contents
 
-- [WavefrontMapChart.tsx](./WavefrontMapChart.tsx.md) — ECharts-backed wavefront map renderer
-- [wavefrontMapChartOption.ts](./wavefrontMapChartOption.ts.md) — Wavefront map option builder
-- [`__tests__/`](./__tests__) — Moved unit tests for the chart component and option builder
+- [WavefrontMapChart.tsx](./WavefrontMapChart.tsx.md) — deck.gl-backed wavefront map renderer
+- [wavefrontMapDeckData.ts](./wavefrontMapDeckData.ts.md) — Wavefront bitmap preparation for `BitmapLayer`
+- [`__tests__/`](./__tests__) — Unit tests for the chart component and bitmap data preparation
