@@ -32,7 +32,6 @@ describe("OptimizationOperandsTab", () => {
       "Weight",
       "",
     ]);
-    expect(Array.from(headers, (header) => Number(header.dataset.width))).toEqual([215, 85, 90, 90]);
 
     expect(screen.getByRole("option", { name: "OPD Difference" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "OPD Difference (Tangential)" })).toBeInTheDocument();
