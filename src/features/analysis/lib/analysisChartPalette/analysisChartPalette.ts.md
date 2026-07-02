@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Exports the shared 11-color Viridis-derived palette used by analysis heatmap-style ECharts views so Wavefront Map, Diffraction PSF, and wavelength-mapped line and scatter charts stay visually aligned with a sequential scale that trims the darkest and brightest extremes for better theme contrast.
+Exports the shared 11-color Viridis-derived palette used by analysis heatmap-style views so Wavefront Map, Diffraction PSF, and wavelength-mapped line and scatter charts stay visually aligned with a sequential scale that trims the darkest and brightest extremes for better theme contrast.
 
 ## Exports
 
@@ -19,8 +19,8 @@ const ANALYSIS_HEATMAP_COLOR_PALETTE: readonly string[]
 
 ## Usage
 
-- Imported by `wavefrontMapChartOption.ts`.
-- Imported by `diffractionPsfChartOption.ts`.
+- Imported by `WavefrontMapChart.tsx` and `wavefrontMapDeckData.ts`.
+- Imported by `DiffractionPsfChart.tsx`.
 - Imported by `spotDiagramChartOption.ts`.
 - Imported by `rayFanChartOption.ts`.
 - Imported by `opdFanChartOption.ts`.

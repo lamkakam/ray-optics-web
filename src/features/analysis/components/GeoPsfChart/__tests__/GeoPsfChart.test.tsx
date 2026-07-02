@@ -1,26 +1,38 @@
 import { act, render, screen } from "@testing-library/react";
 import { GeoPsfChart } from "@/features/analysis/components/GeoPsfChart";
-import { globalTokens } from "@/shared/tokens/styleTokens";
 import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
-let mockSetOption: jest.Mock;
-let mockDispose: jest.Mock;
-let mockResize: jest.Mock;
-let mockEchartsInit: jest.Mock;
-let mockResizeObserverObserve: jest.Mock;
-let mockResizeObserverDisconnect: jest.Mock;
-let mockBuildGeoPsfOption: jest.Mock;
+interface MockDeckGLProps {
+  readonly children?: React.ReactNode;
+  readonly onViewStateChange?: (event: {
+    readonly viewState: {
+      readonly target: readonly [number, number, number];
+      readonly zoom?: number;
+    };
+  }) => void;
+  readonly viewState?: Record<string, {
+    readonly target: readonly [number, number, number];
+    readonly zoom: number;
+  }>;
+}
 
-jest.mock("echarts/core", () => ({
-  init: (...args: unknown[]) => mockEchartsInit(...args),
-}), { virtual: true });
+const mockDeckGL = jest.fn(({ children }: MockDeckGLProps) => (
+  <div data-testid="deck-gl">{children}</div>
+));
+const mockScatterplotLayer = jest.fn((props: unknown) => ({ id: "scatterplot-layer", props }));
+const mockOrthographicView = jest.fn((props: unknown) => ({ id: "orthographic-view", props }));
 
-jest.mock("@/features/analysis/components/GeoPsfChart/geoPsfChartOption", () => ({
-  buildGeoPsfOption: (...args: unknown[]) => mockBuildGeoPsfOption(...args),
-}));
-
-jest.mock("@/shared/components/providers/ThemeProvider", () => ({
-  useTheme: jest.fn(() => ({ theme: "light" })),
+jest.mock("deck.gl", () => ({
+  COORDINATE_SYSTEM: {
+    CARTESIAN: "cartesian",
+  },
+  DeckGL: (props: MockDeckGLProps) => mockDeckGL(props),
+  OrthographicView: function OrthographicView(props: unknown) {
+    return mockOrthographicView(props);
+  },
+  ScatterplotLayer: function ScatterplotLayer(props: unknown) {
+    return mockScatterplotLayer(props);
+  },
 }));
 
 describe("GeoPsfChart", () => {
@@ -35,32 +47,6 @@ describe("GeoPsfChart", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
-    mockSetOption = jest.fn();
-    mockDispose = jest.fn();
-    mockResize = jest.fn();
-    mockEchartsInit = jest.fn(() => ({
-      setOption: mockSetOption,
-      dispose: mockDispose,
-      resize: mockResize,
-    }));
-    mockResizeObserverObserve = jest.fn();
-    mockResizeObserverDisconnect = jest.fn();
-    mockBuildGeoPsfOption = jest.fn(() => ({ series: [] }));
-
-    class MockResizeObserver implements ResizeObserver {
-      observe = mockResizeObserverObserve;
-      unobserve = jest.fn();
-      disconnect = mockResizeObserverDisconnect;
-
-      constructor(_callback: ResizeObserverCallback) {}
-    }
-
-    Object.defineProperty(window, "ResizeObserver", {
-      configurable: true,
-      writable: true,
-      value: MockResizeObserver,
-    });
     Object.defineProperty(HTMLElement.prototype, "clientWidth", {
       configurable: true,
       get: () => 400,
@@ -71,53 +57,115 @@ describe("GeoPsfChart", () => {
     });
   });
 
-  afterEach(() => {
-    jest.useRealTimers();
-  });
-
-  it("measures the parent and builds a chart option from the measured dimensions", () => {
+  it("renders an accessible geometric PSF plot container", () => {
     render(<GeoPsfChart geoPsfData={geoPsfData} />);
 
-    expect(mockBuildGeoPsfOption).toHaveBeenCalledWith(
-      geoPsfData,
-      400,
-      400,
-      globalTokens.echarts.text.light,
+    expect(screen.getByTestId("geo-psf-chart")).toHaveAttribute(
+      "aria-label",
+      "Geometric PSF plot",
     );
+  });
+
+  it("creates a ScatterplotLayer in Cartesian coordinates from geometric PSF points", () => {
+    render(<GeoPsfChart geoPsfData={geoPsfData} />);
+
+    expect(mockScatterplotLayer).toHaveBeenCalledWith(expect.objectContaining({
+      coordinateSystem: "cartesian",
+      getFillColor: [84, 112, 198, 166],
+      getRadius: 1,
+      radiusUnits: "pixels",
+      pickable: false,
+    }));
+
+    const layerProps = mockScatterplotLayer.mock.calls[0][0] as {
+      readonly data: readonly unknown[];
+      readonly getPosition: (datum: { readonly x: number; readonly y: number }) => [number, number];
+    };
+    expect(layerProps.data).toEqual([
+      { x: -0.02, y: -0.01 },
+      { x: 0, y: 0 },
+      { x: 0.02, y: 0.01 },
+    ]);
+    expect(layerProps.getPosition({ x: 0.02, y: -0.01 })).toEqual([0.02, -0.01]);
+  });
+
+  it("uses an OrthographicView and initial zoom that fits the symmetric PSF extent", () => {
+    render(<GeoPsfChart geoPsfData={geoPsfData} />);
+
+    expect(mockOrthographicView).toHaveBeenCalledWith(expect.objectContaining({
+      id: "geo-psf-view",
+      flipY: false,
+      controller: true,
+    }));
+    expect(mockDeckGL).toHaveBeenLastCalledWith(expect.objectContaining({
+      views: [expect.objectContaining({ id: "orthographic-view" })],
+      viewState: expect.objectContaining({
+        "geo-psf-view": expect.objectContaining({
+          target: [0, 0, 0],
+          zoom: expect.closeTo(Math.log2(192 / (2 * 0.02 * 1.12))),
+        }),
+      }),
+    }));
+  });
+
+  it("keeps DeckGL view state controlled under the geometric PSF view id after panning", () => {
+    render(<GeoPsfChart geoPsfData={geoPsfData} />);
+
+    const deckProps = mockDeckGL.mock.lastCall?.[0] as MockDeckGLProps;
+    act(() => {
+      deckProps.onViewStateChange?.({
+        viewState: {
+          target: [0.01, -0.01, 0],
+          zoom: Math.log2(192 / (2 * 0.02)),
+        },
+      });
+    });
+
+    expect(mockDeckGL).toHaveBeenLastCalledWith(expect.objectContaining({
+      viewState: {
+        "geo-psf-view": {
+          target: [0.01, -0.01, 0],
+          zoom: Math.log2(192 / (2 * 0.02)),
+        },
+      },
+    }));
+  });
+
+  it("updates x and y tick labels after panning and zooming", () => {
+    render(<GeoPsfChart geoPsfData={geoPsfData} />);
+
+    const deckProps = mockDeckGL.mock.lastCall?.[0] as MockDeckGLProps;
+    act(() => {
+      deckProps.onViewStateChange?.({
+        viewState: {
+          target: [0.01, -0.01, 0],
+          zoom: Math.log2(192 / (2 * 0.01)),
+        },
+      });
+    });
+
+    expect(screen.getAllByText("0").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("-0.02").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.02").length).toBeGreaterThan(0);
+  });
+
+  it("displays theme-aware axis labels and ticks without a color bar", () => {
+    render(<GeoPsfChart geoPsfData={geoPsfData} />);
+
+    expect(screen.getByText("x (mm)")).toHaveAttribute("fill", "currentColor");
+    expect(screen.getByText("y (mm)")).toHaveAttribute("fill", "currentColor");
+    expect(screen.queryByText("Normalized flux/bin")).not.toBeInTheDocument();
+    expect(screen.queryByText("waves")).not.toBeInTheDocument();
+    expect(screen.getAllByText("-0.022").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.022").length).toBeGreaterThan(0);
+  });
+
+  it("uses a square auto-height chart when requested", () => {
+    render(<GeoPsfChart geoPsfData={geoPsfData} autoHeight />);
+
     expect(screen.getByTestId("geo-psf-chart")).toHaveStyle({
       width: "400px",
       height: "400px",
     });
-  });
-
-  it("debounces ECharts rendering by 500ms and resizes after setting the option", () => {
-    render(<GeoPsfChart geoPsfData={geoPsfData} />);
-
-    expect(mockEchartsInit).not.toHaveBeenCalled();
-
-    act(() => {
-      jest.advanceTimersByTime(500);
-    });
-
-    expect(mockEchartsInit).toHaveBeenCalledWith(
-      expect.any(HTMLDivElement),
-      undefined,
-      { renderer: "canvas" },
-    );
-    expect(mockSetOption).toHaveBeenCalledWith({ series: [] }, true);
-    expect(mockResize).toHaveBeenCalled();
-  });
-
-  it("disposes the chart instance on unmount", () => {
-    const { unmount } = render(<GeoPsfChart geoPsfData={geoPsfData} />);
-
-    act(() => {
-      jest.advanceTimersByTime(500);
-    });
-
-    unmount();
-
-    expect(mockDispose).toHaveBeenCalled();
-    expect(mockResizeObserverDisconnect).toHaveBeenCalled();
   });
 });

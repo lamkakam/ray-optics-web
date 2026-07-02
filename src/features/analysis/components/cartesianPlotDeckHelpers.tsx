@@ -140,11 +140,11 @@ interface CartesianSvgOverlayProps {
   readonly yAxisTicks: readonly number[];
   readonly xAxisLabel: string;
   readonly yAxisLabel: string;
-  readonly colorBarId: string;
-  readonly palette: readonly string[];
-  readonly colorBarTopLabel: string;
-  readonly colorBarBottomLabel: string;
-  readonly colorBarTitle: string;
+  readonly colorBarId?: string;
+  readonly palette?: readonly string[];
+  readonly colorBarTopLabel?: string;
+  readonly colorBarBottomLabel?: string;
+  readonly colorBarTitle?: string;
 }
 
 export function CartesianSvgOverlay({
@@ -160,6 +160,12 @@ export function CartesianSvgOverlay({
   colorBarBottomLabel,
   colorBarTitle,
 }: CartesianSvgOverlayProps) {
+  const hasColorBar = colorBarId !== undefined
+    && palette !== undefined
+    && palette.length > 1
+    && colorBarTopLabel !== undefined
+    && colorBarBottomLabel !== undefined
+    && colorBarTitle !== undefined;
   const colorBarHeight = Math.min(152, layout.plotSide);
   const colorBarLabelX = layout.plotLeft + layout.plotSide + 46;
   const colorBarTitleX = layout.plotLeft + layout.plotSide + 66;
@@ -216,36 +222,40 @@ export function CartesianSvgOverlay({
       >
         {yAxisLabel}
       </text>
-      <defs>
-        <linearGradient id={colorBarId} x1="0" x2="0" y1="1" y2="0">
-          {palette.map((color, index) => (
-            <stop key={color} offset={`${(index / (palette.length - 1)) * 100}%`} stopColor={color} />
-          ))}
-        </linearGradient>
-      </defs>
-      <rect
-        x={layout.plotLeft + layout.plotSide + 24}
-        y={layout.plotTop}
-        width={CARTESIAN_COLOR_BAR_WIDTH}
-        height={colorBarHeight}
-        fill={`url(#${colorBarId})`}
-      />
-      <text x={colorBarLabelX} y={layout.plotTop + 10} fontSize="11" fill="currentColor">
-        {colorBarTopLabel}
-      </text>
-      <text x={colorBarLabelX} y={layout.plotTop + colorBarHeight} fontSize="11" fill="currentColor">
-        {colorBarBottomLabel}
-      </text>
-      <text
-        x={colorBarTitleX}
-        y={colorBarTitleY}
-        textAnchor="middle"
-        fontSize="12"
-        fill="currentColor"
-        transform={`rotate(-90 ${colorBarTitleX} ${colorBarTitleY})`}
-      >
-        {colorBarTitle}
-      </text>
+      {hasColorBar ? (
+        <>
+          <defs>
+            <linearGradient id={colorBarId} x1="0" x2="0" y1="1" y2="0">
+              {palette.map((color, index) => (
+                <stop key={color} offset={`${(index / (palette.length - 1)) * 100}%`} stopColor={color} />
+              ))}
+            </linearGradient>
+          </defs>
+          <rect
+            x={layout.plotLeft + layout.plotSide + 24}
+            y={layout.plotTop}
+            width={CARTESIAN_COLOR_BAR_WIDTH}
+            height={colorBarHeight}
+            fill={`url(#${colorBarId})`}
+          />
+          <text x={colorBarLabelX} y={layout.plotTop + 10} fontSize="11" fill="currentColor">
+            {colorBarTopLabel}
+          </text>
+          <text x={colorBarLabelX} y={layout.plotTop + colorBarHeight} fontSize="11" fill="currentColor">
+            {colorBarBottomLabel}
+          </text>
+          <text
+            x={colorBarTitleX}
+            y={colorBarTitleY}
+            textAnchor="middle"
+            fontSize="12"
+            fill="currentColor"
+            transform={`rotate(-90 ${colorBarTitleX} ${colorBarTitleY})`}
+          >
+            {colorBarTitle}
+          </text>
+        </>
+      ) : undefined}
     </svg>
   );
 }

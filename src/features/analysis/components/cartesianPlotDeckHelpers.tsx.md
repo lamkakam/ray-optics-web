@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Provides shared deck.gl cartesian plot layout and SVG overlay helpers for analysis charts that render square orthographic plots with axis chrome and a vertical color bar.
+Provides shared deck.gl cartesian plot layout and SVG overlay helpers for analysis charts that render square orthographic plots with axis chrome and optional vertical color bars.
 
 ## Key Behaviors
 
@@ -12,9 +12,10 @@ Provides shared deck.gl cartesian plot layout and SVG overlay helpers for analys
 - Derives visible x/y domains from controlled orthographic view state and the square plot size.
 - Produces five evenly spaced axis ticks for each visible domain.
 - Converts hex palette colors to RGB tuples for deck.gl layer color ranges.
-- Renders theme-aware SVG axes, tick labels, axis labels, and vertical palette color bars using `currentColor`.
+- Renders theme-aware SVG axes, tick labels, axis labels, and optional vertical palette color bars using `currentColor`.
 
 ## Consumers
 
+- `GeoPsfChart`
 - `DiffractionPsfChart`
 - `WavefrontMapChart`
