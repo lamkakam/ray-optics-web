@@ -8,6 +8,8 @@ Exports the shared 11-color Viridis-derived palette used by analysis heatmap-sty
 
 ```ts
 const ANALYSIS_HEATMAP_COLOR_PALETTE: readonly string[]
+
+function interpolateAnalysisHeatmapColor(normalizedValue: number): readonly [number, number, number, number]
 ```
 
 ## Behavior
@@ -16,11 +18,12 @@ const ANALYSIS_HEATMAP_COLOR_PALETTE: readonly string[]
 - Keeps palette length stable so wavelength-to-index mapping stays unchanged in analysis charts.
 - Deliberately favors perceptual uniformity and color-vision accessibility over the previous blue-to-red diverging midpoint.
 - Starts from a lighter indigo rather than raw Viridis purple so low-end values remain visible in dark theme.
+- Interpolates clamped normalized values between neighboring palette stops and returns opaque RGBA channels for bitmap renderers.
 
 ## Usage
 
 - Imported by `WavefrontMapChart.tsx` and `wavefrontMapDeckData.ts`.
-- Imported by `DiffractionPsfChart.tsx`.
+- Imported by `DiffractionPsfChart.tsx` and `diffractionPsfDeckData.ts`.
 - Imported by `spotDiagramChartOption.ts`.
 - Imported by `rayFanChartOption.ts`.
 - Imported by `opdFanChartOption.ts`.

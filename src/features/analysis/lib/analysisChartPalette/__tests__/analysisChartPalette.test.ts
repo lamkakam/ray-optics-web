@@ -1,4 +1,7 @@
-import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
+import {
+  ANALYSIS_HEATMAP_COLOR_PALETTE,
+  interpolateAnalysisHeatmapColor,
+} from "@/features/analysis/lib/analysisChartPalette";
 
 const EXPECTED_VIRIDIS_PALETTE = [
   "#5b2a86",
@@ -61,5 +64,11 @@ describe("analysisChartPalette", () => {
     for (const color of ANALYSIS_HEATMAP_COLOR_PALETTE) {
       expect(getContrastRatio(color, DARK_THEME_BACKGROUND)).toBeGreaterThanOrEqual(1.75);
     }
+  });
+
+  it("interpolates RGBA colors between heatmap palette stops", () => {
+    expect(interpolateAnalysisHeatmapColor(0)).toEqual([91, 42, 134, 255]);
+    expect(interpolateAnalysisHeatmapColor(1)).toEqual([134, 213, 73, 255]);
+    expect(interpolateAnalysisHeatmapColor(0.05)).toEqual([91, 52, 144, 255]);
   });
 });

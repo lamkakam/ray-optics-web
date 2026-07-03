@@ -1,4 +1,4 @@
-import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
+import { interpolateAnalysisHeatmapColor } from "@/features/analysis/lib/analysisChartPalette";
 import type { WavefrontMapData } from "@/features/analysis/types/plotData";
 
 export interface WavefrontBitmapImage {
@@ -13,37 +13,6 @@ export interface WavefrontMapPreparedData {
   readonly axisExtent: number;
   readonly minValue: number;
   readonly maxValue: number;
-}
-
-function hexToRgba(hexColor: string, alpha: number): readonly [number, number, number, number] {
-  return [
-    Number.parseInt(hexColor.slice(1, 3), 16),
-    Number.parseInt(hexColor.slice(3, 5), 16),
-    Number.parseInt(hexColor.slice(5, 7), 16),
-    alpha,
-  ];
-}
-
-function interpolatePaletteColor(normalizedValue: number): readonly [number, number, number, number] {
-  const palettePosition = normalizedValue * (ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1);
-  const lowerIndex = Math.max(
-    0,
-    Math.min(ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1, Math.floor(palettePosition)),
-  );
-  const upperIndex = Math.max(
-    0,
-    Math.min(ANALYSIS_HEATMAP_COLOR_PALETTE.length - 1, lowerIndex + 1),
-  );
-  const fraction = palettePosition - lowerIndex;
-  const [lowerRed, lowerGreen, lowerBlue] = hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[lowerIndex], 255);
-  const [upperRed, upperGreen, upperBlue] = hexToRgba(ANALYSIS_HEATMAP_COLOR_PALETTE[upperIndex], 255);
-
-  return [
-    Math.round(lowerRed + ((upperRed - lowerRed) * fraction)),
-    Math.round(lowerGreen + ((upperGreen - lowerGreen) * fraction)),
-    Math.round(lowerBlue + ((upperBlue - lowerBlue) * fraction)),
-    255,
-  ];
 }
 
 function getAxisMinMax(values: readonly number[]): readonly [number, number] {
@@ -86,7 +55,7 @@ export function buildWavefrontMapBitmap(wavefrontMapData: WavefrontMapData): Wav
       const normalizedValue = valueRange > 0
         ? Math.max(0, Math.min(1, (value - normalizedMin) / valueRange))
         : 0;
-      const [red, green, blue, alpha] = interpolatePaletteColor(normalizedValue);
+      const [red, green, blue, alpha] = interpolateAnalysisHeatmapColor(normalizedValue);
       imageData[pixelOffset] = red;
       imageData[pixelOffset + 1] = green;
       imageData[pixelOffset + 2] = blue;
