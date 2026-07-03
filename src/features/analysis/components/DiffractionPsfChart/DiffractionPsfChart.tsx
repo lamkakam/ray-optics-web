@@ -1,6 +1,6 @@
 "use client";
 
-import { COORDINATE_SYSTEM, DeckGL, GridLayer, OrthographicView } from "deck.gl";
+import { BitmapLayer, COORDINATE_SYSTEM, DeckGL, OrthographicView } from "deck.gl";
 import { useMemo, useState } from "react";
 import { ANALYSIS_HEATMAP_COLOR_PALETTE } from "@/features/analysis/lib/analysisChartPalette";
 import {
@@ -9,16 +9,14 @@ import {
   getCartesianPlotLayout,
   getInitialOrthographicZoom,
   getVisibleAxisDomains,
-  hexToRgb,
   useMeasuredChartSize,
   type OrthographicViewState,
   type ViewStateOverride,
 } from "@/features/analysis/components/cartesianPlotDeckHelpers";
 import {
   DIFFRACTION_PSF_LOG_FLOOR,
-  buildDiffractionPsfBins,
+  buildDiffractionPsfBitmap,
   formatDiffractionPsfFluxLabel,
-  type DiffractionPsfBin,
 } from "./diffractionPsfDeckData";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
@@ -35,14 +33,10 @@ export function DiffractionPsfChart({
 }: DiffractionPsfChartProps) {
   const [containerRef, size] = useMeasuredChartSize(autoHeight);
   const preparedData = useMemo(
-    () => buildDiffractionPsfBins(diffractionPsfData),
+    () => buildDiffractionPsfBitmap(diffractionPsfData),
     [diffractionPsfData],
   );
   const layout = getCartesianPlotLayout(size);
-  const colorRange = useMemo(
-    () => ANALYSIS_HEATMAP_COLOR_PALETTE.map((color) => hexToRgb(color)),
-    [],
-  );
   const extentKey = `${preparedData.axisExtent}:${layout.plotSide}`;
   const initialViewState = useMemo<OrthographicViewState>(() => ({
     target: [0, 0, 0],
@@ -55,23 +49,28 @@ export function DiffractionPsfChart({
   const axisDomains = useMemo(() => getVisibleAxisDomains(layout.plotSide, viewState), [layout.plotSide, viewState]);
   const xAxisTicks = useMemo(() => buildCartesianTicks(axisDomains.x), [axisDomains.x]);
   const yAxisTicks = useMemo(() => buildCartesianTicks(axisDomains.y), [axisDomains.y]);
+  const bitmapImage = useMemo(
+    () => new ImageData(
+      preparedData.image.data,
+      preparedData.image.width,
+      preparedData.image.height,
+    ),
+    [preparedData.image],
+  );
 
   const layers = useMemo(() => [
-    new GridLayer<DiffractionPsfBin>({
-      id: "diffraction-psf-grid",
-      data: preparedData.bins,
-      gpuAggregation: true,
-      colorAggregation: "SUM",
+    new BitmapLayer({
+      id: "diffraction-psf-bitmap",
+      image: bitmapImage,
+      bounds: preparedData.bounds,
       coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
-      cellSize: preparedData.cellSize,
-      getPosition: (bin) => [bin.x, bin.y],
-      getColorWeight: (bin) => bin.logScaledFlux,
-      colorDomain: [Math.min(DIFFRACTION_PSF_LOG_FLOOR, preparedData.minLogFlux), preparedData.maxLogFlux],
-      colorRange,
-      extruded: false,
       pickable: false,
+      textureParameters: {
+        minFilter: "nearest",
+        magFilter: "nearest",
+      },
     }),
-  ], [colorRange, preparedData]);
+  ], [bitmapImage, preparedData.bounds]);
 
   return (
     <div ref={containerRef} className="h-full w-full min-h-0">

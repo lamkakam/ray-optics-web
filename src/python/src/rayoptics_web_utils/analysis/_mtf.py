@@ -34,3 +34,12 @@ def _mtf_frequency_axis(cutoff: float, sample_count: int) -> np.ndarray:
     if sample_count <= 1:
         return np.zeros(sample_count, dtype=float)
     return np.linspace(0.0, cutoff, sample_count, dtype=float)
+
+
+def _psf_image_axis(cutoff: float, sample_count: int) -> np.ndarray:
+    """Return a centered image-plane axis sampled at the Nyquist PSF spacing."""
+    if sample_count <= 0 or cutoff <= 0.0:
+        return np.zeros(sample_count, dtype=float)
+
+    spacing = 1.0 / (2.0 * cutoff)
+    return (np.arange(sample_count, dtype=float) - ((sample_count - 1) / 2.0)) * spacing

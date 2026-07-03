@@ -477,32 +477,86 @@ class TestGetDiffractionPsfData:
         assert all(isinstance(v, float) for v in result["y"])
         assert all(isinstance(value, float) for row in result["z"] for value in row)
 
-    def test_enforces_max_dims_floor_of_two_times_num_rays(self, cooke_triplet):
+    def test_enforces_max_dims_floor_of_two_times_num_rays_before_cropping(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_diffraction_psf_data
 
         result = get_diffraction_psf_data(cooke_triplet, fi=1, wvl_idx=1, num_rays=16, max_dims=8)
 
-        assert len(result["x"]) == 32
-        assert len(result["y"]) == 32
-        assert len(result["z"]) == 32
-        assert len(result["z"][0]) == 32
+        assert len(result["x"]) > 0
+        assert len(result["y"]) > 0
+        assert len(result["z"]) == len(result["x"])
+        assert len(result["z"][0]) == len(result["y"])
 
-    def test_uses_requested_max_dims_when_above_two_times_num_rays(self, cooke_triplet):
+    def test_larger_max_dims_produces_smaller_image_plane_spacing(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_diffraction_psf_data
 
-        result = get_diffraction_psf_data(cooke_triplet, fi=1, wvl_idx=1, num_rays=16, max_dims=80)
+        low_resolution = get_diffraction_psf_data(cooke_triplet, fi=1, wvl_idx=1, num_rays=16, max_dims=32)
+        high_resolution = get_diffraction_psf_data(cooke_triplet, fi=1, wvl_idx=1, num_rays=16, max_dims=128)
 
-        assert len(result["x"]) == 80
-        assert len(result["y"]) == 80
-        assert len(result["z"]) == 80
-        assert len(result["z"][0]) == 80
+        low_x_spacing = float(np.mean(np.diff(low_resolution["x"])))
+        high_x_spacing = float(np.mean(np.diff(high_resolution["x"])))
+        low_y_spacing = float(np.mean(np.diff(low_resolution["y"])))
+        high_y_spacing = float(np.mean(np.diff(high_resolution["y"])))
+
+        assert high_x_spacing < low_x_spacing
+        assert high_y_spacing < low_y_spacing
+
+    def test_crops_to_ten_airy_disc_diameters(self, cooke_triplet):
+        from rayoptics.raytr.trace import trace_boundary_rays_at_field
+        from rayoptics_web_utils.analysis import get_diffraction_psf_data
+        from rayoptics_web_utils.analysis._mtf import _directional_na_from_ray_dirs
+
+        result = get_diffraction_psf_data(cooke_triplet, fi=1, wvl_idx=1, num_rays=128, max_dims=1024)
+        wavelength_nm = cooke_triplet.optical_spec.spectral_region.wavelengths[1]
+        wavelength_sys_units = cooke_triplet.nm_to_sys_units(wavelength_nm)
+        fld = cooke_triplet.optical_spec.field_of_view.fields[1]
+        rim_rays = trace_boundary_rays_at_field(cooke_triplet, fld, wavelength_nm, use_named_tuples=True)
+        chief_dir = rim_rays[0].ray[-1].d
+        na_sagittal = _directional_na_from_ray_dirs(chief_dir, rim_rays[1].ray[-1].d, rim_rays[2].ray[-1].d, axis=0)
+        na_tangential = _directional_na_from_ray_dirs(chief_dir, rim_rays[3].ray[-1].d, rim_rays[4].ray[-1].d, axis=1)
+        expected_x_span = 10.0 * 2.44 / (2.0 * na_sagittal / wavelength_sys_units)
+        expected_y_span = 10.0 * 2.44 / (2.0 * na_tangential / wavelength_sys_units)
+        actual_x_span = result["x"][-1] - result["x"][0]
+        actual_y_span = result["y"][-1] - result["y"][0]
+
+        assert actual_x_span == pytest.approx(expected_x_span, rel=0.08)
+        assert actual_y_span == pytest.approx(expected_y_span, rel=0.08)
+        assert len(result["z"]) == len(result["x"])
+        assert len(result["z"][0]) == len(result["y"])
 
     def test_result_is_json_encodable(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_diffraction_psf_data
 
         result = get_diffraction_psf_data(cooke_triplet, fi=0, wvl_idx=0, num_rays=16)
 
+        assert np.all(np.isfinite(np.asarray(result["x"])))
+        assert np.all(np.isfinite(np.asarray(result["y"])))
+        assert np.all(np.isfinite(np.asarray(result["z"])))
+        assert np.all(np.diff(result["x"]) > 0.0)
+        assert np.all(np.diff(result["y"]) > 0.0)
         json.dumps(result)
+
+    def test_tilted_system_axes_use_physical_airy_sampling(self, tilted_houghton):
+        from rayoptics_web_utils.analysis import get_diffraction_psf_data
+
+        result = get_diffraction_psf_data(tilted_houghton, fi=0, wvl_idx=2, num_rays=32, max_dims=128)
+        x_axis = np.asarray(result["x"])
+        y_axis = np.asarray(result["y"])
+
+        assert np.all(np.isfinite(x_axis))
+        assert np.all(np.isfinite(y_axis))
+        assert np.all(np.diff(x_axis) > 0.0)
+        assert np.all(np.diff(y_axis) > 0.0)
+
+        x_spacing = float(np.mean(np.diff(x_axis)))
+        y_spacing = float(np.mean(np.diff(y_axis)))
+        first_dark_ring_radius = 1.22 * tilted_houghton.nm_to_sys_units(546.073) * 8.0
+
+        assert x_spacing == pytest.approx(1.0 / (2.0 * 229.0 * 2.0), rel=0.15)
+        assert y_spacing == pytest.approx(1.0 / (2.0 * 229.0 * 2.0), rel=0.15)
+        assert first_dark_ring_radius == pytest.approx(0.0053, rel=0.1)
+        assert x_spacing < first_dark_ring_radius
+        assert y_spacing < first_dark_ring_radius
 
 
 class TestGetDiffractionMtfData:

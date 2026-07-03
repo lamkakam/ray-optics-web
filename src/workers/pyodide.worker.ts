@@ -161,7 +161,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.16.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.17.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
@@ -641,7 +641,7 @@ export async function getDiffractionPSFData(
   wavelengthIndex: number,
   imagePoint: ImagePoint = "chief_ray",
   numRays: number = 128,
-  maxDims: number = 256,
+  maxDims: number = 1024,
 ): Promise<DiffractionPsfData> {
   return await _getDiffractionPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, imagePoint, numRays, maxDims);
 }

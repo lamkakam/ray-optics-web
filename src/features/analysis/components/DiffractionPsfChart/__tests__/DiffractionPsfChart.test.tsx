@@ -1,6 +1,5 @@
 import { act, render, screen } from "@testing-library/react";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";
-import { DIFFRACTION_PSF_LOG_FLOOR } from "@/features/analysis/components/DiffractionPsfChart/diffractionPsfDeckData";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
 interface MockDeckGLProps {
@@ -20,12 +19,16 @@ interface MockDeckGLProps {
 const mockDeckGL = jest.fn(({ children }: MockDeckGLProps) => (
   <div data-testid="deck-gl">{children}</div>
 ));
+const mockBitmapLayer = jest.fn((props: unknown) => ({ id: "bitmap-layer", props }));
 const mockGridLayer = jest.fn((props: unknown) => ({ id: "grid-layer", props }));
 const mockOrthographicView = jest.fn((props: unknown) => ({ id: "orthographic-view", props }));
 
 jest.mock("deck.gl", () => ({
   COORDINATE_SYSTEM: {
     CARTESIAN: "cartesian",
+  },
+  BitmapLayer: function BitmapLayer(props: unknown) {
+    return mockBitmapLayer(props);
   },
   DeckGL: (props: MockDeckGLProps) => mockDeckGL(props),
   GridLayer: function GridLayer(props: unknown) {
@@ -73,26 +76,27 @@ describe("DiffractionPsfChart", () => {
     );
   });
 
-  it("creates a GPU GridLayer from normalized diffraction PSF bins", () => {
+  it("creates a BitmapLayer from the diffraction PSF raster", () => {
     render(<DiffractionPsfChart diffractionPsfData={diffractionPsfData} />);
 
-    expect(mockGridLayer).toHaveBeenCalledWith(expect.objectContaining({
-      gpuAggregation: true,
-      colorAggregation: "SUM",
+    expect(mockGridLayer).not.toHaveBeenCalled();
+    expect(mockBitmapLayer).toHaveBeenCalledWith(expect.objectContaining({
+      id: "diffraction-psf-bitmap",
       coordinateSystem: "cartesian",
-      cellSize: 0.01,
+      bounds: [-0.03, -0.015, 0.03, 0.015],
+      pickable: false,
+      textureParameters: {
+        minFilter: "nearest",
+        magFilter: "nearest",
+      },
     }));
 
-    const layerProps = mockGridLayer.mock.calls[0][0] as {
-      readonly data: readonly unknown[];
-      readonly getPosition: (datum: { readonly x: number; readonly y: number }) => [number, number];
-      readonly getColorWeight: (datum: { readonly logScaledFlux: number }) => number;
-      readonly colorDomain: readonly [number, number];
+    const layerProps = mockBitmapLayer.mock.calls[0][0] as {
+      readonly image: ImageData;
     };
-    expect(layerProps.data).toHaveLength(9);
-    expect(layerProps.getPosition({ x: 0.02, y: -0.01 })).toEqual([0.02, -0.01]);
-    expect(layerProps.getColorWeight({ logScaledFlux: -3 })).toBe(-3);
-    expect(layerProps.colorDomain[0]).toBe(DIFFRACTION_PSF_LOG_FLOOR);
+    expect(layerProps.image).toBeInstanceOf(ImageData);
+    expect(layerProps.image.width).toBe(3);
+    expect(layerProps.image.height).toBe(3);
   });
 
   it("uses an OrthographicView and initial zoom that fits the symmetric PSF extent", () => {

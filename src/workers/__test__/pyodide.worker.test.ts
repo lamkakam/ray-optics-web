@@ -22,6 +22,8 @@ import {
   _getGeoPSFData,
   _getDiffractionPSFData,
   _getDiffractionMTFData,
+  _setPyodideForTesting,
+  getDiffractionPSFData,
   _getFieldCurvatureData,
   _getAstigmatismCurveData,
   _getLSAData,
@@ -445,6 +447,10 @@ describe("_getGeoPSFData", () => {
 
 
 describe("_getDiffractionPSFData", () => {
+  afterEach(() => {
+    _resetPyodideForTesting();
+  });
+
   it("should build the model script, call json.dumps(get_diffraction_psf_data(...)) and return parsed data", async () => {
     const mockData = {
       fieldIdx: 1,
@@ -468,6 +474,30 @@ describe("_getDiffractionPSFData", () => {
 
     expect(pythonScript).toContain("opm = OpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=64, max_dims=256, image_point='centroid'))");
+    expect(result).toEqual(mockData);
+  });
+
+  it("public default call uses 128 rays and 1024 PSF dimensions", async () => {
+    const mockData = {
+      fieldIdx: 1,
+      wvlIdx: 2,
+      x: [0],
+      y: [0],
+      z: [[1]],
+      unitX: "mm",
+      unitY: "mm",
+      unitZ: "",
+    };
+    const runPythonAsync = jest.fn().mockResolvedValue(JSON.stringify(mockData));
+
+    _setPyodideForTesting({ runPythonAsync });
+
+    const result = await getDiffractionPSFData(allSphericalOpticalModel, 1, 2, "centroid");
+
+    expect(runPythonAsync).toHaveBeenCalledTimes(1);
+    expect(runPythonAsync.mock.calls[0]?.[0]).toContain(
+      "json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=128, max_dims=1024, image_point='centroid'))",
+    );
     expect(result).toEqual(mockData);
   });
 });

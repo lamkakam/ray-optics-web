@@ -1,18 +1,18 @@
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
+import { interpolateAnalysisHeatmapColor } from "@/features/analysis/lib/analysisChartPalette";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
 export const DIFFRACTION_PSF_LOG_FLOOR = Math.log10(5e-4);
 
-export interface DiffractionPsfBin {
-  readonly x: number;
-  readonly y: number;
-  readonly normalizedFlux: number;
-  readonly logScaledFlux: number;
+export interface DiffractionPsfBitmapImage {
+  readonly data: Uint8ClampedArray<ArrayBuffer>;
+  readonly width: number;
+  readonly height: number;
 }
 
 export interface DiffractionPsfPreparedData {
-  readonly bins: readonly DiffractionPsfBin[];
-  readonly cellSize: number;
+  readonly image: DiffractionPsfBitmapImage;
+  readonly bounds: [number, number, number, number];
   readonly axisExtent: number;
   readonly minLogFlux: number;
   readonly maxLogFlux: number;
@@ -39,54 +39,96 @@ export function formatDiffractionPsfFluxLabel(log10Flux: number): string {
   return formatPlotValue(10 ** log10Flux);
 }
 
-export function buildDiffractionPsfBins(
+function getAxisBounds(values: readonly number[]): readonly [number, number] {
+  if (values.length === 0) {
+    return [-0.5, 0.5];
+  }
+
+  const spacing = getMedianPositiveSpacing(values) ?? 1;
+  const first = values[0];
+  const last = values[values.length - 1];
+
+  return [
+    Math.min(first, last) - (spacing / 2),
+    Math.max(first, last) + (spacing / 2),
+  ];
+}
+
+function getLogScaledFlux(flux: number, peakFlux: number): number {
+  if (peakFlux <= 0 || flux <= 0) {
+    return DIFFRACTION_PSF_LOG_FLOOR;
+  }
+
+  return Math.max(DIFFRACTION_PSF_LOG_FLOOR, Math.log10(flux / peakFlux));
+}
+
+export function buildDiffractionPsfBitmap(
   diffractionPsfData: DiffractionPsfData,
 ): DiffractionPsfPreparedData {
+  const width = diffractionPsfData.x.length;
+  const height = diffractionPsfData.y.length;
+  const imageData = new Uint8ClampedArray(width * height * 4);
   let peakFlux = 0;
   let axisExtent = 0;
-  const rawBins: Array<Pick<DiffractionPsfBin, "x" | "y"> & { readonly flux: number }> = [];
 
-  for (let xIndex = 0; xIndex < diffractionPsfData.x.length; xIndex += 1) {
-    const x = diffractionPsfData.x[xIndex];
-    axisExtent = Math.max(axisExtent, Math.abs(x));
-
-    for (let yIndex = 0; yIndex < diffractionPsfData.y.length; yIndex += 1) {
-      const y = diffractionPsfData.y[yIndex];
+  for (let xIndex = 0; xIndex < width; xIndex += 1) {
+    axisExtent = Math.max(axisExtent, Math.abs(diffractionPsfData.x[xIndex]));
+    for (let yIndex = 0; yIndex < height; yIndex += 1) {
+      axisExtent = Math.max(axisExtent, Math.abs(diffractionPsfData.y[yIndex]));
       const flux = Math.max(0, diffractionPsfData.z[xIndex]?.[yIndex] ?? 0);
-      axisExtent = Math.max(axisExtent, Math.abs(y));
       peakFlux = Math.max(peakFlux, flux);
-      rawBins.push({ x, y, flux });
     }
   }
 
-  let minLogFlux = 0;
-  let maxLogFlux = DIFFRACTION_PSF_LOG_FLOOR;
-  const bins = rawBins.map((bin) => {
-    const normalizedFlux = peakFlux > 0 ? bin.flux / peakFlux : 0;
-    const logScaledFlux = normalizedFlux > 0
-      ? Math.max(DIFFRACTION_PSF_LOG_FLOOR, Math.log10(normalizedFlux))
-      : DIFFRACTION_PSF_LOG_FLOOR;
-    minLogFlux = Math.min(minLogFlux, logScaledFlux);
-    maxLogFlux = Math.max(maxLogFlux, logScaledFlux);
+  let minLogFlux = Number.POSITIVE_INFINITY;
+  let maxLogFlux = Number.NEGATIVE_INFINITY;
+  const logScaledFluxes: number[][] = [];
 
-    return {
-      x: bin.x,
-      y: bin.y,
-      normalizedFlux,
-      logScaledFlux,
-    };
-  });
+  for (let xIndex = 0; xIndex < width; xIndex += 1) {
+    logScaledFluxes[xIndex] = [];
+    for (let yIndex = 0; yIndex < height; yIndex += 1) {
+      const flux = Math.max(0, diffractionPsfData.z[xIndex]?.[yIndex] ?? 0);
+      const logScaledFlux = getLogScaledFlux(flux, peakFlux);
+      logScaledFluxes[xIndex][yIndex] = logScaledFlux;
+      minLogFlux = Math.min(minLogFlux, logScaledFlux);
+      maxLogFlux = Math.max(maxLogFlux, logScaledFlux);
+    }
+  }
 
-  const spacingCandidates = [
-    getMedianPositiveSpacing(diffractionPsfData.x),
-    getMedianPositiveSpacing(diffractionPsfData.y),
-  ].filter((spacing): spacing is number => spacing !== undefined);
+  const normalizedMinLogFlux = Number.isFinite(minLogFlux) ? minLogFlux : DIFFRACTION_PSF_LOG_FLOOR;
+  const normalizedMaxLogFlux = Number.isFinite(maxLogFlux)
+    ? Math.max(normalizedMinLogFlux, maxLogFlux)
+    : normalizedMinLogFlux;
+  const logFluxRange = normalizedMaxLogFlux - normalizedMinLogFlux;
+
+  for (let rowIndex = 0; rowIndex < height; rowIndex += 1) {
+    const yIndex = height - 1 - rowIndex;
+    for (let xIndex = 0; xIndex < width; xIndex += 1) {
+      const logScaledFlux = logScaledFluxes[xIndex]?.[yIndex] ?? DIFFRACTION_PSF_LOG_FLOOR;
+      const normalizedColorValue = logFluxRange > 0
+        ? (logScaledFlux - normalizedMinLogFlux) / logFluxRange
+        : 0;
+      const [red, green, blue, alpha] = interpolateAnalysisHeatmapColor(normalizedColorValue);
+      const pixelOffset = ((rowIndex * width) + xIndex) * 4;
+      imageData[pixelOffset] = red;
+      imageData[pixelOffset + 1] = green;
+      imageData[pixelOffset + 2] = blue;
+      imageData[pixelOffset + 3] = alpha;
+    }
+  }
+
+  const [xMin, xMax] = getAxisBounds(diffractionPsfData.x);
+  const [yMin, yMax] = getAxisBounds(diffractionPsfData.y);
 
   return {
-    bins,
-    cellSize: spacingCandidates.length > 0 ? Math.min(...spacingCandidates) : 1,
+    image: {
+      data: imageData,
+      width,
+      height,
+    },
+    bounds: [xMin, yMin, xMax, yMax],
     axisExtent: axisExtent > 0 ? axisExtent : 1,
-    minLogFlux,
-    maxLogFlux: Math.max(minLogFlux, maxLogFlux),
+    minLogFlux: normalizedMinLogFlux,
+    maxLogFlux: normalizedMaxLogFlux,
   };
 }
