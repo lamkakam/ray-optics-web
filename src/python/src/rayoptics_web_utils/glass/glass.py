@@ -1,6 +1,7 @@
 """Glass catalog data extraction from opticalglass."""
 from __future__ import annotations
 import pandas as pd
+from rayoptics_web_utils.glass.helper import (_partial_dispersion)
 
 
 def _partial_dispersions(data: pd.Series) -> dict[str, float]:
@@ -19,13 +20,10 @@ def _partial_dispersions(data: pd.Series) -> dict[str, float]:
     nC = data["refractive indices"]["C"]
     ng = data["refractive indices"]["g"]
 
-    denom = nF - nC
-    if denom == 0.0:
-        return 0.0
     return {
-        "P_F_e": (nF - ne) / denom,
-        "P_F_d": (nF - nd) / denom,
-        "P_g_F": (ng - nF) / denom,
+        "P_F_e": _partial_dispersion(nF, ne, nF, nC),
+        "P_F_d": _partial_dispersion(nF, nd, nF, nC),
+        "P_g_F": _partial_dispersion(ng, nF, nF, nC),
     }
 
 def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, str | list[float]]:
