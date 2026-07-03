@@ -21,8 +21,13 @@ def get_diffraction_psf_data(
 
 - Uses `make_ray_grid(...)` to generate the pupil OPD grid.
 - Passes `image_point` to `make_ray_grid(...)` so diffraction PSF uses the app-wide OPD reference convention.
-- Computes PSF data with `calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, effective_max_dims)`.
-- Computes image-plane axis scaling with `calc_psf_scaling`.
+- Computes PSF data with `calc_psf(pupil_grid.grid[2], num_rays, effective_max_dims)`.
+- Computes independent image-plane axes from boundary-ray directional NA:
+  - sagittal/horizontal NA maps to the `x` axis;
+  - tangential/vertical NA maps to the `y` axis;
+  - each cutoff is `2 * NA / wavelength_sys_units`;
+  - each axis uses Nyquist PSF spacing `1 / (2 * cutoff)`.
+- Does not use RayOptics `calc_psf_scaling` because that scaling can collapse for tilted or folded systems whose reference sphere is not aligned with the final image plane.
 - Uses `effective_max_dims = max(max_dims, 2 * num_rays)`.
 
 ## Return Shape

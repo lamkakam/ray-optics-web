@@ -504,6 +504,28 @@ class TestGetDiffractionPsfData:
 
         json.dumps(result)
 
+    def test_tilted_system_axes_use_physical_airy_sampling(self, tilted_houghton):
+        from rayoptics_web_utils.analysis import get_diffraction_psf_data
+
+        result = get_diffraction_psf_data(tilted_houghton, fi=0, wvl_idx=2, num_rays=32, max_dims=128)
+        x_axis = np.asarray(result["x"])
+        y_axis = np.asarray(result["y"])
+
+        assert np.all(np.isfinite(x_axis))
+        assert np.all(np.isfinite(y_axis))
+        assert np.all(np.diff(x_axis) > 0.0)
+        assert np.all(np.diff(y_axis) > 0.0)
+
+        x_spacing = float(np.mean(np.diff(x_axis)))
+        y_spacing = float(np.mean(np.diff(y_axis)))
+        first_dark_ring_radius = 1.22 * tilted_houghton.nm_to_sys_units(546.073) * 8.0
+
+        assert x_spacing == pytest.approx(1.0 / (2.0 * 229.0), rel=0.15)
+        assert y_spacing == pytest.approx(1.0 / (2.0 * 229.0), rel=0.15)
+        assert first_dark_ring_radius == pytest.approx(0.0053, rel=0.1)
+        assert x_spacing < first_dark_ring_radius
+        assert y_spacing < first_dark_ring_radius
+
 
 class TestGetDiffractionMtfData:
     """Tests for get_diffraction_mtf_data()."""
