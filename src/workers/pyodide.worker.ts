@@ -641,7 +641,7 @@ export async function getDiffractionPSFData(
   wavelengthIndex: number,
   imagePoint: ImagePoint = "chief_ray",
   numRays: number = 128,
-  maxDims: number = 256,
+  maxDims: number = 1024,
 ): Promise<DiffractionPsfData> {
   return await _getDiffractionPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, imagePoint, numRays, maxDims);
 }

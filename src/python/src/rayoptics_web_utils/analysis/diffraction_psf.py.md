@@ -26,14 +26,16 @@ def get_diffraction_psf_data(
   - sagittal/horizontal NA maps to the `x` axis;
   - tangential/vertical NA maps to the `y` axis;
   - each cutoff is `2 * NA / wavelength_sys_units`;
-  - each axis uses Nyquist PSF spacing `1 / (2 * cutoff)`.
+  - each axis starts from Nyquist PSF spacing `1 / (2 * cutoff)` and divides it by the zero-padding fill factor `effective_max_dims / (2 * num_rays)`, so larger `max_dims` produces denser image-plane samples.
 - Does not use RayOptics `calc_psf_scaling` because that scaling can collapse for tilted or folded systems whose reference sphere is not aligned with the final image plane.
 - Uses `effective_max_dims = max(max_dims, 2 * num_rays)`.
+- Crops the returned PSF to the centered span of 10 Airy disc diameters on each image-plane axis, where one Airy disc diameter is `2.44 / cutoff`.
+- Returns only the cropped `x`, `y`, and matching `z` grid. `calc_psf(...)` still computes the full `effective_max_dims` grid before cropping.
 
 ## Return Shape
 
 Returns `fieldIdx`, `wvlIdx`, `x`, `y`, `z`, `unitX`, `unitY`, and `unitZ`.
 
-- `x` and `y` are image-plane axes in system units.
-- `z` is the PSF intensity grid.
+- `x` and `y` are cropped image-plane axes in system units.
+- `z` is the cropped PSF intensity grid with `len(z) == len(x)` and `len(z[0]) == len(y)`.
 - `unitZ` is `""`.
