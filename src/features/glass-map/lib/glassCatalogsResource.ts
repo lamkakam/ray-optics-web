@@ -1,11 +1,11 @@
 "use client";
 
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { buildGlassLookupMaps, completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
-import type { AllGlassCatalogsData, GlassLookupMaps } from "@/features/glass-map/types/glassMap";
+import { completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
+import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 
 export type GlassCatalogsLoadResult =
-  | { readonly data: AllGlassCatalogsData; readonly lookupMaps: GlassLookupMaps; readonly error: undefined }
+  | { readonly data: AllGlassCatalogsData; readonly error: undefined }
   | { readonly data: undefined; readonly error: string };
 
 interface GlassCatalogsResourceEntry {
@@ -27,7 +27,6 @@ function createEntry(proxy: PyodideWorkerAPI): GlassCatalogsResourceEntry {
         const data = completeAllCatalogsData(rawData);
         const result: GlassCatalogsLoadResult = {
           data,
-          lookupMaps: buildGlassLookupMaps(data),
           error: undefined,
         };
         entry.result = result;

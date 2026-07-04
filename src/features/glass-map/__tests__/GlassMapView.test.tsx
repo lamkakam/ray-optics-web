@@ -8,7 +8,7 @@ import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/st
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
-import { buildGlassLookupMaps, completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
+import { completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
@@ -222,7 +222,6 @@ describe("GlassMapView", () => {
     act(() => {
       store.getState().setGlassCatalogsResult({
         data: catalogsData,
-        lookupMaps: buildGlassLookupMaps(catalogsData),
         error: undefined,
       });
     });

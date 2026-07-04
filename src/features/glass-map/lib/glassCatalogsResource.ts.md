@@ -12,7 +12,7 @@ preloadGlassCatalogs(proxy: PyodideWorkerAPI): Promise<GlassCatalogsLoadResult>
 
 - Starts the worker fetch on first call for a given proxy
 - Reuses the same in-flight or completed request for later callers
-- Resolves with catalog data, lookup maps, or an error result
+- Resolves with completed catalog data or an error result
 
 ### `peekGlassCatalogs(proxy)`
 ```ts
@@ -41,5 +41,5 @@ _resetGlassCatalogsResourceForTest(): void
 ## Behaviour
 - Uses a module-level `WeakMap<PyodideWorkerAPI, GlassCatalogsResourceEntry>` for dedupe
 - Completes worker payload catalog keys with `completeAllCatalogsData()` from `features/glass-map/lib/glassMap`
-- Builds case-insensitive manufacturer and medium lookup maps with `buildGlassLookupMaps()` immediately after catalog completion
+- Leaves lookup-map derivation to `features/glass-map/stores/glassMapStore`
 - Represents failure as `{ data: undefined, error: string }` rather than throwing after settlement

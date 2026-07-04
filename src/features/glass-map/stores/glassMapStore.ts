@@ -39,6 +39,46 @@ const allEnabled = Object.fromEntries(
   CATALOG_NAMES.map((name) => [name, true])
 ) as Record<CatalogName, boolean>;
 
+const BUILT_IN_SPECIAL_MEDIA = ["CaF2", "Fused silica", "Water"] as const;
+const CAF2_ALIASES = ["fluorite", "fluorspar"] as const;
+
+function normalizeLookupKey(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+export function buildGlassLookupMaps(catalogsData: AllGlassCatalogsData): GlassLookupMaps {
+  const manufacturerMap = new Map<string, CatalogName>();
+  const mediumMap = new Map<string, { medium: string; manufacturer: string }>();
+
+  for (const catalogName of CATALOG_NAMES) {
+    manufacturerMap.set(normalizeLookupKey(catalogName), catalogName);
+
+    for (const glassName of Object.keys(catalogsData[catalogName])) {
+      if (catalogName === "Special") {
+        if (glassName !== "REFL") {
+          mediumMap.set(normalizeLookupKey(glassName), { medium: glassName, manufacturer: "" });
+        }
+        continue;
+      }
+
+      mediumMap.set(`${normalizeLookupKey(catalogName)}:${normalizeLookupKey(glassName)}`, {
+        medium: glassName,
+        manufacturer: catalogName,
+      });
+    }
+  }
+
+  for (const medium of BUILT_IN_SPECIAL_MEDIA) {
+    mediumMap.set(normalizeLookupKey(medium), { medium, manufacturer: "" });
+  }
+
+  for (const alias of CAF2_ALIASES) {
+    mediumMap.set(normalizeLookupKey(alias), { medium: "CaF2", manufacturer: "" });
+  }
+
+  return { manufacturerMap, mediumMap };
+}
+
 export interface GlassMapRouteIntent {
   readonly source: "medium-selector";
   readonly catalog: string;
@@ -78,7 +118,7 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
       result.error === undefined
         ? {
             catalogsData: result.data,
-            lookupMaps: result.lookupMaps,
+            lookupMaps: buildGlassLookupMaps(result.data),
             catalogsError: undefined,
             catalogsLoaded: true,
           }

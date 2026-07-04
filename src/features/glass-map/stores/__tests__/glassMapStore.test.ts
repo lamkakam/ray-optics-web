@@ -1,10 +1,11 @@
 import { createStore } from "zustand/vanilla";
 import {
+  buildGlassLookupMaps,
   createGlassMapSlice,
   type GlassMapStore,
 } from "@/features/glass-map/stores/glassMapStore";
 import type { CatalogName } from "@/features/glass-map/types/glassMap";
-import { buildGlassLookupMaps, completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
+import { completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 
 const mockGlassData = {
   refractiveIndexD: 1.5168,
@@ -132,16 +133,17 @@ describe("glassMapStore actions", () => {
     const data = completeAllCatalogsData({
       Schott: { "N-BK7": mockGlassData },
     });
-    const lookupMaps = buildGlassLookupMaps(data);
 
     store.getState().setGlassCatalogsResult({
       data,
-      lookupMaps,
       error: undefined,
     });
 
     expect(store.getState().catalogsData).toBe(data);
-    expect(store.getState().lookupMaps).toBe(lookupMaps);
+    expect(store.getState().lookupMaps?.mediumMap.get("schott:n-bk7")).toEqual({
+      medium: "N-BK7",
+      manufacturer: "Schott",
+    });
     expect(store.getState().catalogsError).toBeUndefined();
     expect(store.getState().catalogsLoaded).toBe(true);
   });
@@ -153,7 +155,6 @@ describe("glassMapStore actions", () => {
     });
     store.getState().setGlassCatalogsResult({
       data,
-      lookupMaps: buildGlassLookupMaps(data),
       error: undefined,
     });
 
@@ -166,5 +167,57 @@ describe("glassMapStore actions", () => {
     expect(store.getState().lookupMaps).toBeUndefined();
     expect(store.getState().catalogsError).toBe("Network error");
     expect(store.getState().catalogsLoaded).toBe(false);
+  });
+});
+
+describe("buildGlassLookupMaps", () => {
+  const rawCatalogsData = completeAllCatalogsData({
+    CDGM: { BK7: mockGlassData },
+    Hoya: { "H-LaK52": mockGlassData },
+    Schott: { "N-BK7": mockGlassData },
+    Special: { CaF2: mockGlassData },
+  });
+
+  it("maps manufacturer casing to canonical catalog names", () => {
+    const result = buildGlassLookupMaps(rawCatalogsData);
+
+    expect(result.manufacturerMap.get("hoya")).toBe("Hoya");
+  });
+
+  it("maps catalog glass casing to canonical app values", () => {
+    const result = buildGlassLookupMaps(rawCatalogsData);
+
+    expect(result.mediumMap.get("hoya:h-lak52")).toEqual({
+      medium: "H-LaK52",
+      manufacturer: "Hoya",
+    });
+  });
+
+  it("maps special media aliases without a manufacturer", () => {
+    const result = buildGlassLookupMaps(rawCatalogsData);
+
+    expect(result.mediumMap.get("fluorite")).toEqual({ medium: "CaF2", manufacturer: "" });
+    expect(result.mediumMap.get("fluorspar")).toEqual({ medium: "CaF2", manufacturer: "" });
+    expect(result.mediumMap.get("caf2")).toEqual({ medium: "CaF2", manufacturer: "" });
+  });
+
+  it("maps provider-backed D263TECO Special lookup without a manufacturer", () => {
+    const catalogsData = completeAllCatalogsData({
+      ...rawCatalogsData,
+      Special: { D263TECO: mockGlassData },
+    });
+    const result = buildGlassLookupMaps(catalogsData);
+
+    expect(result.mediumMap.get("d263teco")).toEqual({ medium: "D263TECO", manufacturer: "" });
+  });
+
+  it("does not add a lowercase alias for reflective media", () => {
+    const catalogsData = completeAllCatalogsData({
+      ...rawCatalogsData,
+      Special: { REFL: mockGlassData },
+    });
+    const result = buildGlassLookupMaps(catalogsData);
+
+    expect(result.mediumMap.get("refl")).toBeUndefined();
   });
 });

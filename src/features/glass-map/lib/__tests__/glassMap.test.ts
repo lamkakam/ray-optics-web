@@ -1,5 +1,4 @@
 import {
-  buildGlassLookupMaps,
   completeAllCatalogsData,
   computePlotPoints,
   CATALOG_COLOR_MAP,
@@ -64,51 +63,6 @@ describe("completeAllCatalogsData", () => {
   it("returns empty object for empty catalog", () => {
     const result = completeAllCatalogsData(rawCatalogsData);
     expect(result.Hikari).toEqual({});
-  });
-});
-
-describe("buildGlassLookupMaps", () => {
-  it("maps manufacturer casing to canonical catalog names", () => {
-    const result = buildGlassLookupMaps(completeAllCatalogsData(rawCatalogsData));
-
-    expect(result.manufacturerMap.get("hoya")).toBe("Hoya");
-  });
-
-  it("maps catalog glass casing to canonical app values", () => {
-    const result = buildGlassLookupMaps(completeAllCatalogsData(rawCatalogsData));
-
-    expect(result.mediumMap.get("hoya:h-lak52")).toEqual({
-      medium: "H-LaK52",
-      manufacturer: "Hoya",
-    });
-  });
-
-  it("maps special media aliases without a manufacturer", () => {
-    const result = buildGlassLookupMaps(completeAllCatalogsData(rawCatalogsData));
-
-    expect(result.mediumMap.get("fluorite")).toEqual({ medium: "CaF2", manufacturer: "" });
-    expect(result.mediumMap.get("fluorspar")).toEqual({ medium: "CaF2", manufacturer: "" });
-    expect(result.mediumMap.get("caf2")).toEqual({ medium: "CaF2", manufacturer: "" });
-  });
-
-  it("maps provider-backed D263TECO Special lookup without a manufacturer", () => {
-    const catalogsData = completeAllCatalogsData({
-      ...rawCatalogsData,
-      Special: { D263TECO: rawGlass },
-    });
-    const result = buildGlassLookupMaps(catalogsData);
-
-    expect(result.mediumMap.get("d263teco")).toEqual({ medium: "D263TECO", manufacturer: "" });
-  });
-
-  it("does not add a lowercase alias for reflective media", () => {
-    const catalogsData = completeAllCatalogsData({
-      ...rawCatalogsData,
-      Special: { REFL: rawGlass },
-    });
-    const result = buildGlassLookupMaps(catalogsData);
-
-    expect(result.mediumMap.get("refl")).toBeUndefined();
   });
 });
 
