@@ -29,6 +29,7 @@ import {
 } from "@/features/optimization/stores/optimizationStore";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
+import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { DiffractionMtfData, DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
@@ -376,13 +377,14 @@ function StoreProbe() {
 
 function GlassCatalogStoreProbe() {
   const store = useGlassMapStore();
-  const catalogsLoaded = useStore(store, (s) => s.catalogsLoaded);
   const catalogsData = useStore(store, (s) => s.catalogsData);
   const lookupMaps = useStore(store, (s) => s.lookupMaps);
+  const glassCatalogs = useGlassCatalogs();
 
   return (
     <>
-      <div data-testid="catalogs-loaded">{catalogsLoaded ? "loaded" : "not-loaded"}</div>
+      <div data-testid="catalogs-loaded">{glassCatalogs.isLoaded ? "loaded" : "not-loaded"}</div>
+      <div data-testid="catalogs-error">{glassCatalogs.error ?? "none"}</div>
       <div data-testid="schott-count">{Object.keys(catalogsData?.Schott ?? {}).length}</div>
       <div data-testid="lookup-medium">{lookupMaps?.mediumMap.get("schott:n-bk7")?.manufacturer ?? "none"}</div>
     </>
@@ -521,6 +523,23 @@ describe("app shell routes", () => {
     expect(screen.getByText("Preloading glass catalogs")).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "Initialization progress" })).toHaveAttribute("aria-valuenow", "90");
     expect(screen.getByText("90%")).toBeInTheDocument();
+  });
+
+  it("keeps the initialization overlay visible with the catalog error when preload fails", async () => {
+    mockProxy.getAllGlassCatalogsData.mockRejectedValueOnce(new Error("Catalog preload failed"));
+
+    renderInAppShell(
+      <>
+        <GlassCatalogStoreProbe />
+        <HomePage />
+      </>,
+    );
+
+    expect(await screen.findAllByText("Catalog preload failed")).toHaveLength(2);
+    expect(screen.getByText("Initializing Ray Optics")).toBeInTheDocument();
+    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("not-loaded");
+    expect(screen.getByTestId("catalogs-error")).toHaveTextContent("Catalog preload failed");
+    expect(screen.getByTestId("schott-count")).toHaveTextContent("0");
   });
 
   it("blocks beforeunload across the app even when no optimization result is waiting to be applied", () => {

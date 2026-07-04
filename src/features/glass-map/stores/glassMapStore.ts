@@ -9,7 +9,6 @@ import {
   type PartialDispersionType,
   type SelectedGlass,
 } from "@/features/glass-map/types/glassMap";
-import type { GlassCatalogsLoadResult } from "@/features/glass-map/lib/glassCatalogsResource";
 
 export interface GlassMapState {
   plotType: GlassMapPlotType;
@@ -19,8 +18,6 @@ export interface GlassMapState {
   selectedGlass: SelectedGlass | undefined;
   catalogsData: AllGlassCatalogsData | undefined;
   lookupMaps: GlassLookupMaps | undefined;
-  catalogsError: string | undefined;
-  catalogsLoaded: boolean;
 }
 
 export interface GlassMapActions {
@@ -31,7 +28,6 @@ export interface GlassMapActions {
   enableCatalog(name: CatalogName): void;
   setSelectedGlass(glass: SelectedGlass | undefined): void;
   setCatalogsData(data: AllGlassCatalogsData): void;
-  setGlassCatalogsResult(result: GlassCatalogsLoadResult): void;
 }
 
 export type GlassMapStore = GlassMapState & GlassMapActions;
@@ -94,8 +90,6 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
   selectedGlass: undefined,
   catalogsData: undefined,
   lookupMaps: undefined,
-  catalogsError: undefined,
-  catalogsLoaded: false,
   setPlotType: (t) => set({ plotType: t }),
   setAbbeNumCenterLine: (l) => set({ abbeNumCenterLine: l }),
   setPartialDispersionType: (t) => set({ partialDispersionType: t }),
@@ -118,23 +112,5 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
     set({
       catalogsData: data,
       lookupMaps: _buildGlassLookupMaps(data),
-      catalogsError: undefined,
-      catalogsLoaded: true,
     }),
-  setGlassCatalogsResult: (result) =>
-    set(
-      result.error === undefined
-        ? {
-            catalogsData: result.data,
-            lookupMaps: _buildGlassLookupMaps(result.data),
-            catalogsError: undefined,
-            catalogsLoaded: true,
-          }
-        : {
-            catalogsData: undefined,
-            lookupMaps: undefined,
-            catalogsError: result.error,
-            catalogsLoaded: false,
-          }
-    ),
 });

@@ -40,6 +40,8 @@ interface HistoryEntry {
   readonly state: unknown;
 }
 
+type GlassCatalogPreloadStatus = "loading" | "loaded" | "error";
+
 export default function AppShell({ children }: AppShellProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -50,20 +52,22 @@ export default function AppShell({ children }: AppShellProps) {
   const glassMapStore = useGlassMapStore();
   const catalogsData = useStore(glassMapStore, (state) => state.catalogsData);
   const lookupMaps = useStore(glassMapStore, (state) => state.lookupMaps);
-  const catalogsError = useStore(glassMapStore, (state) => state.catalogsError);
-  const catalogsLoaded = useStore(glassMapStore, (state) => state.catalogsLoaded);
   const hasUnappliedOptimizationResult = useStore(
     optimizationStore,
     (state) => state.hasUnappliedOptimizationResult,
   );
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [pendingNavigationHref, setPendingNavigationHref] = useState<string | undefined>();
+  const [glassCatalogPreloadStatus, setGlassCatalogPreloadStatus] =
+    useState<GlassCatalogPreloadStatus | undefined>();
+  const [glassCatalogPreloadError, setGlassCatalogPreloadError] = useState<string | undefined>();
   const activeHistoryEntryRef = useRef<HistoryEntry>({ href: pathname, state: undefined });
   const glassCatalogsLoading =
     isReady &&
     proxy !== undefined &&
-    !catalogsLoaded &&
-    catalogsError === undefined;
+    glassCatalogPreloadStatus !== "loaded" &&
+    glassCatalogPreloadStatus !== "error";
+  const glassCatalogsLoaded = glassCatalogPreloadStatus === "loaded";
 
   const shouldWarnBeforeLeavingOptimization = useCallback(
     (targetHref: string) =>
@@ -169,30 +173,37 @@ export default function AppShell({ children }: AppShellProps) {
       return;
     }
 
-    if (catalogsLoaded || catalogsError !== undefined) {
-      return;
-    }
-
-    const cachedResult = peekGlassCatalogs(proxy);
-    if (cachedResult !== undefined) {
-      glassMapStore.getState().setGlassCatalogsResult(cachedResult);
+    if (glassCatalogPreloadStatus !== undefined) {
       return;
     }
 
     let cancelled = false;
+    const cachedResult = peekGlassCatalogs(proxy);
+    const catalogPreloadPromise =
+      cachedResult === undefined
+        ? preloadGlassCatalogs(proxy)
+        : Promise.resolve(cachedResult);
 
-    void preloadGlassCatalogs(proxy).then((result) => {
+    void catalogPreloadPromise.then((result) => {
       if (cancelled) {
         return;
       }
 
-      glassMapStore.getState().setGlassCatalogsResult(result);
+      if (result.error === undefined) {
+        glassMapStore.getState().setCatalogsData(result.data);
+        setGlassCatalogPreloadStatus("loaded");
+        setGlassCatalogPreloadError(undefined);
+        return;
+      }
+
+      setGlassCatalogPreloadStatus("error");
+      setGlassCatalogPreloadError(result.error);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [catalogsError, catalogsLoaded, glassMapStore, isReady, proxy]);
+  }, [glassCatalogPreloadStatus, glassMapStore, isReady, proxy]);
 
   const contextValue = useMemo(
     () => ({
@@ -206,28 +217,58 @@ export default function AppShell({ children }: AppShellProps) {
     () => ({
       catalogs: catalogsData,
       lookupMaps,
-      error: catalogsError,
-      isLoaded: catalogsLoaded,
+      error: glassCatalogPreloadError,
+      isLoaded: glassCatalogsLoaded,
       isLoading: glassCatalogsLoading,
       preload: async () => {
         if (proxy === undefined) {
           return undefined;
         }
 
+        setGlassCatalogPreloadStatus("loading");
+        setGlassCatalogPreloadError(undefined);
         const result = await preloadGlassCatalogs(proxy);
-        glassMapStore.getState().setGlassCatalogsResult(result);
+        if (result.error === undefined) {
+          glassMapStore.getState().setCatalogsData(result.data);
+          setGlassCatalogPreloadStatus("loaded");
+          setGlassCatalogPreloadError(undefined);
+        } else {
+          setGlassCatalogPreloadStatus("error");
+          setGlassCatalogPreloadError(result.error);
+        }
         return result;
       },
     }),
-    [catalogsData, catalogsError, catalogsLoaded, glassCatalogsLoading, glassMapStore, lookupMaps, proxy]
+    [
+      catalogsData,
+      glassCatalogPreloadError,
+      glassCatalogsLoaded,
+      glassCatalogsLoading,
+      glassMapStore,
+      lookupMaps,
+      proxy,
+    ]
   );
   const showLoadingOverlay =
     !isReady ||
-    (proxy !== undefined && glassCatalogsLoading && catalogsError === undefined);
+    (proxy !== undefined && (glassCatalogsLoading || glassCatalogPreloadError !== undefined));
   const overlayProgress =
     isReady && proxy !== undefined && glassCatalogsLoading
       ? { value: 90, status: "Preloading glass catalogs" }
       : initProgress;
+  const overlayContents =
+    isReady && proxy !== undefined && glassCatalogPreloadError !== undefined ? (
+      <span className="text-center text-sm text-red-600 dark:text-red-400">
+        {glassCatalogPreloadError}
+      </span>
+    ) : (
+      <div className="flex w-72 max-w-[70vw] flex-col items-center gap-2">
+        <span className="text-center text-sm text-gray-700 dark:text-gray-300">
+          {overlayProgress.status}
+        </span>
+        <Progress value={overlayProgress.value} ariaLabel="Initialization progress" />
+      </div>
+    );
 
   return (
     <MathJaxContext>
@@ -248,14 +289,7 @@ export default function AppShell({ children }: AppShellProps) {
         {showLoadingOverlay && (
           <LoadingOverlay
             title="Initializing Ray Optics"
-            contents={
-              <div className="flex w-72 max-w-[70vw] flex-col items-center gap-2">
-                <span className="text-center text-sm text-gray-700 dark:text-gray-300">
-                  {overlayProgress.status}
-                </span>
-                <Progress value={overlayProgress.value} ariaLabel="Initialization progress" />
-              </div>
-            }
+            contents={overlayContents}
           />
         )}
       </AppShellProvider>

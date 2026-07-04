@@ -1,7 +1,7 @@
 # `features/glass-map/stores/glassMapStore.ts`
 
 ## Purpose
-Zustand store slice for persistent Glass Map UI state and app-wide glass catalog lookup state.
+Zustand store slice for persistent Glass Map UI state and successfully loaded app-wide glass catalog lookup data.
 
 ## State (`GlassMapState`)
 | Field | Type | Default | Description |
@@ -13,8 +13,6 @@ Zustand store slice for persistent Glass Map UI state and app-wide glass catalog
 | `selectedGlass` | `SelectedGlass \| undefined` | `undefined` | Currently clicked/selected glass |
 | `catalogsData` | `AllGlassCatalogsData \| undefined` | `undefined` | Normalized loaded glass catalog data shared across the app |
 | `lookupMaps` | `GlassLookupMaps \| undefined` | `undefined` | Lookup maps derived by the store from the same normalized catalog data |
-| `catalogsError` | `string \| undefined` | `undefined` | Last glass catalog load failure message |
-| `catalogsLoaded` | `boolean` | `false` | Whether catalog data and lookup maps are currently loaded |
 
 ```ts
 interface GlassMapRouteIntent {
@@ -33,8 +31,7 @@ interface GlassMapRouteIntent {
 | `toggleCatalog(name)` | Toggle a single catalog's enabled state |
 | `enableCatalog(name)` | Force a single catalog to enabled=true without toggling others |
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |
-| `setCatalogsData(data)` | Replace normalized catalog data, rebuild lookup maps from it, clear the load error, and mark catalogs loaded |
-| `setGlassCatalogsResult(result)` | Store a successful `GlassCatalogsLoadResult` and derive lookup maps from its data, or clear loaded data and store its error |
+| `setCatalogsData(data)` | Replace normalized catalog data and rebuild lookup maps from it |
 
 ## Helper Exports
 
@@ -63,7 +60,6 @@ import { useStore } from "zustand";
 import { createStore } from "zustand";
 import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import { createGlassMapSlice } from "@/features/glass-map/stores/glassMapStore";
-import { readGlassCatalogs } from "@/features/glass-map/lib/glassCatalogsResource";
 import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
 
 export default function GlassMapView({ proxy }: { proxy: PyodideWorkerAPI }) {
@@ -71,14 +67,9 @@ export default function GlassMapView({ proxy }: { proxy: PyodideWorkerAPI }) {
 
   const plotType = useStore(glassMapStore, (s) => s.plotType);
   const catalogsData = useStore(glassMapStore, (s) => s.catalogsData);
-  const catalogsError = useStore(glassMapStore, (s) => s.catalogsError);
-  const catalogsLoadResult =
-    catalogsData === undefined && catalogsError === undefined
-      ? readGlassCatalogs(proxy)
-      : undefined;
 
-  if (catalogsError !== undefined || catalogsLoadResult?.error !== undefined) {
-    return <p>{catalogsError ?? catalogsLoadResult?.error}</p>;
+  if (catalogsData === undefined) {
+    return <p>Loading glass catalog data...</p>;
   }
 
   return (
@@ -92,3 +83,8 @@ export default function GlassMapView({ proxy }: { proxy: PyodideWorkerAPI }) {
   );
 }
 ```
+
+## Loading Ownership
+- `GlassMapStore` intentionally does not own catalog loading status or catalog loading errors.
+- `app/AppShell.tsx` owns preload status/error, keeps the initialization overlay visible while initial loading is pending, and keeps it visible with the local error if loading fails.
+- Only successful normalized catalog data is committed into this store through `setCatalogsData(data)`.

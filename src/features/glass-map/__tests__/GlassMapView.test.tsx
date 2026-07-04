@@ -143,8 +143,17 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
   };
 }
 
-function makeStore() {
-  return createStore<GlassMapStore>(createGlassMapSlice);
+const defaultCatalogsData = completeAllCatalogsData(rawData);
+
+function makeStore(catalogsData?: AllGlassCatalogsData) {
+  const store = createStore<GlassMapStore>(createGlassMapSlice);
+  const resolvedCatalogsData = arguments.length === 0 ? defaultCatalogsData : catalogsData;
+
+  if (resolvedCatalogsData !== undefined) {
+    store.getState().setCatalogsData(resolvedCatalogsData);
+  }
+
+  return store;
 }
 
 function renderWithStore(
@@ -173,20 +182,19 @@ describe("GlassMapView", () => {
 
   it("shows loading indicator on first render when isReady=true but catalogsData not yet fetched", () => {
     const proxy = makeProxy();
-    // catalogsData is undefined in the initial store state
-    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, makeStore(undefined));
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
-  it("calls getAllGlassCatalogsData on mount when isReady=true", async () => {
+  it("does not call getAllGlassCatalogsData on mount when isReady=true", async () => {
     const proxy = makeProxy();
     renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
-    await waitFor(() => {
-      expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
-    });
+    expect(await screen.findByText(/select a glass/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
-  it("dedupes getAllGlassCatalogsData in React.StrictMode", async () => {
+  it("does not fetch glass catalogs in React.StrictMode", async () => {
     const proxy = makeProxy();
     renderWithStore(
       <React.StrictMode>
@@ -194,24 +202,8 @@ describe("GlassMapView", () => {
       </React.StrictMode>
     );
 
-    await waitFor(() => {
-      expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  it("does not call getAllGlassCatalogsData again if the resource is already loaded", async () => {
-    const proxy = makeProxy();
-    const { unmount } = renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
-
-    await waitFor(() => {
-      expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
-    });
-
-    unmount();
-    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
-
-    await new Promise((r) => setTimeout(r, 50));
-    expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/select a glass/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
   it("renders from store catalog data without fetching the resource", async () => {
@@ -220,10 +212,7 @@ describe("GlassMapView", () => {
     const catalogsData = completeAllCatalogsData(rawData);
 
     act(() => {
-      store.getState().setGlassCatalogsResult({
-        data: catalogsData,
-        error: undefined,
-      });
+      store.getState().setCatalogsData(catalogsData);
     });
 
     renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, store);
@@ -232,14 +221,14 @@ describe("GlassMapView", () => {
     expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
-  it("shows error message when data loading fails", async () => {
+  it("keeps a loading placeholder when catalog data is unexpectedly unavailable", () => {
     const proxy = makeProxy({
       getAllGlassCatalogsData: jest.fn().mockRejectedValue(new Error("Network error")),
     });
-    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
-    await waitFor(() => {
-      expect(screen.getByText(/network error/i)).toBeInTheDocument();
-    });
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, makeStore(undefined));
+
+    expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
   it("renders GlassMapControls after data loads", async () => {
@@ -425,6 +414,20 @@ describe("GlassMapView", () => {
         },
       }),
     });
+    const store = makeStore(completeAllCatalogsData({
+      ...rawData,
+      Ohara: {
+        "S-TIH6": {
+          refractiveIndexD: 1.80518,
+          refractiveIndexE: 1.8163,
+          abbeNumberD: 25.36,
+          abbeNumberE: 25.2,
+          partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+          dispersionCoeffKind: "Sellmeier3T" as const,
+          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+        },
+      },
+    }));
     renderWithStore(
       <GlassMapView
         proxy={proxy}
@@ -432,6 +435,7 @@ describe("GlassMapView", () => {
         routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
         onUseSelectedGlass={onUseSelectedGlass}
       />,
+      store,
     );
     await screen.findByRole("heading", { name: "N-BK7" });
     const unselectedPoint = screen
@@ -515,7 +519,21 @@ describe("GlassMapView", () => {
         },
       }),
     });
-    const store = makeStore();
+    const store = makeStore(completeAllCatalogsData({
+      ...rawData,
+      Schott: {
+        ...rawData.Schott,
+        "N-SF6": {
+          refractiveIndexD: 1.80518,
+          refractiveIndexE: 1.8163,
+          abbeNumberD: 25.36,
+          abbeNumberE: 25.2,
+          partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+          dispersionCoeffKind: "Sellmeier3T" as const,
+          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+        },
+      },
+    }));
 
     renderWithStore(
       <GlassMapView

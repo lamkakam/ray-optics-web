@@ -58,8 +58,8 @@ describe("glassMapStore initial state", () => {
     const store = makeStore();
     expect(store.getState().catalogsData).toBeUndefined();
     expect(store.getState().lookupMaps).toBeUndefined();
-    expect(store.getState().catalogsError).toBeUndefined();
-    expect(store.getState().catalogsLoaded).toBe(false);
+    expect("catalogsError" in store.getState()).toBe(false);
+    expect("catalogsLoaded" in store.getState()).toBe(false);
   });
 });
 
@@ -128,35 +128,36 @@ describe("glassMapStore actions", () => {
     expect(store.getState().enabledCatalogs.Schott).toBe(true);
   });
 
-  it("setGlassCatalogsResult stores successful catalog data and lookup maps", () => {
+  it("does not expose load status or result actions", () => {
+    const store = makeStore();
+
+    expect("setGlassCatalogsResult" in store.getState()).toBe(false);
+  });
+
+  it("setCatalogsData stores catalog data and lookup maps", () => {
     const store = makeStore();
     const data = completeAllCatalogsData({
       Schott: { "N-BK7": mockGlassData },
     });
 
-    store.getState().setGlassCatalogsResult({
-      data,
-      error: undefined,
-    });
+    store.getState().setCatalogsData(data);
 
     expect(store.getState().catalogsData).toBe(data);
     expect(store.getState().lookupMaps?.mediumMap.get("schott:n-bk7")).toEqual({
       medium: "N-BK7",
       manufacturer: "Schott",
     });
-    expect(store.getState().catalogsError).toBeUndefined();
-    expect(store.getState().catalogsLoaded).toBe(true);
   });
 
-  it("setCatalogsData replaces catalog data, rebuilds lookups, and marks catalogs loaded", () => {
+  it("setCatalogsData replaces catalog data and rebuilds lookups", () => {
     const store = makeStore();
+    const initialData = completeAllCatalogsData({
+      Schott: { "N-BK7": mockGlassData },
+    });
     const data = completeAllCatalogsData({
       Hoya: { "H-FK61": mockGlassData },
     });
-    store.getState().setGlassCatalogsResult({
-      data: undefined,
-      error: "Previous error",
-    });
+    store.getState().setCatalogsData(initialData);
 
     store.getState().setCatalogsData(data);
 
@@ -165,29 +166,7 @@ describe("glassMapStore actions", () => {
       medium: "H-FK61",
       manufacturer: "Hoya",
     });
-    expect(store.getState().catalogsError).toBeUndefined();
-    expect(store.getState().catalogsLoaded).toBe(true);
-  });
-
-  it("setGlassCatalogsResult stores an error and clears loaded catalog data", () => {
-    const store = makeStore();
-    const data = completeAllCatalogsData({
-      Schott: { "N-BK7": mockGlassData },
-    });
-    store.getState().setGlassCatalogsResult({
-      data,
-      error: undefined,
-    });
-
-    store.getState().setGlassCatalogsResult({
-      data: undefined,
-      error: "Network error",
-    });
-
-    expect(store.getState().catalogsData).toBeUndefined();
-    expect(store.getState().lookupMaps).toBeUndefined();
-    expect(store.getState().catalogsError).toBe("Network error");
-    expect(store.getState().catalogsLoaded).toBe(false);
+    expect(store.getState().lookupMaps?.mediumMap.get("schott:n-bk7")).toBeUndefined();
   });
 });
 

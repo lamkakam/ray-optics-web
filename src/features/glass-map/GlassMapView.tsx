@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useStore } from "zustand";
 import {
   GlassScatterPlot,
@@ -13,7 +13,6 @@ import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { CatalogName, SelectedGlass } from "./types/glassMap";
 import { computePlotPoints } from "./lib/glassMap";
-import { readGlassCatalogs } from "./lib/glassCatalogsResource";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -46,8 +45,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
   const partialDispersionType = useStore(store, (s) => s.partialDispersionType);
   const enabledCatalogs = useStore(store, (s) => s.enabledCatalogs);
   const selectedGlass = useStore(store, (s) => s.selectedGlass);
-  const storedCatalogsData = useStore(store, (s) => s.catalogsData);
-  const storedCatalogsError = useStore(store, (s) => s.catalogsError);
+  const catalogsData = useStore(store, (s) => s.catalogsData);
   const [routeIntentDismissed, setRouteIntentDismissed] = useState(false);
 
   const {
@@ -56,19 +54,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
     setPartialDispersionType,
     toggleCatalog,
     setSelectedGlass,
-    setGlassCatalogsResult,
   } = store.getState();
-
-  const catalogsLoadResult =
-    isReady && proxy !== undefined && storedCatalogsData === undefined && storedCatalogsError === undefined
-      ? readGlassCatalogs(proxy)
-      : undefined;
-
-  useEffect(() => {
-    if (catalogsLoadResult !== undefined) {
-      setGlassCatalogsResult(catalogsLoadResult);
-    }
-  }, [catalogsLoadResult, setGlassCatalogsResult]);
 
   if (!isReady || !proxy) {
     return (
@@ -77,18 +63,6 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
       </div>
     );
   }
-
-  const catalogsError = storedCatalogsError ?? catalogsLoadResult?.error;
-
-  if (catalogsError !== undefined) {
-    return (
-      <div className="flex items-center justify-center h-full text-red-500">
-        {catalogsError}
-      </div>
-    );
-  }
-
-  const catalogsData = storedCatalogsData ?? catalogsLoadResult?.data;
 
   if (catalogsData === undefined) {
     return (

@@ -1,7 +1,7 @@
 # `shared/components/providers/GlassCatalogProvider/GlassCatalogProvider.tsx`
 
 ## Purpose
-Client-only React context for app-wide glass catalog data. The provider does not fetch data itself; it injects the glass catalog slice owned by `GlassMapStore` so lens editor and glass map consume the same source of truth.
+Client-only React context for app-wide glass catalog data. The provider does not fetch data itself; `AppShell` injects successful catalog data from `GlassMapStore` plus AppShell-local preload status/error so lens editor and glass map consume a shared context.
 
 ## Context Value
 
@@ -17,12 +17,12 @@ interface GlassCatalogContextValue {
 ```
 
 ## Behaviour
-- `catalogs` contains normalized worker-backed glass catalog data once loaded
-- `lookupMaps` contains the case-insensitive manufacturer and medium maps built from the same loaded catalog data
-- `error` contains the last load failure message, if any
-- `isLoaded` mirrors `GlassMapStore.catalogsLoaded`
-- `isLoading` is `true` while the shared shell preload is in flight and the store has neither loaded data nor an error
-- `preload()` reuses the shared loader path and returns the cached result when available
+- `catalogs` contains normalized worker-backed glass catalog data once AppShell has successfully loaded and committed it to `GlassMapStore`
+- `lookupMaps` contains the case-insensitive manufacturer and medium maps built by `GlassMapStore` from the same loaded catalog data
+- `error` contains the AppShell-local preload failure message, if any
+- `isLoaded` is derived from AppShell-local preload status
+- `isLoading` is `true` while the shared shell preload is in flight before success or failure
+- `preload()` reuses the shared loader path, commits successful data to `GlassMapStore`, updates AppShell-local status/error, and returns the cached result when available
 
 ## Exports
 - `GlassCatalogContext` — raw context, primarily for tests
