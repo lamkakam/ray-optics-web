@@ -112,6 +112,8 @@ fused_silica = _rwu_init_result['fused_silica']
 water = _rwu_init_result['water']
 d263teco = _rwu_init_result['d263teco']
 
+user_defined_materials = _rwu_init_result['user_defined']
+
 import json
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig

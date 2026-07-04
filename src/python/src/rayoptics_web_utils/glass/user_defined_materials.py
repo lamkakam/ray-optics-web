@@ -10,9 +10,6 @@ from rayoptics_web_utils.glass.helper import (
     _partial_dispersion,
 )
 
-def get_user_defined_materials_data(map_label_to_instance: dict[str, opticalmedium.InterpolatedMedium]) -> dict[str, dict[str, dict]]:
-    pass
-
 class UserDefinedMaterial(MutableMapping):
     def __init__(self):
         self.map: dict[str, opticalmedium.InterpolatedMedium] = {}
