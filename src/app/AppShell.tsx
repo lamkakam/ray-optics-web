@@ -18,10 +18,7 @@ import { useOptimizationStore } from "@/features/optimization/providers/Optimiza
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { applyOptimizationModelToEditor } from "@/features/optimization/lib/applyOptimizationModelToEditor";
 import { GlassCatalogProvider } from "@/shared/components/providers/GlassCatalogProvider";
-import {
-  peekGlassCatalogs,
-  preloadGlassCatalogs,
-} from "@/features/glass-map/lib/glassCatalogsResource";
+import { loadGlassCatalogs } from "@/features/glass-map/lib/glassCatalogLoader";
 
 interface AppShellProps {
   readonly children: React.ReactNode;
@@ -65,9 +62,10 @@ export default function AppShell({ children }: AppShellProps) {
   const glassCatalogsLoading =
     isReady &&
     proxy !== undefined &&
+    catalogsData === undefined &&
     glassCatalogPreloadStatus !== "loaded" &&
     glassCatalogPreloadStatus !== "error";
-  const glassCatalogsLoaded = glassCatalogPreloadStatus === "loaded";
+  const glassCatalogsLoaded = catalogsData !== undefined || glassCatalogPreloadStatus === "loaded";
 
   const shouldWarnBeforeLeavingOptimization = useCallback(
     (targetHref: string) =>
@@ -173,18 +171,17 @@ export default function AppShell({ children }: AppShellProps) {
       return;
     }
 
+    if (catalogsData !== undefined) {
+      return;
+    }
+
     if (glassCatalogPreloadStatus !== undefined) {
       return;
     }
 
     let cancelled = false;
-    const cachedResult = peekGlassCatalogs(proxy);
-    const catalogPreloadPromise =
-      cachedResult === undefined
-        ? preloadGlassCatalogs(proxy)
-        : Promise.resolve(cachedResult);
 
-    void catalogPreloadPromise.then((result) => {
+    void loadGlassCatalogs(proxy).then((result) => {
       if (cancelled) {
         return;
       }
@@ -203,7 +200,7 @@ export default function AppShell({ children }: AppShellProps) {
     return () => {
       cancelled = true;
     };
-  }, [glassCatalogPreloadStatus, glassMapStore, isReady, proxy]);
+  }, [catalogsData, glassCatalogPreloadStatus, glassMapStore, isReady, proxy]);
 
   const contextValue = useMemo(
     () => ({
@@ -225,9 +222,15 @@ export default function AppShell({ children }: AppShellProps) {
           return undefined;
         }
 
+        if (catalogsData !== undefined) {
+          setGlassCatalogPreloadStatus("loaded");
+          setGlassCatalogPreloadError(undefined);
+          return { data: catalogsData, error: undefined };
+        }
+
         setGlassCatalogPreloadStatus("loading");
         setGlassCatalogPreloadError(undefined);
-        const result = await preloadGlassCatalogs(proxy);
+        const result = await loadGlassCatalogs(proxy);
         if (result.error === undefined) {
           glassMapStore.getState().setCatalogsData(result.data);
           setGlassCatalogPreloadStatus("loaded");

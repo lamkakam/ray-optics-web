@@ -28,3 +28,5 @@ interface GlassCatalogContextValue {
 - `GlassCatalogContext` — raw context, primarily for tests
 - `GlassCatalogProvider` — injects a prepared `GlassCatalogContextValue`
 - `useGlassCatalogs()` — throws outside the provider
+
+`GlassCatalogsLoadResult` is imported from `features/glass-map/lib/glassCatalogLoader`.
