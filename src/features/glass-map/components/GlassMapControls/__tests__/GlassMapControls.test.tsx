@@ -21,6 +21,7 @@ const allEnabled: Record<CatalogName, boolean> = {
   Schott: true,
   Sumita: true,
   Special: true,
+  Custom: true,
 };
 
 const defaultProps = {

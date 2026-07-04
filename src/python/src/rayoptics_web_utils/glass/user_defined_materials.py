@@ -10,6 +10,13 @@ from rayoptics_web_utils.glass.helper import (
     _partial_dispersion,
 )
 
+def _render_safe_glass_code(material: opticalmedium.InterpolatedMedium) -> str:
+    nd = float(material.rindex(_WL_D * 1000.0))
+    nF = float(material.rindex(_WL_F * 1000.0))
+    nC = float(material.rindex(_WL_C * 1000.0))
+    vd = _abbe_number(nd, nF, nC)
+    return f"{round((nd - 1.0) * 1000):03d}{round(vd * 10):03d}"
+
 class UserDefinedMaterial(MutableMapping):
     def __init__(self):
         self.map: dict[str, opticalmedium.InterpolatedMedium] = {}
@@ -64,11 +71,13 @@ class UserDefinedMaterial(MutableMapping):
         if len(value) < 4:
             raise ValueError("At least 4 wavelength-refractive index pairs are required.")
 
-        self.map[key] = opticalmedium.InterpolatedMedium(
+        material = opticalmedium.InterpolatedMedium(
             key,
             pairs=value,
             cat="custom",
         )
+        material.glass_code = lambda material=material: _render_safe_glass_code(material)
+        self.map[key] = material
     
     def __delitem__(self, key: str) -> None:
         del self.map[key]

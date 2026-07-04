@@ -47,6 +47,7 @@ describe("glassMapStore initial state", () => {
     expect(enabled.Schott).toBe(true);
     expect(enabled.Sumita).toBe(true);
     expect(enabled.Special).toBe(true);
+    expect(enabled.Custom).toBe(true);
   });
 
   it("selectedGlass is undefined", () => {
@@ -142,11 +143,39 @@ describe("glassMapStore actions", () => {
 
     store.getState().setCatalogsData(data);
 
-    expect(store.getState().catalogsData).toBe(data);
+    expect(store.getState().catalogsData).toEqual(data);
     expect(store.getState().lookupMaps?.mediumMap.get("schott:n-bk7")).toEqual({
       medium: "N-BK7",
       manufacturer: "Schott",
     });
+  });
+
+  it("upsertCustomGlasses merges custom data and rebuilds lookups", () => {
+    const store = makeStore();
+    store.getState().setCatalogsData(completeAllCatalogsData({}));
+
+    store.getState().upsertCustomGlasses({
+      CUSTOM_A: { ...mockGlassData, dispersionCoeffKind: "tabulated", dispersionCoeffs: [[587.56, 1.5168]] },
+    });
+
+    expect(store.getState().catalogsData?.Custom.CUSTOM_A?.dispersionCoeffKind).toBe("tabulated");
+    expect(store.getState().lookupMaps?.mediumMap.get("custom:custom_a")).toEqual({
+      medium: "CUSTOM_A",
+      manufacturer: "Custom",
+    });
+  });
+
+  it("deleteCustomGlasses removes custom data, rebuilds lookups, and clears deleted selection", () => {
+    const store = makeStore();
+    const custom = { ...mockGlassData, dispersionCoeffKind: "tabulated" as const, dispersionCoeffs: [[587.56, 1.5168] as const] };
+    store.getState().setCatalogsData(completeAllCatalogsData({ Custom: { CUSTOM_A: custom } }));
+    store.getState().setSelectedGlass({ catalogName: "Custom", glassName: "CUSTOM_A", data: custom });
+
+    store.getState().deleteCustomGlasses(["CUSTOM_A"]);
+
+    expect(store.getState().catalogsData?.Custom.CUSTOM_A).toBeUndefined();
+    expect(store.getState().lookupMaps?.mediumMap.get("custom:custom_a")).toBeUndefined();
+    expect(store.getState().selectedGlass).toBeUndefined();
   });
 
   it("setCatalogsData replaces catalog data and rebuilds lookups", () => {
@@ -161,7 +190,7 @@ describe("glassMapStore actions", () => {
 
     store.getState().setCatalogsData(data);
 
-    expect(store.getState().catalogsData).toBe(data);
+    expect(store.getState().catalogsData).toEqual(data);
     expect(store.getState().lookupMaps?.mediumMap.get("hoya:h-fk61")).toEqual({
       medium: "H-FK61",
       manufacturer: "Hoya",

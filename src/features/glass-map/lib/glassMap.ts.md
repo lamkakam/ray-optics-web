@@ -8,16 +8,17 @@ Type definitions and `CATALOG_NAMES` live in `features/glass-map/types/glassMap.
 ## Exports
 
 ### Constants
-- `CATALOG_COLOR_MAP` — maps each `CatalogName` to a hex color string for scatter plot rendering (`Special` -> `#f97316` orange)
+- `CATALOG_COLOR_MAP` — maps each `CatalogName` to a hex color string for scatter plot rendering (`Special` -> `#f97316` orange, `Custom` -> `#64748b` slate)
 
 ### Functions
 
-#### `completeAllCatalogsData(raw: Partial<AllGlassCatalogsData>): AllGlassCatalogsData`
+#### `completeAllCatalogsData(raw: AllGlassCatalogsData): CompleteGlassCatalogsData`
 Iterates over all known catalog names from `CATALOG_NAMES` and returns the frontend-ready catalog data, filling missing catalogs with empty objects.
 
 #### `computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType): PlotPoint[]`
 Computes scatter plot points based on current filter and axis settings:
 - Skips disabled catalogs
+- Treats missing raw catalog buckets as empty for test and boundary tolerance
 - x-axis: `abbeNumberD` when `abbeNumCenterLine='d'`, else `abbeNumberE`
 - y-axis for `refractiveIndex`: `refractiveIndexD` or `refractiveIndexE`
 - y-axis for `partialDispersion`: `partialDispersions[partialDispersionType]`

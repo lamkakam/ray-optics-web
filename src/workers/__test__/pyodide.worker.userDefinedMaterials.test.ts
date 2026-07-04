@@ -50,6 +50,7 @@ describe("user-defined material worker APIs", () => {
 
     expect(capturedCode).toContain("user_defined_materials[name] = pairs");
     expect(capturedCode).toContain("user_defined_materials.get_materials_data(names)");
+    expect(capturedCode).toContain("json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)");
     expect(capturedCode).toContain("CUSTOM_A");
     expect(capturedCode).not.toContain("len(pairs)");
     expect(capturedCode).not.toContain("len(set(names))");
@@ -69,6 +70,7 @@ describe("user-defined material worker APIs", () => {
     expect(capturedCode).toContain("del user_defined_materials[name]");
     expect(capturedCode).toContain("user_defined_materials[name] = pairs");
     expect(capturedCode).toContain("user_defined_materials.get_materials_data(names)");
+    expect(capturedCode).toContain("json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)");
     expect(capturedCode).not.toContain("len(pairs)");
     expect(capturedCode).not.toContain("len(set(names))");
     expect(result).toEqual(rawUserDefinedData);
@@ -96,6 +98,7 @@ describe("user-defined material worker APIs", () => {
     }, ["CUSTOM_A"]);
 
     expect(capturedCode).toContain("user_defined_materials.get_materials_data(names)");
+    expect(capturedCode).toContain("json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)");
     expect(capturedCode).toContain("CUSTOM_A");
     expect(result).toEqual(rawUserDefinedData);
     expect(result.CUSTOM_A.dispersionCoeffKind).toBe("tabulated");

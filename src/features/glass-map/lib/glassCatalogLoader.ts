@@ -2,10 +2,10 @@
 
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
-import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
+import type { CompleteGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 
 export type GlassCatalogsLoadResult =
-  | { readonly data: AllGlassCatalogsData; readonly error: undefined }
+  | { readonly data: CompleteGlassCatalogsData; readonly error: undefined }
   | { readonly data: undefined; readonly error: string };
 
 let inFlightLoads = new WeakMap<PyodideWorkerAPI, Promise<GlassCatalogsLoadResult>>();

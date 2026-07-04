@@ -13,6 +13,7 @@ Stores user-defined tabulated optical materials in an in-memory `MutableMapping`
 - `__setitem__(key, pairs)` registers a new tabulated material from wavelength/index pairs.
 - Duplicate keys raise `KeyError`.
 - Fewer than 4 wavelength/index pairs raises `ValueError`.
+- Registered `InterpolatedMedium` instances receive a render-safe `glass_code()` override that returns a compact float-parseable numeric string based on nd/Vd. This prevents RayOptics layout rendering from failing when it calculates material colors.
 - `__delitem__(key)` deletes an existing material.
 - `get_one_material_data(label)` returns `{ label: glass_entry }`.
 - `get_materials_data(keys)` returns a bare map for the requested labels and raises `KeyError` for missing labels.
@@ -45,4 +46,5 @@ User-defined material data uses the same frontend camelCase glass property names
 - Fraunhofer wavelengths are imported from `glass.helper`.
 - `InterpolatedMedium.rindex()` expects wavelengths in nm, so helper wavelengths in microns are multiplied by 1000 before interpolation.
 - Abbe numbers use F and C lines for both d and e centers.
+- The render-safe glass code uses the d-line refractive index and Vd-style Abbe number, encoded as `NNNVVV`.
 - Exported dict keys are camelCase to match the TypeScript worker contract directly; no frontend raw-data normalizer is required.

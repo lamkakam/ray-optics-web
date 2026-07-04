@@ -8,10 +8,10 @@ Runtime helpers and rendering lookup tables live in `features/glass-map/lib/glas
 ## Exports
 
 ### Constants
-- `CATALOG_NAMES` — readonly tuple of 7 catalog names: `['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special']`
+- `CATALOG_NAMES` — readonly tuple of 8 catalog names: `['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special', 'Custom']`
 
 ### Types
-- `CatalogName` — union of the 7 catalog name strings, derived from `CATALOG_NAMES`
+- `CatalogName` — union of the 8 catalog name strings, derived from `CATALOG_NAMES`
 - `DispersionCoeffKind` — catalog glass dispersion coefficient kinds: `'Schott2x6' | 'Sellmeier3T' | 'Sellmeier4T'`
 - `GlassData` — catalog/UI glass properties received directly from Python in frontend-ready camelCase:
   - `refractiveIndexD`, `refractiveIndexE` — refractive index at d/e lines
@@ -25,13 +25,15 @@ Runtime helpers and rendering lookup tables live in `features/glass-map/lib/glas
   - `partialDispersions` with required `P_fe`, `P_Fd`, `P_gF`
 - `UserDefinedGlassData` — user-defined glass data with `dispersionCoeffKind: "tabulated"` and wavelength/index tuple coefficients.
 - `UserDefinedGlassInput` — input for worker-side user-defined glass mutations: `{ name, pairs }`, where `pairs` is readonly wavelength/index tuples.
-- `AllGlassCatalogsData` — `Record<CatalogName, Record<string, GlassData>>`
+- `CatalogGlassData` — union of built-in catalog `GlassData` and tabulated `UserDefinedGlassData`
+- `AllGlassCatalogsData` — partial raw catalog map accepted at boundaries before normalization
+- `CompleteGlassCatalogsData` — complete catalog map with every `CatalogName`, used for store state after normalization
 - `UserDefinedMaterialsData` — bare user-defined glass map: `Record<string, UserDefinedGlassData>`
 - `AbbeNumCenterLine` — `'d' | 'e'`
 - `PartialDispersionType` — `'P_Fd' | 'P_fe' | 'P_gF'`
 - `GlassMapPlotType` — `'refractiveIndex' | 'partialDispersion'`
-- `SelectedGlass` — `{ catalogName, glassName, data }`
-- `PlotPoint` — `{ x, y, catalogName, glassName, data }`
+- `SelectedGlass` — `{ catalogName, glassName, data }`, where `data` may be built-in or user-defined glass data
+- `PlotPoint` — `{ x, y, catalogName, glassName, data }`, where `data` may be built-in or user-defined glass data
 
 ## Usages
 

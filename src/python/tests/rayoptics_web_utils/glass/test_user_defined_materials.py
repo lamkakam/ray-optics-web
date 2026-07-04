@@ -53,6 +53,14 @@ def test_catalog_attribute() -> None:
     assert user_defined_materials[key]._catalog == "custom"
 
 
+def test_glass_code_is_float_parseable_for_rayoptics_rendering() -> None:
+    user_defined_materials = UserDefinedMaterial()
+    key = "some_material_label"
+    user_defined_materials[key] = only_four_data_points
+
+    assert isinstance(float(user_defined_materials[key].glass_code()), float)
+
+
 def test_get_one_material_data() -> None:
     user_defined_materials = UserDefinedMaterial()
     key = "some_material_label"
@@ -101,7 +109,6 @@ def test_get_all_materials_data() -> None:
     assert key1 in all_materials_data
     assert key2 in all_materials_data
     assert key3 in all_materials_data
-
 
 
 

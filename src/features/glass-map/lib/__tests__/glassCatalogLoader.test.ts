@@ -59,6 +59,7 @@ describe("loadGlassCatalogs", () => {
     expect(result.error).toBeUndefined();
     expect(result.data).toEqual({
       CDGM: {},
+      Custom: {},
       Hikari: {},
       Hoya: {},
       Ohara: {},

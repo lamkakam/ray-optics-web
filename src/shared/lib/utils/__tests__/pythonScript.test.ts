@@ -36,6 +36,20 @@ const baseModel: OpticalModel = {
 };
 
 describe("buildOpticalModelScript", () => {
+  it("uses user_defined_materials lookup for Custom media", () => {
+    const script = buildOpticalModelScript({
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          medium: "CUSTOM_A",
+          manufacturer: "Custom",
+        },
+      ],
+    });
+
+    expect(script).toContain("sm.add_surface([23.713, 4.831, user_defined_materials[\"CUSTOM_A\"]])");
+  });
   it("should set optical specs by calling PupilSpec, FieldSpec, and WvlSpec correctly", () => {
     const script = buildOpticalModelScript(baseModel);
     expect(script).toContain("osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)");

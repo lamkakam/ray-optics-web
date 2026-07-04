@@ -35,6 +35,7 @@ Collapsible side navigation panel toggled by the hamburger button in the header.
 | Example Systems | `/example-systems` |
 | Optimization | `/optimization` |
 | Glass Map | `/glass-map` |
+| Import Custom Glass | `/import-custom-glass` |
 | Settings | `/settings` |
 | Privacy Policy | `/privacy-policy` |
 | About | `/about` |

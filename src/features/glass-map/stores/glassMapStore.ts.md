@@ -11,7 +11,7 @@ Zustand store slice for persistent Glass Map UI state and successfully loaded ap
 | `partialDispersionType` | `PartialDispersionType` | `'P_gF'` | Which partial dispersion for y-axis |
 | `enabledCatalogs` | `Record<CatalogName, boolean>` | all `true` | Per-catalog visibility filter |
 | `selectedGlass` | `SelectedGlass \| undefined` | `undefined` | Currently clicked/selected glass |
-| `catalogsData` | `AllGlassCatalogsData \| undefined` | `undefined` | Normalized loaded glass catalog data shared across the app |
+| `catalogsData` | `CompleteGlassCatalogsData \| undefined` | `undefined` | Normalized loaded glass catalog data shared across the app, including `Custom` |
 | `lookupMaps` | `GlassLookupMaps \| undefined` | `undefined` | Lookup maps derived by the store from the same normalized catalog data |
 
 ```ts
@@ -32,6 +32,8 @@ interface GlassMapRouteIntent {
 | `enableCatalog(name)` | Force a single catalog to enabled=true without toggling others |
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |
 | `setCatalogsData(data)` | Replace normalized catalog data and rebuild lookup maps from it |
+| `upsertCustomGlasses(materialsData)` | Merge worker-returned user-defined glass data into `catalogsData.Custom` and rebuild lookup maps |
+| `deleteCustomGlasses(labels)` | Remove labels from `catalogsData.Custom`, rebuild lookup maps, and clear `selectedGlass` when its Custom entry was deleted |
 
 ## Helper Exports
 
@@ -40,6 +42,7 @@ Builds app-wide case-insensitive lookup maps from normalized catalog data:
 - `manufacturerMap` maps trimmed lowercase catalog names to canonical `CatalogName` values.
 - `mediumMap` maps trimmed lowercase special-media names, aliases, and `catalog:glass` keys to canonical `{ medium, manufacturer }` values.
 - Catalog glasses use keys like `hoya:h-lak52`.
+- Custom glasses use keys like `custom:custom_label` and resolve with `manufacturer: "Custom"`.
 - Special media use an empty manufacturer and include built-ins `CaF2`, `Fused silica`, and `Water`, loaded non-`REFL` `Special` entries, and `fluorite` / `fluorspar` aliases for `CaF2`.
 - `REFL` is intentionally not exposed through a lowercase special-media alias.
 

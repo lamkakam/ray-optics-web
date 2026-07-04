@@ -33,9 +33,21 @@ describe("SideNav", () => {
     expect(screen.getByRole("link", { name: "Lens Editor" })).toHaveAttribute("href", "/");
     expect(screen.getByRole("link", { name: "Example Systems" })).toHaveAttribute("href", "/example-systems");
     expect(screen.getByRole("link", { name: "Glass Map" })).toHaveAttribute("href", "/glass-map");
+    expect(screen.getByRole("link", { name: "Import Custom Glass" })).toHaveAttribute("href", "/import-custom-glass");
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings");
     expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("href", "/privacy-policy");
     expect(screen.getByRole("link", { name: "About" })).toHaveAttribute("href", "/about");
+  });
+
+  it("orders glass routes before settings", () => {
+    render(<SideNav isOpen={true} isLG={false} onClose={jest.fn()} />);
+
+    const labels = screen.getAllByRole("link").map((link) => link.textContent);
+    expect(labels.slice(labels.indexOf("Glass Map"), labels.indexOf("Settings") + 1)).toEqual([
+      "Glass Map",
+      "Import Custom Glass",
+      "Settings",
+    ]);
   });
 
   it("marks the root route as active when no segment is selected", () => {

@@ -14,6 +14,7 @@ import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData"
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import {
   type AllGlassCatalogsData,
+  type CompleteGlassCatalogsData,
   type UserDefinedMaterialsData,
   type UserDefinedGlassInput,
 } from "@/features/glass-map/types/glassMap";
@@ -29,6 +30,14 @@ let activeOptimizationInterruptBuffer: SharedArrayBuffer | undefined;
 let activeOptimizationInterruptView: Int32Array | undefined;
 
 const PYODIDE_INTERRUPT_SIGNAL = 2;
+const USER_DEFINED_MATERIALS_JSON_DEFAULT = `
+def _json_default(value):
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    if hasattr(value, "item"):
+        return value.item()
+    raise TypeError(f"Object of type {value.__class__.__name__} is not JSON serializable")
+`;
 
 type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
 type RawFanAxisData = {
@@ -464,9 +473,9 @@ export async function _focusByPolyStrehl(
 
 export async function _getAllGlassCatalogsData(
   runPython: (code: string) => Promise<unknown>
-): Promise<AllGlassCatalogsData> {
+): Promise<CompleteGlassCatalogsData> {
   const json = (await runPython(`json.dumps(get_all_glass_catalogs_data())`)) as string;
-  return JSON.parse(json) as AllGlassCatalogsData;
+  return JSON.parse(json) as CompleteGlassCatalogsData;
 }
 
 export async function _addUserDefinedGlasses(
@@ -475,6 +484,7 @@ export async function _addUserDefinedGlasses(
 ): Promise<UserDefinedMaterialsData> {
   const materialsJson = JSON.stringify(materials);
   const json = (await runPython(`
+${USER_DEFINED_MATERIALS_JSON_DEFAULT}
 materials = json.loads(${JSON.stringify(materialsJson)})
 names = [material["name"] for material in materials]
 for material in materials:
@@ -485,7 +495,7 @@ for material in materials:
     name = material["name"]
     pairs = material["pairs"]
     user_defined_materials[name] = pairs
-json.dumps(user_defined_materials.get_materials_data(names))
+json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)
 `)) as string;
   return JSON.parse(json) as UserDefinedMaterialsData;
 }
@@ -511,6 +521,7 @@ export async function _updateUserDefinedGlasses(
 ): Promise<UserDefinedMaterialsData> {
   const materialsJson = JSON.stringify(materials);
   const json = (await runPython(`
+${USER_DEFINED_MATERIALS_JSON_DEFAULT}
 materials = json.loads(${JSON.stringify(materialsJson)})
 names = [material["name"] for material in materials]
 for material in materials:
@@ -522,7 +533,7 @@ for material in materials:
     pairs = material["pairs"]
     del user_defined_materials[name]
     user_defined_materials[name] = pairs
-json.dumps(user_defined_materials.get_materials_data(names))
+json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)
 `)) as string;
   return JSON.parse(json) as UserDefinedMaterialsData;
 }
@@ -533,8 +544,9 @@ export async function _getUserDefinedGlasses(
 ): Promise<UserDefinedMaterialsData> {
   const namesJson = JSON.stringify(names);
   const json = (await runPython(`
+${USER_DEFINED_MATERIALS_JSON_DEFAULT}
 names = json.loads(${JSON.stringify(namesJson)})
-json.dumps(user_defined_materials.get_materials_data(names))
+json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)
 `)) as string;
   return JSON.parse(json) as UserDefinedMaterialsData;
 }

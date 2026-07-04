@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { segment: "example-systems", href: "/example-systems", label: "Example Systems" },
   { segment: "optimization", href: "/optimization", label: "Optimization" },
   { segment: "glass-map", href: "/glass-map", label: "Glass Map" },
+  { segment: "import-custom-glass", href: "/import-custom-glass", label: "Import Custom Glass" },
   { segment: "settings", href: "/settings", label: "Settings" },
   { segment: "privacy-policy", href: "/privacy-policy", label: "Privacy Policy" },
   { segment: "about", href: "/about", label: "About" },
