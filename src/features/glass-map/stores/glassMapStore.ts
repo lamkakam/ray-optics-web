@@ -40,7 +40,7 @@ export interface GlassMapRouteIntent {
 export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
     plotType: 'refractiveIndex',
     abbeNumCenterLine: 'd',
-    partialDispersionType: 'P_g_F',
+    partialDispersionType: 'P_gF',
     enabledCatalogs: { ...allEnabled },
     selectedGlass: undefined,
   setPlotType: (t) => set({ plotType: t }),

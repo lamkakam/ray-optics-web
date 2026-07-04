@@ -10,7 +10,7 @@ const mockGlassData = {
   refractiveIndexE: 1.5190,
   abbeNumberD: 64.17,
   abbeNumberE: 63.96,
-  partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+  partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
   dispersionCoeffKind: 'Sellmeier3T' as const,
   dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
 };
@@ -30,9 +30,9 @@ describe("glassMapStore initial state", () => {
     expect(store.getState().abbeNumCenterLine).toBe("d");
   });
 
-  it("partialDispersionType is P_g_F", () => {
+  it("partialDispersionType is P_gF", () => {
     const store = makeStore();
-    expect(store.getState().partialDispersionType).toBe("P_g_F");
+    expect(store.getState().partialDispersionType).toBe("P_gF");
   });
 
   it("all catalogs enabled", () => {
@@ -66,10 +66,10 @@ describe("glassMapStore actions", () => {
     expect(store.getState().abbeNumCenterLine).toBe("e");
   });
 
-  it("setPartialDispersionType sets P_F_d", () => {
+  it("setPartialDispersionType sets P_Fd", () => {
     const store = makeStore();
-    store.getState().setPartialDispersionType("P_F_d");
-    expect(store.getState().partialDispersionType).toBe("P_F_d");
+    store.getState().setPartialDispersionType("P_Fd");
+    expect(store.getState().partialDispersionType).toBe("P_Fd");
   });
 
   it("toggleCatalog disables CDGM", () => {

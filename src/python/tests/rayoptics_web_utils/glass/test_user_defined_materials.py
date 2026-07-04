@@ -60,17 +60,17 @@ def test_get_one_material_data() -> None:
 
     material_data = user_defined_materials.get_one_material_data(key)
     assert key in material_data
-    assert material_data[key]["dispersion_coeff_kind"] == "tabulated"
-    assert material_data[key]["dispersion_coeffs"] == ohara_s_bsm22
-    assert material_data[key]["refractive_index_d"] - 1.6223 < 1e-5
-    assert material_data[key]["refractive_index_e"] - 1.62508 < 1e-5
-    assert material_data[key]["abbe_number_d"] - 53.17 < 1
-    assert material_data[key]["abbe_number_e"] - 52.88 < 1
+    assert material_data[key]["dispersionCoeffKind"] == "tabulated"
+    assert material_data[key]["dispersionCoeffs"] == ohara_s_bsm22
+    assert material_data[key]["refractiveIndexD"] - 1.6223 < 1e-5
+    assert material_data[key]["refractiveIndexE"] - 1.62508 < 1e-5
+    assert material_data[key]["abbeNumberD"] - 53.17 < 1
+    assert material_data[key]["abbeNumberE"] - 52.88 < 1
 
-    assert "partial_dispersions" in material_data[key]
-    assert material_data[key]["partial_dispersions"]["P_F_e"] - 0.4607 < 0.01
-    assert material_data[key]["partial_dispersions"]["P_F_d"] - 0.6983 < 0.01
-    assert material_data[key]["partial_dispersions"]["P_g_F"] - 0.5542 < 0.01
+    assert "partialDispersions" in material_data[key]
+    assert material_data[key]["partialDispersions"]["P_fe"] - 0.4607 < 0.01
+    assert material_data[key]["partialDispersions"]["P_Fd"] - 0.6983 < 0.01
+    assert material_data[key]["partialDispersions"]["P_gF"] - 0.5542 < 0.01
 
 def test_get_materials_data() -> None:
     user_defined_materials = UserDefinedMaterial()

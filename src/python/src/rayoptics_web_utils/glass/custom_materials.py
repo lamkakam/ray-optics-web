@@ -97,9 +97,9 @@ def _build_sellmeier_special_material_data(
 
     denom = nF - nC
     partial_dispersions = {
-        "P_F_e": _partial_dispersion(nF, ne, nF, nC),
-        "P_F_d": _partial_dispersion(nF, nd, nF, nC),
-        "P_g_F": _partial_dispersion(ng, nF, nF, nC),
+        "P_fe": _partial_dispersion(nF, ne, nF, nC),
+        "P_Fd": _partial_dispersion(nF, nd, nF, nC),
+        "P_gF": _partial_dispersion(ng, nF, nF, nC),
     }
 
     b_coeffs = raw_dispersion_coeffs[::2]
@@ -117,13 +117,13 @@ def _build_sellmeier_special_material_data(
         raise ValueError(f"Unsupported Sellmeier term count for {material_name}: {term_count}")
 
     return {
-        "dispersion_coeff_kind": dispersion_coeff_kind,
-        "dispersion_coeffs": [*b_coeffs, *exported_c_coeffs],
-        "refractive_index_d": nd,
-        "refractive_index_e": ne,
-        "abbe_number_d": abbe_number_d,
-        "abbe_number_e": abbe_number_e,
-        "partial_dispersions": partial_dispersions,
+        "dispersionCoeffKind": dispersion_coeff_kind,
+        "dispersionCoeffs": [*b_coeffs, *exported_c_coeffs],
+        "refractiveIndexD": nd,
+        "refractiveIndexE": ne,
+        "abbeNumberD": abbe_number_d,
+        "abbeNumberE": abbe_number_e,
+        "partialDispersions": partial_dispersions,
     }
 
 

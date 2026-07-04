@@ -6,12 +6,12 @@ from rayoptics_web_utils.glass.helper import (_partial_dispersion)
 
 def _partial_dispersions(data: pd.Series) -> dict[str, float]:
     """
-    Compute P_F_e, P_F_d, P_g_F from refractive index lines. Returns 0.0 if any cannot be computed.
+    Compute P_fe, P_Fd, P_gF from refractive index lines. Returns 0.0 if any cannot be computed.
     Return type:
     {
-        "P_F_e": float,
-        "P_F_d": float,
-        "P_g_F": float,
+        "P_fe": float,
+        "P_Fd": float,
+        "P_gF": float,
     }
     """
     nF = data["refractive indices"]["F"]
@@ -21,9 +21,9 @@ def _partial_dispersions(data: pd.Series) -> dict[str, float]:
     ng = data["refractive indices"]["g"]
 
     return {
-        "P_F_e": _partial_dispersion(nF, ne, nF, nC),
-        "P_F_d": _partial_dispersion(nF, nd, nF, nC),
-        "P_g_F": _partial_dispersion(ng, nF, nF, nC),
+        "P_fe": _partial_dispersion(nF, ne, nF, nC),
+        "P_Fd": _partial_dispersion(nF, nd, nF, nC),
+        "P_gF": _partial_dispersion(ng, nF, nF, nC),
     }
 
 def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, str | list[float]]:
@@ -100,13 +100,13 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
     Build a single glass dict from a glass_data() Series.
     Return type:
     {
-        "refractive_index_d": float,
-        "refractive_index_e": float,
-        "abbe_number_d": float,
-        "abbe_number_e": float,
-        "partial_dispersions": dict[str, float],
-        "dispersion_coeff_kind": str, # "Schott2x6" or "Sellmeier3T"
-        "dispersion_coeffs": list[float],
+        "refractiveIndexD": float,
+        "refractiveIndexE": float,
+        "abbeNumberD": float,
+        "abbeNumberE": float,
+        "partialDispersions": dict[str, float],
+        "dispersionCoeffKind": str, # "Schott2x6" or "Sellmeier3T"
+        "dispersionCoeffs": list[float],
     }
     """
     nd = data["refractive indices"]["d"]
@@ -119,13 +119,13 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
     dispersion_coeff_data = _get_dispersion_coefficients(catalog_name, data)
 
     return {
-        "refractive_index_d": nd,
-        "refractive_index_e": ne,
-        "abbe_number_d": vd,
-        "abbe_number_e": ve,
-        "partial_dispersions": partial_dispersions,
-        "dispersion_coeff_kind": dispersion_coeff_data["dispersion_coeffs_kind"],
-        "dispersion_coeffs": dispersion_coeff_data["dispersion_coeffs"],
+        "refractiveIndexD": nd,
+        "refractiveIndexE": ne,
+        "abbeNumberD": vd,
+        "abbeNumberE": ve,
+        "partialDispersions": partial_dispersions,
+        "dispersionCoeffKind": dispersion_coeff_data["dispersion_coeffs_kind"],
+        "dispersionCoeffs": dispersion_coeff_data["dispersion_coeffs"],
     }
 
 

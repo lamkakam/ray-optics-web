@@ -1,7 +1,7 @@
 # `features/glass-map/lib/glassCatalogsResource.ts`
 
 ## Purpose
-Glass-map client-side loader for normalized glass catalog data fetched from the Pyodide worker. It supports both eager preloading and Suspense reads while deduplicating requests per worker proxy.
+Glass-map client-side loader for frontend-ready glass catalog data fetched from the Pyodide worker. It supports both eager preloading and Suspense reads while deduplicating requests per worker proxy.
 
 ## Exports
 
@@ -12,7 +12,7 @@ preloadGlassCatalogs(proxy: PyodideWorkerAPI): Promise<GlassCatalogsLoadResult>
 
 - Starts the worker fetch on first call for a given proxy
 - Reuses the same in-flight or completed request for later callers
-- Resolves with normalized catalog data, lookup maps, or an error result
+- Resolves with catalog data, lookup maps, or an error result
 
 ### `peekGlassCatalogs(proxy)`
 ```ts
@@ -29,7 +29,7 @@ readGlassCatalogs(proxy: PyodideWorkerAPI): GlassCatalogsLoadResult
 
 - Starts loading on first read if needed
 - Throws the pending promise while loading so a `Suspense` boundary can render a fallback
-- Returns the settled normalized result once available
+- Returns the settled result once available
 
 ### `_resetGlassCatalogsResourceForTest()`
 ```ts
@@ -40,6 +40,6 @@ _resetGlassCatalogsResourceForTest(): void
 
 ## Behaviour
 - Uses a module-level `WeakMap<PyodideWorkerAPI, GlassCatalogsResourceEntry>` for dedupe
-- Normalizes worker payloads with `normalizeAllCatalogsData()` from `features/glass-map/lib/glassMap`
-- Builds case-insensitive manufacturer and medium lookup maps with `buildGlassLookupMaps()` immediately after normalization
+- Completes worker payload catalog keys with `completeAllCatalogsData()` from `features/glass-map/lib/glassMap`
+- Builds case-insensitive manufacturer and medium lookup maps with `buildGlassLookupMaps()` immediately after catalog completion
 - Represents failure as `{ data: undefined, error: string }` rather than throwing after settlement

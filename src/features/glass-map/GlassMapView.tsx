@@ -32,9 +32,9 @@ function axisLabels(
     return { xLabel, yLabel: abbeNumCenterLine === "d" ? "Nd" : "Ne" };
   }
   const yLabelMap: Record<GlassMapStore["partialDispersionType"], string> = {
-    P_F_d: "P_F,d",
-    P_F_e: "P_F,e",
-    P_g_F: "P_g,F",
+    P_Fd: "P_F,d",
+    P_fe: "P_F,e",
+    P_gF: "P_g,F",
   };
   return { xLabel, yLabel: yLabelMap[partialDispersionType] };
 }

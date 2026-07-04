@@ -1,7 +1,7 @@
 "use client";
 
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { buildGlassLookupMaps, normalizeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
+import { buildGlassLookupMaps, completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 import type { AllGlassCatalogsData, GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 
 export type GlassCatalogsLoadResult =
@@ -24,7 +24,7 @@ function createEntry(proxy: PyodideWorkerAPI): GlassCatalogsResourceEntry {
     promise: proxy
       .getAllGlassCatalogsData()
       .then((rawData) => {
-        const data = normalizeAllCatalogsData(rawData);
+        const data = completeAllCatalogsData(rawData);
         const result: GlassCatalogsLoadResult = {
           data,
           lookupMaps: buildGlassLookupMaps(data),

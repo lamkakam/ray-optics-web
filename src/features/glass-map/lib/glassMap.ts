@@ -8,8 +8,6 @@ import {
   type GlassMapPlotType,
   type PartialDispersionType,
   type PlotPoint,
-  type RawAllGlassCatalogsData,
-  type RawCatalogGlassData,
 } from "@/features/glass-map/types/glassMap";
 
 export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {
@@ -29,31 +27,10 @@ function normalizeLookupKey(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function normalizeGlassData(raw: RawCatalogGlassData): GlassData {
-  return {
-    refractiveIndexD: raw.refractive_index_d,
-    refractiveIndexE: raw.refractive_index_e,
-    abbeNumberD: raw.abbe_number_d,
-    abbeNumberE: raw.abbe_number_e,
-    partialDispersions: {
-      P_F_e: raw.partial_dispersions.P_F_e,
-      P_F_d: raw.partial_dispersions.P_F_d,
-      P_g_F: raw.partial_dispersions.P_g_F,
-    },
-    dispersionCoeffKind: raw.dispersion_coeff_kind,
-    dispersionCoeffs: raw.dispersion_coeffs,
-  };
-}
-
-export function normalizeAllCatalogsData(raw: RawAllGlassCatalogsData): AllGlassCatalogsData {
+export function completeAllCatalogsData(raw: Partial<AllGlassCatalogsData>): AllGlassCatalogsData {
   const result = {} as Record<CatalogName, Record<string, GlassData>>;
   for (const catalogName of CATALOG_NAMES) {
-    const rawCatalog = raw[catalogName] ?? {};
-    const catalog: Record<string, GlassData> = {};
-    for (const [glassName, rawGlass] of Object.entries(rawCatalog)) {
-      catalog[glassName] = normalizeGlassData(rawGlass);
-    }
-    result[catalogName] = catalog;
+    result[catalogName] = raw[catalogName] ?? {};
   }
   return result as AllGlassCatalogsData;
 }

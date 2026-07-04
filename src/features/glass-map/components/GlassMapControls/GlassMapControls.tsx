@@ -30,9 +30,9 @@ const ABBE_LINE_OPTIONS: ReadonlyArray<RadioOption<AbbeNumCenterLine>> = [
 ];
 
 const PARTIAL_DISPERSION_OPTIONS: ReadonlyArray<RadioOption<PartialDispersionType>> = [
-  { value: "P_F_d", label: "P_F,d", labelNode: <MathJax inline>{`\\(P_{F,d}\\)`}</MathJax> },
-  { value: "P_F_e", label: "P_F,e", labelNode: <MathJax inline>{`\\(P_{F,e}\\)`}</MathJax> },
-  { value: "P_g_F", label: "P_g,F", labelNode: <MathJax inline>{`\\(P_{g,F}\\)`}</MathJax> },
+  { value: "P_Fd", label: "P_F,d", labelNode: <MathJax inline>{`\\(P_{F,d}\\)`}</MathJax> },
+  { value: "P_fe", label: "P_F,e", labelNode: <MathJax inline>{`\\(P_{F,e}\\)`}</MathJax> },
+  { value: "P_gF", label: "P_g,F", labelNode: <MathJax inline>{`\\(P_{g,F}\\)`}</MathJax> },
 ];
 
 export function GlassMapControls({

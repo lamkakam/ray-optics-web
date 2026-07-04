@@ -6,7 +6,7 @@ import {
   _updateUserDefinedGlasses,
 } from "../pyodide.worker";
 import type {
-  RawUserDefinedMaterialsData,
+  UserDefinedMaterialsData,
   UserDefinedGlassInput,
 } from "@/features/glass-map/types/glassMap";
 
@@ -22,15 +22,15 @@ const materials: readonly UserDefinedGlassInput[] = [
   },
 ];
 
-const rawUserDefinedData: RawUserDefinedMaterialsData = {
+const rawUserDefinedData: UserDefinedMaterialsData = {
   CUSTOM_A: {
-    refractive_index_d: 1.5168,
-    refractive_index_e: 1.518,
-    abbe_number_d: 64.17,
-    abbe_number_e: 63.96,
-    partial_dispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
-    dispersion_coeff_kind: "tabulated",
-    dispersion_coeffs: [
+    refractiveIndexD: 1.5168,
+    refractiveIndexE: 1.518,
+    abbeNumberD: 64.17,
+    abbeNumberE: 63.96,
+    partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
+    dispersionCoeffKind: "tabulated",
+    dispersionCoeffs: [
       [0.4861, 1.522],
       [0.5461, 1.518],
       [0.5876, 1.5168],
@@ -54,8 +54,8 @@ describe("user-defined material worker APIs", () => {
     expect(capturedCode).not.toContain("len(pairs)");
     expect(capturedCode).not.toContain("len(set(names))");
     expect(result).toEqual(rawUserDefinedData);
-    expect(result.CUSTOM_A.dispersion_coeff_kind).toBe("tabulated");
-    expect(result.CUSTOM_A.dispersion_coeffs[0]).toEqual([0.4861, 1.522]);
+    expect(result.CUSTOM_A.dispersionCoeffKind).toBe("tabulated");
+    expect(result.CUSTOM_A.dispersionCoeffs[0]).toEqual([0.4861, 1.522]);
   });
 
   it("_updateUserDefinedGlasses deletes then sets materials and returns raw user-defined material data", async () => {
@@ -98,6 +98,6 @@ describe("user-defined material worker APIs", () => {
     expect(capturedCode).toContain("user_defined_materials.get_materials_data(names)");
     expect(capturedCode).toContain("CUSTOM_A");
     expect(result).toEqual(rawUserDefinedData);
-    expect(result.CUSTOM_A.dispersion_coeff_kind).toBe("tabulated");
+    expect(result.CUSTOM_A.dispersionCoeffKind).toBe("tabulated");
   });
 });

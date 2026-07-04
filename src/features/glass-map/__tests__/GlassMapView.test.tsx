@@ -6,7 +6,7 @@ import { GlassMapView } from "@/features/glass-map/GlassMapView";
 import { GlassMapStoreContext } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
+import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
 
 jest.mock("better-react-mathjax", () => ({
@@ -30,16 +30,16 @@ jest.mock("next/link", () => {
   };
 });
 
-const rawData: RawAllGlassCatalogsData = {
+const rawData: AllGlassCatalogsData = {
   Schott: {
     "N-BK7": {
-      refractive_index_d: 1.5168,
-      refractive_index_e: 1.519,
-      abbe_number_d: 64.17,
-      abbe_number_e: 63.96,
-      partial_dispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
-      dispersion_coeff_kind: 'Sellmeier3T' as const,
-      dispersion_coeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+      refractiveIndexD: 1.5168,
+      refractiveIndexE: 1.519,
+      abbeNumberD: 64.17,
+      abbeNumberE: 63.96,
+      partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
+      dispersionCoeffKind: 'Sellmeier3T' as const,
+      dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
     },
   },
   CDGM: {},
@@ -47,6 +47,7 @@ const rawData: RawAllGlassCatalogsData = {
   Hoya: {},
   Ohara: {},
   Sumita: {},
+  Special: {},
 };
 
 function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
@@ -307,7 +308,7 @@ describe("GlassMapView", () => {
           refractiveIndexE: 1.519,
           abbeNumberD: 64.17,
           abbeNumberE: 63.96,
-          partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+          partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
           dispersionCoeffKind: "Sellmeier3T",
           dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
         },
@@ -394,13 +395,13 @@ describe("GlassMapView", () => {
         ...rawData,
         Ohara: {
           "S-TIH6": {
-            refractive_index_d: 1.80518,
-            refractive_index_e: 1.8163,
-            abbe_number_d: 25.36,
-            abbe_number_e: 25.2,
-            partial_dispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
-            dispersion_coeff_kind: "Sellmeier3T" as const,
-            dispersion_coeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+            refractiveIndexD: 1.80518,
+            refractiveIndexE: 1.8163,
+            abbeNumberD: 25.36,
+            abbeNumberE: 25.2,
+            partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+            dispersionCoeffKind: "Sellmeier3T" as const,
+            dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
           },
         },
       }),
@@ -484,13 +485,13 @@ describe("GlassMapView", () => {
         Schott: {
           ...rawData.Schott,
           "N-SF6": {
-            refractive_index_d: 1.80518,
-            refractive_index_e: 1.8163,
-            abbe_number_d: 25.36,
-            abbe_number_e: 25.2,
-            partial_dispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
-            dispersion_coeff_kind: "Sellmeier3T" as const,
-            dispersion_coeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+            refractiveIndexD: 1.80518,
+            refractiveIndexE: 1.8163,
+            abbeNumberD: 25.36,
+            abbeNumberE: 25.2,
+            partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+            dispersionCoeffKind: "Sellmeier3T" as const,
+            dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
           },
         },
       }),

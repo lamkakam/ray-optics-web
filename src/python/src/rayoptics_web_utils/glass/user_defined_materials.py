@@ -32,16 +32,16 @@ class UserDefinedMaterial(MutableMapping):
 
         return {
             label: {
-                "dispersion_coeff_kind": "tabulated",
-                "dispersion_coeffs": [(self.map[label].wvls[i], self.map[label].rndx[i]) for i in range(len(self.map[label].wvls))],
-                "refractive_index_d": nd,
-                "refractive_index_e": ne,
-                "abbe_number_d": _abbe_number(nd, nF, nC),
-                "abbe_number_e": _abbe_number(ne, nF, nC),
-                "partial_dispersions": {
-                    "P_F_e": _partial_dispersion(nF, ne, nF, nC),
-                    "P_F_d": _partial_dispersion(nF, nd, nF, nC),
-                    "P_g_F": _partial_dispersion(ng, nF, nF, nC),
+                "dispersionCoeffKind": "tabulated",
+                "dispersionCoeffs": [(self.map[label].wvls[i], self.map[label].rndx[i]) for i in range(len(self.map[label].wvls))],
+                "refractiveIndexD": nd,
+                "refractiveIndexE": ne,
+                "abbeNumberD": _abbe_number(nd, nF, nC),
+                "abbeNumberE": _abbe_number(ne, nF, nC),
+                "partialDispersions": {
+                    "P_fe": _partial_dispersion(nF, ne, nF, nC),
+                    "P_Fd": _partial_dispersion(nF, nd, nF, nC),
+                    "P_gF": _partial_dispersion(ng, nF, nF, nC),
                 },
             }
         }

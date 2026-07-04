@@ -13,8 +13,8 @@ import { type ZernikeData, type ZernikeOrdering } from "@/features/lens-editor/t
 import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
 import {
-  type RawAllGlassCatalogsData,
-  type RawUserDefinedMaterialsData,
+  type AllGlassCatalogsData,
+  type UserDefinedMaterialsData,
   type UserDefinedGlassInput,
 } from "@/features/glass-map/types/glassMap";
 import type { InitProgress } from "@/shared/hooks/usePyodide";
@@ -464,15 +464,15 @@ export async function _focusByPolyStrehl(
 
 export async function _getAllGlassCatalogsData(
   runPython: (code: string) => Promise<unknown>
-): Promise<RawAllGlassCatalogsData> {
+): Promise<AllGlassCatalogsData> {
   const json = (await runPython(`json.dumps(get_all_glass_catalogs_data())`)) as string;
-  return JSON.parse(json) as RawAllGlassCatalogsData;
+  return JSON.parse(json) as AllGlassCatalogsData;
 }
 
 export async function _addUserDefinedGlasses(
   runPython: (code: string) => Promise<unknown>,
   materials: readonly UserDefinedGlassInput[],
-): Promise<RawUserDefinedMaterialsData> {
+): Promise<UserDefinedMaterialsData> {
   const materialsJson = JSON.stringify(materials);
   const json = (await runPython(`
 materials = json.loads(${JSON.stringify(materialsJson)})
@@ -487,7 +487,7 @@ for material in materials:
     user_defined_materials[name] = pairs
 json.dumps(user_defined_materials.get_materials_data(names))
 `)) as string;
-  return JSON.parse(json) as RawUserDefinedMaterialsData;
+  return JSON.parse(json) as UserDefinedMaterialsData;
 }
 
 export async function _deleteUserDefinedGlasses(
@@ -508,7 +508,7 @@ for name in names:
 export async function _updateUserDefinedGlasses(
   runPython: (code: string) => Promise<unknown>,
   materials: readonly UserDefinedGlassInput[],
-): Promise<RawUserDefinedMaterialsData> {
+): Promise<UserDefinedMaterialsData> {
   const materialsJson = JSON.stringify(materials);
   const json = (await runPython(`
 materials = json.loads(${JSON.stringify(materialsJson)})
@@ -524,19 +524,19 @@ for material in materials:
     user_defined_materials[name] = pairs
 json.dumps(user_defined_materials.get_materials_data(names))
 `)) as string;
-  return JSON.parse(json) as RawUserDefinedMaterialsData;
+  return JSON.parse(json) as UserDefinedMaterialsData;
 }
 
 export async function _getUserDefinedGlasses(
   runPython: (code: string) => Promise<unknown>,
   names: readonly string[],
-): Promise<RawUserDefinedMaterialsData> {
+): Promise<UserDefinedMaterialsData> {
   const namesJson = JSON.stringify(names);
   const json = (await runPython(`
 names = json.loads(${JSON.stringify(namesJson)})
 json.dumps(user_defined_materials.get_materials_data(names))
 `)) as string;
-  return JSON.parse(json) as RawUserDefinedMaterialsData;
+  return JSON.parse(json) as UserDefinedMaterialsData;
 }
 
 export async function _evaluateOptimizationProblem(
@@ -765,11 +765,11 @@ export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: 
   return await _focusByPolyStrehl(requirePyodide(), opticalModel, fieldIndex);
 }
 
-export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData> {
+export async function getAllGlassCatalogsData(): Promise<AllGlassCatalogsData> {
   return await _getAllGlassCatalogsData(requirePyodide());
 }
 
-export async function addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData> {
+export async function addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData> {
   return await _addUserDefinedGlasses(requirePyodide(), materials);
 }
 
@@ -777,11 +777,11 @@ export async function deleteUserDefinedGlasses(names: readonly string[]): Promis
   await _deleteUserDefinedGlasses(requirePyodide(), names);
 }
 
-export async function updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData> {
+export async function updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData> {
   return await _updateUserDefinedGlasses(requirePyodide(), materials);
 }
 
-export async function getUserDefinedGlasses(names: readonly string[]): Promise<RawUserDefinedMaterialsData> {
+export async function getUserDefinedGlasses(names: readonly string[]): Promise<UserDefinedMaterialsData> {
   return await _getUserDefinedGlasses(requirePyodide(), names);
 }
 

@@ -3,43 +3,27 @@ export type CatalogName = typeof CATALOG_NAMES[number];
 
 export type DispersionCoeffKind = 'Schott2x6' | 'Sellmeier3T' | 'Sellmeier4T';
 
-export interface GlassData {
+interface GlassDataBase {
   readonly refractiveIndexD: number;
   readonly refractiveIndexE: number;
   readonly abbeNumberD: number;
   readonly abbeNumberE: number;
   readonly partialDispersions: {
-    readonly P_F_e: number;
-    readonly P_F_d: number;
-    readonly P_g_F: number;
+    readonly P_fe: number;
+    readonly P_Fd: number;
+    readonly P_gF: number;
   };
+}
+
+export interface GlassData extends GlassDataBase {
   readonly dispersionCoeffKind: DispersionCoeffKind;
   readonly dispersionCoeffs: readonly number[];
 }
 
-interface RawGlassDataBase {
-  readonly refractive_index_d: number;
-  readonly refractive_index_e: number;
-  readonly abbe_number_d: number;
-  readonly abbe_number_e: number;
-  readonly partial_dispersions: {
-    readonly P_F_e: number;
-    readonly P_F_d: number;
-      readonly P_g_F: number;
-  };
+export interface UserDefinedGlassData extends GlassDataBase {
+  readonly dispersionCoeffKind: "tabulated";
+  readonly dispersionCoeffs: readonly (readonly [number, number])[];
 }
-
-export interface RawCatalogGlassData extends RawGlassDataBase {
-  readonly dispersion_coeff_kind: DispersionCoeffKind;
-  readonly dispersion_coeffs: readonly number[];
-}
-
-export interface RawUserDefinedGlassData extends RawGlassDataBase {
-  readonly dispersion_coeff_kind: "tabulated";
-  readonly dispersion_coeffs: readonly (readonly [number, number])[];
-}
-
-export type RawGlassData = RawCatalogGlassData | RawUserDefinedGlassData;
 
 export interface UserDefinedGlassInput {
   readonly name: string;
@@ -47,8 +31,7 @@ export interface UserDefinedGlassInput {
 }
 
 export type AllGlassCatalogsData = Record<CatalogName, Record<string, GlassData>>;
-export type RawAllGlassCatalogsData = Record<string, Record<string, RawCatalogGlassData>>;
-export type RawUserDefinedMaterialsData = Record<string, RawUserDefinedGlassData>;
+export type UserDefinedMaterialsData = Record<string, UserDefinedGlassData>;
 
 export interface GlassMediumLookupValue {
   readonly medium: string;
@@ -61,7 +44,7 @@ export interface GlassLookupMaps {
 }
 
 export type AbbeNumCenterLine = 'd' | 'e';
-export type PartialDispersionType = 'P_F_d' | 'P_F_e' | 'P_g_F';
+export type PartialDispersionType = 'P_Fd' | 'P_fe' | 'P_gF';
 export type GlassMapPlotType = 'refractiveIndex' | 'partialDispersion';
 
 export interface SelectedGlass {

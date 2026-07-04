@@ -391,7 +391,7 @@ function RouteSwitchHarness() {
               refractiveIndexE: 1.519,
               abbeNumberD: 64.17,
               abbeNumberE: 63.96,
-              partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+              partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
               dispersionCoeffKind: "Sellmeier3T",
               dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
             },
@@ -778,16 +778,16 @@ describe("app shell routes", () => {
     mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce({
       Schott: {
         "N-BK7": {
-          refractive_index_d: 1.5168,
-          refractive_index_e: 1.519,
-          abbe_number_d: 64.17,
-          abbe_number_e: 63.96,
-          partial_dispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
-          dispersion_coeff_kind: "Sellmeier3T",
-          dispersion_coeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+          refractiveIndexD: 1.5168,
+          refractiveIndexE: 1.519,
+          abbeNumberD: 64.17,
+          abbeNumberE: 63.96,
+          partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
         },
       },
-      CDGM: {}, Hikari: {}, Hoya: {}, Ohara: {}, Sumita: {},
+      CDGM: {}, Hikari: {}, Hoya: {}, Ohara: {}, Sumita: {}, Special: {},
     });
     renderInAppShell(
       <>

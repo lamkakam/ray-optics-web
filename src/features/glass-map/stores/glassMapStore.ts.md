@@ -8,7 +8,7 @@ Zustand store slice for persistent Glass Map UI state.
 |-------|------|---------|-------------|
 | `plotType` | `GlassMapPlotType` | `'refractiveIndex'` | Which plot type to display |
 | `abbeNumCenterLine` | `AbbeNumCenterLine` | `'d'` | d or e spectral line for Abbe number axis |
-| `partialDispersionType` | `PartialDispersionType` | `'P_g_F'` | Which partial dispersion for y-axis |
+| `partialDispersionType` | `PartialDispersionType` | `'P_gF'` | Which partial dispersion for y-axis |
 | `enabledCatalogs` | `Record<CatalogName, boolean>` | all `true` | Per-catalog visibility filter |
 | `selectedGlass` | `SelectedGlass \| undefined` | `undefined` | Currently clicked/selected glass |
 
@@ -25,7 +25,7 @@ interface GlassMapRouteIntent {
 |--------|-------------|
 | `setPlotType(t)` | Switch between refractiveIndex / partialDispersion |
 | `setAbbeNumCenterLine(l)` | Switch d/e spectral line |
-| `setPartialDispersionType(t)` | Switch P_F_d / P_F_e / P_g_F |
+| `setPartialDispersionType(t)` | Switch P_Fd / P_fe / P_gF |
 | `toggleCatalog(name)` | Toggle a single catalog's enabled state |
 | `enableCatalog(name)` | Force a single catalog to enabled=true without toggling others |
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |

@@ -33,11 +33,11 @@ interface PyodideWorkerAPI {
   focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
-  getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
-  addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>;
+  getAllGlassCatalogsData(): Promise<AllGlassCatalogsData>;
+  addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>;
   deleteUserDefinedGlasses(names: readonly string[]): Promise<void>;
-  updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>;
-  getUserDefinedGlasses(names: readonly string[]): Promise<RawUserDefinedMaterialsData>;
+  updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>;
+  getUserDefinedGlasses(names: readonly string[]): Promise<UserDefinedMaterialsData>;
   canInterruptOptimization(): Promise<boolean>;
   requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>;
   evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, imagePoint?: ImagePoint): Promise<OptimizationReport>;
@@ -95,7 +95,7 @@ interface PyodideWorkerAPI {
 - `getZernikeCoefficients` keeps `ordering` as a frontend API parameter; the worker converts it to an explicit `(n, m)` term list before calling Python.
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
 - `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `features/optimization/types/optimizationWorkerTypes` (type only).
-- `RawAllGlassCatalogsData`, `RawUserDefinedMaterialsData`, and `UserDefinedGlassInput` — imported from `features/glass-map/types/glassMap` for catalog and user-defined glass worker APIs (type only).
+- `AllGlassCatalogsData`, `UserDefinedMaterialsData`, and `UserDefinedGlassInput` — imported from `features/glass-map/types/glassMap` for catalog and user-defined glass worker APIs (type only).
 - `ImagePoint` — imported from `shared/components/providers/ImagePointProvider` (type only). Image-point-aware APIs default to `"chief_ray"` when omitted.
 
 ## Edge Cases / Error Handling

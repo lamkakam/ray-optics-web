@@ -13,8 +13,8 @@ import type {
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 import type {
-  RawAllGlassCatalogsData,
-  RawUserDefinedMaterialsData,
+  AllGlassCatalogsData,
+  UserDefinedMaterialsData,
   UserDefinedGlassInput,
 } from "@/features/glass-map/types/glassMap";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
@@ -48,11 +48,11 @@ export interface PyodideWorkerAPI {
   focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
-  getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
-  addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>;
+  getAllGlassCatalogsData(): Promise<AllGlassCatalogsData>;
+  addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>;
   deleteUserDefinedGlasses(names: readonly string[]): Promise<void>;
-  updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>;
-  getUserDefinedGlasses(names: readonly string[]): Promise<RawUserDefinedMaterialsData>;
+  updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>;
+  getUserDefinedGlasses(names: readonly string[]): Promise<UserDefinedMaterialsData>;
   canInterruptOptimization(): Promise<boolean>;
   requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>;
   evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, imagePoint?: ImagePoint): Promise<OptimizationReport>;

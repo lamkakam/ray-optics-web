@@ -12,12 +12,8 @@ Type definitions and `CATALOG_NAMES` live in `features/glass-map/types/glassMap.
 
 ### Functions
 
-#### `normalizeGlassData(raw: RawCatalogGlassData): GlassData`
-Converts snake_case catalog glass Python API response data to camelCase TypeScript data. User-defined `"tabulated"` raw glass data is intentionally not normalized by this catalog helper.
-
-#### `normalizeAllCatalogsData(raw: RawAllGlassCatalogsData): AllGlassCatalogsData`
-Iterates over all known catalog names from `CATALOG_NAMES` and normalizes each glass entry.
-Gracefully handles missing catalogs by returning an empty object for them.
+#### `completeAllCatalogsData(raw: Partial<AllGlassCatalogsData>): AllGlassCatalogsData`
+Iterates over all known catalog names from `CATALOG_NAMES` and returns the frontend-ready catalog data, filling missing catalogs with empty objects.
 
 #### `buildGlassLookupMaps(catalogsData: AllGlassCatalogsData): GlassLookupMaps`
 Builds app-wide case-insensitive lookup maps from normalized catalog data:
@@ -40,12 +36,12 @@ Computes scatter plot points based on current filter and axis settings:
 import {
   CATALOG_COLOR_MAP,
   buildGlassLookupMaps,
+  completeAllCatalogsData,
   computePlotPoints,
-  normalizeAllCatalogsData,
 } from "@/features/glass-map/lib/glassMap";
 import type { AllGlassCatalogsData, CatalogName } from "@/features/glass-map/types/glassMap";
 
-const catalogsData = normalizeAllCatalogsData(rawData);
+const catalogsData = completeAllCatalogsData(rawData);
 const lookupMaps = buildGlassLookupMaps(catalogsData);
 
 const plotPoints = computePlotPoints(
@@ -53,7 +49,7 @@ const plotPoints = computePlotPoints(
   enabledCatalogs,
   "refractiveIndex",
   "d",
-  "P_g_F"
+  "P_gF"
 );
 
 const color = CATALOG_COLOR_MAP.Schott;
