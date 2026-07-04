@@ -30,6 +30,7 @@ export interface GlassMapActions {
   toggleCatalog(name: CatalogName): void;
   enableCatalog(name: CatalogName): void;
   setSelectedGlass(glass: SelectedGlass | undefined): void;
+  setCatalogsData(data: AllGlassCatalogsData): void;
   setGlassCatalogsResult(result: GlassCatalogsLoadResult): void;
 }
 
@@ -46,7 +47,7 @@ function normalizeLookupKey(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function buildGlassLookupMaps(catalogsData: AllGlassCatalogsData): GlassLookupMaps {
+export function _buildGlassLookupMaps(catalogsData: AllGlassCatalogsData): GlassLookupMaps {
   const manufacturerMap = new Map<string, CatalogName>();
   const mediumMap = new Map<string, { medium: string; manufacturer: string }>();
 
@@ -113,12 +114,19 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
       },
     })),
   setSelectedGlass: (glass) => set({ selectedGlass: glass }),
+  setCatalogsData: (data) =>
+    set({
+      catalogsData: data,
+      lookupMaps: _buildGlassLookupMaps(data),
+      catalogsError: undefined,
+      catalogsLoaded: true,
+    }),
   setGlassCatalogsResult: (result) =>
     set(
       result.error === undefined
         ? {
             catalogsData: result.data,
-            lookupMaps: buildGlassLookupMaps(result.data),
+            lookupMaps: _buildGlassLookupMaps(result.data),
             catalogsError: undefined,
             catalogsLoaded: true,
           }

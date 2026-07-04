@@ -33,11 +33,12 @@ interface GlassMapRouteIntent {
 | `toggleCatalog(name)` | Toggle a single catalog's enabled state |
 | `enableCatalog(name)` | Force a single catalog to enabled=true without toggling others |
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |
+| `setCatalogsData(data)` | Replace normalized catalog data, rebuild lookup maps from it, clear the load error, and mark catalogs loaded |
 | `setGlassCatalogsResult(result)` | Store a successful `GlassCatalogsLoadResult` and derive lookup maps from its data, or clear loaded data and store its error |
 
 ## Helper Exports
 
-### `buildGlassLookupMaps(catalogsData: AllGlassCatalogsData): GlassLookupMaps`
+### `_buildGlassLookupMaps(catalogsData: AllGlassCatalogsData): GlassLookupMaps`
 Builds app-wide case-insensitive lookup maps from normalized catalog data:
 - `manufacturerMap` maps trimmed lowercase catalog names to canonical `CatalogName` values.
 - `mediumMap` maps trimmed lowercase special-media names, aliases, and `catalog:glass` keys to canonical `{ medium, manufacturer }` values.
@@ -45,9 +46,11 @@ Builds app-wide case-insensitive lookup maps from normalized catalog data:
 - Special media use an empty manufacturer and include built-ins `CaF2`, `Fused silica`, and `Water`, loaded non-`REFL` `Special` entries, and `fluorite` / `fluorspar` aliases for `CaF2`.
 - `REFL` is intentionally not exposed through a lowercase special-media alias.
 
+This helper is internal store logic. It is exported with a leading underscore only for focused unit tests.
+
 ## Export
 - `createGlassMapSlice: StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice)` for the app-wide persistent store
-- `buildGlassLookupMaps` — derives lookup maps for the store from completed catalog data
+- `_buildGlassLookupMaps` — internal helper exported only for unit tests; derives lookup maps for the store from completed catalog data
 - `GlassMapStore = GlassMapState & GlassMapActions`
 - `GlassMapRouteIntent` — route-level input type used by `app/glass-map/page.tsx` and `GlassMapView.tsx`, but not stored in zustand
 

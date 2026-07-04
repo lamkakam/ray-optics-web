@@ -51,7 +51,7 @@ describe("GlassMapStoreProvider", () => {
     });
     expect(result.current).toBe(store);
   });
-  it("exposes only persistent UI state actions", () => {
+  it("exposes persistent UI and catalog mutation actions", () => {
     const { result } = renderHook(() => useGlassMapStore(), {
       wrapper: ({ children }) => (
         <GlassMapStoreProvider>{children}</GlassMapStoreProvider>
@@ -62,6 +62,6 @@ describe("GlassMapStoreProvider", () => {
     expect(result.current.getState().toggleCatalog).toBeDefined();
     expect(result.current.getState().setSelectedGlass).toBeDefined();
     expect((result.current.getState() as unknown as Record<string, unknown>).setRouteIntent).toBeUndefined();
-    expect((result.current.getState() as unknown as Record<string, unknown>).setCatalogsData).toBeUndefined();
+    expect(typeof result.current.getState().setCatalogsData).toBe("function");
   });
 });

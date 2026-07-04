@@ -1,6 +1,6 @@
 import { createStore } from "zustand/vanilla";
 import {
-  buildGlassLookupMaps,
+  _buildGlassLookupMaps,
   createGlassMapSlice,
   type GlassMapStore,
 } from "@/features/glass-map/stores/glassMapStore";
@@ -148,6 +148,27 @@ describe("glassMapStore actions", () => {
     expect(store.getState().catalogsLoaded).toBe(true);
   });
 
+  it("setCatalogsData replaces catalog data, rebuilds lookups, and marks catalogs loaded", () => {
+    const store = makeStore();
+    const data = completeAllCatalogsData({
+      Hoya: { "H-FK61": mockGlassData },
+    });
+    store.getState().setGlassCatalogsResult({
+      data: undefined,
+      error: "Previous error",
+    });
+
+    store.getState().setCatalogsData(data);
+
+    expect(store.getState().catalogsData).toBe(data);
+    expect(store.getState().lookupMaps?.mediumMap.get("hoya:h-fk61")).toEqual({
+      medium: "H-FK61",
+      manufacturer: "Hoya",
+    });
+    expect(store.getState().catalogsError).toBeUndefined();
+    expect(store.getState().catalogsLoaded).toBe(true);
+  });
+
   it("setGlassCatalogsResult stores an error and clears loaded catalog data", () => {
     const store = makeStore();
     const data = completeAllCatalogsData({
@@ -170,7 +191,7 @@ describe("glassMapStore actions", () => {
   });
 });
 
-describe("buildGlassLookupMaps", () => {
+describe("_buildGlassLookupMaps", () => {
   const rawCatalogsData = completeAllCatalogsData({
     CDGM: { BK7: mockGlassData },
     Hoya: { "H-LaK52": mockGlassData },
@@ -179,13 +200,13 @@ describe("buildGlassLookupMaps", () => {
   });
 
   it("maps manufacturer casing to canonical catalog names", () => {
-    const result = buildGlassLookupMaps(rawCatalogsData);
+    const result = _buildGlassLookupMaps(rawCatalogsData);
 
     expect(result.manufacturerMap.get("hoya")).toBe("Hoya");
   });
 
   it("maps catalog glass casing to canonical app values", () => {
-    const result = buildGlassLookupMaps(rawCatalogsData);
+    const result = _buildGlassLookupMaps(rawCatalogsData);
 
     expect(result.mediumMap.get("hoya:h-lak52")).toEqual({
       medium: "H-LaK52",
@@ -194,7 +215,7 @@ describe("buildGlassLookupMaps", () => {
   });
 
   it("maps special media aliases without a manufacturer", () => {
-    const result = buildGlassLookupMaps(rawCatalogsData);
+    const result = _buildGlassLookupMaps(rawCatalogsData);
 
     expect(result.mediumMap.get("fluorite")).toEqual({ medium: "CaF2", manufacturer: "" });
     expect(result.mediumMap.get("fluorspar")).toEqual({ medium: "CaF2", manufacturer: "" });
@@ -206,7 +227,7 @@ describe("buildGlassLookupMaps", () => {
       ...rawCatalogsData,
       Special: { D263TECO: mockGlassData },
     });
-    const result = buildGlassLookupMaps(catalogsData);
+    const result = _buildGlassLookupMaps(catalogsData);
 
     expect(result.mediumMap.get("d263teco")).toEqual({ medium: "D263TECO", manufacturer: "" });
   });
@@ -216,7 +237,7 @@ describe("buildGlassLookupMaps", () => {
       ...rawCatalogsData,
       Special: { REFL: mockGlassData },
     });
-    const result = buildGlassLookupMaps(catalogsData);
+    const result = _buildGlassLookupMaps(catalogsData);
 
     expect(result.mediumMap.get("refl")).toBeUndefined();
   });
