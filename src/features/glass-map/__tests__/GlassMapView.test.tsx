@@ -8,6 +8,7 @@ import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/st
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
+import { buildGlassLookupMaps, completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
@@ -211,6 +212,25 @@ describe("GlassMapView", () => {
 
     await new Promise((r) => setTimeout(r, 50));
     expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders from store catalog data without fetching the resource", async () => {
+    const proxy = makeProxy();
+    const store = makeStore();
+    const catalogsData = completeAllCatalogsData(rawData);
+
+    act(() => {
+      store.getState().setGlassCatalogsResult({
+        data: catalogsData,
+        lookupMaps: buildGlassLookupMaps(catalogsData),
+        error: undefined,
+      });
+    });
+
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, store);
+
+    expect(await screen.findByText(/select a glass/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
   it("shows error message when data loading fails", async () => {

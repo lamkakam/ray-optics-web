@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useStore } from "zustand";
 import {
   GlassScatterPlot,
@@ -46,6 +46,8 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
   const partialDispersionType = useStore(store, (s) => s.partialDispersionType);
   const enabledCatalogs = useStore(store, (s) => s.enabledCatalogs);
   const selectedGlass = useStore(store, (s) => s.selectedGlass);
+  const storedCatalogsData = useStore(store, (s) => s.catalogsData);
+  const storedCatalogsError = useStore(store, (s) => s.catalogsError);
   const [routeIntentDismissed, setRouteIntentDismissed] = useState(false);
 
   const {
@@ -54,7 +56,19 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
     setPartialDispersionType,
     toggleCatalog,
     setSelectedGlass,
+    setGlassCatalogsResult,
   } = store.getState();
+
+  const catalogsLoadResult =
+    isReady && proxy !== undefined && storedCatalogsData === undefined && storedCatalogsError === undefined
+      ? readGlassCatalogs(proxy)
+      : undefined;
+
+  useEffect(() => {
+    if (catalogsLoadResult !== undefined) {
+      setGlassCatalogsResult(catalogsLoadResult);
+    }
+  }, [catalogsLoadResult, setGlassCatalogsResult]);
 
   if (!isReady || !proxy) {
     return (
@@ -64,17 +78,25 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
     );
   }
 
-  const catalogsLoadResult = readGlassCatalogs(proxy);
+  const catalogsError = storedCatalogsError ?? catalogsLoadResult?.error;
 
-  if (catalogsLoadResult.error !== undefined) {
+  if (catalogsError !== undefined) {
     return (
       <div className="flex items-center justify-center h-full text-red-500">
-        {catalogsLoadResult.error}
+        {catalogsError}
       </div>
     );
   }
 
-  const catalogsData = catalogsLoadResult.data;
+  const catalogsData = storedCatalogsData ?? catalogsLoadResult?.data;
+
+  if (catalogsData === undefined) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+        Loading glass catalog data…
+      </div>
+    );
+  }
 
   let routeSelectedGlass: SelectedGlass | undefined;
   if (routeIntent !== undefined) {

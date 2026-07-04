@@ -374,6 +374,21 @@ function StoreProbe() {
   return <div data-testid="selected-glass-name">{selectedGlass?.glassName ?? "none"}</div>;
 }
 
+function GlassCatalogStoreProbe() {
+  const store = useGlassMapStore();
+  const catalogsLoaded = useStore(store, (s) => s.catalogsLoaded);
+  const catalogsData = useStore(store, (s) => s.catalogsData);
+  const lookupMaps = useStore(store, (s) => s.lookupMaps);
+
+  return (
+    <>
+      <div data-testid="catalogs-loaded">{catalogsLoaded ? "loaded" : "not-loaded"}</div>
+      <div data-testid="schott-count">{Object.keys(catalogsData?.Schott ?? {}).length}</div>
+      <div data-testid="lookup-medium">{lookupMaps?.mediumMap.get("schott:n-bk7")?.manufacturer ?? "none"}</div>
+    </>
+  );
+}
+
 function RouteSwitchHarness() {
   const [route, setRoute] = useState<"glass" | "settings">("glass");
   const store = useGlassMapStore();
@@ -732,12 +747,35 @@ describe("app shell routes", () => {
     expect(screen.getByRole("button", { name: "Sasian Triplet" })).toBeInTheDocument();
   });
 
-  it("preloads glass catalog data while rendering the home route", async () => {
-    renderInAppShell(<HomePage />);
+  it("preloads glass catalog data into the glass-map store while rendering the home route", async () => {
+    mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce({
+      Schott: {
+        "N-BK7": {
+          refractiveIndexD: 1.5168,
+          refractiveIndexE: 1.519,
+          abbeNumberD: 64.17,
+          abbeNumberE: 63.96,
+          partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+        },
+      },
+      CDGM: {}, Hikari: {}, Hoya: {}, Ohara: {}, Sumita: {}, Special: {},
+    });
+
+    renderInAppShell(
+      <>
+        <GlassCatalogStoreProbe />
+        <HomePage />
+      </>,
+    );
 
     await waitFor(() => {
       expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
     });
+    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded");
+    expect(screen.getByTestId("schott-count")).toHaveTextContent("1");
+    expect(screen.getByTestId("lookup-medium")).toHaveTextContent("Schott");
   });
 
   it("renders the glass map on the glass-map route", async () => {

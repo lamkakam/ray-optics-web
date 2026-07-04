@@ -2,11 +2,14 @@ import { type StateCreator } from "zustand";
 import {
   CATALOG_NAMES,
   type AbbeNumCenterLine,
+  type AllGlassCatalogsData,
   type CatalogName,
+  type GlassLookupMaps,
   type GlassMapPlotType,
   type PartialDispersionType,
   type SelectedGlass,
 } from "@/features/glass-map/types/glassMap";
+import type { GlassCatalogsLoadResult } from "@/features/glass-map/lib/glassCatalogsResource";
 
 export interface GlassMapState {
   plotType: GlassMapPlotType;
@@ -14,6 +17,10 @@ export interface GlassMapState {
   partialDispersionType: PartialDispersionType;
   enabledCatalogs: Record<CatalogName, boolean>;
   selectedGlass: SelectedGlass | undefined;
+  catalogsData: AllGlassCatalogsData | undefined;
+  lookupMaps: GlassLookupMaps | undefined;
+  catalogsError: string | undefined;
+  catalogsLoaded: boolean;
 }
 
 export interface GlassMapActions {
@@ -23,6 +30,7 @@ export interface GlassMapActions {
   toggleCatalog(name: CatalogName): void;
   enableCatalog(name: CatalogName): void;
   setSelectedGlass(glass: SelectedGlass | undefined): void;
+  setGlassCatalogsResult(result: GlassCatalogsLoadResult): void;
 }
 
 export type GlassMapStore = GlassMapState & GlassMapActions;
@@ -38,11 +46,15 @@ export interface GlassMapRouteIntent {
 }
 
 export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
-    plotType: 'refractiveIndex',
-    abbeNumCenterLine: 'd',
-    partialDispersionType: 'P_gF',
-    enabledCatalogs: { ...allEnabled },
-    selectedGlass: undefined,
+  plotType: "refractiveIndex",
+  abbeNumCenterLine: "d",
+  partialDispersionType: "P_gF",
+  enabledCatalogs: { ...allEnabled },
+  selectedGlass: undefined,
+  catalogsData: undefined,
+  lookupMaps: undefined,
+  catalogsError: undefined,
+  catalogsLoaded: false,
   setPlotType: (t) => set({ plotType: t }),
   setAbbeNumCenterLine: (l) => set({ abbeNumCenterLine: l }),
   setPartialDispersionType: (t) => set({ partialDispersionType: t }),
@@ -61,4 +73,20 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
       },
     })),
   setSelectedGlass: (glass) => set({ selectedGlass: glass }),
+  setGlassCatalogsResult: (result) =>
+    set(
+      result.error === undefined
+        ? {
+            catalogsData: result.data,
+            lookupMaps: result.lookupMaps,
+            catalogsError: undefined,
+            catalogsLoaded: true,
+          }
+        : {
+            catalogsData: undefined,
+            lookupMaps: undefined,
+            catalogsError: result.error,
+            catalogsLoaded: false,
+          }
+    ),
 });

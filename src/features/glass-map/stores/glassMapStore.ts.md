@@ -1,7 +1,7 @@
 # `features/glass-map/stores/glassMapStore.ts`
 
 ## Purpose
-Zustand store slice for persistent Glass Map UI state.
+Zustand store slice for persistent Glass Map UI state and app-wide glass catalog lookup state.
 
 ## State (`GlassMapState`)
 | Field | Type | Default | Description |
@@ -11,6 +11,10 @@ Zustand store slice for persistent Glass Map UI state.
 | `partialDispersionType` | `PartialDispersionType` | `'P_gF'` | Which partial dispersion for y-axis |
 | `enabledCatalogs` | `Record<CatalogName, boolean>` | all `true` | Per-catalog visibility filter |
 | `selectedGlass` | `SelectedGlass \| undefined` | `undefined` | Currently clicked/selected glass |
+| `catalogsData` | `AllGlassCatalogsData \| undefined` | `undefined` | Normalized loaded glass catalog data shared across the app |
+| `lookupMaps` | `GlassLookupMaps \| undefined` | `undefined` | Lookup maps built from the same normalized catalog data |
+| `catalogsError` | `string \| undefined` | `undefined` | Last glass catalog load failure message |
+| `catalogsLoaded` | `boolean` | `false` | Whether catalog data and lookup maps are currently loaded |
 
 ```ts
 interface GlassMapRouteIntent {
@@ -29,6 +33,7 @@ interface GlassMapRouteIntent {
 | `toggleCatalog(name)` | Toggle a single catalog's enabled state |
 | `enableCatalog(name)` | Force a single catalog to enabled=true without toggling others |
 | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |
+| `setGlassCatalogsResult(result)` | Store a successful `GlassCatalogsLoadResult`, or clear loaded data and store its error |
 
 ## Export
 - `createGlassMapSlice: StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice)` for the app-wide persistent store
@@ -51,10 +56,15 @@ export default function GlassMapView({ proxy }: { proxy: PyodideWorkerAPI }) {
   const glassMapStore = createStore<GlassMapStore>(createGlassMapSlice);
 
   const plotType = useStore(glassMapStore, (s) => s.plotType);
-  const catalogsLoadResult = readGlassCatalogs(proxy);
+  const catalogsData = useStore(glassMapStore, (s) => s.catalogsData);
+  const catalogsError = useStore(glassMapStore, (s) => s.catalogsError);
+  const catalogsLoadResult =
+    catalogsData === undefined && catalogsError === undefined
+      ? readGlassCatalogs(proxy)
+      : undefined;
 
-  if (catalogsLoadResult.error !== undefined) {
-    return <p>{catalogsLoadResult.error}</p>;
+  if (catalogsError !== undefined || catalogsLoadResult?.error !== undefined) {
+    return <p>{catalogsError ?? catalogsLoadResult?.error}</p>;
   }
 
   return (

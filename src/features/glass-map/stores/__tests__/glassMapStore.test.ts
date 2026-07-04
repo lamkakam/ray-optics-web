@@ -4,6 +4,7 @@ import {
   type GlassMapStore,
 } from "@/features/glass-map/stores/glassMapStore";
 import type { CatalogName } from "@/features/glass-map/types/glassMap";
+import { buildGlassLookupMaps, completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 
 const mockGlassData = {
   refractiveIndexD: 1.5168,
@@ -50,6 +51,14 @@ describe("glassMapStore initial state", () => {
   it("selectedGlass is undefined", () => {
     const store = makeStore();
     expect(store.getState().selectedGlass).toBeUndefined();
+  });
+
+  it("glass catalog lookup state is empty", () => {
+    const store = makeStore();
+    expect(store.getState().catalogsData).toBeUndefined();
+    expect(store.getState().lookupMaps).toBeUndefined();
+    expect(store.getState().catalogsError).toBeUndefined();
+    expect(store.getState().catalogsLoaded).toBe(false);
   });
 });
 
@@ -116,5 +125,46 @@ describe("glassMapStore actions", () => {
     store.getState().enableCatalog("Schott");
 
     expect(store.getState().enabledCatalogs.Schott).toBe(true);
+  });
+
+  it("setGlassCatalogsResult stores successful catalog data and lookup maps", () => {
+    const store = makeStore();
+    const data = completeAllCatalogsData({
+      Schott: { "N-BK7": mockGlassData },
+    });
+    const lookupMaps = buildGlassLookupMaps(data);
+
+    store.getState().setGlassCatalogsResult({
+      data,
+      lookupMaps,
+      error: undefined,
+    });
+
+    expect(store.getState().catalogsData).toBe(data);
+    expect(store.getState().lookupMaps).toBe(lookupMaps);
+    expect(store.getState().catalogsError).toBeUndefined();
+    expect(store.getState().catalogsLoaded).toBe(true);
+  });
+
+  it("setGlassCatalogsResult stores an error and clears loaded catalog data", () => {
+    const store = makeStore();
+    const data = completeAllCatalogsData({
+      Schott: { "N-BK7": mockGlassData },
+    });
+    store.getState().setGlassCatalogsResult({
+      data,
+      lookupMaps: buildGlassLookupMaps(data),
+      error: undefined,
+    });
+
+    store.getState().setGlassCatalogsResult({
+      data: undefined,
+      error: "Network error",
+    });
+
+    expect(store.getState().catalogsData).toBeUndefined();
+    expect(store.getState().lookupMaps).toBeUndefined();
+    expect(store.getState().catalogsError).toBe("Network error");
+    expect(store.getState().catalogsLoaded).toBe(false);
   });
 });
