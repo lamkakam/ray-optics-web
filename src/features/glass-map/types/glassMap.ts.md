@@ -12,16 +12,24 @@ Runtime helpers and rendering lookup tables live in `features/glass-map/lib/glas
 
 ### Types
 - `CatalogName` — union of the 7 catalog name strings, derived from `CATALOG_NAMES`
-- `DispersionCoeffKind` — `'Schott2x6' | 'Sellmeier3T' | 'Sellmeier4T'`
+- `DispersionCoeffKind` — catalog glass dispersion coefficient kinds: `'Schott2x6' | 'Sellmeier3T' | 'Sellmeier4T'`
 - `GlassData` — normalized glass properties (camelCase):
   - `refractiveIndexD`, `refractiveIndexE` — refractive index at d/e lines
   - `abbeNumberD`, `abbeNumberE` — Abbe number at d/e lines
   - `partialDispersions` — required `P_F_e`, `P_F_d`, `P_g_F` (all always present)
   - `dispersionCoeffKind` — `DispersionCoeffKind` (`'Schott2x6'`, `'Sellmeier3T'`, or `'Sellmeier4T'`)
   - `dispersionCoeffs` — readonly array of dispersion coefficients: 8 terms for `'Schott2x6'`, 6 terms for `'Sellmeier3T'`, 8 terms for `'Sellmeier4T'`
-- `RawGlassData` — snake_case mirror from Python API (includes `dispersion_coeff_kind`, `dispersion_coeffs`)
+- `RawGlassDataBase` — shared snake_case raw glass properties from Python APIs:
+  - `refractive_index_d`, `refractive_index_e`
+  - `abbe_number_d`, `abbe_number_e`
+  - `partial_dispersions` with required `P_F_e`, `P_F_d`, `P_g_F`
+- `RawCatalogGlassData` — raw catalog glass data with a catalog `DispersionCoeffKind` and numeric coefficient array.
+- `RawUserDefinedGlassData` — raw user-defined glass data with `dispersion_coeff_kind: "tabulated"` and wavelength/index tuple coefficients.
+- `RawGlassData` — union of `RawCatalogGlassData | RawUserDefinedGlassData`
+- `UserDefinedGlassInput` — input for worker-side user-defined glass mutations: `{ name, pairs }`, where `pairs` is readonly wavelength/index tuples.
 - `AllGlassCatalogsData` — `Record<CatalogName, Record<string, GlassData>>`
-- `RawAllGlassCatalogsData` — `Record<string, Record<string, RawGlassData>>`
+- `RawAllGlassCatalogsData` — catalog-only raw data: `Record<string, Record<string, RawCatalogGlassData>>`
+- `RawUserDefinedMaterialsData` — bare user-defined glass map: `Record<string, RawUserDefinedGlassData>`
 - `AbbeNumCenterLine` — `'d' | 'e'`
 - `PartialDispersionType` — `'P_F_d' | 'P_F_e' | 'P_g_F'`
 - `GlassMapPlotType` — `'refractiveIndex' | 'partialDispersion'`

@@ -34,6 +34,10 @@ interface PyodideWorkerAPI {
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
   getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>;
+  addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>;
+  deleteUserDefinedGlasses(names: readonly string[]): Promise<void>;
+  updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>;
+  getUserDefinedGlasses(names: readonly string[]): Promise<RawUserDefinedMaterialsData>;
   canInterruptOptimization(): Promise<boolean>;
   requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>;
   evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, imagePoint?: ImagePoint): Promise<OptimizationReport>;
@@ -91,6 +95,7 @@ interface PyodideWorkerAPI {
 - `getZernikeCoefficients` keeps `ordering` as a frontend API parameter; the worker converts it to an explicit `(n, m)` term list before calling Python.
 - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
 - `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `features/optimization/types/optimizationWorkerTypes` (type only).
+- `RawAllGlassCatalogsData`, `RawUserDefinedMaterialsData`, and `UserDefinedGlassInput` — imported from `features/glass-map/types/glassMap` for catalog and user-defined glass worker APIs (type only).
 - `ImagePoint` — imported from `shared/components/providers/ImagePointProvider` (type only). Image-point-aware APIs default to `"chief_ray"` when omitted.
 
 ## Edge Cases / Error Handling
@@ -100,6 +105,7 @@ interface PyodideWorkerAPI {
 - `proxy` is `undefined` while initialising, preventing callers from invoking methods before the worker is ready.
 - `plotLensLayout` requires the caller to provide `isDark`; the worker derives any diffraction-grating-dependent overlay from the `OpticalModel`.
 - `evaluateOptimizationProblem` and `optimizeOpm` share the same report shape, so optimization UIs can preview residuals before running the full solve.
+- User-defined glass APIs are passed through to the worker as typed Comlink methods. Add/update/get return the bare Python material map keyed by glass name; delete resolves with no payload.
 - `canInterruptOptimization()` reports whether the initialized worker can install a Pyodide interrupt buffer.
 - `requestOptimizationStop(runId)` asks the worker to signal the currently active optimization only when the run id still matches; late or stale run ids return `{ signaled: false }`.
 - `optimizeOpm` also accepts an optional streamed progress callback; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker. For stoppable runs, callers also pass a per-run id and a `SharedArrayBuffer` interrupt buffer.

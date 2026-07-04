@@ -258,6 +258,10 @@ const mockProxy = {
   focusByPolyRmsSpot: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
   focusByPolyStrehl: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
   getAllGlassCatalogsData: jest.fn().mockResolvedValue({}),
+  addUserDefinedGlasses: jest.fn().mockResolvedValue({}),
+  deleteUserDefinedGlasses: jest.fn().mockResolvedValue(undefined),
+  updateUserDefinedGlasses: jest.fn().mockResolvedValue({}),
+  getUserDefinedGlasses: jest.fn().mockResolvedValue({}),
   canInterruptOptimization: jest.fn().mockResolvedValue(true),
   requestOptimizationStop: jest.fn().mockResolvedValue({ signaled: true }),
   evaluateOptimizationProblem: jest.fn().mockResolvedValue({

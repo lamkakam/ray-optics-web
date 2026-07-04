@@ -9,7 +9,7 @@ import {
   type PartialDispersionType,
   type PlotPoint,
   type RawAllGlassCatalogsData,
-  type RawGlassData,
+  type RawCatalogGlassData,
 } from "@/features/glass-map/types/glassMap";
 
 export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {
@@ -29,7 +29,7 @@ function normalizeLookupKey(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function normalizeGlassData(raw: RawGlassData): GlassData {
+export function normalizeGlassData(raw: RawCatalogGlassData): GlassData {
   return {
     refractiveIndexD: raw.refractive_index_d,
     refractiveIndexE: raw.refractive_index_e,

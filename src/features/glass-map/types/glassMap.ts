@@ -17,7 +17,7 @@ export interface GlassData {
   readonly dispersionCoeffs: readonly number[];
 }
 
-export interface RawGlassData {
+interface RawGlassDataBase {
   readonly refractive_index_d: number;
   readonly refractive_index_e: number;
   readonly abbe_number_d: number;
@@ -25,14 +25,30 @@ export interface RawGlassData {
   readonly partial_dispersions: {
     readonly P_F_e: number;
     readonly P_F_d: number;
-    readonly P_g_F: number;
+      readonly P_g_F: number;
   };
+}
+
+export interface RawCatalogGlassData extends RawGlassDataBase {
   readonly dispersion_coeff_kind: DispersionCoeffKind;
   readonly dispersion_coeffs: readonly number[];
 }
 
+export interface RawUserDefinedGlassData extends RawGlassDataBase {
+  readonly dispersion_coeff_kind: "tabulated";
+  readonly dispersion_coeffs: readonly (readonly [number, number])[];
+}
+
+export type RawGlassData = RawCatalogGlassData | RawUserDefinedGlassData;
+
+export interface UserDefinedGlassInput {
+  readonly name: string;
+  readonly pairs: readonly (readonly [number, number])[];
+}
+
 export type AllGlassCatalogsData = Record<CatalogName, Record<string, GlassData>>;
-export type RawAllGlassCatalogsData = Record<string, Record<string, RawGlassData>>;
+export type RawAllGlassCatalogsData = Record<string, Record<string, RawCatalogGlassData>>;
+export type RawUserDefinedMaterialsData = Record<string, RawUserDefinedGlassData>;
 
 export interface GlassMediumLookupValue {
   readonly medium: string;

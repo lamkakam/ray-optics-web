@@ -37,6 +37,10 @@ export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: 
 export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData>
+export async function addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>
+export async function deleteUserDefinedGlasses(names: readonly string[]): Promise<void>
+export async function updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>
+export async function getUserDefinedGlasses(names: readonly string[]): Promise<RawUserDefinedMaterialsData>
 export async function canInterruptOptimization(): Promise<boolean>
 export async function requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>
 export async function evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, imagePoint?: ImagePoint): Promise<OptimizationReport>
@@ -78,6 +82,10 @@ export async function _focusByMonoStrehl(runPython: (code: string) => Promise<un
 export async function _focusByPolyRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _focusByPolyStrehl(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
 export async function _getAllGlassCatalogsData(runPython: (code: string) => Promise<unknown>): Promise<RawAllGlassCatalogsData>
+export async function _addUserDefinedGlasses(runPython: (code: string) => Promise<unknown>, materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>
+export async function _deleteUserDefinedGlasses(runPython: (code: string) => Promise<unknown>, names: readonly string[]): Promise<void>
+export async function _updateUserDefinedGlasses(runPython: (code: string) => Promise<unknown>, materials: readonly UserDefinedGlassInput[]): Promise<RawUserDefinedMaterialsData>
+export async function _getUserDefinedGlasses(runPython: (code: string) => Promise<unknown>, names: readonly string[]): Promise<RawUserDefinedMaterialsData>
 export async function _evaluateOptimizationProblem(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>
 export async function _optimizeOpm(
   runPython: (code: string) => Promise<unknown>,
@@ -138,6 +146,10 @@ All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`,
 | `focusByPolyRmsSpot(model, fieldIndex)` | Focuses by minimizing polychromatic RMS spot radius. Returns `FocusingResult`. |
 | `focusByPolyStrehl(model, fieldIndex)` | Focuses by maximizing polychromatic Strehl ratio. Returns `FocusingResult`. |
 | `getAllGlassCatalogsData()` | Returns raw glass catalog data for all 6 catalogs as `RawAllGlassCatalogsData`. No optical model required. |
+| `addUserDefinedGlasses(materials)` | Adds user-defined tabulated materials through the Python `user_defined_materials` singleton after pre-validating existing names. Returns the bare raw material map for added names. |
+| `deleteUserDefinedGlasses(names)` | Deletes user-defined materials after pre-validating missing names. Resolves with no payload. |
+| `updateUserDefinedGlasses(materials)` | Replaces existing user-defined materials after pre-validating missing names. Deletes each existing entry, sets the replacement pairs, and returns the bare raw material map for updated names. |
+| `getUserDefinedGlasses(names)` | Returns the bare raw material map from `user_defined_materials.get_materials_data(names)`. Missing names propagate Python `KeyError`. |
 | `canInterruptOptimization()` | Returns whether the initialized Pyodide instance exposes `setInterruptBuffer` and the browser exposes `SharedArrayBuffer`. |
 | `requestOptimizationStop(runId)` | Signals the active interrupt buffer only when `runId` matches the currently active optimization run; returns `{ signaled: false }` for late or stale requests. |
 | `evaluateOptimizationProblem(model, config, imagePoint?)` | Builds `opm` from the model, calls Python `evaluate_optimization_problem(opm, config, image_point=...)`, and returns the parsed JSON-safe residual report without running SciPy. |
@@ -164,6 +176,10 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `_getDiffractionMTFData(runPython, model, fi, wi, imagePoint?, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_mtf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}, image_point=...))\`)` and parses the JSON into `DiffractionMtfData`.
 - `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
 - `_getZernikeCoefficients(runPython, model, fi, wi, imagePoint?, n?, ordering?)` — computes `zernikeTermsForOrdering(ordering, numTerms)`, reconstructs it in Python with `json.loads(...)`, and calls `get_zernike_coefficients(..., zernike_terms=zernike_terms, image_point=...)`. Python does not receive an ordering name.
+- `_addUserDefinedGlasses(runPython, materials)` — reconstructs the material request with `json.loads(...)`, pre-validates existing names, sets `user_defined_materials[name] = pairs`, and parses `json.dumps(user_defined_materials.get_materials_data(names))`.
+- `_deleteUserDefinedGlasses(runPython, names)` — reconstructs names with `json.loads(...)`, pre-validates missing names, then deletes each entry with `del user_defined_materials[name]`. It does not parse or return a Python payload.
+- `_updateUserDefinedGlasses(runPython, materials)` — reconstructs the material request with `json.loads(...)`, pre-validates missing names, deletes and re-sets each material, and parses `json.dumps(user_defined_materials.get_materials_data(names))`.
+- `_getUserDefinedGlasses(runPython, names)` — reconstructs names with `json.loads(...)`, calls `user_defined_materials.get_materials_data(names)`, and parses the bare raw material map.
 - `_evaluateOptimizationProblem(runPython, model, config, imagePoint?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, runs `evaluate_optimization_problem(..., image_point=...)`, and parses the returned report.
 - `_optimizeOpm(runPython, model, config, imagePoint?, onProgress?, runId?, interruptBuffer?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, and when a live callback is available binds `_optimization_progress_callback` through `pyodide.globals` so Python can push JSON snapshots back to JS while `optimize_opm(..., image_point=...)` is still running. When `runId`, `interruptBuffer`, and `pyodide.setInterruptBuffer` are available, it creates an `Int32Array` view over the buffer, resets the first cell, stores the active run id, installs the typed view before the Python call, and clears all interrupt state in `finally`.
 - `_resetPyodideForTesting()` — sets `pyodide = null` and clears optimization interrupt state to allow `init()` to be re-exercised in tests.
@@ -177,7 +193,8 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - **Optimization progress bridging**: `_optimizeOpm(...)` is the only exception to the fully fire-and-return pattern; when a progress callback is supplied, it temporarily installs `_optimization_progress_callback` in Pyodide globals for that single optimization call and removes it in `finally`.
 - **Optimization stop signaling**: stoppable runs are identified by a per-run string id and a shared interrupt buffer. `_optimizeOpm(...)` installs the buffer only for the matching active run and clears it in `finally` for success, stopped, failed, and thrown-error paths. `requestOptimizationStop(...)` is idempotent and returns a no-op result for stale or late run ids.
 - **Plot return type**: `plotLensLayout` returns a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getFieldCurvatureData`, `getAstigmatismCurveData`, `getLSAData`, `getWavefrontData`, `getStrehlVsWavelengthData`, `getGeoPSFData`, `getDiffractionPSFData`, and `getDiffractionMTFData` return typed data for frontend rendering.
-- **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, `water`, and `d263teco` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
+- **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, `water`, `d263teco`, and `user_defined_materials` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
+- **User-defined materials**: Add/update pre-validate existence before mutating the Python singleton; delete pre-validates missing names. Add/update/get return `RawUserDefinedMaterialsData`, a bare `{ glassName: rawGlassData }` map with `"tabulated"` dispersion data.
 - **Offset aperture globals**: `_init()` imports `OffsetCircular` from `rayoptics_web_utils.aperture` so generated worker-side scripts can use offset-aware circular aperture edge targets.
 
 ## Edge Cases / Error Handling
@@ -196,7 +213,7 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `features/lens-editor/types/zernikeData` — `ZernikeData` and `ZernikeOrdering` (type only).
 - `features/lens-editor/lib/zernikeData` — `zernikeTermsForOrdering`, the TypeScript-owned Noll/Fringe term-list generator.
 - `lib/pythonScript` — `buildScript` (generates the combined model-build + computation Python script).
-- `lib/glassMap` — `RawAllGlassCatalogsData` (type only).
+- `features/glass-map/types/glassMap` — raw catalog and user-defined glass data types plus `UserDefinedGlassInput` (type only).
 - `features/optimization/types/optimizationWorkerTypes` — optimization config, report, and progress types (type only).
 
 ## Usages
