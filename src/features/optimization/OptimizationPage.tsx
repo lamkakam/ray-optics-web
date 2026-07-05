@@ -22,6 +22,7 @@ import { applyOptimizationModelToEditor } from "./lib/applyOptimizationModelToEd
 import { hasNonZeroOptimizationContribution } from "./stores/optimizationStore";
 import { createEvaluationRow, type RadiusRow, type WeightRow } from "./lib/optimizationViewModels";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import { formatMissingGlassMessage, getMissingPrescriptionGlasses } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { OptimizationProgressEntry, OptimizationReport } from "./types/optimizationWorkerTypes";
@@ -30,6 +31,7 @@ import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import type { ButtonSize } from "@/shared/components/primitives/Button";
+import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 
 interface OptimizationPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -61,6 +63,7 @@ export function OptimizationPage({
     : Math.round(window.innerHeight * 0.4);
   const screenSize = useScreenBreakpoint();
   const { imagePoint } = useImagePoint();
+  const { lookupMaps } = useGlassCatalogs();
   const isLG = screenSize === "screenLG";
   const actionButtonSize: ButtonSize = screenSize === "screenSM" ? "xs" : "sm";
   const lensStore = useLensEditorStore();
@@ -285,12 +288,19 @@ export function OptimizationPage({
     () => evaluationRows.map((row) => [row.operandType, row.target, row.weight, row.value] as const),
     [evaluationRows],
   );
-  const evaluationWarningMessage = invalidConfigMessage ?? optimizationWarningMessage;
+  const missingGlassMessage = useMemo(
+    () => optimizationModel === undefined
+      ? undefined
+      : formatMissingGlassMessage(getMissingPrescriptionGlasses(optimizationModel, lookupMaps)),
+    [lookupMaps, optimizationModel],
+  );
+  const evaluationWarningMessage = invalidConfigMessage ?? missingGlassMessage ?? optimizationWarningMessage;
 
   const hasActiveGridEdit = activeGridEditCount > 0;
   const canOptimize = isReady
     && proxy !== undefined
     && optimizationModel !== undefined
+    && missingGlassMessage === undefined
     && canBuildOptimizationConfig
     && hasNonZeroContribution
     && !hasActiveGridEdit
@@ -377,7 +387,7 @@ export function OptimizationPage({
   }, 200);
 
   useEffect(() => {
-    if (!isReady || proxy === undefined || optimizationModel === undefined || !canBuildOptimizationConfig) {
+    if (!isReady || proxy === undefined || optimizationModel === undefined || !canBuildOptimizationConfig || missingGlassMessage !== undefined) {
       cancelDebouncedEvaluation();
       setEvaluationReport(undefined);
       setIsEvaluating(false);
@@ -398,6 +408,7 @@ export function OptimizationPage({
     optimizationModel,
     optimizationStore,
     canBuildOptimizationConfig,
+    missingGlassMessage,
     optimizer,
     fieldWeights,
     wavelengthWeights,
@@ -422,7 +433,7 @@ export function OptimizationPage({
   }, []);
 
   const handleOptimize = async () => {
-    if (!canOptimize || proxy === undefined || optimizationModel === undefined) {
+    if (!canOptimize || proxy === undefined || optimizationModel === undefined || missingGlassMessage !== undefined) {
       return;
     }
 

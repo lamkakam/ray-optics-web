@@ -26,6 +26,7 @@ interface OptimizationPageProps {
 - Derives the action button size from `useScreenBreakpoint()` and passes it to `OptimizationActionBar`: `xs` on `screenSM`, `sm` otherwise. This matches Lens Editor's `Update System` responsive sizing.
 - Renders the extracted `OptimizationEvaluationPanel` between the action row and the tabs. The table is driven by `evaluateOptimizationProblem(...)`, shows one row per returned residual whose effective `total_weight` is non-zero with `Operand Type`, `Target`, `Weight`, and `Value`, formats `Weight` and `Value` with 6 decimal places, can show a warning banner above the table or empty state, and switches between a live height-capped scroll body on large screens and a full-height body on small screens.
 - When the current store state cannot build an optimization config, passes the thrown `buildOptimizationConfig()` error message into the evaluation panel so Operand Evaluation shows the specific invalid-config reason before either the table or the existing placeholder text.
+- Before live operand evaluation or `Optimize` can call the worker, validates object/surface glasses in the current optimization model against the app-wide glass lookup map. Missing glasses clear the evaluation table, show the standard missing-glass message in Operand Evaluation, disable `Optimize`, and prevent both `evaluateOptimizationProblem(...)` and `optimizeOpm(...)`.
 - Delegates controlled `BottomDrawer` tab construction and rendering to `BottomDrawerContainer`, with five sections:
   - `Algorithm`
   - `Half-Fields`
@@ -62,8 +63,10 @@ interface OptimizationPageProps {
 - When the user switches Optimizer Kind, `BottomDrawerContainer` delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
 - Variable-bound affordances use optimizer-kind-aware capabilities, so both bounded least-squares (`trf`) and methodless Differential Evolution can use the min/max variable UI while `lm` remains unbounded.
 - Invalid intermediate configs clear the evaluation table and show the current `buildOptimizationConfig()` error in Operand Evaluation.
+- Missing-glass validation also clears the evaluation table; config-build errors take precedence when both a config error and a missing-glass error are present.
 - Operand Evaluation loading and completion state updates must not re-render the bottom drawer grid subtree or reset active AG Grid editors; the page passes memoized drawer `layout`, `fields`, `wavelengths`, and `prescription` prop objects, with `onHeightChange` present only for large-screen drawer mode.
 - `Optimize` is disabled when the current optimization config cannot be built, including fresh pages with no operands and malformed variable/pickup inputs.
+- `Optimize` is disabled when the current optimization model references glasses missing from the loaded glass catalog.
 - `Optimize` is also disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
 - `Optimize` is disabled while any Optimization AG Grid cell edit is active, while a post-edit Operand Evaluation refresh is pending, and while Operand Evaluation is currently evaluating.
 - Page-level AG Grid edit lifecycle tracking increments on `onCellEditingStarted`, decrements on `onCellEditingStopped`, increments an edit-stop revision so even no-op edits schedule a refresh, and marks the committed post-edit state as pending until the next debounced Operand Evaluation request settles; invalid config or missing worker prerequisites clear that pending gate without running an evaluation.
