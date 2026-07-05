@@ -38,7 +38,9 @@ interface CustomGlassRow {
 }
 
 type ModalMode = "add" | "edit";
+type ConfirmationMode = "delete" | "overwrite" | "invalid-import";
 type UserDefinedCustomCatalog = Record<string, UserDefinedGlassData>;
+type ImportedCustomGlassMaterial = { readonly name: string; readonly pairs: readonly (readonly [number, number])[] };
 interface CustomGlassStoreActions {
   readonly upsertCustomGlasses: (materialsData: Record<string, UserDefinedGlassData>) => void;
   readonly deleteCustomGlasses: (labels: readonly string[]) => void;
@@ -88,6 +90,10 @@ function toPayload(custom: Record<string, UserDefinedGlassData>): CustomGlassPay
 
 function isUserDefinedGlassData(data: CatalogGlassData): data is UserDefinedGlassData {
   return data.dispersionCoeffKind === "tabulated";
+}
+
+function formatReadonlyNumber(value: unknown): string {
+  return Number(value).toFixed(6);
 }
 
 export function getUserDefinedCustomGlasses(
@@ -314,15 +320,15 @@ export default function ImportCustomGlassPage() {
   const customCatalog = useStore(glassMapStore, (state) => state.catalogsData?.Custom);
   const custom = useMemo(() => getUserDefinedCustomGlasses(customCatalog), [customCatalog]);
   const [checked, setChecked] = useState<ReadonlySet<string>>(new Set());
-  const [filter, setFilter] = useState("");
   const [modalMode, setModalMode] = useState<ModalMode | undefined>();
+  const [confirmationMode, setConfirmationMode] = useState<ConfirmationMode | undefined>();
+  const [pendingImport, setPendingImport] = useState<readonly ImportedCustomGlassMaterial[] | undefined>();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const rows = useMemo(
     () => Object.entries(custom)
       .map(([label, data]) => ({ label, nd: data.refractiveIndexD, vd: data.abbeNumberD, data }))
-      .filter((row) => row.label.toLocaleLowerCase().includes(filter.toLocaleLowerCase()))
       .sort((a, b) => a.label.localeCompare(b.label)),
-    [custom, filter],
+    [custom],
   );
   const checkedLabels = [...checked];
   const selectedEditLabel = checkedLabels.length === 1 ? checkedLabels[0] : undefined;
@@ -330,9 +336,11 @@ export default function ImportCustomGlassPage() {
   const mainColumnDefs = useMemo<ColDef<CustomGlassRow>[]>(() => [
     {
       headerName: "",
-      width: 70,
+      width: 56,
+      maxWidth: 56,
       sortable: false,
       filter: false,
+      resizable: false,
       cellRenderer: (params: { data: CustomGlassRow | undefined }) => {
         if (params.data === undefined) {
           return undefined;
@@ -356,9 +364,9 @@ export default function ImportCustomGlassPage() {
         );
       },
     },
-    { headerName: "Label", field: "label", sortable: true, filter: true, flex: 1 },
-    { headerName: "nd", field: "nd", sortable: true, filter: true, width: 140 },
-    { headerName: "vd", field: "vd", sortable: true, filter: true, width: 140 },
+    { headerName: "Label", field: "label", sortable: true, filter: true, width: 100 },
+    { headerName: "nd", field: "nd", sortable: true, filter: true, width: 112, valueFormatter: (params) => formatReadonlyNumber(params.value) },
+    { headerName: "vd", field: "vd", sortable: true, filter: true, width: 112, valueFormatter: (params) => formatReadonlyNumber(params.value) },
   ], [checked]);
 
   const openAdd = () => setModalMode("add");
@@ -367,21 +375,14 @@ export default function ImportCustomGlassPage() {
       setModalMode("edit");
     }
   };
-  const handleFilterChange = (value: string) => {
-    setFilter(value);
-    const normalized = value.toLocaleLowerCase();
-    setChecked((current) => new Set([...current].filter((label) => label.toLocaleLowerCase().includes(normalized))));
-  };
-  const handleDelete = async () => {
+  const confirmDelete = async () => {
     if (proxy === undefined || checkedLabels.length === 0) {
-      return;
-    }
-    if (!window.confirm(`Are you sure to delete ${checkedLabels.length} glass?`)) {
       return;
     }
     await proxy.deleteUserDefinedGlasses(checkedLabels);
     glassMapStore.getState().deleteCustomGlasses(checkedLabels);
     setChecked(new Set());
+    setConfirmationMode(undefined);
   };
   const handleSubmit = async (label: string, modalRows: readonly EditablePair[]) => {
     if (proxy === undefined || modalMode === undefined) {
@@ -398,26 +399,36 @@ export default function ImportCustomGlassPage() {
     setChecked(new Set([label]));
     setModalMode(undefined);
   };
+  const importMaterials = async (materials: readonly ImportedCustomGlassMaterial[]) => {
+    if (proxy === undefined) {
+      return;
+    }
+    const toUpdate = materials.filter((material) => custom[material.name] !== undefined);
+    const toAdd = materials.filter((material) => custom[material.name] === undefined);
+    const updated = toUpdate.length > 0 ? await proxy.updateUserDefinedGlasses(toUpdate) : {};
+    const added = toAdd.length > 0 ? await proxy.addUserDefinedGlasses(toAdd) : {};
+    glassMapStore.getState().upsertCustomGlasses({ ...updated, ...added });
+    setPendingImport(undefined);
+    setConfirmationMode(undefined);
+  };
   const handleImport = async (file: File) => {
     if (proxy === undefined) {
       return;
     }
     const payload = JSON.parse(await file.text()) as unknown;
     if (!validateImportedCustomGlassData(payload)) {
-      window.alert("Invalid custom glass JSON.");
+      setConfirmationMode("invalid-import");
       return;
     }
     const data = payload as unknown as CustomGlassPayload;
     const conflicts = Object.keys(data.Custom).filter((label) => custom[label] !== undefined);
-    if (conflicts.length > 0 && !window.confirm(`Overwrite ${conflicts.length} existing glass?`)) {
+    const materials = Object.entries(data.Custom).map(([name, material]) => ({ name, pairs: material.data }));
+    if (conflicts.length > 0) {
+      setPendingImport(materials);
+      setConfirmationMode("overwrite");
       return;
     }
-    const materials = Object.entries(data.Custom).map(([name, material]) => ({ name, pairs: material.data }));
-    const toUpdate = materials.filter((material) => custom[material.name] !== undefined);
-    const toAdd = materials.filter((material) => custom[material.name] === undefined);
-    const updated = toUpdate.length > 0 ? await proxy.updateUserDefinedGlasses(toUpdate) : {};
-    const added = toAdd.length > 0 ? await proxy.addUserDefinedGlasses(toAdd) : {};
-    glassMapStore.getState().upsertCustomGlasses({ ...updated, ...added });
+    await importMaterials(materials);
   };
   const initialModalRows = modalMode === "edit" && selectedEditData !== undefined
     ? selectedEditData.dispersionCoeffs.map((pair) => makeRow(pair))
@@ -444,10 +455,7 @@ export default function ImportCustomGlassPage() {
         <Button variant="primary" onClick={openAdd}>Add Glass</Button>
         <Button variant="secondary" disabled={checkedLabels.length !== 1} onClick={openEdit}>Edit Glass</Button>
         <Button variant="secondary" onClick={() => downloadJson(toPayload(custom))}>Download</Button>
-        <Button variant="danger" disabled={checkedLabels.length === 0} onClick={() => { void handleDelete(); }}>Delete Glass</Button>
-        <div className="ml-auto min-w-56">
-          <Input aria-label="Filter custom glass" placeholder="Filter" value={filter} onChange={(event) => handleFilterChange(event.target.value)} />
-        </div>
+        <Button variant="danger" disabled={checkedLabels.length === 0} onClick={() => setConfirmationMode("delete")}>Delete Glass</Button>
       </div>
       <div className="min-h-0 flex-1">
         <AgGridProvider modules={[AllCommunityModule]}>
@@ -469,6 +477,61 @@ export default function ImportCustomGlassPage() {
           onCancel={() => setModalMode(undefined)}
           onSubmit={(label, modalRows) => { void handleSubmit(label, modalRows); }}
         />
+      )}
+      {confirmationMode === "delete" && (
+        <Modal
+          isOpen
+          title="Delete Custom Glass"
+          footer={(
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setConfirmationMode(undefined)}>Cancel</Button>
+              <Button variant="danger" onClick={() => { void confirmDelete(); }}>Delete</Button>
+            </div>
+          )}
+        >
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Delete {checkedLabels.length} selected custom glass{checkedLabels.length === 1 ? "" : "es"}?
+          </p>
+        </Modal>
+      )}
+      {confirmationMode === "overwrite" && pendingImport !== undefined && (
+        <Modal
+          isOpen
+          title="Overwrite Custom Glass"
+          footer={(
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setPendingImport(undefined);
+                  setConfirmationMode(undefined);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button variant="danger" onClick={() => { void importMaterials(pendingImport); }}>Overwrite</Button>
+            </div>
+          )}
+        >
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Overwrite existing custom glass entries from this import?
+          </p>
+        </Modal>
+      )}
+      {confirmationMode === "invalid-import" && (
+        <Modal
+          isOpen
+          title="Invalid Custom Glass JSON"
+          footer={(
+            <div className="flex justify-end gap-3">
+              <Button variant="primary" onClick={() => setConfirmationMode(undefined)}>OK</Button>
+            </div>
+          )}
+        >
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            The selected file is not a valid custom glass JSON file.
+          </p>
+        </Modal>
       )}
     </main>
   );

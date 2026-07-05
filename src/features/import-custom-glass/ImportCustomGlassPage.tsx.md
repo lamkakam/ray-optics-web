@@ -16,11 +16,15 @@ Client page for managing user-defined tabulated glass stored in the Pyodide work
 ## Import / Export
 - Exports JSON as `{ version: "1.0", Custom: { LABEL: { type: "tabulated", data } } }`.
 - Imports are validated by `validateImportedCustomGlassData`.
-- Label conflicts are checked only against `catalogsData.Custom`; confirmation uses the browser confirm dialog before overwrite.
+- Invalid import files open the shared `Modal` primitive with an `Invalid Custom Glass JSON` message instead of using a native alert.
+- Label conflicts are checked only against `catalogsData.Custom`; overwrite confirmation uses the shared `Modal` primitive with `Cancel` and `Overwrite` actions before calling worker update/add APIs.
 
 ## UI
-- Top command bar: Import, Add Glass, Edit Glass, Download, Delete Glass, and a filter input.
-- The main custom glass table is an AG Grid instance with checkbox, `Label`, `nd`, and `vd` columns; filtering removes checked rows hidden by the filter.
+- Top command bar: Import, Add Glass, Edit Glass, Download, and Delete Glass. The readonly custom glass table intentionally has no page-level filter input.
+- The main custom glass table is an AG Grid instance with checkbox, `Label`, `nd`, and `vd` columns. Rows show all user-defined custom glasses sorted by label.
+- The readonly grid sizes the checkbox/select column as a narrow fixed column wide enough to avoid checkbox-cell ellipsis, sets `Label` to a fixed `100px`, and uses compact fixed-width numeric columns for `nd` and `vd`.
+- The readonly `nd` and `vd` cells display `Number(value).toFixed(6)`.
+- Delete confirmation uses the shared `Modal` primitive with `Cancel` and `Delete` actions, and does not call the worker until `Delete` is clicked.
 - The Add/Edit modal uses an AG Grid instance for tabulated pairs with delete action, `Fraunhofer`, `Wavelength (nm)`, and `Refractive Index` columns.
 - Add/Edit modal validates label uniqueness, minimum four positive finite tabulated pairs, and distinct wavelengths.
 

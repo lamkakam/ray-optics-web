@@ -1,6 +1,7 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { AppShellProvider } from "@/app/AppShellContext";
-import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { GlassMapStoreProvider, useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
 import {
   EMPTY_CUSTOM_GLASSES,
@@ -11,6 +12,7 @@ import {
 } from "@/features/import-custom-glass/ImportCustomGlassPage";
 import type { UserDefinedGlassData } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { useEffect, type ReactNode } from "react";
 
 const customGlass: UserDefinedGlassData = {
   refractiveIndexD: 1.5168,
@@ -21,6 +23,56 @@ const customGlass: UserDefinedGlassData = {
   dispersionCoeffKind: "tabulated",
   dispersionCoeffs: [[587.56, 1.5168]],
 };
+
+const importedGlass: UserDefinedGlassData = {
+  ...customGlass,
+  refractiveIndexD: 1.7,
+  abbeNumberD: 45.2,
+};
+
+function SeedCatalogs({ children }: { readonly children: ReactNode }) {
+  const store = useGlassMapStore();
+
+  useEffect(() => {
+    store.getState().setCatalogsData({
+      Custom: {
+        CUSTOM_A: customGlass,
+        CUSTOM_B: importedGlass,
+      },
+    });
+  }, [store]);
+
+  return <>{children}</>;
+}
+
+function renderPage(proxy?: Partial<PyodideWorkerAPI>) {
+  return render(
+    <ThemeProvider>
+      <AppShellProvider
+        value={{
+          proxy: proxy as PyodideWorkerAPI | undefined,
+          isReady: true,
+          openErrorModal: jest.fn(),
+        }}
+      >
+        <GlassMapStoreProvider>
+          <SeedCatalogs>
+            <ImportCustomGlassPage />
+          </SeedCatalogs>
+        </GlassMapStoreProvider>
+      </AppShellProvider>
+    </ThemeProvider>,
+  );
+}
+
+function makeJsonFile(payload: unknown): File {
+  const text = JSON.stringify(payload);
+  const file = new File([text], "custom-glass.json", { type: "application/json" });
+  Object.defineProperty(file, "text", {
+    value: jest.fn().mockResolvedValue(text),
+  });
+  return file;
+}
 
 describe("getUserDefinedCustomGlasses", () => {
   it("returns a stable empty object when Custom catalog data is missing", () => {
@@ -85,22 +137,129 @@ describe("saveCustomGlass", () => {
 
 describe("ImportCustomGlassPage", () => {
   it("renders the custom glass table as an AG Grid instance", () => {
-    render(
-      <ThemeProvider>
-        <AppShellProvider
-          value={{
-            proxy: undefined,
-            isReady: true,
-            openErrorModal: jest.fn(),
-          }}
-        >
-          <GlassMapStoreProvider>
-            <ImportCustomGlassPage />
-          </GlassMapStoreProvider>
-        </AppShellProvider>
-      </ThemeProvider>,
-    );
+    renderPage();
 
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
+  });
+
+  it("does not render a custom glass filter input", () => {
+    renderPage();
+
+    expect(screen.queryByLabelText("Filter custom glass")).not.toBeInTheDocument();
+  });
+
+  it("sizes the readonly grid columns for selection, label, nd, and vd", () => {
+    renderPage();
+
+    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
+
+    expect(headers[0]).toHaveAttribute("data-width", "56");
+    expect(headers[1]).toHaveAttribute("data-width", "100");
+    expect(headers[2]).toHaveAttribute("data-width", "112");
+    expect(headers[3]).toHaveAttribute("data-width", "112");
+  });
+
+  it("renders nd and vd values with six decimal places", () => {
+    renderPage();
+
+    expect(screen.getByText("1.516800")).toBeInTheDocument();
+    expect(screen.getByText("64.170000")).toBeInTheDocument();
+  });
+
+  it("opens a delete modal and waits for Delete before calling the worker", async () => {
+    const user = userEvent.setup();
+    const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
+    renderPage({ deleteUserDefinedGlasses });
+
+    await user.click(screen.getByLabelText("Select CUSTOM_A"));
+    await user.click(screen.getByRole("button", { name: "Delete Glass" }));
+
+    expect(screen.getByRole("dialog", { name: "Delete Custom Glass" })).toBeInTheDocument();
+    expect(deleteUserDefinedGlasses).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => expect(deleteUserDefinedGlasses).toHaveBeenCalledWith(["CUSTOM_A"]));
+  });
+
+  it("does not call the worker when delete is canceled", async () => {
+    const user = userEvent.setup();
+    const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
+    renderPage({ deleteUserDefinedGlasses });
+
+    await user.click(screen.getByLabelText("Select CUSTOM_A"));
+    await user.click(screen.getByRole("button", { name: "Delete Glass" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(deleteUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: "Delete Custom Glass" })).not.toBeInTheDocument();
+  });
+
+  it("opens an overwrite modal for import conflicts and waits for Overwrite", async () => {
+    const user = userEvent.setup();
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({ CUSTOM_A: importedGlass });
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    renderPage({ updateUserDefinedGlasses, addUserDefinedGlasses });
+
+    const file = makeJsonFile({
+      version: "1.0",
+      Custom: {
+        CUSTOM_A: { type: "tabulated", data: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]] },
+      },
+    });
+
+    await user.upload(screen.getByLabelText("Import custom glass file"), file);
+
+    expect(screen.getByRole("dialog", { name: "Overwrite Custom Glass" })).toBeInTheDocument();
+    expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Overwrite" }));
+
+    await waitFor(() => expect(updateUserDefinedGlasses).toHaveBeenCalledWith([{
+      name: "CUSTOM_A",
+      pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
+    }]));
+    expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+  });
+
+  it("does not update or add imported conflicts when overwrite is canceled", async () => {
+    const user = userEvent.setup();
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    renderPage({ updateUserDefinedGlasses, addUserDefinedGlasses });
+
+    const file = makeJsonFile({
+      version: "1.0",
+      Custom: {
+        CUSTOM_A: { type: "tabulated", data: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]] },
+      },
+    });
+
+    await user.upload(screen.getByLabelText("Import custom glass file"), file);
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog", { name: "Overwrite Custom Glass" })).not.toBeInTheDocument();
+  });
+
+  it("opens an invalid import modal instead of using a native alert", async () => {
+    const user = userEvent.setup();
+    const alertSpy = jest.spyOn(window, "alert").mockImplementation(() => undefined);
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    renderPage({ updateUserDefinedGlasses, addUserDefinedGlasses });
+
+    const file = makeJsonFile({ invalid: true });
+
+    await user.upload(screen.getByLabelText("Import custom glass file"), file);
+
+    expect(screen.getByRole("dialog", { name: "Invalid Custom Glass JSON" })).toBeInTheDocument();
+    expect(alertSpy).not.toHaveBeenCalled();
+    expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+
+    alertSpy.mockRestore();
   });
 });
