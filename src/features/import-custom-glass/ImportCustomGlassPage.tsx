@@ -38,9 +38,10 @@ interface CustomGlassRow {
 }
 
 type ModalMode = "add" | "edit";
-type ConfirmationMode = "delete" | "overwrite" | "invalid-import";
+type ConfirmationMode = "delete" | "overwrite" | "invalid-import" | "rejected-csv";
 type UserDefinedCustomCatalog = Record<string, UserDefinedGlassData>;
 type ImportedCustomGlassMaterial = { readonly name: string; readonly pairs: readonly (readonly [number, number])[] };
+type RejectedCsvFile = { readonly filename: string; readonly reason: string };
 interface CustomGlassStoreActions {
   readonly upsertCustomGlasses: (materialsData: Record<string, UserDefinedGlassData>) => void;
   readonly deleteCustomGlasses: (labels: readonly string[]) => void;
@@ -156,6 +157,60 @@ function downloadJson(payload: CustomGlassPayload): void {
   anchor.download = "custom-glass.json";
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+function filenameStem(filename: string): string {
+  const basename = filename.split(/[\\/]/).at(-1) ?? filename;
+  const extensionIndex = basename.lastIndexOf(".");
+  return (extensionIndex <= 0 ? basename : basename.slice(0, extensionIndex)).trim();
+}
+
+function parseCustomGlassCsv(file: File, text: string): ImportedCustomGlassMaterial | RejectedCsvFile {
+  const label = filenameStem(file.name);
+  if (label === "") {
+    return { filename: file.name, reason: "Filename must provide a non-blank glass label." };
+  }
+
+  const lines = text.split(/\r?\n/).filter((line) => line.trim() !== "");
+  if (lines.length === 0) {
+    return { filename: file.name, reason: "Missing CSV header wl,n." };
+  }
+
+  const headers = lines[0].split(",").map((header) => header.trim());
+  if (headers.length !== 2 || headers[0] !== "wl" || headers[1] !== "n") {
+    return { filename: file.name, reason: "CSV header must contain exactly two columns: wl,n." };
+  }
+
+  const pairs: [number, number][] = [];
+  const wavelengths = new Set<number>();
+  for (const [index, line] of lines.slice(1).entries()) {
+    const rowNumber = index + 2;
+    const columns = line.split(",").map((column) => column.trim());
+    if (columns.length !== 2 || columns.some((column) => column === "")) {
+      return { filename: file.name, reason: `Row ${rowNumber} must contain exactly two columns.` };
+    }
+
+    const wavelengthMicrometers = Number(columns[0]);
+    const refractiveIndex = Number(columns[1]);
+    if (!Number.isFinite(wavelengthMicrometers) || !Number.isFinite(refractiveIndex)) {
+      return { filename: file.name, reason: `Row ${rowNumber} values must be numeric.` };
+    }
+    if (wavelengthMicrometers <= 0 || refractiveIndex <= 0) {
+      return { filename: file.name, reason: `Row ${rowNumber} values must be positive.` };
+    }
+    if (wavelengths.has(wavelengthMicrometers)) {
+      return { filename: file.name, reason: `Duplicate wavelength ${columns[0]} found.` };
+    }
+
+    wavelengths.add(wavelengthMicrometers);
+    pairs.push([wavelengthMicrometers * 1000, refractiveIndex]);
+  }
+
+  if (pairs.length < 4) {
+    return { filename: file.name, reason: "CSV must contain at least four valid wavelength/index pairs." };
+  }
+
+  return { name: label, pairs };
 }
 
 function isPositiveFinite(value: string): boolean {
@@ -323,7 +378,9 @@ export default function ImportCustomGlassPage() {
   const [modalMode, setModalMode] = useState<ModalMode | undefined>();
   const [confirmationMode, setConfirmationMode] = useState<ConfirmationMode | undefined>();
   const [pendingImport, setPendingImport] = useState<readonly ImportedCustomGlassMaterial[] | undefined>();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [rejectedCsvFiles, setRejectedCsvFiles] = useState<readonly RejectedCsvFile[]>([]);
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
+  const csvFileInputRef = useRef<HTMLInputElement>(null);
   const rows = useMemo(
     () => Object.entries(custom)
       .map(([label, data]) => ({ label, nd: data.refractiveIndexD, vd: data.abbeNumberD, data }))
@@ -399,7 +456,16 @@ export default function ImportCustomGlassPage() {
     setChecked(new Set([label]));
     setModalMode(undefined);
   };
-  const importMaterials = async (materials: readonly ImportedCustomGlassMaterial[]) => {
+  const showRejectedCsvFiles = (rejections: readonly RejectedCsvFile[]) => {
+    if (rejections.length > 0) {
+      setRejectedCsvFiles(rejections);
+      setConfirmationMode("rejected-csv");
+    }
+  };
+  const importMaterials = async (
+    materials: readonly ImportedCustomGlassMaterial[],
+    rejectionsAfterImport: readonly RejectedCsvFile[] = [],
+  ) => {
     if (proxy === undefined) {
       return;
     }
@@ -410,8 +476,29 @@ export default function ImportCustomGlassPage() {
     glassMapStore.getState().upsertCustomGlasses({ ...updated, ...added });
     setPendingImport(undefined);
     setConfirmationMode(undefined);
+    showRejectedCsvFiles(rejectionsAfterImport);
   };
-  const handleImport = async (file: File) => {
+  const queueImport = async (
+    materials: readonly ImportedCustomGlassMaterial[],
+    rejections: readonly RejectedCsvFile[] = [],
+  ) => {
+    if (proxy === undefined) {
+      return;
+    }
+    if (materials.length === 0) {
+      showRejectedCsvFiles(rejections);
+      return;
+    }
+    const conflicts = materials.filter((material) => custom[material.name] !== undefined);
+    if (conflicts.length > 0) {
+      setRejectedCsvFiles(rejections);
+      setPendingImport(materials);
+      setConfirmationMode("overwrite");
+      return;
+    }
+    await importMaterials(materials, rejections);
+  };
+  const handleJsonImport = async (file: File) => {
     if (proxy === undefined) {
       return;
     }
@@ -421,14 +508,17 @@ export default function ImportCustomGlassPage() {
       return;
     }
     const data = payload as unknown as CustomGlassPayload;
-    const conflicts = Object.keys(data.Custom).filter((label) => custom[label] !== undefined);
     const materials = Object.entries(data.Custom).map(([name, material]) => ({ name, pairs: material.data }));
-    if (conflicts.length > 0) {
-      setPendingImport(materials);
-      setConfirmationMode("overwrite");
+    await queueImport(materials);
+  };
+  const handleCsvImport = async (files: readonly File[]) => {
+    if (proxy === undefined || files.length === 0) {
       return;
     }
-    await importMaterials(materials);
+    const results = await Promise.all(files.map(async (file) => parseCustomGlassCsv(file, await file.text())));
+    const materials = results.filter((result): result is ImportedCustomGlassMaterial => "name" in result);
+    const rejections = results.filter((result): result is RejectedCsvFile => "reason" in result);
+    await queueImport(materials, rejections);
   };
   const initialModalRows = modalMode === "edit" && selectedEditData !== undefined
     ? selectedEditData.dispersionCoeffs.map((pair) => makeRow(pair))
@@ -438,23 +528,37 @@ export default function ImportCustomGlassPage() {
     <main className="flex min-h-0 flex-1 flex-col gap-4 p-4">
       <div className="flex flex-wrap items-center gap-2">
         <input
-          ref={fileInputRef}
+          ref={jsonFileInputRef}
           type="file"
           accept="application/json,.json"
           className="hidden"
-          aria-label="Import custom glass file"
+          aria-label="Import custom glass JSON file"
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file !== undefined) {
-              void handleImport(file);
+              void handleJsonImport(file);
               event.target.value = "";
             }
           }}
         />
-        <Button variant="secondary" onClick={() => fileInputRef.current?.click()}>Import</Button>
+        <input
+          ref={csvFileInputRef}
+          type="file"
+          accept="text/csv,.csv"
+          multiple
+          className="hidden"
+          aria-label="Import custom glass CSV files"
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            void handleCsvImport(files);
+            event.target.value = "";
+          }}
+        />
+        <Button variant="secondary" onClick={() => jsonFileInputRef.current?.click()}>Import from JSON</Button>
+        <Button variant="secondary" onClick={() => csvFileInputRef.current?.click()}>Import from CSV Files</Button>
         <Button variant="primary" onClick={openAdd}>Add Glass</Button>
         <Button variant="secondary" disabled={checkedLabels.length !== 1} onClick={openEdit}>Edit Glass</Button>
-        <Button variant="secondary" onClick={() => downloadJson(toPayload(custom))}>Download</Button>
+        <Button variant="secondary" onClick={() => downloadJson(toPayload(custom))}>Download JSON</Button>
         <Button variant="danger" disabled={checkedLabels.length === 0} onClick={() => setConfirmationMode("delete")}>Delete Glass</Button>
       </div>
       <div className="min-h-0 flex-1">
@@ -504,12 +608,13 @@ export default function ImportCustomGlassPage() {
                 variant="secondary"
                 onClick={() => {
                   setPendingImport(undefined);
+                  setRejectedCsvFiles([]);
                   setConfirmationMode(undefined);
                 }}
               >
                 Cancel
               </Button>
-              <Button variant="danger" onClick={() => { void importMaterials(pendingImport); }}>Overwrite</Button>
+              <Button variant="danger" onClick={() => { void importMaterials(pendingImport, rejectedCsvFiles); }}>Overwrite</Button>
             </div>
           )}
         >
@@ -531,6 +636,37 @@ export default function ImportCustomGlassPage() {
           <p className="text-sm text-gray-700 dark:text-gray-300">
             The selected file is not a valid custom glass JSON file.
           </p>
+        </Modal>
+      )}
+      {confirmationMode === "rejected-csv" && rejectedCsvFiles.length > 0 && (
+        <Modal
+          isOpen
+          title="Rejected Custom Glass CSV Files"
+          footer={(
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setRejectedCsvFiles([]);
+                  setConfirmationMode(undefined);
+                }}
+              >
+                OK
+              </Button>
+            </div>
+          )}
+        >
+          <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+            <p>The following CSV files were not imported.</p>
+            <ul className="space-y-2">
+              {rejectedCsvFiles.map((rejection) => (
+                <li key={rejection.filename}>
+                  <span className="font-medium">{rejection.filename}</span>
+                  <span>: {rejection.reason}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </Modal>
       )}
     </main>

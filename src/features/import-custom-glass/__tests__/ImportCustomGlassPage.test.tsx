@@ -74,6 +74,14 @@ function makeJsonFile(payload: unknown): File {
   return file;
 }
 
+function makeCsvFile(name: string, text: string): File {
+  const file = new File([text], name, { type: "text/csv" });
+  Object.defineProperty(file, "text", {
+    value: jest.fn().mockResolvedValue(text),
+  });
+  return file;
+}
+
 describe("getUserDefinedCustomGlasses", () => {
   it("returns a stable empty object when Custom catalog data is missing", () => {
     expect(getUserDefinedCustomGlasses(undefined)).toBe(EMPTY_CUSTOM_GLASSES);
@@ -166,6 +174,14 @@ describe("ImportCustomGlassPage", () => {
     expect(screen.getByText("64.170000")).toBeInTheDocument();
   });
 
+  it("renders explicit JSON and CSV import/export button labels", () => {
+    renderPage();
+
+    expect(screen.getByRole("button", { name: "Import from JSON" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Import from CSV Files" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Download JSON" })).toBeInTheDocument();
+  });
+
   it("opens a delete modal and waits for Delete before calling the worker", async () => {
     const user = userEvent.setup();
     const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
@@ -208,7 +224,7 @@ describe("ImportCustomGlassPage", () => {
       },
     });
 
-    await user.upload(screen.getByLabelText("Import custom glass file"), file);
+    await user.upload(screen.getByLabelText("Import custom glass JSON file"), file);
 
     expect(screen.getByRole("dialog", { name: "Overwrite Custom Glass" })).toBeInTheDocument();
     expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
@@ -236,7 +252,7 @@ describe("ImportCustomGlassPage", () => {
       },
     });
 
-    await user.upload(screen.getByLabelText("Import custom glass file"), file);
+    await user.upload(screen.getByLabelText("Import custom glass JSON file"), file);
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
@@ -253,7 +269,7 @@ describe("ImportCustomGlassPage", () => {
 
     const file = makeJsonFile({ invalid: true });
 
-    await user.upload(screen.getByLabelText("Import custom glass file"), file);
+    await user.upload(screen.getByLabelText("Import custom glass JSON file"), file);
 
     expect(screen.getByRole("dialog", { name: "Invalid Custom Glass JSON" })).toBeInTheDocument();
     expect(alertSpy).not.toHaveBeenCalled();
@@ -261,5 +277,97 @@ describe("ImportCustomGlassPage", () => {
     expect(addUserDefinedGlasses).not.toHaveBeenCalled();
 
     alertSpy.mockRestore();
+  });
+
+  it("imports multiple valid CSV files with filename-stem labels", async () => {
+    const user = userEvent.setup();
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ LF7: customGlass, SF11: importedGlass });
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    renderPage({ addUserDefinedGlasses, updateUserDefinedGlasses });
+
+    await user.upload(screen.getByLabelText("Import custom glass CSV files"), [
+      makeCsvFile("LF7.csv", "wl,n\n0.48613,1.522\n0.54607,1.518\n0.58756,1.5168\n0.65627,1.514\n"),
+      makeCsvFile("SF11.csv", "wl,n\n0.48613,1.8\n0.54607,1.79\n0.58756,1.78\n0.65627,1.77\n"),
+    ]);
+
+    await waitFor(() => expect(addUserDefinedGlasses).toHaveBeenCalledWith([
+      {
+        name: "LF7",
+        pairs: [[486.13, 1.522], [546.07, 1.518], [587.56, 1.5168], [656.27, 1.514]],
+      },
+      {
+        name: "SF11",
+        pairs: [[486.13, 1.8], [546.07, 1.79], [587.56, 1.78], [656.27, 1.77]],
+      },
+    ]));
+    expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
+  });
+
+  it("opens the overwrite modal before CSV conflict worker calls", async () => {
+    const user = userEvent.setup();
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({ CUSTOM_A: importedGlass });
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    renderPage({ updateUserDefinedGlasses, addUserDefinedGlasses });
+
+    await user.upload(
+      screen.getByLabelText("Import custom glass CSV files"),
+      makeCsvFile("CUSTOM_A.csv", "wl,n\n0.48613,1.71\n0.54607,1.705\n0.58756,1.7\n0.65627,1.695\n"),
+    );
+
+    expect(screen.getByRole("dialog", { name: "Overwrite Custom Glass" })).toBeInTheDocument();
+    expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Overwrite" }));
+
+    await waitFor(() => expect(updateUserDefinedGlasses).toHaveBeenCalledWith([{
+      name: "CUSTOM_A",
+      pairs: [[486.13, 1.71], [546.07, 1.705], [587.56, 1.7], [656.27, 1.695]],
+    }]));
+    expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+  });
+
+  it("imports valid CSV files and reports rejected CSV files", async () => {
+    const user = userEvent.setup();
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ LF7: customGlass });
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    renderPage({ addUserDefinedGlasses, updateUserDefinedGlasses });
+
+    await user.upload(screen.getByLabelText("Import custom glass CSV files"), [
+      makeCsvFile("LF7.csv", "wl,n\n0.48613,1.522\n0.54607,1.518\n0.58756,1.5168\n0.65627,1.514\n"),
+      makeCsvFile("broken.csv", "wl,n,extra\n0.48613,1.522,ignored\n"),
+      makeCsvFile("duplicate.csv", "wl,n\n0.48613,1.522\n0.48613,1.523\n0.58756,1.5168\n0.65627,1.514\n"),
+    ]);
+
+    await waitFor(() => expect(addUserDefinedGlasses).toHaveBeenCalledWith([{
+      name: "LF7",
+      pairs: [[486.13, 1.522], [546.07, 1.518], [587.56, 1.5168], [656.27, 1.514]],
+    }]));
+
+    expect(screen.getByRole("dialog", { name: "Rejected Custom Glass CSV Files" })).toBeInTheDocument();
+    expect(screen.getByText("broken.csv")).toBeInTheDocument();
+    expect(screen.getByText(/exactly two columns/i)).toBeInTheDocument();
+    expect(screen.getByText("duplicate.csv")).toBeInTheDocument();
+    expect(screen.getByText(/duplicate wavelength/i)).toBeInTheDocument();
+  });
+
+  it("reports all-invalid CSV selections without worker calls", async () => {
+    const user = userEvent.setup();
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    const updateUserDefinedGlasses = jest.fn().mockResolvedValue({});
+    renderPage({ addUserDefinedGlasses, updateUserDefinedGlasses });
+
+    await user.upload(screen.getByLabelText("Import custom glass CSV files"), [
+      makeCsvFile("empty.csv", "wl,n\n"),
+      makeCsvFile("bad-number.csv", "wl,n\n0.48613,abc\n0.54607,1.518\n0.58756,1.5168\n0.65627,1.514\n"),
+    ]);
+
+    expect(screen.getByRole("dialog", { name: "Rejected Custom Glass CSV Files" })).toBeInTheDocument();
+    expect(screen.getByText("empty.csv")).toBeInTheDocument();
+    expect(screen.getByText(/at least four/i)).toBeInTheDocument();
+    expect(screen.getByText("bad-number.csv")).toBeInTheDocument();
+    expect(screen.getByText(/numeric/i)).toBeInTheDocument();
+    expect(addUserDefinedGlasses).not.toHaveBeenCalled();
+    expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
   });
 });
