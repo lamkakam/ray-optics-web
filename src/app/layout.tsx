@@ -9,6 +9,7 @@ import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/Analysi
 import { AnalysisDataStoreProvider } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { ImportCustomGlassStoreProvider } from "@/features/import-custom-glass/providers/ImportCustomGlassStoreProvider";
 import { OptimizationStoreProvider } from "@/features/optimization/providers/OptimizationStoreProvider";
 import AppShell from "@/app/AppShell";
 
@@ -34,9 +35,11 @@ export default function RootLayout({
                   <AnalysisDataStoreProvider>
                     <LensLayoutImageStoreProvider>
                       <GlassMapStoreProvider>
-                        <OptimizationStoreProvider>
-                          <AppShell>{children}</AppShell>
-                        </OptimizationStoreProvider>
+                        <ImportCustomGlassStoreProvider>
+                          <OptimizationStoreProvider>
+                            <AppShell>{children}</AppShell>
+                          </OptimizationStoreProvider>
+                        </ImportCustomGlassStoreProvider>
                       </GlassMapStoreProvider>
                     </LensLayoutImageStoreProvider>
                   </AnalysisDataStoreProvider>

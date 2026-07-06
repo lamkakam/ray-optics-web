@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AppShellProvider } from "@/app/AppShellContext";
 import { GlassMapStoreProvider, useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import { ImportCustomGlassStoreProvider, useImportCustomGlassStore } from "@/features/import-custom-glass/providers/ImportCustomGlassStoreProvider";
 import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
 import ImportCustomGlassPage from "@/features/import-custom-glass/ImportCustomGlassPage";
 import type { UserDefinedGlassData } from "@/features/glass-map/types/glassMap";
@@ -39,7 +40,22 @@ function SeedCatalogs({ children }: { readonly children: ReactNode }) {
   return <>{children}</>;
 }
 
-function renderPage(proxy?: Partial<PyodideWorkerAPI>) {
+function renderPage(proxy?: Partial<PyodideWorkerAPI>, seedTableState?: true) {
+  function SeedTableState({ children }: { readonly children: ReactNode }) {
+    const store = useImportCustomGlassStore();
+
+    useEffect(() => {
+      if (seedTableState === true) {
+        store.getState().setSortState([{ colId: "label", sort: "asc" }]);
+        store.getState().setFilterModel({
+          nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+        });
+      }
+    }, [store]);
+
+    return <>{children}</>;
+  }
+
   return render(
     <ThemeProvider>
       <AppShellProvider
@@ -50,9 +66,13 @@ function renderPage(proxy?: Partial<PyodideWorkerAPI>) {
         }}
       >
         <GlassMapStoreProvider>
-          <SeedCatalogs>
-            <ImportCustomGlassPage />
-          </SeedCatalogs>
+          <ImportCustomGlassStoreProvider>
+            <SeedCatalogs>
+              <SeedTableState>
+                <ImportCustomGlassPage />
+              </SeedTableState>
+            </SeedCatalogs>
+          </ImportCustomGlassStoreProvider>
         </GlassMapStoreProvider>
       </AppShellProvider>
     </ThemeProvider>,
@@ -195,6 +215,61 @@ describe("ImportCustomGlassPage", () => {
       expect(header).toHaveAttribute("data-filter-options", expectedNumberFilterOptions);
       expect(header.getAttribute("data-filter-options")?.split(",")).not.toEqual(expect.arrayContaining(["blank", "notBlank"]));
     }
+  });
+
+  it("persists readonly table data-column sort and filter changes", async () => {
+    renderPage();
+
+    const grid = screen.getByTestId("ag-grid-mock");
+    act(() => {
+      grid.dispatchEvent(new CustomEvent("mockSortChanged", {
+        bubbles: true,
+        detail: {
+          columnState: [
+            { colId: "label", sort: "asc" },
+            { colId: "ag-Grid-SelectionColumn", sort: "desc" },
+            { colId: "nd", sort: "desc", sortIndex: 1 },
+          ],
+        },
+      }));
+      grid.dispatchEvent(new CustomEvent("mockFilterChanged", {
+        bubbles: true,
+        detail: {
+          filterModel: {
+            label: { filterType: "text", type: "contains", filter: "CUSTOM" },
+            "ag-Grid-SelectionColumn": { filterType: "text", type: "equals", filter: "x" },
+            nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+          },
+        },
+      }));
+    });
+
+    await waitFor(() => {
+      expect(grid).toHaveAttribute("data-current-column-state", JSON.stringify([
+        { colId: "label", sort: "asc" },
+        { colId: "nd", sort: "desc", sortIndex: 1 },
+      ]));
+      expect(grid).toHaveAttribute("data-current-filter-model", JSON.stringify({
+        label: { filterType: "text", type: "contains", filter: "CUSTOM" },
+        nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+      }));
+    });
+  });
+
+  it("restores saved readonly table sort and filter state on mount", async () => {
+    renderPage(undefined, true);
+
+    const grid = screen.getByTestId("ag-grid-mock");
+
+    await waitFor(() => {
+      expect(grid).toHaveAttribute("data-applied-column-state", JSON.stringify({
+        state: [{ colId: "label", sort: "asc" }],
+        defaultState: {},
+      }));
+      expect(grid).toHaveAttribute("data-current-filter-model", JSON.stringify({
+        nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+      }));
+    });
   });
 
   it("renders readonly optical property values with six decimal places", () => {

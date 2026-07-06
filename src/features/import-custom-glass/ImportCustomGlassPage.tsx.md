@@ -7,6 +7,7 @@ Route-level coordinator for managing user-defined tabulated glass in the client-
 - Reads the Pyodide worker proxy from `useAppShell`.
 - Reads `catalogsData.Custom` from the Glass Map Zustand store and derives user-defined tabulated glasses with `getUserDefinedCustomGlasses`.
 - Owns page-level selection, add/edit modal state, delete/overwrite/invalid/rejected confirmation state, and queued import state.
+- Leaves readonly table sort/filter state to `ImportCustomGlassStore`, provided from the app root.
 - Derives sorted `CustomGlassRow` records for the readonly table.
 - Composes `CustomGlassToolbar`, `CustomGlassTable`, `CustomGlassModal`, and shared confirmation `Modal` instances.
 

@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { AgGridProvider } from "ag-grid-react";
-import type { ColDef, GridApi, GridReadyEvent, RowSelectionOptions, SelectionChangedEvent, SelectionColumnDef } from "ag-grid-community";
+import type { ColDef, FilterChangedEvent, GridApi, GridReadyEvent, RowSelectionOptions, SelectionChangedEvent, SelectionColumnDef, SortChangedEvent } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
+import { useStore } from "zustand";
+import { useImportCustomGlassStore } from "@/features/import-custom-glass/providers/ImportCustomGlassStoreProvider";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import type { CustomGlassRow } from "@/features/import-custom-glass/types/customGlassImport";
@@ -45,6 +47,11 @@ interface CustomGlassTableProps {
 
 export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlassTableProps) {
   const gridTheme = useAgGridTheme();
+  const importCustomGlassStore = useImportCustomGlassStore();
+  const sortState = useStore(importCustomGlassStore, (state) => state.sortState);
+  const filterModel = useStore(importCustomGlassStore, (state) => state.filterModel);
+  const setSortState = useStore(importCustomGlassStore, (state) => state.setSortState);
+  const setFilterModel = useStore(importCustomGlassStore, (state) => state.setFilterModel);
   const gridApiRef = useRef<GridApi<CustomGlassRow> | undefined>(undefined);
 
   const rowSelection = useMemo<RowSelectionOptions<CustomGlassRow>>(() => ({
@@ -162,6 +169,15 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
 
   const handleGridReady = (event: GridReadyEvent<CustomGlassRow>) => {
     gridApiRef.current = event.api;
+    if (sortState.length > 0) {
+      event.api.applyColumnState({
+        state: [...sortState],
+        defaultState: { sort: undefined },
+      });
+    }
+    if (Object.keys(filterModel).length > 0) {
+      event.api.setFilterModel(filterModel);
+    }
     event.api.forEachNode((node) => {
       const label = node.data?.label;
       const shouldBeSelected = label !== undefined && checked.has(label);
@@ -169,6 +185,14 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
         node.setSelected(shouldBeSelected);
       }
     });
+  };
+
+  const handleSortChanged = (event: SortChangedEvent<CustomGlassRow>) => {
+    setSortState(event.api.getColumnState());
+  };
+
+  const handleFilterChanged = (event: FilterChangedEvent<CustomGlassRow>) => {
+    setFilterModel(event.api.getFilterModel());
   };
 
   const handleSelectionChanged = (event: SelectionChangedEvent<CustomGlassRow>) => {
@@ -203,6 +227,8 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
           rowSelection={rowSelection}
           selectionColumnDef={selectionColumnDef}
           onGridReady={handleGridReady}
+          onSortChanged={handleSortChanged}
+          onFilterChanged={handleFilterChanged}
           onSelectionChanged={handleSelectionChanged}
           suppressTouch={true}
         />
