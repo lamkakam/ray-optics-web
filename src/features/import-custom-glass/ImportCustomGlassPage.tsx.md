@@ -1,46 +1,36 @@
 # `features/import-custom-glass/ImportCustomGlassPage.tsx`
 
 ## Purpose
-Client page for managing user-defined tabulated glass stored in the Pyodide worker.
+Route-level coordinator for managing user-defined tabulated glass in the client-only app.
 
-## Data Flow
-- Reads displayed rows from `glassMapStore.catalogsData.Custom`.
-- The Zustand selector subscribes to the raw `Custom` catalog reference only; `getUserDefinedCustomGlasses` derives the user-defined map outside the selector to avoid allocating a new snapshot on every render.
-- Mutates worker state through existing `addUserDefinedGlasses`, `updateUserDefinedGlasses`, and `deleteUserDefinedGlasses`.
-- Mirrors successful worker mutations into the Glass Map store through `upsertCustomGlasses` and `deleteCustomGlasses`.
-- Does not call `getAllGlassCatalogsData()`.
-- If `addUserDefinedGlasses` reports that the label already exists in the worker, the page calls `getUserDefinedGlasses([label])` to sync that worker material into `catalogsData.Custom` instead of surfacing a runtime error overlay.
-- Edit mode with an unchanged label calls `updateUserDefinedGlasses` and then `upsertCustomGlasses`.
-- Edit mode with a changed label adds the new worker material, deletes the previous worker material, then calls `upsertCustomGlasses(newData)` and `deleteCustomGlasses([previousLabel])` so the Glass Map store slice reflects the rename.
+## Responsibilities
+- Reads the Pyodide worker proxy from `useAppShell`.
+- Reads `catalogsData.Custom` from the Glass Map Zustand store and derives user-defined tabulated glasses with `getUserDefinedCustomGlasses`.
+- Owns page-level selection, add/edit modal state, delete/overwrite/invalid/rejected confirmation state, and queued import state.
+- Derives sorted `CustomGlassRow` records for the readonly table.
+- Composes `CustomGlassToolbar`, `CustomGlassTable`, `CustomGlassModal`, and shared confirmation `Modal` instances.
 
-## Import / Export
-- Exports JSON as `{ version: "1.0", Custom: { LABEL: { type: "tabulated", data } } }`.
-- The command bar has separate `Import from JSON`, `Import from CSV Files`, and `Download JSON` actions.
-- JSON imports are validated by `validateImportedCustomGlassData`.
-- Invalid import files open the shared `Modal` primitive with an `Invalid Custom Glass JSON` message instead of using a native alert.
-- CSV import accepts multiple refractiveindex.info-style files in one selection.
-- Each CSV file must have a `wl,n` header with exactly those two comma-separated columns, at least four data rows, finite positive numeric values, and no duplicate wavelengths. Files with missing headers, extra columns, empty data, malformed rows, non-numeric values, non-positive values, duplicate wavelengths, or blank filename-derived labels are rejected.
-- CSV labels come from each filename stem, so `LF7.csv` imports as `LF7`.
-- CSV wavelengths are read in micrometers and converted to nanometers only after the whole file validates. Converted nanometer values are rounded to remove binary floating-point artifacts such as `694.3000000000001`.
-- CSV batches allow partial success: valid files are imported, rejected files are not sent to the worker, and `Rejected Custom Glass CSV Files` lists every rejected filename with its reason. If every selected CSV file is rejected, no worker import APIs are called.
-- Label conflicts are checked only against `catalogsData.Custom`; overwrite confirmation uses the shared `Modal` primitive with `Cancel` and `Overwrite` actions before calling worker update/add APIs.
-- CSV rejection reporting is preserved when valid CSV files also need overwrite confirmation; rejected-file details are shown after the overwrite flow completes.
+## Worker And Store Flow
+- Add/edit modal submissions are converted with `toWorkerInput` and persisted through `saveCustomGlass`.
+- Delete confirmation calls `deleteUserDefinedGlasses`, mirrors the deletion into the Glass Map store, clears selection, and closes the modal.
+- JSON and CSV imports are split into update/add worker calls based on labels already present in `catalogsData.Custom`.
+- Successful imports call `upsertCustomGlasses({ ...updated, ...added })`.
+- The page does not call `getAllGlassCatalogsData()`.
 
-## UI
-- Top command bar: Import from JSON, Import from CSV Files, Add Glass, Edit Glass, Download JSON, and Delete Glass. The readonly custom glass table intentionally has no page-level filter input.
-- The main custom glass table is an AG Grid instance with checkbox, `Label`, `nd`, `vd`, `ne`, `ve`, `Pg,F`, `PF,e`, and `PF,d` columns. Rows show all user-defined custom glasses sorted by label.
-- The readonly grid sizes the checkbox/select column as a fixed `81px` column wide enough to avoid checkbox-cell ellipsis, sets `Label` to a fixed `125px`, and uses fixed `137px` numeric columns for `nd`, `vd`, `ne`, `ve`, `Pg,F`, `PF,e`, and `PF,d`.
-- The readonly grid keeps the checkbox/select column neither sortable nor filterable while `Label`, `nd`, `vd`, `ne`, `ve`, `Pg,F`, `PF,e`, and `PF,d` remain sortable and filterable through their column definitions and the grid default column definition.
-- The readonly grid uses `agTextColumnFilter` for `Label` and `agNumberColumnFilter` for numeric optical columns. Each filter explicitly sets `filterParams.filterOptions` so AG Grid's default `blank` and `notBlank` options are not offered.
-- The sortable readonly data columns set `unSortIcon: true` so AG Grid displays an unsorted sort indicator before the first sort interaction.
-- The readonly optical property cells display `Number(value).toFixed(6)`.
-- Delete confirmation uses the shared `Modal` primitive with `Cancel` and `Delete` actions, and does not call the worker until `Delete` is clicked.
-- The Add/Edit modal uses an AG Grid instance for tabulated pairs with delete action, `Fraunhofer`, `Wavelength (nm)`, and `Refractive Index` columns.
-- Add/Edit modal validates label uniqueness, minimum four positive finite tabulated pairs, and distinct wavelengths.
+## Import Behavior
+- JSON imports are parsed and validated by `validateImportedCustomGlassData`.
+- Invalid JSON opens `Invalid Custom Glass JSON`.
+- CSV imports parse every selected file with `parseCustomGlassCsv`.
+- Valid CSV files are imported; rejected CSV files are reported in `Rejected Custom Glass CSV Files`.
+- If all CSV files are rejected, no worker import APIs are called.
+- Existing-label imports open `Overwrite Custom Glass` and wait for the `Overwrite` action before worker update/add calls.
+- CSV rejection details survive overwrite confirmation and are shown after the overwrite import completes.
 
-## Helper Exports
-- `EMPTY_CUSTOM_GLASSES` — stable empty object used when the store has no Custom catalog yet.
-- `getUserDefinedCustomGlasses(customCatalog)` — returns the same Custom catalog reference when all entries are user-defined tabulated glass, otherwise filters to tabulated entries.
-- `isUserDefinedGlassAlreadyExistsError(error)` — detects the worker duplicate-label error raised by `addUserDefinedGlasses`.
-- `parseCustomGlassCsv(file, text)` — validates refractiveindex.info-style CSV text and converts micrometer wavelengths to rounded nanometer pairs.
-- `saveCustomGlass(options)` — orchestrates add/edit worker CRUD and mirrors successful changes into the Glass Map store actions.
+## UI Composition
+- The toolbar keeps the visible commands `Import from JSON`, `Import from CSV Files`, `Add Glass`, `Edit Glass`, `Download JSON`, and `Delete Glass`.
+- The readonly table intentionally has no page-level custom-glass filter input.
+- The Add/Edit modal is rendered only while `modalMode` is set.
+- Confirmation modals preserve the visible labels and titles used by the previous implementation.
+
+## Compatibility Exports
+- Re-exports `EMPTY_CUSTOM_GLASSES`, `getUserDefinedCustomGlasses`, `isUserDefinedGlassAlreadyExistsError`, `parseCustomGlassCsv`, and `saveCustomGlass` from `lib/customGlassImport` so existing external imports keep working during the refactor.

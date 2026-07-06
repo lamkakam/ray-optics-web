@@ -1,0 +1,24 @@
+# `features/import-custom-glass/components/CustomGlassModal/CustomGlassModal.tsx`
+
+## Purpose
+Add/edit modal for a single user-defined tabulated custom glass.
+
+## Props
+- `mode` selects `Add Glass` or `Edit Glass` title and duplicate-label behavior.
+- `existingLabels` is used to reject duplicate labels.
+- `initialLabel` and `initialRows` seed the modal state.
+- `onCancel` closes without saving.
+- `onSubmit(label, rows)` receives the trimmed label and current editable rows after validation passes.
+
+## Behavior
+- Uses the shared `Modal` primitive and an AG Grid instance for row editing.
+- Preserves the tabulated pair columns: delete action, `Fraunhofer`, `Wavelength (nm)`, and `Refractive Index`.
+- The Fraunhofer selector fills the matching wavelength and clears free-form wavelength edits when wavelength is manually changed.
+- Confirm is disabled until the label is non-blank and unique, there are at least four rows, all wavelength/index values are finite positive numbers, and wavelengths are distinct.
+- Duplicate wavelengths are marked with `text-red-600` and a validation message.
+
+## Accessibility
+- The label input exposes `aria-label="Label"`.
+- Row delete actions expose `aria-label="Delete row {id}"`.
+- Footer actions keep the visible labels and aria labels `Cancel` and `Confirm`.
+- `Add row` keeps the same visible label and aria label.
