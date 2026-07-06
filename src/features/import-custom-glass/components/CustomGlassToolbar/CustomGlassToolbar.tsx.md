@@ -12,6 +12,7 @@ Command and hidden file-input controls for the import custom glass page.
 
 ## Behavior
 - Preserves visible command labels: `Import from JSON`, `Import from CSV Files`, `Add Glass`, `Edit Glass`, `Download JSON`, and `Delete Glass`.
+- Sizes all visible command buttons with the Lens Editor responsive rule: shared `Button` size `sm` on `screenLG`, and `xs` on `screenSM`.
 - The JSON input accepts `application/json,.json`.
 - The CSV input accepts `text/csv,.csv` and supports multiple files.
 - File inputs reset their value after dispatching selection callbacks so the same file can be selected again.

@@ -7,7 +7,12 @@ import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
 import ImportCustomGlassPage from "@/features/import-custom-glass/ImportCustomGlassPage";
 import type { UserDefinedGlassData } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { useEffect, type ReactNode } from "react";
+
+jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
+  useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
+}));
 
 const customGlass: UserDefinedGlassData = {
   refractiveIndexD: 1.5168,
@@ -111,6 +116,10 @@ function expectImportCustomGlassTouchScroll(wrapper: Element | null) {
 }
 
 describe("ImportCustomGlassPage", () => {
+  beforeEach(() => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
+  });
+
   it("renders the custom glass table as an AG Grid instance", () => {
     renderPage();
 
@@ -324,6 +333,47 @@ describe("ImportCustomGlassPage", () => {
     expect(screen.getByRole("button", { name: "Import from JSON" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Import from CSV Files" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Download JSON" })).toBeInTheDocument();
+  });
+
+  it("matches Lens Editor button sizing for toolbar commands on large screens", () => {
+    renderPage();
+
+    for (const name of ["Import from JSON", "Import from CSV Files", "Add Glass", "Edit Glass", "Download JSON", "Delete Glass"]) {
+      expect(screen.getByRole("button", { name })).toHaveClass("px-3", "py-1.5", "text-sm");
+    }
+  });
+
+  it("matches Lens Editor button sizing for toolbar commands on small screens", () => {
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+
+    renderPage();
+
+    for (const name of ["Import from JSON", "Import from CSV Files", "Add Glass", "Edit Glass", "Download JSON", "Delete Glass"]) {
+      expect(screen.getByRole("button", { name })).toHaveClass("px-2", "py-1", "text-xs");
+    }
+  });
+
+  it("matches Lens Editor button sizing for modal commands on large screens", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "Add Glass" }));
+
+    for (const name of ["Add row", "Cancel", "Confirm"]) {
+      expect(screen.getByRole("button", { name })).toHaveClass("px-3", "py-1.5", "text-sm");
+    }
+  });
+
+  it("matches Lens Editor button sizing for modal commands on small screens", async () => {
+    const user = userEvent.setup();
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "Add Glass" }));
+
+    for (const name of ["Add row", "Cancel", "Confirm"]) {
+      expect(screen.getByRole("button", { name })).toHaveClass("px-2", "py-1", "text-xs");
+    }
   });
 
   it("opens a delete modal and waits for Delete before calling the worker", async () => {
