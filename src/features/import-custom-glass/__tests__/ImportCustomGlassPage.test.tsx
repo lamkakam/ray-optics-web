@@ -145,6 +145,40 @@ describe("ImportCustomGlassPage", () => {
     expect(screen.getAllByText("0.410000").length).toBeGreaterThan(0);
   });
 
+  it("selects and clears every custom glass row from the header checkbox", async () => {
+    const user = userEvent.setup();
+    const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
+    renderPage({ deleteUserDefinedGlasses });
+
+    const headerCheckbox = screen.getByRole("checkbox", { name: "Select all custom glasses" });
+    const customA = screen.getByRole("checkbox", { name: "Select CUSTOM_A" });
+    const customB = screen.getByRole("checkbox", { name: "Select CUSTOM_B" });
+
+    expect(headerCheckbox).not.toBeChecked();
+    expect(customA).not.toBeChecked();
+    expect(customB).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Delete Glass" })).toBeDisabled();
+
+    await user.click(headerCheckbox);
+
+    expect(headerCheckbox).toBeChecked();
+    expect(customA).toBeChecked();
+    expect(customB).toBeChecked();
+
+    await user.click(headerCheckbox);
+
+    expect(headerCheckbox).not.toBeChecked();
+    expect(customA).not.toBeChecked();
+    expect(customB).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Delete Glass" })).toBeDisabled();
+
+    await user.click(headerCheckbox);
+    await user.click(screen.getByRole("button", { name: "Delete Glass" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => expect(deleteUserDefinedGlasses).toHaveBeenCalledWith(["CUSTOM_A", "CUSTOM_B"]));
+  });
+
   it("renders explicit JSON and CSV import/export button labels", () => {
     renderPage();
 

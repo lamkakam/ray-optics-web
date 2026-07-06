@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { AgGridProvider } from "ag-grid-react";
-import type { ColDef } from "ag-grid-community";
+import type { ColDef, GridApi, GridReadyEvent, RowSelectionOptions, SelectionChangedEvent, SelectionColumnDef } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
@@ -23,6 +23,20 @@ function formatReadonlyNumber(value: unknown): string {
   return Number(value).toFixed(6);
 }
 
+function areSetsEqual<T>(left: ReadonlySet<T>, right: ReadonlySet<T>): boolean {
+  if (left.size !== right.size) {
+    return false;
+  }
+
+  for (const value of left) {
+    if (!right.has(value)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 interface CustomGlassTableProps {
   readonly rows: readonly CustomGlassRow[];
   readonly checked: ReadonlySet<string>;
@@ -31,37 +45,25 @@ interface CustomGlassTableProps {
 
 export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlassTableProps) {
   const gridTheme = useAgGridTheme();
-  const mainColumnDefs = useMemo<ColDef<CustomGlassRow>[]>(() => [
-    {
-      headerName: "",
-      width: 81,
-      maxWidth: 81,
-      sortable: false,
-      filter: false,
-      resizable: false,
-      cellRenderer: (params: { data: CustomGlassRow | undefined }) => {
-        if (params.data === undefined) {
-          return undefined;
-        }
+  const gridApiRef = useRef<GridApi<CustomGlassRow> | undefined>(undefined);
 
-        return (
-          <input
-            type="checkbox"
-            aria-label={`Select ${params.data.label}`}
-            checked={checked.has(params.data.label)}
-            onChange={(event) => {
-              const next = new Set(checked);
-              if (event.target.checked) {
-                next.add(params.data!.label);
-              } else {
-                next.delete(params.data!.label);
-              }
-              onCheckedChange(next);
-            }}
-          />
-        );
-      },
-    },
+  const rowSelection = useMemo<RowSelectionOptions<CustomGlassRow>>(() => ({
+    mode: "multiRow",
+    checkboxes: true,
+    headerCheckbox: true,
+    selectAll: "all",
+  }), []);
+
+  const selectionColumnDef = useMemo<SelectionColumnDef>(() => ({
+    width: 81,
+    maxWidth: 81,
+    sortable: false,
+    filter: false,
+    resizable: false,
+    suppressMovable: true,
+  }), []);
+
+  const mainColumnDefs = useMemo<ColDef<CustomGlassRow>[]>(() => [
     {
       headerName: "Label",
       field: "label",
@@ -141,7 +143,43 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
       width: 137,
       valueFormatter: (params) => formatReadonlyNumber(params.value),
     },
-  ], [checked, onCheckedChange]);
+  ], []);
+
+  useEffect(() => {
+    const api = gridApiRef.current;
+    if (api === undefined) {
+      return;
+    }
+
+    api.forEachNode((node) => {
+      const label = node.data?.label;
+      const shouldBeSelected = label !== undefined && checked.has(label);
+      if (node.isSelected() !== shouldBeSelected) {
+        node.setSelected(shouldBeSelected);
+      }
+    });
+  }, [checked, rows]);
+
+  const handleGridReady = (event: GridReadyEvent<CustomGlassRow>) => {
+    gridApiRef.current = event.api;
+    event.api.forEachNode((node) => {
+      const label = node.data?.label;
+      const shouldBeSelected = label !== undefined && checked.has(label);
+      if (node.isSelected() !== shouldBeSelected) {
+        node.setSelected(shouldBeSelected);
+      }
+    });
+  };
+
+  const handleSelectionChanged = (event: SelectionChangedEvent<CustomGlassRow>) => {
+    const selectedLabels = event.selectedNodes
+      ?.map((node) => node.data?.label)
+      .filter((label): label is string => label !== undefined) ?? [];
+    const next = new Set(selectedLabels);
+    if (!areSetsEqual(checked, next)) {
+      onCheckedChange(next);
+    }
+  };
 
   return (
     <div className="min-h-0 flex-1">
@@ -152,6 +190,10 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
           columnDefs={mainColumnDefs}
           defaultColDef={{ sortable: true, filter: true, suppressMovable: true }}
           getRowId={(params) => params.data.label}
+          rowSelection={rowSelection}
+          selectionColumnDef={selectionColumnDef}
+          onGridReady={handleGridReady}
+          onSelectionChanged={handleSelectionChanged}
         />
       </AgGridProvider>
     </div>

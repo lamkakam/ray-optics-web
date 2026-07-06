@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 interface ColDef {
   headerName?: string;
@@ -21,12 +21,31 @@ interface AgGridReactProps {
   defaultColDef?: ColDef;
   getRowId?: (params: { data: Record<string, unknown> }) => string;
   onRowSelected?: (event: unknown) => void;
+  onGridReady?: (event: { api: MockGridApi }) => void;
+  onSelectionChanged?: (event: { selectedNodes: { data: Record<string, unknown> }[]; source: "uiSelectAll" | "checkboxSelected" }) => void;
+  rowSelection?: {
+    mode?: string;
+    checkboxes?: boolean;
+    headerCheckbox?: boolean;
+    selectAll?: string;
+  };
+  selectionColumnDef?: ColDef;
   onCellEditingStarted?: (event: unknown) => void;
   onCellEditingStopped?: (event: unknown) => void;
   stopEditingWhenCellsLoseFocus?: boolean;
   theme?: unknown;
   domLayout?: string;
   [key: string]: unknown;
+}
+
+interface MockGridApi {
+  forEachNode: (callback: (node: MockRowNode) => void) => void;
+}
+
+interface MockRowNode {
+  data: Record<string, unknown>;
+  isSelected: () => boolean;
+  setSelected: (selected: boolean) => void;
 }
 
 const rowObjectIds = new WeakMap<Record<string, unknown>, string>();
@@ -205,13 +224,32 @@ export function AgGridReact({
   getRowId,
   onCellEditingStarted,
   onCellEditingStopped,
+  onGridReady,
+  onSelectionChanged,
+  rowSelection,
+  selectionColumnDef,
   stopEditingWhenCellsLoseFocus = false,
   theme,
   domLayout,
 }: AgGridReactProps) {
   const tableRef = useRef<HTMLTableElement | null>(null);
   const previousColumnDefsRef = useRef<ColDef[] | undefined>(undefined);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<ReadonlySet<string>>(new Set());
   const themeName = theme && typeof theme === "object" && "_name" in theme ? (theme as { _name: string })._name : undefined;
+  const effectiveRowData = useMemo(() => rowData ?? [], [rowData]);
+  const hasSelectionColumn = rowSelection?.mode === "multiRow";
+  const showsHeaderCheckbox = hasSelectionColumn && rowSelection?.headerCheckbox !== false;
+  const showsRowCheckboxes = hasSelectionColumn && rowSelection?.checkboxes !== false;
+
+  const getSelectedRows = (selectedKeys: ReadonlySet<string>) =>
+    effectiveRowData.filter((row, rowIdx) => selectedKeys.has(getRowKey(row, rowIdx, getRowId)));
+
+  const emitSelectionChanged = (selectedKeys: ReadonlySet<string>, source: "uiSelectAll" | "checkboxSelected") => {
+    onSelectionChanged?.({
+      selectedNodes: getSelectedRows(selectedKeys).map((data) => ({ data })),
+      source,
+    });
+  };
 
   useLayoutEffect(() => {
     const previousColumnDefs = previousColumnDefsRef.current;
@@ -227,6 +265,55 @@ export function AgGridReact({
     }
   }, [columnDefs]);
 
+  useLayoutEffect(() => {
+    const api: MockGridApi = {
+      forEachNode: (callback) => {
+        effectiveRowData.forEach((row, rowIdx) => {
+          const rowKey = getRowKey(row, rowIdx, getRowId);
+          callback({
+            data: row,
+            isSelected: () => selectedRowKeys.has(rowKey),
+            setSelected: (selected) => {
+              setSelectedRowKeys((previous) => {
+                const next = new Set(previous);
+                if (selected) {
+                  next.add(rowKey);
+                } else {
+                  next.delete(rowKey);
+                }
+                return next;
+              });
+            },
+          });
+        });
+      },
+    };
+
+    onGridReady?.({ api });
+  }, [effectiveRowData, getRowId, onGridReady, selectedRowKeys]);
+
+  const handleHeaderCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const next = event.target.checked
+      ? new Set(effectiveRowData.map((row, rowIdx) => getRowKey(row, rowIdx, getRowId)))
+      : new Set<string>();
+    setSelectedRowKeys(next);
+    emitSelectionChanged(next, "uiSelectAll");
+  };
+
+  const handleRowCheckboxChange = (row: Record<string, unknown>, rowIdx: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const rowKey = getRowKey(row, rowIdx, getRowId);
+    const next = new Set(selectedRowKeys);
+    if (event.target.checked) {
+      next.add(rowKey);
+    } else {
+      next.delete(rowKey);
+    }
+    setSelectedRowKeys(next);
+    emitSelectionChanged(next, "checkboxSelected");
+  };
+
+  const allRowsSelected = effectiveRowData.length > 0 && effectiveRowData.every((row, rowIdx) => selectedRowKeys.has(getRowKey(row, rowIdx, getRowId)));
+
   return (
     <table
       ref={tableRef}
@@ -241,6 +328,23 @@ export function AgGridReact({
     >
       <thead>
         <tr>
+          {hasSelectionColumn ? (
+            <th
+              data-width={selectionColumnDef?.width}
+              data-sortable={resolveColumnFlag(selectionColumnDef ?? {}, defaultColDef, "sortable")}
+              data-filter={resolveColumnFlag(selectionColumnDef ?? {}, defaultColDef, "filter")}
+              data-un-sort-icon={String(selectionColumnDef?.unSortIcon === true)}
+            >
+              {showsHeaderCheckbox ? (
+                <input
+                  type="checkbox"
+                  aria-label="Select all custom glasses"
+                  checked={allRowsSelected}
+                  onChange={handleHeaderCheckboxChange}
+                />
+              ) : null}
+            </th>
+          ) : null}
           {columnDefs?.map((col, i) => (
             <th
               key={i}
@@ -257,11 +361,23 @@ export function AgGridReact({
         </tr>
       </thead>
       <tbody>
-        {rowData?.map((row, rowIdx) => {
+        {effectiveRowData.map((row, rowIdx) => {
           const rowKey = getRowKey(row, rowIdx, getRowId);
 
           return (
             <tr key={rowKey}>
+              {hasSelectionColumn ? (
+                <td>
+                  {showsRowCheckboxes ? (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${String(row.label)}`}
+                      checked={selectedRowKeys.has(rowKey)}
+                      onChange={(event) => handleRowCheckboxChange(row, rowIdx, event)}
+                    />
+                  ) : null}
+                </td>
+              ) : null}
               {columnDefs?.map((col, colIdx) => {
                 const value = col.valueGetter
                   ? col.valueGetter({ data: row })
