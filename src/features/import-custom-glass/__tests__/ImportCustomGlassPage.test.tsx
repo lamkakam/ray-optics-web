@@ -156,15 +156,17 @@ describe("ImportCustomGlassPage", () => {
     expect(screen.queryByLabelText("Filter custom glass")).not.toBeInTheDocument();
   });
 
-  it("sizes the readonly grid columns for selection, label, nd, and vd", () => {
+  it("sizes the readonly grid columns for selection, label, and optical property columns", () => {
     renderPage();
 
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
 
+    expect([...headers].map((header) => header.textContent)).toEqual(["", "Label", "nd", "vd", "ne", "ve", "Pg,F", "PF,e", "PF,d"]);
     expect(headers[0]).toHaveAttribute("data-width", "81");
     expect(headers[1]).toHaveAttribute("data-width", "125");
-    expect(headers[2]).toHaveAttribute("data-width", "137");
-    expect(headers[3]).toHaveAttribute("data-width", "137");
+    for (const header of [...headers].slice(2)) {
+      expect(header).toHaveAttribute("data-width", "137");
+    }
   });
 
   it("keeps only readonly data columns sortable and filterable", () => {
@@ -175,18 +177,23 @@ describe("ImportCustomGlassPage", () => {
     expect(headers[0]).toHaveAttribute("data-sortable", "false");
     expect(headers[0]).toHaveAttribute("data-filter", "false");
     expect(headers[0]).toHaveAttribute("data-un-sort-icon", "false");
-    for (const header of [headers[1], headers[2], headers[3]]) {
+    for (const header of [...headers].slice(1)) {
       expect(header).toHaveAttribute("data-sortable", "true");
       expect(header).toHaveAttribute("data-filter", "true");
       expect(header).toHaveAttribute("data-un-sort-icon", "true");
     }
   });
 
-  it("renders nd and vd values with six decimal places", () => {
+  it("renders readonly optical property values with six decimal places", () => {
     renderPage();
 
     expect(screen.getByText("1.516800")).toBeInTheDocument();
     expect(screen.getByText("64.170000")).toBeInTheDocument();
+    expect(screen.getAllByText("1.519000").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("63.960000").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.534900").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.400000").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("0.410000").length).toBeGreaterThan(0);
   });
 
   it("renders explicit JSON and CSV import/export button labels", () => {

@@ -34,6 +34,11 @@ interface CustomGlassRow {
   readonly label: string;
   readonly nd: number;
   readonly vd: number;
+  readonly ne: number;
+  readonly ve: number;
+  readonly pgF: number;
+  readonly pFe: number;
+  readonly pFd: number;
   readonly data: UserDefinedGlassData;
 }
 
@@ -383,7 +388,17 @@ export default function ImportCustomGlassPage() {
   const csvFileInputRef = useRef<HTMLInputElement>(null);
   const rows = useMemo(
     () => Object.entries(custom)
-      .map(([label, data]) => ({ label, nd: data.refractiveIndexD, vd: data.abbeNumberD, data }))
+      .map(([label, data]) => ({
+        label,
+        nd: data.refractiveIndexD,
+        vd: data.abbeNumberD,
+        ne: data.refractiveIndexE,
+        ve: data.abbeNumberE,
+        pgF: data.partialDispersions.P_gF,
+        pFe: data.partialDispersions.P_fe,
+        pFd: data.partialDispersions.P_Fd,
+        data,
+      }))
       .sort((a, b) => a.label.localeCompare(b.label)),
     [custom],
   );
@@ -424,6 +439,11 @@ export default function ImportCustomGlassPage() {
     { headerName: "Label", field: "label", sortable: true, filter: true, unSortIcon: true, width: 125 },
     { headerName: "nd", field: "nd", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
     { headerName: "vd", field: "vd", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
+    { headerName: "ne", field: "ne", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
+    { headerName: "ve", field: "ve", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
+    { headerName: "Pg,F", field: "pgF", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
+    { headerName: "PF,e", field: "pFe", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
+    { headerName: "PF,d", field: "pFd", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
   ], [checked]);
 
   const openAdd = () => setModalMode("add");
