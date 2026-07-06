@@ -180,7 +180,11 @@ function filenameStem(filename: string): string {
   return (extensionIndex <= 0 ? basename : basename.slice(0, extensionIndex)).trim();
 }
 
-function parseCustomGlassCsv(file: File, text: string): ImportedCustomGlassMaterial | RejectedCsvFile {
+function micrometersToNanometers(value: number): number {
+  return Number((value * 1000).toFixed(12));
+}
+
+export function parseCustomGlassCsv(file: File, text: string): ImportedCustomGlassMaterial | RejectedCsvFile {
   const label = filenameStem(file.name);
   if (label === "") {
     return { filename: file.name, reason: "Filename must provide a non-blank glass label." };
@@ -218,7 +222,7 @@ function parseCustomGlassCsv(file: File, text: string): ImportedCustomGlassMater
     }
 
     wavelengths.add(wavelengthMicrometers);
-    pairs.push([wavelengthMicrometers * 1000, refractiveIndex]);
+    pairs.push([micrometersToNanometers(wavelengthMicrometers), refractiveIndex]);
   }
 
   if (pairs.length < 4) {

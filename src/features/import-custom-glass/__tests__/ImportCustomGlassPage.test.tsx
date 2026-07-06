@@ -8,6 +8,7 @@ import {
   default as ImportCustomGlassPage,
   getUserDefinedCustomGlasses,
   isUserDefinedGlassAlreadyExistsError,
+  parseCustomGlassCsv,
   saveCustomGlass,
 } from "@/features/import-custom-glass/ImportCustomGlassPage";
 import type { UserDefinedGlassData } from "@/features/glass-map/types/glassMap";
@@ -140,6 +141,20 @@ describe("saveCustomGlass", () => {
     expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
     expect(upsertCustomGlasses).toHaveBeenCalledWith({ RENAMED: customGlass });
     expect(deleteCustomGlasses).toHaveBeenCalledWith(["ORIGINAL"]);
+  });
+});
+
+describe("parseCustomGlassCsv", () => {
+  it("converts CSV micrometer wavelengths to nanometers without floating-point artifacts", () => {
+    const result = parseCustomGlassCsv(
+      new File([], "LF7.csv", { type: "text/csv" }),
+      "wl,n\n0.48613,1.522\n0.54607,1.518\n0.58756,1.5168\n0.6943,1.514\n",
+    );
+
+    expect(result).toEqual({
+      name: "LF7",
+      pairs: [[486.13, 1.522], [546.07, 1.518], [587.56, 1.5168], [694.3, 1.514]],
+    });
   });
 });
 

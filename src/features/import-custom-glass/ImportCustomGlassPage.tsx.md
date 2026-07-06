@@ -21,7 +21,7 @@ Client page for managing user-defined tabulated glass stored in the Pyodide work
 - CSV import accepts multiple refractiveindex.info-style files in one selection.
 - Each CSV file must have a `wl,n` header with exactly those two comma-separated columns, at least four data rows, finite positive numeric values, and no duplicate wavelengths. Files with missing headers, extra columns, empty data, malformed rows, non-numeric values, non-positive values, duplicate wavelengths, or blank filename-derived labels are rejected.
 - CSV labels come from each filename stem, so `LF7.csv` imports as `LF7`.
-- CSV wavelengths are read in micrometers and converted to nanometers only after the whole file validates.
+- CSV wavelengths are read in micrometers and converted to nanometers only after the whole file validates. Converted nanometer values are rounded to remove binary floating-point artifacts such as `694.3000000000001`.
 - CSV batches allow partial success: valid files are imported, rejected files are not sent to the worker, and `Rejected Custom Glass CSV Files` lists every rejected filename with its reason. If every selected CSV file is rejected, no worker import APIs are called.
 - Label conflicts are checked only against `catalogsData.Custom`; overwrite confirmation uses the shared `Modal` primitive with `Cancel` and `Overwrite` actions before calling worker update/add APIs.
 - CSV rejection reporting is preserved when valid CSV files also need overwrite confirmation; rejected-file details are shown after the overwrite flow completes.
@@ -42,4 +42,5 @@ Client page for managing user-defined tabulated glass stored in the Pyodide work
 - `EMPTY_CUSTOM_GLASSES` — stable empty object used when the store has no Custom catalog yet.
 - `getUserDefinedCustomGlasses(customCatalog)` — returns the same Custom catalog reference when all entries are user-defined tabulated glass, otherwise filters to tabulated entries.
 - `isUserDefinedGlassAlreadyExistsError(error)` — detects the worker duplicate-label error raised by `addUserDefinedGlasses`.
+- `parseCustomGlassCsv(file, text)` — validates refractiveindex.info-style CSV text and converts micrometer wavelengths to rounded nanometer pairs.
 - `saveCustomGlass(options)` — orchestrates add/edit worker CRUD and mirrors successful changes into the Glass Map store actions.
