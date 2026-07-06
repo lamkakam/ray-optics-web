@@ -417,6 +417,7 @@ describe("OptimizationPage", () => {
       lookupMaps: {
         manufacturerMap: new Map(),
         mediumMap: new Map(),
+        customMediumMap: new Map(),
       },
     });
 

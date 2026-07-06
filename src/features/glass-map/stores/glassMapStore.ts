@@ -51,6 +51,7 @@ function normalizeLookupKey(value: string): string {
 export function _buildGlassLookupMaps(catalogsData: CompleteGlassCatalogsData): GlassLookupMaps {
   const manufacturerMap = new Map<string, CatalogName>();
   const mediumMap = new Map<string, { medium: string; manufacturer: string }>();
+  const customMediumMap = new Map<string, { medium: string; manufacturer: string }>();
 
   for (const catalogName of CATALOG_NAMES) {
     manufacturerMap.set(normalizeLookupKey(catalogName), catalogName);
@@ -67,6 +68,13 @@ export function _buildGlassLookupMaps(catalogsData: CompleteGlassCatalogsData): 
         medium: glassName,
         manufacturer: catalogName,
       });
+
+      if (catalogName === "Custom") {
+        customMediumMap.set(normalizeLookupKey(glassName), {
+          medium: glassName,
+          manufacturer: "Custom",
+        });
+      }
     }
   }
 
@@ -78,7 +86,7 @@ export function _buildGlassLookupMaps(catalogsData: CompleteGlassCatalogsData): 
     mediumMap.set(normalizeLookupKey(alias), { medium: "CaF2", manufacturer: "" });
   }
 
-  return { manufacturerMap, mediumMap };
+  return { manufacturerMap, mediumMap, customMediumMap };
 }
 
 export interface GlassMapRouteIntent {

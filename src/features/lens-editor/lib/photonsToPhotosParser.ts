@@ -338,11 +338,16 @@ function resolveNamedMaterial(
   }
 
   const canonicalManufacturer = lookupMaps.manufacturerMap.get(normalizeLookupKey(row.catalog));
-  if (canonicalManufacturer === undefined) {
-    return undefined;
+  if (canonicalManufacturer !== undefined) {
+    const catalogMaterial = lookupMaps.mediumMap.get(
+      `${normalizeLookupKey(canonicalManufacturer)}:${normalizeLookupKey(row.glassName)}`,
+    );
+    if (catalogMaterial !== undefined) {
+      return catalogMaterial;
+    }
   }
 
-  return lookupMaps.mediumMap.get(`${normalizeLookupKey(canonicalManufacturer)}:${normalizeLookupKey(row.glassName)}`);
+  return lookupMaps.customMediumMap.get(normalizeLookupKey(row.glassName));
 }
 
 function normalizeLookupKey(value: string): string {

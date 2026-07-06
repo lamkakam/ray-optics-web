@@ -434,6 +434,7 @@ describe("LensEditor", () => {
         lookupMaps: {
           manufacturerMap: new Map(),
           mediumMap: new Map(),
+          customMediumMap: new Map(),
         },
         error: undefined,
         isLoaded: true,

@@ -41,8 +41,9 @@ interface GlassMapRouteIntent {
 Builds app-wide case-insensitive lookup maps from normalized catalog data:
 - `manufacturerMap` maps trimmed lowercase catalog names to canonical `CatalogName` values.
 - `mediumMap` maps trimmed lowercase special-media names, aliases, and `catalog:glass` keys to canonical `{ medium, manufacturer }` values.
+- `customMediumMap` maps trimmed lowercase user-defined glass labels directly to canonical `{ medium, manufacturer: "Custom" }` values so downstream Python export uses `user_defined_materials["<label>"]`.
 - Catalog glasses use keys like `hoya:h-lak52`.
-- Custom glasses use keys like `custom:custom_label` and resolve with `manufacturer: "Custom"`.
+- Custom glasses remain in `mediumMap` under keys like `custom:custom_label` for catalog-scoped lookup compatibility, and are also exposed in `customMediumMap` under keys like `custom_label` for imports that should ignore catalog/manufacturer text.
 - Special media use an empty manufacturer and include built-ins `CaF2`, `Fused silica`, and `Water`, loaded non-`REFL` `Special` entries, and `fluorite` / `fluorspar` aliases for `CaF2`.
 - `REFL` is intentionally not exposed through a lowercase special-media alias.
 

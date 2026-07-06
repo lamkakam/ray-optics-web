@@ -29,6 +29,8 @@ Runtime helpers and rendering lookup tables live in `features/glass-map/lib/glas
 - `AllGlassCatalogsData` — partial raw catalog map accepted at boundaries before normalization
 - `CompleteGlassCatalogsData` — complete catalog map with every `CatalogName`, used for store state after normalization
 - `UserDefinedMaterialsData` — bare user-defined glass map: `Record<string, UserDefinedGlassData>`
+- `GlassMediumLookupValue` — canonical material lookup result: `{ medium, manufacturer }`
+- `GlassLookupMaps` — app-wide case-insensitive material lookup maps: `manufacturerMap`, catalog/special `mediumMap`, and label-only `customMediumMap` for user-defined glass
 - `AbbeNumCenterLine` — `'d' | 'e'`
 - `PartialDispersionType` — `'P_Fd' | 'P_fe' | 'P_gF'`
 - `GlassMapPlotType` — `'refractiveIndex' | 'partialDispersion'`

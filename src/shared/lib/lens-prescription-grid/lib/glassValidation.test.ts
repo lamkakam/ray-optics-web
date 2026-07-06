@@ -6,6 +6,7 @@ function makeLookupMaps(keys: readonly string[]): GlassLookupMaps {
   return {
     manufacturerMap: new Map(),
     mediumMap: new Map(keys.map((key) => [key, { medium: key, manufacturer: "" }])),
+    customMediumMap: new Map(),
   };
 }
 

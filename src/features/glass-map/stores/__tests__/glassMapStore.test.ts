@@ -163,6 +163,10 @@ describe("glassMapStore actions", () => {
       medium: "CUSTOM_A",
       manufacturer: "Custom",
     });
+    expect(store.getState().lookupMaps?.customMediumMap.get("custom_a")).toEqual({
+      medium: "CUSTOM_A",
+      manufacturer: "Custom",
+    });
   });
 
   it("deleteCustomGlasses removes custom data, rebuilds lookups, and clears deleted selection", () => {
@@ -175,6 +179,7 @@ describe("glassMapStore actions", () => {
 
     expect(store.getState().catalogsData?.Custom.CUSTOM_A).toBeUndefined();
     expect(store.getState().lookupMaps?.mediumMap.get("custom:custom_a")).toBeUndefined();
+    expect(store.getState().lookupMaps?.customMediumMap.get("custom_a")).toBeUndefined();
     expect(store.getState().selectedGlass).toBeUndefined();
   });
 
@@ -219,6 +224,29 @@ describe("_buildGlassLookupMaps", () => {
     expect(result.mediumMap.get("hoya:h-lak52")).toEqual({
       medium: "H-LaK52",
       manufacturer: "Hoya",
+    });
+  });
+
+  it("keeps catalog-scoped built-in lookup behavior unchanged", () => {
+    const result = _buildGlassLookupMaps(rawCatalogsData);
+
+    expect(result.mediumMap.get("bk7")).toBeUndefined();
+    expect(result.mediumMap.get("cdgm:bk7")).toEqual({
+      medium: "BK7",
+      manufacturer: "CDGM",
+    });
+  });
+
+  it("maps custom glass by label only as a user-defined material", () => {
+    const catalogsData = completeAllCatalogsData({
+      ...rawCatalogsData,
+      Custom: { CUSTOM_A: mockGlassData },
+    });
+    const result = _buildGlassLookupMaps(catalogsData);
+
+    expect(result.customMediumMap.get("custom_a")).toEqual({
+      medium: "CUSTOM_A",
+      manufacturer: "Custom",
     });
   });
 

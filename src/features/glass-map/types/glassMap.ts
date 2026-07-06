@@ -43,6 +43,7 @@ export interface GlassMediumLookupValue {
 export interface GlassLookupMaps {
   readonly manufacturerMap: ReadonlyMap<string, CatalogName>;
   readonly mediumMap: ReadonlyMap<string, GlassMediumLookupValue>;
+  readonly customMediumMap: ReadonlyMap<string, GlassMediumLookupValue>;
 }
 
 export type AbbeNumCenterLine = 'd' | 'e';
