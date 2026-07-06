@@ -161,10 +161,25 @@ describe("ImportCustomGlassPage", () => {
 
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
 
-    expect(headers[0]).toHaveAttribute("data-width", "56");
-    expect(headers[1]).toHaveAttribute("data-width", "100");
-    expect(headers[2]).toHaveAttribute("data-width", "112");
-    expect(headers[3]).toHaveAttribute("data-width", "112");
+    expect(headers[0]).toHaveAttribute("data-width", "81");
+    expect(headers[1]).toHaveAttribute("data-width", "125");
+    expect(headers[2]).toHaveAttribute("data-width", "137");
+    expect(headers[3]).toHaveAttribute("data-width", "137");
+  });
+
+  it("keeps only readonly data columns sortable and filterable", () => {
+    renderPage();
+
+    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
+
+    expect(headers[0]).toHaveAttribute("data-sortable", "false");
+    expect(headers[0]).toHaveAttribute("data-filter", "false");
+    expect(headers[0]).toHaveAttribute("data-un-sort-icon", "false");
+    for (const header of [headers[1], headers[2], headers[3]]) {
+      expect(header).toHaveAttribute("data-sortable", "true");
+      expect(header).toHaveAttribute("data-filter", "true");
+      expect(header).toHaveAttribute("data-un-sort-icon", "true");
+    }
   });
 
   it("renders nd and vd values with six decimal places", () => {

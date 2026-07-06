@@ -59,6 +59,10 @@ function commitValue(col: ColDef, row: Record<string, unknown>, value: unknown, 
   }
 }
 
+function resolveColumnFlag(col: ColDef, defaultColDef: ColDef | undefined, key: "sortable" | "filter") {
+  return String((col[key] ?? defaultColDef?.[key]) === true);
+}
+
 function EditableCell({
   col,
   row,
@@ -231,6 +235,9 @@ export function AgGridReact({
               key={i}
               data-pinned={typeof col.pinned === "string" ? col.pinned : undefined}
               data-width={col.width}
+              data-sortable={resolveColumnFlag(col, defaultColDef, "sortable")}
+              data-filter={resolveColumnFlag(col, defaultColDef, "filter")}
+              data-un-sort-icon={String(col.unSortIcon === true)}
             >
               {col.headerName ?? col.field ?? ""}
             </th>

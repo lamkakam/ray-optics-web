@@ -393,8 +393,8 @@ export default function ImportCustomGlassPage() {
   const mainColumnDefs = useMemo<ColDef<CustomGlassRow>[]>(() => [
     {
       headerName: "",
-      width: 56,
-      maxWidth: 56,
+      width: 81,
+      maxWidth: 81,
       sortable: false,
       filter: false,
       resizable: false,
@@ -421,9 +421,9 @@ export default function ImportCustomGlassPage() {
         );
       },
     },
-    { headerName: "Label", field: "label", sortable: true, filter: true, width: 100 },
-    { headerName: "nd", field: "nd", sortable: true, filter: true, width: 112, valueFormatter: (params) => formatReadonlyNumber(params.value) },
-    { headerName: "vd", field: "vd", sortable: true, filter: true, width: 112, valueFormatter: (params) => formatReadonlyNumber(params.value) },
+    { headerName: "Label", field: "label", sortable: true, filter: true, unSortIcon: true, width: 125 },
+    { headerName: "nd", field: "nd", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
+    { headerName: "vd", field: "vd", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
   ], [checked]);
 
   const openAdd = () => setModalMode("add");
