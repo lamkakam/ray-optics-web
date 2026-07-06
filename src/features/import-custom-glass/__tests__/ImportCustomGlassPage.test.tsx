@@ -103,6 +103,36 @@ describe("ImportCustomGlassPage", () => {
     expect(grids[1].parentElement).toHaveClass("import-custom-glass-touch-scroll");
   });
 
+  it("adds a blank coefficient row when crypto.randomUUID is unavailable", async () => {
+    const originalRandomUUID = crypto.randomUUID;
+    Object.defineProperty(crypto, "randomUUID", {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      const user = userEvent.setup();
+      renderPage();
+
+      await user.click(screen.getByRole("button", { name: "Add Glass" }));
+      const coefficientGrid = screen.getAllByTestId("ag-grid-mock")[1];
+      expect(coefficientGrid.querySelectorAll("tbody tr")).toHaveLength(0);
+
+      await user.click(screen.getByRole("button", { name: "Add row" }));
+
+      const rows = coefficientGrid.querySelectorAll("tbody tr");
+      expect(rows).toHaveLength(1);
+      const cells = rows[0].querySelectorAll("td");
+      expect(cells[2]).toHaveTextContent("");
+      expect(cells[3]).toHaveTextContent("");
+    } finally {
+      Object.defineProperty(crypto, "randomUUID", {
+        configurable: true,
+        value: originalRandomUUID,
+      });
+    }
+  });
+
   it("does not render a custom glass filter input", () => {
     renderPage();
 

@@ -2,6 +2,7 @@ import {
   EMPTY_CUSTOM_GLASSES,
   getUserDefinedCustomGlasses,
   isUserDefinedGlassAlreadyExistsError,
+  makeEditablePair,
   parseCustomGlassCsv,
   saveCustomGlass,
 } from "@/features/import-custom-glass/lib/customGlassImport";
@@ -17,6 +18,34 @@ const customGlass: UserDefinedGlassData = {
   dispersionCoeffKind: "tabulated",
   dispersionCoeffs: [[587.56, 1.5168]],
 };
+
+describe("makeEditablePair", () => {
+  it("creates unique blank editable rows with incremental ids when crypto.randomUUID is unavailable", () => {
+    const originalRandomUUID = crypto.randomUUID;
+    Object.defineProperty(crypto, "randomUUID", {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      const first = makeEditablePair();
+      const second = makeEditablePair();
+
+      expect(first).toMatchObject({
+        fraunhofer: "",
+        wavelength: "",
+        refractiveIndex: "",
+      });
+      expect(first.id).toMatch(/^row-custom-glass-\d+$/);
+      expect(second.id).toBe(`row-custom-glass-${Number(first.id.replace("row-custom-glass-", "")) + 1}`);
+    } finally {
+      Object.defineProperty(crypto, "randomUUID", {
+        configurable: true,
+        value: originalRandomUUID,
+      });
+    }
+  });
+});
 
 describe("getUserDefinedCustomGlasses", () => {
   it("returns a stable empty object when Custom catalog data is missing", () => {

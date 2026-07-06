@@ -10,13 +10,19 @@ import type {
 
 export const EMPTY_CUSTOM_GLASSES: UserDefinedCustomCatalog = {};
 
+let nextEditablePairId = 0;
+
 export function formatNumber(value: number): string {
   return Number.isFinite(value) ? String(value) : "";
 }
 
+function makeEditablePairId(): string {
+  return `row-custom-glass-${nextEditablePairId++}`;
+}
+
 export function makeEditablePair(pair?: readonly [number, number]): EditablePair {
   return {
-    id: crypto.randomUUID(),
+    id: makeEditablePairId(),
     fraunhofer: "",
     wavelength: pair === undefined ? "" : formatNumber(pair[0]),
     refractiveIndex: pair === undefined ? "" : formatNumber(pair[1]),

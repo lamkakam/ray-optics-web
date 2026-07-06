@@ -9,6 +9,7 @@ Pure helpers and browser/worker orchestration for custom glass import, export, a
 
 ## Modal Conversion
 - `makeEditablePair(pair)` creates modal grid rows with a generated id and string wavelength/index values.
+- Row id generation uses a module-level monotonically increasing counter, returning ids of the form `row-custom-glass-N`.
 - `toWorkerInput(label, rows)` trims the label and converts modal row strings to numeric worker pairs.
 
 ## JSON Export
