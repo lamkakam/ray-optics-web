@@ -189,7 +189,7 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
           .import-custom-glass-touch-scroll .ag-body-viewport,
           .import-custom-glass-touch-scroll .ag-center-cols-viewport {
             overscroll-behavior-y: auto;
-            touch-action: pan-y;
+            touch-action: pan-x pan-y;
           }
         }
       `}</style>

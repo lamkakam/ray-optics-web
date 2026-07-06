@@ -16,7 +16,7 @@ Add/edit modal for a single user-defined tabulated custom glass.
 - The Fraunhofer selector fills the matching wavelength and clears free-form wavelength edits when wavelength is manually changed.
 - Confirm is disabled until the label is non-blank and unique, there are at least four rows, all wavelength/index values are finite positive numbers, and wavelengths are distinct.
 - Duplicate wavelengths are marked with `text-red-600` and a validation message.
-- Wraps the coefficient grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores vertical touch panning/scroll chaining for AG Grid viewports in this modal only.
+- Wraps the coefficient grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores horizontal and vertical touch panning plus scroll chaining for AG Grid viewports in this modal only.
 - Passes `suppressTouch={true}` to this feature-owned AG Grid instance.
 
 ## Accessibility

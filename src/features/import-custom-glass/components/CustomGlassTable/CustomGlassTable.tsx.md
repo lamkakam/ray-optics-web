@@ -19,7 +19,7 @@ Readonly AG Grid table for all user-defined custom glasses.
 - `getRowId` uses the custom glass label so AG Grid can preserve row selection across row-data refreshes.
 - `onSelectionChanged` maps AG Grid selected row nodes back into the page-level `ReadonlySet<string>` checked state.
 - When `checked` changes externally after add, edit, delete, or import flows, the grid row selection is synchronized from that set.
-- Wraps the grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores vertical touch panning/scroll chaining for AG Grid viewports in this component only.
+- Wraps the grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores horizontal and vertical touch panning plus scroll chaining for AG Grid viewports in this component only.
 - Passes `suppressTouch={true}` to this feature-owned AG Grid instance.
 
 ## Accessibility

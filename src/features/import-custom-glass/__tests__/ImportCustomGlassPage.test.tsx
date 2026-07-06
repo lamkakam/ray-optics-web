@@ -76,6 +76,20 @@ function makeCsvFile(name: string, text: string): File {
   return file;
 }
 
+function expectImportCustomGlassTouchScroll(wrapper: Element | null) {
+  expect(wrapper).toHaveClass("import-custom-glass-touch-scroll");
+
+  const styleText = [...(wrapper?.querySelectorAll("style") ?? [])]
+    .map((style) => style.textContent ?? "")
+    .join("\n");
+
+  expect(styleText).toContain(".import-custom-glass-touch-scroll .ag-header-viewport");
+  expect(styleText).toContain(".import-custom-glass-touch-scroll .ag-body-viewport");
+  expect(styleText).toContain(".import-custom-glass-touch-scroll .ag-center-cols-viewport");
+  expect(styleText).toMatch(/touch-action:\s*pan-x pan-y;/);
+  expect(styleText).not.toMatch(/touch-action:\s*pan-y;/);
+}
+
 describe("ImportCustomGlassPage", () => {
   it("renders the custom glass table as an AG Grid instance", () => {
     renderPage();
@@ -88,7 +102,7 @@ describe("ImportCustomGlassPage", () => {
 
     const grid = screen.getByTestId("ag-grid-mock");
     expect(grid).toHaveAttribute("data-suppress-touch", "true");
-    expect(grid.parentElement).toHaveClass("import-custom-glass-touch-scroll");
+    expectImportCustomGlassTouchScroll(grid.parentElement);
   });
 
   it("suppresses AG Grid touch handling on the add/edit coefficient grid", async () => {
@@ -100,7 +114,7 @@ describe("ImportCustomGlassPage", () => {
     const grids = screen.getAllByTestId("ag-grid-mock");
     expect(grids).toHaveLength(2);
     expect(grids[1]).toHaveAttribute("data-suppress-touch", "true");
-    expect(grids[1].parentElement).toHaveClass("import-custom-glass-touch-scroll");
+    expectImportCustomGlassTouchScroll(grids[1].parentElement);
   });
 
   it("adds a blank coefficient row when crypto.randomUUID is unavailable", async () => {
