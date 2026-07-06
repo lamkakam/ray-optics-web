@@ -31,6 +31,7 @@ Client page for managing user-defined tabulated glass stored in the Pyodide work
 - The main custom glass table is an AG Grid instance with checkbox, `Label`, `nd`, `vd`, `ne`, `ve`, `Pg,F`, `PF,e`, and `PF,d` columns. Rows show all user-defined custom glasses sorted by label.
 - The readonly grid sizes the checkbox/select column as a fixed `81px` column wide enough to avoid checkbox-cell ellipsis, sets `Label` to a fixed `125px`, and uses fixed `137px` numeric columns for `nd`, `vd`, `ne`, `ve`, `Pg,F`, `PF,e`, and `PF,d`.
 - The readonly grid keeps the checkbox/select column neither sortable nor filterable while `Label`, `nd`, `vd`, `ne`, `ve`, `Pg,F`, `PF,e`, and `PF,d` remain sortable and filterable through their column definitions and the grid default column definition.
+- The readonly grid uses `agTextColumnFilter` for `Label` and `agNumberColumnFilter` for numeric optical columns. Each filter explicitly sets `filterParams.filterOptions` so AG Grid's default `blank` and `notBlank` options are not offered.
 - The sortable readonly data columns set `unSortIcon: true` so AG Grid displays an unsorted sort indicator before the first sort interaction.
 - The readonly optical property cells display `Number(value).toFixed(6)`.
 - Delete confirmation uses the shared `Modal` primitive with `Cancel` and `Delete` actions, and does not call the worker until `Delete` is clicked.

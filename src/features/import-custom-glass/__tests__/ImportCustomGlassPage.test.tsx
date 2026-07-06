@@ -184,6 +184,22 @@ describe("ImportCustomGlassPage", () => {
     }
   });
 
+  it("removes blank filter options from readonly grid data columns", () => {
+    renderPage();
+
+    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
+    const expectedTextFilterOptions = "contains,notContains,equals,notEqual,startsWith,endsWith";
+    const expectedNumberFilterOptions = "equals,notEqual,greaterThan,greaterThanOrEqual,lessThan,lessThanOrEqual,inRange";
+
+    expect(headers[0]).toHaveAttribute("data-filter", "false");
+    expect(headers[0]).not.toHaveAttribute("data-filter-options");
+    expect(headers[1]).toHaveAttribute("data-filter-options", expectedTextFilterOptions);
+    for (const header of [...headers].slice(2)) {
+      expect(header).toHaveAttribute("data-filter-options", expectedNumberFilterOptions);
+      expect(header.getAttribute("data-filter-options")?.split(",")).not.toEqual(expect.arrayContaining(["blank", "notBlank"]));
+    }
+  });
+
   it("renders readonly optical property values with six decimal places", () => {
     renderPage();
 

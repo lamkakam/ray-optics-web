@@ -61,6 +61,16 @@ interface SaveCustomGlassOptions {
 }
 
 export const EMPTY_CUSTOM_GLASSES: UserDefinedCustomCatalog = {};
+const TEXT_FILTER_OPTIONS = ["contains", "notContains", "equals", "notEqual", "startsWith", "endsWith"] as const;
+const NUMBER_FILTER_OPTIONS = [
+  "equals",
+  "notEqual",
+  "greaterThan",
+  "greaterThanOrEqual",
+  "lessThan",
+  "lessThanOrEqual",
+  "inRange",
+] as const;
 
 function formatNumber(value: number): string {
   return Number.isFinite(value) ? String(value) : "";
@@ -436,14 +446,85 @@ export default function ImportCustomGlassPage() {
         );
       },
     },
-    { headerName: "Label", field: "label", sortable: true, filter: true, unSortIcon: true, width: 125 },
-    { headerName: "nd", field: "nd", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
-    { headerName: "vd", field: "vd", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
-    { headerName: "ne", field: "ne", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
-    { headerName: "ve", field: "ve", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
-    { headerName: "Pg,F", field: "pgF", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
-    { headerName: "PF,e", field: "pFe", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
-    { headerName: "PF,d", field: "pFd", sortable: true, filter: true, unSortIcon: true, width: 137, valueFormatter: (params) => formatReadonlyNumber(params.value) },
+    {
+      headerName: "Label",
+      field: "label",
+      sortable: true,
+      filter: "agTextColumnFilter",
+      filterParams: { filterOptions: TEXT_FILTER_OPTIONS },
+      unSortIcon: true,
+      width: 125,
+    },
+    {
+      headerName: "nd",
+      field: "nd",
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      width: 137,
+      valueFormatter: (params) => formatReadonlyNumber(params.value),
+    },
+    {
+      headerName: "vd",
+      field: "vd",
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      width: 137,
+      valueFormatter: (params) => formatReadonlyNumber(params.value),
+    },
+    {
+      headerName: "ne",
+      field: "ne",
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      width: 137,
+      valueFormatter: (params) => formatReadonlyNumber(params.value),
+    },
+    {
+      headerName: "ve",
+      field: "ve",
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      width: 137,
+      valueFormatter: (params) => formatReadonlyNumber(params.value),
+    },
+    {
+      headerName: "Pg,F",
+      field: "pgF",
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      width: 137,
+      valueFormatter: (params) => formatReadonlyNumber(params.value),
+    },
+    {
+      headerName: "PF,e",
+      field: "pFe",
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      width: 137,
+      valueFormatter: (params) => formatReadonlyNumber(params.value),
+    },
+    {
+      headerName: "PF,d",
+      field: "pFd",
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      width: 137,
+      valueFormatter: (params) => formatReadonlyNumber(params.value),
+    },
   ], [checked]);
 
   const openAdd = () => setModalMode("add");

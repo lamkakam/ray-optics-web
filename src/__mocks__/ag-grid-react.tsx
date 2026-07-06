@@ -60,7 +60,18 @@ function commitValue(col: ColDef, row: Record<string, unknown>, value: unknown, 
 }
 
 function resolveColumnFlag(col: ColDef, defaultColDef: ColDef | undefined, key: "sortable" | "filter") {
-  return String((col[key] ?? defaultColDef?.[key]) === true);
+  const value = col[key] ?? defaultColDef?.[key];
+  return String(value === true || (key === "filter" && typeof value === "string"));
+}
+
+function resolveFilterOptions(col: ColDef): string | undefined {
+  const filterParams = col.filterParams;
+  if (filterParams === undefined || filterParams === null || typeof filterParams !== "object") {
+    return undefined;
+  }
+
+  const filterOptions = (filterParams as { filterOptions?: unknown }).filterOptions;
+  return Array.isArray(filterOptions) ? filterOptions.map(String).join(",") : undefined;
 }
 
 function EditableCell({
@@ -237,6 +248,7 @@ export function AgGridReact({
               data-width={col.width}
               data-sortable={resolveColumnFlag(col, defaultColDef, "sortable")}
               data-filter={resolveColumnFlag(col, defaultColDef, "filter")}
+              data-filter-options={resolveFilterOptions(col)}
               data-un-sort-icon={String(col.unSortIcon === true)}
             >
               {col.headerName ?? col.field ?? ""}
