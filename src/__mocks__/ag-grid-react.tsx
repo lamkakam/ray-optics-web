@@ -33,6 +33,7 @@ interface AgGridReactProps {
   onCellEditingStarted?: (event: unknown) => void;
   onCellEditingStopped?: (event: unknown) => void;
   stopEditingWhenCellsLoseFocus?: boolean;
+  suppressTouch?: boolean;
   theme?: unknown;
   domLayout?: string;
   [key: string]: unknown;
@@ -229,6 +230,7 @@ export function AgGridReact({
   rowSelection,
   selectionColumnDef,
   stopEditingWhenCellsLoseFocus = false,
+  suppressTouch = false,
   theme,
   domLayout,
 }: AgGridReactProps) {
@@ -321,6 +323,7 @@ export function AgGridReact({
       data-theme={themeName}
       data-dom-layout={domLayout}
       data-stop-editing-when-cells-lose-focus={String(stopEditingWhenCellsLoseFocus)}
+      data-suppress-touch={String(suppressTouch)}
       data-default-col-def-suppress-movable={String(defaultColDef?.suppressMovable === true)}
       data-default-col-def-sortable={String(defaultColDef?.sortable === true)}
       data-has-on-cell-editing-started={String(onCellEditingStarted !== undefined)}

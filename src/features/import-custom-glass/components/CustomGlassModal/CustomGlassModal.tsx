@@ -155,7 +155,17 @@ export function CustomGlassModal({
         </div>
         <Button variant="secondary" aria-label="Add row" onClick={() => setRows((current) => [...current, makeEditablePair()])}>Add row</Button>
         {duplicates.size > 0 && <p className="text-sm text-red-600">Duplicate wavelength rows must be resolved.</p>}
-        <div className="h-[45vh] min-h-72">
+        <div className="import-custom-glass-touch-scroll h-[45vh] min-h-72">
+          <style>{`
+            @media (pointer: coarse) {
+              .import-custom-glass-touch-scroll .ag-header-viewport,
+              .import-custom-glass-touch-scroll .ag-body-viewport,
+              .import-custom-glass-touch-scroll .ag-center-cols-viewport {
+                overscroll-behavior-y: auto;
+                touch-action: pan-y;
+              }
+            }
+          `}</style>
           <AgGridProvider modules={[AllCommunityModule]}>
             <EditableAgGridReact<EditablePair>
               theme={gridTheme}
@@ -163,6 +173,7 @@ export function CustomGlassModal({
               columnDefs={modalColumnDefs}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
               getRowId={(params) => params.data.id}
+              suppressTouch={true}
             />
           </AgGridProvider>
         </div>

@@ -31,4 +31,15 @@ describe("EditableAgGridReact", () => {
       "false",
     );
   });
+
+  it("does not default AG Grid touch handling to suppressed", () => {
+    render(
+      <EditableAgGridReact<{ readonly value: number }>
+        rowData={[{ value: 1 }]}
+        columnDefs={[{ field: "value", editable: true } satisfies ColDef<{ readonly value: number }>]}
+      />
+    );
+
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-suppress-touch", "false");
+  });
 });

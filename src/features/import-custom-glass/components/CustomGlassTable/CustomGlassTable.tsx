@@ -182,7 +182,17 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
   };
 
   return (
-    <div className="min-h-0 flex-1">
+    <div className="import-custom-glass-touch-scroll min-h-0 flex-1">
+      <style>{`
+        @media (pointer: coarse) {
+          .import-custom-glass-touch-scroll .ag-header-viewport,
+          .import-custom-glass-touch-scroll .ag-body-viewport,
+          .import-custom-glass-touch-scroll .ag-center-cols-viewport {
+            overscroll-behavior-y: auto;
+            touch-action: pan-y;
+          }
+        }
+      `}</style>
       <AgGridProvider modules={[AllCommunityModule]}>
         <EditableAgGridReact<CustomGlassRow>
           theme={gridTheme}
@@ -194,6 +204,7 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
           selectionColumnDef={selectionColumnDef}
           onGridReady={handleGridReady}
           onSelectionChanged={handleSelectionChanged}
+          suppressTouch={true}
         />
       </AgGridProvider>
     </div>
