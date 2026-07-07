@@ -1,6 +1,6 @@
 {
   "name": "ray-optics-web",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "license": "BSD-3-Clause",
   "private": true,
   "scripts": {
