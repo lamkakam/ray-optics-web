@@ -28,5 +28,7 @@ Pure helpers and browser/worker orchestration for custom glass import, export, a
 ## Worker Save Flow
 - `saveCustomGlass(options)` handles add/edit worker mutations and store mirroring.
 - Edit with an unchanged label updates the existing worker glass and upserts returned data.
-- Edit with a changed label adds the new worker glass, deletes the previous worker label, then upserts and deletes in the store.
-- Add mode falls back to `getUserDefinedGlasses([label])` when the worker reports that the user-defined label already exists, preserving the existing sync behavior.
+- Edit with a changed label adds the new worker glass, optionally persists the new row, deletes the previous worker label, optionally deletes the old persisted row, then upserts and deletes in the store.
+- Add mode falls back to `getUserDefinedGlasses([label])` when the worker reports that the user-defined label already exists, preserving the existing sync behavior without writing a new persisted row because no worker mutation succeeded.
+- Optional persistence callbacks run only after the matching worker mutation succeeds.
+- Persistence callback failures are warning-only through `onPersistenceWarning`; the successful worker mutation and store update are not rolled back.

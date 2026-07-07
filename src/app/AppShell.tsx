@@ -19,6 +19,13 @@ import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStorePr
 import { applyOptimizationModelToEditor } from "@/features/optimization/lib/applyOptimizationModelToEditor";
 import { GlassCatalogProvider } from "@/shared/components/providers/GlassCatalogProvider";
 import { loadGlassCatalogs } from "@/features/glass-map/lib/glassCatalogLoader";
+import {
+  isPersistedCustomGlassRow,
+  quarantinePersistedCustomGlass,
+  quarantineStoredCustomGlassRow,
+  readStoredCustomGlassRows,
+} from "@/features/import-custom-glass/lib/customGlassStorage";
+import type { CompleteGlassCatalogsData, UserDefinedMaterialsData } from "@/features/glass-map/types/glassMap";
 
 interface AppShellProps {
   readonly children: React.ReactNode;
@@ -58,6 +65,7 @@ export default function AppShell({ children }: AppShellProps) {
   const [glassCatalogPreloadStatus, setGlassCatalogPreloadStatus] =
     useState<GlassCatalogPreloadStatus | undefined>();
   const [glassCatalogPreloadError, setGlassCatalogPreloadError] = useState<string | undefined>();
+  const [quarantinedCustomGlassLabels, setQuarantinedCustomGlassLabels] = useState<readonly string[]>([]);
   const activeHistoryEntryRef = useRef<HistoryEntry>({ href: pathname, state: undefined });
   const glassCatalogsLoading =
     isReady &&
@@ -181,13 +189,48 @@ export default function AppShell({ children }: AppShellProps) {
 
     let cancelled = false;
 
-    void loadGlassCatalogs(proxy).then((result) => {
+    void (async () => {
+      const result = await loadGlassCatalogs(proxy);
       if (cancelled) {
         return;
       }
 
       if (result.error === undefined) {
-        glassMapStore.getState().setCatalogsData(result.data);
+        const hydratedData: CompleteGlassCatalogsData = {
+          ...result.data,
+          Custom: { ...result.data.Custom },
+        };
+        const quarantinedLabels: string[] = [];
+        const storedRows = await readStoredCustomGlassRows().catch(() => []);
+        for (const row of storedRows) {
+          if (!isPersistedCustomGlassRow(row)) {
+            const label = typeof row === "object" && row !== null && "label" in row && typeof row.label === "string"
+              ? row.label
+              : "unlabeled";
+            quarantinedLabels.push(label);
+            await quarantineStoredCustomGlassRow(row, label).catch(() => undefined);
+            continue;
+          }
+
+          try {
+            const added: UserDefinedMaterialsData = await proxy.addUserDefinedGlasses([{
+              name: row.label,
+              pairs: row.pairs,
+            }]);
+            hydratedData.Custom = {
+              ...hydratedData.Custom,
+              ...added,
+            };
+          } catch {
+            quarantinedLabels.push(row.label);
+            await quarantinePersistedCustomGlass(row).catch(() => undefined);
+          }
+        }
+
+        if (quarantinedLabels.length > 0) {
+          setQuarantinedCustomGlassLabels(quarantinedLabels);
+        }
+        glassMapStore.getState().setCatalogsData(hydratedData);
         setGlassCatalogPreloadStatus("loaded");
         setGlassCatalogPreloadError(undefined);
         return;
@@ -195,7 +238,7 @@ export default function AppShell({ children }: AppShellProps) {
 
       setGlassCatalogPreloadStatus("error");
       setGlassCatalogPreloadError(result.error);
-    });
+    })();
 
     return () => {
       cancelled = true;
@@ -289,6 +332,13 @@ export default function AppShell({ children }: AppShellProps) {
           onLeave={handleLeaveOptimization}
           onApplyToEditor={handleApplyOptimizationToEditorAndLeave}
         />
+        {quarantinedCustomGlassLabels.length > 0 && (
+          <ErrorModal
+            isOpen
+            message={`${quarantinedCustomGlassLabels.length} persisted custom glass entr${quarantinedCustomGlassLabels.length === 1 ? "y was" : "ies were"} quarantined: ${quarantinedCustomGlassLabels.join(", ")}`}
+            onClose={() => setQuarantinedCustomGlassLabels([])}
+          />
+        )}
         {showLoadingOverlay && (
           <LoadingOverlay
             title="Initializing Ray Optics"

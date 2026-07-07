@@ -80,26 +80,50 @@ export async function saveCustomGlass({
   input,
   proxy,
   storeActions,
+  persistInput,
+  deletePersisted,
+  onPersistenceWarning,
 }: SaveCustomGlassOptions): Promise<void> {
   if (mode === "edit" && previousLabel !== undefined && previousLabel !== input.name) {
     const added = await proxy.addUserDefinedGlasses([input]);
+    try {
+      await persistInput?.(input);
+    } catch (error) {
+      onPersistenceWarning?.(error instanceof Error ? error.message : "Failed to persist custom glass.");
+    }
     await proxy.deleteUserDefinedGlasses([previousLabel]);
+    try {
+      await deletePersisted?.([previousLabel]);
+    } catch (error) {
+      onPersistenceWarning?.(error instanceof Error ? error.message : "Failed to delete persisted custom glass.");
+    }
     storeActions.upsertCustomGlasses(added);
     storeActions.deleteCustomGlasses([previousLabel]);
     return;
   }
 
   let result;
+  let workerMutationSucceeded = false;
   try {
-    result = mode === "add"
-      ? await proxy.addUserDefinedGlasses([input])
-      : await proxy.updateUserDefinedGlasses([input]);
+    if (mode === "add") {
+      result = await proxy.addUserDefinedGlasses([input]);
+    } else {
+      result = await proxy.updateUserDefinedGlasses([input]);
+    }
+    workerMutationSucceeded = true;
   } catch (error) {
     if (mode !== "add" || !isUserDefinedGlassAlreadyExistsError(error)) {
       throw error;
     }
 
     result = await proxy.getUserDefinedGlasses([input.name]);
+  }
+  if (workerMutationSucceeded) {
+    try {
+      await persistInput?.(input);
+    } catch (error) {
+      onPersistenceWarning?.(error instanceof Error ? error.message : "Failed to persist custom glass.");
+    }
   }
   storeActions.upsertCustomGlasses(result);
 }

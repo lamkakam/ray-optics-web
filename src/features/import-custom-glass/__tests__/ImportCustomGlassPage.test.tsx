@@ -14,6 +14,21 @@ jest.mock("@/shared/hooks/useScreenBreakpoint", () => ({
   useScreenBreakpoint: jest.fn().mockReturnValue("screenLG"),
 }));
 
+jest.mock("@/features/import-custom-glass/lib/customGlassStorage", () => ({
+  deletePersistedCustomGlasses: jest.fn().mockResolvedValue(undefined),
+  upsertPersistedCustomGlass: jest.fn().mockResolvedValue(undefined),
+  upsertPersistedCustomGlasses: jest.fn().mockResolvedValue(undefined),
+}));
+
+const customGlassStorageMock = jest.requireMock("@/features/import-custom-glass/lib/customGlassStorage") as {
+  readonly deletePersistedCustomGlasses: jest.Mock<Promise<void>, [readonly string[]]>;
+  readonly upsertPersistedCustomGlass: jest.Mock<Promise<void>, [{ readonly name: string; readonly pairs: readonly (readonly [number, number])[] }]>;
+  readonly upsertPersistedCustomGlasses: jest.Mock<Promise<void>, [readonly { readonly name: string; readonly pairs: readonly (readonly [number, number])[] }[]]>;
+};
+const mockDeletePersistedCustomGlasses = customGlassStorageMock.deletePersistedCustomGlasses;
+const mockUpsertPersistedCustomGlasses = customGlassStorageMock.upsertPersistedCustomGlasses;
+const mockUpsertPersistedCustomGlass = customGlassStorageMock.upsertPersistedCustomGlass;
+
 const customGlass: UserDefinedGlassData = {
   refractiveIndexD: 1.5168,
   refractiveIndexE: 1.519,
@@ -118,6 +133,12 @@ function expectImportCustomGlassTouchScroll(wrapper: Element | null) {
 describe("ImportCustomGlassPage", () => {
   beforeEach(() => {
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
+    mockDeletePersistedCustomGlasses.mockClear();
+    mockUpsertPersistedCustomGlass.mockClear();
+    mockUpsertPersistedCustomGlasses.mockClear();
+    mockDeletePersistedCustomGlasses.mockResolvedValue(undefined);
+    mockUpsertPersistedCustomGlass.mockResolvedValue(undefined);
+    mockUpsertPersistedCustomGlasses.mockResolvedValue(undefined);
   });
 
   it("renders the custom glass table as an AG Grid instance", () => {
@@ -392,6 +413,34 @@ describe("ImportCustomGlassPage", () => {
     await waitFor(() => expect(deleteUserDefinedGlasses).toHaveBeenCalledWith(["CUSTOM_A"]));
   });
 
+  it("deletes persisted custom glasses after the worker delete succeeds", async () => {
+    const user = userEvent.setup();
+    const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
+    renderPage({ deleteUserDefinedGlasses });
+
+    await user.click(screen.getByLabelText("Select CUSTOM_A"));
+    await user.click(screen.getByRole("button", { name: "Delete Glass" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => expect(mockDeletePersistedCustomGlasses).toHaveBeenCalledWith(["CUSTOM_A"]));
+    expect(mockDeletePersistedCustomGlasses.mock.invocationCallOrder[0])
+      .toBeGreaterThan(deleteUserDefinedGlasses.mock.invocationCallOrder[0]);
+  });
+
+  it("shows a persistence warning when deleting from IndexedDB fails after worker delete", async () => {
+    const user = userEvent.setup();
+    const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
+    mockDeletePersistedCustomGlasses.mockRejectedValue(new Error("idb delete failed"));
+    renderPage({ deleteUserDefinedGlasses });
+
+    await user.click(screen.getByLabelText("Select CUSTOM_A"));
+    await user.click(screen.getByRole("button", { name: "Delete Glass" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+
+    expect(await screen.findByRole("dialog", { name: "Custom Glass Persistence Warning" })).toBeInTheDocument();
+    expect(screen.getByText(/idb delete failed/)).toBeInTheDocument();
+  });
+
   it("does not call the worker when delete is canceled", async () => {
     const user = userEvent.setup();
     const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
@@ -494,6 +543,18 @@ describe("ImportCustomGlassPage", () => {
         pairs: [[486.13, 1.8], [546.07, 1.79], [587.56, 1.78], [656.27, 1.77]],
       },
     ]));
+    expect(mockUpsertPersistedCustomGlasses).toHaveBeenCalledWith([
+      {
+        name: "LF7",
+        pairs: [[486.13, 1.522], [546.07, 1.518], [587.56, 1.5168], [656.27, 1.514]],
+      },
+      {
+        name: "SF11",
+        pairs: [[486.13, 1.8], [546.07, 1.79], [587.56, 1.78], [656.27, 1.77]],
+      },
+    ]);
+    expect(mockUpsertPersistedCustomGlasses.mock.invocationCallOrder[0])
+      .toBeGreaterThan(addUserDefinedGlasses.mock.invocationCallOrder[0]);
     expect(updateUserDefinedGlasses).not.toHaveBeenCalled();
   });
 

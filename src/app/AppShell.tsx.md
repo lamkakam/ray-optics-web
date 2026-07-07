@@ -7,6 +7,8 @@ Client wrapper for the shared runtime shell. Owns Pyodide initialization, app-wi
 - Calls `usePyodide()` once for the app tree
 - Displays determinate initialization progress from `usePyodide().initProgress`
 - Loads normalized glass catalog data via `loadGlassCatalogs()` when `GlassMapStore.catalogsData` is not already available
+- Hydrates valid persisted custom glass rows from IndexedDB into Pyodide after built-in catalog loading succeeds and before catalog preload is marked loaded
+- Quarantines invalid or worker-rejected persisted custom glass rows and reports one warning after initialization
 - Owns glass-catalog preload status/error locally and commits only successful data into `GlassMapStore`
 - Registers an app-wide `beforeunload` guard for reload, tab close, typed URL, and external navigation
 - Allows browser back/forward navigation between app routes without native confirmation, while keeping the Optimization unapplied-result modal as the browser-history guard for unapplied results
@@ -47,6 +49,10 @@ Client wrapper for the shared runtime shell. Owns Pyodide initialization, app-wi
 - The loading overlay stays visible until both Pyodide is ready and the initial glass-catalog preload has completed successfully.
 - While Pyodide initializes, the overlay uses the milestone state supplied by `usePyodide`.
 - Once Pyodide is ready and catalog preload begins, the overlay displays `"Preloading glass catalogs"` at `90%`; the overlay is removed after catalog preload succeeds.
+- The catalog preload remains blocking while persisted custom glasses are replayed into `addUserDefinedGlasses` one row at a time.
+- Accepted persisted rows are merged into `catalogsData.Custom` before `GlassMapStore.setCatalogsData(...)` is called.
+- Malformed persisted rows, unsupported row types, and rows rejected by the worker are moved from `customGlasses` to `quarantinedCustomGlasses` when possible.
+- After startup completes, AppShell reports one warning listing the quarantined row count and labels.
 - If catalog preload fails, the overlay remains blocking and displays the AppShell-local catalog error. The failed result is not committed into `GlassMapStore`.
 - `GlassMapStore.catalogsData` is the source of truth for already loaded catalogs; AppShell does not read settled data from the loader.
 - `GlassCatalogProvider.error`, `isLoaded`, and `isLoading` are derived from AppShell-local preload status plus `GlassMapStore.catalogsData`; `catalogs` and `lookupMaps` come from `GlassMapStore`.
