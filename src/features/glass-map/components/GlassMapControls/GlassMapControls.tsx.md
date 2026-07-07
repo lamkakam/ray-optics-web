@@ -8,7 +8,7 @@ Pure presentational component that renders all filter/selector controls for the 
 |------|------|-------------|
 | `plotType` | `GlassMapPlotType` | Currently selected plot type |
 | `abbeNumCenterLine` | `AbbeNumCenterLine` | Selected spectral line (`'d'` or `'e'`) |
-| `partialDispersionType` | `PartialDispersionType` | Selected partial dispersion (`'P_F_d'`, `'P_F_e'`, `'P_g_F'`) |
+| `partialDispersionType` | `PartialDispersionType` | Selected partial dispersion (`'P_Fd'`, `'P_fe'`, `'P_gF'`) |
 | `enabledCatalogs` | `Record<CatalogName, boolean>` | Per-catalog enabled state |
 | `onPlotTypeChange` | `(t: GlassMapPlotType) => void` | Called when plot type radio changes |
 | `onAbbeNumCenterLineChange` | `(l: AbbeNumCenterLine) => void` | Called when d/e radio changes |

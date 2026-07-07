@@ -6,15 +6,15 @@ import pytest
 
 CATALOG_NAMES = ["CDGM", "Hikari", "Hoya", "Ohara", "Schott", "Sumita"]
 REQUIRED_KEYS = {
-    "refractive_index_d",
-    "refractive_index_e",
-    "abbe_number_d",
-    "abbe_number_e",
-    "partial_dispersions",
-    "dispersion_coeff_kind",
-    "dispersion_coeffs",
+    "refractiveIndexD",
+    "refractiveIndexE",
+    "abbeNumberD",
+    "abbeNumberE",
+    "partialDispersions",
+    "dispersionCoeffKind",
+    "dispersionCoeffs",
 }
-PARTIAL_DISPERSION_KEYS = {"P_F_e", "P_F_d", "P_g_F"}
+PARTIAL_DISPERSION_KEYS = {"P_fe", "P_Fd", "P_gF"}
 
 
 @pytest.fixture(scope="module")
@@ -222,8 +222,8 @@ class TestGetGlassCatalogData:
 
         result = get_glass_catalog_data(catalog_name)
         for glass_name, entry in result.items():
-            nd = entry["refractive_index_d"]
-            ne = entry["refractive_index_e"]
+            nd = entry["refractiveIndexD"]
+            ne = entry["refractiveIndexE"]
             assert isinstance(nd, float), f"{catalog_name}/{glass_name}: nd not float"
             assert isinstance(ne, float), f"{catalog_name}/{glass_name}: ne not float"
             assert nd > 1.0, f"{catalog_name}/{glass_name}: nd={nd} <= 1.0"
@@ -235,24 +235,24 @@ class TestGetGlassCatalogData:
 
         result = get_glass_catalog_data(catalog_name)
         for glass_name, entry in result.items():
-            vd = entry["abbe_number_d"]
-            ve = entry["abbe_number_e"]
+            vd = entry["abbeNumberD"]
+            ve = entry["abbeNumberE"]
             assert isinstance(vd, float), f"{catalog_name}/{glass_name}: vd not float"
             assert isinstance(ve, float), f"{catalog_name}/{glass_name}: ve not float"
             assert vd > 0.0, f"{catalog_name}/{glass_name}: vd={vd} <= 0"
             assert ve > 0.0, f"{catalog_name}/{glass_name}: ve={ve} <= 0"
 
     @pytest.mark.parametrize("catalog_name", CATALOG_NAMES)
-    def test_partial_dispersions_has_required_keys_with_finite_values(
+    def test_partialDispersions_has_required_keys_with_finite_values(
         self, catalog_name: str
     ) -> None:
         from rayoptics_web_utils.glass.glass import get_glass_catalog_data
 
         result = get_glass_catalog_data(catalog_name)
         for glass_name, entry in result.items():
-            pd_data = entry["partial_dispersions"]
+            pd_data = entry["partialDispersions"]
             assert PARTIAL_DISPERSION_KEYS == set(pd_data.keys()), (
-                f"{catalog_name}/{glass_name}: partial_dispersions keys mismatch"
+                f"{catalog_name}/{glass_name}: partialDispersions keys mismatch"
             )
             for k, v in pd_data.items():
                 assert isinstance(v, float), (
@@ -262,24 +262,24 @@ class TestGetGlassCatalogData:
                     f"{catalog_name}/{glass_name}: partial dispersion {k}={v} not finite"
                 )
     @pytest.mark.parametrize("catalog_name", CATALOG_NAMES)
-    def test_dispersion_coeffs_has_kind_and_coeffs_with_finite_values(
+    def test_dispersionCoeffs_has_kind_and_coeffs_with_finite_values(
         self, catalog_name: str
     ) -> None:
         from rayoptics_web_utils.glass.glass import get_glass_catalog_data
 
         result = get_glass_catalog_data(catalog_name)
         for glass_name, entry in result.items():
-            assert "dispersion_coeff_kind" in entry, f"{catalog_name}/{glass_name} missing 'dispersion_coeff_kind'"
-            assert "dispersion_coeffs" in entry, f"{catalog_name}/{glass_name} missing 'dispersion_coeffs'"
+            assert "dispersionCoeffKind" in entry, f"{catalog_name}/{glass_name} missing 'dispersionCoeffKind'"
+            assert "dispersionCoeffs" in entry, f"{catalog_name}/{glass_name} missing 'dispersionCoeffs'"
             
-            coeff_kind = entry["dispersion_coeff_kind"]
-            assert isinstance(coeff_kind, str), f"{catalog_name}/{glass_name}: dispersion_coeff_kind not string"
+            coeff_kind = entry["dispersionCoeffKind"]
+            assert isinstance(coeff_kind, str), f"{catalog_name}/{glass_name}: dispersionCoeffKind not string"
             assert coeff_kind in {"Schott2x6", "Sellmeier3T", "Sellmeier4T"}, (
-                f"{catalog_name}/{glass_name}: dispersion_coeff_kind {coeff_kind} not in expected values"
+                f"{catalog_name}/{glass_name}: dispersionCoeffKind {coeff_kind} not in expected values"
             )
 
-            coeffs = entry["dispersion_coeffs"]
-            assert isinstance(coeffs, list), f"{catalog_name}/{glass_name}: dispersion_coeffs not list"
+            coeffs = entry["dispersionCoeffs"]
+            assert isinstance(coeffs, list), f"{catalog_name}/{glass_name}: dispersionCoeffs not list"
             for i, coeff in enumerate(coeffs):
                 assert isinstance(coeff, float), (
                     f"{catalog_name}/{glass_name}: dispersion coefficient {i} not float"

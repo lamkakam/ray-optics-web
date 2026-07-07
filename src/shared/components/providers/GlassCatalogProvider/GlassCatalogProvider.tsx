@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext } from "react";
 import type { AllGlassCatalogsData, GlassLookupMaps } from "@/features/glass-map/types/glassMap";
-import type { GlassCatalogsLoadResult } from "@/features/glass-map/lib/glassCatalogsResource";
+import type { GlassCatalogsLoadResult } from "@/features/glass-map/lib/glassCatalogLoader";
 
 export interface GlassCatalogContextValue {
   readonly catalogs: AllGlassCatalogsData | undefined;

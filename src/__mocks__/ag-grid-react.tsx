@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 interface ColDef {
   headerName?: string;
@@ -21,11 +21,44 @@ interface AgGridReactProps {
   defaultColDef?: ColDef;
   getRowId?: (params: { data: Record<string, unknown> }) => string;
   onRowSelected?: (event: unknown) => void;
+  onGridReady?: (event: { api: MockGridApi }) => void;
+  onSortChanged?: (event: { api: MockGridApi }) => void;
+  onFilterChanged?: (event: { api: MockGridApi }) => void;
+  onSelectionChanged?: (event: { selectedNodes: { data: Record<string, unknown> }[]; source: "uiSelectAll" | "checkboxSelected" }) => void;
+  rowSelection?: {
+    mode?: string;
+    checkboxes?: boolean;
+    headerCheckbox?: boolean;
+    selectAll?: string;
+  };
+  selectionColumnDef?: ColDef;
   onCellEditingStarted?: (event: unknown) => void;
   onCellEditingStopped?: (event: unknown) => void;
   stopEditingWhenCellsLoseFocus?: boolean;
+  suppressTouch?: boolean;
   theme?: unknown;
   domLayout?: string;
+  [key: string]: unknown;
+}
+
+interface MockGridApi {
+  forEachNode: (callback: (node: MockRowNode) => void) => void;
+  applyColumnState: (params: { state: MockColumnState[]; defaultState?: Record<string, unknown> }) => void;
+  getColumnState: () => MockColumnState[];
+  setFilterModel: (model: Record<string, unknown>) => void;
+  getFilterModel: () => Record<string, unknown>;
+}
+
+interface MockRowNode {
+  data: Record<string, unknown>;
+  isSelected: () => boolean;
+  setSelected: (selected: boolean) => void;
+}
+
+interface MockColumnState {
+  colId?: string;
+  sort?: "asc" | "desc";
+  sortIndex?: number;
   [key: string]: unknown;
 }
 
@@ -57,6 +90,21 @@ function commitValue(col: ColDef, row: Record<string, unknown>, value: unknown, 
   if (col.valueSetter) {
     col.valueSetter({ data: row, newValue, oldValue });
   }
+}
+
+function resolveColumnFlag(col: ColDef, defaultColDef: ColDef | undefined, key: "sortable" | "filter") {
+  const value = col[key] ?? defaultColDef?.[key];
+  return String(value === true || (key === "filter" && typeof value === "string"));
+}
+
+function resolveFilterOptions(col: ColDef): string | undefined {
+  const filterParams = col.filterParams;
+  if (filterParams === undefined || filterParams === null || typeof filterParams !== "object") {
+    return undefined;
+  }
+
+  const filterOptions = (filterParams as { filterOptions?: unknown }).filterOptions;
+  return Array.isArray(filterOptions) ? filterOptions.map(String).join(",") : undefined;
 }
 
 function EditableCell({
@@ -190,13 +238,39 @@ export function AgGridReact({
   getRowId,
   onCellEditingStarted,
   onCellEditingStopped,
+  onGridReady,
+  onSortChanged,
+  onFilterChanged,
+  onSelectionChanged,
+  rowSelection,
+  selectionColumnDef,
   stopEditingWhenCellsLoseFocus = false,
+  suppressTouch = false,
   theme,
   domLayout,
 }: AgGridReactProps) {
   const tableRef = useRef<HTMLTableElement | null>(null);
   const previousColumnDefsRef = useRef<ColDef[] | undefined>(undefined);
+  const apiRef = useRef<MockGridApi | undefined>(undefined);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<ReadonlySet<string>>(new Set());
+  const [currentColumnState, setCurrentColumnState] = useState<MockColumnState[]>([]);
+  const [appliedColumnState, setAppliedColumnState] = useState<{ state: MockColumnState[]; defaultState?: Record<string, unknown> } | undefined>(undefined);
+  const [currentFilterModel, setCurrentFilterModel] = useState<Record<string, unknown>>({});
   const themeName = theme && typeof theme === "object" && "_name" in theme ? (theme as { _name: string })._name : undefined;
+  const effectiveRowData = useMemo(() => rowData ?? [], [rowData]);
+  const hasSelectionColumn = rowSelection?.mode === "multiRow";
+  const showsHeaderCheckbox = hasSelectionColumn && rowSelection?.headerCheckbox !== false;
+  const showsRowCheckboxes = hasSelectionColumn && rowSelection?.checkboxes !== false;
+
+  const getSelectedRows = (selectedKeys: ReadonlySet<string>) =>
+    effectiveRowData.filter((row, rowIdx) => selectedKeys.has(getRowKey(row, rowIdx, getRowId)));
+
+  const emitSelectionChanged = (selectedKeys: ReadonlySet<string>, source: "uiSelectAll" | "checkboxSelected") => {
+    onSelectionChanged?.({
+      selectedNodes: getSelectedRows(selectedKeys).map((data) => ({ data })),
+      source,
+    });
+  };
 
   useLayoutEffect(() => {
     const previousColumnDefs = previousColumnDefsRef.current;
@@ -212,6 +286,116 @@ export function AgGridReact({
     }
   }, [columnDefs]);
 
+  useLayoutEffect(() => {
+    const api: MockGridApi = {
+      forEachNode: (callback) => {
+        effectiveRowData.forEach((row, rowIdx) => {
+          const rowKey = getRowKey(row, rowIdx, getRowId);
+          callback({
+            data: row,
+            isSelected: () => selectedRowKeys.has(rowKey),
+            setSelected: (selected) => {
+              setSelectedRowKeys((previous) => {
+                const next = new Set(previous);
+                if (selected) {
+                  next.add(rowKey);
+                } else {
+                  next.delete(rowKey);
+                }
+                return next;
+              });
+            },
+          });
+        });
+      },
+      applyColumnState: (params) => {
+        setAppliedColumnState((previous) => (
+          JSON.stringify(previous) === JSON.stringify(params)
+            ? previous
+            : params
+        ));
+        setCurrentColumnState((previous) => (
+          JSON.stringify(previous) === JSON.stringify(params.state)
+            ? previous
+            : params.state
+        ));
+      },
+      getColumnState: () => currentColumnState,
+      setFilterModel: (model) => {
+        setCurrentFilterModel((previous) => (
+          JSON.stringify(previous) === JSON.stringify(model)
+            ? previous
+            : model
+        ));
+      },
+      getFilterModel: () => currentFilterModel,
+    };
+
+    apiRef.current = api;
+    onGridReady?.({ api });
+  }, [currentColumnState, currentFilterModel, effectiveRowData, getRowId, onGridReady, selectedRowKeys]);
+
+  const handleSortChanged = (event: CustomEvent<{ columnState?: MockColumnState[] }>) => {
+    const detail = event.detail;
+    const nextColumnState = detail?.columnState ?? [];
+    setCurrentColumnState(nextColumnState);
+    const api = apiRef.current;
+    if (api !== undefined) {
+      api.getColumnState = () => nextColumnState;
+      onSortChanged?.({ api });
+    }
+  };
+
+  const handleFilterChanged = (event: CustomEvent<{ filterModel?: Record<string, unknown> }>) => {
+    const detail = event.detail;
+    const nextFilterModel = detail?.filterModel ?? {};
+    setCurrentFilterModel(nextFilterModel);
+    const api = apiRef.current;
+    if (api !== undefined) {
+      api.getFilterModel = () => nextFilterModel;
+      onFilterChanged?.({ api });
+    }
+  };
+
+  const handleHeaderCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const next = event.target.checked
+      ? new Set(effectiveRowData.map((row, rowIdx) => getRowKey(row, rowIdx, getRowId)))
+      : new Set<string>();
+    setSelectedRowKeys(next);
+    emitSelectionChanged(next, "uiSelectAll");
+  };
+
+  const handleRowCheckboxChange = (row: Record<string, unknown>, rowIdx: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const rowKey = getRowKey(row, rowIdx, getRowId);
+    const next = new Set(selectedRowKeys);
+    if (event.target.checked) {
+      next.add(rowKey);
+    } else {
+      next.delete(rowKey);
+    }
+    setSelectedRowKeys(next);
+    emitSelectionChanged(next, "checkboxSelected");
+  };
+
+  const allRowsSelected = effectiveRowData.length > 0 && effectiveRowData.every((row, rowIdx) => selectedRowKeys.has(getRowKey(row, rowIdx, getRowId)));
+
+  useLayoutEffect(() => {
+    const table = tableRef.current;
+    if (table === null) {
+      return undefined;
+    }
+
+    const sortListener = (event: Event) => handleSortChanged(event as CustomEvent<{ columnState?: MockColumnState[] }>);
+    const filterListener = (event: Event) => handleFilterChanged(event as CustomEvent<{ filterModel?: Record<string, unknown> }>);
+    table.addEventListener("mockSortChanged", sortListener);
+    table.addEventListener("mockFilterChanged", filterListener);
+
+    return () => {
+      table.removeEventListener("mockSortChanged", sortListener);
+      table.removeEventListener("mockFilterChanged", filterListener);
+    };
+  });
+
   return (
     <table
       ref={tableRef}
@@ -219,18 +403,43 @@ export function AgGridReact({
       data-theme={themeName}
       data-dom-layout={domLayout}
       data-stop-editing-when-cells-lose-focus={String(stopEditingWhenCellsLoseFocus)}
+      data-suppress-touch={String(suppressTouch)}
       data-default-col-def-suppress-movable={String(defaultColDef?.suppressMovable === true)}
       data-default-col-def-sortable={String(defaultColDef?.sortable === true)}
       data-has-on-cell-editing-started={String(onCellEditingStarted !== undefined)}
       data-has-on-cell-editing-stopped={String(onCellEditingStopped !== undefined)}
+      data-current-column-state={JSON.stringify(currentColumnState)}
+      data-applied-column-state={appliedColumnState === undefined ? undefined : JSON.stringify(appliedColumnState)}
+      data-current-filter-model={JSON.stringify(currentFilterModel)}
     >
       <thead>
         <tr>
+          {hasSelectionColumn ? (
+            <th
+              data-width={selectionColumnDef?.width}
+              data-sortable={resolveColumnFlag(selectionColumnDef ?? {}, defaultColDef, "sortable")}
+              data-filter={resolveColumnFlag(selectionColumnDef ?? {}, defaultColDef, "filter")}
+              data-un-sort-icon={String(selectionColumnDef?.unSortIcon === true)}
+            >
+              {showsHeaderCheckbox ? (
+                <input
+                  type="checkbox"
+                  aria-label="Select all custom glasses"
+                  checked={allRowsSelected}
+                  onChange={handleHeaderCheckboxChange}
+                />
+              ) : null}
+            </th>
+          ) : null}
           {columnDefs?.map((col, i) => (
             <th
               key={i}
               data-pinned={typeof col.pinned === "string" ? col.pinned : undefined}
               data-width={col.width}
+              data-sortable={resolveColumnFlag(col, defaultColDef, "sortable")}
+              data-filter={resolveColumnFlag(col, defaultColDef, "filter")}
+              data-filter-options={resolveFilterOptions(col)}
+              data-un-sort-icon={String(col.unSortIcon === true)}
             >
               {col.headerName ?? col.field ?? ""}
             </th>
@@ -238,11 +447,23 @@ export function AgGridReact({
         </tr>
       </thead>
       <tbody>
-        {rowData?.map((row, rowIdx) => {
+        {effectiveRowData.map((row, rowIdx) => {
           const rowKey = getRowKey(row, rowIdx, getRowId);
 
           return (
             <tr key={rowKey}>
+              {hasSelectionColumn ? (
+                <td>
+                  {showsRowCheckboxes ? (
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${String(row.label)}`}
+                      checked={selectedRowKeys.has(rowKey)}
+                      onChange={(event) => handleRowCheckboxChange(row, rowIdx, event)}
+                    />
+                  ) : null}
+                </td>
+              ) : null}
               {columnDefs?.map((col, colIdx) => {
                 const value = col.valueGetter
                   ? col.valueGetter({ data: row })

@@ -7,7 +7,7 @@ Compiles an AJV JSON Schema validator for `OpticalModel` and exports it for use 
 ## Exports
 
 ```ts
-export { validateImportedLensData };
+export { validateImportedCustomGlassData, validateImportedLensData };
 // type: ValidateFunction<OpticalModel> (AJV compiled validator)
 ```
 
@@ -18,6 +18,20 @@ export { validateImportedLensData };
 ```
 
 When validation fails, `validateImportedLensData.errors` is set to an array of AJV `ErrorObject`s.
+
+`validateImportedCustomGlassData` validates custom glass JSON imports shaped as:
+
+```json
+{
+  "version": "1.0",
+  "Custom": {
+    "CUSTOM_LABEL": {
+      "type": "tabulated",
+      "data": [[587.56, 1.5168]]
+    }
+  }
+}
+```
 
 ## Behavior
 
@@ -35,6 +49,7 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 - Surface `edge_aperture` is optional and, when present, must be `{ shape: "circular"; radius: number; offsetX: number; offsetY: number }` with `radius > 0` or `{ shape: "rectangular"; xHalfWidth: number; yHalfWidth: number; rotation: number; offsetX: number; offsetY: number }`.
 
 - **`additionalProperties: false`** is set on every schema object — any unknown key causes validation failure.
+- Custom glass imports require string version `"1.0"`, a `Custom` object, `type: "tabulated"`, at least four wavelength/index pairs, exactly two positive finite numbers per pair, and no extra keys.
 
 ## Dependencies
 
@@ -44,6 +59,7 @@ When validation fails, `validateImportedLensData.errors` is set to an array of A
 ## Edge Cases / Error Handling
 
 - Returns `false` and populates `.errors` for any structural mismatch, unknown property, or type error.
+- Custom glass validation rejects numeric versions, malformed version strings, non-tabulated material types, fewer than four pairs, invalid pair lengths, non-positive or non-finite pair values, and unknown keys.
 - Returns `false` if `object.medium` or `object.manufacturer` is missing, or if `object.medium` is reflective.
 - `specs.field.isWideAngle` may be omitted, but if present it must be a boolean.
 - Legacy aspherical payloads without `kind` are rejected.

@@ -21,12 +21,13 @@ const allEnabled: Record<CatalogName, boolean> = {
   Schott: true,
   Sumita: true,
   Special: true,
+  Custom: true,
 };
 
 const defaultProps = {
   plotType: "refractiveIndex" as const,
   abbeNumCenterLine: "d" as const,
-  partialDispersionType: "P_g_F" as const,
+  partialDispersionType: "P_gF" as const,
   enabledCatalogs: allEnabled,
   onPlotTypeChange: jest.fn(),
   onAbbeNumCenterLineChange: jest.fn(),
@@ -137,10 +138,10 @@ describe("GlassMapControls", () => {
     expect(screen.queryByRole("radio", { name: /P_g,F/i })).not.toBeInTheDocument();
   });
 
-  it("calls onPartialDispersionTypeChange with P_F_d when clicked", async () => {
+  it("calls onPartialDispersionTypeChange with P_Fd when clicked", async () => {
     render(<GlassMapControls {...defaultProps} plotType="partialDispersion" />);
     await userEvent.click(screen.getByRole("radio", { name: /P_F,d/i }));
-    expect(defaultProps.onPartialDispersionTypeChange).toHaveBeenCalledWith("P_F_d");
+    expect(defaultProps.onPartialDispersionTypeChange).toHaveBeenCalledWith("P_Fd");
   });
 
   it("renders a checkbox for each catalog", () => {

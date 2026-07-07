@@ -13,7 +13,6 @@ import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { CatalogName, SelectedGlass } from "./types/glassMap";
 import { computePlotPoints } from "./lib/glassMap";
-import { readGlassCatalogs } from "./lib/glassCatalogsResource";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -32,9 +31,9 @@ function axisLabels(
     return { xLabel, yLabel: abbeNumCenterLine === "d" ? "Nd" : "Ne" };
   }
   const yLabelMap: Record<GlassMapStore["partialDispersionType"], string> = {
-    P_F_d: "P_F,d",
-    P_F_e: "P_F,e",
-    P_g_F: "P_g,F",
+    P_Fd: "P_F,d",
+    P_fe: "P_F,e",
+    P_gF: "P_g,F",
   };
   return { xLabel, yLabel: yLabelMap[partialDispersionType] };
 }
@@ -46,6 +45,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
   const partialDispersionType = useStore(store, (s) => s.partialDispersionType);
   const enabledCatalogs = useStore(store, (s) => s.enabledCatalogs);
   const selectedGlass = useStore(store, (s) => s.selectedGlass);
+  const catalogsData = useStore(store, (s) => s.catalogsData);
   const [routeIntentDismissed, setRouteIntentDismissed] = useState(false);
 
   const {
@@ -64,17 +64,13 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
     );
   }
 
-  const catalogsLoadResult = readGlassCatalogs(proxy);
-
-  if (catalogsLoadResult.error !== undefined) {
+  if (catalogsData === undefined) {
     return (
-      <div className="flex items-center justify-center h-full text-red-500">
-        {catalogsLoadResult.error}
+      <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+        Loading glass catalog data…
       </div>
     );
   }
-
-  const catalogsData = catalogsLoadResult.data;
 
   let routeSelectedGlass: SelectedGlass | undefined;
   if (routeIntent !== undefined) {

@@ -31,8 +31,9 @@ export function buildExportScript(opticalModel: OpticalModel): string;
 4. Sets `opm.radius_mode = True`. Sets `sm.do_apertures` based on `model.setAutoAperture`.
 5. Sets `sm.gaps[0].thi` to the object distance and `sm.gaps[0].medium = decode_medium(...)` from `model.object.medium` / `model.object.manufacturer`.
 6. Calls `sm.add_surface(...)` for each surface in order. Per surface:
-   - Passes `[curvatureRadius, thickness, medium, manufacturer]` (manufacturer omitted for `"air"`, `"REFL"`, `"CaF2"`, `"Fused Silica"`, `"Water"`, and `"D263TECO"`).
+   - Passes `[curvatureRadius, thickness, medium, manufacturer]` (manufacturer omitted for `"air"`, `"REFL"`, `"CaF2"`, `"Fused Silica"`, `"Water"`, `"D263TECO"`, and `Custom` user-defined glass).
    - Handles `medium = "CaF2"`, `"Fused Silica"`, `"Water"`, and `"D263TECO"` by emitting the variable names `caf2`, `fused_silica`, `water`, and `d263teco` respectively (defined in the export script preamble).
+   - Handles `manufacturer = "Custom"` by emitting `user_defined_materials["<label>"]` as the medium expression.
    - Does not pass `sd=` to `sm.add_surface(...)`.
    - Emits `sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=<semiDiameter>, x_offset=0, y_offset=0)]` after `sm.add_surface(...)` for centered circular clear apertures when `semiDiameter > 0`. If `clear_aperture` is omitted, offsets default to `0`.
    - Emits `OffsetCircular(...)` instead of `Circular(...)` for circular clear apertures when either `offsetX` or `offsetY` is nonzero, so RayOptics edge ray targets include the aperture offset.
@@ -88,6 +89,7 @@ The import preamble is built separately from the model-construction lines so fut
 - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
 - Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.
 - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.
+- Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`, so worker computations use the user-defined material table initialized by Pyodide.
 - `OffsetCircular` is required only when a circular aperture offset is nonzero. `Annular` is required when a clear aperture has `shape: "annular"`. `OffsetRotatedRectangular` is required when a clear or edge aperture has `shape: "rectangular"`. Worker scripts get these helpers from `rayoptics_web_utils.aperture`; export scripts define them inline from the generated TypeScript string so copied notebook code remains standalone without installing `rayoptics_web_utils`.
 - The generated helper block is expected to match the concatenation of `annular.py`, `offset_circular.py`, and `offset_rotated_rectangular.py` in that order, separated by a single newline. NPM lifecycle scripts regenerate the ignored TypeScript output before install/check/test/build commands, and the Jest tests keep the export behavior pinned to the Python sources.
 - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.

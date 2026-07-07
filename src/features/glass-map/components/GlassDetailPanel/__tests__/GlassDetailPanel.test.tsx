@@ -18,7 +18,7 @@ const selectedGlass: SelectedGlass = {
     refractiveIndexE: 1.5190,
     abbeNumberD: 64.17,
     abbeNumberE: 63.96,
-    partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+    partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
     dispersionCoeffKind: 'Sellmeier3T',
     dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
   },
@@ -65,24 +65,24 @@ describe("GlassDetailPanel", () => {
     expect(screen.getByText("63.96")).toBeInTheDocument();
   });
 
-  it("renders P_g_F value to 4 decimal places", () => {
+  it("renders P_gF value to 4 decimal places", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
     expect(screen.getByText("0.5349")).toBeInTheDocument();
   });
 
-  it("renders P_F_d value to 4 decimal places", () => {
+  it("renders P_Fd value to 4 decimal places", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
     expect(screen.getByText("0.4100")).toBeInTheDocument();
   });
 
-  it("renders P_F_e value to 4 decimal places", () => {
+  it("renders P_fe value to 4 decimal places", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
     expect(screen.getByText("0.4000")).toBeInTheDocument();
   });
 
   it("renders label cells with data-testid for all properties", () => {
     render(<GlassDetailPanel selectedGlass={selectedGlass} />);
-    for (const key of ["Nd", "Ne", "Vd", "Ve", "P_g_F", "P_F_d", "P_F_e"]) {
+    for (const key of ["Nd", "Ne", "Vd", "Ve", "P_gF", "P_Fd", "P_fe"]) {
       expect(screen.getByTestId(`label-${key}`)).toBeInTheDocument();
     }
   });

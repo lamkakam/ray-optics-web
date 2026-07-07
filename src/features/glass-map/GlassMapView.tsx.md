@@ -1,7 +1,7 @@
 # GlassMapView.tsx
 
 ## Purpose
-Page-level container for the Glass Map feature. Reads preloaded or lazily loaded glass catalog data through the shared Suspense resource, computes plot points, and orchestrates the three child components.
+Page-level container for the Glass Map feature. Reads already-loaded glass catalog data from `GlassMapStore`, computes plot points, and orchestrates the three child components.
 
 ## Props
 | Prop | Type | Description |
@@ -22,8 +22,9 @@ interface GlassMapRouteIntent {
 ## Behavior
 - Obtains the `GlassMapStore` via `useGlassMapStore()` (provided by `GlassMapStoreProvider` in `app/glass-map/page.tsx`)
 - Returns a loading placeholder until `isReady=true` and `proxy` is available
-- Reads normalized catalog data via the shared `readGlassCatalogs(proxy)` loader; loading is handled by Suspense and deduplicated per worker proxy
-- Usually receives already-warm catalog data because `app/AppShell.tsx` preloads the same resource during app initialization
+- Uses `catalogsData` from `GlassMapStore` as the rendering source of truth
+- Does not call the shared glass catalog resource loader; `app/AppShell.tsx` preloads the resource during app initialization and writes successful data into `GlassMapStore`
+- Shows a minimal loading placeholder only if the route renders before `catalogsData` is available, which should be transient or impossible in normal app flow because AppShell blocks initialization until the preload succeeds
 - Computes `PlotPoint[]` via `computePlotPoints()` from `features/glass-map/lib/glassMap`
 - Derives axis labels from `plotType`, `abbeNumCenterLine`, `partialDispersionType`
 - Treats `routeIntent` as a render-time override instead of synchronizing it into the store
@@ -36,9 +37,9 @@ interface GlassMapRouteIntent {
 - Invokes `onUseSelectedGlass` with the effective selection (the route glass initially or a subsequently selected point) before the link navigates to `/`
 
 ## Layout
-- **Error state** (`readGlassCatalogs(proxy).error`): centered red error message
-- **Loading state** (`!isReady || !proxy` in this component, or Suspense fallback while the resource promise is pending): centered loading message
-- In normal app flow the Suspense fallback is uncommon after the initial shell overlay because the shared shell preload has already primed the cache
+- **Loading state** (`!isReady || !proxy`, or missing `catalogsData`): centered loading message
+- Catalog load failures are handled by `AppShell` through the blocking initialization overlay, not by this route view
+- In normal app flow the missing-data placeholder is uncommon after the initial shell overlay because the shared shell preload has already populated the store
 - **Loaded**: `flex-col lg:flex-row h-full`
   - Left: flex-1 (lg: 60%) — `GlassScatterPlot`
 - Right: overflow-y-auto (lg: 40%) — `GlassMapControls` + `GlassDetailPanel`

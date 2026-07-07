@@ -1,4 +1,4 @@
-import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
+import { validateImportedCustomGlassData, validateImportedLensData } from "@/shared/lib/schemas/importSchema";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 const baseModel: OpticalModel = {
@@ -590,5 +590,32 @@ describe("validateImportedLensData", () => {
     };
 
     expect(validateImportedLensData(model)).toBe(false);
+  });
+});
+
+describe("validateImportedCustomGlassData", () => {
+  const validPayload = {
+    version: "1.0",
+    Custom: {
+      CUSTOM_A: {
+        type: "tabulated",
+        data: [[486.13, 1.5224], [546.07, 1.5187], [587.56, 1.5168], [656.27, 1.5143]],
+      },
+    },
+  };
+
+  it("accepts version 1.0 tabulated custom glass data", () => {
+    expect(validateImportedCustomGlassData(validPayload)).toBe(true);
+  });
+
+  it.each([
+    { ...validPayload, version: 1 },
+    { ...validPayload, version: "1" },
+    { ...validPayload, Custom: { CUSTOM_A: { ...validPayload.Custom.CUSTOM_A, type: "sellmeier" } } },
+    { ...validPayload, Custom: { CUSTOM_A: { ...validPayload.Custom.CUSTOM_A, data: [[587.56, 1.5168]] } } },
+    { ...validPayload, Custom: { CUSTOM_A: { ...validPayload.Custom.CUSTOM_A, data: [[587.56, 1.5168], [546.07, 1.5187], [486.13, -1], [656.27, 1.5143]] } } },
+    { ...validPayload, Custom: { CUSTOM_A: { ...validPayload.Custom.CUSTOM_A, extra: true } } },
+  ])("rejects invalid custom glass payload %#", (payload) => {
+    expect(validateImportedCustomGlassData(payload)).toBe(false);
   });
 });

@@ -44,4 +44,13 @@ def init() -> dict[str, OpticalMedium]:
     water = load_custom_material('Water_Daimon-20.0C.yml', 'Water')
     d263teco = load_custom_material('D263TECO.yml', 'D263TECO')
 
-    return {'caf2': caf2, 'fused_silica': fused_silica, 'water': water, 'd263teco': d263teco}
+    from rayoptics_web_utils.glass.user_defined_materials import UserDefinedMaterial
+    user_defined_materials = UserDefinedMaterial()
+
+    return {
+        'caf2': caf2,
+        'fused_silica': fused_silica,
+        'water': water,
+        'd263teco': d263teco,
+        'user_defined': user_defined_materials,
+    }

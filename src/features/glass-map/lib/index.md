@@ -7,4 +7,4 @@ Keep pure functions, rendering lookup tables, and other executable feature logic
 ## Files
 
 - [glassMap.ts](./glassMap.ts.md) — Glass map runtime helpers and catalog color map
-- [glassCatalogsResource.ts](./glassCatalogsResource.ts.md) — Pyodide-backed glass catalog loader with preload and Suspense read support
+- [glassCatalogLoader.ts](./glassCatalogLoader.ts.md) — Pyodide-backed glass catalog loader with in-flight request dedupe only

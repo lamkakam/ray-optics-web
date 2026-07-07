@@ -3,6 +3,7 @@ import path from "path";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import { parsePhotonsToPhotosText } from "@/features/lens-editor/lib/photonsToPhotosParser";
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
+import { buildOpticalModelScript } from "@/shared/lib/utils/pythonScript";
 
 const dataDir = path.join(process.cwd(), "src/__tests__/data/photons-to-photos");
 
@@ -71,6 +72,7 @@ function parseSingleSurfaceMaterial(
 
 const lookupMaps: GlassLookupMaps = {
   manufacturerMap: new Map([["hoya", "Hoya"]]),
+  customMediumMap: new Map([["custom_a", { medium: "CUSTOM_A", manufacturer: "Custom" }]]),
   mediumMap: new Map([
     ["hoya:h-lak52", { medium: "H-LaK52", manufacturer: "Hoya" }],
     ["caf2", { medium: "CaF2", manufacturer: "" }],
@@ -166,6 +168,104 @@ describe("parsePhotonsToPhotosText", () => {
     );
 
     expect(surface).toMatchObject({ medium: expectedMedium, manufacturer: "" });
+  });
+
+  it("resolves custom glass by the glass-name cell when the catalog cell is blank", () => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "1.620", vd: "42.0", glassName: "CUSTOM_A", catalog: "" },
+      lookupMaps,
+    );
+
+    expect(surface).toMatchObject({ medium: "CUSTOM_A", manufacturer: "Custom" });
+  });
+
+  it("resolves custom glass by the glass-name cell when the catalog cell is wrong", () => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "1.620", vd: "42.0", glassName: "CUSTOM_A", catalog: "cdgm" },
+      lookupMaps,
+    );
+
+    expect(surface).toMatchObject({ medium: "CUSTOM_A", manufacturer: "Custom" });
+  });
+
+  it("resolves case-mismatched custom glass to the canonical stored label", () => {
+    const surface = parseSingleSurfaceMaterial(
+      { nd: "1.620", vd: "42.0", glassName: "custom_a", catalog: "" },
+      lookupMaps,
+    );
+
+    expect(surface).toMatchObject({ medium: "CUSTOM_A", manufacturer: "Custom" });
+  });
+
+  it("exports imported custom glass through the user-defined materials table", () => {
+    const result = parsePhotonsToPhotosText(
+      makeSingleSurfaceText({ nd: "1.620", vd: "42.0", glassName: "CUSTOM_A", catalog: "" }),
+      lookupMaps,
+    );
+
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+
+    expect(buildOpticalModelScript(result.model)).toContain(
+      'sm.add_surface([100, 5, user_defined_materials["CUSTOM_A"]])',
+    );
+  });
+
+  it("imports Old Schott custom labels as user-defined materials despite TXT label casing", () => {
+    const oldSchottLookupMaps: GlassLookupMaps = {
+      manufacturerMap: new Map(),
+      mediumMap: new Map([
+        ["custom:lafn8", { medium: "LAFN8", manufacturer: "Custom" }],
+        ["custom:laf20", { medium: "LAF20", manufacturer: "Custom" }],
+        ["custom:f9", { medium: "F9", manufacturer: "Custom" }],
+        ["custom:lf8", { medium: "LF8", manufacturer: "Custom" }],
+        ["fluorspar", { medium: "CaF2", manufacturer: "" }],
+      ]),
+      customMediumMap: new Map([
+        ["lafn8", { medium: "LAFN8", manufacturer: "Custom" }],
+        ["laf20", { medium: "LAF20", manufacturer: "Custom" }],
+        ["f9", { medium: "F9", manufacturer: "Custom" }],
+        ["lf8", { medium: "LF8", manufacturer: "Custom" }],
+      ]),
+    };
+    const text = [
+      "[descriptive data]",
+      "title\tOld Schott custom material test",
+      "[variable distances]",
+      "Focal Length\t249.6",
+      "Angle of View\t18",
+      "F-Number\t5.6",
+      "d0\tInfinity",
+      "Bf\t121.338",
+      "[lens data]",
+      ["1", "51.2500", "4.55325", "1.735197", "45.24", "41.5909", "LaFN8", ""].join("\t"),
+      ["2", "41.8975", "1.70125", "", "42.78", "", "", ""].join("\t"),
+      ["3", "43.1225", "11.05800", "1.43493", "43.24", "95.23", "Fluorspar", ""].join("\t"),
+      ["4", "-73.9700", "3.35250", "1.682476", "43.90", "48.200977", "LaF20", ""].join("\t"),
+      ["5", "-453.4700", "7.70550", "1.6205", "37.19", "38.081", "F9", ""].join("\t"),
+      ["6", "-52.3700", "2.05150", "1.564435", "24.44", "43.75028", "LF8", ""].join("\t"),
+      ["7", "208.4625", "Bf", "", "24.44", "", "", ""].join("\t"),
+    ].join("\n");
+
+    const result = parsePhotonsToPhotosText(text, oldSchottLookupMaps);
+
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+
+    expect(result.model.surfaces.map(({ medium, manufacturer }) => [medium, manufacturer])).toEqual([
+      ["LAFN8", "Custom"],
+      ["air", ""],
+      ["CaF2", ""],
+      ["LAF20", "Custom"],
+      ["F9", "Custom"],
+      ["LF8", "Custom"],
+      ["air", ""],
+    ]);
+    const script = buildOpticalModelScript(result.model);
+    expect(script).toContain('user_defined_materials["LAFN8"]');
+    expect(script).toContain('user_defined_materials["LAF20"]');
+    expect(script).toContain('user_defined_materials["F9"]');
+    expect(script).toContain('user_defined_materials["LF8"]');
   });
 
   it("falls back to model glass when a named glass is unsupported", () => {

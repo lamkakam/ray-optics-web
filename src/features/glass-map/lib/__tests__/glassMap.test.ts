@@ -1,7 +1,5 @@
 import {
-  buildGlassLookupMaps,
-  normalizeGlassData,
-  normalizeAllCatalogsData,
+  completeAllCatalogsData,
   computePlotPoints,
   CATALOG_COLOR_MAP,
 } from "@/features/glass-map/lib/glassMap";
@@ -9,23 +7,22 @@ import {
   CATALOG_NAMES,
 } from "@/features/glass-map/types/glassMap";
 import type {
-  RawGlassData,
-  RawAllGlassCatalogsData,
+  GlassData,
   AllGlassCatalogsData,
   CatalogName,
 } from "@/features/glass-map/types/glassMap";
 
-const rawGlass: RawGlassData = {
-  refractive_index_d: 1.5168,
-  refractive_index_e: 1.5190,
-  abbe_number_d: 64.17,
-  abbe_number_e: 63.96,
-  partial_dispersions: { P_F_e: 0.4, P_F_d: 0.41, P_g_F: 0.5349 },
-  dispersion_coeff_kind: 'Sellmeier3T',
-  dispersion_coeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+const rawGlass: GlassData = {
+  refractiveIndexD: 1.5168,
+  refractiveIndexE: 1.5190,
+  abbeNumberD: 64.17,
+  abbeNumberE: 63.96,
+  partialDispersions: { P_fe: 0.4, P_Fd: 0.41, P_gF: 0.5349 },
+  dispersionCoeffKind: 'Sellmeier3T',
+  dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
 };
 
-const rawCatalogsData: RawAllGlassCatalogsData = {
+const rawCatalogsData: AllGlassCatalogsData = {
   CDGM: { BK7: rawGlass },
   Hikari: {},
   Hoya: { "H-LaK52": rawGlass },
@@ -36,7 +33,7 @@ const rawCatalogsData: RawAllGlassCatalogsData = {
 };
 
 describe("CATALOG_NAMES", () => {
-  it("contains all 7 catalog names", () => {
+  it("contains all catalog names including Custom", () => {
     expect(CATALOG_NAMES).toContain("CDGM");
     expect(CATALOG_NAMES).toContain("Hikari");
     expect(CATALOG_NAMES).toContain("Hoya");
@@ -44,7 +41,8 @@ describe("CATALOG_NAMES", () => {
     expect(CATALOG_NAMES).toContain("Schott");
     expect(CATALOG_NAMES).toContain("Sumita");
     expect(CATALOG_NAMES).toContain("Special");
-    expect(CATALOG_NAMES.length).toBe(7);
+    expect(CATALOG_NAMES).toContain("Custom");
+    expect(CATALOG_NAMES.length).toBe(8);
   });
 });
 
@@ -56,95 +54,16 @@ describe("CATALOG_COLOR_MAP", () => {
   });
 });
 
-describe("normalizeGlassData", () => {
-  it("maps snake_case fields to camelCase", () => {
-    const result = normalizeGlassData(rawGlass);
-    expect(result.refractiveIndexD).toBe(1.5168);
-    expect(result.refractiveIndexE).toBe(1.519);
-    expect(result.abbeNumberD).toBe(64.17);
-    expect(result.abbeNumberE).toBe(63.96);
-  });
-
-  it("maps partial_dispersions", () => {
-    const result = normalizeGlassData(rawGlass);
-    expect(result.partialDispersions.P_F_e).toBe(0.4);
-    expect(result.partialDispersions.P_F_d).toBe(0.41);
-    expect(result.partialDispersions.P_g_F).toBe(0.5349);
-  });
-
-  it("maps dispersion_coeff_kind and dispersion_coeffs", () => {
-    const result = normalizeGlassData(rawGlass);
-    expect(result.dispersionCoeffKind).toBe('Sellmeier3T');
-    expect(result.dispersionCoeffs).toEqual([1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653]);
-  });
-
-  it("accepts Sellmeier4T data", () => {
-    const result = normalizeGlassData({
-      ...rawGlass,
-      dispersion_coeff_kind: 'Sellmeier4T',
-      dispersion_coeffs: [0.5684027565, 0.1726177391, 0.02086189578, 0.1130748688, 0.005101829712, 0.01821153936, 0.02620722293, 10.69792721],
-    });
-    expect(result.dispersionCoeffKind).toBe('Sellmeier4T');
-    expect(result.dispersionCoeffs).toHaveLength(8);
-  });
-
-});
-
-describe("normalizeAllCatalogsData", () => {
-  it("normalizes all catalogs and glasses", () => {
-    const result = normalizeAllCatalogsData(rawCatalogsData);
+describe("completeAllCatalogsData", () => {
+  it("passes through frontend-ready catalog glass data", () => {
+    const result = completeAllCatalogsData(rawCatalogsData);
     expect(result.CDGM["BK7"].refractiveIndexD).toBe(1.5168);
     expect(result.Schott["N-BK7"].abbeNumberD).toBe(64.17);
   });
 
   it("returns empty object for empty catalog", () => {
-    const result = normalizeAllCatalogsData(rawCatalogsData);
+    const result = completeAllCatalogsData(rawCatalogsData);
     expect(result.Hikari).toEqual({});
-  });
-});
-
-describe("buildGlassLookupMaps", () => {
-  it("maps manufacturer casing to canonical catalog names", () => {
-    const result = buildGlassLookupMaps(normalizeAllCatalogsData(rawCatalogsData));
-
-    expect(result.manufacturerMap.get("hoya")).toBe("Hoya");
-  });
-
-  it("maps catalog glass casing to canonical app values", () => {
-    const result = buildGlassLookupMaps(normalizeAllCatalogsData(rawCatalogsData));
-
-    expect(result.mediumMap.get("hoya:h-lak52")).toEqual({
-      medium: "H-LaK52",
-      manufacturer: "Hoya",
-    });
-  });
-
-  it("maps special media aliases without a manufacturer", () => {
-    const result = buildGlassLookupMaps(normalizeAllCatalogsData(rawCatalogsData));
-
-    expect(result.mediumMap.get("fluorite")).toEqual({ medium: "CaF2", manufacturer: "" });
-    expect(result.mediumMap.get("fluorspar")).toEqual({ medium: "CaF2", manufacturer: "" });
-    expect(result.mediumMap.get("caf2")).toEqual({ medium: "CaF2", manufacturer: "" });
-  });
-
-  it("maps provider-backed D263TECO Special lookup without a manufacturer", () => {
-    const catalogsData = normalizeAllCatalogsData({
-      ...rawCatalogsData,
-      Special: { D263TECO: rawGlass },
-    });
-    const result = buildGlassLookupMaps(catalogsData);
-
-    expect(result.mediumMap.get("d263teco")).toEqual({ medium: "D263TECO", manufacturer: "" });
-  });
-
-  it("does not add a lowercase alias for reflective media", () => {
-    const catalogsData = normalizeAllCatalogsData({
-      ...rawCatalogsData,
-      Special: { REFL: rawGlass },
-    });
-    const result = buildGlassLookupMaps(catalogsData);
-
-    expect(result.mediumMap.get("refl")).toBeUndefined();
   });
 });
 
@@ -156,7 +75,7 @@ describe("computePlotPoints", () => {
         refractiveIndexE: 1.519,
         abbeNumberD: 64.17,
         abbeNumberE: 63.96,
-        partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+        partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
         dispersionCoeffKind: 'Schott2x6',
         dispersionCoeffs: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
       },
@@ -170,7 +89,7 @@ describe("computePlotPoints", () => {
         refractiveIndexE: 1.519,
         abbeNumberD: 64.17,
         abbeNumberE: 63.96,
-        partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+        partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
         dispersionCoeffKind: 'Sellmeier3T',
         dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
       },
@@ -187,10 +106,11 @@ describe("computePlotPoints", () => {
     Schott: true,
     Sumita: true,
     Special: true,
+    Custom: true,
   };
 
   it("returns points for refractiveIndex/d: x=Vd, y=Nd", () => {
-    const points = computePlotPoints(catalogsData, allEnabled, "refractiveIndex", "d", "P_g_F");
+    const points = computePlotPoints(catalogsData, allEnabled, "refractiveIndex", "d", "P_gF");
     expect(points.length).toBe(2);
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(64.17);
@@ -199,21 +119,21 @@ describe("computePlotPoints", () => {
   });
 
   it("returns points for refractiveIndex/e: x=Ve, y=Ne", () => {
-    const points = computePlotPoints(catalogsData, allEnabled, "refractiveIndex", "e", "P_g_F");
+    const points = computePlotPoints(catalogsData, allEnabled, "refractiveIndex", "e", "P_gF");
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(63.96);
     expect(bk7.y).toBe(1.519);
   });
 
-  it("returns points for partialDispersion/d/P_g_F: x=Vd, y=P_g_F", () => {
-    const points = computePlotPoints(catalogsData, allEnabled, "partialDispersion", "d", "P_g_F");
+  it("returns points for partialDispersion/d/P_gF: x=Vd, y=P_gF", () => {
+    const points = computePlotPoints(catalogsData, allEnabled, "partialDispersion", "d", "P_gF");
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(64.17);
     expect(bk7.y).toBe(0.5349);
   });
 
-  it("returns points for partialDispersion/d/P_F_d: x=Vd, y=P_F_d", () => {
-    const points = computePlotPoints(catalogsData, allEnabled, "partialDispersion", "d", "P_F_d");
+  it("returns points for partialDispersion/d/P_Fd: x=Vd, y=P_Fd", () => {
+    const points = computePlotPoints(catalogsData, allEnabled, "partialDispersion", "d", "P_Fd");
     const bk7 = points.find((p) => p.glassName === "BK7")!;
     expect(bk7.x).toBe(64.17);
     expect(bk7.y).toBe(0.41);
@@ -221,16 +141,16 @@ describe("computePlotPoints", () => {
 
   it("excludes disabled catalog", () => {
     const enabled: Record<CatalogName, boolean> = { ...allEnabled, CDGM: false };
-    const points = computePlotPoints(catalogsData, enabled, "refractiveIndex", "d", "P_g_F");
+    const points = computePlotPoints(catalogsData, enabled, "refractiveIndex", "d", "P_gF");
     expect(points.find((p) => p.catalogName === "CDGM")).toBeUndefined();
     expect(points.find((p) => p.catalogName === "Schott")).toBeDefined();
   });
 
   it("returns empty array when all catalogs disabled", () => {
     const allDisabled: Record<CatalogName, boolean> = {
-      CDGM: false, Hikari: false, Hoya: false, Ohara: false, Schott: false, Sumita: false, Special: false,
+      CDGM: false, Hikari: false, Hoya: false, Ohara: false, Schott: false, Sumita: false, Special: false, Custom: false,
     };
-    const points = computePlotPoints(catalogsData, allDisabled, "refractiveIndex", "d", "P_g_F");
+    const points = computePlotPoints(catalogsData, allDisabled, "refractiveIndex", "d", "P_gF");
     expect(points).toHaveLength(0);
   });
 });

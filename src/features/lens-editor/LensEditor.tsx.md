@@ -10,12 +10,13 @@ Lens-editor child components are imported through the `features/lens-editor/comp
 |------|------|-------------|
 | `proxy` | `PyodideWorkerAPI \| undefined` | Pyodide worker proxy (undefined until ready) |
 | `isReady` | `boolean` | Whether Pyodide is initialised |
-| `onError` | `() => void` | Called on submit error; opens page-level error modal |
+| `onError` | `() => void` | Called on submit compute error; opens page-level error modal |
 
 ## State
 | State | Type | Description |
 |-------|------|-------------|
 | `computing` | `boolean` | Submit in-progress flag |
+| `validationErrorMessage` | `string \| undefined` | Lens-prescription glass validation error shown in a local `ErrorModal` |
 | `seidelModalOpen` | `boolean` | Seidel modal visibility |
 | `zernikeModalOpen` | `boolean` | Zernike modal visibility |
 
@@ -27,13 +28,14 @@ Read reactively via `useStore` / `useLensEditorStore`:
 - From `useLensEditorStore()`: `committedOpticalModel`
 - From `useTheme()`: `theme`
 - From `useImagePoint()`: `imagePoint`
+- From `useGlassCatalogs()`: `lookupMaps`
 - `hasAnalysisControls`: true when at least one analysis control or chip can render (`seidelData`, `committedOpticalModel`, or `firstOrderData`)
 - `analysisButtonSize`: `xs` on `screenSM`, `sm` on `screenLG`; Seidel/Zernike analysis buttons match `LensEditorConfigToolbar` sizing on small screens and keep the desktop `sm` size
 
 Imperative access to actions is via the provider hooks (`useLensEditorStore`, `useSpecsConfiguratorStore`, `useAnalysisPlotStore`, `useAnalysisDataStore`, `useLensLayoutImageStore`) and then `store.getState()`.
 
 ## Callbacks
-- `handleSubmit` — builds `OpticalModel`, derives `isDark` from `theme === "dark"`, clamps field/wavelength indices, loads first-order/layout/analysis/seidel data in parallel, passes the app-wide `imagePoint` into OPD-related analysis loading, updates committed state; calls `onError()` on failure
+- `handleSubmit` — builds `OpticalModel`, validates object/surface glasses against the app-wide glass lookup map before setting loading state or calling the worker, derives `isDark` from `theme === "dark"`, clamps field/wavelength indices, loads first-order/layout/analysis/seidel data in parallel, passes the app-wide `imagePoint` into OPD-related analysis loading, updates committed state; calls `onError()` on compute failure
 - `handleFetchZernikeData` — fetches Zernike coefficients for `ZernikeTermsModal` from the committed optical model and passes the app-wide `imagePoint`; ordering remains a frontend selection and is converted to explicit terms by the worker
 - Zernike payload/order types are imported from `features/lens-editor/types/zernikeData`; Zernike term-count constants are imported from `features/lens-editor/lib/zernikeData`
 - `getOpticalModel` — builds the current `OpticalModel` snapshot from the provider-backed stores
@@ -58,7 +60,8 @@ Imperative access to actions is via the provider hooks (`useLensEditorStore`, `u
 - SeidelAberrModal, ZernikeTermsModal
 
 ## Notes
-- `onError` delegates to `app/AppShell.tsx`, which owns the shared `ErrorModal`
+- `onError` delegates compute failures to `app/AppShell.tsx`, which owns the shared generic `ErrorModal`
+- Missing prescription glasses are shown through a local `ErrorModal` with the standard glass-validation message and do not call `onError()`
 - `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
 - `handleSubmit` uses `loadAnalysisPlot(...)` from `features/analysis/lib/plotFunctions.ts`, so submit-time analysis updates use the same worker-path rules as `AnalysisPlotContainer.tsx`
 - `handleSubmit` commits plot-store-backed results through `commitAnalysisPlotResult(...)`, including diffraction MTF data; `surfaceBySurface3rdOrder` is ignored by that helper because full Seidel data is committed separately from `proxy.get3rdOrderSeidelData(...)`

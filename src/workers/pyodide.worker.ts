@@ -12,7 +12,12 @@ import {
 import { type ZernikeData, type ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
-import { type RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
+import {
+  type AllGlassCatalogsData,
+  type CompleteGlassCatalogsData,
+  type UserDefinedMaterialsData,
+  type UserDefinedGlassInput,
+} from "@/features/glass-map/types/glassMap";
 import type { InitProgress } from "@/shared/hooks/usePyodide";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { loadPyodideModule } from "@/workers/loadPyodideModule";
@@ -25,6 +30,14 @@ let activeOptimizationInterruptBuffer: SharedArrayBuffer | undefined;
 let activeOptimizationInterruptView: Int32Array | undefined;
 
 const PYODIDE_INTERRUPT_SIGNAL = 2;
+const USER_DEFINED_MATERIALS_JSON_DEFAULT = `
+def _json_default(value):
+    if hasattr(value, "tolist"):
+        return value.tolist()
+    if hasattr(value, "item"):
+        return value.item()
+    raise TypeError(f"Object of type {value.__class__.__name__} is not JSON serializable")
+`;
 
 type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
 type RawFanAxisData = {
@@ -112,6 +125,8 @@ fused_silica = _rwu_init_result['fused_silica']
 water = _rwu_init_result['water']
 d263teco = _rwu_init_result['d263teco']
 
+user_defined_materials = _rwu_init_result['user_defined']
+
 import json
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
@@ -161,7 +176,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.17.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.18.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
@@ -458,9 +473,82 @@ export async function _focusByPolyStrehl(
 
 export async function _getAllGlassCatalogsData(
   runPython: (code: string) => Promise<unknown>
-): Promise<RawAllGlassCatalogsData> {
+): Promise<CompleteGlassCatalogsData> {
   const json = (await runPython(`json.dumps(get_all_glass_catalogs_data())`)) as string;
-  return JSON.parse(json) as RawAllGlassCatalogsData;
+  return JSON.parse(json) as CompleteGlassCatalogsData;
+}
+
+export async function _addUserDefinedGlasses(
+  runPython: (code: string) => Promise<unknown>,
+  materials: readonly UserDefinedGlassInput[],
+): Promise<UserDefinedMaterialsData> {
+  const materialsJson = JSON.stringify(materials);
+  const json = (await runPython(`
+${USER_DEFINED_MATERIALS_JSON_DEFAULT}
+materials = json.loads(${JSON.stringify(materialsJson)})
+names = [material["name"] for material in materials]
+for material in materials:
+    name = material["name"]
+    if name in user_defined_materials:
+        raise ValueError(f"User-defined glass already exists: {name}")
+for material in materials:
+    name = material["name"]
+    pairs = material["pairs"]
+    user_defined_materials[name] = pairs
+json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)
+`)) as string;
+  return JSON.parse(json) as UserDefinedMaterialsData;
+}
+
+export async function _deleteUserDefinedGlasses(
+  runPython: (code: string) => Promise<unknown>,
+  names: readonly string[],
+): Promise<void> {
+  const namesJson = JSON.stringify(names);
+  await runPython(`
+names = json.loads(${JSON.stringify(namesJson)})
+for name in names:
+    if name not in user_defined_materials:
+        raise KeyError(name)
+for name in names:
+    del user_defined_materials[name]
+`);
+}
+
+export async function _updateUserDefinedGlasses(
+  runPython: (code: string) => Promise<unknown>,
+  materials: readonly UserDefinedGlassInput[],
+): Promise<UserDefinedMaterialsData> {
+  const materialsJson = JSON.stringify(materials);
+  const json = (await runPython(`
+${USER_DEFINED_MATERIALS_JSON_DEFAULT}
+materials = json.loads(${JSON.stringify(materialsJson)})
+names = [material["name"] for material in materials]
+for material in materials:
+    name = material["name"]
+    if name not in user_defined_materials:
+        raise KeyError(name)
+for material in materials:
+    name = material["name"]
+    pairs = material["pairs"]
+    del user_defined_materials[name]
+    user_defined_materials[name] = pairs
+json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)
+`)) as string;
+  return JSON.parse(json) as UserDefinedMaterialsData;
+}
+
+export async function _getUserDefinedGlasses(
+  runPython: (code: string) => Promise<unknown>,
+  names: readonly string[],
+): Promise<UserDefinedMaterialsData> {
+  const namesJson = JSON.stringify(names);
+  const json = (await runPython(`
+${USER_DEFINED_MATERIALS_JSON_DEFAULT}
+names = json.loads(${JSON.stringify(namesJson)})
+json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)
+`)) as string;
+  return JSON.parse(json) as UserDefinedMaterialsData;
 }
 
 export async function _evaluateOptimizationProblem(
@@ -689,8 +777,24 @@ export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: 
   return await _focusByPolyStrehl(requirePyodide(), opticalModel, fieldIndex);
 }
 
-export async function getAllGlassCatalogsData(): Promise<RawAllGlassCatalogsData> {
+export async function getAllGlassCatalogsData(): Promise<AllGlassCatalogsData> {
   return await _getAllGlassCatalogsData(requirePyodide());
+}
+
+export async function addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData> {
+  return await _addUserDefinedGlasses(requirePyodide(), materials);
+}
+
+export async function deleteUserDefinedGlasses(names: readonly string[]): Promise<void> {
+  await _deleteUserDefinedGlasses(requirePyodide(), names);
+}
+
+export async function updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData> {
+  return await _updateUserDefinedGlasses(requirePyodide(), materials);
+}
+
+export async function getUserDefinedGlasses(names: readonly string[]): Promise<UserDefinedMaterialsData> {
+  return await _getUserDefinedGlasses(requirePyodide(), names);
 }
 
 export async function canInterruptOptimization(): Promise<boolean> {
@@ -744,6 +848,10 @@ expose({
   focusByPolyRmsSpot,
   focusByPolyStrehl,
   getAllGlassCatalogsData,
+  addUserDefinedGlasses,
+  deleteUserDefinedGlasses,
+  updateUserDefinedGlasses,
+  getUserDefinedGlasses,
   canInterruptOptimization,
   requestOptimizationStop,
   evaluateOptimizationProblem,

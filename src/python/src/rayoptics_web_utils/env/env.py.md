@@ -21,7 +21,8 @@ Returns `{'caf2': <OpticalMedium>, 'fused_silica': <OpticalMedium>, 'water': <Op
 3. *(No rayoptics import here)* — the docstring notes that `from rayoptics.environment import *` is intentionally omitted; the worker performs its own import after `init()` returns.
 4. **Set matplotlib backend to `Agg`** — calls `matplotlib.use('Agg')` to prevent any display/GUI backend from being activated in the headless Pyodide environment.
 5. **Load custom materials** — imports `load_custom_material()` from `rayoptics_web_utils.glass.custom_materials`, then constructs `caf2` from `CaF2_Malitson.yml`, `fused_silica` from `FusedSilica_Malitson.yml`, `water` from `Water_Daimon-20.0C.yml`, and `d263teco` from `D263TECO.yml`.
-6. **Return** — returns `{'caf2': caf2, 'fused_silica': fused_silica, 'water': water, 'd263teco': d263teco}`.
+6. **Initialize the data structure for user-defined glass** - import `UserDefinedMaterial` from `rayoptics_web_utils.glass.user_defined_materials`. Construct one and only one  stateful instance of `UserDefinedMaterial` for storing user defined materials at runtime.
+7. **Return** — returns `{'caf2': caf2, 'fused_silica': fused_silica, 'water': water, 'd263teco': d263teco, 'user_defined': user_defined_materials}`.
 
 ## Key Conventions
 

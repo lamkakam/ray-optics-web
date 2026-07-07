@@ -6,8 +6,9 @@ import { GlassMapView } from "@/features/glass-map/GlassMapView";
 import { GlassMapStoreContext } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { createGlassMapSlice, type GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { RawAllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
-import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
+import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
+import { _resetGlassCatalogLoaderForTest } from "@/features/glass-map/lib/glassCatalogLoader";
+import { completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 
 jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => (
@@ -30,16 +31,16 @@ jest.mock("next/link", () => {
   };
 });
 
-const rawData: RawAllGlassCatalogsData = {
+const rawData: AllGlassCatalogsData = {
   Schott: {
     "N-BK7": {
-      refractive_index_d: 1.5168,
-      refractive_index_e: 1.519,
-      abbe_number_d: 64.17,
-      abbe_number_e: 63.96,
-      partial_dispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
-      dispersion_coeff_kind: 'Sellmeier3T' as const,
-      dispersion_coeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+      refractiveIndexD: 1.5168,
+      refractiveIndexE: 1.519,
+      abbeNumberD: 64.17,
+      abbeNumberE: 63.96,
+      partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
+      dispersionCoeffKind: 'Sellmeier3T' as const,
+      dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
     },
   },
   CDGM: {},
@@ -47,6 +48,7 @@ const rawData: RawAllGlassCatalogsData = {
   Hoya: {},
   Ohara: {},
   Sumita: {},
+  Special: {},
 };
 
 function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
@@ -129,6 +131,10 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     focusByPolyRmsSpot: jest.fn(),
     focusByPolyStrehl: jest.fn(),
     getAllGlassCatalogsData: jest.fn().mockResolvedValue(rawData),
+    addUserDefinedGlasses: jest.fn().mockResolvedValue({}),
+    deleteUserDefinedGlasses: jest.fn().mockResolvedValue(undefined),
+    updateUserDefinedGlasses: jest.fn().mockResolvedValue({}),
+    getUserDefinedGlasses: jest.fn().mockResolvedValue({}),
     canInterruptOptimization: jest.fn().mockResolvedValue(true),
     requestOptimizationStop: jest.fn().mockResolvedValue({ signaled: true }),
     evaluateOptimizationProblem: jest.fn(),
@@ -137,8 +143,17 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
   };
 }
 
-function makeStore() {
-  return createStore<GlassMapStore>(createGlassMapSlice);
+const defaultCatalogsData = completeAllCatalogsData(rawData);
+
+function makeStore(catalogsData?: AllGlassCatalogsData) {
+  const store = createStore<GlassMapStore>(createGlassMapSlice);
+  const resolvedCatalogsData = arguments.length === 0 ? defaultCatalogsData : catalogsData;
+
+  if (resolvedCatalogsData !== undefined) {
+    store.getState().setCatalogsData(resolvedCatalogsData);
+  }
+
+  return store;
 }
 
 function renderWithStore(
@@ -156,7 +171,7 @@ function renderWithStore(
 
 beforeEach(() => {
   jest.clearAllMocks();
-  _resetGlassCatalogsResourceForTest();
+  _resetGlassCatalogLoaderForTest();
 });
 
 describe("GlassMapView", () => {
@@ -167,20 +182,19 @@ describe("GlassMapView", () => {
 
   it("shows loading indicator on first render when isReady=true but catalogsData not yet fetched", () => {
     const proxy = makeProxy();
-    // catalogsData is undefined in the initial store state
-    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, makeStore(undefined));
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
-  it("calls getAllGlassCatalogsData on mount when isReady=true", async () => {
+  it("does not call getAllGlassCatalogsData on mount when isReady=true", async () => {
     const proxy = makeProxy();
     renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
-    await waitFor(() => {
-      expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
-    });
+    expect(await screen.findByText(/select a glass/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
-  it("dedupes getAllGlassCatalogsData in React.StrictMode", async () => {
+  it("does not fetch glass catalogs in React.StrictMode", async () => {
     const proxy = makeProxy();
     renderWithStore(
       <React.StrictMode>
@@ -188,34 +202,33 @@ describe("GlassMapView", () => {
       </React.StrictMode>
     );
 
-    await waitFor(() => {
-      expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
-    });
+    expect(await screen.findByText(/select a glass/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
-  it("does not call getAllGlassCatalogsData again if the resource is already loaded", async () => {
+  it("renders from store catalog data without fetching the resource", async () => {
     const proxy = makeProxy();
-    const { unmount } = renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
+    const store = makeStore();
+    const catalogsData = completeAllCatalogsData(rawData);
 
-    await waitFor(() => {
-      expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    act(() => {
+      store.getState().setCatalogsData(catalogsData);
     });
 
-    unmount();
-    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, store);
 
-    await new Promise((r) => setTimeout(r, 50));
-    expect(proxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/select a glass/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
-  it("shows error message when data loading fails", async () => {
+  it("keeps a loading placeholder when catalog data is unexpectedly unavailable", () => {
     const proxy = makeProxy({
       getAllGlassCatalogsData: jest.fn().mockRejectedValue(new Error("Network error")),
     });
-    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />);
-    await waitFor(() => {
-      expect(screen.getByText(/network error/i)).toBeInTheDocument();
-    });
+    renderWithStore(<GlassMapView proxy={proxy} isReady={true} />, makeStore(undefined));
+
+    expect(screen.getByText(/loading glass catalog data/i)).toBeInTheDocument();
+    expect(proxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
   it("renders GlassMapControls after data loads", async () => {
@@ -303,7 +316,7 @@ describe("GlassMapView", () => {
           refractiveIndexE: 1.519,
           abbeNumberD: 64.17,
           abbeNumberE: 63.96,
-          partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+          partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
           dispersionCoeffKind: "Sellmeier3T",
           dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
         },
@@ -390,17 +403,31 @@ describe("GlassMapView", () => {
         ...rawData,
         Ohara: {
           "S-TIH6": {
-            refractive_index_d: 1.80518,
-            refractive_index_e: 1.8163,
-            abbe_number_d: 25.36,
-            abbe_number_e: 25.2,
-            partial_dispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
-            dispersion_coeff_kind: "Sellmeier3T" as const,
-            dispersion_coeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+            refractiveIndexD: 1.80518,
+            refractiveIndexE: 1.8163,
+            abbeNumberD: 25.36,
+            abbeNumberE: 25.2,
+            partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+            dispersionCoeffKind: "Sellmeier3T" as const,
+            dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
           },
         },
       }),
     });
+    const store = makeStore(completeAllCatalogsData({
+      ...rawData,
+      Ohara: {
+        "S-TIH6": {
+          refractiveIndexD: 1.80518,
+          refractiveIndexE: 1.8163,
+          abbeNumberD: 25.36,
+          abbeNumberE: 25.2,
+          partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+          dispersionCoeffKind: "Sellmeier3T" as const,
+          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+        },
+      },
+    }));
     renderWithStore(
       <GlassMapView
         proxy={proxy}
@@ -408,6 +435,7 @@ describe("GlassMapView", () => {
         routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
         onUseSelectedGlass={onUseSelectedGlass}
       />,
+      store,
     );
     await screen.findByRole("heading", { name: "N-BK7" });
     const unselectedPoint = screen
@@ -480,18 +508,32 @@ describe("GlassMapView", () => {
         Schott: {
           ...rawData.Schott,
           "N-SF6": {
-            refractive_index_d: 1.80518,
-            refractive_index_e: 1.8163,
-            abbe_number_d: 25.36,
-            abbe_number_e: 25.2,
-            partial_dispersions: { P_g_F: 0.6439, P_F_d: 0.305, P_F_e: 0.298 },
-            dispersion_coeff_kind: "Sellmeier3T" as const,
-            dispersion_coeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+            refractiveIndexD: 1.80518,
+            refractiveIndexE: 1.8163,
+            abbeNumberD: 25.36,
+            abbeNumberE: 25.2,
+            partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+            dispersionCoeffKind: "Sellmeier3T" as const,
+            dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
           },
         },
       }),
     });
-    const store = makeStore();
+    const store = makeStore(completeAllCatalogsData({
+      ...rawData,
+      Schott: {
+        ...rawData.Schott,
+        "N-SF6": {
+          refractiveIndexD: 1.80518,
+          refractiveIndexE: 1.8163,
+          abbeNumberD: 25.36,
+          abbeNumberE: 25.2,
+          partialDispersions: { P_gF: 0.6439, P_Fd: 0.305, P_fe: 0.298 },
+          dispersionCoeffKind: "Sellmeier3T" as const,
+          dispersionCoeffs: [1.72448482, 0.390104889, 1.04572858, 0.0134871947, 0.0569318095, 118.557185],
+        },
+      },
+    }));
 
     renderWithStore(
       <GlassMapView

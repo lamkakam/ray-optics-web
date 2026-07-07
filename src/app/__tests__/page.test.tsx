@@ -15,7 +15,10 @@ import { LensEditorStoreProvider } from "@/features/lens-editor/providers/LensEd
 import { AnalysisPlotStoreProvider } from "@/features/analysis/providers/AnalysisPlotStoreProvider";
 import { AnalysisDataStoreProvider } from "@/features/analysis/providers/AnalysisDataStoreProvider";
 import { LensLayoutImageStoreProvider } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
-import { GlassMapStoreProvider } from "@/features/glass-map/providers/GlassMapStoreProvider";
+import {
+  GlassMapStoreContext,
+  GlassMapStoreProvider,
+} from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
 import { ImagePointProvider, type ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import {
@@ -28,7 +31,8 @@ import {
   type OptimizationState,
 } from "@/features/optimization/stores/optimizationStore";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
-import { _resetGlassCatalogsResourceForTest } from "@/features/glass-map/lib/glassCatalogsResource";
+import { _resetGlassCatalogLoaderForTest } from "@/features/glass-map/lib/glassCatalogLoader";
+import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { DiffractionMtfData, DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
@@ -36,12 +40,41 @@ import type { Theme } from "@/shared/tokens/theme";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 import { OBJECT_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
+import { createGlassMapSlice } from "@/features/glass-map/stores/glassMapStore";
 
 let mockSelectedSegment: string | null = null;
 let mockSearchParams = new URLSearchParams();
 let mockPathname = "/";
 const mockPush = jest.fn<void, [string]>();
 const mockReplace = jest.fn<void, [string]>();
+
+const loadedCatalogsData: AllGlassCatalogsData = {
+  CDGM: {},
+  Hikari: {},
+  Hoya: {},
+  Ohara: {},
+  Schott: {
+    "N-BK7": {
+      refractiveIndexD: 1.5168,
+      refractiveIndexE: 1.519,
+      abbeNumberD: 64.17,
+      abbeNumberE: 63.96,
+      partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
+      dispersionCoeffKind: "Sellmeier3T",
+      dispersionCoeffs: [
+        1.03961212,
+        0.231792344,
+        1.01046945,
+        0.00600069867,
+        0.0200179144,
+        103.560653,
+      ],
+    },
+  },
+  Sumita: {},
+  Special: {},
+};
 
 jest.mock("next/navigation", () => ({
   useSelectedLayoutSegment: () => mockSelectedSegment,
@@ -258,6 +291,10 @@ const mockProxy = {
   focusByPolyRmsSpot: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
   focusByPolyStrehl: jest.fn().mockResolvedValue({ delta_thi: 0, metric_value: 0 }),
   getAllGlassCatalogsData: jest.fn().mockResolvedValue({}),
+  addUserDefinedGlasses: jest.fn().mockResolvedValue({}),
+  deleteUserDefinedGlasses: jest.fn().mockResolvedValue(undefined),
+  updateUserDefinedGlasses: jest.fn().mockResolvedValue({}),
+  getUserDefinedGlasses: jest.fn().mockResolvedValue({}),
   canInterruptOptimization: jest.fn().mockResolvedValue(true),
   requestOptimizationStop: jest.fn().mockResolvedValue({ signaled: true }),
   evaluateOptimizationProblem: jest.fn().mockResolvedValue({
@@ -344,8 +381,39 @@ function renderWithStores(node: React.ReactNode) {
   );
 }
 
+function renderWithSeededGlassCatalogs(node: React.ReactNode, catalogsData = loadedCatalogsData) {
+  const glassMapStore = createStore(createGlassMapSlice);
+  glassMapStore.getState().setCatalogsData(catalogsData);
+
+  return render(
+    <ImagePointProvider>
+      <SpecsConfiguratorStoreProvider>
+        <LensEditorStoreProvider>
+          <AnalysisPlotStoreProvider>
+            <AnalysisDataStoreProvider>
+              <LensLayoutImageStoreProvider>
+                <GlassMapStoreContext.Provider value={glassMapStore}>
+                  {node}
+                </GlassMapStoreContext.Provider>
+              </LensLayoutImageStoreProvider>
+            </AnalysisDataStoreProvider>
+          </AnalysisPlotStoreProvider>
+        </LensEditorStoreProvider>
+      </SpecsConfiguratorStoreProvider>
+    </ImagePointProvider>
+  );
+}
+
 function renderInAppShell(node: React.ReactNode) {
   return renderWithStores(
+    <OptimizationStoreProvider>
+      <AppShell>{node}</AppShell>
+    </OptimizationStoreProvider>,
+  );
+}
+
+function renderInAppShellWithSeededGlassCatalogs(node: React.ReactNode) {
+  return renderWithSeededGlassCatalogs(
     <OptimizationStoreProvider>
       <AppShell>{node}</AppShell>
     </OptimizationStoreProvider>,
@@ -370,6 +438,43 @@ function StoreProbe() {
   return <div data-testid="selected-glass-name">{selectedGlass?.glassName ?? "none"}</div>;
 }
 
+function GlassCatalogStoreProbe() {
+  const store = useGlassMapStore();
+  const catalogsData = useStore(store, (s) => s.catalogsData);
+  const lookupMaps = useStore(store, (s) => s.lookupMaps);
+  const glassCatalogs = useGlassCatalogs();
+
+  return (
+    <>
+      <div data-testid="catalogs-loaded">{glassCatalogs.isLoaded ? "loaded" : "not-loaded"}</div>
+      <div data-testid="catalogs-error">{glassCatalogs.error ?? "none"}</div>
+      <div data-testid="schott-count">{Object.keys(catalogsData?.Schott ?? {}).length}</div>
+      <div data-testid="lookup-medium">{lookupMaps?.mediumMap.get("schott:n-bk7")?.manufacturer ?? "none"}</div>
+    </>
+  );
+}
+
+function GlassCatalogPreloadProbe() {
+  const glassCatalogs = useGlassCatalogs();
+  const [preloadResult, setPreloadResult] = useState("none");
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          void glassCatalogs.preload().then((result) => {
+            setPreloadResult(result?.data === glassCatalogs.catalogs ? "store-data" : "other");
+          });
+        }}
+      >
+        Preload catalogs
+      </button>
+      <div data-testid="preload-result">{preloadResult}</div>
+    </>
+  );
+}
+
 function RouteSwitchHarness() {
   const [route, setRoute] = useState<"glass" | "settings">("glass");
   const store = useGlassMapStore();
@@ -387,7 +492,7 @@ function RouteSwitchHarness() {
               refractiveIndexE: 1.519,
               abbeNumberD: 64.17,
               abbeNumberE: 63.96,
-              partialDispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
+              partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
               dispersionCoeffKind: "Sellmeier3T",
               dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
             },
@@ -455,7 +560,7 @@ function SeedPendingMediumSelection() {
 describe("app shell routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    _resetGlassCatalogsResourceForTest();
+    _resetGlassCatalogLoaderForTest();
     mockSelectedSegment = null;
     mockPathname = "/";
     mockSearchParams = new URLSearchParams();
@@ -502,6 +607,23 @@ describe("app shell routes", () => {
     expect(screen.getByText("Preloading glass catalogs")).toBeInTheDocument();
     expect(screen.getByRole("progressbar", { name: "Initialization progress" })).toHaveAttribute("aria-valuenow", "90");
     expect(screen.getByText("90%")).toBeInTheDocument();
+  });
+
+  it("keeps the initialization overlay visible with the catalog error when preload fails", async () => {
+    mockProxy.getAllGlassCatalogsData.mockRejectedValueOnce(new Error("Catalog preload failed"));
+
+    renderInAppShell(
+      <>
+        <GlassCatalogStoreProbe />
+        <HomePage />
+      </>,
+    );
+
+    expect(await screen.findAllByText("Catalog preload failed")).toHaveLength(2);
+    expect(screen.getByText("Initializing Ray Optics")).toBeInTheDocument();
+    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("not-loaded");
+    expect(screen.getByTestId("catalogs-error")).toHaveTextContent("Catalog preload failed");
+    expect(screen.getByTestId("schott-count")).toHaveTextContent("0");
   });
 
   it("blocks beforeunload across the app even when no optimization result is waiting to be applied", () => {
@@ -728,30 +850,67 @@ describe("app shell routes", () => {
     expect(screen.getByRole("button", { name: "Sasian Triplet" })).toBeInTheDocument();
   });
 
-  it("preloads glass catalog data while rendering the home route", async () => {
-    renderInAppShell(<HomePage />);
+  it("preloads glass catalog data into the glass-map store while rendering the home route", async () => {
+    mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce({
+      Schott: {
+        "N-BK7": {
+          refractiveIndexD: 1.5168,
+          refractiveIndexE: 1.519,
+          abbeNumberD: 64.17,
+          abbeNumberE: 63.96,
+          partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+        },
+      },
+      CDGM: {}, Hikari: {}, Hoya: {}, Ohara: {}, Sumita: {}, Special: {},
+    });
+
+    renderInAppShell(
+      <>
+        <GlassCatalogStoreProbe />
+        <HomePage />
+      </>,
+    );
 
     await waitFor(() => {
       expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
     });
+    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded");
+    expect(screen.getByTestId("schott-count")).toHaveTextContent("1");
+    expect(screen.getByTestId("lookup-medium")).toHaveTextContent("Schott");
+  });
+
+  it("uses existing glass-map store catalog data without refetching on initial preload", async () => {
+    renderInAppShellWithSeededGlassCatalogs(
+      <>
+        <GlassCatalogStoreProbe />
+        <HomePage />
+      </>,
+    );
+
+    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded");
+    expect(screen.getByTestId("schott-count")).toHaveTextContent("1");
+    expect(screen.queryByText("Preloading glass catalogs")).not.toBeInTheDocument();
+    expect(mockProxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
+  });
+
+  it("returns existing mutable store catalog data from context preload without refetching", async () => {
+    const user = userEvent.setup();
+    renderInAppShellWithSeededGlassCatalogs(
+      <>
+        <GlassCatalogPreloadProbe />
+        <HomePage />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Preload catalogs" }));
+
+    expect(await screen.findByTestId("preload-result")).toHaveTextContent("store-data");
+    expect(mockProxy.getAllGlassCatalogsData).not.toHaveBeenCalled();
   });
 
   it("renders the glass map on the glass-map route", async () => {
-    renderInAppShell(<GlassMapPage />);
-
-    await waitFor(() => {
-      expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  it("does not refetch glass catalog data when opening glass map after home preload", async () => {
-    const { unmount } = renderInAppShell(<HomePage />);
-
-    await waitFor(() => {
-      expect(mockProxy.getAllGlassCatalogsData).toHaveBeenCalledTimes(1);
-    });
-
-    unmount();
     renderInAppShell(<GlassMapPage />);
 
     await waitFor(() => {
@@ -774,16 +933,16 @@ describe("app shell routes", () => {
     mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce({
       Schott: {
         "N-BK7": {
-          refractive_index_d: 1.5168,
-          refractive_index_e: 1.519,
-          abbe_number_d: 64.17,
-          abbe_number_e: 63.96,
-          partial_dispersions: { P_g_F: 0.5349, P_F_d: 0.41, P_F_e: 0.4 },
-          dispersion_coeff_kind: "Sellmeier3T",
-          dispersion_coeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
+          refractiveIndexD: 1.5168,
+          refractiveIndexE: 1.519,
+          abbeNumberD: 64.17,
+          abbeNumberE: 63.96,
+          partialDispersions: { P_gF: 0.5349, P_Fd: 0.41, P_fe: 0.4 },
+          dispersionCoeffKind: "Sellmeier3T",
+          dispersionCoeffs: [1.03961212, 0.231792344, 1.01046945, 0.00600069867, 0.0200179144, 103.560653],
         },
       },
-      CDGM: {}, Hikari: {}, Hoya: {}, Ohara: {}, Sumita: {},
+      CDGM: {}, Hikari: {}, Hoya: {}, Ohara: {}, Sumita: {}, Special: {},
     });
     renderInAppShell(
       <>

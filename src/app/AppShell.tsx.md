@@ -6,12 +6,13 @@ Client wrapper for the shared runtime shell. Owns Pyodide initialization, app-wi
 ## Responsibilities
 - Calls `usePyodide()` once for the app tree
 - Displays determinate initialization progress from `usePyodide().initProgress`
-- Preloads normalized glass catalog data once per worker proxy via `preloadGlassCatalogs()`
+- Loads normalized glass catalog data via `loadGlassCatalogs()` when `GlassMapStore.catalogsData` is not already available
+- Owns glass-catalog preload status/error locally and commits only successful data into `GlassMapStore`
 - Registers an app-wide `beforeunload` guard for reload, tab close, typed URL, and external navigation
 - Allows browser back/forward navigation between app routes without native confirmation, while keeping the Optimization unapplied-result modal as the browser-history guard for unapplied results
 - Guards in-app SideNav navigation away from `/optimization` when an optimized result has not been applied to the Editor
 - Provides `proxy`, `isReady`, and `openErrorModal` through `AppShellProvider`
-- Injects app-wide glass catalog state through `GlassCatalogProvider`
+- Injects app-wide glass catalog state through `GlassCatalogProvider`, combining local preload status/error with successful store data
 - Renders the shared `Layout` shell around route content
 - Renders `ErrorModal` and `LoadingOverlay` outside the routed content area
 - Renders `UnappliedOptimizationResultModal` outside routed content so the warning can be shown even while leaving the Optimization route
@@ -21,7 +22,7 @@ Client wrapper for the shared runtime shell. Owns Pyodide initialization, app-wi
 ```tsx
 <MathJaxContext>
   <AppShellProvider value={{ proxy, isReady, openErrorModal }}>
-    <GlassCatalogProvider value={{ catalogs, error, isLoaded, isLoading, preload }}>
+    <GlassCatalogProvider value={{ catalogs, lookupMaps, error, isLoaded, isLoading, preload }}>
       <Layout onNavigate={guardedNavigate}>{children}</Layout>
     </GlassCatalogProvider>
     <ErrorModal ... />
@@ -43,9 +44,12 @@ Client wrapper for the shared runtime shell. Owns Pyodide initialization, app-wi
 ## Notes
 - `app/layout.tsx` remains the server layout for metadata and global providers.
 - This replaces the former route-group shell so the public URLs remain unchanged after flattening the routes.
-- The loading overlay stays visible until both Pyodide is ready and the initial glass-catalog preload has completed successfully or failed.
+- The loading overlay stays visible until both Pyodide is ready and the initial glass-catalog preload has completed successfully.
 - While Pyodide initializes, the overlay uses the milestone state supplied by `usePyodide`.
-- Once Pyodide is ready and catalog preload begins, the overlay displays `"Preloading glass catalogs"` at `90%`; the overlay is removed after catalog preload succeeds or fails.
+- Once Pyodide is ready and catalog preload begins, the overlay displays `"Preloading glass catalogs"` at `90%`; the overlay is removed after catalog preload succeeds.
+- If catalog preload fails, the overlay remains blocking and displays the AppShell-local catalog error. The failed result is not committed into `GlassMapStore`.
+- `GlassMapStore.catalogsData` is the source of truth for already loaded catalogs; AppShell does not read settled data from the loader.
+- `GlassCatalogProvider.error`, `isLoaded`, and `isLoading` are derived from AppShell-local preload status plus `GlassMapStore.catalogsData`; `catalogs` and `lookupMaps` come from `GlassMapStore`.
 - `beforeunload` always calls `preventDefault()` and sets `event.returnValue` so reload, typed URL, tab close, and external navigation show the native browser prompt anywhere in the app.
 - In-app navigation away from `/optimization` opens a non-dismissible `UnappliedOptimizationResultModal` instead of pushing the requested route immediately.
 - `Stay` clears the pending route and remains on Optimization.

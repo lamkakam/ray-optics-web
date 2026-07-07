@@ -1,4 +1,4 @@
-export type FraunhoferSymbol = "r" | "C" | "C'" | "d" | "e" | "F" | "F'" | "g" | "h" | "i";
+export type FraunhoferSymbol = "t" | "s" | "A'" | "r" | "C" | "C'" | "D" | "d" | "e" | "F" | "F'" | "g" | "h" | "i";
 
 export interface FraunhoferLine {
   readonly symbol: FraunhoferSymbol;
@@ -7,9 +7,13 @@ export interface FraunhoferLine {
 
 /** Fraunhofer lines sorted from longest to shortest wavelength. */
 export const FRAUNHOFER_LINES: readonly FraunhoferLine[] = [
+  { symbol: "t", wavelength: 1013.98 },
+  { symbol: "s", wavelength: 852.11 },
+  { symbol: "A'", wavelength: 768.19 },
   { symbol: "r", wavelength: 706.519 },
   { symbol: "C", wavelength: 656.273 },
   { symbol: "C'", wavelength: 643.847 },
+  { symbol: "D", wavelength: 589.294 }, // mean of D1 and D2
   { symbol: "d", wavelength: 587.562 },
   { symbol: "e", wavelength: 546.073 },
   { symbol: "F", wavelength: 486.133 },

@@ -8,6 +8,7 @@ import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/
 import { NUM_NOLL_TERMS, NUM_FRINGE_TERMS } from "@/features/lens-editor/lib/zernikeData";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import { formatMissingGlassMessage, getMissingPrescriptionGlasses } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import { commitAnalysisPlotResult, loadAnalysisPlot } from "@/features/analysis/lib/plotFunctions";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
@@ -27,6 +28,8 @@ import { Button, type ButtonSize } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
+import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
+import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 
 export interface LensEditorProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -44,6 +47,7 @@ export function LensEditor({
   const analysisButtonSize: ButtonSize = screenSize === "screenSM" ? "xs" : "sm";
   const { theme } = useTheme();
   const { imagePoint } = useImagePoint();
+  const { lookupMaps } = useGlassCatalogs();
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
   const analysisPlotStore = useAnalysisPlotStore();
@@ -60,6 +64,7 @@ export function LensEditor({
   const seidelData = useStore(analysisDataStore, (s) => s.seidelData);
   const committedOpticalModel = useStore(lensStore, (s) => s.committedOpticalModel);
   const [computing, setComputing] = useState(false);
+  const [validationErrorMessage, setValidationErrorMessage] = useState<string | undefined>();
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
 
@@ -82,6 +87,11 @@ export function LensEditor({
     const specs = specsStore.getState().toOpticalSpecs();
     const surfacesData = gridRowsToSurfaces(lensStore.getState().rows);
     const model: OpticalModel = { setAutoAperture, specs, ...surfacesData };
+    const missingGlassMessage = formatMissingGlassMessage(getMissingPrescriptionGlasses(model, lookupMaps));
+    if (missingGlassMessage !== undefined) {
+      setValidationErrorMessage(missingGlassMessage);
+      return;
+    }
     const isDark = theme === "dark";
 
     setComputing(true);
@@ -122,7 +132,7 @@ export function LensEditor({
       lensLayoutImageStore.getState().setLayoutLoading(false);
       analysisPlotStore.getState().setPlotLoading(false);
     }
-  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError, theme, imagePoint]);
+  }, [proxy, specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore, selectedFieldIndex, selectedWavelengthIndex, selectedPlotType, onError, theme, imagePoint, lookupMaps]);
 
   const getOpticalModel = useCallback((): OpticalModel => {
     const autoAperture = lensStore.getState().autoAperture;
@@ -253,6 +263,11 @@ export function LensEditor({
       {bottomDrawer}
       {seidelModal}
       {zernikeModal}
+      <ErrorModal
+        isOpen={validationErrorMessage !== undefined}
+        message={validationErrorMessage}
+        onClose={() => setValidationErrorMessage(undefined)}
+      />
     </>
   );
 
@@ -279,6 +294,11 @@ export function LensEditor({
       {bottomDrawer}
       {seidelModal}
       {zernikeModal}
+      <ErrorModal
+        isOpen={validationErrorMessage !== undefined}
+        message={validationErrorMessage}
+        onClose={() => setValidationErrorMessage(undefined)}
+      />
     </div>
   );
 

@@ -3,13 +3,15 @@ import importlib.resources
 import yaml
 from opticalglass.rindexinfo import create_material
 from opticalglass.rindexinfo import RIIMedium
-
-# Fraunhofer wavelengths in μm
-_WL_C  = 0.6563   # hydrogen C
-_WL_D  = 0.5876   # helium d
-_WL_E  = 0.5461   # mercury e
-_WL_F  = 0.4861   # hydrogen F
-_WL_G  = 0.4358   # mercury g
+from rayoptics_web_utils.glass.helper import (
+    _WL_C,
+    _WL_D,
+    _WL_E,
+    _WL_F,
+    _WL_G,
+    _abbe_number,
+    _partial_dispersion,
+)
 
 def _formula1(dispersion_coeffs: list[float], wavelengthInMicron: float) -> float:
     if len(dispersion_coeffs) % 2 != 0:
@@ -87,17 +89,17 @@ def _build_sellmeier_special_material_data(
     ne = dispersion_fn(raw_dispersion_coeffs, _WL_E)
     nF = dispersion_fn(raw_dispersion_coeffs, _WL_F)
     ng = dispersion_fn(raw_dispersion_coeffs, _WL_G)
-    abbe_number_d = (nd - 1) / (nF - nC)
-    abbe_number_e = (ne - 1) / (nF - nC)
+    abbe_number_d = _abbe_number(nd, nF, nC)
+    abbe_number_e = _abbe_number(ne, nF, nC)
     properties = material.yaml_data.get('PROPERTIES', {})
     nd = float(properties.get('nd', nd))
     abbe_number_d = float(properties.get('Vd', abbe_number_d))
 
     denom = nF - nC
     partial_dispersions = {
-        "P_F_e": (nF - ne) / denom,
-        "P_F_d": (nF - nd) / denom,
-        "P_g_F": (ng - nF) / denom,
+        "P_fe": _partial_dispersion(nF, ne, nF, nC),
+        "P_Fd": _partial_dispersion(nF, nd, nF, nC),
+        "P_gF": _partial_dispersion(ng, nF, nF, nC),
     }
 
     b_coeffs = raw_dispersion_coeffs[::2]
@@ -115,13 +117,13 @@ def _build_sellmeier_special_material_data(
         raise ValueError(f"Unsupported Sellmeier term count for {material_name}: {term_count}")
 
     return {
-        "dispersion_coeff_kind": dispersion_coeff_kind,
-        "dispersion_coeffs": [*b_coeffs, *exported_c_coeffs],
-        "refractive_index_d": nd,
-        "refractive_index_e": ne,
-        "abbe_number_d": abbe_number_d,
-        "abbe_number_e": abbe_number_e,
-        "partial_dispersions": partial_dispersions,
+        "dispersionCoeffKind": dispersion_coeff_kind,
+        "dispersionCoeffs": [*b_coeffs, *exported_c_coeffs],
+        "refractiveIndexD": nd,
+        "refractiveIndexE": ne,
+        "abbeNumberD": abbe_number_d,
+        "abbeNumberE": abbe_number_e,
+        "partialDispersions": partial_dispersions,
     }
 
 

@@ -283,6 +283,39 @@ const importedLensDataSchema = {
   },
 };
 
-const validateImportedLensData = ajv.compile<OpticalModel>(importedLensDataSchema);
+const customGlassMaterialSchema = {
+  type: "object",
+  required: ["type", "data"],
+  additionalProperties: false,
+  properties: {
+    type: { type: "string", const: "tabulated" },
+    data: {
+      type: "array",
+      minItems: 4,
+      items: {
+        type: "array",
+        minItems: 2,
+        maxItems: 2,
+        items: positiveFiniteNumberSchema,
+      },
+    },
+  },
+};
 
-export { validateImportedLensData };
+const importedCustomGlassDataSchema = {
+  type: "object",
+  required: ["version", "Custom"],
+  additionalProperties: false,
+  properties: {
+    version: { type: "string", pattern: "^\\d+\\.\\d+$", const: "1.0" },
+    Custom: {
+      type: "object",
+      additionalProperties: customGlassMaterialSchema,
+    },
+  },
+};
+
+const validateImportedLensData = ajv.compile<OpticalModel>(importedLensDataSchema);
+const validateImportedCustomGlassData = ajv.compile(importedCustomGlassDataSchema);
+
+export { validateImportedCustomGlassData, validateImportedLensData };

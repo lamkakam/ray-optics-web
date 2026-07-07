@@ -272,13 +272,14 @@ function renderLensEditor(overrides?: {
   proxy?: PyodideWorkerAPI | undefined;
   isReady?: boolean;
   onError?: () => void;
+  glassCatalogContextValue?: GlassCatalogContextValue;
 }) {
   // Lazy import to allow mock override before render
   const { LensEditor } = require("@/features/lens-editor/LensEditor") as typeof import("@/features/lens-editor/LensEditor");
   const { specsStore, lensStore, analysisPlotStore, lensLayoutImageStore, analysisDataStore } = makeStores();
   const proxy = overrides && "proxy" in overrides ? overrides.proxy : makeProxy();
   const onError = overrides?.onError ?? jest.fn();
-  const glassCatalogContextValue: GlassCatalogContextValue = {
+  const glassCatalogContextValue: GlassCatalogContextValue = overrides?.glassCatalogContextValue ?? {
     catalogs: undefined,
     lookupMaps: undefined,
     error: undefined,
@@ -422,6 +423,48 @@ describe("LensEditor", () => {
       expect(proxy!.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, "centroid");
     });
     expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
+  });
+
+  it("shows an error modal and skips worker calls when Update System has a missing glass", async () => {
+    const proxy = makeProxy();
+    const { lensStore } = renderLensEditor({
+      proxy,
+      glassCatalogContextValue: {
+        catalogs: undefined,
+        lookupMaps: {
+          manufacturerMap: new Map(),
+          mediumMap: new Map(),
+          customMediumMap: new Map(),
+        },
+        error: undefined,
+        isLoaded: true,
+        isLoading: false,
+        preload: jest.fn(),
+      },
+    });
+    act(() => {
+      lensStore.getState().setRows(surfacesToGridRows({
+        ...testImportModel,
+        surfaces: [
+          {
+            label: "Default",
+            curvatureRadius: 50,
+            thickness: 5,
+            medium: "N-BK7",
+            manufacturer: "Schott",
+            semiDiameter: 10,
+          },
+        ],
+      }));
+    });
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    expect(await screen.findByRole("dialog", { name: "Error" })).toHaveTextContent("Schott: N-BK7");
+    expect(proxy.getFirstOrderData).not.toHaveBeenCalled();
+    expect(proxy.plotLensLayout).not.toHaveBeenCalled();
+    expect(proxy.get3rdOrderSeidelData).not.toHaveBeenCalled();
   });
 
   it("submit error path calls onError", async () => {

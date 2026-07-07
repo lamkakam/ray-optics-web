@@ -24,6 +24,13 @@ function formattedMedium(medium: string, glassManufacturer: string): { medium: s
     };
   }
 
+  if (glassManufacturer === "Custom") {
+    return {
+      medium: `user_defined_materials[${JSON.stringify(medium)}]`,
+      glassManufacturer: "",
+    };
+  }
+
   // real medium or glass
   return {
     medium: nonBuiltInSpecialMaterial.get(medium) ?? JSON.stringify(medium),

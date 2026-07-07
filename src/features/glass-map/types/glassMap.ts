@@ -1,38 +1,39 @@
-export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special'] as const;
+export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special', 'Custom'] as const;
 export type CatalogName = typeof CATALOG_NAMES[number];
 
 export type DispersionCoeffKind = 'Schott2x6' | 'Sellmeier3T' | 'Sellmeier4T';
 
-export interface GlassData {
+interface GlassDataBase {
   readonly refractiveIndexD: number;
   readonly refractiveIndexE: number;
   readonly abbeNumberD: number;
   readonly abbeNumberE: number;
   readonly partialDispersions: {
-    readonly P_F_e: number;
-    readonly P_F_d: number;
-    readonly P_g_F: number;
+    readonly P_fe: number;
+    readonly P_Fd: number;
+    readonly P_gF: number;
   };
+}
+
+export interface GlassData extends GlassDataBase {
   readonly dispersionCoeffKind: DispersionCoeffKind;
   readonly dispersionCoeffs: readonly number[];
 }
 
-export interface RawGlassData {
-  readonly refractive_index_d: number;
-  readonly refractive_index_e: number;
-  readonly abbe_number_d: number;
-  readonly abbe_number_e: number;
-  readonly partial_dispersions: {
-    readonly P_F_e: number;
-    readonly P_F_d: number;
-    readonly P_g_F: number;
-  };
-  readonly dispersion_coeff_kind: DispersionCoeffKind;
-  readonly dispersion_coeffs: readonly number[];
+export interface UserDefinedGlassData extends GlassDataBase {
+  readonly dispersionCoeffKind: "tabulated";
+  readonly dispersionCoeffs: readonly (readonly [number, number])[];
 }
 
-export type AllGlassCatalogsData = Record<CatalogName, Record<string, GlassData>>;
-export type RawAllGlassCatalogsData = Record<string, Record<string, RawGlassData>>;
+export interface UserDefinedGlassInput {
+  readonly name: string;
+  readonly pairs: readonly (readonly [number, number])[];
+}
+
+export type UserDefinedMaterialsData = Record<string, UserDefinedGlassData>;
+export type CatalogGlassData = GlassData | UserDefinedGlassData;
+export type AllGlassCatalogsData = Partial<Record<CatalogName, Record<string, CatalogGlassData>>>;
+export type CompleteGlassCatalogsData = Record<CatalogName, Record<string, CatalogGlassData>>;
 
 export interface GlassMediumLookupValue {
   readonly medium: string;
@@ -42,16 +43,17 @@ export interface GlassMediumLookupValue {
 export interface GlassLookupMaps {
   readonly manufacturerMap: ReadonlyMap<string, CatalogName>;
   readonly mediumMap: ReadonlyMap<string, GlassMediumLookupValue>;
+  readonly customMediumMap: ReadonlyMap<string, GlassMediumLookupValue>;
 }
 
 export type AbbeNumCenterLine = 'd' | 'e';
-export type PartialDispersionType = 'P_F_d' | 'P_F_e' | 'P_g_F';
+export type PartialDispersionType = 'P_Fd' | 'P_fe' | 'P_gF';
 export type GlassMapPlotType = 'refractiveIndex' | 'partialDispersion';
 
 export interface SelectedGlass {
   readonly catalogName: CatalogName;
   readonly glassName: string;
-  readonly data: GlassData;
+  readonly data: CatalogGlassData;
 }
 
 export interface PlotPoint {
@@ -59,5 +61,5 @@ export interface PlotPoint {
   readonly y: number;
   readonly catalogName: CatalogName;
   readonly glassName: string;
-  readonly data: GlassData;
+  readonly data: CatalogGlassData;
 }

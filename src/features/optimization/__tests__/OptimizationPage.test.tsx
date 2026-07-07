@@ -159,7 +159,11 @@ function mockPointerCapture(element: HTMLElement) {
   });
 }
 
-function renderOptimizationPage(proxy: PyodideWorkerAPI, onError = jest.fn()) {
+function renderOptimizationPage(
+  proxy: PyodideWorkerAPI,
+  onError = jest.fn(),
+  glassCatalogOverrides?: Partial<GlassCatalogContextValue>,
+) {
   const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
   const optimizationStore = createStore<OptimizationState>(createOptimizationSlice);
@@ -187,6 +191,7 @@ function renderOptimizationPage(proxy: PyodideWorkerAPI, onError = jest.fn()) {
     isLoaded: true,
     isLoading: false,
     preload: jest.fn(),
+    ...glassCatalogOverrides,
   };
 
   const rendered = render(
@@ -404,6 +409,32 @@ describe("OptimizationPage", () => {
     expect(within(evaluationScroll).getByText("Paraxial focal length")).toBeInTheDocument();
     expect(within(evaluationScroll).getByText("1.000000")).toBeInTheDocument();
     expect(within(evaluationScroll).getByText("98.500000")).toBeInTheDocument();
+  });
+
+  it("shows missing-glass warning and blocks evaluation and optimize calls", async () => {
+    const proxy = makeProxy();
+    const { optimizationStore } = renderOptimizationPage(proxy, jest.fn(), {
+      lookupMaps: {
+        manufacturerMap: new Map(),
+        mediumMap: new Map(),
+        customMediumMap: new Map(),
+      },
+    });
+
+    act(() => {
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+      ]);
+    });
+
+    const evaluationPanel = screen.getByText("Operand Evaluation").closest("div")?.parentElement;
+    expect(evaluationPanel).not.toBeNull();
+    expect(await within(evaluationPanel as HTMLElement).findByText(/Schott: BK7/)).toBeInTheDocument();
+    expect(proxy.evaluateOptimizationProblem).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Optimize" }));
+
+    expect(proxy.optimizeOpm).not.toHaveBeenCalled();
   });
 
   it("keeps active drawer grid editors focused when operand evaluation loading completes", async () => {

@@ -20,15 +20,15 @@ Extracts optical glass catalog data (refractive indices, Abbe numbers, partial d
 
 ## API
 
-### `_partial_dispersions(data) -> dict[str, float]`
+### `_partialDispersions(data) -> dict[str, float]`
 
 Reads refractive indices at `"C"`, `"d"`, `"e"`, `"F"`, `"g"` from `('refractive indices', letter)` and computes all three partial dispersions. Returns `0.0` if the denominator (nF − nC) is zero.
 
 ### `_get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, str | list[float]]`
 
 - Reads `"dispersion coefficients"` of each glass from `data`.
-- Each glass from catalog name of `"CDGM"`, `"Hoya"` and `"Sumita"` use the convention for Schott dispersion equation with total 5 terms. Each glass from `"Hikari"` use the convention for Schott dispersion equation with total 8 terms. For output, `"dispersion_coeffs"` for each glass from `"CDGM"`, `"Hoya"`, `"Sumita"` is padded to have a uniform length of 8, aligning to the length of `"dispersion_coeffs"` of each glass from `"Hikari"`. The `"dispersion_coeff_kind"` is `"Schott2x6"`.
-- Each glass from catalog name of `"Ohara"` and `"Schott"` use the convention of Sellmeier dispersion equation with total 6 terms. The `"dispersion_coeff_kind"` is `"Sellmeier3T"`.
+- Each glass from catalog name of `"CDGM"`, `"Hoya"` and `"Sumita"` use the convention for Schott dispersion equation with total 5 terms. Each glass from `"Hikari"` use the convention for Schott dispersion equation with total 8 terms. For output, `"dispersionCoeffs"` for each glass from `"CDGM"`, `"Hoya"`, `"Sumita"` is padded to have a uniform length of 8, aligning to the length of `"dispersionCoeffs"` of each glass from `"Hikari"`. The `"dispersionCoeffKind"` is `"Schott2x6"`.
+- Each glass from catalog name of `"Ohara"` and `"Schott"` use the convention of Sellmeier dispersion equation with total 6 terms. The `"dispersionCoeffKind"` is `"Sellmeier3T"`.
 - Special materials may also use `"Sellmeier4T"` when the bundled refractiveindex.info source carries four Sellmeier terms, as with Water.
 
 ### `_build_glass_entry(data) -> dict[str, float | dict[str, float] | list[float]]`
@@ -44,21 +44,21 @@ Returns `{glass_name: glass_dict}` for all valid glasses in the named catalog. C
 Returns data for all 6 opticalglass catalogs (CDGM, Hikari, Hoya, Ohara, Schott, Sumita) plus the `"Special"` catalog from `custom_materials.get_special_materials_data()` (contains CaF2, Fused Silica, Water, and D263TECO). Total: 7 catalog keys.
 
 ## Output Schema (per glass)
-The value for the attribute `"dispersion_coeff_kind"` is `"Schott2x6"`, `"Sellmeier3T"`, or `"Sellmeier4T"`
+The value for the attribute `"dispersionCoeffKind"` is `"Schott2x6"`, `"Sellmeier3T"`, or `"Sellmeier4T"`
 
 ```json
 {
-  "refractive_index_d": 1.5168,
-  "refractive_index_e": 1.51872,
-  "abbe_number_d": 64.17,
-  "abbe_number_e": 63.96,
-  "partial_dispersions": {
-    "P_F_e": 0.454094,
-    "P_F_d": 0.692308,
-    "P_g_F": 0.533499
+  "refractiveIndexD": 1.5168,
+  "refractiveIndexE": 1.51872,
+  "abbeNumberD": 64.17,
+  "abbeNumberE": 63.96,
+  "partialDispersions": {
+    "P_fe": 0.454094,
+    "P_Fd": 0.692308,
+    "P_gF": 0.533499
   },
-  "dispersion_coeff_kind": "Sellmeier3T",
-  "dispersion_coeffs": [
+  "dispersionCoeffKind": "Sellmeier3T",
+  "dispersionCoeffs": [
     1.03961212,
     0.231792344,
     1.01046945,
@@ -115,11 +115,11 @@ schott_catalog = get_glass_catalog_data("Schott")
 
 bk7_data = schott_catalog["BK7"]
 # Returns: {
-#   "refractive_index_d": 1.5168,
-#   "abbe_number_d": 64.17,
-#   "partial_dispersions": {...},
-#   "dispersion_coeff_kind": "Sellmeier3T",
-#   "dispersion_coeffs": [...]
+#   "refractiveIndexD": 1.5168,
+#   "abbeNumberD": 64.17,
+#   "partialDispersions": {...},
+#   "dispersionCoeffKind": "Sellmeier3T",
+#   "dispersionCoeffs": [...]
 # }
 ```
 
