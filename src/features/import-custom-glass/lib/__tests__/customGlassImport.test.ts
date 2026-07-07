@@ -106,6 +106,114 @@ describe("saveCustomGlass", () => {
     expect(upsertCustomGlasses).toHaveBeenCalledWith({ RENAMED: customGlass });
     expect(deleteCustomGlasses).toHaveBeenCalledWith(["ORIGINAL"]);
   });
+
+  it("persists add input only after the worker add succeeds", async () => {
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ ADDED: customGlass });
+    const persistInput = jest.fn().mockResolvedValue(undefined);
+    const upsertCustomGlasses = jest.fn();
+
+    await saveCustomGlass({
+      mode: "add",
+      previousLabel: undefined,
+      input: {
+        name: "ADDED",
+        pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
+      },
+      proxy: {
+        addUserDefinedGlasses,
+      } as unknown as PyodideWorkerAPI,
+      storeActions: {
+        upsertCustomGlasses,
+        deleteCustomGlasses: jest.fn(),
+      },
+      persistInput,
+    });
+
+    expect(addUserDefinedGlasses).toHaveBeenCalled();
+    expect(persistInput.mock.invocationCallOrder[0]).toBeGreaterThan(addUserDefinedGlasses.mock.invocationCallOrder[0]);
+    expect(upsertCustomGlasses).toHaveBeenCalledWith({ ADDED: customGlass });
+  });
+
+  it("does not persist add input when the worker add rejects", async () => {
+    const addUserDefinedGlasses = jest.fn().mockRejectedValue(new Error("worker failed"));
+    const persistInput = jest.fn();
+
+    await expect(saveCustomGlass({
+      mode: "add",
+      previousLabel: undefined,
+      input: {
+        name: "ADDED",
+        pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
+      },
+      proxy: {
+        addUserDefinedGlasses,
+      } as unknown as PyodideWorkerAPI,
+      storeActions: {
+        upsertCustomGlasses: jest.fn(),
+        deleteCustomGlasses: jest.fn(),
+      },
+      persistInput,
+    })).rejects.toThrow("worker failed");
+
+    expect(persistInput).not.toHaveBeenCalled();
+  });
+
+  it("warns but keeps store update when persistence fails after worker success", async () => {
+    const addUserDefinedGlasses = jest.fn().mockResolvedValue({ ADDED: customGlass });
+    const persistInput = jest.fn().mockRejectedValue(new Error("idb failed"));
+    const onPersistenceWarning = jest.fn();
+    const upsertCustomGlasses = jest.fn();
+
+    await saveCustomGlass({
+      mode: "add",
+      previousLabel: undefined,
+      input: {
+        name: "ADDED",
+        pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
+      },
+      proxy: {
+        addUserDefinedGlasses,
+      } as unknown as PyodideWorkerAPI,
+      storeActions: {
+        upsertCustomGlasses,
+        deleteCustomGlasses: jest.fn(),
+      },
+      persistInput,
+      onPersistenceWarning,
+    });
+
+    expect(onPersistenceWarning).toHaveBeenCalledWith("idb failed");
+    expect(upsertCustomGlasses).toHaveBeenCalledWith({ ADDED: customGlass });
+  });
+
+  it("does not persist during duplicate-add fallback when no worker mutation succeeds", async () => {
+    const addUserDefinedGlasses = jest.fn().mockRejectedValue(new Error("User-defined glass already exists: ADDED"));
+    const getUserDefinedGlasses = jest.fn().mockResolvedValue({ ADDED: customGlass });
+    const persistInput = jest.fn();
+    const upsertCustomGlasses = jest.fn();
+
+    await saveCustomGlass({
+      mode: "add",
+      previousLabel: undefined,
+      input: {
+        name: "ADDED",
+        pairs: [[587.56, 1.5168], [486.13, 1.522], [546.07, 1.518], [656.27, 1.514]],
+      },
+      proxy: {
+        addUserDefinedGlasses,
+        getUserDefinedGlasses,
+      } as unknown as PyodideWorkerAPI,
+      storeActions: {
+        upsertCustomGlasses,
+        deleteCustomGlasses: jest.fn(),
+      },
+      persistInput,
+    });
+
+    expect(getUserDefinedGlasses).toHaveBeenCalledWith(["ADDED"]);
+    expect(persistInput).not.toHaveBeenCalled();
+    expect(upsertCustomGlasses).toHaveBeenCalledWith({ ADDED: customGlass });
+  });
 });
 
 describe("parseCustomGlassCsv", () => {

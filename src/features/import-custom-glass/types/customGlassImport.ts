@@ -26,7 +26,7 @@ export interface CustomGlassRow {
 }
 
 export type ModalMode = "add" | "edit";
-export type ConfirmationMode = "delete" | "overwrite" | "invalid-import" | "rejected-csv";
+export type ConfirmationMode = "delete" | "overwrite" | "invalid-import" | "rejected-csv" | "persistence-warning";
 export type UserDefinedCustomCatalog = Record<string, UserDefinedGlassData>;
 export type ImportedCustomGlassMaterial = { readonly name: string; readonly pairs: readonly (readonly [number, number])[] };
 export type RejectedCsvFile = { readonly filename: string; readonly reason: string };
@@ -42,4 +42,7 @@ export interface SaveCustomGlassOptions {
   readonly input: UserDefinedGlassInput;
   readonly proxy: PyodideWorkerAPI;
   readonly storeActions: CustomGlassStoreActions;
+  readonly persistInput?: (input: UserDefinedGlassInput) => Promise<void>;
+  readonly deletePersisted?: (labels: readonly string[]) => Promise<void>;
+  readonly onPersistenceWarning?: (message: string) => void;
 }

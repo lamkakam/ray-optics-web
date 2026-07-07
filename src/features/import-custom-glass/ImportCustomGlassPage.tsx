@@ -14,6 +14,11 @@ import {
   toCustomGlassPayload,
   toWorkerInput,
 } from "@/features/import-custom-glass/lib/customGlassImport";
+import {
+  deletePersistedCustomGlasses,
+  upsertPersistedCustomGlass,
+  upsertPersistedCustomGlasses,
+} from "@/features/import-custom-glass/lib/customGlassStorage";
 import type {
   ConfirmationMode,
   CustomGlassRow,
@@ -43,6 +48,7 @@ export default function ImportCustomGlassPage() {
   const [confirmationMode, setConfirmationMode] = useState<ConfirmationMode | undefined>();
   const [pendingImport, setPendingImport] = useState<readonly ImportedCustomGlassMaterial[] | undefined>();
   const [rejectedCsvFiles, setRejectedCsvFiles] = useState<readonly RejectedCsvFile[]>([]);
+  const [persistenceWarning, setPersistenceWarning] = useState<string | undefined>();
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const csvFileInputRef = useRef<HTMLInputElement>(null);
   const rows = useMemo<readonly CustomGlassRow[]>(
@@ -75,9 +81,19 @@ export default function ImportCustomGlassPage() {
       return;
     }
     await proxy.deleteUserDefinedGlasses(checkedLabels);
+    let hasPersistenceWarning = false;
+    try {
+      await deletePersistedCustomGlasses(checkedLabels);
+    } catch (error) {
+      hasPersistenceWarning = true;
+      setPersistenceWarning(error instanceof Error ? error.message : "Failed to delete persisted custom glass.");
+      setConfirmationMode("persistence-warning");
+    }
     glassMapStore.getState().deleteCustomGlasses(checkedLabels);
     setChecked(new Set());
-    setConfirmationMode(undefined);
+    if (!hasPersistenceWarning) {
+      setConfirmationMode(undefined);
+    }
   };
   const handleSubmit = async (label: string, modalRows: Parameters<typeof toWorkerInput>[1]) => {
     if (proxy === undefined || modalMode === undefined) {
@@ -89,6 +105,12 @@ export default function ImportCustomGlassPage() {
       input: toWorkerInput(label, modalRows),
       proxy,
       storeActions: glassMapStore.getState(),
+      persistInput: upsertPersistedCustomGlass,
+      deletePersisted: deletePersistedCustomGlasses,
+      onPersistenceWarning: (message) => {
+        setPersistenceWarning(message);
+        setConfirmationMode("persistence-warning");
+      },
     });
     setChecked(new Set([label]));
     setModalMode(undefined);
@@ -108,10 +130,32 @@ export default function ImportCustomGlassPage() {
     }
     const toUpdate = materials.filter((material) => custom[material.name] !== undefined);
     const toAdd = materials.filter((material) => custom[material.name] === undefined);
+    let hasPersistenceWarning = false;
     const updated = toUpdate.length > 0 ? await proxy.updateUserDefinedGlasses(toUpdate) : {};
+    if (toUpdate.length > 0) {
+      try {
+        await upsertPersistedCustomGlasses(toUpdate);
+      } catch (error) {
+        hasPersistenceWarning = true;
+        setPersistenceWarning(error instanceof Error ? error.message : "Failed to persist custom glass import.");
+        setConfirmationMode("persistence-warning");
+      }
+    }
     const added = toAdd.length > 0 ? await proxy.addUserDefinedGlasses(toAdd) : {};
+    if (toAdd.length > 0) {
+      try {
+        await upsertPersistedCustomGlasses(toAdd);
+      } catch (error) {
+        hasPersistenceWarning = true;
+        setPersistenceWarning(error instanceof Error ? error.message : "Failed to persist custom glass import.");
+        setConfirmationMode("persistence-warning");
+      }
+    }
     glassMapStore.getState().upsertCustomGlasses({ ...updated, ...added });
     setPendingImport(undefined);
+    if (hasPersistenceWarning) {
+      return;
+    }
     setConfirmationMode(undefined);
     showRejectedCsvFiles(rejectionsAfterImport);
   };
@@ -271,6 +315,30 @@ export default function ImportCustomGlassPage() {
               ))}
             </ul>
           </div>
+        </Modal>
+      )}
+      {confirmationMode === "persistence-warning" && persistenceWarning !== undefined && (
+        <Modal
+          isOpen
+          title="Custom Glass Persistence Warning"
+          footer={(
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="primary"
+                aria-label="OK"
+                onClick={() => {
+                  setPersistenceWarning(undefined);
+                  setConfirmationMode(undefined);
+                }}
+              >
+                OK
+              </Button>
+            </div>
+          )}
+        >
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            The custom glass change succeeded for this session, but it could not be saved for future visits. {persistenceWarning}
+          </p>
         </Modal>
       )}
     </main>

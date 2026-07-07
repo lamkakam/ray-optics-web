@@ -48,6 +48,7 @@ let mockSearchParams = new URLSearchParams();
 let mockPathname = "/";
 const mockPush = jest.fn<void, [string]>();
 const mockReplace = jest.fn<void, [string]>();
+let mockStoredCustomGlassRows: readonly unknown[] = [];
 
 const loadedCatalogsData: AllGlassCatalogsData = {
   CDGM: {},
@@ -76,6 +77,16 @@ const loadedCatalogsData: AllGlassCatalogsData = {
   Special: {},
 };
 
+const persistedCustomGlassData = {
+  refractiveIndexD: 1.7,
+  refractiveIndexE: 1.705,
+  abbeNumberD: 45.2,
+  abbeNumberE: 45,
+  partialDispersions: { P_gF: 0.53, P_Fd: 0.41, P_fe: 0.4 },
+  dispersionCoeffKind: "tabulated",
+  dispersionCoeffs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
+} as const;
+
 jest.mock("next/navigation", () => ({
   useSelectedLayoutSegment: () => mockSelectedSegment,
   useSearchParams: () => mockSearchParams,
@@ -101,6 +112,26 @@ jest.mock("better-react-mathjax", () => ({
   MathJaxContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   MathJax: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 }));
+
+jest.mock("@/features/import-custom-glass/lib/customGlassStorage", () => ({
+  isPersistedCustomGlassRow: (value: unknown) => {
+    if (typeof value !== "object" || value === null) {
+      return false;
+    }
+    const row = value as { readonly label?: unknown; readonly type?: unknown; readonly pairs?: unknown };
+    return typeof row.label === "string" && row.type === "tabulated" && Array.isArray(row.pairs);
+  },
+  readStoredCustomGlassRows: jest.fn(() => Promise.resolve(mockStoredCustomGlassRows)),
+  quarantinePersistedCustomGlass: jest.fn().mockResolvedValue(undefined),
+  quarantineStoredCustomGlassRow: jest.fn().mockResolvedValue(undefined),
+}));
+
+const customGlassStorageMock = jest.requireMock("@/features/import-custom-glass/lib/customGlassStorage") as {
+  readonly quarantinePersistedCustomGlass: jest.Mock<Promise<void>, [unknown]>;
+  readonly quarantineStoredCustomGlassRow: jest.Mock<Promise<void>, [unknown, string]>;
+};
+const mockQuarantinePersistedCustomGlass = customGlassStorageMock.quarantinePersistedCustomGlass;
+const mockQuarantineStoredCustomGlassRow = customGlassStorageMock.quarantineStoredCustomGlassRow;
 
 const mockSetTheme: jest.Mock<void, [Theme]> = jest.fn();
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
@@ -449,6 +480,7 @@ function GlassCatalogStoreProbe() {
       <div data-testid="catalogs-loaded">{glassCatalogs.isLoaded ? "loaded" : "not-loaded"}</div>
       <div data-testid="catalogs-error">{glassCatalogs.error ?? "none"}</div>
       <div data-testid="schott-count">{Object.keys(catalogsData?.Schott ?? {}).length}</div>
+      <div data-testid="custom-count">{Object.keys(catalogsData?.Custom ?? {}).length}</div>
       <div data-testid="lookup-medium">{lookupMaps?.mediumMap.get("schott:n-bk7")?.manufacturer ?? "none"}</div>
     </>
   );
@@ -564,6 +596,9 @@ describe("app shell routes", () => {
     mockSelectedSegment = null;
     mockPathname = "/";
     mockSearchParams = new URLSearchParams();
+    mockStoredCustomGlassRows = [];
+    mockQuarantinePersistedCustomGlass.mockResolvedValue(undefined);
+    mockQuarantineStoredCustomGlassRow.mockResolvedValue(undefined);
     window.history.pushState({}, "", "/");
     mockPush.mockReset();
     mockReplace.mockReset();
@@ -879,6 +914,55 @@ describe("app shell routes", () => {
     expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded");
     expect(screen.getByTestId("schott-count")).toHaveTextContent("1");
     expect(screen.getByTestId("lookup-medium")).toHaveTextContent("Schott");
+  });
+
+  it("hydrates persisted custom glasses into Python before marking catalogs loaded", async () => {
+    mockStoredCustomGlassRows = [{
+      label: "PERSISTED",
+      type: "tabulated",
+      pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
+    }];
+    mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce(loadedCatalogsData);
+    mockProxy.addUserDefinedGlasses.mockResolvedValueOnce({ PERSISTED: persistedCustomGlassData });
+
+    renderInAppShell(
+      <>
+        <GlassCatalogStoreProbe />
+        <HomePage />
+      </>,
+    );
+
+    await waitFor(() => expect(mockProxy.addUserDefinedGlasses).toHaveBeenCalledWith([{
+      name: "PERSISTED",
+      pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
+    }]));
+    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded");
+    expect(screen.getByTestId("custom-count")).toHaveTextContent("1");
+  });
+
+  it("quarantines invalid persisted custom glasses while valid rows still load", async () => {
+    mockStoredCustomGlassRows = [
+      {
+        label: "VALID",
+        type: "tabulated",
+        pairs: [[587.56, 1.7], [486.13, 1.71], [546.07, 1.705], [656.27, 1.695]],
+      },
+      { label: "BAD_TYPE", type: "sellmeier", pairs: [] },
+    ];
+    mockProxy.getAllGlassCatalogsData.mockResolvedValueOnce(loadedCatalogsData);
+    mockProxy.addUserDefinedGlasses.mockResolvedValueOnce({ VALID: persistedCustomGlassData });
+
+    renderInAppShell(
+      <>
+        <GlassCatalogStoreProbe />
+        <HomePage />
+      </>,
+    );
+
+    expect(await screen.findByText(/1 persisted custom glass entry was quarantined: BAD_TYPE/)).toBeInTheDocument();
+    expect(screen.getByTestId("catalogs-loaded")).toHaveTextContent("loaded");
+    expect(screen.getByTestId("custom-count")).toHaveTextContent("1");
+    expect(mockQuarantineStoredCustomGlassRow).toHaveBeenCalledWith({ label: "BAD_TYPE", type: "sellmeier", pairs: [] }, "BAD_TYPE");
   });
 
   it("uses existing glass-map store catalog data without refetching on initial preload", async () => {
