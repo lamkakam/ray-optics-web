@@ -1,7 +1,7 @@
 import { RadioInput } from "@/shared/components/primitives/RadioInput";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
-import { Button, type ButtonSize } from "@/shared/components/primitives/Button";
+import { Button } from "@/shared/components/primitives/Button";
 
 type Chromaticity = "mono" | "poly";
 type Metric = "rmsSpot" | "wavefront";
@@ -15,7 +15,6 @@ interface FocusingPanelProps {
   readonly onMetricChange: (value: Metric) => void;
   readonly onFieldIndexChange: (value: number) => void;
   readonly onFocus: () => void;
-  readonly focusButtonSize: ButtonSize;
   readonly disabled: boolean;
 }
 
@@ -38,7 +37,6 @@ export function FocusingPanel({
   onMetricChange,
   onFieldIndexChange,
   onFocus,
-  focusButtonSize,
   disabled,
 }: FocusingPanelProps) {
   return (
@@ -73,7 +71,6 @@ export function FocusingPanel({
       </div>
       <Button
         variant="primary"
-        size={focusButtonSize}
         aria-label="Focus"
         disabled={disabled}
         onClick={onFocus}

@@ -30,7 +30,6 @@ import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
-import type { ButtonSize } from "@/shared/components/primitives/Button";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 
 interface OptimizationPageProps {
@@ -65,7 +64,6 @@ export function OptimizationPage({
   const { imagePoint } = useImagePoint();
   const { lookupMaps } = useGlassCatalogs();
   const isLG = screenSize === "screenLG";
-  const actionButtonSize: ButtonSize = screenSize === "screenSM" ? "xs" : "sm";
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
   const optimizationStore = useOptimizationStore();
@@ -569,7 +567,6 @@ export function OptimizationPage({
         canOptimize={canOptimize}
         canApplyToEditor={optimizationModel !== undefined}
         isOptimizing={isOptimizing}
-        buttonSize={actionButtonSize}
         onOptimize={() => void handleOptimize()}
         onApplyToEditor={() => optimizationStore.getState().openApplyConfirm()}
       />

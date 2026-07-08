@@ -30,7 +30,6 @@ Read reactively via `useStore` / `useLensEditorStore`:
 - From `useImagePoint()`: `imagePoint`
 - From `useGlassCatalogs()`: `lookupMaps`
 - `hasAnalysisControls`: true when at least one analysis control or chip can render (`seidelData`, `committedOpticalModel`, or `firstOrderData`)
-- `analysisButtonSize`: `xs` on `screenSM`, `sm` on `screenLG`; Seidel/Zernike analysis buttons match `LensEditorConfigToolbar` sizing on small screens and keep the desktop `sm` size
 
 Imperative access to actions is via the provider hooks (`useLensEditorStore`, `useSpecsConfiguratorStore`, `useAnalysisPlotStore`, `useAnalysisDataStore`, `useLensLayoutImageStore`) and then `store.getState()`.
 
