@@ -6,10 +6,8 @@ import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/Spec
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { FocusingPanel } from "@/features/lens-editor/components/FocusingPanel";
 import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
-import type { ButtonSize } from "@/shared/components/primitives/Button";
 
 type Chromaticity = "mono" | "poly";
 type Metric = "rmsSpot" | "wavefront";
@@ -31,8 +29,6 @@ export function FocusingContainer({
   onUpdateSystem,
   onError,
 }: FocusingContainerProps) {
-  const screenSize = useScreenBreakpoint();
-  const focusButtonSize: ButtonSize = screenSize === "screenSM" ? "xs" : "sm";
   const lensStore = useLensEditorStore();
   const [chromaticity, setChromaticity] = useState<Chromaticity>("mono");
   const [metric, setMetric] = useState<Metric>("rmsSpot");
@@ -103,7 +99,6 @@ export function FocusingContainer({
         onMetricChange={setMetric}
         onFieldIndexChange={setFieldIndex}
         onFocus={handleFocus}
-        focusButtonSize={focusButtonSize}
         disabled={!isReady || computing || focusing}
       />
     </div>

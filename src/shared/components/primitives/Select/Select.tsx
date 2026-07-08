@@ -9,32 +9,20 @@ export type SelectOption = {
 
 interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "children"> {
   readonly options: ReadonlyArray<SelectOption>;
-  readonly type?: "default" | "compact";
   readonly placeholder?: string;
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  function Select({ options, type = "default", placeholder, className, ...rest }, ref) {
-    const variantClasses =
-      type === "compact"
-        ? [
-          cx.select.style.compactBorderStyle,
-          cx.select.style.compactBorderRadius,
-          cx.select.style.compactOutlineStyle,
-          cx.select.size.compactWidth,
-          cx.select.size.compactHorizontalPadding,
-          cx.select.size.compactVerticalPadding,
-          cx.select.size.compactFontSize,
-        ]
-        : [
-          cx.select.style.borderRadius,
-          cx.select.style.borderStyle,
-          cx.select.style.outlineStyle,
-          cx.select.size.defaultWidth,
-          cx.select.size.horizontalPadding,
-          cx.select.size.verticalPadding,
-          cx.select.size.fontSize,
-        ];
+  function Select({ options, placeholder, className, ...rest }, ref) {
+    const variantClasses = [
+      cx.select.style.borderRadius,
+      cx.select.style.borderStyle,
+      cx.select.style.outlineStyle,
+      cx.select.size.defaultWidth,
+      cx.select.size.horizontalPadding,
+      cx.select.size.verticalPadding,
+      cx.select.size.fontSize,
+    ];
 
     const selectClassName = clsx(
       variantClasses,

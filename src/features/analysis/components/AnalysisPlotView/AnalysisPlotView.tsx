@@ -14,7 +14,6 @@ import { WavefrontMapChart } from "@/features/analysis/components/WavefrontMapCh
 import { Label } from "@/shared/components/primitives/Label";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Select, type SelectOption } from "@/shared/components/primitives/Select";
-import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
@@ -302,8 +301,6 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
     onPlotTypeChange,
     autoHeight,
   } = props;
-  const screenSize = useScreenBreakpoint();
-  const selectType = screenSize === "screenSM" ? "compact" : "default";
   const fieldDisabled = !PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent;
   const fieldVisible = PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent;
   const selectedPlotRenderer = PLOT_RENDERERS[selectedPlotType];
@@ -322,7 +319,6 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
               options={fieldOptions}
               value={selectedFieldIndex}
               disabled={fieldDisabled}
-              type={selectType}
               onChange={(e) => onFieldChange(Number(e.target.value))}
             />
           </div>
@@ -337,7 +333,6 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
               aria-label="Wavelength"
               options={wavelengthOptions}
               value={selectedWavelengthIndex}
-              type={selectType}
               onChange={(e) => onWavelengthChange(Number(e.target.value))}
             />
           </div>
@@ -351,7 +346,6 @@ export function AnalysisPlotView(props: AnalysisPlotViewProps) {
             aria-label="Plot type"
             options={PLOT_TYPE_OPTIONS}
             value={selectedPlotType}
-            type={selectType}
             onChange={(e) => onPlotTypeChange(e.target.value as PlotType)}
           />
         </div>

@@ -24,9 +24,6 @@ interface FocusingContainerProps {
 - `fieldIndex: number` (default `0`)
 - `focusing: boolean` (default `false`)
 
-## Responsive Sizing
-
-Uses `useScreenBreakpoint()` to pass `focusButtonSize` to `FocusingPanel`: `"xs"` on `screenSM`, `"sm"` on `screenLG`. This matches the `Update System` button sizing in `LensEditorConfigToolbar`.
 
 ## Behavior
 
@@ -43,8 +40,6 @@ Uses `useScreenBreakpoint()` to pass `focusButtonSize` to `FocusingPanel`: `"xs"
 6. Sets `focusing=false` in `finally`.
 
 The `disabled` prop passed to `FocusingPanel` is `!isReady || computing || focusing`.
-
-The `focusButtonSize` prop passed to `FocusingPanel` is `screenSize === "screenSM" ? "xs" : "sm"`.
 
 `fieldOptions` are derived reactively from `useSpecsConfiguratorStore` and Zustand's `useStore` (subscribes to `relativeFields`, `maxField`, `fieldType`). This means the Field dropdown updates immediately when field configuration changes in `specsStore`, even before the user clicks "Update System".
 

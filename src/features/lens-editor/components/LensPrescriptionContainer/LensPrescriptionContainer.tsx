@@ -83,7 +83,6 @@ export function LensPrescriptionContainer({
   getOpticalModel,
 }: LensPrescriptionContainerProps) {
   const screenSize = useScreenBreakpoint();
-  const buttonSize = screenSize === "screenSM" ? "xs" : "sm";
   const store = useLensEditorStore();
   const rows = useStore(store, (s) => s.rows);
   const autoAperture = useStore(store, (s) => s.autoAperture);
@@ -126,10 +125,10 @@ export function LensPrescriptionContainer({
     <div>
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
         <Tooltip text="Generate a Python script" portal noTouch>
-          <Button variant="secondary" size={buttonSize} onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
+          <Button variant="secondary" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>
         </Tooltip>
         <Tooltip text="Format selected prescription rows" portal noTouch>
-          <Button variant="secondary" size={buttonSize} onClick={() => setFormattingOpen(true)}>Formatting</Button>
+          <Button variant="secondary" onClick={() => setFormattingOpen(true)}>Formatting</Button>
         </Tooltip>
       </div>
 

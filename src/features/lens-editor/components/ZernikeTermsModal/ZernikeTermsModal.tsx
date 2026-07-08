@@ -158,7 +158,6 @@ function ZernikeTermsModalContent({
               options={fieldOptions as SelectOption[]}
               value={selectedFieldIndex}
               onChange={handleFieldChange}
-              type="compact"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -168,7 +167,6 @@ function ZernikeTermsModalContent({
               options={wavelengthOptions as SelectOption[]}
               value={selectedWvlIndex}
               onChange={handleWvlChange}
-              type="compact"
             />
           </div>
         </div>
@@ -180,7 +178,6 @@ function ZernikeTermsModalContent({
               options={ORDERING_OPTIONS}
               value={selectedOrdering}
               onChange={handleOrderingChange}
-              type="compact"
             />
           </div>
         </div>

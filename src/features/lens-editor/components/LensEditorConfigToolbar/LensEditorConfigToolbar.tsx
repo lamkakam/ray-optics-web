@@ -7,7 +7,6 @@ import { Button } from "@/shared/components/primitives/Button";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
-import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { ConfirmImportModal } from "@/features/lens-editor/components/LensPrescriptionContainer/ConfirmImportModal";
 import {
   parsePhotonsToPhotosText,
@@ -28,9 +27,7 @@ export function LensEditorConfigToolbar({
   onUpdateSystem,
   isUpdateSystemDisabled,
 }: LensEditorConfigToolbarProps) {
-  const screenSize = useScreenBreakpoint();
   const { lookupMaps } = useGlassCatalogs();
-  const buttonSize = screenSize === "screenSM" ? "xs" : "sm";
   const [importErrorOpen, setImportErrorOpen] = useState(false);
   const [importErrorMessage, setImportErrorMessage] = useState("The JSON file is invalid. Schema validation failed.");
   const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
@@ -148,7 +145,6 @@ export function LensEditorConfigToolbar({
       <Tooltip text="Compute and update the optical system" position="bottom" noTouch>
         <Button
           variant="primary"
-          size={buttonSize}
           disabled={isUpdateSystemDisabled}
           onClick={() => void onUpdateSystem()}
           aria-label="Update System"
@@ -159,7 +155,6 @@ export function LensEditorConfigToolbar({
       <Tooltip text="Load a previously downloaded config" position="bottom" noTouch>
         <Button
           variant="primary"
-          size={buttonSize}
           onClick={() => fileInputRef.current?.click()}
           aria-label="Load Config"
         >
@@ -169,7 +164,6 @@ export function LensEditorConfigToolbar({
       <Tooltip text="Import a Photons to Photos TXT prescription" position="bottom" noTouch>
         <Button
           variant="primary"
-          size={buttonSize}
           onClick={() => photonsToPhotosFileInputRef.current?.click()}
           aria-label="Import a file from Photons to Photos"
         >
@@ -179,7 +173,6 @@ export function LensEditorConfigToolbar({
       <Tooltip text="Download current config as JSON" position="bottom" noTouch>
         <Button
           variant="primary"
-          size={buttonSize}
           onClick={handleExport}
           aria-label="Download Config"
         >

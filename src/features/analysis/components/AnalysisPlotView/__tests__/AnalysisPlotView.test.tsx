@@ -573,30 +573,6 @@ describe("AnalysisPlotView", () => {
     expect(screen.getByText("No plot available")).toBeInTheDocument();
   });
 
-  describe("responsive dropdown size", () => {
-    it("uses compact selects on small screens", () => {
-      (useScreenBreakpoint as jest.Mock).mockReturnValue("screenSM");
-      render(<AnalysisPlotView {...defaultProps} />);
-      const field = screen.getByLabelText("Half-Field");
-      const plotType = screen.getByLabelText("Plot type");
-      expect(field).toHaveClass("px-2");
-      expect(field).not.toHaveClass("px-3");
-      expect(plotType).toHaveClass("px-2");
-      expect(plotType).not.toHaveClass("px-3");
-    });
-
-    it("uses default selects on large screens", () => {
-      (useScreenBreakpoint as jest.Mock).mockReturnValue("screenLG");
-      render(<AnalysisPlotView {...defaultProps} />);
-      const field = screen.getByLabelText("Half-Field");
-      const plotType = screen.getByLabelText("Plot type");
-      expect(field).toHaveClass("w-full");
-      expect(field).not.toHaveClass("px-2");
-      expect(plotType).toHaveClass("w-full");
-      expect(plotType).not.toHaveClass("px-2");
-    });
-  });
-
   describe("autoHeight mode", () => {
     it("uses the autoHeight container classes without rendering an image fallback", () => {
       const { container } = render(<AnalysisPlotView {...defaultProps} autoHeight />);

@@ -2,9 +2,7 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  variant?: "default" | "compact";
-}
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 const BASE_CLASSES = [
   cx.input.style.borderRadius,
@@ -23,22 +21,14 @@ const BASE_CLASSES = [
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   function Input(
-    { autoComplete = "off", className, variant = "default", ...rest },
+    { autoComplete = "off", className, ...rest },
     ref,
   ) {
-    const sizeClasses =
-      variant === "compact"
-        ? [
-            cx.input.size.compactHorizontalPadding,
-            cx.input.size.compactVerticalPadding,
-            cx.input.size.compactFontSize,
-            cx.input.size.compactWidth,
-          ]
-        : [
-            cx.input.size.horizontalPadding,
-            cx.input.size.verticalPadding,
-            cx.input.size.fontSize,
-          ];
+    const sizeClasses = [
+      cx.input.size.horizontalPadding,
+      cx.input.size.verticalPadding,
+      cx.input.size.fontSize,
+    ];
     return (
       <input
         ref={ref}
