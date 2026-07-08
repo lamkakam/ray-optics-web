@@ -10,7 +10,6 @@ import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
-import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { FRAUNHOFER_LINES } from "@/shared/lib/data/fraunhoferLines";
 import { makeEditablePair } from "@/features/import-custom-glass/lib/customGlassImport";
 import type { EditablePair, ModalMode } from "@/features/import-custom-glass/types/customGlassImport";
@@ -49,8 +48,6 @@ export function CustomGlassModal({
   onSubmit,
 }: CustomGlassModalProps) {
   const gridTheme = useAgGridTheme();
-  const screenSize = useScreenBreakpoint();
-  const buttonSize = screenSize === "screenSM" ? "xs" : "sm";
   const [label, setLabel] = useState(initialLabel);
   const [rows, setRows] = useState<readonly EditablePair[]>(initialRows);
   const duplicates = duplicateWavelengths(rows);
@@ -145,8 +142,8 @@ export function CustomGlassModal({
       size="4xl"
       footer={(
         <div className="flex justify-end gap-3">
-          <Button variant="secondary" size={buttonSize} aria-label="Cancel" onClick={onCancel}>Cancel</Button>
-          <Button variant="primary" size={buttonSize} aria-label="Confirm" disabled={!canConfirm} onClick={() => onSubmit(trimmedLabel, rows)}>Confirm</Button>
+          <Button variant="secondary" aria-label="Cancel" onClick={onCancel}>Cancel</Button>
+          <Button variant="primary" aria-label="Confirm" disabled={!canConfirm} onClick={() => onSubmit(trimmedLabel, rows)}>Confirm</Button>
         </div>
       )}
     >
@@ -156,7 +153,7 @@ export function CustomGlassModal({
           <Input id="custom-glass-label" aria-label="Label" value={label} onChange={(event) => setLabel(event.target.value)} />
           {labelExists && <p className="mt-1 text-sm text-red-600">Label already exists.</p>}
         </div>
-        <Button variant="secondary" size={buttonSize} aria-label="Add row" onClick={() => setRows((current) => [...current, makeEditablePair()])}>Add row</Button>
+        <Button variant="secondary" aria-label="Add row" onClick={() => setRows((current) => [...current, makeEditablePair()])}>Add row</Button>
         {duplicates.size > 0 && <p className="text-sm text-red-600">Duplicate wavelength rows must be resolved.</p>}
         <div className="import-custom-glass-touch-scroll h-[45vh] min-h-72">
           <style>{`

@@ -42,9 +42,9 @@ describe("Button", () => {
       cx.button.color.primaryBgColor,
       cx.button.color.primaryHoverBgColor,
       cx.button.color.primaryTextColor,
-      cx.button.size.horizontalPaddingMd,
-      cx.button.size.verticalPaddingMd,
-      cx.button.size.fontSizeMd,
+      cx.button.size.horizontalPaddingSm,
+      cx.button.size.verticalPaddingSm,
+      cx.button.size.fontSizeSm,
       cx.button.style.opacity,
     );
   });
@@ -61,9 +61,9 @@ describe("Button", () => {
       cx.button.color.secondaryBgColor,
       cx.button.color.secondaryTextColor,
       cx.button.color.secondaryHoverBgColor,
-      cx.button.size.horizontalPaddingMd,
-      cx.button.size.verticalPaddingMd,
-      cx.button.size.fontSizeMd,
+      cx.button.size.horizontalPaddingSm,
+      cx.button.size.verticalPaddingSm,
+      cx.button.size.fontSizeSm,
       cx.button.style.opacity,
     );
     expect(btn).toHaveClass("border");
@@ -81,9 +81,9 @@ describe("Button", () => {
       cx.button.color.toggleBgColor,
       cx.button.color.toggleTextColor,
       cx.button.color.toggleHoverBgColor,
-      cx.button.size.horizontalPaddingMd,
-      cx.button.size.verticalPaddingMd,
-      cx.button.size.fontSizeMd,
+      cx.button.size.horizontalPaddingSm,
+      cx.button.size.verticalPaddingSm,
+      cx.button.size.fontSizeSm,
       cx.button.style.opacity,
     );
     expect(btn).toHaveClass("border");
@@ -100,9 +100,9 @@ describe("Button", () => {
       cx.button.color.dangerBgColor,
       cx.button.color.dangerHoverBgColor,
       cx.button.color.dangerTextColor,
-      cx.button.size.horizontalPaddingMd,
-      cx.button.size.verticalPaddingMd,
-      cx.button.size.fontSizeMd,
+      cx.button.size.horizontalPaddingSm,
+      cx.button.size.verticalPaddingSm,
+      cx.button.size.fontSizeSm,
       cx.button.style.opacity,
     );
   });

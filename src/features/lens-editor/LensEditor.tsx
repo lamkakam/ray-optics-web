@@ -24,7 +24,7 @@ import {
   SeidelAberrModal,
   ZernikeTermsModal,
 } from "@/features/lens-editor/components";
-import { Button, type ButtonSize } from "@/shared/components/primitives/Button";
+import { Button } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
@@ -44,7 +44,6 @@ export function LensEditor({
 }: LensEditorProps) {
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
-  const analysisButtonSize: ButtonSize = screenSize === "screenSM" ? "xs" : "sm";
   const { theme } = useTheme();
   const { imagePoint } = useImagePoint();
   const { lookupMaps } = useGlassCatalogs();
@@ -153,7 +152,6 @@ export function LensEditor({
       <Tooltip text="View 3rd-order Seidel aberration coefficients" position="bottom" noTouch>
         <Button
           variant="secondary"
-          size={analysisButtonSize}
           aria-label="3rd Order Seidel Aberrations"
           onClick={() => setSeidelModalOpen(true)}
         >
@@ -168,7 +166,6 @@ export function LensEditor({
       <Tooltip text="View Zernike polynomial coefficients" position="bottom" noTouch>
         <Button
           variant="secondary"
-          size={analysisButtonSize}
           aria-label="Zernike Terms"
           onClick={() => setZernikeModalOpen(true)}
         >

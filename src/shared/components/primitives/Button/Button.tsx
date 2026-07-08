@@ -44,7 +44,7 @@ export function Button({
 }: ButtonProps) {
   const sizeClass = variant === "floating"
     ? SIZE_CLASSES.xs
-    : SIZE_CLASSES[size ?? "md"];
+    : SIZE_CLASSES[size ?? "sm"];
 
   return (
     <button

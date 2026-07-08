@@ -594,26 +594,6 @@ describe("LensEditor", () => {
     });
   });
 
-  it("SM: analysis buttons match Update System xs sizing after successful submit", async () => {
-    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
-    renderLensEditor();
-    const user = userEvent.setup();
-    await user.click(screen.getByTestId("update-system-btn"));
-
-    await waitFor(() => {
-      const buttonNames = [
-        "Update System",
-        "3rd Order Seidel Aberrations",
-        "Zernike Terms",
-      ];
-      for (const name of buttonNames) {
-        const button = screen.getByRole("button", { name });
-        expect(button).toHaveClass("px-2", "py-1", "text-xs");
-        expect(button).not.toHaveClass("py-2", "text-sm");
-      }
-    });
-  });
-
   it("shows confirmation modal when valid JSON file is selected", async () => {
     renderLensEditor();
 

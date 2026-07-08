@@ -356,47 +356,6 @@ describe("ImportCustomGlassPage", () => {
     expect(screen.getByRole("button", { name: "Download JSON" })).toBeInTheDocument();
   });
 
-  it("matches Lens Editor button sizing for toolbar commands on large screens", () => {
-    renderPage();
-
-    for (const name of ["Import from JSON", "Import from CSV Files", "Add Glass", "Edit Glass", "Download JSON", "Delete Glass"]) {
-      expect(screen.getByRole("button", { name })).toHaveClass("px-3", "py-1.5", "text-sm");
-    }
-  });
-
-  it("matches Lens Editor button sizing for toolbar commands on small screens", () => {
-    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
-
-    renderPage();
-
-    for (const name of ["Import from JSON", "Import from CSV Files", "Add Glass", "Edit Glass", "Download JSON", "Delete Glass"]) {
-      expect(screen.getByRole("button", { name })).toHaveClass("px-2", "py-1", "text-xs");
-    }
-  });
-
-  it("matches Lens Editor button sizing for modal commands on large screens", async () => {
-    const user = userEvent.setup();
-    renderPage();
-
-    await user.click(screen.getByRole("button", { name: "Add Glass" }));
-
-    for (const name of ["Add row", "Cancel", "Confirm"]) {
-      expect(screen.getByRole("button", { name })).toHaveClass("px-3", "py-1.5", "text-sm");
-    }
-  });
-
-  it("matches Lens Editor button sizing for modal commands on small screens", async () => {
-    const user = userEvent.setup();
-    jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
-    renderPage();
-
-    await user.click(screen.getByRole("button", { name: "Add Glass" }));
-
-    for (const name of ["Add row", "Cancel", "Confirm"]) {
-      expect(screen.getByRole("button", { name })).toHaveClass("px-2", "py-1", "text-xs");
-    }
-  });
-
   it("opens a delete modal and waits for Delete before calling the worker", async () => {
     const user = userEvent.setup();
     const deleteUserDefinedGlasses = jest.fn().mockResolvedValue(undefined);
