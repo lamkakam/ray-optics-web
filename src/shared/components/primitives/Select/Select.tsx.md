@@ -11,7 +11,6 @@ type SelectOption = { value: string | number; label: string };
 
 interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "children"> {
   options: ReadonlyArray<SelectOption>;
-  type?: "default" | "compact";
   placeholder?: string;
 }
 ```
@@ -21,7 +20,6 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 | Prop | Type | Required | Description |
 |------|------|----------|-------------|
 | `options` | `ReadonlyArray<SelectOption>` | Yes | Items to render as `<option>` elements |
-| `type` | `"default" \| "compact"` | No | Compact uses reduced padding and width tokens. Defaults to `"default"` |
 | `placeholder` | `string` | No | Disabled first option shown when no value is selected |
 
 ## Key Behaviors
@@ -42,15 +40,6 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
   options={APERTURE_OPTIONS}
   value={currentDropdownValue}
   onChange={handleDropdownChange}
-/>
-
-// Compact variant for dense layouts
-<Select
-  type="compact"
-  aria-label="Field"
-  options={fieldOptions}
-  value={selectedFieldIndex}
-  onChange={(e) => onFieldChange(Number(e.target.value))}
 />
 
 // With placeholder

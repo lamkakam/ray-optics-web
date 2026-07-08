@@ -7,16 +7,8 @@ Themed `<input>` primitive with two visual densities. Forwards a ref and passes 
 ## Props
 
 ```ts
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  variant?: "default" | "compact";
-}
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 ```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `variant` | `"default" \| "compact"` | No | Compact uses reduced padding and width tokens. Defaults to `"default"` |
 
 ## Key Behaviors
 
@@ -38,18 +30,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   onBlur={handleValueBlur}
 />
 
-// Numeric input with default variant
-<Input
+// Numeric input
   type="number"
   placeholder="Enter value"
   min="0"
   max="100"
-/>
-
-// Compact variant for space-constrained layouts
-<Input
-  variant="compact"
-  type="text"
-  placeholder="Search..."
 />
 ```

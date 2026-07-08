@@ -175,7 +175,6 @@ function FieldConfigModalContent({
           <Select
             id="field-space"
             aria-label="Field space"
-            type="compact"
             value={space}
             onChange={(e) => setSpace(e.target.value as FieldSpace)}
             options={[
@@ -189,7 +188,6 @@ function FieldConfigModalContent({
           <Select
             id="field-type"
             aria-label="Field type"
-            type="compact"
             value={fieldType}
             onChange={(e) => setFieldType(e.target.value as FieldType)}
             options={[
@@ -204,7 +202,6 @@ function FieldConfigModalContent({
             id="field-max"
             type="text"
             aria-label="Max half-field value"
-            variant="compact"
             value={maxFieldStr}
             onChange={(e) => setMaxFieldStr(e.target.value)}
             className="w-full"

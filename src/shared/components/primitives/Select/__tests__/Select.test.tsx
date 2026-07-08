@@ -45,7 +45,7 @@ describe("Select", () => {
     });
   });
 
-  it("applies standard token classes by default (no compact)", () => {
+  it("applies standard token classes by default", () => {
     render(<Select options={OPTIONS} aria-label="test" />);
     const el = screen.getByRole("combobox");
     expectClasses(el,
@@ -56,25 +56,6 @@ describe("Select", () => {
       cx.select.size.defaultWidth,
       cx.select.size.horizontalPadding,
       cx.select.size.verticalPadding,
-      responsiveSelectFontSize,
-      cx.select.size.focusRingWidth,
-      cx.select.color.focusRingColor,
-      cx.select.color.borderColor,
-      cx.select.color.bgColor,
-      cx.select.color.textColor,
-    );
-  });
-
-  it("applies compact token classes when type is compact", () => {
-    render(<Select options={OPTIONS} type="compact" aria-label="test" />);
-    const el = screen.getByRole("combobox");
-    expectClasses(el,
-      cx.select.style.compactBorderStyle,
-      cx.select.style.compactBorderRadius,
-      cx.select.style.compactOutlineStyle,
-      cx.select.style.transitionStyle,
-      cx.select.size.compactHorizontalPadding,
-      cx.select.size.compactVerticalPadding,
       responsiveSelectFontSize,
       cx.select.size.focusRingWidth,
       cx.select.color.focusRingColor,
@@ -175,7 +156,7 @@ describe("Select", () => {
   });
 
   it("applies appearance-none to compact variant", () => {
-    render(<Select options={OPTIONS} type="compact" aria-label="test" />);
+    render(<Select options={OPTIONS} aria-label="test" />);
     const el = screen.getByRole("combobox");
     expectClasses(el, cx.select.style.appearanceReset);
   });
@@ -187,7 +168,7 @@ describe("Select", () => {
   });
 
   it("applies custom arrow right-padding to compact variant", () => {
-    render(<Select options={OPTIONS} type="compact" aria-label="test" />);
+    render(<Select options={OPTIONS} aria-label="test" />);
     const el = screen.getByRole("combobox");
     expectClasses(el, cx.select.size.customArrowPadding);
   });

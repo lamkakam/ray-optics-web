@@ -118,24 +118,13 @@ describe("Input", () => {
     expect(onBlur).toHaveBeenCalledTimes(1);
   });
 
-  it("applies default padding classes when variant is default", () => {
-    render(<Input aria-label="test" variant="default" />);
+  it("applies default padding classes", () => {
+    render(<Input aria-label="test" />);
     const el = screen.getByRole("textbox");
     expectClasses(
       el,
       cx.input.size.horizontalPadding,
       cx.input.size.verticalPadding,
-      responsiveInputFontSize,
-    );
-  });
-
-  it("applies compact padding classes when variant is compact", () => {
-    render(<Input aria-label="test" variant="compact" />);
-    const el = screen.getByRole("textbox");
-    expectClasses(
-      el,
-      cx.input.size.compactHorizontalPadding,
-      cx.input.size.compactVerticalPadding,
       responsiveInputFontSize,
     );
   });
