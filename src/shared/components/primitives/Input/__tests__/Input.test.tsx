@@ -17,6 +17,8 @@ function expectClasses(element: HTMLElement, ...tokenStrings: string[]) {
 }
 
 describe("Input", () => {
+  const responsiveInputFontSize = "text-base min-[1440px]:text-sm";
+
   it("renders an <input> element", () => {
     render(<Input aria-label="test-input" />);
     expect(screen.getByRole("textbox", { name: "test-input" })).toBeInTheDocument();
@@ -123,7 +125,7 @@ describe("Input", () => {
       el,
       cx.input.size.horizontalPadding,
       cx.input.size.verticalPadding,
-      cx.input.size.fontSize,
+      responsiveInputFontSize,
     );
   });
 
@@ -134,7 +136,7 @@ describe("Input", () => {
       el,
       cx.input.size.compactHorizontalPadding,
       cx.input.size.compactVerticalPadding,
-      cx.input.size.compactFontSize,
+      responsiveInputFontSize,
     );
   });
 });

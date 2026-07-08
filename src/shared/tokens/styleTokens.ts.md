@@ -38,6 +38,7 @@ componentTokens
 - `switch` tokens define checked/unchecked track colors, fixed `sm`/`md` dimensions, thumb translate offsets, content offsets, transition classes, and `will-change-transform`.
 - `progress` tokens define linear track, indicator, status text, fixed `sm`/`md` dimensions, rounded shape, transition, and `will-change` classes.
 - `input.style.opacity` and `input.style.cursor` reference the shared disabled-state tokens from `globalTokens.style`, matching `select` so both primitives use the same tokenized disabled behavior.
+- `input.size.fontSize`, `input.size.compactFontSize`, `select.size.fontSize`, and `select.size.compactFontSize` use `text-base min-[1440px]:text-sm` so text-like controls render at 16 px on `screenSM` and return to the denser 14 px size on `screenLG`.
 - `switch.style.opacity` and `switch.style.cursor` also reference the shared disabled-state tokens from `globalTokens.style`.
 - `externalLink` tokens define theme-aware blue text, hover text, underline decoration colors, default `text-sm`, description `text-md`, `font-medium`, underline offset, transition, and focus-visible ring styling for plain external anchors.
 - `overlay` tokens have `z-[200]` — the highest z-index in the stack, above `Modal`'s `z-50`.

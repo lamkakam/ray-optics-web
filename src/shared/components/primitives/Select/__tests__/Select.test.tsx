@@ -23,6 +23,8 @@ const OPTIONS = [
 ];
 
 describe("Select", () => {
+  const responsiveSelectFontSize = "text-base min-[1440px]:text-sm";
+
   it("renders a <select> element", () => {
     render(<Select options={OPTIONS} aria-label="test-select" />);
     expect(screen.getByRole("combobox", { name: "test-select" })).toBeInTheDocument();
@@ -54,7 +56,7 @@ describe("Select", () => {
       cx.select.size.defaultWidth,
       cx.select.size.horizontalPadding,
       cx.select.size.verticalPadding,
-      cx.select.size.fontSize,
+      responsiveSelectFontSize,
       cx.select.size.focusRingWidth,
       cx.select.color.focusRingColor,
       cx.select.color.borderColor,
@@ -73,7 +75,7 @@ describe("Select", () => {
       cx.select.style.transitionStyle,
       cx.select.size.compactHorizontalPadding,
       cx.select.size.compactVerticalPadding,
-      cx.select.size.compactFontSize,
+      responsiveSelectFontSize,
       cx.select.size.focusRingWidth,
       cx.select.color.focusRingColor,
       cx.select.color.borderColor,

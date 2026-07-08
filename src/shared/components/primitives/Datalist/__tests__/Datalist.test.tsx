@@ -16,6 +16,8 @@ function expectTokenClasses(element: HTMLElement, token: string): void {
 }
 
 describe("Datalist", () => {
+  const responsiveSelectFontSize = "text-base min-[1440px]:text-sm";
+
   it("associates its text input with a generated datalist and renders options", () => {
     const { container } = render(
       <Datalist aria-label="Glass" options={OPTIONS} value="" onChange={() => undefined} />,
@@ -88,7 +90,7 @@ describe("Datalist", () => {
       cx.select.size.defaultWidth,
       cx.select.size.horizontalPadding,
       cx.select.size.verticalPadding,
-      cx.select.size.fontSize,
+      responsiveSelectFontSize,
       cx.select.color.focusRingColor,
       cx.select.color.borderColor,
       cx.select.color.bgColor,

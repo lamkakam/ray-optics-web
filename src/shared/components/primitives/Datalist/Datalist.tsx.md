@@ -20,6 +20,7 @@ interface DatalistProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>
 - Forwards standard input attributes, events, disabled state, and an `HTMLInputElement` ref.
 - Renders each supplied item as a datalist option with its value and label.
 - Applies the default `Select` design tokens, full-width wrapper sizing, disabled styles, and appearance reset, without decorative arrow padding or markup.
+- Inherits the `Select` responsive font-size token: 16 px below 1440 px and 14 px at `screenLG`.
 - Applies `className` to the wrapper so callers can provide width constraints and other wrapper styles.
 
 ## Usage
