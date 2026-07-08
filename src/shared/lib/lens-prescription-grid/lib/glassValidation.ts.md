@@ -14,8 +14,11 @@ Shared client-side validation for prescription media before worker-backed lens u
 - Validates the object medium and each sequential surface medium. The image row is not validated because it has no medium.
 - Allows validation to pass when `lookupMaps` is `undefined`, avoiding false blocking during catalog preload and isolated test states.
 - Allows `air` and `REFL` without lookup entries.
+- Allows model-glass rows without lookup entries when `medium` is a finite numeric refractive index and `manufacturer` is blank.
+- Allows model-glass rows without lookup entries when `medium` is a finite numeric refractive index and `manufacturer` is a finite numeric Abbe number.
 - For rows with a manufacturer, checks `mediumMap` using the normalized `manufacturer:medium` key.
 - For rows without a manufacturer, first checks the plain normalized medium key for special media, then checks `custom:medium` for user-defined glasses.
+- Numeric `medium` values with nonnumeric `manufacturer` text are treated as catalog glass rows and must exist in the lookup maps.
 - Missing labels are deduplicated in prescription order.
 - Missing rows with a manufacturer display as `<Manufacturer>: <Glass>`.
 - Missing rows without a manufacturer display as `Custom: <Glass>`.

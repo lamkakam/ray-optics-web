@@ -28,10 +28,28 @@ function getPrescriptionMedia(surfaces: Surfaces): PrescriptionMedium[] {
   ].map(({ medium, manufacturer }) => ({ medium, manufacturer }));
 }
 
+function isFiniteNumericString(value: string): boolean {
+  const trimmedValue = value.trim();
+  return trimmedValue !== "" && Number.isFinite(Number(trimmedValue));
+}
+
+function isModelGlass({ medium, manufacturer }: PrescriptionMedium): boolean {
+  if (!isFiniteNumericString(medium)) {
+    return false;
+  }
+
+  const trimmedManufacturer = manufacturer.trim();
+  return trimmedManufacturer === "" || isFiniteNumericString(trimmedManufacturer);
+}
+
 function hasKnownMedium(
   { medium, manufacturer }: PrescriptionMedium,
   lookupMaps: GlassLookupMaps,
 ): boolean {
+  if (isModelGlass({ medium, manufacturer })) {
+    return true;
+  }
+
   const normalizedMedium = normalizeLookupKey(medium);
   if (BUILT_IN_MEDIA_WITHOUT_LOOKUP.has(normalizedMedium)) {
     return true;

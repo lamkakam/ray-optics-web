@@ -79,6 +79,27 @@ describe("glassValidation", () => {
     )).toEqual([]);
   });
 
+  it("passes model glass with a numeric refractive index and empty manufacturer", () => {
+    expect(getMissingPrescriptionGlasses(
+      modelWithMedia([["1.458", ""]]),
+      makeLookupMaps([]),
+    )).toEqual([]);
+  });
+
+  it("passes model glass with a numeric refractive index and numeric Abbe number", () => {
+    expect(getMissingPrescriptionGlasses(
+      modelWithMedia([["1.458", "51.38"]]),
+      makeLookupMaps([]),
+    )).toEqual([]);
+  });
+
+  it("reports numeric refractive index with nonnumeric manufacturer as missing catalog glass", () => {
+    expect(getMissingPrescriptionGlasses(
+      modelWithMedia([["1.458", "Schott"]]),
+      makeLookupMaps([]),
+    )).toEqual(["Schott: 1.458"]);
+  });
+
   it("deduplicates missing glasses", () => {
     expect(getMissingPrescriptionGlasses(
       modelWithMedia([["N-BK7", "Schott"], ["N-BK7", "Schott"], ["MY_GLASS", ""]]),
