@@ -258,7 +258,7 @@ export function OptimizationLensPrescriptionGrid({
   return (
     <div
       data-testid="optimization-lens-prescription-grid"
-      className="h-[calc(100vh-160px)] overflow-x-auto min-[1440px]:h-full min-[1440px]:min-h-[200px]"
+      className="prescription-grid-touch-scroll h-[calc(100vh-160px)] overflow-x-auto min-[1440px]:h-full min-[1440px]:min-h-[200px]"
     >
       <AgGridProvider modules={[AllCommunityModule]}>
         <EditableAgGridReact<RadiusRow>
@@ -267,6 +267,7 @@ export function OptimizationLensPrescriptionGrid({
           columnDefs={lensColumns}
           defaultColDef={lensPrescriptionGridDefaultColDef}
           domLayout="normal"
+          suppressTouch={true}
           onCellEditingStarted={onCellEditingStarted}
           onCellEditingStopped={onCellEditingStopped}
         />

@@ -65,7 +65,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
     );
 
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "normal");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-suppress-touch", "true");
     expect(screen.getByTestId("optimization-lens-prescription-grid")).toHaveClass(
+      "prescription-grid-touch-scroll",
       "h-[calc(100vh-160px)]",
       "min-[1440px]:h-full",
       "min-[1440px]:min-h-[200px]",

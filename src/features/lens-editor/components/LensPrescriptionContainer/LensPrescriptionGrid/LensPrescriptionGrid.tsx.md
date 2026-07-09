@@ -53,6 +53,7 @@ interface LensPrescriptionGridProps {
 - Number parsing rejects non-numeric input and restores the old value.
 - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending numeric cell edits are committed before another grid action such as opening a modal or inserting/deleting a row is handled.
 - Applies shared AG Grid column config with `defaultColDef={{ sortable: false, suppressMovable: true }}` and AG Grid's normal layout so the grid owns vertical row scrolling.
+- Sets AG Grid's `suppressTouch` option and applies the scoped `prescription-grid-touch-scroll` coarse-pointer styles to AG Grid's viewport elements. The combination enables native horizontal and vertical touch scrolling across ordinary and action cells. It intentionally disables AG Grid-specific touch gestures while browser-simulated mouse events continue to support editing and modal actions.
 - Uses `h-[calc(100vh-160px)]` below `1440px`; at `1440px` and above it fills the remaining flex-column drawer-panel height with a `200px` minimum.
 
 ## Usages
