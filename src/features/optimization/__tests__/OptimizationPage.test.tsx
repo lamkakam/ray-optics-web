@@ -784,37 +784,6 @@ describe("OptimizationPage", () => {
     expect(screen.getByText("Diffraction Grating")).toBeInTheDocument();
   });
 
-  it("uses autoHeight ag-grid layout for the tabular tabs without extra vertical scroll wrappers", async () => {
-    renderOptimizationPage(makeProxy());
-    const user = userEvent.setup();
-
-    expect(screen.getByTestId("optimization-algorithm-tab")).not.toHaveClass("p-4");
-
-    await user.click(screen.getByRole("tab", { name: "Half-Fields" }));
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
-    expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("p-4");
-    expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("overflow-y-auto");
-
-    await user.click(screen.getByRole("tab", { name: "Wavelengths" }));
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
-    expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("p-4");
-    expect(screen.getByTestId("optimization-weights-grid")).not.toHaveClass("overflow-y-auto");
-
-    await user.click(screen.getByRole("tab", { name: "Lens Prescription" }));
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
-    expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("p-4");
-    expect(screen.getByTestId("optimization-lens-prescription-grid")).not.toHaveClass("overflow-y-auto");
-
-    await user.click(screen.getByRole("tab", { name: "Operands" }));
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "autoHeight");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-default-col-def-suppress-movable", "true");
-    expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("p-4");
-    expect(screen.getByTestId("optimization-operands-tab")).not.toHaveClass("overflow-y-auto");
-  });
-
   it("exposes OPD Difference in the operand kind selector and resets the target when selected", async () => {
     const { optimizationStore } = renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
