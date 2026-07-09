@@ -68,6 +68,17 @@ describe("LensPrescriptionGrid", () => {
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
+  it("uses normal AG Grid layout with responsive fixed grid heights", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "normal");
+    expect(screen.getByLabelText("Lens prescription editor")).toHaveClass(
+      "h-[calc(100vh-160px)]",
+      "min-[1440px]:flex-1",
+      "min-[1440px]:min-h-[200px]",
+    );
+  });
+
   it("renders all rows", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     const rows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");

@@ -46,6 +46,32 @@ function makeAsphereState(overrides: Partial<AsphereOptimizationState> = {}): As
 }
 
 describe("OptimizationLensPrescriptionGrid", () => {
+  it("uses normal AG Grid layout with responsive fixed grid heights", () => {
+    render(
+      <OptimizationLensPrescriptionGrid
+        rows={[]}
+        radiusModes={[]}
+        thicknessModes={[]}
+        asphereStates={[]}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "normal");
+    expect(screen.getByTestId("optimization-lens-prescription-grid")).toHaveClass(
+      "h-[calc(100vh-160px)]",
+      "min-[1440px]:h-full",
+      "min-[1440px]:min-h-[200px]",
+    );
+  });
+
   it("renders the expected headers and forwards modal open actions", async () => {
     const user = userEvent.setup();
     const onOpenRadiusModal = jest.fn();

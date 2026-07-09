@@ -17,8 +17,6 @@ export const lensPrescriptionGridDefaultColDef = {
   suppressMovable: true,
 } satisfies ColDef;
 
-export const LENS_PRESCRIPTION_GRID_DOM_LAYOUT = "autoHeight";
-
 export const LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS = {
   surface: 85,
   index: 80,
