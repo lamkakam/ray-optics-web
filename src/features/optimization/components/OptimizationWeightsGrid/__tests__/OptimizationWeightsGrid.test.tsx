@@ -7,7 +7,7 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 }));
 
 describe("OptimizationWeightsGrid", () => {
-  it("uses a fixed-height, touch-scrollable normal AG Grid layout", () => {
+  it("matches the responsive Lens Prescription grid height with a touch-scrollable normal layout", () => {
     render(
       <OptimizationWeightsGrid
         rows={[{ id: "weight-0", index: 0, label: "0.7", weight: 1 }]}
@@ -17,7 +17,12 @@ describe("OptimizationWeightsGrid", () => {
     );
 
     const grid = screen.getByTestId("ag-grid-mock");
-    expect(grid.parentElement).toHaveClass("h-[200px]", "ag-grid-touch-scroll");
+    expect(grid.parentElement).toHaveClass(
+      "ag-grid-touch-scroll",
+      "h-[calc(100vh-160px)]",
+      "min-[1440px]:h-full",
+      "min-[1440px]:min-h-[200px]",
+    );
     expect(grid).toHaveAttribute("data-dom-layout", "normal");
     expect(grid).toHaveAttribute("data-suppress-touch", "false");
   });

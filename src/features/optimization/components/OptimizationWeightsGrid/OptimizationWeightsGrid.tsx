@@ -55,7 +55,7 @@ export function OptimizationWeightsGrid({
   return (
     <div
       data-testid="optimization-weights-grid"
-      className="ag-grid-touch-scroll h-[200px] overflow-x-auto"
+      className="ag-grid-touch-scroll h-[calc(100vh-160px)] overflow-x-auto min-[1440px]:h-full min-[1440px]:min-h-[200px]"
     >
       <AgGridProvider modules={[AllCommunityModule]}>
         <EditableAgGridReact<WeightRow>

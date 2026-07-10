@@ -106,11 +106,20 @@ export function OptimizationOperandsTab({
   ], [onDeleteOperand, onUpdateOperand]);
 
   return (
-    <div data-testid="optimization-operands-tab" className="space-y-4 overflow-x-auto">
-      <Button variant="secondary" size="sm" aria-label="Add operand" onClick={onAddOperand}>
+    <div
+      data-testid="optimization-operands-tab"
+      className="flex h-[calc(100vh-160px)] flex-col gap-4 overflow-x-auto min-[1440px]:h-full min-[1440px]:min-h-[200px]"
+    >
+      <Button
+        className="self-start"
+        variant="secondary"
+        size="sm"
+        aria-label="Add operand"
+        onClick={onAddOperand}
+      >
         Add Operand
       </Button>
-      <div className="ag-grid-touch-scroll h-[200px]">
+      <div className="ag-grid-touch-scroll min-h-0 flex-1">
         <AgGridProvider modules={[AllCommunityModule]}>
           <EditableAgGridReact<OptimizationOperandRow>
             theme={gridTheme}
