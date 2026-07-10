@@ -1,4 +1,5 @@
 import {
+  buildGlassLookupMaps,
   completeAllCatalogsData,
   computePlotPoints,
   CATALOG_COLOR_MAP,
@@ -34,6 +35,9 @@ const rawCatalogsData: AllGlassCatalogsData = {
   Special: { CaF2: rawGlass },
 };
 
+const completeCatalogsData = completeAllCatalogsData(rawCatalogsData);
+const lookupMaps = buildGlassLookupMaps(completeCatalogsData);
+
 describe("CATALOG_NAMES", () => {
   it("contains all catalog names including Custom", () => {
     expect(CATALOG_NAMES).toContain("CDGM");
@@ -50,19 +54,64 @@ describe("CATALOG_NAMES", () => {
 
 describe("catalog glass resolution", () => {
   it("resolves catalog and glass names case-insensitively with stored spelling", () => {
-    expect(resolveCatalogGlass(rawCatalogsData, "schott", "n-bk7")).toEqual({
+    expect(resolveCatalogGlass(completeCatalogsData, lookupMaps, "schott", "n-bk7")).toEqual({
       catalogName: "Schott",
       glassName: "N-BK7",
       data: rawGlass,
     });
   });
 
-  it("rejects unknown catalogs, partial matches, and excluded Special media", () => {
-    expect(resolveCatalogGlass(rawCatalogsData, "Unknown", "N-BK7")).toBeUndefined();
-    expect(resolveCatalogGlass(rawCatalogsData, "Schott", "N-B")).toBeUndefined();
-    expect(resolveCatalogGlass({ ...rawCatalogsData, Special: { air: rawGlass, refl: rawGlass, Water: rawGlass } }, "Special", "AIR")).toBeUndefined();
+  it("normalizes surrounding whitespace through the canonical lookup maps", () => {
+    expect(resolveCatalogGlass(completeCatalogsData, lookupMaps, "  schott ", " N-BK7  "))
+      .toEqual({ catalogName: "Schott", glassName: "N-BK7", data: rawGlass });
+  });
+
+  it("rejects unknown catalogs, partial matches, aliases, and excluded Special media", () => {
+    const specialCatalogs = completeAllCatalogsData({
+      ...rawCatalogsData,
+      Special: { air: rawGlass, REFL: rawGlass, CaF2: rawGlass, Water: rawGlass },
+    });
+    const specialLookups = buildGlassLookupMaps(specialCatalogs);
+
+    expect(resolveCatalogGlass(completeCatalogsData, lookupMaps, "Unknown", "N-BK7")).toBeUndefined();
+    expect(resolveCatalogGlass(completeCatalogsData, lookupMaps, "Schott", "N-B")).toBeUndefined();
+    expect(resolveCatalogGlass(specialCatalogs, specialLookups, "Special", "fluorite")).toBeUndefined();
+    expect(resolveCatalogGlass(specialCatalogs, specialLookups, "Special", "AIR")).toBeUndefined();
+    expect(resolveCatalogGlass(specialCatalogs, specialLookups, "Special", "refl")).toBeUndefined();
     expect(getEligibleGlassNames({ ...rawCatalogsData, Special: { air: rawGlass, REFL: rawGlass, Water: rawGlass } }, "Special"))
       .toEqual(["Water"]);
+  });
+
+  it("resolves Custom glass through the catalog-scoped medium map", () => {
+    const catalogsData = completeAllCatalogsData({ Custom: { "My Glass": rawGlass } });
+    const maps = buildGlassLookupMaps(catalogsData);
+
+    expect(resolveCatalogGlass(catalogsData, maps, " custom ", " my glass ")).toEqual({
+      catalogName: "Custom",
+      glassName: "My Glass",
+      data: rawGlass,
+    });
+  });
+});
+
+describe("buildGlassLookupMaps", () => {
+  it("builds canonical manufacturer, catalog glass, Custom, and Special lookups", () => {
+    const catalogsData = completeAllCatalogsData({
+      Hoya: { "H-LaK52": rawGlass },
+      Special: { D263TECO: rawGlass, REFL: rawGlass },
+      Custom: { CUSTOM_A: rawGlass },
+    });
+    const result = buildGlassLookupMaps(catalogsData);
+
+    expect(result.manufacturerMap.get("hoya")).toBe("Hoya");
+    expect(result.mediumMap.get("hoya:h-lak52")).toEqual({ medium: "H-LaK52", manufacturer: "Hoya" });
+    expect(result.mediumMap.get("h-lak52")).toBeUndefined();
+    expect(result.mediumMap.get("d263teco")).toEqual({ medium: "D263TECO", manufacturer: "" });
+    expect(result.mediumMap.get("refl")).toBeUndefined();
+    expect(result.mediumMap.get("fluorite")).toEqual({ medium: "CaF2", manufacturer: "" });
+    expect(result.mediumMap.get("fluorspar")).toEqual({ medium: "CaF2", manufacturer: "" });
+    expect(result.mediumMap.get("custom:custom_a")).toEqual({ medium: "CUSTOM_A", manufacturer: "Custom" });
+    expect(result.customMediumMap.get("custom_a")).toEqual({ medium: "CUSTOM_A", manufacturer: "Custom" });
   });
 });
 

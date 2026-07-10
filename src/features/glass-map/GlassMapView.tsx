@@ -47,6 +47,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
   const enabledCatalogs = useStore(store, (s) => s.enabledCatalogs);
   const selectedGlass = useStore(store, (s) => s.selectedGlass);
   const catalogsData = useStore(store, (s) => s.catalogsData);
+  const lookupMaps = useStore(store, (s) => s.lookupMaps);
   const [routeIntentDismissed, setRouteIntentDismissed] = useState(false);
 
   const {
@@ -65,7 +66,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
     );
   }
 
-  if (catalogsData === undefined) {
+  if (catalogsData === undefined || lookupMaps === undefined) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
         Loading glass catalog data…
@@ -75,7 +76,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
 
   let routeSelectedGlass: SelectedGlass | undefined;
   if (routeIntent !== undefined) {
-    routeSelectedGlass = resolveCatalogGlass(catalogsData, routeIntent.catalog, routeIntent.glass);
+    routeSelectedGlass = resolveCatalogGlass(catalogsData, lookupMaps, routeIntent.catalog, routeIntent.glass);
   }
 
   const routeIntentActive = !routeIntentDismissed && routeSelectedGlass !== undefined;
@@ -135,7 +136,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
             )}
           </div>
         )}
-        <GlassMapCatalogSelector catalogsData={catalogsData} onSelect={handlePointClick} />
+        <GlassMapCatalogSelector catalogsData={catalogsData} lookupMaps={lookupMaps} onSelect={handlePointClick} />
         <GlassMapControls
           plotType={plotType}
           abbeNumCenterLine={abbeNumCenterLine}

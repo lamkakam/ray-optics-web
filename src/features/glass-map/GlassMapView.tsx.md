@@ -22,13 +22,14 @@ interface GlassMapRouteIntent {
 ## Behavior
 - Obtains the `GlassMapStore` via `useGlassMapStore()` (provided by `GlassMapStoreProvider` in `app/glass-map/page.tsx`)
 - Returns a loading placeholder until `isReady=true` and `proxy` is available
-- Uses `catalogsData` from `GlassMapStore` as the rendering source of truth
+- Uses `catalogsData` and its derived `lookupMaps` from `GlassMapStore` as one rendering initialization unit
 - Does not call the shared glass catalog resource loader; `app/AppShell.tsx` preloads the resource during app initialization and writes successful data into `GlassMapStore`
 - Shows a minimal loading placeholder only if the route renders before `catalogsData` is available, which should be transient or impossible in normal app flow because AppShell blocks initialization until the preload succeeds
 - Computes `PlotPoint[]` via `computePlotPoints()` from `features/glass-map/lib/glassMap`
 - Derives axis labels from `plotType`, `abbeNumCenterLine`, `partialDispersionType`
 - Treats `routeIntent` as a render-time override instead of synchronizing it into the store
-- If `routeIntent` resolves to a valid eligible glass through the shared catalog-glass resolver, that glass is shown initially and its catalog is forced visible in the controls
+- Passes the same lookup maps to route-intent resolution and `GlassMapCatalogSelector`
+- If `routeIntent` resolves through the shared lookup-map-based catalog-glass resolver to a valid eligible glass, that glass is shown initially and its catalog is forced visible in the controls
 - Plot radios and catalog checkboxes update their respective plot/filter state without dismissing the route-intent selection
 - The route-intent override is dismissed when the user selects a chart point or commits the catalog selector, after which the persistent store selection is authoritative
 - The catalog selector updates `selectedGlass` without changing `enabledCatalogs`; selecting from a disabled catalog updates details but leaves its plot points hidden

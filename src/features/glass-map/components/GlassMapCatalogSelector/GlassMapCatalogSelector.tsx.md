@@ -7,6 +7,7 @@ Single-row catalog and glass selector for the Glass Map controls panel. The draf
 ## Props
 
 - `catalogsData: CompleteGlassCatalogsData` — authoritative catalog data.
+- `lookupMaps: GlassLookupMaps` — canonical lookup maps built from the same catalog-data snapshot.
 - `onSelect: (glass: SelectedGlass) => void` — called with the canonical stored catalog name, glass name, and data.
 
 ## Behavior
@@ -17,5 +18,5 @@ Single-row catalog and glass selector for the Glass Map controls panel. The draf
 - Clears Glass whenever Catalog changes.
 - Glass suggestions come from the selected bucket in `catalogsData`.
 - The `Special` bucket excludes the shared built-in special materials (`air` and `REFL`) case-insensitively.
-- Exact case-insensitive input matches are canonicalized to stored spelling. Blank, partial, and unmatched inputs keep Select disabled.
+- Exact trimmed, case-insensitive input matches are canonicalized through the lookup maps to stored spelling. Blank, partial, aliased, and unmatched inputs keep Select disabled.
 - Does not read or change catalog plot-filter state.

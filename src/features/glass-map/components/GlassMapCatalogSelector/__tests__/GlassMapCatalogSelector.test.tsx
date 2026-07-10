@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { GlassMapCatalogSelector } from "@/features/glass-map/components/GlassMapCatalogSelector";
 import type { CompleteGlassCatalogsData, GlassData } from "@/features/glass-map/types/glassMap";
+import { buildGlassLookupMaps } from "@/features/glass-map/lib/glassMap";
 
 const glass: GlassData = {
   refractiveIndexD: 1.5168,
@@ -12,7 +13,6 @@ const glass: GlassData = {
   dispersionCoeffKind: "Sellmeier3T",
   dispersionCoeffs: [1, 2, 3, 4, 5, 6],
 };
-
 const catalogsData: CompleteGlassCatalogsData = {
   CDGM: {},
   Hikari: {},
@@ -20,20 +20,25 @@ const catalogsData: CompleteGlassCatalogsData = {
   Ohara: {},
   Schott: { "N-BK7": glass, "N-SF6": glass },
   Sumita: {},
-  Special: { air: glass, REFL: glass, Water: glass },
+  Special: { air: glass, REFL: glass, "Fused Silica": glass, Water: glass },
   Custom: { "My Glass": glass },
 };
+const lookupMaps = buildGlassLookupMaps(catalogsData);
+
+function renderSelector(onSelect = jest.fn()) {
+  return render(<GlassMapCatalogSelector catalogsData={catalogsData} lookupMaps={lookupMaps} onSelect={onSelect} />);
+}
 
 describe("GlassMapCatalogSelector", () => {
   it("lists every supported catalog, including catalogs with no glasses", () => {
-    render(<GlassMapCatalogSelector catalogsData={catalogsData} onSelect={jest.fn()} />);
+    renderSelector();
 
     expect(within(screen.getByRole("combobox", { name: "Catalog" })).getAllByRole("option").map((option) => option.textContent))
       .toEqual(["CDGM", "Hikari", "Hoya", "Ohara", "Schott", "Sumita", "Special", "Custom"]);
   });
 
   it("defaults to the first catalog with an eligible glass and leaves Glass blank", () => {
-    render(<GlassMapCatalogSelector catalogsData={catalogsData} onSelect={jest.fn()} />);
+    renderSelector();
 
     expect(screen.getByRole("combobox", { name: "Catalog" })).toHaveValue("Hoya");
     expect(screen.getByRole("combobox", { name: "Glass" })).toHaveValue("");
@@ -41,7 +46,7 @@ describe("GlassMapCatalogSelector", () => {
   });
 
   it("resets Glass and updates datalist options when Catalog changes", async () => {
-    render(<GlassMapCatalogSelector catalogsData={catalogsData} onSelect={jest.fn()} />);
+    renderSelector();
     const glassInput = screen.getByRole("combobox", { name: "Glass" });
     await userEvent.type(glassInput, "BSC7");
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Schott");
@@ -54,7 +59,7 @@ describe("GlassMapCatalogSelector", () => {
 
   it("canonicalizes a complete case-insensitive match and selects it", async () => {
     const onSelect = jest.fn();
-    render(<GlassMapCatalogSelector catalogsData={catalogsData} onSelect={onSelect} />);
+    renderSelector(onSelect);
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Schott");
     await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), "n-bk7");
 
@@ -64,23 +69,39 @@ describe("GlassMapCatalogSelector", () => {
   });
 
   it.each(["", "N-", "missing"])("keeps Select disabled for invalid input %p", async (value) => {
-    render(<GlassMapCatalogSelector catalogsData={catalogsData} onSelect={jest.fn()} />);
+    renderSelector();
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Schott");
     if (value !== "") await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), value);
     expect(screen.getByRole("button", { name: "Select glass" })).toBeDisabled();
   });
 
   it("excludes air and REFL from Special case-insensitively", async () => {
-    render(<GlassMapCatalogSelector catalogsData={catalogsData} onSelect={jest.fn()} />);
+    renderSelector();
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Special");
     const input = screen.getByRole("combobox", { name: "Glass" });
     const datalist = document.getElementById(input.getAttribute("list")!);
-    expect(Array.from(datalist!.querySelectorAll("option")).map((option) => option.value)).toEqual(["Water"]);
+    expect(Array.from(datalist!.querySelectorAll("option")).map((option) => option.value))
+      .toEqual(["Fused Silica", "Water"]);
+  });
+
+  it("selects provider-backed Fused Silica using its catalog spelling", async () => {
+    const onSelect = jest.fn();
+    renderSelector(onSelect);
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Special");
+    await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), "fused silica");
+
+    expect(screen.getByRole("combobox", { name: "Glass" })).toHaveValue("Fused Silica");
+    expect(screen.getByRole("button", { name: "Select glass" })).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: "Select glass" }));
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({
+      catalogName: "Special",
+      glassName: "Fused Silica",
+    }));
   });
 
   it("selects an eligible Custom glass", async () => {
     const onSelect = jest.fn();
-    render(<GlassMapCatalogSelector catalogsData={catalogsData} onSelect={onSelect} />);
+    renderSelector(onSelect);
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Custom");
     await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), "my glass");
     await userEvent.click(screen.getByRole("button", { name: "Select glass" }));
