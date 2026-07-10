@@ -39,6 +39,7 @@ interface WavelengthConfigModalProps {
 - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for wavelength row insertion and deletion controls.
 - When a row is deleted, `referenceIndex` is adjusted to remain valid.
 - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending wavelength or weight edits are committed before footer actions such as Apply read the draft rows.
+- Keeps the caption outside a `200px`-high grid container and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
 
 ## Grid Columns
 

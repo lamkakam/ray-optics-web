@@ -51,4 +51,12 @@ body {
   .ag-center-cols-viewport {
     overscroll-behavior: none;
   }
+
+  .ag-grid-touch-scroll .ag-header-viewport,
+  .ag-grid-touch-scroll .ag-body-viewport,
+  .ag-grid-touch-scroll .ag-center-cols-viewport {
+    overscroll-behavior: auto;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
 }

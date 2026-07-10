@@ -147,15 +147,15 @@ describe("ImportCustomGlassPage", () => {
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
   });
 
-  it("suppresses AG Grid touch handling on the readonly custom glass table", () => {
+  it("enables AG Grid touch handling on the readonly custom glass table", () => {
     renderPage();
 
     const grid = screen.getByTestId("ag-grid-mock");
-    expect(grid).toHaveAttribute("data-suppress-touch", "true");
+    expect(grid).toHaveAttribute("data-suppress-touch", "false");
     expectImportCustomGlassTouchScroll(grid.parentElement);
   });
 
-  it("suppresses AG Grid touch handling on the add/edit coefficient grid", async () => {
+  it("enables AG Grid touch handling on the add/edit coefficient grid", async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -163,7 +163,7 @@ describe("ImportCustomGlassPage", () => {
 
     const grids = screen.getAllByTestId("ag-grid-mock");
     expect(grids).toHaveLength(2);
-    expect(grids[1]).toHaveAttribute("data-suppress-touch", "true");
+    expect(grids[1]).toHaveAttribute("data-suppress-touch", "false");
     expectImportCustomGlassTouchScroll(grids[1].parentElement);
   });
 

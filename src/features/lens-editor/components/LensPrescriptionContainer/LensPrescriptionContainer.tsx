@@ -122,7 +122,7 @@ export function LensPrescriptionContainer({
   const isObjectMediumRow = mediumRow?.kind === "object";
 
   return (
-    <div>
+    <div className="min-[1440px]:flex min-[1440px]:h-full min-[1440px]:flex-col">
       <div role="toolbar" aria-label="Grid toolbar" className="mb-2 flex gap-2">
         <Tooltip text="Generate a Python script" portal noTouch>
           <Button variant="secondary" onClick={() => setPythonScriptOpen(true)}>Export Python Script</Button>

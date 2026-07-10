@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { LensPrescriptionGrid } from "../";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { Theme } from "@/shared/tokens/theme";
@@ -66,6 +68,28 @@ describe("LensPrescriptionGrid", () => {
   it("renders the AG Grid mock table", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
     expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
+  });
+
+  it("uses normal AG Grid layout with responsive fixed grid heights", () => {
+    render(<LensPrescriptionGrid {...defaultProps} />);
+
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "normal");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-suppress-touch", "false");
+    expect(screen.getByLabelText("Lens prescription editor")).toHaveClass(
+      "ag-grid-touch-scroll",
+      "h-[calc(100vh-160px)]",
+      "min-[1440px]:flex-1",
+      "min-[1440px]:min-h-[200px]",
+    );
+  });
+
+  it("allows native two-axis panning on AG Grid viewports for coarse pointers", () => {
+    const globalStyles = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+
+    expect(globalStyles).toContain(".ag-grid-touch-scroll .ag-header-viewport");
+    expect(globalStyles).toContain(".ag-grid-touch-scroll .ag-body-viewport");
+    expect(globalStyles).toContain(".ag-grid-touch-scroll .ag-center-cols-viewport");
+    expect(globalStyles).toMatch(/\.ag-grid-touch-scroll[\s\S]*touch-action:\s*pan-x pan-y;/);
   });
 
   it("renders all rows", () => {

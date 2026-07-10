@@ -27,7 +27,6 @@ export {
   createSurfaceColumn,
   createThicknessColumn,
   LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS,
-  LENS_PRESCRIPTION_GRID_DOM_LAYOUT,
   lensPrescriptionGridDefaultColDef,
   lensPrescriptionGridIndexColumnDef,
   numberValueParser,

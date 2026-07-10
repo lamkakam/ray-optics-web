@@ -47,6 +47,15 @@ describe("WavelengthConfigModal", () => {
     expect(rows).toHaveLength(4);
   });
 
+  it("uses a fixed-height, touch-scrollable normal AG Grid layout", () => {
+    render(<WavelengthConfigModal {...defaultProps} />);
+
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid.parentElement).toHaveClass("h-[200px]", "ag-grid-touch-scroll");
+    expect(grid).toHaveAttribute("data-dom-layout", "normal");
+    expect(grid).toHaveAttribute("data-suppress-touch", "false");
+  });
+
   it("renders add row button for each row", () => {
     render(<WavelengthConfigModal {...defaultProps} />);
     const addBtns = screen.getAllByLabelText("Add wavelength row");

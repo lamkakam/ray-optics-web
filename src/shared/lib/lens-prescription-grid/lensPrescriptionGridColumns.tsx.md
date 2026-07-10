@@ -6,7 +6,6 @@ Shared column and AG Grid configuration for lens prescription grids.
 
 - `numberValueParser` — accepts finite decimal/scientific notation input and restores `oldValue` for blank or invalid input.
 - `lensPrescriptionGridDefaultColDef` — `{ sortable: false, suppressMovable: true }`.
-- `LENS_PRESCRIPTION_GRID_DOM_LAYOUT` — `"autoHeight"`.
 - `LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS` — shared initial widths for prescription columns:
   - `surface`: `85`
   - `index`: `80`

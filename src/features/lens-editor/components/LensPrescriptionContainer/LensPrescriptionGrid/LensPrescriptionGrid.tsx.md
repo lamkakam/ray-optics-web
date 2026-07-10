@@ -52,7 +52,9 @@ interface LensPrescriptionGridProps {
 - The aperture column renders immediately after `Semi-diam.` and only for `surface` rows.
 - Number parsing rejects non-numeric input and restores the old value.
 - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending numeric cell edits are committed before another grid action such as opening a modal or inserting/deleting a row is handled.
-- Applies shared AG Grid config: `defaultColDef={{ sortable: false, suppressMovable: true }}` and `domLayout="autoHeight"`.
+- Applies shared AG Grid column config with `defaultColDef={{ sortable: false, suppressMovable: true }}` and AG Grid's normal layout so the grid owns vertical row scrolling.
+- Keeps AG Grid's native touch handling enabled so resizable header handles respond to touchscreen drags. The shared `ag-grid-touch-scroll` coarse-pointer styles continue to provide native horizontal and vertical panning, iOS momentum scrolling, and scroll chaining on viewport areas; AG Grid owns gestures that begin on resize handles.
+- Uses `h-[calc(100vh-160px)]` below `1440px`; at `1440px` and above it fills the remaining flex-column drawer-panel height with a `200px` minimum.
 
 ## Usages
 

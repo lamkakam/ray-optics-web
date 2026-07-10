@@ -7,6 +7,22 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 }));
 
 describe("OptimizationOperandsTab", () => {
+  it("uses a fixed-height, touch-scrollable normal AG Grid layout", () => {
+    render(
+      <OptimizationOperandsTab
+        operands={[]}
+        onAddOperand={jest.fn()}
+        onDeleteOperand={jest.fn()}
+        onUpdateOperand={jest.fn()}
+      />,
+    );
+
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid.parentElement).toHaveClass("h-[200px]", "ag-grid-touch-scroll");
+    expect(grid).toHaveAttribute("data-dom-layout", "normal");
+    expect(grid).toHaveAttribute("data-suppress-touch", "false");
+  });
+
   it("renders the operands grid and wires add, edit, and delete actions", async () => {
     const user = userEvent.setup();
     const onAddOperand = jest.fn();

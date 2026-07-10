@@ -211,16 +211,18 @@ function FieldConfigModalContent({
 
       <div className="mb-4" style={{ width: "100%" }}>
         <Paragraph variant="caption">Maximum 10 relative fields</Paragraph>
-        <AgGridProvider modules={[AllCommunityModule]}>
-          <EditableAgGridReact<FieldRow>
-            theme={gridTheme}
-            rowData={rows}
-            columnDefs={columnDefs}
-            defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-            domLayout="autoHeight"
-            getRowId={(params) => params.data.id}
-          />
-        </AgGridProvider>
+        <div className="ag-grid-touch-scroll h-[200px]">
+          <AgGridProvider modules={[AllCommunityModule]}>
+            <EditableAgGridReact<FieldRow>
+              theme={gridTheme}
+              rowData={rows}
+              columnDefs={columnDefs}
+              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+              domLayout="normal"
+              getRowId={(params) => params.data.id}
+            />
+          </AgGridProvider>
+        </div>
 
         <div className="mt-4">
           <CheckboxInput

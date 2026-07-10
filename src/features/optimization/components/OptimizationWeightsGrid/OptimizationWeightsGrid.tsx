@@ -53,7 +53,10 @@ export function OptimizationWeightsGrid({
   ], [onUpdateWeight, valueColumnWidth]);
 
   return (
-    <div data-testid="optimization-weights-grid" className="overflow-x-auto">
+    <div
+      data-testid="optimization-weights-grid"
+      className="ag-grid-touch-scroll h-[200px] overflow-x-auto"
+    >
       <AgGridProvider modules={[AllCommunityModule]}>
         <EditableAgGridReact<WeightRow>
           theme={gridTheme}
@@ -61,7 +64,7 @@ export function OptimizationWeightsGrid({
           columnDefs={weightColumns}
           getRowId={(params) => params.data.id}
           defaultColDef={{ sortable: false, suppressMovable: true }}
-          domLayout="autoHeight"
+          domLayout="normal"
           onCellEditingStarted={onCellEditingStarted}
           onCellEditingStopped={onCellEditingStopped}
         />

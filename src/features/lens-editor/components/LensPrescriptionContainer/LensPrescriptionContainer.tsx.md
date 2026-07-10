@@ -38,6 +38,7 @@ Lens store state is consumed via `LensEditorStoreContext`:
 - Scale and Reverse formatting ranges are local to one open modal session, so switching modes during that session restores the last range used for each mode.
 - Formatting errors are surfaced through the shared `ErrorModal`; failed formatting leaves the existing store rows unchanged.
 - The visible `Set auto aperture dimensions:` label and `Set auto aperture dimensions` accessible switch name are paired with an Auto/Manual switch that updates `autoAperture` in the store, passes `semiDiameterReadonly` to the grid, and passes `autoAperture` to `ApertureModal` for Clear Rectangular ratio labels.
+- At the `1440px` large-screen breakpoint, the prescription tab content becomes a full-height flex column: its toolbar and aperture switch retain natural height while the grid fills the remaining panel height and keeps a `200px` minimum.
 - `LensPrescriptionGrid`, `PythonScriptModal`, `FormattingModal`, and `AddReferenceSurfaceModal` are internal to this directory; the nested barrel only exports components used outside `LensPrescriptionContainer/` (`MediumSelectorModal`, `AsphericalModal`, `DecenterModal`, `DiffractionGratingModal`, and `GridRowButtons`). `ConfirmImportModal` remains colocated here but is used by `LensEditorConfigToolbar`.
 
 ## Usages

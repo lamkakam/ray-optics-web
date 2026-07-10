@@ -19,7 +19,6 @@ import {
   createSemiDiameterColumn,
   createSurfaceColumn,
   createThicknessColumn,
-  LENS_PRESCRIPTION_GRID_DOM_LAYOUT,
   LensPrescriptionActionWrapper,
   lensPrescriptionGridDefaultColDef,
   lensPrescriptionGridIndexColumnDef,
@@ -257,14 +256,17 @@ export function OptimizationLensPrescriptionGrid({
   ]);
 
   return (
-    <div data-testid="optimization-lens-prescription-grid" className="overflow-x-auto">
+    <div
+      data-testid="optimization-lens-prescription-grid"
+      className="ag-grid-touch-scroll h-[calc(100vh-160px)] overflow-x-auto min-[1440px]:h-full min-[1440px]:min-h-[200px]"
+    >
       <AgGridProvider modules={[AllCommunityModule]}>
         <EditableAgGridReact<RadiusRow>
           theme={gridTheme}
           rowData={[...rows]}
           columnDefs={lensColumns}
           defaultColDef={lensPrescriptionGridDefaultColDef}
-          domLayout={LENS_PRESCRIPTION_GRID_DOM_LAYOUT}
+          domLayout="normal"
           onCellEditingStarted={onCellEditingStarted}
           onCellEditingStopped={onCellEditingStopped}
         />

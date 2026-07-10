@@ -10,7 +10,6 @@ import { EditableAgGridReact } from "@/shared/components/ag-grid";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import {
   createLensPrescriptionCommonColumns,
-  LENS_PRESCRIPTION_GRID_DOM_LAYOUT,
   lensPrescriptionGridDefaultColDef,
   lensPrescriptionGridIndexColumnDef,
 } from "@/shared/lib/lens-prescription-grid";
@@ -105,6 +104,7 @@ export function LensPrescriptionGrid({
   return (
     <div
       aria-label="Lens prescription editor"
+      className="ag-grid-touch-scroll h-[calc(100vh-160px)] min-[1440px]:min-h-[200px] min-[1440px]:flex-1"
     >
       <AgGridProvider modules={[AllCommunityModule]}>
         <EditableAgGridReact<GridRow>
@@ -112,7 +112,7 @@ export function LensPrescriptionGrid({
           rowData={rows}
           columnDefs={columnDefs}
           defaultColDef={lensPrescriptionGridDefaultColDef}
-          domLayout={LENS_PRESCRIPTION_GRID_DOM_LAYOUT}
+          domLayout="normal"
           getRowId={(params) => params.data.id}
         />
       </AgGridProvider>
