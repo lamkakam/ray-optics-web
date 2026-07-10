@@ -40,6 +40,15 @@ const nextConfig: NextConfig = {
     config.plugins.push(
       new webpack.IgnorePlugin({ resourceRegExp: /^(?:node:|ws$)/ }),
     );
+    // Pyodide 314's published bundle omitted its upstream webpackIgnore comment.
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings ?? []),
+      {
+        module: /[\\/]node_modules[\\/]pyodide[\\/]pyodide\.mjs$/,
+        message:
+          /^Critical dependency: the request of a dependency is an expression$/,
+      },
+    ];
     return config;
   },
 };
