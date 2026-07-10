@@ -104,7 +104,7 @@ export function LensPrescriptionGrid({
   return (
     <div
       aria-label="Lens prescription editor"
-      className="prescription-grid-touch-scroll h-[calc(100vh-160px)] min-[1440px]:min-h-[200px] min-[1440px]:flex-1"
+      className="ag-grid-touch-scroll h-[calc(100vh-160px)] min-[1440px]:min-h-[200px] min-[1440px]:flex-1"
     >
       <AgGridProvider modules={[AllCommunityModule]}>
         <EditableAgGridReact<GridRow>

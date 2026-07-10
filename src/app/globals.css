@@ -52,9 +52,9 @@ body {
     overscroll-behavior: none;
   }
 
-  .prescription-grid-touch-scroll .ag-header-viewport,
-  .prescription-grid-touch-scroll .ag-body-viewport,
-  .prescription-grid-touch-scroll .ag-center-cols-viewport {
+  .ag-grid-touch-scroll .ag-header-viewport,
+  .ag-grid-touch-scroll .ag-body-viewport,
+  .ag-grid-touch-scroll .ag-center-cols-viewport {
     overscroll-behavior: auto;
     touch-action: pan-x pan-y;
     -webkit-overflow-scrolling: touch;

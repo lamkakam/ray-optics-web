@@ -74,6 +74,15 @@ describe("FieldConfigModal", () => {
     expect(rows).toHaveLength(4);
   });
 
+  it("uses a fixed-height, touch-scrollable normal AG Grid layout", () => {
+    render(<FieldConfigModal {...defaultProps} />);
+
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid.parentElement).toHaveClass("h-[200px]", "ag-grid-touch-scroll");
+    expect(grid).toHaveAttribute("data-dom-layout", "normal");
+    expect(grid).toHaveAttribute("data-suppress-touch", "true");
+  });
+
   it("renders add row button for each row", () => {
     render(<FieldConfigModal {...defaultProps} />);
     const addBtns = screen.getAllByLabelText("Add field row");

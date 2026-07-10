@@ -46,6 +46,7 @@ interface FieldConfigModalProps {
 - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
 - Row ids use a module-level counter for stable AG Grid `getRowId`.
 - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
+- Keeps the caption outside a `200px`-high grid container and uses AG Grid's normal layout for internal scrolling. Suppresses AG Grid touch gestures and applies the shared `ag-grid-touch-scroll` coarse-pointer styles for native two-axis panning and iOS momentum scrolling.
 
 ## Grid Columns
 

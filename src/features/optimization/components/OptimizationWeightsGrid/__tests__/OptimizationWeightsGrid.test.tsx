@@ -7,6 +7,21 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 }));
 
 describe("OptimizationWeightsGrid", () => {
+  it("uses a fixed-height, touch-scrollable normal AG Grid layout", () => {
+    render(
+      <OptimizationWeightsGrid
+        rows={[{ id: "weight-0", index: 0, label: "0.7", weight: 1 }]}
+        valueColumnWidth={120}
+        onUpdateWeight={jest.fn()}
+      />,
+    );
+
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid.parentElement).toHaveClass("h-[200px]", "ag-grid-touch-scroll");
+    expect(grid).toHaveAttribute("data-dom-layout", "normal");
+    expect(grid).toHaveAttribute("data-suppress-touch", "true");
+  });
+
   it("commits a pending weight edit before an outside action is handled", async () => {
     const user = userEvent.setup();
     const onAction = jest.fn();

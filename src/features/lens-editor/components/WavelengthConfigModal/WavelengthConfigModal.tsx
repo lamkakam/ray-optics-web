@@ -230,16 +230,19 @@ function WavelengthConfigModalContent({
     >
       <div className="mb-4" style={{ width: "100%" }}>
         <Paragraph variant="caption">Maximum 7 wavelengths</Paragraph>
-        <AgGridProvider modules={[AllCommunityModule]}>
-          <EditableAgGridReact<WavelengthRow>
-            theme={gridTheme}
-            rowData={rows}
-            columnDefs={columnDefs}
-            defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
-            domLayout="autoHeight"
-            getRowId={(params) => params.data.id}
-          />
-        </AgGridProvider>
+        <div className="ag-grid-touch-scroll h-[200px]">
+          <AgGridProvider modules={[AllCommunityModule]}>
+            <EditableAgGridReact<WavelengthRow>
+              theme={gridTheme}
+              rowData={rows}
+              columnDefs={columnDefs}
+              defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+              domLayout="normal"
+              suppressTouch={true}
+              getRowId={(params) => params.data.id}
+            />
+          </AgGridProvider>
+        </div>
       </div>
     </Modal>
   );

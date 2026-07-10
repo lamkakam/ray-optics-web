@@ -110,18 +110,21 @@ export function OptimizationOperandsTab({
       <Button variant="secondary" size="sm" aria-label="Add operand" onClick={onAddOperand}>
         Add Operand
       </Button>
-      <AgGridProvider modules={[AllCommunityModule]}>
-        <EditableAgGridReact<OptimizationOperandRow>
-          theme={gridTheme}
-          rowData={[...operands]}
-          columnDefs={operandColumns}
-          getRowId={(params) => params.data.id}
-          defaultColDef={{ sortable: false, suppressMovable: true }}
-          domLayout="autoHeight"
-          onCellEditingStarted={onCellEditingStarted}
-          onCellEditingStopped={onCellEditingStopped}
-        />
-      </AgGridProvider>
+      <div className="ag-grid-touch-scroll h-[200px]">
+        <AgGridProvider modules={[AllCommunityModule]}>
+          <EditableAgGridReact<OptimizationOperandRow>
+            theme={gridTheme}
+            rowData={[...operands]}
+            columnDefs={operandColumns}
+            getRowId={(params) => params.data.id}
+            defaultColDef={{ sortable: false, suppressMovable: true }}
+            domLayout="normal"
+            suppressTouch={true}
+            onCellEditingStarted={onCellEditingStarted}
+            onCellEditingStopped={onCellEditingStopped}
+          />
+        </AgGridProvider>
+      </div>
     </div>
   );
 }
