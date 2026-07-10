@@ -23,7 +23,7 @@ interface FocusingPanelProps {
 ## Layout
 
 1. `RadioInput` for chromaticity: options `[{ value: "mono", label: "Monochromatic" }, { value: "poly", label: "Polychromatic" }]`, rendered with `columns={2}`
-2. `RadioInput` for metric: options `[{ value: "rmsSpot", label: "Minimize RMS Spot Radius" }, { value: "wavefront", label: "Minimize Wavefront Error" }]`
+2. `RadioInput` for metric: options `[{ value: "rmsSpot", label: "Minimize RMS Spot Radius", labelNode: "RMS Spot Radius" }, { value: "wavefront", label: "Minimize Wavefront Error", labelNode: "Wavefront Error" }]`, rendered with `columns={2}` and `layout="compact"`. The shorter `labelNode` values are visible while the full `label` values remain each radio's accessible name.
 3. `Label` + `Select` (aria-label="Field") for field index selection
 4. `Button` variant `"primary"` text "Focus", `aria-label="Focus"`, `disabled={disabled}`
 
