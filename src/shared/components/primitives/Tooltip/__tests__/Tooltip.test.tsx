@@ -2,6 +2,20 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Tooltip } from "../Tooltip";
 
+function createRect(left: number, top: number, width: number, height: number): DOMRect {
+  return {
+    x: left,
+    y: top,
+    left,
+    top,
+    right: left + width,
+    bottom: top + height,
+    width,
+    height,
+    toJSON: () => ({}),
+  };
+}
+
 describe("Tooltip", () => {
   it("renders children", () => {
     render(
@@ -88,6 +102,95 @@ describe("Tooltip", () => {
     expect(tip).not.toHaveClass("top-full");
     expect(tip).not.toHaveClass("left-1/2");
     expect(tip).not.toHaveClass("-translate-x-1/2");
+  });
+
+  describe("viewport-aware positioning", () => {
+    const originalInnerWidth = window.innerWidth;
+
+    afterEach(() => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: originalInnerWidth,
+      });
+    });
+
+    it("shifts a tooltip right when it would cross the left viewport gutter", () => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
+      render(
+        <Tooltip text="Compute and update the optical system" position="bottom">
+          <button>Update</button>
+        </Tooltip>,
+      );
+
+      const wrapper = screen.getByRole("button", { name: "Update" }).parentElement!;
+      const tooltip = screen.getByRole("tooltip");
+      jest.spyOn(wrapper, "getBoundingClientRect").mockReturnValue(createRect(0, 80, 32, 32));
+      jest.spyOn(tooltip, "getBoundingClientRect").mockReturnValue(createRect(-80, 116, 240, 24));
+
+      fireEvent.mouseEnter(wrapper);
+
+      expect(tooltip).toHaveStyle({ marginLeft: "88px" });
+    });
+
+    it("shifts a tooltip left when it would cross the right viewport gutter", () => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
+      render(
+        <Tooltip text="Compute and update the optical system" position="bottom">
+          <button>Update</button>
+        </Tooltip>,
+      );
+
+      const wrapper = screen.getByRole("button", { name: "Update" }).parentElement!;
+      const tooltip = screen.getByRole("tooltip");
+      jest.spyOn(wrapper, "getBoundingClientRect").mockReturnValue(createRect(288, 80, 32, 32));
+      jest.spyOn(tooltip, "getBoundingClientRect").mockReturnValue(createRect(220, 116, 160, 24));
+
+      fireEvent.mouseEnter(wrapper);
+
+      expect(tooltip).toHaveStyle({ marginLeft: "-68px" });
+    });
+
+    it("remeasures while hovered and resets the horizontal correction on leave", () => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
+      render(
+        <Tooltip text="Compute and update the optical system" position="bottom">
+          <button>Update</button>
+        </Tooltip>,
+      );
+
+      const wrapper = screen.getByRole("button", { name: "Update" }).parentElement!;
+      const tooltip = screen.getByRole("tooltip");
+      jest.spyOn(wrapper, "getBoundingClientRect").mockReturnValue(createRect(0, 80, 32, 32));
+      const tooltipRect = jest.spyOn(tooltip, "getBoundingClientRect");
+      tooltipRect.mockReturnValue(createRect(-80, 116, 240, 24));
+
+      fireEvent.mouseEnter(wrapper);
+      expect(tooltip).toHaveStyle({ marginLeft: "88px" });
+
+      tooltipRect.mockReturnValue(createRect(308, 116, 160, 24));
+      fireEvent.resize(window);
+      expect(tooltip).toHaveStyle({ marginLeft: "-68px" });
+
+      tooltipRect.mockReturnValue(createRect(-148, 116, 240, 24));
+      fireEvent.scroll(window);
+      expect(tooltip).toHaveStyle({ marginLeft: "88px" });
+
+      fireEvent.mouseLeave(wrapper);
+      expect(tooltip).toHaveStyle({ marginLeft: "0px" });
+    });
+
+    it("constrains and wraps content to the viewport width", () => {
+      render(
+        <Tooltip text="A long tooltip message">
+          <button>Update</button>
+        </Tooltip>,
+      );
+
+      expect(screen.getByRole("tooltip")).toHaveStyle({
+        maxWidth: "calc(100vw - 16px)",
+        whiteSpace: "normal",
+      });
+    });
   });
 
   describe("noTouch prop", () => {

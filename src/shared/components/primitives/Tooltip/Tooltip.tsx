@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
@@ -40,12 +40,82 @@ const portalBaseClasses = clsx(
   "whitespace-nowrap",
 );
 
+const VIEWPORT_GUTTER = 8;
 
-export function Tooltip({ text, children, position = "top", portal = false, noTouch, triggerClassName }: TooltipProps) {
+function getViewportSafeOffset(
+  triggerRect: DOMRect,
+  tooltipRect: DOMRect,
+  currentOffset: number,
+  viewportWidth: number,
+): number {
+  const tooltipLeftWithinTrigger = tooltipRect.left - triggerRect.left - currentOffset;
+  const tooltipLeft = triggerRect.left + tooltipLeftWithinTrigger;
+  const availableWidth = Math.max(viewportWidth - VIEWPORT_GUTTER * 2, 0);
+
+  if (tooltipRect.width > availableWidth) {
+    return VIEWPORT_GUTTER - tooltipLeft;
+  }
+
+  const maxTooltipLeft = viewportWidth - VIEWPORT_GUTTER - tooltipRect.width;
+  const safeTooltipLeft = Math.min(
+    Math.max(tooltipLeft, VIEWPORT_GUTTER),
+    maxTooltipLeft,
+  );
+
+  return safeTooltipLeft - tooltipLeft;
+}
+
+export function Tooltip({
+  text,
+  children,
+  position = "top",
+  portal = false,
+  noTouch,
+  triggerClassName,
+}: TooltipProps) {
   const triggerRef = useRef<HTMLSpanElement>(null);
+  const nonPortalTooltipRef = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [nonPortalHovered, setNonPortalHovered] = useState(false);
+  const [horizontalOffset, setHorizontalOffset] = useState(0);
+  const horizontalOffsetRef = useRef(0);
   const isTouchingRef = useRef(false);
+
+  useEffect(() => {
+    if (portal || !nonPortalHovered) {
+      return undefined;
+    }
+
+    const updatePosition = () => {
+      const triggerElement = triggerRef.current;
+      const tooltipElement = nonPortalTooltipRef.current;
+      if (!triggerElement || !tooltipElement) {
+        return;
+      }
+
+      const triggerRect = triggerElement.getBoundingClientRect();
+      const tooltipRect = tooltipElement.getBoundingClientRect();
+      const nextOffset = getViewportSafeOffset(
+        triggerRect,
+        tooltipRect,
+        horizontalOffsetRef.current,
+        window.innerWidth,
+      );
+
+      horizontalOffsetRef.current = nextOffset;
+      setHorizontalOffset(nextOffset);
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [nonPortalHovered, portal]);
 
   if (portal) {
     const handleMouseEnter = () => {
@@ -108,9 +178,19 @@ export function Tooltip({ text, children, position = "top", portal = false, noTo
             : "";
 
   return (
-    <span className={clsx("group relative inline-flex", triggerClassName)}>
+    <span
+      className={clsx("group relative inline-flex", triggerClassName)}
+      ref={triggerRef}
+      onMouseEnter={() => setNonPortalHovered(true)}
+      onMouseLeave={() => {
+        horizontalOffsetRef.current = 0;
+        setHorizontalOffset(0);
+        setNonPortalHovered(false);
+      }}
+    >
       {children}
       <span
+        ref={nonPortalTooltipRef}
         role="tooltip"
         className={clsx(
           "absolute",
@@ -118,6 +198,12 @@ export function Tooltip({ text, children, position = "top", portal = false, noTo
           baseClasses,
           positionClasses,
         )}
+        style={{
+          marginLeft: horizontalOffset,
+          maxWidth: "calc(100vw - 16px)",
+          overflowWrap: "break-word",
+          whiteSpace: "normal",
+        }}
       >
         {text}
       </span>

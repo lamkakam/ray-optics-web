@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Hover tooltip with two rendering modes: a CSS `group-hover` absolute variant (default) and a `portal` variant that renders via `createPortal` into `document.body` to avoid overflow-hidden clipping inside AG Grid cells.
+Hover tooltip with two rendering modes: a viewport-aware CSS `group-hover` absolute variant (default) and a `portal` variant that renders via `createPortal` into `document.body` to avoid overflow-hidden clipping inside AG Grid cells.
 
 ## Props
 
@@ -32,11 +32,15 @@ interface TooltipProps {
 
 - `visible: boolean` — portal mode only; controls opacity.
 - `coords: { x, y }` — portal mode only; stores measured trigger position.
+- `nonPortalHovered: boolean` — non-portal mode only; enables viewport remeasurement while the trigger is hovered.
+- `horizontalOffset: number` — non-portal mode only; horizontal correction in pixels applied to keep the tooltip within the viewport.
+- `triggerRef` / `nonPortalTooltipRef` — references used to measure trigger and tooltip geometry for non-portal positioning.
 - `isTouchingRef: React.MutableRefObject<boolean>` — portal mode only; set to `true` on `touchstart` to detect synthetic mouse events from touch sequences.
 
 ## Key Behaviors
 
-- **Non-portal mode**: uses CSS `group-hover:opacity-100` on an absolutely positioned `<span>`.
+- **Non-portal mode**: uses CSS `group-hover:opacity-100` on an absolutely positioned `<span>`. On hover, the trigger and tooltip rectangles are measured and the tooltip receives a horizontal offset that clamps it to an 8px viewport gutter while preserving the existing vertical placement and `position` prop behavior. The correction is recalculated during viewport resize and captured scroll events, and reset on mouse leave.
+- **Non-portal content sizing**: uses a maximum width of `calc(100vw - 16px)`, normal whitespace, and word breaking so long messages wrap within the viewport on narrow screens.
 - **Portal mode**: attaches `onMouseEnter`/`onMouseLeave` listeners, measures the trigger rect via `getBoundingClientRect`, and renders a fixed `<span>` at those coordinates.
 - `triggerClassName` is merged onto the trigger wrapper in both portal and non-portal modes without changing default inline-flex behavior.
 - `portal` must be `true` when the tooltip is rendered inside any element with `overflow: hidden` (e.g. AG Grid rows).
