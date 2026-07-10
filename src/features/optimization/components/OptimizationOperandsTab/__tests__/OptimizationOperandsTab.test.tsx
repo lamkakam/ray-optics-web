@@ -7,7 +7,7 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
 }));
 
 describe("OptimizationOperandsTab", () => {
-  it("uses a fixed-height, touch-scrollable normal AG Grid layout", () => {
+  it("matches the responsive Lens Prescription height while reserving space above the grid", () => {
     render(
       <OptimizationOperandsTab
         operands={[]}
@@ -17,8 +17,18 @@ describe("OptimizationOperandsTab", () => {
       />,
     );
 
+    const tab = screen.getByTestId("optimization-operands-tab");
     const grid = screen.getByTestId("ag-grid-mock");
-    expect(grid.parentElement).toHaveClass("h-[200px]", "ag-grid-touch-scroll");
+    expect(tab).toHaveClass(
+      "flex",
+      "flex-col",
+      "gap-4",
+      "h-[calc(100vh-160px)]",
+      "min-[1440px]:h-full",
+      "min-[1440px]:min-h-[200px]",
+    );
+    expect(screen.getByRole("button", { name: "Add operand" })).toHaveClass("self-start");
+    expect(grid.parentElement).toHaveClass("ag-grid-touch-scroll", "min-h-0", "flex-1");
     expect(grid).toHaveAttribute("data-dom-layout", "normal");
     expect(grid).toHaveAttribute("data-suppress-touch", "false");
   });
