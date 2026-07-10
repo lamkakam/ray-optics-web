@@ -7,7 +7,7 @@
     "generate:python-export-helpers": "node scripts/generate-python-export-helpers.mjs",
     "postinstall": "npm run generate:python-export-helpers",
     "predev": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
-    "dev": "next dev --webpack",
+    "dev": "node scripts/dev-server.js",
     "prebuild": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
     "build": "next build --webpack",
     "serve": "npx serve out",

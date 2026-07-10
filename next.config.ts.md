@@ -6,9 +6,7 @@ Configures the Next.js application for a fully static export.
 
 - Reads `NEXT_PUBLIC_BASE_PATH` and applies it as `basePath`, defaulting to an empty string for local development.
 - Keeps `output` set to `export` so the app can be built as static files.
-- Sets cross-origin isolation response headers for every route served by `next dev`:
-  - `Cross-Origin-Opener-Policy: same-origin`
-  - `Cross-Origin-Embedder-Policy: require-corp`
+- Does not define custom route headers, which Next.js does not support with static export. The custom development server and static `serve` configuration apply cross-origin isolation headers in their respective environments.
 - Preserves the worker public path under the configured base path so Web Workers created with `new Worker(new URL(..., import.meta.url))` load from the correct `_next` asset path.
 - Disables webpack chunk splitting so the Pyodide worker remains self-contained. Webpack's default web-worker chunk loader uses `importScripts`, which is unavailable in module workers.
 - Enables webpack's module-output experiment for every compilation so App Router browser modules shared through Next.js's development cache preserve `{ type: "module" }` instead of rewriting it to a classic worker.
