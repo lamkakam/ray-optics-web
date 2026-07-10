@@ -23,6 +23,12 @@ Computes scatter plot points based on current filter and axis settings:
 - y-axis for `refractiveIndex`: `refractiveIndexD` or `refractiveIndexE`
 - y-axis for `partialDispersion`: `partialDispersions[partialDispersionType]`
 
+#### `getEligibleGlassNames(catalogsData, catalogName): string[]`
+Returns stored glass names for a catalog. For `Special`, it excludes the shared built-in special materials (`air` and `REFL`) case-insensitively.
+
+#### `resolveCatalogGlass(catalogsData, catalogValue, glassValue): SelectedGlass | undefined`
+Resolves complete catalog and glass matches case-insensitively and returns their canonical stored spelling and data. It uses `getEligibleGlassNames`, so route intent and UI validation share the same eligibility rules.
+
 ## Usages
 
 ```tsx

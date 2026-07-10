@@ -2,6 +2,8 @@ import {
   completeAllCatalogsData,
   computePlotPoints,
   CATALOG_COLOR_MAP,
+  getEligibleGlassNames,
+  resolveCatalogGlass,
 } from "@/features/glass-map/lib/glassMap";
 import {
   CATALOG_NAMES,
@@ -43,6 +45,24 @@ describe("CATALOG_NAMES", () => {
     expect(CATALOG_NAMES).toContain("Special");
     expect(CATALOG_NAMES).toContain("Custom");
     expect(CATALOG_NAMES.length).toBe(8);
+  });
+});
+
+describe("catalog glass resolution", () => {
+  it("resolves catalog and glass names case-insensitively with stored spelling", () => {
+    expect(resolveCatalogGlass(rawCatalogsData, "schott", "n-bk7")).toEqual({
+      catalogName: "Schott",
+      glassName: "N-BK7",
+      data: rawGlass,
+    });
+  });
+
+  it("rejects unknown catalogs, partial matches, and excluded Special media", () => {
+    expect(resolveCatalogGlass(rawCatalogsData, "Unknown", "N-BK7")).toBeUndefined();
+    expect(resolveCatalogGlass(rawCatalogsData, "Schott", "N-B")).toBeUndefined();
+    expect(resolveCatalogGlass({ ...rawCatalogsData, Special: { air: rawGlass, refl: rawGlass, Water: rawGlass } }, "Special", "AIR")).toBeUndefined();
+    expect(getEligibleGlassNames({ ...rawCatalogsData, Special: { air: rawGlass, REFL: rawGlass, Water: rawGlass } }, "Special"))
+      .toEqual(["Water"]);
   });
 });
 

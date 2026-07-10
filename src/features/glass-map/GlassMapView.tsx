@@ -6,13 +6,14 @@ import {
   GlassScatterPlot,
   GlassMapControls,
   GlassDetailPanel,
+  GlassMapCatalogSelector,
 } from "./components";
 import type { GlassMapRouteIntent, GlassMapStore } from "./stores/glassMapStore";
 import { useGlassMapStore } from "./providers/GlassMapStoreProvider";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { CatalogName, SelectedGlass } from "./types/glassMap";
-import { computePlotPoints } from "./lib/glassMap";
+import type { SelectedGlass } from "./types/glassMap";
+import { computePlotPoints, resolveCatalogGlass } from "./lib/glassMap";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -74,17 +75,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
 
   let routeSelectedGlass: SelectedGlass | undefined;
   if (routeIntent !== undefined) {
-    const catalogName = routeIntent.catalog as CatalogName;
-    const catalog = catalogsData[catalogName];
-    const glassData = catalog?.[routeIntent.glass];
-
-    if (glassData !== undefined) {
-      routeSelectedGlass = {
-        catalogName,
-        glassName: routeIntent.glass,
-        data: glassData,
-      };
-    }
+    routeSelectedGlass = resolveCatalogGlass(catalogsData, routeIntent.catalog, routeIntent.glass);
   }
 
   const routeIntentActive = !routeIntentDismissed && routeSelectedGlass !== undefined;
@@ -144,6 +135,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
             )}
           </div>
         )}
+        <GlassMapCatalogSelector catalogsData={catalogsData} onSelect={handlePointClick} />
         <GlassMapControls
           plotType={plotType}
           abbeNumCenterLine={abbeNumCenterLine}

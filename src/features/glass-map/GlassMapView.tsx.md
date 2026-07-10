@@ -28,9 +28,10 @@ interface GlassMapRouteIntent {
 - Computes `PlotPoint[]` via `computePlotPoints()` from `features/glass-map/lib/glassMap`
 - Derives axis labels from `plotType`, `abbeNumCenterLine`, `partialDispersionType`
 - Treats `routeIntent` as a render-time override instead of synchronizing it into the store
-- If `routeIntent` resolves to a valid glass, that glass is shown initially and its catalog is forced visible in the controls
+- If `routeIntent` resolves to a valid eligible glass through the shared catalog-glass resolver, that glass is shown initially and its catalog is forced visible in the controls
 - Plot radios and catalog checkboxes update their respective plot/filter state without dismissing the route-intent selection
-- The route-intent override is dismissed only when the user selects a chart point, after which that point and the persistent store state are authoritative
+- The route-intent override is dismissed when the user selects a chart point or commits the catalog selector, after which the persistent store selection is authoritative
+- The catalog selector updates `selectedGlass` without changing `enabledCatalogs`; selecting from a disabled catalog updates details but leaves its plot points hidden
 - When `routeIntent.source === "medium-selector"`, the back link is shown above the controls panel
 - Renders a `Back to lens editor` inline link above the controls panel when opened from `MediumSelectorModal`
 - Renders `Use selected glass` next to the back link only for medium-selector route intent when the selected glass is valid and the route supplied an apply callback
@@ -42,7 +43,7 @@ interface GlassMapRouteIntent {
 - In normal app flow the missing-data placeholder is uncommon after the initial shell overlay because the shared shell preload has already populated the store
 - **Loaded**: `flex-col lg:flex-row h-full`
   - Left: flex-1 (lg: 60%) — `GlassScatterPlot`
-- Right: overflow-y-auto (lg: 40%) — `GlassMapControls` + `GlassDetailPanel`
+- Right: overflow-y-auto (lg: 40%) — `GlassMapCatalogSelector` + `GlassMapControls` + `GlassDetailPanel`
   - When present, the back link is rendered above `GlassMapControls`
 
 ## Axis Label Logic
@@ -58,6 +59,7 @@ MathJax context is provided by `app/AppShell.tsx`. This component does not own a
 
 ## Children
 - `GlassScatterPlot` — scatter plot with zoom/pan
+- `GlassMapCatalogSelector` — catalog dropdown, searchable glass datalist, and Select action
 - `GlassMapControls` — filter/selector controls (uses MathJax from parent context)
 - `GlassDetailPanel` — selected glass details (uses MathJax from parent context)
 

@@ -8,7 +8,9 @@ import {
   type GlassMapPlotType,
   type PartialDispersionType,
   type PlotPoint,
+  type SelectedGlass,
 } from "@/features/glass-map/types/glassMap";
+import { builtInSpecialMaterial } from "@/shared/lib/utils/specialMaterials";
 
 export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {
   CDGM: "#3b82f6",
@@ -27,6 +29,38 @@ export function completeAllCatalogsData(raw: AllGlassCatalogsData): CompleteGlas
     result[catalogName] = raw[catalogName] ?? {};
   }
   return result;
+}
+
+function resolveCatalogName(catalogName: string): CatalogName | undefined {
+  return CATALOG_NAMES.find((name) => name.toLowerCase() === catalogName.toLowerCase());
+}
+
+export function getEligibleGlassNames(
+  catalogsData: AllGlassCatalogsData,
+  catalogName: CatalogName,
+): string[] {
+  return Object.keys(catalogsData[catalogName] ?? {}).filter(
+    (glassName) => catalogName !== "Special"
+      || !Array.from(builtInSpecialMaterial).some(
+        (medium) => medium.toLowerCase() === glassName.toLowerCase(),
+      ),
+  );
+}
+
+export function resolveCatalogGlass(
+  catalogsData: AllGlassCatalogsData,
+  catalogValue: string,
+  glassValue: string,
+): SelectedGlass | undefined {
+  const catalogName = resolveCatalogName(catalogValue);
+  if (catalogName === undefined) return undefined;
+
+  const glassName = getEligibleGlassNames(catalogsData, catalogName)
+    .find((name) => name.toLowerCase() === glassValue.toLowerCase());
+  if (glassName === undefined) return undefined;
+
+  const data = catalogsData[catalogName]?.[glassName];
+  return data === undefined ? undefined : { catalogName, glassName, data };
 }
 
 export function computePlotPoints(
