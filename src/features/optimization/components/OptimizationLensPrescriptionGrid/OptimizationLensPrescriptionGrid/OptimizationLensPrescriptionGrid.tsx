@@ -267,7 +267,6 @@ export function OptimizationLensPrescriptionGrid({
           columnDefs={lensColumns}
           defaultColDef={lensPrescriptionGridDefaultColDef}
           domLayout="normal"
-          suppressTouch={true}
           onCellEditingStarted={onCellEditingStarted}
           onCellEditingStopped={onCellEditingStopped}
         />

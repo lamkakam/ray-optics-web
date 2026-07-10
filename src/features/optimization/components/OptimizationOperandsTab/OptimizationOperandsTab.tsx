@@ -119,7 +119,6 @@ export function OptimizationOperandsTab({
             getRowId={(params) => params.data.id}
             defaultColDef={{ sortable: false, suppressMovable: true }}
             domLayout="normal"
-            suppressTouch={true}
             onCellEditingStarted={onCellEditingStarted}
             onCellEditingStopped={onCellEditingStopped}
           />

@@ -74,7 +74,7 @@ describe("LensPrescriptionGrid", () => {
     render(<LensPrescriptionGrid {...defaultProps} />);
 
     expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-dom-layout", "normal");
-    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-suppress-touch", "true");
+    expect(screen.getByTestId("ag-grid-mock")).toHaveAttribute("data-suppress-touch", "false");
     expect(screen.getByLabelText("Lens prescription editor")).toHaveClass(
       "ag-grid-touch-scroll",
       "h-[calc(100vh-160px)]",

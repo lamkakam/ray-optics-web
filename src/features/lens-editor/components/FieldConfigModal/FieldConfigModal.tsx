@@ -219,7 +219,6 @@ function FieldConfigModalContent({
               columnDefs={columnDefs}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
               domLayout="normal"
-              suppressTouch={true}
               getRowId={(params) => params.data.id}
             />
           </AgGridProvider>

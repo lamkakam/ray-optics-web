@@ -173,7 +173,6 @@ export function CustomGlassModal({
               columnDefs={modalColumnDefs}
               defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
               getRowId={(params) => params.data.id}
-              suppressTouch={true}
             />
           </AgGridProvider>
         </div>

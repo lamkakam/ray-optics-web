@@ -230,7 +230,6 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
           onSortChanged={handleSortChanged}
           onFilterChanged={handleFilterChanged}
           onSelectionChanged={handleSelectionChanged}
-          suppressTouch={true}
         />
       </AgGridProvider>
     </div>

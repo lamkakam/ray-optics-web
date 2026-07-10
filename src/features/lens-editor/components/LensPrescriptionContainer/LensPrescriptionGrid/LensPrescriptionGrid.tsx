@@ -113,7 +113,6 @@ export function LensPrescriptionGrid({
           columnDefs={columnDefs}
           defaultColDef={lensPrescriptionGridDefaultColDef}
           domLayout="normal"
-          suppressTouch={true}
           getRowId={(params) => params.data.id}
         />
       </AgGridProvider>

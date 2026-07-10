@@ -23,7 +23,7 @@ Readonly AG Grid table for all user-defined custom glasses.
 - Persists AG Grid `onSortChanged` and `onFilterChanged` output back into `ImportCustomGlassStore`.
 - Persisted sort/filter state is sanitized by the store so only readonly data columns are kept; the AG Grid selection column is ignored.
 - Wraps the grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores horizontal and vertical touch panning plus scroll chaining for AG Grid viewports in this component only.
-- Passes `suppressTouch={true}` to this feature-owned AG Grid instance.
+- Keeps AG Grid touch handling enabled so every resizable data-column header responds to touchscreen drags; the intentionally fixed selection column remains non-resizable.
 
 ## Accessibility
 - Each row checkbox exposes `aria-label="Select {label}"`.
