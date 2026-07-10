@@ -1,17 +1,10 @@
 # next.config.ts
 
-Configures the Next.js application for a fully static export.
+Selects the Next.js configuration for the current execution phase.
 
 ## Responsibilities
 
-- Reads `NEXT_PUBLIC_BASE_PATH` and applies it as `basePath`, defaulting to an empty string for local development.
-- Keeps `output` set to `export` so the app can be built as static files.
-- Sets cross-origin isolation response headers for every route served by `next dev`:
-  - `Cross-Origin-Opener-Policy: same-origin`
-  - `Cross-Origin-Embedder-Policy: require-corp`
-- Preserves the worker public path under the configured base path so Web Workers created with `new Worker(new URL(..., import.meta.url))` load from the correct `_next` asset path.
-- Disables webpack chunk splitting so the Pyodide worker remains self-contained. Webpack's default web-worker chunk loader uses `importScripts`, which is unavailable in module workers.
-- Enables webpack's module-output experiment for every compilation so App Router browser modules shared through Next.js's development cache preserve `{ type: "module" }` instead of rewriting it to a classic worker.
-- Explicitly enables module output only for client builds and disables it for server builds, keeping Next's development server and page-data collection CommonJS-compatible.
-- Assigns the client webpack library to `globalThis._N_E`. This preserves Next.js's client export namespace while avoiding the unqualified `_N_E` assignment that is invalid in strict ES-module workers.
-- Ignores `node:` and `ws` imports in browser bundles. Pyodide 314's universal npm loader contains these imports behind a Node-runtime guard, but webpack otherwise resolves them (and emits an async `ws` chunk) while building the module worker.
+- Returns the shared development configuration unchanged for `PHASE_DEVELOPMENT_SERVER`, allowing `next dev` to serve dynamic development output.
+- Removes the Next.js `headers` configuration for all other phases because static exports cannot apply it; `public/serve.json` supplies the same cross-origin isolation headers when `npm run serve` hosts the exported files.
+- Adds `output: "export"` for those non-development phases, including production builds, so `next build` creates the static `out` directory used by `npm run serve`.
+- Keeps all shared settings in `next.config.dev.ts` so development and production do not drift.
