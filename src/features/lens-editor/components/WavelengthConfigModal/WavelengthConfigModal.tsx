@@ -230,7 +230,7 @@ function WavelengthConfigModalContent({
     >
       <div className="mb-4" style={{ width: "100%" }}>
         <Paragraph variant="caption">Maximum 7 wavelengths</Paragraph>
-        <div className="ag-grid-touch-scroll h-[200px]">
+        <div className="ag-grid-touch-scroll h-[400px]">
           <AgGridProvider modules={[AllCommunityModule]}>
             <EditableAgGridReact<WavelengthRow>
               theme={gridTheme}

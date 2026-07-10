@@ -211,7 +211,7 @@ function FieldConfigModalContent({
 
       <div className="mb-4" style={{ width: "100%" }}>
         <Paragraph variant="caption">Maximum 10 relative fields</Paragraph>
-        <div className="ag-grid-touch-scroll h-[200px]">
+        <div className="ag-grid-touch-scroll h-[200px] min-[1440px]:h-[400px]">
           <AgGridProvider modules={[AllCommunityModule]}>
             <EditableAgGridReact<FieldRow>
               theme={gridTheme}
