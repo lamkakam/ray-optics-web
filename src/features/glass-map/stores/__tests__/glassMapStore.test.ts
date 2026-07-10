@@ -1,6 +1,5 @@
 import { createStore } from "zustand/vanilla";
 import {
-  _buildGlassLookupMaps,
   createGlassMapSlice,
   type GlassMapStore,
 } from "@/features/glass-map/stores/glassMapStore";
@@ -201,80 +200,5 @@ describe("glassMapStore actions", () => {
       manufacturer: "Hoya",
     });
     expect(store.getState().lookupMaps?.mediumMap.get("schott:n-bk7")).toBeUndefined();
-  });
-});
-
-describe("_buildGlassLookupMaps", () => {
-  const rawCatalogsData = completeAllCatalogsData({
-    CDGM: { BK7: mockGlassData },
-    Hoya: { "H-LaK52": mockGlassData },
-    Schott: { "N-BK7": mockGlassData },
-    Special: { CaF2: mockGlassData },
-  });
-
-  it("maps manufacturer casing to canonical catalog names", () => {
-    const result = _buildGlassLookupMaps(rawCatalogsData);
-
-    expect(result.manufacturerMap.get("hoya")).toBe("Hoya");
-  });
-
-  it("maps catalog glass casing to canonical app values", () => {
-    const result = _buildGlassLookupMaps(rawCatalogsData);
-
-    expect(result.mediumMap.get("hoya:h-lak52")).toEqual({
-      medium: "H-LaK52",
-      manufacturer: "Hoya",
-    });
-  });
-
-  it("keeps catalog-scoped built-in lookup behavior unchanged", () => {
-    const result = _buildGlassLookupMaps(rawCatalogsData);
-
-    expect(result.mediumMap.get("bk7")).toBeUndefined();
-    expect(result.mediumMap.get("cdgm:bk7")).toEqual({
-      medium: "BK7",
-      manufacturer: "CDGM",
-    });
-  });
-
-  it("maps custom glass by label only as a user-defined material", () => {
-    const catalogsData = completeAllCatalogsData({
-      ...rawCatalogsData,
-      Custom: { CUSTOM_A: mockGlassData },
-    });
-    const result = _buildGlassLookupMaps(catalogsData);
-
-    expect(result.customMediumMap.get("custom_a")).toEqual({
-      medium: "CUSTOM_A",
-      manufacturer: "Custom",
-    });
-  });
-
-  it("maps special media aliases without a manufacturer", () => {
-    const result = _buildGlassLookupMaps(rawCatalogsData);
-
-    expect(result.mediumMap.get("fluorite")).toEqual({ medium: "CaF2", manufacturer: "" });
-    expect(result.mediumMap.get("fluorspar")).toEqual({ medium: "CaF2", manufacturer: "" });
-    expect(result.mediumMap.get("caf2")).toEqual({ medium: "CaF2", manufacturer: "" });
-  });
-
-  it("maps provider-backed D263TECO Special lookup without a manufacturer", () => {
-    const catalogsData = completeAllCatalogsData({
-      ...rawCatalogsData,
-      Special: { D263TECO: mockGlassData },
-    });
-    const result = _buildGlassLookupMaps(catalogsData);
-
-    expect(result.mediumMap.get("d263teco")).toEqual({ medium: "D263TECO", manufacturer: "" });
-  });
-
-  it("does not add a lowercase alias for reflective media", () => {
-    const catalogsData = completeAllCatalogsData({
-      ...rawCatalogsData,
-      Special: { REFL: mockGlassData },
-    });
-    const result = _buildGlassLookupMaps(catalogsData);
-
-    expect(result.mediumMap.get("refl")).toBeUndefined();
   });
 });

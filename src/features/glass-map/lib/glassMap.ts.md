@@ -23,6 +23,15 @@ Computes scatter plot points based on current filter and axis settings:
 - y-axis for `refractiveIndex`: `refractiveIndexD` or `refractiveIndexE`
 - y-axis for `partialDispersion`: `partialDispersions[partialDispersionType]`
 
+#### `getEligibleGlassNames(catalogsData, catalogName): string[]`
+Returns stored glass names for a catalog. For `Special`, it excludes the shared built-in special materials (`air` and `REFL`) case-insensitively.
+
+#### `buildGlassLookupMaps(catalogsData): GlassLookupMaps`
+Builds the app-wide canonical, trimmed, case-insensitive manufacturer, catalog-medium, Special-medium, and Custom-medium lookup maps. Loaded Special catalog spelling takes precedence over built-in fallback labels (for example, `Fused Silica` is not overwritten by `Fused silica`). This runtime library owns lookup construction; stores only invoke it when catalog data changes.
+
+#### `resolveCatalogGlass(catalogsData, lookupMaps, catalogValue, glassValue): SelectedGlass | undefined`
+Resolves catalog and glass names through `manufacturerMap` and `mediumMap`, returning canonical stored spelling and data. Surrounding whitespace and casing differences are accepted. The normalized input must still exactly equal the canonical medium name, so prescription-only aliases and partial matches are rejected. It also applies `getEligibleGlassNames`, preserving glass-map-specific exclusion of built-in `air` and `REFL` materials.
+
 ## Usages
 
 ```tsx

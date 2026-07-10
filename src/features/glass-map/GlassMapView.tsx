@@ -6,13 +6,14 @@ import {
   GlassScatterPlot,
   GlassMapControls,
   GlassDetailPanel,
+  GlassMapCatalogSelector,
 } from "./components";
 import type { GlassMapRouteIntent, GlassMapStore } from "./stores/glassMapStore";
 import { useGlassMapStore } from "./providers/GlassMapStoreProvider";
 import { InlineLink } from "@/shared/components/primitives/InlineLink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { CatalogName, SelectedGlass } from "./types/glassMap";
-import { computePlotPoints } from "./lib/glassMap";
+import type { SelectedGlass } from "./types/glassMap";
+import { computePlotPoints, resolveCatalogGlass } from "./lib/glassMap";
 
 interface GlassMapViewProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -46,6 +47,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
   const enabledCatalogs = useStore(store, (s) => s.enabledCatalogs);
   const selectedGlass = useStore(store, (s) => s.selectedGlass);
   const catalogsData = useStore(store, (s) => s.catalogsData);
+  const lookupMaps = useStore(store, (s) => s.lookupMaps);
   const [routeIntentDismissed, setRouteIntentDismissed] = useState(false);
 
   const {
@@ -64,7 +66,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
     );
   }
 
-  if (catalogsData === undefined) {
+  if (catalogsData === undefined || lookupMaps === undefined) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
         Loading glass catalog data…
@@ -74,17 +76,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
 
   let routeSelectedGlass: SelectedGlass | undefined;
   if (routeIntent !== undefined) {
-    const catalogName = routeIntent.catalog as CatalogName;
-    const catalog = catalogsData[catalogName];
-    const glassData = catalog?.[routeIntent.glass];
-
-    if (glassData !== undefined) {
-      routeSelectedGlass = {
-        catalogName,
-        glassName: routeIntent.glass,
-        data: glassData,
-      };
-    }
+    routeSelectedGlass = resolveCatalogGlass(catalogsData, lookupMaps, routeIntent.catalog, routeIntent.glass);
   }
 
   const routeIntentActive = !routeIntentDismissed && routeSelectedGlass !== undefined;
@@ -144,6 +136,7 @@ export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }
             )}
           </div>
         )}
+        <GlassMapCatalogSelector catalogsData={catalogsData} lookupMaps={lookupMaps} onSelect={handlePointClick} />
         <GlassMapControls
           plotType={plotType}
           abbeNumCenterLine={abbeNumCenterLine}

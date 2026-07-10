@@ -558,4 +558,52 @@ describe("GlassMapView", () => {
       expect(screen.getByRole("heading", { name: "N-SF6" })).toBeInTheDocument();
     });
   });
+
+  it("selects a glass from the catalog selector and updates the detail panel", async () => {
+    const store = makeStore();
+    renderWithStore(<GlassMapView proxy={makeProxy()} isReady={true} />, store);
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Schott");
+    await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), "n-bk7");
+    await userEvent.click(screen.getByRole("button", { name: "Select glass" }));
+
+    expect(await screen.findByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+    expect(store.getState().selectedGlass).toEqual(expect.objectContaining({ catalogName: "Schott", glassName: "N-BK7" }));
+  });
+
+  it("lets selector selection dismiss the route-intent override", async () => {
+    const store = makeStore({
+      ...rawData,
+      Custom: { "My Glass": rawData.Schott!["N-BK7"] },
+    });
+    renderWithStore(
+      <GlassMapView
+        proxy={makeProxy()}
+        isReady={true}
+        routeIntent={{ source: "medium-selector", catalog: "Schott", glass: "N-BK7" }}
+      />,
+      store,
+    );
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Custom");
+    await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), "my glass");
+    await userEvent.click(screen.getByRole("button", { name: "Select glass" }));
+
+    expect(await screen.findByRole("heading", { name: "My Glass" })).toBeInTheDocument();
+  });
+
+  it("does not enable a disabled catalog when selecting one of its glasses", async () => {
+    const store = makeStore();
+    act(() => store.getState().toggleCatalog("Schott"));
+    renderWithStore(<GlassMapView proxy={makeProxy()} isReady={true} />, store);
+
+    await userEvent.selectOptions(screen.getByRole("combobox", { name: "Catalog" }), "Schott");
+    await userEvent.type(screen.getByRole("combobox", { name: "Glass" }), "N-BK7");
+    await userEvent.click(screen.getByRole("button", { name: "Select glass" }));
+
+    expect(await screen.findByRole("heading", { name: "N-BK7" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Schott" })).not.toBeChecked();
+    expect(store.getState().enabledCatalogs.Schott).toBe(false);
+    expect(screen.queryAllByTestId("glass-point")).toHaveLength(0);
+  });
 });

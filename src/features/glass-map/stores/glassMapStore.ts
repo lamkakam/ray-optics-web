@@ -11,7 +11,7 @@ import {
   type SelectedGlass,
   type UserDefinedMaterialsData,
 } from "@/features/glass-map/types/glassMap";
-import { completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
+import { buildGlassLookupMaps, completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 
 export interface GlassMapState {
   plotType: GlassMapPlotType;
@@ -40,54 +40,6 @@ export type GlassMapStore = GlassMapState & GlassMapActions;
 const allEnabled = Object.fromEntries(
   CATALOG_NAMES.map((name) => [name, true])
 ) as Record<CatalogName, boolean>;
-
-const BUILT_IN_SPECIAL_MEDIA = ["CaF2", "Fused silica", "Water"] as const;
-const CAF2_ALIASES = ["fluorite", "fluorspar"] as const;
-
-function normalizeLookupKey(value: string): string {
-  return value.trim().toLowerCase();
-}
-
-export function _buildGlassLookupMaps(catalogsData: CompleteGlassCatalogsData): GlassLookupMaps {
-  const manufacturerMap = new Map<string, CatalogName>();
-  const mediumMap = new Map<string, { medium: string; manufacturer: string }>();
-  const customMediumMap = new Map<string, { medium: string; manufacturer: string }>();
-
-  for (const catalogName of CATALOG_NAMES) {
-    manufacturerMap.set(normalizeLookupKey(catalogName), catalogName);
-
-    for (const glassName of Object.keys(catalogsData[catalogName] ?? {})) {
-      if (catalogName === "Special") {
-        if (glassName !== "REFL") {
-          mediumMap.set(normalizeLookupKey(glassName), { medium: glassName, manufacturer: "" });
-        }
-        continue;
-      }
-
-      mediumMap.set(`${normalizeLookupKey(catalogName)}:${normalizeLookupKey(glassName)}`, {
-        medium: glassName,
-        manufacturer: catalogName,
-      });
-
-      if (catalogName === "Custom") {
-        customMediumMap.set(normalizeLookupKey(glassName), {
-          medium: glassName,
-          manufacturer: "Custom",
-        });
-      }
-    }
-  }
-
-  for (const medium of BUILT_IN_SPECIAL_MEDIA) {
-    mediumMap.set(normalizeLookupKey(medium), { medium, manufacturer: "" });
-  }
-
-  for (const alias of CAF2_ALIASES) {
-    mediumMap.set(normalizeLookupKey(alias), { medium: "CaF2", manufacturer: "" });
-  }
-
-  return { manufacturerMap, mediumMap, customMediumMap };
-}
 
 export interface GlassMapRouteIntent {
   readonly source: "medium-selector";
@@ -125,7 +77,7 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
     const catalogsData = completeAllCatalogsData(data);
     set({
       catalogsData,
-      lookupMaps: _buildGlassLookupMaps(catalogsData),
+      lookupMaps: buildGlassLookupMaps(catalogsData),
     });
   },
   upsertCustomGlasses: (materialsData) =>
@@ -144,7 +96,7 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
 
       return {
         catalogsData,
-        lookupMaps: _buildGlassLookupMaps(catalogsData),
+        lookupMaps: buildGlassLookupMaps(catalogsData),
       };
     }),
   deleteCustomGlasses: (labels) =>
@@ -169,7 +121,7 @@ export const createGlassMapSlice: StateCreator<GlassMapStore> = (set) => ({
 
       return {
         catalogsData,
-        lookupMaps: _buildGlassLookupMaps(catalogsData),
+        lookupMaps: buildGlassLookupMaps(catalogsData),
         selectedGlass,
       };
     }),
