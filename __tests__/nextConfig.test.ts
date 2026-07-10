@@ -23,13 +23,18 @@ describe("nextConfig", () => {
 
   it("configures static export for production builds", () => {
     expect(productionConfig).toHaveProperty("output", "export");
+    expect(productionConfig).not.toHaveProperty("headers");
   });
 
-  it("only adds static export to the shared development configuration", () => {
+  it("otherwise preserves the shared development configuration", () => {
+    const { headers, ...developmentConfigWithoutHeaders } = developmentConfig;
     const { output, ...productionConfigWithoutOutput } = productionConfig;
 
+    expect(headers).toBeDefined();
     expect(output).toBe("export");
-    expect(productionConfigWithoutOutput).toEqual(developmentConfig);
+    expect(productionConfigWithoutOutput).toEqual(
+      developmentConfigWithoutHeaders,
+    );
   });
 
   it("sets cross-origin isolation headers for every route in dev", async () => {

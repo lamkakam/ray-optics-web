@@ -8,8 +8,11 @@ export default function getNextConfig(phase: string): NextConfig {
     return developmentConfig;
   }
 
+  const productionConfig = { ...developmentConfig };
+  delete productionConfig.headers;
+
   return {
-    ...developmentConfig,
+    ...productionConfig,
     output: "export",
   };
 }
