@@ -23,9 +23,21 @@ const CHROMATICITY_OPTIONS: ReadonlyArray<{ value: Chromaticity; label: string }
   { value: "poly", label: "Polychromatic" },
 ];
 
-const METRIC_OPTIONS: ReadonlyArray<{ value: Metric; label: string }> = [
-  { value: "rmsSpot", label: "Minimize RMS Spot Radius" },
-  { value: "wavefront", label: "Minimize Wavefront Error" },
+const METRIC_OPTIONS: ReadonlyArray<{
+  value: Metric;
+  label: string;
+  labelNode: string;
+}> = [
+  {
+    value: "rmsSpot",
+    label: "Minimize RMS Spot Radius",
+    labelNode: "RMS Spot Radius",
+  },
+  {
+    value: "wavefront",
+    label: "Minimize Wavefront Error",
+    labelNode: "Wavefront Error",
+  },
 ];
 
 export function FocusingPanel({
@@ -57,6 +69,8 @@ export function FocusingPanel({
         value={metric}
         onChange={onMetricChange}
         disabled={disabled}
+        columns={2}
+        layout="compact"
       />
       <div>
         <Label htmlFor="focusing-field-select">Field</Label>

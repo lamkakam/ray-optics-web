@@ -43,6 +43,29 @@ describe("FocusingPanel", () => {
     expect(screen.getByLabelText("Minimize Wavefront Error")).toBeInTheDocument();
   });
 
+  it("renders metric options in a compact two-column grid", () => {
+    render(<FocusingPanel {...defaultProps} />);
+    const optionsGrid = screen.getByText("Metric").nextElementSibling;
+
+    expect(optionsGrid).toHaveClass(
+      "inline-grid",
+      "grid-cols-2",
+      "gap-x-6",
+      "gap-y-1",
+    );
+  });
+
+  it("renders shorter metric labels while preserving full accessible labels", () => {
+    render(<FocusingPanel {...defaultProps} />);
+
+    expect(screen.getByText("RMS Spot Radius")).toBeInTheDocument();
+    expect(screen.getByText("Wavefront Error")).toBeInTheDocument();
+    expect(screen.queryByText("Minimize RMS Spot Radius")).not.toBeInTheDocument();
+    expect(screen.queryByText("Minimize Wavefront Error")).not.toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Minimize RMS Spot Radius" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Minimize Wavefront Error" })).toBeInTheDocument();
+  });
+
   it("marks mono as checked when chromaticity=mono", () => {
     render(<FocusingPanel {...defaultProps} chromaticity="mono" />);
     expect(screen.getByLabelText("Monochromatic")).toBeChecked();
