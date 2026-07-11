@@ -58,15 +58,15 @@ export default function AboutPage() {
           <div className="flex flex-col gap-2">
             <ExternalLink
               href="https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-LICENSES.md"
-              aria-label="View Third-Party Licenses"
+              aria-label="View List of Third-Party TypeScript and JavaScript Packages Licenses"
             >
-              View Third-Party Licenses
+              View List of Third-Party TypeScript and JavaScript Packages Licenses
             </ExternalLink>
             <ExternalLink
               href="https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-PYTHON-LICENSES.md"
-              aria-label="View Python Third-Party Licenses"
+              aria-label="View List of Third-Party Python Package Licenses"
             >
-              View Python Third-Party Licenses
+              View List of Third-Party Python Package Licenses
             </ExternalLink>
           </div>
         </section>
