@@ -90,6 +90,8 @@ npm run build
 npm run serve
 ```
 
+The production build also generates the third-party dependency license report at `out/THIRD-PARTY-LICENSES.md`.
+
 ## Architecture
 
 RayOptics computations are CPU-intensive. The app runs the Python runtime ([Pyodide v314.0.0](https://pyodide.org/)) inside a **module Web Worker** so the main thread (and the UI) stays responsive. The loader is bundled from the npm package, while runtime assets are served from the matching versioned jsDelivr path. Communication between the React frontend and the worker uses [Comlink](https://github.com/GoogleChromeLabs/comlink) for typed async RPC — raw `postMessage` is never used directly.
