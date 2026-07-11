@@ -10,7 +10,7 @@
     "dev": "next dev --webpack",
     "prebuild": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
     "build": "next build --webpack",
-    "postbuild": "license-checker-rseidelsohn --production --markdown --out out/THIRD-PARTY-LICENSES.md",
+    "postbuild": "license-checker-rseidelsohn --production --markdown --out out/THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json",
     "serve": "npx serve out",
     "pretype-check": "npm run generate:python-export-helpers",
     "type-check": "tsc --noEmit",
