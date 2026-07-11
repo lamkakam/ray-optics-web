@@ -55,12 +55,20 @@ export default function AboutPage() {
         </section>
         <section>
           <Header level={3} className="mb-2">Third-Party License</Header>
-          <ExternalLink
-            href="https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-LICENSES.md"
-            aria-label="View Third-Party Licenses"
-          >
-            View Third-Party Licenses
-          </ExternalLink>
+          <div className="flex flex-col gap-2">
+            <ExternalLink
+              href="https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-LICENSES.md"
+              aria-label="View Third-Party Licenses"
+            >
+              View Third-Party Licenses
+            </ExternalLink>
+            <ExternalLink
+              href="https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-PYTHON-LICENSES.md"
+              aria-label="View Python Third-Party Licenses"
+            >
+              View Python Third-Party Licenses
+            </ExternalLink>
+          </div>
         </section>
       </div>
     </div>

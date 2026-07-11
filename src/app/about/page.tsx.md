@@ -9,5 +9,7 @@ About route page (`/about`).
 - Mentions the RayOptics library and Pyodide (Python to WebAssembly)
 - Notes that all computation is local and no server-side processing occurs
 - Renders the current root `LICENSE` contents verbatim in a whitespace-preserving `<pre><code>` block
-- Includes a `Third-Party License` section with an `ExternalLink` labeled `View Third-Party Licenses` to `https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-LICENSES.md`
+- Includes a `Third-Party License` section with vertically grouped `ExternalLink`s:
+  - `View Third-Party Licenses` links to `https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-LICENSES.md`
+  - `View Python Third-Party Licenses` links to `https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-PYTHON-LICENSES.md`
 - Keeps the About content vertically scrollable within the app shell
