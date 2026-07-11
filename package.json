@@ -1,6 +1,6 @@
 {
   "name": "ray-optics-web",
-  "version": "0.32.2",
+  "version": "0.33.0",
   "license": "BSD-3-Clause",
   "private": true,
   "scripts": {
@@ -10,6 +10,9 @@
     "dev": "next dev --webpack",
     "prebuild": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
     "build": "next build --webpack",
+    "generate:python-third-party-licenses": "src/python/.venv/bin/pip-licenses --format=markdown --with-urls --ignore-packages=rayoptics-web-utils --output-file=THIRD-PARTY-PYTHON-LICENSES.md",
+    "generate:third-party-licenses": "license-checker-rseidelsohn --production --markdown --out THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && npm run generate:python-third-party-licenses",
+    "postbuild": "license-checker-rseidelsohn --production --markdown --out out/THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && src/python/.venv/bin/pip-licenses --format=markdown --with-urls --ignore-packages=rayoptics-web-utils --output-file=out/THIRD-PARTY-PYTHON-LICENSES.md",
     "serve": "npx serve out",
     "pretype-check": "npm run generate:python-export-helpers",
     "type-check": "tsc --noEmit",
@@ -62,6 +65,7 @@
     "eslint-config-next": "^16.0.0",
     "jest": "30.4.2",
     "jest-environment-jsdom": "30.4.1",
+    "license-checker-rseidelsohn": "^5.0.1",
     "postcss": "^8.4.0",
     "tailwindcss": "^4.0.0",
     "ts-jest": "29.4.11",

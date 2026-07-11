@@ -14,6 +14,7 @@ fi
 echo "Installing dependencies..."
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install pytest
+.venv/bin/pip install pip-licenses
 .venv/bin/pip install -e .
 
 echo ""

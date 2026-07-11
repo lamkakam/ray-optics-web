@@ -1,0 +1,17 @@
+{
+  "jszip@3.10.1": {
+    "licenses": "MIT"
+  },
+  "@arcgis/core@4.34.8": {
+    "repository": "https://www.npmjs.com/package/@arcgis/core",
+    "licenses": "Custom: https://js.arcgis.com/5.1/LICENSE.txt"
+  },
+  "@arcgis/lumina@4.34.9": {
+    "repository": "https://www.npmjs.com/package/@arcgis/lumina",
+    "licenses": "Custom: https://js.arcgis.com/5.1/LICENSE.txt"
+  },
+  "@arcgis/toolkit@4.34.9": {
+    "repository": "https://www.npmjs.com/package/@arcgis/toolkit",
+    "licenses": "Custom: https://js.arcgis.com/5.1/LICENSE.txt"
+  }
+}
