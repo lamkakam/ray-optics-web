@@ -44,8 +44,10 @@ source src/python/.venv/bin/activate
 
 ## Integration
 
-This script is a **developer setup step only** — it is not called by any npm script. It must be run manually before:
+This script is not called by any npm script. It must be run manually before:
 
 - `bash scripts/run-python-tests.sh`
 - Any interactive Python session inside `python/` that imports `rayoptics_web_utils`
 - `npm run generate:third-party-licenses`
+
+The GitHub Pages deployment workflow also runs this script after setting up Python. The Next build's `postbuild` step generates the Python third-party dependency license report with `pip-licenses` from this venv.
