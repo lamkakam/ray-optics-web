@@ -59,6 +59,12 @@ npm run test:e2e
 npm run generate:third-party-licenses
 ```
 
+### Generate only the tracked Python third-party dependency license report (after initializing the Python venv):
+
+```bash
+npm run generate:python-third-party-licenses
+```
+
 ### Build the wheel of local rayoptics_web_utils and then build the Next app:
 
 ```bash
