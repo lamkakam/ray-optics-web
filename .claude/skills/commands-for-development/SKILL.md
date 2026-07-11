@@ -53,7 +53,7 @@ bash <project-root>/scripts/run-python-tests.sh
 npm run test:e2e
 ```
 
-### Generate the tracked third-party dependency license report:
+### Generate the tracked npm and Python third-party dependency license reports (after initializing the Python venv):
 
 ```bash
 npm run generate:third-party-licenses

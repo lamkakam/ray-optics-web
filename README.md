@@ -83,7 +83,8 @@ bash scripts/run-python-tests.sh
 # E2E tests (Playwright)
 npm run test:e2e
 
-# Refresh the tracked third-party dependency license report
+# Refresh the tracked npm and Python third-party dependency license reports
+# (requires the initialized Python venv above)
 npm run generate:third-party-licenses
 
 # Build the wheel of rayoptics_web_utils and then build the Next app
@@ -93,11 +94,11 @@ npm run build
 npm run serve
 ```
 
-The tracked root-level report is refreshed explicitly with `npm run generate:third-party-licenses`. The production build also generates a deployment copy at `out/THIRD-PARTY-LICENSES.md` through `postbuild`.
+The tracked root-level reports are refreshed explicitly with `npm run generate:third-party-licenses`; this requires `src/python/.venv` to have been initialized first. The production build also generates deployment copies at `out/THIRD-PARTY-LICENSES.md` and `out/THIRD-PARTY-PYTHON-LICENSES.md` through `postbuild`.
 
 ## Third-Party Licenses
 
-See [list of third-party licenses](./THIRD-PARTY-LICENSES.md).
+See the [npm dependency license report](./THIRD-PARTY-LICENSES.md) and the [Python dependency license report](./THIRD-PARTY-PYTHON-LICENSES.md).
 
 ## Architecture
 
