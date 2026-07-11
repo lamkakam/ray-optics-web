@@ -95,9 +95,9 @@ npm run serve
 
 The tracked root-level report is refreshed explicitly with `npm run generate:third-party-licenses`. The production build also generates a deployment copy at `out/THIRD-PARTY-LICENSES.md` through `postbuild`.
 
-## Third-Party Dependency Licenses
+## Third-Party Licenses
 
-See the tracked production dependency license report: [THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md).
+See [list of third-party licenses](./THIRD-PARTY-LICENSES.md).
 
 ## Architecture
 
