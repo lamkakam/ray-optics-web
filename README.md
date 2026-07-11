@@ -83,6 +83,9 @@ bash scripts/run-python-tests.sh
 # E2E tests (Playwright)
 npm run test:e2e
 
+# Refresh the tracked third-party dependency license report
+npm run generate:third-party-licenses
+
 # Build the wheel of rayoptics_web_utils and then build the Next app
 npm run build
 
@@ -90,7 +93,11 @@ npm run build
 npm run serve
 ```
 
-The production build also generates the third-party dependency license report at `out/THIRD-PARTY-LICENSES.md`.
+The tracked root-level report is refreshed explicitly with `npm run generate:third-party-licenses`. The production build also generates a deployment copy at `out/THIRD-PARTY-LICENSES.md` through `postbuild`.
+
+## Third-Party Dependency Licenses
+
+See the tracked production dependency license report: [THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md).
 
 ## Architecture
 

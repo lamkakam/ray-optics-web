@@ -53,6 +53,12 @@ bash <project-root>/scripts/run-python-tests.sh
 npm run test:e2e
 ```
 
+### Generate the tracked third-party dependency license report:
+
+```bash
+npm run generate:third-party-licenses
+```
+
 ### Build the wheel of local rayoptics_web_utils and then build the Next app:
 
 ```bash
@@ -64,4 +70,3 @@ npm run build
 ```bash
 npm run serve
 ```
-
