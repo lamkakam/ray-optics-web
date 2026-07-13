@@ -1,0 +1,4 @@
+interface:
+  display_name: "Service Worker Caching and Deployment"
+  short_description: "Maintain caching and GitHub Pages deployment"
+  default_prompt: "Use $service-worker-caching-and-deployment to safely change or diagnose the app caching and deployment flow."

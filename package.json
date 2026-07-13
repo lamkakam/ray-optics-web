@@ -12,7 +12,7 @@
     "build": "next build --webpack",
     "generate:python-third-party-licenses": "src/python/.venv/bin/pip-licenses --format=markdown --with-urls --ignore-packages=rayoptics-web-utils --output-file=THIRD-PARTY-PYTHON-LICENSES.md",
     "generate:third-party-licenses": "license-checker-rseidelsohn --production --markdown --out THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && npm run generate:python-third-party-licenses",
-    "postbuild": "license-checker-rseidelsohn --production --markdown --out out/THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && src/python/.venv/bin/pip-licenses --format=markdown --with-urls --ignore-packages=rayoptics-web-utils --output-file=out/THIRD-PARTY-PYTHON-LICENSES.md",
+    "postbuild": "node scripts/generate-next-static-sw.js && license-checker-rseidelsohn --production --markdown --out out/THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && src/python/.venv/bin/pip-licenses --format=markdown --with-urls --ignore-packages=rayoptics-web-utils --output-file=out/THIRD-PARTY-PYTHON-LICENSES.md",
     "serve": "npx serve out",
     "pretype-check": "npm run generate:python-export-helpers",
     "type-check": "tsc --noEmit",

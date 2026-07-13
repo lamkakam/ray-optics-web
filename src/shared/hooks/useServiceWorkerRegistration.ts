@@ -7,7 +7,9 @@ export async function registerServiceWorker(): Promise<void> {
 
   try {
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    await navigator.serviceWorker.register(`${basePath}/pyodide-sw.js`);
+    await navigator.serviceWorker.register(`${basePath}/pyodide-sw.js`, {
+      updateViaCache: "none",
+    });
   } catch {
     // Registration failed — silently ignore
   }

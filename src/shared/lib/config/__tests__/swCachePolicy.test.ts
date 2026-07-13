@@ -1,4 +1,34 @@
-import { shouldCache } from "../swCachePolicy";
+import { isNextStaticAsset, shouldCache } from "../swCachePolicy";
+
+describe("isNextStaticAsset", () => {
+  const origin = "https://example.com";
+
+  it("recognizes same-origin Next static assets with or without a base path", () => {
+    expect(isNextStaticAsset("https://example.com/_next/static/chunks/app.js", origin)).toBe(true);
+    expect(
+      isNextStaticAsset(
+        "https://example.com/ray-optics-web/_next/static/css/app.css",
+        origin,
+        "/ray-optics-web"
+      )
+    ).toBe(true);
+  });
+
+  it("rejects cross-origin URLs and lookalike paths", () => {
+    expect(
+      isNextStaticAsset("https://other.example/_next/static/chunks/app.js", origin)
+    ).toBe(false);
+    expect(
+      isNextStaticAsset("https://example.com/_next/static-lookalike/app.js", origin)
+    ).toBe(false);
+    expect(
+      isNextStaticAsset(
+        "https://example.com/api/_next/static/chunks/app.js?redirect=1",
+        origin
+      )
+    ).toBe(false);
+  });
+});
 
 describe("shouldCache", () => {
   it("returns true for representative Pyodide 314.0.0 CDN assets", () => {

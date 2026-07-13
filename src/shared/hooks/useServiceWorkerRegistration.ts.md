@@ -17,6 +17,7 @@ Register the Pyodide service worker (file at`public/pyodide-sw.js`) so that the 
 
 1. Guards against non-browser environments: returns immediately if `navigator` is `undefined` or `"serviceWorker"` is not in `navigator`.
 2. Reads `process.env.NEXT_PUBLIC_BASE_PATH` (defaults to `""` if unset) to construct the correct script URL: `${basePath}/pyodide-sw.js`.
+3. Registers with `updateViaCache: "none"`, forcing each app load to check the generated worker script rather than reusing an HTTP-cached deployment manifest.
 3. Calls `navigator.serviceWorker.register(url)`.
 4. Silently ignores any registration error (caught and discarded).
 
