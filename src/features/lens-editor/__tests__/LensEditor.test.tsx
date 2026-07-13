@@ -222,6 +222,7 @@ function makeProxy(): PyodideWorkerAPI {
   return {
     init: jest.fn(),
     getFirstOrderData: jest.fn().mockResolvedValue({ efl: 100 }),
+    getSurfaceSemiDiameters: jest.fn().mockResolvedValue([100, 11.5, 200]),
     plotLensLayout: jest.fn().mockResolvedValue("layout-base64"),
     getRayFanData: jest.fn().mockResolvedValue([
       {
@@ -355,6 +356,50 @@ describe("LensEditor", () => {
     await waitFor(() => {
       expect(proxy!.plotLensLayout).toHaveBeenCalledWith(expect.anything(), true);
     });
+  });
+
+  it("fetches and commits physical computed semi-diameters only in auto mode", async () => {
+    const { proxy, lensStore } = renderLensEditor();
+    act(() => {
+      lensStore.getState().setRows(surfacesToGridRows({
+        ...testImportModel,
+        surfaces: [{ label: "Default", curvatureRadius: 50, thickness: 5, medium: "air", manufacturer: "", semiDiameter: 10 }],
+      }));
+      lensStore.getState().setAutoAperture(true);
+    });
+
+    await userEvent.setup().click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => expect(lensStore.getState().autoSemiDiameters).toEqual(
+      { [lensStore.getState().rows[1].id]: 11.5 },
+    ));
+    expect(proxy!.getSurfaceSemiDiameters).toHaveBeenCalledTimes(1);
+    expect((lensStore.getState().rows[1] as { semiDiameter: number }).semiDiameter).toBe(10);
+  });
+
+  it("clears an old computed cache after a successful manual update", async () => {
+    const { proxy, lensStore } = renderLensEditor();
+    act(() => lensStore.getState().setAutoSemiDiameters({ old: 9 }));
+
+    await userEvent.setup().click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => expect(lensStore.getState().autoSemiDiameters).toEqual({}));
+    expect(proxy!.getSurfaceSemiDiameters).not.toHaveBeenCalled();
+  });
+
+  it("preserves the old computed cache when an auto update fails", async () => {
+    const proxy = makeProxy();
+    (proxy.getSurfaceSemiDiameters as jest.Mock).mockRejectedValue(new Error("sd failed"));
+    const { lensStore, onError } = renderLensEditor({ proxy });
+    act(() => {
+      lensStore.getState().setAutoAperture(true);
+      lensStore.getState().setAutoSemiDiameters({ old: 9 });
+    });
+
+    await userEvent.setup().click(screen.getByTestId("update-system-btn"));
+
+    await waitFor(() => expect(onError).toHaveBeenCalled());
+    expect(lensStore.getState().autoSemiDiameters).toEqual({ old: 9 });
   });
 
   it("Update System passes isDark=false and preserves diffraction grating data in the submitted model when the theme is light", async () => {

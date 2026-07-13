@@ -1,5 +1,7 @@
 # `features/lens-editor/components/LensPrescriptionContainer/LensPrescriptionContainer.tsx`
 
+Supplies the editor cache to the grid. Toggling auto aperture changes display/read-only behavior without overwriting manual values or discarding the cache.
+
 ## Purpose
 
 Container that owns lens-prescription-specific controls (Export Python Script, Formatting, auto aperture dimensions switch) and orchestrates all grid editing modals for the lens prescription editor. Bridges the `lensEditorStore` to its colocated `LensPrescriptionGrid`, modal components, and row buttons under `LensPrescriptionContainer/`. Lens config actions (`Update System`, `Load Config`, `Download Config`) live in `LensEditorConfigToolbar`.

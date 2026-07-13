@@ -1,5 +1,7 @@
 # LensEditor.tsx
 
+Successful auto-aperture updates request sequential semi-diameters alongside the analyses, validate Object/physical/Image alignment, and replace the ID-keyed cache. Successful manual updates clear it. Failed updates leave the committed model and cache unchanged.
+
 ## Purpose
 Page-level component (`"use client"`). Owns the home-view lens editor workflow: manual/import submit-compute behavior, Lens Editor config toolbar placement, Seidel/Zernike modal state, and layout for LG and SM breakpoints. Calls `useScreenBreakpoint()` internally to derive `isLG`. Delegates the compute error modal to `page.tsx` via `onError`.
 Lens-editor child components are imported through the `features/lens-editor/components` root barrel so `LensEditor` depends on the component package surface rather than individual component directories.

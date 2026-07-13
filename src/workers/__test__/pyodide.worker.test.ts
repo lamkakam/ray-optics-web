@@ -27,6 +27,7 @@ import {
   _getFieldCurvatureData,
   _getAstigmatismCurveData,
   _getLSAData,
+  _getSurfaceSemiDiameters,
 } from "../pyodide.worker";
 
 const readPyprojectVersion = (): string => {
@@ -81,6 +82,26 @@ describe("_getFirstOrderData", () => {
     expect(pythonScript).toContain("opm = OpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_first_order_data(_build_opm()))");
     expect(result).toMatchObject({ efl: 200, bfl: 100 });
+  });
+});
+
+describe("_getSurfaceSemiDiameters", () => {
+  it("builds and updates the model before extracting and parsing all interface values", async () => {
+    let pythonScript = "";
+    const result = await _getSurfaceSemiDiameters(async (code) => {
+      pythonScript = code;
+      return "[100.0, 4.5, 5.5, 200.0]";
+    }, allSphericalOpticalModel);
+
+    expect(pythonScript).toContain("opm.update_model()");
+    expect(pythonScript).toContain("json.dumps(get_surface_semi_diameters(_build_opm()))");
+    expect(result).toEqual([100, 4.5, 5.5, 200]);
+  });
+
+  it("imports the helper during initialization", async () => {
+    const scripts: string[] = [];
+    await _init(async (code) => { scripts.push(code); }, "/test.whl");
+    expect(scripts.join("\n")).toContain("get_surface_semi_diameters");
   });
 });
 

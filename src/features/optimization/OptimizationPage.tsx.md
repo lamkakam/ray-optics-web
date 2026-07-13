@@ -78,7 +78,7 @@ interface OptimizationPageProps {
 - Late or stale stop responses are ignored by the page orchestration because only the active run's worker promise can update the completed optimization state.
 - The progress modal is blocking while optimization is active: there is no `OK` button and backdrop clicks are ignored until the worker promise settles.
 - After the optimization run settles, the progress modal keeps the final chart visible, exposes an `OK` button, and can then be dismissed without mutating the optimization result.
-- `Apply to Editor` opens a confirm modal, applies the page-local optimization snapshot through `applyOptimizationModelToEditor()`, clears the store's unapplied-result marker, and then calls optional `onApplyToEditor(model)`.
+- `Apply to Editor` asynchronously applies through `applyOptimizationModelToEditor()`, clearing the unapplied marker only after success. Synchronization failures retain the result and use the existing error UI.
 - Modal rendering is delegated to extracted wrappers:
   - `RadiusModeModal`
   - `ThicknessModeModal`

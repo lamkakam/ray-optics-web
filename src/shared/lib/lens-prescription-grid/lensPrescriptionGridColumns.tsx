@@ -71,6 +71,7 @@ interface MediumColumnOptions<TData> extends BaseColumnOptions<TData> {
 
 interface SemiDiameterColumnOptions<TData> extends BaseColumnOptions<TData> {
   readonly semiDiameterReadonly?: boolean;
+  readonly computedSemiDiameters?: Readonly<Record<string, number>>;
   readonly onSemiDiameterChange?: (row: GridRow, semiDiameter: number) => void;
 }
 
@@ -209,6 +210,7 @@ export function createMediumColumn<TData>({
 export function createSemiDiameterColumn<TData>({
   getGridRow,
   semiDiameterReadonly = false,
+  computedSemiDiameters = {},
   onSemiDiameterChange,
 }: SemiDiameterColumnOptions<TData>): ColDef<TData> {
   const isRectangularClearApertureRow = (row: GridRow): boolean =>
@@ -221,6 +223,7 @@ export function createSemiDiameterColumn<TData>({
       if (params.data === undefined) return undefined;
       const row = getGridRow(params.data);
       if (row.kind !== "surface") return undefined;
+      if (semiDiameterReadonly) return computedSemiDiameters[row.id] ?? row.semiDiameter;
       if (isRectangularClearApertureRow(row)) return undefined;
       return row.semiDiameter;
     },

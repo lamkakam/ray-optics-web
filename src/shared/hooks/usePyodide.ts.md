@@ -1,5 +1,7 @@
 # `shared/hooks/usePyodide.ts`
 
+`PyodideWorkerAPI` exposes `getSurfaceSemiDiameters(opticalModel): Promise<number[]>` for sequential Object-through-Image `surface_od()` values.
+
 ## Purpose
 
 Initialise the singleton Pyodide web worker and expose a typed Comlink proxy to the rest of the app. All RayOptics computations run in the web worker; this hook provides the React interface to them.

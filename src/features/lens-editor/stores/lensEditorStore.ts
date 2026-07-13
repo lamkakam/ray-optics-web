@@ -28,6 +28,7 @@ export interface LensEditorState {
   optimizationSyncPolicy: LensEditorOptimizationSyncPolicy;
   selectedRowId: string | undefined;
   autoAperture: boolean;
+  autoSemiDiameters: Readonly<Record<string, number>>;
   activeBottomDrawerTabId: string;
   bottomDrawerHeight: number | undefined;
   mediumModal: ModalState;
@@ -44,6 +45,8 @@ export interface LensEditorState {
   deleteRow: (id: string) => void;
   setSelectedRowId: (id: string | undefined) => void;
   setAutoAperture: (value: boolean) => void;
+  setAutoSemiDiameters: (values: Readonly<Record<string, number>>) => void;
+  clearAutoSemiDiameters: () => void;
   setActiveBottomDrawerTabId: (id: string) => void;
   setBottomDrawerHeight: (height: number) => void;
   openMediumModal: (rowId: string) => void;
@@ -91,6 +94,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   optimizationSyncPolicy: "resetOptimizationModes",
   selectedRowId: undefined,
   autoAperture: false,
+  autoSemiDiameters: {},
   activeBottomDrawerTabId: "specs",
   bottomDrawerHeight: undefined,
   mediumModal: { open: false, rowId: "" },
@@ -170,6 +174,10 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   setSelectedRowId: (id) => set({ selectedRowId: id }),
 
   setAutoAperture: (value) => set({ autoAperture: value }),
+
+  setAutoSemiDiameters: (values) => set({ autoSemiDiameters: { ...values } }),
+
+  clearAutoSemiDiameters: () => set({ autoSemiDiameters: {} }),
 
   setActiveBottomDrawerTabId: (id) => set({ activeBottomDrawerTabId: id }),
 

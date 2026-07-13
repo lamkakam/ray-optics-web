@@ -89,4 +89,23 @@ describe("lens prescription grid column widths", () => {
     expect(column.valueGetter({ data: row } as ValueGetterParams<GridRow>)).toBeUndefined();
     expect(column.editable({ data: row } as never)).toBe(false);
   });
+
+  it("shows computed values in auto mode, including rectangular apertures, with manual fallback", () => {
+    const rectangularRow: GridRow = {
+      kind: "surface", id: "surface-1", label: "Default", curvatureRadius: 10,
+      thickness: 2, medium: "air", manufacturer: "", semiDiameter: 6,
+      clear_aperture: { shape: "rectangular", xHalfWidth: 4, yHalfWidth: 2, rotation: 0, offsetX: 0, offsetY: 0 },
+    };
+    const autoColumn = createSemiDiameterColumn({
+      getGridRow,
+      semiDiameterReadonly: true,
+      computedSemiDiameters: { "surface-1": 4.472, "surface-2": 8.5 },
+    });
+    const fallbackRow = { ...rectangularRow, id: "new-surface", clear_aperture: undefined };
+
+    expect(typeof autoColumn.valueGetter).toBe("function");
+    if (typeof autoColumn.valueGetter !== "function") return;
+    expect(autoColumn.valueGetter({ data: rectangularRow } as ValueGetterParams<GridRow>)).toBe(4.472);
+    expect(autoColumn.valueGetter({ data: fallbackRow } as ValueGetterParams<GridRow>)).toBe(6);
+  });
 });

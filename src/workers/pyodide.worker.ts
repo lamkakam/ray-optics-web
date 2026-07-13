@@ -135,7 +135,7 @@ from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 
 from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular
-from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data, get_lsa_data
+from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data, get_lsa_data, get_surface_semi_diameters
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
 )
@@ -176,7 +176,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.19.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.20.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
@@ -218,6 +218,17 @@ function normalizeFanData<TFanData extends RayFanData | OpdFanData>(rawData: Raw
 export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<Record<string, number>> {
   const json = (await runPython(buildScript(opticalModel, (opm) => `json.dumps(get_first_order_data(${opm}))`))) as string;
   return JSON.parse(json);
+}
+
+export async function _getSurfaceSemiDiameters(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+): Promise<number[]> {
+  const json = (await runPython(buildScript(
+    opticalModel,
+    (opm) => `json.dumps(get_surface_semi_diameters(${opm}))`,
+  ))) as string;
+  return JSON.parse(json) as number[];
 }
 
 export async function _plotLensLayout(
@@ -654,6 +665,10 @@ export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Rec
   return await _getFirstOrderData(requirePyodide(), opticalModel);
 }
 
+export async function getSurfaceSemiDiameters(opticalModel: OpticalModel): Promise<number[]> {
+  return await _getSurfaceSemiDiameters(requirePyodide(), opticalModel);
+}
+
 export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string> {
   return await _plotLensLayout(requirePyodide(), opticalModel, isDark);
 }
@@ -829,6 +844,7 @@ export async function optimizeOpm(
 expose({
   init,
   getFirstOrderData,
+  getSurfaceSemiDiameters,
   plotLensLayout,
   getRayFanData,
   getOpdFanData,

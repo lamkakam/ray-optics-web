@@ -511,10 +511,15 @@ export function OptimizationPage({
       return;
     }
 
-    applyOptimizationModelToEditor({ model, lensStore, specsStore });
-    optimizationStore.getState().closeApplyConfirm();
-    optimizationStore.getState().markOptimizationResultAppliedToEditor();
-    await onApplyToEditor?.(model);
+    if (proxy === undefined) return;
+    try {
+      await applyOptimizationModelToEditor({ model, lensStore, specsStore, proxy });
+      optimizationStore.getState().closeApplyConfirm();
+      optimizationStore.getState().markOptimizationResultAppliedToEditor();
+      await onApplyToEditor?.(model);
+    } catch {
+      onError();
+    }
   };
 
   const bottomDrawerFields = useMemo(() => ({

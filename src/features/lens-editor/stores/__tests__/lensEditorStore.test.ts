@@ -55,6 +55,9 @@ function makeTestRows(): GridRow[] {
 
 describe("lensEditorStore", () => {
   describe("initial state", () => {
+    it("starts with no computed auto-aperture semi-diameters", () => {
+      expect(makeStore().getState().autoSemiDiameters).toEqual({});
+    });
     it("has an object row and an image row", () => {
       const store = makeStore();
       const rows = store.getState().rows;
@@ -79,6 +82,21 @@ describe("lensEditorStore", () => {
       expect(store.getState().bottomDrawerHeight).toBeUndefined();
     });
 
+  });
+
+  describe("computed auto-aperture semi-diameters", () => {
+    it("replaces and clears the cache without modifying manual row values", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+
+      store.getState().setAutoSemiDiameters({ s1: 11.5, s2: 9.25 });
+      expect(store.getState().autoSemiDiameters).toEqual({ s1: 11.5, s2: 9.25 });
+      expect(store.getState().rows.find((row) => row.id === "s1")).toMatchObject({ semiDiameter: 10 });
+
+      store.getState().clearAutoSemiDiameters();
+      expect(store.getState().autoSemiDiameters).toEqual({});
+      expect(store.getState().rows.find((row) => row.id === "s1")).toMatchObject({ semiDiameter: 10 });
+    });
   });
 
   describe("setRows", () => {

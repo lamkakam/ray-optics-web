@@ -268,6 +268,7 @@ const mockGetRayFanData = jest.fn().mockResolvedValue([
 const mockProxy = {
   init: jest.fn<Promise<void>, []>().mockResolvedValue(undefined),
   getFirstOrderData: mockGetFirstOrderData,
+  getSurfaceSemiDiameters: jest.fn().mockResolvedValue([]),
   plotLensLayout: mockPlotLensLayout,
   getRayFanData: mockGetRayFanData,
   getOpdFanData: mockGetOpdFanData,
@@ -545,15 +546,15 @@ function RouteSwitchHarness() {
   );
 }
 
-function SeedUnappliedOptimizationResult() {
+function SeedUnappliedOptimizationResult({ model = optimizationGuardModel }: { readonly model?: OpticalModel }) {
   const store = useOptimizationStore();
 
   React.useEffect(() => {
     store.setState({
-      optimizationModel: optimizationGuardModel,
+      optimizationModel: model,
       hasUnappliedOptimizationResult: true,
     });
-  }, [store]);
+  }, [model, store]);
 
   return <div>Optimization body</div>;
 }
@@ -755,6 +756,28 @@ describe("app shell routes", () => {
     expect(screen.getByTestId("editor-radius")).toHaveTextContent("42");
     expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(false);
     expect(mockPush).toHaveBeenCalledWith("/glass-map");
+  });
+
+  it("keeps an auto-aperture optimization result unapplied and does not navigate when synchronization fails", async () => {
+    mockPathname = "/optimization";
+    mockSelectedSegment = "optimization";
+    mockProxy.getSurfaceSemiDiameters.mockRejectedValueOnce(new Error("sd failed"));
+    const user = userEvent.setup();
+    const { optimizationStore } = renderInAppShellWithOptimizationStore(
+      <>
+        <SeedUnappliedOptimizationResult model={{ ...optimizationGuardModel, setAutoAperture: "autoAperture" }} />
+        <LensEditorRadiusProbe />
+      </>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Open navigation" }));
+    await user.click(screen.getByRole("link", { name: "Glass Map" }));
+    await user.click(screen.getByRole("button", { name: "Apply to Editor" }));
+
+    expect(await screen.findByRole("dialog", { name: "Error" })).toBeInTheDocument();
+    expect(screen.getByTestId("editor-radius")).toHaveTextContent("0");
+    expect(optimizationStore.getState().hasUnappliedOptimizationResult).toBe(true);
+    expect(mockPush).not.toHaveBeenCalled();
   });
 
   it("intercepts guarded browser history before Next routing handles it", async () => {

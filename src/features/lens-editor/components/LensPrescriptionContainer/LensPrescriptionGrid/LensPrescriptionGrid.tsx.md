@@ -1,5 +1,7 @@
 # `features/lens-editor/components/LensPrescriptionContainer/LensPrescriptionGrid/LensPrescriptionGrid.tsx`
 
+Passes the computed semi-diameter cache into the shared semi-diameter column while preserving stable row-ID lookup.
+
 ## Purpose
 
 AG Grid table for editing the lens prescription. Displays and edits surface rows (object, surface, image) with columns for surface index, surface label, radius of curvature, thickness, medium, semi-diameter, aspherical, tilt/decenter, and diffraction grating. Row action buttons appear in a leading column.
