@@ -5,6 +5,7 @@ describe("registerServiceWorker", () => {
   const originalNavigator = global.navigator;
 
   afterEach(() => {
+    delete process.env.NEXT_PUBLIC_BASE_PATH;
     Object.defineProperty(global, "navigator", {
       value: originalNavigator,
       writable: true,
@@ -20,7 +21,9 @@ describe("registerServiceWorker", () => {
 
     await registerServiceWorker();
 
-    expect(mockRegister).toHaveBeenCalledWith("/pyodide-sw.js");
+    expect(mockRegister).toHaveBeenCalledWith("/pyodide-sw.js", {
+      updateViaCache: "none",
+    });
   });
 
   it("prefixes the SW path with NEXT_PUBLIC_BASE_PATH when set", async () => {
@@ -33,8 +36,9 @@ describe("registerServiceWorker", () => {
 
     await registerServiceWorker();
 
-    expect(mockRegister).toHaveBeenCalledWith("/ray-optics-web/pyodide-sw.js");
-    delete process.env.NEXT_PUBLIC_BASE_PATH;
+    expect(mockRegister).toHaveBeenCalledWith("/ray-optics-web/pyodide-sw.js", {
+      updateViaCache: "none",
+    });
   });
 
   it("no-ops if serviceWorker is not supported", async () => {
@@ -68,6 +72,8 @@ describe("useServiceWorkerRegistration", () => {
 
     renderHook(() => useServiceWorkerRegistration());
 
-    expect(mockRegister).toHaveBeenCalledWith("/pyodide-sw.js");
+    expect(mockRegister).toHaveBeenCalledWith("/pyodide-sw.js", {
+      updateViaCache: "none",
+    });
   });
 });

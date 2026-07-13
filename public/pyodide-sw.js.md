@@ -2,16 +2,18 @@
 
 ## Purpose
 
-Service worker providing cache-first delivery for Pyodide runtime assets, PyPI metadata and wheels, and the same-origin `rayoptics_web_utils` wheel.
+Service-worker template providing cache-first delivery for Pyodide/PyPI resources and immutable Next.js build assets. The post-build generator replaces the manifest marker in the deployed `out/pyodide-sw.js`; the source template itself remains reusable across builds.
 
 ## Cache lifecycle
 
-- Uses cache name `pyodide-cache-v1.3`.
-- On activation, deletes every cache whose name differs from the current cache, including the obsolete v1.2 cache containing Pyodide 0.27.7 assets.
-- Claims clients after cache cleanup completes.
+- `pyodide-cache-v1.3` stores Pyodide runtime files, PyPI metadata, and wheels.
+- Stable `next-static-assets` stores every deployment's content-hashed `_next/static` files indefinitely so already-open tabs can continue lazy-loading older chunks.
+- Installation adds the generated deployment manifest to `next-static-assets` before the worker skips waiting.
+- Activation deletes obsolete caches whose names begin with `pyodide-cache-`, but retains the current Pyodide cache, the Next asset cache, and unrelated caches.
+- Browser storage eviction remains the only expiry mechanism for retained Next assets.
 
-## Cache policy
+## Request policy
 
-Requests containing `cdn.jsdelivr.net/pyodide/`, `files.pythonhosted.org/`, or `pypi.org/pypi/` are cacheable. The generic jsDelivr path covers Pyodide 314.0.0 WASM, standard-library, lockfile, and package assets. Same-origin `.whl` files are also cacheable.
+Same-origin requests beneath the service worker scope's `_next/static/` directory use the dedicated Next cache first. A cache miss uses the network and stores only a successful response. HTML, route payloads, and lookalike or cross-origin paths are excluded.
 
-Successful uncached responses are cloned into the current cache. Failed responses and unrelated requests are not cached.
+Pyodide CDN resources, PyPI resources, and same-origin wheels keep their existing cache-first behavior in the versioned Pyodide cache.

@@ -14,3 +14,21 @@ export function shouldCache(url: string, origin?: string): boolean {
   }
   return false;
 }
+
+export function isNextStaticAsset(
+  url: string,
+  origin: string,
+  basePath = ""
+): boolean {
+  try {
+    const parsedUrl = new URL(url);
+    const normalizedBasePath = basePath.replace(/^\/+|\/+$/g, "");
+    const staticPath = normalizedBasePath
+      ? `/${normalizedBasePath}/_next/static/`
+      : "/_next/static/";
+
+    return parsedUrl.origin === origin && parsedUrl.pathname.startsWith(staticPath);
+  } catch {
+    return false;
+  }
+}
