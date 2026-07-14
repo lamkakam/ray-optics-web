@@ -24,7 +24,7 @@ import { createEvaluationRow, type RadiusRow, type WeightRow } from "./lib/optim
 import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { formatMissingGlassMessage, getMissingPrescriptionGlasses } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
 import type { OptimizationProgressEntry, OptimizationReport } from "./types/optimizationWorkerTypes";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
@@ -43,11 +43,19 @@ const ZERO_WEIGHT_WARNING_MESSAGE = "At least one effective optimization weight 
 const LG_EVALUATION_RESERVED_HEIGHT_FALLBACK = 333;
 const PYODIDE_INTERRUPT_SIGNAL = 2;
 
-function buildCurrentEditorModel(lensStore: ReturnType<typeof useLensEditorStore>, specsStore: ReturnType<typeof useSpecsConfiguratorStore>) {
-  const autoAperture = lensStore.getState().autoAperture;
+function buildCurrentEditorModel(
+  rows: GridRow[],
+  autoAperture: boolean,
+  autoSemiDiameters: Readonly<Record<string, number>>,
+  specs: OpticalSpecs,
+): OpticalModel {
+  const effectiveRows = autoAperture
+    ? rows.map((row) => row.kind === "surface"
+      ? { ...row, semiDiameter: autoSemiDiameters[row.id] ?? row.semiDiameter }
+      : row)
+    : rows;
   const setAutoAperture = autoAperture ? "autoAperture" as const : "manualAperture" as const;
-  const specs = specsStore.getState().toOpticalSpecs();
-  const surfaces = gridRowsToSurfaces(lensStore.getState().rows);
+  const surfaces = gridRowsToSurfaces(effectiveRows);
   return { setAutoAperture, specs, ...surfaces };
 }
 
@@ -71,6 +79,7 @@ export function OptimizationPage({
   const prescriptionRevision = useStore(lensStore, (state) => state.prescriptionRevision);
   const optimizationSyncPolicy = useStore(lensStore, (state) => state.optimizationSyncPolicy);
   const editorAutoAperture = useStore(lensStore, (state) => state.autoAperture);
+  const editorAutoSemiDiameters = useStore(lensStore, (state) => state.autoSemiDiameters);
   const pupilSpace = useStore(specsStore, (state) => state.pupilSpace);
   const pupilType = useStore(specsStore, (state) => state.pupilType);
   const pupilValue = useStore(specsStore, (state) => state.pupilValue);
@@ -168,7 +177,12 @@ export function OptimizationPage({
   }, [isLG]);
 
   useEffect(() => {
-    const currentEditorModel = buildCurrentEditorModel(lensStore, specsStore);
+    const currentEditorModel = buildCurrentEditorModel(
+      editorRows,
+      editorAutoAperture,
+      editorAutoSemiDiameters,
+      specsStore.getState().toOpticalSpecs(),
+    );
     if (optimizationStore.getState().optimizationModel === undefined) {
       optimizationStore.getState().initializeFromOpticalModel(currentEditorModel);
       return;
@@ -182,6 +196,7 @@ export function OptimizationPage({
     prescriptionRevision,
     optimizationSyncPolicy,
     editorAutoAperture,
+    editorAutoSemiDiameters,
     pupilSpace,
     pupilType,
     pupilValue,
@@ -192,7 +207,6 @@ export function OptimizationPage({
     isWideAngle,
     wavelengthWeightsFromEditor,
     referenceIndex,
-    lensStore,
     optimizationStore,
     specsStore,
   ]);
@@ -531,13 +545,14 @@ export function OptimizationPage({
   }), [wavelengthRows]);
 
   const bottomDrawerPrescription = useMemo(() => ({
+    autoAperture: optimizationModel?.setAutoAperture === "autoAperture",
     rows: radiusRows,
     onOpenMediumModal: setMediumModalRow,
     onOpenAsphericalModal: setAsphericalModalRow,
     onOpenApertureModal: setApertureModalRow,
     onOpenDecenterModal: setDecenterModalRow,
     onOpenDiffractionGratingModal: setDiffractionGratingModalRow,
-  }), [radiusRows]);
+  }), [optimizationModel?.setAutoAperture, radiusRows]);
 
   const bottomDrawerLayout = useMemo(
     () => isLG

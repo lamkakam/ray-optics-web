@@ -19,6 +19,9 @@ interface OptimizationPageProps {
 
 - On page mount, initializes the optimization slice from the current editor draft only when the optimization slice does not already have a model; persisted Optimization state survives route returns.
 - Listens to live Lens Editor and Specs store changes and calls `syncFromOpticalModel(...)` so optimization reflects the latest prescription/spec state instead of staying stale.
+- Builds the synchronized editor model through a pure `buildCurrentEditorModel(...)` helper whose explicit inputs are the reactive editor rows, reactive auto-aperture mode, reactive row-ID-keyed auto semi-diameter cache, and current optical specs.
+- In auto-aperture mode, the synchronized model replaces each physical surface row's manual `semiDiameter` with its cached computed value and falls back to the manual value when that row ID is absent from the cache. In manual mode, the retained cache is ignored and the editable row values are synchronized unchanged.
+- Both `editorAutoAperture` and `editorAutoSemiDiameters` are synchronization dependencies, so mode-only changes and new worker-computed cache values update `optimizationModel`. Consequently, both `evaluateOptimizationProblem(...)` and `optimizeOpm(...)` receive the effective semi-diameters without a separate Optimization worker request.
 - Passes the Lens Editor `optimizationSyncPolicy` into `syncFromOpticalModel(...)` so normal editor prescription edits reset Optimization prescription modes, while Optimization Apply and Focusing-origin edits preserve those modes.
 - Renders the extracted `OptimizationActionBar` above the tabs with:
   - `Optimize`
@@ -54,6 +57,7 @@ interface OptimizationPageProps {
   - read-only `Aperture` column after `Semi-diam.` that opens the aperture inspection modal
   - a third `Var.` column after `Asph.` for asphere variable/pickup configuration (real surface rows only; opens `AsphereVarModal`)
   - read-only `Tilt & Decenter` and `Diffraction Grating` columns
+- Passes the auto/manual mode from the synchronized optimization model through `BottomDrawerContainer` to `OptimizationLensPrescriptionGrid`, keeping the prescription display aligned with the model used by evaluation and optimization.
 - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
 - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
 - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests.
@@ -93,6 +97,7 @@ interface OptimizationPageProps {
 - The optimization page stays decoupled from the editor while open; it does not mutate the editor until the user confirms `Apply to Editor`.
 - Mount-time initialization preserves existing optimization weights, operands, algorithm settings, and variable/pickup modes when returning to the route without editor changes.
 - Editor-driven optical-model changes propagate into optimization automatically; field, wavelength, and prescription differences are synchronized independently so only affected optimization defaults reset.
+- Auto-aperture semi-diameter cache updates follow the same prescription synchronization policy as other editor-driven surface changes; disabling auto aperture restores manual values without clearing the Lens Editor cache.
 - The live evaluation table uses the residual `total_weight` reported by Python and hides rows whose effective weight is zero, so field/wavelength-expanded operands appear only for active contributions.
 - Large-screen evaluation height is derived from the observed page-shell height, the current live drawer height, and measured fixed overhead above the table, with a fallback reserve when DOM measurement is not yet available.
 - The page treats zero-weight blocking generically based on optional `fields` and `wavelengths` arrays in the built optimization config instead of hardcoding operand kinds, so newly added operands inherit the rule automatically if they follow the same config shape.

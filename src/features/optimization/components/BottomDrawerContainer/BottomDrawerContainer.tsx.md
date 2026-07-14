@@ -37,7 +37,7 @@ interface BottomDrawerContainerProps {
 - `wavelengths.rows` provides derived wavelength weight rows.
 - `gridEditLifecycle` optionally provides page-level AG Grid edit start/stop callbacks shared by all Optimization grids.
 - `onWarning` receives explicit method-switch config-build failures so the page can surface them in Operand Evaluation.
-- `prescription` provides derived prescription rows plus local inspection-modal callbacks, including aperture inspection. Optimization variable modal callbacks and mode state are read from the optimization store.
+- `prescription` provides the synchronized auto-aperture mode, derived prescription rows, and local inspection-modal callbacks, including aperture inspection. Optimization variable modal callbacks and mode state are read from the optimization store.
 
 ## Behavior
 
@@ -52,6 +52,7 @@ interface BottomDrawerContainerProps {
 - Forwards shared AG Grid edit lifecycle callbacks into Half-Fields, Wavelengths, Lens Prescription, and Operands grids so `OptimizationPage` can disable Optimize while edits and post-edit evaluations are pending.
 - Renders the shared weight grid with tab-specific `Value` column widths: `95px` for fields and `130px` for wavelengths.
 - Opens radius, thickness, and asphere variable modals through the optimization store while forwarding inspection-modal callbacks supplied by `OptimizationPage`.
+- Forwards `prescription.autoAperture` to `OptimizationLensPrescriptionGrid` so the shared semi-diameter column uses the synchronized mode.
 - Adds, deletes, and updates operands through the optimization store.
 - Is wrapped in `React.memo` and memoizes store-backed callbacks, prescription props, and the drawer `tabs` array so unrelated `OptimizationPage` state changes, including Operand Evaluation loading and completion, do not recreate AG Grid column definitions or reset active grid editors.
 

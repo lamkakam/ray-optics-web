@@ -112,6 +112,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   }, [optimizationStore]);
 
   const prescriptionProps = useMemo<OptimizationLensPrescriptionGridProps>(() => ({
+    autoAperture: prescription.autoAperture,
     rows: prescription.rows,
     radiusModes,
     thicknessModes,
@@ -138,6 +139,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     prescription.onOpenDecenterModal,
     prescription.onOpenDiffractionGratingModal,
     prescription.onOpenMediumModal,
+    prescription.autoAperture,
     prescription.rows,
     radiusModes,
     thicknessModes,
