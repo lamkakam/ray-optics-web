@@ -68,7 +68,18 @@ class MockCaches {
   }
 }
 
-async function loadWorker(manifest: string[], caches = new MockCaches()) {
+function createWindowClient(url: string) {
+  return {
+    url,
+    navigate: jest.fn(async () => undefined),
+  };
+}
+
+async function loadWorker(
+  manifest: string[],
+  caches = new MockCaches(),
+  windowClients: ReturnType<typeof createWindowClient>[] = []
+) {
   const handlers = new Map<string, WorkerHandler>();
   const source = (
     await readFile(path.join(process.cwd(), "public/pyodide-sw.js"), "utf8")
@@ -79,7 +90,10 @@ async function loadWorker(manifest: string[], caches = new MockCaches()) {
   const self = {
     location: { origin: "https://example.com" },
     registration: { scope: "https://example.com/ray-optics-web/" },
-    clients: { claim: jest.fn(async () => undefined) },
+    clients: {
+      claim: jest.fn(async () => undefined),
+      matchAll: jest.fn(async () => windowClients),
+    },
     skipWaiting: jest.fn(async () => undefined),
     addEventListener: (type: string, handler: WorkerHandler) => handlers.set(type, handler),
   };
@@ -110,6 +124,42 @@ describe("pyodide service worker", () => {
     expect((await worker.caches.open("next-static-assets")).added).toEqual([manifest]);
   });
 
+  it("does not create or runtime-fill the Next static cache for an empty manifest", async () => {
+    const worker = await loadWorker([]);
+    const staticUrl = "https://example.com/ray-optics-web/_next/static/development.js";
+
+    await dispatch(worker, "install");
+    const response = await dispatch(worker, "fetch", staticUrl);
+
+    expect(response).toBeUndefined();
+    expect(worker.fetchMock).not.toHaveBeenCalled();
+    expect(worker.caches.stores.has("next-static-assets")).toBe(false);
+    expect(worker.self.skipWaiting).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps Pyodide, PyPI, and wheel resources cache-first in development", async () => {
+    const caches = new MockCaches();
+    const cache = await caches.open("pyodide-cache-v1.3");
+    const urls = [
+      "https://cdn.jsdelivr.net/pyodide/v314.0.0/full/pyodide.js",
+      "https://pypi.org/pypi/rayoptics/json",
+      "https://files.pythonhosted.org/packages/rayoptics.whl",
+      "https://example.com/ray-optics-web/rayoptics_web_utils.whl",
+    ];
+    await Promise.all(
+      urls.map((url) => cache.put(url, new MockResponse(`cached:${url}`)))
+    );
+    const worker = await loadWorker([], caches);
+
+    for (const url of urls) {
+      await expect(dispatch(worker, "fetch", url)).resolves.toMatchObject({
+        body: `cached:${url}`,
+      });
+    }
+    expect(worker.fetchMock).not.toHaveBeenCalled();
+    expect(worker.caches.stores.has("next-static-assets")).toBe(false);
+  });
+
   it("keeps a previous deployment asset cache-first when the network would 404", async () => {
     const sharedCaches = new MockCaches();
     const oldUrl = "https://example.com/ray-optics-web/_next/static/old.js";
@@ -128,7 +178,7 @@ describe("pyodide service worker", () => {
   });
 
   it("runtime-caches only successful Next static responses", async () => {
-    const worker = await loadWorker([]);
+    const worker = await loadWorker(["/ray-optics-web/_next/static/precache.js"]);
     const goodUrl = "https://example.com/ray-optics-web/_next/static/good.js";
     const badUrl = "https://example.com/ray-optics-web/_next/static/bad.js";
     worker.fetchMock
@@ -143,13 +193,46 @@ describe("pyodide service worker", () => {
     await expect(cache.match(badUrl)).resolves.toBeUndefined();
   });
 
-  it("retains Next and unrelated caches while deleting obsolete Pyodide caches", async () => {
+  it("deletes the legacy Next cache and reloads controlled windows in development", async () => {
+    const caches = new MockCaches();
+    await caches.open("next-static-assets");
+    const clients = [
+      createWindowClient("https://example.com/ray-optics-web/optimization"),
+      createWindowClient("https://example.com/ray-optics-web/"),
+    ];
+    const worker = await loadWorker([], caches, clients);
+
+    await dispatch(worker, "activate");
+
+    expect(caches.deleted).toContain("next-static-assets");
+    expect(worker.self.clients.claim).toHaveBeenCalledTimes(1);
+    expect(worker.self.clients.matchAll).toHaveBeenCalledWith({ type: "window" });
+    clients.forEach((client) => {
+      expect(client.navigate).toHaveBeenCalledTimes(1);
+      expect(client.navigate).toHaveBeenCalledWith(client.url);
+    });
+  });
+
+  it("does not reload controlled windows when no stale Next cache was removed", async () => {
+    const client = createWindowClient("https://example.com/ray-optics-web/");
+    const worker = await loadWorker([], new MockCaches(), [client]);
+
+    await dispatch(worker, "activate");
+
+    expect(worker.self.clients.matchAll).not.toHaveBeenCalled();
+    expect(client.navigate).not.toHaveBeenCalled();
+  });
+
+  it("retains Next and unrelated caches in production while deleting obsolete Pyodide caches", async () => {
     const caches = new MockCaches();
     await caches.open("next-static-assets");
     await caches.open("pyodide-cache-v1.2");
     await caches.open("pyodide-cache-v1.3");
     await caches.open("unrelated-cache");
-    const worker = await loadWorker([], caches);
+    const worker = await loadWorker(
+      ["/ray-optics-web/_next/static/production.js"],
+      caches
+    );
 
     await dispatch(worker, "activate");
 
