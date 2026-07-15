@@ -110,7 +110,7 @@ export function _getOptimizationInterruptStateForTesting(): { activeRunId?: stri
 3. Emits `10%` with `"Loading Pyodide loader"`. The worker imports `loadPyodide` and `version` from the pinned npm package; it does not use `importScripts`.
 4. Emits `25%` with `"Starting Pyodide runtime"`, natively imports `pyodide.asm.mjs` from `https://cdn.jsdelivr.net/pyodide/v314.0.0/full/` with webpack processing disabled, and passes its module factory to `loadPyodide({ indexURL, createPyodideModule })`. This prevents webpack from converting Pyodide's computed CDN import into a local context lookup.
 5. Emits `40%` with `"Loading Pyodide packages"` and loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
-6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.21.0-py3-none-any.whl`.
+6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.21.1-py3-none-any.whl`.
 
 The public API includes `getSurfaceSemiDiameters(model)`, which builds and updates the model, invokes the Python helper, and parses the ordered JSON array.
 7. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl, onProgress)`.

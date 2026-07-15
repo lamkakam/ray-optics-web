@@ -25,7 +25,7 @@ def get_geo_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 6
         wl=wavelength_nm,
         foc=0,
         num_rays=num_rays,
-        check_apertures=True,
+        clip_rays=True,
         apply_vignetting=True,
     )
 
