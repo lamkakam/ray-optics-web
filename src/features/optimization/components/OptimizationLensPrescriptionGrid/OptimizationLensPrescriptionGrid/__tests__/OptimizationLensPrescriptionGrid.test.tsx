@@ -46,6 +46,84 @@ function makeAsphereState(overrides: Partial<AsphereOptimizationState> = {}): As
 }
 
 describe("OptimizationLensPrescriptionGrid", () => {
+  it("shows effective semi-diameters in auto mode, including rectangular apertures, and manual values otherwise", () => {
+    const rectangularSurfaceRow: GridRow = {
+      ...surfaceRow,
+      id: "surface-2",
+      semiDiameter: 9,
+      clear_aperture: {
+        shape: "rectangular",
+        xHalfWidth: 4,
+        yHalfWidth: 2,
+        rotation: 0,
+        offsetX: 0,
+        offsetY: 0,
+      },
+    };
+    const commonProps = {
+      radiusModes: [] as RadiusMode[],
+      thicknessModes: [] as RadiusMode[],
+      asphereStates: [] as AsphereOptimizationState[],
+      onOpenRadiusModal: jest.fn(),
+      onOpenThicknessModal: jest.fn(),
+      onOpenMediumModal: jest.fn(),
+      onOpenAsphericalModal: jest.fn(),
+      onOpenAsphereVarModal: jest.fn(),
+      onOpenDecenterModal: jest.fn(),
+      onOpenDiffractionGratingModal: jest.fn(),
+      onOpenApertureModal: jest.fn(),
+    };
+    const { rerender } = render(
+      <OptimizationLensPrescriptionGrid
+        {...commonProps}
+        autoAperture
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: { ...surfaceRow, semiDiameter: 12.5 },
+          },
+          {
+            id: "optimization-row-2",
+            radiusSurfaceIndex: 2,
+            thicknessSurfaceIndex: 2,
+            row: { ...rectangularSurfaceRow, semiDiameter: 11.25 },
+          },
+        ]}
+      />,
+    );
+
+    let renderedRows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    expect(renderedRows[0].querySelectorAll("td")[7]).toHaveTextContent("12.5");
+    expect(renderedRows[1].querySelectorAll("td")[7]).toHaveTextContent("11.25");
+
+    rerender(
+      <OptimizationLensPrescriptionGrid
+        {...commonProps}
+        autoAperture={false}
+        rows={[
+          {
+            id: "optimization-row-1",
+            radiusSurfaceIndex: 1,
+            thicknessSurfaceIndex: 1,
+            row: surfaceRow,
+          },
+          {
+            id: "optimization-row-2",
+            radiusSurfaceIndex: 2,
+            thicknessSurfaceIndex: 2,
+            row: rectangularSurfaceRow,
+          },
+        ]}
+      />,
+    );
+
+    renderedRows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    expect(renderedRows[0].querySelectorAll("td")[7]).toHaveTextContent("10");
+    expect(renderedRows[1].querySelectorAll("td")[7]).toBeEmptyDOMElement();
+  });
+
   it("uses normal AG Grid layout with responsive fixed grid heights", () => {
     render(
       <OptimizationLensPrescriptionGrid

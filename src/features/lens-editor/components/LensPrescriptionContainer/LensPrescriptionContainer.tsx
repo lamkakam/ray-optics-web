@@ -86,6 +86,7 @@ export function LensPrescriptionContainer({
   const store = useLensEditorStore();
   const rows = useStore(store, (s) => s.rows);
   const autoAperture = useStore(store, (s) => s.autoAperture);
+  const autoSemiDiameters = useStore(store, (s) => s.autoSemiDiameters);
   const mediumModal = useStore(store, (s) => s.mediumModal);
   const pendingMediumSelection = useStore(store, (s) => s.pendingMediumSelection);
   const asphericalModal = useStore(store, (s) => s.asphericalModal);
@@ -158,6 +159,7 @@ export function LensPrescriptionContainer({
         onAddRowAfter={handleAddRowAfter}
         onDeleteRow={handleDeleteRow}
         semiDiameterReadonly={autoAperture}
+        computedSemiDiameters={autoSemiDiameters}
       />
 
       <MediumSelectorModal

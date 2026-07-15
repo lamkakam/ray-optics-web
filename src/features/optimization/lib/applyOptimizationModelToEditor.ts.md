@@ -6,7 +6,7 @@ Shared helper that applies an optimization-local optical model snapshot back to 
 
 ## Export
 
-- `applyOptimizationModelToEditor({ model, lensStore, specsStore })` — writes specs, prescription rows, auto-aperture state, and committed optical-model state into the editor.
+- `applyOptimizationModelToEditor({ model, lensStore, specsStore, proxy })` fetches and validates fresh auto-aperture semi-diameters before atomically writing editor state. Manual models bypass extraction and clear the cache; fetch failures leave the editor unchanged.
 
 ## Behavior
 

@@ -118,7 +118,7 @@ export default function AppShell({ children }: AppShellProps) {
     proceedToHref(href);
   }, [pendingNavigationHref, proceedToHref]);
 
-  const handleApplyOptimizationToEditorAndLeave = useCallback(() => {
+  const handleApplyOptimizationToEditorAndLeave = useCallback(async () => {
     const href = pendingNavigationHref;
     const model = optimizationStore.getState().optimizationModel;
     if (href === undefined || model === undefined) {
@@ -126,10 +126,15 @@ export default function AppShell({ children }: AppShellProps) {
       return;
     }
 
-    applyOptimizationModelToEditor({ model, lensStore, specsStore });
-    optimizationStore.getState().markOptimizationResultAppliedToEditor();
-    proceedToHref(href);
-  }, [lensStore, optimizationStore, pendingNavigationHref, proceedToHref, specsStore]);
+    if (proxy === undefined) return;
+    try {
+      await applyOptimizationModelToEditor({ model, lensStore, specsStore, proxy });
+      optimizationStore.getState().markOptimizationResultAppliedToEditor();
+      proceedToHref(href);
+    } catch {
+      setErrorModalOpen(true);
+    }
+  }, [lensStore, optimizationStore, pendingNavigationHref, proceedToHref, proxy, specsStore]);
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {

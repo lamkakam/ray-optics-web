@@ -80,6 +80,7 @@ function OptimizationVariableModeCell({
 }
 
 export interface OptimizationLensPrescriptionGridProps {
+  readonly autoAperture?: boolean;
   readonly rows: ReadonlyArray<RadiusRow>;
   readonly radiusModes: ReadonlyArray<RadiusMode>;
   readonly thicknessModes: ReadonlyArray<RadiusMode>;
@@ -97,6 +98,7 @@ export interface OptimizationLensPrescriptionGridProps {
 }
 
 export function OptimizationLensPrescriptionGrid({
+  autoAperture = false,
   rows,
   radiusModes,
   thicknessModes,
@@ -191,7 +193,10 @@ export function OptimizationLensPrescriptionGrid({
       onOpenMediumModal,
       tooltipText: "Click to view medium or glass",
     }),
-    createSemiDiameterColumn<RadiusRow>({ getGridRow: (data) => data.row }),
+    createSemiDiameterColumn<RadiusRow>({
+      getGridRow: (data) => data.row,
+      semiDiameterReadonly: autoAperture,
+    }),
     createApertureColumn<RadiusRow>({
       getGridRow: (data) => data.row,
       onOpenApertureModal,
@@ -242,6 +247,7 @@ export function OptimizationLensPrescriptionGrid({
       tooltipText: "Click to view diffraction grating",
     }),
   ], [
+    autoAperture,
     asphereStates,
     onOpenAsphericalModal,
     onOpenApertureModal,

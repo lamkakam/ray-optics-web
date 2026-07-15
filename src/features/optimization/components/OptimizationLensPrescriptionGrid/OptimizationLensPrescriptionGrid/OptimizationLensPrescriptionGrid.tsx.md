@@ -3,6 +3,7 @@
 Renders the optimization lens prescription grid, including a read-only surface `Index` column, radius/thickness variable buttons, asphere variable/pickup button, and read-only inspection cells that open existing lens-editor dialogs.
 
 - Exports `OptimizationLensPrescriptionGridProps` so the component directory barrels can expose the grid's public prop type without widening the `LensPrescriptionGrid` public surface.
+- Accepts an optional `autoAperture` prop (default `false`) and passes it to the shared semi-diameter column as its read-only mode. Auto mode displays each effective model `semiDiameter`, including rectangular-aperture surfaces; manual mode keeps editable/manual values and the existing blank rectangular-aperture cell behavior.
 - Uses a horizontal-overflow wrapper for the wide prescription table and relies on parent layout padding instead of adding its own outer `p-4`.
 - Uses AG Grid's normal layout so the grid owns vertical row scrolling. Below `1440px` the wrapper height is `calc(100vh - 160px)`; at `1440px` and above it fills the drawer panel with a `200px` minimum height.
 - Keeps AG Grid's native touch handling enabled so resizable header handles respond to touchscreen drags. The shared `ag-grid-touch-scroll` coarse-pointer styles continue to provide native horizontal and vertical panning, iOS momentum scrolling, and scroll chaining on viewport areas; AG Grid owns gestures that begin on resize handles.

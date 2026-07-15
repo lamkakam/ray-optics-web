@@ -1,5 +1,7 @@
 # `python/src/rayoptics_web_utils/__init__.py`
 
+The lazy top-level exports include `get_surface_semi_diameters` from the analysis package.
+
 ## Purpose
 
 Package entry point. Eagerly imports `init` from `env/env.py` (safe — no rayoptics at top level) and lazy-loads analysis/plotting symbols via `__getattr__` so rayoptics is not imported before `init()` runs.

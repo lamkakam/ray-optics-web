@@ -1560,6 +1560,75 @@ describe("OptimizationPage", () => {
     });
   });
 
+  it("propagates cached auto-aperture semi-diameters into evaluation and optimization, then restores manual values", async () => {
+    const proxy = makeProxy();
+    const { lensStore, optimizationStore } = renderOptimizationPage(proxy);
+    const [firstSurfaceRow, secondSurfaceRow] = lensStore.getState().rows.filter(
+      (row) => row.kind === "surface",
+    );
+    const autoSemiDiameters = {
+      [firstSurfaceRow.id]: 12.5,
+      [secondSurfaceRow.id]: 11.25,
+    };
+
+    act(() => {
+      lensStore.getState().setAutoSemiDiameters(autoSemiDiameters);
+      lensStore.getState().setAutoAperture(true);
+    });
+
+    await waitFor(() => {
+      expect(optimizationStore.getState().optimizationModel).toMatchObject({
+        setAutoAperture: "autoAperture",
+        surfaces: [
+          { semiDiameter: 12.5 },
+          { semiDiameter: 11.25 },
+        ],
+      });
+    });
+
+    act(() => {
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+      ]);
+    });
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+    expect((proxy.evaluateOptimizationProblem as jest.Mock).mock.calls.at(-1)?.[0]).toMatchObject({
+      setAutoAperture: "autoAperture",
+      surfaces: [
+        { semiDiameter: 12.5 },
+        { semiDiameter: 11.25 },
+      ],
+    });
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Optimize" }));
+
+    await waitFor(() => expect(proxy.optimizeOpm).toHaveBeenCalled());
+    expect((proxy.optimizeOpm as jest.Mock).mock.calls[0]?.[0]).toMatchObject({
+      setAutoAperture: "autoAperture",
+      surfaces: [
+        { semiDiameter: 12.5 },
+        { semiDiameter: 11.25 },
+      ],
+    });
+
+    act(() => {
+      lensStore.getState().setAutoAperture(false);
+    });
+
+    await waitFor(() => {
+      expect(optimizationStore.getState().optimizationModel).toMatchObject({
+        setAutoAperture: "manualAperture",
+        surfaces: [
+          { semiDiameter: 10 },
+          { semiDiameter: 9 },
+        ],
+      });
+    });
+    expect(lensStore.getState().autoSemiDiameters).toEqual(autoSemiDiameters);
+  });
+
   it("preserves persisted optimization state when returning to the page without editor changes", async () => {
     const proxy = makeProxy();
     const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);

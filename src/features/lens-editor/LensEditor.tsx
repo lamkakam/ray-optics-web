@@ -30,6 +30,7 @@ import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
+import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/autoSemiDiameters";
 
 export interface LensEditorProps {
   readonly proxy: PyodideWorkerAPI | undefined;
@@ -84,7 +85,8 @@ export function LensEditor({
     const autoAperture = lensStore.getState().autoAperture;
     const setAutoAperture = autoAperture ? "autoAperture" as const : "manualAperture" as const;
     const specs = specsStore.getState().toOpticalSpecs();
-    const surfacesData = gridRowsToSurfaces(lensStore.getState().rows);
+    const submittedRows = lensStore.getState().rows;
+    const surfacesData = gridRowsToSurfaces(submittedRows);
     const model: OpticalModel = { setAutoAperture, specs, ...surfacesData };
     const missingGlassMessage = formatMissingGlassMessage(getMissingPrescriptionGlasses(model, lookupMaps));
     if (missingGlassMessage !== undefined) {
@@ -103,7 +105,7 @@ export function LensEditor({
       analysisPlotStore.getState().setSelectedFieldIndex(clampedFieldIndex, specs.field.fields.length);
       analysisPlotStore.getState().setSelectedWavelengthIndex(clampedWavelengthIndex, specs.wavelengths.weights.length);
 
-      const [fod, layout, plotResult, seidel] = await Promise.all([
+      const [fod, layout, plotResult, seidel, sequentialSemiDiameters] = await Promise.all([
         proxy.getFirstOrderData(model),
         proxy.plotLensLayout(model, isDark),
         loadAnalysisPlot({
@@ -115,7 +117,12 @@ export function LensEditor({
           imagePoint,
         }),
         proxy.get3rdOrderSeidelData(model),
+        autoAperture ? proxy.getSurfaceSemiDiameters(model) : Promise.resolve(undefined),
       ]);
+
+      const autoSemiDiameters = sequentialSemiDiameters === undefined
+        ? undefined
+        : mapPhysicalSurfaceSemiDiameters(submittedRows, sequentialSemiDiameters);
 
       analysisDataStore.getState().setFirstOrderData(fod);
       lensLayoutImageStore.getState().setLayoutImage(layout);
@@ -123,6 +130,11 @@ export function LensEditor({
       analysisDataStore.getState().setSeidelData(seidel);
       specsStore.getState().setCommittedSpecs(specs);
       lensStore.getState().setCommittedOpticalModel(model);
+      if (autoSemiDiameters === undefined) {
+        lensStore.getState().clearAutoSemiDiameters();
+      } else {
+        lensStore.getState().setAutoSemiDiameters(autoSemiDiameters);
+      }
     } catch (err) {
       console.log("Update System failed:", err);
       onError();

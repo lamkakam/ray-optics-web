@@ -3,6 +3,7 @@ const PYODIDE_CACHE_NAME = "pyodide-cache-v1.3";
 const PYODIDE_CACHE_PREFIX = "pyodide-cache-";
 const NEXT_STATIC_CACHE_NAME = "next-static-assets";
 const NEXT_STATIC_MANIFEST = /* __NEXT_STATIC_MANIFEST__ */ [];
+const IS_DEVELOPMENT = NEXT_STATIC_MANIFEST.length === 0;
 
 const CACHEABLE_HOSTS = [
   "cdn.jsdelivr.net/pyodide/",
@@ -29,6 +30,11 @@ function isNextStaticAsset(url) {
 }
 
 self.addEventListener("install", (event) => {
+  if (IS_DEVELOPMENT) {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
+
   event.waitUntil(
     caches
       .open(NEXT_STATIC_CACHE_NAME)
@@ -39,21 +45,35 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(
-        names
-          .filter(
-            (name) =>
-              name.startsWith(PYODIDE_CACHE_PREFIX) && name !== PYODIDE_CACHE_NAME
-          )
-          .map((name) => caches.delete(name))
-      )
-    ).then(() => self.clients.claim())
+    caches.keys().then(async (names) => {
+      const cacheNamesToDelete = names.filter(
+        (name) =>
+          (name.startsWith(PYODIDE_CACHE_PREFIX) && name !== PYODIDE_CACHE_NAME) ||
+          (IS_DEVELOPMENT && name === NEXT_STATIC_CACHE_NAME)
+      );
+      const deletionResults = await Promise.all(
+        cacheNamesToDelete.map(async (name) => ({
+          name,
+          deleted: await caches.delete(name),
+        }))
+      );
+      const removedStaleNextAssets = deletionResults.some(
+        ({ name, deleted }) => name === NEXT_STATIC_CACHE_NAME && deleted
+      );
+
+      await self.clients.claim();
+      if (removedStaleNextAssets) {
+        const windowClients = await self.clients.matchAll({ type: "window" });
+        await Promise.all(
+          windowClients.map((client) => client.navigate(client.url))
+        );
+      }
+    })
   );
 });
 
 self.addEventListener("fetch", (event) => {
-  if (isNextStaticAsset(event.request.url)) {
+  if (!IS_DEVELOPMENT && isNextStaticAsset(event.request.url)) {
     event.respondWith(
       caches.open(NEXT_STATIC_CACHE_NAME).then(async (cache) => {
         const cached = await cache.match(event.request);

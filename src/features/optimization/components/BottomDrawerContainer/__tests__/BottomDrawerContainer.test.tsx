@@ -62,13 +62,15 @@ jest.mock("@/features/optimization/components/OptimizationWeightsGrid", () => ({
 
 jest.mock("@/features/optimization/components/OptimizationLensPrescriptionGrid", () => ({
   OptimizationLensPrescriptionGrid: ({
+    autoAperture,
     onOpenRadiusModal,
     onOpenThicknessModal,
   }: {
+    readonly autoAperture: boolean;
     readonly onOpenRadiusModal: (surfaceIndex: number) => void;
     readonly onOpenThicknessModal: (surfaceIndex: number) => void;
   }) => (
-    <div>
+    <div data-testid="mock-optimization-prescription" data-auto-aperture={String(autoAperture)}>
       <button type="button" onClick={() => onOpenRadiusModal(1)}>
         Open Radius
       </button>
@@ -108,6 +110,7 @@ function renderBottomDrawerContainer(
         fields={{ rows: [{ id: "field-row", index: 0, label: "0 deg", weight: 1 }] }}
         wavelengths={{ rows: [{ id: "wavelength-row", index: 1, label: "587 nm", weight: 1 }] }}
         prescription={{
+          autoAperture: true,
           rows: [],
           onOpenMediumModal: jest.fn(),
           onOpenAsphericalModal: jest.fn(),
@@ -123,6 +126,15 @@ function renderBottomDrawerContainer(
 }
 
 describe("BottomDrawerContainer", () => {
+  it("forwards the synchronized auto-aperture mode to the prescription grid", () => {
+    renderBottomDrawerContainer();
+
+    expect(screen.getByTestId("mock-optimization-prescription")).toHaveAttribute(
+      "data-auto-aperture",
+      "true",
+    );
+  });
+
   it("owns optimization-store-backed tab, optimizer, weight, prescription, and operand handlers", async () => {
     const user = userEvent.setup();
     const { store } = renderBottomDrawerContainer();

@@ -1,5 +1,7 @@
 # `app/AppShell.tsx`
 
+Guarded Optimization navigation awaits the same atomic editor synchronization helper as the page Apply button. It navigates and marks the result applied only on success; failures retain state and open the existing error modal.
+
 ## Purpose
 Client wrapper for the shared runtime shell. Owns Pyodide initialization, app-wide glass-catalog preloading, the global error modal, the loading overlay, Optimization leave guards, `MathJaxContext`, and common app chrome for all routed pages.
 

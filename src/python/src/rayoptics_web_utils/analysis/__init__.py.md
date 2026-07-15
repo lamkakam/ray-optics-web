@@ -1,5 +1,7 @@
 # `python/src/rayoptics_web_utils/analysis/__init__.py`
 
+The analysis barrel exports `get_surface_semi_diameters` alongside the plot and optical-data helpers.
+
 ## Purpose
 
 Re-exports analysis data extraction helpers from their concrete modules for subpackage imports such as:

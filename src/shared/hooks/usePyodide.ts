@@ -30,6 +30,7 @@ type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
 export interface PyodideWorkerAPI {
   init(onProgress?: InitProgressCallback): Promise<void>;
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
+  getSurfaceSemiDiameters(opticalModel: OpticalModel): Promise<number[]>;
   plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
   getRayFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<RayFanData>;
   getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<OpdFanData>;
