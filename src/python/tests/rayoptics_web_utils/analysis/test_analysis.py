@@ -436,6 +436,23 @@ class TestGetWavefrontData:
 class TestGetGeoPsfData:
     """Tests for get_geo_psf_data()."""
 
+    def test_ray_list_clips_rays_at_apertures(self, cooke_triplet, monkeypatch):
+        from rayoptics.raytr.analyses import RayList as RealRayList
+        from rayoptics_web_utils.analysis import geometric_psf
+
+        captured_kwargs = {}
+
+        def capturing_ray_list(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return RealRayList(*args, **kwargs)
+
+        monkeypatch.setattr(geometric_psf, "RayList", capturing_ray_list)
+
+        geometric_psf.get_geo_psf_data(cooke_triplet, fi=0, wvl_idx=0, num_rays=16)
+
+        assert captured_kwargs.get("clip_rays") is True
+        assert "check_apertures" not in captured_kwargs
+
     def test_returns_xy_point_cloud(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_geo_psf_data
 
