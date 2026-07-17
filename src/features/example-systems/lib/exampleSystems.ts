@@ -820,7 +820,7 @@ const orthoAPO: OpticalModel = {
       label: "Default",
       curvatureRadius: -235,
       thickness: 7,
-      medium: "S-BSL7",
+      medium: "S-BSL 7",
       manufacturer: "Ohara",
       semiDiameter: 62.395437,
     },
