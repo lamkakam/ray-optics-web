@@ -5,6 +5,7 @@ from rayoptics.raytr import sampler
 from rayoptics.raytr.analyses import RayList
 
 from rayoptics_web_utils.utils import _json_float_list, _system_units
+from rayoptics_web_utils.analysis._afocal import angular_coordinates, is_afocal_image_space, output_segment, reference_direction
 
 
 def get_geo_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 64) -> dict:
@@ -29,11 +30,25 @@ def get_geo_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 6
         apply_vignetting=True,
     )
 
+    afocal = is_afocal_image_space(opm)
+    if afocal:
+        reference, _ = reference_direction(opm, fi, wavelength_nm)
+        angular_points = [
+            angular_coordinates(output_segment(ray_pkg)[1], reference)
+            for _, _, ray_pkg in ray_list.ray_list
+            if ray_pkg is not None
+        ]
+        x_values = [point[0] for point in angular_points]
+        y_values = [point[1] for point in angular_points]
+    else:
+        x_values = ray_list.ray_abr[0]
+        y_values = ray_list.ray_abr[1]
+
     return {
         "fieldIdx": fi,
         "wvlIdx": wvl_idx,
-        "x": _json_float_list(ray_list.ray_abr[0]),
-        "y": _json_float_list(ray_list.ray_abr[1]),
-        "unitX": _system_units(opm),
-        "unitY": _system_units(opm),
+        "x": _json_float_list(x_values),
+        "y": _json_float_list(y_values),
+        "unitX": "arcsec" if afocal else _system_units(opm),
+        "unitY": "arcsec" if afocal else _system_units(opm),
     }

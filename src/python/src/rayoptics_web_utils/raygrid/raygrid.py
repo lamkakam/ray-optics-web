@@ -26,6 +26,12 @@ def make_ray_grid(
     Returns:
         RayGrid instance ready for OPD / PSF extraction.
     """
+    from rayoptics_web_utils.analysis._afocal import is_afocal_image_space, make_afocal_ray_grid
+    if is_afocal_image_space(opm):
+        return make_afocal_ray_grid(
+            opm, fi, wavelength_nm, num_rays=num_rays, image_point=image_point,
+        )
+
     from rayoptics.raytr.analyses import RayGrid
     if image_point == "chief_ray":
         image_pt_2d = None

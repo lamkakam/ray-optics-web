@@ -18,6 +18,7 @@ def get_lsa_data(opm: OpticalModel, num_points: int = 21) -> list[dict]: ...
 - Iterates every configured wavelength index.
 - Traces each sampled pupil ray with RayOptics `trace_ray(..., foc=foc)`.
 - Computes longitudinal focus shift from the current image plane using `-ray[-1].p[1] / (ray[-2].d[1] / ray[-2].d[2])`.
+- For infinite image space, evaluates each ray's height and angular slope at the exit-pupil plane and returns signed output vergence in `D` instead of intersecting a nearly parallel ray at infinity.
 
 ## Return Shape
 
@@ -32,4 +33,4 @@ Each list entry represents one wavelength:
 }
 ```
 
-`LSA.x` contains longitudinal focus shifts, and `LSA.y` contains normalized pupil coordinates.
+`LSA.x` contains longitudinal focus shifts (`mm`) for finite mode or output vergence (`D`) for afocal mode. `LSA.y` contains normalized pupil coordinates.

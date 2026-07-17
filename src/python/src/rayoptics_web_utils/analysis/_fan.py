@@ -5,6 +5,7 @@ from rayoptics.environment import OpticalModel
 from rayoptics.raytr import trace
 
 from rayoptics_web_utils.raygrid import _resolve_image_point
+from rayoptics_web_utils.analysis._afocal import is_afocal_image_space
 
 
 def _trace_fan_series(
@@ -20,13 +21,9 @@ def _trace_fan_series(
     central_wvl = opm.seq_model.central_wavelength()
     foc = osp.defocus.get_focus()
 
-    image_pt = _resolve_image_point(
-        opm,
-        fi=fi,
-        wavelength_nm=central_wvl,
-        foc=foc,
-        num_rays=21,
-        image_point=image_point,
+    image_pt = None if is_afocal_image_space(opm) else _resolve_image_point(
+        opm, fi=fi, wavelength_nm=central_wvl, foc=foc,
+        num_rays=21, image_point=image_point,
     )
     ref_sphere, chief_ray = trace.setup_pupil_coords(opm, fld, central_wvl, foc, image_pt=image_pt)
     fld.chief_ray = chief_ray

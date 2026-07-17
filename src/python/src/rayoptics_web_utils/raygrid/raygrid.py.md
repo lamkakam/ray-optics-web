@@ -23,6 +23,8 @@ def make_ray_grid(
 
 Creates a `RayGrid` with `check_apertures=True` and `apply_vignetting=True` always set.
 
+When image space is infinite, returns a RayGrid-compatible namespace built by the shared afocal helper. Its pupil axes match the normal grid and its OPD plane is the exit-pupil plane normal to the selected output direction. OPD remains stored in central-wavelength waves for existing consumers.
+
 - `opm`: OpticalModel instance.
 - `fi`: field index into `osp['fov'].fields`.
 - `wavelength_nm`: wavelength in nm — callers retrieve this via `opm['optical_spec']['wvls'].wavelengths[i]`.

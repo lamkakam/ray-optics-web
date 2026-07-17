@@ -229,6 +229,7 @@ const mockGetDiffractionMTFData: jest.Mock<Promise<DiffractionMtfData>, [Optical
     unitY: "",
     cutoffTangential: 0,
     cutoffSagittal: 0,
+    scaleKind: "image-na",
     naTangential: 0,
     naSagittal: 0,
   });

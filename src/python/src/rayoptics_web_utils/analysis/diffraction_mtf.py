@@ -10,6 +10,11 @@ from rayoptics_web_utils.analysis._mtf import (
     _directional_na_from_ray_dirs,
     _mtf_frequency_axis,
 )
+from rayoptics_web_utils.analysis._afocal import (
+    ARCSEC_PER_RADIAN,
+    is_afocal_image_space,
+    projected_exit_pupil_diameters,
+)
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _json_float_list, _system_units
 
@@ -32,7 +37,8 @@ def get_diffraction_mtf_data(
     effective_max_dims = max(max_dims, 2 * num_rays)
 
     pupil_grid = make_ray_grid(opm, fi=field_idx, wavelength_nm=wavelength_nm, num_rays=num_rays, image_point=image_point)
-    psf = calc_psf(np.transpose(pupil_grid.grid[2]), num_rays, effective_max_dims)
+    opd_waves = pupil_grid.grid[2] * (osp.spectral_region.central_wvl / wavelength_nm)
+    psf = calc_psf(np.transpose(opd_waves), num_rays, effective_max_dims)
     mtf = np.abs(np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(psf))))
 
     center_idx = effective_max_dims // 2
@@ -43,22 +49,30 @@ def get_diffraction_mtf_data(
     tangential_mtf = mtf[center_idx:, center_idx]
     sagittal_mtf = mtf[center_idx, center_idx:]
 
-    rim_rays = trace_boundary_rays_at_field(opm, fld, wavelength_nm, use_named_tuples=True)
-    chief_dir = rim_rays[0].ray[-1].d
-    na_sagittal = _directional_na_from_ray_dirs(
-        chief_dir,
-        rim_rays[1].ray[-1].d,
-        rim_rays[2].ray[-1].d,
-        axis=0,
-    )
-    na_tangential = _directional_na_from_ray_dirs(
-        chief_dir,
-        rim_rays[3].ray[-1].d,
-        rim_rays[4].ray[-1].d,
-        axis=1,
-    )
-    cutoff_sagittal = 2.0 * na_sagittal / wavelength_sys_units
-    cutoff_tangential = 2.0 * na_tangential / wavelength_sys_units
+    afocal = is_afocal_image_space(opm)
+    if afocal:
+        diameter_sagittal, diameter_tangential = projected_exit_pupil_diameters(
+            opm, field_idx, wavelength_nm, image_point=image_point,
+        )
+        cutoff_sagittal = diameter_sagittal / wavelength_sys_units / ARCSEC_PER_RADIAN
+        cutoff_tangential = diameter_tangential / wavelength_sys_units / ARCSEC_PER_RADIAN
+    else:
+        rim_rays = trace_boundary_rays_at_field(opm, fld, wavelength_nm, use_named_tuples=True)
+        chief_dir = rim_rays[0].ray[-1].d
+        na_sagittal = _directional_na_from_ray_dirs(
+            chief_dir,
+            rim_rays[1].ray[-1].d,
+            rim_rays[2].ray[-1].d,
+            axis=0,
+        )
+        na_tangential = _directional_na_from_ray_dirs(
+            chief_dir,
+            rim_rays[3].ray[-1].d,
+            rim_rays[4].ray[-1].d,
+            axis=1,
+        )
+        cutoff_sagittal = 2.0 * na_sagittal / wavelength_sys_units
+        cutoff_tangential = 2.0 * na_tangential / wavelength_sys_units
 
     tangential_freqs = _mtf_frequency_axis(cutoff_tangential, len(tangential_mtf))
     sagittal_freqs = _mtf_frequency_axis(cutoff_sagittal, len(sagittal_mtf))
@@ -66,7 +80,7 @@ def get_diffraction_mtf_data(
     ideal_tangential = _diffraction_limited_mtf(tangential_freqs, cutoff_tangential)
     ideal_sagittal = _diffraction_limited_mtf(sagittal_freqs, cutoff_sagittal)
 
-    return {
+    result = {
         "fieldIdx": field_idx,
         "wvlIdx": wvl_idx,
         "Tangential": {
@@ -85,10 +99,16 @@ def get_diffraction_mtf_data(
             "x": _json_float_list(sagittal_freqs),
             "y": _json_float_list(ideal_sagittal),
         },
-        "unitX": f"cycles/{_system_units(opm)}",
+        "unitX": "cycles/arcsec" if afocal else f"cycles/{_system_units(opm)}",
         "unitY": "",
         "cutoffTangential": float(cutoff_tangential),
         "cutoffSagittal": float(cutoff_sagittal),
-        "naTangential": float(na_tangential),
-        "naSagittal": float(na_sagittal),
+        "scaleKind": "exit-pupil" if afocal else "image-na",
     }
+    if afocal:
+        result["exitPupilDiameterTangential"] = float(diameter_tangential)
+        result["exitPupilDiameterSagittal"] = float(diameter_sagittal)
+    else:
+        result["naTangential"] = float(na_tangential)
+        result["naSagittal"] = float(na_sagittal)
+    return result

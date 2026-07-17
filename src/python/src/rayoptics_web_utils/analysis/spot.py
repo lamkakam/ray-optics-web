@@ -6,6 +6,7 @@ from rayoptics.environment import OpticalModel
 from rayoptics.raytr import trace
 
 from rayoptics_web_utils.raygrid import _resolve_image_point
+from rayoptics_web_utils.analysis._afocal import angular_coordinates, is_afocal_image_space, output_segment, reference_direction
 from rayoptics_web_utils.utils import _json_float_list, _system_units
 
 
@@ -14,9 +15,16 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
     Return spot-diagram point clouds for all wavelengths at field index ``fi``.
     """
     sm = opm.seq_model
+    afocal = is_afocal_image_space(opm)
+    references = {}
 
     def _spot(p, wi, ray_pkg, fld, wvl, foc):
         if ray_pkg is not None:
+            if afocal:
+                if wvl not in references:
+                    references[wvl] = reference_direction(opm, fi, wvl, image_point=image_point)[0]
+                reference = references[wvl]
+                return angular_coordinates(output_segment(ray_pkg)[1], reference)
             image_pt = fld.ref_sphere[0]
             ray = ray_pkg[mc.ray]
             dist = foc / ray[-1][mc.d][2]
@@ -25,7 +33,7 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
             return np.array([t_abr[0], t_abr[1]])
         return None
 
-    if image_point == "chief_ray":
+    if image_point == "chief_ray" and not afocal:
         grids, _ = sm.trace_grid(_spot, fi, wl=None, num_rays=21, form="list", append_if_none=False)
     else:
         osp = opm.optical_spec
@@ -35,13 +43,9 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
         for wvl in osp.spectral_region.wavelengths:
             vig_bbox = fld.vignetting_bbox(opm["osp"]["pupil"])
             grid_def = [vig_bbox[0], vig_bbox[1], 21]
-            image_pt = _resolve_image_point(
-                opm,
-                fi=fi,
-                wavelength_nm=wvl,
-                foc=foc,
-                num_rays=21,
-                image_point=image_point,
+            image_pt = None if afocal else _resolve_image_point(
+                opm, fi=fi, wavelength_nm=wvl, foc=foc,
+                num_rays=21, image_point=image_point,
             )
             ref_sphere, chief_ray = trace.setup_pupil_coords(opm, fld, wvl, foc, image_pt=image_pt)
             fld.chief_ray = chief_ray
@@ -66,7 +70,7 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
             "wvlIdx": wvl_idx,
             "x": _json_float_list([point[0] for point in grid]),
             "y": _json_float_list([point[1] for point in grid]),
-            "unitX": _system_units(opm),
-            "unitY": _system_units(opm),
+            "unitX": "arcsec" if afocal else _system_units(opm),
+            "unitY": "arcsec" if afocal else _system_units(opm),
         })
     return data

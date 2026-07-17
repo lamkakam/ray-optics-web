@@ -30,8 +30,11 @@ export interface DiffractionMtfData {
   unitY: string;
   cutoffTangential: number;
   cutoffSagittal: number;
-  naTangential: number;
-  naSagittal: number;
+  scaleKind: "image-na" | "exit-pupil";
+  naTangential?: number;
+  naSagittal?: number;
+  exitPupilDiameterTangential?: number;
+  exitPupilDiameterSagittal?: number;
 }
 
 export interface WavefrontMapData {

@@ -5,6 +5,7 @@ from rayoptics.environment import OpticalModel
 from rayoptics.raytr.waveabr import wave_abr_full_calc
 
 from rayoptics_web_utils.analysis._fan import _trace_fan_series
+from rayoptics_web_utils.analysis._afocal import afocal_opd, exit_pupil_plane, is_afocal_image_space, reference_direction
 from rayoptics_web_utils.utils import _json_float_list
 
 
@@ -13,8 +14,18 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
     Return OPD fan data for all wavelengths at field index ``fi``.
     """
 
+    afocal = is_afocal_image_space(opm)
+    references = {}
+
     def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
         if ray_pkg[mc.ray] is not None:
+            if afocal:
+                if wvl not in references:
+                    reference, chief_pkg = reference_direction(opm, fi, wvl, image_point=image_point)
+                    plane_point, _ = exit_pupil_plane(opm, fld, wvl, chief_pkg=chief_pkg)
+                    references[wvl] = (reference, chief_pkg, plane_point)
+                reference, chief_pkg, plane_point = references[wvl]
+                return afocal_opd(opm, ray_pkg, chief_pkg, plane_point, reference, wvl) / opm.nm_to_sys_units(wvl)
             fod = opm["analysis_results"]["parax_data"].fod
             opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg, fld.chief_ray, fld.ref_sphere)
             return opd_val / opm.nm_to_sys_units(wvl)

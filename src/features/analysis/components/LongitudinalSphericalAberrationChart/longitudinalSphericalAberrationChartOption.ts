@@ -60,7 +60,9 @@ export function buildLongitudinalSphericalAberrationOption(
     },
     xAxis: {
       type: "value",
-      name: unitX ? `Longitudinal Focus Shift (${unitX})` : "Longitudinal Focus Shift",
+      name: unitX === "D"
+        ? "Output Vergence (D)"
+        : unitX ? `Longitudinal Focus Shift (${unitX})` : "Longitudinal Focus Shift",
       nameLocation: "middle",
       nameGap: 34,
       nameTextStyle: {

@@ -27,7 +27,9 @@ def get_diffraction_mtf_data(
 | `unitX` | `cycles/<system unit>` |
 | `unitY` | `""` |
 | `cutoffTangential`, `cutoffSagittal` | Directional cutoff frequencies |
-| `naTangential`, `naSagittal` | Directional numerical apertures |
+| `scaleKind` | `image-na` for finite image space or `exit-pupil` for infinite image space |
+| `naTangential`, `naSagittal` | Finite-mode directional numerical apertures |
+| `exitPupilDiameterTangential`, `exitPupilDiameterSagittal` | Afocal projected pupil diameters |
 
 ## Key Conventions
 
@@ -38,3 +40,4 @@ def get_diffraction_mtf_data(
 - Directional NA is computed from boundary ray directions relative to the chief ray.
 - Frequency axes are derived from each directional cutoff and do not use `calc_psf_scaling`.
 - Uses `effective_max_dims = max(max_dims, 2 * num_rays)`.
+- Selected-wavelength OPD phase is used. Afocal cutoffs are `D / wavelength`, converted to `cycles/arcsec`; finite cutoffs and metadata retain directional-NA behavior.

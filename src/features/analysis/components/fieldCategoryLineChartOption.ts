@@ -66,7 +66,9 @@ export function buildFieldCategoryLineAxesAndGrid(
     },
     xAxis: {
       type: "value",
-      name: data.unitX ? `Focus Shift (${data.unitX})` : "Focus Shift",
+      name: data.unitX === "D"
+        ? "Output Vergence (D)"
+        : data.unitX ? `Focus Shift (${data.unitX})` : "Focus Shift",
       nameLocation: "middle",
       nameGap: 34,
       nameTextStyle: {

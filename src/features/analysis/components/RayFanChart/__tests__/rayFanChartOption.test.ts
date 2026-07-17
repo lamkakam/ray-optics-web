@@ -35,6 +35,12 @@ describe("buildRayFanChartOption", () => {
     },
   ];
 
+  it("labels arcsecond ordinates as angular aberration", () => {
+    const angularData = rayFanData.map((series) => ({ ...series, unitY: "arcsec" }));
+    const option = buildRayFanChartOption(angularData, ["587.6nm"], 800, 400, "#000");
+    expect(option.yAxis[0].name).toBe("Angular Aberr. (arcsec)");
+  });
+
   it("builds tangential and sagittal line series with one shared legend entry per wavelength", () => {
     const option = buildRayFanChartOption(
       rayFanData,

@@ -79,6 +79,11 @@ describe("fieldCurveChartOption", () => {
     ]);
   });
 
+  it("labels afocal field curves as output vergence", () => {
+    const option = buildFieldCurveOption({ ...fieldCurveData, unitX: "D" }, 480, 320, "#000");
+    expect(option.xAxis.name).toBe("Output Vergence (D)");
+  });
+
   it("limits y-axis labels, ticks, and split lines to five evenly distributed categories", () => {
     const denseFieldCurveData: FieldCurveData = {
       ...fieldCurveData,

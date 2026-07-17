@@ -37,7 +37,7 @@ function buildRayFanChartOption(
 - Computes independent y-axis min/max extents for Tangential and Sagittal data, assigns them to their matching subplots, and does not expose a UI toggle for shared y scaling.
 - Rounds computed axis min/max extents with the shared analysis plot-value formatter before assigning them to subplots, including clamping magnitudes smaller than `1e-9` to `0`.
 - Falls back to `[-1e-6, 1e-6]` for a subplot's y-axis extent when that subplot has no finite y values or only one constant finite y value.
-- Labels only the first y-axis with `Transverse Aberr. (${unitY})`; the second subplot omits the duplicate y-axis label.
+- Labels only the first y-axis. `arcsec` payloads use `Angular Aberr. (arcsec)`; finite transverse payloads retain `Transverse Aberr. (${unitY})`.
 
 ## Output Shape
 

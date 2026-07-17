@@ -16,7 +16,8 @@ Same structure as `get_ray_fan_data`, except `unitY` is `"waves"`. Blocked apert
 
 ## Key Conventions
 
-- Use `wave_abr_full_calc(...) / opm.nm_to_sys_units(wvl)` to convert OPD from system units to waves.
+- Finite image space uses `wave_abr_full_calc(...) / opm.nm_to_sys_units(wvl)`.
+- Infinite image space uses the shared exit-pupil plane-wave OPD, excludes the artificial final gap, makes chief-ray OPD zero, and converts to the traced wavelength's waves.
 - Use `_trace_fan_series` so aperture-blocked samples remain visible as JSON `null` gaps instead of being dropped.
 - Pass `image_point` through `_trace_fan_series`; `"chief_ray"` preserves the existing reference, while `"centroid"` uses the shared centroid image point.
 - Normalize numeric arrays through `_json_float_list`.
