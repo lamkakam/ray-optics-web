@@ -2,39 +2,6 @@
  * Describes the Optimization Store module.
  *
  * @remarks
- * ## Key State
- *
- * - `optimizationModel` — page-local `OpticalModel` snapshot seeded from the editor
- * - `editorSyncBaseline` — fingerprints of the editor field specs, wavelength specs, and prescription snapshot last synchronized into Optimization
- * - `optimizer` — optimizer-kind-specific algorithm inputs stored as strings for direct form binding while mirroring `OptimizationConfig["optimizer"]` attribute names; least squares stores `method`, `max_nfev`, `ftol`, `xtol`, and `gtol` UI values, while Differential Evolution stores `max_nfev`, `tol`, and `atol` UI values
- * - `fieldWeights` / `wavelengthWeights` — numeric optimization weights
- * - `radiusModes` — one entry per non-object radius target, including the image surface
- * - `thicknessModes` — one entry per surface-row thickness target
- * - `asphereStates` — one entry per real surface, carrying the optimization asphere type plus independent constant/variable/pickup settings for conic constant, 10 coefficient slots, and toroid sweep radius
- * - `operands` — add/delete operand rows for focal-length, f-number, OPD Difference variants, RMS metrics, and Ray Fan variants; targeted operands keep editable string `target` values while target-less operands store `target: undefined`
- * - `isOptimizing` — loading flag for the page-blocking overlay
- * - `hasUnappliedOptimizationResult` — true after an optimization report with returned `final_values` or `pickups` updates the Optimization-local optical model and before that model is applied to the Editor
- * - `applyConfirmOpen`, `radiusModal`, `thicknessModal`, `asphereModal` — modal state
- * - `lastOptimizationReport` — last successful worker report
- *
- * ## Actions
- *
- * - `initializeFromOpticalModel(model)` — seeds the page from the editor snapshot only when Optimization has no model yet, and records the editor-sync baseline
- * - `syncFromOpticalModel(model, options?)` — refreshes the page-local optical model from the live editor state by comparing field, wavelength, and prescription fingerprints against the recorded baseline
- * - `setFieldWeight(index, value)` / `setWavelengthWeight(index, value)` — update one weight
- * - `setRadiusMode(surfaceIndex, mode)` — switch a radius row between `constant`, `variable`, and `pickup`
- * - `setThicknessMode(surfaceIndex, mode)` — switch a thickness row between `constant`, `variable`, and `pickup`
- * - `setAsphereType(surfaceIndex, type)` — set the optimization-only asphere type for a spherical editor surface; existing editor asphere kinds stay locked
- * - `replaceAsphereState(surfaceIndex, state)` — replace one surface’s full optimization asphere state after the modal commits
- * - `setAsphereTermMode(surfaceIndex, term, mode)` — mutate one asphere target directly
- * - `openThicknessModal(surfaceIndex)` / `closeThicknessModal()` — control the thickness modal
- * - `openAsphereModal(surfaceIndex)` / `closeAsphereModal()` — control the asphere variable/pickup modal
- * - `addOperand()` / `deleteOperand(id)` / `updateOperand(id, patch)` / `replaceOperands(rows)` — manage operand rows
- * - `setOptimizerKind(kind)` — switches optimizer kind and resets algorithm fields to that kind's defaults so method-based and methodless fields are not mixed
- * - `markOptimizationResultAppliedToEditor()` — clears `hasUnappliedOptimizationResult` after the optimized model has been applied to the Editor
- * - `buildOptimizationConfig()` — validates current UI state and emits the Python `OptimizationConfig`, including method-aware bounded or unbounded variable entries
- * - `applyOptimizationResult(report)` — applies optimized radius/thickness/asphere values and pickups back into the page-local optical-model snapshot and marks the result as unapplied when the report contains returned values or pickups
- *
  * ## Internal Structure
  *
  * - `buildOptimizationConfig()` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
@@ -217,50 +184,94 @@ interface AsphereModalState {
 }
 
 export interface OptimizationState {
+  /** Active Optimization page tab. Defaults to `"algorithm"`. */
   activeTabId: string;
+  /** Page-local optical-model snapshot seeded from the Editor, or `undefined` before initialization. */
   optimizationModel: OpticalModel | undefined;
+  /** Fingerprints of the editor field, wavelength, and prescription state last synchronized into Optimization. */
   editorSyncBaseline: EditorSyncBaseline | undefined;
+  /** Optimizer-specific form inputs, with numeric values stored as strings for direct form binding. Defaults to least-squares UI defaults. */
   optimizer: OptimizationAlgorithmState;
+  /** Numeric field optimization weights. Initially empty, then seeded as `[1, 0, ...]` from the model. */
   fieldWeights: number[];
+  /** Numeric wavelength optimization weights. Initially empty, then seeded from the model's wavelength weights. */
   wavelengthWeights: number[];
+  /** Constant, variable, or pickup mode for every non-object radius target, including the image surface. */
   radiusModes: RadiusMode[];
+  /** Constant, variable, or pickup mode for every surface-row thickness target. */
   thicknessModes: RadiusMode[];
+  /** Optimization asphere type and independent term modes for every real surface. */
   asphereStates: AsphereOptimizationState[];
+  /** Merit-function operand rows. Defaults to an empty array; target-less kinds store `target: undefined`. */
   operands: OptimizationOperandRow[];
+  /** Whether optimization is running and the page-blocking overlay should be shown. Defaults to `false`. */
   isOptimizing: boolean;
+  /** Whether the page-local optimized model contains returned values not yet applied to the Editor. Defaults to `false`. */
   hasUnappliedOptimizationResult: boolean;
+  /** Last successful worker report, or `undefined` before a report is applied. */
   lastOptimizationReport: OptimizationReport | undefined;
+  /** Whether the apply-to-Editor confirmation modal is open. Defaults to `false`. */
   applyConfirmOpen: boolean;
+  /** Radius variable/pickup modal state. Defaults to closed without a surface index. */
   radiusModal: RadiusModalState;
+  /** Thickness variable/pickup modal state. Defaults to closed without a surface index. */
   thicknessModal: ThicknessModalState;
+  /** Asphere variable/pickup modal state. Defaults to closed without a surface index. */
   asphereModal: AsphereModalState;
 
+  /** Seeds Optimization state and its sync baseline only when no local model exists; otherwise only backfills a missing baseline. */
   initializeFromOpticalModel: (model: OpticalModel) => void;
+  /** Synchronizes the live Editor model using field, wavelength, and prescription fingerprints, resetting or reconciling dependent modes according to `options`. */
   syncFromOpticalModel: (model: OpticalModel, options?: OptimizationSyncOptions) => void;
+  /** Sets the active Optimization page tab. */
   setActiveTabId: (tabId: string) => void;
+  /** Normalizes and updates the field weight at `index`; an out-of-range index leaves the array unchanged. */
   setFieldWeight: (index: number, value: string | number) => void;
+  /** Normalizes and updates the wavelength weight at `index`; an out-of-range index leaves the array unchanged. */
   setWavelengthWeight: (index: number, value: string | number) => void;
+  /** Replaces the matching radius target's constant, variable, or pickup mode. */
   setRadiusMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
+  /** Replaces the matching thickness target's constant, variable, or pickup mode. */
   setThicknessMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
+  /** Sets an optimization-only asphere type unless the surface's editor-defined type is locked. */
   setAsphereType: (surfaceIndex: number, type: AsphericalType) => void;
+  /** Replaces a surface's full asphere state while preserving its index and any existing type lock. */
   replaceAsphereState: (surfaceIndex: number, state: AsphereOptimizationState) => void;
+  /** Replaces one conic, toric-sweep, or coefficient term mode; coefficient drafts default to slot `0` when no index is supplied. */
   setAsphereTermMode: (surfaceIndex: number, term: "conic" | "toricSweep" | "coefficient", mode: AsphereTermModeDraft) => void;
+  /** Opens the radius modal for a surface. */
   openRadiusModal: (surfaceIndex: number) => void;
+  /** Closes the radius modal and clears its surface index. */
   closeRadiusModal: () => void;
+  /** Opens the thickness modal for a surface. */
   openThicknessModal: (surfaceIndex: number) => void;
+  /** Closes the thickness modal and clears its surface index. */
   closeThicknessModal: () => void;
+  /** Opens the asphere modal for a surface. */
   openAsphereModal: (surfaceIndex: number) => void;
+  /** Closes the asphere modal and clears its surface index. */
   closeAsphereModal: () => void;
+  /** Appends a default focal-length operand with target `"100"` and weight `"1"`. */
   addOperand: () => void;
+  /** Deletes the operand with `id`; an unknown ID leaves the rows unchanged. */
   deleteOperand: (id: string) => void;
+  /** Patches an operand and applies the new kind's default target behavior when its kind changes. */
   updateOperand: (id: string, patch: Partial<Omit<OptimizationOperandRow, "id">>) => void;
+  /** Replaces all operand rows. */
   replaceOperands: (rows: OptimizationOperandRow[]) => void;
+  /** Opens the apply-to-Editor confirmation modal. */
   openApplyConfirm: () => void;
+  /** Closes the apply-to-Editor confirmation modal. */
   closeApplyConfirm: () => void;
+  /** Sets the page-blocking optimization loading flag. */
   setIsOptimizing: (value: boolean) => void;
+  /** Clears the unapplied-result marker after the optimized model is applied to the Editor. */
   markOptimizationResultAppliedToEditor: () => void;
+  /** Switches optimizer kind and resets all algorithm fields to that kind's UI defaults. */
   setOptimizerKind: (kind: OptimizationAlgorithmState["kind"]) => void;
+  /** Validates current UI state and builds the Python worker configuration with method-aware variables, pickups, and expanded operands. Throws on invalid or incomplete state. */
   buildOptimizationConfig: () => OptimizationConfig;
+  /** Applies returned radius, thickness, asphere, and pickup values to the local model, stores the report, and marks non-empty results as unapplied. Does nothing when no local model exists. */
   applyOptimizationResult: (report: OptimizationReport) => void;
 }
 

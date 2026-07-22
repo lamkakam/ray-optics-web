@@ -2,12 +2,6 @@
  * Describes the Import Custom Glass Store module.
  *
  * @remarks
- * ## State
- * | Field | Type | Default | Description |
- * |-------|------|---------|-------------|
- * | `sortState` | `readonly ImportCustomGlassSortState[]` | `[]` | Sanitized AG Grid sort state for readonly custom-glass data columns. |
- * | `filterModel` | `Partial<Record<ImportCustomGlassDataColumnId, unknown>>` | `{}` | Sanitized AG Grid filter model for readonly custom-glass data columns. |
- *
  * ## Data Columns
  * `IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS` is the allowlist for persisted table state:
  *
@@ -22,12 +16,6 @@
  *
  * The AG Grid selection column and unknown future columns are intentionally ignored until they are explicitly added to this tuple.
  *
- * ## Actions
- * | Action | Description |
- * |--------|-------------|
- * | `setSortState(state)` | Stores only entries whose `colId` is an allowed data column and whose `sort` is defined. |
- * | `setFilterModel(model)` | Stores only filter entries whose key is an allowed data column. |
- * | `resetTableState()` | Clears both sort and filter state. |
  */
 import type { ColumnState } from "ag-grid-community";
 import { type StateCreator } from "zustand";
@@ -48,13 +36,18 @@ export type ImportCustomGlassFilterModel = Record<ImportCustomGlassDataColumnId,
 export type ImportCustomGlassSortState = Pick<ColumnState, "colId" | "sort" | "sortIndex">;
 
 export interface ImportCustomGlassState {
+  /** Sanitized AG Grid sort state for readonly custom-glass data columns. Defaults to an empty array. */
   sortState: readonly ImportCustomGlassSortState[];
+  /** Sanitized AG Grid filter model for readonly custom-glass data columns. Defaults to an empty object. */
   filterModel: Partial<ImportCustomGlassFilterModel>;
 }
 
 export interface ImportCustomGlassActions {
+  /** Stores only entries whose `colId` is an allowed data column and whose `sort` is defined. */
   setSortState(state: readonly ColumnState[]): void;
+  /** Stores only filter entries whose key is an allowed data column. */
   setFilterModel(model: Record<string, unknown>): void;
+  /** Clears both the sort and filter state. */
   resetTableState(): void;
 }
 

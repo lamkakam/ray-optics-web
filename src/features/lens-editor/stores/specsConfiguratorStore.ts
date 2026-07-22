@@ -2,39 +2,6 @@
  * Zustand slice for managing the optical specifications configuration form. Holds aperture, field, and wavelength settings as flat state and provides conversion helpers to/from `OpticalSpecs`.
  *
  * @remarks
- * ## State
- *
- * | Field | Type | Default |
- * |---|---|---|
- * | `pupilSpace` | `PupilSpace` | `"object"` |
- * | `pupilType` | `PupilType` | `"epd"` |
- * | `pupilValue` | `number` | `0.5` |
- * | `fieldSpace` | `FieldSpace` | `"object"` |
- * | `fieldType` | `FieldType` | `"height"` |
- * | `maxField` | `number` | `0` |
- * | `relativeFields` | `number[]` | `[0]` |
- * | `isWideAngle` | `boolean` | `false` |
- * | `wavelengthWeights` | `WavelengthWeights` | `[[546.073, 1]]` (Note: `546.073` (e-line wavelength) is imported from `@/shared/lib/data/fraunhoferLines`) |
- * | `referenceIndex` | `ReferenceIndex` | `0` |
- * | `committedSpecs` | `OpticalSpecs` | mirrors default form state (epd 0.5, height field maxField 0, e-line wavelength) |
- * | `fieldModalOpen` | `boolean` | `false` |
- * | `wavelengthModalOpen` | `boolean` | `false` |
- *
- * ## Actions
- *
- * - `setAperture(patch)` — partial update for `pupilSpace`, `pupilType`, `pupilValue`; omitted keys are preserved.
- * - `setField(field)` — replaces all field properties atomically, including `isWideAngle`.
- * - `setWavelengths(wl)` — replaces `wavelengthWeights` and `referenceIndex` atomically.
- * - `openFieldModal()` / `closeFieldModal()` — toggle `fieldModalOpen`.
- * - `openWavelengthModal()` / `closeWavelengthModal()` — toggle `wavelengthModalOpen`.
- * - `toOpticalSpecs()` — builds and returns an `OpticalSpecs` object from current state; `field.isRelative` is always `true`, and `field.isWideAngle` is always emitted as a boolean.
- * - `loadFromSpecs(specs)` — populates all form state fields from an `OpticalSpecs` object (used when loading a model); does NOT update `committedSpecs`. Missing `field.isWideAngle` defaults to `false`.
- * - `setCommittedSpecs(specs)` — stores a committed snapshot of `OpticalSpecs`; called after a successful submit in `page.tsx`.
- * - `getFieldOptions()` — derives `{ label, value }[]` from `committedSpecs.field`; unit is `°` for angle, ` mm` for height.
- * - `getWavelengthOptions()` — derives `{ label, value }[]` from `committedSpecs.wavelengths.weights`.
- * - `clampFieldIndex(index, newSpecs?)` — clamps `index` to the last valid field index in `newSpecs` (if provided) or `committedSpecs`. Returns `Math.min(index, fields.length - 1)`.
- * - `clampWavelengthIndex(index, newSpecs?)` — clamps `index` to the last valid wavelength index in `newSpecs` (if provided) or `committedSpecs`. Returns `Math.min(index, weights.length - 1)`.
- *
  * ## Key Conventions
  *
  * - `relativeFields` maps to `OpticalSpecs.field.fields`; `isRelative` is hardcoded to `true` in `toOpticalSpecs`.
@@ -63,42 +30,55 @@ export type WavelengthWeights = OpticalSpecs["wavelengths"]["weights"];
 export type ReferenceIndex = OpticalSpecs["wavelengths"]["referenceIndex"];
 
 export interface SpecsConfiguratorState {
-  // Aperture
+  /** Pupil coordinate space. Defaults to `"object"`. */
   pupilSpace: PupilSpace;
+  /** Pupil specification type. Defaults to `"epd"`. */
   pupilType: PupilType;
+  /** Pupil value. Defaults to `0.5`. */
   pupilValue: number;
 
-  // Field
+  /** Field coordinate space. Defaults to `"object"`. */
   fieldSpace: FieldSpace;
+  /** Field specification type. Defaults to `"height"`. */
   fieldType: FieldType;
+  /** Maximum field value. Defaults to `0`. */
   maxField: number;
+  /** Relative field samples mapped to `OpticalSpecs.field.fields`. Defaults to `[0]`. */
   relativeFields: number[];
+  /** Whether wide-angle field handling is enabled. Defaults to `false`. */
   isWideAngle: boolean;
 
-  // Wavelengths
+  /** Wavelength/weight tuples in nanometres. Defaults to the e-line with weight `1`. */
   wavelengthWeights: WavelengthWeights;
+  /** Zero-based reference wavelength index. Defaults to `0`; callers keep it in range. */
   referenceIndex: ReferenceIndex;
 
-  // Committed specs (snapshot of last submitted form state)
+  /** Last committed specifications snapshot. Initially mirrors the default form state. */
   committedSpecs: OpticalSpecs;
+  /** Stores the committed specifications snapshot after a successful submit. */
   setCommittedSpecs: (specs: OpticalSpecs) => void;
+  /** Derives field selector options from `committedSpecs`, using degrees for angles and millimetres for heights. */
   getFieldOptions: () => { label: string; value: number }[];
+  /** Derives wavelength selector options from `committedSpecs`, labelled in nanometres. */
   getWavelengthOptions: () => { label: string; value: number }[];
 
-  // Clamping helpers
+  /** Clamps only the upper bound of a field index to the last field in `newSpecs`, or in `committedSpecs` when omitted. */
   clampFieldIndex: (index: number, newSpecs?: OpticalSpecs) => number;
+  /** Clamps only the upper bound of a wavelength index to the last wavelength in `newSpecs`, or in `committedSpecs` when omitted. */
   clampWavelengthIndex: (index: number, newSpecs?: OpticalSpecs) => number;
 
-  // Modal state
+  /** Whether the field configuration modal is open. Defaults to `false`. */
   fieldModalOpen: boolean;
+  /** Whether the wavelength configuration modal is open. Defaults to `false`. */
   wavelengthModalOpen: boolean;
 
-  // Actions
+  /** Partially updates aperture state, preserving omitted properties. */
   setAperture: (patch: {
     pupilSpace?: PupilSpace;
     pupilType?: PupilType;
     pupilValue?: number;
   }) => void;
+  /** Atomically replaces all field properties, including wide-angle mode. */
   setField: (field: {
     space: FieldSpace;
     type: FieldType;
@@ -106,15 +86,22 @@ export interface SpecsConfiguratorState {
     relativeFields: number[];
     isWideAngle: boolean;
   }) => void;
+  /** Atomically replaces wavelength weights and the reference index. */
   setWavelengths: (wl: {
     weights: WavelengthWeights;
     referenceIndex: ReferenceIndex;
   }) => void;
+  /** Opens the field configuration modal. */
   openFieldModal: () => void;
+  /** Closes the field configuration modal. */
   closeFieldModal: () => void;
+  /** Opens the wavelength configuration modal. */
   openWavelengthModal: () => void;
+  /** Closes the wavelength configuration modal. */
   closeWavelengthModal: () => void;
+  /** Builds current form state as `OpticalSpecs`, always emitting relative fields and a boolean wide-angle flag. */
   toOpticalSpecs: () => OpticalSpecs;
+  /** Loads form fields from specifications without changing `committedSpecs`; a missing wide-angle flag becomes `false`. */
   loadFromSpecs: (specs: OpticalSpecs) => void;
 }
 

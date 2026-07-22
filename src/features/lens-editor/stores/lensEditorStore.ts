@@ -4,45 +4,6 @@
  * @remarks
  * Zustand store for managing the lens editor grid and its associated modals. Holds the array of `GridRow` objects displayed in the surface table and coordinates selection, insertion, deletion, and modal open/close state.
  *
- * ## State
- *
- * | Field | Type | Default |
- * |---|---|---|
- * | `rows` | `GridRow[]` | `[OBJECT_ROW, IMAGE_ROW]` |
- * | `prescriptionRevision` | `number` | `0` |
- * | `optimizationSyncPolicy` | `"resetOptimizationModes" \| "preserveOptimizationModes"` | `"resetOptimizationModes"` |
- * | `selectedRowId` | `string \| undefined` | `undefined` |
- * | `autoAperture` | `boolean` | `false` |
- * | `activeBottomDrawerTabId` | `string` | `"specs"` |
- * | `bottomDrawerHeight` | `number \| undefined` | `undefined` |
- * | `mediumModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
- * | `pendingMediumSelection` | `{ rowId: string; medium: string; manufacturer: string } \| undefined` | `undefined` |
- * | `asphericalModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
- * | `decenterModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
- * | `diffractionGratingModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
- * | `apertureModal` | `{ open: boolean; rowId: string }` | `{ open: false, rowId: "" }` |
- * | `committedOpticalModel` | `OpticalModel \| undefined` | `undefined` |
- *
- * ## Actions
- *
- * - `setRows(rows, options?)` — replaces the entire rows array (used when loading a model), increments `prescriptionRevision`, and records an optional Optimization sync policy.
- * - `updateRow(id, patch, options?)` — merges `patch` into the row with the given id; `id` and `kind` are always preserved and cannot be overwritten by the patch. Successful updates increment `prescriptionRevision` and record an optional Optimization sync policy.
- * - `addRowAfter(id)` — inserts a new blank surface row immediately after the row with the given id; no-op if the id is not found or the target row is the image row.
- * - `deleteRow(id)` — removes the surface row with the given id; no-op for object/image rows. Clears `selectedRowId` if it matches the deleted row.
- * - `setSelectedRowId(id)` — sets or clears the selected row.
- * - `setAutoAperture(value)` — sets the auto-aperture flag.
- * - `setActiveBottomDrawerTabId(id)` — records the currently selected Lens Editor bottom-drawer tab so the same tab can be restored after navigating away and back.
- * - `setBottomDrawerHeight(height)` — records the most recently committed bottom-drawer height so the drawer can restore its size after navigating away and back.
- * - `openMediumModal(rowId)` — opens the glass medium picker modal and seeds `pendingMediumSelection` from the object or surface row’s confirmed medium/manufacturer.
- * - `updatePendingMediumSelection(patch)` — updates the unconfirmed catalog-glass selection while the medium modal is open.
- * - `commitPendingMediumSelection(selection?)` — writes the confirmed selection to the target row, then clears the pending draft and closes the modal. Optional `selection` allows model-glass values to bypass the catalog draft.
- * - `closeMediumModal()` — closes the medium modal and discards the pending draft.
- * - `openAsphericalModal(rowId)` / `closeAsphericalModal()` — open/close the aspherical coefficients modal.
- * - `openDecenterModal(rowId)` / `closeDecenterModal()` — open/close the surface decenter modal.
- * - `openDiffractionGratingModal(rowId)` / `closeDiffractionGratingModal()` — open/close the surface diffraction grating modal.
- * - `openApertureModal(rowId)` / `closeApertureModal()` — open/close the surface aperture modal.
- * - `setCommittedOpticalModel(model)` — stores the last successfully submitted `OpticalModel` snapshot. Used by `AnalysisPlotContainer` and other consumers that need the most recently committed model.
- *
  * ## Key Conventions
  *
  * - Object and image rows (`kind === "object"` / `kind === "image"`) cannot be deleted or added after (image guard in `addRowAfter`).
@@ -90,44 +51,82 @@ interface PrescriptionMutationOptions {
 }
 
 export interface LensEditorState {
+  /** Surface-grid rows. Defaults to the object and image rows. */
   rows: GridRow[];
+  /** Monotonically increasing prescription mutation counter. Defaults to `0`. */
   prescriptionRevision: number;
+  /** Policy Optimization should use for the latest prescription mutation. Defaults to `"resetOptimizationModes"`. */
   optimizationSyncPolicy: LensEditorOptimizationSyncPolicy;
+  /** Selected grid-row ID, or `undefined` when no row is selected. */
   selectedRowId: string | undefined;
+  /** Whether automatic aperture calculation is enabled. Defaults to `false`. */
   autoAperture: boolean;
+  /** App-lifetime computed semi-diameter cache keyed by stable row ID. Defaults to an empty object and does not alter manual row values. */
   autoSemiDiameters: Readonly<Record<string, number>>;
+  /** Active bottom-drawer tab ID, persisted across route changes. Defaults to `"specs"`. */
   activeBottomDrawerTabId: string;
+  /** Last committed bottom-drawer height for route restoration, initially `undefined`. */
   bottomDrawerHeight: number | undefined;
+  /** Medium-picker modal state. Defaults to closed with an empty row ID. */
   mediumModal: ModalState;
+  /** Unconfirmed medium selection, or `undefined` when no draft exists. */
   pendingMediumSelection: PendingMediumSelection | undefined;
+  /** Aspherical-coefficients modal state. Defaults to closed with an empty row ID. */
   asphericalModal: ModalState;
+  /** Surface-decenter modal state. Defaults to closed with an empty row ID. */
   decenterModal: ModalState;
+  /** Diffraction-grating modal state. Defaults to closed with an empty row ID. */
   diffractionGratingModal: ModalState;
+  /** Surface-aperture modal state. Defaults to closed with an empty row ID. */
   apertureModal: ModalState;
+  /** Last successfully submitted optical-model snapshot, initially `undefined`. */
   committedOpticalModel: OpticalModel | undefined;
 
+  /** Replaces all rows, increments `prescriptionRevision`, and records the supplied sync policy or the reset policy by default. */
   setRows: (rows: GridRow[], options?: PrescriptionMutationOptions) => void;
+  /** Merges a patch into an existing row while preserving its `id` and `kind`, then increments the revision and records the sync policy. Does nothing when `id` is absent. */
   updateRow: (id: string, patch: Partial<GridRow>, options?: PrescriptionMutationOptions) => void;
+  /** Inserts a default surface after `id` and increments the revision. Does nothing for an unknown ID or the image row. */
   addRowAfter: (id: string) => void;
+  /** Deletes a surface row, clears its selection, and increments the revision. Does nothing for missing, object, or image rows. */
   deleteRow: (id: string) => void;
+  /** Sets or clears the selected row ID. */
   setSelectedRowId: (id: string | undefined) => void;
+  /** Enables or disables automatic aperture calculation. */
   setAutoAperture: (value: boolean) => void;
+  /** Replaces the computed semi-diameter cache without changing editable manual semi-diameters. */
   setAutoSemiDiameters: (values: Readonly<Record<string, number>>) => void;
+  /** Clears the computed semi-diameter cache without changing editable manual semi-diameters. */
   clearAutoSemiDiameters: () => void;
+  /** Persists the active bottom-drawer tab ID across route changes. */
   setActiveBottomDrawerTabId: (id: string) => void;
+  /** Persists the latest committed bottom-drawer height across route changes. */
   setBottomDrawerHeight: (height: number) => void;
+  /** Opens the medium picker for `rowId` and seeds its pending draft from a valid object or surface row. */
   openMediumModal: (rowId: string) => void;
+  /** Updates the pending medium and manufacturer when a draft exists; otherwise does nothing. */
   updatePendingMediumSelection: (patch: Pick<PendingMediumSelection, "medium" | "manufacturer">) => void;
+  /** Commits the explicit selection or pending draft to its target row, then closes the modal and clears the draft. Does nothing when no selection is available. */
   commitPendingMediumSelection: (selection?: Pick<PendingMediumSelection, "medium" | "manufacturer">) => void;
+  /** Closes the medium picker, resets its row ID, and discards the pending draft. */
   closeMediumModal: () => void;
+  /** Opens the aspherical-coefficients modal for a row. */
   openAsphericalModal: (rowId: string) => void;
+  /** Closes the aspherical-coefficients modal and resets its row ID. */
   closeAsphericalModal: () => void;
+  /** Opens the surface-decenter modal for a row. */
   openDecenterModal: (rowId: string) => void;
+  /** Closes the surface-decenter modal and resets its row ID. */
   closeDecenterModal: () => void;
+  /** Opens the diffraction-grating modal for a row. */
   openDiffractionGratingModal: (rowId: string) => void;
+  /** Closes the diffraction-grating modal and resets its row ID. */
   closeDiffractionGratingModal: () => void;
+  /** Opens the surface-aperture modal for a row. */
   openApertureModal: (rowId: string) => void;
+  /** Closes the surface-aperture modal and resets its row ID. */
   closeApertureModal: () => void;
+  /** Stores the last successfully submitted optical-model snapshot for analysis consumers. */
   setCommittedOpticalModel: (model: OpticalModel) => void;
 }
 

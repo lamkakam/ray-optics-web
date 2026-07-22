@@ -2,30 +2,6 @@
  * Describes the Glass Map Store module.
  *
  * @remarks
- * ## State (`GlassMapState`)
- * | Field | Type | Default | Description |
- * |-------|------|---------|-------------|
- * | `plotType` | `GlassMapPlotType` | `'refractiveIndex'` | Which plot type to display |
- * | `abbeNumCenterLine` | `AbbeNumCenterLine` | `'d'` | d or e spectral line for Abbe number axis |
- * | `partialDispersionType` | `PartialDispersionType` | `'P_gF'` | Which partial dispersion for y-axis |
- * | `enabledCatalogs` | `Record<CatalogName, boolean>` | all `true` | Per-catalog visibility filter |
- * | `selectedGlass` | `SelectedGlass \| undefined` | `undefined` | Currently clicked/selected glass |
- * | `catalogsData` | `CompleteGlassCatalogsData \| undefined` | `undefined` | Normalized loaded glass catalog data shared across the app, including `Custom` |
- * | `lookupMaps` | `GlassLookupMaps \| undefined` | `undefined` | Lookup maps built by the glass-map runtime library from the same normalized catalog data |
- *
- * ## Actions (`GlassMapActions`)
- * | Action | Description |
- * |--------|-------------|
- * | `setPlotType(t)` | Switch between refractiveIndex / partialDispersion |
- * | `setAbbeNumCenterLine(l)` | Switch d/e spectral line |
- * | `setPartialDispersionType(t)` | Switch P_Fd / P_fe / P_gF |
- * | `toggleCatalog(name)` | Toggle a single catalog's enabled state |
- * | `enableCatalog(name)` | Force a single catalog to enabled=true without toggling others |
- * | `setSelectedGlass(glass)` | Set or clear the selected glass (callable from external components) |
- * | `setCatalogsData(data)` | Replace normalized catalog data and rebuild lookup maps from it |
- * | `upsertCustomGlasses(materialsData)` | Merge worker-returned user-defined glass data into `catalogsData.Custom` and rebuild lookup maps |
- * | `deleteCustomGlasses(labels)` | Remove labels from `catalogsData.Custom`, rebuild lookup maps, and clear `selectedGlass` when its Custom entry was deleted |
- *
  * ## Loading Ownership
  * - `GlassMapStore` intentionally does not own catalog loading status or catalog loading errors.
  * - `app/AppShell.tsx` owns preload status/error, keeps the initialization overlay visible while initial loading is pending, and keeps it visible with the local error if loading fails.
@@ -48,24 +24,40 @@ import {
 import { buildGlassLookupMaps, completeAllCatalogsData } from "@/features/glass-map/lib/glassMap";
 
 export interface GlassMapState {
+  /** Plot shown by the Glass Map. Defaults to `"refractiveIndex"`. */
   plotType: GlassMapPlotType;
+  /** Spectral line used for the Abbe-number axis. Defaults to `"d"`. */
   abbeNumCenterLine: AbbeNumCenterLine;
+  /** Partial-dispersion measure used for the y-axis. Defaults to `"P_gF"`. */
   partialDispersionType: PartialDispersionType;
+  /** Per-catalog visibility flags. Every catalog is enabled by default. */
   enabledCatalogs: Record<CatalogName, boolean>;
+  /** Currently selected glass, or `undefined` when no glass is selected. */
   selectedGlass: SelectedGlass | undefined;
+  /** Normalized app-wide catalog data, including `Custom`, or `undefined` until loading succeeds. */
   catalogsData: CompleteGlassCatalogsData | undefined;
+  /** Lookup maps built from `catalogsData`, or `undefined` until catalog loading succeeds. */
   lookupMaps: GlassLookupMaps | undefined;
 }
 
 export interface GlassMapActions {
+  /** Selects the refractive-index or partial-dispersion plot. */
   setPlotType(t: GlassMapPlotType): void;
+  /** Selects the `d` or `e` spectral line for the Abbe-number axis. */
   setAbbeNumCenterLine(l: AbbeNumCenterLine): void;
+  /** Selects the partial-dispersion measure used for the y-axis. */
   setPartialDispersionType(t: PartialDispersionType): void;
+  /** Toggles one catalog's enabled state without changing other catalogs. */
   toggleCatalog(name: CatalogName): void;
+  /** Enables one catalog without changing other catalogs. */
   enableCatalog(name: CatalogName): void;
+  /** Sets or clears the externally accessible selected glass. */
   setSelectedGlass(glass: SelectedGlass | undefined): void;
+  /** Normalizes replacement catalog data and atomically rebuilds its lookup maps. */
   setCatalogsData(data: AllGlassCatalogsData): void;
+  /** Merges worker-returned user-defined glasses into `catalogsData.Custom` and rebuilds lookup maps. Does nothing before catalog data is loaded. */
   upsertCustomGlasses(materialsData: UserDefinedMaterialsData): void;
+  /** Removes labels from `catalogsData.Custom`, rebuilds lookup maps, and clears `selectedGlass` if its Custom entry was removed. Does nothing before catalog data is loaded. */
   deleteCustomGlasses(labels: readonly string[]): void;
 }
 

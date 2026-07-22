@@ -2,18 +2,6 @@
  * Zustand store for analysis results computed after each successful submit. Holds Seidel aberration data and first-order optical data returned by the Pyodide worker.
  *
  * @remarks
- * ## State
- *
- * | Field | Type | Default |
- * |---|---|---|
- * | `seidelData` | `SeidelData \| undefined` | `undefined` |
- * | `firstOrderData` | `Record<string, number> \| undefined` | `undefined` |
- *
- * ## Actions
- *
- * - `setSeidelData(data)` — stores or clears the 3rd-order Seidel aberration data returned by `proxy.get3rdOrderSeidelData`. Populated after each successful submit; controls visibility of the Seidel and Zernike buttons.
- * - `setFirstOrderData(data)` — stores or clears the first-order optical data (e.g. EFL, f-number) returned by `proxy.getFirstOrderData`. Populated after each successful submit.
- *
  * ## Dependencies
  *
  * - `create`, `StateCreator` from `zustand`.
@@ -23,10 +11,14 @@ import { type StateCreator } from "zustand";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 
 export interface AnalysisDataState {
+  /** Third-order Seidel aberration data from the latest successful submit, or `undefined` before submission or after clearing. Controls visibility of the Seidel and Zernike buttons. */
   seidelData: SeidelData | undefined;
+  /** First-order optical data, such as EFL and f-number, from the latest successful submit, or `undefined` before submission or after clearing. */
   firstOrderData: Record<string, number> | undefined;
 
+  /** Stores or clears the third-order Seidel aberration data returned by `proxy.get3rdOrderSeidelData`. */
   setSeidelData: (data: SeidelData | undefined) => void;
+  /** Stores or clears the first-order optical data returned by `proxy.getFirstOrderData`. */
   setFirstOrderData: (data: Record<string, number> | undefined) => void;
 }
 
@@ -37,4 +29,3 @@ export const createAnalysisDataSlice: StateCreator<AnalysisDataState> = (set) =>
   setSeidelData: (data) => set({ seidelData: data }),
   setFirstOrderData: (data) => set({ firstOrderData: data }),
 });
-
