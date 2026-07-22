@@ -1,6 +1,3 @@
-/**
-# `features/optimization/components/LensPrescriptionGrid/PickupModeFields/PickupModeFields.tsx`
-*/
 "use client";
 
 import { Input } from "@/shared/components/primitives/Input";

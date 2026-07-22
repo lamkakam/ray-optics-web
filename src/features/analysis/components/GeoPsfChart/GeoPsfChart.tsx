@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/GeoPsfChart/GeoPsfChart.tsx`
-*/
 "use client";
 
 import { COORDINATE_SYSTEM, DeckGL, OrthographicView, ScatterplotLayer } from "deck.gl";
@@ -26,8 +23,6 @@ interface GeoPsfChartProps {
 const DECK_VIEW_ID = "geo-psf-view";
 
 /**
-## Purpose
-
 Renders the Geometric PSF analysis view as a deck.gl `ScatterplotLayer` inside an `OrthographicView` using Cartesian coordinates.
 
 ## Key Behaviors

@@ -1,6 +1,3 @@
-/**
-# `shared/components/primitives/MenuContainer/MenuContainer.tsx`
-*/
 import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";

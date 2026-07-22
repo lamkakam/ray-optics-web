@@ -1,6 +1,4 @@
 /**
-# `shared/lib/lens-prescription-grid/LensPrescriptionGridCells.tsx`
-
 Reusable prescription grid cell UI that is safe for `shared/` because it depends only on shared primitives.
 
 ## Behavior

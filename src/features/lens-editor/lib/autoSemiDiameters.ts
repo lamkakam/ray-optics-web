@@ -1,6 +1,3 @@
-/**
-# `autoSemiDiameters.ts`
-*/
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
 /**

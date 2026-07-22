@@ -1,6 +1,4 @@
 /**
-# `features/optimization/OptimizationPage.tsx`
-
 ## Key Conventions
 
 - The optimization page stays decoupled from the editor while open; it does not mutate the editor until the user confirms `Apply to Editor`.
@@ -81,8 +79,6 @@ function buildCurrentEditorModel(
 }
 
 /**
-## Purpose
-
 Client page component for the optimization workflow. It initializes and continuously synchronizes a page-local optimization snapshot from the editor stores, orchestrates the extracted optimization view components, calls the Pyodide worker, and applies optimized results back to the editor on confirmation.
 
 ## Behavior

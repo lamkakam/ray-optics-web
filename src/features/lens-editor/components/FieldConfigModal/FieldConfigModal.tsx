@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/FieldConfigModal/FieldConfigModal.tsx`
-
 ## Internal State
 
 - `space`, `fieldType`, `maxFieldStr`, `isWideAngle` — draft values for the controls.
@@ -75,8 +73,6 @@ function fieldsToRows(fields: readonly number[]): FieldRow[] {
 const MAX_ROWS = 10;
 
 /**
-## Purpose
-
 Modal for configuring optical field settings: field space, field type, max half-field value, a list of relative field positions, and the optional wide-angle ray-aiming mode. Uses AG Grid for the editable field table.
 
 ## Key Behaviors
@@ -89,49 +85,6 @@ Modal for configuring optical field settings: field space, field type, max half-
 - Row ids use a module-level counter for stable AG Grid `getRowId`.
 - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
 - Keeps the caption outside a grid container that is `200px` high below the project-standard `1440px` breakpoint and `400px` high at `1440px` and above, and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
-
-## Usages
-
-```tsx
-import { FieldConfigModal } from "@/features/lens-editor/components/FieldConfigModal";
-
-// In a container component (e.g., SpecsConfiguratorContainer)
-const fieldSpace = useStore(store, (s) => s.fieldSpace);
-const fieldType = useStore(store, (s) => s.fieldType);
-const maxField = useStore(store, (s) => s.maxField);
-const relativeFields = useStore(store, (s) => s.relativeFields);
-const isWideAngle = useStore(store, (s) => s.isWideAngle);
-const fieldModalOpen = useStore(store, (s) => s.fieldModalOpen);
-
-const handleFieldApply = useCallback(
-  (result: {
-    space: FieldSpace;
-    type: FieldType;
-    maxField: number;
-    relativeFields: number[];
-    isWideAngle: boolean;
-  }) => {
-    store.getState().setField(result);
-    store.getState().closeFieldModal();
-  },
-  [store]
-);
-
-return (
-  <>
-    <FieldConfigModal
-      isOpen={fieldModalOpen}
-      initialSpace={fieldSpace}
-      initialType={fieldType}
-      initialMaxField={maxField}
-      initialRelativeFields={relativeFields}
-      initialIsWideAngle={isWideAngle}
-      onApply={handleFieldApply}
-      onClose={() => store.getState().closeFieldModal()}
-    />
-  </>
-);
-```
 */
 export function FieldConfigModal({
   isOpen,

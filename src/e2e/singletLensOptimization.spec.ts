@@ -1,8 +1,4 @@
 /**
-# `singletLensOptimization.spec.ts`
-
-## Purpose
-
 Playwright end-to-end coverage for the complete singlet optimization workflow, from importing the supplied lens configuration through applying optimized even-aspheric coefficients back to the Lens Editor.
 
 ## Flow

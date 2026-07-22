@@ -1,33 +1,8 @@
 /**
-# `features/glass-map/lib/glassMap.ts`
-
-## Purpose
 Runtime helper functions and rendering constants for the Glass Map feature.
 
 Type definitions and `CATALOG_NAMES` live in `features/glass-map/types/glassMap.ts`.
-
-## Usages
-
-```tsx
-import {
-  CATALOG_COLOR_MAP,
-  completeAllCatalogsData,
-  computePlotPoints,
-} from "@/features/glass-map/lib/glassMap";
-import type { AllGlassCatalogsData, CatalogName } from "@/features/glass-map/types/glassMap";
-
-const catalogsData = completeAllCatalogsData(rawData);
-
-const plotPoints = computePlotPoints(
-  catalogsData,
-  enabledCatalogs,
-  "refractiveIndex",
-  "d",
-  "P_gF"
-);
-
-const color = CATALOG_COLOR_MAP.Schott;
-```*/
+*/
 import {
   CATALOG_NAMES,
   type AbbeNumCenterLine,

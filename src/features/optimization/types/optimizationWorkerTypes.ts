@@ -1,8 +1,4 @@
 /**
-# `features/optimization/types/optimizationWorkerTypes.ts`
-
-## Purpose
-
 TypeScript types for the optimization UI and the Pyodide worker boundary.
 
 ## Key Conventions

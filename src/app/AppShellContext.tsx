@@ -1,5 +1,4 @@
 /**
-# `app/AppShellContext.tsx`
 ## Behaviour
 - `proxy` and `isReady` come from `usePyodide()` owned by `app/AppShell.tsx`
 - `openErrorModal()` lets child pages surface worker/setup errors through the shared shell modal
@@ -21,7 +20,6 @@ interface AppShellContextValue {
 }
 
 /**
-## Purpose
 Client-only context for app routes rendered inside the shared shell. Exposes shared Pyodide state and shell-level UI actions without prop drilling through every page.
 */
 const AppShellContext = createContext<AppShellContextValue | undefined>(undefined);

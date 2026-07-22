@@ -1,6 +1,4 @@
 /**
-# `features/analysis/components/RayFanChart/rayFanChartOption.ts`
-
 ## Output Shape
 
 - `title`: two subplot titles
@@ -162,8 +160,6 @@ function getAxisExtents(rayFanData: RayFanData): RayFanAxisExtents {
 }
 
 /**
-## Purpose
-
 Defines the Ray Fan ECharts configuration used by `RayFanChart`. This module owns ECharts registration, fixed layout constants, wavelength-based color assignment, and conversion from worker-provided ray-fan data into paired tangential/sagittal line series.
 
 ## Key Behaviors

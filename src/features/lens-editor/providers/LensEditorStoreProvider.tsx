@@ -1,6 +1,3 @@
-/**
-# `features/lens-editor/providers/LensEditorStoreProvider.tsx`
-*/
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
@@ -19,38 +16,8 @@ export interface LensEditorStoreProviderProps {
 }
 
 /**
-## Purpose
-
 Provides a single `StoreApi<LensEditorState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
-
-## Usage
-
-In `app/layout.tsx` — mount the provider once:
-```tsx
-<ThemeProvider>
-  <LensEditorStoreProvider>
-    {children}
-  </LensEditorStoreProvider>
-</ThemeProvider>
-```
-
-Inside any lens-editor component — imperative access:
-```tsx
-import { useStore } from "zustand";
-// ...
-const lensStore = useLensEditorStore();
-const rows = useStore(lenStore, (s) => s.rows);
-lensStore.getState().updateRow(id, patch);
-```
-
-In tests — inject a pre-built store:
-```tsx
-render(
-  <LensEditorStoreContext.Provider value={store}>
-    <MyComponent />
-  </LensEditorStoreContext.Provider>
-);
-```*/
+*/
 export const LensEditorStoreProvider: React.FC<LensEditorStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

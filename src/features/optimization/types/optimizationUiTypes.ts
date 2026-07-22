@@ -1,8 +1,4 @@
 /**
-# `features/optimization/types/optimizationUiTypes.ts`
-
-## Purpose
-
 Optimizer UI metadata/config type definitions consumed by `features/optimization/lib/optimizerUiConfig.ts`.
 
 ## Key Conventions

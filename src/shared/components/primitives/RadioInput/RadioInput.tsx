@@ -1,6 +1,4 @@
 /**
-# `shared/components/primitives/RadioInput/RadioInput.tsx`
-
 ## Styling
 
 Uses Tailwind CSS.
@@ -69,8 +67,6 @@ interface RadioInputProps<T extends string> {
 }
 
 /**
-## Purpose
-
 A generic radio button group component. Renders a `<fieldset>` with a `<legend>` and one labelled `<input type="radio">` per option.
 
 ## Behavior
@@ -82,76 +78,6 @@ A generic radio button group component. Renders a `<fieldset>` with a `<legend>`
 - `labelNode` allows rich content (e.g. MathJax nodes) while keeping plain-text accessibility.
 - `columns` controls the option grid layout. Accepted values are `1`, `2`, `3`, and `4`; the default is `1`.
 - `layout` controls whether the option grid stretches to the full available width (`"full"`, default) or shrinks to content width with compact horizontal gutters (`"compact"`).
-
-## Usages
-
-```tsx
-// Chromaticity options
-<RadioInput
-  name="chromaticity"
-  label="Chromaticity"
-  options={[
-    { value: "mono", label: "Monochromatic" },
-    { value: "poly", label: "Polychromatic" },
-  ]}
-  value={chromaticity}
-  onChange={onChromaticityChange}
-  disabled={isCalculating}
-/>
-
-// Metric selection with custom labelNode for rich content
-<RadioInput
-  name="metric"
-  label="Metric"
-  options={[
-    { value: "rmsSpot", label: "Minimize RMS Spot Radius" },
-    { value: "wavefront", label: "Minimize Wavefront Error" },
-  ]}
-  value={metric}
-  onChange={onMetricChange}
-/>
-
-// Two-column option layout
-<RadioInput
-  name="viewMode"
-  label="View Mode"
-  options={[
-    { value: "spot", label: "Spot" },
-    { value: "wavefront", label: "Wavefront" },
-    { value: "field", label: "Field" },
-    { value: "distortion", label: "Distortion" },
-  ]}
-  value={viewMode}
-  onChange={onViewModeChange}
-  columns={2}
-/>
-
-// Compact two-column option layout
-<RadioInput
-  name="plotType"
-  label="Plot Type"
-  options={[
-    { value: "refractiveIndex", label: "Refractive Index" },
-    { value: "partialDispersion", label: "Partial Dispersion" },
-  ]}
-  value={plotType}
-  onChange={onPlotTypeChange}
-  columns={2}
-  layout="compact"
-/>
-
-// Radio group with MathJax content
-<RadioInput
-  name="aberration"
-  label="Aberration Type"
-  options={[
-    { value: "spherical", label: "Spherical", labelNode: <MathJax>{`\\(SA\\)`}</MathJax> },
-    { value: "coma", label: "Coma", labelNode: <MathJax>{`\\(Coma\\)`}</MathJax> },
-  ]}
-  value={selectedAberration}
-  onChange={onAberrationChange}
-/>
-```
 */
 export function RadioInput<T extends string>({
   name,

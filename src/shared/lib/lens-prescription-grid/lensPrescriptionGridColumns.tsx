@@ -1,6 +1,4 @@
 /**
-# `shared/lib/lens-prescription-grid/lensPrescriptionGridColumns.tsx`
-
 In read-only auto mode the semi-diameter column shows its computed ID-keyed value or the manual fallback, including rectangular clear apertures. Manual mode continues to blank rectangular cells.
 
 Shared column and AG Grid configuration for lens prescription grids.

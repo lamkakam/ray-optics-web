@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/FocusingContainer/FocusingContainer.tsx`
-
 ## Internal State
 
 - `chromaticity: "mono" | "poly"` (default `"mono"`)
@@ -41,8 +39,6 @@ interface FocusingContainerProps {
 }
 
 /**
-## Purpose
-
 Container for the Focusing tab in the bottom drawer. Manages focusing strategy state, calls the appropriate worker function, updates the last surface thickness in `lensStore`, then calls `onUpdateSystem` to recompute the model.
 
 ## Behavior
@@ -62,8 +58,6 @@ Container for the Focusing tab in the bottom drawer. Manages focusing strategy s
 The `disabled` prop passed to `FocusingPanel` is `!isReady || computing || focusing`.
 
 `fieldOptions` are derived reactively from `useSpecsConfiguratorStore` and Zustand's `useStore` (subscribes to `relativeFields`, `maxField`, `fieldType`). This means the Field dropdown updates immediately when field configuration changes in `specsStore`, even before the user clicks "Update System".
-
-## Usages
 
 Instantiated in `BottomDrawerContainer.tsx` as the "Focusing" tab content.
 */

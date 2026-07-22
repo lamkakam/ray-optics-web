@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/ZernikeTermsModal/ZernikeTermsModal.tsx`
-
 ## Internal State
 
 | State | Type | Description |
@@ -69,8 +67,6 @@ interface ZernikeTermsModalProps {
 }
 
 /**
-## Purpose
-
 Modal that displays Zernike polynomial coefficients for a selected Half-Field, wavelength, and ordering (Noll or Fringe). Data is fetched lazily when the modal opens or when any dropdown selection changes.
 
 ## Key Behaviors
@@ -93,40 +89,6 @@ Modal that displays Zernike polynomial coefficients for a selected Half-Field, w
   - Initial load (`loading && !data`): shows "Loading…" text, no table.
   - Re-fetch (`loading && data`): shows `<LoadingMask>` overlaid on the existing table (stale data stays visible behind the mask).
   - Idle (`!loading && data`): table visible, no mask.
-
-## Usages
-
-```tsx
-import { NUM_FRINGE_TERMS, NUM_NOLL_TERMS } from "@/features/lens-editor/lib/zernikeData";
-import { ZernikeTermsModal } from "@/features/lens-editor/components/ZernikeTermsModal";
-import type { ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
-
-// In a page component (e.g., LensEditor)
-const [zernikeModalOpen, setZernikeModalOpen] = useState(false);
-
-const handleFetchZernikeData = useCallback(
-  async (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => {
-    if (!proxy) throw new Error("Pyodide not ready");
-    const committedOpticalModel = lensStore.getState().committedOpticalModel;
-    if (!committedOpticalModel) throw new Error("No optical model computed yet");
-    const numTerms = ordering === "noll" ? NUM_NOLL_TERMS : NUM_FRINGE_TERMS;
-    return proxy.getZernikeCoefficients(committedOpticalModel, fieldIndex, wvlIndex, imagePoint, numTerms, ordering);
-  },
-  [proxy, lensStore]
-);
-
-return (
-  <>
-    <ZernikeTermsModal
-      isOpen={zernikeModalOpen}
-      fieldOptions={specsStore.getState().getFieldOptions()}
-      wavelengthOptions={specsStore.getState().getWavelengthOptions()}
-      onFetchData={handleFetchZernikeData}
-      onClose={() => setZernikeModalOpen(false)}
-    />
-  </>
-);
-```
 */
 export function ZernikeTermsModal({
   isOpen,

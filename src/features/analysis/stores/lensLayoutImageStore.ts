@@ -1,8 +1,4 @@
 /**
-# `features/analysis/stores/lensLayoutImageStore.ts`
-
-## Purpose
-
 Zustand store for managing the lens layout image and its loading state. Holds the base64-encoded lens layout image and a loading flag, following the same pattern as `analysisPlotStore`.
 
 ## State
@@ -20,27 +16,7 @@ Zustand store for managing the lens layout image and its loading state. Holds th
 ## Dependencies
 
 - `StateCreator` from `zustand`.
-
-## Usages
-
-```tsx
-import { useStore } from "zustand";
-import { useLensLayoutImageStore } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
-
-function LensLayoutSection() {
-  const store = useLensLayoutImageStore();
-  const layoutImage = useStore(store, (s) => s.layoutImage);
-  const layoutLoading = useStore(store, (s) => s.layoutLoading);
-
-  if (layoutLoading && !layoutImage) {
-    return <p>Loading layout...</p>;
-  }
-
-  return layoutImage ? (
-    <img src={`data:image/png;base64,${layoutImage}`} alt="Lens layout" />
-  ) : null;
-}
-```*/
+*/
 import type { StateCreator } from "zustand";
 
 export interface LensLayoutImageState {

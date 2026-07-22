@@ -1,6 +1,4 @@
 /**
-# `__mocks__/ag-grid-react.tsx`
-
 Jest mock for AG Grid React.
 
 - Renders grid data as an HTML table with headers, rows, text inputs for editable text cells, and native selects for `agSelectCellEditor`.

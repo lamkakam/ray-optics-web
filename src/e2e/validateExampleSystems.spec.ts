@@ -1,8 +1,4 @@
 /**
-# `e2e/validateExampleSystems.spec.ts`
-
-## Purpose
-
 Playwright end-to-end coverage that validates every bundled example system through the same visible controls used by a person.
 
 ## Behavior

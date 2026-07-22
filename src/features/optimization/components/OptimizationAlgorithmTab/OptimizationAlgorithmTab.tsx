@@ -1,6 +1,3 @@
-/**
-# `features/optimization/components/OptimizationAlgorithmTab/OptimizationAlgorithmTab.tsx`
-*/
 "use client";
 
 import { Input } from "@/shared/components/primitives/Input";

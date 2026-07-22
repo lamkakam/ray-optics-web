@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/DiffractionGratingCell/DiffractionGratingCell.tsx`
-
 Compatibility export for `DiffractionGratingCell`.
 
 The implementation lives in `shared/lib/lens-prescription-grid/LensPrescriptionGridCells.tsx` so Lens Editor and Optimization can reuse the same prescription cell UI without importing from `features/`.

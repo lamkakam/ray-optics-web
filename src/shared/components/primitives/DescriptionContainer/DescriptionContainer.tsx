@@ -1,6 +1,3 @@
-/**
-# `shared/components/primitives/DescriptionContainer/DescriptionContainer.tsx`
-*/
 import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";

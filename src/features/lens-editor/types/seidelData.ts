@@ -1,6 +1,3 @@
-/**
-# `features/lens-editor/types/seidelData.ts`
-*/
 import type { ReactNode } from "react";
 
 export interface SeidelSurfaceBySurfaceData {
@@ -10,15 +7,8 @@ export interface SeidelSurfaceBySurfaceData {
 }
 
 /**
-## Purpose
-
 Defines Seidel aberration payload types used by the lens editor modal and analysis third-order chart.
-
-## Usage
-
-```ts
-import type { SeidelData } from "@/features/lens-editor/types/seidelData";
-```*/
+*/
 export interface SeidelData {
   surfaceBySurface: SeidelSurfaceBySurfaceData;
   transverse: Record<string, number>;  // TSA, TCO, TAS, SAS, PTB, DST

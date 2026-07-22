@@ -1,6 +1,4 @@
 /**
-# `app/settings/page.tsx`
-
 ## Behaviour
 - Reads `theme` and `setTheme` from `ThemeProvider`
 - Adapts the `<select>` change event into the `Theme` union
@@ -22,7 +20,6 @@ const themeOptions: { value: Theme; label: string }[] = [
 ];
 
 /**
-## Purpose
 Settings route page (`/settings`).
 */
 export default function SettingsPage() {

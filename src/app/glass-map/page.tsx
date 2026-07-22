@@ -1,6 +1,4 @@
 /**
-# `app/glass-map/page.tsx`
-
 ## Behaviour
 - Reads `proxy` and `isReady` from `useAppShell()`
 - Wraps query-param parsing in a `React.Suspense` boundary to satisfy the App Router build requirement for `useSearchParams()`
@@ -87,7 +85,6 @@ function GlassMapPageContent({ proxy, isReady }: GlassMapPageContentProps) {
 }
 
 /**
-## Purpose
 Glass Map route page (`/glass-map`).
 */
 export default function GlassMapPage() {

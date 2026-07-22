@@ -1,6 +1,3 @@
-/**
-# `shared/components/primitives/Select/Select.tsx`
-*/
 import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
@@ -18,8 +15,6 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 }
 
 /**
-## Purpose
-
 Themed `<select>` primitive with two visual densities. Renders a list of `SelectOption` items and optionally a disabled placeholder. Forwards a ref for programmatic focus.
 
 ## Key Behaviors
@@ -30,36 +25,6 @@ Themed `<select>` primitive with two visual densities. Renders a list of `Select
 - Both variants use responsive font-size tokens: 16 px (`text-base`) below 1440 px to avoid small-screen browser text zoom, and 14 px (`text-sm`) at `screenLG` for desktop density.
 - The `<select>` is wrapped in a `<div>` with `relative w-full` plus any `className` passed via props. Width/spacing constraints (e.g. `max-w-xs`) are applied to the wrapper `<div>`, not the inner `<select>`. This ensures the SVG chevron arrow is always positioned relative to the visible control boundary and stays within bounds.
 - The inner `<select>` always has `w-full` so it fills the wrapper regardless of the wrapper's width constraint.
-
-## Usages
-
-```tsx
-// Basic dropdown with aperture types
-<Select
-  aria-label="System aperture type"
-  options={APERTURE_OPTIONS}
-  value={currentDropdownValue}
-  onChange={handleDropdownChange}
-/>
-
-// With placeholder
-<Select
-  aria-label="Glass"
-  options={glassOptions}
-  value={selectedGlass}
-  placeholder="Select glass..."
-  onChange={handleChange}
-/>
-
-// Disabled state
-<Select
-  aria-label="Plot type"
-  options={PLOT_TYPE_OPTIONS}
-  value={selectedPlotType}
-  disabled={fieldDisabled}
-  onChange={handleChange}
-/>
-```
 */
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   function Select({ options, placeholder, className, ...rest }, ref) {

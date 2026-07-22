@@ -1,6 +1,4 @@
 /**
-# `jest.setup.ts`
-
 Shared Jest setup for the jsdom test environment.
 
 - Registers `@testing-library/jest-dom` matchers.

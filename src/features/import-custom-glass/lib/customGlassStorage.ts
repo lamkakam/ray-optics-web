@@ -1,7 +1,4 @@
 /**
-# `features/import-custom-glass/lib/customGlassStorage.ts`
-
-## Purpose
 IndexedDB persistence for user-defined custom glass rows.
 
 ## Database Contract

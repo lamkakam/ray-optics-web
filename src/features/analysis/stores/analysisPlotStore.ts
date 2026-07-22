@@ -1,8 +1,4 @@
 /**
-# `features/analysis/stores/analysisPlotStore.ts`
-
-## Purpose
-
 Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, field-curvature data, astigmatism-curve data, longitudinal-spherical-aberration data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
 
 ## State

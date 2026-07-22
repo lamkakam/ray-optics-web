@@ -1,6 +1,4 @@
 /**
-# `features/optimization/components/LensPrescriptionGrid/ThicknessModeModal/ThicknessModeModal.tsx`
-
 Renders the thickness variable/pickup modal with modal-local draft state.
 
 ## Modal Footer

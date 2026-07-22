@@ -1,34 +1,6 @@
 /**
-# `features/lens-editor/lib/zernikeData.ts`
-
-## Purpose
-
 Runtime utilities for rendering Zernike polynomial tables in the lens editor.
 This module owns Noll and Fringe ordering definitions for both UI display and worker term-list generation.
-
-## Usage
-
-```ts
-import {
-  nollToNm,
-  zernikeNotation,
-  classicalName,
-  NUM_NOLL_TERMS,
-} from "@/features/lens-editor/lib/zernikeData";
-import type { ZernikeData } from "@/features/lens-editor/types/zernikeData";
-
-function renderZernikeTable(zernikeData: ZernikeData) {
-  return zernikeData.coefficients.slice(0, NUM_NOLL_TERMS).map((coeff, index) => {
-    const [n, m] = nollToNm(index + 1);
-
-    return {
-      notation: zernikeNotation(n, m),
-      name: classicalName(n, m),
-      coefficient: coeff,
-    };
-  });
-}
-```
 
 ## Notes
 

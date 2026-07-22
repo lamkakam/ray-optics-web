@@ -1,8 +1,4 @@
 /**
-# `features/example-systems/lib/exampleSystems.ts`
-
-## Purpose
-
 Provides a catalogue of complete definitions covering a wide variety of optical designs, exported as a keyed record for use in the system-selector UI.
 
 ## Edge Cases / Error Handling
@@ -14,35 +10,7 @@ Provides a catalogue of complete definitions covering a wide variety of optical 
   - `{ kind: "Conic", conicConstant }`
   - `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
 - The Ortho-APO example uses Ohara's catalogue-supported canonical `S-BSL 7` glass name.
-
-## Usages
-
-```tsx
-import { ExampleSystemList, type ExampleSystemName } from "@/features/example-systems/lib/exampleSystems";
-import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-
-// In a system selector dropdown
-function SystemSelector() {
-  const handleSelectSystem = (key: ExampleSystemName) => {
-    const model = ExampleSystemList[key];
-
-    // Load the selected system into the editor
-    lensEditorStore.getState().setRows(surfacesToGridRows(model));
-    specsStore.getState().loadFromSpecs(model.specs);
-  };
-
-  return (
-    <select onChange={(e) => handleSelectSystem(e.target.value as ExampleSystemName)}>
-      <option value="">Choose an example system...</option>
-      {Object.keys(ExampleSystemList).map((key) => (
-        <option key={key} value={key}>
-          {key}
-        </option>
-      ))}
-    </select>
-  );
-}
-```*/
+*/
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 const commonWavelengthConfig: OpticalModel["specs"]["wavelengths"] = {

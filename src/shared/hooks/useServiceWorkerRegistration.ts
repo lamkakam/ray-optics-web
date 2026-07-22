@@ -1,6 +1,4 @@
 /**
-# `shared/hooks/useServiceWorkerRegistration.ts`
-
 ## Dependencies
 
 - `useEffect` from React.
@@ -33,8 +31,6 @@ export async function registerServiceWorker(): Promise<void> {
 }
 
 /**
-## Purpose
-
 Register the Pyodide service worker (file at`public/pyodide-sw.js`) so that the browser caches the Pyodide WASM bundle and the wheels of `rayoptics_web_utils` (local package in `python/`), `rayoptics` and its deps.
 
 ## Behavior
@@ -50,53 +46,7 @@ Register the Pyodide service worker (file at`public/pyodide-sw.js`) so that the 
 - Registration failures (network error, script parse error, etc.) are silently swallowed — the app functions without caching; users just re-download assets on each visit.
 - On the server `navigator` is `undefined`; the guard at the top of `registerServiceWorker` prevents any error.
 
-## Usages
-
-**1. Via the `ServiceWorkerRegistrar` component (recommended):**
-
-```tsx
-import ServiceWorkerRegistrar from "@/shared/components/providers/ServiceWorkerRegistrar";
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html>
-      <body>
-        <ServiceWorkerRegistrar />
-        {children}
-      </body>
-    </html>
-  );
-}
-```
-
-**2. Directly in a component:**
-
-```tsx
-"use client";
-
-import { useServiceWorkerRegistration } from "@/shared/hooks/useServiceWorkerRegistration";
-
-export function AppRoot() {
-  useServiceWorkerRegistration(); // Runs once on mount
-
-  return <div>{/* app content *\/}</div>;
-}
-```
-
-**3. Standalone async function (outside React):**
-
-```ts
-import { registerServiceWorker } from "@/shared/hooks/useServiceWorkerRegistration";
-
-async function setupApp() {
-  await registerServiceWorker();
-  // Service worker is now registered
-}
-```*/
+*/
 export function useServiceWorkerRegistration(): void {
   useEffect(() => {
     registerServiceWorker();

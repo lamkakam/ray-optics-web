@@ -1,6 +1,4 @@
 /**
-# `features/analysis/components/DiffractionPsfChart/DiffractionPsfChart.tsx`
-
 ## Axis Tick Calculation Flow
 
 - `buildDiffractionPsfBitmap(...)` derives `axisExtent` from the maximum absolute physical coordinate across `diffractionPsfData.x` and `diffractionPsfData.y`, falling back to `1` when no positive extent is available.
@@ -50,8 +48,6 @@ interface DiffractionPsfChartProps {
 const DECK_VIEW_ID = "diffraction-psf-view";
 
 /**
-## Purpose
-
 Renders the Diffraction PSF analysis view as a deck.gl `BitmapLayer` inside an `OrthographicView`, with SVG chart chrome for axes, ticks, labels, and the normalized-flux color bar.
 
 ## Key Behaviors

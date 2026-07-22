@@ -1,7 +1,4 @@
 /**
-# `features/import-custom-glass/types/customGlassImport.ts`
-
-## Purpose
 Feature-local TypeScript contracts for custom glass import, export, editing, and page state.*/
 import type { UserDefinedGlassData, UserDefinedGlassInput } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";

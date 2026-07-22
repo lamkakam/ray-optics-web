@@ -1,6 +1,4 @@
 /**
-# `e2e/schmidtCameraDownload.spec.ts`
-
 Playwright end-to-end test that loads the Schmidt Camera example system from `/example-systems`, confirms the overwrite modal, returns to the Lens Editor, and verifies the downloaded configuration JSON shape.
 
 ## Flow

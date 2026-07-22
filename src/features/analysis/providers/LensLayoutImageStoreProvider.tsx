@@ -1,6 +1,3 @@
-/**
-# `features/analysis/providers/LensLayoutImageStoreProvider.tsx`
-*/
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
@@ -19,38 +16,8 @@ export interface LensLayoutImageStoreProviderProps {
 }
 
 /**
-## Purpose
-
 Provides a single `StoreApi<LensLayoutImageState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
-
-## Usage
-
-In `app/layout.tsx` — mount the provider once:
-```tsx
-<ThemeProvider>
-  <LensLayoutImageStoreProvider>
-    {children}
-  </LensLayoutImageStoreProvider>
-</ThemeProvider>
-```
-
-Inside any lens layout plot related related component — imperative access:
-```tsx
-import { useStore } from "zustand";
-// ...
-const store = useLensLayoutImageStore();
-const layoutImage = useStore(store, (s) => s.layoutImage);
-store.getState().setLayoutLoading(loading);
-```
-
-In tests — inject a pre-built store:
-```tsx
-render(
-  <LensLayoutImageStoreContext.Provider value={store}>
-    <MyComponent />
-  </LensLayoutImageStoreContext.Provider>
-);
-```*/
+*/
 export const LensLayoutImageStoreProvider: React.FC<LensLayoutImageStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

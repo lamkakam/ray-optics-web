@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/StrehlVsWavelengthChart/StrehlVsWavelengthChart.tsx`
-*/
 import type { StrehlVsWavelengthData } from "@/features/analysis/types/plotData";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { buildStrehlVsWavelengthOption } from "./strehlVsWavelengthChartOption";
@@ -11,8 +8,6 @@ interface StrehlVsWavelengthChartProps {
 }
 
 /**
-## Purpose
-
 Typed React wrapper for the Strehl vs Wavelength ECharts line plot.
 
 ## Behavior

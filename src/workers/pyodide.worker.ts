@@ -1,8 +1,4 @@
 /**
-# `workers/pyodide.worker.ts`
-
-## Purpose
-
 Pyodide module worker that runs RayOptics computations off the main thread. Loads Pyodide v314.0.0, installs `rayoptics_web_utils` (internal Python package in `python/`), `rayoptics` and supporting packages, and exposes a typed API to React components via Comlink. This Pyodide web worker is long living.
 
 Each exported function (except `init`) is **stateless**: it receives an `OpticalModel`, builds the Python `opm` locally in a single `runPython` call (using `buildScript` from `lib/pythonScript`), runs the computation, and returns the result. No global optical-model state persists between calls.
@@ -124,47 +120,8 @@ Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)
 - `features/glass-map/types/glassMap` — catalog and user-defined glass data types plus `UserDefinedGlassInput` (type only).
 - `features/optimization/types/optimizationWorkerTypes` — optimization config, report, and progress types (type only).
 
-## Usages
-
-The worker is accessed via the `usePyodide` hook (see `hooks/usePyodide.ts.md`):
-
-```tsx
-"use client";
-
-import { usePyodide } from "@/shared/hooks/usePyodide";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-
-export function AnalysisPanel({ opticalModel }: { opticalModel: OpticalModel }) {
-  const { proxy, isReady, error } = usePyodide();
-
-  const handleComputeLayout = async () => {
-    if (!proxy) return;
-
-    // Call a worker function
-    const layoutBase64 = await proxy.plotLensLayout(opticalModel, false);
-    console.log("Lens layout image:", layoutBase64);
-
-    // Get first-order data
-    const firstOrder = await proxy.getFirstOrderData(opticalModel);
-    console.log("EFL:", firstOrder.EFL);
-
-    // Get Seidel aberrations
-    const seidel = await proxy.get3rdOrderSeidelData(opticalModel);
-    console.log("Seidel data:", seidel);
-  };
-
-  if (!isReady) return <div>Loading Pyodide...</div>;
-  if (error) return <div>Error: {error}</div>;
-
-  return (
-    <button onClick={handleComputeLayout}>
-      Compute Analysis
-    </button>
-  );
-}
-```
-
-The worker is instantiated as a singleton by `hooks/usePyodide.ts` via Comlink RPC.*/
+The worker is instantiated as a singleton by `hooks/usePyodide.ts` via Comlink RPC.
+*/
 import { expose } from "comlink";
 import { loadPyodide, version } from "pyodide";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";

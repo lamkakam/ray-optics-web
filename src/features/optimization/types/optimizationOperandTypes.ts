@@ -1,8 +1,4 @@
 /**
-# `features/optimization/types/optimizationOperandTypes.ts`
-
-## Purpose
-
 Optimization operand metadata and option types shared by operand metadata helpers and consumers.
 
 ## Key Conventions

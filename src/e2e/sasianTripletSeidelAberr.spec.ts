@@ -1,6 +1,4 @@
 /**
-# `e2e/sasianTripletSeidelAberr.spec.ts`
-
 Playwright end-to-end test that loads the Sasian Triplet example system from `/example-systems`, confirms the overwrite modal, returns to the Lens Editor, and verifies all Seidel aberration modal tabs.
 
 ## Flow

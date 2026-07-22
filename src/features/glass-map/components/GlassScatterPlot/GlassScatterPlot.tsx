@@ -1,6 +1,4 @@
 /**
-# `features/glass-map/components/GlassScatterPlot/GlassScatterPlot.tsx`
-
 ## Implementation
 - `@visx/responsive` `<ParentSize>` fills container; renders `InnerPlot` when width/height > 0
 - `@visx/zoom` `<Zoom>` wraps SVG; `zoom.transformMatrix` drives zoom/pan
@@ -494,42 +492,7 @@ function InnerPlot({
 }
 
 /**
-## Purpose
 Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders all `PlotPoint` entries as colored circles, supports zoom/pan via mouse wheel, drag, and touch pinch, shows grid lines on both axes, shows a tooltip on hover (mouse) or single-touch tap, and draws crosshair lines for the selected glass.
-
-## Usages
-
-```tsx
-import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
-import { computePlotPoints } from "@/features/glass-map/lib/glassMap";
-
-// In a page component (e.g., GlassMapView)
-const points = useMemo(
-  () =>
-    catalogsData
-      ? computePlotPoints(catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType)
-      : [],
-  [catalogsData, enabledCatalogs, plotType, abbeNumCenterLine, partialDispersionType]
-);
-
-const { xLabel, yLabel } = axisLabels(plotType, abbeNumCenterLine, partialDispersionType);
-
-const handlePointClick = (glass: SelectedGlass) => {
-  setSelectedGlass(glass);
-};
-
-return (
-  <GlassScatterPlot
-    points={points}
-    selectedGlass={selectedGlass}
-    xAxisLabel={xLabel}
-    yAxisLabel={yLabel}
-    onPointClick={handlePointClick}
-    yDomainMin={plotType === "refractiveIndex" ? 1.4 : undefined}
-    yDomainMax={plotType === "refractiveIndex" ? 2.0 : undefined}
-  />
-);
-```
 */
 export function GlassScatterPlot(props: GlassScatterPlotProps) {
   return (

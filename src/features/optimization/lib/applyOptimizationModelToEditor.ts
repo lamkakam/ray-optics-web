@@ -1,6 +1,4 @@
 /**
-# `features/optimization/lib/applyOptimizationModelToEditor.ts`
-
 ## Behavior
 
 - `applyOptimizationModelToEditor({ model, lensStore, specsStore, proxy })` fetches and validates fresh auto-aperture semi-diameters before atomically writing editor state. Manual models bypass extraction and clear the cache; fetch failures leave the editor unchanged.
@@ -26,8 +24,6 @@ interface ApplyOptimizationModelToEditorParams {
 }
 
 /**
-## Purpose
-
 Shared helper that applies an optimization-local optical model snapshot back to the lens editor stores.
 
 ## Behavior

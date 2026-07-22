@@ -1,6 +1,4 @@
 /**
-# `shared/components/primitives/CheckboxInput/CheckboxInput.tsx`
-
 ## Styling
 
 - Wrapper hover styling comes from `componentTokens.checkbox.color.hoverBgColor`.
@@ -47,8 +45,6 @@ const INPUT_CLASSES = [
 ] as const;
 
 /**
-## Purpose
-
 Compact labelled checkbox primitive for the shared checkbox-row pattern. It centralizes the `<label><input type="checkbox" /></label>` structure, applies unified styling, and supports either a plain string label or caller-provided JSX label content.
 
 ## Behavior
@@ -59,30 +55,6 @@ Compact labelled checkbox primitive for the shared checkbox-row pattern. It cent
 - When `label` is a string, wraps it in the component-owned `<span>` with the shared text styling and optional `labelClassName`.
 - When `label` is a JSX element, renders that JSX directly with no extra wrapper so the caller controls container layout and styling.
 - Supports composed visual labels such as the glass-map catalog color dot without a separate adornment prop.
-
-## Usages
-
-```tsx
-<CheckboxInput
-  id="use-model-glass"
-  label="Use model glass"
-  checked={useModelGlass}
-  onChange={setUseModelGlass}
-/>
-
-<CheckboxInput
-  id="catalog-Schott"
-  ariaLabel="Schott"
-  label={(
-    <div className="flex flex-1 items-center gap-2 text-left text-sm leading-5">
-      <span className="inline-block h-3 w-3 rounded-full bg-blue-500" />
-      <span>Schott</span>
-    </div>
-  )}
-  checked={enabledCatalogs.Schott}
-  onChange={() => onToggleCatalog("Schott")}
-/>
-```
 */
 export function CheckboxInput({
   id,

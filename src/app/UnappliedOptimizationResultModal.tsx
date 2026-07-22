@@ -1,6 +1,4 @@
 /**
-# `app/UnappliedOptimizationResultModal.tsx`
-
 ## Modal Footer
 
 - Stay, Leave, and Apply to Editor actions are passed to `Modal.footer` so they remain fixed while the modal body scrolls.
@@ -19,8 +17,6 @@ interface UnappliedOptimizationResultModalProps {
 }
 
 /**
-## Purpose
-
 Shell-level warning dialog shown when the user tries to leave `/optimization` while a completed optimization result has updated only the Optimization-local optical model.
 
 ## Behavior

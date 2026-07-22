@@ -1,6 +1,4 @@
 /**
-# `shared/components/layout/BottomDrawer/BottomDrawer.tsx`
-
 ## Internal State
 
 - `height: number` — current drawer height in pixels; initialized on first render from `initialHeight` or `window.innerHeight * 0.4`.
@@ -48,8 +46,6 @@ function isCollapsedHeight(height: number): boolean {
 }
 
 /**
-## Purpose
-
 Resizable bottom panel that houses tabbed content. Supports pointer-based drag-to-resize with a continuous height between collapsed (48px) and a viewport-based maximum (85vh). Can also run in non-draggable mode for simple layouts.
 
 ## Key Behaviors
@@ -66,36 +62,6 @@ Resizable bottom panel that houses tabbed content. Supports pointer-based drag-t
 - Tab selection can be either uncontrolled or externally controlled through the forwarded `activeTabId` / `onTabChange` props.
 - `initialHeight` values at or below the collapsed threshold (`48 + 10`) start the drawer in the collapsed state on the first render.
 - The drawer root is `shrink-0` in both draggable and non-draggable modes so flex layouts preserve the committed drawer height instead of compressing the panel internals.
-
-## Usages
-
-```tsx
-import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";
-
-// In a container component (e.g., BottomDrawerContainer)
-const tabs = useMemo(
-  () => [
-    {
-      id: "specs",
-      label: "System Specs",
-      content: <SpecsConfiguratorContainer />,
-    },
-    {
-      id: "prescription",
-      label: "Prescription",
-      content: <LensPrescriptionContainer {...props} />,
-    },
-    {
-      id: "focusing",
-      label: "Focusing",
-      content: <FocusingContainer {...focusingProps} />,
-    },
-  ],
-  [getOpticalModel, onImportJson, onUpdateSystem, isReady, computing, proxy, onError]
-);
-
-return <BottomDrawer tabs={tabs} draggable={draggable} />;
-```
 */
 export function BottomDrawer({
   tabs,

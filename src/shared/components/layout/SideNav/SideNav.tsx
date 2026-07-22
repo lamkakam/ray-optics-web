@@ -1,6 +1,4 @@
 /**
-# `shared/components/layout/SideNav/SideNav.tsx`
-
 ## Behaviour
 - Always rendered in the DOM — never returns `null`
 - `<nav aria-label="Side navigation" aria-hidden={!isOpen} inert={!isOpen}>` positioned `absolute top-0 left-0 h-full z-40`
@@ -60,35 +58,7 @@ const NAV_ITEMS = [
 ] as const;
 
 /**
-## Purpose
 Collapsible side navigation panel toggled by the hamburger button in the header. Uses Next.js App Router links for route navigation and highlights the active route from the current layout segment.
-
-## Usages
-
-```tsx
-import { SideNav } from "@/shared/components/layout/SideNav";
-
-// In a layout component (e.g., Layout)
-const [sideNavOpen, setSideNavOpen] = useState(false);
-const screenSize = useScreenBreakpoint();
-const isLG = screenSize === "screenLG";
-
-const sideNavNode = (
-  <SideNav
-    isOpen={sideNavOpen}
-    isLG={isLG}
-    onClose={() => setSideNavOpen(false)}
-    onNavigate={guardedNavigate}
-  />
-);
-
-return (
-  <div className="relative flex-1 overflow-hidden">
-    {sideNavNode}
-    {children}
-  </div>
-);
-```
 */
 export function SideNav({ isOpen, isLG, onClose, onNavigate }: SideNavProps) {
   const selectedSegment = useSelectedLayoutSegment();

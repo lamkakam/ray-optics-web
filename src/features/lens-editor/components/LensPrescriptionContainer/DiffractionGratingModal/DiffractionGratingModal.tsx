@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/LensPrescriptionContainer/DiffractionGratingModal/DiffractionGratingModal.tsx`
-
 ## Modal Footer
 
 - Close, Remove, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while diffraction grating fields scroll.
@@ -36,8 +34,6 @@ function parseInteger(value: string, fallback: number): number {
 }
 
 /**
-## Purpose
-
 Modal for configuring diffraction grating parameters on a surface.
 
 ## Key Behaviors

@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/WavefrontMapChart/WavefrontMapChart.tsx`
-*/
 "use client";
 
 import { BitmapLayer, COORDINATE_SYSTEM, DeckGL, OrthographicView } from "deck.gl";
@@ -28,8 +25,6 @@ interface WavefrontMapChartProps {
 const DECK_VIEW_ID = "wavefront-map-view";
 
 /**
-## Purpose
-
 Renders the Wavefront Map analysis view as a deck.gl `BitmapLayer` inside an `OrthographicView`, with SVG chart chrome for axes, ticks, labels, and the wavefront color bar.
 
 ## Key Behaviors

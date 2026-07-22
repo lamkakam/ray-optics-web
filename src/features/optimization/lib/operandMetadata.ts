@@ -1,6 +1,4 @@
 /**
-# `features/optimization/lib/operandMetadata.ts`
-
 ## Key Conventions
 
 - `label` is the user-facing operand name shown in selectors and evaluation tables.
@@ -103,8 +101,6 @@ const OPTIMIZATION_OPERAND_METADATA_BY_KIND = new Map(
 );
 
 /**
-## Purpose
-
 Defines the shared optimization operand metadata consumed by the store and operand/evaluation UI.*/
 export function getOptimizationOperandMetadata(kind: OptimizationOperandKind): OptimizationOperandMetadata {
   const metadata = OPTIMIZATION_OPERAND_METADATA_BY_KIND.get(kind);

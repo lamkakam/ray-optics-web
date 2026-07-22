@@ -1,6 +1,3 @@
-/**
-# `features/lens-editor/providers/SpecsConfiguratorStoreProvider.tsx`
-*/
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
@@ -19,38 +16,8 @@ export interface SpecsConfiguratorStoreProviderProps {
 }
 
 /**
-## Purpose
-
 Provides a single `StoreApi<SpecsConfiguratorState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
-
-## Usage
-
-In `app/layout.tsx` — mount the provider once:
-```tsx
-<ThemeProvider>
-  <SpecsConfiguratorStoreProvider>
-    {children}
-  </SpecsConfiguratorStoreProvider>
-</ThemeProvider>
-```
-
-Inside any Specs Configurator component — imperative access:
-```tsx
-import { useStore } from "zustand";
-// ...
-const specsConfiguratorStore = useSpecsConfiguratorStore();
-const fieldSpace = useStore(specsConfiguratorStore, (s) => s.fieldSpace);
-specsConfiguratorStore.getState().setField(field);
-```
-
-In tests — inject a pre-built store:
-```tsx
-render(
-  <SpecsConfiguratorStoreContext.Provider value={store}>
-    <MyComponent />
-  </SpecsConfiguratorStoreContext.Provider>
-);
-```*/
+*/
 export const SpecsConfiguratorStoreProvider: React.FC<SpecsConfiguratorStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

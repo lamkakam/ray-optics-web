@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/LongitudinalSphericalAberrationChart/LongitudinalSphericalAberrationChart.tsx`
-*/
 import type { LongitudinalSphericalAberrationData } from "@/features/analysis/types/plotData";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { buildLongitudinalSphericalAberrationOption } from "./longitudinalSphericalAberrationChartOption";
@@ -20,8 +17,6 @@ interface LongitudinalSphericalAberrationChartBuilderArgs {
 }
 
 /**
-## Purpose
-
 Wraps the shared analysis ECharts component factory for longitudinal spherical aberration data.
 */
 export const LongitudinalSphericalAberrationChart = createAnalysisChartComponent<

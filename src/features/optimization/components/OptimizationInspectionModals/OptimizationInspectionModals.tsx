@@ -1,6 +1,3 @@
-/**
-# `features/optimization/components/OptimizationInspectionModals/OptimizationInspectionModals.tsx`
-*/
 "use client";
 
 import {

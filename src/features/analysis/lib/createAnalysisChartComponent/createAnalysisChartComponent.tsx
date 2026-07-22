@@ -1,6 +1,4 @@
 /**
-# `features/analysis/lib/createAnalysisChartComponent/createAnalysisChartComponent.tsx`
-
 ## Dependencies
 
 - `echarts/core`
@@ -55,8 +53,6 @@ type CreateAnalysisChartComponentConfig<
 const DEFAULT_DIMENSION_VALIDATION = ({ width }: ChartDimensionValidationInput) => width > 0;
 
 /**
-## Purpose
-
 Provides a higher-order factory that returns typed analysis chart function components with a shared Apache ECharts lifecycle. The factory centralizes responsive parent measurement, injected sizing policy evaluation, theme-aware text color selection, debounced chart updates, and ECharts disposal.
 
 ## Key Behaviors

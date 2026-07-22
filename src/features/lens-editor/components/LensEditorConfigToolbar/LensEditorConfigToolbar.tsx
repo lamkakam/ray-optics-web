@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/LensEditorConfigToolbar/LensEditorConfigToolbar.tsx`
-
 ## State
 
 - `importErrorOpen: boolean` — controls the invalid-import `ErrorModal`.
@@ -39,8 +37,6 @@ interface LensEditorConfigToolbarProps {
 }
 
 /**
-## Purpose
-
 Lens Editor-level toolbar for configuration actions shown above the analysis controls. It owns the visible `Update System`, `Load Config`, `Import a file from Photons to Photos`, and `Download Config` buttons so these actions stay available before any Seidel/Zernike data has been computed.
 
 ## Behavior
@@ -51,8 +47,6 @@ Lens Editor-level toolbar for configuration actions shown above the analysis con
 - Confirming the import calls `onImportJson(pendingImportData)` and clears pending state. Canceling clears pending state without mutating stores.
 - `Download Config` serializes `getOpticalModel()` as pretty JSON and downloads it as `lens-config.json`.
 - Button size follows `useScreenBreakpoint`: `xs` on `screenSM`, `sm` otherwise.
-
-## Usages
 
 Rendered by `LensEditor.tsx` before the Seidel/Zernike analysis controls in both LG and SM layouts.
 */

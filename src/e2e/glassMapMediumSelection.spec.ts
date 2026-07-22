@@ -1,6 +1,4 @@
 /**
-# `e2e/glassMapMediumSelection.spec.ts`
-
 Playwright end-to-end coverage for returning from Glass Map to an open `Select Medium` workflow.
 
 ## Scenarios

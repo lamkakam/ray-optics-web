@@ -1,8 +1,4 @@
 /**
-# `features/analysis/lib/plotFunctions.ts`
-
-## Purpose
-
 Shared utility that maps `PlotType` values to Pyodide worker proxy calls and commits typed plot load results into the analysis plot store. Eliminates duplication between `LensEditor.tsx`, `applyExampleSystem.ts`, and `AnalysisPlotContainer.tsx`.
 
 ## Dependencies

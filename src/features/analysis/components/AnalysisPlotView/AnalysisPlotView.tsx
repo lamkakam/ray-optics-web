@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/AnalysisPlotView/AnalysisPlotView.tsx`
-*/
 import React from "react";
 import { AstigmatismChart } from "@/features/analysis/components/AstigmatismChart";
 import { DiffractionMtfChart } from "@/features/analysis/components/DiffractionMtfChart";
@@ -334,8 +331,6 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
 };
 
 /**
-## Purpose
-
 Displays an analysis plot alongside plot-type, Half-Field, and wavelength selectors. All supported analysis plot types delegate to dedicated ECharts chart components that render typed data.
 
 ## Key Behaviors
@@ -360,52 +355,6 @@ Displays an analysis plot alongside plot-type, Half-Field, and wavelength select
 - `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.
 - `diffractionMTF` renders `DiffractionMtfChart` only when `diffractionMtfData` is present.
 - `AnalysisPlotView` never imports Apache ECharts directly; chart-specific measurement, debounce, and option-building logic live in dedicated feature-local modules.
-
-## Usages
-
-```tsx
-import { AnalysisPlotView, PLOT_TYPE_CONFIG, type PlotType } from "@/features/analysis/components";
-
-// In a container component (e.g., AnalysisPlotContainer)
-const handleFieldChange = useCallback(async (value: number) => {
-  store.getState().setSelectedFieldIndex(value);
-  if (!proxy) return;
-  if (!PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent) return;
-  store.getState().setPlotLoading(true);
-  try {
-    const result = await loadAnalysisPlot({
-      plotType: selectedPlotType,
-      proxy,
-      model: committedOpticalModel,
-      fieldIndex: value,
-      wavelengthIndex: selectedWavelengthIndex,
-    });
-    if (result?.kind === "rayFan") {
-      store.getState().setRayFanData(result.rayFanData);
-    }
-  } catch {
-    onError();
-  } finally {
-    store.getState().setPlotLoading(false);
-  }
-}, [proxy, store, selectedPlotType, selectedWavelengthIndex, committedOpticalModel, onError]);
-
-return (
-  <AnalysisPlotView
-    fieldOptions={fieldOptions}
-    wavelengthOptions={wavelengthOptions}
-    selectedFieldIndex={selectedFieldIndex}
-    selectedWavelengthIndex={selectedWavelengthIndex}
-    selectedPlotType={selectedPlotType}
-    diffractionPsfData={diffractionPsfData}
-    loading={plotLoading}
-    onFieldChange={handleFieldChange}
-    onWavelengthChange={handleWavelengthChange}
-    onPlotTypeChange={handlePlotTypeChange}
-    autoHeight={autoHeight}
-  />
-);
-```
 */
 export function AnalysisPlotView(props: AnalysisPlotViewProps) {
   const {

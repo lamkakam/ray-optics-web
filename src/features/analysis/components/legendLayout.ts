@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/legendLayout.ts`
-*/
 const LEGEND_MARKER_AND_GAP_WIDTH = 34;
 const LEGEND_ITEM_GAP = 16;
 const LEGEND_CHARACTER_WIDTH = 7;
@@ -42,8 +39,6 @@ function estimateLegendRowWidth(labels: readonly string[]): number {
 }
 
 /**
-## Purpose
-
 Provides feature-local layout helpers for analysis chart legends that can wrap onto multiple rows on narrow chart widths.
 
 ## Behavior

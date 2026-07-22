@@ -1,6 +1,4 @@
 /**
-# `features/glass-map/stores/glassMapStore.ts`
-
 ## State (`GlassMapState`)
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -69,41 +67,7 @@ export interface GlassMapActions {
 }
 
 /**
-## Purpose
 Zustand store slice for persistent Glass Map UI state and successfully loaded app-wide glass catalog lookup data.
-
-## Usages
-
-```tsx
-"use client";
-
-import { useStore } from "zustand";
-import { createStore } from "zustand";
-import type { GlassMapStore } from "@/features/glass-map/stores/glassMapStore";
-import { createGlassMapSlice } from "@/features/glass-map/stores/glassMapStore";
-import { GlassScatterPlot } from "@/features/glass-map/components/GlassScatterPlot";
-
-export default function GlassMapView({ proxy }: { proxy: PyodideWorkerAPI }) {
-  const glassMapStore = createStore<GlassMapStore>(createGlassMapSlice);
-
-  const plotType = useStore(glassMapStore, (s) => s.plotType);
-  const catalogsData = useStore(glassMapStore, (s) => s.catalogsData);
-
-  if (catalogsData === undefined) {
-    return <p>Loading glass catalog data...</p>;
-  }
-
-  return (
-    <GlassScatterPlot
-      points={[]}
-      selectedGlass={undefined}
-      xAxisLabel="Vd"
-      yAxisLabel="Nd"
-      onPointClick={() => undefined}
-    />
-  );
-}
-```
 */
 export type GlassMapStore = GlassMapState & GlassMapActions;
 

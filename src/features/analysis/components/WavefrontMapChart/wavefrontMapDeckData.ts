@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/WavefrontMapChart/wavefrontMapDeckData.ts`
-*/
 import { interpolateAnalysisHeatmapColor } from "@/features/analysis/lib/analysisChartPalette";
 import type { WavefrontMapData } from "@/features/analysis/types/plotData";
 
@@ -27,8 +24,6 @@ function getAxisMinMax(values: readonly number[]): readonly [number, number] {
 }
 
 /**
-## Purpose
-
 Prepares worker-provided `WavefrontMapData` for the deck.gl wavefront map renderer.
 
 ## Key Behaviors

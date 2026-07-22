@@ -1,6 +1,3 @@
-/**
-# `features/lens-editor/components/LensPrescriptionContainer/LensPrescriptionGrid/LensPrescriptionGrid.tsx`
-*/
 "use client";
 
 import { useMemo } from "react";
@@ -42,8 +39,6 @@ interface LensPrescriptionGridProps {
 }
 
 /**
-## Purpose
-
 AG Grid table for editing the lens prescription. Displays and edits surface rows (object, surface, image) with columns for surface index, surface label, radius of curvature, thickness, medium, semi-diameter, aspherical, tilt/decenter, and diffraction grating. Row action buttons appear in a leading column.
 
 ## Key Behaviors
@@ -65,41 +60,6 @@ AG Grid table for editing the lens prescription. Displays and edits surface rows
 - Applies shared AG Grid column config with `defaultColDef={{ sortable: false, suppressMovable: true }}` and AG Grid's normal layout so the grid owns vertical row scrolling.
 - Keeps AG Grid's native touch handling enabled so resizable header handles respond to touchscreen drags. The shared `ag-grid-touch-scroll` coarse-pointer styles continue to provide native horizontal and vertical panning, iOS momentum scrolling, and scroll chaining on viewport areas; AG Grid owns gestures that begin on resize handles.
 - Uses `h-[calc(100vh-160px)]` below `1440px`; at `1440px` and above it fills the remaining flex-column drawer-panel height with a `200px` minimum.
-
-## Usages
-
-```tsx
-import { LensPrescriptionGrid } from "@/features/lens-editor/components/LensPrescriptionContainer/LensPrescriptionGrid";
-
-// In a container component (e.g., LensPrescriptionContainer)
-const rows = useStore(store, (s) => s.rows);
-
-const handleRowChange = useCallback(
-  (id: string, patch: Partial<GridRow>) => store.getState().updateRow(id, patch),
-  [store]
-);
-
-const handleOpenMediumModal = useCallback(
-  (rowId: string) => store.getState().openMediumModal(rowId),
-  [store]
-);
-
-return (
-  <>
-    <LensPrescriptionGrid
-      rows={rows}
-      onRowChange={handleRowChange}
-      onOpenMediumModal={handleOpenMediumModal}
-      onOpenAsphericalModal={handleOpenAsphericalModal}
-      onOpenApertureModal={handleOpenApertureModal}
-      onOpenDecenterModal={handleOpenDecenterModal}
-      onAddRowAfter={handleAddRowAfter}
-      onDeleteRow={handleDeleteRow}
-      semiDiameterReadonly={autoAperture}
-    />
-  </>
-);
-```
 */
 /**
 Passes the computed semi-diameter cache into the shared semi-diameter column while preserving stable row-ID lookup.

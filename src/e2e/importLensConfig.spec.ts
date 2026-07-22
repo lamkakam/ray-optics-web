@@ -1,6 +1,4 @@
 /**
-# `e2e/importLensConfig.spec.ts`
-
 End-to-end coverage for importing `lens-config.json` through the `Load Config` button and verifying the imported specs, prescription grid, modals, and update flow.
 
 ## Flow

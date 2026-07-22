@@ -1,8 +1,4 @@
 /**
-# `features/optimization/types/optimizationAlgorithmTypes.ts`
-
-## Purpose
-
 Optimization algorithm selection and capability types used by runtime capability helpers and their callers.
 
 ## Key Conventions

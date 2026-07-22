@@ -1,8 +1,4 @@
 /**
-# `shared/lib/lens-prescription-grid/lib/surfaceValueScaling.ts`
-
-## Purpose
-
 Pure scaling policy and helpers for numeric values owned by lens prescription grid object, surface, and image rows. The module centralizes which numeric fields participate in scale formatting, which fields are preserved, and which values are collected for formatting validation.
 
 ## Scaling Policy
@@ -15,8 +11,6 @@ Pure scaling policy and helpers for numeric values owned by lens prescription gr
 - `EvenAspherical`, `XToroid`, and `YToroid` coefficient orders are `2, 4, ...`.
 - Dimensionless or angular values are preserved: conic constants, decenter `alpha`/`beta`/`gamma`, rectangular aperture rotation, diffraction grating `lpmm`, and diffraction grating `order`.
 - Object distances at or above `1e10` are preserved.
-
-## Validation Collection
 
 `collectSurfaceScalingNumericValues` walks `SURFACE_VALUE_SCALING_POLICY` and collects all numeric values covered by the policy, including preserved values. This keeps finite-number and precision-underflow validation aligned with the same fields that scale formatting recognizes.*/
 import type {

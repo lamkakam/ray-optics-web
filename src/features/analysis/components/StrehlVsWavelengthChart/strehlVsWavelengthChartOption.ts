@@ -1,6 +1,4 @@
 /**
-# `features/analysis/components/StrehlVsWavelengthChart/strehlVsWavelengthChartOption.ts`
-
 ## Series
 
 - `Strehl` - one `line` series using paired `[x, y]` samples and `showSymbol: false`.
@@ -37,8 +35,6 @@ function toLineData(strehlVsWavelengthData: StrehlVsWavelengthData): number[][] 
 }
 
 /**
-## Purpose
-
 Builds the Apache ECharts option for the Strehl vs Wavelength line chart.*/
 export function buildStrehlVsWavelengthOption(
   strehlVsWavelengthData: StrehlVsWavelengthData,

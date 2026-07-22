@@ -1,9 +1,5 @@
 /**
-# `features/lens-editor/stores/lensEditorStore.ts`
-
 `autoSemiDiameters` is an app-lifetime cache keyed by stable surface row ID. Its actions replace or clear computed values without changing editable manual `rows[].semiDiameter` values.
-
-## Purpose
 
 Zustand store for managing the lens editor grid and its associated modals. Holds the array of `GridRow` objects displayed in the surface table and coordinates selection, insertion, deletion, and modal open/close state.
 
@@ -66,9 +62,8 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 - `generateRowId` from `@/shared/lib/lens-prescription-grid/lib/gridTransform`.
 - `OpticalModel` from `@/shared/lib/types/opticalModel`.
 
-## Usages
-
-Used through `LensEditorStoreProvider` and `useLensEditorStore()` rather than as a standalone exported hook from this file.*/
+Used through `LensEditorStoreProvider` and `useLensEditorStore()` rather than as a standalone exported hook from this file.
+*/
 import { type StateCreator } from "zustand";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";

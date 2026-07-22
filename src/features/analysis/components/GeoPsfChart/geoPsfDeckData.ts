@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/GeoPsfChart/geoPsfDeckData.ts`
-*/
 import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
 export interface GeoPsfPoint {
@@ -9,8 +6,6 @@ export interface GeoPsfPoint {
 }
 
 /**
-## Purpose
-
 Prepares Geometric PSF point samples for the deck.gl `ScatterplotLayer`.
 
 ## Key Behaviors

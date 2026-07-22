@@ -1,6 +1,4 @@
 /**
-# `features/example-systems/lib/exampleSystemDescriptions.ts`
-
 README-derived display descriptions for bundled example optical systems.
 
 ## Description Map
@@ -662,7 +660,6 @@ const DESCRIPTIONS_BY_NAME = {
   ),
 } satisfies Record<ExampleSystemName, ReactNode>;
 
-/***/
 export function getExampleSystemDescription(exampleName: ExampleSystemName): ReactNode {
   return DESCRIPTIONS_BY_NAME[exampleName];
 }

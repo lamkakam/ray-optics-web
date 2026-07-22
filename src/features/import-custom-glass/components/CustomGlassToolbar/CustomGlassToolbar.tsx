@@ -1,6 +1,4 @@
 /**
-# `features/import-custom-glass/components/CustomGlassToolbar/CustomGlassToolbar.tsx`
-
 ## Accessibility
 - Hidden inputs retain `aria-label="Import custom glass JSON file"` and `aria-label="Import custom glass CSV files"` for tests and assistive technology.
 - Visible command buttons expose aria labels matching their visible text.
@@ -32,7 +30,6 @@ interface CustomGlassToolbarProps {
 }
 
 /**
-## Purpose
 Command and hidden file-input controls for the import custom glass page.
 
 ## Behavior

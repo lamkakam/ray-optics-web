@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/LensPrescriptionContainer/ConfirmImportModal/ConfirmImportModal.tsx`
-
 ## Modal Footer
 
 - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
@@ -21,39 +19,11 @@ interface ConfirmImportModalProps {
 }
 
 /**
-## Purpose
-
 Simple confirmation modal that warns the user that loading a config JSON will overwrite their current System Specs and Lens Prescription.
 
 ## Key Behaviors
 
 - Stateless — purely presentational.
-
-## Usages
-
-```tsx
-import { ConfirmImportModal } from "@/features/lens-editor/components/LensPrescriptionContainer/ConfirmImportModal";
-
-// In a container component
-const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
-
-const handleConfirmImport = () => {
-  if (pendingImportData) onImportJson(pendingImportData);
-  setPendingImportData(undefined);
-};
-
-const handleCancelImport = () => setPendingImportData(undefined);
-
-return (
-  <>
-    <ConfirmImportModal
-      isOpen={pendingImportData !== undefined}
-      onConfirm={handleConfirmImport}
-      onCancel={handleCancelImport}
-    />
-  </>
-);
-```
 */
 export function ConfirmImportModal({ isOpen, onConfirm, onCancel }: ConfirmImportModalProps) {
   return (

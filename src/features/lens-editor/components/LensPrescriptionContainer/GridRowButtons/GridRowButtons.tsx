@@ -1,6 +1,3 @@
-/**
-# `features/lens-editor/components/LensPrescriptionContainer/GridRowButtons/GridRowButtons.tsx`
-*/
 import { Button } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 
@@ -18,38 +15,11 @@ interface GridRowButtonsProps {
 }
 
 /**
-## Purpose
-
 Renders a compact pair of "insert" (+) and "delete" (−) icon buttons with portal tooltips. Used as an action cell inside AG Grid rows for tables that support row insertion and deletion.
 
 ## Key Behaviors
 
 - Buttons are conditionally rendered based on callback presence, keeping the cell uncluttered for object/image rows.
-
-## Usages
-
-```tsx
-import { GridRowButtons } from "@/features/lens-editor/components/LensPrescriptionContainer";
-
-// In an AG Grid cellRenderer
-const columnDefs = [
-  {
-    headerName: "",
-    field: "kind",
-    width: 100,
-    cellRenderer: (params: { data: GridRow }) => {
-      const { kind, id } = params.data;
-      return (
-        <GridRowButtons
-          onAdd={kind !== "image" ? () => onAddRowAfter(id) : undefined}
-          onDelete={kind === "surface" ? () => onDeleteRow(id) : undefined}
-        />
-      );
-    },
-  },
-  // ... other columns
-];
-```
 */
 export function GridRowButtons({
   onAdd,

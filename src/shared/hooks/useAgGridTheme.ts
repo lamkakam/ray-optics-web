@@ -1,6 +1,4 @@
 /**
-# `shared/hooks/useAgGridTheme.ts`
-
 ## Return Value
 
 An AG Grid theme object — specifically `themeQuartz` composed with either `colorSchemeDark` or `colorSchemeLight` via `.withPart()`:
@@ -33,8 +31,6 @@ import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
 /**
-## Purpose
-
 Derive the correct AG Grid theme object from the app's current light/dark theme setting and responsive breakpoint, so AG Grid tables automatically match the rest of the UI.
 
 ## Behavior
@@ -49,33 +45,6 @@ Derive the correct AG Grid theme object from the app's current light/dark theme 
 
 - Any value of `theme` that is not `"dark"` falls through to the light scheme (safe default).
 - The memoised value is stable across re-renders when `theme` and `screenSize` do not change, preventing unnecessary AG Grid re-renders.
-
-## Usages
-
-```tsx
-"use client";
-
-import { AgGridReact } from "ag-grid-react";
-import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
-
-export function DataGrid() {
-  const agTheme = useAgGridTheme();
-
-  return (
-    <AgGridReact
-      columnDefs={[
-        { field: "name" },
-        { field: "age" },
-      ]}
-      rowData={[
-        { name: "Alice", age: 30 },
-        { name: "Bob", age: 25 },
-      ]}
-      theme={agTheme}
-    />
-  );
-}
-```
 
 The theme automatically responds to light/dark mode changes from `ThemeProvider`.
 */

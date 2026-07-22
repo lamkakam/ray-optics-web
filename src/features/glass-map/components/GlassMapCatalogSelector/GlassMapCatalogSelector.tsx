@@ -1,6 +1,3 @@
-/**
-# `GlassMapCatalogSelector.tsx`
-*/
 "use client";
 
 import { useState } from "react";
@@ -21,8 +18,6 @@ interface GlassMapCatalogSelectorProps {
 }
 
 /**
-## Purpose
-
 Single-row catalog and glass selector for the Glass Map controls panel. The draft catalog and glass input are component-local; selecting a valid glass delegates the committed selection to the parent.
 
 ## Behavior

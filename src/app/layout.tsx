@@ -1,6 +1,4 @@
 /**
-# `app/layout.tsx`
-
 ## Rendered Structure
 ```tsx
 <html>
@@ -38,7 +36,6 @@ export const metadata: Metadata = {
 };
 
 /**
-## Purpose
 Root server layout for the App Router. Owns metadata, global providers, and the shared client app shell wrapper.
 
 ## Responsibilities

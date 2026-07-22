@@ -1,6 +1,3 @@
-/**
-# `features/optimization/components/OptimizationOperandsTab/OptimizationOperandsTab.tsx`
-*/
 "use client";
 
 import { useMemo } from "react";

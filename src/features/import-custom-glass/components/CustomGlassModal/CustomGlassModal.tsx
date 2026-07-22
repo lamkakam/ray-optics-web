@@ -1,6 +1,4 @@
 /**
-# `features/import-custom-glass/components/CustomGlassModal/CustomGlassModal.tsx`
-
 ## Accessibility
 - The label input exposes `aria-label="Label"`.
 - Row delete actions expose `aria-label="Delete row {id}"`.
@@ -55,7 +53,6 @@ function duplicateWavelengths(rows: readonly EditablePair[]): Set<string> {
 }
 
 /**
-## Purpose
 Add/edit modal for a single user-defined tabulated custom glass.
 
 ## Behavior

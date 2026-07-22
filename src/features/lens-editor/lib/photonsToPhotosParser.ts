@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/lib/photonsToPhotosParser.ts`
-
 ## API
 
 - `parsePhotonsToPhotosText(text, lookupMaps?)` returns either:
@@ -78,8 +76,6 @@ const IGNORED_SECTIONS = new Set<SectionName>(["figure", "notes"]);
 const RADIUS_TOLERANCE = 1e-6;
 
 /**
-## Purpose
-
 Parses Photons to Photos lens prescription `.txt` files into app `OpticalModel` data for import.
 */
 export function parsePhotonsToPhotosText(

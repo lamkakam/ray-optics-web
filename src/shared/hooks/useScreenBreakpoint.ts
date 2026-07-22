@@ -1,6 +1,4 @@
 /**
-# `shared/hooks/useScreenBreakpoint.ts`
-
 ## Return Value
 
 - `"screenLG"` — viewport is ≥ 1440 px wide.
@@ -57,8 +55,6 @@ function unsubscribe(id: number): void {
 
 // --- Hook ---
 /**
-## Purpose
-
 Return the current responsive breakpoint (`"screenSM"` or `"screenLG"`) based on a `(min-width: 1440px)` media query, updating reactively as the viewport resizes.
 
 ## Behavior
@@ -75,45 +71,6 @@ Return the current responsive breakpoint (`"screenSM"` or `"screenLG"`) based on
 
 - Multiple hook instances each register an independent listener via the internal subscription registry; they do not interfere with one another.
 - `_resetRegistry()` is exported for test isolation only — not for production use.
-
-## Usages
-
-```tsx
-"use client";
-
-import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-
-export function ResponsiveLayout() {
-  const screenSize = useScreenBreakpoint();
-
-  return (
-    <div>
-      {screenSize === "screenLG" ? (
-        <div className="flex gap-8">
-          <Sidebar />
-          <MainContent />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          <MainContent />
-          <Sidebar />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Better: pass breakpoint to children as a prop for testability
-export function PageContainer() {
-  const screenSize = useScreenBreakpoint();
-
-  return <MainLayout screenSize={screenSize} />;
-}
-
-interface MainLayoutProps {
-  screenSize: "screenSM" | "screenLG";
-}
-```
 
 This keeps child components testable without a real browser environment.
 */

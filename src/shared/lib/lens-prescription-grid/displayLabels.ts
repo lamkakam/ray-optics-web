@@ -1,6 +1,4 @@
 /**
-# `shared/lib/lens-prescription-grid/displayLabels.ts`
-
 Shared display labels for modal-backed lens prescription grid text action cells.*/
 import type {
   AsphericalType,

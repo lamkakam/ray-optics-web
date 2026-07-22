@@ -1,6 +1,3 @@
-/**
-# `shared/components/primitives/Progress/Progress.tsx`
-*/
 import React from "react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -58,8 +55,6 @@ function clampPercent(value: number, min: number, max: number): number {
 }
 
 /**
-## Purpose
-
 Determinate progress primitive. It currently supports a linear progress bar and keeps the API variant-based so a circular progress variant can be added without replacing consumers.
 
 ## Key Behaviors
@@ -70,12 +65,6 @@ Determinate progress primitive. It currently supports a linear progress bar and 
 - Hides the visible percentage when `showStatus={false}`.
 - The inherited `className` prop is merged via `twMerge` after token classes.
 - Uses `componentTokens.progress` for track color, indicator color, status text color, dimensions, radius, transition, and `will-change` classes.
-
-## Usages
-
-```tsx
-<Progress value={completedItems} min={0} max={totalItems} ariaLabel="Import progress" />
-```
 */
 export function Progress({
   value,

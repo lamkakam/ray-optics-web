@@ -1,8 +1,4 @@
 /**
-# `features/optimization/lib/optimizerUiConfig.ts`
-
-## Purpose
-
 Centralizes optimizer UI metadata so the optimization algorithm tab, store defaults, and method capability lookup all read the same labels, defaults, and per-method capability flags.
 
 ## Key Behaviors

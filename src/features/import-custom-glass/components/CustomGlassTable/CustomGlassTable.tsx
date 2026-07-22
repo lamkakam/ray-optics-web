@@ -1,6 +1,4 @@
 /**
-# `features/import-custom-glass/components/CustomGlassTable/CustomGlassTable.tsx`
-
 ## Accessibility
 - Each row checkbox exposes `aria-label="Select {label}"`.
 - The header checkbox exposes `aria-label="Select all custom glasses"` in tests through the AG Grid mock.
@@ -56,7 +54,6 @@ interface CustomGlassTableProps {
 }
 
 /**
-## Purpose
 Readonly AG Grid table for all user-defined custom glasses.
 
 ## Behavior

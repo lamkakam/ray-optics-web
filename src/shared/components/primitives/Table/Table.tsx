@@ -1,6 +1,3 @@
-/**
-# `shared/components/primitives/Table/Table.tsx`
-*/
 import React from "react";
 
 type TableColumnAlignment = "left" | "right";
@@ -19,8 +16,6 @@ function getAlignmentClass(alignment: TableColumnAlignment | undefined): string 
 }
 
 /**
-## Purpose
-
 Simple read-only HTML table with a header row and data rows. Accepts generic cell content including React nodes for formatted values.
 
 ## Key Behaviors
@@ -28,43 +23,6 @@ Simple read-only HTML table with a header row and data rows. Accepts generic cel
 - Row keys fall back to index since rows have no stable id.
 - Header and body cells share the same per-column alignment so numeric columns can be right-aligned consistently.
 - No sorting, filtering, or pagination — purely a display table.
-
-## Usages
-
-```tsx
-// Optical aberration metrics table
-<Table
-  headers={["Name", "Value", "Status"]}
-  rows={[
-    ["Spherical Aberration", "0.100000", <Chip>Low</Chip>],
-    ["Coma", 0.2, <Chip>Medium</Chip>],
-    ["Astigmatism", "0.050000", <Chip>Low</Chip>],
-  ]}
-/>
-
-// First-order data table
-const firstOrderData = [
-  ["EFL", "100.00 mm"],
-  ["BFL", "95.45 mm"],
-  ["f/#", "4.0"],
-  ["Image Height", "21.6 mm"],
-];
-
-<Table
-  headers={["Parameter", "Value"]}
-  rows={firstOrderData}
-/>
-
-// Mix of different cell types
-<Table
-  headers={["Parameter", "Value", "Unit"]}
-  rows={[
-    ["Focal Length", 100, "mm"],
-    ["Aperture", "f/4", "—"],
-    ["Field of View", 20, "°"],
-  ]}
-/>
-```
 */
 export function Table({ headers, rows, columnAlignments }: TableProps) {
   return (

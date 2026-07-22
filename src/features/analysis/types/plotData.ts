@@ -1,15 +1,6 @@
 /**
-# `features/analysis/types/plotData.ts`
-
-## Purpose
-
 Defines analysis plot payload types returned by the Pyodide worker and consumed by analysis chart stores/components.
-
-## Usage
-
-```ts
-import type { RayFanData } from "@/features/analysis/types/plotData";
-```*/
+*/
 export interface LineAxisData {
   x: number[];
   y: number[];

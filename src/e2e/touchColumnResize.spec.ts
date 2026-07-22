@@ -1,8 +1,4 @@
 /**
-# `e2e/touchColumnResize.spec.ts`
-
-## Purpose
-
 Verifies that a real AG Grid column resize handle responds to a touchscreen pointer drag.
 
 ## Coverage

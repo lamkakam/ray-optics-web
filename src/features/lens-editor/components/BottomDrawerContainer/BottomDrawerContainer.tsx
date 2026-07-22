@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/BottomDrawerContainer/BottomDrawerContainer.tsx`
-
 ## Internal Logic
 
 Builds a `tabs` array via `useMemo` containing:
@@ -48,13 +46,9 @@ interface BottomDrawerContainerProps {
 }
 
 /**
-## Purpose
-
 Container component that composes the four drawer tabs (System Specs, Prescription, Focusing, Image Reference) and renders them inside `BottomDrawer`. Extracts `drawerTabs` construction from `page.tsx` to encapsulate bottom-drawer concerns.
 
 `SpecsConfiguratorContainer`, `LensPrescriptionContainer`, and `FocusingContainer` read their stores through the provider hooks, so this container only forwards the callbacks and worker state they still need.
-
-## Usages
 
 Used in `LensEditor.tsx` for both LG and SM layouts, with `draggable` toggled by breakpoint.
 */

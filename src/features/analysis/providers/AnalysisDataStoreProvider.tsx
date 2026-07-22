@@ -1,6 +1,3 @@
-/**
-# `features/analysis/providers/AnalysisDataStoreProvider.tsx`
-*/
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
@@ -19,38 +16,8 @@ export interface AnalysisDataStoreProviderProps {
 }
 
 /**
-## Purpose
-
 Provides a single `StoreApi<AnalysisDataState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
-
-## Usage
-
-In `app/layout.tsx` — mount the provider once:
-```tsx
-<ThemeProvider>
-  <AnalysisDataStoreProvider>
-    {children}
-  </AnalysisDataStoreProvider>
-</ThemeProvider>
-```
-
-Inside any analysis data related component — imperative access:
-```tsx
-import { useStore } from "zustand";
-// ...
-const store = useAnalysisDataStore();
-const seidelData = useStore(store, (s) => s.seidelData);
-store.getState().setFirstOrderData(firstOrderData);
-```
-
-In tests — inject a pre-built store:
-```tsx
-render(
-  <AnalysisDataStoreContext.Provider value={store}>
-    <MyComponent />
-  </AnalysisDataStoreContext.Provider>
-);
-```*/
+*/
 export const AnalysisDataStoreProvider: React.FC<AnalysisDataStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

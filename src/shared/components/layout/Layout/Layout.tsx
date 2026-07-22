@@ -1,6 +1,4 @@
 /**
-# `shared/components/layout/Layout/Layout.tsx`
-
 ## State
 | State | Type | Description |
 |-------|------|-------------|
@@ -63,15 +61,7 @@ interface LayoutProps {
 }
 
 /**
-## Purpose
 Composite client layout shell. Owns hamburger/side-nav open state and screen-size detection. Renders the shared app chrome and delegates route content to `children`.
-
-## Usages
-
-```tsx
-// In app/AppShell.tsx
-<Layout onNavigate={guardedNavigate}>{children}</Layout>
-```
 */
 export function Layout({ children, onNavigate }: LayoutProps) {
   const [sideNavOpen, setSideNavOpen] = useState(false);

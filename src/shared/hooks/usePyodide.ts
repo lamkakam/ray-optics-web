@@ -1,6 +1,4 @@
 /**
-# `shared/hooks/usePyodide.ts`
-
 `PyodideWorkerAPI` exposes `getSurfaceSemiDiameters(opticalModel): Promise<number[]>` for sequential Object-through-Image `surface_od()` values.
 
 ## Dependencies
@@ -124,8 +122,6 @@ function initOnce(): Promise<void> {
 }
 
 /**
-## Purpose
-
 Initialise the singleton Pyodide web worker and expose a typed Comlink proxy to the rest of the app. All RayOptics computations run in the web worker; this hook provides the React interface to them.
 
 ## Behavior
@@ -153,55 +149,6 @@ Initialise the singleton Pyodide web worker and expose a typed Comlink proxy to 
 - `optimizeOpm` also accepts an optional streamed progress callback; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker. For stoppable runs, callers also pass a per-run id and a `SharedArrayBuffer` interrupt buffer.
 - `init` accepts an optional progress callback for determinate startup milestones; `usePyodide` owns the Comlink proxy wrapping for this callback.
 - `_resetSingleton()` is exported for test isolation only — NOT for production use.
-
-## Usages
-
-**1. In a page container component (via DI pattern):**
-
-```tsx
-"use client";
-
-import { usePyodide } from "@/hooks/usePyodide";
-import { LensEditor } from "@/components/LensEditor";
-
-export default function Page() {
-  const { proxy, isReady, error } = usePyodide();
-
-  if (!isReady && !error) {
-    return <div>Loading Pyodide...</div>;
-  }
-
-  if (error) {
-    return <div>Failed to initialize: {error}</div>;
-  }
-
-  // Pass the proxy to child components via DI
-  return <LensEditor pyodideProxy={proxy} />;
-}
-```
-
-**2. In a child component (receives proxy as prop):**
-
-```tsx
-interface LensEditorProps {
-  pyodideProxy: PyodideWorkerAPI | undefined;
-}
-
-export function LensEditor({ pyodideProxy }: LensEditorProps) {
-  const handleComputeAnalysis = async () => {
-    if (!pyodideProxy) return;
-
-    const firstOrderData = await pyodideProxy.getFirstOrderData(opticalModel);
-    console.log("First-order data:", firstOrderData);
-  };
-
-  return (
-    <button onClick={handleComputeAnalysis}>
-      Compute Analysis
-    </button>
-  );
-}
-```
 
 This pattern keeps child components testable without requiring a real Pyodide worker.
 */

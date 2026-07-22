@@ -1,6 +1,4 @@
 /**
-# `e2e/sasianTripletManualInput.spec.ts`
-
 Playwright end-to-end test that manually builds the Sasian Triplet lens from a blank Lens Editor state and verifies the updated optical system renders analysis output.
 
 ## Flow

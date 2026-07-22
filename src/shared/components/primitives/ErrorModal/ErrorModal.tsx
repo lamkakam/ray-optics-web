@@ -1,6 +1,4 @@
 /**
-# `shared/components/primitives/ErrorModal/ErrorModal.tsx`
-
 ## Modal Footer
 
 - The OK action is passed to `Modal.footer` so it remains fixed outside the message body.
@@ -21,53 +19,11 @@ interface ErrorModalProps {
 }
 
 /**
-## Purpose
-
 Pre-built error dialog that wraps `Modal` with a fixed "Error" title and a single "OK" dismiss button. Shows a customizable error message or a default validation message.
 
 ## Key Behaviors
 
 - No backdrop-click dismissal (omits `onBackdropClick`), requiring explicit OK press.
-
-## Usages
-
-```tsx
-// Basic error modal with default message
-const [errorOpen, setErrorOpen] = useState(false);
-
-<ErrorModal
-  isOpen={errorOpen}
-  onClose={() => setErrorOpen(false)}
-/>
-
-// Error modal with custom message
-<ErrorModal
-  isOpen={errorOpen}
-  onClose={() => setErrorOpen(false)}
-  message="Failed to import lens file: Invalid JSON format"
-/>
-
-// Usage in page-level component
-const errorModal = (
-  <ErrorModal
-    isOpen={errorModalOpen}
-    onClose={() => setErrorModalOpen(false)}
-  />
-);
-
-<Layout errorModal={errorModal}>
-  {/* Page content *\/}
-</Layout>
-
-// Triggered by validation error
-try {
-  const parsed = JSON.parse(importedData);
-  // ... validation ...
-} catch (error) {
-  setErrorMessage(error.message);
-  setErrorOpen(true);
-}
-```
 */
 export function ErrorModal({ isOpen, onClose, message }: ErrorModalProps) {
   return (

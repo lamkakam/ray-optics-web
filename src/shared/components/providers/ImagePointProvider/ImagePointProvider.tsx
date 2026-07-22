@@ -1,6 +1,4 @@
 /**
-# `shared/components/providers/ImagePointProvider/ImagePointProvider.tsx`
-
 ## API
 
 - `ImagePoint` is `"chief_ray" | "centroid"`.
@@ -35,8 +33,6 @@ function getInitialImagePoint(): ImagePoint {
 }
 
 /**
-## Purpose
-
 Provides app-wide image-point state for spot, wavefront-like, and OPD-related analyses.
 
 ## Behavior

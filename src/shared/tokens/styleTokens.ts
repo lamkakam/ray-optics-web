@@ -1,8 +1,4 @@
 /**
-# `shared/tokens/styleTokens.ts`
-
-## Purpose
-
 Centralized design-token system for Tailwind CSS class strings. Provides a nested `componentTokens` object (aliased `cx`) consumed by all micro-components, ensuring consistent theming and a single place to update visual design.
 
 ## Token Structure
@@ -38,9 +34,8 @@ componentTokens
 - `overlay` tokens have `z-[200]` — the highest z-index in the stack, above `Modal`'s `z-50`.
 - `menuContainer` and `descriptionContainer` reuse global surface, border, and secondary text tokens for the example-systems page primitives.
 
-## Usages
-
-- Imported by every component in `components/micro/` and by `AnalysisPlotView` in `components/composite/`.*/
+- Imported by every component in `components/micro/` and by `AnalysisPlotView` in `components/composite/`.
+*/
 /**
  * Shared Tailwind class tokens — nested per-component design token system.
  *

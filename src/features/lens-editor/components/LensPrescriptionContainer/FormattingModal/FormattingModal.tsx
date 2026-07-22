@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/LensPrescriptionContainer/FormattingModal/FormattingModal.tsx`
-
 ## Dependencies
 
 - UI primitives: `Modal`, `RadioInput`, `Input`, `Select`, `Button`, and `Label`.
@@ -54,8 +52,6 @@ function clampSurfaceIndex(value: number, max: number): number {
 }
 
 /**
-## Purpose
-
 Modal for scaling or reversing selected lens prescription rows from the Lens Editor toolbar. It owns draft controls for the current modal session and delegates all row transformation to the pure `prescriptionFormatting` helper.
 
 ## Behavior

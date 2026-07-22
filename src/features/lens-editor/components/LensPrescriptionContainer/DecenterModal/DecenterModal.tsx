@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/LensPrescriptionContainer/DecenterModal/DecenterModal.tsx`
-
 ## Internal State
 
 - `posAndOrientation: DecenterCoordinateSystemStrategy` — selected strategy.
@@ -53,8 +51,6 @@ const POS_AND_ORIENTATION_OPTIONS = [
 ];
 
 /**
-## Purpose
-
 Modal for configuring surface tilt and decenter parameters: coordinate system strategy, Euler angles (alpha, beta, gamma in degrees), and X/Y offsets.
 
 ## Key Behaviors
@@ -62,34 +58,6 @@ Modal for configuring surface tilt and decenter parameters: coordinate system st
 - When `initialDecenter` is `undefined`, all fields default to `0` and strategy defaults to `"bend"`.
 - Invalid or empty numeric strings fall back to the initial value.
 - In `readOnly` mode, the strategy select and all numeric inputs are disabled; the footer renders only `Close`.
-
-## Usages
-
-```tsx
-import { DecenterModal, type DecenterType } from "@/features/lens-editor/components/LensPrescriptionContainer";
-
-// In a container component (e.g., LensPrescriptionContainer)
-const decenterRow = rows.find((r) => r.id === decenterModal.rowId);
-
-return (
-  <>
-    <DecenterModal
-      key={decenterModal.open ? decenterModal.rowId : "decenter-closed"}
-      isOpen={decenterModal.open}
-      initialDecenter={decenterRow?.kind !== "object" ? decenterRow?.decenter : undefined}
-      onConfirm={(decenter: DecenterType) => {
-        store.getState().updateRow(decenterModal.rowId, { decenter });
-        store.getState().closeDecenterModal();
-      }}
-      onClose={() => store.getState().closeDecenterModal()}
-      onRemove={() => {
-        store.getState().updateRow(decenterModal.rowId, { decenter: undefined });
-        store.getState().closeDecenterModal();
-      }}
-    />
-  </>
-);
-```
 */
 export function DecenterModal({
   isOpen,

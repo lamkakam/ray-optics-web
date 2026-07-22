@@ -1,6 +1,4 @@
 /**
-# `features/optimization/lib/modalHelpers.ts`
-
 Pure helper utilities shared by optimization variable/pickup modals.
 
 ## Behavior

@@ -1,8 +1,4 @@
 /**
-# `shared/lib/lens-prescription-grid/lib/prescriptionFormatting.ts`
-
-## Purpose
-
 Pure formatting helpers for lens prescription grid rows. The module does not read or mutate Zustand state; callers pass rows in and receive either a full candidate row array or an error.
 
 ## Scale Behavior
@@ -38,8 +34,6 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 - The inserted reference surface is a standard flat air surface with `curvatureRadius: 0`, `thickness: 0`, `medium: "air"`, `manufacturer: ""`, label `Default`, and no decenter, aspherical, or diffraction grating data.
 - The reference surface copies `semiDiameter` from the original first surface so aperture display remains consistent before any auto-aperture recalculation.
 - The helper returns a new row array and preserves all original row objects.
-
-## Validation
 
 `formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value collected by `surfaceValueScaling.ts` in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check. Scaling is also rejected atomically with a precision-underflow error when any nonzero source numeric value, including an aperture dimension, aspheric coefficient, or preserved dimensionless value, becomes zero. Source values that are already zero remain valid.*/
 import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";

@@ -1,5 +1,3 @@
-/**
-# `features/analysis/lib/analysisChartPalette/analysisChartPalette.ts`*/
 export const ANALYSIS_HEATMAP_COLOR_PALETTE = [
   "#5b2a86",
   "#5a3d9a",
@@ -24,8 +22,6 @@ function hexToRgba(hexColor: string, alpha: number): readonly [number, number, n
 }
 
 /**
-## Purpose
-
 Exports the shared 11-color Viridis-derived palette used by analysis heatmap-style views so Wavefront Map, Diffraction PSF, and wavelength-mapped line and scatter charts stay visually aligned with a sequential scale that trims the darkest and brightest extremes for better theme contrast.
 
 ## Behavior
@@ -36,13 +32,12 @@ Exports the shared 11-color Viridis-derived palette used by analysis heatmap-sty
 - Starts from a lighter indigo rather than raw Viridis purple so low-end values remain visible in dark theme.
 - Interpolates clamped normalized values between neighboring palette stops and returns opaque RGBA channels for bitmap renderers.
 
-## Usage
-
 - Imported by `WavefrontMapChart.tsx` and `wavefrontMapDeckData.ts`.
 - Imported by `DiffractionPsfChart.tsx` and `diffractionPsfDeckData.ts`.
 - Imported by `spotDiagramChartOption.ts`.
 - Imported by `rayFanChartOption.ts`.
-- Imported by `opdFanChartOption.ts`.*/
+- Imported by `opdFanChartOption.ts`.
+*/
 export function interpolateAnalysisHeatmapColor(
   normalizedValue: number,
 ): readonly [number, number, number, number] {

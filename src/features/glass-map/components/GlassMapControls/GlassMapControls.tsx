@@ -1,6 +1,4 @@
 /**
-# `features/glass-map/components/GlassMapControls/GlassMapControls.tsx`
-
 ## Sections
 1. **Plot Type** — `RadioInput` group (`refractiveIndex` / `partialDispersion`) rendered with `columns={2}` and `layout="compact"`
 2. **Centre Wavelength** — `RadioInput` group (`d` / `e`) rendered with `columns={2}` and `layout="compact"`, labelled "Centre Wavelength"; options rendered via `MathJax inline`
@@ -56,36 +54,7 @@ const PARTIAL_DISPERSION_OPTIONS: ReadonlyArray<RadioOption<PartialDispersionTyp
 ];
 
 /**
-## Purpose
 Pure presentational component that renders all filter/selector controls for the Glass Map page. No store access — all state and callbacks are passed as props.
-
-## Usages
-
-```tsx
-import { GlassMapControls } from "@/features/glass-map/components/GlassMapControls";
-
-// In a page component (e.g., GlassMapView)
-const plotType = useStore(store, (s) => s.plotType);
-const abbeNumCenterLine = useStore(store, (s) => s.abbeNumCenterLine);
-const partialDispersionType = useStore(store, (s) => s.partialDispersionType);
-const enabledCatalogs = useStore(store, (s) => s.enabledCatalogs);
-const { setPlotType, setAbbeNumCenterLine, setPartialDispersionType, toggleCatalog } = store.getState();
-
-return (
-  <div className="flex flex-col gap-4 p-4">
-    <GlassMapControls
-      plotType={plotType}
-      abbeNumCenterLine={abbeNumCenterLine}
-      partialDispersionType={partialDispersionType}
-      enabledCatalogs={enabledCatalogs}
-      onPlotTypeChange={setPlotType}
-      onAbbeNumCenterLineChange={setAbbeNumCenterLine}
-      onPartialDispersionTypeChange={setPartialDispersionType}
-      onToggleCatalog={toggleCatalog}
-    />
-  </div>
-);
-```
 */
 export function GlassMapControls({
   plotType,

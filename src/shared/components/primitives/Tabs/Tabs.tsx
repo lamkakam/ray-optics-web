@@ -1,6 +1,4 @@
 /**
-# `shared/components/primitives/Tabs/Tabs.tsx`
-
 ## Internal State
 
 - `internalActiveTabId: string` — uncontrolled active tab id, initialized to `tabs[0]?.id`.
@@ -33,8 +31,6 @@ interface TabsProps {
 }
 
 /**
-## Purpose
-
 Accessible tabbed panel component. Renders a tab bar with ARIA roles and a content panel for the active tab. Supports an optional action slot beside the tabs and a collapsible panel.
 
 ## Key Behaviors
@@ -44,41 +40,6 @@ Accessible tabbed panel component. Renders a tab bar with ARIA roles and a conte
 - Tab bar scrolls horizontally when tabs overflow.
 - In controlled mode, `activeTabId` decides the selected tab and clicks only emit `onTabChange`.
 - If `activeTabId` or the uncontrolled state points to a tab id that is no longer present, `Tabs` safely falls back to the first tab in `tabs`.
-
-## Usages
-
-```tsx
-// Analysis results tabs in BottomDrawer
-const tabs = [
-  {
-    id: "ray-fan",
-    label: "Ray Fan",
-    content: <RayFanPlot data={plotData} />,
-  },
-  {
-    id: "spot-diagram",
-    label: "Spot Diagram",
-    content: <SpotDiagramPlot data={plotData} />,
-  },
-  {
-    id: "wavefront",
-    label: "Wavefront",
-    content: <WavefrontPlot data={plotData} />,
-  },
-];
-
-<Tabs
-  tabs={tabs}
-  actions={<collapseButton />}
-  showPanel={true}
-/>
-
-// Tabs with custom panel styling
-<Tabs
-  tabs={configTabs}
-  panelClassName="p-6 bg-gray-50"
-/>
-```
 */
 export function Tabs({
   tabs,

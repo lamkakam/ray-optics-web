@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/FieldCurveChart/FieldCurveChart.tsx`
-*/
 import type { FieldCurveData } from "@/features/analysis/types/plotData";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { buildFieldCurveOption } from "./fieldCurveChartOption";
@@ -17,8 +14,6 @@ interface FieldCurveChartBuilderArgs {
 }
 
 /**
-## Purpose
-
 Wraps the shared analysis ECharts component factory for Field Curvature plot data.
 */
 export const FieldCurveChart = createAnalysisChartComponent<FieldCurveChartProps, FieldCurveChartBuilderArgs>({

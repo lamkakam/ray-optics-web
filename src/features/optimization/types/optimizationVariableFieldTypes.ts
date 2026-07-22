@@ -1,8 +1,4 @@
 /**
-# `features/optimization/types/optimizationVariableFieldTypes.ts`
-
-## Purpose
-
 Shared variable-mode field prop and renderer types used by the variable field renderer helper.
 
 ## Key Conventions

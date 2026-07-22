@@ -1,6 +1,3 @@
-/**
-# `shared/components/primitives/Switch/Switch.tsx`
-*/
 import React from "react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -58,8 +55,6 @@ const CONTENT_OFFSET_CLASSES = {
 } as const satisfies Record<SwitchSize, Record<"checked" | "unchecked", string>>;
 
 /**
-## Purpose
-
 Controlled switch primitive for binary settings. It renders a native button with `role="switch"` and tokenized track, thumb, disabled, and animation classes.
 
 ## Key Behaviors
@@ -72,18 +67,6 @@ Controlled switch primitive for binary settings. It renders a native button with
 - Positions visible state content on the side opposite the thumb to prevent labels such as `Auto` and `Manual` from being covered by the thumb.
 - The inherited `className` prop is merged via `twMerge` after token classes.
 - Applies tokenized track color, thumb translation, transition, `will-change-transform`, opacity, and disabled cursor classes.
-
-## Usages
-
-```tsx
-<Switch
-  checked={useModelGlass}
-  ariaLabel="Use model glass"
-  onCheckedChange={setUseModelGlass}
-  checkedContent="On"
-  uncheckedContent="Off"
-/>
-```
 */
 export function Switch({
   checked,

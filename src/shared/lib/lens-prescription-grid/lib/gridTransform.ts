@@ -1,11 +1,5 @@
 /**
-# `shared/lib/lens-prescription-grid/lib/gridTransform.ts`
-
-## Purpose
-
 Converts between the domain `Surfaces` model and the flat `GridRow[]` representation used by the LensEditor AG Grid, and generates stable row IDs for surface rows.
-
-## Behavior
 
 ## Dependencies
 
@@ -18,31 +12,9 @@ Converts between the domain `Surfaces` model and the flat `GridRow[]` representa
 - The module-level `nextId` counter means IDs from two separate `surfacesToGridRows` calls will never collide, but IDs are not stable across page reloads.
 - `generateRowId()` is exported for testing; in production it is only called from `surfacesToGridRows`.
 
-## Usages
-
-```ts
-import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
-import type { OpticalModel, Surfaces } from "@/shared/lib/types/opticalModel";
-
-// Convert model to AG Grid rows when loading
-const surfaces: Surfaces = model;
-const gridRows = surfacesToGridRows(surfaces);
-lensEditorStore.getState().setRows(gridRows);
-
-// Convert grid rows back to surfaces when user submits
-const editedRows = lensEditorStore.getState().rows;
-const editedSurfaces = gridRowsToSurfaces(editedRows);
-
-// Create updated model and send to worker
-const updatedModel: OpticalModel = {
-  ...model,
-  ...editedSurfaces,
-};
-const result = await proxy.getFirstOrderData(updatedModel);
-```
-
 - `surfacesToGridRows` is called when loading a model into the LensEditor.
-- `gridRowsToSurfaces` is called when the user commits an edit before dispatching to the Pyodide worker.*/
+- `gridRowsToSurfaces` is called when the user commits an edit before dispatching to the Pyodide worker.
+*/
 import type { Surfaces, Surface } from "@/shared/lib/types/opticalModel";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 

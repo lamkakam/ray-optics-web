@@ -1,5 +1,4 @@
 /**
-# `shared/components/providers/GlassCatalogProvider/GlassCatalogProvider.tsx`
 ## Behaviour
 - `catalogs` contains normalized worker-backed glass catalog data once AppShell has successfully loaded and committed it to `GlassMapStore`
 - `lookupMaps` contains the case-insensitive manufacturer and medium maps built by `GlassMapStore` from the same loaded catalog data
@@ -30,7 +29,6 @@ interface GlassCatalogProviderProps {
 }
 
 /**
-## Purpose
 Client-only React context for app-wide glass catalog data. The provider does not fetch data itself; `AppShell` injects successful catalog data from `GlassMapStore` plus AppShell-local preload status/error so lens editor and glass map consume a shared context.*/
 export function GlassCatalogProvider({ value, children }: GlassCatalogProviderProps) {
   return (

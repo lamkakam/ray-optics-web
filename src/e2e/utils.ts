@@ -1,6 +1,4 @@
 /**
-# `e2e/utils.ts`
-
 Shared Playwright helpers for ray-optics-web end-to-end tests.
 
 ## General Helpers

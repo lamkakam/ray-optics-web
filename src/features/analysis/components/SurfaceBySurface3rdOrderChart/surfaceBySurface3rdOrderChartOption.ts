@@ -1,7 +1,3 @@
-/**
-# `features/analysis/components/SurfaceBySurface3rdOrderChart/surfaceBySurface3rdOrderChartOption.ts`
-
-*/
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
@@ -64,8 +60,6 @@ function formatTooltip(params: TooltipFormatterParam | TooltipFormatterParam[]) 
 }
 
 /**
-## Purpose
-
 Builds the ECharts option object for the analysis panel’s grouped bar chart of surface-by-surface third-order Seidel aberration coefficients.
 
 ## Key Behaviors

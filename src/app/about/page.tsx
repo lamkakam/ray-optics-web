@@ -1,6 +1,4 @@
 /**
-# `app/about/page.tsx`
-
 ## Behaviour
 - Renders the About heading and explanatory text inline in the route file
 - Describes Ray Optics Web as a browser-based optical design GUI
@@ -49,7 +47,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `;
 
 /**
-## Purpose
 About route page (`/about`).
 */
 export default function AboutPage() {

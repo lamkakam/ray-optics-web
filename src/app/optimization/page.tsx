@@ -1,14 +1,9 @@
-/**
-# `app/optimization/page.tsx`
-*/
 "use client";
 
 import { useAppShell } from "@/app/AppShellContext";
 import { OptimizationPage } from "@/features/optimization/OptimizationPage";
 
 /**
-## Purpose
-
 App Router page for `/optimization`.
 
 ## Behavior

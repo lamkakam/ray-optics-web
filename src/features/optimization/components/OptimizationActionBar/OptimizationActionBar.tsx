@@ -1,6 +1,3 @@
-/**
-# `features/optimization/components/OptimizationActionBar/OptimizationActionBar.tsx`
-*/
 "use client";
 
 import { Button } from "@/shared/components/primitives/Button";

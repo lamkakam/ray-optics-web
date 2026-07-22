@@ -1,6 +1,3 @@
-/**
-# `features/lens-editor/components/LensPrescriptionContainer/ApertureModal/ApertureModal.tsx`
-*/
 "use client";
 
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";

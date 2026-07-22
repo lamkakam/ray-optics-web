@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/LongitudinalSphericalAberrationChart/longitudinalSphericalAberrationChartOption.ts`
-*/
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
@@ -20,8 +17,6 @@ import type { LongitudinalSphericalAberrationData } from "@/features/analysis/ty
 echarts.use([LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
 
 /**
-## Purpose
-
 Builds the ECharts option for longitudinal spherical aberration plots.
 
 ## Behavior

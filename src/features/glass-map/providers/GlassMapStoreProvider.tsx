@@ -1,6 +1,3 @@
-/**
-# `features/glass-map/providers/GlassMapStoreProvider.tsx`
-*/
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
@@ -22,39 +19,8 @@ export interface GlassMapStoreProviderProps {
 }
 
 /**
-## Purpose
-
 Provides a single `StoreApi<GlassMapStore>` instance to the app tree via React context. The provider creates the store once per mount so glass-map state persists across route switches.
-
-## Usage
-
-In `app/layout.tsx` — mount the provider once:
-```tsx
-<LensLayoutImageStoreProvider>
-  <GlassMapStoreProvider>
-    <AppShell>{children}</AppShell>
-  </GlassMapStoreProvider>
-</LensLayoutImageStoreProvider>
-```
-
-Inside `GlassMapView` — access the store:
-```tsx
-import { useGlassMapStore } from "@/features/glass-map/providers/GlassMapStoreProvider";
-import { useStore } from "zustand";
-// ...
-const store = useGlassMapStore();
-const plotType = useStore(store, (s) => s.plotType);
-store.getState().setPlotType("partialDispersion");
-```
-
-In tests — inject a pre-built store:
-```tsx
-render(
-  <GlassMapStoreContext.Provider value={store}>
-    <GlassMapView proxy={...} isReady={...} />
-  </GlassMapStoreContext.Provider>
-);
-```*/
+*/
 export const GlassMapStoreProvider: React.FC<GlassMapStoreProviderProps> = ({
   children,
 }) => {

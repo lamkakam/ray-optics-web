@@ -1,6 +1,4 @@
 /**
-# next.config.dev.ts
-
 Defines the shared Next.js settings used by both development and production without enabling static export.
 
 ## Responsibilities

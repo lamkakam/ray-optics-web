@@ -1,6 +1,4 @@
 /**
-# `features/analysis/components/OpdFanChart/opdFanChartOption.ts`
-
 ## Output Shape
 
 - `title`: two subplot titles
@@ -166,8 +164,6 @@ function getAxisExtents(opdFanData: OpdFanData): OpdFanAxisExtents {
 }
 
 /**
-## Purpose
-
 Defines the OPD Fan ECharts configuration used by `OpdFanChart`. This module owns ECharts registration, fixed layout constants, wavelength-based color assignment, and conversion from worker-provided OPD fan data into paired tangential/sagittal line series.
 
 ## Key Behaviors

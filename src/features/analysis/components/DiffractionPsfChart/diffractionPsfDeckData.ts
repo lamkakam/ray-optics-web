@@ -1,8 +1,4 @@
 /**
-# `features/analysis/components/DiffractionPsfChart/diffractionPsfDeckData.ts`
-
-## Purpose
-
 Prepares worker-provided `DiffractionPsfData` for the deck.gl diffraction PSF renderer.
 
 ## Key Behaviors

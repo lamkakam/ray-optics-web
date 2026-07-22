@@ -1,6 +1,3 @@
-/**
-# `shared/components/primitives/ExternalLink/ExternalLink.tsx`
-*/
 import React from "react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -24,8 +21,6 @@ const fontSizeByVariant: Record<NonNullable<ExternalLinkProps["variant"]>, strin
 };
 
 /**
-## Purpose
-
 External URL link primitive for source/reference links that should leave the app. It renders a plain HTML anchor rather than Next.js `Link`.
 
 ## Key Behaviors
@@ -36,14 +31,6 @@ External URL link primitive for source/reference links that should leave the app
 - Uses `componentTokens.externalLink.size.fontSize` for the default variant and `componentTokens.externalLink.size.descriptionFontSize` for the `"description"` variant.
 - Uses `componentTokens.externalLink` for theme-aware text colors, hover colors, underline styling, transitions, and focus-visible styling.
 - Merges consumer `className` with token classes via `clsx` + `twMerge`, allowing focused overrides including consumer font-size classes.
-
-## Usages
-
-```tsx
-<ExternalLink href="https://example.com/source" aria-label="Open source material">
-  Source material
-</ExternalLink>
-```
 */
 export function ExternalLink({
   href,

@@ -1,6 +1,3 @@
-/**
-# `workers/loadPyodideModule.ts`
-*/
 import type { loadPyodide } from "pyodide";
 
 type CreatePyodideModule = NonNullable<

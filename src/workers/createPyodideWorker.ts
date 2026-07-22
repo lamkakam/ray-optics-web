@@ -1,6 +1,4 @@
 /**
-# `workers/createPyodideWorker.ts`
-
 ## Return Value
 Returns a new `Worker` instance backed by `workers/pyodide.worker.ts`.
 */
@@ -10,8 +8,6 @@ Returns a new `Worker` instance backed by `workers/pyodide.worker.ts`.
  * without hitting import.meta.url issues.
  */
 /**
-## Purpose
-
 Instantiate the Pyodide web worker. Extracted into its own module so that tests can mock it without encountering `import.meta.url` resolution issues.
 
 ## Behavior
@@ -30,18 +26,6 @@ Both `next dev` and production builds must preserve this option in the emitted A
 
 - Each call returns a **new** `Worker` instance. Callers (i.e. `usePyodide`) are responsible for ensuring this is only called once (singleton pattern).
 - No error handling inside — if the worker script fails to load, the `Worker` constructor throws and the caller handles it.
-
-## Usages
-
-Called exclusively by `usePyodide.ts` to create the singleton worker:
-
-```ts
-import { createPyodideWorker } from "@/workers/createPyodideWorker";
-
-// Inside usePyodide.ts
-const worker = createPyodideWorker();
-const proxy = wrap<PyodideWorkerAPI>(worker);
-```
 
 **In tests**, this module is replaced with a mock that returns a fake worker, avoiding `import.meta.url` and Pyodide initialisation overhead.
 */

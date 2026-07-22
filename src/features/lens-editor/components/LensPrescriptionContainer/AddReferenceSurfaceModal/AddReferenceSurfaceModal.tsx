@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/LensPrescriptionContainer/AddReferenceSurfaceModal/AddReferenceSurfaceModal.tsx`
-
 Confirmation modal shown after a successful Reverse formatting operation when the resulting first physical surface has nonzero tilt or decenter.
 
 ## Modal Footer

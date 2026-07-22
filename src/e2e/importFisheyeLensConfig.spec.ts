@@ -1,8 +1,4 @@
 /**
-# `src/e2e/importFisheyeLensConfig.spec.ts`
-
-## Purpose
-
 End-to-end coverage for importing `fisheye-lens-config.json`, explicitly running `Update System`, and verifying that the imported prescription and system-spec state remains consistent after computation.
 
 ## Covered Flow

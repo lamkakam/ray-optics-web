@@ -1,8 +1,4 @@
 /**
-# `shared/lib/utils/specialMaterials.ts`
-
-## Purpose
-
 Defines the special optical media shared by TypeScript consumers.*/
 export const builtInSpecialMaterial: ReadonlySet<string> = new Set([
   "air",

@@ -1,6 +1,4 @@
 /**
-# `shared/lib/types/opticalModel.ts`
-
 ## Key Conventions
 
 - **`curvatureRadius: 0`** means flat surface (infinite radius of curvature) — used throughout the codebase.
@@ -140,8 +138,6 @@ export interface Surfaces {
 
 /** Complete optical model returned from the worker. */
 /**
-## Purpose
-
 Defines core TypeScript domain types for the optical model, including system specifications, surfaces, and aspherical surface configuration. Feature-owned analysis, focusing, Seidel, Zernike, and glass-map payload types live under their owning feature directories.
 
 ## Edge Cases / Error Handling
@@ -151,33 +147,8 @@ Defines core TypeScript domain types for the optical model, including system spe
 - `fields` in `OpticalSpecs.field` may be absolute or relative values depending on `isRelative`.
 - `referenceIndex` in `wavelengths` is a zero-based index into `weights`; callers must ensure it is in range.
 
-## Usages
-
-```ts
-import type { OpticalModel, OpticalSpecs, Surface } from "@/shared/lib/types/opticalModel";
-
-// Creating a new optical model
-const model: OpticalModel = {
-  specs: {
-    pupil: { space: "object", type: "epd", value: 25 },
-    field: { space: "object", type: "height", fields: [0, 14, 20], isRelative: true },
-    wavelengths: { weights: [[546.073, 1]], referenceIndex: 0 },
-  },
-  object: { distance: 1e10, medium: "air", manufacturer: "" },
-  surfaces: [
-    { curvatureRadius: 50, thickness: 10, medium: "BK7", manufacturer: "Schott" },
-    { curvatureRadius: -50, thickness: 5, medium: "air" },
-  ],
-  image: { curvatureRadius: 0 },
-  setAutoAperture: "autoAperture",
-};
-
-// Passing to Pyodide worker
-const firstOrderData = await proxy.getFirstOrderData(model);
-const layoutImage = await proxy.plotLensLayout(model, false);
-```
-
-Imported by modules that need the core optical model contract. Types are validated by `lib/importSchema.ts` for uploaded files.*/
+Imported by modules that need the core optical model contract. Types are validated by `lib/importSchema.ts` for uploaded files.
+*/
 export interface OpticalModel extends Surfaces {
   setAutoAperture: SetAutoApertureFlag;
   specs: OpticalSpecs;

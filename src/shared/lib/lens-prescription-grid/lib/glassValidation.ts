@@ -1,8 +1,4 @@
 /**
-# `shared/lib/lens-prescription-grid/lib/glassValidation.ts`
-
-## Purpose
-
 Shared client-side validation for prescription media before worker-backed lens update or optimization operations use an `OpticalModel`.
 
 ## Behavior

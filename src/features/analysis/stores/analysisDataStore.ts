@@ -1,8 +1,4 @@
 /**
-# `features/analysis/stores/analysisDataStore.ts`
-
-## Purpose
-
 Zustand store for analysis results computed after each successful submit. Holds Seidel aberration data and first-order optical data returned by the Pyodide worker.
 
 ## State

@@ -1,6 +1,3 @@
-/**
-# `features/optimization/lib/variableModeFields.tsx`
-*/
 import { BoundedVariableModeFields } from "@/features/optimization/lib/BoundedVariableModeFields/BoundedVariableModeFields";
 import { UnboundedVariableModeFields } from "@/features/optimization/lib/UnboundedVariableModeFields/UnboundedVariableModeFields";
 import type {

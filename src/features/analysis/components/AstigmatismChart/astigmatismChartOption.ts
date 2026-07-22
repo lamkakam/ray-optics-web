@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/AstigmatismChart/astigmatismChartOption.ts`
-*/
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
@@ -14,8 +11,6 @@ import type { AstigmatismCurveData } from "@/features/analysis/types/plotData";
 echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
 /**
-## Purpose
-
 Builds the ECharts option for wavelength-specific astigmatism focal-separation curves.
 
 ## Behavior

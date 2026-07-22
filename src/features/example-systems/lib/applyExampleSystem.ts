@@ -1,6 +1,3 @@
-/**
-# `features/example-systems/lib/applyExampleSystem.ts`
-*/
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { AnalysisDataState } from "@/features/analysis/stores/analysisDataStore";

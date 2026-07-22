@@ -1,8 +1,4 @@
 /**
-# `shared/lib/lens-prescription-grid/types/gridTypes.ts`
-
-## Purpose
-
 Defines the type used to represent rows in the LensEditor AG Grid, covering the object plane, optical surfaces, and the image plane.
 
 ## Edge Cases / Error Handling
@@ -14,39 +10,7 @@ Defines the type used to represent rows in the LensEditor AG Grid, covering the 
 ## Dependencies
 
 - `shared/lib/types/opticalModel.ts` — `Surface`, `Surfaces` (type-only imports)
-
-## Usages
-
-```tsx
-import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-
-// Using constants for stable row identification
-function handleSelectRow(rowId: string) {
-  if (rowId === OBJECT_ROW_ID) {
-    console.log("Selected object plane");
-  } else if (rowId === IMAGE_ROW_ID) {
-    console.log("Selected image plane");
-  } else {
-    console.log("Selected surface row");
-  }
-}
-
-// Type-safe pattern matching with discriminant
-function processRow(row: GridRow) {
-  switch (row.kind) {
-    case "object":
-      console.log("Object distance:", row.objectDistance);
-      console.log("Object medium:", row.medium, row.manufacturer);
-      break;
-    case "image":
-      console.log("Image curvature radius:", row.curvatureRadius);
-      break;
-    case "surface":
-      console.log("Surface label:", row.label);
-      break;
-  }
-}
-```*/
+*/
 import type { Surface, Surfaces } from "@/shared/lib/types/opticalModel";
 
 export const OBJECT_ROW_ID = "row-object";

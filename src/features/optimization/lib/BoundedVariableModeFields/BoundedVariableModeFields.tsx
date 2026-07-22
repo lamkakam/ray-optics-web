@@ -1,6 +1,3 @@
-/**
-# `features/optimization/lib/BoundedVariableModeFields/BoundedVariableModeFields.tsx`
-*/
 "use client";
 
 import { Input } from "@/shared/components/primitives/Input";

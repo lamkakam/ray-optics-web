@@ -1,44 +1,8 @@
 /**
-# `features/glass-map/types/glassMap.ts`
-
-## Purpose
 Type definitions and type-derived catalog-name constants for the Glass Map feature.
 
 Runtime helpers and rendering lookup tables live in `features/glass-map/lib/glassMap.ts`.
-
-## Usages
-
-```tsx
-import { CATALOG_NAMES } from "@/features/glass-map/types/glassMap";
-import type {
-  AllGlassCatalogsData,
-  CatalogName,
-  GlassMapPlotType,
-} from "@/features/glass-map/types/glassMap";
-
-function CatalogToggles({
-  enabledCatalogs,
-  toggleCatalog,
-}: {
-  enabledCatalogs: Record<CatalogName, boolean>;
-  toggleCatalog: (name: CatalogName) => void;
-}) {
-  return (
-    <div>
-      {CATALOG_NAMES.map((catalog) => (
-        <label key={catalog}>
-          <input
-            type="checkbox"
-            checked={enabledCatalogs[catalog]}
-            onChange={() => toggleCatalog(catalog)}
-          />
-          {catalog}
-        </label>
-      ))}
-    </div>
-  );
-}
-```*/
+*/
 export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special', 'Custom'] as const;
 export type CatalogName = typeof CATALOG_NAMES[number];
 

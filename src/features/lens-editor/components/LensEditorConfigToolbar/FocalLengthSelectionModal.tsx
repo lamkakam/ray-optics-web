@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/LensEditorConfigToolbar/FocalLengthSelectionModal.tsx`
-
 ## Modal Footer
 
 - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while the focal-length choices scroll.
@@ -25,8 +23,6 @@ interface FocalLengthSelectionModalProps {
 }
 
 /**
-## Purpose
-
 Toolbar-local modal for choosing a focal-length column when importing a zoom Photons to Photos `.txt` file.
 
 ## Behavior

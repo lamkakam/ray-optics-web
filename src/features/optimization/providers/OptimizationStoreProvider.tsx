@@ -1,6 +1,3 @@
-/**
-# `features/optimization/providers/OptimizationStoreProvider.tsx`
-*/
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from "react";
@@ -19,8 +16,6 @@ export interface OptimizationStoreProviderProps {
 }
 
 /**
-## Purpose
-
 Creates the optimization store once and exposes it through React context so `/optimization` state persists across route switches.
 
 ## Behavior

@@ -1,6 +1,3 @@
-/**
-# `features/optimization/components/LensPrescriptionGrid/ModeSelectField/ModeSelectField.tsx`
-*/
 "use client";
 
 import { MODAL_MODE_OPTIONS } from "@/features/optimization/lib/modalHelpers";

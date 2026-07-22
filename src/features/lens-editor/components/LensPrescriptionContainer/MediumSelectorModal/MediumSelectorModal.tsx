@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/LensPrescriptionContainer/MediumSelectorModal/MediumSelectorModal.tsx`
-
 ## Internal State
 
 - `manufacturer: string` — selected catalog/manufacturer value.
@@ -86,8 +84,6 @@ function normalizeNumericOrEmptyString(value: string): string {
 }
 
 /**
-## Purpose
-
 Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. The Catalog dropdown, Special-media dropdown, and searchable catalog-glass datalist are populated from the app-wide `GlassCatalogProvider`, which uses the same Pyodide-backed catalog source as the glass map.
 
 ## Key Behaviors
@@ -126,32 +122,6 @@ Modal for selecting an optical medium (glass or special medium) or entering a nu
 - Model-glass validity is evaluated immediately while editing, before blur normalization. Catalog-glass Confirm validation remains based on an exact available-medium match.
 - In `readOnly` mode, all checkboxes, selects, and inputs are disabled and the footer renders a single `Close` action instead of `Cancel` / `Confirm`.
 - Uses `key` prop at the call site (in `LensPrescriptionContainer`) to reset state when the modal re-opens for a different row.
-
-## Usages
-
-```tsx
-import { MediumSelectorModal } from "@/features/lens-editor/components/LensPrescriptionContainer";
-
-// In a container component (e.g., LensPrescriptionContainer)
-const mediumRow = rows.find((r) => r.id === mediumModal.rowId);
-
-return (
-  <>
-    <MediumSelectorModal
-      key={mediumModal.open ? mediumModal.rowId : "medium-closed"}
-      isOpen={mediumModal.open}
-      initialMedium={mediumRow?.kind === "surface" || mediumRow?.kind === "object" ? mediumRow.medium : "air"}
-      initialManufacturer={mediumRow?.kind === "surface" || mediumRow?.kind === "object" ? mediumRow.manufacturer : ""}
-      allowReflective={mediumRow?.kind !== "object"}
-      onConfirm={(medium, manufacturer) => {
-        store.getState().updateRow(mediumModal.rowId, { medium, manufacturer });
-        store.getState().closeMediumModal();
-      }}
-      onClose={() => store.getState().closeMediumModal()}
-    />
-  </>
-);
-```
 */
 export function MediumSelectorModal({
   isOpen,

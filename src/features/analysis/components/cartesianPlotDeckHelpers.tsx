@@ -1,8 +1,4 @@
 /**
-# `features/analysis/components/cartesianPlotDeckHelpers.tsx`
-
-## Purpose
-
 Provides shared deck.gl cartesian plot layout and SVG overlay helpers for analysis charts that render square orthographic plots with axis chrome and optional vertical color bars.
 
 ## Key Behaviors

@@ -1,6 +1,4 @@
 /**
-# `features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal.tsx`
-
 Renders the radius variable/pickup modal with modal-local draft state.
 
 ## Modal Footer

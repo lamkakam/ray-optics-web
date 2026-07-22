@@ -1,6 +1,4 @@
 /**
-# `features/optimization/components/LensPrescriptionGrid/AsphereVarModal/AsphereVarModal.tsx`
-
 ## Key Conventions
 
 - Coefficient label mapping: EvenAspherical/XToroid/YToroid use `a_${(index+1)*2}` (a_2, a_4…); RadialPolynomial uses `a_${index+1}` (a_1, a_2…).
@@ -170,8 +168,6 @@ interface AsphereVarModalProps {
 }
 
 /**
-## Purpose
-
 Modal dialog for configuring asphere variable and pickup optimization targets for a single surface. Allows the user to select the asphere type (Conic, Even Aspheric, Radial Polynomial, X Toroid, Y Toroid) and set each term (conic constant, polynomial coefficients, toroid sweep radius) to `constant`, `variable`, or `pickup` mode. Keeps changes in local draft state until "Done" is clicked.
 
 ## Behavior

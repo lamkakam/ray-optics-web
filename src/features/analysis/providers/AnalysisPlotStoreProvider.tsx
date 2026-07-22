@@ -1,6 +1,3 @@
-/**
-# `features/analysis/providers/AnalysisPlotStoreProvider.tsx`
-*/
 "use client";
 
 import { createContext, type ReactNode, useContext, useState } from 'react';
@@ -19,38 +16,8 @@ export interface AnalysisPlotStoreProviderProps {
 }
 
 /**
-## Purpose
-
 Provides a single `StoreApi<AnalysisPlotState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
-
-## Usage
-
-In `app/layout.tsx` — mount the provider once:
-```tsx
-<ThemeProvider>
-  <AnalysisPlotStoreProvider>
-    {children}
-  </AnalysisPlotStoreProvider>
-</ThemeProvider>
-```
-
-Inside any analysis plot component — imperative access:
-```tsx
-import { useStore } from "zustand";
-// ...
-const store = useAnalysisPlotStore();
-const selectedPlotType = useStore(store, (s) => s.selectedPlotType);
-store.getState().setSelectedPlotType(plotType);
-```
-
-In tests — inject a pre-built store:
-```tsx
-render(
-  <AnalysisPlotStoreContext.Provider value={store}>
-    <MyComponent />
-  </AnalysisPlotStoreContext.Provider>
-);
-```*/
+*/
 export const AnalysisPlotStoreProvider: React.FC<AnalysisPlotStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

@@ -1,6 +1,4 @@
 /**
-# `app/privacy-policy/page.tsx`
-
 ## Behaviour
 - Renders the Privacy Policy heading and copy inline in the route file
 - Explains that the app runs fully client-side in the browser
@@ -13,7 +11,6 @@ import { Header } from "@/shared/components/primitives/Header";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
 /**
-## Purpose
 Privacy Policy route page (`/privacy-policy`).
 */
 export default function PrivacyPolicyPage() {

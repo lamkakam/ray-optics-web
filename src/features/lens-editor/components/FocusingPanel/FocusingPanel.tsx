@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/FocusingPanel/FocusingPanel.tsx`
-
 ## Layout
 
 1. `RadioInput` for chromaticity: options `[{ value: "mono", label: "Monochromatic" }, { value: "poly", label: "Polychromatic" }]`, rendered with `columns={2}`
@@ -53,45 +51,7 @@ const METRIC_OPTIONS: ReadonlyArray<{
 ];
 
 /**
-## Purpose
-
 Pure presentational panel for configuring and triggering optical focusing. Composed from `RadioInput`, `Label`, `Select`, and `Button` micro components.
-
-## Usages
-
-```tsx
-import { FocusingPanel } from "@/features/lens-editor/components/FocusingPanel";
-
-// In a container component (e.g., FocusingContainer)
-const [chromaticity, setChromaticity] = useState<"mono" | "poly">("mono");
-const [metric, setMetric] = useState<"rmsSpot" | "wavefront">("rmsSpot");
-const [fieldIndex, setFieldIndex] = useState(0);
-
-const fieldOptions = [
-  { label: "0.0°", value: 0 },
-  { label: "14.0°", value: 1 },
-  { label: "20.0°", value: 2 },
-];
-
-const handleFocus = async () => {
-  // Call proxy focusing methods based on chromaticity and metric
-  // Update system after focusing
-};
-
-return (
-  <FocusingPanel
-    chromaticity={chromaticity}
-    metric={metric}
-    fieldIndex={fieldIndex}
-    fieldOptions={fieldOptions}
-    onChromaticityChange={setChromaticity}
-    onMetricChange={setMetric}
-    onFieldIndexChange={setFieldIndex}
-    onFocus={handleFocus}
-    disabled={!isReady || computing}
-  />
-);
-```
 */
 export function FocusingPanel({
   chromaticity,

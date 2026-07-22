@@ -1,8 +1,4 @@
 /**
-# `e2e/pyodideModuleWorkerDev.spec.ts`
-
-## Purpose
-
 Regression coverage for the Next.js development bundle that starts the Pyodide worker.
 
 ## Behavior

@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/WavelengthConfigModal/WavelengthConfigModal.tsx`
-
 ## Internal State
 
 - `rows: WavelengthRow[]` — AG Grid row data; each row has `id`, `fraunhofer` symbol, `wavelength`, and `weight`.
@@ -77,8 +75,6 @@ function weightsToRows(weights: readonly [number, number][]): WavelengthRow[] {
 const MAX_ROWS = 7;
 
 /**
-## Purpose
-
 Modal for configuring the system's wavelengths. Provides an AG Grid table with columns for Fraunhofer symbol, wavelength (nm), weight, and a reference wavelength radio button.
 
 ## Key Behaviors
@@ -90,37 +86,6 @@ Modal for configuring the system's wavelengths. Provides an AG Grid table with c
 - When a row is deleted, `referenceIndex` is adjusted to remain valid.
 - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending wavelength or weight edits are committed before footer actions such as Apply read the draft rows.
 - Keeps the caption outside a `400px`-high grid container at all screen sizes and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
-
-## Usages
-
-```tsx
-import { WavelengthConfigModal } from "@/features/lens-editor/components/WavelengthConfigModal";
-
-// In a container component (e.g., SpecsConfiguratorContainer)
-const wavelengthWeights = useStore(store, (s) => s.wavelengthWeights);
-const referenceIndex = useStore(store, (s) => s.referenceIndex);
-const wavelengthModalOpen = useStore(store, (s) => s.wavelengthModalOpen);
-
-const handleWavelengthApply = useCallback(
-  (result: { weights: WavelengthWeights; referenceIndex: ReferenceIndex }) => {
-    store.getState().setWavelengths(result);
-    store.getState().closeWavelengthModal();
-  },
-  [store]
-);
-
-return (
-  <>
-    <WavelengthConfigModal
-      isOpen={wavelengthModalOpen}
-      initialWeights={wavelengthWeights}
-      initialReferenceIndex={referenceIndex}
-      onApply={handleWavelengthApply}
-      onClose={() => store.getState().closeWavelengthModal()}
-    />
-  </>
-);
-```
 */
 export function WavelengthConfigModal({
   isOpen,

@@ -1,6 +1,4 @@
 /**
-# `shared/lib/lens-prescription-grid/index.ts`
-
 Barrel exports for the shared lens prescription grid module.*/
 export {
   ApertureCell,

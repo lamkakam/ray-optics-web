@@ -1,6 +1,4 @@
 /**
-# `features/analysis/components/DiffractionMtfChart/diffractionMtfChartOption.ts`
-
 ## Series
 
 | Series | Source | Line style |
@@ -75,8 +73,6 @@ function getYAxisMax(diffractionMtfData: DiffractionMtfData): number {
 }
 
 /**
-## Purpose
-
 Builds the Apache ECharts option for the Diffraction MTF line chart.*/
 export function buildDiffractionMtfOption(
   diffractionMtfData: DiffractionMtfData,

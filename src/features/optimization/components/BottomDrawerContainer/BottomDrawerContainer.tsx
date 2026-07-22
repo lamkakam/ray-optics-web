@@ -1,6 +1,4 @@
 /**
-# `features/optimization/components/BottomDrawerContainer/BottomDrawerContainer.tsx`
-
 ## Key Conventions
 
 - This component preserves drawer tab labels, test IDs, padding, and tab component behavior from the previous page-local drawer implementation.
@@ -61,8 +59,6 @@ export interface BottomDrawerContainerProps {
 }
 
 /**
-## Purpose
-
 Container for the optimization page bottom drawer. It owns the five optimization drawer tabs, responsive drawer wrapper, and optimization-store-backed tab callbacks.
 
 ## Behavior

@@ -1,6 +1,3 @@
-/**
-# next.config.ts
-*/
 import type { NextConfig } from "next";
 import { PHASE_DEVELOPMENT_SERVER } from "next/constants";
 

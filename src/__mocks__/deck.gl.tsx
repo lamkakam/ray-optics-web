@@ -1,6 +1,4 @@
 /**
-# `__mocks__/deck.gl.tsx`
-
 Jest mock for deck.gl React integration and layer/view constructors.
 
 - Exposes `COORDINATE_SYSTEM.CARTESIAN` for analysis chart layer configuration.

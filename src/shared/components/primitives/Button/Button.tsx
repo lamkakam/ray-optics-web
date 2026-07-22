@@ -1,6 +1,3 @@
-/**
-# `shared/components/primitives/Button/Button.tsx`
-*/
 import React from "react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -42,8 +39,6 @@ type RegularButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 type ButtonProps = FloatingButtonProps | RegularButtonProps;
 
 /**
-## Purpose
-
 Themed button primitive that maps a `variant` and optional `size` to Tailwind classes via `styleTokens`. Covers the full range of button styles used across the app.
 
 ## Key Behaviors
@@ -52,37 +47,6 @@ Themed button primitive that maps a `variant` and optional `size` to Tailwind cl
 - The inherited `type` prop defaults to `"button"`, preventing accidental form submission.
 - The inherited `className` prop is merged via `twMerge` after variant and size classes so consumers can safely override individual tokens.
 - `disabled:opacity-50` and `disabled:cursor-not-allowed` are always applied.
-
-## Usages
-
-```tsx
-// Primary button
-<Button variant="primary" size="md" onClick={handleSubmit}>
-  Submit
-</Button>
-
-// Secondary button in a tooltip
-<Tooltip text="Insert row">
-  <Button variant="secondary" size="sm" onClick={onAdd}>
-    +
-  </Button>
-</Tooltip>
-
-// Floating button (top-right overlay)
-<Button variant="floating" onClick={onClose}>
-  ✕
-</Button>
-
-// Danger button for destructive actions
-<Button variant="danger" size="sm">
-  Delete
-</Button>
-
-// Toggle button for state indication
-<Button variant="toggle" className="w-full text-left" onClick={onOpenModal}>
-  {fieldSummary}
-</Button>
-```
 */
 export function Button({
   variant,

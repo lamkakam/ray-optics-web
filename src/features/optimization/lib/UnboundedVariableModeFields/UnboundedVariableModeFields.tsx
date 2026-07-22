@@ -1,6 +1,3 @@
-/**
-# `features/optimization/lib/UnboundedVariableModeFields/UnboundedVariableModeFields.tsx`
-*/
 "use client";
 
 import { Paragraph } from "@/shared/components/primitives/Paragraph";

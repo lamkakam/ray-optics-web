@@ -1,7 +1,4 @@
 /**
-# `features/glass-map/lib/glassCatalogLoader.ts`
-
-## Purpose
 Client-side Pyodide worker loader for frontend-ready glass catalog data.
 
 The loader only deduplicates concurrent worker requests. It does not retain completed catalog data or settled errors. Mutable catalog state belongs to `GlassMapStore.catalogsData` after a successful load.

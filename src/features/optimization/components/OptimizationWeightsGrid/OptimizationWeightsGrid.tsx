@@ -1,6 +1,3 @@
-/**
-# `features/optimization/components/OptimizationWeightsGrid/OptimizationWeightsGrid.tsx`
-*/
 "use client";
 
 import { useMemo } from "react";

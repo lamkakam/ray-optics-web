@@ -1,6 +1,4 @@
 /**
-# `features/import-custom-glass/ImportCustomGlassPage.tsx`
-
 ## Worker And Store Flow
 - Add/edit modal submissions are converted with `toWorkerInput` and persisted through `saveCustomGlass`.
 - Add/edit persistence writes to IndexedDB only after the corresponding worker mutation succeeds.
@@ -71,7 +69,6 @@ export {
 } from "@/features/import-custom-glass/lib/customGlassImport";
 
 /**
-## Purpose
 Route-level coordinator for managing user-defined tabulated glass in the client-only app.
 
 ## Responsibilities

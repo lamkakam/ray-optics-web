@@ -1,7 +1,4 @@
 /**
-# `features/import-custom-glass/lib/customGlassImport.ts`
-
-## Purpose
 Pure helpers and browser/worker orchestration for custom glass import, export, and save flows.
 
 ## Catalog Helpers

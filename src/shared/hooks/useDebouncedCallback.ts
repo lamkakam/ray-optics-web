@@ -1,6 +1,4 @@
 /**
-# `shared/hooks/useDebouncedCallback.ts`
-
 ## Conventions
 
 - Uses `undefined` for the absence of a timer id.
@@ -14,8 +12,6 @@ type DebouncedCallbackControls<Args extends readonly unknown[]> = {
 };
 
 /**
-## Purpose
-
 Provide a small shared React hook for delayed, cancelable side effects that should only run after recent input settles.
 
 ## Behavior

@@ -1,6 +1,4 @@
 /**
-# `features/import-custom-glass/stores/importCustomGlassStore.ts`
-
 ## State
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -27,7 +25,6 @@ The AG Grid selection column and unknown future columns are intentionally ignore
 | `setSortState(state)` | Stores only entries whose `colId` is an allowed data column and whose `sort` is defined. |
 | `setFilterModel(model)` | Stores only filter entries whose key is an allowed data column. |
 | `resetTableState()` | Clears both sort and filter state. |
-
 */
 import type { ColumnState } from "ag-grid-community";
 import { type StateCreator } from "zustand";
@@ -59,7 +56,6 @@ export interface ImportCustomGlassActions {
 }
 
 /**
-## Purpose
 Zustand store slice for Import Custom Glass table UI state that should survive route/component remounts while the app root providers remain mounted.
 */
 export type ImportCustomGlassStore = ImportCustomGlassState & ImportCustomGlassActions;

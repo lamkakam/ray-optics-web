@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/ImageReferencePanel/ImageReferencePanel.tsx`
-
 ## Behaviour
 
 - Reads `imagePoint` and `setImagePoint` from `ImagePointProvider`.
@@ -24,11 +22,7 @@ const imagePointOptions: ReadonlyArray<{ value: ImagePoint; label: string }> = [
 ];
 
 /**
-## Purpose
-
 Lens Editor drawer panel for selecting the app-wide image reference convention used by OPD-related analysis and optimization workflows.
-
-## Usages
 
 Rendered as the `Image Reference` tab in `BottomDrawerContainer`.
 */

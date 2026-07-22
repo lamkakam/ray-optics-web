@@ -1,6 +1,4 @@
 /**
-# GlassMapView.tsx
-
 ## Layout
 - **Loading state** (`!isReady || !proxy`, or missing `catalogsData`): centered loading message
 - Catalog load failures are handled by `AppShell` through the blocking initialization overlay, not by this route view
@@ -73,7 +71,6 @@ function axisLabels(
 }
 
 /**
-## Purpose
 Page-level container for the Glass Map feature. Reads already-loaded glass catalog data from `GlassMapStore`, computes plot points, and orchestrates the three child components.
 
 ## Behavior
@@ -94,29 +91,6 @@ Page-level container for the Glass Map feature. Reads already-loaded glass catal
 - Renders a `Back to lens editor` inline link above the controls panel when opened from `MediumSelectorModal`
 - Renders `Use selected glass` next to the back link only for medium-selector route intent when the selected glass is valid and the route supplied an apply callback
 - Invokes `onUseSelectedGlass` with the effective selection (the route glass initially or a subsequently selected point) before the link navigates to `/`
-
-## Usages
-
-In `app/glass-map/page.tsx`:
-```tsx
-<GlassMapView
-  key={routeIntentKey}
-  proxy={proxy}
-  isReady={isReady}
-  routeIntent={routeIntent}
-/>
-```
-
-In tests — inject store via context:
-```tsx
-render(
-  <GlassMapStoreContext.Provider value={store}>
-    <Suspense fallback={<div>Loading glass catalog data…</div>}>
-      <GlassMapView proxy={proxy} isReady={isReady} />
-    </Suspense>
-  </GlassMapStoreContext.Provider>
-);
-```
 */
 export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }: GlassMapViewProps) {
   const store = useGlassMapStore();

@@ -1,8 +1,4 @@
 /**
-# `src/e2e/importTransmissiveDiffractionGratingConfig.spec.ts`
-
-## Purpose
-
 End-to-end coverage for importing `transmissive-diffraction-grating.json` through the `Load Config` button and verifying that the imported diffraction grating and tilt/decenter settings are visible from the prescription UI.
 
 ## Covered Flow

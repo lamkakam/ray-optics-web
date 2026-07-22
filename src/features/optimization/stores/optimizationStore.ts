@@ -1,6 +1,4 @@
 /**
-# `features/optimization/stores/optimizationStore.ts`
-
 ## Key State
 
 - `optimizationModel` — page-local `OpticalModel` snapshot seeded from the editor
@@ -277,8 +275,6 @@ function getFactorWeights(factors?: ReadonlyArray<WeightedFactor>): number[] {
 }
 
 /**
-## Purpose
-
 Provider-backed Zustand slice for the optimization route. Owns page state including the page-local optical-model snapshot, algorithm inputs, field and wavelength weights, radius variable/pickup selections, operands, loading state, and store-backed modal state.*/
 export function hasNonZeroOptimizationContribution(
   config: Pick<OptimizationConfig, "merit_function">,

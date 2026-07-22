@@ -1,6 +1,4 @@
 /**
-# `features/lens-editor/components/LensPrescriptionContainer/AsphericalModal/AsphericalModal.tsx`
-
 ## Internal State
 
 - `conicConstantStr: string` — draft string for conic constant input.
@@ -248,8 +246,6 @@ const contentMap: {
 };
 
 /**
-## Purpose
-
 Modal for configuring aspherical surface parameters: conic constant, surface type, up to 10 polynomial coefficients (a₂ through a₂₀), and the toroid sweep radius of curvature for toroidal types. Renders MathJax equations to label coefficients and explain the sag formula.
 
 ## Key Behaviors
@@ -262,57 +258,6 @@ Modal for configuring aspherical surface parameters: conic constant, surface typ
 - Coefficients array is padded to length 10 on initialization.
 - Uses `<MathJax>` for the sag formula and coefficient labels; `MathJaxContext` is provided by the ancestor (`page.tsx`).
 - In `readOnly` mode, the type selector and all numeric inputs are disabled; `Remove Aspherical`, `Cancel`, and `Confirm` are replaced by a single `Close` button.
-
-## Usages
-
-```tsx
-import { AsphericalModal } from "@/features/lens-editor/components/LensPrescriptionContainer";
-import type { AsphericalType } from "@/shared/lib/types/opticalModel";
-
-// In a container component (e.g., LensPrescriptionContainer)
-const asphericalRow = rows.find((r) => r.id === asphericalModal.rowId);
-
-return (
-  <>
-    <AsphericalModal
-      key={asphericalModal.open ? asphericalModal.rowId : "aspherical-closed"}
-      isOpen={asphericalModal.open}
-      initialConicConstant={asphericalRow?.kind === "surface" ? (asphericalRow.aspherical?.conicConstant ?? 0) : 0}
-      initialType={getInitialAsphericalType(asphericalRow)}
-      initialCoefficients={getInitialAsphericalCoefficients(asphericalRow)}
-      initialToricSweepRadiusOfCurvature={getInitialToricSweepRadiusOfCurvature(asphericalRow)}
-      onConfirm={(params) => {
-        const aspherical = params.type === "EvenAspherical"
-          ? { kind: "EvenAspherical", conicConstant: params.conicConstant, polynomialCoefficients: params.polynomialCoefficients }
-          : params.type === "RadialPolynomial"
-            ? { kind: "RadialPolynomial", conicConstant: params.conicConstant, polynomialCoefficients: params.polynomialCoefficients }
-            : params.type === "XToroid"
-              ? {
-                  kind: "XToroid",
-                  conicConstant: params.conicConstant,
-                  toricSweepRadiusOfCurvature: params.toricSweepRadiusOfCurvature,
-                  polynomialCoefficients: params.polynomialCoefficients,
-                }
-              : params.type === "YToroid"
-                ? {
-                    kind: "YToroid",
-                    conicConstant: params.conicConstant,
-                    toricSweepRadiusOfCurvature: params.toricSweepRadiusOfCurvature,
-                    polynomialCoefficients: params.polynomialCoefficients,
-                  }
-          : { kind: "Conic", conicConstant: params.conicConstant };
-        store.getState().updateRow(asphericalModal.rowId, { aspherical });
-        store.getState().closeAsphericalModal();
-      }}
-      onClose={() => store.getState().closeAsphericalModal()}
-      onRemove={() => {
-        store.getState().updateRow(asphericalModal.rowId, { aspherical: undefined });
-        store.getState().closeAsphericalModal();
-      }}
-    />
-  </>
-);
-```
 */
 export function AsphericalModal({
   isOpen,

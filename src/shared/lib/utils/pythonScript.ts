@@ -1,13 +1,7 @@
 /**
-# `shared/lib/utils/pythonScript.ts`
-
-## Purpose
-
 Builds the Python source code string that reconstructs the definition of an optical system for RayOptics inside the Pyodide worker. It is also for UI components to let users copy the Python snippet to the clipboard so that users may use the code string for their own RayOptics instance on Jupyter notebook.
 
 Special-material recognition and Python-variable mappings are imported from `specialMaterials.ts` so other UI behavior uses the same definitions. Export-only aperture helper definitions are imported from the generated `generated/pythonExportApertureHelpers.ts` string, which is produced automatically from the Python helper sources under `src/python/src/rayoptics_web_utils/aperture/`.
-
-## Behavior
 
 ## Edge Cases / Error Handling
 
@@ -22,30 +16,9 @@ Special-material recognition and Python-variable mappings are imported from `spe
 - The generated helper block is expected to match the concatenation of `annular.py`, `offset_circular.py`, and `offset_rotated_rectangular.py` in that order, separated by a single newline. NPM lifecycle scripts regenerate the ignored TypeScript output before install/check/test/build commands, and the Jest tests keep the export behavior pinned to the Python sources.
 - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.
 
-## Usages
-
-```ts
-import { buildScript, buildExportScript, buildOpticalModelScript } from "@/shared/lib/utils/pythonScript";
-import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-
-// Inside worker: build model + computation in one script
-const computation = (opm: string) => `
-  first_order = get_first_order_data(${opm})
-  json.dumps(first_order)
-`;
-const script = buildScript(model, computation);
-const result = await pyodide.runPythonAsync(script); // Returns first-order data
-
-// Export to notebook: generate a copyable Python snippet
-const notebookScript = buildExportScript(model);
-console.log(notebookScript); // Can be copied to Jupyter notebook
-
-// Build just the model definition (used internally)
-const modelDef = buildOpticalModelScript(model);
-```
-
 - `buildScript` is called by `workers/pyodide.worker.ts` to produce combined model + computation Python code.
-- `buildExportScript` is called by "Export to notebook" UI action to generate copyable snippets.*/
+- `buildExportScript` is called by "Export to notebook" UI action to generate copyable snippets.
+*/
 
 import type { OpticalModel, AsphericalPolynomialCoeffs, ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalModel";
 import { pythonExportApertureHelpers } from "./generated/pythonExportApertureHelpers";

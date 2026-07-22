@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/SpotDiagramChart/spotDiagramChartOption.ts`
-*/
 import * as echarts from "echarts/core";
 import { ScatterChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
@@ -85,8 +82,6 @@ function getSeriesColors(
 }
 
 /**
-## Purpose
-
 Defines the Spot Diagram ECharts configuration used by `SpotDiagramChart`. This module owns ECharts registration, fixed layout constants, and conversion from worker-provided per-wavelength point clouds into labeled scatter series.
 
 ## Key Behaviors

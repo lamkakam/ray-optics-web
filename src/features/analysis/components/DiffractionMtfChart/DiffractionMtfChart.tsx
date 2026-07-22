@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/DiffractionMtfChart/DiffractionMtfChart.tsx`
-*/
 import type { DiffractionMtfData } from "@/features/analysis/types/plotData";
 import { buildDiffractionMtfOption } from "./diffractionMtfChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
@@ -11,8 +8,6 @@ interface DiffractionMtfChartProps {
 }
 
 /**
-## Purpose
-
 Typed React wrapper for the Diffraction MTF ECharts line plot.
 
 ## Behavior

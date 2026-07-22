@@ -1,6 +1,3 @@
-/**
-# `shared/components/primitives/Modal/Modal.tsx`
-*/
 "use client";
 
 import React, { useId } from "react";
@@ -33,8 +30,6 @@ interface ModalProps {
 }
 
 /**
-## Purpose
-
 Accessible modal dialog shell. Renders a backdrop, a fixed title, a scrollable body region, and an optional fixed footer. Does not manage its own open/close state — callers pass `isOpen`.
 
 ## Key Behaviors
@@ -46,52 +41,6 @@ Accessible modal dialog shell. Renders a backdrop, a fixed title, a scrollable b
 - Panel is a flex column with `max-h-[90dvh]` and `overflow-hidden`.
 - Children render inside `data-testid="modal-body"`, which owns vertical scrolling via `overflow-y-auto`.
 - When `footer` is provided, it renders in `data-testid="modal-footer"` below the body with a top border and is not part of the scrollable body.
-
-## Usages
-
-```tsx
-// Basic modal for selecting a medium
-<Modal
-  isOpen={isOpen}
-  title="Select Medium"
-  titleId="medium-modal-title"
-  size="md"
-  onBackdropClick={onClose}
-  footer={(
-    <div className="flex gap-2 justify-end">
-      <Button variant="secondary" onClick={onClose}>
-        Cancel
-      </Button>
-      <Button variant="primary" onClick={onConfirm}>
-        Confirm
-      </Button>
-    </div>
-  )}
->
-  <div className="space-y-4 mb-4">
-    <div>
-      <Label htmlFor="manufacturer-select">
-        Manufacturer
-      </Label>
-      <Select
-        id="manufacturer-select"
-        options={manufacturers}
-        value={selectedManufacturer}
-        onChange={handleManufacturerChange}
-      />
-    </div>
-  </div>
-</Modal>
-
-// Larger modal with scrollable content
-<Modal
-  isOpen={isOpen}
-  title="Advanced Settings"
-  size="4xl"
->
-  {/* Scrollable content *\/}
-</Modal>
-```
 */
 export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, footer, children }: ModalProps) {
   const generatedId = useId();

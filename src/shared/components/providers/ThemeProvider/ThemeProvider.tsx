@@ -1,8 +1,4 @@
 /**
-# `shared/components/providers/ThemeProvider/ThemeProvider.tsx`
-
-## Internal State
-
 - `theme: Theme` — the active theme, initialized by `getInitialTheme()` which reads `localStorage` then falls back to the OS preference.*/
 "use client";
 
@@ -30,8 +26,6 @@ function getInitialTheme(): Theme {
 }
 
 /**
-## Purpose
-
 React context provider that manages the application theme (`"light"` | `"dark"`). Persists the selection to `localStorage`, syncs the `dark` CSS class on `<html>`, and respects the OS `prefers-color-scheme` media query on first visit.
 
 ## Key Behaviors
@@ -40,45 +34,7 @@ React context provider that manages the application theme (`"light"` | `"dark"`)
 - `useTheme` throws if called outside a `ThemeProvider` tree.
 - SSR-safe: `getInitialTheme` returns `"light"` when `window` is `undefined`.
 
-## Usages
-
-**1. Wrap the root layout:**
-
-```tsx
-import { ThemeProvider } from "@/shared/components/providers/ThemeProvider";
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <ThemeProvider>
-      <html>
-        <body>{children}</body>
-      </html>
-    </ThemeProvider>
-  );
-}
-```
-
-**2. Consume theme in a component:**
-
-```tsx
-"use client";
-
-import { useTheme } from "@/shared/components/providers/ThemeProvider";
-
-export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
-
-  return (
-    <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-      Toggle Theme: {theme}
-    </button>
-  );
-}
-```*/
+*/
 export function ThemeProvider({ children }: { readonly children: React.ReactNode }) {
   const [theme, _setTheme] = useState<Theme>(getInitialTheme);
 

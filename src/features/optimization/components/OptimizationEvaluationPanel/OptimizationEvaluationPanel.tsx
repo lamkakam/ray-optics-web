@@ -1,6 +1,3 @@
-/**
-# `features/optimization/components/OptimizationEvaluationPanel/OptimizationEvaluationPanel.tsx`
-*/
 "use client";
 
 import clsx from "clsx";
@@ -18,8 +15,6 @@ interface OptimizationEvaluationPanelProps {
 }
 
 /**
-## Purpose
-
 Displays the live operand evaluation section, including its empty state, loading status text, and residual table.
 
 ## Behavior

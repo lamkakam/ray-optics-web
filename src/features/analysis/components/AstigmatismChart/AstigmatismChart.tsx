@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/AstigmatismChart/AstigmatismChart.tsx`
-*/
 import type { AstigmatismCurveData } from "@/features/analysis/types/plotData";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { buildAstigmatismOption } from "./astigmatismChartOption";
@@ -17,8 +14,6 @@ interface AstigmatismChartBuilderArgs {
 }
 
 /**
-## Purpose
-
 Wraps the shared analysis ECharts component factory for the Astigmatism Curve plot.
 
 ## Behavior

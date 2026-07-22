@@ -1,6 +1,3 @@
-/**
-# `features/analysis/components/FieldCurveChart/fieldCurveChartOption.ts`
-*/
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
@@ -21,8 +18,6 @@ function buildFieldCurveSeriesDefinitions(fieldCurveData: FieldCurveData) {
 }
 
 /**
-## Purpose
-
 Builds the ECharts option for field-curvature value-versus-field category plots.
 
 ## Behavior

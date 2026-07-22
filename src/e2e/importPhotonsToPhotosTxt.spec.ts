@@ -1,8 +1,4 @@
 /**
-# `e2e/importPhotonsToPhotosTxt.spec.ts`
-
-## Purpose
-
 End-to-end coverage for importing Photons to Photos `.txt` files through the Lens Editor toolbar.
 
 ## Coverage

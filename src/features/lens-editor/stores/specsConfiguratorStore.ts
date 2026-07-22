@@ -1,8 +1,4 @@
 /**
-# `features/lens-editor/stores/specsConfiguratorStore.ts`
-
-## Purpose
-
 Zustand slice for managing the optical specifications configuration form. Holds aperture, field, and wavelength settings as flat state and provides conversion helpers to/from `OpticalSpecs`.
 
 ## State
@@ -51,51 +47,8 @@ Zustand slice for managing the optical specifications configuration form. Holds 
 - `OpticalSpecs` from `@/shared/lib/types/opticalModel` (type only).
 - `lookupWavelength` from `@/shared/lib/data/fraunhoferLines` — used to seed the default e-line wavelength.
 
-## Usages
-
-```tsx
-"use client";
-
-import { useStore } from "zustand";
-import { createStore } from "createStore from "zustand";
-import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
-import { createSpecsConfiguratorSlice } from "@/features/lens-editor/stores/specsConfiguratorStore";
-
-export default function SpecsConfiguratorPage() {
-  // Create the store once
-  const specsStore = useMemo(
-    () => createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice),
-    []
-  );
-
-  // Read state
-  const pupilValue = useStore(specsStore, (s) => s.pupilValue);
-  const maxField = useStore(specsStore, (s) => s.maxField);
-
-  // Dispatch actions
-  const handleApertureChange = (value: number) => {
-    specsStore.getState().setAperture({ pupilValue: value });
-  };
-
-  const handleSubmit = () => {
-    const specs = specsStore.getState().toOpticalSpecs();
-    console.log("Submitting specs:", specs);
-  };
-
-  return (
-    <div>
-      <input
-        type="number"
-        value={pupilValue}
-        onChange={(e) => handleApertureChange(parseFloat(e.target.value))}
-      />
-      <button onClick={handleSubmit}>Submit</button>
-    </div>
-  );
-}
-```
-
-Form components receive state slices and actions as props via DI to keep them testable.*/
+Form components receive state slices and actions as props via DI to keep them testable.
+*/
 import type { StateCreator } from "zustand";
 import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
 import { lookupWavelength } from "@/shared/lib/data/fraunhoferLines";

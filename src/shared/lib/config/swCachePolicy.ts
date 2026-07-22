@@ -1,8 +1,4 @@
 /**
-# `shared/lib/config/swCachePolicy.ts`
-
-## Purpose
-
 Defines pure, testable URL predicates that mirror service-worker caching policy.*/
 const CACHEABLE_PATTERNS = [
   "cdn.jsdelivr.net/pyodide/",

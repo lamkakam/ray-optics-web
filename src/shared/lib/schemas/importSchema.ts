@@ -1,8 +1,4 @@
 /**
-# `shared/lib/schemas/importSchema.ts`
-
-## Purpose
-
 Compiles an AJV JSON Schema validator for `OpticalModel` and exports it for use at import-time boundaries (e.g. when a user uploads a lens JSON file).
 
 ## Behavior
@@ -41,35 +37,8 @@ Compiles an AJV JSON Schema validator for `OpticalModel` and exports it for use 
 - `additionalProperties: false` means evolved schemas (extra fields added by newer app versions) will fail validation against old validators; schema versioning should be considered if the format changes.
 - The AJV instance and compiled validator are module singletons — compilation happens once at import time, not per call.
 
-## Usages
-
-```tsx
-import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
-
-function handleFileUpload(jsonData: unknown) {
-  // Validate before using
-  if (!validateImportedLensData(jsonData)) {
-    // Show validation errors to user
-    const errors = validateImportedLensData.errors;
-    console.error("Invalid model:", errors);
-    alert(`Import failed: ${errors?.map(e => e.message).join(", ")}`);
-    return;
-  }
-
-  // jsonData is now type-checked as OpticalModel
-  lensEditorStore.getState().setRows(surfacesToGridRows(jsonData));
-  specsStore.getState().loadFromSpecs(jsonData.specs);
-}
-
-// Example: File input handler
-async function handleImport(file: File) {
-  const text = await file.text();
-  const data = JSON.parse(text);
-  handleFileUpload(data);
-}
-```
-
-Called when a user imports a lens JSON file before passing to Zustand store or Pyodide worker. Check return value and display `.errors` on failure.*/
+Called when a user imports a lens JSON file before passing to Zustand store or Pyodide worker. Check return value and display `.errors` on failure.
+*/
 import Ajv from "ajv";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 

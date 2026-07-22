@@ -1,8 +1,4 @@
 /**
-# `features/analysis/components/fieldCategoryLineChartOption.ts`
-
-## Purpose
-
 Provides private low-level helpers for field-category line charts used by field curvature and astigmatism chart option builders.
 
 ## Behavior

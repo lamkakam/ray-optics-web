@@ -1,6 +1,3 @@
-/**
-# `features/glass-map/components/GlassDetailPanel/GlassDetailPanel.tsx`
-*/
 "use client";
 
 import React from "react";
@@ -16,7 +13,6 @@ interface GlassDetailPanelProps {
 type Row = { key: string; label: React.ReactNode; value: string };
 
 /**
-## Purpose
 Displays details for the currently selected glass point. Shows a placeholder when no glass is selected.
 
 ## Behavior
@@ -31,21 +27,6 @@ Displays details for the currently selected glass point. Shows a placeholder whe
 - **The component does not own a `MathJaxContext`** — the context is provided by the parent (`GlassMapView`).
 - Each label cell contains a `<span data-testid="label-{key}">` (e.g. `label-Nd`, `label-P_gF`) for testing.
 - Property table is rendered using the `Table` micro-component (`headers={[]}`, rows are `[labelSpan, value]` pairs).
-
-## Usages
-
-```tsx
-import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
-
-// In a page component (e.g., GlassMapView)
-const selectedGlass = useStore(store, (s) => s.selectedGlass);
-
-return (
-  <div>
-    <GlassDetailPanel selectedGlass={selectedGlass} />
-  </div>
-);
-```
 */
 export function GlassDetailPanel({ selectedGlass }: GlassDetailPanelProps) {
   if (!selectedGlass) {

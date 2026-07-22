@@ -1,6 +1,4 @@
 /**
-# `shared/components/primitives/Tooltip/Tooltip.tsx`
-
 ## Internal State
 
 - `visible: boolean` — portal mode only; controls opacity.
@@ -84,8 +82,6 @@ function getViewportSafeOffset(
 }
 
 /**
-## Purpose
-
 Hover tooltip with two rendering modes: a viewport-aware CSS `group-hover` absolute variant (default) and a `portal` variant that renders via `createPortal` into `document.body` to avoid overflow-hidden clipping inside AG Grid cells.
 
 ## Key Behaviors
@@ -96,48 +92,6 @@ Hover tooltip with two rendering modes: a viewport-aware CSS `group-hover` absol
 - `triggerClassName` is merged onto the trigger wrapper in both portal and non-portal modes without changing default inline-flex behavior.
 - `portal` must be `true` when the tooltip is rendered inside any element with `overflow: hidden` (e.g. AG Grid rows).
 - **`noTouch` mode**: in portal mode, attaches an `onTouchStart` handler that sets `isTouchingRef.current = true`. When `onMouseEnter` fires and `noTouch && isTouchingRef.current` is true (i.e., the enter was synthesized from a touch tap), the handler resets the flag and returns early without showing the tooltip. Plain mouse hovers are unaffected because no `touchstart` precedes them. `onMouseLeave` always resets the flag. `noTouch` does not apply `touch-action: none`, because doing so blocks native scroll and pan gestures on iOS Safari. Should be set on any portal `<Tooltip>` that wraps a clickable element (button, toggle, etc.).
-
-## Usages
-
-```tsx
-// Tooltip over a grid control button
-<Tooltip text="Insert row" portal noTouch>
-  <Button
-    variant="secondary"
-    size="sm"
-    onClick={onAdd}
-    aria-label="Insert row"
-  >
-    +
-  </Button>
-</Tooltip>
-
-// Tooltip with custom position
-<Tooltip text="Click to configure field settings" position="top-start" noTouch>
-  <Button
-    variant="toggle"
-    className="w-full text-left"
-    onClick={onOpenFieldModal}
-  >
-    {fieldSummary}
-  </Button>
-</Tooltip>
-
-// Portal mode for use inside overflow-hidden containers
-<Tooltip text="Select medium" portal noTouch>
-  <Button
-    variant="secondary"
-    onClick={onOpenModal}
-  >
-    {mediumName}
-  </Button>
-</Tooltip>
-
-// Tooltip without portal (standard group-hover mode)
-<Tooltip text="Hover for more info">
-  <span className="cursor-help">Info</span>
-</Tooltip>
-```
 */
 export function Tooltip({
   text,

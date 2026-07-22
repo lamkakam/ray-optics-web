@@ -1,6 +1,3 @@
-/**
-# `app/example-systems/page.tsx`
-*/
 "use client";
 
 import { useAppShell } from "@/app/AppShellContext";

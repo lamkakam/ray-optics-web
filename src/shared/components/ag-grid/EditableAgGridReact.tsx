@@ -1,6 +1,3 @@
-/**
-# `shared/components/ag-grid/EditableAgGridReact.tsx`
-*/
 "use client";
 
 import { AgGridReact } from "ag-grid-react";

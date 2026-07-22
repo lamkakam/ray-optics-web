@@ -1,7 +1,3 @@
-/**
-# `shared/lib/chart-formatting/formatPlotValue.ts`
-
-*/
 export const MINIMUM_NON_ZERO_PLOT_VALUE = 1e-9;
 export const MINIMUM_DECIMAL_PLOT_VALUE = 1e-3;
 const MAXIMUM_DECIMAL_PLOT_VALUE = 1e3;
@@ -12,8 +8,6 @@ function formatScientificPlotValue(value: number): string {
 }
 
 /**
-## Purpose
-
 Defines shared numeric formatters for chart labels, tooltips, and rounded axis extents, including log-scale axis labels that must stay renderable at the minimum non-zero plot floor.
 
 ## Key Behaviors

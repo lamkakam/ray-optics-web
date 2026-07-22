@@ -1,7 +1,4 @@
 /**
-# `app/import-custom-glass/page.tsx`
-
-## Purpose
 Next.js App Router entry for `/import-custom-glass`.
 
 ## Behavior

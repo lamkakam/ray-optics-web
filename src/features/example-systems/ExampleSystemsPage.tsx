@@ -1,6 +1,3 @@
-/**
-# `features/example-systems/ExampleSystemsPage.tsx`
-*/
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";

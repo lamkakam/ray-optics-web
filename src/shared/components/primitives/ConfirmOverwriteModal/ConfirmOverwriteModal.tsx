@@ -1,6 +1,4 @@
 /**
-# `shared/components/primitives/ConfirmOverwriteModal/ConfirmOverwriteModal.tsx`
-
 Confirmation modal used before loading an example optical system.
 
 ## Modal Footer

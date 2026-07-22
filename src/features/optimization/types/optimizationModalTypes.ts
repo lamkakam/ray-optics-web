@@ -1,8 +1,4 @@
 /**
-# `features/optimization/types/optimizationModalTypes.ts`
-
-## Purpose
-
 Shared type definitions for optimization variable/pickup modal helpers and fields.
 
 ## Key Conventions
