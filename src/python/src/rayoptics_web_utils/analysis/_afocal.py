@@ -15,7 +15,7 @@ This module does not define a separate public result model. It returns NumPy val
 
 - `n_obj` and `n_img` are the absolute refractive indices of the first and last sequential-model gaps at `wavelength_nm`. Taking the absolute value prevents a signed-index representation from reversing optical-path and vergence conventions.
 
-- `h` is a sampled ray's signed transverse height relative to the chief ray at the exit-pupil plane, in system length units. `u` is a signed angular ray slope in radians, calculated with `atan2` relative to **d_ref** rather than by a small-angle approximation.
+- `h` is a sampled ray's signed transverse height relative to the chief ray at the exit-pupil plane, in system length units. `m` is its exact local direction slope `(d · e) / (d · d_ref)`, equal to `tan(theta)` for the signed local direction angle `theta`. Angular analysis coordinates still use `atan2` and are returned in arcseconds.
 
 - OPL and OPD are optical path length and optical path difference. `afocal_opd` returns OPD in system length units. `make_afocal_ray_grid` divides it by the central wavelength expressed in the same system units, producing waves.
 
@@ -258,20 +258,43 @@ def _trace_pkg(opm, pupil, fld, wavelength_nm):
     return None if result.err is not None else result.pkg
 
 
+def _finite_output_segment(ray_pkg):
+    """Return a perturbed ray's finite output point and unit direction, or `None`.
+
+    Point and direction components are inspected before normalization. A ray with
+    any non-finite component is rejected as an unavailable differential sample.
+    Malformed packages, zero directions, and other unexpected errors propagate.
+
+    Args:
+        ray_pkg: Traced ray package.
+
+    Returns:
+        The finite output point and unit direction, or `None`.
+    """
+    ray = ray_pkg[mc.ray]
+    point = np.asarray(ray[-2][mc.p], dtype=float)
+    direction = np.asarray(ray[-2][mc.d], dtype=float)
+    if not np.all(np.isfinite(point)) or not np.all(np.isfinite(direction)):
+        return None
+    return point, _unit(direction)
+
+
 def exit_pupil_plane(opm, fld, wavelength_nm, chief_pkg=None):
-    """Returns the paraxial exit-pupil plane from neighboring chief rays.
+    """Returns the local-tangent exit-pupil plane from neighboring chief rays.
 
 
     - Estimates where neighboring chief rays cross the nominal chief ray.
     - If no chief package is supplied, it traces one.
-    - For each field coordinate (`xv`, then `yv`), it makes shallow copies of the field and perturbs that coordinate by `+eps` and `-eps`, where `eps = 1e-4`.
-    - Central differences give the variation of the output point and direction:
+    - For ordinary fields, it samples both field coordinates (`xv`, then `yv`). RayOptics wide-angle aiming accepts meridional fields, so a wide-angle field samples its `yv` coordinate only. For every sampled coordinate, shallow field copies are perturbed by `+eps` and `-eps`, where `eps = 1e-4`. It calls `Field.update()` on every copy after changing its coordinate, clearing inherited `aim_info`, `chief_ray`, and `ref_sphere` caches before tracing.
+    - A perturbation whose output point or direction contains a non-finite component is unavailable. Other trace and package errors propagate.
+    - When both perturbations are available, the preferred central differences give the variation of the output point and direction:
 
     ```
     dp = (r_plus - r_minus) / (2 eps)
     dd = (d_plus - d_minus) / (2 eps).
     ```
 
+    - When only one perturbation is available, as at an angular boundary such as `+/-90` degrees, it instead takes the corresponding center-to-neighbor derivative. If neither is available, that field coordinate contributes no estimate.
     - Only components perpendicular to the central chief direction **d_c** locate the crossing:
 
     ```
@@ -300,18 +323,34 @@ def exit_pupil_plane(opm, fld, wavelength_nm, chief_pkg=None):
     chief_point, chief_dir = output_segment(chief_pkg)
     distances = []
     eps = 1.0e-4
-    for axis in range(2):
+    is_wide_angle = bool(getattr(getattr(fld, "fov", None), "is_wide_angle", False))
+    coordinates = ("yv",) if is_wide_angle else ("xv", "yv")
+    for coordinate in coordinates:
         plus_field = copy.copy(fld)
         minus_field = copy.copy(fld)
-        coordinate = "xv" if axis == 0 else "yv"
         setattr(plus_field, coordinate, getattr(plus_field, coordinate) + eps)
         setattr(minus_field, coordinate, getattr(minus_field, coordinate) - eps)
+        plus_field.update()
+        minus_field.update()
         plus_pkg = _chief_ray_pkg(opm, plus_field, wavelength_nm)
         minus_pkg = _chief_ray_pkg(opm, minus_field, wavelength_nm)
-        plus_point, plus_dir = output_segment(plus_pkg)
-        minus_point, minus_dir = output_segment(minus_pkg)
-        dp = (plus_point - minus_point) / (2.0 * eps)
-        dd = (plus_dir - minus_dir) / (2.0 * eps)
+        plus_segment = _finite_output_segment(plus_pkg)
+        minus_segment = _finite_output_segment(minus_pkg)
+        if plus_segment is not None and minus_segment is not None:
+            plus_point, plus_dir = plus_segment
+            minus_point, minus_dir = minus_segment
+            dp = (plus_point - minus_point) / (2.0 * eps)
+            dd = (plus_dir - minus_dir) / (2.0 * eps)
+        elif plus_segment is not None:
+            plus_point, plus_dir = plus_segment
+            dp = (plus_point - chief_point) / eps
+            dd = (plus_dir - chief_dir) / eps
+        elif minus_segment is not None:
+            minus_point, minus_dir = minus_segment
+            dp = (chief_point - minus_point) / eps
+            dd = (chief_dir - minus_dir) / eps
+        else:
+            continue
         dd_perp = dd - np.dot(dd, chief_dir) * chief_dir
         dp_perp = dp - np.dot(dp, chief_dir) * chief_dir
         denom = float(np.dot(dd_perp, dd_perp))
@@ -499,6 +538,36 @@ def _system_units_per_metre(opm) -> float:
     return {"m": 1.0, "cm": 100.0, "mm": 1000.0, "in": 39.37007874015748}[units]
 
 
+def _vergence_coordinates(ray_pkg, chief_at_pupil, plane_point, reference, transverse_axis):
+    """Return a ray's signed exit-pupil height and exact local direction slope.
+
+    The ray is intersected with the plane through `plane_point` normal to the
+    unit `reference`. Its height is measured from `chief_at_pupil` along
+    `transverse_axis`, and its direction slope is the direction-cosine ratio
+    `(d · transverse_axis) / (d · reference)`. The plane-intersection check
+    rejects a ray parallel to the plane before the same denominator is used for
+    the slope.
+
+    Args:
+        ray_pkg: Traced ray package.
+        chief_at_pupil: Chief-ray point on the exit-pupil plane.
+        plane_point: Point on the exit-pupil plane.
+        reference: Unit plane normal and chief-ray reference direction.
+        transverse_axis: Sagittal or tangential local transverse unit axis.
+
+    Returns:
+        Signed height in system units and dimensionless local direction slope.
+    """
+    ray_point, ray_direction = output_segment(ray_pkg)
+    ray_distance = _plane_distance(ray_point, ray_direction, plane_point, reference)
+    ray_at_pupil = ray_point + ray_distance * ray_direction
+    height = float(np.dot(ray_at_pupil - chief_at_pupil, transverse_axis))
+    slope = float(
+        np.dot(ray_direction, transverse_axis) / np.dot(ray_direction, reference)
+    )
+    return height, slope
+
+
 def output_vergence(opm, fld, wavelength_nm, pupil, axis: int) -> float:
     """Return the ray's sagittal or tangential output vergence in diopters.
 
@@ -508,21 +577,21 @@ def output_vergence(opm, fld, wavelength_nm, pupil, axis: int) -> float:
         h = (r_ray_at_pupil - r_chief_at_pupil) · e_axis.
         ```
 
-    - It calculates exact signed slopes for the sampled and chief rays:
+    - It calculates the sampled ray's exact signed local direction slope:
 
         ```
-        u_ray   = atan2(d_ray · e_axis, d_ray · d_ref)
-        u_chief = atan2(d_chief · e_axis, d_chief · d_ref)
+        m = (d_ray · e_axis) / (d_ray · d_ref) = tan(theta)
         ```
 
         and returns
 
         ```
-        L = -n_img (u_ray - u_chief) / h
+        L = -n_img m / h
         vergence_D = L * system_units_per_metre.
         ```
 
-    - The minus sign establishes positive vergence for downstream convergence: a positive-height ray converging toward the chief ray has a smaller slope and therefore positive `L`.
+    - Because **d_ref** is the chief direction and **e_axis** is normal to it, the chief-ray local slope is exactly zero. The direction-cosine ratio retains the full finite-ray tangent instead of replacing it with its angle in radians.
+    - The minus sign establishes positive vergence for downstream convergence: a positive-height ray directed back toward the chief ray has a negative slope and therefore positive `L`.
     - A failed sampled ray returns `NaN`.
     - If `|h| < 1e-15`, the result is `0.0` to avoid division by an unresolved pupil height.
     - Otherwise the value is converted from inverse system length to inverse metres.
@@ -546,23 +615,30 @@ def output_vergence(opm, fld, wavelength_nm, pupil, axis: int) -> float:
         return float("nan")
 
     chief_point, chief_dir = output_segment(chief_pkg)
-    ray_point, ray_dir = output_segment(ray_pkg)
     chief_distance = _plane_distance(chief_point, chief_dir, plane_point, reference)
-    ray_distance = _plane_distance(ray_point, ray_dir, plane_point, reference)
     chief_at_pupil = chief_point + chief_distance * chief_dir
-    ray_at_pupil = ray_point + ray_distance * ray_dir
-    height = float(np.dot(ray_at_pupil - chief_at_pupil, axes[axis]))
-    ray_slope = np.arctan2(np.dot(ray_dir, axes[axis]), np.dot(ray_dir, reference))
-    chief_slope = np.arctan2(np.dot(chief_dir, axes[axis]), np.dot(chief_dir, reference))
+    height, ray_slope = _vergence_coordinates(
+        ray_pkg, chief_at_pupil, plane_point, reference, axes[axis]
+    )
     if abs(height) < 1.0e-15:
         return 0.0
     n_img = abs(float(opm.seq_model.gaps[-1].medium.rindex(wavelength_nm)))
-    return float(-n_img * (ray_slope - chief_slope) / height * _system_units_per_metre(opm))
+    return float(-n_img * ray_slope / height * _system_units_per_metre(opm))
 
 
 def differential_output_vergence(opm, fld, wavelength_nm, axis: int) -> float:
     """Return paraxial output vergence from symmetric differential pupil rays.
-    - Samples the paraxial limit by calling `output_vergence` at a single small positive pupil displacement: `pupil[axis] = +1e-4`, with the other coordinate zero. This is a difference relative to the chief ray at pupil coordinate zero; it is not a symmetric `+/-` differential-pupil calculation. Axis `0` supplies sagittal vergence and axis `1` supplies tangential vergence.
+
+    - Traces normalized pupil coordinates `-1e-4` and `+1e-4` on the requested axis, with the other coordinate zero. Axis `0` supplies sagittal vergence and axis `1` supplies tangential vergence.
+    - Each ray is intersected with the chief-derived exit-pupil plane and reduced to its signed height `h` and exact local direction slope `m`.
+    - The returned central slope-versus-height derivative is
+
+        ```
+        L = -n_img (m_plus - m_minus) / (h_plus - h_minus),
+        vergence_D = L * system_units_per_metre.
+        ```
+
+    - If either trace fails, the result is `NaN`. If the two heights differ by less than `1e-15` system units, the unresolved derivative is `0.0`.
 
     Args:
         opm: RayOptics optical model.
@@ -574,6 +650,41 @@ def differential_output_vergence(opm, fld, wavelength_nm, axis: int) -> float:
         Paraxial output vergence from symmetric differential pupil rays.
     """
     eps = 1.0e-4
-    pupil = np.zeros(2)
-    pupil[axis] = eps
-    return output_vergence(opm, fld, wavelength_nm, pupil, axis)
+    chief_pkg = _chief_ray_pkg(opm, fld, wavelength_nm)
+    reference = output_segment(chief_pkg)[1]
+    transverse_axis = transverse_axes(reference)[axis]
+    plane_point, _ = exit_pupil_plane(opm, fld, wavelength_nm, chief_pkg=chief_pkg)
+    chief_point, chief_direction = output_segment(chief_pkg)
+    chief_distance = _plane_distance(
+        chief_point, chief_direction, plane_point, reference
+    )
+    chief_at_pupil = chief_point + chief_distance * chief_direction
+    samples = []
+    for sign in (-1.0, 1.0):
+        pupil = np.zeros(2)
+        pupil[axis] = sign * eps
+        ray_pkg = _trace_pkg(opm, pupil, fld, wavelength_nm)
+        if ray_pkg is None:
+            return float("nan")
+        samples.append(
+            _vergence_coordinates(
+                ray_pkg,
+                chief_at_pupil,
+                plane_point,
+                reference,
+                transverse_axis,
+            )
+        )
+
+    minus_sample, plus_sample = samples
+    height_difference = plus_sample[0] - minus_sample[0]
+    if abs(height_difference) < 1.0e-15:
+        return 0.0
+    slope_difference = plus_sample[1] - minus_sample[1]
+    n_img = abs(float(opm.seq_model.gaps[-1].medium.rindex(wavelength_nm)))
+    return float(
+        -n_img
+        * slope_difference
+        / height_difference
+        * _system_units_per_metre(opm)
+    )
