@@ -1,5 +1,4 @@
-/**
-Defines the special optical media shared by TypeScript consumers.*/
+/** Defines the special optical media shared by TypeScript consumers. */
 export const builtInSpecialMaterial: ReadonlySet<string> = new Set([
   "air",
   "REFL",

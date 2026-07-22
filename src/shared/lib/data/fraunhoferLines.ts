@@ -28,9 +28,7 @@ const wavelengthMap = new Map<FraunhoferSymbol, number>(
 );
 
 /** Look up a wavelength (nm) by Fraunhofer line symbol. Case-sensitive. */
-/**
-Provides the canonical set of Fraunhofer spectral lines used in optical design, and a symbol-to-wavelength lookup function.
-*/
+/** Provides the canonical set of Fraunhofer spectral lines used in optical design, and a symbol-to-wavelength lookup function. */
 export function lookupWavelength(symbol: FraunhoferSymbol): number {
   return wavelengthMap.get(symbol)!;
 }

@@ -1,49 +1,51 @@
 /**
-Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, field-curvature data, astigmatism-curve data, longitudinal-spherical-aberration data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
-
-## State
-
-| Field | Type | Default |
-|---|---|---|
-| `rayFanData` | `RayFanData \| undefined` | `undefined` |
-| `opdFanData` | `OpdFanData \| undefined` | `undefined` |
-| `spotDiagramData` | `SpotDiagramData \| undefined` | `undefined` |
-| `fieldCurvatureData` | `FieldCurveData \| undefined` | `undefined` |
-| `astigmatismCurveData` | `AstigmatismCurveData \| undefined` | `undefined` |
-| `longitudinalSphericalAberrationData` | `LongitudinalSphericalAberrationData \| undefined` | `undefined` |
-| `geoPsfData` | `GeoPsfData \| undefined` | `undefined` |
-| `diffractionPsfData` | `DiffractionPsfData \| undefined` | `undefined` |
-| `diffractionMtfData` | `DiffractionMtfData \| undefined` | `undefined` |
-| `wavefrontMapData` | `WavefrontMapData \| undefined` | `undefined` |
-| `strehlVsWavelengthData` | `StrehlVsWavelengthData \| undefined` | `undefined` |
-| `plotLoading` | `boolean` | `false` |
-| `selectedFieldIndex` | `number` | `0` |
-| `selectedWavelengthIndex` | `number` | `0` |
-| `selectedPlotType` | `PlotType` | `"rayFan"` |
-
-## Actions
-
-- `setRayFanData(data)` — sets or clears the Ray Fan ECharts payload and clears the other typed plot payloads.
-- `setOpdFanData(data)` — sets or clears the OPD Fan ECharts payload and clears the other typed plot payloads.
-- `setSpotDiagramData(data)` — sets or clears the ECharts Spot Diagram payload and clears the other typed plot payloads.
-- `setFieldCurvatureData(data)` — sets or clears the field-curvature chart payload and clears the other typed plot payloads.
-- `setAstigmatismCurveData(data)` — sets or clears the astigmatism-curve chart payload and clears the other typed plot payloads.
-- `setLongitudinalSphericalAberrationData(data)` — sets or clears the longitudinal spherical aberration chart payload and clears the other typed plot payloads.
-- `setGeoPsfData(data)` — sets or clears the geometric PSF chart payload and clears the other typed plot payloads.
-- `setDiffractionPsfData(data)` — sets or clears the diffraction PSF chart payload and clears the other typed plot payloads.
-- `setDiffractionMtfData(data)` — sets or clears the diffraction MTF chart payload and clears the other typed plot payloads.
-- `setWavefrontMapData(data)` — sets or clears the wavefront-map chart payload and clears the other typed plot payloads.
-- `setStrehlVsWavelengthData(data)` — sets or clears the Strehl-vs-wavelength chart payload and clears the other typed plot payloads.
-- `setPlotLoading(loading)` — sets the loading flag.
-- `setSelectedFieldIndex(index, maxCount?)` — sets the active field index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
-- `setSelectedWavelengthIndex(index, maxCount?)` — sets the active wavelength index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
-- `setSelectedPlotType(plotType)` — sets the active plot type.
-
-## Dependencies
-
-- `create`, `StateCreator` from `zustand`.
-- `PlotType` (type-only) from `@/features/analysis/components`.
-- `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `AstigmatismCurveData`, `LongitudinalSphericalAberrationData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.*/
+ * Zustand store for managing the analysis plot panel state. Holds Ray-Fan data, OPD-fan data, spot-diagram data, field-curvature data, astigmatism-curve data, longitudinal-spherical-aberration data, geometric-PSF data, wavefront-map data, Strehl-vs-wavelength data, diffraction-PSF data, or diffraction-MTF data payload, plus the loading flag and selected field/wavelength indices that drive the `AnalysisPlotView` component.
+ *
+ * @remarks
+ * ## State
+ *
+ * | Field | Type | Default |
+ * |---|---|---|
+ * | `rayFanData` | `RayFanData \| undefined` | `undefined` |
+ * | `opdFanData` | `OpdFanData \| undefined` | `undefined` |
+ * | `spotDiagramData` | `SpotDiagramData \| undefined` | `undefined` |
+ * | `fieldCurvatureData` | `FieldCurveData \| undefined` | `undefined` |
+ * | `astigmatismCurveData` | `AstigmatismCurveData \| undefined` | `undefined` |
+ * | `longitudinalSphericalAberrationData` | `LongitudinalSphericalAberrationData \| undefined` | `undefined` |
+ * | `geoPsfData` | `GeoPsfData \| undefined` | `undefined` |
+ * | `diffractionPsfData` | `DiffractionPsfData \| undefined` | `undefined` |
+ * | `diffractionMtfData` | `DiffractionMtfData \| undefined` | `undefined` |
+ * | `wavefrontMapData` | `WavefrontMapData \| undefined` | `undefined` |
+ * | `strehlVsWavelengthData` | `StrehlVsWavelengthData \| undefined` | `undefined` |
+ * | `plotLoading` | `boolean` | `false` |
+ * | `selectedFieldIndex` | `number` | `0` |
+ * | `selectedWavelengthIndex` | `number` | `0` |
+ * | `selectedPlotType` | `PlotType` | `"rayFan"` |
+ *
+ * ## Actions
+ *
+ * - `setRayFanData(data)` — sets or clears the Ray Fan ECharts payload and clears the other typed plot payloads.
+ * - `setOpdFanData(data)` — sets or clears the OPD Fan ECharts payload and clears the other typed plot payloads.
+ * - `setSpotDiagramData(data)` — sets or clears the ECharts Spot Diagram payload and clears the other typed plot payloads.
+ * - `setFieldCurvatureData(data)` — sets or clears the field-curvature chart payload and clears the other typed plot payloads.
+ * - `setAstigmatismCurveData(data)` — sets or clears the astigmatism-curve chart payload and clears the other typed plot payloads.
+ * - `setLongitudinalSphericalAberrationData(data)` — sets or clears the longitudinal spherical aberration chart payload and clears the other typed plot payloads.
+ * - `setGeoPsfData(data)` — sets or clears the geometric PSF chart payload and clears the other typed plot payloads.
+ * - `setDiffractionPsfData(data)` — sets or clears the diffraction PSF chart payload and clears the other typed plot payloads.
+ * - `setDiffractionMtfData(data)` — sets or clears the diffraction MTF chart payload and clears the other typed plot payloads.
+ * - `setWavefrontMapData(data)` — sets or clears the wavefront-map chart payload and clears the other typed plot payloads.
+ * - `setStrehlVsWavelengthData(data)` — sets or clears the Strehl-vs-wavelength chart payload and clears the other typed plot payloads.
+ * - `setPlotLoading(loading)` — sets the loading flag.
+ * - `setSelectedFieldIndex(index, maxCount?)` — sets the active field index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
+ * - `setSelectedWavelengthIndex(index, maxCount?)` — sets the active wavelength index. If `maxCount` is provided, clamps the index to `maxCount - 1`.
+ * - `setSelectedPlotType(plotType)` — sets the active plot type.
+ *
+ * ## Dependencies
+ *
+ * - `create`, `StateCreator` from `zustand`.
+ * - `PlotType` (type-only) from `@/features/analysis/components`.
+ * - `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `AstigmatismCurveData`, `LongitudinalSphericalAberrationData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.
+ */
 import { type StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";

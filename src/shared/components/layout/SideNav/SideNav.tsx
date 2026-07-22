@@ -1,33 +1,36 @@
 /**
-## Behaviour
-- Always rendered in the DOM — never returns `null`
-- `<nav aria-label="Side navigation" aria-hidden={!isOpen} inert={!isOpen}>` positioned `absolute top-0 left-0 h-full z-40`
-- `aria-hidden="true"` when closed — hides from accessibility tree (screen readers, `queryByRole`)
-- `inert` when closed — removes descendants from keyboard focus and user interaction while the panel is off-screen
-- Background: `bg-white dark:bg-gray-900`, `border-r`, `shadow-xl`
-- Slide animation: `transition-transform duration-200 ease-out will-change-transform`; `translate-x-0` when open, `-translate-x-full` when closed
-- Parent container must have `overflow-hidden` to clip the off-screen nav
-- Close button (`aria-label="Close navigation"`) is right-aligned at the top
-- Uses `useSelectedLayoutSegment()` to determine the active route
-- Nav items rendered as `<NavLink>` links
-  - Active item: `active={true}` + `aria-current="page"`
-  - Root route (`/`) is active when the selected segment is `null`
-- When `onNavigate` is supplied, item clicks pass both the target `href` and click event to it before calling `onClose`.
-- If `onNavigate` returns `false`, `SideNav` does not close; this supports guarded navigation modals that keep the attempted route pending.
-- Outside pointer dismissal is owned by `Layout`; `SideNav` only exposes `onClose` for close-button and accepted navigation actions.
-
-## Nav Items
-| Label | Href |
-|-------|----------|
-| Lens Editor | `/` |
-| Example Systems | `/example-systems` |
-| Optimization | `/optimization` |
-| Glass Map | `/glass-map` |
-| Import Custom Glass | `/import-custom-glass` |
-| Settings | `/settings` |
-| Privacy Policy | `/privacy-policy` |
-| About | `/about` |
-*/
+ * Describes the Side Nav module.
+ *
+ * @remarks
+ * ## Behaviour
+ * - Always rendered in the DOM — never returns `null`
+ * - `<nav aria-label="Side navigation" aria-hidden={!isOpen} inert={!isOpen}>` positioned `absolute top-0 left-0 h-full z-40`
+ * - `aria-hidden="true"` when closed — hides from accessibility tree (screen readers, `queryByRole`)
+ * - `inert` when closed — removes descendants from keyboard focus and user interaction while the panel is off-screen
+ * - Background: `bg-white dark:bg-gray-900`, `border-r`, `shadow-xl`
+ * - Slide animation: `transition-transform duration-200 ease-out will-change-transform`; `translate-x-0` when open, `-translate-x-full` when closed
+ * - Parent container must have `overflow-hidden` to clip the off-screen nav
+ * - Close button (`aria-label="Close navigation"`) is right-aligned at the top
+ * - Uses `useSelectedLayoutSegment()` to determine the active route
+ * - Nav items rendered as `<NavLink>` links
+ * - Active item: `active={true}` + `aria-current="page"`
+ * - Root route (`/`) is active when the selected segment is `null`
+ * - When `onNavigate` is supplied, item clicks pass both the target `href` and click event to it before calling `onClose`.
+ * - If `onNavigate` returns `false`, `SideNav` does not close; this supports guarded navigation modals that keep the attempted route pending.
+ * - Outside pointer dismissal is owned by `Layout`; `SideNav` only exposes `onClose` for close-button and accepted navigation actions.
+ *
+ * ## Nav Items
+ * | Label | Href |
+ * |-------|----------|
+ * | Lens Editor | `/` |
+ * | Example Systems | `/example-systems` |
+ * | Optimization | `/optimization` |
+ * | Glass Map | `/glass-map` |
+ * | Import Custom Glass | `/import-custom-glass` |
+ * | Settings | `/settings` |
+ * | Privacy Policy | `/privacy-policy` |
+ * | About | `/about` |
+ */
 "use client";
 
 import type React from "react";
@@ -57,9 +60,7 @@ const NAV_ITEMS = [
   { segment: "about", href: "/about", label: "About" },
 ] as const;
 
-/**
-Collapsible side navigation panel toggled by the hamburger button in the header. Uses Next.js App Router links for route navigation and highlights the active route from the current layout segment.
-*/
+/** Collapsible side navigation panel toggled by the hamburger button in the header. Uses Next.js App Router links for route navigation and highlights the active route from the current layout segment. */
 export function SideNav({ isOpen, isLG, onClose, onNavigate }: SideNavProps) {
   const selectedSegment = useSelectedLayoutSegment();
   const activeSegment = selectedSegment ?? null;

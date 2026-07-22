@@ -1,14 +1,17 @@
 /**
-## Behaviour
-
-- Reads `imagePoint` and `setImagePoint` from `ImagePointProvider`.
-- Renders one `Select` labeled `Image point`.
-- Offers exactly two options:
-  - `"chief_ray"` — `Chief ray`
-  - `"centroid"` — `Centroid`
-- Calls `setImagePoint(...)` only when the selected option differs from the current value.
-- Does not own persistence; persistence remains handled by `ImagePointProvider`.
-*/
+ * Describes the Image Reference Panel module.
+ *
+ * @remarks
+ * ## Behaviour
+ *
+ * - Reads `imagePoint` and `setImagePoint` from `ImagePointProvider`.
+ * - Renders one `Select` labeled `Image point`.
+ * - Offers exactly two options:
+ * - `"chief_ray"` — `Chief ray`
+ * - `"centroid"` — `Centroid`
+ * - Calls `setImagePoint(...)` only when the selected option differs from the current value.
+ * - Does not own persistence; persistence remains handled by `ImagePointProvider`.
+ */
 "use client";
 
 import React from "react";
@@ -22,10 +25,11 @@ const imagePointOptions: ReadonlyArray<{ value: ImagePoint; label: string }> = [
 ];
 
 /**
-Lens Editor drawer panel for selecting the app-wide image reference convention used by OPD-related analysis and optimization workflows.
-
-Rendered as the `Image Reference` tab in `BottomDrawerContainer`.
-*/
+ * Lens Editor drawer panel for selecting the app-wide image reference convention used by OPD-related analysis and optimization workflows.
+ *
+ * @remarks
+ * Rendered as the `Image Reference` tab in `BottomDrawerContainer`.
+ */
 export function ImageReferencePanel() {
   const { imagePoint, setImagePoint } = useImagePoint();
 

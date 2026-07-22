@@ -1,10 +1,11 @@
 /**
-Confirmation modal shown after a successful Reverse formatting operation when the resulting first physical surface has nonzero tilt or decenter.
-
-## Modal Footer
-
-- No and Yes actions are passed to `Modal.footer` so they remain fixed outside the explanatory body.
-*/
+ * Confirmation modal shown after a successful Reverse formatting operation when the resulting first physical surface has nonzero tilt or decenter.
+ *
+ * @remarks
+ * ## Modal Footer
+ *
+ * - No and Yes actions are passed to `Modal.footer` so they remain fixed outside the explanatory body.
+ */
 "use client";
 
 import { Button } from "@/shared/components/primitives/Button";
@@ -18,13 +19,16 @@ interface AddReferenceSurfaceModalProps {
 }
 
 /**
-## Behavior
-
-- Uses the shared `Modal` primitive with title `Add Reference Surface?`.
-- Explains that rayoptics wavefront and OPD calculations can be unreliable when the first physical surface is tilted or decentered, and that a flat air reference surface after Object avoids the topology issue.
-- `No` calls `onCancel` so the caller can apply the reversed rows unchanged.
-- `Yes` calls `onConfirm` so the caller can insert a flat air reference surface before applying rows.
-*/
+ * Describes the Add Reference Surface Modal module.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Uses the shared `Modal` primitive with title `Add Reference Surface?`.
+ * - Explains that rayoptics wavefront and OPD calculations can be unreliable when the first physical surface is tilted or decentered, and that a flat air reference surface after Object avoids the topology issue.
+ * - `No` calls `onCancel` so the caller can apply the reversed rows unchanged.
+ * - `Yes` calls `onConfirm` so the caller can insert a flat air reference surface before applying rows.
+ */
 export function AddReferenceSurfaceModal({
   isOpen,
   onConfirm,

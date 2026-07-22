@@ -1,18 +1,21 @@
 /**
-## Internal State
-
-- `space`, `fieldType`, `maxFieldStr`, `isWideAngle` — draft values for the controls.
-- `rows: FieldRow[]` — AG Grid row data for relative field values; each row has a stable `id`.
-
-## Grid Columns
-
-- Row actions: 100px.
-- Relative Field: 125px.
-
-## Modal Footer
-
-- Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while field settings and the field grid scroll.
-*/
+ * Describes the Field Config Modal module.
+ *
+ * @remarks
+ * ## Internal State
+ *
+ * - `space`, `fieldType`, `maxFieldStr`, `isWideAngle` — draft values for the controls.
+ * - `rows: FieldRow[]` — AG Grid row data for relative field values; each row has a stable `id`.
+ *
+ * ## Grid Columns
+ *
+ * - Row actions: 100px.
+ * - Relative Field: 125px.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while field settings and the field grid scroll.
+ */
 import { useState, useCallback } from "react";
 import { AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
@@ -73,19 +76,20 @@ function fieldsToRows(fields: readonly number[]): FieldRow[] {
 const MAX_ROWS = 10;
 
 /**
-Modal for configuring optical field settings: field space, field type, max half-field value, a list of relative field positions, and the optional wide-angle ray-aiming mode. Uses AG Grid for the editable field table.
-
-## Key Behaviors
-
-- Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh editor subtree whose draft state is initialized from props without a reset `useEffect`.
-- Row limit is 10; the add button becomes hidden (not removed) at the limit.
-- The first row cannot be deleted.
-- Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for field row insertion and deletion controls.
-- A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
-- Row ids use a module-level counter for stable AG Grid `getRowId`.
-- Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
-- Keeps the caption outside a grid container that is `200px` high below the project-standard `1440px` breakpoint and `400px` high at `1440px` and above, and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
-*/
+ * Modal for configuring optical field settings: field space, field type, max half-field value, a list of relative field positions, and the optional wide-angle ray-aiming mode. Uses AG Grid for the editable field table.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh editor subtree whose draft state is initialized from props without a reset `useEffect`.
+ * - Row limit is 10; the add button becomes hidden (not removed) at the limit.
+ * - The first row cannot be deleted.
+ * - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for field row insertion and deletion controls.
+ * - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
+ * - Row ids use a module-level counter for stable AG Grid `getRowId`.
+ * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
+ * - Keeps the caption outside a grid container that is `200px` high below the project-standard `1440px` breakpoint and `400px` high at `1440px` and above, and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
+ */
 export function FieldConfigModal({
   isOpen,
   ...props

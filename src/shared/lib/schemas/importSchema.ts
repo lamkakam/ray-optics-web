@@ -1,44 +1,45 @@
 /**
-Compiles an AJV JSON Schema validator for `OpticalModel` and exports it for use at import-time boundaries (e.g. when a user uploads a lens JSON file).
-
-## Behavior
-
-- The validator enforces the full nested structure of `OpticalModel`.
-- `object` now requires `distance`, `medium`, and `manufacturer`.
-- Object medium rejects reflective values (`"REFL"` / `"refl"`).
-- `specs.field.isWideAngle` is accepted as an optional boolean to support wide-angle ray-aiming mode while preserving compatibility with older imported files.
-- Surface `aspherical` data must use the discriminated union shape with `kind`.
-- Supported `aspherical.kind` values are `"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
-- Toroid shapes require `toricSweepRadiusOfCurvature`; all coefficient-bearing shapes limit `polynomialCoefficients` to at most 10 items.
-- Surface `diffractionGrating` is optional and, when present, must contain numeric `lpmm` and integer `order`.
-- Surface `clear_aperture` is optional and, when present, must be either `{ shape: "circular"; offsetX: number; offsetY: number }`, `{ shape: "annular"; obstructionRadius: number; offsetX: number; offsetY: number }`, or `{ shape: "rectangular"; xHalfWidth: number; yHalfWidth: number; rotation: number; offsetX: number; offsetY: number }`.
-- Annular `obstructionRadius` must be greater than `0` and smaller than that surface's `semiDiameter`.
-- Rectangular `xHalfWidth` and `yHalfWidth` must be positive finite numbers; rectangular offsets and rotation must be finite numbers.
-- Surface `edge_aperture` is optional and, when present, must be `{ shape: "circular"; radius: number; offsetX: number; offsetY: number }` with `radius > 0` or `{ shape: "rectangular"; xHalfWidth: number; yHalfWidth: number; rotation: number; offsetX: number; offsetY: number }`.
-
-- **`additionalProperties: false`** is set on every schema object — any unknown key causes validation failure.
-- Custom glass imports require string version `"1.0"`, a `Custom` object, `type: "tabulated"`, at least four wavelength/index pairs, exactly two positive finite numbers per pair, and no extra keys.
-
-## Dependencies
-
-- `ajv` — JSON Schema validator
-- `shared/lib/types/opticalModel.ts` — `OpticalModel` (type-only, used as AJV generic parameter)
-
-## Edge Cases / Error Handling
-
-- Returns `false` and populates `.errors` for any structural mismatch, unknown property, or type error.
-- Custom glass validation rejects numeric versions, malformed version strings, non-tabulated material types, fewer than four pairs, invalid pair lengths, non-positive or non-finite pair values, and unknown keys.
-- Returns `false` if `object.medium` or `object.manufacturer` is missing, or if `object.medium` is reflective.
-- `specs.field.isWideAngle` may be omitted, but if present it must be a boolean.
-- Legacy aspherical payloads without `kind` are rejected.
-- `XToroid` and `YToroid` payloads are rejected unless `toricSweepRadiusOfCurvature` is present and numeric.
-- Aperture payloads reject missing offsets, non-finite or non-numeric offsets, unsupported shapes, non-positive edge radius values, non-positive rectangular half widths, non-finite rectangular rotation, and extra keys.
-- Legacy circular aperture payloads without `offsetX` and `offsetY` are rejected.
-- `additionalProperties: false` means evolved schemas (extra fields added by newer app versions) will fail validation against old validators; schema versioning should be considered if the format changes.
-- The AJV instance and compiled validator are module singletons — compilation happens once at import time, not per call.
-
-Called when a user imports a lens JSON file before passing to Zustand store or Pyodide worker. Check return value and display `.errors` on failure.
-*/
+ * Compiles an AJV JSON Schema validator for `OpticalModel` and exports it for use at import-time boundaries (e.g. when a user uploads a lens JSON file).
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - The validator enforces the full nested structure of `OpticalModel`.
+ * - `object` now requires `distance`, `medium`, and `manufacturer`.
+ * - Object medium rejects reflective values (`"REFL"` / `"refl"`).
+ * - `specs.field.isWideAngle` is accepted as an optional boolean to support wide-angle ray-aiming mode while preserving compatibility with older imported files.
+ * - Surface `aspherical` data must use the discriminated union shape with `kind`.
+ * - Supported `aspherical.kind` values are `"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
+ * - Toroid shapes require `toricSweepRadiusOfCurvature`; all coefficient-bearing shapes limit `polynomialCoefficients` to at most 10 items.
+ * - Surface `diffractionGrating` is optional and, when present, must contain numeric `lpmm` and integer `order`.
+ * - Surface `clear_aperture` is optional and, when present, must be either `{ shape: "circular"; offsetX: number; offsetY: number }`, `{ shape: "annular"; obstructionRadius: number; offsetX: number; offsetY: number }`, or `{ shape: "rectangular"; xHalfWidth: number; yHalfWidth: number; rotation: number; offsetX: number; offsetY: number }`.
+ * - Annular `obstructionRadius` must be greater than `0` and smaller than that surface's `semiDiameter`.
+ * - Rectangular `xHalfWidth` and `yHalfWidth` must be positive finite numbers; rectangular offsets and rotation must be finite numbers.
+ * - Surface `edge_aperture` is optional and, when present, must be `{ shape: "circular"; radius: number; offsetX: number; offsetY: number }` with `radius > 0` or `{ shape: "rectangular"; xHalfWidth: number; yHalfWidth: number; rotation: number; offsetX: number; offsetY: number }`.
+ *
+ * - **`additionalProperties: false`** is set on every schema object — any unknown key causes validation failure.
+ * - Custom glass imports require string version `"1.0"`, a `Custom` object, `type: "tabulated"`, at least four wavelength/index pairs, exactly two positive finite numbers per pair, and no extra keys.
+ *
+ * ## Dependencies
+ *
+ * - `ajv` — JSON Schema validator
+ * - `shared/lib/types/opticalModel.ts` — `OpticalModel` (type-only, used as AJV generic parameter)
+ *
+ * ## Edge Cases / Error Handling
+ *
+ * - Returns `false` and populates `.errors` for any structural mismatch, unknown property, or type error.
+ * - Custom glass validation rejects numeric versions, malformed version strings, non-tabulated material types, fewer than four pairs, invalid pair lengths, non-positive or non-finite pair values, and unknown keys.
+ * - Returns `false` if `object.medium` or `object.manufacturer` is missing, or if `object.medium` is reflective.
+ * - `specs.field.isWideAngle` may be omitted, but if present it must be a boolean.
+ * - Legacy aspherical payloads without `kind` are rejected.
+ * - `XToroid` and `YToroid` payloads are rejected unless `toricSweepRadiusOfCurvature` is present and numeric.
+ * - Aperture payloads reject missing offsets, non-finite or non-numeric offsets, unsupported shapes, non-positive edge radius values, non-positive rectangular half widths, non-finite rectangular rotation, and extra keys.
+ * - Legacy circular aperture payloads without `offsetX` and `offsetY` are rejected.
+ * - `additionalProperties: false` means evolved schemas (extra fields added by newer app versions) will fail validation against old validators; schema versioning should be considered if the format changes.
+ * - The AJV instance and compiled validator are module singletons — compilation happens once at import time, not per call.
+ *
+ * Called when a user imports a lens JSON file before passing to Zustand store or Pyodide worker. Check return value and display `.errors` on failure.
+ */
 import Ajv from "ajv";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 

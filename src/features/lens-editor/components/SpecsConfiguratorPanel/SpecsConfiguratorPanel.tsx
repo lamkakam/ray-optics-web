@@ -1,8 +1,11 @@
 /**
-## Internal State
-
-- `ApertureValueInput.valueStr: string` — local string draft of `pupilValue` held by a keyed child input. The child remounts when the committed `pupilValue` changes, so no prop-sync `useEffect` is needed. The draft is committed on `blur` if it parses to a valid number; otherwise it reverts to the last committed value.
-*/
+ * Describes the Specs Configurator Panel module.
+ *
+ * @remarks
+ * ## Internal State
+ *
+ * - `ApertureValueInput.valueStr: string` — local string draft of `pupilValue` held by a keyed child input. The child remounts when the committed `pupilValue` changes, so no prop-sync `useEffect` is needed. The draft is committed on `blur` if it parses to a valid number; otherwise it reverts to the last committed value.
+ */
 import React, { useState } from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { Button } from "@/shared/components/primitives/Button";
@@ -48,13 +51,14 @@ const APERTURE_OPTIONS: readonly {
   ];
 
 /**
-Presentational panel for editing optical system specifications: system aperture (type + value), visible Half-Field summary, and wavelength summary. Calls back to the container for all state changes; holds only a local draft string for the aperture value input.
-
-## Key Behaviors
-
-- Aperture dropdown selects from three pre-defined combinations of `pupilSpace`+`pupilType`.
-- Half-Field and wavelength sections show their summaries as toggle-style buttons that open the respective modals.
-*/
+ * Presentational panel for editing optical system specifications: system aperture (type + value), visible Half-Field summary, and wavelength summary. Calls back to the container for all state changes; holds only a local draft string for the aperture value input.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Aperture dropdown selects from three pre-defined combinations of `pupilSpace`+`pupilType`.
+ * - Half-Field and wavelength sections show their summaries as toggle-style buttons that open the respective modals.
+ */
 export function SpecsConfiguratorPanel({
   pupilSpace,
   pupilType,

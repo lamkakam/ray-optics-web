@@ -1,10 +1,13 @@
 /**
-## API
-
-- `ImagePoint` is `"chief_ray" | "centroid"`.
-- `ImagePointProvider` initializes from `localStorage` key `ray-optics-web-image-point`, falling back to the legacy `ray-optics-web-opd-aim-point` key for migration.
-- `useImagePoint()` returns `{ imagePoint, setImagePoint }`.
-*/
+ * Describes the Image Point Provider module.
+ *
+ * @remarks
+ * ## API
+ *
+ * - `ImagePoint` is `"chief_ray" | "centroid"`.
+ * - `ImagePointProvider` initializes from `localStorage` key `ray-optics-web-image-point`, falling back to the legacy `ray-optics-web-opd-aim-point` key for migration.
+ * - `useImagePoint()` returns `{ imagePoint, setImagePoint }`.
+ */
 "use client";
 
 import React, { createContext, useCallback, useContext, useState } from "react";
@@ -33,14 +36,15 @@ function getInitialImagePoint(): ImagePoint {
 }
 
 /**
-Provides app-wide image-point state for spot, wavefront-like, and OPD-related analyses.
-
-## Behavior
-
-- Defaults to `"chief_ray"` to preserve the existing RayOptics reference convention.
-- Persists valid updates to the new `localStorage` key.
-- Ignores invalid persisted values and invalid runtime updates.
-*/
+ * Provides app-wide image-point state for spot, wavefront-like, and OPD-related analyses.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Defaults to `"chief_ray"` to preserve the existing RayOptics reference convention.
+ * - Persists valid updates to the new `localStorage` key.
+ * - Ignores invalid persisted values and invalid runtime updates.
+ */
 export function ImagePointProvider({ children }: { readonly children: React.ReactNode }) {
   const [imagePoint, _setImagePoint] = useState<ImagePoint>(getInitialImagePoint);
 

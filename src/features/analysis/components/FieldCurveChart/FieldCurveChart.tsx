@@ -13,9 +13,7 @@ interface FieldCurveChartBuilderArgs {
   readonly fieldCurveData: FieldCurveData;
 }
 
-/**
-Wraps the shared analysis ECharts component factory for Field Curvature plot data.
-*/
+/** Wraps the shared analysis ECharts component factory for Field Curvature plot data. */
 export const FieldCurveChart = createAnalysisChartComponent<FieldCurveChartProps, FieldCurveChartBuilderArgs>({
   displayName: "FieldCurveChart",
   testId: "field-curve-chart",

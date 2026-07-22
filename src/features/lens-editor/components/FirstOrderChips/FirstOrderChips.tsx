@@ -18,14 +18,15 @@ const CHIP_CONFIG: { key: string; format: (v: number) => string }[] = [
 ];
 
 /**
-Renders a row of `Chip` components showing key first-order paraxial properties (EFL, BFL, IMG HT, f/#, NA OBJ, NA IMG) extracted from the worker's first-order data dict.
-
-## Key Behaviors
-
-- Only keys present in `data` are rendered; missing keys are silently skipped.
-- EFL, BFL, IMG HT are formatted with 2 decimal places; f/#, NA OBJ, NA IMG use 4 significant figures.
-- Returns `null` when `data` is `undefined`.
-*/
+ * Renders a row of `Chip` components showing key first-order paraxial properties (EFL, BFL, IMG HT, f/#, NA OBJ, NA IMG) extracted from the worker's first-order data dict.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Only keys present in `data` are rendered; missing keys are silently skipped.
+ * - EFL, BFL, IMG HT are formatted with 2 decimal places; f/#, NA OBJ, NA IMG use 4 significant figures.
+ * - Returns `null` when `data` is `undefined`.
+ */
 export function FirstOrderChips({ data }: FirstOrderChipsProps) {
   if (!data) return null;
 

@@ -1,11 +1,14 @@
 /**
-## Behaviour
-- Reads `theme` and `setTheme` from `ThemeProvider`
-- Adapts the `<select>` change event into the `Theme` union
-- Renders the Settings heading and theme selector inline in the route file
-- Uses the shared `Select` primitive with bounded width for layout stability
-- Does not render the Image point selector; image reference selection lives in the Lens Editor drawer's `Image Reference` tab
-*/
+ * Describes the Page module.
+ *
+ * @remarks
+ * ## Behaviour
+ * - Reads `theme` and `setTheme` from `ThemeProvider`
+ * - Adapts the `<select>` change event into the `Theme` union
+ * - Renders the Settings heading and theme selector inline in the route file
+ * - Uses the shared `Select` primitive with bounded width for layout stability
+ * - Does not render the Image point selector; image reference selection lives in the Lens Editor drawer's `Image Reference` tab
+ */
 "use client";
 
 import React from "react";
@@ -19,9 +22,7 @@ const themeOptions: { value: Theme; label: string }[] = [
   { value: "dark", label: "Dark" },
 ];
 
-/**
-Settings route page (`/settings`).
-*/
+/** Settings route page (`/settings`). */
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
 

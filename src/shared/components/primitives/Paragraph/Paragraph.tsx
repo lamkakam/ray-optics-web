@@ -19,14 +19,15 @@ interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
 }
 
 /**
-Themed `<p>` element with semantic variants that map to different color and size tokens.
-
-## Key Behaviors
-
-- Implemented as `React.forwardRef`.
-- `caption` adds a bottom margin token; `subheading` uses medium font weight; `placeholder` uses muted text color.
-- `errorMessage` uses the shared error text color token with caption-sized typography.
-*/
+ * Themed `<p>` element with semantic variants that map to different color and size tokens.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Implemented as `React.forwardRef`.
+ * - `caption` adds a bottom margin token; `subheading` uses medium font weight; `placeholder` uses muted text color.
+ * - `errorMessage` uses the shared error text color token with caption-sized typography.
+ */
 export const Paragraph = React.forwardRef<HTMLParagraphElement, ParagraphProps>(
   function Paragraph({ variant = "body", className, ...rest }, ref) {
     return (

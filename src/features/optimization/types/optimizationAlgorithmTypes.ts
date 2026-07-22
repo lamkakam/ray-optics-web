@@ -1,10 +1,12 @@
 /**
-Optimization algorithm selection and capability types used by runtime capability helpers and their callers.
-
-## Key Conventions
-
-- `OptimizationAlgorithmSelection` preserves the least-squares method discriminator while allowing methodless optimizer kinds to be selected by `kind` only.
-- Runtime capability lookup and config data stay in `features/optimization/lib/`.*/
+ * Optimization algorithm selection and capability types used by runtime capability helpers and their callers.
+ *
+ * @remarks
+ * ## Key Conventions
+ *
+ * - `OptimizationAlgorithmSelection` preserves the least-squares method discriminator while allowing methodless optimizer kinds to be selected by `kind` only.
+ * - Runtime capability lookup and config data stay in `features/optimization/lib/`.
+ */
 import type { LeastSquaresMethod, OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
 
 export interface OptimizationMethodCapabilities {

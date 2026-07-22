@@ -6,9 +6,7 @@ export interface SeidelSurfaceBySurfaceData {
   data: number[][];   // 5 x N matrix (row = aberration type, col = surface)
 }
 
-/**
-Defines Seidel aberration payload types used by the lens editor modal and analysis third-order chart.
-*/
+/** Defines Seidel aberration payload types used by the lens editor modal and analysis third-order chart. */
 export interface SeidelData {
   surfaceBySurface: SeidelSurfaceBySurfaceData;
   transverse: Record<string, number>;  // TSA, TCO, TAS, SAS, PTB, DST

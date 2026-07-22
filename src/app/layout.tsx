@@ -1,20 +1,23 @@
 /**
-## Rendered Structure
-```tsx
-<html>
-  <body>
-    <ThemeProvider>
-      <ImagePointProvider>
-        <ServiceWorkerRegistrar />
-        <...store providers...>
-          <AppShell>{children}</AppShell>
-        </...store providers...>
-      </ImagePointProvider>
-    </ThemeProvider>
-  </body>
-</html>
-```
-*/
+ * Describes the Layout module.
+ *
+ * @remarks
+ * ## Rendered Structure
+ * ```tsx
+ * <html>
+ * <body>
+ * <ThemeProvider>
+ * <ImagePointProvider>
+ * <ServiceWorkerRegistrar />
+ * <...store providers...>
+ * <AppShell>{children}</AppShell>
+ * </...store providers...>
+ * </ImagePointProvider>
+ * </ThemeProvider>
+ * </body>
+ * </html>
+ * ```
+ */
 import type { Metadata } from "next";
 import "./globals.css";
 import ServiceWorkerRegistrar from "@/shared/components/providers/ServiceWorkerRegistrar";
@@ -36,17 +39,18 @@ export const metadata: Metadata = {
 };
 
 /**
-Root server layout for the App Router. Owns metadata, global providers, and the shared client app shell wrapper.
-
-## Responsibilities
-- Declares the app metadata
-- Imports global CSS
-- Mounts the theme provider, Image point provider, service worker registrar, and shared app-wide Zustand-backed store providers once for the entire app
-- Wraps routed content in `AppShell` so shared client shell behaviour persists across all routes
-- Mounts `GlassMapStoreProvider` at the app root so glass-map UI state persists across route switches
-- Mounts `ImportCustomGlassStoreProvider` at the app root so Import Custom Glass readonly table sort/filter state persists across route switches
-- Mounts `OptimizationStoreProvider` at the app root so optimization UI state persists across route switches
-*/
+ * Root server layout for the App Router. Owns metadata, global providers, and the shared client app shell wrapper.
+ *
+ * @remarks
+ * ## Responsibilities
+ * - Declares the app metadata
+ * - Imports global CSS
+ * - Mounts the theme provider, Image point provider, service worker registrar, and shared app-wide Zustand-backed store providers once for the entire app
+ * - Wraps routed content in `AppShell` so shared client shell behaviour persists across all routes
+ * - Mounts `GlassMapStoreProvider` at the app root so glass-map UI state persists across route switches
+ * - Mounts `ImportCustomGlassStoreProvider` at the app root so Import Custom Glass readonly table sort/filter state persists across route switches
+ * - Mounts `OptimizationStoreProvider` at the app root so optimization UI state persists across route switches
+ */
 export default function RootLayout({
   children,
 }: {

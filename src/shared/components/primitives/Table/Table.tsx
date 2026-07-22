@@ -16,14 +16,15 @@ function getAlignmentClass(alignment: TableColumnAlignment | undefined): string 
 }
 
 /**
-Simple read-only HTML table with a header row and data rows. Accepts generic cell content including React nodes for formatted values.
-
-## Key Behaviors
-
-- Row keys fall back to index since rows have no stable id.
-- Header and body cells share the same per-column alignment so numeric columns can be right-aligned consistently.
-- No sorting, filtering, or pagination — purely a display table.
-*/
+ * Simple read-only HTML table with a header row and data rows. Accepts generic cell content including React nodes for formatted values.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Row keys fall back to index since rows have no stable id.
+ * - Header and body cells share the same per-column alignment so numeric columns can be right-aligned consistently.
+ * - No sorting, filtering, or pagination — purely a display table.
+ */
 export function Table({ headers, rows, columnAlignments }: TableProps) {
   return (
     <table className="w-full text-sm">

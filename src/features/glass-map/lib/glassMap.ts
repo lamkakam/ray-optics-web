@@ -1,8 +1,9 @@
 /**
-Runtime helper functions and rendering constants for the Glass Map feature.
-
-Type definitions and `CATALOG_NAMES` live in `features/glass-map/types/glassMap.ts`.
-*/
+ * Runtime helper functions and rendering constants for the Glass Map feature.
+ *
+ * @remarks
+ * Type definitions and `CATALOG_NAMES` live in `features/glass-map/types/glassMap.ts`.
+ */
 import {
   CATALOG_NAMES,
   type AbbeNumCenterLine,

@@ -87,25 +87,28 @@ export interface PlotTypeConfig {
 }
 
 /**
-## PLOT_TYPE_CONFIG
-
-Exported config record mapping each `PlotType` to `{ label, fieldDependent, wavelengthDependent? }`:
-
-| PlotType | label | fieldDependent | wavelengthDependent |
-|---|---|---|---|
-| `rayFan` | "Ray Fan" | true | false |
-| `opdFan` | "OPD Fan" | true | false |
-| `spotDiagram` | "Spot Diagram" | true | false |
-| `fieldCurvature` | "Field Curvature" | false | true |
-| `astigmatismCurve` | "Astigmatism Curve" | false | true |
-| `longitudinalSphericalAberration` | "Longitudinal Spherical Aberration" | false | false |
-| `surfaceBySurface3rdOrder` | "Surface by Surface 3rd Order Aberr." | false | false |
-| `strehlVsWavelength` | "Strehl vs Wavelength" | true | false |
-| `wavefrontMap` | "Wavefront Map" | true | true |
-| `geoPSF` | "Geometric PSF" | true | true |
-| `diffractionPSF` | "Diffraction PSF" | true | true |
-| `diffractionMTF` | "Diffraction MTF" | true | true |
-*/
+ * Describes the Analysis Plot View module.
+ *
+ * @remarks
+ * ## PLOT_TYPE_CONFIG
+ *
+ * Exported config record mapping each `PlotType` to `{ label, fieldDependent, wavelengthDependent? }`:
+ *
+ * | PlotType | label | fieldDependent | wavelengthDependent |
+ * |---|---|---|---|
+ * | `rayFan` | "Ray Fan" | true | false |
+ * | `opdFan` | "OPD Fan" | true | false |
+ * | `spotDiagram` | "Spot Diagram" | true | false |
+ * | `fieldCurvature` | "Field Curvature" | false | true |
+ * | `astigmatismCurve` | "Astigmatism Curve" | false | true |
+ * | `longitudinalSphericalAberration` | "Longitudinal Spherical Aberration" | false | false |
+ * | `surfaceBySurface3rdOrder` | "Surface by Surface 3rd Order Aberr." | false | false |
+ * | `strehlVsWavelength` | "Strehl vs Wavelength" | true | false |
+ * | `wavefrontMap` | "Wavefront Map" | true | true |
+ * | `geoPSF` | "Geometric PSF" | true | true |
+ * | `diffractionPSF` | "Diffraction PSF" | true | true |
+ * | `diffractionMTF` | "Diffraction MTF" | true | true |
+ */
 export const PLOT_TYPE_CONFIG: Record<PlotType, PlotTypeConfig> = {
   rayFan: {
     label: "Ray Fan",
@@ -331,31 +334,32 @@ const PLOT_RENDERERS: Record<PlotType, PlotRendererConfig> = {
 };
 
 /**
-Displays an analysis plot alongside plot-type, Half-Field, and wavelength selectors. All supported analysis plot types delegate to dedicated ECharts chart components that render typed data.
-
-## Key Behaviors
-
-- `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the Half-Field dropdown is hidden for non-field-dependent types.
-- The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
-- Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
-- `PLOT_RENDERERS` (module-local) maps each `PlotType` to a typed renderer config with:
-  - `hasData(props)`, which checks whether the corresponding chart data is defined
-  - `render(props)`, which renders the matching chart component for that plot type
-- `AnalysisPlotView` generalizes typed-chart availability by looking up `PLOT_RENDERERS[selectedPlotType]` and rendering the chart only when `hasData(props)` is `true`.
-- `surfaceBySurface3rdOrder` renders `SurfaceBySurface3rdOrderChart` only when `surfaceBySurface3rdOrderData` is present. The chart uses the Seidel `surfaceBySurface` payload already fetched from the worker instead of the old PNG.
-- `rayFan` renders `RayFanChart` only when `rayFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
-- `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
-- `spotDiagram` renders `SpotDiagramChart` only when `spotDiagramData` is present, passing wavelength labels from `wavelengthOptions` so each series is named by the actual wavelength rather than the wavelength index.
-- `fieldCurvature` renders `FieldCurveChart` only when `fieldCurvatureData` is present and shows the wavelength selector without a Half-Field selector.
-- `astigmatismCurve` renders `AstigmatismChart` only when `astigmatismCurveData` is present and shows the wavelength selector without a Half-Field selector.
-- `longitudinalSphericalAberration` renders `LongitudinalSphericalAberrationChart` only when `longitudinalSphericalAberrationData` is present, passes wavelength labels to name each series, and hides both field and wavelength selectors because the worker always traces field 0 for all wavelengths.
-- `strehlVsWavelength` renders `StrehlVsWavelengthChart` only when `strehlVsWavelengthData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
-- `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
-- `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.
-- `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.
-- `diffractionMTF` renders `DiffractionMtfChart` only when `diffractionMtfData` is present.
-- `AnalysisPlotView` never imports Apache ECharts directly; chart-specific measurement, debounce, and option-building logic live in dedicated feature-local modules.
-*/
+ * Displays an analysis plot alongside plot-type, Half-Field, and wavelength selectors. All supported analysis plot types delegate to dedicated ECharts chart components that render typed data.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - `PLOT_TYPE_CONFIG` (exported) declares which plot types are field-dependent; the Half-Field dropdown is hidden for non-field-dependent types.
+ * - The wavelength selector is only rendered when `PLOT_TYPE_CONFIG[selectedPlotType].wavelengthDependent` is `true`.
+ * - Uses `useScreenBreakpoint` to switch between `compact` and `default` Select variants on small screens.
+ * - `PLOT_RENDERERS` (module-local) maps each `PlotType` to a typed renderer config with:
+ * - `hasData(props)`, which checks whether the corresponding chart data is defined
+ * - `render(props)`, which renders the matching chart component for that plot type
+ * - `AnalysisPlotView` generalizes typed-chart availability by looking up `PLOT_RENDERERS[selectedPlotType]` and rendering the chart only when `hasData(props)` is `true`.
+ * - `surfaceBySurface3rdOrder` renders `SurfaceBySurface3rdOrderChart` only when `surfaceBySurface3rdOrderData` is present. The chart uses the Seidel `surfaceBySurface` payload already fetched from the worker instead of the old PNG.
+ * - `rayFan` renders `RayFanChart` only when `rayFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
+ * - `opdFan` renders `OpdFanChart` only when `opdFanData` is present, passing wavelength labels from `wavelengthOptions` so each wavelength line pair is named by the actual wavelength rather than the wavelength index.
+ * - `spotDiagram` renders `SpotDiagramChart` only when `spotDiagramData` is present, passing wavelength labels from `wavelengthOptions` so each series is named by the actual wavelength rather than the wavelength index.
+ * - `fieldCurvature` renders `FieldCurveChart` only when `fieldCurvatureData` is present and shows the wavelength selector without a Half-Field selector.
+ * - `astigmatismCurve` renders `AstigmatismChart` only when `astigmatismCurveData` is present and shows the wavelength selector without a Half-Field selector.
+ * - `longitudinalSphericalAberration` renders `LongitudinalSphericalAberrationChart` only when `longitudinalSphericalAberrationData` is present, passes wavelength labels to name each series, and hides both field and wavelength selectors because the worker always traces field 0 for all wavelengths.
+ * - `strehlVsWavelength` renders `StrehlVsWavelengthChart` only when `strehlVsWavelengthData` is present. It is field-dependent and does not render the wavelength selector because the worker samples wavelengths internally.
+ * - `wavefrontMap` renders `WavefrontMapChart` only when `wavefrontMapData` is present.
+ * - `geoPSF` renders `GeoPsfChart` only when `geoPsfData` is present.
+ * - `diffractionPSF` renders `DiffractionPsfChart` only when `diffractionPsfData` is present.
+ * - `diffractionMTF` renders `DiffractionMtfChart` only when `diffractionMtfData` is present.
+ * - `AnalysisPlotView` never imports Apache ECharts directly; chart-specific measurement, debounce, and option-building logic live in dedicated feature-local modules.
+ */
 export function AnalysisPlotView(props: AnalysisPlotViewProps) {
   const {
     fieldOptions,

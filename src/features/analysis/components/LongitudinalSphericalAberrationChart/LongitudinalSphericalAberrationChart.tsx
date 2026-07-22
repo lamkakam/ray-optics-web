@@ -16,9 +16,7 @@ interface LongitudinalSphericalAberrationChartBuilderArgs {
   readonly wavelengthLabels: readonly string[];
 }
 
-/**
-Wraps the shared analysis ECharts component factory for longitudinal spherical aberration data.
-*/
+/** Wraps the shared analysis ECharts component factory for longitudinal spherical aberration data. */
 export const LongitudinalSphericalAberrationChart = createAnalysisChartComponent<
   LongitudinalSphericalAberrationChartProps,
   LongitudinalSphericalAberrationChartBuilderArgs

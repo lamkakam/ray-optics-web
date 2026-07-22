@@ -1,14 +1,16 @@
 /**
-Pure helper utilities shared by optimization variable/pickup modals.
-
-## Behavior
-
-- `validateVariableBounds()` applies rules sequentially and stops at the first returned error string. This lets callers prioritize min/max ordering before field-specific rules such as curvature-radius zero-straddling.
-- `minLessThanMaxRule` formats errors as `{label} variable bounds must have Min. less than Max.` when either bound is non-finite or the numeric minimum is greater than or equal to the numeric maximum.
-- `CURVATURE_RADIUS_GUIDANCE_TEXT`, `getCurvatureRadiusBoundsErrorText()`, and `curvatureRadiusNoZeroStraddleRule` are shared by `features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal.tsx` and the toroid-sweep variable row in `features/optimization/components/LensPrescriptionGrid/AsphereVarModal/AsphereVarModal.tsx` so the flat-surface guidance and zero-crossing error copy stay in sync.
-- `curvatureRadiusCrossesZero()` is intended for curvature-radius style bounds, where `R = 0` represents a flat surface with infinite radius and bounds must stay entirely negative or entirely positive.
-- The draft builders are shared by both `features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal.tsx` and `features/optimization/components/LensPrescriptionGrid/ThicknessModeModal/ThicknessModeModal.tsx` to keep default mode transitions consistent.
-- The pickup source-surface option builders keep radius and thickness dropdown bounds consistent with their optimizer validation rules.*/
+ * Pure helper utilities shared by optimization variable/pickup modals.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - `validateVariableBounds()` applies rules sequentially and stops at the first returned error string. This lets callers prioritize min/max ordering before field-specific rules such as curvature-radius zero-straddling.
+ * - `minLessThanMaxRule` formats errors as `{label} variable bounds must have Min. less than Max.` when either bound is non-finite or the numeric minimum is greater than or equal to the numeric maximum.
+ * - `CURVATURE_RADIUS_GUIDANCE_TEXT`, `getCurvatureRadiusBoundsErrorText()`, and `curvatureRadiusNoZeroStraddleRule` are shared by `features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal.tsx` and the toroid-sweep variable row in `features/optimization/components/LensPrescriptionGrid/AsphereVarModal/AsphereVarModal.tsx` so the flat-surface guidance and zero-crossing error copy stay in sync.
+ * - `curvatureRadiusCrossesZero()` is intended for curvature-radius style bounds, where `R = 0` represents a flat surface with infinite radius and bounds must stay entirely negative or entirely positive.
+ * - The draft builders are shared by both `features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal.tsx` and `features/optimization/components/LensPrescriptionGrid/ThicknessModeModal/ThicknessModeModal.tsx` to keep default mode transitions consistent.
+ * - The pickup source-surface option builders keep radius and thickness dropdown bounds consistent with their optimizer validation rules.
+ */
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
 import type { SourceSurfaceSelectOption } from "@/features/optimization/types/optimizationModalTypes";
 

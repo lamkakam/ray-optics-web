@@ -1,3 +1,2 @@
-/**
-Barrel export for the colocated `FormattingModal`.*/
+/** Barrel export for the colocated `FormattingModal`. */
 export { FormattingModal } from "./FormattingModal";

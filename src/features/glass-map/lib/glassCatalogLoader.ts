@@ -1,12 +1,14 @@
 /**
-Client-side Pyodide worker loader for frontend-ready glass catalog data.
-
-The loader only deduplicates concurrent worker requests. It does not retain completed catalog data or settled errors. Mutable catalog state belongs to `GlassMapStore.catalogsData` after a successful load.
-
-## Behaviour
-- Uses a module-level `WeakMap<PyodideWorkerAPI, Promise<GlassCatalogsLoadResult>>`
-- Provides no `peek` or Suspense `read` API because settled mutable data is intentionally not cached here
-- Leaves lookup-map derivation and durable catalog ownership to `features/glass-map/stores/glassMapStore`*/
+ * Client-side Pyodide worker loader for frontend-ready glass catalog data.
+ *
+ * @remarks
+ * The loader only deduplicates concurrent worker requests. It does not retain completed catalog data or settled errors. Mutable catalog state belongs to `GlassMapStore.catalogsData` after a successful load.
+ *
+ * ## Behaviour
+ * - Uses a module-level `WeakMap<PyodideWorkerAPI, Promise<GlassCatalogsLoadResult>>`
+ * - Provides no `peek` or Suspense `read` API because settled mutable data is intentionally not cached here
+ * - Leaves lookup-map derivation and durable catalog ownership to `features/glass-map/stores/glassMapStore`
+ */
 "use client";
 
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -24,12 +26,15 @@ function getErrorMessage(error: unknown): string {
 }
 
 /**
-- Starts `proxy.getAllGlassCatalogsData()` when no request is already in flight for that proxy
-- Reuses the same promise for concurrent callers using the same worker proxy
-- Completes worker payload catalog keys with `completeAllCatalogsData()`
-- Resolves worker failures as `{ data: undefined, error: string }`
-- Deletes the in-flight entry after success or failure so later calls start a new worker request
-*/
+ * Describes the Glass Catalog Loader module.
+ *
+ * @remarks
+ * - Starts `proxy.getAllGlassCatalogsData()` when no request is already in flight for that proxy
+ * - Reuses the same promise for concurrent callers using the same worker proxy
+ * - Completes worker payload catalog keys with `completeAllCatalogsData()`
+ * - Resolves worker failures as `{ data: undefined, error: string }`
+ * - Deletes the in-flight entry after success or failure so later calls start a new worker request
+ */
 export function loadGlassCatalogs(proxy: PyodideWorkerAPI): Promise<GlassCatalogsLoadResult> {
   const inFlightLoad = inFlightLoads.get(proxy);
 
@@ -59,9 +64,7 @@ export function loadGlassCatalogs(proxy: PyodideWorkerAPI): Promise<GlassCatalog
   return loadPromise;
 }
 
-/**
-- Clears in-flight requests for Jest isolation
-*/
+/** - Clears in-flight requests for Jest isolation */
 export function _resetGlassCatalogLoaderForTest(): void {
   inFlightLoads = new WeakMap<PyodideWorkerAPI, Promise<GlassCatalogsLoadResult>>();
 }

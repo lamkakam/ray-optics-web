@@ -55,19 +55,20 @@ const CONTENT_OFFSET_CLASSES = {
 } as const satisfies Record<SwitchSize, Record<"checked" | "unchecked", string>>;
 
 /**
-Controlled switch primitive for binary settings. It renders a native button with `role="switch"` and tokenized track, thumb, disabled, and animation classes.
-
-## Key Behaviors
-
-- Renders `<button type="button" role="switch">` by default.
-- Sets `aria-checked` from the controlled `checked` prop.
-- Calls `onCheckedChange(!checked)` on click unless the consumer prevents the click event.
-- Relies on native button `disabled` behavior, so disabled switches do not fire click handlers.
-- Uses fixed tokenized dimensions for `sm` and `md`, so content changes do not resize the control.
-- Positions visible state content on the side opposite the thumb to prevent labels such as `Auto` and `Manual` from being covered by the thumb.
-- The inherited `className` prop is merged via `twMerge` after token classes.
-- Applies tokenized track color, thumb translation, transition, `will-change-transform`, opacity, and disabled cursor classes.
-*/
+ * Controlled switch primitive for binary settings. It renders a native button with `role="switch"` and tokenized track, thumb, disabled, and animation classes.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Renders `<button type="button" role="switch">` by default.
+ * - Sets `aria-checked` from the controlled `checked` prop.
+ * - Calls `onCheckedChange(!checked)` on click unless the consumer prevents the click event.
+ * - Relies on native button `disabled` behavior, so disabled switches do not fire click handlers.
+ * - Uses fixed tokenized dimensions for `sm` and `md`, so content changes do not resize the control.
+ * - Positions visible state content on the side opposite the thumb to prevent labels such as `Auto` and `Manual` from being covered by the thumb.
+ * - The inherited `className` prop is merged via `twMerge` after token classes.
+ * - Applies tokenized track color, thumb translation, transition, `will-change-transform`, opacity, and disabled cursor classes.
+ */
 export function Switch({
   checked,
   onCheckedChange,

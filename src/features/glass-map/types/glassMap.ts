@@ -1,8 +1,9 @@
 /**
-Type definitions and type-derived catalog-name constants for the Glass Map feature.
-
-Runtime helpers and rendering lookup tables live in `features/glass-map/lib/glassMap.ts`.
-*/
+ * Type definitions and type-derived catalog-name constants for the Glass Map feature.
+ *
+ * @remarks
+ * Runtime helpers and rendering lookup tables live in `features/glass-map/lib/glassMap.ts`.
+ */
 export const CATALOG_NAMES = ['CDGM', 'Hikari', 'Hoya', 'Ohara', 'Schott', 'Sumita', 'Special', 'Custom'] as const;
 export type CatalogName = typeof CATALOG_NAMES[number];
 

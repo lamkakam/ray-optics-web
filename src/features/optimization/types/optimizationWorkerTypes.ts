@@ -1,20 +1,22 @@
 /**
-TypeScript types for the optimization UI and the Pyodide worker boundary.
-
-## Key Conventions
-
-- `OptimizationConfig` mirrors the config shape documented in `src/python/src/rayoptics_web_utils/optimization/optimization.py.md`.
-- The module lives under `features/optimization/types/` because these contracts are specific to optimization, even when imported by shared worker hooks.
-- `OptimizationConfig.optimizer` is a discriminated union:
-  least-squares configs include `kind: "least_squares"`, `method`, `max_nfev`, `ftol`, `xtol`, and `gtol`;
-  differential-evolution configs include `kind: "differential_evolution"`, `max_nfev`, `tol`, and `atol`.
-- `variables` and `pickups` are discriminated unions. Supported kinds are `radius`, `thickness`, `asphere_conic_constant`, `asphere_polynomial_coefficient`, and `asphere_toric_sweep_radius`.
-- `OptimizationConfig.variables[*].min` / `max` are present for bounded optimizer runs (`trf` and `differential_evolution`) and may be omitted for unbounded least-squares runs (`lm`).
-- Asphere config/report entries carry `asphere_kind`; polynomial coefficient entries additionally carry `coefficient_index`, and coefficient pickups also carry `source_coefficient_index`.
-- Merit operands and residual entries may omit `target` for target-less operands. Existing scalar operands still include numeric targets.
-- `OptimizationReport` preserves the Python snake_case keys unchanged so the worker can parse the JSON directly.
-- `OptimizationReport.optimizer` may include solver metadata such as `nfev`, `nit`, `njev`, `cost`, and `optimality` after a full optimization run.
-- `OptimizationReport.optimization_progress` is always a chronological list of merit-history samples; each entry exposes the raw `merit_function_value` used by the progress chart plus the precomputed `log10_merit_function_value` for consumers that need a transformed value.*/
+ * TypeScript types for the optimization UI and the Pyodide worker boundary.
+ *
+ * @remarks
+ * ## Key Conventions
+ *
+ * - `OptimizationConfig` mirrors the config shape documented in `src/python/src/rayoptics_web_utils/optimization/optimization.py.md`.
+ * - The module lives under `features/optimization/types/` because these contracts are specific to optimization, even when imported by shared worker hooks.
+ * - `OptimizationConfig.optimizer` is a discriminated union:
+ * least-squares configs include `kind: "least_squares"`, `method`, `max_nfev`, `ftol`, `xtol`, and `gtol`;
+ * differential-evolution configs include `kind: "differential_evolution"`, `max_nfev`, `tol`, and `atol`.
+ * - `variables` and `pickups` are discriminated unions. Supported kinds are `radius`, `thickness`, `asphere_conic_constant`, `asphere_polynomial_coefficient`, and `asphere_toric_sweep_radius`.
+ * - `OptimizationConfig.variables[*].min` / `max` are present for bounded optimizer runs (`trf` and `differential_evolution`) and may be omitted for unbounded least-squares runs (`lm`).
+ * - Asphere config/report entries carry `asphere_kind`; polynomial coefficient entries additionally carry `coefficient_index`, and coefficient pickups also carry `source_coefficient_index`.
+ * - Merit operands and residual entries may omit `target` for target-less operands. Existing scalar operands still include numeric targets.
+ * - `OptimizationReport` preserves the Python snake_case keys unchanged so the worker can parse the JSON directly.
+ * - `OptimizationReport.optimizer` may include solver metadata such as `nfev`, `nit`, `njev`, `cost`, and `optimality` after a full optimization run.
+ * - `OptimizationReport.optimization_progress` is always a chronological list of merit-history samples; each entry exposes the raw `merit_function_value` used by the progress chart plus the precomputed `log10_merit_function_value` for consumers that need a transformed value.
+ */
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 
 export type OptimizerKind = "least_squares" | "differential_evolution";

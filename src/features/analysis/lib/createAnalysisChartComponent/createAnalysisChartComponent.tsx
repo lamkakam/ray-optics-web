@@ -1,11 +1,14 @@
 /**
-## Dependencies
-
-- `echarts/core`
-- `useTheme()` from `shared/components/providers/ThemeProvider`
-- `useDebouncedCallback()` from `shared/hooks/useDebouncedCallback`
-- `globalTokens` from `shared/tokens/styleTokens`
-*/
+ * Describes the Create Analysis Chart Component module.
+ *
+ * @remarks
+ * ## Dependencies
+ *
+ * - `echarts/core`
+ * - `useTheme()` from `shared/components/providers/ThemeProvider`
+ * - `useDebouncedCallback()` from `shared/hooks/useDebouncedCallback`
+ * - `globalTokens` from `shared/tokens/styleTokens`
+ */
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";
@@ -53,21 +56,22 @@ type CreateAnalysisChartComponentConfig<
 const DEFAULT_DIMENSION_VALIDATION = ({ width }: ChartDimensionValidationInput) => width > 0;
 
 /**
-Provides a higher-order factory that returns typed analysis chart function components with a shared Apache ECharts lifecycle. The factory centralizes responsive parent measurement, injected sizing policy evaluation, theme-aware text color selection, debounced chart updates, and ECharts disposal.
-
-## Key Behaviors
-
-- Measures the parent element with `ResizeObserver`.
-- Optionally calls `useRuntimeContext()` inside the generated component so chart implementations can derive hook-based context such as responsive breakpoints.
-- Passes the runtime context into `getBuilderArgs(...)` and `getChartHeight(...)`.
-- Delegates chart height calculation to the injected `getChartHeight(...)` arrow function.
-- Uses `isDimensionValid(...)` to decide whether dimensions should be committed or cleared.
-- Reads the active app theme via `useTheme()` and resolves the ECharts text color from `globalTokens`.
-- Lazily initializes one canvas-based ECharts instance and reuses it until unmount.
-- Resizes an already-initialized ECharts instance immediately when measured dimensions change so drag-resized containers do not leave the canvas at a stale size between debounced option rebuilds.
-- Debounces `echarts.init(...)/setOption(...)/resize()` using `useDebouncedCallback(...)` and the supplied `debounceMs`.
-- Resizes the live chart instance on window resize and disposes it during cleanup.
-*/
+ * Provides a higher-order factory that returns typed analysis chart function components with a shared Apache ECharts lifecycle. The factory centralizes responsive parent measurement, injected sizing policy evaluation, theme-aware text color selection, debounced chart updates, and ECharts disposal.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Measures the parent element with `ResizeObserver`.
+ * - Optionally calls `useRuntimeContext()` inside the generated component so chart implementations can derive hook-based context such as responsive breakpoints.
+ * - Passes the runtime context into `getBuilderArgs(...)` and `getChartHeight(...)`.
+ * - Delegates chart height calculation to the injected `getChartHeight(...)` arrow function.
+ * - Uses `isDimensionValid(...)` to decide whether dimensions should be committed or cleared.
+ * - Reads the active app theme via `useTheme()` and resolves the ECharts text color from `globalTokens`.
+ * - Lazily initializes one canvas-based ECharts instance and reuses it until unmount.
+ * - Resizes an already-initialized ECharts instance immediately when measured dimensions change so drag-resized containers do not leave the canvas at a stale size between debounced option rebuilds.
+ * - Debounces `echarts.init(...)/setOption(...)/resize()` using `useDebouncedCallback(...)` and the supplied `debounceMs`.
+ * - Resizes the live chart instance on window resize and disposes it during cleanup.
+ */
 export function createAnalysisChartComponent<
   Props extends { readonly autoHeight?: boolean },
   BuilderArgs,

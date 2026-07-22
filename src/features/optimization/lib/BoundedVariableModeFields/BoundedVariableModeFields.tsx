@@ -23,17 +23,18 @@ interface BoundedVariableModeFieldsProps {
 }
 
 /**
-## Behavior
-
-- Renders shared Min/Max inputs with caller-owned visible labels and aria-labels.
-- Supports optional helper copy and optional inline validation text so radius and toroid rows can show domain-specific guidance.
-- Supports caller-owned layout classes so consuming modals can keep their existing spacing and grid arrangement.
-- Renders validation text with `Paragraph` variant `errorMessage`; `errorTextClassName` is for caller-owned layout/spacing overrides, not color ownership.
-- Does not own state; callers pass current values and field-level change handlers.
-*/
-/**
-Shared optimization-only Min/Max field group for variable-mode editors.
-*/
+ * Describes the Bounded Variable Mode Fields module.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Renders shared Min/Max inputs with caller-owned visible labels and aria-labels.
+ * - Supports optional helper copy and optional inline validation text so radius and toroid rows can show domain-specific guidance.
+ * - Supports caller-owned layout classes so consuming modals can keep their existing spacing and grid arrangement.
+ * - Renders validation text with `Paragraph` variant `errorMessage`; `errorTextClassName` is for caller-owned layout/spacing overrides, not color ownership.
+ * - Does not own state; callers pass current values and field-level change handlers.
+ */
+/** Shared optimization-only Min/Max field group for variable-mode editors. */
 export function BoundedVariableModeFields({
   idPrefix,
   minLabel = "Min.",

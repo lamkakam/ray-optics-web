@@ -55,17 +55,18 @@ function clampPercent(value: number, min: number, max: number): number {
 }
 
 /**
-Determinate progress primitive. It currently supports a linear progress bar and keeps the API variant-based so a circular progress variant can be added without replacing consumers.
-
-## Key Behaviors
-
-- Renders a semantic root with `role="progressbar"`.
-- Sets `aria-label`, `aria-valuemin`, `aria-valuemax`, and `aria-valuenow` from props and defaults.
-- Normalizes `value` within `min` and `max`, rounds the computed percentage, and clamps rendered status and indicator width to `0%` through `100%`.
-- Hides the visible percentage when `showStatus={false}`.
-- The inherited `className` prop is merged via `twMerge` after token classes.
-- Uses `componentTokens.progress` for track color, indicator color, status text color, dimensions, radius, transition, and `will-change` classes.
-*/
+ * Determinate progress primitive. It currently supports a linear progress bar and keeps the API variant-based so a circular progress variant can be added without replacing consumers.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Renders a semantic root with `role="progressbar"`.
+ * - Sets `aria-label`, `aria-valuemin`, `aria-valuemax`, and `aria-valuenow` from props and defaults.
+ * - Normalizes `value` within `min` and `max`, rounds the computed percentage, and clamps rendered status and indicator width to `0%` through `100%`.
+ * - Hides the visible percentage when `showStatus={false}`.
+ * - The inherited `className` prop is merged via `twMerge` after token classes.
+ * - Uses `componentTokens.progress` for track color, indicator color, status text color, dimensions, radius, transition, and `will-change` classes.
+ */
 export function Progress({
   value,
   min = 0,

@@ -1,10 +1,11 @@
 /**
-Confirmation modal used before loading an example optical system.
-
-## Modal Footer
-
-- Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
-*/
+ * Confirmation modal used before loading an example optical system.
+ *
+ * @remarks
+ * ## Modal Footer
+ *
+ * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
+ */
 "use client";
 
 import { Modal } from "@/shared/components/primitives/Modal";

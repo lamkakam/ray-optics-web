@@ -1,8 +1,11 @@
 /**
-## Modal Footer
-
-- Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
-*/
+ * Describes the Confirm Import Modal module.
+ *
+ * @remarks
+ * ## Modal Footer
+ *
+ * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
+ */
 "use client";
 
 import { Modal } from "@/shared/components/primitives/Modal";
@@ -19,12 +22,13 @@ interface ConfirmImportModalProps {
 }
 
 /**
-Simple confirmation modal that warns the user that loading a config JSON will overwrite their current System Specs and Lens Prescription.
-
-## Key Behaviors
-
-- Stateless — purely presentational.
-*/
+ * Simple confirmation modal that warns the user that loading a config JSON will overwrite their current System Specs and Lens Prescription.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Stateless — purely presentational.
+ */
 export function ConfirmImportModal({ isOpen, onConfirm, onCancel }: ConfirmImportModalProps) {
   return (
     <Modal

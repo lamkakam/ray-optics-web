@@ -1,10 +1,12 @@
 /**
-Shared variable-mode field prop and renderer types used by the variable field renderer helper.
-
-## Key Conventions
-
-- The renderer component returns `React.JSX.Element`.
-- Runtime renderer selection stays in `features/optimization/lib/variableModeFields.tsx`.*/
+ * Shared variable-mode field prop and renderer types used by the variable field renderer helper.
+ *
+ * @remarks
+ * ## Key Conventions
+ *
+ * - The renderer component returns `React.JSX.Element`.
+ * - Runtime renderer selection stays in `features/optimization/lib/variableModeFields.tsx`.
+ */
 import type React from "react";
 
 export interface VariableModeFieldsProps {

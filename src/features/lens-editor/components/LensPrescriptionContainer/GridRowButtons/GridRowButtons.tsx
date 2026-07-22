@@ -15,12 +15,13 @@ interface GridRowButtonsProps {
 }
 
 /**
-Renders a compact pair of "insert" (+) and "delete" (−) icon buttons with portal tooltips. Used as an action cell inside AG Grid rows for tables that support row insertion and deletion.
-
-## Key Behaviors
-
-- Buttons are conditionally rendered based on callback presence, keeping the cell uncluttered for object/image rows.
-*/
+ * Renders a compact pair of "insert" (+) and "delete" (−) icon buttons with portal tooltips. Used as an action cell inside AG Grid rows for tables that support row insertion and deletion.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Buttons are conditionally rendered based on callback presence, keeping the cell uncluttered for object/image rows.
+ */
 export function GridRowButtons({
   onAdd,
   onDelete,

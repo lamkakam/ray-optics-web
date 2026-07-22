@@ -1,10 +1,13 @@
 /**
-## Styling
-
-- Wrapper hover styling comes from `componentTokens.checkbox.color.hoverBgColor`.
-- Checkbox border, checked state color, focus ring, size, and radius come from `componentTokens.checkbox`.
-- Label text inherits the shared secondary text color and can be extended via `labelClassName`.
-*/
+ * Describes the Checkbox Input module.
+ *
+ * @remarks
+ * ## Styling
+ *
+ * - Wrapper hover styling comes from `componentTokens.checkbox.color.hoverBgColor`.
+ * - Checkbox border, checked state color, focus ring, size, and radius come from `componentTokens.checkbox`.
+ * - Label text inherits the shared secondary text color and can be extended via `labelClassName`.
+ */
 import { type JSX } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
@@ -45,17 +48,18 @@ const INPUT_CLASSES = [
 ] as const;
 
 /**
-Compact labelled checkbox primitive for the shared checkbox-row pattern. It centralizes the `<label><input type="checkbox" /></label>` structure, applies unified styling, and supports either a plain string label or caller-provided JSX label content.
-
-## Behavior
-
-- Renders a wrapper `<label>` containing the checkbox input and visible label content.
-- Calls `onChange(event.target.checked)` on checkbox changes.
-- Uses `ariaLabel` when provided; otherwise the visible label supplies the accessible name.
-- When `label` is a string, wraps it in the component-owned `<span>` with the shared text styling and optional `labelClassName`.
-- When `label` is a JSX element, renders that JSX directly with no extra wrapper so the caller controls container layout and styling.
-- Supports composed visual labels such as the glass-map catalog color dot without a separate adornment prop.
-*/
+ * Compact labelled checkbox primitive for the shared checkbox-row pattern. It centralizes the `<label><input type="checkbox" /></label>` structure, applies unified styling, and supports either a plain string label or caller-provided JSX label content.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Renders a wrapper `<label>` containing the checkbox input and visible label content.
+ * - Calls `onChange(event.target.checked)` on checkbox changes.
+ * - Uses `ariaLabel` when provided; otherwise the visible label supplies the accessible name.
+ * - When `label` is a string, wraps it in the component-owned `<span>` with the shared text styling and optional `labelClassName`.
+ * - When `label` is a JSX element, renders that JSX directly with no extra wrapper so the caller controls container layout and styling.
+ * - Supports composed visual labels such as the glass-map catalog color dot without a separate adornment prop.
+ */
 export function CheckboxInput({
   id,
   label,

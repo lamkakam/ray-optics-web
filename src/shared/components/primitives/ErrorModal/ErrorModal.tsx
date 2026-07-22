@@ -1,8 +1,11 @@
 /**
-## Modal Footer
-
-- The OK action is passed to `Modal.footer` so it remains fixed outside the message body.
-*/
+ * Describes the Error Modal module.
+ *
+ * @remarks
+ * ## Modal Footer
+ *
+ * - The OK action is passed to `Modal.footer` so it remains fixed outside the message body.
+ */
 "use client";
 
 import { Button } from "@/shared/components/primitives/Button";
@@ -19,12 +22,13 @@ interface ErrorModalProps {
 }
 
 /**
-Pre-built error dialog that wraps `Modal` with a fixed "Error" title and a single "OK" dismiss button. Shows a customizable error message or a default validation message.
-
-## Key Behaviors
-
-- No backdrop-click dismissal (omits `onBackdropClick`), requiring explicit OK press.
-*/
+ * Pre-built error dialog that wraps `Modal` with a fixed "Error" title and a single "OK" dismiss button. Shows a customizable error message or a default validation message.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - No backdrop-click dismissal (omits `onBackdropClick`), requiring explicit OK press.
+ */
 export function ErrorModal({ isOpen, onClose, message }: ErrorModalProps) {
   return (
     <Modal

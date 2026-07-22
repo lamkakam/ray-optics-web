@@ -1,18 +1,20 @@
 /**
-Pure scaling policy and helpers for numeric values owned by lens prescription grid object, surface, and image rows. The module centralizes which numeric fields participate in scale formatting, which fields are preserved, and which values are collected for formatting validation.
-
-## Scaling Policy
-
-- Executable scaling is table-driven through `SURFACE_VALUE_SCALING_POLICY`. Top-level object keys are derived from `Surfaces["object"]`, `Surfaces["image"]`, and `Surface` instead of being duplicated as untyped string lists.
-- A policy leaf that is a function transforms the matching value. A policy leaf that is `undefined` preserves the matching value while still including numeric values in validation.
-- Linear dimensions multiply by `factor`: object distance below `1e10`, surface and image curvature radius, surface thickness, semi-diameter, decenter offsets, clear aperture offsets and dimensional fields, edge aperture offsets and dimensional fields, and toroid sweep radius.
-- Asphere polynomial coefficients divide by `factor ** (order - 1)`.
-- `RadialPolynomial` coefficient orders are `1..n`.
-- `EvenAspherical`, `XToroid`, and `YToroid` coefficient orders are `2, 4, ...`.
-- Dimensionless or angular values are preserved: conic constants, decenter `alpha`/`beta`/`gamma`, rectangular aperture rotation, diffraction grating `lpmm`, and diffraction grating `order`.
-- Object distances at or above `1e10` are preserved.
-
-`collectSurfaceScalingNumericValues` walks `SURFACE_VALUE_SCALING_POLICY` and collects all numeric values covered by the policy, including preserved values. This keeps finite-number and precision-underflow validation aligned with the same fields that scale formatting recognizes.*/
+ * Pure scaling policy and helpers for numeric values owned by lens prescription grid object, surface, and image rows. The module centralizes which numeric fields participate in scale formatting, which fields are preserved, and which values are collected for formatting validation.
+ *
+ * @remarks
+ * ## Scaling Policy
+ *
+ * - Executable scaling is table-driven through `SURFACE_VALUE_SCALING_POLICY`. Top-level object keys are derived from `Surfaces["object"]`, `Surfaces["image"]`, and `Surface` instead of being duplicated as untyped string lists.
+ * - A policy leaf that is a function transforms the matching value. A policy leaf that is `undefined` preserves the matching value while still including numeric values in validation.
+ * - Linear dimensions multiply by `factor`: object distance below `1e10`, surface and image curvature radius, surface thickness, semi-diameter, decenter offsets, clear aperture offsets and dimensional fields, edge aperture offsets and dimensional fields, and toroid sweep radius.
+ * - Asphere polynomial coefficients divide by `factor ** (order - 1)`.
+ * - `RadialPolynomial` coefficient orders are `1..n`.
+ * - `EvenAspherical`, `XToroid`, and `YToroid` coefficient orders are `2, 4, ...`.
+ * - Dimensionless or angular values are preserved: conic constants, decenter `alpha`/`beta`/`gamma`, rectangular aperture rotation, diffraction grating `lpmm`, and diffraction grating `order`.
+ * - Object distances at or above `1e10` are preserved.
+ *
+ * `collectSurfaceScalingNumericValues` walks `SURFACE_VALUE_SCALING_POLICY` and collects all numeric values covered by the policy, including preserved values. This keeps finite-number and precision-underflow validation aligned with the same fields that scale formatting recognizes.
+ */
 import type {
   ClearAperture,
   DecenterConfig,

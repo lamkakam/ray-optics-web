@@ -30,18 +30,19 @@ interface ModalProps {
 }
 
 /**
-Accessible modal dialog shell. Renders a backdrop, a fixed title, a scrollable body region, and an optional fixed footer. Does not manage its own open/close state — callers pass `isOpen`.
-
-## Key Behaviors
-
-- Returns `null` when `isOpen` is `false` (no DOM presence).
-- Panel carries `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`.
-- `onKeyDown` on the outer wrapper calls `stopPropagation` to prevent key events from leaking to the page.
-- Panel animates in via `animate-modal-enter` CSS class.
-- Panel is a flex column with `max-h-[90dvh]` and `overflow-hidden`.
-- Children render inside `data-testid="modal-body"`, which owns vertical scrolling via `overflow-y-auto`.
-- When `footer` is provided, it renders in `data-testid="modal-footer"` below the body with a top border and is not part of the scrollable body.
-*/
+ * Accessible modal dialog shell. Renders a backdrop, a fixed title, a scrollable body region, and an optional fixed footer. Does not manage its own open/close state — callers pass `isOpen`.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Returns `null` when `isOpen` is `false` (no DOM presence).
+ * - Panel carries `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`.
+ * - `onKeyDown` on the outer wrapper calls `stopPropagation` to prevent key events from leaking to the page.
+ * - Panel animates in via `animate-modal-enter` CSS class.
+ * - Panel is a flex column with `max-h-[90dvh]` and `overflow-hidden`.
+ * - Children render inside `data-testid="modal-body"`, which owns vertical scrolling via `overflow-y-auto`.
+ * - When `footer` is provided, it renders in `data-testid="modal-footer"` below the body with a top border and is not part of the scrollable body.
+ */
 export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, footer, children }: ModalProps) {
   const generatedId = useId();
   const resolvedTitleId = titleId ?? generatedId;

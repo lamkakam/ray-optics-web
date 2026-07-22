@@ -1,8 +1,11 @@
 /**
-## Internal State
-
-- `internalActiveTabId: string` — uncontrolled active tab id, initialized to `tabs[0]?.id`.
-*/
+ * Describes the Tabs module.
+ *
+ * @remarks
+ * ## Internal State
+ *
+ * - `internalActiveTabId: string` — uncontrolled active tab id, initialized to `tabs[0]?.id`.
+ */
 "use client";
 
 import React, { useState } from "react";
@@ -31,16 +34,17 @@ interface TabsProps {
 }
 
 /**
-Accessible tabbed panel component. Renders a tab bar with ARIA roles and a content panel for the active tab. Supports an optional action slot beside the tabs and a collapsible panel.
-
-## Key Behaviors
-
-- Tab buttons carry `role="tab"`, `aria-selected`, and `aria-label`.
-- The content area carries `role="tabpanel"`.
-- Tab bar scrolls horizontally when tabs overflow.
-- In controlled mode, `activeTabId` decides the selected tab and clicks only emit `onTabChange`.
-- If `activeTabId` or the uncontrolled state points to a tab id that is no longer present, `Tabs` safely falls back to the first tab in `tabs`.
-*/
+ * Accessible tabbed panel component. Renders a tab bar with ARIA roles and a content panel for the active tab. Supports an optional action slot beside the tabs and a collapsible panel.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Tab buttons carry `role="tab"`, `aria-selected`, and `aria-label`.
+ * - The content area carries `role="tabpanel"`.
+ * - Tab bar scrolls horizontally when tabs overflow.
+ * - In controlled mode, `activeTabId` decides the selected tab and clicks only emit `onTabChange`.
+ * - If `activeTabId` or the uncontrolled state points to a tab id that is no longer present, `Tabs` safely falls back to the first tab in `tabs`.
+ */
 export function Tabs({
   tabs,
   actions,

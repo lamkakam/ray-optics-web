@@ -1,5 +1,4 @@
-/**
-Defines pure, testable URL predicates that mirror service-worker caching policy.*/
+/** Defines pure, testable URL predicates that mirror service-worker caching policy. */
 const CACHEABLE_PATTERNS = [
   "cdn.jsdelivr.net/pyodide/",
   "files.pythonhosted.org/",

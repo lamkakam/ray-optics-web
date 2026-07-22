@@ -15,9 +15,7 @@ interface OptimizationActionBarProps {
   readonly onApplyToEditor: () => void;
 }
 
-/**
-Renders the optimization page primary actions and delegates button state/click handling to page-level callbacks.
-*/
+/** Renders the optimization page primary actions and delegates button state/click handling to page-level callbacks. */
 export function OptimizationActionBar({
   canOptimize,
   canApplyToEditor,

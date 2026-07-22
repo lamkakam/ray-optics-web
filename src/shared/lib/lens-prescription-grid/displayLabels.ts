@@ -1,5 +1,4 @@
-/**
-Shared display labels for modal-backed lens prescription grid text action cells.*/
+/** Shared display labels for modal-backed lens prescription grid text action cells. */
 import type {
   AsphericalType,
   ClearAperture,

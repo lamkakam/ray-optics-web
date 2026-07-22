@@ -20,13 +20,14 @@ const levelFontSizes: Record<HeaderLevel, string> = {
 };
 
 /**
-Polymorphic heading component that renders an `h1`–`h6` tag with a consistent font weight and per-level font size drawn from style tokens.
-
-## Key Behaviors
-
-- Tag is derived dynamically from `level`: `` `h${level}` ``.
-- Font sizes: h1 = xl, h2 = lg, h3 = base, h4/h5/h6 = sm/xs/xs.
-*/
+ * Polymorphic heading component that renders an `h1`–`h6` tag with a consistent font weight and per-level font size drawn from style tokens.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Tag is derived dynamically from `level`: `` `h${level}` ``.
+ * - Font sizes: h1 = xl, h2 = lg, h3 = base, h4/h5/h6 = sm/xs/xs.
+ */
 export function Header({ level, className, children, ...rest }: HeaderProps) {
   const Tag = `h${level}` as `h${HeaderLevel}`;
   return (

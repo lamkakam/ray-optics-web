@@ -6,18 +6,14 @@ import { createAnalysisPlotSlice, type AnalysisPlotState } from '@/features/anal
 
 type ContextValue = StoreApi<AnalysisPlotState> | undefined;
 
-/**
-Raw context object. Use only in tests to supply a pre-built store directly via `<AnalysisPlotStoreContext.Provider value={store}>`.
-*/
+/** Raw context object. Use only in tests to supply a pre-built store directly via `<AnalysisPlotStoreContext.Provider value={store}>`. */
 export const AnalysisPlotStoreContext = createContext<ContextValue>(undefined);
 
 export interface AnalysisPlotStoreProviderProps {
   children: ReactNode;
 }
 
-/**
-Provides a single `StoreApi<AnalysisPlotState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
-*/
+/** Provides a single `StoreApi<AnalysisPlotState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes. */
 export const AnalysisPlotStoreProvider: React.FC<AnalysisPlotStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 
@@ -32,9 +28,7 @@ export const AnalysisPlotStoreProvider: React.FC<AnalysisPlotStoreProviderProps>
   );
 };
 
-/**
-Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `AnalysisPlotStoreProvider`.
-*/
+/** Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `AnalysisPlotStoreProvider`. */
 export const useAnalysisPlotStore = (): StoreApi<AnalysisPlotState> => {
   const store = useContext(AnalysisPlotStoreContext);
   if (store === undefined) {

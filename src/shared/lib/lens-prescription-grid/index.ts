@@ -1,5 +1,4 @@
-/**
-Barrel exports for the shared lens prescription grid module.*/
+/** Barrel exports for the shared lens prescription grid module. */
 export {
   ApertureCell,
   AsphericalCell,

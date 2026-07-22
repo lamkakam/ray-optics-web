@@ -1,8 +1,11 @@
 /**
-## Accessibility
-- Hidden inputs retain `aria-label="Import custom glass JSON file"` and `aria-label="Import custom glass CSV files"` for tests and assistive technology.
-- Visible command buttons expose aria labels matching their visible text.
-*/
+ * Describes the Custom Glass Toolbar module.
+ *
+ * @remarks
+ * ## Accessibility
+ * - Hidden inputs retain `aria-label="Import custom glass JSON file"` and `aria-label="Import custom glass CSV files"` for tests and assistive technology.
+ * - Visible command buttons expose aria labels matching their visible text.
+ */
 "use client";
 
 import type { RefObject } from "react";
@@ -30,16 +33,17 @@ interface CustomGlassToolbarProps {
 }
 
 /**
-Command and hidden file-input controls for the import custom glass page.
-
-## Behavior
-- Preserves visible command labels: `Import from JSON`, `Import from CSV Files`, `Add Glass`, `Edit Glass`, `Download JSON`, and `Delete Glass`.
-- Sizes all visible command buttons with the Lens Editor responsive rule: shared `Button` size `sm` on `screenLG`, and `xs` on `screenSM`.
-- The JSON input accepts `application/json,.json`.
-- The CSV input accepts `text/csv,.csv` and supports multiple files.
-- File inputs reset their value after dispatching selection callbacks so the same file can be selected again.
-- Edit is enabled only for one selected row; Delete is enabled for at least one selected row.
-*/
+ * Command and hidden file-input controls for the import custom glass page.
+ *
+ * @remarks
+ * ## Behavior
+ * - Preserves visible command labels: `Import from JSON`, `Import from CSV Files`, `Add Glass`, `Edit Glass`, `Download JSON`, and `Delete Glass`.
+ * - Sizes all visible command buttons with the Lens Editor responsive rule: shared `Button` size `sm` on `screenLG`, and `xs` on `screenSM`.
+ * - The JSON input accepts `application/json,.json`.
+ * - The CSV input accepts `text/csv,.csv` and supports multiple files.
+ * - File inputs reset their value after dispatching selection callbacks so the same file can be selected again.
+ * - Edit is enabled only for one selected row; Delete is enabled for at least one selected row.
+ */
 export function CustomGlassToolbar({
   jsonFileInputRef,
   csvFileInputRef,

@@ -1,6 +1,4 @@
-/**
-Defines analysis plot payload types returned by the Pyodide worker and consumed by analysis chart stores/components.
-*/
+/** Defines analysis plot payload types returned by the Pyodide worker and consumed by analysis chart stores/components. */
 export interface LineAxisData {
   x: number[];
   y: number[];

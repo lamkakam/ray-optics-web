@@ -12,17 +12,18 @@ interface DatalistProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>
 }
 
 /**
-Searchable native datalist primitive whose visible text input uses the same themed appearance as `Select`.
-
-## Key Behaviors
-
-- Renders a text `<input>` associated with a native `<datalist>` through a unique React-generated ID.
-- Forwards standard input attributes, events, disabled state, and an `HTMLInputElement` ref.
-- Renders each supplied item as a datalist option with its value and label.
-- Applies the default `Select` design tokens, full-width wrapper sizing, disabled styles, and appearance reset, without decorative arrow padding or markup.
-- Inherits the `Select` responsive font-size token: 16 px below 1440 px and 14 px at `screenLG`.
-- Applies `className` to the wrapper so callers can provide width constraints and other wrapper styles.
-*/
+ * Searchable native datalist primitive whose visible text input uses the same themed appearance as `Select`.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Renders a text `<input>` associated with a native `<datalist>` through a unique React-generated ID.
+ * - Forwards standard input attributes, events, disabled state, and an `HTMLInputElement` ref.
+ * - Renders each supplied item as a datalist option with its value and label.
+ * - Applies the default `Select` design tokens, full-width wrapper sizing, disabled styles, and appearance reset, without decorative arrow padding or markup.
+ * - Inherits the `Select` responsive font-size token: 16 px below 1440 px and 14 px at `screenLG`.
+ * - Applies `className` to the wrapper so callers can provide width constraints and other wrapper styles.
+ */
 export const Datalist = React.forwardRef<HTMLInputElement, DatalistProps>(
   function Datalist({ options, className, ...rest }, ref) {
     const generatedId = useId();

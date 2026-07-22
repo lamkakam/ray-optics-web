@@ -1,21 +1,24 @@
 /**
-## Internal State
-
-- `rows: WavelengthRow[]` — AG Grid row data; each row has `id`, `fraunhofer` symbol, `wavelength`, and `weight`.
-- `referenceIndex: number` — index of the reference wavelength.
-
-## Grid Columns
-
-- Row actions: 100px.
-- Fraunhofer: 110px.
-- Wavelength (nm): 150px.
-- Weight: 85px.
-- Reference: 100px.
-
-## Modal Footer
-
-- Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while the wavelength grid scrolls.
-*/
+ * Describes the Wavelength Config Modal module.
+ *
+ * @remarks
+ * ## Internal State
+ *
+ * - `rows: WavelengthRow[]` — AG Grid row data; each row has `id`, `fraunhofer` symbol, `wavelength`, and `weight`.
+ * - `referenceIndex: number` — index of the reference wavelength.
+ *
+ * ## Grid Columns
+ *
+ * - Row actions: 100px.
+ * - Fraunhofer: 110px.
+ * - Wavelength (nm): 150px.
+ * - Weight: 85px.
+ * - Reference: 100px.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while the wavelength grid scrolls.
+ */
 import { useState, useCallback } from "react";
 import { AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
@@ -75,18 +78,19 @@ function weightsToRows(weights: readonly [number, number][]): WavelengthRow[] {
 const MAX_ROWS = 7;
 
 /**
-Modal for configuring the system's wavelengths. Provides an AG Grid table with columns for Fraunhofer symbol, wavelength (nm), weight, and a reference wavelength radio button.
-
-## Key Behaviors
-
-- Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh editor subtree whose rows and `referenceIndex` are initialized from props without a reset `useEffect`.
-- Fraunhofer symbol and wavelength are kept in sync: editing the symbol updates the wavelength, and editing the wavelength updates the symbol if it matches a Fraunhofer line exactly. BUT THE USER'S MANUAL WAVELENGTH INPUT OVERRIDES THE VALUE OF THE SYMBOL.
-- Row limit is 7 (HARD LIMIT FROM RayOptics); the first row cannot be deleted.
-- Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for wavelength row insertion and deletion controls.
-- When a row is deleted, `referenceIndex` is adjusted to remain valid.
-- Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending wavelength or weight edits are committed before footer actions such as Apply read the draft rows.
-- Keeps the caption outside a `400px`-high grid container at all screen sizes and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
-*/
+ * Modal for configuring the system's wavelengths. Provides an AG Grid table with columns for Fraunhofer symbol, wavelength (nm), weight, and a reference wavelength radio button.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh editor subtree whose rows and `referenceIndex` are initialized from props without a reset `useEffect`.
+ * - Fraunhofer symbol and wavelength are kept in sync: editing the symbol updates the wavelength, and editing the wavelength updates the symbol if it matches a Fraunhofer line exactly. BUT THE USER'S MANUAL WAVELENGTH INPUT OVERRIDES THE VALUE OF THE SYMBOL.
+ * - Row limit is 7 (HARD LIMIT FROM RayOptics); the first row cannot be deleted.
+ * - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for wavelength row insertion and deletion controls.
+ * - When a row is deleted, `referenceIndex` is adjusted to remain valid.
+ * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending wavelength or weight edits are committed before footer actions such as Apply read the draft rows.
+ * - Keeps the caption outside a `400px`-high grid container at all screen sizes and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
+ */
 export function WavelengthConfigModal({
   isOpen,
   ...props

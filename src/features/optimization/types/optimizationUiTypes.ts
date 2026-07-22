@@ -1,11 +1,13 @@
 /**
-Optimizer UI metadata/config type definitions consumed by `features/optimization/lib/optimizerUiConfig.ts`.
-
-## Key Conventions
-
-- The method and tolerance key types derive from `optimizationWorkerTypes.ts` so UI metadata cannot drift from the worker-boundary config contract.
-- `OptimizerUiConfig` requires `least_squares` to remain method-based while allowing non-least-squares optimizers to use either metadata shape.
-- This module exports only types; runtime UI metadata stays in `optimizerUiConfig.ts`.*/
+ * Optimizer UI metadata/config type definitions consumed by `features/optimization/lib/optimizerUiConfig.ts`.
+ *
+ * @remarks
+ * ## Key Conventions
+ *
+ * - The method and tolerance key types derive from `optimizationWorkerTypes.ts` so UI metadata cannot drift from the worker-boundary config contract.
+ * - `OptimizerUiConfig` requires `least_squares` to remain method-based while allowing non-least-squares optimizers to use either metadata shape.
+ * - This module exports only types; runtime UI metadata stays in `optimizerUiConfig.ts`.
+ */
 import type { OptimizationConfig, OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
 
 type SharedOptimizerConfig = OptimizationConfig["optimizer"];

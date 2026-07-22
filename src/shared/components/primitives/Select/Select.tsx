@@ -15,17 +15,18 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
 }
 
 /**
-Themed `<select>` primitive with two visual densities. Renders a list of `SelectOption` items and optionally a disabled placeholder. Forwards a ref for programmatic focus.
-
-## Key Behaviors
-
-- Implemented as `React.forwardRef` so it can be used inside AG Grid cell editors and third-party wrappers. The `ref` forwards to `<HTMLSelectElement>`, not the wrapper div.
-- `disabled:opacity-50` and `disabled:cursor-not-allowed` are applied via style tokens.
-- `appearance-none` is applied to both variants to strip native OS select rendering. This fixes iOS Safari's compact/pill-shaped appearance that ignores custom Tailwind styles.
-- Both variants use responsive font-size tokens: 16 px (`text-base`) below 1440 px to avoid small-screen browser text zoom, and 14 px (`text-sm`) at `screenLG` for desktop density.
-- The `<select>` is wrapped in a `<div>` with `relative w-full` plus any `className` passed via props. Width/spacing constraints (e.g. `max-w-xs`) are applied to the wrapper `<div>`, not the inner `<select>`. This ensures the SVG chevron arrow is always positioned relative to the visible control boundary and stays within bounds.
-- The inner `<select>` always has `w-full` so it fills the wrapper regardless of the wrapper's width constraint.
-*/
+ * Themed `<select>` primitive with two visual densities. Renders a list of `SelectOption` items and optionally a disabled placeholder. Forwards a ref for programmatic focus.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Implemented as `React.forwardRef` so it can be used inside AG Grid cell editors and third-party wrappers. The `ref` forwards to `<HTMLSelectElement>`, not the wrapper div.
+ * - `disabled:opacity-50` and `disabled:cursor-not-allowed` are applied via style tokens.
+ * - `appearance-none` is applied to both variants to strip native OS select rendering. This fixes iOS Safari's compact/pill-shaped appearance that ignores custom Tailwind styles.
+ * - Both variants use responsive font-size tokens: 16 px (`text-base`) below 1440 px to avoid small-screen browser text zoom, and 14 px (`text-sm`) at `screenLG` for desktop density.
+ * - The `<select>` is wrapped in a `<div>` with `relative w-full` plus any `className` passed via props. Width/spacing constraints (e.g. `max-w-xs`) are applied to the wrapper `<div>`, not the inner `<select>`. This ensures the SVG chevron arrow is always positioned relative to the visible control boundary and stays within bounds.
+ * - The inner `<select>` always has `w-full` so it fills the wrapper regardless of the wrapper's width constraint.
+ */
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   function Select({ options, placeholder, className, ...rest }, ref) {
     const variantClasses = [

@@ -1,15 +1,18 @@
 /**
-## Internal State
-
-- `conicConstantStr: string` — draft string for conic constant input.
-- `type: AsphericalType` — selected type.
-- `toricSweepRadiusOfCurvatureStr: string` — draft string for the toroid sweep radius input.
-- `coefficientStrs: string[]` — draft strings for all 10 coefficient inputs.
-
-## Modal Footer
-
-- Close, Remove Aspherical, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while aspherical fields scroll.
-*/
+ * Describes the Aspherical Modal module.
+ *
+ * @remarks
+ * ## Internal State
+ *
+ * - `conicConstantStr: string` — draft string for conic constant input.
+ * - `type: AsphericalType` — selected type.
+ * - `toricSweepRadiusOfCurvatureStr: string` — draft string for the toroid sweep radius input.
+ * - `coefficientStrs: string[]` — draft strings for all 10 coefficient inputs.
+ *
+ * ## Modal Footer
+ *
+ * - Close, Remove Aspherical, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while aspherical fields scroll.
+ */
 "use client";
 
 import React, { useState } from "react";
@@ -41,6 +44,7 @@ interface AsphericalModalProps {
   /**
    * Called with parsed values on Confirm. Result fields depend on `type`:
    *
+   * @remarks
    * - `"Conic"` yields `{ kind: "Conic", conicConstant }`.
    * - `"EvenAspherical"` yields `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`.
    * - `"RadialPolynomial"` yields `{ kind: "RadialPolynomial", conicConstant, polynomialCoefficients }`.
@@ -246,19 +250,20 @@ const contentMap: {
 };
 
 /**
-Modal for configuring aspherical surface parameters: conic constant, surface type, up to 10 polynomial coefficients (a₂ through a₂₀), and the toroid sweep radius of curvature for toroidal types. Renders MathJax equations to label coefficients and explain the sag formula.
-
-## Key Behaviors
-
-- Uses `ASPHERICAL_TYPE_OPTIONS` from `shared/lib/lens-prescription-grid/displayLabels.ts` for UI-facing labels; the container maps confirmed values to the domain `Surface["aspherical"]` union.
-- Coefficient inputs are shown for every non-conic type: `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
-- The toroid sweep radius input is shown only for `"XToroid"` and `"YToroid"`.
-- On confirm, trailing zero coefficients are stripped (`truncateTrailingZeros`); Conic type produces an empty coefficients array.
-- On confirm, toroid sweep radius values that parse to a non-finite number fall back to `0`.
-- Coefficients array is padded to length 10 on initialization.
-- Uses `<MathJax>` for the sag formula and coefficient labels; `MathJaxContext` is provided by the ancestor (`page.tsx`).
-- In `readOnly` mode, the type selector and all numeric inputs are disabled; `Remove Aspherical`, `Cancel`, and `Confirm` are replaced by a single `Close` button.
-*/
+ * Modal for configuring aspherical surface parameters: conic constant, surface type, up to 10 polynomial coefficients (a₂ through a₂₀), and the toroid sweep radius of curvature for toroidal types. Renders MathJax equations to label coefficients and explain the sag formula.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Uses `ASPHERICAL_TYPE_OPTIONS` from `shared/lib/lens-prescription-grid/displayLabels.ts` for UI-facing labels; the container maps confirmed values to the domain `Surface["aspherical"]` union.
+ * - Coefficient inputs are shown for every non-conic type: `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
+ * - The toroid sweep radius input is shown only for `"XToroid"` and `"YToroid"`.
+ * - On confirm, trailing zero coefficients are stripped (`truncateTrailingZeros`); Conic type produces an empty coefficients array.
+ * - On confirm, toroid sweep radius values that parse to a non-finite number fall back to `0`.
+ * - Coefficients array is padded to length 10 on initialization.
+ * - Uses `<MathJax>` for the sag formula and coefficient labels; `MathJaxContext` is provided by the ancestor (`page.tsx`).
+ * - In `readOnly` mode, the type selector and all numeric inputs are disabled; `Remove Aspherical`, `Cancel`, and `Confirm` are replaced by a single `Close` button.
+ */
 export function AsphericalModal({
   isOpen,
   readOnly = false,

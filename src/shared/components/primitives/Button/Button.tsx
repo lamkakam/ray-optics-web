@@ -39,15 +39,16 @@ type RegularButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 type ButtonProps = FloatingButtonProps | RegularButtonProps;
 
 /**
-Themed button primitive that maps a `variant` and optional `size` to Tailwind classes via `styleTokens`. Covers the full range of button styles used across the app.
-
-## Key Behaviors
-
-- `floating` variant renders as `position: absolute` with `top-2 right-2` positioning, intended for overlay buttons inside a relative container.
-- The inherited `type` prop defaults to `"button"`, preventing accidental form submission.
-- The inherited `className` prop is merged via `twMerge` after variant and size classes so consumers can safely override individual tokens.
-- `disabled:opacity-50` and `disabled:cursor-not-allowed` are always applied.
-*/
+ * Themed button primitive that maps a `variant` and optional `size` to Tailwind classes via `styleTokens`. Covers the full range of button styles used across the app.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - `floating` variant renders as `position: absolute` with `top-2 right-2` positioning, intended for overlay buttons inside a relative container.
+ * - The inherited `type` prop defaults to `"button"`, preventing accidental form submission.
+ * - The inherited `className` prop is merged via `twMerge` after variant and size classes so consumers can safely override individual tokens.
+ * - `disabled:opacity-50` and `disabled:cursor-not-allowed` are always applied.
+ */
 export function Button({
   variant,
   size,

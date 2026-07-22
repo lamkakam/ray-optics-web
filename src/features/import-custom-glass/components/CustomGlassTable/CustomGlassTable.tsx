@@ -1,8 +1,11 @@
 /**
-## Accessibility
-- Each row checkbox exposes `aria-label="Select {label}"`.
-- The header checkbox exposes `aria-label="Select all custom glasses"` in tests through the AG Grid mock.
-*/
+ * Describes the Custom Glass Table module.
+ *
+ * @remarks
+ * ## Accessibility
+ * - Each row checkbox exposes `aria-label="Select {label}"`.
+ * - The header checkbox exposes `aria-label="Select all custom glasses"` in tests through the AG Grid mock.
+ */
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
@@ -54,25 +57,26 @@ interface CustomGlassTableProps {
 }
 
 /**
-Readonly AG Grid table for all user-defined custom glasses.
-
-## Behavior
-- Uses AG Grid multi-row selection with a dedicated selection column, row checkboxes, a header checkbox, and `selectAll: "all"`.
-- Preserves the data columns `Label`, `nd`, `vd`, `ne`, `ve`, `Pg,F`, `PF,e`, and `PF,d`.
-- Keeps the AG Grid selection column fixed at `81px`, `Label` at `125px`, and each numeric optical property column at `137px`.
-- Selection is neither sortable nor filterable; data columns are sortable/filterable with `unSortIcon: true`.
-- `Label` uses `agTextColumnFilter`; numeric columns use `agNumberColumnFilter`.
-- Filter options intentionally omit AG Grid `blank` and `notBlank` choices.
-- Numeric optical values are formatted with `Number(value).toFixed(6)`.
-- `getRowId` uses the custom glass label so AG Grid can preserve row selection across row-data refreshes.
-- `onSelectionChanged` maps AG Grid selected row nodes back into the page-level `ReadonlySet<string>` checked state.
-- When `checked` changes externally after add, edit, delete, or import flows, the grid row selection is synchronized from that set.
-- Reads saved sort/filter state from `ImportCustomGlassStore` on grid ready and restores it with `api.applyColumnState` and `api.setFilterModel`.
-- Persists AG Grid `onSortChanged` and `onFilterChanged` output back into `ImportCustomGlassStore`.
-- Persisted sort/filter state is sanitized by the store so only readonly data columns are kept; the AG Grid selection column is ignored.
-- Wraps the grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores horizontal and vertical touch panning plus scroll chaining for AG Grid viewports in this component only.
-- Keeps AG Grid touch handling enabled so every resizable data-column header responds to touchscreen drags; the intentionally fixed selection column remains non-resizable.
-*/
+ * Readonly AG Grid table for all user-defined custom glasses.
+ *
+ * @remarks
+ * ## Behavior
+ * - Uses AG Grid multi-row selection with a dedicated selection column, row checkboxes, a header checkbox, and `selectAll: "all"`.
+ * - Preserves the data columns `Label`, `nd`, `vd`, `ne`, `ve`, `Pg,F`, `PF,e`, and `PF,d`.
+ * - Keeps the AG Grid selection column fixed at `81px`, `Label` at `125px`, and each numeric optical property column at `137px`.
+ * - Selection is neither sortable nor filterable; data columns are sortable/filterable with `unSortIcon: true`.
+ * - `Label` uses `agTextColumnFilter`; numeric columns use `agNumberColumnFilter`.
+ * - Filter options intentionally omit AG Grid `blank` and `notBlank` choices.
+ * - Numeric optical values are formatted with `Number(value).toFixed(6)`.
+ * - `getRowId` uses the custom glass label so AG Grid can preserve row selection across row-data refreshes.
+ * - `onSelectionChanged` maps AG Grid selected row nodes back into the page-level `ReadonlySet<string>` checked state.
+ * - When `checked` changes externally after add, edit, delete, or import flows, the grid row selection is synchronized from that set.
+ * - Reads saved sort/filter state from `ImportCustomGlassStore` on grid ready and restores it with `api.applyColumnState` and `api.setFilterModel`.
+ * - Persists AG Grid `onSortChanged` and `onFilterChanged` output back into `ImportCustomGlassStore`.
+ * - Persisted sort/filter state is sanitized by the store so only readonly data columns are kept; the AG Grid selection column is ignored.
+ * - Wraps the grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores horizontal and vertical touch panning plus scroll chaining for AG Grid viewports in this component only.
+ * - Keeps AG Grid touch handling enabled so every resizable data-column header responds to touchscreen drags; the intentionally fixed selection column remains non-resizable.
+ */
 export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlassTableProps) {
   const gridTheme = useAgGridTheme();
   const importCustomGlassStore = useImportCustomGlassStore();

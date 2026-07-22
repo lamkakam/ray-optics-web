@@ -1,13 +1,16 @@
 /**
-## Internal State
-
-- `posAndOrientation: DecenterCoordinateSystemStrategy` — selected strategy.
-- `alphaStr`, `betaStr`, `gammaStr`, `offsetXStr`, `offsetYStr: string` — draft strings for numeric inputs.
-
-## Modal Footer
-
-- Close, Remove Decenter, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while decenter fields scroll.
-*/
+ * Describes the Decenter Modal module.
+ *
+ * @remarks
+ * ## Internal State
+ *
+ * - `posAndOrientation: DecenterCoordinateSystemStrategy` — selected strategy.
+ * - `alphaStr`, `betaStr`, `gammaStr`, `offsetXStr`, `offsetYStr: string` — draft strings for numeric inputs.
+ *
+ * ## Modal Footer
+ *
+ * - Close, Remove Decenter, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while decenter fields scroll.
+ */
 "use client";
 
 import { useState } from "react";
@@ -51,14 +54,15 @@ const POS_AND_ORIENTATION_OPTIONS = [
 ];
 
 /**
-Modal for configuring surface tilt and decenter parameters: coordinate system strategy, Euler angles (alpha, beta, gamma in degrees), and X/Y offsets.
-
-## Key Behaviors
-
-- When `initialDecenter` is `undefined`, all fields default to `0` and strategy defaults to `"bend"`.
-- Invalid or empty numeric strings fall back to the initial value.
-- In `readOnly` mode, the strategy select and all numeric inputs are disabled; the footer renders only `Close`.
-*/
+ * Modal for configuring surface tilt and decenter parameters: coordinate system strategy, Euler angles (alpha, beta, gamma in degrees), and X/Y offsets.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - When `initialDecenter` is `undefined`, all fields default to `0` and strategy defaults to `"bend"`.
+ * - Invalid or empty numeric strings fall back to the initial value.
+ * - In `readOnly` mode, the strategy select and all numeric inputs are disabled; the footer renders only `Close`.
+ */
 export function DecenterModal({
   isOpen,
   initialDecenter,

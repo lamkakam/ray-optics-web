@@ -1,13 +1,16 @@
 /**
-## Layout
-
-1. `RadioInput` for chromaticity: options `[{ value: "mono", label: "Monochromatic" }, { value: "poly", label: "Polychromatic" }]`, rendered with `columns={2}`
-2. `RadioInput` for metric: options `[{ value: "rmsSpot", label: "Minimize RMS Spot Radius", labelNode: "RMS Spot Radius" }, { value: "wavefront", label: "Minimize Wavefront Error", labelNode: "Wavefront Error" }]`, rendered with `columns={2}` and `layout="compact"`. The shorter `labelNode` values are visible while the full `label` values remain each radio's accessible name.
-3. `Label` + `Select` (aria-label="Field") for field index selection
-4. `Button` variant `"primary"` text "Focus", `aria-label="Focus"`, `disabled={disabled}`
-
-All inputs and the button are disabled when `disabled=true`.
-*/
+ * Describes the Focusing Panel module.
+ *
+ * @remarks
+ * ## Layout
+ *
+ * 1. `RadioInput` for chromaticity: options `[{ value: "mono", label: "Monochromatic" }, { value: "poly", label: "Polychromatic" }]`, rendered with `columns={2}`
+ * 2. `RadioInput` for metric: options `[{ value: "rmsSpot", label: "Minimize RMS Spot Radius", labelNode: "RMS Spot Radius" }, { value: "wavefront", label: "Minimize Wavefront Error", labelNode: "Wavefront Error" }]`, rendered with `columns={2}` and `layout="compact"`. The shorter `labelNode` values are visible while the full `label` values remain each radio's accessible name.
+ * 3. `Label` + `Select` (aria-label="Field") for field index selection
+ * 4. `Button` variant `"primary"` text "Focus", `aria-label="Focus"`, `disabled={disabled}`
+ *
+ * All inputs and the button are disabled when `disabled=true`.
+ */
 import { RadioInput } from "@/shared/components/primitives/RadioInput";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
@@ -50,9 +53,7 @@ const METRIC_OPTIONS: ReadonlyArray<{
   },
 ];
 
-/**
-Pure presentational panel for configuring and triggering optical focusing. Composed from `RadioInput`, `Label`, `Select`, and `Button` micro components.
-*/
+/** Pure presentational panel for configuring and triggering optical focusing. Composed from `RadioInput`, `Label`, `Select`, and `Button` micro components. */
 export function FocusingPanel({
   chromaticity,
   metric,

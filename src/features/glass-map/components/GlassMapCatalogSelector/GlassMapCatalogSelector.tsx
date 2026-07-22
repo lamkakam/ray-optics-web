@@ -18,19 +18,20 @@ interface GlassMapCatalogSelectorProps {
 }
 
 /**
-Single-row catalog and glass selector for the Glass Map controls panel. The draft catalog and glass input are component-local; selecting a valid glass delegates the committed selection to the parent.
-
-## Behavior
-
-- Renders the shared `Select`, `Datalist`, and `Button` primitives with accessible Catalog, Glass, and Select-glass labels.
-- Catalog options contain every `CATALOG_NAMES` entry, including catalogs with no glasses, `Special`, and `Custom`.
-- Defaults Catalog to the first catalog containing an eligible glass and Glass to blank.
-- Clears Glass whenever Catalog changes.
-- Glass suggestions come from the selected bucket in `catalogsData`.
-- The `Special` bucket excludes the shared built-in special materials (`air` and `REFL`) case-insensitively.
-- Exact trimmed, case-insensitive input matches are canonicalized through the lookup maps to stored spelling. Blank, partial, aliased, and unmatched inputs keep Select disabled.
-- Does not read or change catalog plot-filter state.
-*/
+ * Single-row catalog and glass selector for the Glass Map controls panel. The draft catalog and glass input are component-local; selecting a valid glass delegates the committed selection to the parent.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Renders the shared `Select`, `Datalist`, and `Button` primitives with accessible Catalog, Glass, and Select-glass labels.
+ * - Catalog options contain every `CATALOG_NAMES` entry, including catalogs with no glasses, `Special`, and `Custom`.
+ * - Defaults Catalog to the first catalog containing an eligible glass and Glass to blank.
+ * - Clears Glass whenever Catalog changes.
+ * - Glass suggestions come from the selected bucket in `catalogsData`.
+ * - The `Special` bucket excludes the shared built-in special materials (`air` and `REFL`) case-insensitively.
+ * - Exact trimmed, case-insensitive input matches are canonicalized through the lookup maps to stored spelling. Blank, partial, aliased, and unmatched inputs keep Select disabled.
+ * - Does not read or change catalog plot-filter state.
+ */
 export function GlassMapCatalogSelector({ catalogsData, lookupMaps, onSelect }: GlassMapCatalogSelectorProps) {
   const [catalogName, setCatalogName] = useState<CatalogName>(
     CATALOG_NAMES.find((name) => getEligibleGlassNames(catalogsData, name).length > 0)

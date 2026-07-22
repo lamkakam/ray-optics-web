@@ -1,3 +1,2 @@
-/**
-Barrel export for the colocated `AddReferenceSurfaceModal`.*/
+/** Barrel export for the colocated `AddReferenceSurfaceModal`. */
 export { AddReferenceSurfaceModal } from "./AddReferenceSurfaceModal";

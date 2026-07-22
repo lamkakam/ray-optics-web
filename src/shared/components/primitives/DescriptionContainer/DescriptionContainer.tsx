@@ -7,11 +7,12 @@ interface DescriptionContainerProps extends React.HTMLAttributes<HTMLDivElement>
 }
 
 /**
-Styled description panel primitive.
-
-- Renders a `<div>` wrapper for descriptive content.
-- Uses `componentTokens.descriptionContainer` for surface, border, text, padding, and radius classes.
-*/
+ * Styled description panel primitive.
+ *
+ * @remarks
+ * - Renders a `<div>` wrapper for descriptive content.
+ * - Uses `componentTokens.descriptionContainer` for surface, border, text, padding, and radius classes.
+ */
 export const DescriptionContainer = React.forwardRef<HTMLDivElement, DescriptionContainerProps>(
   function DescriptionContainer({ className, children, ...rest }, ref) {
     const { color, size, style } = cx.descriptionContainer;

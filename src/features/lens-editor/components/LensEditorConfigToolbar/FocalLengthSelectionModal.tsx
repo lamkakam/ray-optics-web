@@ -1,8 +1,11 @@
 /**
-## Modal Footer
-
-- Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while the focal-length choices scroll.
-*/
+ * Describes the Focal Length Selection Modal module.
+ *
+ * @remarks
+ * ## Modal Footer
+ *
+ * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while the focal-length choices scroll.
+ */
 "use client";
 
 import { useState } from "react";
@@ -23,14 +26,15 @@ interface FocalLengthSelectionModalProps {
 }
 
 /**
-Toolbar-local modal for choosing a focal-length column when importing a zoom Photons to Photos `.txt` file.
-
-## Behavior
-
-- Renders a non-backdrop-dismissible `Modal` titled `Select Focal Length`.
-- Uses shared `RadioInput` with labels like `24.376 mm`; the first choice is selected initially.
-- `Cancel` closes without importing. `Confirm` passes the selected choice index back to the toolbar.
-*/
+ * Toolbar-local modal for choosing a focal-length column when importing a zoom Photons to Photos `.txt` file.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Renders a non-backdrop-dismissible `Modal` titled `Select Focal Length`.
+ * - Uses shared `RadioInput` with labels like `24.376 mm`; the first choice is selected initially.
+ * - `Cancel` closes without importing. `Confirm` passes the selected choice index back to the toolbar.
+ */
 export function FocalLengthSelectionModal({
   isOpen,
   choices,

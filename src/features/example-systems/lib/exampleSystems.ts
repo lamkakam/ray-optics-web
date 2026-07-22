@@ -1,16 +1,17 @@
 /**
-Provides a catalogue of complete definitions covering a wide variety of optical designs, exported as a keyed record for use in the system-selector UI.
-
-## Edge Cases / Error Handling
-
-- The record is plain data — no lazy loading. All 23 models are in memory at module init time.
-- UI components should use the canonical `ExampleSystemName` keys directly; this module does not provide generated numeric prefix aliases.
-- Each example model now includes `object.distance`, `object.medium`, and `object.manufacturer`, so downloaded/imported JSON fixtures match the runtime schema.
-- Example models with aspherical surfaces use the discriminated domain shape:
-  - `{ kind: "Conic", conicConstant }`
-  - `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
-- The Ortho-APO example uses Ohara's catalogue-supported canonical `S-BSL 7` glass name.
-*/
+ * Provides a catalogue of complete definitions covering a wide variety of optical designs, exported as a keyed record for use in the system-selector UI.
+ *
+ * @remarks
+ * ## Edge Cases / Error Handling
+ *
+ * - The record is plain data — no lazy loading. All 23 models are in memory at module init time.
+ * - UI components should use the canonical `ExampleSystemName` keys directly; this module does not provide generated numeric prefix aliases.
+ * - Each example model now includes `object.distance`, `object.medium`, and `object.manufacturer`, so downloaded/imported JSON fixtures match the runtime schema.
+ * - Example models with aspherical surfaces use the discriminated domain shape:
+ * - `{ kind: "Conic", conicConstant }`
+ * - `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
+ * - The Ortho-APO example uses Ohara's catalogue-supported canonical `S-BSL 7` glass name.
+ */
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 const commonWavelengthConfig: OpticalModel["specs"]["wavelengths"] = {

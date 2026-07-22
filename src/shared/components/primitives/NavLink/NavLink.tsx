@@ -1,15 +1,18 @@
 /**
-## Styling (via `componentTokens.navLink` in `styleTokens.ts`)
-- Base: `block px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer`
-- Active: `bg-blue-50 text-blue-700 dark:bg-gray-700 dark:text-blue-400`
-- Inactive: `text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800`
-
-## Behaviour
-- Renders a Next.js `Link`
-- Preserves normal route navigation through `href`
-- Invokes `onClick` when supplied and passes through the anchor click event, allowing callers to call `preventDefault()` before guarded programmatic navigation
-- Active/inactive state is controlled entirely via the `active` prop
-*/
+ * Describes the Nav Link module.
+ *
+ * @remarks
+ * ## Styling (via `componentTokens.navLink` in `styleTokens.ts`)
+ * - Base: `block px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer`
+ * - Active: `bg-blue-50 text-blue-700 dark:bg-gray-700 dark:text-blue-400`
+ * - Inactive: `text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800`
+ *
+ * ## Behaviour
+ * - Renders a Next.js `Link`
+ * - Preserves normal route navigation through `href`
+ * - Invokes `onClick` when supplied and passes through the anchor click event, allowing callers to call `preventDefault()` before guarded programmatic navigation
+ * - Active/inactive state is controlled entirely via the `active` prop
+ */
 "use client";
 
 import React from "react";
@@ -35,9 +38,7 @@ interface NavLinkProps {
   readonly onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
-/**
-Micro-component for navigation links. Wraps Next.js `Link` with the app's active/inactive styling and optional click handling.
-*/
+/** Micro-component for navigation links. Wraps Next.js `Link` with the app's active/inactive styling and optional click handling. */
 export function NavLink({
   active,
   href,

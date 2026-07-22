@@ -6,18 +6,14 @@ import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from '@/fea
 
 type ContextValue = StoreApi<SpecsConfiguratorState> | undefined;
 
-/**
-Raw context object. Use only in tests to supply a pre-built store directly via `<SpecsConfiguratorStoreContext.Provider value={store}>`.
-*/
+/** Raw context object. Use only in tests to supply a pre-built store directly via `<SpecsConfiguratorStoreContext.Provider value={store}>`. */
 export const SpecsConfiguratorStoreContext = createContext<ContextValue>(undefined);
 
 export interface SpecsConfiguratorStoreProviderProps {
   children: ReactNode;
 }
 
-/**
-Provides a single `StoreApi<SpecsConfiguratorState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
-*/
+/** Provides a single `StoreApi<SpecsConfiguratorState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes. */
 export const SpecsConfiguratorStoreProvider: React.FC<SpecsConfiguratorStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 
@@ -32,9 +28,7 @@ export const SpecsConfiguratorStoreProvider: React.FC<SpecsConfiguratorStoreProv
   );
 };
 
-/**
-Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `SpecsConfiguratorStoreProvider`.
-*/
+/** Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `SpecsConfiguratorStoreProvider`. */
 export const useSpecsConfiguratorStore = (): StoreApi<SpecsConfiguratorState> => {
   const store = useContext(SpecsConfiguratorStoreContext);
   if (store === undefined) {

@@ -7,14 +7,15 @@ interface UnboundedVariableModeFieldsProps {
 }
 
 /**
-## Behavior
-
-- Shows a compact caption explaining that the current method does not use bounds.
-- Renders no `Min.` / `Max.` inputs and performs no variable-bounds validation on its own.
-*/
-/**
-Renders the variable-mode body for unbounded optimizers.
-*/
+ * Describes the Unbounded Variable Mode Fields module.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Shows a compact caption explaining that the current method does not use bounds.
+ * - Renders no `Min.` / `Max.` inputs and performs no variable-bounds validation on its own.
+ */
+/** Renders the variable-mode body for unbounded optimizers. */
 export function UnboundedVariableModeFields({
   className,
 }: UnboundedVariableModeFieldsProps) {

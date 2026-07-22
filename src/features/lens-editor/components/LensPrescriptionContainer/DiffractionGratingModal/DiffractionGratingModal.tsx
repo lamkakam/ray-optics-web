@@ -1,8 +1,11 @@
 /**
-## Modal Footer
-
-- Close, Remove, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while diffraction grating fields scroll.
-*/
+ * Describes the Diffraction Grating Modal module.
+ *
+ * @remarks
+ * ## Modal Footer
+ *
+ * - Close, Remove, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while diffraction grating fields scroll.
+ */
 "use client";
 
 import { useState } from "react";
@@ -34,17 +37,18 @@ function parseInteger(value: string, fallback: number): number {
 }
 
 /**
-Modal for configuring diffraction grating parameters on a surface.
-
-## Key Behaviors
-
-- Defaults to `lpmm = 1000` and `order = 1` when the surface has no existing grating.
-- Keeps raw input as strings and parses on confirm.
-- Invalid `lp/mm` values fall back to the initial positive value.
-- Invalid `order` values fall back to the initial integer value.
-- `Remove` clears the stored diffraction grating config.
-- In `readOnly` mode, both inputs are disabled and the footer renders only `Close`.
-*/
+ * Modal for configuring diffraction grating parameters on a surface.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Defaults to `lpmm = 1000` and `order = 1` when the surface has no existing grating.
+ * - Keeps raw input as strings and parses on confirm.
+ * - Invalid `lp/mm` values fall back to the initial positive value.
+ * - Invalid `order` values fall back to the initial integer value.
+ * - `Remove` clears the stored diffraction grating config.
+ * - In `readOnly` mode, both inputs are disabled and the footer renders only `Close`.
+ */
 export function DiffractionGratingModal({
   isOpen,
   initialDiffractionGrating,
