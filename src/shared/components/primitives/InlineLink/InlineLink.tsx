@@ -13,6 +13,18 @@ interface InlineLinkProps {
   readonly onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
+/**
+ * Inline navigation link primitive for text-style links rendered with Next.js `Link`. Used for contextual navigation actions inside forms and side panels.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Renders a Next.js `Link`
+ * - Uses inline text-link styling with underline and theme-aware colours
+ * - Merges consumer `className` with the default classes via `clsx` + `twMerge`
+ * - Supports explicit `aria-label` for accessibility when the visible label is not enough
+ * - Forwards an optional typed anchor click handler for navigation actions that also update client state
+ */
 export function InlineLink({
   href,
   children,

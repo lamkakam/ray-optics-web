@@ -9,13 +9,21 @@ import { RadioInput } from "@/shared/components/primitives/RadioInput";
 import type { RadioOption } from "@/shared/components/primitives/RadioInput";
 
 interface GlassMapControlsProps {
+  /** Currently selected plot type */
   readonly plotType: GlassMapPlotType;
+  /** Selected spectral line (`'d'` or `'e'`) */
   readonly abbeNumCenterLine: AbbeNumCenterLine;
+  /** Selected partial dispersion (`'P_Fd'`, `'P_fe'`, `'P_gF'`) */
   readonly partialDispersionType: PartialDispersionType;
+  /** Per-catalog enabled state */
   readonly enabledCatalogs: Record<CatalogName, boolean>;
+  /** Called when plot type radio changes */
   readonly onPlotTypeChange: (t: GlassMapPlotType) => void;
+  /** Called when d/e radio changes */
   readonly onAbbeNumCenterLineChange: (l: AbbeNumCenterLine) => void;
+  /** Called when PD type radio changes */
   readonly onPartialDispersionTypeChange: (t: PartialDispersionType) => void;
+  /** Called when a catalog checkbox changes */
   readonly onToggleCatalog: (name: CatalogName) => void;
 }
 
@@ -35,6 +43,17 @@ const PARTIAL_DISPERSION_OPTIONS: ReadonlyArray<RadioOption<PartialDispersionTyp
   { value: "P_gF", label: "P_g,F", labelNode: <MathJax inline>{`\\(P_{g,F}\\)`}</MathJax> },
 ];
 
+/**
+ *
+ * ## Sections
+ * 1. **Plot Type** — `RadioInput` group (`refractiveIndex` / `partialDispersion`) rendered with `columns={2}` and `layout="compact"`
+ * 2. **Centre Wavelength** — `RadioInput` group (`d` / `e`) rendered with `columns={2}` and `layout="compact"`, labelled "Centre Wavelength"; options rendered via `MathJax inline`
+ * 3. **Partial Dispersion** (only visible when `plotType='partialDispersion'`) — `RadioInput` group for `P_F,d`, `P_F,e`, `P_g,F` rendered with `columns={3}` and `layout="compact"`; option labels rendered via `MathJax inline` (`\(P_{F,d}\)` etc.)
+ * 4. **Catalogs** — shared compact checkbox per catalog rendered in a shrink-wrapped three-column grid (`inline-grid grid-cols-3 gap-x-6 gap-y-1`), with a JSX-composed label that includes a colored dot indicator using `CATALOG_COLOR_MAP` from `features/glass-map/lib/glassMap`; the checkbox keeps a plain-text `aria-label` equal to the catalog name
+ *
+ * ## MathJax
+ * The component uses `<MathJax inline>` from `better-react-mathjax` for visually rich labels (subscript notation). `RadioOption.labelNode` carries the MathJax node while `RadioOption.label` preserves plain-text `aria-label` for accessibility. **The component does not own a `MathJaxContext`** — the context is provided by the parent (`GlassMapView`). Axis labels in the scatter plot are not affected (they remain plain strings rendered in SVG).
+ */
 export function GlassMapControls({
   plotType,
   abbeNumCenterLine,

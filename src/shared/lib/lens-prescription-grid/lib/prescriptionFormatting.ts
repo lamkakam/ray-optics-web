@@ -1,3 +1,7 @@
+/**
+ * Pure prescription formatting orchestration. Callers provide rows and receive a
+ * complete candidate row set or an error; no store state is read or mutated.
+ */
 import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { IMAGE_ROW_ID, OBJECT_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import {
@@ -8,26 +12,31 @@ import {
 
 export { OBJECT_DISTANCE_INFINITY_THRESHOLD } from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
 
+/** One Object, physical-surface, or Image range-selector option. */
 export interface SurfaceSelectorOption {
   readonly value: number;
   readonly label: string;
 }
 
+/** Inclusive selector range and positive finite scale factor. */
 export interface ScaleRowsOptions {
   readonly first: number;
   readonly last: number;
   readonly factor: number;
 }
 
+/** Inclusive selector range for reversal; Image is not a valid endpoint. */
 export interface ReverseRowsOptions {
   readonly first: number;
   readonly last: number;
 }
 
+/** Scale or reverse formatting request. */
 export type FormattingRowsOptions =
   | ({ readonly mode: "scale" } & ScaleRowsOptions)
   | ({ readonly mode: "reverse" } & ReverseRowsOptions);
 
+/** Successful candidate rows or the unchanged rows plus validation error. */
 export type FormattingRowsResult =
   | { readonly ok: true; readonly rows: GridRow[] }
   | { readonly ok: false; readonly rows: GridRow[]; readonly error: string };
@@ -51,6 +60,7 @@ function surfaceCount(rows: readonly GridRow[]): number {
   return rows.filter((row) => row.kind === "surface").length;
 }
 
+/** Returns whether the first physical surface has any non-zero decenter or tilt component. */
 export function firstSurfaceNeedsReferenceSurface(rows: readonly GridRow[]): boolean {
   const firstSurface = rows.find((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
   if (firstSurface?.decenter === undefined) {
@@ -66,6 +76,7 @@ export function firstSurfaceNeedsReferenceSurface(rows: readonly GridRow[]): boo
   ].some((value) => value !== 0);
 }
 
+/** Returns new rows with a flat air reference surface after Object, preserving the first surface semi-diameter. */
 export function insertReferenceSurfaceAfterObject(rows: readonly GridRow[]): GridRow[] {
   const firstSurface = rows.find((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
   const referenceSurface: Extract<GridRow, { kind: "surface" }> = {
@@ -88,6 +99,7 @@ export function insertReferenceSurfaceAfterObject(rows: readonly GridRow[]): Gri
   ];
 }
 
+/** Builds Object-through-Image inclusive range options for scaling. */
 export function buildScaleSurfaceOptions(rows: readonly GridRow[]): SurfaceSelectorOption[] {
   const count = surfaceCount(rows);
   return [
@@ -100,6 +112,7 @@ export function buildScaleSurfaceOptions(rows: readonly GridRow[]): SurfaceSelec
   ];
 }
 
+/** Builds Object-through-last-physical-surface range options for reversal. */
 export function buildReverseSurfaceOptions(rows: readonly GridRow[]): SurfaceSelectorOption[] {
   const count = surfaceCount(rows);
   return [
@@ -215,6 +228,7 @@ function normalizeReverseRows(rows: readonly GridRow[], { first, last }: Reverse
   };
 }
 
+/** Scales the selected inclusive range according to the shared surface-value policy. */
 export function scaleRows(rows: readonly GridRow[], { first, last, factor }: ScaleRowsOptions): GridRow[] {
   return rows.map((row) => {
     const selectorIndex = selectorIndexForRow(rows, row);
@@ -273,6 +287,7 @@ function setGap(rows: GridRow[], surfaceSelectorIndex: number, gap: GapPropertie
   });
 }
 
+/** Reverses an inclusive Object/physical-surface span while preserving surface-owned data and moving gap-owned data with each propagation gap. */
 export function reverseRows(rows: readonly GridRow[], { first, last }: ReverseRowsOptions): GridRow[] {
   const normalized = normalizeReverseRows(rows, { first, last });
   const sourceRows = normalized.rows;
@@ -388,6 +403,7 @@ function validateRows(rows: readonly GridRow[], sourceRows?: readonly GridRow[])
   return undefined;
 }
 
+/** Validates and applies a scale or reverse request atomically. Rejects invalid ranges, non-positive factors, non-finite results, and precision underflow without mutating source rows. */
 export function formatPrescriptionRows(rows: readonly GridRow[], options: FormattingRowsOptions): FormattingRowsResult {
   if (options.mode === "scale") {
     if (!Number.isFinite(options.factor) || options.factor <= 0) {

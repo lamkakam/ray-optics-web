@@ -4,17 +4,44 @@ import type { RefObject } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 
 interface CustomGlassToolbarProps {
+  /** Lets the visible JSON button trigger its hidden file input. */
   readonly jsonFileInputRef: RefObject<HTMLInputElement | null>;
+  /** Lets the visible CSV button trigger its hidden file input. */
   readonly csvFileInputRef: RefObject<HTMLInputElement | null>;
+  /** Controls the Edit and Delete disabled states. */
   readonly selectedCount: number;
+  /** Handles a single JSON file. */
   readonly onJsonFileSelected: (file: File) => void;
+  /** Handles multi-file CSV selection. */
   readonly onCsvFilesSelected: (files: readonly File[]) => void;
+  /** Dispatches the page-level add command. */
   readonly onAdd: () => void;
+  /** Dispatches the page-level edit command. */
   readonly onEdit: () => void;
+  /** Dispatches the page-level JSON download command. */
   readonly onDownloadJson: () => void;
+  /** Dispatches the page-level delete command. */
   readonly onDelete: () => void;
 }
 
+/**
+ * Command and hidden file-input controls for the import custom glass page.
+ *
+ * @remarks
+ * ## Behavior
+ * - Preserves visible command labels: `Import from JSON`, `Import from CSV Files`, `Add Glass`, `Edit Glass`, `Download JSON`, and `Delete Glass`.
+ * - Sizes all visible command buttons with the Lens Editor responsive rule: shared `Button` size `sm` on `screenLG`, and `xs` on `screenSM`.
+ * - The JSON input accepts `application/json,.json`.
+ * - The CSV input accepts `text/csv,.csv` and supports multiple files.
+ * - File inputs reset their value after dispatching selection callbacks so the same file can be selected again.
+ * - Edit is enabled only for one selected row; Delete is enabled for at least one selected row.
+ *
+ *
+ *
+ * ## Accessibility
+ * - Hidden inputs retain `aria-label="Import custom glass JSON file"` and `aria-label="Import custom glass CSV files"` for tests and assistive technology.
+ * - Visible command buttons expose aria labels matching their visible text.
+ */
 export function CustomGlassToolbar({
   jsonFileInputRef,
   csvFileInputRef,

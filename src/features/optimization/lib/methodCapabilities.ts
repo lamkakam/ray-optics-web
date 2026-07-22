@@ -1,3 +1,4 @@
+/** Optimizer capability lookup derived from the single runtime UI configuration. */
 import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 import type {
   OptimizationAlgorithmSelection,
@@ -5,6 +6,7 @@ import type {
 } from "@/features/optimization/types/optimizationAlgorithmTypes";
 import type { LeastSquaresMethod } from "@/features/optimization/types/optimizationWorkerTypes";
 
+/** Least-squares method capabilities derived from `OPTIMIZER_UI_CONFIG` so validation and rendering cannot drift. */
 const METHOD_CAPABILITIES: Record<LeastSquaresMethod, OptimizationMethodCapabilities> =
   OPTIMIZER_UI_CONFIG.least_squares.methods.reduce<Record<LeastSquaresMethod, OptimizationMethodCapabilities>>(
     (capabilities, method) => ({
@@ -17,10 +19,12 @@ const METHOD_CAPABILITIES: Record<LeastSquaresMethod, OptimizationMethodCapabili
     {} as Record<LeastSquaresMethod, OptimizationMethodCapabilities>,
   );
 
+/** Returns bounds and residual-dimension capabilities for one least-squares method. */
 export function getOptimizationMethodCapabilities(method: LeastSquaresMethod): OptimizationMethodCapabilities {
   return METHOD_CAPABILITIES[method];
 }
 
+/** Returns bounds and residual-dimension capabilities for any optimizer selection. */
 export function getOptimizationAlgorithmCapabilities(
   selection: OptimizationAlgorithmSelection,
 ): OptimizationMethodCapabilities {

@@ -5,14 +5,33 @@ import { Modal } from "@/shared/components/primitives/Modal";
 import { Button } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 
-
 interface PythonScriptModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Python script text to display */
   readonly script: string;
+  /** Called when the OK button is clicked */
   readonly onClose: () => void;
 }
 
+/**
+ * Modal that displays a generated Python script in a scrollable code block with a floating "Copy" button that uses the Clipboard API. The copy button shows a transient "Copied!" confirmation.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Script is displayed in a `<pre><code>` block with `max-h-[60vh]` overflow scroll.
+ * - Copy button uses `variant="floating"` positioned at top-right of the code block.
+ * - `script` is computed lazily by the caller only when `isOpen` is `true` (performance optimization).
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - The Ok action is passed to `Modal.footer` so it remains fixed while script content scrolls.
+ */
 export function PythonScriptModal({ isOpen, script, onClose }: PythonScriptModalProps) {
+  /** Whether the transient successful-copy confirmation is visible. */
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {

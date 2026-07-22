@@ -1,6 +1,11 @@
-"""rayoptics-web-utils: Python utilities for rayoptics in Pyodide."""
+"""Expose RayOptics web utilities with deferred RayOptics imports.
 
-from rayoptics_web_utils.env import init  # safe — no rayoptics imports at top level
+Environment initialization and optical-glass catalog helpers are safe to import
+eagerly. Analysis, plotting, focusing, Zernike, and optimization symbols remain
+lazy so ``init()`` can install Pyodide's unavailable-GUI stubs first.
+"""
+
+from rayoptics_web_utils.env import init
 
 # Eager imports: opticalglass has no rayoptics dependency, safe to import immediately
 from rayoptics_web_utils.glass.glass import (  # noqa: E402
@@ -10,7 +15,6 @@ from rayoptics_web_utils.glass.glass import (  # noqa: E402
 
 # Lazy imports for modules that depend on rayoptics (must be imported after init())
 _LAZY_IMPORTS = {
-    # analysis
     'get_first_order_data': 'rayoptics_web_utils.analysis.first_order',
     'get_3rd_order_seidel_data': 'rayoptics_web_utils.analysis.seidel',
     'get_ray_fan_data': 'rayoptics_web_utils.analysis.ray_fan',
@@ -25,16 +29,12 @@ _LAZY_IMPORTS = {
     'get_astigmatism_curve_data': 'rayoptics_web_utils.analysis.field_curves',
     'get_lsa_data': 'rayoptics_web_utils.analysis.longitudinal_spherical_aberration',
     'get_surface_semi_diameters': 'rayoptics_web_utils.analysis.surface_semi_diameters',
-    # zernike
     'get_zernike_coefficients': 'rayoptics_web_utils.zernike.zernike',
-    # plotting
     'plot_lens_layout': 'rayoptics_web_utils.plotting.plotting',
-    # focusing
     'focus_by_mono_rms_spot': 'rayoptics_web_utils.focusing.focusing',
     'focus_by_mono_strehl':    'rayoptics_web_utils.focusing.focusing',
     'focus_by_poly_rms_spot':  'rayoptics_web_utils.focusing.focusing',
     'focus_by_poly_strehl':    'rayoptics_web_utils.focusing.focusing',
-    # optimization
     'evaluate_optimization_problem': 'rayoptics_web_utils.optimization.optimization',
     'optimize_opm': 'rayoptics_web_utils.optimization.optimization',
 }
@@ -42,7 +42,14 @@ _LAZY_IMPORTS = {
 
 def __getattr__(name):
     """Lazy import: analysis/plotting modules import rayoptics at module level,
-    so they can only be imported AFTER init() has stubbed Qt modules."""
+    so they can only be imported AFTER init() has stubbed Qt modules.
+
+    Args:
+        name: Attribute name to resolve lazily.
+
+    Returns:
+        The lazily imported attribute.
+    """
     if name in _LAZY_IMPORTS:
         import importlib
         module = importlib.import_module(_LAZY_IMPORTS[name])

@@ -1,4 +1,4 @@
-"""Strehl ratio vs wavelength data extraction."""
+"""Extract Strehl ratio as a function of wavelength."""
 
 import numpy as np
 from rayoptics.environment import OpticalModel
@@ -67,8 +67,30 @@ def get_strehl_vs_wavelength_data(
     wavelength_samples: int = 32,
     num_rays: int = 21,
 ) -> dict:
-    """
-    Return Strehl ratio samples across the model wavelength range for one field.
+    """Return chart-ready Strehl samples across wavelength for one field.
+
+    The result contains `fieldIdx`, wavelengths `x`, Strehl ratios `y`,
+    `unitX="nm"`, and empty `unitY`, using plain floats for JSON encoding.
+
+    Two or more distinct configured wavelengths define the uniform sample range.
+    A single distinct wavelength instead uses `center ± 200 nm`, clipping the
+    lower bound to 201 nm. Samples are temporarily added to the model because
+    RayOptics traces only wavelengths in its sequential index table; the original
+    wavelengths, weights, and reference wavelength are restored even on error.
+
+    Each sample uses `make_ray_grid` with the requested image-point reference,
+    scales central-wavelength OPD to the sampled wavelength, and computes
+    monochromatic Strehl without extracting exit-pupil coordinates.
+
+    Args:
+        opm: RayOptics optical model.
+        fieldIndex: Field index.
+        image_point: Image-point reference convention.
+        wavelength_samples: Wavelength and spectral-weight samples.
+        num_rays: Pupil-grid sampling resolution.
+
+    Returns:
+        Chart-ready Strehl samples across wavelength for one field.
     """
     wavelengths = _wavelength_axis(opm["optical_spec"]["wvls"].wavelengths, wavelength_samples)
     strehl_values = []

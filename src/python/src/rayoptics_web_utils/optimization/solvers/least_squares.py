@@ -1,4 +1,4 @@
-"""SciPy least-squares solver adapter."""
+"""Adapt SciPy least squares to optimization problems."""
 
 from __future__ import annotations
 
@@ -10,7 +10,23 @@ from .base import SolverAdapter
 
 
 class LeastSquaresSolver(SolverAdapter):
-    """Run ``scipy.optimize.least_squares`` against an optimization problem."""
+    """Run ``scipy.optimize.least_squares`` against an optimization problem.
+
+
+    Implements the current SciPy least-squares optimization as a solver adapter.
+
+    - Calls `scipy.optimize.least_squares(...)`.
+    - Uses `OptimizationProblem.residual_objective(...)` as the solver objective.
+    - Passes SciPy `bounds=(lower, upper)` only for bounded least-squares methods such as `trf`; omits the `bounds` argument for `lm`.
+    - Returns a normalized result mapping with least-squares-specific metadata:
+      - `x`
+      - `success`
+      - `status`
+      - `message`
+      - `nfev`
+      - `njev`
+      - `cost`
+      - `optimality`"""
 
     def solve(self, progress_reporter: ProgressReporter | None = None) -> SolverResult:
         x0 = self.problem.current_vector()

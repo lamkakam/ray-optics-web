@@ -1,4 +1,4 @@
-"""Annular aperture helper."""
+"""Provide a RayOptics annular aperture."""
 
 from math import sqrt
 
@@ -6,7 +6,14 @@ from rayoptics.elem.surface import Aperture
 
 
 class Annular(Aperture):
-    """Circular clear aperture with a centered circular obstruction."""
+    """Circular clear aperture with a centered circular obstruction.
+
+    - Constructor accepts `radius`, `obstruction_radius`, `x_offset`, `y_offset`, and `rotation`.
+    - `obstruction_radius` must be greater than `0` and smaller than `radius`; invalid construction or resizing raises `ValueError`.
+    - `dimension()` returns `(radius, radius)` and `max_dimension()` returns `radius`.
+    - `point_inside(x, y, fuzz)` applies the inherited offset transform, then accepts points between `obstruction_radius` and `radius`.
+    - `edge_pt_target(rel_dir)` targets the outer radius and includes `x_offset` / `y_offset`.
+    - `apply_scale_factor(scale_factor)` scales offsets, outer radius, and obstruction radius."""
 
     def __init__(self, radius=1.0, obstruction_radius=0.5, **kwargs):
         super().__init__(**kwargs)

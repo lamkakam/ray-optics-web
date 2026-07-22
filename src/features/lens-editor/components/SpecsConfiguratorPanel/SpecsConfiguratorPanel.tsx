@@ -1,3 +1,4 @@
+/** Specs configurator presentation and keyed aperture-draft editing behavior. */
 import React, { useState } from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { Button } from "@/shared/components/primitives/Button";
@@ -13,13 +14,21 @@ interface AperturePatch {
 }
 
 interface SpecsConfiguratorPanelProps {
+  /** Current aperture space (`"object"` / `"image"`) */
   readonly pupilSpace: PupilSpace;
+  /** Current aperture type (`"epd"`, `"f/#"`, `"NA"`) */
   readonly pupilType: PupilType;
+  /** Numeric aperture value */
   readonly pupilValue: number;
+  /** Human-readable summary of field config (e.g. `"3 fields, 20° max"`) */
   readonly fieldSummary: string;
+  /** Human-readable summary of wavelengths (e.g. `"3 wavelengths"`) */
   readonly wavelengthSummary: string;
+  /** Partial update for aperture space, type, or value */
   readonly onApertureChange: (patch: AperturePatch) => void;
+  /** Opens `FieldConfigModal` */
   readonly onOpenFieldModal: () => void;
+  /** Opens `WavelengthConfigModal` */
   readonly onOpenWavelengthModal: () => void;
 }
 
@@ -34,6 +43,15 @@ const APERTURE_OPTIONS: readonly {
     { label: "Object Space NA", value: "object:NA", pupilSpace: "object", pupilType: "NA" },
   ];
 
+/**
+ * Presentational panel for editing optical system specifications: system aperture (type + value), visible Half-Field summary, and wavelength summary. Calls back to the container for all state changes; holds only a local draft string for the aperture value input.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Aperture dropdown selects from three pre-defined combinations of `pupilSpace`+`pupilType`.
+ * - Half-Field and wavelength sections show their summaries as toggle-style buttons that open the respective modals.
+ */
 export function SpecsConfiguratorPanel({
   pupilSpace,
   pupilType,
@@ -115,6 +133,7 @@ interface ApertureValueInputProps {
 }
 
 function ApertureValueInput({ pupilValue, onCommit }: ApertureValueInputProps) {
+  /** String draft committed on blur or reverted when it is not numeric. */
   const [valueStr, setValueStr] = useState(() => String(pupilValue));
 
   const handleValueBlur = () => {

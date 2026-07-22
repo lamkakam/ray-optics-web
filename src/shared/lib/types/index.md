@@ -4,4 +4,4 @@ Core domain TypeScript type definitions shared across the app.
 
 ## Files
 
-- [opticalModel.ts](./opticalModel.ts.md) — Core optical model, surface, specification, aspherical, and focusing types
+- [opticalModel.ts](./opticalModel.ts) — Core optical model, surface, specification, aspherical, and focusing types

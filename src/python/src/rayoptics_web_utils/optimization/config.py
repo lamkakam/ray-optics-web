@@ -1,4 +1,11 @@
-"""Normalization and validation helpers for optimization configs."""
+"""Normalize and validate optimization configuration.
+
+Least-squares supports ``trf`` and ``lm``; differential evolution has its own
+methodless option set. Bounded solvers require finite bounds, while ``lm`` permits
+fully unbounded variables and requires at least as many nominal residuals as
+variables. Validation also enforces unique mutable targets, acyclic pickups, and
+stable option-driven residual counts after field/wavelength expansion.
+"""
 
 from __future__ import annotations
 
@@ -239,7 +246,14 @@ def validate_pickup_graph(pickups: list[PickupConfig]) -> None:
 
 
 def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
-    """Return pickups in dependency order after cycle validation."""
+    """Return pickups in dependency order after cycle validation.
+
+    Args:
+        pickups: Normalized pickup configurations.
+
+    Returns:
+        Pickups in dependency order after cycle validation.
+    """
     by_target = {target_key(pickup): pickup for pickup in pickups}
     graph: dict[TargetKey, set[TargetKey]] = {}
     indegree: dict[TargetKey, int] = {}

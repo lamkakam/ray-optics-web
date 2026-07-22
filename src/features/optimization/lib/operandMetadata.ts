@@ -1,6 +1,8 @@
+/** Runtime metadata that keeps optimization operand selectors, evaluation labels, and validation aligned. */
 import type { OptimizationOperandKind } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { OptimizationOperandMetadata } from "@/features/optimization/types/optimizationOperandTypes";
 
+/** Defines labels, target requirements, defaults, field/wavelength expansion, and nominal residual counts for every operand. Combined Ray Fan contributes two axes per ray; axis-specific variants contribute one. */
 export const OPTIMIZATION_OPERAND_METADATA: ReadonlyArray<OptimizationOperandMetadata> = [
   {
     kind: "focal_length",
@@ -88,6 +90,7 @@ const OPTIMIZATION_OPERAND_METADATA_BY_KIND = new Map(
   OPTIMIZATION_OPERAND_METADATA.map((metadata) => [metadata.kind, metadata] as const),
 );
 
+/** Defines the shared optimization operand metadata consumed by the store and operand/evaluation UI. */
 export function getOptimizationOperandMetadata(kind: OptimizationOperandKind): OptimizationOperandMetadata {
   const metadata = OPTIMIZATION_OPERAND_METADATA_BY_KIND.get(kind);
   if (metadata === undefined) {

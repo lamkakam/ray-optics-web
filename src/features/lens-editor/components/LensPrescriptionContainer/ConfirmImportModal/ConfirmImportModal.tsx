@@ -5,11 +5,28 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
 interface ConfirmImportModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Proceeds with the import */
   readonly onConfirm: () => void;
+  /** Aborts the import */
   readonly onCancel: () => void;
 }
 
+/**
+ * Simple confirmation modal that warns the user that loading a config JSON will overwrite their current System Specs and Lens Prescription.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Stateless — purely presentational.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
+ */
 export function ConfirmImportModal({ isOpen, onConfirm, onCancel }: ConfirmImportModalProps) {
   return (
     <Modal

@@ -1,3 +1,4 @@
+/** Strehl-vs-wavelength ECharts registration and shared plot geometry. */
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
@@ -23,6 +24,11 @@ function toLineData(strehlVsWavelengthData: StrehlVsWavelengthData): number[][] 
   return lineData;
 }
 
+/**
+ * Builds the Apache ECharts option for the Strehl-vs-wavelength line chart.
+ * The symbol-free series pairs x/y samples, pins the wavelength domain to the
+ * sampled endpoints, and fixes the Strehl-ratio range to `[0, 1]`.
+ */
 export function buildStrehlVsWavelengthOption(
   strehlVsWavelengthData: StrehlVsWavelengthData,
   chartWidth: number,

@@ -1,4 +1,4 @@
-"""Progress tracking helpers for optimization runs."""
+"""Track solver-independent optimization progress."""
 
 from __future__ import annotations
 
@@ -13,7 +13,18 @@ MERIT_LOG_EPSILON = 1e-300
 
 
 class OptimizationProgress:
-    """Track optimization progress snapshots by distinct evaluated vectors."""
+    """Track optimization progress snapshots by distinct evaluated vectors.
+
+
+    Tracks solver progress snapshots in a solver-independent way.
+
+    - Stores the existing progress payload shape:
+      - `iteration`
+      - `merit_function_value`
+      - `log10_merit_function_value`
+    - Deduplicates repeated evaluations of the same vector.
+    - Stores a copied latest recorded vector and exposes it through `latest_vector` as a defensive copy so interrupted optimization can build a partial-result report without mutating internal progress state.
+    - Can notify an optional progress reporter whenever a new snapshot is recorded."""
 
     def __init__(self) -> None:
         self.entries: list[OptimizationProgressEntry] = []

@@ -1,3 +1,4 @@
+/** Shared editor-application path used by the Optimization page and guarded app navigation. */
 import type { StoreApi } from "zustand";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";
@@ -13,6 +14,18 @@ interface ApplyOptimizationModelToEditorParams {
   readonly proxy: Pick<PyodideWorkerAPI, "getSurfaceSemiDiameters">;
 }
 
+/**
+ * Shared helper that applies an optimization-local optical model snapshot back to the lens editor stores.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Loads and commits `model.specs` through `SpecsConfiguratorState`.
+ * - Converts `model` surfaces to prescription grid rows with `surfacesToGridRows()`.
+ * - Calls `LensEditorState.setRows()` with `optimizationSyncPolicy: "preserveOptimizationModes"` so the Optimization store can sync the applied model without discarding compatible optimization variable/pickup settings.
+ * - Mirrors `model.setAutoAperture` into the editor auto-aperture flag.
+ * - Commits the full optical model in the lens editor store.
+ */
 export async function applyOptimizationModelToEditor({
   model,
   lensStore,

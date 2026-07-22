@@ -1,10 +1,11 @@
 "use client";
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { Theme } from "@/shared/tokens/theme";
 
 interface ThemeContextValue {
+  /** Active theme initialized from persisted state or the OS preference. */
   theme: Theme;
+  /** Persists and applies a new theme. */
   setTheme: (newTheme: Theme) => void;
 }
 
@@ -23,6 +24,16 @@ function getInitialTheme(): Theme {
     : "light";
 }
 
+/**
+ * React context provider that manages the application theme (`"light"` | `"dark"`). Persists the selection to `localStorage`, syncs the `dark` CSS class on `<html>`, and respects the OS `prefers-color-scheme` media query on first visit.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - `setTheme` persists the new value to `localStorage` under key `"ray-optics-theme"` and updates the `dark` class on `document.documentElement`.
+ * - `useTheme` throws if called outside a `ThemeProvider` tree.
+ * - SSR-safe: `getInitialTheme` returns `"light"` when `window` is `undefined`.
+ */
 export function ThemeProvider({ children }: { readonly children: React.ReactNode }) {
   const [theme, _setTheme] = useState<Theme>(getInitialTheme);
 
@@ -57,6 +68,7 @@ export function ThemeProvider({ children }: { readonly children: React.ReactNode
   );
 }
 
+/** Returns the active theme context or throws outside the provider. */
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) {

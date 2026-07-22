@@ -1,9 +1,23 @@
+/**
+ * Runtime utilities for rendering Zernike polynomial tables in the lens editor.
+ * This module owns Noll and Fringe ordering definitions for both UI display and worker term-list generation.
+ *
+ * @remarks
+ * ## Notes
+ *
+ * - Types for worker payloads and ordering options live in `features/lens-editor/types/zernikeData.ts`.
+ * - Python Zernike code receives only explicit term lists; ordering names remain a TypeScript/UI concern.
+ * - This module intentionally contains runtime values and functions plus the `ZernikeTerm` tuple type used by those helpers.
+ */
 import type { ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 
+/** Number of Noll-ordered terms exposed by the editor. */
 export const NUM_NOLL_TERMS = 56;
 
+/** Number of Fringe-ordered terms exposed by the editor. */
 export const NUM_FRINGE_TERMS = 37;
 
+/** Radial and azimuthal Zernike indices. */
 export type ZernikeTerm = readonly [number, number];
 
 /**
@@ -37,6 +51,7 @@ export function nollToNm(j: number): [number, number] {
  * Convert Fringe (University of Arizona) index j (1-based) to (n, m).
  * TypeScript-owned Fringe ordering definition.
  *
+ * @remarks
  * Groups by c = (n + |m|) / 2. Group c has 2c+1 terms; cumulative
  * count through group c is (c+1)^2. Within each group, |m| descending,
  * cos (+m) before sin (-m), m=0 last.
@@ -53,14 +68,13 @@ export function fringeToNm(j: number): [number, number] {
   return [n, sign * mAbs];
 }
 
+/** Returns the requested number of explicit `(n, m)` terms in Noll or Fringe order. */
 export function zernikeTermsForOrdering(ordering: ZernikeOrdering, numTerms: number): readonly ZernikeTerm[] {
   const indexToNm = ordering === "fringe" ? fringeToNm : nollToNm;
   return Array.from({ length: numTerms }, (_, index) => indexToNm(index + 1));
 }
 
-/**
- * Returns MathJax-compatible LaTeX notation for a Zernike polynomial.
- */
+/** Returns MathJax-compatible LaTeX notation for a Zernike polynomial. */
 export function zernikeNotation(n: number, m: number): string {
   return `\\(Z_{${n}}^{${m}}\\)`;
 }

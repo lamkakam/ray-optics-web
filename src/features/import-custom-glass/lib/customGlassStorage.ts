@@ -1,3 +1,10 @@
+/**
+ * IndexedDB persistence for user-defined custom glasses.
+ *
+ * @remarks
+ * Database `ray-optics-web-custom-glass` version 1 owns `customGlasses` and
+ * `quarantinedCustomGlasses` object stores, both keyed by `label`.
+ */
 import type { UserDefinedGlassInput } from "@/features/glass-map/types/glassMap";
 
 const DB_NAME = "ray-optics-web-custom-glass";
@@ -5,6 +12,7 @@ const DB_VERSION = 1;
 const CUSTOM_STORE = "customGlasses";
 const QUARANTINED_STORE = "quarantinedCustomGlasses";
 
+/** Strict persisted representation of one tabulated user-defined glass. */
 export interface PersistedCustomGlassRow {
   readonly label: string;
   readonly type: "tabulated";
@@ -38,6 +46,7 @@ function txDone(transaction: IDBTransaction): Promise<void> {
   });
 }
 
+/** Accepts only non-blank labels, the tabulated discriminator, and finite numeric wavelength/index pairs. */
 export function isPersistedCustomGlassRow(value: unknown): value is PersistedCustomGlassRow {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -55,6 +64,7 @@ export function isPersistedCustomGlassRow(value: unknown): value is PersistedCus
     );
 }
 
+/** Copies worker input into the stable persisted row shape. */
 export function toPersistedCustomGlassRow(input: UserDefinedGlassInput): PersistedCustomGlassRow {
   return {
     label: input.name,
@@ -93,19 +103,23 @@ async function withStore<T>(
   }
 }
 
+/** Reads custom-glass rows and discards structurally invalid records. */
 export async function readPersistedCustomGlasses(): Promise<readonly PersistedCustomGlassRow[]> {
   const rows = await readStoredCustomGlassRows();
   return rows.filter(isPersistedCustomGlassRow);
 }
 
+/** Reads raw custom-store rows for startup hydration and quarantine decisions. */
 export async function readStoredCustomGlassRows(): Promise<readonly unknown[]> {
   return withStore(CUSTOM_STORE, "readonly", (store) => store.getAll());
 }
 
+/** Persists one row after its matching worker mutation succeeds. */
 export async function upsertPersistedCustomGlass(input: UserDefinedGlassInput): Promise<void> {
   await withStore(CUSTOM_STORE, "readwrite", (store) => store.put(toPersistedCustomGlassRow(input)));
 }
 
+/** Persists multiple rows in one read-write transaction. */
 export async function upsertPersistedCustomGlasses(inputs: readonly UserDefinedGlassInput[]): Promise<void> {
   const db = await openDb();
   try {
@@ -120,6 +134,7 @@ export async function upsertPersistedCustomGlasses(inputs: readonly UserDefinedG
   }
 }
 
+/** Deletes named rows in one read-write transaction. */
 export async function deletePersistedCustomGlasses(labels: readonly string[]): Promise<void> {
   const db = await openDb();
   try {
@@ -134,10 +149,12 @@ export async function deletePersistedCustomGlasses(labels: readonly string[]): P
   }
 }
 
+/** Moves one valid persisted row to the quarantine store. */
 export async function quarantinePersistedCustomGlass(row: PersistedCustomGlassRow): Promise<void> {
   await quarantineStoredCustomGlassRow(row, row.label);
 }
 
+/** Writes an arbitrary stored value to quarantine and removes its custom-store entry atomically. */
 export async function quarantineStoredCustomGlassRow(row: unknown, label: string): Promise<void> {
   const db = await openDb();
   try {
@@ -152,6 +169,7 @@ export async function quarantineStoredCustomGlassRow(row: unknown, label: string
   }
 }
 
+/** Exposes the IndexedDB contract for persistence tests. */
 export const customGlassStorageConstants = {
   dbName: DB_NAME,
   dbVersion: DB_VERSION,
@@ -159,6 +177,7 @@ export const customGlassStorageConstants = {
   quarantinedStore: QUARANTINED_STORE,
 } as const;
 
+/** Injects a controlled IndexedDB factory for tests, or clears the override. */
 export function _setIndexedDbForTest(factory: IDBFactory | undefined): void {
   indexedDbOverride = factory;
 }

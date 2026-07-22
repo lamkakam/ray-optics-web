@@ -13,21 +13,38 @@ import type { AsphericalType } from "@/shared/lib/types/opticalModel";
 
 const COEFFICIENT_NUM = 10;
 
-
 interface AsphericalModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** When `true`, all controls are disabled and the footer shows only `Close` */
   readonly readOnly?: boolean;
+  /** Starting conic constant value */
   readonly initialConicConstant: number;
+  /** Surface type on open */
   readonly initialType: AsphericalType;
+  /** Polynomial coefficients on open (may be shorter than 10) */
   readonly initialCoefficients: number[];
+  /** Starting toroid sweep radius of curvature value */
   readonly initialToricSweepRadiusOfCurvature: number;
+  /**
+   * Called with parsed values on Confirm. Result fields depend on `type`:
+   *
+   * @remarks
+   * - `"Conic"` yields `{ kind: "Conic", conicConstant }`.
+   * - `"EvenAspherical"` yields `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`.
+   * - `"RadialPolynomial"` yields `{ kind: "RadialPolynomial", conicConstant, polynomialCoefficients }`.
+   * - `"XToroid"` yields `{ kind: "XToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`.
+   * - `"YToroid"` yields `{ kind: "YToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`.
+   */
   readonly onConfirm: (params: {
     conicConstant: number;
     type: AsphericalType;
     polynomialCoefficients: number[];
     toricSweepRadiusOfCurvature: number;
   }) => void;
+  /** Cancel callback */
   readonly onClose: () => void;
+  /** Clears aspherical data for the surface */
   readonly onRemove: () => void;
 }
 
@@ -217,7 +234,27 @@ const contentMap: {
   },
 };
 
-
+/**
+ * Modal for configuring aspherical surface parameters: conic constant, surface type, up to 10 polynomial coefficients (a₂ through a₂₀), and the toroid sweep radius of curvature for toroidal types. Renders MathJax equations to label coefficients and explain the sag formula.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Uses `ASPHERICAL_TYPE_OPTIONS` from `shared/lib/lens-prescription-grid/displayLabels.ts` for UI-facing labels; the container maps confirmed values to the domain `Surface["aspherical"]` union.
+ * - Coefficient inputs are shown for every non-conic type: `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
+ * - The toroid sweep radius input is shown only for `"XToroid"` and `"YToroid"`.
+ * - On confirm, trailing zero coefficients are stripped (`truncateTrailingZeros`); Conic type produces an empty coefficients array.
+ * - On confirm, toroid sweep radius values that parse to a non-finite number fall back to `0`.
+ * - Coefficients array is padded to length 10 on initialization.
+ * - Uses `<MathJax>` for the sag formula and coefficient labels; `MathJaxContext` is provided by the ancestor (`page.tsx`).
+ * - In `readOnly` mode, the type selector and all numeric inputs are disabled; `Remove Aspherical`, `Cancel`, and `Confirm` are replaced by a single `Close` button.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Close, Remove Aspherical, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while aspherical fields scroll.
+ */
 export function AsphericalModal({
   isOpen,
   readOnly = false,
@@ -229,11 +266,15 @@ export function AsphericalModal({
   onClose,
   onRemove,
 }: AsphericalModalProps) {
+  /** String draft of the conic constant. */
   const [conicConstantStr, setConicConstantStr] = useState(String(initialConicConstant));
+  /** Selected aspherical surface representation. */
   const [type, setType] = useState<AsphericalType>(initialType);
+  /** String draft of the toroidal sweep radius. */
   const [toricSweepRadiusOfCurvatureStr, setToricSweepRadiusOfCurvatureStr] = useState(
     String(initialToricSweepRadiusOfCurvature)
   );
+  /** String drafts for all ten polynomial coefficients. */
   const [coefficientStrs, setCoefficientStrs] = useState<string[]>(() =>
     padCoefficients(initialCoefficients)
   );

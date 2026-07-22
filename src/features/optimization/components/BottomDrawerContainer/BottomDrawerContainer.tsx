@@ -1,4 +1,14 @@
 "use client";
+/**
+ *
+ * @remarks
+ * ## Key Conventions
+ *
+ * - This component preserves drawer tab labels, test IDs, padding, and tab component behavior from the previous page-local drawer implementation.
+ * - Props are grouped to keep the component interface below the project prop-count limit while making tab ownership explicit.
+ * - `OptimizationPage` remains responsible for deriving row data and owning local inspection-modal row state; store-backed drawer actions live here.
+ * - Grid-relevant callback identities should stay stable unless their actual data dependencies change, because the Jest AG Grid mock and real AG Grid both model editor loss when column definitions are recreated during active editing.
+ */
 
 import { memo, useCallback, useMemo, type ComponentProps } from "react";
 import { useStore } from "zustand";
@@ -27,18 +37,51 @@ type PrescriptionProps = Omit<
   | "onCellEditingStopped"
 >;
 
+/** Optimization drawer lifecycle callbacks supplied by the page. */
 export interface BottomDrawerContainerProps {
+  /** Controls responsive drawer behavior. */
   readonly layout: {
+    /** Switches between draggable large-screen rendering and non-draggable small-screen rendering. */
     readonly isLG: boolean;
+    /** Receives live drawer height changes when provided. */
     readonly onHeightChange?: (height: number) => void;
   };
+  /** Provides derived field weight rows. */
   readonly fields: Readonly<FieldsProps>;
+  /** Provides derived wavelength weight rows. */
   readonly wavelengths: Readonly<FieldsProps>;
+  /**
+   * Provides the synchronized auto-aperture mode, derived prescription rows, and local inspection-modal callbacks, including aperture inspection.
+   * Optimization variable modal callbacks and mode state are read from the optimization store.
+   */
   readonly prescription: Readonly<PrescriptionProps>;
+  /** Provides optional page-level AG Grid edit start/stop callbacks shared by all Optimization grids. */
   readonly gridEditLifecycle?: Readonly<GridEditLifecycleProps>;
+  /** Receives explicit method-switch config-build failures so the page can surface them in Operand Evaluation. */
   readonly onWarning: (message: string) => void;
 }
 
+/**
+ * Container for the optimization page bottom drawer. It owns the five optimization drawer tabs, responsive drawer wrapper, and optimization-store-backed tab callbacks.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Builds the drawer tabs in the fixed order `Algorithm`, `Half-Fields`, `Wavelengths`, `Lens Prescription`, and `Operands`.
+ * - Keeps `data-testid="optimization-bottom-drawer-wrapper"` on the wrapper for existing page tests.
+ * - Uses `mt-auto pb-4` on large screens and `pb-4` on smaller screens.
+ * - Passes `panelClassName="p-0"` so tab contents keep their own gutter.
+ * - Sets `draggable` from `layout.isLG`.
+ * - Reads the optimization store for active tab state, optimizer state, radius/thickness/asphere modes, operands, and all store-backed drawer callbacks.
+ * - Handles optimizer patch updates locally, including optimizer-kind resets through `setOptimizerKind()` and method-change config validation warnings through `onWarning`.
+ * - Updates field and wavelength weights through the optimization store.
+ * - Forwards shared AG Grid edit lifecycle callbacks into Half-Fields, Wavelengths, Lens Prescription, and Operands grids so `OptimizationPage` can disable Optimize while edits and post-edit evaluations are pending.
+ * - Renders the shared weight grid with tab-specific `Value` column widths: `95px` for fields and `130px` for wavelengths.
+ * - Opens radius, thickness, and asphere variable modals through the optimization store while forwarding inspection-modal callbacks supplied by `OptimizationPage`.
+ * - Forwards `prescription.autoAperture` to `OptimizationLensPrescriptionGrid` so the shared semi-diameter column uses the synchronized mode.
+ * - Adds, deletes, and updates operands through the optimization store.
+ * - Is wrapped in `React.memo` and memoizes store-backed callbacks, prescription props, and the drawer `tabs` array so unrelated `OptimizationPage` state changes, including Operand Evaluation loading and completion, do not recreate AG Grid column definitions or reset active grid editors.
+ */
 export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   layout,
   fields,

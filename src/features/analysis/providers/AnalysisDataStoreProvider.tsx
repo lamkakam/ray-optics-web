@@ -6,12 +6,15 @@ import { createAnalysisDataSlice, type AnalysisDataState } from '@/features/anal
 
 type ContextValue = StoreApi<AnalysisDataState> | undefined;
 
+/** Raw context object. Use only in tests to supply a pre-built store directly via `<AnalysisDataStoreContext.Provider value={store}>`. */
 export const AnalysisDataStoreContext = createContext<ContextValue>(undefined);
 
+/** Initial state and child tree for an isolated analysis-data store. */
 export interface AnalysisDataStoreProviderProps {
   children: ReactNode;
 }
 
+/** Provides a single `StoreApi<AnalysisDataState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes. */
 export const AnalysisDataStoreProvider: React.FC<AnalysisDataStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 
@@ -26,6 +29,7 @@ export const AnalysisDataStoreProvider: React.FC<AnalysisDataStoreProviderProps>
   );
 };
 
+/** Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `AnalysisDataStoreProvider`. */
 export const useAnalysisDataStore = (): StoreApi<AnalysisDataState> => {
   const store = useContext(AnalysisDataStoreContext);
   if (store === undefined) {

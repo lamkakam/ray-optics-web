@@ -3,9 +3,11 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Supported semantic heading levels. */
 export type HeaderLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface HeaderProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  /** Determines which `<h*>` tag is rendered and which font-size token is applied */
   readonly level: HeaderLevel;
 }
 
@@ -18,6 +20,15 @@ const levelFontSizes: Record<HeaderLevel, string> = {
   6: cx.header.size.h6FontSize,
 };
 
+/**
+ * Polymorphic heading component that renders an `h1`–`h6` tag with a consistent font weight and per-level font size drawn from style tokens.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Tag is derived dynamically from `level`: `` `h${level}` ``.
+ * - Font sizes: h1 = xl, h2 = lg, h3 = base, h4/h5/h6 = sm/xs/xs.
+ */
 export function Header({ level, className, children, ...rest }: HeaderProps) {
   const Tag = `h${level}` as `h${HeaderLevel}`;
   return (

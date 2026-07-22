@@ -1,4 +1,4 @@
-"""RayGrid factory for rayoptics wavefront and PSF analysis."""
+"""Construct RayGrid-compatible wavefront samples."""
 
 from rayoptics.environment import OpticalModel
 
@@ -13,18 +13,25 @@ def make_ray_grid(
     num_rays: int = 64,
     image_point: str = "chief_ray",
 ):
-    """Create a RayGrid with standard aperture and vignetting settings.
+    """Create wavefront samples with standard aperture and vignetting semantics.
+
+    ``wavelength_nm`` is a plain float in nm. Finite image space lazily imports and
+    constructs ``RayGrid`` with both ``check_apertures`` and ``apply_vignetting`` set.
+    Chief-ray mode leaves ``image_pt_2d`` unset; centroid mode supplies the shared
+    resolved point. Infinite image space returns a RayGrid-compatible namespace whose
+    OPD plane is normal to the selected output direction. In either mode OPD remains
+    in central-wavelength waves for downstream scaling.
 
     Args:
-        opm: OpticalModel instance.
-        fi: field index into osp['fov'].fields.
-        wavelength_nm: wavelength in nm (retrieve via opm['optical_spec']['wvls'].wavelengths[i]).
-        foc: defocus value in system units (default 0.0).
-        num_rays: grid resolution (default 64).
-        image_point: image-point reference convention, "chief_ray" or "centroid".
+        opm: RayOptics optical model.
+        fi: Field index.
+        wavelength_nm: Wavelength in nanometres.
+        foc: Focus shift in system length units.
+        num_rays: Pupil-grid sampling resolution.
+        image_point: Image-point reference convention.
 
     Returns:
-        RayGrid instance ready for OPD / PSF extraction.
+        RayGrid-compatible wavefront samples.
     """
     from rayoptics_web_utils.analysis._afocal import is_afocal_image_space, make_afocal_ray_grid
     if is_afocal_image_space(opm):

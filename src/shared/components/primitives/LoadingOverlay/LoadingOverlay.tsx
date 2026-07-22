@@ -4,10 +4,22 @@ import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
 interface LoadingOverlayProps {
+  /** Bold status heading (e.g. "Initializing Pyodide") */
   readonly title: string;
+  /** Supplementary text or progress details shown below the title */
   readonly contents: React.ReactNode;
 }
 
+/**
+ * Full-screen loading overlay with an animated spinner, a title, and a neutral content area. Used while heavy async operations (Pyodide init, wheel download) are in progress.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Renders as `fixed inset-0` with `z-[200]`, covering the entire viewport above all other UI.
+ * - Spinner is an SVG `animate-spin` circle with `aria-hidden="true"`.
+ * - Renders `contents` inside a neutral `<div>`, not a paragraph, so structured content such as progress bars is valid markup.
+ */
 export function LoadingOverlay({ title, contents }: LoadingOverlayProps) {
   const overlayClass = clsx(
     cx.overlay.style.zIndex,

@@ -1,4 +1,4 @@
-"""Wavefront map data extraction."""
+"""Extract wavefront-map data."""
 
 import numpy as np
 from rayoptics.environment import OpticalModel
@@ -14,8 +14,22 @@ def get_wavefront_data(
     image_point: str = "chief_ray",
     num_rays: int = 64,
 ) -> dict:
-    """
-    Return a wavefront map grid for one field and wavelength.
+    """Return a wavefront map grid for one field and wavelength.
+
+    The result contains `fieldIdx`, `wvlIdx`, relative pupil axes `x` and `y`,
+    transposed OPD grid `z`, empty axis units, and `unitZ="waves"`. The requested
+    `image_point` is passed to `make_ray_grid`; OPD is scaled by
+    `central_wvl / wavelength_nm`, and NaN samples serialize as `None`.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        wvl_idx: Wavelength index.
+        image_point: Image-point reference convention.
+        num_rays: Pupil-grid sampling resolution.
+
+    Returns:
+        A wavefront map grid for one field and wavelength.
     """
     osp = opm.optical_spec
     central_wvl = osp["wvls"].central_wvl

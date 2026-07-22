@@ -3,17 +3,27 @@ import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Supported progress-indicator presentation. */
 export type ProgressVariant = "linear";
+/** Supported progress-indicator sizes. */
 export type ProgressSize = "sm" | "md";
 
+/** Accessible determinate progress-indicator props. */
 export interface ProgressProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
+  /** Current determinate progress value */
   readonly value: number;
+  /** Lower bound. Defaults to `0` */
   readonly min?: number;
+  /** Upper bound. Defaults to `100` */
   readonly max?: number;
+  /** Visual variant. Defaults to `"linear"` */
   readonly variant?: ProgressVariant;
+  /** Track and status text size. Defaults to `"md"` */
   readonly size?: ProgressSize;
+  /** Shows the rounded percentage status when true. Defaults to `true` */
   readonly showStatus?: boolean;
+  /** Accessible label. Defaults to `"Progress"` */
   readonly ariaLabel?: string;
 }
 
@@ -47,6 +57,19 @@ function clampPercent(value: number, min: number, max: number): number {
   return Math.min(100, Math.max(0, ((value - min) / range) * 100));
 }
 
+/**
+ * Determinate progress primitive. It currently supports a linear progress bar and keeps the API variant-based so a circular progress variant can be added without replacing consumers.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Renders a semantic root with `role="progressbar"`.
+ * - Sets `aria-label`, `aria-valuemin`, `aria-valuemax`, and `aria-valuenow` from props and defaults.
+ * - Normalizes `value` within `min` and `max`, rounds the computed percentage, and clamps rendered status and indicator width to `0%` through `100%`.
+ * - Hides the visible percentage when `showStatus={false}`.
+ * - The inherited `className` prop is merged via `twMerge` after token classes.
+ * - Uses `componentTokens.progress` for track color, indicator color, status text color, dimensions, radius, transition, and `will-change` classes.
+ */
 export function Progress({
   value,
   min = 0,

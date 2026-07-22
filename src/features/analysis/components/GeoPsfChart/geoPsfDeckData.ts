@@ -1,15 +1,28 @@
 import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
+/** One deck.gl-ready geometric-PSF point. */
 export interface GeoPsfPoint {
   readonly x: number;
   readonly y: number;
 }
 
+/**
+ * Prepares Geometric PSF point samples for the deck.gl `ScatterplotLayer`.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Pairs `GeoPsfData.x` and `GeoPsfData.y` by index up to the shorter array length.
+ * - Emits typed `{ x, y }` point records only when both paired coordinates are finite.
+ * - Computes a symmetric `axisExtent` from all finite x/y samples in the paired range.
+ * - Defaults `axisExtent` to `1` when the paired data contains no usable finite extent.
+ */
 export interface GeoPsfDeckData {
   readonly points: readonly GeoPsfPoint[];
   readonly axisExtent: number;
 }
 
+/** Converts worker coordinates to deck.gl points and symmetric physical bounds. */
 export function buildGeoPsfPoints(geoPsfData: GeoPsfData): GeoPsfDeckData {
   const points: GeoPsfPoint[] = [];
   let axisExtent = 0;

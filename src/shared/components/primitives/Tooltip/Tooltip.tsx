@@ -1,14 +1,21 @@
+/** Portal and in-flow tooltip positioning, viewport correction, and touch behavior. */
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 interface TooltipProps {
+  /** Tooltip content */
   readonly text: string;
+  /** Trigger element */
   readonly children: React.ReactNode;
+  /** Placement relative to trigger. Defaults to `"top"` */
   readonly position?: "top" | "bottom" | "top-start" | "start" | "no-transform";
+  /** When `true`, renders via `createPortal` using fixed positioning. Required inside AG Grid cells. Defaults to `false` */
   readonly portal?: boolean;
+  /** When `true` in portal mode, uses a `touchstart` ref flag to suppress the synthetic `mouseenter` browsers fire after touch. It does not apply `touch-action: none`, so native scroll and pan gestures remain available. Defaults to `false` */
   readonly noTouch?: boolean;
+  /** Additional classes for the trigger wrapper span. Use this when the hover target must fill its parent, such as an AG Grid cell action area. */
   readonly triggerClassName?: string;
 }
 
@@ -65,6 +72,19 @@ function getViewportSafeOffset(
   return safeTooltipLeft - tooltipLeft;
 }
 
+/**
+ * Hover tooltip with two rendering modes: a viewport-aware CSS `group-hover` absolute variant (default) and a `portal` variant that renders via `createPortal` into `document.body` to avoid overflow-hidden clipping inside AG Grid cells.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - **Non-portal mode**: uses CSS `group-hover:opacity-100` on an absolutely positioned `<span>`. On hover, the trigger and tooltip rectangles are measured and the tooltip receives a horizontal offset that clamps it to an 8px viewport gutter while preserving the existing vertical placement and `position` prop behavior. The correction is recalculated during viewport resize and captured scroll events, and reset on mouse leave.
+ * - **Non-portal content sizing**: uses a maximum width of `calc(100vw - 16px)`, normal whitespace, and word breaking so long messages wrap within the viewport on narrow screens.
+ * - **Portal mode**: attaches `onMouseEnter`/`onMouseLeave` listeners, measures the trigger rect via `getBoundingClientRect`, and renders a fixed `<span>` at those coordinates.
+ * - `triggerClassName` is merged onto the trigger wrapper in both portal and non-portal modes without changing default inline-flex behavior.
+ * - `portal` must be `true` when the tooltip is rendered inside any element with `overflow: hidden` (e.g. AG Grid rows).
+ * - **`noTouch` mode**: in portal mode, attaches an `onTouchStart` handler that sets `isTouchingRef.current = true`. When `onMouseEnter` fires and `noTouch && isTouchingRef.current` is true (i.e., the enter was synthesized from a touch tap), the handler resets the flag and returns early without showing the tooltip. Plain mouse hovers are unaffected because no `touchstart` precedes them. `onMouseLeave` always resets the flag. `noTouch` does not apply `touch-action: none`, because doing so blocks native scroll and pan gestures on iOS Safari. Should be set on any portal `<Tooltip>` that wraps a clickable element (button, toggle, etc.).
+ */
 export function Tooltip({
   text,
   children,
@@ -73,13 +93,20 @@ export function Tooltip({
   noTouch,
   triggerClassName,
 }: TooltipProps) {
+  /** Trigger geometry source used by both positioning modes. */
   const triggerRef = useRef<HTMLSpanElement>(null);
+  /** Tooltip geometry source used for non-portal viewport correction. */
   const nonPortalTooltipRef = useRef<HTMLSpanElement>(null);
+  /** Portal-mode visibility. */
   const [visible, setVisible] = useState(false);
+  /** Portal-mode trigger coordinates. */
   const [coords, setCoords] = useState({ x: 0, y: 0 });
+  /** Whether the in-flow trigger is hovered and should be remeasured. */
   const [nonPortalHovered, setNonPortalHovered] = useState(false);
+  /** Horizontal correction that keeps an in-flow tooltip inside the viewport. */
   const [horizontalOffset, setHorizontalOffset] = useState(0);
   const horizontalOffsetRef = useRef(0);
+  /** Suppresses synthetic mouse events emitted after portal-mode touch input. */
   const isTouchingRef = useRef(false);
 
   useEffect(() => {

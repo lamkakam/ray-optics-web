@@ -30,24 +30,58 @@ const OPTION_GRID_CLASSES = {
 
 type RadioInputLayout = keyof typeof OPTION_GRID_CLASSES;
 
+/** Value and label for one typed radio option. */
 export type RadioOption<T extends string> = {
   value: T;
+  /** Used as the `aria-label` and as fallback visual text. */
   label: string;
   /** Optional React node rendered as the visual label. When provided, replaces the plain `label` text. The `label` string is always used as `aria-label`. */
   labelNode?: React.ReactNode;
 };
 
 interface RadioInputProps<T extends string> {
+  /** HTML name attribute for the radio group */
   readonly name: string;
+  /** Legend / group label */
   readonly label: string;
   readonly options: ReadonlyArray<RadioOption<T>>;
+  /** Currently selected value */
   readonly value: T;
   readonly onChange: (value: T) => void;
+  /** Disables all inputs when true */
   readonly disabled?: boolean;
+  /** Number of grid columns for options; defaults to 1 */
   readonly columns?: 1 | 2 | 3 | 4;
+  /** Option grid width and gutter behavior; defaults to "full" */
   readonly layout?: RadioInputLayout;
 }
 
+/**
+ * A generic radio button group component. Renders a `<fieldset>` with a `<legend>` and one labelled `<input type="radio">` per option.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Each option renders as `<label><input type="radio" /> {labelNode ?? label}</label>`.
+ * - The `aria-label` on each radio always equals the option's `label` string (even when `labelNode` is provided).
+ * - Calls `onChange(option.value)` when a radio is clicked.
+ * - When `disabled=true`, all radio inputs have the `disabled` attribute.
+ * - `labelNode` allows rich content (e.g. MathJax nodes) while keeping plain-text accessibility.
+ * - `columns` controls the option grid layout. Accepted values are `1`, `2`, `3`, and `4`; the default is `1`.
+ * - `layout` controls whether the option grid stretches to the full available width (`"full"`, default) or shrinks to content width with compact horizontal gutters (`"compact"`).
+ *
+ *
+ *
+ * ## Styling
+ *
+ * Uses Tailwind CSS.
+ *
+ * - Group label text color uses `cx.label.color.textColor`.
+ * - The option container uses fixed Tailwind grid classes based on `layout` and `columns`, avoiding dynamic class generation.
+ * - `layout="full"` uses `grid grid-cols-* gap-1`; `layout="compact"` uses `inline-grid grid-cols-* gap-x-6 gap-y-1`.
+ * - Each option row uses `componentTokens.radio`, including the shared hover background token reused from `CheckboxInput`.
+ * - The radio control accent color comes from `componentTokens.radio.color.checkedColor`.
+ */
 export function RadioInput<T extends string>({
   name,
   label,

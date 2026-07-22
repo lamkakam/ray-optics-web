@@ -9,8 +9,11 @@ import type { SeidelData, AberrationTypeToLabel } from "@/features/lens-editor/t
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
 interface SeidelAberrModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Seidel aberration data from the Pyodide worker (`get_3rd_order_seidel_data`) */
   readonly data: SeidelData;
+  /** Called when the OK button is clicked */
   readonly onClose: () => void;
 }
 
@@ -33,6 +36,23 @@ const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
   PCV: "Petzval Curvature (PCV)",
 };
 
+/**
+ * Modal that displays third-order Seidel aberration data in a four-tab layout: Surface by Surface, Transverse, Wavefront, and Field Curvature. Uses MathJax for a disclaimer about the approximation's scope.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Table data for all four tabs is derived with `useMemo` to avoid recomputing on unrelated renders.
+ * - Aberration type keys (e.g. `"TSA"`, `"W040"`) are mapped to human-readable labels via `ABERRATION_TYPE_TO_LABEL`.
+ * - Field Curvature tab includes a Curvature Radius column (reciprocal of value; `"Infinite"` when value is 0).
+ * - Uses `<MathJax inline>` for LaTeX rendering; `MathJaxContext` is provided by the ancestor (`page.tsx`).
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - The Ok action is passed to `Modal.footer` so it remains fixed while Seidel aberration content scrolls.
+ */
 export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProps) {
   const { surfaceBySurface, transverse, wavefront, curvature } = data;
 

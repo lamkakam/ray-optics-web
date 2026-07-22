@@ -2,6 +2,7 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Supported semantic paragraph styles. */
 export type ParagraphVariant = "body" | "caption" | "subheading" | "placeholder" | "errorMessage" | "description";
 
 const VARIANT_CLASSES: Record<ParagraphVariant, readonly string[]> = {
@@ -14,9 +15,20 @@ const VARIANT_CLASSES: Record<ParagraphVariant, readonly string[]> = {
 } as const satisfies Record<ParagraphVariant, readonly string[]>;
 
 interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  /** Visual style. Defaults to `"body"` */
   readonly variant?: ParagraphVariant;
 }
 
+/**
+ * Themed `<p>` element with semantic variants that map to different color and size tokens.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Implemented as `React.forwardRef`.
+ * - `caption` adds a bottom margin token; `subheading` uses medium font weight; `placeholder` uses muted text color.
+ * - `errorMessage` uses the shared error text color token with caption-sized typography.
+ */
 export const Paragraph = React.forwardRef<HTMLParagraphElement, ParagraphProps>(
   function Paragraph({ variant = "body", className, ...rest }, ref) {
     return (

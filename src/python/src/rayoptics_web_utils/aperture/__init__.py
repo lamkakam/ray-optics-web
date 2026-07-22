@@ -1,4 +1,4 @@
-"""Aperture helpers for RayOptics integration."""
+"""Expose custom RayOptics aperture types."""
 
 from rayoptics_web_utils.aperture.annular import Annular
 from rayoptics_web_utils.aperture.offset_circular import OffsetCircular

@@ -1,4 +1,8 @@
-"""analysis subpackage: optical data extraction helpers."""
+"""Expose optical-analysis data extraction helpers.
+
+Importing this namespace loads RayOptics-dependent modules, so the top-level package
+exposes these helpers through its lazy import map.
+"""
 
 from rayoptics_web_utils.analysis.diffraction_mtf import get_diffraction_mtf_data
 from rayoptics_web_utils.analysis.diffraction_psf import get_diffraction_psf_data

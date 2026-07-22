@@ -1,4 +1,5 @@
 "use client";
+/** Lens-editor JSON and Photons to Photos import/export controls. */
 
 import React, { useRef, useState } from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -15,12 +16,31 @@ import {
 import { FocalLengthSelectionModal } from "./FocalLengthSelectionModal";
 
 interface LensEditorConfigToolbarProps {
+  /** Builds the current optical model snapshot for JSON download */
   readonly getOpticalModel: () => OpticalModel;
+  /** Applies a validated imported JSON config after user confirmation */
   readonly onImportJson: (data: OpticalModel) => void;
+  /** Triggers Lens Editor submit/compute */
   readonly onUpdateSystem: () => void | Promise<void>;
+  /** Disables `Update System` while Pyodide is not ready or a compute is in progress */
   readonly isUpdateSystemDisabled: boolean;
 }
 
+/**
+ * Lens Editor-level toolbar for configuration actions shown above the analysis controls. It owns the visible `Update System`, `Load Config`, `Import a file from Photons to Photos`, and `Download Config` buttons so these actions stay available before any Seidel/Zernike data has been computed.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - `Update System` calls `onUpdateSystem` and respects `isUpdateSystemDisabled`.
+ * - `Load Config` opens the hidden JSON file input. File contents are parsed and validated with `validateImportedLensData`; valid data opens `ConfirmImportModal`, invalid data opens `ErrorModal`.
+ * - `Import a file from Photons to Photos` opens the hidden TXT file input. Non-`.txt` filenames are rejected before reading. Prime TXT files are parsed with app-wide glass lookup maps when available, AJV-validated, and sent to `ConfirmImportModal`. Zoom TXT files first open `FocalLengthSelectionModal`; confirming the focal length resolves and validates that column before opening `ConfirmImportModal`.
+ * - Confirming the import calls `onImportJson(pendingImportData)` and clears pending state. Canceling clears pending state without mutating stores.
+ * - `Download Config` serializes `getOpticalModel()` as pretty JSON and downloads it as `lens-config.json`.
+ * - Button size follows `useScreenBreakpoint`: `xs` on `screenSM`, `sm` otherwise.
+ *
+ * Rendered by `LensEditor.tsx` before the Seidel/Zernike analysis controls in both LG and SM layouts.
+ */
 export function LensEditorConfigToolbar({
   getOpticalModel,
   onImportJson,
@@ -28,11 +48,17 @@ export function LensEditorConfigToolbar({
   isUpdateSystemDisabled,
 }: LensEditorConfigToolbarProps) {
   const { lookupMaps } = useGlassCatalogs();
+  /** Whether the invalid-import error modal is open. */
   const [importErrorOpen, setImportErrorOpen] = useState(false);
+  /** Current JSON, extension, TXT parse, or schema error message. */
   const [importErrorMessage, setImportErrorMessage] = useState("The JSON file is invalid. Schema validation failed.");
+  /** Validated JSON or TXT model awaiting confirmation. */
   const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
+  /** Parsed multi-column TXT import awaiting a focal-length choice. */
   const [pendingZoomImport, setPendingZoomImport] = useState<Extract<PhotonsToPhotosParseResult, { kind: "zoom" }> | undefined>();
+  /** Hidden JSON input activated by Load Config. */
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** Hidden TXT input activated by Import from Photons to Photos. */
   const photonsToPhotosFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {

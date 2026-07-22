@@ -28,13 +28,21 @@ interface FieldConfigResult {
 }
 
 interface FieldConfigModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** `"object"` or `"image"` */
   readonly initialSpace: FieldSpace;
+  /** `"height"` or `"angle"` */
   readonly initialType: FieldType;
+  /** Max half-field value in mm or degrees */
   readonly initialMaxField: number;
+  /** List of relative field values (0–1) */
   readonly initialRelativeFields: readonly number[];
+  /** Initial state for the wide-angle ray-aiming checkbox */
   readonly initialIsWideAngle: boolean;
+  /** Called with the final config on Apply */
   readonly onApply: (result: FieldConfigResult) => void;
+  /** Cancel callback */
   readonly onClose: () => void;
 }
 
@@ -49,6 +57,32 @@ function fieldsToRows(fields: readonly number[]): FieldRow[] {
 
 const MAX_ROWS = 10;
 
+/**
+ * Modal for configuring optical field settings: field space, field type, max half-field value, a list of relative field positions, and the optional wide-angle ray-aiming mode. Uses AG Grid for the editable field table.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Mount-on-open: when `isOpen=false`, the component returns `null`; reopening mounts a fresh editor subtree whose draft state is initialized from props without a reset `useEffect`.
+ * - Row limit is 10; the add button becomes hidden (not removed) at the limit.
+ * - The first row cannot be deleted.
+ * - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for field row insertion and deletion controls.
+ * - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
+ * - Row ids use a module-level counter for stable AG Grid `getRowId`.
+ * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
+ * - Keeps the caption outside a grid container that is `200px` high below the project-standard `1440px` breakpoint and `400px` high at `1440px` and above, and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
+ *
+ *
+ *
+ * ## Grid Columns
+ *
+ * - Row actions: 100px.
+ * - Relative Field: 125px.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while field settings and the field grid scroll.
+ */
 export function FieldConfigModal({
   isOpen,
   ...props
@@ -71,10 +105,15 @@ function FieldConfigModalContent({
 }: Omit<FieldConfigModalProps, "isOpen">) {
   const gridTheme = useAgGridTheme();
 
+  /** Draft object- or image-space selection. */
   const [space, setSpace] = useState(() => initialSpace);
+  /** Draft angle- or height-field selection. */
   const [fieldType, setFieldType] = useState(() => initialType);
+  /** String draft of the maximum absolute field. */
   const [maxFieldStr, setMaxFieldStr] = useState(() => String(initialMaxField));
+  /** Editable relative-field rows with stable grid ids. */
   const [rows, setRows] = useState<FieldRow[]>(() => fieldsToRows(initialRelativeFields));
+  /** Draft wide-angle ray-aiming setting. */
   const [isWideAngle, setIsWideAngle] = useState(() => initialIsWideAngle);
 
   const addRow = useCallback((afterId: string) => {

@@ -1,4 +1,15 @@
-"""Operand-based optimization helpers for rayoptics optical models."""
+"""Expose dict-driven optical-model optimization.
+
+The facade accepts JSON-safe configs for least-squares or differential-evolution
+solvers and returns JSON-safe reports. Radius targets remain radius-valued in the
+public contract but are optimized internally as curvature; other targets stay in
+direct value space.
+
+Residual weights are ``operand_weight * sqrt(field_weight) *
+sqrt(wavelength_weight)``. The merit sum of squares is the sum of squared weighted
+residuals and ``rss`` is its square root. Scalar operands expand by selected
+field/wavelength samples; ray-fan operands retain fixed, penalty-padded dimensions.
+"""
 
 from __future__ import annotations
 
@@ -71,7 +82,24 @@ def evaluate_optimization_problem(
     config: OptimizationConfig,
     image_point: str = "chief_ray",
 ) -> OptimizationReport:
-    """Evaluate a dict-driven optimization problem without running SciPy."""
+    """Evaluate a dict-driven optimization problem without running SciPy.
+
+
+    1. Validates and normalizes the config.
+    2. Snapshots all variable/pickup targets before mutation.
+    3. Applies the current variable vector and then applies pickups in dependency order.
+    4. Calls `opm.update_model()`.
+    5. Evaluates all operand residuals and returns a JSON-safe report.
+    6. If evaluation fails, restores the snapshotted state and re-raises.
+
+    Args:
+        opm: RayOptics optical model.
+        config: Optimization configuration mapping.
+        image_point: Image-point reference convention.
+
+    Returns:
+        JSON-safe merit evaluation report.
+    """
     _sync_legacy_hooks()
     problem = _OptimizationProblem(opm, config, image_point=image_point)
     snapshot = _snapshot_state(opm, problem.variables, problem.pickups)
@@ -120,7 +148,35 @@ def optimize_opm(
     image_point: str = "chief_ray",
     progress_reporter: ProgressReporter | None = None,
 ) -> OptimizationReport:
-    """Optimize a rayoptics optical model using a dict-driven config."""
+    """Optimize a rayoptics optical model using a dict-driven config.
+
+
+    1. Validates and normalizes the config.
+    2. Snapshots all variable/pickup targets before mutation.
+    3. Builds the current variable vector and, for bounded solvers, bounds from the config.
+    4. Selects the registered solver adapter for `optimizer.kind` and delegates execution to it.
+    5. Each objective evaluation:
+       - is handled by `_OptimizationProblem.objective(vector)`
+       - writes variables
+       - applies pickups
+       - calls `opm.update_model()`
+       - evaluates operand residuals
+    6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) for residual solvers or a scalar `1e6` penalty for scalar solvers so SciPy can continue.
+    7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`.
+    8. If SciPy raises `KeyboardInterrupt`, treats it as a user stop, evaluates the latest recorded optimizer vector (or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that latest state.
+    9. If SciPy setup or the final evaluation fails for any other exception, restores the snapshotted state and re-raises.
+
+    If there are no variables, `optimize_opm()` skips SciPy, records one progress point from the evaluated merit report, and returns `status == "no_variables"`.
+
+    Args:
+        opm: RayOptics optical model.
+        config: Optimization configuration mapping.
+        image_point: Image-point reference convention.
+        progress_reporter: Optional callback that receives optimization progress.
+
+    Returns:
+        Detailed optimization result and progress report.
+    """
     _sync_legacy_hooks()
     problem = _OptimizationProblem(opm, config, image_point=image_point)
     snapshot = _snapshot_state(opm, problem.variables, problem.pickups)

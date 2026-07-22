@@ -1,3 +1,31 @@
+/**
+ * `autoSemiDiameters` is an app-lifetime cache keyed by stable surface row ID. Its actions replace or clear computed values without changing editable manual `rows[].semiDiameter` values.
+ *
+ * @remarks
+ * Zustand store for managing the lens editor grid and its associated modals. Holds the array of `GridRow` objects displayed in the surface table and coordinates selection, insertion, deletion, and modal open/close state.
+ *
+ * ## Key Conventions
+ *
+ * - Object and image rows (`kind === "object"` / `kind === "image"`) cannot be deleted or added after (image guard in `addRowAfter`).
+ * - Normal row replacements, row edits, row insertions, and row deletions use `optimizationSyncPolicy: "resetOptimizationModes"` so Optimization clears stale radius/thickness/asphere variable modes after ordinary editor prescription edits.
+ * - Optimization Apply and Focusing may pass `optimizationSyncPolicy: "preserveOptimizationModes"` because those prescription updates originate from Optimization-compatible workflows and should not clear Optimization prescription modes.
+ * - The default object row is `{ objectDistance: OBJECT_DISTANCE_INFINITY_THRESHOLD, medium: "air", manufacturer: "" }`, currently `1e10`.
+ * - New rows inserted by `addRowAfter` are seeded with `generateRowId()` and default surface values: flat (`curvatureRadius: 0`), zero thickness, `"air"` medium, `semiDiameter: 1`.
+ * - Modal `rowId` is reset to `""` on close.
+ * - `pendingMediumSelection` persists unconfirmed catalog-glass choices across route changes while the root store provider remains mounted.
+ * - `activeBottomDrawerTabId` and `bottomDrawerHeight` are feature-owned UI state. They persist as long as the root store provider remains mounted.
+ * - `bottomDrawerHeight` is persistence-only state for route restoration; `BottomDrawer` still owns live drag state locally to avoid store-driven re-renders on every pointer move.
+ * - Formatting draft controls are intentionally not stored here. `FormattingModal` owns them locally so Cancel and successful Confirm discard drafts when the modal unmounts, and reopening recomputes defaults from current rows.
+ *
+ * ## Dependencies
+ *
+ * - `create`, `StateCreator` from `zustand`.
+ * - `GridRow`, `OBJECT_ROW_ID`, `IMAGE_ROW_ID` from `@/shared/lib/lens-prescription-grid/types/gridTypes`.
+ * - `generateRowId` from `@/shared/lib/lens-prescription-grid/lib/gridTransform`.
+ * - `OpticalModel` from `@/shared/lib/types/opticalModel`.
+ *
+ * Used through `LensEditorStoreProvider` and `useLensEditorStore()` rather than as a standalone exported hook from this file.
+ */
 import { type StateCreator } from "zustand";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
@@ -23,44 +51,82 @@ interface PrescriptionMutationOptions {
 }
 
 export interface LensEditorState {
+  /** Surface-grid rows. Defaults to the object and image rows. */
   rows: GridRow[];
+  /** Monotonically increasing prescription mutation counter. Defaults to `0`. */
   prescriptionRevision: number;
+  /** Policy Optimization should use for the latest prescription mutation. Defaults to `"resetOptimizationModes"`. */
   optimizationSyncPolicy: LensEditorOptimizationSyncPolicy;
+  /** Selected grid-row ID, or `undefined` when no row is selected. */
   selectedRowId: string | undefined;
+  /** Whether automatic aperture calculation is enabled. Defaults to `false`. */
   autoAperture: boolean;
+  /** App-lifetime computed semi-diameter cache keyed by stable row ID. Defaults to an empty object and does not alter manual row values. */
   autoSemiDiameters: Readonly<Record<string, number>>;
+  /** Active bottom-drawer tab ID, persisted across route changes. Defaults to `"specs"`. */
   activeBottomDrawerTabId: string;
+  /** Last committed bottom-drawer height for route restoration, initially `undefined`. */
   bottomDrawerHeight: number | undefined;
+  /** Medium-picker modal state. Defaults to closed with an empty row ID. */
   mediumModal: ModalState;
+  /** Unconfirmed medium selection, or `undefined` when no draft exists. */
   pendingMediumSelection: PendingMediumSelection | undefined;
+  /** Aspherical-coefficients modal state. Defaults to closed with an empty row ID. */
   asphericalModal: ModalState;
+  /** Surface-decenter modal state. Defaults to closed with an empty row ID. */
   decenterModal: ModalState;
+  /** Diffraction-grating modal state. Defaults to closed with an empty row ID. */
   diffractionGratingModal: ModalState;
+  /** Surface-aperture modal state. Defaults to closed with an empty row ID. */
   apertureModal: ModalState;
+  /** Last successfully submitted optical-model snapshot, initially `undefined`. */
   committedOpticalModel: OpticalModel | undefined;
 
+  /** Replaces all rows, increments `prescriptionRevision`, and records the supplied sync policy or the reset policy by default. */
   setRows: (rows: GridRow[], options?: PrescriptionMutationOptions) => void;
+  /** Merges a patch into an existing row while preserving its `id` and `kind`, then increments the revision and records the sync policy. Does nothing when `id` is absent. */
   updateRow: (id: string, patch: Partial<GridRow>, options?: PrescriptionMutationOptions) => void;
+  /** Inserts a default surface after `id` and increments the revision. Does nothing for an unknown ID or the image row. */
   addRowAfter: (id: string) => void;
+  /** Deletes a surface row, clears its selection, and increments the revision. Does nothing for missing, object, or image rows. */
   deleteRow: (id: string) => void;
+  /** Sets or clears the selected row ID. */
   setSelectedRowId: (id: string | undefined) => void;
+  /** Enables or disables automatic aperture calculation. */
   setAutoAperture: (value: boolean) => void;
+  /** Replaces the computed semi-diameter cache without changing editable manual semi-diameters. */
   setAutoSemiDiameters: (values: Readonly<Record<string, number>>) => void;
+  /** Clears the computed semi-diameter cache without changing editable manual semi-diameters. */
   clearAutoSemiDiameters: () => void;
+  /** Persists the active bottom-drawer tab ID across route changes. */
   setActiveBottomDrawerTabId: (id: string) => void;
+  /** Persists the latest committed bottom-drawer height across route changes. */
   setBottomDrawerHeight: (height: number) => void;
+  /** Opens the medium picker for `rowId` and seeds its pending draft from a valid object or surface row. */
   openMediumModal: (rowId: string) => void;
+  /** Updates the pending medium and manufacturer when a draft exists; otherwise does nothing. */
   updatePendingMediumSelection: (patch: Pick<PendingMediumSelection, "medium" | "manufacturer">) => void;
+  /** Commits the explicit selection or pending draft to its target row, then closes the modal and clears the draft. Does nothing when no selection is available. */
   commitPendingMediumSelection: (selection?: Pick<PendingMediumSelection, "medium" | "manufacturer">) => void;
+  /** Closes the medium picker, resets its row ID, and discards the pending draft. */
   closeMediumModal: () => void;
+  /** Opens the aspherical-coefficients modal for a row. */
   openAsphericalModal: (rowId: string) => void;
+  /** Closes the aspherical-coefficients modal and resets its row ID. */
   closeAsphericalModal: () => void;
+  /** Opens the surface-decenter modal for a row. */
   openDecenterModal: (rowId: string) => void;
+  /** Closes the surface-decenter modal and resets its row ID. */
   closeDecenterModal: () => void;
+  /** Opens the diffraction-grating modal for a row. */
   openDiffractionGratingModal: (rowId: string) => void;
+  /** Closes the diffraction-grating modal and resets its row ID. */
   closeDiffractionGratingModal: () => void;
+  /** Opens the surface-aperture modal for a row. */
   openApertureModal: (rowId: string) => void;
+  /** Closes the surface-aperture modal and resets its row ID. */
   closeApertureModal: () => void;
+  /** Stores the last successfully submitted optical-model snapshot for analysis consumers. */
   setCommittedOpticalModel: (model: OpticalModel) => void;
 }
 

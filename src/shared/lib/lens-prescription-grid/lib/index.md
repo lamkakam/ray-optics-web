@@ -4,5 +4,5 @@ Lens prescription grid transformation helpers.
 
 ## Files
 
-- [gridTransform.ts](./gridTransform.ts.md) — Transform between Surface data and AG Grid rows (surfacesToGridRows, gridRowsToSurfaces)
-- [prescriptionFormatting.ts](./prescriptionFormatting.ts.md) — Pure scale/reverse formatting helpers for lens prescription rows, including selector options and atomic validation.
+- [gridTransform.ts](./gridTransform.ts) — Transform between Surface data and AG Grid rows (surfacesToGridRows, gridRowsToSurfaces)
+- [prescriptionFormatting.ts](./prescriptionFormatting.ts) — Pure scale/reverse formatting helpers for lens prescription rows, including selector options and atomic validation.

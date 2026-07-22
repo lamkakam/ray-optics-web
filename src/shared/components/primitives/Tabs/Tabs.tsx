@@ -1,9 +1,11 @@
 "use client";
+/** Controlled and uncontrolled tab navigation. */
 
 import React, { useState } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Stable tab id, label, and content. */
 export interface TabItem {
   readonly id: string;
   readonly label: string;
@@ -11,14 +13,32 @@ export interface TabItem {
 }
 
 interface TabsProps {
+  /** Tab definitions — id, label, and content node */
   readonly tabs: readonly TabItem[];
+  /** Extra element rendered at the far-right of the tab bar (e.g. collapse button) */
   readonly actions?: React.ReactNode;
+  /** When `false` the content panel is hidden. Defaults to `true` */
   readonly showPanel?: boolean;
+  /** Applied to the `role="tabpanel"` div */
   readonly panelClassName?: string;
+  /** Controlled active tab id. When omitted, `Tabs` manages its own internal selection state */
   readonly activeTabId?: string;
+  /** Called whenever the user clicks a tab, in both controlled and uncontrolled modes */
   readonly onTabChange?: (tabId: string) => void;
 }
 
+/**
+ * Accessible tabbed panel component. Renders a tab bar with ARIA roles and a content panel for the active tab. Supports an optional action slot beside the tabs and a collapsible panel.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Tab buttons carry `role="tab"`, `aria-selected`, and `aria-label`.
+ * - The content area carries `role="tabpanel"`.
+ * - Tab bar scrolls horizontally when tabs overflow.
+ * - In controlled mode, `activeTabId` decides the selected tab and clicks only emit `onTabChange`.
+ * - If `activeTabId` or the uncontrolled state points to a tab id that is no longer present, `Tabs` safely falls back to the first tab in `tabs`.
+ */
 export function Tabs({
   tabs,
   actions,
@@ -27,6 +47,7 @@ export function Tabs({
   activeTabId,
   onTabChange,
 }: TabsProps) {
+  /** Uncontrolled active tab, initialized from the first available tab. */
   const [internalActiveTabId, setInternalActiveTabId] = useState(tabs[0]?.id ?? "");
   const resolvedActiveTabId = tabs.some((tab) => tab.id === activeTabId)
     ? activeTabId

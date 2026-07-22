@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 import { Header } from "@/shared/components/primitives/Header";
 
+/** Supported modal width presets. */
 export type ModalSize = "md" | "lg" | "4xl";
 
 const sizeClasses: Record<ModalSize, string> = {
@@ -14,15 +15,35 @@ const sizeClasses: Record<ModalSize, string> = {
 };
 
 interface ModalProps {
+  /** When `false`, renders nothing */
   readonly isOpen: boolean;
+  /** Displayed as an `h2` at the top of the panel; also the `aria-labelledby` target */
   readonly title: string;
+  /** Custom id for the title element. Auto-generated with `useId` if omitted */
   readonly titleId?: string;
+  /** Max-width of the panel. Defaults to `"md"` */
   readonly size?: ModalSize;
+  /** Called when the semi-transparent backdrop is clicked */
   readonly onBackdropClick?: () => void;
+  /** Optional fixed footer content rendered outside the scrollable body region */
   readonly footer?: React.ReactNode;
   readonly children: React.ReactNode;
 }
 
+/**
+ * Accessible modal dialog shell. Renders a backdrop, a fixed title, a scrollable body region, and an optional fixed footer. Does not manage its own open/close state — callers pass `isOpen`.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Returns `null` when `isOpen` is `false` (no DOM presence).
+ * - Panel carries `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`.
+ * - `onKeyDown` on the outer wrapper calls `stopPropagation` to prevent key events from leaking to the page.
+ * - Panel animates in via `animate-modal-enter` CSS class.
+ * - Panel is a flex column with `max-h-[90dvh]` and `overflow-hidden`.
+ * - Children render inside `data-testid="modal-body"`, which owns vertical scrolling via `overflow-y-auto`.
+ * - When `footer` is provided, it renders in `data-testid="modal-footer"` below the body with a top border and is not part of the scrollable body.
+ */
 export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, footer, children }: ModalProps) {
   const generatedId = useId();
   const resolvedTitleId = titleId ?? generatedId;

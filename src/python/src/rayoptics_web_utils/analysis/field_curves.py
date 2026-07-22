@@ -1,4 +1,4 @@
-"""Field curvature and astigmatism curve data extraction."""
+"""Extract wavelength-selectable field curves across the full field of view."""
 
 from __future__ import annotations
 
@@ -69,12 +69,30 @@ def _trace_field_curves(opm: OpticalModel, wvl_idx: int, num_points: int = 21) -
 
 
 def get_field_curvature_data(opm: OpticalModel, wvl_idx: int, num_points: int = 21) -> dict:
-    """Return sagittal and tangential field-curvature curves for one wavelength."""
+    """Return sagittal and tangential field-curvature curves for one wavelength.
+
+    Args:
+        opm: RayOptics optical model.
+        wvl_idx: Wavelength index.
+        num_points: Number of field samples.
+
+    Returns:
+        Sagittal and tangential field-curvature curves for one wavelength.
+    """
     return _trace_field_curves(opm, wvl_idx, num_points=num_points)
 
 
 def get_astigmatism_curve_data(opm: OpticalModel, wvl_idx: int, num_points: int = 21) -> dict:
-    """Return tangential-minus-sagittal astigmatic separation for one wavelength."""
+    """Return tangential-minus-sagittal astigmatic separation for one wavelength.
+
+    Args:
+        opm: RayOptics optical model.
+        wvl_idx: Wavelength index.
+        num_points: Number of field samples.
+
+    Returns:
+        Tangential-minus-sagittal astigmatic separation for one wavelength.
+    """
     field_curves = _trace_field_curves(opm, wvl_idx, num_points=num_points)
     sagittal_x = field_curves["Sagittal"]["x"]
     tangential_x = field_curves["Tangential"]["x"]

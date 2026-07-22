@@ -1,18 +1,28 @@
-"""Glass catalog data extraction from opticalglass."""
+"""Extract JSON-safe optical-glass catalog data.
+
+``opticalglass.glass_data`` exposes a multi-level series indexed by category and
+sub-key. Partial dispersions use ``nF−nC`` as their denominator and return zero
+when it cannot be computed. CDGM, Hoya, Sumita, and Hikari coefficients export as
+``Schott2x6``; Ohara and Schott export as ``Sellmeier3T``. Bundled special
+materials may additionally use ``Sellmeier4T``.
+"""
+
+
 from __future__ import annotations
 import pandas as pd
 from rayoptics_web_utils.glass.helper import (_partial_dispersion)
 
 
 def _partial_dispersions(data: pd.Series) -> dict[str, float]:
-    """
-    Compute P_fe, P_Fd, P_gF from refractive index lines. Returns 0.0 if any cannot be computed.
-    Return type:
-    {
-        "P_fe": float,
-        "P_Fd": float,
-        "P_gF": float,
-    }
+    """Return P_fe, P_Fd, and P_gF from indexed refractive indices.
+
+    An unavailable or zero F–C denominator yields zero-valued dispersions.
+
+    Args:
+        data: Source data to process.
+
+    Returns:
+        P_fe, P_Fd, and P_gF from indexed refractive indices.
     """
     nF = data["refractive indices"]["F"]
     ne = data["refractive indices"]["e"]
@@ -27,14 +37,18 @@ def _partial_dispersions(data: pd.Series) -> dict[str, float]:
     }
 
 def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, str | list[float]]:
-    """
-    Return type:
-    {
-        "dispersion_coeffs_kind": str, # "Schott2x6" or "Sellmeier3T"
-        "dispersion_coeffs": list[float],
-    }
+    """Return normalized coefficient kind and values for one catalog glass.
 
-    Raises ValueError if catalog is unsupported.
+    CDGM, Hoya, and Sumita Schott data are padded to Hikari's eight-value layout;
+    Ohara and Schott retain six-value Sellmeier form. Unsupported catalogs raise
+    ``ValueError``.
+
+    Args:
+        catalog_name: Name of the glass catalog.
+        data: Source data to process.
+
+    Returns:
+        Normalized coefficient kind and values for one catalog glass.
     """
 
     def schott2x4() -> dict[str, str | list[float]]:
@@ -66,7 +80,7 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
             "dispersion_coeffs_kind": "Schott2x6",
             "dispersion_coeffs": dispersion_coeffs,
         }
-    
+
     def sellmeier3t(catalog_name: str) -> dict[str, str | list[float]]:
         if catalog_name == "Schott":
             keys = ["B1", "B2", "B3", "C1", "C2", "C3"]
@@ -82,7 +96,7 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
             "dispersion_coeffs_kind": "Sellmeier3T",
             "dispersion_coeffs": dispersion_coeffs,
         }
-    
+
     match catalog_name:
         case "CDGM" | "Hoya" |"Sumita":
             return schott2x4()
@@ -92,22 +106,21 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
             return sellmeier3t(catalog_name)
         case _:
             raise ValueError(f"Unsupported catalog: {catalog_name}")
-        
+
 
 
 def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | dict[str, float] | list[float]]:
-    """
-    Build a single glass dict from a glass_data() Series.
-    Return type:
-    {
-        "refractiveIndexD": float,
-        "refractiveIndexE": float,
-        "abbeNumberD": float,
-        "abbeNumberE": float,
-        "partialDispersions": dict[str, float],
-        "dispersionCoeffKind": str, # "Schott2x6" or "Sellmeier3T"
-        "dispersionCoeffs": list[float],
-    }
+    """Return one frontend glass entry from an ``opticalglass`` data series.
+
+    Includes d/e indices and Abbe numbers, partial dispersions, coefficient kind, and
+    coefficient values.
+
+    Args:
+        catalog_name: Name of the glass catalog.
+        data: Source data to process.
+
+    Returns:
+        One frontend glass entry from an ``opticalglass`` data series.
     """
     nd = data["refractive indices"]["d"]
     ne = data["refractive indices"]["e"]
@@ -130,7 +143,16 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
 
 
 def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
-    """Return {glass_name: glass_dict} for all glasses in a catalog."""
+    """Return every valid glass entry in a named catalog.
+
+    Catalog lookup is case-insensitive and the nested values are JSON serialisable.
+
+    Args:
+        catalog_name: Name of the glass catalog.
+
+    Returns:
+        Every valid glass entry in a named catalog.
+    """
     from opticalglass.glassfactory import fill_catalog_list
 
     catalogs = fill_catalog_list()
@@ -144,7 +166,14 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
 
 
 def get_all_glass_catalogs_data() -> dict[str, dict[str, dict]]:
-    """Return {catalog_name: {glass_name: glass_dict}} for all 6 catalogs + Special materials."""
+    """Return the six standard catalogs plus bundled ``Special`` materials.
+
+    Args:
+        None.
+
+    Returns:
+        The six standard catalogs plus bundled ``Special`` materials.
+    """
     from .custom_materials import get_special_materials_data
     catalog_names = ["CDGM", "Hikari", "Hoya", "Ohara", "Schott", "Sumita"]
     result = {name: get_glass_catalog_data(name) for name in catalog_names}

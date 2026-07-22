@@ -1,4 +1,4 @@
-"""Shared image-point selection."""
+"""Resolve the shared image-point reference for OPD analyses."""
 
 from __future__ import annotations
 
@@ -26,7 +26,24 @@ def _resolve_image_point(
     num_rays: int,
     image_point: str = "chief_ray",
 ):
-    """Return RayOptics image_pt_2d override for the requested image point."""
+    """Return the RayOptics image-point override for the requested convention.
+
+    ``"chief_ray"`` returns ``None``. ``"centroid"`` traces a vignetted,
+    aperture-checked pupil grid, projects each valid final ray point by
+    ``foc / direction_z``, and averages the finite transverse coordinates. Blocked or
+    non-finite rays are excluded; no valid points raises ``ValueError``.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        wavelength_nm: Wavelength in nanometres.
+        foc: Focus shift in system length units.
+        num_rays: Pupil-grid sampling resolution.
+        image_point: Image-point reference convention.
+
+    Returns:
+        The RayOptics image-point override for the requested convention.
+    """
     validated_image_point = _validate_image_point(image_point)
     if validated_image_point == "chief_ray":
         return None

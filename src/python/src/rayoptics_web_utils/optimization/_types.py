@@ -1,4 +1,11 @@
-"""Shared type definitions for optimization helpers."""
+"""Define the optimization package's shared static contracts.
+
+Input and normalized configs remain distinct. Solver options are discriminated by
+kind, mutable targets by target kind, and result mappings allow solver-specific
+metadata. Operand evaluators may return scalars or residual vectors and receive
+the image-point convention explicitly. Snapshot entries retain the complete target
+descriptor so rollback preserves asphere kinds.
+"""
 
 from __future__ import annotations
 
@@ -413,7 +420,14 @@ class OptimizationProblemProtocol(Protocol):
 
 
 def has_finite_variable_bounds(variable: VariableConfig) -> bool:
-    """Return whether a normalized variable provides finite min/max bounds."""
+    """Return whether a normalized variable provides finite min/max bounds.
+
+    Args:
+        variable: Normalized optimization variable.
+
+    Returns:
+        Whether a normalized variable provides finite min/max bounds.
+    """
     if "min" not in variable or "max" not in variable:
         return False
     return math.isfinite(variable["min"]) and math.isfinite(variable["max"])

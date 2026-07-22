@@ -1,4 +1,4 @@
-"""Transverse ray-fan data extraction."""
+"""Extract transverse ray-fan data."""
 
 import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
@@ -14,8 +14,24 @@ from rayoptics_web_utils.utils import _json_float_list, _system_units
 
 
 def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]:
-    """
-    Return transverse ray-fan data for all wavelengths at field index ``fi``.
+    """Return transverse ray-fan data for all wavelengths at field index ``fi``.
+
+    Each wavelength result contains `fieldIdx`, `wvlIdx`, `Sagittal`,
+    `Tangential`, `unitX`, and `unitY`. Both fans contain pupil coordinates `x`
+    and transverse aberrations `y`; blocked samples remain as `None` gaps.
+
+    Finite image space reports image-plane aberrations in system dimensions.
+    Infinite image space reports output-direction aberrations relative to the
+    selected direction reference in `arcsec`. `image_point="chief_ray"` keeps
+    the historical default; `"centroid"` uses the shared centroid reference.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Transverse ray-fan data for all wavelengths at field index ``fi``.
     """
 
     afocal = is_afocal_image_space(opm)

@@ -10,6 +10,23 @@ interface AddReferenceSurfaceModalProps {
   readonly onCancel: () => void;
 }
 
+/**
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Uses the shared `Modal` primitive with title `Add Reference Surface?`.
+ * - Explains that rayoptics wavefront and OPD calculations can be unreliable when the first physical surface is tilted or decentered, and that a flat air reference surface after Object avoids the topology issue.
+ * - `No` calls `onCancel` so the caller can apply the reversed rows unchanged.
+ * - `Yes` calls `onConfirm` so the caller can insert a flat air reference surface before applying rows.
+ *
+ *
+ * Confirmation modal shown after a successful Reverse formatting operation when the resulting first physical surface has nonzero tilt or decenter.
+ *
+ * ## Modal Footer
+ *
+ * - No and Yes actions are passed to `Modal.footer` so they remain fixed outside the explanatory body.
+ */
 export function AddReferenceSurfaceModal({
   isOpen,
   onConfirm,

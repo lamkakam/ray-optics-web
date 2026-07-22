@@ -1,3 +1,55 @@
+/**
+ * Describes the Optimization Store module.
+ *
+ * @remarks
+ * ## Internal Structure
+ *
+ * - `buildOptimizationConfig()` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
+ * - Store-local optimizer and surface-mode helper types derive shared contract fields from `features/optimization/types/optimizationWorkerTypes.ts` via indexed-access / `Extract` types, so the worker-boundary kind unions stay defined in one place. Optimizer form state keeps the shared field names and maps only numeric values to input strings.
+ * - Shared optimizer capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the selected optimizer's rule set.
+ * - Default optimizer method and tolerance strings are seeded from `features/optimization/lib/optimizerUiConfig.ts` so the form defaults, labels, and capability rules stay aligned.
+ * - Shared validation for bounded variable ranges stays centralized so radius, thickness, and asphere variable entries continue to use the same `min < max` rule and error text when the active method requires bounds.
+ * - Surface pickup source-index validation stays centralized so radius and thickness pickups continue to share the same same-surface and out-of-range checks.
+ *
+ * ## Validation Rules
+ *
+ * - `max_nfev` must be a positive integer.
+ * - For least squares, `ftol`, `xtol`, and `gtol` must be finite positive values greater than `Number.EPSILON`, matching SciPy's double-precision machine-epsilon tolerance guard before the worker is called.
+ * - For Differential Evolution, `tol` must be a positive non-zero number and `atol` must be a non-negative number.
+ * - Operand `weight` must be a positive non-zero number.
+ * - For bounded optimizers such as `trf` and `differential_evolution`, variable `min` and `max` must be numeric, and `min < max`.
+ * - For least-squares `lm`, the built config must provide at least as many residual samples as optimization variables; otherwise `buildOptimizationConfig()` throws before the page tries to evaluate or optimize.
+ * - Pickup `source_surface_index` must be in range and must not equal the target surface index.
+ * - Asphere coefficient pickups require a coefficient `sourceTermKey`.
+ * - Asphere coefficient pickup `source_coefficient_index` must be a non-negative integer so zero-based coefficient slot `0` is allowed.
+ * - At least one operand is required before `buildOptimizationConfig()` succeeds.
+ * - `hasNonZeroOptimizationContribution(...)` treats missing `fields` or `wavelengths` as a neutral factor of `1`, and otherwise checks all operand/field/wavelength weight combinations for any product greater than `0`.
+ *
+ * ## Key Conventions
+ *
+ * - `surfaceIndex` matches the sequential-model indexing used by Python: first lens surface is `1`; radius modes include the image surface (`surfaces.length + 1`), while thickness modes stop at the last surface row.
+ * - `initializeFromOpticalModel()` seeds field weights as `1` for field index `0` and `0` for every remaining field.
+ * - `initializeFromOpticalModel()` seeds wavelength weights from `model.specs.wavelengths.weights[*][1]`, matching the editor-page wavelength weights.
+ * - `syncFromOpticalModel()` resets field weights to the same `[1, 0, 0, ...]` default only when editor field specs changed since the last baseline.
+ * - `syncFromOpticalModel()` resets wavelength weights from `model.specs.wavelengths.weights[*][1]` only when editor wavelength specs changed since the last baseline.
+ * - Editor wide-angle mode changes update `optimizationModel.specs.field.isWideAngle` but do not count as field-spec changes for Optimization settings reset purposes.
+ * - Editor reference wavelength changes update `optimizationModel.specs.wavelengths.referenceIndex` but do not count as wavelength-spec changes for Optimization settings reset purposes.
+ * - `syncFromOpticalModel()` resets radius, thickness, and asphere variable/pickup modes to constants when the editor prescription changed with the default `"resetOptimizationModes"` policy.
+ * - `syncFromOpticalModel()` updates `optimizationModel` and the baseline without clearing prescription modes when the editor prescription changed with `"preserveOptimizationModes"`.
+ * - Algorithm settings and operand rows are never reset by editor sync.
+ * - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, either axis-specific OPD Difference operand, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
+ * - For preserved prescription sync, `syncFromOpticalModel()` reconciles radius modes, thickness modes, and `asphereStates` by index so model-shape-compatible modes survive while new targets receive default constant modes.
+ * - `buildOptimizationConfig()` appends asphere variables and pickups alongside radius/thickness entries, using `asphere_kind` plus zero-based `coefficient_index` / `source_coefficient_index` metadata for the Python optimizer.
+ * - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf` and `differential_evolution`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching least-squares methods does not discard prior inputs.
+ * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
+ * - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal`.
+ * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count. `ray_fan` contributes `num_rays * 2` residuals per selected field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
+ * - `applyOptimizationResult()` can create or update `surface.aspherical` on the optimization-local optical model when optimized asphere results come back from Python.
+ * - `syncFromOpticalModel()` clears `hasUnappliedOptimizationResult` when a normal editor sync replaces the Optimization-local snapshot through field, wavelength, or reset-policy prescription changes.
+ * - `syncFromOpticalModel()` preserves `hasUnappliedOptimizationResult` during Optimization-origin prescription syncs that use `prescriptionSyncPolicy: "preserveOptimizationModes"`; the apply path clears the marker explicitly after the editor has been updated.
+ * - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
+ * - `RadiusMode`, `RadiusModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.
+ */
 import { type StateCreator } from "zustand";
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
@@ -132,50 +184,94 @@ interface AsphereModalState {
 }
 
 export interface OptimizationState {
+  /** Active Optimization page tab. Defaults to `"algorithm"`. */
   activeTabId: string;
+  /** Page-local optical-model snapshot seeded from the Editor, or `undefined` before initialization. */
   optimizationModel: OpticalModel | undefined;
+  /** Fingerprints of the editor field, wavelength, and prescription state last synchronized into Optimization. */
   editorSyncBaseline: EditorSyncBaseline | undefined;
+  /** Optimizer-specific form inputs, with numeric values stored as strings for direct form binding. Defaults to least-squares UI defaults. */
   optimizer: OptimizationAlgorithmState;
+  /** Numeric field optimization weights. Initially empty, then seeded as `[1, 0, ...]` from the model. */
   fieldWeights: number[];
+  /** Numeric wavelength optimization weights. Initially empty, then seeded from the model's wavelength weights. */
   wavelengthWeights: number[];
+  /** Constant, variable, or pickup mode for every non-object radius target, including the image surface. */
   radiusModes: RadiusMode[];
+  /** Constant, variable, or pickup mode for every surface-row thickness target. */
   thicknessModes: RadiusMode[];
+  /** Optimization asphere type and independent term modes for every real surface. */
   asphereStates: AsphereOptimizationState[];
+  /** Merit-function operand rows. Defaults to an empty array; target-less kinds store `target: undefined`. */
   operands: OptimizationOperandRow[];
+  /** Whether optimization is running and the page-blocking overlay should be shown. Defaults to `false`. */
   isOptimizing: boolean;
+  /** Whether the page-local optimized model contains returned values not yet applied to the Editor. Defaults to `false`. */
   hasUnappliedOptimizationResult: boolean;
+  /** Last successful worker report, or `undefined` before a report is applied. */
   lastOptimizationReport: OptimizationReport | undefined;
+  /** Whether the apply-to-Editor confirmation modal is open. Defaults to `false`. */
   applyConfirmOpen: boolean;
+  /** Radius variable/pickup modal state. Defaults to closed without a surface index. */
   radiusModal: RadiusModalState;
+  /** Thickness variable/pickup modal state. Defaults to closed without a surface index. */
   thicknessModal: ThicknessModalState;
+  /** Asphere variable/pickup modal state. Defaults to closed without a surface index. */
   asphereModal: AsphereModalState;
 
+  /** Seeds Optimization state and its sync baseline only when no local model exists; otherwise only backfills a missing baseline. */
   initializeFromOpticalModel: (model: OpticalModel) => void;
+  /** Synchronizes the live Editor model using field, wavelength, and prescription fingerprints, resetting or reconciling dependent modes according to `options`. */
   syncFromOpticalModel: (model: OpticalModel, options?: OptimizationSyncOptions) => void;
+  /** Sets the active Optimization page tab. */
   setActiveTabId: (tabId: string) => void;
+  /** Normalizes and updates the field weight at `index`; an out-of-range index leaves the array unchanged. */
   setFieldWeight: (index: number, value: string | number) => void;
+  /** Normalizes and updates the wavelength weight at `index`; an out-of-range index leaves the array unchanged. */
   setWavelengthWeight: (index: number, value: string | number) => void;
+  /** Replaces the matching radius target's constant, variable, or pickup mode. */
   setRadiusMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
+  /** Replaces the matching thickness target's constant, variable, or pickup mode. */
   setThicknessMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
+  /** Sets an optimization-only asphere type unless the surface's editor-defined type is locked. */
   setAsphereType: (surfaceIndex: number, type: AsphericalType) => void;
+  /** Replaces a surface's full asphere state while preserving its index and any existing type lock. */
   replaceAsphereState: (surfaceIndex: number, state: AsphereOptimizationState) => void;
+  /** Replaces one conic, toric-sweep, or coefficient term mode; coefficient drafts default to slot `0` when no index is supplied. */
   setAsphereTermMode: (surfaceIndex: number, term: "conic" | "toricSweep" | "coefficient", mode: AsphereTermModeDraft) => void;
+  /** Opens the radius modal for a surface. */
   openRadiusModal: (surfaceIndex: number) => void;
+  /** Closes the radius modal and clears its surface index. */
   closeRadiusModal: () => void;
+  /** Opens the thickness modal for a surface. */
   openThicknessModal: (surfaceIndex: number) => void;
+  /** Closes the thickness modal and clears its surface index. */
   closeThicknessModal: () => void;
+  /** Opens the asphere modal for a surface. */
   openAsphereModal: (surfaceIndex: number) => void;
+  /** Closes the asphere modal and clears its surface index. */
   closeAsphereModal: () => void;
+  /** Appends a default focal-length operand with target `"100"` and weight `"1"`. */
   addOperand: () => void;
+  /** Deletes the operand with `id`; an unknown ID leaves the rows unchanged. */
   deleteOperand: (id: string) => void;
+  /** Patches an operand and applies the new kind's default target behavior when its kind changes. */
   updateOperand: (id: string, patch: Partial<Omit<OptimizationOperandRow, "id">>) => void;
+  /** Replaces all operand rows. */
   replaceOperands: (rows: OptimizationOperandRow[]) => void;
+  /** Opens the apply-to-Editor confirmation modal. */
   openApplyConfirm: () => void;
+  /** Closes the apply-to-Editor confirmation modal. */
   closeApplyConfirm: () => void;
+  /** Sets the page-blocking optimization loading flag. */
   setIsOptimizing: (value: boolean) => void;
+  /** Clears the unapplied-result marker after the optimized model is applied to the Editor. */
   markOptimizationResultAppliedToEditor: () => void;
+  /** Switches optimizer kind and resets all algorithm fields to that kind's UI defaults. */
   setOptimizerKind: (kind: OptimizationAlgorithmState["kind"]) => void;
+  /** Validates current UI state and builds the Python worker configuration with method-aware variables, pickups, and expanded operands. Throws on invalid or incomplete state. */
   buildOptimizationConfig: () => OptimizationConfig;
+  /** Applies returned radius, thickness, asphere, and pickup values to the local model, stores the report, and marks non-empty results as unapplied. Does nothing when no local model exists. */
   applyOptimizationResult: (report: OptimizationReport) => void;
 }
 
@@ -193,6 +289,7 @@ function getFactorWeights(factors?: ReadonlyArray<WeightedFactor>): number[] {
   return factors.map((factor) => factor.weight);
 }
 
+/** Provider-backed Zustand slice for the optimization route. Owns page state including the page-local optical-model snapshot, algorithm inputs, field and wavelength weights, radius variable/pickup selections, operands, loading state, and store-backed modal state. */
 export function hasNonZeroOptimizationContribution(
   config: Pick<OptimizationConfig, "merit_function">,
 ): boolean {

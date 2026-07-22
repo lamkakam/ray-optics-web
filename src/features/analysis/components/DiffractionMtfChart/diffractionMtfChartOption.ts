@@ -1,3 +1,4 @@
+/** Diffraction-MTF ECharts registration and shared plot geometry. */
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TooltipComponent } from "echarts/components";
@@ -19,6 +20,7 @@ interface DiffractionMtfSeriesConfig {
   readonly lineType: "solid" | "dashed";
 }
 
+/** Measured series are solid; their corresponding ideal series are dashed. */
 const SERIES_CONFIG: readonly DiffractionMtfSeriesConfig[] = [
   { key: "Tangential", label: "Tangential", lineType: "solid" },
   { key: "Sagittal", label: "Sagittal", lineType: "solid" },
@@ -57,6 +59,11 @@ function getYAxisMax(diffractionMtfData: DiffractionMtfData): number {
   return Number(formatPlotValue(max));
 }
 
+/**
+ * Builds the Apache ECharts option for the diffraction-MTF line chart.
+ * The spatial-frequency axis includes its unit, and the MTF axis starts at zero
+ * with a minimum upper bound of one.
+ */
 export function buildDiffractionMtfOption(
   diffractionMtfData: DiffractionMtfData,
   chartWidth: number,

@@ -5,11 +5,21 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
 interface ConfirmOverwriteModalProps {
+  /** Controls modal visibility */
   readonly isOpen: boolean;
+  /** Confirms overwrite and continues loading */
   readonly onConfirm: () => void;
+  /** Cancels loading */
   readonly onCancel: () => void;
 }
 
+/**
+ * Confirmation modal used before loading an example optical system.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
+ */
 export function ConfirmOverwriteModal({ isOpen, onConfirm, onCancel }: ConfirmOverwriteModalProps) {
   return (
     <Modal

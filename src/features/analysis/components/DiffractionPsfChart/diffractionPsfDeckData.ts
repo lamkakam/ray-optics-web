@@ -1,15 +1,36 @@
+/**
+ * Prepares worker-provided `DiffractionPsfData` for the deck.gl diffraction PSF renderer.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - Converts only `DiffractionPsfData.x`, `DiffractionPsfData.y`, and `DiffractionPsfData.z` into row-major raw RGBA bytes; the React component wraps these bytes in browser `ImageData` before passing them to deck.gl `BitmapLayer`.
+ * - Does not consume geometric PSF ray data or `GeoPsfData`.
+ * - Clamps negative or missing flux samples to zero before peak normalization.
+ * - Normalizes positive flux linearly against the brightest positive bin so the maximum normalized flux value is `1`.
+ * - Converts normalized flux to `log10` display values after normalization.
+ * - Uses `DIFFRACTION_PSF_LOG_FLOOR` (`log10(5e-4)`) for zero-flux bins, missing or negative flux bins, and positive normalized flux below `5e-4`, avoiding `NaN` and infinities while keeping the lower log-scale display floor at `5e-4`.
+ * - Maps log-scaled values onto the shared analysis heatmap palette with the shared interpolation helper.
+ * - Writes image rows top-to-bottom for browser `ImageData`, so the lowest physical y coordinate appears in the bottom bitmap row and Cartesian orientation is preserved in deck.gl.
+ * - Derives rectangular `bounds` from the first and last physical axis coordinates plus or minus half that axis' median positive spacing, falling back to spacing `1` when no spacing exists.
+ * - Computes a symmetric `axisExtent` from the largest absolute physical coordinate, falling back to `1`.
+ * - Formats color-bar labels back from log-scale values to normalized linear flux with the shared plot-value formatter.
+ */
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import { interpolateAnalysisHeatmapColor } from "@/features/analysis/lib/analysisChartPalette";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
+/** Log10 normalized-flux floor used by the bitmap palette and legend. */
 export const DIFFRACTION_PSF_LOG_FLOOR = Math.log10(5e-4);
 
+/** Raw RGBA bitmap dimensions and bytes. */
 export interface DiffractionPsfBitmapImage {
   readonly data: Uint8ClampedArray<ArrayBuffer>;
   readonly width: number;
   readonly height: number;
 }
 
+/** Prepared bitmap, physical bounds, and symmetric axis extent. */
 export interface DiffractionPsfPreparedData {
   readonly image: DiffractionPsfBitmapImage;
   readonly bounds: [number, number, number, number];
@@ -35,6 +56,7 @@ function getMedianPositiveSpacing(values: readonly number[]): number | undefined
   return spacings[Math.floor(spacings.length / 2)];
 }
 
+/** Formats a log10 flux value as a normalized linear-flux label. */
 export function formatDiffractionPsfFluxLabel(log10Flux: number): string {
   return formatPlotValue(10 ** log10Flux);
 }
@@ -62,6 +84,7 @@ function getLogScaledFlux(flux: number, peakFlux: number): number {
   return Math.max(DIFFRACTION_PSF_LOG_FLOOR, Math.log10(flux / peakFlux));
 }
 
+/** Converts diffraction-PSF data to a log-scaled RGBA bitmap and physical bounds. */
 export function buildDiffractionPsfBitmap(
   diffractionPsfData: DiffractionPsfData,
 ): DiffractionPsfPreparedData {

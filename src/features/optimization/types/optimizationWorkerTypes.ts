@@ -1,7 +1,11 @@
+/** Optimization-specific contracts shared by the UI and Pyodide worker boundary. */
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 
+/** Worker-supported optimizer families. */
 export type OptimizerKind = "least_squares" | "differential_evolution";
+/** Worker-supported SciPy least-squares methods. */
 export type LeastSquaresMethod = "trf" | "lm";
+/** Worker-supported merit operand discriminators. */
 export type OptimizationOperandKind =
   | "focal_length"
   | "f_number"
@@ -14,6 +18,7 @@ export type OptimizationOperandKind =
   | "ray_fan_tangential"
   | "ray_fan_sagittal";
 
+/** Targeted scalar or target-less vector operand configuration. */
 export type OptimizationOperandConfig =
   | {
       readonly kind: OptimizationOperandKind;
@@ -32,7 +37,13 @@ export type OptimizationOperandConfig =
       readonly options?: { readonly num_rays?: number };
     };
 
+/**
+ * Complete Python optimization configuration.
+ * Least-squares and differential-evolution settings remain discriminated by
+ * optimizer kind; bounded runs populate variable limits while LM may omit them.
+ */
 export interface OptimizationConfig {
+  /** Solver-specific configuration discriminated by optimizer kind. */
   readonly optimizer:
     | {
         readonly kind: "least_squares";
@@ -48,13 +59,16 @@ export interface OptimizationConfig {
         readonly tol: number;
         readonly atol: number;
       };
+  /** Independently optimized radius, thickness, or asphere terms. */
   readonly variables: ReadonlyArray<OptimizationVariableConfig>;
+  /** Radius, thickness, or asphere terms derived from another term. */
   readonly pickups: ReadonlyArray<OptimizationPickupConfig>;
   readonly merit_function: {
     readonly operands: ReadonlyArray<OptimizationOperandConfig>;
   };
 }
 
+/** Variable configuration discriminated by radius, thickness, or asphere term kind. */
 export type OptimizationVariableConfig =
   | {
       readonly kind: "radius" | "thickness";
@@ -78,6 +92,7 @@ export type OptimizationVariableConfig =
       readonly max?: number;
     };
 
+/** Pickup configuration, including coefficient-to-coefficient source indices where required. */
 export type OptimizationPickupConfig =
   | {
       readonly kind: "radius" | "thickness";
@@ -105,6 +120,7 @@ export type OptimizationPickupConfig =
       readonly offset: number;
     };
 
+/** Initial or final optimized value returned by Python. */
 export type OptimizationValueEntry =
   | {
       readonly kind: "radius" | "thickness";
@@ -131,6 +147,7 @@ export type OptimizationValueEntry =
       readonly max?: number;
     };
 
+/** Evaluated pickup value returned by Python. */
 export type OptimizationPickupEntry =
   | {
       readonly kind: "radius" | "thickness";
@@ -161,6 +178,7 @@ export type OptimizationPickupEntry =
       readonly value: number;
     };
 
+/** One scalar residual; target is absent for target-less vector operands. */
 export interface OptimizationResidualEntry {
   readonly kind: string;
   readonly target?: number;
@@ -174,16 +192,19 @@ export interface OptimizationResidualEntry {
   readonly weighted_residual: number;
 }
 
+/** One chronological merit-history sample. */
 export interface OptimizationProgressEntry {
   readonly iteration: number;
   readonly merit_function_value: number;
   readonly log10_merit_function_value: number;
 }
 
+/** Python optimization report with snake_case keys preserved for direct JSON parsing. */
 export interface OptimizationReport {
   readonly success: boolean;
   readonly status: string;
   readonly message: string;
+  /** Solver identity plus optional solve metadata available after a full run. */
   readonly optimizer: {
     readonly kind: OptimizerKind;
     readonly method?: LeastSquaresMethod;
@@ -201,9 +222,11 @@ export interface OptimizationReport {
     readonly sum_of_squares: number;
     readonly rss: number;
   };
+  /** Chronological raw and precomputed log10 merit history. */
   readonly optimization_progress: ReadonlyArray<OptimizationProgressEntry>;
 }
 
+/** Optimized optical model paired with its worker report. */
 export interface OptimizationRunResult {
   readonly model: OpticalModel;
   readonly report: OptimizationReport;

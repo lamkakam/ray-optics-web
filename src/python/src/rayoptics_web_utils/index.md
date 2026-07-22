@@ -4,7 +4,7 @@ Internal Python package for optical computing utilities and RayOptics integratio
 
 ## Package Initialization
 
-- [__init__.py](./__init__.py.md) — Package exports and initialization
+- [__init__.py](./__init__.py) — Package exports and initialization
 
 ## Subdirectories
 

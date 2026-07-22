@@ -7,12 +7,32 @@ import { RadioInput, type RadioOption } from "@/shared/components/primitives/Rad
 import type { PhotonsToPhotosFocalLengthChoice } from "@/features/lens-editor/lib/photonsToPhotosParser";
 
 interface FocalLengthSelectionModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Available focal-length columns */
   readonly choices: readonly PhotonsToPhotosFocalLengthChoice[];
+  /** Resolves the selected column */
   readonly onConfirm: (choiceIndex: number) => void;
+  /** Aborts the TXT import */
   readonly onCancel: () => void;
 }
 
+/**
+ * Toolbar-local modal for choosing a focal-length column when importing a zoom Photons to Photos `.txt` file.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - Renders a non-backdrop-dismissible `Modal` titled `Select Focal Length`.
+ * - Uses shared `RadioInput` with labels like `24.376 mm`; the first choice is selected initially.
+ * - `Cancel` closes without importing. `Confirm` passes the selected choice index back to the toolbar.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while the focal-length choices scroll.
+ */
 export function FocalLengthSelectionModal({
   isOpen,
   choices,

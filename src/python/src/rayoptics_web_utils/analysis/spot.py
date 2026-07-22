@@ -1,4 +1,4 @@
-"""Spot diagram data extraction."""
+"""Extract spot-diagram data."""
 
 import numpy as np
 import rayoptics.optical.model_constants as mc
@@ -11,8 +11,24 @@ from rayoptics_web_utils.utils import _json_float_list, _system_units
 
 
 def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]:
-    """
-    Return spot-diagram point clouds for all wavelengths at field index ``fi``.
+    """Return spot-diagram point clouds for all wavelengths at field index ``fi``.
+
+    Each wavelength entry contains `fieldIdx`, `wvlIdx`, coordinates `x` and
+    `y`, and their units. Finite image space uses system dimensions; infinite
+    image space uses `arcsec` and is independent of the artificial image gap.
+
+    `image_point="chief_ray"` uses `seq_model.trace_grid` with 21 rays and the
+    historical reference. `"centroid"` sets a shared reference sphere and
+    reports coordinates relative to the valid-ray centroid. In afocal mode the
+    centroid is determined entirely in direction space, never at an image plane.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Spot-diagram point clouds for all wavelengths at field index ``fi``.
     """
     sm = opm.seq_model
     afocal = is_afocal_image_space(opm)

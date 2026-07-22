@@ -4,7 +4,7 @@ The main lens design and editing feature. Contains the full lens editor page, al
 
 ## Entry Point
 
-- [LensEditor.tsx](./LensEditor.tsx.md) — Main lens design and editing page view
+- [LensEditor.tsx](./LensEditor.tsx) — Main lens design and editing page view
 
 ## Subdirectories
 

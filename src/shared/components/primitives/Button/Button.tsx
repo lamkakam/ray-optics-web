@@ -3,7 +3,9 @@ import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Supported visual button variants. */
 export type ButtonVariant = "primary" | "secondary" | "toggle" | "danger" | "floating";
+/** Supported button density sizes. */
 export type ButtonSize = "md" | "sm" | "xs";
 
 const { color: c, size: sz, style: s } = cx.button;
@@ -23,17 +25,32 @@ const SIZE_CLASSES = {
 } as const satisfies Record<ButtonSize, readonly string[]>;
 
 type FloatingButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  /** Visual style. `floating` is absolutely positioned with a translucent background */
   readonly variant: "floating";
+  /** Padding and font-size tier. Defaults to `"md"`. Forbidden on `floating` variant (auto-uses `xs`) */
   readonly size?: never;
 };
 
 type RegularButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  /** Visual style. `floating` is absolutely positioned with a translucent background */
   readonly variant: ButtonVariant;
+  /** Padding and font-size tier. Defaults to `"md"`. Forbidden on `floating` variant (auto-uses `xs`) */
   readonly size?: ButtonSize;
 };
 
 type ButtonProps = FloatingButtonProps | RegularButtonProps;
 
+/**
+ * Themed button primitive that maps a `variant` and optional `size` to Tailwind classes via `styleTokens`. Covers the full range of button styles used across the app.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - `floating` variant renders as `position: absolute` with `top-2 right-2` positioning, intended for overlay buttons inside a relative container.
+ * - The inherited `type` prop defaults to `"button"`, preventing accidental form submission.
+ * - The inherited `className` prop is merged via `twMerge` after variant and size classes so consumers can safely override individual tokens.
+ * - `disabled:opacity-50` and `disabled:cursor-not-allowed` are always applied.
+ */
 export function Button({
   variant,
   size,

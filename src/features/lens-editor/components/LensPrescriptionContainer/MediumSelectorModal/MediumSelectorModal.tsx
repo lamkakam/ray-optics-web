@@ -13,15 +13,25 @@ import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProv
 import { builtInSpecialMaterial } from "@/shared/lib/utils/specialMaterials";
 
 interface MediumSelectorModalProps {
+  /** Controls modal visibility */
   readonly isOpen: boolean;
+  /** Pre-selected medium on open */
   readonly initialMedium: string;
+  /** Pre-selected manufacturer on open; empty string or `"air"` maps to `"Special"` */
   readonly initialManufacturer: string;
+  /** When `true`, all controls are disabled and the footer shows only `Close` */
   readonly readOnly?: boolean;
+  /** When `false`, `"REFL"` is removed from the Special media options */
   readonly allowReflective?: boolean;
+  /** Controlled catalog-glass medium value used when the parent persists an unconfirmed draft */
   readonly selectedMedium?: string;
+  /** Controlled catalog-glass manufacturer value used with `selectedMedium` */
   readonly selectedManufacturer?: string;
+  /** Called whenever the catalog-glass draft changes */
   readonly onSelectionChange?: (medium: string, manufacturer: string) => void;
+  /** Called with the selected medium and manufacturer (empty string for Special) */
   readonly onConfirm: (medium: string, manufacturer: string) => void;
+  /** Cancel / close callback */
   readonly onClose: () => void;
 }
 
@@ -58,6 +68,53 @@ function normalizeNumericOrEmptyString(value: string): string {
   return Number.isFinite(parsed) ? trimmed : "";
 }
 
+/**
+ * Modal for selecting an optical medium (glass or special medium) or entering a numeric model glass. The Catalog dropdown, Special-media dropdown, and searchable catalog-glass datalist are populated from the app-wide `GlassCatalogProvider`, which uses the same Pyodide-backed catalog source as the glass map.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - When the Catalog field changes to `"Special"`, medium resets to `"air"`.
+ * - Glass is a shared `Select` dropdown for the `"Special"` manufacturer, containing built-in and provider-backed Special media.
+ * - Glass is a searchable native datalist for catalogs, with suggestions limited to the selected catalog.
+ * - Typed glass values must completely match an available suggestion, with case-insensitive comparison. Valid matches are canonicalized to the catalog's original spelling before draft updates, confirmation, and glass-map navigation.
+ * - An unmatched catalog value remains visible for continued searching, disables Confirm without showing an error, and hides the glass-map link.
+ * - Catalog options come from loaded provider catalogs with `"Special"` prefixed and empty catalogs omitted.
+ * - The `"Special"` glass list combines the shared `builtInSpecialMaterial` collection (`"air"`, `"REFL"`) with provider-backed special glasses such as `"CaF2"`.
+ * - When `allowReflective` is `false`, `"REFL"` is excluded from the Special media list so object-space media cannot be set to reflective.
+ * - Whenever Catalog changes to a catalog, the visible Glass value and draft medium are cleared, `onSelectionChange` reports `("", manufacturer)`, Confirm is disabled, and the glass-map link is hidden until a valid catalog glass is entered.
+ * - When `selectedMedium` / `selectedManufacturer` are provided, valid catalog-glass drafts are controlled by the parent so unconfirmed choices can survive route changes.
+ * - `onSelectionChange` fires for catalog-glass changes and reports `"Special"` for the special manufacturer option.
+ * - `onConfirm` passes an empty string for manufacturer when `"Special"` is selected.
+ * - When `Use model glass` is unchecked and a catalog glass is selected, an inline `View in glass map` link appears below the glass dropdown.
+ * - Disabling `Use model glass` resets the catalog draft to Catalog `"Special"` and Glass `"air"`, including controlled parent state through `onSelectionChange`, while preserving the model-glass input values for a later toggle back to model-glass mode.
+ * - The glass-map link targets `/glass-map` with query params `source=medium-selector`, `catalog=<manufacturer>`, and `glass=<medium>`.
+ * - For `"Special"`, the glass-map link is shown for valid provider-backed glasses such as `"CaF2"` and targets the `Special` catalog. It is hidden for built-in media (`"air"`, `"REFL"`), invalid selections, and model-glass mode.
+ * - If catalog data is still loading or failed, the modal shows a status message and disables the Catalog select and glass datalist instead of assuming static bundled data.
+ * - A shared compact `CheckboxInput` labelled `Use model glass` appears above the catalog controls and defaults to unchecked for non-numeric initial values.
+ * - When `Use model glass` is checked, the Catalog and Glass dropdowns are replaced by:
+ * - a `Single refractive index` checkbox rendered with the shared checkbox primitive
+ * - a `Refractive index at d-line` input
+ * - an `Abbe Number` input when `Single refractive index` is unchecked
+ * - When `Single refractive index` is checked, the Abbe Number input is hidden without clearing its value. Unchecking it restores the value held in component state.
+ * - If `initialMedium` parses to a float, the modal auto-enters model-glass mode and seeds the refractive-index input with the original `initialMedium` string.
+ * - If `initialManufacturer` also parses to a float, the modal seeds the Abbe Number input and leaves `Single refractive index` unchecked.
+ * - If `initialMedium` is numeric but `initialManufacturer` is not, the modal starts in model-glass mode with `Single refractive index` checked.
+ * - On blur, `Refractive index at d-line` is normalized to a positive numeric string; parse failure, `NaN`, zero, or negative values reset it to `"1.0"`.
+ * - On blur, `Abbe Number` is normalized to either a numeric string or the empty string; parse failure or `NaN` resets it to `""`.
+ * - In model-glass mode, `onConfirm` passes `(refractiveIndexAtDLine, abbeNumber)` or `(refractiveIndexAtDLine, "")` when `Single refractive index` is checked.
+ * - In model-glass mode, Confirm is enabled only when the refractive index is a non-empty, finite numeric value greater than or equal to `1`.
+ * - When `Single refractive index` is unchecked, Confirm additionally requires a non-empty, finite numeric Abbe Number greater than `0`; single-index mode ignores the Abbe Number.
+ * - Model-glass validity is evaluated immediately while editing, before blur normalization. Catalog-glass Confirm validation remains based on an exact available-medium match.
+ * - In `readOnly` mode, all checkboxes, selects, and inputs are disabled and the footer renders a single `Close` action instead of `Cancel` / `Confirm`.
+ * - Uses `key` prop at the call site (in `LensPrescriptionContainer`) to reset state when the modal re-opens for a different row.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Close, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while medium selection controls scroll.
+ */
 export function MediumSelectorModal({
   isOpen,
   initialMedium,
@@ -74,16 +131,23 @@ export function MediumSelectorModal({
   const initialHasAbbeNumber = isNumericString(initialManufacturer);
   const initialMfr = isSpecialMedium(initialManufacturer) ? "Special" : initialManufacturer;
   const { catalogs, error, isLoaded } = useGlassCatalogs();
+  /** Draft catalog or manufacturer selection. */
   const [localManufacturer, setLocalManufacturer] = useState(initialMfr);
+  /** Draft medium selection. */
   const [localMedium, setLocalMedium] = useState(initialMedium);
+  /** Visible glass-search input, kept separately from the committed draft medium. */
   const [glassInput, setGlassInput] = useState(selectedMedium ?? initialMedium);
+  /** Whether numeric model-glass inputs replace catalog selection. */
   const [useModelGlass, setUseModelGlass] = useState(initialUseModelGlass);
+  /** Whether the model glass omits an Abbe number. */
   const [singleRefractiveIndex, setSingleRefractiveIndex] = useState(
     initialUseModelGlass && !initialHasAbbeNumber,
   );
+  /** String draft of the model-glass d-line refractive index. */
   const [refractiveIndexAtDLine, setRefractiveIndexAtDLine] = useState(
     initialUseModelGlass ? initialMedium : "",
   );
+  /** String draft of the model-glass Abbe number. */
   const [abbeNumber, setAbbeNumber] = useState(initialHasAbbeNumber ? initialManufacturer : "");
   const manufacturer = selectedManufacturer ?? localManufacturer;
   const medium = selectedMedium ?? localMedium;

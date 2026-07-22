@@ -1,3 +1,4 @@
+/** Zernike coefficient payload returned by the worker API. */
 export interface ZernikeData {
   readonly coefficients: readonly number[];
   readonly rms_normalized_coefficients: readonly number[];
@@ -9,4 +10,5 @@ export interface ZernikeData {
   readonly wavelength_nm: number;
 }
 
+/** Frontend-selected coefficient indexing convention. */
 export type ZernikeOrdering = "noll" | "fringe";

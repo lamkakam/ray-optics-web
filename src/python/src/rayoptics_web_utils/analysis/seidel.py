@@ -1,4 +1,4 @@
-"""Third-order Seidel aberration data extraction."""
+"""Extract third-order Seidel aberration data."""
 
 from typing import Literal
 
@@ -14,7 +14,23 @@ key_of_3rd_order_seidel_data = Literal["surfaceBySurface", "transverse", "wavefr
 
 
 def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel_data, dict]:
-    """Return 3rd-order Seidel aberration data as a dict."""
+    """Return third-order Seidel data from a RayOptics `OpticalModel`.
+
+    The result maps `surfaceBySurface` to per-surface coefficients,
+    `transverse` to transverse aberration, `wavefront` to wavefront error, and
+    `curvature` to field curvature. `surfaceBySurface` contains `aberrTypes`,
+    `surfaceLabels`, and transposed numeric `data`.
+
+    Aggregate outputs use the third-order package's `"sum"` row. The central
+    wavelength is converted to system units for `seidel_to_wavefront`, and all
+    returned dict/list values are JSON serialisable.
+
+    Args:
+        opm: RayOptics optical model.
+
+    Returns:
+        Third-order Seidel data from a RayOptics `OpticalModel`.
+    """
     to_pkg = compute_third_order(opm)
     fod = opm["analysis_results"]["parax_data"].fod
     wvls = opm["optical_spec"]["wvls"]

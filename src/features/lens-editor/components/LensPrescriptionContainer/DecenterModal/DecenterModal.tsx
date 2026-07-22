@@ -9,14 +9,21 @@ import { Select } from "@/shared/components/primitives/Select";
 import { type DecenterConfig } from "@/shared/lib/types/opticalModel";
 
 type DecenterCoordinateSystemStrategy = DecenterConfig["coordinateSystemStrategy"];
+/** Editable optical-surface decenter configuration. */
 export type DecenterType = DecenterConfig;
 
 interface DecenterModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Existing decenter config, or `undefined` for a new one (defaults to bend/all zeros) */
   readonly initialDecenter: DecenterType | undefined;
+  /** When `true`, all controls are disabled and the footer shows only `Close` */
   readonly readOnly?: boolean;
+  /** Called with parsed values on Confirm */
   readonly onConfirm: (decenter: DecenterType) => void;
+  /** Cancel callback */
   readonly onClose: () => void;
+  /** Clears decenter data for the surface */
   readonly onRemove: () => void;
 }
 
@@ -34,6 +41,22 @@ const POS_AND_ORIENTATION_OPTIONS = [
   { value: "reverse", label: "No change to this surface; reversed coordinate system for following surfaces" },
 ];
 
+/**
+ * Modal for configuring surface tilt and decenter parameters: coordinate system strategy, Euler angles (alpha, beta, gamma in degrees), and X/Y offsets.
+ *
+ * @remarks
+ * ## Key Behaviors
+ *
+ * - When `initialDecenter` is `undefined`, all fields default to `0` and strategy defaults to `"bend"`.
+ * - Invalid or empty numeric strings fall back to the initial value.
+ * - In `readOnly` mode, the strategy select and all numeric inputs are disabled; the footer renders only `Close`.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Close, Remove Decenter, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while decenter fields scroll.
+ */
 export function DecenterModal({
   isOpen,
   initialDecenter,
@@ -51,7 +74,9 @@ export function DecenterModal({
     offsetY: 0,
   };
 
+  /** Selected coordinate-system strategy. */
   const [posAndOrientation, setPosAndOrientation] = useState<DecenterCoordinateSystemStrategy>(init.coordinateSystemStrategy);
+  /** String drafts for the three angular and two positional coordinates. */
   const [alphaStr, setAlphaStr] = useState(String(init.alpha));
   const [betaStr, setBetaStr] = useState(String(init.beta));
   const [gammaStr, setGammaStr] = useState(String(init.gamma));

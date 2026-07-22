@@ -1,4 +1,4 @@
-"""OPD fan data extraction."""
+"""Extract optical-path-difference fan data."""
 
 import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
@@ -10,8 +10,24 @@ from rayoptics_web_utils.utils import _json_float_list
 
 
 def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]:
-    """
-    Return OPD fan data for all wavelengths at field index ``fi``.
+    """Return OPD fan data for all wavelengths at field index ``fi``.
+
+    Results have the same shape as `get_ray_fan_data`, with `unitY="waves"`.
+    Blocked aperture samples remain as `None` gaps in `y`.
+
+    Finite image space uses `wave_abr_full_calc(...) / opm.nm_to_sys_units(wvl)`.
+    Infinite image space uses the shared exit-pupil plane-wave OPD, excludes the
+    artificial final gap, makes chief-ray OPD zero, and converts to the traced
+    wavelength's waves. `image_point="chief_ray"` preserves the historical
+    reference, while `"centroid"` uses the shared centroid image point.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        image_point: Image-point reference convention.
+
+    Returns:
+        OPD fan data for all wavelengths at field index ``fi``.
     """
 
     afocal = is_afocal_image_space(opm)

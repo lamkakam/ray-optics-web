@@ -1,3 +1,7 @@
+/**
+ * Custom-glass conversion plus browser, worker, persistence, and store orchestration.
+ * Row ids are allocated monotonically so editable grid rows remain stable.
+ */
 import type { CatalogGlassData, UserDefinedGlassData, UserDefinedGlassInput } from "@/features/glass-map/types/glassMap";
 import type {
   CustomGlassPayload,
@@ -8,10 +12,12 @@ import type {
   UserDefinedCustomCatalog,
 } from "@/features/import-custom-glass/types/customGlassImport";
 
+/** Stable empty custom catalog used before worker-backed data is available. */
 export const EMPTY_CUSTOM_GLASSES: UserDefinedCustomCatalog = {};
 
 let nextEditablePairId = 0;
 
+/** Formats finite modal values and maps non-finite values to an empty draft. */
 export function formatNumber(value: number): string {
   return Number.isFinite(value) ? String(value) : "";
 }
@@ -20,6 +26,7 @@ function makeEditablePairId(): string {
   return `row-custom-glass-${nextEditablePairId++}`;
 }
 
+/** Creates an editable grid pair with a stable generated id and string-valued drafts. */
 export function makeEditablePair(pair?: readonly [number, number]): EditablePair {
   return {
     id: makeEditablePairId(),
@@ -29,6 +36,7 @@ export function makeEditablePair(pair?: readonly [number, number]): EditablePair
   };
 }
 
+/** Trims a label and converts editable string drafts to numeric worker pairs. */
 export function toWorkerInput(label: string, rows: readonly EditablePair[]): UserDefinedGlassInput {
   return {
     name: label.trim(),
@@ -36,6 +44,7 @@ export function toWorkerInput(label: string, rows: readonly EditablePair[]): Use
   };
 }
 
+/** Builds the strict version-1.0 JSON export envelope for tabulated custom glasses. */
 export function toCustomGlassPayload(custom: Record<string, UserDefinedGlassData>): CustomGlassPayload {
   return {
     version: "1.0",
@@ -52,6 +61,7 @@ function isUserDefinedGlassData(data: CatalogGlassData): data is UserDefinedGlas
   return data.dispersionCoeffKind === "tabulated";
 }
 
+/** Returns only tabulated custom-glass entries, preserving the input reference when no filtering is needed. */
 export function getUserDefinedCustomGlasses(
   customCatalog: Record<string, CatalogGlassData> | undefined,
 ): UserDefinedCustomCatalog {
@@ -69,11 +79,13 @@ export function getUserDefinedCustomGlasses(
   );
 }
 
+/** Checks whether an unknown worker failure reports an existing user-defined label. */
 export function isUserDefinedGlassAlreadyExistsError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return message.includes("User-defined glass already exists:");
 }
 
+/** Coordinates add or edit worker mutations, optional persistence, and store mirroring. Persistence failures are warning-only and never roll back a successful worker mutation. */
 export async function saveCustomGlass({
   mode,
   previousLabel,
@@ -138,6 +150,7 @@ function micrometersToNanometers(value: number): number {
   return Number((value * 1000).toFixed(12));
 }
 
+/** Parses refractiveindex.info-style `wl,n` CSV text. The filename supplies the label; rows must contain unique positive finite values, at least four pairs are required, and wavelengths are converted from micrometers to nanometers. */
 export function parseCustomGlassCsv(file: File, text: string): ImportedCustomGlassMaterial | RejectedCsvFile {
   const label = filenameStem(file.name);
   if (label === "") {
@@ -186,6 +199,7 @@ export function parseCustomGlassCsv(file: File, text: string): ImportedCustomGla
   return { name: label, pairs };
 }
 
+/** Downloads a custom-glass payload as two-space-formatted `custom-glass.json`. */
 export function downloadCustomGlassJson(payload: CustomGlassPayload): void {
   const blob = new Blob([JSON.stringify(payload, undefined, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);

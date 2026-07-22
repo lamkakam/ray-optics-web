@@ -1,3 +1,22 @@
+/**
+ * Describes the Import Custom Glass Store module.
+ *
+ * @remarks
+ * ## Data Columns
+ * `IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS` is the allowlist for persisted table state:
+ *
+ * - `label`
+ * - `nd`
+ * - `vd`
+ * - `ne`
+ * - `ve`
+ * - `pgF`
+ * - `pFe`
+ * - `pFd`
+ *
+ * The AG Grid selection column and unknown future columns are intentionally ignored until they are explicitly added to this tuple.
+ *
+ */
 import type { ColumnState } from "ag-grid-community";
 import { type StateCreator } from "zustand";
 
@@ -17,16 +36,22 @@ export type ImportCustomGlassFilterModel = Record<ImportCustomGlassDataColumnId,
 export type ImportCustomGlassSortState = Pick<ColumnState, "colId" | "sort" | "sortIndex">;
 
 export interface ImportCustomGlassState {
+  /** Sanitized AG Grid sort state for readonly custom-glass data columns. Defaults to an empty array. */
   sortState: readonly ImportCustomGlassSortState[];
+  /** Sanitized AG Grid filter model for readonly custom-glass data columns. Defaults to an empty object. */
   filterModel: Partial<ImportCustomGlassFilterModel>;
 }
 
 export interface ImportCustomGlassActions {
+  /** Stores only entries whose `colId` is an allowed data column and whose `sort` is defined. */
   setSortState(state: readonly ColumnState[]): void;
+  /** Stores only filter entries whose key is an allowed data column. */
   setFilterModel(model: Record<string, unknown>): void;
+  /** Clears both the sort and filter state. */
   resetTableState(): void;
 }
 
+/** Zustand store slice for Import Custom Glass table UI state that should survive route/component remounts while the app root providers remain mounted. */
 export type ImportCustomGlassStore = ImportCustomGlassState & ImportCustomGlassActions;
 
 const IMPORT_CUSTOM_GLASS_DATA_COLUMN_ID_SET = new Set<string>(IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS);

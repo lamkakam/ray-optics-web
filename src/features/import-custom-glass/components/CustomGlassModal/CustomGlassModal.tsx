@@ -15,11 +15,17 @@ import { makeEditablePair } from "@/features/import-custom-glass/lib/customGlass
 import type { EditablePair, ModalMode } from "@/features/import-custom-glass/types/customGlassImport";
 
 interface CustomGlassModalProps {
+  /** Selects the `Add Glass` or `Edit Glass` title and duplicate-label behavior. */
   readonly mode: ModalMode;
+  /** Used to reject duplicate labels. */
   readonly existingLabels: ReadonlySet<string>;
+  /** Seeds the modal label state. */
   readonly initialLabel: string;
+  /** Seeds the modal row state. */
   readonly initialRows: readonly EditablePair[];
+  /** Closes without saving. */
   readonly onCancel: () => void;
+  /** Receives the trimmed label and current editable rows after validation passes. */
   readonly onSubmit: (label: string, rows: readonly EditablePair[]) => void;
 }
 
@@ -39,6 +45,29 @@ function duplicateWavelengths(rows: readonly EditablePair[]): Set<string> {
   return new Set([...counts].filter(([, count]) => count > 1).map(([value]) => value));
 }
 
+/**
+ * Add/edit modal for a single user-defined tabulated custom glass.
+ *
+ * @remarks
+ * ## Behavior
+ * - Uses the shared `Modal` primitive and an AG Grid instance for row editing.
+ * - Preserves the tabulated pair columns: delete action, `Fraunhofer`, `Wavelength (nm)`, and `Refractive Index`.
+ * - The Fraunhofer selector fills the matching wavelength and clears free-form wavelength edits when wavelength is manually changed.
+ * - Confirm is disabled until the label is non-blank and unique, there are at least four rows, all wavelength/index values are finite positive numbers, and wavelengths are distinct.
+ * - The modal-level `Add row`, `Cancel`, and `Confirm` buttons use the Lens Editor responsive sizing rule: shared `Button` size `sm` on `screenLG`, and `xs` on `screenSM`.
+ * - Row-level AG Grid delete actions stay fixed at shared `Button` size `xs`.
+ * - Duplicate wavelengths are marked with `text-red-600` and a validation message.
+ * - Wraps the coefficient grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores horizontal and vertical touch panning plus scroll chaining for AG Grid viewports in this modal only.
+ * - Keeps AG Grid touch handling enabled so resizable coefficient-column headers respond to touchscreen drags while native two-axis viewport scrolling remains available.
+ *
+ *
+ *
+ * ## Accessibility
+ * - The label input exposes `aria-label="Label"`.
+ * - Row delete actions expose `aria-label="Delete row {id}"`.
+ * - Footer actions keep the visible labels and aria labels `Cancel` and `Confirm`.
+ * - `Add row` keeps the same visible label and aria label.
+ */
 export function CustomGlassModal({
   mode,
   existingLabels,

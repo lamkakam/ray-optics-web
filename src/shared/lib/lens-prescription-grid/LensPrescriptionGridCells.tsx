@@ -1,4 +1,22 @@
 "use client";
+/**
+ * Reusable prescription grid cell UI that is safe for `shared/` because it depends only on shared primitives.
+ *
+ * @remarks
+ * ## Behavior
+ *
+ * - All tooltips use `portal` and `noTouch` for AG Grid compatibility.
+ * - Medium, aspherical, decenter, and diffraction grating tooltip-backed action cells do not apply `touch-action: none`, so native touch scrolling can start over those controls in iOS Safari.
+ * - Medium, aspherical, decenter, and diffraction grating cells use `triggerClassName="flex h-full w-full"` so the tooltip trigger fills the cell action area.
+ * - Medium, aperture, aspherical, decenter, and diffraction grating action cell text renders on a single line and uses an ellipsis when it exceeds the available cell width.
+ * - Empty aspherical, decenter, and diffraction grating values display `None`.
+ * - Aperture values are formatted from both `clear_aperture` and `edge_aperture`: missing clear aperture and centered circular clear aperture display `Default` when edge aperture is missing/default; circular clear aperture with nonzero offset displays `Cir offset (<x>, <y>)`; annular clear aperture displays `Annu obs <radius>` with an optional offset suffix; explicit circular edge aperture appends `; Edge Cir <radius>` with an optional offset suffix.
+ * - Aspherical values display the shared asphere type label (`Conic`, `Even Aspherical`, `Radial Polynomial`, `X Toroid`, `Y Toroid`).
+ * - Decenter values display `coordinateSystemStrategy` directly.
+ * - Diffraction grating values display `${lpmm} lp/mm`.
+ * - Default tooltip copy preserves the Lens Editor wording.
+ * - Optimization passes view-oriented tooltip copy through the shared column builders.
+ */
 
 import React from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
@@ -21,6 +39,7 @@ interface ActionWrapperProps {
   readonly onAction: () => void;
 }
 
+/** Wraps an interactive grid cell action with consistent keyboard and pointer behavior. */
 export function LensPrescriptionActionWrapper({ children, onAction }: ActionWrapperProps) {
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("button,a,input,select,textarea") !== null) {
@@ -47,6 +66,7 @@ interface MediumCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the medium cell and opens its selector action. */
 export function MediumCell({
   medium,
   onOpenModal,
@@ -91,6 +111,7 @@ interface AsphericalCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the asphere summary and opens its editor action. */
 export function AsphericalCell({
   aspherical,
   onOpenModal,
@@ -112,6 +133,7 @@ interface ApertureCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the aperture summary and opens its editor action. */
 export function ApertureCell({
   clearAperture,
   edgeAperture,
@@ -133,6 +155,7 @@ interface DecenterCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the decenter summary and opens its editor action. */
 export function DecenterCell({
   decenter,
   onOpenModal,
@@ -153,6 +176,7 @@ interface DiffractionGratingCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the grating summary and opens its editor action. */
 export function DiffractionGratingCell({
   diffractionGrating,
   onOpenModal,
