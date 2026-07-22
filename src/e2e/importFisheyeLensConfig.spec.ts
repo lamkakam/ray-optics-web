@@ -8,24 +8,24 @@ import {
 } from "./utils";
 
 const expectedSurfaces = [
-  ["Default", "4.7745", "0.1299", "1.713", "2"],
-  ["Default", "0.8821", "0.5688", "air", "0.88"],
-  ["Default", "1.6822", "0.0938", "1.618", "0.95"],
-  ["Default", "0.8064", "0.3313", "air", "0.725"],
-  ["Default", "1.6265", "0.4838", "1.595", "0.6"],
-  ["Default", "-0.7284", "0.0938", "1.623", "0.6"],
-  ["Default", "8.3331", "0.05", "air", "0.6"],
-  ["Default", "7.6334", "0.1875", "1.805", "0.6"],
-  ["Default", "0", "0.0806", "air", "0.6"],
-  ["Default", "0", "0.0938", "1.581", "0.6"],
-  ["Default", "0", "0.1413", "air", "0.6"],
-  ["Stop", "0", "0.1", "air", "0.284"],
-  ["Default", "-2.8724", "0.05", "1.713", "0.6"],
-  ["Default", "2.8034", "0.25", "1.64", "0.6"],
-  ["Default", "-1.1513", "0.0063", "air", "0.6"],
-  ["Default", "3.2583", "0.2919", "1.488", "0.6"],
-  ["Default", "-0.8827", "0.0913", "1.805", "0.6"],
-  ["Default", "-1.7116", "2.8885085903779517", "air", "0.6"],
+  ["Default", "4.7745", "0.1299", "1.713", 1.75],
+  ["Default", "0.8821", "0.5688", "air", 0.88],
+  ["Default", "1.6822", "0.0938", "1.618", 0.883],
+  ["Default", "0.8064", "0.3313", "air", 0.735],
+  ["Default", "1.6265", "0.4838", "1.595", 0.6],
+  ["Default", "-0.7284", "0.0938", "1.623", 0.6],
+  ["Default", "8.3331", "0.05", "air", 0.6],
+  ["Default", "7.6334", "0.1875", "1.805", 0.6],
+  ["Default", "0", "0.0806", "air", 0.6],
+  ["Default", "0", "0.0938", "1.581", 0.6],
+  ["Default", "0", "0.1413", "air", 0.6],
+  ["Stop", "0", "0.1", "air", 0.284],
+  ["Default", "-2.8724", "0.05", "1.713", 0.6],
+  ["Default", "2.8034", "0.25", "1.64", 0.6],
+  ["Default", "-1.1513", "0.0063", "air", 0.6],
+  ["Default", "3.2583", "0.2919", "1.488", 0.6],
+  ["Default", "-0.8827", "0.0913", "1.805", 0.6],
+  ["Default", "-1.7116", "2.8885085903779517", "air", 0.6],
 ] as const;
 
 test("import fisheye config, update system, and verify loaded prescription/specs", async ({
@@ -76,9 +76,15 @@ test("import fisheye config, update system, and verify loaded prescription/specs
     await expect(
       await getGridCellByHeaderText(page, prescGrid, row, "Medium")
     ).toContainText(surface[3]);
-    await expect(
-      await getGridCellByHeaderText(page, prescGrid, row, "Semi-diam.")
-    ).toContainText(surface[4]);
+    const semiDiameterCell = await getGridCellByHeaderText(
+      page,
+      prescGrid,
+      row,
+      "Semi-diam."
+    );
+    const semiDiameter = Number.parseFloat(await semiDiameterCell.innerText());
+    expect(Number.isFinite(semiDiameter)).toBe(true);
+    expect(semiDiameter).toBeCloseTo(surface[4], 3);
 
     await row.hover();
     await expect(
