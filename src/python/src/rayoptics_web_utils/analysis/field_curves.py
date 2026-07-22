@@ -8,6 +8,7 @@ from rayoptics.raytr.trace import setup_pupil_coords, trace_astigmatism
 from rayoptics.raytr.opticalspec import Field
 
 from rayoptics_web_utils.utils import _json_float_list, _system_units
+from rayoptics_web_utils.analysis._afocal import differential_output_vergence, is_afocal_image_space
 
 
 def _field_unit(opm: OpticalModel) -> str:
@@ -34,14 +35,18 @@ def _trace_field_curves(opm: OpticalModel, wvl_idx: int, num_points: int = 21) -
     field_values = [float(value) for value in np.linspace(0.0, max_field, num=num_points)]
     sagittal_focus = []
     tangential_focus = []
+    afocal = is_afocal_image_space(opm)
 
     for field_value in field_values:
         fld.yv = field_value
-        ref_sphere, cr_pkg = setup_pupil_coords(opm, fld, wvl, foc)
-        fld.chief_ray = cr_pkg
-        fld.ref_sphere = ref_sphere
-
-        s_foc, t_foc = trace_astigmatism(opm, fld, wvl, foc)
+        if afocal:
+            s_foc = differential_output_vergence(opm, fld, wvl, axis=0)
+            t_foc = differential_output_vergence(opm, fld, wvl, axis=1)
+        else:
+            ref_sphere, cr_pkg = setup_pupil_coords(opm, fld, wvl, foc)
+            fld.chief_ray = cr_pkg
+            fld.ref_sphere = ref_sphere
+            s_foc, t_foc = trace_astigmatism(opm, fld, wvl, foc)
         sagittal_focus.append(s_foc)
         tangential_focus.append(t_foc)
 
@@ -58,7 +63,7 @@ def _trace_field_curves(opm: OpticalModel, wvl_idx: int, num_points: int = 21) -
             "y": _json_float_list(category_indices),
         },
         "fieldLabels": [_format_field_label(value) for value in field_values],
-        "unitX": _system_units(opm),
+        "unitX": "D" if afocal else _system_units(opm),
         "unitY": _field_unit(opm),
     }
 

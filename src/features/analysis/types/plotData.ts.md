@@ -9,7 +9,7 @@ Defines analysis plot payload types returned by the Pyodide worker and consumed 
 - `DiffractionPsfData`: diffraction PSF axes and intensity grid.
 - `LineAxisData`: shared paired `x/y` line samples.
 - `FanLineAxisData`: paired fan `x/y` samples where `y` can be `undefined` for aperture-blocked samples.
-- `DiffractionMtfData`: diffraction MTF measured and ideal line curves plus cutoff metadata.
+- `DiffractionMtfData`: diffraction MTF measured and ideal line curves plus a required `scaleKind` discriminator. Finite `image-na` payloads carry optional directional NA metadata; afocal `exit-pupil` payloads carry optional projected pupil diameters.
 - `WavefrontMapData`: wavefront-map axes and OPD grid; missing samples are represented as `undefined`.
 - `StrehlVsWavelengthData`: selected-field Strehl ratio samples across wavelength, with wavelength units in `unitX`.
 - `GeoPsfData`: geometric PSF point-cloud data.

@@ -7,7 +7,7 @@ Provides private low-level helpers for field-category line charts used by field 
 ## Behavior
 
 - Converts paired `LineAxisData.x` and `LineAxisData.y` arrays into ECharts `[x, y]` line points, truncating to the shorter array.
-- Builds the shared focus-shift x-axis, field-category y-axis, and fixed grid dimensions.
+- Builds the shared focus-shift x-axis, field-category y-axis, and fixed grid dimensions. A payload unit of `D` changes the physical x-axis label to `Output Vergence (D)`.
 - Explicitly enables solid grey split lines on both axes.
 - Limits visible y-axis category labels, tick marks, and horizontal split lines to five evenly distributed field labels when more than five labels are available.
 - Shows every y-axis category label, tick mark, and horizontal split line when five or fewer field labels are available.

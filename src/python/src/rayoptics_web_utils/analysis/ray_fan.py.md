@@ -16,7 +16,8 @@ Each list entry represents one wavelength and contains `fieldIdx`, `wvlIdx`, `Sa
 
 - `Sagittal` and `Tangential` each contain `x` pupil coordinates and `y` transverse aberration values. Blocked aperture samples are represented as `None` in `y`.
 - `unitX` is `""`.
-- `unitY` is `opm.system_spec.dimensions`.
+- For finite image space, `unitY` is `opm.system_spec.dimensions` and ordinates are image-plane transverse aberrations.
+- For infinite image space, ordinates are output-direction aberrations relative to the selected direction reference and `unitY` is `"arcsec"`.
 
 ## Key Conventions
 

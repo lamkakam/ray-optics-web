@@ -4,6 +4,12 @@ import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
 
 from rayoptics_web_utils.analysis._fan import _trace_fan_series
+from rayoptics_web_utils.analysis._afocal import (
+    angular_coordinates,
+    is_afocal_image_space,
+    output_segment,
+    reference_direction,
+)
 from rayoptics_web_utils.utils import _json_float_list, _system_units
 
 
@@ -12,8 +18,16 @@ def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
     Return transverse ray-fan data for all wavelengths at field index ``fi``.
     """
 
+    afocal = is_afocal_image_space(opm)
+    references = {}
+
     def _ray_abr(p, xy, ray_pkg, fld, wvl, foc):
         if ray_pkg[mc.ray] is not None:
+            if afocal:
+                if wvl not in references:
+                    references[wvl] = reference_direction(opm, fi, wvl, image_point=image_point)[0]
+                reference = references[wvl]
+                return float(angular_coordinates(output_segment(ray_pkg)[1], reference)[xy])
             image_pt = fld.ref_sphere[0]
             ray = ray_pkg[mc.ray]
             dist = foc / ray[-1][mc.d][2]
@@ -39,6 +53,6 @@ def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
                 "y": _json_float_list(tangential_y[wvl_idx]),
             },
             "unitX": "",
-            "unitY": _system_units(opm),
+            "unitY": "arcsec" if afocal else _system_units(opm),
         })
     return data

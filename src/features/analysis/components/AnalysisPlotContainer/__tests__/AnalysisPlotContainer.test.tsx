@@ -104,6 +104,7 @@ const diffractionMtfData: DiffractionMtfData = {
   unitY: "",
   cutoffTangential: 42,
   cutoffSagittal: 40,
+  scaleKind: "image-na",
   naTangential: 0.012,
   naSagittal: 0.011,
 };

@@ -137,3 +137,34 @@ def tilted_houghton():
 
     opm.update_model()
     return opm
+
+
+@pytest.fixture
+def afocal_two_lens():
+    """Build a paraxially afocal pair of identical zero-thickness thin lenses."""
+    from rayoptics.environment import OpticalModel
+    from rayoptics.raytr.opticalspec import PupilSpec, FieldSpec, WvlSpec
+
+    opm = OpticalModel()
+    osp = opm["optical_spec"]
+    sm = opm["seq_model"]
+    opm.system_spec.dimensions = "mm"
+    osp["pupil"] = PupilSpec(osp, key=["object", "epd"], value=10.0)
+    osp["fov"] = FieldSpec(
+        osp, key=["object", "angle"], value=1.0,
+        flds=[0.0, 1.0], is_relative=True,
+    )
+    osp["wvls"] = WvlSpec([(486.133, 1), (587.562, 2), (656.273, 1)], ref_wl=1)
+    opm.radius_mode = True
+    sm.do_apertures = False
+    sm.gaps[0].thi = 1.0e10
+
+    # Each zero-thickness n=1.5 biconvex lens has paraxial power 1/100 mm.
+    # Separating equal positive lenses by f1 + f2 gives an exact afocal pair.
+    sm.add_surface([100.0, 0.0, 1.5], sd=6.0)
+    sm.set_stop()
+    sm.add_surface([-100.0, 200.0, "air"], sd=6.0)
+    sm.add_surface([100.0, 0.0, 1.5], sd=6.0)
+    sm.add_surface([-100.0, 1.0e10, "air"], sd=6.0)
+    opm.update_model()
+    return opm

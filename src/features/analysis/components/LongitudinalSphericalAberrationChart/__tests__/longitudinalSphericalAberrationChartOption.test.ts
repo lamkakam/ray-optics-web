@@ -74,6 +74,14 @@ describe("longitudinalSphericalAberrationChartOption", () => {
     ]);
   });
 
+  it("labels afocal LSA as output vergence", () => {
+    const option = buildLongitudinalSphericalAberrationOption(
+      lsaData.map((series) => ({ ...series, unitX: "D" })),
+      ["486.1nm", "587.6nm"], 480, 320, "#000",
+    );
+    expect(option.xAxis.name).toBe("Output Vergence (D)");
+  });
+
   it("reserves extra top space for wrapped wavelength legends and reduces grid height", () => {
     const sixWavelengthLsaData: LongitudinalSphericalAberrationData = Array.from({ length: 6 }, (_, index) => ({
       wvlIdx: index,

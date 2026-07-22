@@ -194,7 +194,10 @@ export function buildRayFanChartOption(
     : titleTop;
   const axisExtents = getAxisExtents(rayFanData);
   const seriesColors = getSeriesColors(rayFanData, wavelengthLabels);
-  const yAxisName = rayFanData[0]?.unitY ? `Transverse Aberr. (${rayFanData[0].unitY})` : "Transverse Aberr.";
+  const rayFanUnit = rayFanData[0]?.unitY;
+  const yAxisName = rayFanUnit === "arcsec"
+    ? "Angular Aberr. (arcsec)"
+    : rayFanUnit ? `Transverse Aberr. (${rayFanUnit})` : "Transverse Aberr.";
 
   return {
     animation: false,
