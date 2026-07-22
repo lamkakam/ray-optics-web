@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the App Shell Context module.
  *
@@ -11,7 +12,6 @@
  * - `app/page.tsx`
  * - `app/glass-map/page.tsx`
  */
-"use client";
 
 import React, { createContext, useContext } from "react";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";

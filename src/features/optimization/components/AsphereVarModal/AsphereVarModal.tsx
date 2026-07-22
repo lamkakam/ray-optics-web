@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Asphere Var Modal module.
  *
@@ -14,7 +15,6 @@
  *
  * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while asphere variable controls scroll.
  */
-"use client";
 
 import React from "react";
 import { MathJax } from "better-react-mathjax";

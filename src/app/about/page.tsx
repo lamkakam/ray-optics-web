@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Page module.
  *
@@ -13,7 +14,6 @@
  * - `View Python Third-Party Licenses` links to `https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-PYTHON-LICENSES.md`
  * - Keeps the About content vertically scrollable within the app shell
  */
-"use client";
 
 import { ExternalLink } from "@/shared/components/primitives/ExternalLink";
 import { Header } from "@/shared/components/primitives/Header";

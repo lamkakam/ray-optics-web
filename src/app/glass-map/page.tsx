@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Page module.
  *
@@ -17,7 +18,6 @@
  * - Leaves navigation to `/` to the Glass Map inline links, so `Back to lens editor` remains a state-preserving navigation while `Use selected glass` updates the draft first
  * - Uses the same loading placeholder for both search-param suspense and catalog-resource suspense
  */
-"use client";
 
 import { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";

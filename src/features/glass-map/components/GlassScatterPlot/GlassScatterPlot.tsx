@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Glass Scatter Plot module.
  *
@@ -59,7 +60,6 @@
  * - Touch gesture behavior from `@use-gesture` is not modeled reliably in jsdom for SVG bubbling paths, so tests focus on the SVG gesture container contract rather than synthetic pinch execution
  * - Crosshair lines are not rendered when the selected glass is not found in the current `points` array (e.g. its catalog is disabled)
  */
-"use client";
 
 import React, { useCallback } from "react";
 import { ParentSize } from "@visx/responsive";

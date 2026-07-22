@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Analysis Plot Container module.
  *
@@ -56,7 +57,6 @@
  *
  * After the initial render, a change to the app-wide `imagePoint` refreshes the currently selected plot by calling `loadPlot(selectedPlotType, selectedFieldIndex, selectedWavelengthIndex)`. This uses the last committed optical model and does not run the full Update System workflow, so lens layout, first-order data, and non-selected analysis data are left unchanged. `surfaceBySurface3rdOrder` remains a no-op on image-point changes and continues to reuse existing Seidel data.
  */
-"use client";
 
 import { useCallback, useEffect, useRef } from "react";
 import { useStore } from "zustand";

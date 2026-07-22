@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Formatting Modal module.
  *
@@ -11,7 +12,6 @@
  *
  * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while formatting controls scroll.
  */
-"use client";
 
 import React, { useMemo, useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";

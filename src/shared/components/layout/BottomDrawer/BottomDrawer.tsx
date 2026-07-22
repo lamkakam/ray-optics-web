@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Bottom Drawer module.
  *
@@ -9,7 +10,6 @@
  * - `dragging: React.MutableRefObject<boolean>` — pointer capture flag.
  * - `startY / startHeight: React.MutableRefObject<number>` — drag start coordinates.
  */
-"use client";
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import clsx from "clsx";

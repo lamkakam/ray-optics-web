@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Medium Selector Modal module.
  *
@@ -16,7 +17,6 @@
  *
  * - Close, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while medium selection controls scroll.
  */
-"use client";
 
 import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";

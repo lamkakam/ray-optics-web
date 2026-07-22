@@ -1,3 +1,4 @@
+"use client";
 /**
  * Renders the optimization lens prescription grid, including a read-only surface `Index` column, radius/thickness variable buttons, asphere variable/pickup button, and read-only inspection cells that open existing lens-editor dialogs.
  *
@@ -19,7 +20,6 @@
  * - Sets the three optimization `Var.` columns to a narrow `60px` initial width sized for the `Var.` header text, while leaving them otherwise resizable by AG Grid defaults.
  * - Uses shared text action cells for non-optimization-mode inspection cells such as `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating`; those cells show aperture defaults or circular radius labels, `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels while preserving the read-only modal callbacks.
  */
-"use client";
 
 import { useMemo } from "react";
 import { AgGridProvider } from "ag-grid-react";

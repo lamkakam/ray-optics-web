@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Glass Map Controls module.
  *
@@ -11,7 +12,6 @@
  * ## MathJax
  * The component uses `<MathJax inline>` from `better-react-mathjax` for visually rich labels (subscript notation). `RadioOption.labelNode` carries the MathJax node while `RadioOption.label` preserves plain-text `aria-label` for accessibility. **The component does not own a `MathJaxContext`** — the context is provided by the parent (`GlassMapView`). Axis labels in the scatter plot are not affected (they remain plain strings rendered in SVG).
  */
-"use client";
 
 import { MathJax } from "better-react-mathjax";
 import { CATALOG_COLOR_MAP } from "@/features/glass-map/lib/glassMap";

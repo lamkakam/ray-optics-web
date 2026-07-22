@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Focal Length Selection Modal module.
  *
@@ -6,7 +7,6 @@
  *
  * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while the focal-length choices scroll.
  */
-"use client";
 
 import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";

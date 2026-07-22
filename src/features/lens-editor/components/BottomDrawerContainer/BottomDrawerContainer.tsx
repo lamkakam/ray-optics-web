@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Bottom Drawer Container module.
  *
@@ -18,7 +19,6 @@
  *
  * Renders `<BottomDrawer tabs={tabs} draggable={draggable} activeTabId={...} onTabChange={...} initialHeight={...} onHeightCommit={...} />`.
  */
-"use client";
 
 import { useMemo } from "react";
 import { useStore } from "zustand";

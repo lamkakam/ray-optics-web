@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Side Nav module.
  *
@@ -31,7 +32,6 @@
  * | Privacy Policy | `/privacy-policy` |
  * | About | `/about` |
  */
-"use client";
 
 import type React from "react";
 import { useSelectedLayoutSegment } from "next/navigation";

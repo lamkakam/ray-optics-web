@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Custom Glass Table module.
  *
@@ -6,7 +7,6 @@
  * - Each row checkbox exposes `aria-label="Select {label}"`.
  * - The header checkbox exposes `aria-label="Select all custom glasses"` in tests through the AG Grid mock.
  */
-"use client";
 
 import { useEffect, useMemo, useRef } from "react";
 import { AgGridProvider } from "ag-grid-react";

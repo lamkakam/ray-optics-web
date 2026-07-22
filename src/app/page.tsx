@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Page module.
  *
@@ -7,7 +8,6 @@
  * - Renders `LensEditor`
  * - Passes `openErrorModal` to `LensEditor` as `onError`
  */
-"use client";
 
 import { LensEditor } from "@/features/lens-editor/LensEditor";
 import { useAppShell } from "@/app/AppShellContext";

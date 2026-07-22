@@ -1,3 +1,4 @@
+"use client";
 /**
  * Reusable prescription grid cell UI that is safe for `shared/` because it depends only on shared primitives.
  *
@@ -16,7 +17,6 @@
  * - Default tooltip copy preserves the Lens Editor wording.
  * - Optimization passes view-oriented tooltip copy through the shared column builders.
  */
-"use client";
 
 import React from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";

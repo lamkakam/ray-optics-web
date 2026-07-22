@@ -1,3 +1,4 @@
+"use client";
 /**
  * Provides shared deck.gl cartesian plot layout and SVG overlay helpers for analysis charts that render square orthographic plots with axis chrome and optional vertical color bars.
  *
@@ -18,7 +19,6 @@
  * - `DiffractionPsfChart`
  * - `WavefrontMapChart`
  */
-"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";

@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Unapplied Optimization Result Modal module.
  *
@@ -6,7 +7,6 @@
  *
  * - Stay, Leave, and Apply to Editor actions are passed to `Modal.footer` so they remain fixed while the modal body scrolls.
  */
-"use client";
 
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";

@@ -1,3 +1,4 @@
+"use client";
 /**
  * Blocking optimization-status modal for the Optimization page. It renders an Apache ECharts line chart of optimization progress with iteration on the x-axis and raw `total merit function value` on a logarithmic y-axis.
  *
@@ -16,7 +17,6 @@
  *
  * - Stop and OK actions are passed to `Modal.footer` so the active action remains fixed while progress content scrolls.
  */
-"use client";
 
 import { useEffect, useRef } from "react";
 import * as echarts from "echarts/core";

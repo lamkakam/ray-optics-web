@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Error Modal module.
  *
@@ -6,7 +7,6 @@
  *
  * - The OK action is passed to `Modal.footer` so it remains fixed outside the message body.
  */
-"use client";
 
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";

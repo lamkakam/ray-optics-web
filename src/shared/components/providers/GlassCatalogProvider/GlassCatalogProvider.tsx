@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Glass Catalog Provider module.
  *
@@ -10,7 +11,6 @@
  * - `isLoading` is `true` while the shared shell preload is in flight before success or failure
  * - `preload()` reuses the shared loader path, commits successful data to `GlassMapStore`, updates AppShell-local status/error, and returns the cached result when available
  */
-"use client";
 
 import React, { createContext, useContext } from "react";
 import type { AllGlassCatalogsData, GlassLookupMaps } from "@/features/glass-map/types/glassMap";

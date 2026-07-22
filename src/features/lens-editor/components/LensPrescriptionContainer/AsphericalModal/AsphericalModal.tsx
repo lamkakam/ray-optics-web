@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Aspherical Modal module.
  *
@@ -13,7 +14,6 @@
  *
  * - Close, Remove Aspherical, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while aspherical fields scroll.
  */
-"use client";
 
 import React, { useState } from "react";
 import { MathJax } from "better-react-mathjax";

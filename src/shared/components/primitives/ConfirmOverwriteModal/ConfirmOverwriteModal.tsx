@@ -1,3 +1,4 @@
+"use client";
 /**
  * Confirmation modal used before loading an example optical system.
  *
@@ -6,7 +7,6 @@
  *
  * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
  */
-"use client";
 
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Button } from "@/shared/components/primitives/Button";

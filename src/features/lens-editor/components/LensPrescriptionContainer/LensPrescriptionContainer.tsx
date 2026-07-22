@@ -1,3 +1,4 @@
+"use client";
 /**
  * Supplies the editor cache to the grid. Toggling auto aperture changes display/read-only behavior without overwriting manual values or discarding the cache.
  *
@@ -18,7 +19,6 @@
  * - `formattingError: string | undefined` — controls the shared `ErrorModal` shown when formatting validation fails.
  * - `pendingReferenceSurfaceRows: GridRow[] | undefined` — holds a successful Reverse result while the user chooses whether to insert a flat air reference surface.
  */
-"use client";
 
 import React, { useState, useCallback } from "react";
 import { useStore } from "zustand";

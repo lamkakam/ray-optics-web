@@ -1,3 +1,4 @@
+"use client";
 /**
  * Renders the radius variable/pickup modal with modal-local draft state.
  *
@@ -6,7 +7,6 @@
  *
  * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while radius mode controls scroll.
  */
-"use client";
 
 import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";

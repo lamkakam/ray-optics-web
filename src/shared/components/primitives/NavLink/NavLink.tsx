@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Nav Link module.
  *
@@ -13,7 +14,6 @@
  * - Invokes `onClick` when supplied and passes through the anchor click event, allowing callers to call `preventDefault()` before guarded programmatic navigation
  * - Active/inactive state is controlled entirely via the `active` prop
  */
-"use client";
 
 import React from "react";
 import Link from "next/link";

@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Page module.
  *
@@ -9,7 +10,6 @@
  * - Uses the shared `Select` primitive with bounded width for layout stability
  * - Does not render the Image point selector; image reference selection lives in the Lens Editor drawer's `Image Reference` tab
  */
-"use client";
 
 import React from "react";
 import type { Theme } from "@/shared/tokens/theme";

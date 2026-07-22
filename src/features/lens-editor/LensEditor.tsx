@@ -1,3 +1,4 @@
+"use client";
 /**
  * Successful auto-aperture updates request sequential semi-diameters alongside the analyses, validate Object/physical/Image alignment, and replace the ID-keyed cache. Successful manual updates clear it. Failed updates leave the committed model and cache unchanged.
  *
@@ -58,7 +59,6 @@
  * - Submit flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
  * - Example-system loading now lives on `/example-systems`; LensEditor no longer renders the old example dropdown or overwrite confirmation.
  */
-"use client";
 
 import React, { useState, useCallback } from "react";
 import { useStore } from "zustand";

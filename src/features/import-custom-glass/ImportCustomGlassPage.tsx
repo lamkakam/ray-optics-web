@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Import Custom Glass Page module.
  *
@@ -31,7 +32,6 @@
  * ## Compatibility Exports
  * - Re-exports `EMPTY_CUSTOM_GLASSES`, `getUserDefinedCustomGlasses`, `isUserDefinedGlassAlreadyExistsError`, `parseCustomGlassCsv`, and `saveCustomGlass` from `lib/customGlassImport` so existing external imports keep working during the refactor.
  */
-"use client";
 
 import { useMemo, useRef, useState } from "react";
 import { useStore } from "zustand";

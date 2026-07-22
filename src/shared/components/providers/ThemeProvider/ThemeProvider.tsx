@@ -1,5 +1,5 @@
-/** - `theme: Theme` — the active theme, initialized by `getInitialTheme()` which reads `localStorage` then falls back to the OS preference. */
 "use client";
+/** - `theme: Theme` — the active theme, initialized by `getInitialTheme()` which reads `localStorage` then falls back to the OS preference. */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { Theme } from "@/shared/tokens/theme";

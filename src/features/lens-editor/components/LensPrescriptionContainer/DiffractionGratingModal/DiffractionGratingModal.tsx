@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Diffraction Grating Modal module.
  *
@@ -6,7 +7,6 @@
  *
  * - Close, Remove, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while diffraction grating fields scroll.
  */
-"use client";
 
 import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";

@@ -1,3 +1,4 @@
+"use client";
 /**
  * Confirmation modal shown after a successful Reverse formatting operation when the resulting first physical surface has nonzero tilt or decenter.
  *
@@ -6,7 +7,6 @@
  *
  * - No and Yes actions are passed to `Modal.footer` so they remain fixed outside the explanatory body.
  */
-"use client";
 
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";

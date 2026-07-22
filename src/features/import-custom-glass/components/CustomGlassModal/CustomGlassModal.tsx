@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Custom Glass Modal module.
  *
@@ -8,7 +9,6 @@
  * - Footer actions keep the visible labels and aria labels `Cancel` and `Confirm`.
  * - `Add row` keeps the same visible label and aria label.
  */
-"use client";
 
 import { useMemo, useState } from "react";
 import { AgGridProvider } from "ag-grid-react";

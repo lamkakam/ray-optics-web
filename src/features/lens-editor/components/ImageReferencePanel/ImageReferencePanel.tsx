@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Image Reference Panel module.
  *
@@ -12,7 +13,6 @@
  * - Calls `setImagePoint(...)` only when the selected option differs from the current value.
  * - Does not own persistence; persistence remains handled by `ImagePointProvider`.
  */
-"use client";
 
 import React from "react";
 import { type ImagePoint, useImagePoint } from "@/shared/components/providers/ImagePointProvider";

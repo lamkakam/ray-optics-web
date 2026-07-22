@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Layout module.
  *
@@ -48,7 +49,6 @@
  * ## iOS Safari height note
  * `globals.css` sets `html, body { height: 100%; overflow: hidden; }`. This locks the document so it can never scroll. Without this, `h-screen` (`100vh`) on iOS Safari equals the "large viewport height" (address bar hidden), causing the layout to overflow when the address bar is visible. The resulting micro-scroll triggers the address bar to animate in/out, resizing the viewport and making the header jump. The `h-full` on the outer div fills the locked `body` height instead.
  */
-"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";

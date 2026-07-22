@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Python Script Modal module.
  *
@@ -10,7 +11,6 @@
  *
  * - The Ok action is passed to `Modal.footer` so it remains fixed while script content scrolls.
  */
-"use client";
 
 import { useState } from "react";
 import { Modal } from "@/shared/components/primitives/Modal";

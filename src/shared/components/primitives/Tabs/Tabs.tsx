@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Tabs module.
  *
@@ -6,7 +7,6 @@
  *
  * - `internalActiveTabId: string` — uncontrolled active tab id, initialized to `tabs[0]?.id`.
  */
-"use client";
 
 import React, { useState } from "react";
 import clsx from "clsx";

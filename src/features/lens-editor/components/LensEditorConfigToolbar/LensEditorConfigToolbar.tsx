@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Lens Editor Config Toolbar module.
  *
@@ -12,7 +13,6 @@
  * - `photonsToPhotosFileInputRef: React.RefObject<HTMLInputElement>` — hidden `.txt` file input triggered by `Import a file from Photons to Photos`.
  * - `lookupMaps` — app-wide glass lookup maps read from `useGlassCatalogs()` and passed to Photons to Photos parsing.
  */
-"use client";
 
 import React, { useRef, useState } from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";

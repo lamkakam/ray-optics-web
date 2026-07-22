@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Glass Map View module.
  *
@@ -28,7 +29,6 @@
  * - `GlassMapControls` — filter/selector controls (uses MathJax from parent context)
  * - `GlassDetailPanel` — selected glass details (uses MathJax from parent context)
  */
-"use client";
 
 import { useState } from "react";
 import { useStore } from "zustand";

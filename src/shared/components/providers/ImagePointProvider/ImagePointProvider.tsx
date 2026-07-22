@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Image Point Provider module.
  *
@@ -8,7 +9,6 @@
  * - `ImagePointProvider` initializes from `localStorage` key `ray-optics-web-image-point`, falling back to the legacy `ray-optics-web-opd-aim-point` key for migration.
  * - `useImagePoint()` returns `{ imagePoint, setImagePoint }`.
  */
-"use client";
 
 import React, { createContext, useCallback, useContext, useState } from "react";
 

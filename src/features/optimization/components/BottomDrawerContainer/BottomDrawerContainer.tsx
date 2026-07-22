@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Bottom Drawer Container module.
  *
@@ -9,7 +10,6 @@
  * - `OptimizationPage` remains responsible for deriving row data and owning local inspection-modal row state; store-backed drawer actions live here.
  * - Grid-relevant callback identities should stay stable unless their actual data dependencies change, because the Jest AG Grid mock and real AG Grid both model editor loss when column definitions are recreated during active editing.
  */
-"use client";
 
 import { memo, useCallback, useMemo, type ComponentProps } from "react";
 import { useStore } from "zustand";

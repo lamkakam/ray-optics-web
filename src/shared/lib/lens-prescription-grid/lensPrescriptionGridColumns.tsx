@@ -1,3 +1,4 @@
+"use client";
 /**
  * In read-only auto mode the semi-diameter column shows its computed ID-keyed value or the manual fallback, including rectangular clear apertures. Manual mode continues to blank rectangular cells.
  *
@@ -16,7 +17,6 @@
  *
  * `createSemiDiameterColumn` renders a blank value and is non-editable for surface rows whose clear aperture is rectangular, because rectangular clear apertures carry their own half-length and half-width instead of using `semiDiameter`.
  */
-"use client";
 
 import type { ColDef } from "ag-grid-community";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";

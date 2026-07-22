@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Page module.
  *
@@ -8,7 +9,6 @@
  * - Lists the third-party CDNs contacted for Pyodide and Python package delivery
  * - Notes that IP addresses may be visible to those CDNs
  */
-"use client";
 
 import { Header } from "@/shared/components/primitives/Header";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";

@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Diffraction Psf Chart module.
  *
@@ -21,7 +22,6 @@
  * - `buildDiffractionPsfBitmap(...)` and `formatDiffractionPsfFluxLabel(...)` from `diffractionPsfDeckData.ts`
  * - `ANALYSIS_HEATMAP_COLOR_PALETTE` from `features/analysis/lib/analysisChartPalette`
  */
-"use client";
 
 import { BitmapLayer, COORDINATE_SYSTEM, DeckGL, OrthographicView } from "deck.gl";
 import { useMemo, useState } from "react";

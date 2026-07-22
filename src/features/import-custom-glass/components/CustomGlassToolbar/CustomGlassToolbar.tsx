@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Custom Glass Toolbar module.
  *
@@ -6,7 +7,6 @@
  * - Hidden inputs retain `aria-label="Import custom glass JSON file"` and `aria-label="Import custom glass CSV files"` for tests and assistive technology.
  * - Visible command buttons expose aria labels matching their visible text.
  */
-"use client";
 
 import type { RefObject } from "react";
 import { Button } from "@/shared/components/primitives/Button";

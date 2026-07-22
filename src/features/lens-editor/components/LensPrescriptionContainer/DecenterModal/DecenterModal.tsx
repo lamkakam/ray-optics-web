@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Decenter Modal module.
  *
@@ -11,7 +12,6 @@
  *
  * - Close, Remove Decenter, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while decenter fields scroll.
  */
-"use client";
 
 import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";

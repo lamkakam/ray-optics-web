@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Specs Configurator Container module.
  *
@@ -5,7 +6,6 @@
  * ## Injected Dependencies
  * Imperative access to specs actions is via `useSpecsConfiguratorStore()` (stable, non-reactive). For reactive states, use `useSpecsConfiguratorStore` with Zustand's `useStore`.
  */
-"use client";
 
 import { useCallback } from "react";
 import { useStore } from "zustand";

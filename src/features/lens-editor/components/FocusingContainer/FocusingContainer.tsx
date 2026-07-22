@@ -1,3 +1,4 @@
+"use client";
 /**
  * Describes the Focusing Container module.
  *
@@ -18,7 +19,6 @@
  * </div>
  * ```
  */
-"use client";
 
 import { useState, useMemo } from "react";
 import { useStore } from "zustand";

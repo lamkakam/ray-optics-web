@@ -1,3 +1,4 @@
+"use client";
 /**
  * Displays the confirmation dialog shown before applying the optimization snapshot back to the editor.
  *
@@ -6,7 +7,6 @@
  *
  * - Cancel and Apply actions are passed to `Modal.footer` so they remain fixed outside the confirmation body.
  */
-"use client";
 
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
