@@ -13,17 +13,6 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-/**
-## Props
-
-```ts
-interface AddReferenceSurfaceModalProps {
-  readonly isOpen: boolean;
-  readonly onConfirm: () => void;
-  readonly onCancel: () => void;
-}
-```
-*/
 interface AddReferenceSurfaceModalProps {
   readonly isOpen: boolean;
   readonly onConfirm: () => void;

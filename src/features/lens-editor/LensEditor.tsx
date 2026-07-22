@@ -93,17 +93,12 @@ import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProv
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/autoSemiDiameters";
 
-/**
-## Props
-| Prop | Type | Description |
-|------|------|-------------|
-| `proxy` | `PyodideWorkerAPI \| undefined` | Pyodide worker proxy (undefined until ready) |
-| `isReady` | `boolean` | Whether Pyodide is initialised |
-| `onError` | `() => void` | Called on submit compute error; opens page-level error modal |
-*/
 export interface LensEditorProps {
+  /** Pyodide worker proxy (undefined until ready) */
   readonly proxy: PyodideWorkerAPI | undefined;
+  /** Whether Pyodide is initialised */
   readonly isReady: boolean;
+  /** Called on submit compute error; opens page-level error modal */
   readonly onError: () => void;
 }
 

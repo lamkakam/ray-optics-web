@@ -53,18 +53,6 @@ import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 
-/**
-## Props
-
-```ts
-interface OptimizationPageProps {
-  proxy: PyodideWorkerAPI | undefined;
-  isReady: boolean;
-  onError: () => void;
-  onApplyToEditor?: (model: OpticalModel) => Promise<void> | void;
-}
-```
-*/
 interface OptimizationPageProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;

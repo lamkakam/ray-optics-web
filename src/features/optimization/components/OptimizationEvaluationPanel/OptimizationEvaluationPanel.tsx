@@ -8,20 +8,6 @@ import { Paragraph } from "@/shared/components/primitives/Paragraph";
 import { Table } from "@/shared/components/primitives/Table";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
-/**
-## Props
-
-```ts
-interface OptimizationEvaluationPanelProps {
-  rows: ReadonlyArray<readonly [string, string, string, string]>;
-  isEvaluating: boolean;
-  invalidConfigMessage?: string;
-  warningMessage?: string;
-  maxBodyHeight?: number;
-  allowBodyScroll?: boolean;
-}
-```
-*/
 interface OptimizationEvaluationPanelProps {
   readonly rows: ReadonlyArray<readonly [string, string, string, string]>;
   readonly isEvaluating: boolean;

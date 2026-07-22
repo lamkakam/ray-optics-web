@@ -6,25 +6,10 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-/**
-## Props
-
-```ts
 interface LoadingOverlayProps {
-  title: string;
-  contents: React.ReactNode;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `title` | `string` | Yes | Bold status heading (e.g. "Initializing Pyodide") |
-| `contents` | `React.ReactNode` | Yes | Supplementary text or progress details shown below the title |
-*/
-interface LoadingOverlayProps {
+  /** Bold status heading (e.g. "Initializing Pyodide") */
   readonly title: string;
+  /** Supplementary text or progress details shown below the title */
   readonly contents: React.ReactNode;
 }
 

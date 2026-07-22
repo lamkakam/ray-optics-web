@@ -29,49 +29,26 @@ import { Select } from "@/shared/components/primitives/Select";
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 import { builtInSpecialMaterial } from "@/shared/lib/utils/specialMaterials";
 
-/**
-## Props
-
-```ts
 interface MediumSelectorModalProps {
-  isOpen: boolean;
-  initialMedium: string;
-  initialManufacturer: string;
-  readOnly?: boolean;
-  allowReflective?: boolean;
-  selectedMedium?: string;
-  selectedManufacturer?: string;
-  onSelectionChange?: (medium: string, manufacturer: string) => void;
-  onConfirm: (medium: string, manufacturer: string) => void;
-  onClose: () => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls modal visibility |
-| `initialMedium` | `string` | Yes | Pre-selected medium on open |
-| `initialManufacturer` | `string` | Yes | Pre-selected manufacturer on open; empty string or `"air"` maps to `"Special"` |
-| `readOnly` | `boolean` | No | When `true`, all controls are disabled and the footer shows only `Close` |
-| `allowReflective` | `boolean` | No | When `false`, `"REFL"` is removed from the Special media options |
-| `selectedMedium` | `string \| undefined` | No | Controlled catalog-glass medium value used when the parent persists an unconfirmed draft |
-| `selectedManufacturer` | `string \| undefined` | No | Controlled catalog-glass manufacturer value used with `selectedMedium` |
-| `onSelectionChange` | `(medium, manufacturer) => void` | No | Called whenever the catalog-glass draft changes |
-| `onConfirm` | `(medium, manufacturer) => void` | Yes | Called with the selected medium and manufacturer (empty string for Special) |
-| `onClose` | `() => void` | Yes | Cancel / close callback |
-*/
-interface MediumSelectorModalProps {
+  /** Controls modal visibility */
   readonly isOpen: boolean;
+  /** Pre-selected medium on open */
   readonly initialMedium: string;
+  /** Pre-selected manufacturer on open; empty string or `"air"` maps to `"Special"` */
   readonly initialManufacturer: string;
+  /** When `true`, all controls are disabled and the footer shows only `Close` */
   readonly readOnly?: boolean;
+  /** When `false`, `"REFL"` is removed from the Special media options */
   readonly allowReflective?: boolean;
+  /** Controlled catalog-glass medium value used when the parent persists an unconfirmed draft */
   readonly selectedMedium?: string;
+  /** Controlled catalog-glass manufacturer value used with `selectedMedium` */
   readonly selectedManufacturer?: string;
+  /** Called whenever the catalog-glass draft changes */
   readonly onSelectionChange?: (medium: string, manufacturer: string) => void;
+  /** Called with the selected medium and manufacturer (empty string for Special) */
   readonly onConfirm: (medium: string, manufacturer: string) => void;
+  /** Cancel / close callback */
   readonly onClose: () => void;
 }
 

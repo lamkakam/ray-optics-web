@@ -11,28 +11,12 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-/**
-## Props
-
-```ts
 interface ErrorModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  message?: string;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls visibility |
-| `onClose` | `() => void` | Yes | Called when the OK button is clicked |
-| `message` | `string` | No | Custom error text. Defaults to a generic validation message |
-*/
-interface ErrorModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Called when the OK button is clicked */
   readonly onClose: () => void;
+  /** Custom error text. Defaults to a generic validation message */
   readonly message?: string;
 }
 

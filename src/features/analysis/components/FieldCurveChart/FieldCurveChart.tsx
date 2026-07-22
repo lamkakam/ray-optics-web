@@ -5,14 +5,10 @@ import type { FieldCurveData } from "@/features/analysis/types/plotData";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { buildFieldCurveOption } from "./fieldCurveChartOption";
 
-/**
-## Props
-
-- `fieldCurveData`: `FieldCurveData` payload to render.
-- `autoHeight`: optional responsive height behavior passed through to the shared chart factory.
-*/
 interface FieldCurveChartProps {
+  /** `FieldCurveData` payload to render. */
   readonly fieldCurveData: FieldCurveData;
+  /** optional responsive height behavior passed through to the shared chart factory. */
   readonly autoHeight?: boolean;
 }
 

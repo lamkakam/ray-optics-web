@@ -11,16 +11,12 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Datalist } from "@/shared/components/primitives/Datalist";
 import { Select } from "@/shared/components/primitives/Select";
 
-/**
-## Props
-
-- `catalogsData: CompleteGlassCatalogsData` — authoritative catalog data.
-- `lookupMaps: GlassLookupMaps` — canonical lookup maps built from the same catalog-data snapshot.
-- `onSelect: (glass: SelectedGlass) => void` — called with the canonical stored catalog name, glass name, and data.
-*/
 interface GlassMapCatalogSelectorProps {
+  /** Authoritative catalog data. */
   readonly catalogsData: CompleteGlassCatalogsData;
+  /** Canonical lookup maps built from the same catalog-data snapshot. */
   readonly lookupMaps: GlassLookupMaps;
+  /** Called with the canonical stored catalog name, glass name, and data. */
   readonly onSelect: (glass: SelectedGlass) => void;
 }
 

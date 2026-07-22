@@ -11,22 +11,6 @@ import { type JSX } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
-/**
-## Props
-
-```ts
-interface CheckboxInputProps {
-  readonly id: string;
-  readonly label: string | JSX.Element;
-  readonly checked: boolean;
-  readonly onChange: (checked: boolean) => void;
-  readonly disabled?: boolean;
-  readonly ariaLabel?: string;
-  readonly className?: string;
-  readonly labelClassName?: string;
-}
-```
-*/
 interface CheckboxInputProps {
   readonly id: string;
   readonly label: string | JSX.Element;

@@ -11,16 +11,6 @@ import { buildSurfaceBySurface3rdOrderChartOption } from "./surfaceBySurface3rdO
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
-/**
-## Props
-
-```ts
-interface SurfaceBySurface3rdOrderChartProps {
-  surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData;
-  autoHeight?: boolean;
-}
-```
-*/
 interface SurfaceBySurface3rdOrderChartProps {
   readonly surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData;
   readonly autoHeight?: boolean;

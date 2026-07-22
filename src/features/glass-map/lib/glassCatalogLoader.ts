@@ -27,11 +27,6 @@ function getErrorMessage(error: unknown): string {
 }
 
 /**
-### `loadGlassCatalogs(proxy)`
-```ts
-loadGlassCatalogs(proxy: PyodideWorkerAPI): Promise<GlassCatalogsLoadResult>
-```
-
 - Starts `proxy.getAllGlassCatalogsData()` when no request is already in flight for that proxy
 - Reuses the same promise for concurrent callers using the same worker proxy
 - Completes worker payload catalog keys with `completeAllCatalogsData()`
@@ -68,11 +63,6 @@ export function loadGlassCatalogs(proxy: PyodideWorkerAPI): Promise<GlassCatalog
 }
 
 /**
-### `_resetGlassCatalogLoaderForTest()`
-```ts
-_resetGlassCatalogLoaderForTest(): void
-```
-
 - Clears in-flight requests for Jest isolation
 */
 export function _resetGlassCatalogLoaderForTest(): void {

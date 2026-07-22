@@ -11,28 +11,12 @@ import { Modal } from "@/shared/components/primitives/Modal";
 import { Button } from "@/shared/components/primitives/Button";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-/**
-## Props
-
-```ts
 interface ConfirmImportModalProps {
-  isOpen: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls visibility |
-| `onConfirm` | `() => void` | Yes | Proceeds with the import |
-| `onCancel` | `() => void` | Yes | Aborts the import |
-*/
-interface ConfirmImportModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Proceeds with the import */
   readonly onConfirm: () => void;
+  /** Aborts the import */
   readonly onCancel: () => void;
 }
 

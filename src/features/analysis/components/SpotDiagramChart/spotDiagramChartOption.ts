@@ -1,17 +1,5 @@
 /**
 # `features/analysis/components/SpotDiagramChart/spotDiagramChartOption.ts`
-
-## API
-
-```ts
-function buildSpotDiagramOption(
-  spotDiagramData: SpotDiagramData,
-  wavelengthLabels: readonly string[],
-  chartWidth: number,
-  chartHeight: number,
-  textColor: string,
-)
-```
 */
 import * as echarts from "echarts/core";
 import { ScatterChart } from "echarts/charts";

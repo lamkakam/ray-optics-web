@@ -3,10 +3,6 @@
 
 ## Return Value
 
-```ts
-type ScreenSize = "screenSM" | "screenLG";
-```
-
 - `"screenLG"` — viewport is ≥ 1440 px wide.
 - `"screenSM"` — viewport is < 1440 px wide.
 

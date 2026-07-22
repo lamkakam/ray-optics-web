@@ -12,14 +12,6 @@
 | `catalogsData` | `CompleteGlassCatalogsData \| undefined` | `undefined` | Normalized loaded glass catalog data shared across the app, including `Custom` |
 | `lookupMaps` | `GlassLookupMaps \| undefined` | `undefined` | Lookup maps built by the glass-map runtime library from the same normalized catalog data |
 
-```ts
-interface GlassMapRouteIntent {
-  source: "medium-selector";
-  catalog: string;
-  glass: string;
-}
-```
-
 ## Actions (`GlassMapActions`)
 | Action | Description |
 |--------|-------------|

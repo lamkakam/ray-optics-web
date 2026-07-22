@@ -23,26 +23,22 @@ interface ApertureConfirmValue {
   readonly edge_aperture: EdgeAperture | undefined;
 }
 
-/**
-## Props
-
-- `isOpen`: controls visibility.
-- `autoAperture`: optional flag that switches Clear Rectangular size labels from half dimensions to ratios and switches Clear Annular central obstruction display from radius to ratio. Defaults to `false`.
-- `semiDiameter`: outer clear aperture radius for the selected surface, used to validate annular obstruction radius and convert annular obstruction ratio display to stored radius.
-- `initialClearAperture`: optional current clear aperture. Supports circular, annular, and rectangular clear apertures.
-- `initialEdgeAperture`: optional current edge aperture. When omitted, Edge Aperture uses `Default (Follow Clear Aperture)`.
-- `readOnly`: disables controls and renders a Close-only footer.
-- `onConfirm`: receives `{ clear_aperture, edge_aperture }`.
-- `onClose`: closes/cancels the modal.
-*/
 interface ApertureModalProps {
+  /** controls visibility. */
   readonly isOpen: boolean;
+  /** optional flag that switches Clear Rectangular size labels from half dimensions to ratios and switches Clear Annular central obstruction display from radius to ratio. Defaults to `false`. */
   readonly autoAperture?: boolean;
+  /** outer clear aperture radius for the selected surface, used to validate annular obstruction radius and convert annular obstruction ratio display to stored radius. */
   readonly semiDiameter: number;
+  /** optional current clear aperture. Supports circular, annular, and rectangular clear apertures. */
   readonly initialClearAperture: ClearAperture | undefined;
+  /** optional current edge aperture. When omitted, Edge Aperture uses `Default (Follow Clear Aperture)`. */
   readonly initialEdgeAperture: EdgeAperture | undefined;
+  /** disables controls and renders a Close-only footer. */
   readonly readOnly?: boolean;
+  /** receives `{ clear_aperture, edge_aperture }`. */
   readonly onConfirm: (value: ApertureConfirmValue) => void;
+  /** closes/cancels the modal. */
   readonly onClose: () => void;
 }
 

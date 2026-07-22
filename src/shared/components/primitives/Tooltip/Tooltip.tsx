@@ -15,37 +15,18 @@ import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
-/**
-## Props
-
-```ts
 interface TooltipProps {
-  text: string;
-  children: React.ReactNode;
-  position?: "top" | "bottom" | "top-start" | "start" | "no-transform";
-  portal?: boolean;
-  noTouch?: boolean;
-  triggerClassName?: string;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `text` | `string` | Yes | Tooltip content |
-| `children` | `React.ReactNode` | Yes | Trigger element |
-| `position` | `string` | No | Placement relative to trigger. Defaults to `"top"` |
-| `portal` | `boolean` | No | When `true`, renders via `createPortal` using fixed positioning. Required inside AG Grid cells. Defaults to `false` |
-| `noTouch` | `boolean` | No | When `true` in portal mode, uses a `touchstart` ref flag to suppress the synthetic `mouseenter` browsers fire after touch. It does not apply `touch-action: none`, so native scroll and pan gestures remain available. Defaults to `false` |
-| `triggerClassName` | `string` | No | Additional classes for the trigger wrapper span. Use this when the hover target must fill its parent, such as an AG Grid cell action area. |
-*/
-interface TooltipProps {
+  /** Tooltip content */
   readonly text: string;
+  /** Trigger element */
   readonly children: React.ReactNode;
+  /** Placement relative to trigger. Defaults to `"top"` */
   readonly position?: "top" | "bottom" | "top-start" | "start" | "no-transform";
+  /** When `true`, renders via `createPortal` using fixed positioning. Required inside AG Grid cells. Defaults to `false` */
   readonly portal?: boolean;
+  /** When `true` in portal mode, uses a `touchstart` ref flag to suppress the synthetic `mouseenter` browsers fire after touch. It does not apply `touch-action: none`, so native scroll and pan gestures remain available. Defaults to `false` */
   readonly noTouch?: boolean;
+  /** Additional classes for the trigger wrapper span. Use this when the hover target must fill its parent, such as an AG Grid cell action area. */
   readonly triggerClassName?: string;
 }
 

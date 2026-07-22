@@ -27,20 +27,14 @@ import {
 } from "@/features/lens-editor/lib/photonsToPhotosParser";
 import { FocalLengthSelectionModal } from "./FocalLengthSelectionModal";
 
-/**
-## Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `getOpticalModel` | `() => OpticalModel` | Builds the current optical model snapshot for JSON download |
-| `onImportJson` | `(data: OpticalModel) => void` | Applies a validated imported JSON config after user confirmation |
-| `onUpdateSystem` | `() => void \| Promise<void>` | Triggers Lens Editor submit/compute |
-| `isUpdateSystemDisabled` | `boolean` | Disables `Update System` while Pyodide is not ready or a compute is in progress |
-*/
 interface LensEditorConfigToolbarProps {
+  /** Builds the current optical model snapshot for JSON download */
   readonly getOpticalModel: () => OpticalModel;
+  /** Applies a validated imported JSON config after user confirmation */
   readonly onImportJson: (data: OpticalModel) => void;
+  /** Triggers Lens Editor submit/compute */
   readonly onUpdateSystem: () => void | Promise<void>;
+  /** Disables `Update System` while Pyodide is not ready or a compute is in progress */
   readonly isUpdateSystemDisabled: boolean;
 }
 

@@ -28,19 +28,6 @@ import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridType
 
 export type FormattingMode = "scale" | "reverse";
 
-/**
-## Props
-
-```ts
-interface FormattingModalProps {
-  isOpen: boolean;
-  rows: readonly GridRow[];
-  onConfirm: (result: { mode: FormattingMode; rows: GridRow[] }) => void;
-  onCancel: () => void;
-  onError: (message: string) => void;
-}
-```
-*/
 interface FormattingModalProps {
   readonly isOpen: boolean;
   readonly rows: readonly GridRow[];

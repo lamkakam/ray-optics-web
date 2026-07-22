@@ -8,19 +8,6 @@ import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import Link from "next/link";
 
-/**
-## Props
-
-```ts
-interface InlineLinkProps {
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-  "aria-label"?: string;
-  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
-}
-```
-*/
 interface InlineLinkProps {
   readonly href: string;
   readonly children: React.ReactNode;

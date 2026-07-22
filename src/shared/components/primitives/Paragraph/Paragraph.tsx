@@ -16,24 +16,8 @@ const VARIANT_CLASSES: Record<ParagraphVariant, readonly string[]> = {
   description: [cx.text.color.bodyTextColor, cx.text.size.descriptionFontSize],
 } as const satisfies Record<ParagraphVariant, readonly string[]>;
 
-/**
-## Props
-
-```ts
-type ParagraphVariant = "body" | "caption" | "subheading" | "placeholder" | "errorMessage";
-
 interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
-  variant?: ParagraphVariant;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `variant` | `ParagraphVariant` | No | Visual style. Defaults to `"body"` |
-*/
-interface ParagraphProps extends React.HTMLAttributes<HTMLParagraphElement> {
+  /** Visual style. Defaults to `"body"` */
   readonly variant?: ParagraphVariant;
 }
 

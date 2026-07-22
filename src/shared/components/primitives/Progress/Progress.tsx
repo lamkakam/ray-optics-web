@@ -9,45 +9,21 @@ import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 export type ProgressVariant = "linear";
 export type ProgressSize = "sm" | "md";
 
-/**
-## Props
-
-```ts
-export type ProgressVariant = "linear";
-export type ProgressSize = "sm" | "md";
-
-export interface ProgressProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
-  readonly value: number;
-  readonly min?: number;
-  readonly max?: number;
-  readonly variant?: ProgressVariant;
-  readonly size?: ProgressSize;
-  readonly showStatus?: boolean;
-  readonly ariaLabel?: string;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `value` | `number` | Yes | Current determinate progress value |
-| `min` | `number` | No | Lower bound. Defaults to `0` |
-| `max` | `number` | No | Upper bound. Defaults to `100` |
-| `variant` | `"linear"` | No | Visual variant. Defaults to `"linear"` |
-| `size` | `"sm" \| "md"` | No | Track and status text size. Defaults to `"md"` |
-| `showStatus` | `boolean` | No | Shows the rounded percentage status when true. Defaults to `true` |
-| `ariaLabel` | `string` | No | Accessible label. Defaults to `"Progress"` |
-| `className` | `string` | No | Merged via `twMerge` after token classes |
-*/
 export interface ProgressProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
+  /** Current determinate progress value */
   readonly value: number;
+  /** Lower bound. Defaults to `0` */
   readonly min?: number;
+  /** Upper bound. Defaults to `100` */
   readonly max?: number;
+  /** Visual variant. Defaults to `"linear"` */
   readonly variant?: ProgressVariant;
+  /** Track and status text size. Defaults to `"md"` */
   readonly size?: ProgressSize;
+  /** Shows the rounded percentage status when true. Defaults to `true` */
   readonly showStatus?: boolean;
+  /** Accessible label. Defaults to `"Progress"` */
   readonly ariaLabel?: string;
 }
 
@@ -92,6 +68,7 @@ Determinate progress primitive. It currently supports a linear progress bar and 
 - Sets `aria-label`, `aria-valuemin`, `aria-valuemax`, and `aria-valuenow` from props and defaults.
 - Normalizes `value` within `min` and `max`, rounds the computed percentage, and clamps rendered status and indicator width to `0%` through `100%`.
 - Hides the visible percentage when `showStatus={false}`.
+- The inherited `className` prop is merged via `twMerge` after token classes.
 - Uses `componentTokens.progress` for track color, indicator color, status text color, dimensions, radius, transition, and `will-change` classes.
 
 ## Usages

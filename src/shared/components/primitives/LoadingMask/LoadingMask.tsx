@@ -3,16 +3,8 @@
 */
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-/**
-## Props
-
-```ts
 interface LoadingMaskProps {
-  readonly message?: string; // default: "Loading…"
-}
-```
-*/
-interface LoadingMaskProps {
+  /** default: "Loading…" */
   readonly message?: string;
 }
 

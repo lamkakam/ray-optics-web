@@ -1,16 +1,5 @@
 /**
 # `app/AppShellContext.tsx`
-
-## Context Value
-
-```ts
-interface AppShellContextValue {
-  proxy: PyodideWorkerAPI | undefined;
-  isReady: boolean;
-  openErrorModal: () => void;
-}
-```
-
 ## Behaviour
 - `proxy` and `isReady` come from `usePyodide()` owned by `app/AppShell.tsx`
 - `openErrorModal()` lets child pages surface worker/setup errors through the shared shell modal

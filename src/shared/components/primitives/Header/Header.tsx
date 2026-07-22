@@ -8,24 +8,8 @@ import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 export type HeaderLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
-/**
-## Props
-
-```ts
-type HeaderLevel = 1 | 2 | 3 | 4 | 5 | 6;
-
 interface HeaderProps extends React.HTMLAttributes<HTMLHeadingElement> {
-  level: HeaderLevel;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `level` | `HeaderLevel` | Yes | Determines which `<h*>` tag is rendered and which font-size token is applied |
-*/
-interface HeaderProps extends React.HTMLAttributes<HTMLHeadingElement> {
+  /** Determines which `<h*>` tag is rendered and which font-size token is applied */
   readonly level: HeaderLevel;
 }
 

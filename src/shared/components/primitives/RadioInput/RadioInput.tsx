@@ -45,41 +45,26 @@ type RadioInputLayout = keyof typeof OPTION_GRID_CLASSES;
 
 export type RadioOption<T extends string> = {
   value: T;
+  /** Used as the `aria-label` and as fallback visual text. */
   label: string;
   /** Optional React node rendered as the visual label. When provided, replaces the plain `label` text. The `label` string is always used as `aria-label`. */
   labelNode?: React.ReactNode;
 };
 
-/**
-## Props
-
-```ts
 interface RadioInputProps<T extends string> {
-  readonly name: string;          // HTML name attribute for the radio group
-  readonly label: string;         // Legend / group label
-  readonly options: ReadonlyArray<RadioOption<T>>;
-  readonly value: T;              // Currently selected value
-  readonly onChange: (value: T) => void;
-  readonly disabled?: boolean;    // Disables all inputs when true
-  readonly columns?: 1 | 2 | 3 | 4; // Number of grid columns for options; defaults to 1
-  readonly layout?: "full" | "compact"; // Option grid width and gutter behavior; defaults to "full"
-}
-
-type RadioOption<T extends string> = {
-  value: T;
-  label: string;         // Used as the aria-label and as fallback visual text
-  labelNode?: React.ReactNode; // Optional custom visual content; replaces label text when provided
-};
-```
-*/
-interface RadioInputProps<T extends string> {
+  /** HTML name attribute for the radio group */
   readonly name: string;
+  /** Legend / group label */
   readonly label: string;
   readonly options: ReadonlyArray<RadioOption<T>>;
+  /** Currently selected value */
   readonly value: T;
   readonly onChange: (value: T) => void;
+  /** Disables all inputs when true */
   readonly disabled?: boolean;
+  /** Number of grid columns for options; defaults to 1 */
   readonly columns?: 1 | 2 | 3 | 4;
+  /** Option grid width and gutter behavior; defaults to "full" */
   readonly layout?: RadioInputLayout;
 }
 

@@ -10,27 +10,10 @@ export type SelectOption = {
   readonly label: string;
 };
 
-/**
-## Props
-
-```ts
-type SelectOption = { value: string | number; label: string };
-
 interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "children"> {
-  options: ReadonlyArray<SelectOption>;
-  placeholder?: string;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `options` | `ReadonlyArray<SelectOption>` | Yes | Items to render as `<option>` elements |
-| `placeholder` | `string` | No | Disabled first option shown when no value is selected |
-*/
-interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "children"> {
+  /** Items to render as `<option>` elements */
   readonly options: ReadonlyArray<SelectOption>;
+  /** Disabled first option shown when no value is selected */
   readonly placeholder?: string;
 }
 

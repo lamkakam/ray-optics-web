@@ -13,17 +13,6 @@ import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnal
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import type { RayFanData } from "@/features/analysis/types/plotData";
 
-/**
-## Props
-
-```ts
-interface RayFanChartProps {
-  rayFanData: RayFanData;
-  wavelengthLabels: readonly string[];
-  autoHeight?: boolean;
-}
-```
-*/
 interface RayFanChartProps {
   readonly rayFanData: RayFanData;
   readonly wavelengthLabels: readonly string[];

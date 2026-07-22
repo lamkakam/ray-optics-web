@@ -31,20 +31,6 @@ import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
 type Chromaticity = "mono" | "poly";
 type Metric = "rmsSpot" | "wavefront";
 
-/**
-## Props
-
-```ts
-interface FocusingContainerProps {
-  readonly proxy: PyodideWorkerAPI | undefined;
-  readonly isReady: boolean;
-  readonly computing: boolean;
-  readonly getOpticalModel: () => OpticalModel;
-  readonly onUpdateSystem: () => Promise<void>;
-  readonly onError: () => void;
-}
-```
-*/
 interface FocusingContainerProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;

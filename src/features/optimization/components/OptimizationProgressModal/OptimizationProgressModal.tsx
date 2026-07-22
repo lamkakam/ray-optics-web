@@ -40,21 +40,6 @@ echarts.use([LineChart, GridComponent, TooltipComponent, CanvasRenderer]);
 
 const OPTIMIZATION_PROGRESS_CHART_POINT_LIMIT = 2000;
 
-/**
-## Props
-
-```ts
-interface OptimizationProgressModalProps {
-  isOpen: boolean;
-  isOptimizing: boolean;
-  progress: ReadonlyArray<OptimizationProgressEntry>;
-  onClose: () => void;
-  onStop?: () => void;
-  isStopping?: boolean;
-  canStop?: boolean;
-}
-```
-*/
 interface OptimizationProgressModalProps {
   readonly isOpen: boolean;
   readonly isOptimizing: boolean;

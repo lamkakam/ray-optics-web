@@ -10,10 +10,6 @@ import { createLensLayoutImageSlice, type LensLayoutImageState } from '@/feature
 type ContextValue = StoreApi<LensLayoutImageState> | undefined;
 
 /**
-### `LensLayoutImageStoreContext`
-```ts
-const LensLayoutImageStoreContext: React.Context<StoreApi<LensLayoutImageState> | undefined>
-```
 Raw context object. Use only in tests to supply a pre-built store directly via `<LensLayoutImageStoreContext.Provider value={store}>`.
 */
 export const LensLayoutImageStoreContext = createContext<ContextValue>(undefined);
@@ -70,10 +66,6 @@ export const LensLayoutImageStoreProvider: React.FC<LensLayoutImageStoreProvider
 };
 
 /**
-### `useLensLayoutImageStore`
-```ts
-const useLensLayoutImageStore = (): StoreApi<LensLayoutImageState>
-```
 Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `LensLayoutImageStoreProvider`.
 */
 export const useLensLayoutImageStore = (): StoreApi<LensLayoutImageState> => {

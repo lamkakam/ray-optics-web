@@ -5,14 +5,10 @@ import type { AstigmatismCurveData } from "@/features/analysis/types/plotData";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { buildAstigmatismOption } from "./astigmatismChartOption";
 
-/**
-## Props
-
-- `astigmatismCurveData`: `AstigmatismCurveData` payload to render.
-- `autoHeight`: optional responsive height behavior passed through to the shared chart factory.
-*/
 interface AstigmatismChartProps {
+  /** `AstigmatismCurveData` payload to render. */
   readonly astigmatismCurveData: AstigmatismCurveData;
+  /** optional responsive height behavior passed through to the shared chart factory. */
   readonly autoHeight?: boolean;
 }
 

@@ -71,25 +71,20 @@ import { useTooltip, Tooltip } from "@visx/tooltip";
 import { CATALOG_COLOR_MAP } from "@/features/glass-map/lib/glassMap";
 import type { PlotPoint, SelectedGlass } from "@/features/glass-map/types/glassMap";
 
-/**
-## Props
-| Prop | Type | Description |
-|------|------|-------------|
-| `points` | `readonly PlotPoint[]` | Data points to render |
-| `selectedGlass` | `SelectedGlass \| undefined` | Currently selected glass; rendered with larger radius, stroke, and crosshair lines |
-| `xAxisLabel` | `string` | Label for x-axis (e.g. "Vd") |
-| `yAxisLabel` | `string` | Label for y-axis (e.g. "Nd") |
-| `onPointClick` | `(glass: SelectedGlass) => void` | Called when a circle is clicked or touched |
-| `yDomainMin` | `number \| undefined` | Optional forced minimum for y-axis domain (e.g. `1.4` for refractive index plots) |
-| `yDomainMax` | `number \| undefined` | Optional forced maximum for y-axis domain (e.g. `2.0` for refractive index plots) |
-*/
 interface GlassScatterPlotProps {
+  /** Data points to render */
   readonly points: readonly PlotPoint[];
+  /** Currently selected glass; rendered with larger radius, stroke, and crosshair lines */
   readonly selectedGlass: SelectedGlass | undefined;
+  /** Label for x-axis (e.g. "Vd") */
   readonly xAxisLabel: string;
+  /** Label for y-axis (e.g. "Nd") */
   readonly yAxisLabel: string;
+  /** Called when a circle is clicked or touched */
   readonly onPointClick: (glass: SelectedGlass) => void;
+  /** Optional forced minimum for y-axis domain (e.g. `1.4` for refractive index plots) */
   readonly yDomainMin?: number;
+  /** Optional forced maximum for y-axis domain (e.g. `2.0` for refractive index plots) */
   readonly yDomainMax?: number;
 }
 

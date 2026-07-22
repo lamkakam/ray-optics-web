@@ -3,22 +3,8 @@
 */
 import { Chip } from "@/shared/components/primitives/Chip";
 
-/**
-## Props
-
-```ts
 interface FirstOrderChipsProps {
-  data?: Record<string, number>;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `data` | `Record<string, number>` | No | First-order data map from `get_first_order_data`. Renders nothing when `undefined` |
-*/
-interface FirstOrderChipsProps {
+  /** First-order data map from `get_first_order_data`. Renders nothing when `undefined` */
   readonly data?: Record<string, number>;
 }
 

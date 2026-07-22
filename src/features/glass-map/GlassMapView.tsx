@@ -44,27 +44,14 @@ import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type { SelectedGlass } from "./types/glassMap";
 import { computePlotPoints, resolveCatalogGlass } from "./lib/glassMap";
 
-/**
-## Props
-| Prop | Type | Description |
-|------|------|-------------|
-| `proxy` | `PyodideWorkerAPI \| undefined` | Worker proxy for data fetching |
-| `isReady` | `boolean` | Whether the Pyodide worker is ready |
-| `routeIntent` | `GlassMapRouteIntent \| undefined` | Optional route-level selection intent from another page |
-| `onUseSelectedGlass` | `((glass: SelectedGlass) => void) \| undefined` | Optional decoupled action for applying the effective selection to the originating workflow |
-
-```ts
-interface GlassMapRouteIntent {
-  source: "medium-selector";
-  catalog: string;
-  glass: string;
-}
-```
-*/
 interface GlassMapViewProps {
+  /** Worker proxy for data fetching */
   readonly proxy: PyodideWorkerAPI | undefined;
+  /** Whether the Pyodide worker is ready */
   readonly isReady: boolean;
+  /** Optional route-level selection intent from another page */
   readonly routeIntent?: GlassMapRouteIntent;
+  /** Optional decoupled action for applying the effective selection to the originating workflow */
   readonly onUseSelectedGlass?: (glass: SelectedGlass) => void;
 }
 

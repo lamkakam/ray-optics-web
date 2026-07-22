@@ -42,16 +42,6 @@ import {
 } from "./diffractionPsfDeckData";
 import type { DiffractionPsfData } from "@/features/analysis/types/plotData";
 
-/**
-## Props
-
-```ts
-interface DiffractionPsfChartProps {
-  diffractionPsfData: DiffractionPsfData;
-  autoHeight?: boolean;
-}
-```
-*/
 interface DiffractionPsfChartProps {
   readonly diffractionPsfData: DiffractionPsfData;
   readonly autoHeight?: boolean;

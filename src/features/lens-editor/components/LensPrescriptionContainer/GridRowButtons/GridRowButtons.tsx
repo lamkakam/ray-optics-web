@@ -4,34 +4,16 @@
 import { Button } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 
-/**
-## Props
-
-```ts
 interface GridRowButtonsProps {
-  onAdd?: () => void;
-  onDelete?: () => void;
-  addHidden?: boolean;
-  addLabel?: string;
-  deleteLabel?: string;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `onAdd` | `() => void` | No | Insert callback. Button is omitted entirely if `undefined` |
-| `onDelete` | `() => void` | No | Delete callback. Button is omitted entirely if `undefined` |
-| `addHidden` | `boolean` | No | When `true`, add button is present in DOM but `visibility: hidden` (preserves layout when at row limit) |
-| `addLabel` | `string` | No | Tooltip and aria-label for add button. Defaults to `"Insert row"` |
-| `deleteLabel` | `string` | No | Tooltip and aria-label for delete button. Defaults to `"Delete row"` |
-*/
-interface GridRowButtonsProps {
+  /** Insert callback. Button is omitted entirely if `undefined` */
   readonly onAdd?: () => void;
+  /** Delete callback. Button is omitted entirely if `undefined` */
   readonly onDelete?: () => void;
+  /** When `true`, add button is present in DOM but `visibility: hidden` (preserves layout when at row limit) */
   readonly addHidden?: boolean;
+  /** Tooltip and aria-label for add button. Defaults to `"Insert row"` */
   readonly addLabel?: string;
+  /** Tooltip and aria-label for delete button. Defaults to `"Delete row"` */
   readonly deleteLabel?: string;
 }
 

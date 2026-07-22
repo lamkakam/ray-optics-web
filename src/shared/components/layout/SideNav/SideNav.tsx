@@ -37,19 +37,14 @@ import { useSelectedLayoutSegment } from "next/navigation";
 import { Button } from "@/shared/components/primitives/Button";
 import { NavLink } from "@/shared/components/primitives/NavLink";
 
-/**
-## Props
-| Prop | Type | Description |
-|------|------|-------------|
-| `isOpen` | `boolean` | When `false`, nav is translated off-screen (`-translate-x-full`); always in DOM |
-| `isLG` | `boolean` | Determines width: `w-[33vw]` on LG, `w-[50vw]` on SM |
-| `onClose` | `() => void` | Called when the ✕ close button is clicked |
-| `onNavigate` | `(href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean \| undefined` | Optional navigation interceptor; returning `false` keeps the nav open and leaves route handling to the caller |
-*/
 interface SideNavProps {
+  /** When `false`, nav is translated off-screen (`-translate-x-full`); always in DOM */
   readonly isOpen: boolean;
+  /** Determines width: `w-[33vw]` on LG, `w-[50vw]` on SM */
   readonly isLG: boolean;
+  /** Called when the ✕ close button is clicked */
   readonly onClose: () => void;
+  /** Optional navigation interceptor; returning `false` keeps the nav open and leaves route handling to the caller */
   readonly onNavigate?: (href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean;
 }
 

@@ -23,20 +23,18 @@ import { FRAUNHOFER_LINES } from "@/shared/lib/data/fraunhoferLines";
 import { makeEditablePair } from "@/features/import-custom-glass/lib/customGlassImport";
 import type { EditablePair, ModalMode } from "@/features/import-custom-glass/types/customGlassImport";
 
-/**
-## Props
-- `mode` selects `Add Glass` or `Edit Glass` title and duplicate-label behavior.
-- `existingLabels` is used to reject duplicate labels.
-- `initialLabel` and `initialRows` seed the modal state.
-- `onCancel` closes without saving.
-- `onSubmit(label, rows)` receives the trimmed label and current editable rows after validation passes.
-*/
 interface CustomGlassModalProps {
+  /** Selects the `Add Glass` or `Edit Glass` title and duplicate-label behavior. */
   readonly mode: ModalMode;
+  /** Used to reject duplicate labels. */
   readonly existingLabels: ReadonlySet<string>;
+  /** Seeds the modal label state. */
   readonly initialLabel: string;
+  /** Seeds the modal row state. */
   readonly initialRows: readonly EditablePair[];
+  /** Closes without saving. */
   readonly onCancel: () => void;
+  /** Receives the trimmed label and current editable rows after validation passes. */
   readonly onSubmit: (label: string, rows: readonly EditablePair[]) => void;
 }
 

@@ -159,20 +159,6 @@ function getSourceCoefficientOptions(optimizationModel: OpticalModel, sourceSurf
   });
 }
 
-/**
-## Props
-
-```ts
-interface AsphereVarModalProps {
-  isOpen: boolean;
-  optimizationModel: OpticalModel | undefined;
-  surfaceIndex: number | undefined;
-  asphereState: AsphereOptimizationState | undefined;
-  onSave: (surfaceIndex: number, state: AsphereOptimizationState) => void;
-  onClose: () => void;
-}
-```
-*/
 interface AsphereVarModalProps {
   readonly isOpen: boolean;
   readonly optimizationModel: OpticalModel | undefined;

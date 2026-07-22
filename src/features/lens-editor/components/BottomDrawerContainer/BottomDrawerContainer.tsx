@@ -30,40 +30,20 @@ import { LensPrescriptionContainer } from "@/features/lens-editor/components/Len
 import { FocusingContainer } from "@/features/lens-editor/components/FocusingContainer";
 import { ImageReferencePanel } from "@/features/lens-editor/components/ImageReferencePanel";
 
-/**
-## Props
-
-```ts
 interface BottomDrawerContainerProps {
-  getOpticalModel: () => OpticalModel;
-  onUpdateSystem: () => Promise<void>;
-  isReady: boolean;
-  computing: boolean;
-  proxy: PyodideWorkerAPI | undefined;
-  onError: () => void;
-  draggable: boolean;
-}
-```
-
-`SpecsConfiguratorContainer`, `LensPrescriptionContainer`, and `FocusingContainer` read their stores through the provider hooks, so this container only forwards the callbacks and worker state they still need.
-
-| Prop | Type | Required | Description |
-|---|---|---|---|
-| `getOpticalModel` | `() => OpticalModel` | Yes | Callback to build the current optical model from store state |
-| `onUpdateSystem` | `() => Promise<void>` | Yes | Triggers a full system update (submit) |
-| `isReady` | `boolean` | Yes | Whether Pyodide is initialized |
-| `computing` | `boolean` | Yes | Whether a computation is in progress |
-| `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy |
-| `onError` | `() => void` | Yes | Called when an async operation throws |
-| `draggable` | `boolean` | Yes | Whether the drawer is draggable (true for LG layout, false for SM) |
-*/
-interface BottomDrawerContainerProps {
+  /** Callback to build the current optical model from store state */
   readonly getOpticalModel: () => OpticalModel;
+  /** Triggers a full system update (submit) */
   readonly onUpdateSystem: () => Promise<void>;
+  /** Whether Pyodide is initialized */
   readonly isReady: boolean;
+  /** Whether a computation is in progress */
   readonly computing: boolean;
+  /** Pyodide worker proxy */
   readonly proxy: PyodideWorkerAPI | undefined;
+  /** Called when an async operation throws */
   readonly onError: () => void;
+  /** Whether the drawer is draggable (true for LG layout, false for SM) */
   readonly draggable: boolean;
 }
 
@@ -71,6 +51,8 @@ interface BottomDrawerContainerProps {
 ## Purpose
 
 Container component that composes the four drawer tabs (System Specs, Prescription, Focusing, Image Reference) and renders them inside `BottomDrawer`. Extracts `drawerTabs` construction from `page.tsx` to encapsulate bottom-drawer concerns.
+
+`SpecsConfiguratorContainer`, `LensPrescriptionContainer`, and `FocusingContainer` read their stores through the provider hooks, so this container only forwards the callbacks and worker state they still need.
 
 ## Usages
 

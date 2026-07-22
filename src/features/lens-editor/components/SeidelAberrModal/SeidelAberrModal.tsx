@@ -15,28 +15,12 @@ import type { TabItem } from "@/shared/components/primitives/Tabs";
 import type { SeidelData, AberrationTypeToLabel } from "@/features/lens-editor/types/seidelData";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-/**
-## Props
-
-```ts
 interface SeidelAberrModalProps {
-  isOpen: boolean;
-  data: SeidelData;
-  onClose: () => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls visibility |
-| `data` | `SeidelData` | Yes | Seidel aberration data from the Pyodide worker (`get_3rd_order_seidel_data`) |
-| `onClose` | `() => void` | Yes | Called when the OK button is clicked |
-*/
-interface SeidelAberrModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Seidel aberration data from the Pyodide worker (`get_3rd_order_seidel_data`) */
   readonly data: SeidelData;
+  /** Called when the OK button is clicked */
   readonly onClose: () => void;
 }
 

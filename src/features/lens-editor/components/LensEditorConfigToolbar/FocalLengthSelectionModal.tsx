@@ -13,20 +13,14 @@ import { Modal } from "@/shared/components/primitives/Modal";
 import { RadioInput, type RadioOption } from "@/shared/components/primitives/RadioInput";
 import type { PhotonsToPhotosFocalLengthChoice } from "@/features/lens-editor/lib/photonsToPhotosParser";
 
-/**
-## Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `isOpen` | `boolean` | Controls visibility |
-| `choices` | `PhotonsToPhotosFocalLengthChoice[]` | Available focal-length columns |
-| `onConfirm` | `(choiceIndex: number) => void` | Resolves the selected column |
-| `onCancel` | `() => void` | Aborts the TXT import |
-*/
 interface FocalLengthSelectionModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Available focal-length columns */
   readonly choices: readonly PhotonsToPhotosFocalLengthChoice[];
+  /** Resolves the selected column */
   readonly onConfirm: (choiceIndex: number) => void;
+  /** Aborts the TXT import */
   readonly onCancel: () => void;
 }
 

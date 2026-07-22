@@ -6,21 +6,6 @@ import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
-/**
-## Props
-
-```ts
-type ExternalLinkProps = Omit<
-  React.AnchorHTMLAttributes<HTMLAnchorElement>,
-  "href" | "children" | "target" | "rel" | "aria-label"
-> & {
-  href: string;
-  children: React.ReactNode;
-  "aria-label": string;
-  variant?: "default" | "description";
-};
-```
-*/
 type ExternalLinkProps = Omit<
   React.AnchorHTMLAttributes<HTMLAnchorElement>,
   "href" | "children" | "target" | "rel" | "aria-label"

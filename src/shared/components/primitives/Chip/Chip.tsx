@@ -5,15 +5,6 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
-/**
-## Props
-
-```ts
-interface ChipProps {
-  children: React.ReactNode;
-}
-```
-*/
 interface ChipProps {
   readonly children: React.ReactNode;
 }

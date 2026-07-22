@@ -72,27 +72,12 @@ import {
 } from "@/features/analysis/components/AnalysisPlotView";
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
-
-/**
-## Props
-
-```ts
 interface AnalysisPlotContainerProps {
-  proxy: PyodideWorkerAPI | undefined;
-  onError: () => void;
-  autoHeight?: boolean;
-}
-```
-
-| Prop | Type | Required | Description |
-|---|---|---|---|
-| `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy; handlers no-op if `undefined` |
-| `onError` | `() => void` | Yes | Called when any async plot call throws |
-| `autoHeight` | `boolean` | No | Forwarded to `AnalysisPlotView` |
-*/
-interface AnalysisPlotContainerProps {
+  /** Pyodide worker proxy; handlers no-op if `undefined` */
   readonly proxy: PyodideWorkerAPI | undefined;
+  /** Called when any async plot call throws */
   readonly onError: () => void;
+  /** Forwarded to `AnalysisPlotView` */
   readonly autoHeight?: boolean;
 }
 

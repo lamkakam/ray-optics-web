@@ -44,43 +44,22 @@ interface FieldConfigResult {
   readonly isWideAngle: boolean;
 }
 
-/**
-## Props
-
-```ts
 interface FieldConfigModalProps {
-  isOpen: boolean;
-  initialSpace: FieldSpace;
-  initialType: FieldType;
-  initialMaxField: number;
-  initialRelativeFields: readonly number[];
-  initialIsWideAngle: boolean;
-  onApply: (result: FieldConfigResult) => void;
-  onClose: () => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls visibility |
-| `initialSpace` | `FieldSpace` | Yes | `"object"` or `"image"` |
-| `initialType` | `FieldType` | Yes | `"height"` or `"angle"` |
-| `initialMaxField` | `number` | Yes | Max half-field value in mm or degrees |
-| `initialRelativeFields` | `readonly number[]` | Yes | List of relative field values (0–1) |
-| `initialIsWideAngle` | `boolean` | Yes | Initial state for the wide-angle ray-aiming checkbox |
-| `onApply` | `(result) => void` | Yes | Called with the final config on Apply |
-| `onClose` | `() => void` | Yes | Cancel callback |
-*/
-interface FieldConfigModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** `"object"` or `"image"` */
   readonly initialSpace: FieldSpace;
+  /** `"height"` or `"angle"` */
   readonly initialType: FieldType;
+  /** Max half-field value in mm or degrees */
   readonly initialMaxField: number;
+  /** List of relative field values (0–1) */
   readonly initialRelativeFields: readonly number[];
+  /** Initial state for the wide-angle ray-aiming checkbox */
   readonly initialIsWideAngle: boolean;
+  /** Called with the final config on Apply */
   readonly onApply: (result: FieldConfigResult) => void;
+  /** Cancel callback */
   readonly onClose: () => void;
 }
 

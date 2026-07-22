@@ -46,15 +46,12 @@ function areSetsEqual<T>(left: ReadonlySet<T>, right: ReadonlySet<T>): boolean {
   return true;
 }
 
-/**
-## Props
-- `rows` are sorted page-derived `CustomGlassRow` records.
-- `checked` identifies selected glass labels.
-- `onCheckedChange(next)` receives the next selected label set when a checkbox changes.
-*/
 interface CustomGlassTableProps {
+  /** Sorted page-derived `CustomGlassRow` records. */
   readonly rows: readonly CustomGlassRow[];
+  /** Identifies selected glass labels. */
   readonly checked: ReadonlySet<string>;
+  /** Receives the next selected label set when a checkbox changes. */
   readonly onCheckedChange: (checked: ReadonlySet<string>) => void;
 }
 

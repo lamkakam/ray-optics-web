@@ -14,20 +14,6 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import type { DiffractionGrating } from "@/shared/lib/types/opticalModel";
 
-/**
-## Props
-
-```ts
-interface DiffractionGratingModalProps {
-  isOpen: boolean;
-  initialDiffractionGrating: DiffractionGrating | undefined;
-  readOnly?: boolean;
-  onConfirm: (diffractionGrating: DiffractionGrating) => void;
-  onClose: () => void;
-  onRemove: () => void;
-}
-```
-*/
 interface DiffractionGratingModalProps {
   readonly isOpen: boolean;
   readonly initialDiffractionGrating: DiffractionGrating | undefined;

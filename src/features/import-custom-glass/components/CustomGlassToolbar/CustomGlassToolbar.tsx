@@ -10,23 +10,24 @@
 import type { RefObject } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 
-/**
-## Props
-- `jsonFileInputRef` and `csvFileInputRef` let the visible buttons trigger hidden file inputs.
-- `selectedCount` controls Edit/Delete disabled states.
-- `onJsonFileSelected(file)` handles a single JSON file.
-- `onCsvFilesSelected(files)` handles multi-file CSV selection.
-- `onAdd`, `onEdit`, `onDownloadJson`, and `onDelete` dispatch page-level commands.
-*/
 interface CustomGlassToolbarProps {
+  /** Lets the visible JSON button trigger its hidden file input. */
   readonly jsonFileInputRef: RefObject<HTMLInputElement | null>;
+  /** Lets the visible CSV button trigger its hidden file input. */
   readonly csvFileInputRef: RefObject<HTMLInputElement | null>;
+  /** Controls the Edit and Delete disabled states. */
   readonly selectedCount: number;
+  /** Handles a single JSON file. */
   readonly onJsonFileSelected: (file: File) => void;
+  /** Handles multi-file CSV selection. */
   readonly onCsvFilesSelected: (files: readonly File[]) => void;
+  /** Dispatches the page-level add command. */
   readonly onAdd: () => void;
+  /** Dispatches the page-level edit command. */
   readonly onEdit: () => void;
+  /** Dispatches the page-level JSON download command. */
   readonly onDownloadJson: () => void;
+  /** Dispatches the page-level delete command. */
   readonly onDelete: () => void;
 }
 

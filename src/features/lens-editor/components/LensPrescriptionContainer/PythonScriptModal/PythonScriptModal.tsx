@@ -16,29 +16,12 @@ import { Modal } from "@/shared/components/primitives/Modal";
 import { Button } from "@/shared/components/primitives/Button";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 
-
-/**
-## Props
-
-```ts
 interface PythonScriptModalProps {
-  isOpen: boolean;
-  script: string;
-  onClose: () => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls visibility |
-| `script` | `string` | Yes | Python script text to display |
-| `onClose` | `() => void` | Yes | Called when the OK button is clicked |
-*/
-interface PythonScriptModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Python script text to display */
   readonly script: string;
+  /** Called when the OK button is clicked */
   readonly onClose: () => void;
 }
 

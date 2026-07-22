@@ -8,13 +8,8 @@ import { MathJax } from "better-react-mathjax";
 import type { SelectedGlass } from "@/features/glass-map/types/glassMap";
 import { Table } from "@/shared/components/primitives/Table";
 
-/**
-## Props
-| Prop | Type | Description |
-|------|------|-------------|
-| `selectedGlass` | `SelectedGlass \| undefined` | Glass to display; `undefined` shows placeholder |
-*/
 interface GlassDetailPanelProps {
+  /** Glass to display; `undefined` shows placeholder */
   readonly selectedGlass: SelectedGlass | undefined;
 }
 

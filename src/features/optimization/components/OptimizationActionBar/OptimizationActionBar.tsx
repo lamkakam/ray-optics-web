@@ -5,20 +5,16 @@
 
 import { Button } from "@/shared/components/primitives/Button";
 
-/**
-## Props
-
-- `canOptimize`: enables `Optimize` when the page has a valid optimization config with non-zero effective contribution.
-- `canApplyToEditor`: enables `Apply to Editor` when there is an optimization model to apply.
-- `isOptimizing`: disables `Optimize` while an optimization run is active.
-- `onOptimize`: called by `Optimize`.
-- `onApplyToEditor`: called by `Apply to Editor`.
-*/
 interface OptimizationActionBarProps {
+  /** enables `Optimize` when the page has a valid optimization config with non-zero effective contribution. */
   readonly canOptimize: boolean;
+  /** enables `Apply to Editor` when there is an optimization model to apply. */
   readonly canApplyToEditor: boolean;
+  /** disables `Optimize` while an optimization run is active. */
   readonly isOptimizing: boolean;
+  /** called by `Optimize`. */
   readonly onOptimize: () => void;
+  /** called by `Apply to Editor`. */
   readonly onApplyToEditor: () => void;
 }
 

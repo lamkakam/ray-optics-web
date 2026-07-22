@@ -16,43 +16,22 @@ import { Tabs, TabItem } from "@/shared/components/primitives/Tabs";
 
 export type { TabItem };
 
-/**
-## Props
-
-```ts
 interface BottomDrawerProps {
-  tabs: readonly TabItem[];
-  draggable?: boolean;
-  panelClassName?: string;
-  activeTabId?: string;
-  onTabChange?: (tabId: string) => void;
-  initialHeight?: number;
-  onHeightCommit?: (height: number) => void;
-  onHeightChange?: (height: number) => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `tabs` | `readonly TabItem[]` | Yes | Tab definitions passed directly to `Tabs` |
-| `draggable` | `boolean` | No | Enables drag-resize and collapse toggle. Defaults to `true` |
-| `panelClassName` | `string` | No | Extra classes appended to the tab panel so callers can override or extend the default panel padding/scroll styling |
-| `activeTabId` | `string` | No | Optional controlled active tab id forwarded to `Tabs` |
-| `onTabChange` | `(tabId: string) => void` | No | Optional tab click callback forwarded to `Tabs` |
-| `initialHeight` | `number` | No | Optional persisted drawer height in pixels used for the first render |
-| `onHeightCommit` | `(height: number) => void` | No | Optional callback invoked when the drawer height is committed after resize settles or collapse/expand toggles |
-| `onHeightChange` | `(height: number) => void` | No | Optional callback invoked on live height changes while dragging and on collapse/expand toggles so surrounding layouts can react immediately |
-*/
-interface BottomDrawerProps {
+  /** Tab definitions passed directly to `Tabs` */
   readonly tabs: readonly TabItem[];
+  /** Enables drag-resize and collapse toggle. Defaults to `true` */
   readonly draggable?: boolean;
+  /** Extra classes appended to the tab panel so callers can override or extend the default panel padding/scroll styling */
   readonly panelClassName?: string;
+  /** Optional controlled active tab id forwarded to `Tabs` */
   readonly activeTabId?: string;
+  /** Optional tab click callback forwarded to `Tabs` */
   readonly onTabChange?: (tabId: string) => void;
+  /** Optional persisted drawer height in pixels used for the first render */
   readonly initialHeight?: number;
+  /** Optional callback invoked when the drawer height is committed after resize settles or collapse/expand toggles */
   readonly onHeightCommit?: (height: number) => void;
+  /** Optional callback invoked on live height changes while dragging and on collapse/expand toggles so surrounding layouts can react immediately */
   readonly onHeightChange?: (height: number) => void;
 }
 

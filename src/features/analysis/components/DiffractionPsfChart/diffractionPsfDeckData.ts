@@ -5,22 +5,6 @@
 
 Prepares worker-provided `DiffractionPsfData` for the deck.gl diffraction PSF renderer.
 
-## API
-
-```ts
-const DIFFRACTION_PSF_LOG_FLOOR: number
-
-interface DiffractionPsfBitmapImage {
-  data: Uint8ClampedArray<ArrayBuffer>;
-  width: number;
-  height: number;
-}
-
-function buildDiffractionPsfBitmap(diffractionPsfData: DiffractionPsfData): DiffractionPsfPreparedData
-
-function formatDiffractionPsfFluxLabel(log10Flux: number): string
-```
-
 ## Key Behaviors
 
 - Converts only `DiffractionPsfData.x`, `DiffractionPsfData.y`, and `DiffractionPsfData.z` into row-major raw RGBA bytes; the React component wraps these bytes in browser `ImageData` before passing them to deck.gl `BitmapLayer`.

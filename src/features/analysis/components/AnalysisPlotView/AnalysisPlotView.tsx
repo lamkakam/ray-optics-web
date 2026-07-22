@@ -20,25 +20,6 @@ import { Select, type SelectOption } from "@/shared/components/primitives/Select
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
-/**
-## PlotType
-
-```ts
-type PlotType =
-  | "rayFan"
-  | "opdFan"
-  | "spotDiagram"
-  | "fieldCurvature"
-  | "astigmatismCurve"
-  | "longitudinalSphericalAberration"
-  | "surfaceBySurface3rdOrder"
-  | "strehlVsWavelength"
-  | "wavefrontMap"
-  | "geoPSF"
-  | "diffractionPSF"
-  | "diffractionMTF";
-```
-*/
 export type PlotType = "rayFan"
   | "opdFan"
   | "spotDiagram"
@@ -55,84 +36,50 @@ export type PlotType = "rayFan"
 type FieldOption = SelectOption & { readonly value: number };
 type WavelengthOption = FieldOption;
 
-/**
-## Props
-
-```ts
 interface AnalysisPlotViewProps {
-  fieldOptions: readonly (SelectOption & { value: number })[];
-  wavelengthOptions: readonly (SelectOption & { value: number })[];
-  selectedFieldIndex: number;
-  selectedWavelengthIndex: number;
-  selectedPlotType: PlotType;
-  surfaceBySurface3rdOrderData?: SeidelSurfaceBySurfaceData;
-  rayFanData?: RayFanData;
-  opdFanData?: OpdFanData;
-  spotDiagramData?: SpotDiagramData;
-  fieldCurvatureData?: FieldCurveData;
-  astigmatismCurveData?: AstigmatismCurveData;
-  longitudinalSphericalAberrationData?: LongitudinalSphericalAberrationData;
-  diffractionPsfData?: DiffractionPsfData;
-  diffractionMtfData?: DiffractionMtfData;
-  wavefrontMapData?: WavefrontMapData;
-  strehlVsWavelengthData?: StrehlVsWavelengthData;
-  loading?: boolean;
-  onFieldChange: (fieldIndex: number) => void;
-  onWavelengthChange: (wavelengthIndex: number) => void;
-  onPlotTypeChange: (plotType: PlotType) => void;
-  autoHeight?: boolean;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `fieldOptions` | `readonly FieldOption[]` | Yes | Selectable field points for the Half-Field dropdown |
-| `wavelengthOptions` | `readonly WavelengthOption[]` | Yes | Selectable wavelengths for the wavelength dropdown |
-| `selectedFieldIndex` | `number` | Yes | Currently selected field index |
-| `selectedWavelengthIndex` | `number` | Yes | Currently selected wavelength index |
-| `selectedPlotType` | `PlotType` | Yes | Currently selected plot type |
-| `surfaceBySurface3rdOrderData` | `SeidelSurfaceBySurfaceData` | No | Per-surface Seidel aberration matrix used only when `selectedPlotType === "surfaceBySurface3rdOrder"` |
-| `rayFanData` | `RayFanData` | No | Per-wavelength ray-fan series used only when `selectedPlotType === "rayFan"` |
-| `opdFanData` | `OpdFanData` | No | Per-wavelength OPD fan series used only when `selectedPlotType === "opdFan"` |
-| `spotDiagramData` | `SpotDiagramData` | No | Per-wavelength spot-diagram point clouds used only when `selectedPlotType === "spotDiagram"` |
-| `fieldCurvatureData` | `FieldCurveData` | No | Wavelength-specific field-curvature data used only when `selectedPlotType === "fieldCurvature"` |
-| `astigmatismCurveData` | `AstigmatismCurveData` | No | Wavelength-specific astigmatism curve data used only when `selectedPlotType === "astigmatismCurve"` |
-| `longitudinalSphericalAberrationData` | `LongitudinalSphericalAberrationData` | No | Per-wavelength LSA curves used only when `selectedPlotType === "longitudinalSphericalAberration"` |
-| `geoPsfData` | `GeoPsfData` | No | Geometric PSF point-cloud data used only when `selectedPlotType === "geoPSF"` |
-| `diffractionPsfData` | `DiffractionPsfData` | No | Diffraction PSF axis/intensity data used only when `selectedPlotType === "diffractionPSF"` |
-| `diffractionMtfData` | `DiffractionMtfData` | No | Diffraction MTF line data used only when `selectedPlotType === "diffractionMTF"` |
-| `wavefrontMapData` | `WavefrontMapData` | No | Wavefront-map axis/OPD data used only when `selectedPlotType === "wavefrontMap"` |
-| `strehlVsWavelengthData` | `StrehlVsWavelengthData` | No | Strehl ratio vs wavelength line data used only when `selectedPlotType === "strehlVsWavelength"` |
-| `loading` | `boolean` | No | Shows "Loading plot..." placeholder when `true` |
-| `onFieldChange` | `(n) => void` | Yes | Called with the new field index |
-| `onWavelengthChange` | `(n) => void` | Yes | Called with the new wavelength index |
-| `onPlotTypeChange` | `(t) => void` | Yes | Called with the new plot type |
-| `autoHeight` | `boolean` | No | When `true`, the outer container avoids the fixed-height panel layout so chart components can size to their content |
-*/
-interface AnalysisPlotViewProps {
+  /** Selectable field points for the Half-Field dropdown */
   readonly fieldOptions: readonly FieldOption[];
+  /** Selectable wavelengths for the wavelength dropdown */
   readonly wavelengthOptions: readonly WavelengthOption[];
+  /** Currently selected field index */
   readonly selectedFieldIndex: number;
+  /** Currently selected wavelength index */
   readonly selectedWavelengthIndex: number;
+  /** Currently selected plot type */
   readonly selectedPlotType: PlotType;
+  /** Per-surface Seidel aberration matrix used only when `selectedPlotType === "surfaceBySurface3rdOrder"` */
   readonly surfaceBySurface3rdOrderData?: SeidelSurfaceBySurfaceData;
+  /** Per-wavelength ray-fan series used only when `selectedPlotType === "rayFan"` */
   readonly rayFanData?: RayFanData;
+  /** Per-wavelength OPD fan series used only when `selectedPlotType === "opdFan"` */
   readonly opdFanData?: OpdFanData;
+  /** Per-wavelength spot-diagram point clouds used only when `selectedPlotType === "spotDiagram"` */
   readonly spotDiagramData?: SpotDiagramData;
+  /** Wavelength-specific field-curvature data used only when `selectedPlotType === "fieldCurvature"` */
   readonly fieldCurvatureData?: FieldCurveData;
+  /** Wavelength-specific astigmatism curve data used only when `selectedPlotType === "astigmatismCurve"` */
   readonly astigmatismCurveData?: AstigmatismCurveData;
+  /** Per-wavelength LSA curves used only when `selectedPlotType === "longitudinalSphericalAberration"` */
   readonly longitudinalSphericalAberrationData?: LongitudinalSphericalAberrationData;
+  /** Geometric PSF point-cloud data used only when `selectedPlotType === "geoPSF"` */
   readonly geoPsfData?: GeoPsfData;
+  /** Diffraction PSF axis/intensity data used only when `selectedPlotType === "diffractionPSF"` */
   readonly diffractionPsfData?: DiffractionPsfData;
+  /** Diffraction MTF line data used only when `selectedPlotType === "diffractionMTF"` */
   readonly diffractionMtfData?: DiffractionMtfData;
+  /** Wavefront-map axis/OPD data used only when `selectedPlotType === "wavefrontMap"` */
   readonly wavefrontMapData?: WavefrontMapData;
+  /** Strehl ratio vs wavelength line data used only when `selectedPlotType === "strehlVsWavelength"` */
   readonly strehlVsWavelengthData?: StrehlVsWavelengthData;
+  /** Shows "Loading plot..." placeholder when `true` */
   readonly loading?: boolean;
+  /** Called with the new field index */
   readonly onFieldChange: (fieldIndex: number) => void;
+  /** Called with the new wavelength index */
   readonly onWavelengthChange: (wavelengthIndex: number) => void;
+  /** Called with the new plot type */
   readonly onPlotTypeChange: (plotType: PlotType) => void;
+  /** When `true`, the outer container avoids the fixed-height panel layout so chart components can size to their content */
   readonly autoHeight?: boolean;
 }
 

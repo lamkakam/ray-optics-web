@@ -55,15 +55,10 @@ import { Header } from "@/shared/components/primitives/Header";
 import { SideNav } from "@/shared/components/layout/SideNav";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 
-/**
-## Props
-| Prop | Type | Description |
-|------|------|-------------|
-| `children` | `React.ReactNode` | Active view content |
-| `onNavigate` | `(href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean \| undefined` | Optional SideNav navigation interceptor supplied by the app shell |
-*/
 interface LayoutProps {
+  /** Active view content */
   readonly children: React.ReactNode;
+  /** Optional SideNav navigation interceptor supplied by the app shell */
   readonly onNavigate?: (href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean;
 }
 

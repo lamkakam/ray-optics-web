@@ -13,17 +13,6 @@ import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnal
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
 import type { OpdFanData } from "@/features/analysis/types/plotData";
 
-/**
-## Props
-
-```ts
-interface OpdFanChartProps {
-  opdFanData: OpdFanData;
-  wavelengthLabels: readonly string[];
-  autoHeight?: boolean;
-}
-```
-*/
 interface OpdFanChartProps {
   readonly opdFanData: OpdFanData;
   readonly wavelengthLabels: readonly string[];

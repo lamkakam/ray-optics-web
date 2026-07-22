@@ -7,20 +7,6 @@ Provides the shared optimizer-capability lookup used by the optimization UI and 
 
 Type definitions for capability return values and algorithm selections live in `features/optimization/types/optimizationAlgorithmTypes.ts`.
 
-## Public Surface
-
-```ts
-getOptimizationMethodCapabilities(method: LeastSquaresMethod): {
-  canUseBounds: boolean;
-  requiresResidualCountAtLeastVariableCount: boolean;
-}
-
-getOptimizationAlgorithmCapabilities(selection): {
-  canUseBounds: boolean;
-  requiresResidualCountAtLeastVariableCount: boolean;
-}
-```
-
 ## Key Behaviors
 
 - Derives both least-squares capability flags from `optimizerUiConfig.ts` so UI rendering and config validation do not drift.

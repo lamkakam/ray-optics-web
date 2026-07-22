@@ -10,10 +10,6 @@ import { createSpecsConfiguratorSlice, type SpecsConfiguratorState } from '@/fea
 type ContextValue = StoreApi<SpecsConfiguratorState> | undefined;
 
 /**
-### `SpecsConfiguratorStoreContext`
-```ts
-const SpecsConfiguratorStoreContext: React.Context<StoreApi<SpecsConfiguratorState> | undefined>
-```
 Raw context object. Use only in tests to supply a pre-built store directly via `<SpecsConfiguratorStoreContext.Provider value={store}>`.
 */
 export const SpecsConfiguratorStoreContext = createContext<ContextValue>(undefined);
@@ -70,10 +66,6 @@ export const SpecsConfiguratorStoreProvider: React.FC<SpecsConfiguratorStoreProv
 };
 
 /**
-### `useSpecsConfiguratorStore`
-```ts
-const useSpecsConfiguratorStore = (): StoreApi<SpecsConfiguratorState>
-```
 Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `SpecsConfiguratorStoreProvider`.
 */
 export const useSpecsConfiguratorStore = (): StoreApi<SpecsConfiguratorState> => {

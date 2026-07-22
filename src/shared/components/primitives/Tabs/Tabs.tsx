@@ -17,43 +17,18 @@ export interface TabItem {
   readonly content: React.ReactNode;
 }
 
-/**
-## Props
-
-```ts
-interface TabItem {
-  id: string;
-  label: string;
-  content: React.ReactNode;
-}
-
 interface TabsProps {
-  tabs: readonly TabItem[];
-  actions?: React.ReactNode;
-  showPanel?: boolean;
-  panelClassName?: string;
-  activeTabId?: string;
-  onTabChange?: (tabId: string) => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `tabs` | `readonly TabItem[]` | Yes | Tab definitions — id, label, and content node |
-| `actions` | `React.ReactNode` | No | Extra element rendered at the far-right of the tab bar (e.g. collapse button) |
-| `showPanel` | `boolean` | No | When `false` the content panel is hidden. Defaults to `true` |
-| `panelClassName` | `string` | No | Applied to the `role="tabpanel"` div |
-| `activeTabId` | `string` | No | Controlled active tab id. When omitted, `Tabs` manages its own internal selection state |
-| `onTabChange` | `(tabId: string) => void` | No | Called whenever the user clicks a tab, in both controlled and uncontrolled modes |
-*/
-interface TabsProps {
+  /** Tab definitions — id, label, and content node */
   readonly tabs: readonly TabItem[];
+  /** Extra element rendered at the far-right of the tab bar (e.g. collapse button) */
   readonly actions?: React.ReactNode;
+  /** When `false` the content panel is hidden. Defaults to `true` */
   readonly showPanel?: boolean;
+  /** Applied to the `role="tabpanel"` div */
   readonly panelClassName?: string;
+  /** Controlled active tab id. When omitted, `Tabs` manages its own internal selection state */
   readonly activeTabId?: string;
+  /** Called whenever the user clicks a tab, in both controlled and uncontrolled modes */
   readonly onTabChange?: (tabId: string) => void;
 }
 

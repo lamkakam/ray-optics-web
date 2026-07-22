@@ -20,16 +20,6 @@ import {
 import { buildWavefrontMapBitmap } from "./wavefrontMapDeckData";
 import type { WavefrontMapData } from "@/features/analysis/types/plotData";
 
-/**
-## Props
-
-```ts
-interface WavefrontMapChartProps {
-  wavefrontMapData: WavefrontMapData;
-  autoHeight?: boolean;
-}
-```
-*/
 interface WavefrontMapChartProps {
   readonly wavefrontMapData: WavefrontMapData;
   readonly autoHeight?: boolean;

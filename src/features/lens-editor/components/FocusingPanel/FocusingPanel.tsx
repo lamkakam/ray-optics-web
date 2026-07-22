@@ -18,23 +18,6 @@ import { Button } from "@/shared/components/primitives/Button";
 type Chromaticity = "mono" | "poly";
 type Metric = "rmsSpot" | "wavefront";
 
-/**
-## Props
-
-```ts
-interface FocusingPanelProps {
-  readonly chromaticity: "mono" | "poly";
-  readonly metric: "rmsSpot" | "wavefront";
-  readonly fieldIndex: number;
-  readonly fieldOptions: ReadonlyArray<{ value: number; label: string }>;
-  readonly onChromaticityChange: (value: "mono" | "poly") => void;
-  readonly onMetricChange: (value: "rmsSpot" | "wavefront") => void;
-  readonly onFieldIndexChange: (value: number) => void;
-  readonly onFocus: () => void;
-  readonly disabled: boolean;
-}
-```
-*/
 interface FocusingPanelProps {
   readonly chromaticity: Chromaticity;
   readonly metric: Metric;

@@ -8,42 +8,19 @@ import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 export type SwitchSize = "sm" | "md";
 
-/**
-## Props
-
-```ts
-export type SwitchSize = "sm" | "md";
-
-interface SwitchProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onChange"> {
-  readonly checked: boolean;
-  readonly onCheckedChange: (checked: boolean) => void;
-  readonly ariaLabel: string;
-  readonly checkedContent?: React.ReactNode;
-  readonly uncheckedContent?: React.ReactNode;
-  readonly size?: SwitchSize;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `checked` | `boolean` | Yes | Controlled checked state |
-| `onCheckedChange` | `(checked: boolean) => void` | Yes | Called with the next checked state on click |
-| `ariaLabel` | `string` | Yes | Accessible name for the switch button |
-| `checkedContent` | `React.ReactNode` | No | Content shown only while checked |
-| `uncheckedContent` | `React.ReactNode` | No | Content shown only while unchecked |
-| `size` | `"sm" \| "md"` | No | Visual size. Defaults to `"md"` |
-| `className` | `string` | No | Merged via `twMerge` after token classes |
-*/
 export interface SwitchProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onChange"> {
+  /** Controlled checked state */
   readonly checked: boolean;
+  /** Called with the next checked state on click */
   readonly onCheckedChange: (checked: boolean) => void;
+  /** Accessible name for the switch button */
   readonly ariaLabel: string;
+  /** Content shown only while checked */
   readonly checkedContent?: React.ReactNode;
+  /** Content shown only while unchecked */
   readonly uncheckedContent?: React.ReactNode;
+  /** Visual size. Defaults to `"md"` */
   readonly size?: SwitchSize;
 }
 
@@ -93,6 +70,7 @@ Controlled switch primitive for binary settings. It renders a native button with
 - Relies on native button `disabled` behavior, so disabled switches do not fire click handlers.
 - Uses fixed tokenized dimensions for `sm` and `md`, so content changes do not resize the control.
 - Positions visible state content on the side opposite the thumb to prevent labels such as `Auto` and `Manual` from being covered by the thumb.
+- The inherited `className` prop is merged via `twMerge` after token classes.
 - Applies tokenized track color, thumb translation, transition, `will-change-transform`, opacity, and disabled cursor classes.
 
 ## Usages

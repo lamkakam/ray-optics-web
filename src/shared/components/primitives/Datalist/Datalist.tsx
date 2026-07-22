@@ -10,17 +10,6 @@ export type DatalistOption = {
   readonly label: string;
 };
 
-/**
-## Props
-
-```ts
-type DatalistOption = { value: string | number; label: string };
-
-interface DatalistProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "children" | "list" | "type"> {
-  options: ReadonlyArray<DatalistOption>;
-}
-```
-*/
 interface DatalistProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "children" | "list" | "type"> {
   readonly options: ReadonlyArray<DatalistOption>;
 }

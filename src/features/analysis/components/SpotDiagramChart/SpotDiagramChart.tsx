@@ -5,17 +5,6 @@ import { buildSpotDiagramOption } from "./spotDiagramChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import type { SpotDiagramData } from "@/features/analysis/types/plotData";
 
-/**
-## Props
-
-```ts
-interface SpotDiagramChartProps {
-  spotDiagramData: SpotDiagramData;
-  wavelengthLabels: readonly string[];
-  autoHeight?: boolean;
-}
-```
-*/
 interface SpotDiagramChartProps {
   readonly spotDiagramData: SpotDiagramData;
   readonly wavelengthLabels: readonly string[];

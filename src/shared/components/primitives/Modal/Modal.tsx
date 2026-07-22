@@ -16,40 +16,18 @@ const sizeClasses: Record<ModalSize, string> = {
   "4xl": "max-w-4xl",
 };
 
-/**
-## Props
-
-```ts
-type ModalSize = "md" | "lg" | "4xl";
-
 interface ModalProps {
-  isOpen: boolean;
-  title: string;
-  titleId?: string;
-  size?: ModalSize;
-  onBackdropClick?: () => void;
-  footer?: React.ReactNode;
-  children: React.ReactNode;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | When `false`, renders nothing |
-| `title` | `string` | Yes | Displayed as an `h2` at the top of the panel; also the `aria-labelledby` target |
-| `titleId` | `string` | No | Custom id for the title element. Auto-generated with `useId` if omitted |
-| `size` | `ModalSize` | No | Max-width of the panel. Defaults to `"md"` |
-| `onBackdropClick` | `() => void` | No | Called when the semi-transparent backdrop is clicked |
-| `footer` | `React.ReactNode` | No | Optional fixed footer content rendered outside the scrollable body region |
-*/
-interface ModalProps {
+  /** When `false`, renders nothing */
   readonly isOpen: boolean;
+  /** Displayed as an `h2` at the top of the panel; also the `aria-labelledby` target */
   readonly title: string;
+  /** Custom id for the title element. Auto-generated with `useId` if omitted */
   readonly titleId?: string;
+  /** Max-width of the panel. Defaults to `"md"` */
   readonly size?: ModalSize;
+  /** Called when the semi-transparent backdrop is clicked */
   readonly onBackdropClick?: () => void;
+  /** Optional fixed footer content rendered outside the scrollable body region */
   readonly footer?: React.ReactNode;
   readonly children: React.ReactNode;
 }

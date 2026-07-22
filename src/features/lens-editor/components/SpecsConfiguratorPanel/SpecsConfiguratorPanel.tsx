@@ -19,43 +19,22 @@ interface AperturePatch {
   readonly pupilValue?: number;
 }
 
-/**
-## Props
-
-```ts
 interface SpecsConfiguratorPanelProps {
-  pupilSpace: PupilSpace;
-  pupilType: PupilType;
-  pupilValue: number;
-  fieldSummary: string;
-  wavelengthSummary: string;
-  onApertureChange: (patch: AperturePatch) => void;
-  onOpenFieldModal: () => void;
-  onOpenWavelengthModal: () => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `pupilSpace` | `PupilSpace` | Yes | Current aperture space (`"object"` / `"image"`) |
-| `pupilType` | `PupilType` | Yes | Current aperture type (`"epd"`, `"f/#"`, `"NA"`) |
-| `pupilValue` | `number` | Yes | Numeric aperture value |
-| `fieldSummary` | `string` | Yes | Human-readable summary of field config (e.g. `"3 fields, 20° max"`) |
-| `wavelengthSummary` | `string` | Yes | Human-readable summary of wavelengths (e.g. `"3 wavelengths"`) |
-| `onApertureChange` | `(patch) => void` | Yes | Partial update for aperture space, type, or value |
-| `onOpenFieldModal` | `() => void` | Yes | Opens `FieldConfigModal` |
-| `onOpenWavelengthModal` | `() => void` | Yes | Opens `WavelengthConfigModal` |
-*/
-interface SpecsConfiguratorPanelProps {
+  /** Current aperture space (`"object"` / `"image"`) */
   readonly pupilSpace: PupilSpace;
+  /** Current aperture type (`"epd"`, `"f/#"`, `"NA"`) */
   readonly pupilType: PupilType;
+  /** Numeric aperture value */
   readonly pupilValue: number;
+  /** Human-readable summary of field config (e.g. `"3 fields, 20° max"`) */
   readonly fieldSummary: string;
+  /** Human-readable summary of wavelengths (e.g. `"3 wavelengths"`) */
   readonly wavelengthSummary: string;
+  /** Partial update for aperture space, type, or value */
   readonly onApertureChange: (patch: AperturePatch) => void;
+  /** Opens `FieldConfigModal` */
   readonly onOpenFieldModal: () => void;
+  /** Opens `WavelengthConfigModal` */
   readonly onOpenWavelengthModal: () => void;
 }
 

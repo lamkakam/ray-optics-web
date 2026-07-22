@@ -20,25 +20,20 @@ import { componentTokens } from "@/shared/tokens/styleTokens";
 
 const cx = componentTokens.navLink;
 
-/**
-## Props
-| Prop | Type | Description |
-|------|------|-------------|
-| `active` | `boolean` | Active state — drives colour variant |
-| `href` | `string` | Route destination |
-| `children` | `React.ReactNode` | Label |
-| `aria-label` | `string \| undefined` | ARIA label |
-| `aria-current` | `"page" \| undefined` | Active ARIA attribute |
-| `className` | `string \| undefined` | Optional extra Tailwind classes |
-| `onClick` | `React.MouseEventHandler<HTMLAnchorElement> \| undefined` | Optional click callback that receives the anchor click event |
-*/
 interface NavLinkProps {
+  /** Active state — drives colour variant */
   readonly active: boolean;
+  /** Route destination */
   readonly href: string;
+  /** Label */
   readonly children: React.ReactNode;
+  /** ARIA label */
   readonly "aria-label"?: string;
+  /** Active ARIA attribute */
   readonly "aria-current"?: "page" | undefined;
+  /** Optional extra Tailwind classes */
   readonly className?: string;
+  /** Optional click callback that receives the anchor click event */
   readonly onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 

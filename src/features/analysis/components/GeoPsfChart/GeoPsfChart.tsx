@@ -18,16 +18,6 @@ import {
 import { buildGeoPsfPoints, type GeoPsfPoint } from "./geoPsfDeckData";
 import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
-/**
-## Props
-
-```ts
-interface GeoPsfChartProps {
-  geoPsfData: GeoPsfData;
-  autoHeight?: boolean;
-}
-```
-*/
 interface GeoPsfChartProps {
   readonly geoPsfData: GeoPsfData;
   readonly autoHeight?: boolean;

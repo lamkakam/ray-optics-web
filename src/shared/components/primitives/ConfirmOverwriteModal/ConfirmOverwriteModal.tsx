@@ -3,12 +3,6 @@
 
 Confirmation modal used before loading an example optical system.
 
-| Prop | Type | Required | Description |
-|---|---|---:|---|
-| `isOpen` | `boolean` | Yes | Controls modal visibility |
-| `onConfirm` | `() => void` | Yes | Confirms overwrite and continues loading |
-| `onCancel` | `() => void` | Yes | Cancels loading |
-
 ## Modal Footer
 
 - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
@@ -20,8 +14,11 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
 interface ConfirmOverwriteModalProps {
+  /** Controls modal visibility */
   readonly isOpen: boolean;
+  /** Confirms overwrite and continues loading */
   readonly onConfirm: () => void;
+  /** Cancels loading */
   readonly onCancel: () => void;
 }
 

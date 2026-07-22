@@ -23,39 +23,18 @@ import { type DecenterConfig } from "@/shared/lib/types/opticalModel";
 type DecenterCoordinateSystemStrategy = DecenterConfig["coordinateSystemStrategy"];
 export type DecenterType = DecenterConfig;
 
-/**
-## Props
-
-```ts
 interface DecenterModalProps {
-  isOpen: boolean;
-  initialDecenter: DecenterType | undefined;
-  readOnly?: boolean;
-  onConfirm: (decenter: DecenterType) => void;
-  onClose: () => void;
-  onRemove: () => void;
-}
-
-type DecenterType = DecenterConfig;  // from lib/opticalModel
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls visibility |
-| `initialDecenter` | `DecenterType \| undefined` | Yes | Existing decenter config, or `undefined` for a new one (defaults to bend/all zeros) |
-| `readOnly` | `boolean` | No | When `true`, all controls are disabled and the footer shows only `Close` |
-| `onConfirm` | `(decenter) => void` | Yes | Called with parsed values on Confirm |
-| `onClose` | `() => void` | Yes | Cancel callback |
-| `onRemove` | `() => void` | Yes | Clears decenter data for the surface |
-*/
-interface DecenterModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Existing decenter config, or `undefined` for a new one (defaults to bend/all zeros) */
   readonly initialDecenter: DecenterType | undefined;
+  /** When `true`, all controls are disabled and the footer shows only `Close` */
   readonly readOnly?: boolean;
+  /** Called with parsed values on Confirm */
   readonly onConfirm: (decenter: DecenterType) => void;
+  /** Cancel callback */
   readonly onClose: () => void;
+  /** Clears decenter data for the surface */
   readonly onRemove: () => void;
 }
 

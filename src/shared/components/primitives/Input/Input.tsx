@@ -5,13 +5,6 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
-/**
-## Props
-
-```ts
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
-```
-*/
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 const BASE_CLASSES = [

@@ -13,10 +13,6 @@ import {
 type ContextValue = StoreApi<GlassMapStore> | undefined;
 
 /**
-### `GlassMapStoreContext`
-```ts
-const GlassMapStoreContext: React.Context<StoreApi<GlassMapStore> | undefined>
-```
 Raw context object. Use only in tests to supply a pre-built store directly via `<GlassMapStoreContext.Provider value={store}>`.
 */
 export const GlassMapStoreContext = createContext<ContextValue>(undefined);
@@ -74,10 +70,6 @@ export const GlassMapStoreProvider: React.FC<GlassMapStoreProviderProps> = ({
 };
 
 /**
-### `useGlassMapStore`
-```ts
-const useGlassMapStore = (): StoreApi<GlassMapStore>
-```
 Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `GlassMapStoreProvider`.
 */
 export const useGlassMapStore = (): StoreApi<GlassMapStore> => {

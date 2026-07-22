@@ -30,24 +30,6 @@ import type { AnalysisPlotState } from "@/features/analysis/stores/analysisPlotS
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
 /**
-### `AnalysisPlotLoadResult`
-
-```ts
-type AnalysisPlotLoadResult =
-  | { kind: "surfaceBySurface3rdOrder"; surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData }
-  | { kind: "rayFan"; rayFanData: RayFanData }
-  | { kind: "opdFan"; opdFanData: OpdFanData }
-  | { kind: "spotDiagram"; spotDiagramData: SpotDiagramData }
-  | { kind: "fieldCurvature"; fieldCurvatureData: FieldCurveData }
-  | { kind: "astigmatismCurve"; astigmatismCurveData: AstigmatismCurveData }
-  | { kind: "longitudinalSphericalAberration"; longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData }
-  | { kind: "geoPSF"; geoPsfData: GeoPsfData }
-  | { kind: "wavefrontMap"; wavefrontMapData: WavefrontMapData }
-  | { kind: "strehlVsWavelength"; strehlVsWavelengthData: StrehlVsWavelengthData }
-  | { kind: "diffractionPSF"; diffractionPsfData: DiffractionPsfData }
-  | { kind: "diffractionMTF"; diffractionMtfData: DiffractionMtfData };
-```
-
 Discriminated result returned by the shared analysis-plot loader. It makes the worker-call branching explicit so callers can store typed chart data without duplicating plot-type conditionals.
 */
 export type AnalysisPlotLoadResult =
@@ -74,25 +56,6 @@ interface LoadAnalysisPlotParams {
 }
 
 /**
-### `loadAnalysisPlot`
-
-```ts
-async function loadAnalysisPlot({
-  plotType,
-  proxy,
-  model,
-  fieldIndex,
-  wavelengthIndex,
-}: {
-  plotType: PlotType;
-  proxy: PyodideWorkerAPI | undefined;
-  model: OpticalModel | undefined;
-  fieldIndex: number;
-  wavelengthIndex: number;
-  imagePoint?: ImagePoint;
-}): Promise<AnalysisPlotLoadResult | undefined>
-```
-
 Shared async loader used by both `LensEditor.tsx` and `AnalysisPlotContainer.tsx`.
 
 - Returns `undefined` when `proxy` or `model` is missing.
@@ -206,15 +169,6 @@ export async function loadAnalysisPlot({
 }
 
 /**
-### `commitAnalysisPlotResult`
-
-```ts
-function commitAnalysisPlotResult(
-  plotResult: AnalysisPlotLoadResult | undefined,
-  analysisPlotStore: StoreApi<AnalysisPlotState>,
-): void
-```
-
 Commits a loaded analysis plot payload to the matching `AnalysisPlotState` setter.
 
 - No-ops when `plotResult` is `undefined`.

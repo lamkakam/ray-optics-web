@@ -27,64 +27,37 @@ import type { AsphericalType } from "@/shared/lib/types/opticalModel";
 
 const COEFFICIENT_NUM = 10;
 
-
-/**
-## Props
-
-```ts
 interface AsphericalModalProps {
-  isOpen: boolean;
-  readOnly?: boolean;
-  initialConicConstant: number;
-  initialType: AsphericalType;
-  initialCoefficients: number[];
-  initialToricSweepRadiusOfCurvature: number;
-  onConfirm: (params: {
-    conicConstant: number;
-    type: AsphericalType;
-    polynomialCoefficients: number[];
-    toricSweepRadiusOfCurvature: number;
-  }) => void;
-  onClose: () => void;
-  onRemove: () => void;
-}
-```
-
-The modal uses `ASPHERICAL_TYPE_OPTIONS` from `shared/lib/lens-prescription-grid/displayLabels.ts` for these UI-facing labels, while the container maps them to the domain `Surface["aspherical"]` union:
-- `"Conic"` -> `{ kind: "Conic", conicConstant }`
-- `"EvenAspherical"` -> `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
-- `"RadialPolynomial"` -> `{ kind: "RadialPolynomial", conicConstant, polynomialCoefficients }`
-- `"XToroid"` -> `{ kind: "XToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
-- `"YToroid"` -> `{ kind: "YToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls visibility |
-| `readOnly` | `boolean` | No | When `true`, all controls are disabled and the footer shows only `Close` |
-| `initialConicConstant` | `number` | Yes | Starting conic constant value |
-| `initialType` | `AsphericalType` | Yes | Surface type on open |
-| `initialCoefficients` | `number[]` | Yes | Polynomial coefficients on open (may be shorter than 10) |
-| `initialToricSweepRadiusOfCurvature` | `number` | Yes | Starting toroid sweep radius of curvature value |
-| `onConfirm` | `(params) => void` | Yes | Called with parsed values on Confirm |
-| `onClose` | `() => void` | Yes | Cancel callback |
-| `onRemove` | `() => void` | Yes | Clears aspherical data for the surface |
-*/
-interface AsphericalModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** When `true`, all controls are disabled and the footer shows only `Close` */
   readonly readOnly?: boolean;
+  /** Starting conic constant value */
   readonly initialConicConstant: number;
+  /** Surface type on open */
   readonly initialType: AsphericalType;
+  /** Polynomial coefficients on open (may be shorter than 10) */
   readonly initialCoefficients: number[];
+  /** Starting toroid sweep radius of curvature value */
   readonly initialToricSweepRadiusOfCurvature: number;
+  /**
+   * Called with parsed values on Confirm. Result fields depend on `type`:
+   *
+   * - `"Conic"` yields `{ kind: "Conic", conicConstant }`.
+   * - `"EvenAspherical"` yields `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`.
+   * - `"RadialPolynomial"` yields `{ kind: "RadialPolynomial", conicConstant, polynomialCoefficients }`.
+   * - `"XToroid"` yields `{ kind: "XToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`.
+   * - `"YToroid"` yields `{ kind: "YToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`.
+   */
   readonly onConfirm: (params: {
     conicConstant: number;
     type: AsphericalType;
     polynomialCoefficients: number[];
     toricSweepRadiusOfCurvature: number;
   }) => void;
+  /** Cancel callback */
   readonly onClose: () => void;
+  /** Clears aspherical data for the surface */
   readonly onRemove: () => void;
 }
 
@@ -274,7 +247,6 @@ const contentMap: {
   },
 };
 
-
 /**
 ## Purpose
 
@@ -282,6 +254,7 @@ Modal for configuring aspherical surface parameters: conic constant, surface typ
 
 ## Key Behaviors
 
+- Uses `ASPHERICAL_TYPE_OPTIONS` from `shared/lib/lens-prescription-grid/displayLabels.ts` for UI-facing labels; the container maps confirmed values to the domain `Surface["aspherical"]` union.
 - Coefficient inputs are shown for every non-conic type: `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
 - The toroid sweep radius input is shown only for `"XToroid"` and `"YToroid"`.
 - On confirm, trailing zero coefficients are stripped (`truncateTrailingZeros`); Conic type produces an empty coefficients array.

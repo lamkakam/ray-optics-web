@@ -1,19 +1,5 @@
 /**
 # `shared/components/providers/GlassCatalogProvider/GlassCatalogProvider.tsx`
-
-## Context Value
-
-```ts
-interface GlassCatalogContextValue {
-  catalogs: AllGlassCatalogsData | undefined;
-  lookupMaps: GlassLookupMaps | undefined;
-  error: string | undefined;
-  isLoaded: boolean;
-  isLoading: boolean;
-  preload: () => Promise<GlassCatalogsLoadResult | undefined>;
-}
-```
-
 ## Behaviour
 - `catalogs` contains normalized worker-backed glass catalog data once AppShell has successfully loaded and committed it to `GlassMapStore`
 - `lookupMaps` contains the case-insensitive manufacturer and medium maps built by `GlassMapStore` from the same loaded catalog data

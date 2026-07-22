@@ -42,34 +42,16 @@ interface WavelengthConfigResult {
   readonly referenceIndex: number;
 }
 
-/**
-## Props
-
-```ts
 interface WavelengthConfigModalProps {
-  isOpen: boolean;
-  initialWeights: readonly [number, number][];
-  initialReferenceIndex: number;
-  onApply: (result: WavelengthConfigResult) => void;
-  onClose: () => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls visibility |
-| `initialWeights` | `readonly [number, number][]` | Yes | Array of `[wavelength_nm, weight]` pairs |
-| `initialReferenceIndex` | `number` | Yes | Index of the reference wavelength in the weights array |
-| `onApply` | `(result) => void` | Yes | Called with updated weights and reference index on Apply |
-| `onClose` | `() => void` | Yes | Cancel callback |
-*/
-interface WavelengthConfigModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Array of `[wavelength_nm, weight]` pairs */
   readonly initialWeights: readonly [number, number][];
+  /** Index of the reference wavelength in the weights array */
   readonly initialReferenceIndex: number;
+  /** Called with updated weights and reference index on Apply */
   readonly onApply: (result: WavelengthConfigResult) => void;
+  /** Cancel callback */
   readonly onClose: () => void;
 }
 

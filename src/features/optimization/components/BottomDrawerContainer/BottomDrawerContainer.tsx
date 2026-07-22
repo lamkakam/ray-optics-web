@@ -37,51 +37,26 @@ type PrescriptionProps = Omit<
   | "onCellEditingStopped"
 >;
 
-/**
-## Props
-
-```ts
-interface BottomDrawerContainerProps {
-  layout: {
-    isLG: boolean;
-    onHeightChange?: (height: number) => void;
-  };
-  fields: Pick<ComponentProps<typeof OptimizationWeightsGrid>, "rows">;
-  wavelengths: Pick<ComponentProps<typeof OptimizationWeightsGrid>, "rows">;
-  gridEditLifecycle?: Pick<ComponentProps<typeof OptimizationWeightsGrid>, "onCellEditingStarted" | "onCellEditingStopped">;
-  onWarning: (message: string) => void;
-  prescription: Omit<
-    OptimizationLensPrescriptionGridProps,
-    | "radiusModes"
-    | "thicknessModes"
-    | "asphereStates"
-    | "onOpenRadiusModal"
-    | "onOpenThicknessModal"
-    | "onOpenAsphereVarModal"
-    | "onCellEditingStarted"
-    | "onCellEditingStopped"
-  >;
-}
-```
-
-- `layout` controls responsive drawer behavior:
-  - `isLG` switches between draggable large-screen rendering and non-draggable small-screen rendering.
-  - `onHeightChange` receives live drawer height changes when provided.
-- `fields.rows` provides derived field weight rows.
-- `wavelengths.rows` provides derived wavelength weight rows.
-- `gridEditLifecycle` optionally provides page-level AG Grid edit start/stop callbacks shared by all Optimization grids.
-- `onWarning` receives explicit method-switch config-build failures so the page can surface them in Operand Evaluation.
-- `prescription` provides the synchronized auto-aperture mode, derived prescription rows, and local inspection-modal callbacks, including aperture inspection. Optimization variable modal callbacks and mode state are read from the optimization store.
-*/
 export interface BottomDrawerContainerProps {
+  /** Controls responsive drawer behavior. */
   readonly layout: {
+    /** Switches between draggable large-screen rendering and non-draggable small-screen rendering. */
     readonly isLG: boolean;
+    /** Receives live drawer height changes when provided. */
     readonly onHeightChange?: (height: number) => void;
   };
+  /** Provides derived field weight rows. */
   readonly fields: Readonly<FieldsProps>;
+  /** Provides derived wavelength weight rows. */
   readonly wavelengths: Readonly<FieldsProps>;
+  /**
+   * Provides the synchronized auto-aperture mode, derived prescription rows, and local inspection-modal callbacks, including aperture inspection.
+   * Optimization variable modal callbacks and mode state are read from the optimization store.
+   */
   readonly prescription: Readonly<PrescriptionProps>;
+  /** Provides optional page-level AG Grid edit start/stop callbacks shared by all Optimization grids. */
   readonly gridEditLifecycle?: Readonly<GridEditLifecycleProps>;
+  /** Receives explicit method-switch config-build failures so the page can surface them in Operand Evaluation. */
   readonly onWarning: (message: string) => void;
 }
 

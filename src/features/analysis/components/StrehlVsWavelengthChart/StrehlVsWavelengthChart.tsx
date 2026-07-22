@@ -5,16 +5,6 @@ import type { StrehlVsWavelengthData } from "@/features/analysis/types/plotData"
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { buildStrehlVsWavelengthOption } from "./strehlVsWavelengthChartOption";
 
-/**
-## Props
-
-```ts
-interface StrehlVsWavelengthChartProps {
-  strehlVsWavelengthData: StrehlVsWavelengthData;
-  autoHeight?: boolean;
-}
-```
-*/
 interface StrehlVsWavelengthChartProps {
   readonly strehlVsWavelengthData: StrehlVsWavelengthData;
   readonly autoHeight?: boolean;

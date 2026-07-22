@@ -5,28 +5,12 @@ import React from "react";
 
 type TableColumnAlignment = "left" | "right";
 
-/**
-## Props
-
-```ts
 interface TableProps {
-  headers: readonly string[];
-  rows: readonly (readonly (string | number | React.ReactNode)[])[];
-  columnAlignments?: readonly ("left" | "right")[];
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `headers` | `readonly string[]` | Yes | Column header labels |
-| `rows` | `readonly (...)[]` | Yes | Row data; each cell may be a string, number, or React node |
-| `columnAlignments` | `readonly ("left" | "right")[]` | No | Optional per-column text alignment applied to both header and body cells; unspecified columns default to left alignment |
-*/
-interface TableProps {
+  /** Column header labels */
   readonly headers: readonly string[];
+  /** Row data; each cell may be a string, number, or React node */
   readonly rows: readonly (readonly (string | number | React.ReactNode)[])[];
+  /** Optional per-column text alignment applied to both header and body cells; unspecified columns default to left alignment */
   readonly columnAlignments?: readonly TableColumnAlignment[];
 }
 

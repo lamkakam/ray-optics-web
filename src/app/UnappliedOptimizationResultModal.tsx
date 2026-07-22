@@ -11,18 +11,6 @@ import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-/**
-## Props
-
-```ts
-interface UnappliedOptimizationResultModalProps {
-  isOpen: boolean;
-  onStay: () => void;
-  onLeave: () => void;
-  onApplyToEditor: () => void;
-}
-```
-*/
 interface UnappliedOptimizationResultModalProps {
   readonly isOpen: boolean;
   readonly onStay: () => void;

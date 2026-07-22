@@ -1,18 +1,6 @@
 /**
 # `shared/hooks/useDebouncedCallback.ts`
 
-## API
-
-```ts
-useDebouncedCallback<Args extends readonly unknown[]>(
-  callback: (...args: Args) => void,
-  delayMs: number,
-): {
-  readonly run: (...args: Args) => void;
-  readonly cancel: () => void;
-}
-```
-
 ## Conventions
 
 - Uses `undefined` for the absence of a timer id.

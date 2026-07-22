@@ -5,16 +5,6 @@ import type { DiffractionMtfData } from "@/features/analysis/types/plotData";
 import { buildDiffractionMtfOption } from "./diffractionMtfChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 
-/**
-## Props
-
-```ts
-interface DiffractionMtfChartProps {
-  diffractionMtfData: DiffractionMtfData;
-  autoHeight?: boolean;
-}
-```
-*/
 interface DiffractionMtfChartProps {
   readonly diffractionMtfData: DiffractionMtfData;
   readonly autoHeight?: boolean;

@@ -1,22 +1,6 @@
 /**
 # `features/analysis/lib/createAnalysisChartComponent/createAnalysisChartComponent.tsx`
 
-## Factory Contract
-
-```ts
-createAnalysisChartComponent<Props extends { autoHeight?: boolean }, BuilderArgs, RuntimeContext>({
-  displayName,
-  testId,
-  ariaLabel,
-  debounceMs,
-  useRuntimeContext?,
-  getBuilderArgs,
-  getChartHeight,
-  buildOption,
-  isDimensionValid?,
-})
-```
-
 ## Dependencies
 
 - `echarts/core`

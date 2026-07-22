@@ -1,17 +1,5 @@
 /**
 # `features/analysis/components/WavefrontMapChart/wavefrontMapDeckData.ts`
-
-## API
-
-```ts
-interface WavefrontBitmapImage {
-  data: Uint8ClampedArray<ArrayBuffer>;
-  width: number;
-  height: number;
-}
-
-function buildWavefrontMapBitmap(wavefrontMapData: WavefrontMapData): WavefrontMapPreparedData
-```
 */
 import { interpolateAnalysisHeatmapColor } from "@/features/analysis/lib/analysisChartPalette";
 import type { WavefrontMapData } from "@/features/analysis/types/plotData";

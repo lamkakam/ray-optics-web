@@ -4,25 +4,10 @@
 import clsx from "clsx";
 import { Paragraph } from "@/shared/components/primitives/Paragraph";
 
-/**
-## Props
-
-```ts
 interface LensLayoutPanelProps {
-  imageBase64?: string;
-  loading?: boolean;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `imageBase64` | `string` | No | Base64 PNG data (without the `data:image/png;base64,` prefix) |
-| `loading` | `boolean` | No | When `true` and an image is present, a semi-transparent "Updating..." overlay is shown. When `true` and no image yet, shows "Loading lens layout..." placeholder |
-*/
-interface LensLayoutPanelProps {
+  /** Base64 PNG data (without the `data:image/png;base64,` prefix) */
   readonly imageBase64?: string;
+  /** When `true` and an image is present, a semi-transparent "Updating..." overlay is shown. When `true` and no image yet, shows "Loading lens layout..." placeholder */
   readonly loading?: boolean;
 }
 

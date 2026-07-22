@@ -17,49 +17,26 @@ import {
   lensPrescriptionGridIndexColumnDef,
 } from "@/shared/lib/lens-prescription-grid";
 
-/**
-## Props
-
-```ts
 interface LensPrescriptionGridProps {
-  rows: GridRow[];
-  onRowChange: (id: string, patch: Partial<GridRow>) => void;
-  onOpenMediumModal: (rowId: string) => void;
-  onOpenAsphericalModal: (rowId: string) => void;
-  onOpenDecenterModal: (rowId: string) => void;
-  onOpenDiffractionGratingModal: (rowId: string) => void;
-  onOpenApertureModal: (rowId: string) => void;
-  onAddRowAfter: (rowId: string) => void;
-  onDeleteRow: (rowId: string) => void;
-  semiDiameterReadonly?: boolean;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `rows` | `GridRow[]` | Yes | Flat array of grid rows from the lens editor store |
-| `onRowChange` | `(id, patch) => void` | Yes | Partial update for a row field |
-| `onOpenMediumModal` | `(rowId) => void` | Yes | Opens `MediumSelectorModal` for the given row |
-| `onOpenAsphericalModal` | `(rowId) => void` | Yes | Opens `AsphericalModal` for the given row |
-| `onOpenDecenterModal` | `(rowId) => void` | Yes | Opens `DecenterModal` for the given row |
-| `onOpenDiffractionGratingModal` | `(rowId) => void` | Yes | Opens `DiffractionGratingModal` for the given surface row |
-| `onOpenApertureModal` | `(rowId) => void` | Yes | Opens `ApertureModal` for the given surface row |
-| `onAddRowAfter` | `(rowId) => void` | Yes | Inserts a new surface row after the given row |
-| `onDeleteRow` | `(rowId) => void` | Yes | Deletes the given surface row |
-| `semiDiameterReadonly` | `boolean` | No | When `true`, semi-diameter column is read-only and dimmed (auto-aperture mode) |
-*/
-interface LensPrescriptionGridProps {
+  /** Flat array of grid rows from the lens editor store */
   readonly rows: GridRow[];
+  /** Partial update for a row field */
   readonly onRowChange: (id: string, patch: Partial<GridRow>) => void;
+  /** Opens `MediumSelectorModal` for the given row */
   readonly onOpenMediumModal: (rowId: string) => void;
+  /** Opens `AsphericalModal` for the given row */
   readonly onOpenAsphericalModal: (rowId: string) => void;
+  /** Opens `DecenterModal` for the given row */
   readonly onOpenDecenterModal: (rowId: string) => void;
+  /** Opens `DiffractionGratingModal` for the given surface row */
   readonly onOpenDiffractionGratingModal: (rowId: string) => void;
+  /** Opens `ApertureModal` for the given surface row */
   readonly onOpenApertureModal: (rowId: string) => void;
+  /** Inserts a new surface row after the given row */
   readonly onAddRowAfter: (rowId: string) => void;
+  /** Deletes the given surface row */
   readonly onDeleteRow: (rowId: string) => void;
+  /** When `true`, semi-diameter column is read-only and dimmed (auto-aperture mode) */
   readonly semiDiameterReadonly?: boolean;
   readonly computedSemiDiameters?: Readonly<Record<string, number>>;
 }

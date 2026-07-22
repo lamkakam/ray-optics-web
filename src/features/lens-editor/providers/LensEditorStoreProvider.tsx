@@ -10,10 +10,6 @@ import { createLensEditorSlice, type LensEditorState } from '@/features/lens-edi
 type ContextValue = StoreApi<LensEditorState> | undefined;
 
 /**
-### `LensEditorStoreContext`
-```ts
-const LensEditorStoreContext: React.Context<StoreApi<LensEditorState> | undefined>
-```
 Raw context object. Use only in tests to supply a pre-built store directly via `<LensEditorStoreContext.Provider value={store}>`.
 */
 export const LensEditorStoreContext = createContext<ContextValue>(undefined);
@@ -70,10 +66,6 @@ export const LensEditorStoreProvider: React.FC<LensEditorStoreProviderProps> = (
 };
 
 /**
-### `useLensEditorStore`
-```ts
-const useLensEditorStore = (): StoreApi<LensEditorState>
-```
 Returns the raw `store` for imperative access (`store.getState().*`) without subscribing to state changes. Use inside callbacks and effects where you need stable, non-reactive access. For reactive values, use it with Zustand's `useStore`. Must be called inside `LensEditorStoreProvider`.
 */
 export const useLensEditorStore = (): StoreApi<LensEditorState> => {

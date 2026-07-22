@@ -55,34 +55,16 @@ const ORDERING_OPTIONS: SelectOption[] = [
   { value: "noll", label: "Noll" },
 ];
 
-/**
-## Props
-
-```ts
 interface ZernikeTermsModalProps {
+  /** Controls visibility */
   readonly isOpen: boolean;
+  /** Options for the Half-Field dropdown */
   readonly fieldOptions: readonly SelectOption[];
+  /** Options for the Wavelength dropdown */
   readonly wavelengthOptions: readonly SelectOption[];
+  /** Callback to fetch Zernike data. Called on open and on any dropdown change. */
   readonly onFetchData: (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => Promise<ZernikeData>;
-  readonly onClose: () => void;
-}
-```
-
-## Prop Details
-
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `isOpen` | `boolean` | Yes | Controls visibility |
-| `fieldOptions` | `readonly SelectOption[]` | Yes | Options for the Half-Field dropdown |
-| `wavelengthOptions` | `readonly SelectOption[]` | Yes | Options for the Wavelength dropdown |
-| `onFetchData` | `(fieldIndex, wvlIndex, ordering) => Promise<ZernikeData>` | Yes | Callback to fetch Zernike data. Called on open and on any dropdown change. |
-| `onClose` | `() => void` | Yes | Called when the Ok button is clicked |
-*/
-interface ZernikeTermsModalProps {
-  readonly isOpen: boolean;
-  readonly fieldOptions: readonly SelectOption[];
-  readonly wavelengthOptions: readonly SelectOption[];
-  readonly onFetchData: (fieldIndex: number, wvlIndex: number, ordering: ZernikeOrdering) => Promise<ZernikeData>;
+  /** Called when the Ok button is clicked */
   readonly onClose: () => void;
 }
 

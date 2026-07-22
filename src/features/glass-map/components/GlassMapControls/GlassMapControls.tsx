@@ -20,27 +20,22 @@ import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
 import { RadioInput } from "@/shared/components/primitives/RadioInput";
 import type { RadioOption } from "@/shared/components/primitives/RadioInput";
 
-/**
-## Props
-| Prop | Type | Description |
-|------|------|-------------|
-| `plotType` | `GlassMapPlotType` | Currently selected plot type |
-| `abbeNumCenterLine` | `AbbeNumCenterLine` | Selected spectral line (`'d'` or `'e'`) |
-| `partialDispersionType` | `PartialDispersionType` | Selected partial dispersion (`'P_Fd'`, `'P_fe'`, `'P_gF'`) |
-| `enabledCatalogs` | `Record<CatalogName, boolean>` | Per-catalog enabled state |
-| `onPlotTypeChange` | `(t: GlassMapPlotType) => void` | Called when plot type radio changes |
-| `onAbbeNumCenterLineChange` | `(l: AbbeNumCenterLine) => void` | Called when d/e radio changes |
-| `onPartialDispersionTypeChange` | `(t: PartialDispersionType) => void` | Called when PD type radio changes |
-| `onToggleCatalog` | `(name: CatalogName) => void` | Called when a catalog checkbox changes |
-*/
 interface GlassMapControlsProps {
+  /** Currently selected plot type */
   readonly plotType: GlassMapPlotType;
+  /** Selected spectral line (`'d'` or `'e'`) */
   readonly abbeNumCenterLine: AbbeNumCenterLine;
+  /** Selected partial dispersion (`'P_Fd'`, `'P_fe'`, `'P_gF'`) */
   readonly partialDispersionType: PartialDispersionType;
+  /** Per-catalog enabled state */
   readonly enabledCatalogs: Record<CatalogName, boolean>;
+  /** Called when plot type radio changes */
   readonly onPlotTypeChange: (t: GlassMapPlotType) => void;
+  /** Called when d/e radio changes */
   readonly onAbbeNumCenterLineChange: (l: AbbeNumCenterLine) => void;
+  /** Called when PD type radio changes */
   readonly onPartialDispersionTypeChange: (t: PartialDispersionType) => void;
+  /** Called when a catalog checkbox changes */
   readonly onToggleCatalog: (name: CatalogName) => void;
 }
 

@@ -5,13 +5,6 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
-/**
-## Props
-
-```ts
-interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {}
-```
-*/
 interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> { }
 
 const BASE_CLASSES = [
