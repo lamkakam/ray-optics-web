@@ -12,12 +12,6 @@ def get_first_order_data(opm: OpticalModel) -> dict[str, float]:
 
     Extract first-order paraxial data from a RayOptics `OpticalModel`.
 
-    ## Exports
-
-    ```python
-    def get_first_order_data(opm: OpticalModel) -> dict[str, float]: ...
-    ```
-
     ## Behavior
 
     - Reads `opm["parax_model"].opt_model["analysis_results"]["parax_data"].fod`.

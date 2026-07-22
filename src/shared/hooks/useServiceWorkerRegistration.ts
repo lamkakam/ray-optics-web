@@ -5,8 +5,7 @@
 
 - `useEffect` from React.
 - `navigator.serviceWorker` browser API.
-- `process.env.NEXT_PUBLIC_BASE_PATH` — Next.js public env var for the app's base path (e.g. `"/ray-optics-web"` on GitHub Pages).
-*/
+- `process.env.NEXT_PUBLIC_BASE_PATH` — Next.js public env var for the app's base path (e.g. `"/ray-optics-web"` on GitHub Pages).*/
 import { useEffect } from "react";
 
 /**
@@ -37,13 +36,6 @@ export async function registerServiceWorker(): Promise<void> {
 ## Purpose
 
 Register the Pyodide service worker (file at`public/pyodide-sw.js`) so that the browser caches the Pyodide WASM bundle and the wheels of `rayoptics_web_utils` (local package in `python/`), `rayoptics` and its deps.
-
-## Exports
-
-| Export | Kind | Description |
-|--------|------|-------------|
-| `registerServiceWorker` | `async function` | Standalone async function that performs the registration. Can be called outside of React if needed. |
-| `useServiceWorkerRegistration` | React hook | Calls `registerServiceWorker()` once on mount via `useEffect`. Returns `void`. |
 
 ## Behavior
 
@@ -104,8 +96,7 @@ async function setupApp() {
   await registerServiceWorker();
   // Service worker is now registered
 }
-```
-*/
+```*/
 export function useServiceWorkerRegistration(): void {
   useEffect(() => {
     registerServiceWorker();

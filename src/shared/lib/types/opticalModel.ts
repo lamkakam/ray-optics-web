@@ -18,8 +18,7 @@
 - `clear_aperture`, when present on a surface, records the clear aperture shape and signed X/Y offsets. Circular and annular outer clear aperture radii are derived from `semiDiameter`; annular clear apertures additionally store `obstructionRadius`; rectangular clear apertures store `xHalfWidth`, `yHalfWidth`, and `rotation`.
 - `edge_aperture`, when present on a surface, records an explicit circular edge aperture radius or rectangular half widths, rotation, and signed X/Y offsets. When omitted, the edge aperture follows the clear aperture.
 - `OpticalModel` extends `Surfaces`, so all surface data is directly on the model object.
-- `setAutoAperture: "autoAperture"` tells RayOptics to recompute semi-diameters; `"manualAperture"` preserves them.
-*/
+- `setAutoAperture: "autoAperture"` tells RayOptics to recompute semi-diameters; `"manualAperture"` preserves them.*/
 import type { SetAutoApertureFlag } from "@/shared/lib/utils/apertureFlag";
 export type { SetAutoApertureFlag };
 
@@ -145,15 +144,6 @@ export interface Surfaces {
 
 Defines core TypeScript domain types for the optical model, including system specifications, surfaces, and aspherical surface configuration. Feature-owned analysis, focusing, Seidel, Zernike, and glass-map payload types live under their owning feature directories.
 
-## Exports
-- `DecenterConfig`: shared tilt/decenter configuration for image and surface rows.
-- `DiffractionGrating`: surface diffraction grating configuration with `lpmm` and integer `order`.
-- `AnnularAperture`: annular clear aperture shape data with `shape: "annular"` and `obstructionRadius`.
-- `RectangularAperture`: rectangular aperture shape data with `shape: "rectangular"`, `xHalfWidth`, `yHalfWidth`, and `rotation`.
-- `ClearAperture`: clear aperture configuration. Supports circular, annular, and rectangular clear apertures; all include `offsetX` and `offsetY`.
-- `EdgeAperture`: edge aperture configuration. Supports circular and rectangular explicit edge apertures; all include `offsetX` and `offsetY`.
-- `OpticalModel`: interface for all information (system specs, surfaces, and aperture flag) needed for RayOptics. Includes `setAutoAperture: SetAutoApertureFlag`.
-
 ## Edge Cases / Error Handling
 
 - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`, and has a maximum of 10 coefficients.
@@ -187,8 +177,7 @@ const firstOrderData = await proxy.getFirstOrderData(model);
 const layoutImage = await proxy.plotLensLayout(model, false);
 ```
 
-Imported by modules that need the core optical model contract. Types are validated by `lib/importSchema.ts` for uploaded files.
-*/
+Imported by modules that need the core optical model contract. Types are validated by `lib/importSchema.ts` for uploaded files.*/
 export interface OpticalModel extends Surfaces {
   setAutoAperture: SetAutoApertureFlag;
   specs: OpticalSpecs;

@@ -42,12 +42,6 @@ def get_lsa_data(opm: OpticalModel, num_points: int = 21) -> list[dict]:
 
     Return longitudinal spherical aberration plot data for the on-axis field across all configured wavelengths.
 
-    ## Exports
-
-    ```python
-    def get_lsa_data(opm: OpticalModel, num_points: int = 21) -> list[dict]: ...
-    ```
-
     ## Behavior
 
     - Samples normalized tangential pupil coordinate `rho` from `0.01` to `1.0`.

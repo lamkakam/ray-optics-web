@@ -1,11 +1,6 @@
 /**
 # `features/optimization/lib/operandMetadata.ts`
 
-## Exports
-
-- `OPTIMIZATION_OPERAND_METADATA` — ordered list of all supported operand kinds
-- `getOptimizationOperandMetadata(kind)` — lookup helper by kind
-
 ## Key Conventions
 
 - `label` is the user-facing operand name shown in selectors and evaluation tables.
@@ -16,8 +11,7 @@
 - `expandsByFieldAndWavelength` determines whether store config assembly attaches field and wavelength weight arrays.
 - OPD Difference variants are targeted scalar operands with default target `"0"` and field/wavelength expansion. The combined operand keeps both fan axes, while `opd_difference_tangential` and `opd_difference_sagittal` select one axis.
 - Ray Fan variants are target-less vector operands with default `options.num_rays = 21` and field/wavelength expansion. The combined operand contributes both axes, while `ray_fan_tangential` and `ray_fan_sagittal` select one axis.
-- `getNominalResidualCountPerSample(options)` is used for deterministic `lm` pre-validation. `ray_fan` contributes `num_rays * 2` residuals per field/wavelength, while axis-specific Ray Fan operands contribute `num_rays`.
-*/
+- `getNominalResidualCountPerSample(options)` is used for deterministic `lm` pre-validation. `ray_fan` contributes `num_rays * 2` residuals per field/wavelength, while axis-specific Ray Fan operands contribute `num_rays`.*/
 import type { OptimizationOperandKind } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { OptimizationOperandMetadata } from "@/features/optimization/types/optimizationOperandTypes";
 
@@ -111,8 +105,7 @@ const OPTIMIZATION_OPERAND_METADATA_BY_KIND = new Map(
 /**
 ## Purpose
 
-Defines the shared optimization operand metadata consumed by the store and operand/evaluation UI.
-*/
+Defines the shared optimization operand metadata consumed by the store and operand/evaluation UI.*/
 export function getOptimizationOperandMetadata(kind: OptimizationOperandKind): OptimizationOperandMetadata {
   const metadata = OPTIMIZATION_OPERAND_METADATA_BY_KIND.get(kind);
   if (metadata === undefined) {

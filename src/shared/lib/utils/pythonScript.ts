@@ -7,16 +7,6 @@ Builds the Python source code string that reconstructs the definition of an opti
 
 Special-material recognition and Python-variable mappings are imported from `specialMaterials.ts` so other UI behavior uses the same definitions. Export-only aperture helper definitions are imported from the generated `generated/pythonExportApertureHelpers.ts` string, which is produced automatically from the Python helper sources under `src/python/src/rayoptics_web_utils/aperture/`.
 
-## Exports
-
-```ts
-export function buildOpticalModelScript(opticalModel: OpticalModel): string;
-
-export function buildScript(opticalModel: OpticalModel, computation: (opm: string) => string): string;
-
-export function buildExportScript(opticalModel: OpticalModel): string;
-```
-
 ## Behavior
 
 ## Edge Cases / Error Handling
@@ -55,8 +45,7 @@ const modelDef = buildOpticalModelScript(model);
 ```
 
 - `buildScript` is called by `workers/pyodide.worker.ts` to produce combined model + computation Python code.
-- `buildExportScript` is called by "Export to notebook" UI action to generate copyable snippets.
-*/
+- `buildExportScript` is called by "Export to notebook" UI action to generate copyable snippets.*/
 
 import type { OpticalModel, AsphericalPolynomialCoeffs, ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalModel";
 import { pythonExportApertureHelpers } from "./generated/pythonExportApertureHelpers";

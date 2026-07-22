@@ -14,12 +14,6 @@ class Annular(Aperture):
 
     Provides `Annular`, a RayOptics `Aperture` subclass for circular clear apertures with a circular central obstruction.
 
-    ## Exports
-
-    ```python
-    class Annular(Aperture): ...
-    ```
-
     ## Behavior
 
     - Constructor accepts `radius`, `obstruction_radius`, `x_offset`, `y_offset`, and `rotation`.

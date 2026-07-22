@@ -5,12 +5,6 @@
 
 Zustand slice for managing the optical specifications configuration form. Holds aperture, field, and wavelength settings as flat state and provides conversion helpers to/from `OpticalSpecs`.
 
-## Exports
-
-- `PupilSpace`, `PupilType`, `FieldSpace`, `FieldType`, `WavelengthWeights`, `ReferenceIndex` — type aliases derived from `OpticalSpecs` for use in form components.
-- `SpecsConfiguratorState` — interface describing all state fields and actions.
-- `createSpecsConfiguratorSlice` — `StateCreator<SpecsConfiguratorState>` to be composed into a combined store.
-
 ## State
 
 | Field | Type | Default |
@@ -101,8 +95,7 @@ export default function SpecsConfiguratorPage() {
 }
 ```
 
-Form components receive state slices and actions as props via DI to keep them testable.
-*/
+Form components receive state slices and actions as props via DI to keep them testable.*/
 import type { StateCreator } from "zustand";
 import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
 import { lookupWavelength } from "@/shared/lib/data/fraunhoferLines";

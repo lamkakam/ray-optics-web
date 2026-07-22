@@ -4,19 +4,6 @@
 
 Implements ordering-agnostic Zernike polynomial evaluation and least-squares fitting against OPD grids from RayOptics `RayGrid`. The caller supplies the ordered `(n, m)` term list; TypeScript owns Noll/Fringe ordering definitions.
 
-## Exports
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `zernike_radial` | `(n: int, m: int, rho: NDArray) -> NDArray` | Radial polynomial R_n^m(rho) |
-| `zernike_polynomial` | `(n: int, m: int, rho: NDArray, theta: NDArray) -> NDArray` | Unnormalized Zernike polynomial for an explicit `(n, m)` term |
-| `noll_norm_factor` | `(n: int, m: int) -> float` | Noll normalization factor N_n^m = sqrt((2 - δ_{m,0})(n + 1)) |
-| `unnormalized_to_rms_normalized` | `(coeffs: list[float], zernike_terms: list[tuple[int, int]]) -> list[float]` | Convert unnormalized coefficients to RMS-normalized using the matching explicit terms |
-| `fit_zernike` | `(opd_grid: NDArray, zernike_terms: list[tuple[int, int]]) -> NDArray` | Least-squares fit of explicit Zernike terms to a (3, N, N) OPD grid |
-| `_scale_opd_grid_to_wavelength` | `(opd_grid: NDArray, opm, wavelength_nm: float) -> NDArray` | Convert OPD values from central-wavelength waves to traced-wavelength waves |
-| `_extract_exit_pupil_grid` | `(rg, opm, wavelength_nm: float) -> NDArray` | Extract pre-computed exit pupil coords from RayGrid's `upd_grid` and build (3, N, N) grid with corrected OPD |
-| `get_zernike_coefficients` | `(opm, field_index, wvl_index, zernike_terms, image_point="chief_ray", num_rays=64) -> dict` | High-level: compute Zernike coefficients for a field/wavelength using explicit ordered terms |
-
 ## Conventions
 
 - **Term ownership**: Python receives an explicit ordered list of `(n, m)` terms. It does not know about Noll or Fringe index conversion.
@@ -102,8 +89,7 @@ All functions are called from the Pyodide worker (`workers/pyodide.worker.ts`) a
 Zernike polynomial fitting for wavefront analysis.
 
 Fits caller-provided Zernike polynomial terms against OPD grids from RayOptics
-RayGrid.
-"""
+RayGrid."""
 
 import math
 

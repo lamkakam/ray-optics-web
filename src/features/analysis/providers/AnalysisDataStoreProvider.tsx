@@ -27,14 +27,6 @@ export interface AnalysisDataStoreProviderProps {
 
 Provides a single `StoreApi<AnalysisDataState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
 
-## Exports
-
-### `AnalysisDataStoreProvider`
-```tsx
-<AnalysisDataStoreProvider>{children}</AnalysisDataStoreProvider>
-```
-Creates the store once (singleton) and supplies it to all descendants.
-
 ## Usage
 
 In `app/layout.tsx` — mount the provider once:
@@ -62,8 +54,7 @@ render(
     <MyComponent />
   </AnalysisDataStoreContext.Provider>
 );
-```
-*/
+```*/
 export const AnalysisDataStoreProvider: React.FC<AnalysisDataStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

@@ -7,12 +7,6 @@
 
 Zustand store for managing the lens editor grid and its associated modals. Holds the array of `GridRow` objects displayed in the surface table and coordinates selection, insertion, deletion, and modal open/close state.
 
-## Exports
-
-- `LensEditorState` — interface describing all state fields and actions.
-- `LensEditorOptimizationSyncPolicy` — origin hint for prescription mutations that tells Optimization whether to reset or preserve prescription variable/pickup modes.
-- `createLensEditorSlice` — `StateCreator<LensEditorState>` for composition.
-
 ## State
 
 | Field | Type | Default |
@@ -74,8 +68,7 @@ Zustand store for managing the lens editor grid and its associated modals. Holds
 
 ## Usages
 
-Used through `LensEditorStoreProvider` and `useLensEditorStore()` rather than as a standalone exported hook from this file.
-*/
+Used through `LensEditorStoreProvider` and `useLensEditorStore()` rather than as a standalone exported hook from this file.*/
 import { type StateCreator } from "zustand";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";

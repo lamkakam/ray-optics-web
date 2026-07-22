@@ -28,11 +28,6 @@ The AG Grid selection column and unknown future columns are intentionally ignore
 | `setFilterModel(model)` | Stores only filter entries whose key is an allowed data column. |
 | `resetTableState()` | Clears both sort and filter state. |
 
-## Export
-- `createImportCustomGlassSlice` - `StateCreator<ImportCustomGlassStore>` for creating the feature store.
-- `IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS` - readonly tuple of AG Grid data-column IDs.
-- `ImportCustomGlassDataColumnId` - narrowed union of supported data-column IDs.
-- `ImportCustomGlassStore` - combined state and actions type.
 */
 import type { ColumnState } from "ag-grid-community";
 import { type StateCreator } from "zustand";

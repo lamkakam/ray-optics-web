@@ -5,35 +5,6 @@
 
 Compiles an AJV JSON Schema validator for `OpticalModel` and exports it for use at import-time boundaries (e.g. when a user uploads a lens JSON file).
 
-## Exports
-
-```ts
-export { validateImportedCustomGlassData, validateImportedLensData };
-// type: ValidateFunction<OpticalModel> (AJV compiled validator)
-```
-
-`validateImportedLensData` is an AJV compiled validator function with the signature:
-
-```ts
-(data: unknown) => data is OpticalModel
-```
-
-When validation fails, `validateImportedLensData.errors` is set to an array of AJV `ErrorObject`s.
-
-`validateImportedCustomGlassData` validates custom glass JSON imports shaped as:
-
-```json
-{
-  "version": "1.0",
-  "Custom": {
-    "CUSTOM_LABEL": {
-      "type": "tabulated",
-      "data": [[587.56, 1.5168]]
-    }
-  }
-}
-```
-
 ## Behavior
 
 - The validator enforces the full nested structure of `OpticalModel`.
@@ -98,8 +69,7 @@ async function handleImport(file: File) {
 }
 ```
 
-Called when a user imports a lens JSON file before passing to Zustand store or Pyodide worker. Check return value and display `.errors` on failure.
-*/
+Called when a user imports a lens JSON file before passing to Zustand store or Pyodide worker. Check return value and display `.errors` on failure.*/
 import Ajv from "ajv";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 

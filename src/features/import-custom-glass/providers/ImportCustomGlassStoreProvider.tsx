@@ -26,11 +26,6 @@ export interface ImportCustomGlassStoreProviderProps {
 ## Purpose
 Provides one `StoreApi<ImportCustomGlassStore>` instance through React context. The provider is mounted in `app/layout.tsx` so readonly custom-glass table sort and filter state persists while the app root remains mounted.
 
-## Exports
-
-### `ImportCustomGlassStoreProvider`
-Creates the store once per provider mount and supplies it to descendants.
-
 ## Usage
 Mounted at the app root beside the other feature store providers:
 
@@ -42,8 +37,7 @@ Mounted at the app root beside the other feature store providers:
     </OptimizationStoreProvider>
   </ImportCustomGlassStoreProvider>
 </GlassMapStoreProvider>
-```
-*/
+```*/
 export function ImportCustomGlassStoreProvider({
   children,
 }: ImportCustomGlassStoreProviderProps) {

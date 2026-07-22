@@ -5,11 +5,6 @@
 
 Zustand store for managing the lens layout image and its loading state. Holds the base64-encoded lens layout image and a loading flag, following the same pattern as `analysisPlotStore`.
 
-## Exports
-
-- `LensLayoutImageState` — interface describing all state fields and actions.
-- `createLensLayoutImageSlice` — `StateCreator<LensLayoutImageState>` for composition into the provider-backed store.
-
 ## State
 
 | Field | Type | Default |
@@ -45,8 +40,7 @@ function LensLayoutSection() {
     <img src={`data:image/png;base64,${layoutImage}`} alt="Lens layout" />
   ) : null;
 }
-```
-*/
+```*/
 import type { StateCreator } from "zustand";
 
 export interface LensLayoutImageState {

@@ -1,16 +1,5 @@
 /**
-# `shared/lib/data/fraunhoferLines.ts`
-
-## Exports
-
-- `type FraunhoferSymbol`: string literals. Case sensitive
-
-- `interface FraunhoferLine`
-
-- `const FRAUNHOFER_LINES: readonly FraunhoferLine[]`: Fraunhofer lines sorted from longest to shortest wavelength
-
-- `function lookupWavelength(symbol: FraunhoferSymbol): number`: Look up a wavelength (nm) by Fraunhofer line symbol. Case-sensitive.
-*/
+# `shared/lib/data/fraunhoferLines.ts`*/
 export type FraunhoferSymbol = "t" | "s" | "A'" | "r" | "C" | "C'" | "D" | "d" | "e" | "F" | "F'" | "g" | "h" | "i";
 
 export interface FraunhoferLine {
@@ -69,8 +58,7 @@ const wavelengths = {
   ],
   referenceIndex: 1, // d-line as reference
 };
-```
-*/
+```*/
 export function lookupWavelength(symbol: FraunhoferSymbol): number {
   return wavelengthMap.get(symbol)!;
 }

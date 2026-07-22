@@ -5,11 +5,6 @@
 
 Shared client-side validation for prescription media before worker-backed lens update or optimization operations use an `OpticalModel`.
 
-## Exports
-
-- `getMissingPrescriptionGlasses(surfaces, lookupMaps)` returns a deduplicated list of display labels for glasses that are present in an `OpticalModel`/`Surfaces` prescription but absent from the loaded `GlassLookupMaps`.
-- `formatMissingGlassMessage(missingGlasses)` returns the standard user-facing validation message, or `undefined` when there are no missing glasses.
-
 ## Behavior
 
 - Validates the object medium and each sequential surface medium. The image row is not validated because it has no medium.
@@ -28,8 +23,7 @@ Shared client-side validation for prescription media before worker-backed lens u
 
 The default formatted message is:
 
-`Unknown glass in prescription: <missing glasses>. Select a glass that exists in the loaded glass catalog or add it as a custom glass.`
-*/
+`Unknown glass in prescription: <missing glasses>. Select a glass that exists in the loaded glass catalog or add it as a custom glass.`*/
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { OpticalModel, Surfaces } from "@/shared/lib/types/opticalModel";
 

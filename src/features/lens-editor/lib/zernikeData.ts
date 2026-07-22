@@ -6,32 +6,6 @@
 Runtime utilities for rendering Zernike polynomial tables in the lens editor.
 This module owns Noll and Fringe ordering definitions for both UI display and worker term-list generation.
 
-## Exports
-
-### Constants
-
-| Export | Type | Description |
-|--------|------|-------------|
-| `NUM_NOLL_TERMS` | `56` | Number of Noll-ordered terms (n=0..10). |
-| `NUM_FRINGE_TERMS` | `37` | Number of Fringe-ordered terms to display. |
-| `CLASSICAL_NAMES` | `Record<string, string>` | Maps `"${n},${m}"` keys to human-readable names. Covers all 56 Noll (n,m) pairs. |
-
-### Types
-
-| Export | Type | Description |
-|--------|------|-------------|
-| `ZernikeTerm` | `readonly [number, number]` | Explicit `(n, m)` term passed to Python for fitting. |
-
-### Functions
-
-| Function | Signature | Description |
-|----------|-----------|-------------|
-| `nollToNm` | `(j: number) => [number, number]` | Converts Noll index j (1-based) to radial order n and azimuthal frequency m. |
-| `fringeToNm` | `(j: number) => [number, number]` | Converts Fringe (University of Arizona) index j (1-based) to (n, m). |
-| `zernikeTermsForOrdering` | `(ordering: ZernikeOrdering, numTerms: number) => readonly ZernikeTerm[]` | Builds the explicit ordered `(n, m)` term list for the worker to pass to Python. |
-| `zernikeNotation` | `(n: number, m: number) => string` | Returns MathJax-compatible LaTeX string `\(Z_{n}^{m}\)`. |
-| `classicalName` | `(n: number, m: number) => string` | Returns the classical name for a Zernike polynomial by (n, m), or `""` when no name is defined. |
-
 ## Usage
 
 ```ts
@@ -60,8 +34,7 @@ function renderZernikeTable(zernikeData: ZernikeData) {
 
 - Types for worker payloads and ordering options live in `features/lens-editor/types/zernikeData.ts`.
 - Python Zernike code receives only explicit term lists; ordering names remain a TypeScript/UI concern.
-- This module intentionally contains runtime values and functions plus the `ZernikeTerm` tuple type used by those helpers.
-*/
+- This module intentionally contains runtime values and functions plus the `ZernikeTerm` tuple type used by those helpers.*/
 import type { ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 
 export const NUM_NOLL_TERMS = 56;

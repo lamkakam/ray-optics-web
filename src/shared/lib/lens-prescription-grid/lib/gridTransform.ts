@@ -5,14 +5,6 @@
 
 Converts between the domain `Surfaces` model and the flat `GridRow[]` representation used by the LensEditor AG Grid, and generates stable row IDs for surface rows.
 
-## Exports
-
-```ts
-function generateRowId(): string;
-function surfacesToGridRows(surfaces: Surfaces): GridRow[];
-function gridRowsToSurfaces(rows: GridRow[]): Surfaces;
-```
-
 ## Behavior
 
 ## Dependencies
@@ -50,8 +42,7 @@ const result = await proxy.getFirstOrderData(updatedModel);
 ```
 
 - `surfacesToGridRows` is called when loading a model into the LensEditor.
-- `gridRowsToSurfaces` is called when the user commits an edit before dispatching to the Pyodide worker.
-*/
+- `gridRowsToSurfaces` is called when the user commits an edit before dispatching to the Pyodide worker.*/
 import type { Surfaces, Surface } from "@/shared/lib/types/opticalModel";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 

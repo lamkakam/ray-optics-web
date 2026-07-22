@@ -1,14 +1,6 @@
 /**
 # `shared/lib/chart-formatting/formatPlotValue.ts`
 
-## Export
-
-```ts
-const MINIMUM_NON_ZERO_PLOT_VALUE: number
-const MINIMUM_DECIMAL_PLOT_VALUE: number
-function formatPlotValue(value: number): string
-function formatLogScalePlotValue(value: number): string
-```
 */
 export const MINIMUM_NON_ZERO_PLOT_VALUE = 1e-9;
 export const MINIMUM_DECIMAL_PLOT_VALUE = 1e-3;

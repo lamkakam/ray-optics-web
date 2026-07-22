@@ -41,11 +41,7 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
 
     Return spot-diagram point clouds for all wavelengths at one field.
 
-    ## Exports
-
-    ```python
-    def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]: ...
-    ```"""
+    """
     sm = opm.seq_model
     afocal = is_afocal_image_space(opm)
     references = {}

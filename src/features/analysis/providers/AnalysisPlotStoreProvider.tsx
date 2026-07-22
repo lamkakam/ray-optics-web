@@ -27,14 +27,6 @@ export interface AnalysisPlotStoreProviderProps {
 
 Provides a single `StoreApi<AnalysisPlotState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
 
-## Exports
-
-### `AnalysisPlotStoreProvider`
-```tsx
-<AnalysisPlotStoreProvider>{children}</AnalysisPlotStoreProvider>
-```
-Creates the store once (singleton) and supplies it to all descendants.
-
 ## Usage
 
 In `app/layout.tsx` — mount the provider once:
@@ -62,8 +54,7 @@ render(
     <MyComponent />
   </AnalysisPlotStoreContext.Provider>
 );
-```
-*/
+```*/
 export const AnalysisPlotStoreProvider: React.FC<AnalysisPlotStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

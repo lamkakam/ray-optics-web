@@ -1,17 +1,9 @@
 /**
 # `shared/components/providers/ThemeProvider/ThemeProvider.tsx`
 
-## Exports
-
-```ts
-export function ThemeProvider({ children }: { children: React.ReactNode }): JSX.Element
-export function useTheme(): { theme: Theme; setTheme: (newTheme: Theme) => void }
-```
-
 ## Internal State
 
-- `theme: Theme` — the active theme, initialized by `getInitialTheme()` which reads `localStorage` then falls back to the OS preference.
-*/
+- `theme: Theme` — the active theme, initialized by `getInitialTheme()` which reads `localStorage` then falls back to the OS preference.*/
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
@@ -86,8 +78,7 @@ export function ThemeToggle() {
     </button>
   );
 }
-```
-*/
+```*/
 export function ThemeProvider({ children }: { readonly children: React.ReactNode }) {
   const [theme, _setTheme] = useState<Theme>(getInitialTheme);
 

@@ -6,13 +6,10 @@ Client-side Pyodide worker loader for frontend-ready glass catalog data.
 
 The loader only deduplicates concurrent worker requests. It does not retain completed catalog data or settled errors. Mutable catalog state belongs to `GlassMapStore.catalogsData` after a successful load.
 
-## Exports
-
 ## Behaviour
 - Uses a module-level `WeakMap<PyodideWorkerAPI, Promise<GlassCatalogsLoadResult>>`
 - Provides no `peek` or Suspense `read` API because settled mutable data is intentionally not cached here
-- Leaves lookup-map derivation and durable catalog ownership to `features/glass-map/stores/glassMapStore`
-*/
+- Leaves lookup-map derivation and durable catalog ownership to `features/glass-map/stores/glassMapStore`*/
 "use client";
 
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";

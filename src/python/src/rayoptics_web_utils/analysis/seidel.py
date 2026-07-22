@@ -39,12 +39,7 @@ def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel
 
     Extract third-order Seidel aberration data from a RayOptics `OpticalModel`.
 
-    ## Exports
-
-    ```python
-    key_of_3rd_order_seidel_data = Literal["surfaceBySurface", "transverse", "wavefront", "curvature"]
-    def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel_data, dict]: ...
-    ```"""
+    """
     to_pkg = compute_third_order(opm)
     fod = opm["analysis_results"]["parax_data"].fod
     wvls = opm["optical_spec"]["wvls"]

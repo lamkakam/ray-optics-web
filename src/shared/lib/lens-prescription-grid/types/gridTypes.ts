@@ -5,19 +5,6 @@
 
 Defines the type used to represent rows in the LensEditor AG Grid, covering the object plane, optical surfaces, and the image plane.
 
-## Exports
-
-- `const OBJECT_ROW_ID`
-- `const IMAGE_ROW_ID`
-- `type GridRow`
-
-### Constants
-
-| Constant | Value | Usage |
-|---|---|---|
-| `OBJECT_ROW_ID` | `"row-object"` | Stable row ID for the object row (used by AG Grid as `rowId`) |
-| `IMAGE_ROW_ID` | `"row-image"` | Stable row ID for the image row |
-
 ## Edge Cases / Error Handling
 
 - `id` is always present regardless of `kind`; it is used as the AG Grid row identifier.
@@ -59,8 +46,7 @@ function processRow(row: GridRow) {
       break;
   }
 }
-```
-*/
+```*/
 import type { Surface, Surfaces } from "@/shared/lib/types/opticalModel";
 
 export const OBJECT_ROW_ID = "row-object";

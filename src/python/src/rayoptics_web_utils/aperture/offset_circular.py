@@ -14,12 +14,6 @@ class OffsetCircular(Circular):
 
     RayOptics `Circular.point_inside()` already applies the aperture transform and remains correct for offset apertures. Its `edge_pt_target()` ignores offsets, so this subclass overrides only that method.
 
-    ## Exports
-
-    ```python
-    class OffsetCircular(Circular): ...
-    ```
-
     ## Behavior
 
     - Inherits construction, offset storage, transforms, and `point_inside()` from `rayoptics.elem.surface.Circular`.

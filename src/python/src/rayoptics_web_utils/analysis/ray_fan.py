@@ -39,11 +39,7 @@ def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
 
     Return transverse ray-fan plot data for all wavelengths at one field.
 
-    ## Exports
-
-    ```python
-    def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]: ...
-    ```"""
+    """
 
     afocal = is_afocal_image_space(opm)
     references = {}

@@ -23,12 +23,6 @@ class OffsetRotatedRectangular(Rectangular):
 
     Provides `OffsetRotatedRectangular`, a RayOptics `Rectangular` subclass for rectangular apertures whose point containment and ray-aiming edge targets must account for both offsets and rotation.
 
-    ## Exports
-
-    ```python
-    class OffsetRotatedRectangular(Rectangular): ...
-    ```
-
     ## Behavior
 
     - Constructor behavior is inherited from `rayoptics.elem.surface.Rectangular`; accepted keyword arguments include `x_half_width`, `y_half_width`, `x_offset`, `y_offset`, and `rotation`.

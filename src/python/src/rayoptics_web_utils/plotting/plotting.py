@@ -28,16 +28,6 @@ def plot_lens_layout(opm: OpticalModel, show_ray_fan_vs_wvls: bool = False, is_d
 
     Generates the remaining matplotlib-rendered image used by the web client: the optical lens layout. Analysis chart data is produced by `rayoptics_web_utils.analysis` and rendered in the frontend.
 
-    ## Exports
-
-    ```python
-    def plot_lens_layout(
-        opm: OpticalModel,
-        show_ray_fan_vs_wvls: bool = False,
-        is_dark: bool = False,
-    ) -> str: ...
-    ```
-
     `plot_lens_layout` returns a base64-encoded PNG string.
 
     ### `plot_lens_layout(opm, show_ray_fan_vs_wvls=False, is_dark=False)`

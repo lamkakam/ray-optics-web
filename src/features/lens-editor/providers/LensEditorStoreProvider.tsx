@@ -27,14 +27,6 @@ export interface LensEditorStoreProviderProps {
 
 Provides a single `StoreApi<LensEditorState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
 
-## Exports
-
-### `LensEditorStoreProvider`
-```tsx
-<LensEditorStoreProvider>{children}</LensEditorStoreProvider>
-```
-Creates the store once (singleton) and supplies it to all descendants.
-
 ## Usage
 
 In `app/layout.tsx` — mount the provider once:
@@ -62,8 +54,7 @@ render(
     <MyComponent />
   </LensEditorStoreContext.Provider>
 );
-```
-*/
+```*/
 export const LensEditorStoreProvider: React.FC<LensEditorStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

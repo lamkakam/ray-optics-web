@@ -5,33 +5,6 @@ In read-only auto mode the semi-diameter column shows its computed ID-keyed valu
 
 Shared column and AG Grid configuration for lens prescription grids.
 
-## Exports
-
-- `numberValueParser` — accepts finite decimal/scientific notation input and restores `oldValue` for blank or invalid input.
-- `lensPrescriptionGridDefaultColDef` — `{ sortable: false, suppressMovable: true }`.
-- `LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS` — shared initial widths for prescription columns:
-  - `surface`: `85`
-  - `index`: `80`
-  - `radiusOfCurvature`: `170`
-  - `thickness`: `130`
-  - `medium`: `115`
-  - `semiDiameter`: `115`
-  - `aperture`: `115`
-  - `aspherical`: `140`
-  - `decenter`: `135`
-  - `diffractionGrating`: `165`
-- `lensPrescriptionGridIndexColumnDef` — shared `Index` column config with `headerName: "Index"`, the shared `index` width, and `pinned: "left"`.
-- `createSurfaceColumn`
-- `createRadiusOfCurvatureColumn`
-- `createThicknessColumn`
-- `createMediumColumn`
-- `createSemiDiameterColumn`
-- `createApertureColumn`
-- `createAsphericalColumn`
-- `createDecenterColumn`
-- `createDiffractionGratingColumn`
-- `createLensPrescriptionCommonColumns`
-
 ## Design
 
 Builders accept `getGridRow(data)` so feature grids can adapt their own row model to `GridRow` without coupling `shared/` to feature state. Modal and edit behavior is injected through optional callbacks. When edit callbacks are omitted, numeric and select columns remain read-only.
@@ -42,8 +15,7 @@ Builders accept `getGridRow(data)` so feature grids can adapt their own row mode
 
 The modal-backed `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` builders apply shared initial widths and pass the row's actual optional config into the shared text action cells. `createApertureColumn` passes both `clear_aperture` and `edge_aperture` into `ApertureCell`, and its value getter returns the same formatted aperture label shown by the renderer. Aperture labels display `Default` only for default/omitted edge aperture plus omitted or centered circular clear aperture; otherwise they show compact clear aperture details and append explicit circular edge aperture details. The other cells display `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels while keeping the existing modal callbacks.
 
-`createSemiDiameterColumn` renders a blank value and is non-editable for surface rows whose clear aperture is rectangular, because rectangular clear apertures carry their own half-length and half-width instead of using `semiDiameter`.
-*/
+`createSemiDiameterColumn` renders a blank value and is non-editable for surface rows whose clear aperture is rectangular, because rectangular clear apertures carry their own half-length and half-width instead of using `semiDiameter`.*/
 "use client";
 
 import type { ColDef } from "ag-grid-community";

@@ -27,14 +27,6 @@ export interface LensLayoutImageStoreProviderProps {
 
 Provides a single `StoreApi<LensLayoutImageState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
 
-## Exports
-
-### `LensLayoutImageStoreProvider`
-```tsx
-<LensLayoutImageStoreProvider>{children}</LensLayoutImageStoreProvider>
-```
-Creates the store once (singleton) and supplies it to all descendants.
-
 ## Usage
 
 In `app/layout.tsx` — mount the provider once:
@@ -62,8 +54,7 @@ render(
     <MyComponent />
   </LensLayoutImageStoreContext.Provider>
 );
-```
-*/
+```*/
 export const LensLayoutImageStoreProvider: React.FC<LensLayoutImageStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

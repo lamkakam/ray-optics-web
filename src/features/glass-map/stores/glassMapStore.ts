@@ -33,11 +33,6 @@ interface GlassMapRouteIntent {
 | `upsertCustomGlasses(materialsData)` | Merge worker-returned user-defined glass data into `catalogsData.Custom` and rebuild lookup maps |
 | `deleteCustomGlasses(labels)` | Remove labels from `catalogsData.Custom`, rebuild lookup maps, and clear `selectedGlass` when its Custom entry was deleted |
 
-## Export
-- `createGlassMapSlice: StateCreator<GlassMapStore>` — use with `createStore<GlassMapStore>(createGlassMapSlice)` for the app-wide persistent store
-- `GlassMapStore = GlassMapState & GlassMapActions`
-- `GlassMapRouteIntent` — route-level input type used by `app/glass-map/page.tsx` and `GlassMapView.tsx`, but not stored in zustand
-
 ## Loading Ownership
 - `GlassMapStore` intentionally does not own catalog loading status or catalog loading errors.
 - `app/AppShell.tsx` owns preload status/error, keeps the initialization overlay visible while initial loading is pending, and keeps it visible with the local error if loading fails.

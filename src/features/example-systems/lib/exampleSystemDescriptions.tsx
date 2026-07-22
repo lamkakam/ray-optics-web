@@ -12,8 +12,7 @@ README-derived display descriptions for bundled example optical systems.
 ## Link Behavior
 
 - Source/reference links use a local `DescriptionExternalLink` wrapper around `ExternalLink` with `variant="description"`, so each link uses the description-sized external-link token, is underlined, theme-aware, and opens in a new tab with `rel="noopener noreferrer"`.
-- Links provide explicit `aria-label` values, including descriptive labels for visible text such as `Link`.
-*/
+- Links provide explicit `aria-label` values, including descriptive labels for visible text such as `Link`.*/
 import type { ComponentProps, ReactNode } from 'react';
 import { MathJax } from 'better-react-mathjax';
 import { ExternalLink, Paragraph } from '@/shared/components/primitives';
@@ -663,11 +662,7 @@ const DESCRIPTIONS_BY_NAME = {
   ),
 } satisfies Record<ExampleSystemName, ReactNode>;
 
-/**
-## Exports
-
-- `getExampleSystemDescription(exampleName)` accepts an `ExampleSystemName` and returns source summary text for the selected example.
-*/
+/***/
 export function getExampleSystemDescription(exampleName: ExampleSystemName): ReactNode {
   return DESCRIPTIONS_BY_NAME[exampleName];
 }

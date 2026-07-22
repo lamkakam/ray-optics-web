@@ -20,8 +20,7 @@ interface GlassCatalogContextValue {
 - `error` contains the AppShell-local preload failure message, if any
 - `isLoaded` is derived from AppShell-local preload status
 - `isLoading` is `true` while the shared shell preload is in flight before success or failure
-- `preload()` reuses the shared loader path, commits successful data to `GlassMapStore`, updates AppShell-local status/error, and returns the cached result when available
-*/
+- `preload()` reuses the shared loader path, commits successful data to `GlassMapStore`, updates AppShell-local status/error, and returns the cached result when available*/
 "use client";
 
 import React, { createContext, useContext } from "react";
@@ -46,15 +45,7 @@ interface GlassCatalogProviderProps {
 
 /**
 ## Purpose
-Client-only React context for app-wide glass catalog data. The provider does not fetch data itself; `AppShell` injects successful catalog data from `GlassMapStore` plus AppShell-local preload status/error so lens editor and glass map consume a shared context.
-
-## Exports
-- `GlassCatalogContext` — raw context, primarily for tests
-- `GlassCatalogProvider` — injects a prepared `GlassCatalogContextValue`
-- `useGlassCatalogs()` — throws outside the provider
-
-`GlassCatalogsLoadResult` is imported from `features/glass-map/lib/glassCatalogLoader`.
-*/
+Client-only React context for app-wide glass catalog data. The provider does not fetch data itself; `AppShell` injects successful catalog data from `GlassMapStore` plus AppShell-local preload status/error so lens editor and glass map consume a shared context.*/
 export function GlassCatalogProvider({ value, children }: GlassCatalogProviderProps) {
   return (
     <GlassCatalogContext.Provider value={value}>

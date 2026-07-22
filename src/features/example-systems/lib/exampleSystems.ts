@@ -5,16 +5,6 @@
 
 Provides a catalogue of complete definitions covering a wide variety of optical designs, exported as a keyed record for use in the system-selector UI.
 
-## Exports
-
-```ts
-const ExampleSystemList: Record<string, OpticalModel>;
-type ExampleSystemName = keyof typeof ExampleSystemList;
-```
-
-- `ExampleSystemList` is the unprefixed catalogue keyed by the canonical display names.
-- `ExampleSystemName` is the exact union of supported unprefixed example names.
-
 ## Edge Cases / Error Handling
 
 - The record is plain data — no lazy loading. All 23 models are in memory at module init time.
@@ -52,8 +42,7 @@ function SystemSelector() {
     </select>
   );
 }
-```
-*/
+```*/
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
 const commonWavelengthConfig: OpticalModel["specs"]["wavelengths"] = {

@@ -1,17 +1,6 @@
 /**
 # `features/optimization/stores/optimizationStore.ts`
 
-## Exports
-
-- `RadiusMode` — persisted variable/pickup mode per optimization target row
-- `RadiusModeDraft` — input payload used by `setRadiusMode` and `setThicknessMode`
-- `AsphereTermKey`, `AsphereMode`, `AsphereTermModeDraft`, `AsphereOptimizationState` — optimization-only asphere type + per-term mode state for each real surface
-- `OptimizationOperandRow` — editable operand row shape
-- `OptimizationPrescriptionSyncPolicy` — editor-sync option that either resets prescription variable/pickup modes or preserves them for Optimization-origin/focusing-origin prescription updates
-- `OptimizationState` — full slice interface
-- `hasNonZeroOptimizationContribution(config)` — pure helper that checks whether any built merit-function operand contributes a non-zero effective weight
-- `createOptimizationSlice` — `StateCreator<OptimizationState>`
-
 ## Key State
 
 - `optimizationModel` — page-local `OpticalModel` snapshot seeded from the editor
@@ -91,8 +80,7 @@
 - `syncFromOpticalModel()` clears `hasUnappliedOptimizationResult` when a normal editor sync replaces the Optimization-local snapshot through field, wavelength, or reset-policy prescription changes.
 - `syncFromOpticalModel()` preserves `hasUnappliedOptimizationResult` during Optimization-origin prescription syncs that use `prescriptionSyncPolicy: "preserveOptimizationModes"`; the apply path clears the marker explicitly after the editor has been updated.
 - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
-- `RadiusMode`, `RadiusModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.
-*/
+- `RadiusMode`, `RadiusModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.*/
 import { type StateCreator } from "zustand";
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
@@ -291,8 +279,7 @@ function getFactorWeights(factors?: ReadonlyArray<WeightedFactor>): number[] {
 /**
 ## Purpose
 
-Provider-backed Zustand slice for the optimization route. Owns page state including the page-local optical-model snapshot, algorithm inputs, field and wavelength weights, radius variable/pickup selections, operands, loading state, and store-backed modal state.
-*/
+Provider-backed Zustand slice for the optimization route. Owns page state including the page-local optical-model snapshot, algorithm inputs, field and wavelength weights, radius variable/pickup selections, operands, loading state, and store-backed modal state.*/
 export function hasNonZeroOptimizationContribution(
   config: Pick<OptimizationConfig, "merit_function">,
 ): boolean {

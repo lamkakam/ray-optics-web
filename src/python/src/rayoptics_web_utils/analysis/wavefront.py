@@ -39,11 +39,7 @@ def get_wavefront_data(
 
     Return wavefront map grid data for one field and wavelength.
 
-    ## Exports
-
-    ```python
-    def get_wavefront_data(opm: OpticalModel, fi: int, wvl_idx: int, image_point: str = "chief_ray", num_rays: int = 64) -> dict: ...
-    ```"""
+    """
     osp = opm.optical_spec
     central_wvl = osp["wvls"].central_wvl
     wavelength_nm = opm["optical_spec"]["wvls"].wavelengths[wvl_idx]

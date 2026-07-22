@@ -7,8 +7,7 @@
 - `grid`: two plotting regions
 - `xAxis`: paired `value` axes labeled `Pupil Radius (Relative)`
 - `yAxis`: paired `value` axes, with the first labeled `Transverse Aberr. (...)` and the second left unlabeled
-- `series`: two line series per wavelength, tangential first then sagittal
-*/
+- `series`: two line series per wavelength, tangential first then sagittal*/
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from "echarts/components";
@@ -167,19 +166,6 @@ function getAxisExtents(rayFanData: RayFanData): RayFanAxisExtents {
 
 Defines the Ray Fan ECharts configuration used by `RayFanChart`. This module owns ECharts registration, fixed layout constants, wavelength-based color assignment, and conversion from worker-provided ray-fan data into paired tangential/sagittal line series.
 
-## Exports
-
-```ts
-function buildRayFanChartOption(
-  rayFanData: RayFanData,
-  wavelengthLabels: readonly string[],
-  chartWidth: number,
-  chartHeight: number,
-  textColor: string,
-  isSmallScreen?: boolean,
-)
-```
-
 ## Key Behaviors
 
 - Registers the required ECharts line, grid, legend, title, tooltip, and canvas renderer modules once at module load.
@@ -200,8 +186,7 @@ function buildRayFanChartOption(
 - Computes independent y-axis min/max extents for Tangential and Sagittal data, assigns them to their matching subplots, and does not expose a UI toggle for shared y scaling.
 - Rounds computed axis min/max extents with the shared analysis plot-value formatter before assigning them to subplots, including clamping magnitudes smaller than `1e-9` to `0`.
 - Falls back to `[-1e-6, 1e-6]` for a subplot's y-axis extent when that subplot has no finite y values or only one constant finite y value.
-- Labels only the first y-axis. `arcsec` payloads use `Angular Aberr. (arcsec)`; finite transverse payloads retain `Transverse Aberr. (${unitY})`.
-*/
+- Labels only the first y-axis. `arcsec` payloads use `Angular Aberr. (arcsec)`; finite transverse payloads retain `Transverse Aberr. (${unitY})`.*/
 export function buildRayFanChartOption(
   rayFanData: RayFanData,
   wavelengthLabels: readonly string[],

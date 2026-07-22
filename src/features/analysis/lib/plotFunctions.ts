@@ -5,8 +5,6 @@
 
 Shared utility that maps `PlotType` values to Pyodide worker proxy calls and commits typed plot load results into the analysis plot store. Eliminates duplication between `LensEditor.tsx`, `applyExampleSystem.ts`, and `AnalysisPlotContainer.tsx`.
 
-## Exports
-
 ## Dependencies
 
 - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
@@ -21,8 +19,7 @@ Shared utility that maps `PlotType` values to Pyodide worker proxy calls and com
 - Used in `applyExampleSystem.ts` after bundled example-system computation completes.
 - Used in `AnalysisPlotContainer.tsx` when field/wavelength/plot-type changes.
 - `loadAnalysisPlot(...)` is the preferred API for any code path that needs the correct worker call for every `PlotType`.
-- `commitAnalysisPlotResult(...)` is the preferred API for storing every plot-store-backed `AnalysisPlotLoadResult`.
-*/
+- `commitAnalysisPlotResult(...)` is the preferred API for storing every plot-store-backed `AnalysisPlotLoadResult`.*/
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";

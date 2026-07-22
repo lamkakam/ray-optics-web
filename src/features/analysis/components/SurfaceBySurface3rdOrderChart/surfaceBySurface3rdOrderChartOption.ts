@@ -1,16 +1,6 @@
 /**
 # `features/analysis/components/SurfaceBySurface3rdOrderChart/surfaceBySurface3rdOrderChartOption.ts`
 
-## Export
-
-```ts
-function buildSurfaceBySurface3rdOrderChartOption(
-  surfaceBySurface3rdOrderData: SeidelSurfaceBySurfaceData,
-  chartWidth: number,
-  chartHeight: number,
-  textColor: string,
-)
-```
 */
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";

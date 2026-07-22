@@ -5,13 +5,6 @@
 
 Centralized design-token system for Tailwind CSS class strings. Provides a nested `componentTokens` object (aliased `cx`) consumed by all micro-components, ensuring consistent theming and a single place to update visual design.
 
-## Exports
-
-```ts
-export const globalTokens: { /* shared Tailwind classes + raw ECharts theme values *\/ }
-export const componentTokens: { /* nested per-component tokens *\/ }
-```
-
 ## Token Structure
 
 Tokens are organized as:
@@ -47,8 +40,7 @@ componentTokens
 
 ## Usages
 
-- Imported by every component in `components/micro/` and by `AnalysisPlotView` in `components/composite/`.
-*/
+- Imported by every component in `components/micro/` and by `AnalysisPlotView` in `components/composite/`.*/
 /**
  * Shared Tailwind class tokens — nested per-component design token system.
  *

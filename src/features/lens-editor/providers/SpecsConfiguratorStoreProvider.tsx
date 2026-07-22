@@ -27,14 +27,6 @@ export interface SpecsConfiguratorStoreProviderProps {
 
 Provides a single `StoreApi<SpecsConfiguratorState>` instance to the entire component tree via React context. Mounted once in `app/layout.tsx` so the store persists across all routes.
 
-## Exports
-
-### `SpecsConfiguratorStoreProvider`
-```tsx
-<SpecsConfiguratorStoreProvider>{children}</SpecsConfiguratorStoreProvider>
-```
-Creates the store once (singleton) and supplies it to all descendants.
-
 ## Usage
 
 In `app/layout.tsx` — mount the provider once:
@@ -62,8 +54,7 @@ render(
     <MyComponent />
   </SpecsConfiguratorStoreContext.Provider>
 );
-```
-*/
+```*/
 export const SpecsConfiguratorStoreProvider: React.FC<SpecsConfiguratorStoreProviderProps> = ({ children }) => {
   const [store, setStore] = useState<ContextValue>(undefined);
 

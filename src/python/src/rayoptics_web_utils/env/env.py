@@ -39,12 +39,6 @@ def init() -> dict[str, OpticalMedium]:
 
     Initialises the Pyodide runtime environment by stubbing unavailable GUI and networking modules, setting the matplotlib backend to `Agg`, and loading the bundled custom optical materials from YAML data.
 
-    ## Exports
-
-    ```python
-    def init() -> dict[str, OpticalMedium]: ...
-    ```
-
     Returns `{'caf2': <OpticalMedium>, 'fused_silica': <OpticalMedium>, 'water': <OpticalMedium>, 'd263teco': <OpticalMedium>}`.
 
     ## Usages

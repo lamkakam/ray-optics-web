@@ -42,19 +42,6 @@ def make_ray_grid(
 
     Provides a factory function `make_ray_grid` that centralises the construction of `RayGrid` instances with the standard aperture and vignetting settings used throughout the package. Eliminates direct multi-argument `RayGrid(...)` construction at call sites that need wavefront grids.
 
-    ## Exports
-
-    ```python
-    def make_ray_grid(
-        opm: OpticalModel,
-        fi: int,
-        wavelength_nm: float,
-        foc: float = 0.0,
-        num_rays: int = 64,
-        image_point: str = "chief_ray",
-    ) -> RayGrid: ...
-    ```
-
     ### `make_ray_grid(opm, fi, wavelength_nm, foc=0.0, num_rays=64)`
 
     Creates a `RayGrid` with `check_apertures=True` and `apply_vignetting=True` always set.

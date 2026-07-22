@@ -1,14 +1,5 @@
 /**
-# `features/analysis/lib/analysisChartPalette/analysisChartPalette.ts`
-
-## Exports
-
-```ts
-const ANALYSIS_HEATMAP_COLOR_PALETTE: readonly string[]
-
-function interpolateAnalysisHeatmapColor(normalizedValue: number): readonly [number, number, number, number]
-```
-*/
+# `features/analysis/lib/analysisChartPalette/analysisChartPalette.ts`*/
 export const ANALYSIS_HEATMAP_COLOR_PALETTE = [
   "#5b2a86",
   "#5a3d9a",
@@ -51,8 +42,7 @@ Exports the shared 11-color Viridis-derived palette used by analysis heatmap-sty
 - Imported by `DiffractionPsfChart.tsx` and `diffractionPsfDeckData.ts`.
 - Imported by `spotDiagramChartOption.ts`.
 - Imported by `rayFanChartOption.ts`.
-- Imported by `opdFanChartOption.ts`.
-*/
+- Imported by `opdFanChartOption.ts`.*/
 export function interpolateAnalysisHeatmapColor(
   normalizedValue: number,
 ): readonly [number, number, number, number] {

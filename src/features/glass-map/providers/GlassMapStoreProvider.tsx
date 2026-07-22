@@ -30,14 +30,6 @@ export interface GlassMapStoreProviderProps {
 
 Provides a single `StoreApi<GlassMapStore>` instance to the app tree via React context. The provider creates the store once per mount so glass-map state persists across route switches.
 
-## Exports
-
-### `GlassMapStoreProvider`
-```tsx
-<GlassMapStoreProvider>{children}</GlassMapStoreProvider>
-```
-Creates the store once per provider mount and supplies it to descendants.
-
 ## Usage
 
 In `app/layout.tsx` — mount the provider once:
@@ -66,8 +58,7 @@ render(
     <GlassMapView proxy={...} isReady={...} />
   </GlassMapStoreContext.Provider>
 );
-```
-*/
+```*/
 export const GlassMapStoreProvider: React.FC<GlassMapStoreProviderProps> = ({
   children,
 }) => {

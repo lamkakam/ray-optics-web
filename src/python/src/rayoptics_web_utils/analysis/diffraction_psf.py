@@ -80,19 +80,6 @@ def get_diffraction_psf_data(
 
     Return diffraction PSF image-plane axes and intensity grid for one field and wavelength.
 
-    ## Exports
-
-    ```python
-    def get_diffraction_psf_data(
-        opm: OpticalModel,
-        fi: int,
-        wvl_idx: int,
-        image_point: str = "chief_ray",
-        num_rays: int = 64,
-        max_dims: int = 256,
-    ) -> dict: ...
-    ```
-
     ## Behavior
 
     - Produces the diffraction intensity distribution formed from the pupil wavefront error for one field point and one wavelength.

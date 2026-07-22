@@ -7,101 +7,6 @@ Pyodide module worker that runs RayOptics computations off the main thread. Load
 
 Each exported function (except `init`) is **stateless**: it receives an `OpticalModel`, builds the Python `opm` locally in a single `runPython` call (using `buildScript` from `lib/pythonScript`), runs the computation, and returns the result. No global optical-model state persists between calls.
 
-## Exports
-
-### Public API (Comlink)
-
-```ts
-interface InitProgress {
-  readonly value: number;
-  readonly status: string;
-}
-
-export async function init(onProgress?: (progress: InitProgress) => void | Promise<void>): Promise<void>
-export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>
-export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>
-export async function getRayFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<RayFanData>
-export async function getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<OpdFanData>
-export async function getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
-export async function getFieldCurvatureData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData>
-export async function getAstigmatismCurveData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<AstigmatismCurveData>
-export async function getLSAData(opticalModel: OpticalModel): Promise<LongitudinalSphericalAberrationData>
-export async function getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, imagePoint?: ImagePoint, numRays?: number): Promise<WavefrontMapData>
-export async function getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>
-export async function getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<GeoPsfData>
-export async function getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
-export async function getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>
-export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>
-export async function getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>
-export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
-export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
-export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
-export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
-export async function getAllGlassCatalogsData(): Promise<CompleteGlassCatalogsData>
-export async function addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>
-export async function deleteUserDefinedGlasses(names: readonly string[]): Promise<void>
-export async function updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>
-export async function getUserDefinedGlasses(names: readonly string[]): Promise<UserDefinedMaterialsData>
-export async function canInterruptOptimization(): Promise<boolean>
-export async function requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>
-export async function evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, imagePoint?: ImagePoint): Promise<OptimizationReport>
-export async function optimizeOpm(
-  opticalModel: OpticalModel,
-  config: OptimizationConfig,
-  imagePoint?: ImagePoint,
-  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
-  runId?: string,
-  interruptBuffer?: SharedArrayBuffer,
-): Promise<OptimizationReport>
-```
-
-### Injectable Variants (for testing)
-
-```ts
-export async function _init(
-  runPython: (code: string) => Promise<unknown>,
-  wheelUrl: string,
-  onProgress?: (progress: InitProgress) => void | Promise<void>,
-): Promise<void>
-export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<Record<string, number>>
-export async function _plotLensLayout(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, isDark: boolean): Promise<string>
-export async function _getRayFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<RayFanData>
-export async function _getOpdFanData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<OpdFanData>
-export async function _getSpotDiagramData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<SpotDiagramData>
-export async function _getFieldCurvatureData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData>
-export async function _getAstigmatismCurveData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, wavelengthIndex: number): Promise<AstigmatismCurveData>
-export async function _getLSAData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<LongitudinalSphericalAberrationData>
-export async function _getWavefrontData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, imagePoint?: ImagePoint, numRays?: number): Promise<WavefrontMapData>
-export async function _getStrehlVsWavelengthData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>
-export async function _getGeoPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, numRays?: number): Promise<GeoPsfData>
-export async function _getDiffractionPSFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>
-export async function _getDiffractionMTFData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wavelengthIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>
-export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData>
-export async function _getZernikeCoefficients(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>
-export async function _focusByMonoRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
-export async function _focusByMonoStrehl(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
-export async function _focusByPolyRmsSpot(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
-export async function _focusByPolyStrehl(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>
-export async function _getAllGlassCatalogsData(runPython: (code: string) => Promise<unknown>): Promise<CompleteGlassCatalogsData>
-export async function _addUserDefinedGlasses(runPython: (code: string) => Promise<unknown>, materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>
-export async function _deleteUserDefinedGlasses(runPython: (code: string) => Promise<unknown>, names: readonly string[]): Promise<void>
-export async function _updateUserDefinedGlasses(runPython: (code: string) => Promise<unknown>, materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>
-export async function _getUserDefinedGlasses(runPython: (code: string) => Promise<unknown>, names: readonly string[]): Promise<UserDefinedMaterialsData>
-export async function _evaluateOptimizationProblem(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel, config: OptimizationConfig): Promise<OptimizationReport>
-export async function _optimizeOpm(
-  runPython: (code: string) => Promise<unknown>,
-  opticalModel: OpticalModel,
-  config: OptimizationConfig,
-  imagePoint?: ImagePoint,
-  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
-  runId?: string,
-  interruptBuffer?: SharedArrayBuffer,
-): Promise<OptimizationReport>
-export function _resetPyodideForTesting(): void
-export function _setPyodideForTesting(nextPyodide: unknown | undefined): void
-export function _getOptimizationInterruptStateForTesting(): { activeRunId?: string; interruptBuffer?: SharedArrayBuffer }
-```
-
 ## Initialization
 
 `init()` performs the following steps:
@@ -259,8 +164,7 @@ export function AnalysisPanel({ opticalModel }: { opticalModel: OpticalModel }) 
 }
 ```
 
-The worker is instantiated as a singleton by `hooks/usePyodide.ts` via Comlink RPC.
-*/
+The worker is instantiated as a singleton by `hooks/usePyodide.ts` via Comlink RPC.*/
 import { expose } from "comlink";
 import { loadPyodide, version } from "pyodide";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";

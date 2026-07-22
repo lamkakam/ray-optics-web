@@ -98,17 +98,7 @@ def get_strehl_vs_wavelength_data(
 
     Return chart-ready monochromatic Strehl ratio data sampled across wavelength for one field.
 
-    ## Exports
-
-    ```python
-    def get_strehl_vs_wavelength_data(
-        opm: OpticalModel,
-        fieldIndex: int,
-        image_point: str = "chief_ray",
-        wavelength_samples: int = 32,
-        num_rays: int = 21,
-    ) -> dict: ...
-    ```"""
+    """
     wavelengths = _wavelength_axis(opm["optical_spec"]["wvls"].wavelengths, wavelength_samples)
     strehl_values = []
     spectral_region, original_state = _set_analysis_wavelengths(opm, wavelengths)

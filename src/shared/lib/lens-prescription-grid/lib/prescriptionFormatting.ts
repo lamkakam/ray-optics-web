@@ -5,17 +5,6 @@
 
 Pure formatting helpers for lens prescription grid rows. The module does not read or mutate Zustand state; callers pass rows in and receive either a full candidate row array or an error.
 
-## Exports
-
-- `buildScaleSurfaceOptions(rows)` — returns selector options from `Object` through each surface and `Image`.
-- `buildReverseSurfaceOptions(rows)` — returns selector options from `Object` through the last 1-based surface; `Image` is intentionally excluded.
-- `OBJECT_DISTANCE_INFINITY_THRESHOLD` — object distances at or above `1e10` are treated as infinity-like and preserved during scale formatting.
-- `scaleRows(rows, { first, last, factor })` — scales selected prescription rows.
-- `reverseRows(rows, { first, last })` — reverses selected surface rows and boundary gaps.
-- `firstSurfaceNeedsReferenceSurface(rows)` — returns true when the first surface has a decenter config and at least one tilt/decenter numeric field is nonzero.
-- `insertReferenceSurfaceAfterObject(rows)` — inserts a flat zero-thickness air reference surface immediately after Object, copying semi-diameter from the first existing surface.
-- `formatPrescriptionRows(rows, options)` — validates selection/factor, builds the candidate array, and rejects invalid, overflowing, or precision-underflowing numeric results atomically.
-
 ## Scale Behavior
 
 - Scaleable numeric fields and preservation rules are centralized in `surfaceValueScaling.ts`; this module delegates selected-row scaling and validation numeric collection to that helper.
@@ -52,8 +41,7 @@ Pure formatting helpers for lens prescription grid rows. The module does not rea
 
 ## Validation
 
-`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value collected by `surfaceValueScaling.ts` in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check. Scaling is also rejected atomically with a precision-underflow error when any nonzero source numeric value, including an aperture dimension, aspheric coefficient, or preserved dimensionless value, becomes zero. Source values that are already zero remain valid.
-*/
+`formatPrescriptionRows` rejects without mutation when the selection is invalid, the scale factor is not positive finite, or any numeric value collected by `surfaceValueScaling.ts` in the candidate rows is non-finite. Arithmetic beyond JavaScript's finite number range overflows to infinity and is therefore rejected by the same finite-number check. Scaling is also rejected atomically with a precision-underflow error when any nonzero source numeric value, including an aperture dimension, aspheric coefficient, or preserved dimensionless value, becomes zero. Source values that are already zero remain valid.*/
 import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import { IMAGE_ROW_ID, OBJECT_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import {

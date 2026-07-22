@@ -5,11 +5,6 @@
 
 Zustand store for analysis results computed after each successful submit. Holds Seidel aberration data and first-order optical data returned by the Pyodide worker.
 
-## Exports
-
-- `AnalysisDataState` — interface describing all state fields and actions.
-- `createAnalysisDataSlice` — `StateCreator<AnalysisDataState>` for composition.
-
 ## State
 
 | Field | Type | Default |
@@ -25,8 +20,7 @@ Zustand store for analysis results computed after each successful submit. Holds 
 ## Dependencies
 
 - `create`, `StateCreator` from `zustand`.
-- `SeidelData` from `@/features/lens-editor/types/seidelData`.
-*/
+- `SeidelData` from `@/features/lens-editor/types/seidelData`.*/
 import { type StateCreator } from "zustand";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 
