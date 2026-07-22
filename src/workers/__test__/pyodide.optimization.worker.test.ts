@@ -1,7 +1,14 @@
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
+import type {
+  GlassOptimizationConfig,
+  GlassOptimizationReport,
+  OptimizationProgressEntry,
+} from "@/features/optimization/types/optimizationWorkerTypes";
 import {
   _evaluateOptimizationProblem,
   _getOptimizationInterruptStateForTesting,
+  _optimizeGlasses,
   _optimizeOpm,
   _requestOptimizationStop,
   _setPyodideForTesting,
@@ -27,6 +34,185 @@ const baseModel: OpticalModel = {
     wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
   },
 };
+
+const glassConfig: GlassOptimizationConfig = {
+  glass_optimizer: { num_neighbours: 2, maxiter: 20, tol: 1e-4 },
+  glass_variables: [
+    {
+      surface_index: 1,
+      candidates: [
+        { name: "N-BK7", catalog: "Schott" },
+        { name: "N-LAK9", catalog: "Schott" },
+      ],
+    },
+  ],
+  variables: [{ kind: "radius", surface_index: 1, min: 40, max: 60 }],
+  pickups: [],
+  merit_function: {
+    operands: [{ kind: "focal_length", target: 100, weight: 1 }],
+  },
+};
+
+function glassReport(
+  progress: ReadonlyArray<OptimizationProgressEntry> = [],
+): GlassOptimizationReport {
+  return {
+    success: true,
+    status: "optimized",
+    message: "done",
+    optimizer: {
+      kind: "glass_expert",
+      method: "L-BFGS-B",
+      runs: 5,
+      nfev: 20,
+      nit: 4,
+      num_neighbours: 2,
+      maxiter: 20,
+      tol: 1e-4,
+    },
+    initial_glasses: [{ surface_index: 1, name: "N-BK7", catalog: "Schott" }],
+    final_glasses: [{ surface_index: 1, name: "N-LAK9", catalog: "Schott" }],
+    initial_values: [],
+    final_values: [],
+    pickups: [],
+    residuals: [],
+    merit_function: { sum_of_squares: 1, rss: 1 },
+    optimization_progress: progress,
+  };
+}
+
+describe("_optimizeGlasses", () => {
+  beforeEach(() => {
+    _setPyodideForTesting(undefined);
+  });
+
+  it("serializes the flat glass config and invokes optimize_glasses", async () => {
+    const runPython = jest.fn().mockResolvedValue(JSON.stringify(glassReport()));
+
+    const result = await _optimizeGlasses(runPython, baseModel, glassConfig);
+
+    expect(result.optimizer.kind).toBe("glass_expert");
+    const source = runPython.mock.calls[0]?.[0] ?? "";
+    expect(source).toContain("optimize_glasses(");
+    expect(source).toContain('\\"glass_optimizer\\":{\\"num_neighbours\\":2,\\"maxiter\\":20,\\"tol\\":0.0001}');
+    expect(source).toContain('\\"candidates\\":[{\\"name\\":\\"N-BK7\\",\\"catalog\\":\\"Schott\\"}');
+  });
+
+  it("parses candidate-aware progress and forwards the final history", async () => {
+    const progress: OptimizationProgressEntry[] = [
+      {
+        iteration: 0,
+        merit_function_value: 4,
+        log10_merit_function_value: Math.log10(4),
+        phase: "global",
+        surface_index: 1,
+        candidate: { name: "N-LAK9", catalog: "Schott" },
+      },
+      {
+        iteration: 1,
+        merit_function_value: 1,
+        log10_merit_function_value: 0,
+        phase: "polish",
+      },
+    ];
+    const onProgress = jest.fn().mockResolvedValue(undefined);
+    const pyodideGlobalsSet = jest.fn();
+    const runPython = jest.fn().mockImplementation(async () => {
+      const boundCallback = pyodideGlobalsSet.mock.calls[0]?.[1] as ((json: string) => void) | undefined;
+      boundCallback?.(JSON.stringify(progress));
+      return JSON.stringify(glassReport(progress));
+    });
+    _setPyodideForTesting({
+      globals: { set: pyodideGlobalsSet, delete: jest.fn() },
+      setInterruptBuffer: jest.fn(),
+    });
+
+    const result = await _optimizeGlasses(
+      runPython,
+      baseModel,
+      glassConfig,
+      "chief_ray",
+      onProgress,
+    );
+
+    expect(onProgress).toHaveBeenCalledWith(progress);
+    expect(result.optimization_progress[0]).toMatchObject({
+      phase: "global",
+      surface_index: 1,
+      candidate: { name: "N-LAK9", catalog: "Schott" },
+    });
+  });
+
+  it("shares interrupt setup and guaranteed cleanup on Python errors", async () => {
+    const setInterruptBuffer = jest.fn();
+    const globalsSet = jest.fn();
+    const globalsDelete = jest.fn();
+    _setPyodideForTesting({
+      setInterruptBuffer,
+      globals: { set: globalsSet, delete: globalsDelete },
+    });
+    const interruptBuffer = new SharedArrayBuffer(4);
+    const runPython = jest.fn().mockRejectedValue(new Error("python failed"));
+
+    await expect(_optimizeGlasses(
+      runPython,
+      baseModel,
+      glassConfig,
+      "centroid",
+      jest.fn(),
+      "glass-run",
+      interruptBuffer,
+    )).rejects.toThrow("python failed");
+
+    expect(setInterruptBuffer).toHaveBeenNthCalledWith(1, expect.any(Int32Array));
+    expect(setInterruptBuffer).toHaveBeenLastCalledWith(undefined);
+    expect(globalsDelete).toHaveBeenCalledWith("_optimization_progress_callback");
+    expect(_getOptimizationInterruptStateForTesting()).toEqual({
+      activeRunId: undefined,
+      interruptBuffer: undefined,
+    });
+  });
+
+  it("cleans up progress and interrupt state when interrupt setup throws", async () => {
+    const setInterruptBuffer = jest.fn().mockImplementation((view?: Int32Array) => {
+      if (view !== undefined) {
+        throw new Error("interrupt setup failed");
+      }
+    });
+    const globalsSet = jest.fn();
+    const globalsDelete = jest.fn();
+    _setPyodideForTesting({
+      setInterruptBuffer,
+      globals: { set: globalsSet, delete: globalsDelete },
+    });
+    const interruptBuffer = new SharedArrayBuffer(4);
+    const runPython = jest.fn();
+
+    await expect(_optimizeGlasses(
+      runPython,
+      baseModel,
+      glassConfig,
+      "chief_ray",
+      jest.fn(),
+      "glass-setup-error",
+      interruptBuffer,
+    )).rejects.toThrow("interrupt setup failed");
+
+    expect(runPython).not.toHaveBeenCalled();
+    expect(setInterruptBuffer).toHaveBeenLastCalledWith(undefined);
+    expect(globalsDelete).toHaveBeenCalledWith("_optimization_progress_callback");
+    expect(_getOptimizationInterruptStateForTesting()).toEqual({
+      activeRunId: undefined,
+      interruptBuffer: undefined,
+    });
+  });
+
+  it("is present on the typed public worker API", () => {
+    const optimizeGlasses: PyodideWorkerAPI["optimizeGlasses"] = async () => glassReport();
+
+    expect(optimizeGlasses).toBeDefined();
+  });
+});
 
 describe("_optimizeOpm", () => {
   beforeEach(() => {

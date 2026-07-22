@@ -1,6 +1,6 @@
 # Optimization Worker Communication
 
-Optimization runs execute inside the long-lived Pyodide web worker and are called from `OptimizationPage` through the typed Comlink proxy exposed by `usePyodide`.
+Optimization runs execute inside the long-lived Pyodide web worker through the typed Comlink proxy exposed by `usePyodide`. `OptimizationPage` currently calls `optimizeOpm(...)`; the worker also exposes the backend-only `optimizeGlasses(...)` API for mixed categorical/continuous runs.
 
 ## Progress Streaming
 
@@ -14,6 +14,14 @@ Optimization runs execute inside the long-lived Pyodide web worker and are calle
 - an optional `SharedArrayBuffer` interrupt buffer
 
 Inside the worker, `_optimizeOpm(...)` temporarily binds `_optimization_progress_callback` into `pyodide.globals`. The generated Python script wraps that global as `_report_optimization_progress(progress)`, serializes each progress snapshot to JSON, and passes it back to the page callback while Python is still running.
+
+`_optimizeGlasses(...)` uses the same lifecycle helper. Its progress entries retain the common iteration and merit fields and add:
+
+- `phase`: `global`, `local`, or `polish`
+- `surface_index` during candidate trials
+- `candidate: { name, catalog }` during candidate trials
+
+Iterations remain globally monotonic across every nested L-BFGS-B run. Optional candidate fields are absent during polishing; the worker does not introduce `null` placeholders.
 
 The page stores the streamed `OptimizationProgressEntry[]` in React state. `OptimizationProgressModal` plots the newest 2000 entries while retaining the full history in page state.
 
@@ -32,7 +40,7 @@ The direct `Atomics.store(...)` on the page is required because a normal Comlink
 
 ## Cleanup
 
-`_optimizeOpm(...)` clears interrupt state in `finally`:
+The shared optimization runner used by `_optimizeOpm(...)` and `_optimizeGlasses(...)` clears interrupt state in `finally`:
 
 - `pyodide.setInterruptBuffer(undefined)`
 - resets the shared buffer to `0`
@@ -54,3 +62,11 @@ Pyodide delivers the interrupt to Python as `KeyboardInterrupt`. `optimize_opm(.
 - accumulated `optimization_progress`
 
 The UI applies this report exactly like a successful optimization and does not open the warning modal for the user-requested stopped status.
+
+`optimize_glasses(...)` uses the same successful `"stopped"` status, but restores the best fully completed candidate snapshot before reporting. Any material or continuous changes made by the interrupted partial candidate are discarded. Unexpected exceptions restore the original material and numeric/pickup snapshots and are rethrown to the worker caller.
+
+## Glass-Expert RPC
+
+`proxy.optimizeGlasses(...)` accepts the same model, image-point, progress callback, run id, and interrupt buffer positions as `optimizeOpm(...)`. Its flat config contains `glass_optimizer`, ordered `glass_variables`, numeric `variables`, `pickups`, and `merit_function`.
+
+The result extends the continuous report with `initial_glasses` and `final_glasses`. Optimizer metadata identifies `glass_expert` / `L-BFGS-B`, normalized `num_neighbours`, `maxiter`, and `tol`, plus aggregate `runs`, `nfev`, and `nit`. This RPC is intentionally exposed without adding an Optimization-page UI in this change.

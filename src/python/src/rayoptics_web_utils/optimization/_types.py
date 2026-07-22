@@ -2,9 +2,10 @@
 
 Input and normalized configs remain distinct. Solver options are discriminated by
 kind, mutable targets by target kind, and result mappings allow solver-specific
-metadata. Operand evaluators may return scalars or residual vectors and receive
-the image-point convention explicitly. Snapshot entries retain the complete target
-descriptor so rollback preserves asphere kinds.
+metadata. Glass-expert inputs keep categorical candidates ordered separately from
+continuous targets. Operand evaluators may return scalars or residual vectors and
+receive the image-point convention explicitly. Snapshot entries retain the complete
+target descriptor so rollback preserves asphere kinds.
 """
 
 from __future__ import annotations
@@ -25,13 +26,14 @@ type TargetKind = Literal[
     "asphere_polynomial_coefficient",
     "asphere_toric_sweep_radius",
 ]
-type OptimizerKind = Literal["least_squares", "differential_evolution"]
+type OptimizerKind = Literal["least_squares", "differential_evolution", "glass_expert"]
 type LeastSquaresMethod = Literal["trf", "lm"]
+type GlassOptimizationPhase = Literal["global", "local", "polish"]
 type AsphereKind = Literal["Conic", "EvenAspherical", "RadialPolynomial", "XToroid", "YToroid"]
 type BaseTargetKey = tuple[TargetKind, int]
 type PolynomialTargetKey = tuple[Literal["asphere_polynomial_coefficient"], int, int]
 type TargetKey = BaseTargetKey | PolynomialTargetKey
-type OptimizationStatus = int | Literal["evaluated", "no_variables", "stopped"]
+type OptimizationStatus = int | Literal["evaluated", "optimized", "no_variables", "stopped"]
 
 
 class OperandOptions(TypedDict, total=False):
@@ -300,6 +302,36 @@ class OptimizationConfig(TypedDict, total=False):
     merit_function: MeritFunctionConfigInput
 
 
+class GlassOptimizerConfigInput(TypedDict, total=False):
+    num_neighbours: int
+    maxiter: int
+    tol: float
+
+
+class NormalizedGlassOptimizerConfig(TypedDict):
+    num_neighbours: int
+    maxiter: int
+    tol: float
+
+
+class GlassCandidateInput(TypedDict, total=False):
+    name: str
+    catalog: str
+
+
+class GlassVariableConfigInput(TypedDict, total=False):
+    surface_index: int
+    candidates: list[GlassCandidateInput]
+
+
+class GlassOptimizationConfig(TypedDict, total=False):
+    glass_optimizer: GlassOptimizerConfigInput
+    glass_variables: list[GlassVariableConfigInput]
+    variables: list[VariableConfigInput]
+    pickups: list[PickupConfigInput]
+    merit_function: MeritFunctionConfigInput
+
+
 class NormalizedOptimizationConfig(TypedDict):
     optimizer: NormalizedOptimizerConfig
     variables: list[VariableConfig]
@@ -359,6 +391,9 @@ class OptimizationProgressEntry(TypedDict):
     iteration: int
     merit_function_value: float
     log10_merit_function_value: float
+    phase: NotRequired[GlassOptimizationPhase]
+    surface_index: NotRequired[int]
+    candidate: NotRequired[GlassCandidateInput]
 
 
 type ProgressReporter = Callable[[list[OptimizationProgressEntry]], None]
@@ -366,12 +401,16 @@ type ProgressReporter = Callable[[list[OptimizationProgressEntry]], None]
 
 class OptimizerSummary(TypedDict):
     kind: OptimizerKind
-    method: NotRequired[LeastSquaresMethod]
+    method: NotRequired[LeastSquaresMethod | Literal["L-BFGS-B"]]
     nfev: NotRequired[int]
     njev: NotRequired[int]
     nit: NotRequired[int]
     cost: NotRequired[float]
     optimality: NotRequired[float]
+    runs: NotRequired[int]
+    num_neighbours: NotRequired[int]
+    maxiter: NotRequired[int]
+    tol: NotRequired[float]
 
 
 class ProblemEvaluation(TypedDict):
@@ -390,6 +429,17 @@ class OptimizationReport(ProblemEvaluation):
     message: str
 
 
+class GlassStateEntry(TypedDict):
+    surface_index: int
+    name: str
+    catalog: str
+
+
+class GlassOptimizationReport(OptimizationReport):
+    initial_glasses: list[GlassStateEntry]
+    final_glasses: list[GlassStateEntry]
+
+
 class SolverResult(TypedDict):
     x: FloatArray
     success: bool
@@ -400,6 +450,7 @@ class SolverResult(TypedDict):
     nit: NotRequired[int]
     cost: NotRequired[float]
     optimality: NotRequired[float]
+    fun: NotRequired[float]
 
 
 type OperandValue = float | list[float]

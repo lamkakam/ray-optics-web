@@ -11,6 +11,8 @@ import type { FocusingResult } from "@/features/lens-editor/types/focusingResult
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import type {
+  GlassOptimizationConfig,
+  GlassOptimizationReport,
   OptimizationConfig,
   OptimizationProgressEntry,
   OptimizationReport,
@@ -101,6 +103,15 @@ export interface PyodideWorkerAPI {
     runId?: string,
     interruptBuffer?: SharedArrayBuffer,
   ): Promise<OptimizationReport>;
+  /** Runs mixed glass/continuous optimization with the same progress and interrupt lifecycle. */
+  optimizeGlasses(
+    opticalModel: OpticalModel,
+    config: GlassOptimizationConfig,
+    imagePoint?: ImagePoint,
+    onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+    runId?: string,
+    interruptBuffer?: SharedArrayBuffer,
+  ): Promise<GlassOptimizationReport>;
 }
 
 // Singleton state — shared across all hook instances
@@ -153,11 +164,11 @@ function initOnce(): Promise<void> {
  * - Errors from `proxy.init()` are caught and stored as a plain string in `error`; the worker itself remains alive.
  * - `proxy` is `undefined` while initialising, preventing callers from invoking methods before the worker is ready.
  * - `plotLensLayout` requires the caller to provide `isDark`; the worker derives any diffraction-grating-dependent overlay from the `OpticalModel`.
- * - `evaluateOptimizationProblem` and `optimizeOpm` share the same report shape, so optimization UIs can preview residuals before running the full solve.
+ * - `evaluateOptimizationProblem` and `optimizeOpm` share the same report shape, so optimization UIs can preview residuals before running the full solve. `optimizeGlasses` extends that report with initial/final glass identities and categorical optimizer metadata.
  * - User-defined glass APIs are passed through to the worker as typed Comlink methods. Add/update/get return the bare Python material map keyed by glass name; delete resolves with no payload.
  * - `canInterruptOptimization()` reports whether the initialized worker can install a Pyodide interrupt buffer.
  * - `requestOptimizationStop(runId)` asks the worker to signal the currently active optimization only when the run id still matches; late or stale run ids return `{ signaled: false }`.
- * - `optimizeOpm` also accepts an optional streamed progress callback; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker. For stoppable runs, callers also pass a per-run id and a `SharedArrayBuffer` interrupt buffer.
+ * - `optimizeOpm` and `optimizeGlasses` accept the same optional streamed progress callback and interruption arguments; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker. Glass progress may additionally include phase, surface, and candidate context.
  * - `init` accepts an optional progress callback for determinate startup milestones; `usePyodide` owns the Comlink proxy wrapping for this callback.
  * - `_resetSingleton()` is exported for test isolation only — NOT for production use.
  *
