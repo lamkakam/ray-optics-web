@@ -1,3 +1,60 @@
+/**
+# `features/analysis/components/AnalysisPlotContainer/AnalysisPlotContainer.tsx`
+
+## State
+
+All analysis-plot state fields (reactive) are read from `useAnalysisPlotStore` and Zustand's `useStore(store, selector)`:
+- `rayFanData`, `opdFanData`, `spotDiagramData`, `fieldCurvatureData`, `astigmatismCurveData`, `longitudinalSphericalAberrationData`, `geoPsfData`, `wavefrontMapData`, `strehlVsWavelengthData`, `diffractionPsfData`, `diffractionMtfData`, `plotLoading`, `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`.
+
+`committedOpticalModel` is read from `lensStore` via `useLensEditorStore` and `useStore(lensStore, (s) => s.committedOpticalModel)`.
+
+`seidelData` is read reactively from `useAnalysisDataStore()` and passed through to the view for `surfaceBySurface3rdOrder`.
+
+`committedSpecs` is subscribed from `specsStore` via `useSpecsConfiguratorStore` and `useStore(specsStore, (s) => s.committedSpecs)` (return value unused — subscription only) to trigger re-renders when the committed specs change.
+
+## Derived Data
+
+- **`fieldOptions`** — options for the visible Half-Field selector, obtained by calling `specsStore.getState().getFieldOptions()` directly in the render body (re-evaluated on each render triggered by `committedSpecs` change). Unit is `°` for `"angle"`, ` mm` for `"height"`.
+- **`wavelengthOptions`** — obtained by calling `specsStore.getState().getWavelengthOptions()` directly in the render body.
+
+## Internal Logic
+
+All plot loading goes through `loadAnalysisPlot(...)` from `@/features/analysis/lib/plotFunctions`, which centralizes the plot-type to worker-API mapping. Plot-store-backed payload commits go through `commitAnalysisPlotResult(...)`, keeping panel behavior aligned with `LensEditor.tsx` submit handling and example-system application.
+
+The container also reads `imagePoint` from `ImagePointProvider` and passes it into `loadAnalysisPlot` so Ray Fan, OPD fan, spot diagram, wavefront map, Strehl vs wavelength, diffraction PSF, and diffraction MTF use the app-wide image reference convention.
+
+### `loadPlot(plotType, fieldIndex, wavelengthIndex)`
+
+Shared async helper used by all three change handlers:
+
+1. Returns immediately when `proxy` or `committedOpticalModel` is missing.
+2. Sets `plotLoading(true)`.
+3. Calls `loadAnalysisPlot({ plotType, proxy, model: committedOpticalModel, fieldIndex, wavelengthIndex, imagePoint })`.
+4. If the result kind is `"surfaceBySurface3rdOrder"`, updates only `analysisDataStore.seidelData.surfaceBySurface`.
+5. Otherwise delegates to `commitAnalysisPlotResult(...)`, which stores the payload with the matching analysis plot store setter.
+6. Calls `onError()` in `catch` and always clears `plotLoading` in `finally`.
+
+### `handleFieldChange(value)`
+
+1. Updates `selectedFieldIndex` in store.
+2. If `proxy` is undefined or `PLOT_TYPE_CONFIG[selectedPlotType].fieldDependent === false`, returns without plotting.
+3. Delegates to `loadPlot(selectedPlotType, value, selectedWavelengthIndex)`.
+
+### `handleWavelengthChange(value)`
+
+Same pattern as `handleFieldChange` but updates `selectedWavelengthIndex` and delegates to `loadPlot(selectedPlotType, selectedFieldIndex, value)`. Only executes the plot call when `wavelengthDependent === true`, which includes field-independent field curvature and astigmatism curve plots.
+
+### `handlePlotTypeChange(plotType)`
+
+1. Updates `selectedPlotType` in store.
+2. If `proxy` is undefined, returns.
+3. Returns immediately for `surfaceBySurface3rdOrder`; the view reuses already-fetched `seidelData.surfaceBySurface` and does not refetch or use the legacy PNG path.
+4. Delegates to `loadPlot(plotType, selectedFieldIndex, selectedWavelengthIndex)` for the remaining plot types.
+
+### Image-point refresh
+
+After the initial render, a change to the app-wide `imagePoint` refreshes the currently selected plot by calling `loadPlot(selectedPlotType, selectedFieldIndex, selectedWavelengthIndex)`. This uses the last committed optical model and does not run the full Update System workflow, so lens layout, first-order data, and non-selected analysis data are left unchanged. `surfaceBySurface3rdOrder` remains a no-op on image-point changes and continues to reuse existing Seidel data.
+*/
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
@@ -16,12 +73,38 @@ import {
 import { useImagePoint } from "@/shared/components/providers/ImagePointProvider";
 
 
+/**
+## Props
+
+```ts
+interface AnalysisPlotContainerProps {
+  proxy: PyodideWorkerAPI | undefined;
+  onError: () => void;
+  autoHeight?: boolean;
+}
+```
+
+| Prop | Type | Required | Description |
+|---|---|---|---|
+| `proxy` | `PyodideWorkerAPI \| undefined` | Yes | Pyodide worker proxy; handlers no-op if `undefined` |
+| `onError` | `() => void` | Yes | Called when any async plot call throws |
+| `autoHeight` | `boolean` | No | Forwarded to `AnalysisPlotView` |
+*/
 interface AnalysisPlotContainerProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly onError: () => void;
   readonly autoHeight?: boolean;
 }
 
+/**
+## Purpose
+
+Container component that owns all analysis-plot logic: derives Half-Field/wavelength select options, resolves the correct worker API for each plot type, and handles user-driven field, wavelength, and plot-type changes. Renders `AnalysisPlotView` as its presentational child and feeds typed surface-by-surface Seidel data, typed Ray-Fan data, typed OPD-fan data, typed spot-diagram point data, typed field-curvature data, typed astigmatism-curve data, typed longitudinal-spherical-aberration data, typed geometric-PSF point data, typed wavefront-map grid data, typed Strehl-vs-wavelength line data, typed diffraction-PSF grid data, or typed diffraction-MTF line data depending on the selected plot type.
+
+## Usages
+
+- Used in `LensEditor.tsx`. The container pulls the relevant stores from their providers and only receives `proxy`, `onError`, and `autoHeight` as props.
+*/
 export function AnalysisPlotContainer({
   proxy,
   onError,

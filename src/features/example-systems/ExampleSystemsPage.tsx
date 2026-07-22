@@ -1,3 +1,6 @@
+/**
+# `features/example-systems/ExampleSystemsPage.tsx`
+*/
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
@@ -27,6 +30,29 @@ interface ExampleSystemsPageProps {
   readonly onError: () => void;
 }
 
+/**
+## Behavior
+
+- Uses `useScreenBreakpoint()` to choose between large-screen and small-screen layout at the project `screenLG` breakpoint.
+- On `screenLG`, renders the existing two-column layout with a `MenuContainer` list on the left and apply/description content on the right.
+- On `screenLG`, uses viewport-relative column sizing so each column occupies approximately half of the available viewport width, sizes the page-specific `MenuContainer` instance to the viewport height, and keeps the Apply button above the page-specific `DescriptionContainer` in the right column.
+- On `screenSM`, renders a contained full-width vertical layout with the page heading and Apply button in the same header row.
+- On `screenSM`, stacks `MenuContainer` before `DescriptionContainer`, gives both panels the full available route width, and splits the remaining route height between them with `min-h-0`/`flex-1`.
+- On `screenSM`, keeps the page wrapper overflow hidden to avoid route-level vertical scrolling; long menu or description content scrolls inside the corresponding panel.
+- Adds page-specific spacing between adjacent direct paragraph children in each `DescriptionContainer`, while leaving links and other non-paragraph description content unaffected.
+- Keeps selected `ExampleSystemName`, confirmation modal visibility, and applying state local to the component.
+- Builds the menu from `Object.keys(ExampleSystemList) as ExampleSystemName[]` and displays canonical unprefixed example names directly.
+- Maintains a stable button ref for each example menu item and restores focus to the selected example button when the selected key changes through menu interaction.
+- Makes selection follow focus while tabbing through example menu item buttons, so the focused menu item is also the chosen system.
+- Handles `Enter` on the page-specific Example Systems menu by opening the existing apply overwrite confirmation when an example is chosen and applying is not in progress.
+- Renders the placeholder copy as a `Paragraph`, then renders selected description React nodes directly so description fragments can contain paragraphs and links without nested paragraph markup.
+- Uses `ExampleSystemList[selectedExampleKey]` and starts `applyExampleSystem()` after overwrite confirmation, then routes to `/` immediately so the Lens Editor can show store-backed loading states while worker computations continue.
+- Keeps background apply completion attached after navigation: `applyExampleSystem()` continues computing first-order/layout/selected plot/Seidel data with the app-wide `imagePoint`, commits specs/model when ready, and clears local applying state only if the page remains mounted.
+- Calls `onError` when the background apply promise rejects after navigation; the route is not moved back to `/example-systems`.
+*/
+/**
+Client route component for selecting and applying bundled example optical systems.
+*/
 export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) {
   const router = useRouter();
   const { theme } = useTheme();

@@ -1,3 +1,10 @@
+/**
+# `features/lens-editor/components/LensPrescriptionContainer/DiffractionGratingModal/DiffractionGratingModal.tsx`
+
+## Modal Footer
+
+- Close, Remove, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while diffraction grating fields scroll.
+*/
 "use client";
 
 import { useState } from "react";
@@ -7,6 +14,20 @@ import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import type { DiffractionGrating } from "@/shared/lib/types/opticalModel";
 
+/**
+## Props
+
+```ts
+interface DiffractionGratingModalProps {
+  isOpen: boolean;
+  initialDiffractionGrating: DiffractionGrating | undefined;
+  readOnly?: boolean;
+  onConfirm: (diffractionGrating: DiffractionGrating) => void;
+  onClose: () => void;
+  onRemove: () => void;
+}
+```
+*/
 interface DiffractionGratingModalProps {
   readonly isOpen: boolean;
   readonly initialDiffractionGrating: DiffractionGrating | undefined;
@@ -28,6 +49,20 @@ function parseInteger(value: string, fallback: number): number {
   return Number.isInteger(parsed) ? parsed : fallback;
 }
 
+/**
+## Purpose
+
+Modal for configuring diffraction grating parameters on a surface.
+
+## Key Behaviors
+
+- Defaults to `lpmm = 1000` and `order = 1` when the surface has no existing grating.
+- Keeps raw input as strings and parses on confirm.
+- Invalid `lp/mm` values fall back to the initial positive value.
+- Invalid `order` values fall back to the initial integer value.
+- `Remove` clears the stored diffraction grating config.
+- In `readOnly` mode, both inputs are disabled and the footer renders only `Close`.
+*/
 export function DiffractionGratingModal({
   isOpen,
   initialDiffractionGrating,

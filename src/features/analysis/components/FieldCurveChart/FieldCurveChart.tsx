@@ -1,7 +1,16 @@
+/**
+# `features/analysis/components/FieldCurveChart/FieldCurveChart.tsx`
+*/
 import type { FieldCurveData } from "@/features/analysis/types/plotData";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { buildFieldCurveOption } from "./fieldCurveChartOption";
 
+/**
+## Props
+
+- `fieldCurveData`: `FieldCurveData` payload to render.
+- `autoHeight`: optional responsive height behavior passed through to the shared chart factory.
+*/
 interface FieldCurveChartProps {
   readonly fieldCurveData: FieldCurveData;
   readonly autoHeight?: boolean;
@@ -11,6 +20,11 @@ interface FieldCurveChartBuilderArgs {
   readonly fieldCurveData: FieldCurveData;
 }
 
+/**
+## Purpose
+
+Wraps the shared analysis ECharts component factory for Field Curvature plot data.
+*/
 export const FieldCurveChart = createAnalysisChartComponent<FieldCurveChartProps, FieldCurveChartBuilderArgs>({
   displayName: "FieldCurveChart",
   testId: "field-curve-chart",

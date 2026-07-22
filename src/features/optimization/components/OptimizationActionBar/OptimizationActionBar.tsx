@@ -1,7 +1,19 @@
+/**
+# `features/optimization/components/OptimizationActionBar/OptimizationActionBar.tsx`
+*/
 "use client";
 
 import { Button } from "@/shared/components/primitives/Button";
 
+/**
+## Props
+
+- `canOptimize`: enables `Optimize` when the page has a valid optimization config with non-zero effective contribution.
+- `canApplyToEditor`: enables `Apply to Editor` when there is an optimization model to apply.
+- `isOptimizing`: disables `Optimize` while an optimization run is active.
+- `onOptimize`: called by `Optimize`.
+- `onApplyToEditor`: called by `Apply to Editor`.
+*/
 interface OptimizationActionBarProps {
   readonly canOptimize: boolean;
   readonly canApplyToEditor: boolean;
@@ -10,6 +22,9 @@ interface OptimizationActionBarProps {
   readonly onApplyToEditor: () => void;
 }
 
+/**
+Renders the optimization page primary actions and delegates button state/click handling to page-level callbacks.
+*/
 export function OptimizationActionBar({
   canOptimize,
   canApplyToEditor,

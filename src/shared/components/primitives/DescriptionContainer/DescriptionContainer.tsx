@@ -1,3 +1,6 @@
+/**
+# `shared/components/primitives/DescriptionContainer/DescriptionContainer.tsx`
+*/
 import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
@@ -6,6 +9,12 @@ interface DescriptionContainerProps extends React.HTMLAttributes<HTMLDivElement>
   readonly children?: React.ReactNode;
 }
 
+/**
+Styled description panel primitive.
+
+- Renders a `<div>` wrapper for descriptive content.
+- Uses `componentTokens.descriptionContainer` for surface, border, text, padding, and radius classes.
+*/
 export const DescriptionContainer = React.forwardRef<HTMLDivElement, DescriptionContainerProps>(
   function DescriptionContainer({ className, children, ...rest }, ref) {
     const { color, size, style } = cx.descriptionContainer;

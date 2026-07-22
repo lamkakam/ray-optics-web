@@ -1,3 +1,17 @@
+/**
+# `app/about/page.tsx`
+
+## Behaviour
+- Renders the About heading and explanatory text inline in the route file
+- Describes Ray Optics Web as a browser-based optical design GUI
+- Mentions the RayOptics library and Pyodide (Python to WebAssembly)
+- Notes that all computation is local and no server-side processing occurs
+- Renders the current root `LICENSE` contents verbatim in a whitespace-preserving `<pre><code>` block
+- Includes a `Third-Party License` section with vertically grouped `ExternalLink`s:
+  - `View Third-Party Licenses` links to `https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-LICENSES.md`
+  - `View Python Third-Party Licenses` links to `https://redirect.github.com/lamkakam/ray-optics-web/blob/main/THIRD-PARTY-PYTHON-LICENSES.md`
+- Keeps the About content vertically scrollable within the app shell
+*/
 "use client";
 
 import { ExternalLink } from "@/shared/components/primitives/ExternalLink";
@@ -34,6 +48,10 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `;
 
+/**
+## Purpose
+About route page (`/about`).
+*/
 export default function AboutPage() {
   return (
     <div className="p-6 overflow-y-auto">

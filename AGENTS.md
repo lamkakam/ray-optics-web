@@ -18,11 +18,11 @@
 
 - The skills md files are under `<project-root>/.claude/skills`. Before doing code changes, in plan mode or not, always read the skill of "commands-for-development".
 
-- Specs is in the file of `<FILENAME_INCLUDING_FILENAME_EXTENSION>.md` (for example: `opticalModel.ts.md`) under the same directory of the source code file. Read the relevant specs files before planning or before code implementation.
+- TypeScript, TSX, and Python specifications are embedded in their source files. Symbol-specific documentation belongs at the narrowest corresponding function, component, class, type, interface, or constant; reserve the file header or module docstring for genuinely module-wide documentation. Read the relevant embedded documentation before planning or implementation. JavaScript (including MJS) and shell specifications remain in `<FILENAME_INCLUDING_FILENAME_EXTENSION>.md` sidecars. The generated `src/shared/lib/utils/generated/pythonExportApertureHelpers.ts` also retains its sidecar because its source is generated.
 
 - Do not reinvent the wheel: try to reuse existing codes.
 
-- Always update the specs (`<FILENAME_INCLUDING_FILENAME_EXTENSION>.md` under the same directory of the source code file) after any change involving source code.
+- Always update the corresponding embedded declaration or module documentation after changing TypeScript, TSX, or Python source code. Continue to update sidecar specifications after changing JavaScript, MJS, or shell source code. Update `src/shared/lib/utils/generated/pythonExportApertureHelpers.ts.md` when its generated contract changes; do not edit the generated source directly.
 
 - In TypeScript, use `undefined` instead of `null` whenever possible
 
@@ -33,4 +33,3 @@
 - End your commit message with "Co-Authored-By: <model-name-with-precise-version-number> with an email address "no-reply@<domain-name>" for auditing purpose (eg. `"Co-Authored-By: GPT-5.6-sol <no-reply@openai.com>"`)
 
 - Use `gh` outside the sandbox when making a Pull Request
-

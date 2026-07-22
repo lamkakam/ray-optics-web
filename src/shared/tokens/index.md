@@ -4,5 +4,5 @@ Design system tokens and theme configuration. Pure constants — no React compon
 
 ## Files
 
-- [styleTokens.ts](./styleTokens.ts.md) — Centralised Tailwind class tokens for button variants, sizes, colours, and other design system properties
-- [theme.ts](./theme.ts.md) — Theme type definition (colors, spacing, breakpoints) for light/dark modes
+- [styleTokens.ts](./styleTokens.ts) — Centralised Tailwind class tokens for button variants, sizes, colours, and other design system properties
+- [theme.ts](./theme.ts) — Theme type definition (colors, spacing, breakpoints) for light/dark modes

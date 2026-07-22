@@ -1,4 +1,13 @@
-"""Plotting functions for rayoptics models."""
+"""# `python/src/rayoptics_web_utils/plotting/plotting.py`
+
+## Function Details
+
+## Key Conventions
+
+- `_fig_to_base64(fig)` converts and closes the figure.
+- This module intentionally does not expose analysis PNG renderers for ray fans, OPD fans, spot diagrams, Seidel charts, wavefront maps, geometrical PSF, or diffraction PSF. Those views use typed data from `rayoptics_web_utils.analysis`.
+
+Plotting functions for rayoptics models."""
 
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
@@ -13,7 +22,44 @@ from rayoptics_web_utils.utils import _fig_to_base64
 
 
 def plot_lens_layout(opm: OpticalModel, show_ray_fan_vs_wvls: bool = False, is_dark: bool = False) -> str:
-    """Plot the lens layout and return as base64 PNG."""
+    """Plot the lens layout and return as base64 PNG.
+
+    ## Purpose
+
+    Generates the remaining matplotlib-rendered image used by the web client: the optical lens layout. Analysis chart data is produced by `rayoptics_web_utils.analysis` and rendered in the frontend.
+
+    ## Exports
+
+    ```python
+    def plot_lens_layout(
+        opm: OpticalModel,
+        show_ray_fan_vs_wvls: bool = False,
+        is_dark: bool = False,
+    ) -> str: ...
+    ```
+
+    `plot_lens_layout` returns a base64-encoded PNG string.
+
+    ### `plot_lens_layout(opm, show_ray_fan_vs_wvls=False, is_dark=False)`
+
+    Renders the optical layout (cross-section with ray traces) using `InteractiveLayout`.
+
+    - By default, creates a figure with `FigureClass=InteractiveLayout`, enabling ray drawing (`do_draw_rays=True`) and disabling paraxial layout (`do_paraxial_layout=False`).
+    - Forwards `is_dark` to `InteractiveLayout` so the layout can render in light or dark mode.
+    - When `show_ray_fan_vs_wvls=True`, disables the standard ray/beam overlays and injects an `entity_factory_list` that builds one `RayFanBundle` per configured wavelength for field index `0`.
+    - The wavelength overlay uses `RayFan(..., xyfan='y')` and the field label from `fov.index_labels[0]`, with each bundle reusing the wavelength render color from the optical model.
+    - Calls `fig.plot()` then delegates to `_fig_to_base64`.
+
+    ## Usages
+
+    The Pyodide worker calls `plot_lens_layout` for the lens layout image:
+
+    ```python
+    from rayoptics_web_utils.plotting import plot_lens_layout
+
+    png_base64 = plot_lens_layout(opm)
+    ray_fan_png = plot_lens_layout(opm, show_ray_fan_vs_wvls=True, is_dark=True)
+    ```"""
     def _create_ray_fan_vs_wvl(fig: Figure, opt_model: OpticalModel, num_rays: int = 21) -> list[RayFanBundle]:
         ray_fan_bundles = []
         _, start_offset = fig.sl_so
@@ -28,7 +74,7 @@ def plot_lens_layout(opm: OpticalModel, show_ray_fan_vs_wvls: bool = False, is_d
             rb = RayFanBundle(opt_model, rayfan, start_offset)
             ray_fan_bundles.append(rb)
         return ray_fan_bundles
-    
+
     do_paraxial_layout = False
 
     if show_ray_fan_vs_wvls is True:

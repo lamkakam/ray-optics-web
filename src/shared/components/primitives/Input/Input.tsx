@@ -1,7 +1,17 @@
+/**
+# `shared/components/primitives/Input/Input.tsx`
+*/
 import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/**
+## Props
+
+```ts
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
+```
+*/
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
 const BASE_CLASSES = [
@@ -19,6 +29,39 @@ const BASE_CLASSES = [
   cx.input.color.textColor,
 ] as const;
 
+/**
+## Purpose
+
+Themed `<input>` primitive with two visual densities. Forwards a ref and passes all standard HTML input attributes through.
+
+## Key Behaviors
+
+- Implemented as `React.forwardRef` so it can be used inside forms and AG Grid cell editors.
+- Defaults `autoComplete` to `"off"` to suppress browser autofill on shared form inputs, while still honoring any explicit `autoComplete` prop passed by the caller.
+- Base classes (border, background, text color, focus ring, and disabled-state opacity/cursor tokens) are always applied; only padding and font size differ between variants.
+- Both variants use responsive font-size tokens: 16 px (`text-base`) below 1440 px to avoid small-screen browser text zoom, and 14 px (`text-sm`) at `screenLG` for desktop density.
+- Disabled styling is tokenized via `cx.input.style.opacity` and `cx.input.style.cursor`, which mirror the shared disabled behavior used by `Select`.
+
+## Usages
+
+```tsx
+// Text input for aperture value
+<Input
+  type="text"
+  aria-label="Aperture value"
+  value={valueStr}
+  onChange={(e) => setValueStr(e.target.value)}
+  onBlur={handleValueBlur}
+/>
+
+// Numeric input
+  type="number"
+  placeholder="Enter value"
+  min="0"
+  max="100"
+/>
+```
+*/
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   function Input(
     { autoComplete = "off", className, ...rest },

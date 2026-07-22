@@ -6,8 +6,8 @@ Components for optical analysis plots and aberration data.
 
 ## Shared Components
 
-- [AnalysisPlotContainer.tsx](./AnalysisPlotContainer/AnalysisPlotContainer.tsx.md) — Manages analysis plot selection and data fetching via Pyodide
-- [AnalysisPlotView.tsx](./AnalysisPlotView/AnalysisPlotView.tsx.md) — Renders analysis plot controls and switches between typed chart renderers
+- [AnalysisPlotContainer.tsx](./AnalysisPlotContainer/AnalysisPlotContainer.tsx) — Manages analysis plot selection and data fetching via Pyodide
+- [AnalysisPlotView.tsx](./AnalysisPlotView/AnalysisPlotView.tsx) — Renders analysis plot controls and switches between typed chart renderers
 
 ## Chart Directories
 

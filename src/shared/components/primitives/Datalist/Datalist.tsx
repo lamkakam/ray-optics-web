@@ -1,3 +1,6 @@
+/**
+# `shared/components/primitives/Datalist/Datalist.tsx`
+*/
 import React, { useId } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
@@ -7,10 +10,46 @@ export type DatalistOption = {
   readonly label: string;
 };
 
+/**
+## Props
+
+```ts
+type DatalistOption = { value: string | number; label: string };
+
+interface DatalistProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "children" | "list" | "type"> {
+  options: ReadonlyArray<DatalistOption>;
+}
+```
+*/
 interface DatalistProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "children" | "list" | "type"> {
   readonly options: ReadonlyArray<DatalistOption>;
 }
 
+/**
+## Purpose
+
+Searchable native datalist primitive whose visible text input uses the same themed appearance as `Select`.
+
+## Key Behaviors
+
+- Renders a text `<input>` associated with a native `<datalist>` through a unique React-generated ID.
+- Forwards standard input attributes, events, disabled state, and an `HTMLInputElement` ref.
+- Renders each supplied item as a datalist option with its value and label.
+- Applies the default `Select` design tokens, full-width wrapper sizing, disabled styles, and appearance reset, without decorative arrow padding or markup.
+- Inherits the `Select` responsive font-size token: 16 px below 1440 px and 14 px at `screenLG`.
+- Applies `className` to the wrapper so callers can provide width constraints and other wrapper styles.
+
+## Usage
+
+```tsx
+<Datalist
+  aria-label="Glass"
+  options={glassNames.map((glass) => ({ value: glass, label: glass }))}
+  value={glass}
+  onChange={(event) => setGlass(event.target.value)}
+/>
+```
+*/
 export const Datalist = React.forwardRef<HTMLInputElement, DatalistProps>(
   function Datalist({ options, className, ...rest }, ref) {
     const generatedId = useId();

@@ -4,7 +4,7 @@ Interactive Abbe diagram (glass map) feature for exploring optical glass materia
 
 ## Entry Point
 
-- [GlassMapView.tsx](./GlassMapView.tsx.md) — Interactive Abbe diagram page view
+- [GlassMapView.tsx](./GlassMapView.tsx) — Interactive Abbe diagram page view
 
 ## Subdirectories
 

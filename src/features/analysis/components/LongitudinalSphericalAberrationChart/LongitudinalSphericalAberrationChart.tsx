@@ -1,7 +1,17 @@
+/**
+# `features/analysis/components/LongitudinalSphericalAberrationChart/LongitudinalSphericalAberrationChart.tsx`
+*/
 import type { LongitudinalSphericalAberrationData } from "@/features/analysis/types/plotData";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { buildLongitudinalSphericalAberrationOption } from "./longitudinalSphericalAberrationChartOption";
 
+/**
+## Props
+
+- `longitudinalSphericalAberrationData`: all wavelength LSA series to render.
+- `wavelengthLabels`: labels used to name the wavelength series.
+- `autoHeight`: optional responsive height behavior passed through to the shared chart factory.
+*/
 interface LongitudinalSphericalAberrationChartProps {
   readonly longitudinalSphericalAberrationData: LongitudinalSphericalAberrationData;
   readonly wavelengthLabels: readonly string[];
@@ -13,6 +23,11 @@ interface LongitudinalSphericalAberrationChartBuilderArgs {
   readonly wavelengthLabels: readonly string[];
 }
 
+/**
+## Purpose
+
+Wraps the shared analysis ECharts component factory for longitudinal spherical aberration data.
+*/
 export const LongitudinalSphericalAberrationChart = createAnalysisChartComponent<
   LongitudinalSphericalAberrationChartProps,
   LongitudinalSphericalAberrationChartBuilderArgs

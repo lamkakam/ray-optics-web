@@ -1,3 +1,64 @@
+/**
+# LensEditor.tsx
+
+Successful auto-aperture updates request sequential semi-diameters alongside the analyses, validate Object/physical/Image alignment, and replace the ID-keyed cache. Successful manual updates clear it. Failed updates leave the committed model and cache unchanged.
+
+## State
+| State | Type | Description |
+|-------|------|-------------|
+| `computing` | `boolean` | Submit in-progress flag |
+| `validationErrorMessage` | `string \| undefined` | Lens-prescription glass validation error shown in a local `ErrorModal` |
+| `seidelModalOpen` | `boolean` | Seidel modal visibility |
+| `zernikeModalOpen` | `boolean` | Zernike modal visibility |
+
+## Derived Store State
+Read reactively via `useStore` / `useLensEditorStore`:
+- From `useAnalysisPlotStore()`: `selectedFieldIndex`, `selectedWavelengthIndex`, `selectedPlotType`
+- From `useLensLayoutImageStore()`: `layoutImage`, `layoutLoading`
+- From `useAnalysisDataStore()`: `firstOrderData`, `seidelData`
+- From `useLensEditorStore()`: `committedOpticalModel`
+- From `useTheme()`: `theme`
+- From `useImagePoint()`: `imagePoint`
+- From `useGlassCatalogs()`: `lookupMaps`
+- `hasAnalysisControls`: true when at least one analysis control or chip can render (`seidelData`, `committedOpticalModel`, or `firstOrderData`)
+
+Imperative access to actions is via the provider hooks (`useLensEditorStore`, `useSpecsConfiguratorStore`, `useAnalysisPlotStore`, `useAnalysisDataStore`, `useLensLayoutImageStore`) and then `store.getState()`.
+
+## Callbacks
+- `handleSubmit` — builds `OpticalModel`, validates object/surface glasses against the app-wide glass lookup map before setting loading state or calling the worker, derives `isDark` from `theme === "dark"`, clamps field/wavelength indices, loads first-order/layout/analysis/seidel data in parallel, passes the app-wide `imagePoint` into OPD-related analysis loading, updates committed state; calls `onError()` on compute failure
+- `handleFetchZernikeData` — fetches Zernike coefficients for `ZernikeTermsModal` from the committed optical model and passes the app-wide `imagePoint`; ordering remains a frontend selection and is converted to explicit terms by the worker
+- Zernike payload/order types are imported from `features/lens-editor/types/zernikeData`; Zernike term-count constants are imported from `features/lens-editor/lib/zernikeData`
+- `getOpticalModel` — builds the current `OpticalModel` snapshot from the provider-backed stores
+- `handleImportJson` — loads an imported `OpticalModel` into the specs and lens-editor stores
+- `configToolbar` — `LensEditorConfigToolbar` bound to `getOpticalModel`, `handleImportJson`, `handleSubmit`, and disabled when `!isReady || computing`; the toolbar owns both JSON config import and Photons to Photos TXT import before delegating validated models to `handleImportJson`
+
+## Layout
+
+### LG (`isLG === true`)
+- Controls row: always rendered so config actions are available before any optical system has been computed. Row order is `Update System`, `Load Config`, `Import a file from Photons to Photos`, `Download Config`, then optional `3rd Order Seidel Aberr.` and optional `Zernike Terms`; `border-b` is applied here when `firstOrderData` is undefined. `seidelButton` is guarded by `seidelData`; `zernikeButton` is guarded by `committedOpticalModel` (not `seidelData`)
+- First-order chips row (border-bottom) — only rendered when `firstOrderData` is defined
+- Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%); the analysis panel wrapper has `overflow-hidden` (`data-testid="lg-analysis-plot-panel"`) to prevent content from bleeding over the BottomDrawer when viewport height is small
+- BottomDrawerContainer (`draggable={true}`)
+- SeidelAberrModal, ZernikeTermsModal
+
+### SM (`isLG === false`)
+- Outer scroll wrapper: `data-testid="sm-scroll-container"` with `flex-1 min-h-0 overflow-y-auto flex flex-col` — makes all content scrollable on small screens
+- Controls section: always rendered so config actions are available before any optical system has been computed. It wraps naturally and orders controls as `Update System`, `Load Config`, `Import a file from Photons to Photos`, `Download Config`, then optional Seidel/Zernike buttons; first-order chips render below only when `firstOrderData` is defined
+- `data-testid="lens-layout-container"` wrapping LensLayoutPanel
+- `data-testid="analysis-plot-container"` wrapping AnalysisPlotContainer
+- BottomDrawerContainer (`draggable={false}`)
+- SeidelAberrModal, ZernikeTermsModal
+
+## Notes
+- `onError` delegates compute failures to `app/AppShell.tsx`, which owns the shared generic `ErrorModal`
+- Missing prescription glasses are shown through a local `ErrorModal` with the standard glass-validation message and do not call `onError()`
+- `ZernikeTermsModal` receives `specsStore.getState().getFieldOptions()` / `getWavelengthOptions()` as snapshots — intentional
+- `handleSubmit` uses `loadAnalysisPlot(...)` from `features/analysis/lib/plotFunctions.ts`, so submit-time analysis updates use the same worker-path rules as `AnalysisPlotContainer.tsx`
+- `handleSubmit` commits plot-store-backed results through `commitAnalysisPlotResult(...)`, including diffraction MTF data; `surfaceBySurface3rdOrder` is ignored by that helper because full Seidel data is committed separately from `proxy.get3rdOrderSeidelData(...)`
+- `handleSubmit` passes `theme === "dark"` into `proxy.plotLensLayout(...)`; the worker then derives whether to enable wavelength ray-fan overlays from any `surface.diffractionGrating`
+- Submit flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
+- Example-system loading now lives on `/example-systems`; LensEditor no longer renders the old example dropdown or overwrite confirmation.
+*/
 "use client";
 
 import React, { useState, useCallback } from "react";
@@ -32,12 +93,39 @@ import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProv
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/autoSemiDiameters";
 
+/**
+## Props
+| Prop | Type | Description |
+|------|------|-------------|
+| `proxy` | `PyodideWorkerAPI \| undefined` | Pyodide worker proxy (undefined until ready) |
+| `isReady` | `boolean` | Whether Pyodide is initialised |
+| `onError` | `() => void` | Called on submit compute error; opens page-level error modal |
+*/
 export interface LensEditorProps {
   readonly proxy: PyodideWorkerAPI | undefined;
   readonly isReady: boolean;
   readonly onError: () => void;
 }
 
+/**
+## Purpose
+Page-level component (`"use client"`). Owns the home-view lens editor workflow: manual/import submit-compute behavior, Lens Editor config toolbar placement, Seidel/Zernike modal state, and layout for LG and SM breakpoints. Calls `useScreenBreakpoint()` internally to derive `isLG`. Delegates the compute error modal to `page.tsx` via `onError`.
+Lens-editor child components are imported through the `features/lens-editor/components` root barrel so `LensEditor` depends on the component package surface rather than individual component directories.
+`AnalysisPlotContainer` is imported through the `features/analysis/components` root barrel for the same reason.
+
+## Usages
+
+```tsx
+// In app/page.tsx
+const lensEditor = (
+  <LensEditor
+    proxy={proxy}
+    isReady={isReady}
+    onError={() => setErrorModalOpen(true)}
+  />
+);
+```
+*/
 export function LensEditor({
   proxy,
   isReady,

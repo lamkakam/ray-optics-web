@@ -6,7 +6,7 @@ Direct component directories expose an `index.ts` barrel so page-level imports c
 
 ## Components
 
-- [GlassScatterPlot.tsx](./GlassScatterPlot/GlassScatterPlot.tsx.md) — Abbe diagram scatter plot with glass selections (visx)
-- [GlassDetailPanel.tsx](./GlassDetailPanel/GlassDetailPanel.tsx.md) — displays glass material properties (refractive index, V-number, etc.)
-- [GlassMapControls.tsx](./GlassMapControls/GlassMapControls.tsx.md) — filter and zoom controls for the glass map view
-- [GlassMapCatalogSelector.tsx](./GlassMapCatalogSelector/GlassMapCatalogSelector.tsx.md) — catalog and searchable glass selector for committed detail selection
+- [GlassScatterPlot.tsx](./GlassScatterPlot/GlassScatterPlot.tsx) — Abbe diagram scatter plot with glass selections (visx)
+- [GlassDetailPanel.tsx](./GlassDetailPanel/GlassDetailPanel.tsx) — displays glass material properties (refractive index, V-number, etc.)
+- [GlassMapControls.tsx](./GlassMapControls/GlassMapControls.tsx) — filter and zoom controls for the glass map view
+- [GlassMapCatalogSelector.tsx](./GlassMapCatalogSelector/GlassMapCatalogSelector.tsx) — catalog and searchable glass selector for committed detail selection

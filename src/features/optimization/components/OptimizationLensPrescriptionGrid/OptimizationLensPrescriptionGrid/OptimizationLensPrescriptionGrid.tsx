@@ -1,3 +1,25 @@
+/**
+# `features/optimization/components/LensPrescriptionGrid/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid.tsx`
+
+Renders the optimization lens prescription grid, including a read-only surface `Index` column, radius/thickness variable buttons, asphere variable/pickup button, and read-only inspection cells that open existing lens-editor dialogs.
+
+- Exports `OptimizationLensPrescriptionGridProps` so the component directory barrels can expose the grid's public prop type without widening the `LensPrescriptionGrid` public surface.
+- Accepts an optional `autoAperture` prop (default `false`) and passes it to the shared semi-diameter column as its read-only mode. Auto mode displays each effective model `semiDiameter`, including rectangular-aperture surfaces; manual mode keeps editable/manual values and the existing blank rectangular-aperture cell behavior.
+- Uses a horizontal-overflow wrapper for the wide prescription table and relies on parent layout padding instead of adding its own outer `p-4`.
+- Uses AG Grid's normal layout so the grid owns vertical row scrolling. Below `1440px` the wrapper height is `calc(100vh - 160px)`; at `1440px` and above it fills the drawer panel with a `200px` minimum height.
+- Keeps AG Grid's native touch handling enabled so resizable header handles respond to touchscreen drags. The shared `ag-grid-touch-scroll` coarse-pointer styles continue to provide native horizontal and vertical panning, iOS momentum scrolling, and scroll chaining on viewport areas; AG Grid owns gestures that begin on resize handles.
+- Applies the shared `lensPrescriptionGridDefaultColDef` (`{ sortable: false, suppressMovable: true }`) so the prescription columns stay in their prescribed order across the Optimization tabs.
+- Uses `EditableAgGridReact`, matching the other editable AG Grid surfaces so any future editable prescription cells commit pending edits when editing stops.
+- Accepts optional AG Grid cell edit lifecycle callbacks and forwards them to `EditableAgGridReact`, even though current prescription cells are read-only, so the page-level Optimize gate remains wired if prescription cells become editable later.
+- Composes common prescription columns from `shared/lib/lens-prescription-grid` with `getGridRow: (data) => data.row`; optimization-only columns remain local.
+- Passes optimization-specific tooltip copy for the read-only `Medium`, `Asph.`, and `Diffraction Grating` inspection cells so they say `Click to view ...` without changing the editor page grid.
+- Prepends an `Index` column before `Surface`; it is blank for `Object` and `Image`, shows `1..N` for real surface rows using the existing optimization surface numbering, and uses the shared lens prescription grid `Index` config so it has the shared initial width and is pinned left.
+- The `Index`, `Surface`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`.
+- The radius and thickness `Var.` cells use the same `ActionWrapper` plus Tooltip-wrapped native `<button>` pattern as `Medium`; clicking either the button or the surrounding cell body opens the corresponding optimization modal for the surface. Their Tooltip trigger fills the cell action wrapper so hovering anywhere in the cell action area displays the tooltip. The buttons show the saved optimization mode as `C` for missing or `constant` modes, `V` for `variable`, and `P` for `pickup`.
+- Adds a `Var.` column after `Asph.` for configuring asphere variable/pickup optimization targets; shown only for real surface rows. The button summarizes all saved asphere term modes as `C` when the asphere state is missing or every term is `constant`, `V` when any term is variable-only, `P` when any term is pickup-only, and `V,P` when variable and pickup terms are both present. Requires `asphereStates` and `onOpenAsphereVarModal` props.
+- Sets the three optimization `Var.` columns to a narrow `60px` initial width sized for the `Var.` header text, while leaving them otherwise resizable by AG Grid defaults.
+- Uses shared text action cells for non-optimization-mode inspection cells such as `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating`; those cells show aperture defaults or circular radius labels, `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels while preserving the read-only modal callbacks.
+*/
 "use client";
 
 import { useMemo } from "react";

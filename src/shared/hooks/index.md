@@ -4,8 +4,8 @@ React hooks for shared, cross-feature logic. These hooks have no dependency on s
 
 ## Hooks
 
-- [useAgGridTheme.ts](./useAgGridTheme.ts.md) — Hook to provide AG Grid theming based on current light/dark mode
-- [useDebouncedCallback.ts](./useDebouncedCallback.ts.md) — Hook to debounce delayed, cancelable side-effect callbacks while preserving the latest callback implementation
-- [useScreenBreakpoint.ts](./useScreenBreakpoint.ts.md) — Hook to detect screen size breakpoints for responsive design
-- [useServiceWorkerRegistration.ts](./useServiceWorkerRegistration.ts.md) — Hook to register and manage the service worker for offline support
-- [usePyodide.ts](./usePyodide.ts.md) — Initialises the singleton Pyodide web worker and exposes a typed Comlink proxy to the rest of the app
+- [useAgGridTheme.ts](./useAgGridTheme.ts) — Hook to provide AG Grid theming based on current light/dark mode
+- [useDebouncedCallback.ts](./useDebouncedCallback.ts) — Hook to debounce delayed, cancelable side-effect callbacks while preserving the latest callback implementation
+- [useScreenBreakpoint.ts](./useScreenBreakpoint.ts) — Hook to detect screen size breakpoints for responsive design
+- [useServiceWorkerRegistration.ts](./useServiceWorkerRegistration.ts) — Hook to register and manage the service worker for offline support
+- [usePyodide.ts](./usePyodide.ts) — Initialises the singleton Pyodide web worker and exposes a typed Comlink proxy to the rest of the app

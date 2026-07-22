@@ -4,4 +4,4 @@ Lens prescription grid type definitions.
 
 ## Files
 
-- [gridTypes.ts](./gridTypes.ts.md) — Type definitions for lens prescription grid rows and columns
+- [gridTypes.ts](./gridTypes.ts) — Type definitions for lens prescription grid rows and columns
