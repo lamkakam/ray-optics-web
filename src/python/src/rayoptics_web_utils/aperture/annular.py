@@ -1,6 +1,4 @@
-"""# `python/src/rayoptics_web_utils/aperture/annular.py`
-
-Annular aperture helper."""
+"""Provide a RayOptics annular aperture."""
 
 from math import sqrt
 
@@ -9,12 +7,6 @@ from rayoptics.elem.surface import Aperture
 
 class Annular(Aperture):
     """Circular clear aperture with a centered circular obstruction.
-
-    ## Purpose
-
-    Provides `Annular`, a RayOptics `Aperture` subclass for circular clear apertures with a circular central obstruction.
-
-    ## Behavior
 
     - Constructor accepts `radius`, `obstruction_radius`, `x_offset`, `y_offset`, and `rotation`.
     - `obstruction_radius` must be greater than `0` and smaller than `radius`; invalid construction or resizing raises `ValueError`.

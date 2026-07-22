@@ -1,21 +1,4 @@
-"""# `python/src/rayoptics_web_utils/analysis/wavefront.py`
-
-## Return Shape
-
-Returns `fieldIdx`, `wvlIdx`, `x`, `y`, `z`, `unitX`, `unitY`, and `unitZ`.
-
-- `x` and `y` are relative pupil axes.
-- `z` is the transposed OPD grid in waves.
-- `unitX` and `unitY` are `""`; `unitZ` is `"waves"`.
-
-## Key Conventions
-
-- Uses `make_ray_grid(...)`.
-- Passes `image_point` to `make_ray_grid(...)`.
-- Preserves the existing wavelength correction by scaling the OPD grid by `central_wvl / wavelength_nm`.
-- Uses `_json_float_grid` so NaN values serialize as `None`.
-
-Wavefront map data extraction."""
+"""Extract wavefront-map data."""
 
 import numpy as np
 from rayoptics.environment import OpticalModel
@@ -31,14 +14,12 @@ def get_wavefront_data(
     image_point: str = "chief_ray",
     num_rays: int = 64,
 ) -> dict:
-    """
-        Return a wavefront map grid for one field and wavelength.
+    """Return a wavefront map grid for one field and wavelength.
 
-
-    ## Purpose
-
-    Return wavefront map grid data for one field and wavelength.
-
+    The result contains `fieldIdx`, `wvlIdx`, relative pupil axes `x` and `y`,
+    transposed OPD grid `z`, empty axis units, and `unitZ="waves"`. The requested
+    `image_point` is passed to `make_ray_grid`; OPD is scaled by
+    `central_wvl / wavelength_nm`, and NaN samples serialize as `None`.
     """
     osp = opm.optical_spec
     central_wvl = osp["wvls"].central_wvl

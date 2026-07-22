@@ -1,15 +1,4 @@
-"""# `python/src/rayoptics_web_utils/optimization/progress.py`
-
-## Public Surface
-
-```python
-class OptimizationProgress:
-    entries: list[OptimizationProgressEntry]
-    latest_vector: FloatArray | None
-    record(vector: FloatArray, evaluation: ProblemEvaluation, reporter: ProgressReporter | None = None) -> bool
-```
-
-Progress tracking helpers for optimization runs."""
+"""Track solver-independent optimization progress."""
 
 from __future__ import annotations
 
@@ -26,11 +15,8 @@ MERIT_LOG_EPSILON = 1e-300
 class OptimizationProgress:
     """Track optimization progress snapshots by distinct evaluated vectors.
 
-    ## Purpose
 
     Tracks solver progress snapshots in a solver-independent way.
-
-    ## Key Behaviors
 
     - Stores the existing progress payload shape:
       - `iteration`

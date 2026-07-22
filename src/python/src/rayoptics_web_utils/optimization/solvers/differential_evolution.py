@@ -1,13 +1,4 @@
-"""# `python/src/rayoptics_web_utils/optimization/solvers/differential_evolution.py`
-
-## Public Surface
-
-```python
-class DifferentialEvolutionSolver(SolverAdapter):
-    solve(progress_reporter: ProgressReporter | None = None) -> SolverResult
-```
-
-SciPy differential-evolution solver adapter."""
+"""Adapt SciPy differential evolution to optimization problems."""
 
 from __future__ import annotations
 
@@ -33,11 +24,8 @@ def _maxiter_for_evaluation_budget(
 class DifferentialEvolutionSolver(SolverAdapter):
     """Run ``scipy.optimize.differential_evolution`` against an optimization problem.
 
-    ## Purpose
 
     Implements SciPy differential evolution as a solver adapter for scalar-merit optimization problems.
-
-    ## Key Behaviors
 
     - Calls `scipy.optimize.differential_evolution(...)`.
     - Uses `OptimizationProblem.scalar_objective(...)` as the solver objective.

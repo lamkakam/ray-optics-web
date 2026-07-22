@@ -1,240 +1,15 @@
-"""# `python/src/rayoptics_web_utils/optimization/optimization.py`
+"""Expose dict-driven optical-model optimization.
 
-## Purpose
+The facade accepts JSON-safe configs for least-squares or differential-evolution
+solvers and returns JSON-safe reports. Radius targets remain radius-valued in the
+public contract but are optimized internally as curvature; other targets stay in
+direct value space.
 
-Provides the public compatibility facade for the optimization package. The public API still accepts JSON-encodable config dicts, supports affine pickups for geometric and aspheric targets, evaluates operand-based merit functions, and runs SciPy-backed optimization through solver adapters, including least-squares and differential evolution.
-
-`opm` is typed as `rayoptics.environment.OpticalModel`.
-
-## Public API
-
-```python
-evaluate_optimization_problem(opm: OpticalModel, config: OptimizationConfig, image_point: str = "chief_ray") -> OptimizationReport
-optimize_opm(
-    opm: OpticalModel,
-    config: OptimizationConfig,
-    image_point: str = "chief_ray",
-    progress_reporter: ProgressReporter | None = None,
-) -> OptimizationReport
-```
-
-`image_point` is forwarded into `OptimizationProblem` so OPD-based operands use the app-wide reference convention.
-
-Both return JSON-serialisable dicts containing:
-
-- `success`
-- `status`
-- `message`
-- `optimizer`
-- `initial_values`
-- `final_values`
-- `pickups`
-- `residuals`
-- `merit_function`
-- `optimization_progress`
-
-## Config Shape
-
-```python
-{
-  "optimizer": {
-    "kind": "least_squares",
-    "method": "trf",  # or "lm"
-    "ftol": 1e-8,
-    "xtol": 1e-8,
-    "gtol": 1e-8,
-    "max_nfev": 200
-  },
-  "variables": [
-    {"kind": "radius", "surface_index": 1, "min": 20.0, "max": 30.0},
-    {"kind": "thickness", "surface_index": 6, "min": 35.0, "max": 50.0}
-  ],
-  "pickups": [
-    {"kind": "radius", "surface_index": 2, "source_surface_index": 1, "scale": -1.0, "offset": 0.0}
-  ],
-  "merit_function": {
-    "operands": [
-      {
-        "kind": "rms_spot_size",
-        "target": 0.0,
-        "weight": 1.0,
-        "fields": [{"index": 0, "weight": 1.0}],
-        "wavelengths": [{"index": 1, "weight": 1.0}],
-        "options": {"num_rays": 21}
-      }
-    ]
-  }
-}
-```
-
-## Supported Kinds
-
-### Optimizer
-
-- `least_squares`
-- `differential_evolution`
-
-The public facade is backed by an internal solver registry. `least_squares` uses the residual-vector objective and `differential_evolution` uses the scalar sum-of-squares objective.
-
-### Variables / Pickups
-
-- `radius` — reads/writes `opm["seq_model"].ifcs[surface_index].profile.r`
-- `thickness` — reads/writes `opm["seq_model"].gaps[surface_index].thi`
-- `asphere_conic_constant` — reads/writes `opm["seq_model"].ifcs[surface_index].profile.cc`
-- `asphere_polynomial_coefficient` — reads/writes one coefficient slot in `profile.coefs`, extending the list with trailing zeros when needed
-- `asphere_toric_sweep_radius` — reads/writes `profile.cR` for `XToroid` / `YToroid`
-- Radius variables remain radius-based in the public config and report payloads, but SciPy optimizes them internally in curvature space (`c = 1 / R`, with planar `R = 0` mapped to `c = 0`) to avoid the singular numeric behavior around flat surfaces.
-- Asphere variables and pickups stay in direct value space; only radius variables are transformed internally.
-- Bounded methods such as `trf` and global optimizers such as `differential_evolution` expect variable `min` / `max`; unbounded methods such as `lm` may omit them.
-
-### Operands
-
-- `rms_spot_size`
-- `rms_wavefront_error`
-- `opd_difference`
-- `opd_difference_tangential`
-- `opd_difference_sagittal`
-- `focal_length`
-- `f_number`
-- `ray_fan`
-- `ray_fan_tangential`
-- `ray_fan_sagittal`
-
-## Weighting Rules
-
-- `focal_length` and `f_number` are field-independent and wavelength-independent; any `fields` or `wavelengths` entries are ignored.
-- Field-dependent scalar operands expand into one residual per selected field/wavelength pair.
-- `ray_fan` expands into a fixed `42` residual samples per selected field/wavelength pair (`21` tangential + `21` sagittal). Axis-specific Ray Fan operands expand into `21` residual samples for the selected axis. Missing or non-finite analysis samples are padded with `1e6` penalties so SciPy `lm` finite differencing always receives vectors with stable dimensions.
-- `opd_difference` reuses `rayoptics_web_utils.analysis.get_opd_fan_data(opm, fi)` and computes one scalar per field/wavelength sample as `mean(abs(OPD_i - mean(OPD)))` across the combined tangential and sagittal OPD fan ordinates, after dropping non-finite values. Axis-specific OPD Difference operands use the same formula on only the selected fan axis.
-- `ray_fan` reuses `rayoptics_web_utils.analysis.get_ray_fan_data(opm, fi)` and exposes the combined tangential and sagittal ordinates as target-less residual samples. Axis-specific Ray Fan operands expose only the selected axis.
-- Each residual uses:
-
-```python
-total_weight = operand_weight * sqrt(field_weight) * sqrt(wavelength_weight)
-weighted_residual = total_weight * (actual_value - target)
-```
-
-- `merit_function["sum_of_squares"]` is the sum of squared weighted residuals.
-- `merit_function["rss"]` is the square root of that sum.
-
-## Validation Rules
-
-- Unknown optimizer, variable, pickup, or operand kinds raise `ValueError`.
-- Variable targets and pickup targets must be unique.
-- The same target cannot be both a variable and a pickup target.
-- Radius targets use `sm.ifcs`; thickness targets use `sm.gaps`; out-of-range indices raise `IndexError`.
-- Asphere targets use `sm.ifcs` and may include `asphere_kind`; polynomial coefficient targets also include `coefficient_index`, and coefficient pickups include `source_coefficient_index`.
-- When an asphere target references a spherical interface, the optimizer materializes the requested profile kind before reading or writing that target.
-- If an interface is already aspheric with a different profile class than the requested `asphere_kind`, validation raises `ValueError`.
-- Pickup graphs are topologically validated; cycles raise `ValueError("Pickup cycle detected")`.
-- `merit_function.operands` must not be empty.
-
-## Internal Structure
-
-- `_types.py` — shared typed dicts, aliases, and protocols used across the package
-- `optimization.py` — public facade, solver dispatch, compatibility aliases, and stopped-report construction
-- `config.py` — config normalization and validation
-- `targets.py` — mutable target access, snapshots, radius/curvature transforms
-- `operands.py` — operand registry and per-sample evaluators
-- `problem.py` — algorithm-agnostic `OptimizationProblem`
-- `progress.py` — solver-independent progress tracking
-- `solvers/base.py` — solver adapter contract
-- `solvers/least_squares.py` — current SciPy least-squares adapter
-- `solvers/differential_evolution.py` — SciPy differential-evolution adapter
-
-## Algorithm
-
-### `OptimizationProblem`
-
-- Owns normalized optimizer state, variable/pickup application, merit evaluation, scalar and residual objectives, and solver-independent progress tracking.
-- `residual_objective(vector)` evaluates one optimizer step and converts the merit report into the residual vector consumed by least-squares-style solvers.
-- `scalar_objective(vector)` evaluates one optimizer step and returns `merit_function["sum_of_squares"]` for scalar/global optimizers such as differential evolution.
-- Both objective methods record merit-history entries whenever the incoming variable vector differs materially from the last recorded vector.
-- Residual evaluation failures return a large penalty residual vector with the nominal expanded length (`1e6` per residual sample, minimum length 1); scalar evaluation failures return `1e6`.
-- For radius variables, `current_vector()`, bounded `bounds()`, and `apply_vector(...)` all translate between external radius units and the internal curvature-space optimizer vector.
-
-### `LeastSquaresSolver`
-
-- Runs `scipy.optimize.least_squares(...)` using the stored optimizer configuration, current variable vector, and `OptimizationProblem.residual_objective(...)`.
-- Supplies SciPy bounds only when the selected least-squares method is bounded (`trf`); `lm` runs without a `bounds` argument.
-- Normalizes the SciPy result into the mapping consumed by `optimize_opm(...)`.
-
-### `DifferentialEvolutionSolver`
-
-- Runs `scipy.optimize.differential_evolution(...)` using the stored optimizer configuration and `OptimizationProblem.scalar_objective(...)`.
-- Converts `OptimizationProblem.bounds()` into the per-dimension `(min, max)` sequence required by SciPy differential evolution.
-- Supports SciPy 1.14.1-compatible DE options: `strategy`, `max_nfev`, `popsize`, `tol`, `mutation`, `recombination`, `seed`, `polish`, `init`, and `atol`; the solver adapter forwards `max_nfev` to SciPy as `maxiter`.
-- Normalizes the SciPy result into the mapping consumed by `optimize_opm(...)`, carrying solver-specific metadata such as `nfev` and `nit`.
-
-## Result Shape
-
-### `initial_values` / `final_values`
-
-Each entry contains:
-
-- `kind`
-- `surface_index`
-- `value`
-- `min`
-- `max`
-- Asphere entries additionally include `asphere_kind`; polynomial entries also include `coefficient_index`.
-- For unbounded variables such as `lm`, `min` and `max` are omitted from the report entries.
-
-### `pickups`
-
-Each entry contains:
-
-- `kind`
-- `surface_index`
-- `source_surface_index`
-- `scale`
-- `offset`
-- `value`
-- Asphere pickups additionally include `asphere_kind`; polynomial coefficient pickups also include `coefficient_index` and `source_coefficient_index`.
-
-### `residuals`
-
-Each entry contains:
-
-- `kind`
-- `target`
-- `value`
-- `field_index`
-- `wavelength_index`
-- `operand_weight`
-- `field_weight`
-- `wavelength_weight`
-- `total_weight`
-- `weighted_residual`
-
-### `optimization_progress`
-
-Each entry contains:
-
-- `iteration`
-- `merit_function_value`
-- `log10_merit_function_value`
-
-## Dependencies
-
-- `scipy.optimize.least_squares`
-- `rayoptics_web_utils.raygrid.make_ray_grid`
-- `rayoptics_web_utils.analysis.get_opd_fan_data`
-- `rayoptics_web_utils.zernike.zernike._scale_opd_grid_to_wavelength`
-- RayOptics sequential model access via `opm["seq_model"]`
-
-## Usages
-
-```python
-from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_opm
-
-report = evaluate_optimization_problem(opm, config)
-result = optimize_opm(opm, config)
-```
-
-The module is intended as the Python core for future worker/UI integration; in this change it is Python-only.
-
-Operand-based optimization helpers for rayoptics optical models."""
+Residual weights are ``operand_weight * sqrt(field_weight) *
+sqrt(wavelength_weight)``. The merit sum of squares is the sum of squared weighted
+residuals and ``rss`` is its square root. Scalar operands expand by selected
+field/wavelength samples; ray-fan operands retain fixed, penalty-padded dimensions.
+"""
 
 from __future__ import annotations
 
@@ -309,7 +84,6 @@ def evaluate_optimization_problem(
 ) -> OptimizationReport:
     """Evaluate a dict-driven optimization problem without running SciPy.
 
-    ### `evaluate_optimization_problem(opm, config)`
 
     1. Validates and normalizes the config.
     2. Snapshots all variable/pickup targets before mutation.
@@ -367,7 +141,6 @@ def optimize_opm(
 ) -> OptimizationReport:
     """Optimize a rayoptics optical model using a dict-driven config.
 
-    ### `optimize_opm(opm, config)`
 
     1. Validates and normalizes the config.
     2. Snapshots all variable/pickup targets before mutation.

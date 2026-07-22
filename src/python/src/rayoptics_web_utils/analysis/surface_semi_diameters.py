@@ -1,6 +1,4 @@
-"""# `surface_semi_diameters.py`
-
-Sequential-interface semi-diameter extraction."""
+"""Extract sequential-interface semi-diameters."""
 
 
 def get_surface_semi_diameters(opm) -> list[float]:

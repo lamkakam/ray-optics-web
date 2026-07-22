@@ -1,28 +1,4 @@
-"""# `python/src/rayoptics_web_utils/optimization/problem.py`
-
-## Public Surface
-
-```python
-class OptimizationProblem:
-    __init__(opm, config, image_point: str = "chief_ray")
-    current_vector() -> FloatArray
-    bounds() -> tuple[FloatArray, FloatArray]
-    apply_vector(values) -> list[PickupReportEntry]
-    evaluate(values=None) -> ProblemEvaluation
-    residual_objective(vector) -> FloatArray
-    scalar_objective(vector) -> float
-    variable_state() -> list[VariableStateEntry]
-    penalty_residual_vector() -> np.ndarray
-```
-
-## Dependencies
-
-- `config.py`
-- `operands.py`
-- `progress.py`
-- `targets.py`
-
-Algorithm-agnostic optimization problem model."""
+"""Model an algorithm-independent optimization problem."""
 
 from __future__ import annotations
 
@@ -56,11 +32,8 @@ from .targets import (
 class OptimizationProblem:
     """Validated optimization problem bound to an optical model.
 
-    ## Purpose
 
     Provides the algorithm-agnostic `OptimizationProblem` core used by optimization solver adapters. It owns config normalization, variable/pickup application, operand evaluation, merit computation, and progress tracking, but does not call any SciPy solver directly.
-
-    ## Key Behaviors
 
     - Normalizes the incoming config with `config.normalize_config(...)`.
     - Keeps variables in radius-based external units while translating radius optimization internally to curvature space.

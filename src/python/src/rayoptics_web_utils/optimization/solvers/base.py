@@ -1,13 +1,4 @@
-"""# `python/src/rayoptics_web_utils/optimization/solvers/base.py`
-
-## Public Surface
-
-```python
-class SolverAdapter(ABC):
-    solve(progress_reporter: ProgressReporter | None = None) -> SolverResult
-```
-
-Base types for optimization solver adapters."""
+"""Define the optimization solver-adapter contract."""
 
 from __future__ import annotations
 
@@ -19,11 +10,8 @@ from rayoptics_web_utils.optimization._types import OptimizationProblemProtocol,
 class SolverAdapter(ABC):
     """Adapter that runs one optimization algorithm against a problem.
 
-    ## Purpose
 
     Defines the internal solver-adapter contract used to keep algorithm-specific SciPy integration out of the optimization core.
-
-    ## Key Behaviors
 
     - Accepts a prepared `OptimizationProblem`.
     - Returns a normalized solver result mapping consumed by `optimize_opm(...)`.

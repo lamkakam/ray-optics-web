@@ -1,21 +1,4 @@
-"""# `python/src/rayoptics_web_utils/analysis/longitudinal_spherical_aberration.py`
-
-## Return Shape
-
-Each list entry represents one wavelength:
-
-```python
-{
-    "wvlIdx": int,
-    "LSA": {"x": list[float], "y": list[float]},
-    "unitX": "mm",
-    "unitY": "",
-}
-```
-
-`LSA.x` contains longitudinal focus shifts (`mm`) for finite mode or output vergence (`D`) for afocal mode. `LSA.y` contains normalized pupil coordinates.
-
-Longitudinal spherical aberration data extraction."""
+"""Extract longitudinal spherical aberration data."""
 
 from __future__ import annotations
 
@@ -36,13 +19,7 @@ def _focus_shift_from_ray(ray) -> float:
 
 
 def get_lsa_data(opm: OpticalModel, num_points: int = 21) -> list[dict]:
-    """Return on-axis longitudinal spherical aberration curves for all wavelengths.
-
-    ## Purpose
-
-    Return longitudinal spherical aberration plot data for the on-axis field across all configured wavelengths.
-
-    ## Behavior
+    """Return on-axis longitudinal spherical aberration for every wavelength.
 
     - Samples normalized tangential pupil coordinate `rho` from `0.01` to `1.0`.
     - Omits `rho=0` because the geometric longitudinal spherical aberration focus-shift formula is singular on axis.
@@ -50,7 +27,12 @@ def get_lsa_data(opm: OpticalModel, num_points: int = 21) -> list[dict]:
     - Iterates every configured wavelength index.
     - Traces each sampled pupil ray with RayOptics `trace_ray(..., foc=foc)`.
     - Computes longitudinal focus shift from the current image plane using `-ray[-1].p[1] / (ray[-2].d[1] / ray[-2].d[2])`.
-    - For infinite image space, evaluates each ray's height and angular slope at the exit-pupil plane and returns signed output vergence in `D` instead of intersecting a nearly parallel ray at infinity."""
+    - For infinite image space, evaluates each ray's height and angular slope at the exit-pupil plane and returns signed output vergence in `D` instead of intersecting a nearly parallel ray at infinity.
+
+    Each result contains `wvlIdx`, `LSA` axes `x` and `y`, and `unitX` and
+    `unitY`. `LSA.x` contains finite-mode focus shifts in `mm` or afocal output
+    vergence in `D`; `LSA.y` contains normalized pupil coordinates.
+    """
     osp = opm["optical_spec"]
     rho_values = [float(value) for value in np.linspace(0.01, 1.0, num=num_points)]
     data: list[dict] = []

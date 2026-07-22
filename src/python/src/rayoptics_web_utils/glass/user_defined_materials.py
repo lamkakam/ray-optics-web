@@ -1,6 +1,5 @@
-"""# `python/src/rayoptics_web_utils/glass/user_defined_materials.py`
+"""Store user-defined tabulated materials in the frontend glass schema.
 
-## API
 
 ## Output Schema
 
@@ -52,13 +51,9 @@ def _render_safe_glass_code(material: opticalmedium.InterpolatedMedium) -> str:
     return f"{round((nd - 1.0) * 1000):03d}{round(vd * 10):03d}"
 
 class UserDefinedMaterial(MutableMapping):
-    """## Purpose
+    """Map material labels to tabulated `InterpolatedMedium` instances.
 
-    Stores user-defined tabulated optical materials in an in-memory `MutableMapping` and exports frontend-ready glass data for selected entries.
-
-    ### `UserDefinedMaterial`
-
-    `UserDefinedMaterial` behaves like a mutable mapping from material label to `opticalglass.opticalmedium.InterpolatedMedium`.
+    Selected entries export as frontend-ready glass data.
 
     - `__setitem__(key, pairs)` registers a new tabulated material from wavelength/index pairs.
     - Duplicate keys raise `KeyError`.
@@ -137,4 +132,3 @@ class UserDefinedMaterial(MutableMapping):
 
     def __len__(self) -> int:
         return len(self.map)
-

@@ -1,4 +1,4 @@
-"""# `python/src/rayoptics_web_utils/aperture/offset_rotated_rectangular.py`
+"""Define coordinates for an offset, rotated rectangular aperture.
 
 ## Coordinate Convention
 
@@ -9,7 +9,7 @@
 - This is consistent with RayOptics decenter/tilt coordinates for the surface frame. RayOptics' `DecenterData` uses `dec = [x, y, z]`; its Euler `gamma` is the comparable rotation about `z`. RayOptics applies optical-design sign handling to `alpha` and `beta`, but not to `gamma`.
 - For the usual RayOptics field convention where the meridional plane is the `y-z` plane, surface `x` is the sagittal direction and surface `y` is the tangential/meridional direction.
 
-Offset and rotation aware rectangular aperture helper."""
+"""
 
 from math import cos, radians, sin, sqrt
 
@@ -18,12 +18,6 @@ from rayoptics.elem.surface import Rectangular
 
 class OffsetRotatedRectangular(Rectangular):
     """Rectangular aperture whose geometry respects offsets and rotation.
-
-    ## Purpose
-
-    Provides `OffsetRotatedRectangular`, a RayOptics `Rectangular` subclass for rectangular apertures whose point containment and ray-aiming edge targets must account for both offsets and rotation.
-
-    ## Behavior
 
     - Constructor behavior is inherited from `rayoptics.elem.surface.Rectangular`; accepted keyword arguments include `x_half_width`, `y_half_width`, `x_offset`, `y_offset`, and `rotation`.
     - `rotation` is interpreted in degrees.

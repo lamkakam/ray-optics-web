@@ -1,21 +1,8 @@
-"""# `python/src/rayoptics_web_utils/analysis/__init__.py`
+"""Expose optical-analysis data extraction helpers.
 
-The analysis barrel exports `get_surface_semi_diameters` alongside the plot and optical-data helpers.
-
-## Purpose
-
-Re-exports analysis data extraction helpers from their concrete modules for subpackage imports such as:
-
-```python
-from rayoptics_web_utils.analysis import get_diffraction_mtf_data
-```
-
-## Key Conventions
-
-- Keep `__all__` synchronized with the imported public helpers.
-- This subpackage imports RayOptics-dependent code at module import time; top-level package access should continue to use the lazy import map in `rayoptics_web_utils/__init__.py`.
-
-analysis subpackage: optical data extraction helpers."""
+Importing this namespace loads RayOptics-dependent modules, so the top-level package
+exposes these helpers through its lazy import map.
+"""
 
 from rayoptics_web_utils.analysis.diffraction_mtf import get_diffraction_mtf_data
 from rayoptics_web_utils.analysis.diffraction_psf import get_diffraction_psf_data

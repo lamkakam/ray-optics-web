@@ -1,70 +1,11 @@
-"""# `python/src/rayoptics_web_utils/glass/glass.py`
+"""Extract JSON-safe optical-glass catalog data.
 
-## Purpose
-
-Extracts optical glass catalog data (refractive indices, Abbe numbers, partial dispersions) from the `opticalglass` library and returns it as plain Python dicts suitable for JSON serialisation.
-
-## Key Conventions
-
-- `opticalglass` has **no** rayoptics dependency → all functions in this module are eagerly importable (no lazy loading required).
-- `glass_data(name)` returns a `pandas.Series` with a multi-level tuple index `(category, sub_key)`.
-- `nd` key: `('refractive indices', 'd')`.
-- `ne` key: `('refractive indices', 'e')`.
-- Test cases ensure that all interested attributes of each optical glass from the built-in catalogs in `opticalglass` are valid.
-
-## Partial Dispersion Formulas
-
-- P_F,e = (nF − ne) / (nF − nC)
-- P_F,d = (nF − nd) / (nF − nC)
-- P_g,F = (ng − nF) / (nF − nC)
-
-## API
-
-### `_partialDispersions(data) -> dict[str, float]`
-
-Reads refractive indices at `"C"`, `"d"`, `"e"`, `"F"`, `"g"` from `('refractive indices', letter)` and computes all three partial dispersions. Returns `0.0` if the denominator (nF − nC) is zero.
-
-## Output Schema (per glass)
-The value for the attribute `"dispersionCoeffKind"` is `"Schott2x6"`, `"Sellmeier3T"`, or `"Sellmeier4T"`
-
-```json
-{
-  "refractiveIndexD": 1.5168,
-  "refractiveIndexE": 1.51872,
-  "abbeNumberD": 64.17,
-  "abbeNumberE": 63.96,
-  "partialDispersions": {
-    "P_fe": 0.454094,
-    "P_Fd": 0.692308,
-    "P_gF": 0.533499
-  },
-  "dispersionCoeffKind": "Sellmeier3T",
-  "dispersionCoeffs": [
-    1.03961212,
-    0.231792344,
-    1.01046945,
-    0.006000699,
-    0.0200179144,
-    103.560653
-  ]
-}
-```
-
-## Catalogs
-
-| Catalog  | # Glasses (approx) |
-|----------|--------------------|
-| CDGM     | 240                |
-| Hikari   | 160                |
-| Hoya     | 194                |
-| Ohara    | 134                |
-| Schott   | 123                |
-| Sumita   | 134                |
-| Special  | 4 (CaF2, Fused Silica, Water, D263TECO) |
-
-## Usages
-
-Glass catalog data extraction from opticalglass."""
+``opticalglass.glass_data`` exposes a multi-level series indexed by category and
+sub-key. Partial dispersions use ``nF−nC`` as their denominator and return zero
+when it cannot be computed. CDGM, Hoya, Sumita, and Hikari coefficients export as
+``Schott2x6``; Ohara and Schott export as ``Sellmeier3T``. Bundled special
+materials may additionally use ``Sellmeier4T``.
+"""
 
 
 from __future__ import annotations
@@ -73,15 +14,9 @@ from rayoptics_web_utils.glass.helper import (_partial_dispersion)
 
 
 def _partial_dispersions(data: pd.Series) -> dict[str, float]:
-    """
-    Compute P_fe, P_Fd, P_gF from refractive index lines. Returns 0.0 if any cannot be computed.
-    Return type:
-    {
-        "P_fe": float,
-        "P_Fd": float,
-        "P_gF": float,
-    }
-    """
+    """Return P_fe, P_Fd, and P_gF from indexed refractive indices.
+
+    An unavailable or zero F–C denominator yields zero-valued dispersions."""
     nF = data["refractive indices"]["F"]
     ne = data["refractive indices"]["e"]
     nd = data["refractive indices"]["d"]
@@ -95,22 +30,11 @@ def _partial_dispersions(data: pd.Series) -> dict[str, float]:
     }
 
 def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, str | list[float]]:
-    """
-        Return type:
-        {
-            "dispersion_coeffs_kind": str, # "Schott2x6" or "Sellmeier3T"
-            "dispersion_coeffs": list[float],
-        }
+    """Return normalized coefficient kind and values for one catalog glass.
 
-        Raises ValueError if catalog is unsupported.
-
-
-    ### `_get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str, str | list[float]]`
-
-    - Reads `"dispersion coefficients"` of each glass from `data`.
-    - Each glass from catalog name of `"CDGM"`, `"Hoya"` and `"Sumita"` use the convention for Schott dispersion equation with total 5 terms. Each glass from `"Hikari"` use the convention for Schott dispersion equation with total 8 terms. For output, `"dispersionCoeffs"` for each glass from `"CDGM"`, `"Hoya"`, `"Sumita"` is padded to have a uniform length of 8, aligning to the length of `"dispersionCoeffs"` of each glass from `"Hikari"`. The `"dispersionCoeffKind"` is `"Schott2x6"`.
-    - Each glass from catalog name of `"Ohara"` and `"Schott"` use the convention of Sellmeier dispersion equation with total 6 terms. The `"dispersionCoeffKind"` is `"Sellmeier3T"`.
-    - Special materials may also use `"Sellmeier4T"` when the bundled refractiveindex.info source carries four Sellmeier terms, as with Water."""
+    CDGM, Hoya, and Sumita Schott data are padded to Hikari's eight-value layout;
+    Ohara and Schott retain six-value Sellmeier form. Unsupported catalogs raise
+    ``ValueError``."""
 
     def schott2x4() -> dict[str, str | list[float]]:
         keys= ["A0", "A1", "A2", "A3", "A4", "A5"]
@@ -171,23 +95,10 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
 
 
 def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | dict[str, float] | list[float]]:
-    """
-        Build a single glass dict from a glass_data() Series.
-        Return type:
-        {
-            "refractiveIndexD": float,
-            "refractiveIndexE": float,
-            "abbeNumberD": float,
-            "abbeNumberE": float,
-            "partialDispersions": dict[str, float],
-            "dispersionCoeffKind": str, # "Schott2x6" or "Sellmeier3T"
-            "dispersionCoeffs": list[float],
-        }
+    """Return one frontend glass entry from an ``opticalglass`` data series.
 
-
-    ### `_build_glass_entry(data) -> dict[str, float | dict[str, float] | list[float]]`
-
-    Assembles the full glass dict from a `glass_data()` Series."""
+    Includes d/e indices and Abbe numbers, partial dispersions, coefficient kind, and
+    coefficient values."""
     nd = data["refractive indices"]["d"]
     ne = data["refractive indices"]["e"]
 
@@ -209,35 +120,9 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
 
 
 def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
-    """Return {glass_name: glass_dict} for all glasses in a catalog.
+    """Return every valid glass entry in a named catalog.
 
-    ### `get_glass_catalog_data(catalog_name) -> dict[str, dict]`
-
-    Returns `{glass_name: glass_dict}` for all valid glasses in the named catalog. Catalog name is case-insensitive (delegated to `opticalglass` CaselessDictionary).
-
-    ### `get_glass_catalog_data`
-
-    Query a single optical glass catalog by name:
-
-    ```python
-    from rayoptics_web_utils.glass.glass import get_glass_catalog_data
-
-    schott_catalog = get_glass_catalog_data("Schott")
-    # Returns: {"BK7": {...}, "SF5": {...}, ...}
-
-    bk7_data = schott_catalog["BK7"]
-    # Returns: {
-    #   "refractiveIndexD": 1.5168,
-    #   "abbeNumberD": 64.17,
-    #   "partialDispersions": {...},
-    #   "dispersionCoeffKind": "Sellmeier3T",
-    #   "dispersionCoeffs": [...]
-    # }
-    ```
-
-    - Exported eagerly from `rayoptics_web_utils.__init__` as `get_glass_catalog_data` and `get_all_glass_catalogs_data`.
-    - Called from the Pyodide worker (`workers/pyodide.worker.ts`) to populate the glass map feature on the frontend.
-    - All data is JSON-serializable and transmitted as plain dicts (no live pyproxy objects)."""
+    Catalog lookup is case-insensitive and the nested values are JSON serialisable."""
     from opticalglass.glassfactory import fill_catalog_list
 
     catalogs = fill_catalog_list()
@@ -251,31 +136,7 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
 
 
 def get_all_glass_catalogs_data() -> dict[str, dict[str, dict]]:
-    """Return {catalog_name: {glass_name: glass_dict}} for all 6 catalogs + Special materials.
-
-    ### `get_all_glass_catalogs_data() -> dict[str, dict[str, dict]]`
-
-    Returns data for all 6 opticalglass catalogs (CDGM, Hikari, Hoya, Ohara, Schott, Sumita) plus the `"Special"` catalog from `custom_materials.get_special_materials_data()` (contains CaF2, Fused Silica, Water, and D263TECO). Total: 7 catalog keys.
-
-    ### `get_all_glass_catalogs_data`
-
-    Called from the Pyodide worker to load all optical glass catalog data for the glass map feature:
-
-    ```python
-    from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
-
-    all_catalogs = get_all_glass_catalogs_data()
-    # Returns: {
-    #   "CDGM": {"D-ZK1": {...}, "D-PK3": {...}, ...},
-    #   "Hikari": {"A5": {...}, "A3": {...}, ...},
-    #   "Hoya": {"FC5": {...}, "E-FDS6": {...}, ...},
-    #   "Ohara": {"S-BAH3": {...}, ...},
-    #   "Schott": {"BK7": {...}, "FK51": {...}, ...},
-    #   "Sumita": {"K-BaK4": {...}, ...},
-    #   "Special": {"CaF2": {...}, "Fused Silica": {...}, "Water": {...}, "D263TECO": {...}}
-    # }
-    json_result = json.dumps(all_catalogs)
-    ```"""
+    """Return the six standard catalogs plus bundled ``Special`` materials."""
     from .custom_materials import get_special_materials_data
     catalog_names = ["CDGM", "Hikari", "Hoya", "Ohara", "Schott", "Sumita"]
     result = {name: get_glass_catalog_data(name) for name in catalog_names}

@@ -1,8 +1,4 @@
-"""# `python/src/rayoptics_web_utils/analysis/field_curves.py`
-
-## Purpose
-
-Extracts wavelength-selectable field-curve data sampled across the full field of view."""
+"""Extract wavelength-selectable field curves across the full field of view."""
 
 from __future__ import annotations
 

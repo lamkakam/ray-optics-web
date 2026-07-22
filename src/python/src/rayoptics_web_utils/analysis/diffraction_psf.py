@@ -1,26 +1,4 @@
-"""# `python/src/rayoptics_web_utils/analysis/diffraction_psf.py`
-
-## Boundary Ray Data
-
-`trace_boundary_rays_at_field(opm, fld, wavelength_nm, use_named_tuples=True)` returns `rim_rays` as `list[RayPkg]`.
-
-- Each `RayPkg` has fields `.ray`, `.op`, and `.wvl`.
-- `.ray` is `list[RaySeg]`.
-- Each `RaySeg` has fields `.p`, `.d`, `.dst`, and `.nrml`.
-- `rim_rays[i].ray[-1].d` is the final image-space direction-cosine vector for boundary ray `i`.
-- RayOptics' default boundary-ray order is `[chief, +X, -X, +Y, -Y]`.
-
-The PSF scaling code uses `rim_rays[0].ray[-1].d` as the chief ray direction, `rim_rays[1]` and `rim_rays[2]` for sagittal/horizontal NA, and `rim_rays[3]` and `rim_rays[4]` for tangential/vertical NA.
-
-## Return Shape
-
-Returns `fieldIdx`, `wvlIdx`, `x`, `y`, `z`, `unitX`, `unitY`, and `unitZ`.
-
-- `x` and `y` are cropped image-plane axes in system units.
-- `z` is the cropped PSF intensity grid with `len(z) == len(x)` and `len(z[0]) == len(y)`.
-- `unitZ` is `""`.
-
-Diffraction PSF data extraction."""
+"""Extract diffraction point-spread-function data."""
 
 import numpy as np
 from rayoptics.environment import OpticalModel
@@ -72,15 +50,7 @@ def get_diffraction_psf_data(
     num_rays: int = 64,
     max_dims: int = 256,
 ) -> dict:
-    """
-        Return diffraction PSF image-plane axes and intensity grid for one field and wavelength.
-
-
-    ## Purpose
-
-    Return diffraction PSF image-plane axes and intensity grid for one field and wavelength.
-
-    ## Behavior
+    """Return diffraction PSF axes and intensity for one field and wavelength.
 
     - Produces the diffraction intensity distribution formed from the pupil wavefront error for one field point and one wavelength.
     - Uses `make_ray_grid(...)` to generate the pupil OPD grid. `pupil_grid.grid[2]` is the wavefront error sampled over the pupil; invalid or blocked samples are handled by the ray-grid construction before this module receives the grid.
@@ -97,7 +67,16 @@ def get_diffraction_psf_data(
     - Zero-padding is controlled by `effective_max_dims`: `calc_psf(...)` computes a square `effective_max_dims` grid, while the original pupil sampling remains `num_rays`.
     - Crops the returned PSF to the centered span of 10 Airy disc diameters on each image-plane axis, where one Airy disc diameter is `2.44 / cutoff`. The crop keeps the central diffraction structure while avoiding returning the full padded grid.
     - Returns only the cropped `x`, `y`, and matching `z` grid. `calc_psf(...)` still computes the full `effective_max_dims` grid before cropping.
-    - Infinite image space uses projected exit-pupil diameters, cutoff `D / wavelength`, and axes in `arcsec`; finite image space retains directional-NA image-plane scaling."""
+    - Infinite image space uses projected exit-pupil diameters, cutoff `D / wavelength`, and axes in `arcsec`; finite image space retains directional-NA image-plane scaling.
+
+    Boundary rays arrive in `[chief, +X, -X, +Y, -Y]` order. Their final
+    direction-cosine vectors provide the chief direction, sagittal/horizontal
+    NA, and tangential/vertical NA.
+
+    Returns `fieldIdx`, `wvlIdx`, cropped axes `x` and `y`, matching intensity
+    grid `z`, axis units `unitX` and `unitY`, and empty intensity unit `unitZ`.
+    The grid satisfies `len(z) == len(x)` and `len(z[0]) == len(y)`.
+    """
     osp = opm.optical_spec
     fld = osp.field_of_view.fields[fi]
     wavelength_nm = osp.spectral_region.wavelengths[wvl_idx]
