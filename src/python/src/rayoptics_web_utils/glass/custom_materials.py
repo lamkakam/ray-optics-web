@@ -30,7 +30,15 @@ def _formula1(dispersion_coeffs: list[float], wavelengthInMicron: float) -> floa
     """Return refractive index from refractiveindex.info formula 1.
 
     Coefficients alternate ``Bi, Ci`` with raw ``Ci`` resonance wavelengths in µm;
-    computes ``sqrt(1 + Σ Bi*λ²/(λ²-Ci²))``."""
+    computes ``sqrt(1 + Σ Bi*λ²/(λ²-Ci²))``.
+
+    Args:
+        dispersion_coeffs: Dispersion coefficients for the material equation.
+        wavelengthInMicron: Wavelength in micrometres.
+
+    Returns:
+        Refractive index from refractiveindex.info formula 1.
+    """
     if len(dispersion_coeffs) % 2 != 0:
         raise ValueError(f"Expected even number dispersion coefficients for Formula 1, got {len(dispersion_coeffs)}")
 
@@ -46,7 +54,15 @@ def _formula2(dispersion_coeffs: list[float], wavelengthInMicron: float) -> floa
     """Return refractive index from refractiveindex.info formula 2.
 
     Coefficients alternate ``Bi, Ci`` with squared ``Ci`` terms in µm²; computes
-    ``sqrt(1 + Σ Bi*λ²/(λ²-Ci))``."""
+    ``sqrt(1 + Σ Bi*λ²/(λ²-Ci))``.
+
+    Args:
+        dispersion_coeffs: Dispersion coefficients for the material equation.
+        wavelengthInMicron: Wavelength in micrometres.
+
+    Returns:
+        Refractive index from refractiveindex.info formula 2.
+    """
     if len(dispersion_coeffs) % 2 != 0:
         raise ValueError(f"Expected even number dispersion coefficients for Formula 2, got {len(dispersion_coeffs)}")
 
@@ -72,7 +88,15 @@ def _load_material_yaml(filename: str) -> dict:
 
 
 def load_custom_material(filename: str, material_name: str) -> RIIMedium:
-    """Load a bundled YAML material as an ``RIIMedium``."""
+    """Load a bundled YAML material as an ``RIIMedium``.
+
+    Args:
+        filename: Bundled material YAML filename.
+        material_name: Material name within the bundled YAML data.
+
+    Returns:
+        The bundled material as an ``RIIMedium``.
+    """
     material_yaml = _load_material_yaml(filename)
     return create_material(material_yaml, material_name, 'rii-main', 'data-nk')
 
@@ -85,7 +109,15 @@ def _build_sellmeier_special_material_data(
 
     Evaluates Fraunhofer indices using the declared equation, derives Abbe numbers and
     partial dispersions, applies source nd/Vd overrides, and exports a three- or four-
-    term Sellmeier coefficient layout."""
+    term Sellmeier coefficient layout.
+
+    Args:
+        filename: Bundled material YAML filename.
+        material_name: Material name within the bundled YAML data.
+
+    Returns:
+        A frontend glass entry derived from the bundled Sellmeier-style YAML.
+    """
     material = load_custom_material(filename, material_name)
 
     equation_type = material.yaml_data['DATA'][0]['type']
@@ -150,29 +182,64 @@ def _build_formula1_six_coeff_special_material_data(filename: str, material_name
 
 
 def _get_caf2_data() -> dict:
-    """Return CaF2 formula-1 data in squared-Ci ``Sellmeier3T`` layout."""
+    """Return CaF2 formula-1 data in squared-Ci ``Sellmeier3T`` layout.
+
+    Args:
+        None.
+
+    Returns:
+        CaF2 formula-1 data in squared-Ci ``Sellmeier3T`` layout.
+    """
     return _build_formula1_six_coeff_special_material_data('CaF2_Malitson.yml', 'CaF2')
 
 
 def _get_fused_silica_data() -> dict:
-    """Return fused-silica formula-1 data in squared-Ci ``Sellmeier3T`` layout."""
+    """Return fused-silica formula-1 data in squared-Ci ``Sellmeier3T`` layout.
+
+    Args:
+        None.
+
+    Returns:
+        Fused-silica formula-1 data in squared-Ci ``Sellmeier3T`` layout.
+    """
     return _build_formula1_six_coeff_special_material_data('FusedSilica_Malitson.yml', 'Fused Silica')
 
 
 def _get_water_data() -> dict:
-    """Return water formula-2 data in four-term ``Sellmeier4T`` layout."""
+    """Return water formula-2 data in four-term ``Sellmeier4T`` layout.
+
+    Args:
+        None.
+
+    Returns:
+        Water formula-2 data in four-term ``Sellmeier4T`` layout.
+    """
     return _build_sellmeier_special_material_data('Water_Daimon-20.0C.yml', 'Water')
 
 
 def _get_d263teco_data() -> dict:
-    """Return D263TECO formula-2 data in ``Sellmeier3T`` layout."""
+    """Return D263TECO formula-2 data in ``Sellmeier3T`` layout.
+
+    Args:
+        None.
+
+    Returns:
+        D263TECO formula-2 data in ``Sellmeier3T`` layout.
+    """
     return _build_sellmeier_special_material_data('D263TECO.yml', 'D263TECO')
 
 
 def get_special_materials_data() -> dict[str, dict[str, dict]]:
     """Return the bundled materials under the ``Special`` catalog key.
 
-    The nested map contains CaF2, Fused Silica, Water, and D263TECO entries."""
+    The nested map contains CaF2, Fused Silica, Water, and D263TECO entries.
+
+    Args:
+        None.
+
+    Returns:
+        The bundled materials under the ``Special`` catalog key.
+    """
     return {
         "Special": {
             "CaF2": _get_caf2_data(),

@@ -22,4 +22,11 @@ class SolverAdapter(ABC):
 
     @abstractmethod
     def solve(self, progress_reporter: ProgressReporter | None = None) -> SolverResult:
-        """Run the solver and return a normalized result mapping."""
+        """Run the solver and return a normalized result mapping.
+
+        Args:
+            progress_reporter: Optional callback that receives optimization progress.
+
+        Returns:
+            Normalized solver result mapping.
+        """

@@ -14,7 +14,14 @@ class OffsetCircular(Circular):
     - Expects `rel_dir` to provide at least two numeric entries, matching the base class contract."""
 
     def edge_pt_target(self, rel_dir):
-        """Return an aperture edge target shifted by x/y offsets."""
+        """Return an aperture edge target shifted by x/y offsets.
+
+        Args:
+            rel_dir: Relative ray direction.
+
+        Returns:
+            Shifted two-dimensional aperture-edge target.
+        """
         return [
             self.x_offset + self.radius * rel_dir[0],
             self.y_offset + self.radius * rel_dir[1],

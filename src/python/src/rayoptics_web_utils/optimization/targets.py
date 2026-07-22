@@ -30,7 +30,16 @@ def snapshot_state(
     variable_configs: list[VariableConfig],
     pickup_configs: list[PickupConfig],
 ) -> dict[TargetKey, SnapshotEntry]:
-    """Capture the current values for all mutable optimizer targets."""
+    """Capture the current values for all mutable optimizer targets.
+
+    Args:
+        opm: RayOptics optical model.
+        variable_configs: Normalized variable configurations.
+        pickup_configs: Normalized pickup configurations.
+
+    Returns:
+        Snapshot entries keyed by mutable optimizer target.
+    """
     state: dict[TargetKey, SnapshotEntry] = {}
     for entry in [*variable_configs, *pickup_configs]:
         key = target_key(entry)
@@ -40,7 +49,15 @@ def snapshot_state(
 
 
 def restore_state(opm: OpticalModel, snapshot: dict[TargetKey, SnapshotEntry]) -> None:
-    """Restore a previously captured optimizer state."""
+    """Restore a previously captured optimizer state.
+
+    Args:
+        opm: RayOptics optical model.
+        snapshot: Previously captured optimizer state.
+
+    Returns:
+        None.
+    """
     for snapshot_entry in snapshot.values():
         write_target_value(opm, snapshot_entry["entry"], snapshot_entry["value"])
     opm.update_model()

@@ -32,6 +32,13 @@ def get_lsa_data(opm: OpticalModel, num_points: int = 21) -> list[dict]:
     Each result contains `wvlIdx`, `LSA` axes `x` and `y`, and `unitX` and
     `unitY`. `LSA.x` contains finite-mode focus shifts in `mm` or afocal output
     vergence in `D`; `LSA.y` contains normalized pupil coordinates.
+
+    Args:
+        opm: RayOptics optical model.
+        num_points: Number of field samples.
+
+    Returns:
+        On-axis longitudinal spherical aberration for every wavelength.
     """
     osp = opm["optical_spec"]
     rho_values = [float(value) for value in np.linspace(0.01, 1.0, num=num_points)]

@@ -16,7 +16,14 @@ from rayoptics_web_utils.glass.helper import (_partial_dispersion)
 def _partial_dispersions(data: pd.Series) -> dict[str, float]:
     """Return P_fe, P_Fd, and P_gF from indexed refractive indices.
 
-    An unavailable or zero F–C denominator yields zero-valued dispersions."""
+    An unavailable or zero F–C denominator yields zero-valued dispersions.
+
+    Args:
+        data: Source data to process.
+
+    Returns:
+        P_fe, P_Fd, and P_gF from indexed refractive indices.
+    """
     nF = data["refractive indices"]["F"]
     ne = data["refractive indices"]["e"]
     nd = data["refractive indices"]["d"]
@@ -34,7 +41,15 @@ def _get_dispersion_coefficients(catalog_name: str, data: pd.Series) -> dict[str
 
     CDGM, Hoya, and Sumita Schott data are padded to Hikari's eight-value layout;
     Ohara and Schott retain six-value Sellmeier form. Unsupported catalogs raise
-    ``ValueError``."""
+    ``ValueError``.
+
+    Args:
+        catalog_name: Name of the glass catalog.
+        data: Source data to process.
+
+    Returns:
+        Normalized coefficient kind and values for one catalog glass.
+    """
 
     def schott2x4() -> dict[str, str | list[float]]:
         keys= ["A0", "A1", "A2", "A3", "A4", "A5"]
@@ -98,7 +113,15 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
     """Return one frontend glass entry from an ``opticalglass`` data series.
 
     Includes d/e indices and Abbe numbers, partial dispersions, coefficient kind, and
-    coefficient values."""
+    coefficient values.
+
+    Args:
+        catalog_name: Name of the glass catalog.
+        data: Source data to process.
+
+    Returns:
+        One frontend glass entry from an ``opticalglass`` data series.
+    """
     nd = data["refractive indices"]["d"]
     ne = data["refractive indices"]["e"]
 
@@ -122,7 +145,14 @@ def _build_glass_entry(catalog_name: str, data: pd.Series) -> dict[str, float | 
 def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
     """Return every valid glass entry in a named catalog.
 
-    Catalog lookup is case-insensitive and the nested values are JSON serialisable."""
+    Catalog lookup is case-insensitive and the nested values are JSON serialisable.
+
+    Args:
+        catalog_name: Name of the glass catalog.
+
+    Returns:
+        Every valid glass entry in a named catalog.
+    """
     from opticalglass.glassfactory import fill_catalog_list
 
     catalogs = fill_catalog_list()
@@ -136,7 +166,14 @@ def get_glass_catalog_data(catalog_name: str) -> dict[str, dict]:
 
 
 def get_all_glass_catalogs_data() -> dict[str, dict[str, dict]]:
-    """Return the six standard catalogs plus bundled ``Special`` materials."""
+    """Return the six standard catalogs plus bundled ``Special`` materials.
+
+    Args:
+        None.
+
+    Returns:
+        The six standard catalogs plus bundled ``Special`` materials.
+    """
     from .custom_materials import get_special_materials_data
     catalog_names = ["CDGM", "Hikari", "Hoya", "Ohara", "Schott", "Sumita"]
     result = {name: get_glass_catalog_data(name) for name in catalog_names}

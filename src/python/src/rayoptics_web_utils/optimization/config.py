@@ -246,7 +246,14 @@ def validate_pickup_graph(pickups: list[PickupConfig]) -> None:
 
 
 def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
-    """Return pickups in dependency order after cycle validation."""
+    """Return pickups in dependency order after cycle validation.
+
+    Args:
+        pickups: Normalized pickup configurations.
+
+    Returns:
+        Pickups in dependency order after cycle validation.
+    """
     by_target = {target_key(pickup): pickup for pickup in pickups}
     graph: dict[TargetKey, set[TargetKey]] = {}
     indegree: dict[TargetKey, int] = {}

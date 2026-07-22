@@ -25,27 +25,34 @@ def get_diffraction_mtf_data(
     num_rays: int = 64,
     max_dims: int = 256,
 ) -> dict:
-    """
-    Return measured and diffraction-limited MTF centerline data for one field and wavelength.
+    """Return measured and diffraction-limited MTF centerline data for one field and wavelength.
 
     - Unit of spatial frequency is `cycles/<system unit>` for finite image space or `cycles/arcsec` for afocal systems.
     - For finite conjugated systems, frequency cutoffs are `2 * NA / wavelength`, where `NA` depends on the direction (sagittal or tangential).
     - Afocal cutoffs are `D / wavelength`, where `D` is the projected exit pupil diameter in the given direction (sagittal or tangential).
 
-    ## Return Shape
+    Args:
+        opm: RayOptics optical model.
+        field_idx: Field index.
+        wvl_idx: Wavelength index.
+        image_point: Image-point reference convention.
+        num_rays: Pupil-grid sampling resolution.
+        max_dims: Maximum padded diffraction-grid dimensions.
 
-    | Field | Description |
-    |---|---|
-    | `fieldIdx`, `wvlIdx` | Requested field and wavelength indices |
-    | `Tangential`, `Sagittal` | Measured non-negative MTF centerlines with `x` and `y` arrays |
-    | `IdealTangential`, `IdealSagittal` | Diffraction-limited reference curves with matching axes |
-    | `unitX` | `cycles/<system unit>` |
-    | `unitY` | empty string |
-    | `cutoffTangential`, `cutoffSagittal` | Directional cutoff frequencies |
-    | `scaleKind` | `image-na` for finite image space or `exit-pupil` for infinite image space |
-    | `naTangential`, `naSagittal` | Finite-mode directional numerical apertures |
-    | `exitPupilDiameterTangential`, `exitPupilDiameterSagittal` | Afocal projected pupil diameters |
-    
+    Returns:
+        Mapping containing measured and diffraction-limited MTF centerline data:
+
+        | Field | Description |
+        |---|---|
+        | `fieldIdx`, `wvlIdx` | Requested field and wavelength indices |
+        | `Tangential`, `Sagittal` | Measured non-negative MTF centerlines with `x` and `y` arrays |
+        | `IdealTangential`, `IdealSagittal` | Diffraction-limited reference curves with matching axes |
+        | `unitX` | `cycles/<system unit>` |
+        | `unitY` | empty string |
+        | `cutoffTangential`, `cutoffSagittal` | Directional cutoff frequencies |
+        | `scaleKind` | `image-na` for finite image space or `exit-pupil` for infinite image space |
+        | `naTangential`, `naSagittal` | Finite-mode directional numerical apertures |
+        | `exitPupilDiameterTangential`, `exitPupilDiameterSagittal` | Afocal projected pupil diameters |
     """
     osp = opm.optical_spec
     fld = osp.field_of_view.fields[field_idx]

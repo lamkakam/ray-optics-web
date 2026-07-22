@@ -20,6 +20,14 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
     artificial final gap, makes chief-ray OPD zero, and converts to the traced
     wavelength's waves. `image_point="chief_ray"` preserves the historical
     reference, while `"centroid"` uses the shared centroid image point.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        image_point: Image-point reference convention.
+
+    Returns:
+        OPD fan data for all wavelengths at field index ``fi``.
     """
 
     afocal = is_afocal_image_space(opm)

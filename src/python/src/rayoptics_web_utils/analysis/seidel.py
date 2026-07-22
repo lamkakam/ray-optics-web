@@ -24,6 +24,12 @@ def get_3rd_order_seidel_data(opm: OpticalModel) -> dict[key_of_3rd_order_seidel
     Aggregate outputs use the third-order package's `"sum"` row. The central
     wavelength is converted to system units for `seidel_to_wavefront`, and all
     returned dict/list values are JSON serialisable.
+
+    Args:
+        opm: RayOptics optical model.
+
+    Returns:
+        Third-order Seidel data from a RayOptics `OpticalModel`.
     """
     to_pkg = compute_third_order(opm)
     fod = opm["analysis_results"]["parax_data"].fod

@@ -420,7 +420,14 @@ class OptimizationProblemProtocol(Protocol):
 
 
 def has_finite_variable_bounds(variable: VariableConfig) -> bool:
-    """Return whether a normalized variable provides finite min/max bounds."""
+    """Return whether a normalized variable provides finite min/max bounds.
+
+    Args:
+        variable: Normalized optimization variable.
+
+    Returns:
+        Whether a normalized variable provides finite min/max bounds.
+    """
     if "min" not in variable or "max" not in variable:
         return False
     return math.isfinite(variable["min"]) and math.isfinite(variable["max"])

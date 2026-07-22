@@ -32,6 +32,13 @@ def noll_norm_factor(n: int, m: int) -> float:
 
     The RMS-normalized Zernike polynomial is Z̃ = N · Z_unnorm.
     To convert unnormalized coefficients to RMS-normalized: c_rms = c / N.
+
+    Args:
+        n: Radial Zernike order.
+        m: Azimuthal Zernike order.
+
+    Returns:
+        Noll normalization factor for the term.
     """
     return math.sqrt((2 - (m == 0)) * (n + 1))
 
@@ -45,7 +52,11 @@ def unnormalized_to_rms_normalized(
     so each output coefficient directly gives the RMS contribution of that term.
 
     Args:
+        coeffs: Zernike coefficients to convert.
         zernike_terms: explicit ordered (n, m) terms matching coeffs.
+
+    Returns:
+        RMS-normalized Zernike coefficients.
     """
     result = []
     for coeff, (n, m) in zip(coeffs, zernike_terms):
@@ -54,7 +65,16 @@ def unnormalized_to_rms_normalized(
 
 
 def zernike_radial(n: int, m: int, rho: NDArray) -> NDArray:
-    """Radial part R_n^m(rho) of Zernike polynomial."""
+    """Radial part R_n^m(rho) of Zernike polynomial.
+
+    Args:
+        n: Radial Zernike order.
+        m: Azimuthal Zernike order.
+        rho: Normalized radial pupil coordinate.
+
+    Returns:
+        Radial polynomial values at `rho`.
+    """
     m_abs = abs(m)
     result = np.zeros_like(rho, dtype=float)
     for s in range((n - m_abs) // 2 + 1):
@@ -69,7 +89,17 @@ def zernike_radial(n: int, m: int, rho: NDArray) -> NDArray:
 
 
 def zernike_polynomial(n: int, m: int, rho: NDArray, theta: NDArray) -> NDArray:
-    """Compute unnormalized Zernike polynomial Z_n^m."""
+    """Compute unnormalized Zernike polynomial Z_n^m.
+
+    Args:
+        n: Radial Zernike order.
+        m: Azimuthal Zernike order.
+        rho: Normalized radial pupil coordinate.
+        theta: Azimuthal pupil coordinate in radians.
+
+    Returns:
+        Unnormalized Zernike polynomial values.
+    """
     R = zernike_radial(n, m, rho)
     if m > 0:
         Z = R * np.cos(m * theta)
@@ -84,8 +114,8 @@ def fit_zernike(opd_grid: NDArray, zernike_terms: list[ZernikeTerm]) -> NDArray:
     """Fit Zernike polynomials to a RayGrid wavefront.
 
     Args:
-        opd_grid: shape (3, N, N) — [0]=pupil_x, [1]=pupil_y, [2]=OPD in waves
-        zernike_terms: explicit ordered (n, m) terms to fit
+        opd_grid: shape (3, N, N) — [0]=pupil_x, [1]=pupil_y, [2]=OPD in waves.
+        zernike_terms: explicit ordered (n, m) terms to fit.
 
     Returns:
         1-D array of Zernike coefficients in waves, length len(zernike_terms).
@@ -113,7 +143,14 @@ def fit_zernike(opd_grid: NDArray, zernike_terms: list[ZernikeTerm]) -> NDArray:
 
 
 def _monochromatic_strehl(opd_waves: NDArray) -> float:
-    """Strehl = |mean(exp(i·2π·W))|² over valid pupil points."""
+    """Strehl = |mean(exp(i·2π·W))|² over valid pupil points.
+
+    Args:
+        opd_waves: Optical path differences in waves.
+
+    Returns:
+        Monochromatic Strehl ratio, or `0.0` when no samples are valid.
+    """
     valid = opd_waves[~np.isnan(opd_waves)]
     if len(valid) == 0:
         return 0.0
@@ -122,7 +159,16 @@ def _monochromatic_strehl(opd_waves: NDArray) -> float:
 
 
 def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) -> NDArray:
-    """Scale OPD values from the model's central wavelength to wavelength_nm."""
+    """Scale OPD values from the model's central wavelength to wavelength_nm.
+
+    Args:
+        opd_grid: Pupil-coordinate and optical-path-difference grid.
+        opm: RayOptics optical model.
+        wavelength_nm: Wavelength in nanometres.
+
+    Returns:
+        OPD values expressed in waves at `wavelength_nm`.
+    """
     central_wvl = opm['optical_spec']['wvls'].central_wvl
     scale = opm.nm_to_sys_units(central_wvl) / opm.nm_to_sys_units(wavelength_nm)
     return np.asarray(opd_grid, dtype=float) * scale
@@ -202,7 +248,19 @@ def get_zernike_coefficients(
     using the requested image-point reference. The JSON-safe result contains
     unnormalized ``coefficients`` and ``rms_normalized_coefficients`` in waves,
     piston-excluded ``rms_wfe`` and ``pv_wfe`` over ``rho <= 1``, monochromatic
-    ``strehl_ratio``, ``num_terms``, ``field_index``, and ``wavelength_nm``."""
+    ``strehl_ratio``, ``num_terms``, ``field_index``, and ``wavelength_nm``.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wvl_index: Wavelength index.
+        zernike_terms: Ordered `(n, m)` Zernike terms matching the coefficients.
+        image_point: Image-point reference convention.
+        num_rays: Pupil-grid sampling resolution.
+
+    Returns:
+        Zernike and wavefront metrics for one field and wavelength.
+    """
     from rayoptics_web_utils.raygrid import make_ray_grid
 
     wavelength_nm = opm['optical_spec']['wvls'].wavelengths[wvl_index]

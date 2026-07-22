@@ -6,9 +6,16 @@ _WL_F  = 0.4861   # hydrogen F
 _WL_G  = 0.4358   # mercury g
 
 def _abbe_number(n_center, nF, nC) -> float:
-    """
-    Compute Abbe number V = (nD - 1) / (nF - nC)
+    """Compute Abbe number V = (nD - 1) / (nF - nC)
     Returns 0.0 if any cannot be computed.
+
+    Args:
+        n_center: Refractive index at the center wavelength.
+        nF: Refractive index at the Fraunhofer F line.
+        nC: Refractive index at the Fraunhofer C line.
+
+    Returns:
+        Abbe number, or `0.0` when it cannot be computed.
     """
     denom = nF - nC
     if denom == 0.0:
@@ -16,9 +23,17 @@ def _abbe_number(n_center, nF, nC) -> float:
     return (n_center - 1) / denom
 
 def _partial_dispersion(n_short_wl, n_long_wl, nF, nC) -> float:
-    """
-    Compute partial dispersion P = (n_long_wl - n_short_wl) / (nF - nC)
+    """Compute partial dispersion P = (n_long_wl - n_short_wl) / (nF - nC)
     Returns 0.0 if any cannot be computed.
+
+    Args:
+        n_short_wl: Refractive index at the shorter wavelength.
+        n_long_wl: Refractive index at the longer wavelength.
+        nF: Refractive index at the Fraunhofer F line.
+        nC: Refractive index at the Fraunhofer C line.
+
+    Returns:
+        Partial dispersion, or `0.0` when it cannot be computed.
     """
     denom = nF - nC
     if denom == 0.0:

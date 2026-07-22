@@ -21,6 +21,14 @@ def get_spot_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") ->
     historical reference. `"centroid"` sets a shared reference sphere and
     reports coordinates relative to the valid-ray centroid. In afocal mode the
     centroid is determined entirely in direction space, never at an image plane.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Spot-diagram point clouds for all wavelengths at field index ``fi``.
     """
     sm = opm.seq_model
     afocal = is_afocal_image_space(opm)

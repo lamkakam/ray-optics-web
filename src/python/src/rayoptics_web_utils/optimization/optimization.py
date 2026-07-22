@@ -90,7 +90,16 @@ def evaluate_optimization_problem(
     3. Applies the current variable vector and then applies pickups in dependency order.
     4. Calls `opm.update_model()`.
     5. Evaluates all operand residuals and returns a JSON-safe report.
-    6. If evaluation fails, restores the snapshotted state and re-raises."""
+    6. If evaluation fails, restores the snapshotted state and re-raises.
+
+    Args:
+        opm: RayOptics optical model.
+        config: Optimization configuration mapping.
+        image_point: Image-point reference convention.
+
+    Returns:
+        JSON-safe merit evaluation report.
+    """
     _sync_legacy_hooks()
     problem = _OptimizationProblem(opm, config, image_point=image_point)
     snapshot = _snapshot_state(opm, problem.variables, problem.pickups)
@@ -157,7 +166,17 @@ def optimize_opm(
     8. If SciPy raises `KeyboardInterrupt`, treats it as a user stop, evaluates the latest recorded optimizer vector (or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that latest state.
     9. If SciPy setup or the final evaluation fails for any other exception, restores the snapshotted state and re-raises.
 
-    If there are no variables, `optimize_opm()` skips SciPy, records one progress point from the evaluated merit report, and returns `status == "no_variables"`."""
+    If there are no variables, `optimize_opm()` skips SciPy, records one progress point from the evaluated merit report, and returns `status == "no_variables"`.
+
+    Args:
+        opm: RayOptics optical model.
+        config: Optimization configuration mapping.
+        image_point: Image-point reference convention.
+        progress_reporter: Optional callback that receives optimization progress.
+
+    Returns:
+        Detailed optimization result and progress report.
+    """
     _sync_legacy_hooks()
     problem = _OptimizationProblem(opm, config, image_point=image_point)
     snapshot = _snapshot_state(opm, problem.variables, problem.pickups)

@@ -22,7 +22,16 @@ def plot_lens_layout(opm: OpticalModel, show_ray_fan_vs_wvls: bool = False, is_d
     Uses ``InteractiveLayout`` with rays enabled and the paraxial layout disabled.
     ``is_dark`` is forwarded to the layout. With wavelength fans enabled, standard
     overlays are replaced by one tangential ``RayFanBundle`` per wavelength at field
-    zero, using the model's wavelength colors. The figure is closed after encoding."""
+    zero, using the model's wavelength colors. The figure is closed after encoding.
+
+    Args:
+        opm: RayOptics optical model.
+        show_ray_fan_vs_wvls: Whether to overlay wavelength ray fans.
+        is_dark: Whether to render with the dark theme.
+
+    Returns:
+        Base64-encoded PNG of the lens layout.
+    """
     def _create_ray_fan_vs_wvl(fig: Figure, opt_model: OpticalModel, num_rays: int = 21) -> list[RayFanBundle]:
         ray_fan_bundles = []
         _, start_offset = fig.sl_so

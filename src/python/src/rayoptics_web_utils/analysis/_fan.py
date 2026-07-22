@@ -13,13 +13,22 @@ def _trace_fan_series(
     fan_filter,
     image_point: str = "chief_ray",
 ) -> tuple[list[list[float]], list[list[float | None]]]:
-    """
-    Trace one pupil fan for each wavelength at a given field index `fi` and fan axis `xy`
+    """Trace one pupil fan for each wavelength at a given field index `fi` and fan axis `xy`
     , and preserve failed traces (blocked rays) as gaps instead of dropping them.
 
     - For afocal systems, skips the artificial image-plane centroid; fan callbacks resolve chief or centroid references directly in direction space.
     - Delegates fan ordinate calculation to the provided `fan_filter` callback.
     - Blocked rays (eg. from annular central-obstruction samples) are represented as `None` ordinates.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        xy: Fan axis selector.
+        fan_filter: Callback that calculates each fan ordinate.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Tuple of x-axis values and pupil-fan series for every wavelength.
     """
     osp = opm.optical_spec
     fld = osp.field_of_view.fields[fi]

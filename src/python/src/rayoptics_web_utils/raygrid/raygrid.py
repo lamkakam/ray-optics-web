@@ -20,7 +20,19 @@ def make_ray_grid(
     Chief-ray mode leaves ``image_pt_2d`` unset; centroid mode supplies the shared
     resolved point. Infinite image space returns a RayGrid-compatible namespace whose
     OPD plane is normal to the selected output direction. In either mode OPD remains
-    in central-wavelength waves for downstream scaling."""
+    in central-wavelength waves for downstream scaling.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        wavelength_nm: Wavelength in nanometres.
+        foc: Focus shift in system length units.
+        num_rays: Pupil-grid sampling resolution.
+        image_point: Image-point reference convention.
+
+    Returns:
+        RayGrid-compatible wavefront samples.
+    """
     from rayoptics_web_utils.analysis._afocal import is_afocal_image_space, make_afocal_ray_grid
     if is_afocal_image_space(opm):
         return make_afocal_ray_grid(

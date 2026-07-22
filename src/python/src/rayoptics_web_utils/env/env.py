@@ -16,6 +16,12 @@ def init() -> dict[str, OpticalMedium]:
     Repeated calls overwrite the stubs harmlessly. Calling it after dependent
     modules are cached cannot retroactively affect their imports. Bundled YAML is
     loaded through package resources so zip-installed wheels are supported.
+
+    Args:
+        None.
+
+    Returns:
+        Shared bundled and user-defined optical materials.
     """
     for m in [
         'PySide6', 'PySide6.QtWidgets', 'PySide6.QtCore',

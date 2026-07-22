@@ -10,6 +10,12 @@ def get_first_order_data(opm: OpticalModel) -> dict[str, float]:
     - Returns a flat `dict[str, float]`.
     - Includes only `int` and `float` attributes from `fod.__dict__`.
     - Casts all included values to `float` for JSON serialisability.
+
+    Args:
+        opm: RayOptics optical model.
+
+    Returns:
+        First-order paraxial data from a RayOptics `OpticalModel`.
     """
     pm = opm["parax_model"]
     fod = pm.opt_model["analysis_results"]["parax_data"].fod

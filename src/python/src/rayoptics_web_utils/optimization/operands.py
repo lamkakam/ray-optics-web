@@ -24,12 +24,27 @@ PENALTY_RESIDUAL = 1e6
 
 
 def get_operand_num_rays(options: OperandOptions | None, default: int = 21) -> int:
-    """Return the caller-configured ray sampling count for operand analyses."""
+    """Return the caller-configured ray sampling count for operand analyses.
+
+    Args:
+        options: Normalized operand options.
+        default: Fallback ray-sampling count.
+
+    Returns:
+        The caller-configured ray sampling count for operand analyses.
+    """
     return int((options or {}).get("num_rays", default))
 
 
 def get_nominal_operand_sample_residual_count(sample: OperandSample) -> int:
-    """Return the stable residual count contributed by one normalized operand sample."""
+    """Return the stable residual count contributed by one normalized operand sample.
+
+    Args:
+        sample: Normalized operand sample.
+
+    Returns:
+        The stable residual count contributed by one normalized operand sample.
+    """
     if sample["kind"] == "ray_fan":
         return get_operand_num_rays(sample.get("options")) * 2
     if sample["kind"] in {"ray_fan_tangential", "ray_fan_sagittal"}:
@@ -38,7 +53,19 @@ def get_nominal_operand_sample_residual_count(sample: OperandSample) -> int:
 
 
 def _spot_fn(p, wi, ray_pkg, fld, wvl, foc):
-    """Transverse aberration function for trace_grid."""
+    """Transverse aberration function for trace_grid.
+
+    Args:
+        p: Normalized pupil coordinate.
+        wi: Wavelength index.
+        ray_pkg: Traced ray package.
+        fld: RayOptics field specification.
+        wvl: Wavelength in nanometres.
+        foc: Focus shift in system length units.
+
+    Returns:
+        The transverse aberration vector, or `None` for a blocked ray.
+    """
     del p, wi, wvl
     if ray_pkg is not None:
         image_pt = fld.ref_sphere[0]
@@ -57,7 +84,18 @@ def compute_rms_spot_size(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> float:
-    """Return RMS spot size for one field/wavelength sample."""
+    """Return RMS spot size for one field/wavelength sample.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        RMS spot size for one field/wavelength sample.
+    """
     del image_point
     if field_index is None or wavelength_index is None:
         raise ValueError("rms_spot_size requires field and wavelength indices")
@@ -87,7 +125,18 @@ def compute_rms_wavefront_error(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> float:
-    """Return RMS WFE in waves for one field/wavelength sample."""
+    """Return RMS WFE in waves for one field/wavelength sample.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        RMS WFE in waves for one field/wavelength sample.
+    """
     if field_index is None or wavelength_index is None:
         raise ValueError("rms_wavefront_error requires field and wavelength indices")
     num_rays = get_operand_num_rays(options)
@@ -125,7 +174,19 @@ def _compute_opd_difference_for_axis(
     image_point: str = "chief_ray",
     axis: str | None = None,
 ) -> float:
-    """Return mean absolute OPD deviation in waves for one field/wavelength sample."""
+    """Return mean absolute OPD deviation in waves for one field/wavelength sample.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+        axis: Axis to evaluate, where 0 is sagittal and 1 is tangential.
+
+    Returns:
+        Mean absolute OPD deviation in waves for one field/wavelength sample.
+    """
     if field_index is None or wavelength_index is None:
         raise ValueError("opd_difference requires field and wavelength indices")
     del options
@@ -148,7 +209,18 @@ def compute_opd_difference(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> float:
-    """Return combined tangential and sagittal mean absolute OPD deviation."""
+    """Return combined tangential and sagittal mean absolute OPD deviation.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Combined tangential and sagittal mean absolute OPD deviation.
+    """
     return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, image_point)
 
 
@@ -159,7 +231,18 @@ def compute_opd_difference_tangential(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> float:
-    """Return tangential mean absolute OPD deviation."""
+    """Return tangential mean absolute OPD deviation.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Tangential mean absolute OPD deviation.
+    """
     return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, image_point, "Tangential")
 
 
@@ -170,7 +253,18 @@ def compute_opd_difference_sagittal(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> float:
-    """Return sagittal mean absolute OPD deviation."""
+    """Return sagittal mean absolute OPD deviation.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Sagittal mean absolute OPD deviation.
+    """
     return _compute_opd_difference_for_axis(opm, field_index, wavelength_index, options, image_point, "Sagittal")
 
 
@@ -181,7 +275,18 @@ def compute_focal_length(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> float:
-    """Return paraxial effective focal length."""
+    """Return paraxial effective focal length.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Paraxial effective focal length.
+    """
     del field_index, wavelength_index, options, image_point
     return float(opm["analysis_results"]["parax_data"].fod.efl)
 
@@ -193,7 +298,18 @@ def compute_f_number(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> float:
-    """Return paraxial f-number."""
+    """Return paraxial f-number.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Paraxial f-number.
+    """
     del field_index, wavelength_index, options, image_point
     return float(opm["analysis_results"]["parax_data"].fod.fno)
 
@@ -206,7 +322,19 @@ def _compute_ray_fan_for_axis(
     image_point: str = "chief_ray",
     axis: str | None = None,
 ) -> list[float]:
-    """Return ray-fan ordinates for one field/wavelength sample."""
+    """Return ray-fan ordinates for one field/wavelength sample.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+        axis: Axis to evaluate, where 0 is sagittal and 1 is tangential.
+
+    Returns:
+        Ray-fan ordinates for one field/wavelength sample.
+    """
     if field_index is None or wavelength_index is None:
         raise ValueError("ray_fan requires field and wavelength indices")
     residual_count = get_operand_num_rays(options) * (2 if axis is None else 1)
@@ -230,7 +358,18 @@ def compute_ray_fan(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> list[float]:
-    """Return combined tangential and sagittal ray-fan ordinates for one field/wavelength sample."""
+    """Return combined tangential and sagittal ray-fan ordinates for one field/wavelength sample.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Combined tangential and sagittal ray-fan ordinates for one field/wavelength sample.
+    """
     return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, image_point)
 
 
@@ -241,7 +380,18 @@ def compute_ray_fan_tangential(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> list[float]:
-    """Return tangential ray-fan ordinates for one field/wavelength sample."""
+    """Return tangential ray-fan ordinates for one field/wavelength sample.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Tangential ray-fan ordinates for one field/wavelength sample.
+    """
     return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, image_point, "Tangential")
 
 
@@ -252,7 +402,18 @@ def compute_ray_fan_sagittal(
     options: OperandOptions | None,
     image_point: str = "chief_ray",
 ) -> list[float]:
-    """Return sagittal ray-fan ordinates for one field/wavelength sample."""
+    """Return sagittal ray-fan ordinates for one field/wavelength sample.
+
+    Args:
+        opm: RayOptics optical model.
+        field_index: Field index.
+        wavelength_index: Wavelength index.
+        options: Normalized operand options.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Sagittal ray-fan ordinates for one field/wavelength sample.
+    """
     return _compute_ray_fan_for_axis(opm, field_index, wavelength_index, options, image_point, "Sagittal")
 
 

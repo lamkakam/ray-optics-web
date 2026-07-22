@@ -19,7 +19,16 @@ AIRY_DISC_DIAMETER_COUNT = 10.0
 
 
 def _padded_psf_image_axis(cutoff: float, sample_count: int, num_rays: int) -> np.ndarray:
-    """Return a centered image-plane axis with zero-padding-refined sampling."""
+    """Return a centered image-plane axis with zero-padding-refined sampling.
+
+    Args:
+        cutoff: Directional diffraction cutoff frequency.
+        sample_count: Number of samples on the output axis.
+        num_rays: Pupil-grid sampling resolution.
+
+    Returns:
+        A centered image-plane axis with zero-padding-refined sampling.
+    """
     if sample_count <= 0 or cutoff <= 0.0:
         return np.zeros(sample_count, dtype=float)
 
@@ -29,7 +38,15 @@ def _padded_psf_image_axis(cutoff: float, sample_count: int, num_rays: int) -> n
 
 
 def _centered_crop_indices(axis: np.ndarray, cutoff: float) -> np.ndarray:
-    """Return indices spanning the central 10 Airy disc diameters on one axis."""
+    """Return indices spanning the central 10 Airy disc diameters on one axis.
+
+    Args:
+        axis: Axis to evaluate, where 0 is sagittal and 1 is tangential.
+        cutoff: Directional diffraction cutoff frequency.
+
+    Returns:
+        Indices spanning the central 10 Airy disc diameters on one axis.
+    """
     if len(axis) == 0 or cutoff <= 0.0:
         return np.arange(len(axis))
 
@@ -76,6 +93,17 @@ def get_diffraction_psf_data(
     Returns `fieldIdx`, `wvlIdx`, cropped axes `x` and `y`, matching intensity
     grid `z`, axis units `unitX` and `unitY`, and empty intensity unit `unitZ`.
     The grid satisfies `len(z) == len(x)` and `len(z[0]) == len(y)`.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        wvl_idx: Wavelength index.
+        image_point: Image-point reference convention.
+        num_rays: Pupil-grid sampling resolution.
+        max_dims: Maximum padded diffraction-grid dimensions.
+
+    Returns:
+        Diffraction PSF axes and intensity for one field and wavelength.
     """
     osp = opm.optical_spec
     fld = osp.field_of_view.fields[fi]

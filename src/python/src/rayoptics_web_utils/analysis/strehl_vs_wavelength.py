@@ -81,6 +81,16 @@ def get_strehl_vs_wavelength_data(
     Each sample uses `make_ray_grid` with the requested image-point reference,
     scales central-wavelength OPD to the sampled wavelength, and computes
     monochromatic Strehl without extracting exit-pupil coordinates.
+
+    Args:
+        opm: RayOptics optical model.
+        fieldIndex: Field index.
+        image_point: Image-point reference convention.
+        wavelength_samples: Wavelength and spectral-weight samples.
+        num_rays: Pupil-grid sampling resolution.
+
+    Returns:
+        Chart-ready Strehl samples across wavelength for one field.
     """
     wavelengths = _wavelength_axis(opm["optical_spec"]["wvls"].wavelengths, wavelength_samples)
     strehl_values = []

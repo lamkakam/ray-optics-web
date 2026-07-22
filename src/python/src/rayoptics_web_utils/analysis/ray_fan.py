@@ -24,6 +24,14 @@ def get_ray_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
     Infinite image space reports output-direction aberrations relative to the
     selected direction reference in `arcsec`. `image_point="chief_ray"` keeps
     the historical default; `"centroid"` uses the shared centroid reference.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        image_point: Image-point reference convention.
+
+    Returns:
+        Transverse ray-fan data for all wavelengths at field index ``fi``.
     """
 
     afocal = is_afocal_image_space(opm)

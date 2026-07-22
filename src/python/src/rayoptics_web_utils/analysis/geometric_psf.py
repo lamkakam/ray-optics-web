@@ -15,6 +15,15 @@ def get_geo_psf_data(opm: OpticalModel, fi: int, wvl_idx: int, num_rays: int = 6
     - Traces a `RayList` with aperture checking enabled through `clip_rays=True` and vignetting enabled through `apply_vignetting=True`.
     - Finite image space returns `RayList.ray_abr` in system dimensions.
     - Infinite image space returns the sampled exiting-ray direction cloud relative to the chief direction in `arcsec`.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        wvl_idx: Wavelength index.
+        num_rays: Pupil-grid sampling resolution.
+
+    Returns:
+        Geometric PSF point-cloud data for one field and wavelength.
     """
     wavelength_nm = opm["optical_spec"]["wvls"].wavelengths[wvl_idx]
 

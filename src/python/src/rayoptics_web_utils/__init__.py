@@ -42,7 +42,14 @@ _LAZY_IMPORTS = {
 
 def __getattr__(name):
     """Lazy import: analysis/plotting modules import rayoptics at module level,
-    so they can only be imported AFTER init() has stubbed Qt modules."""
+    so they can only be imported AFTER init() has stubbed Qt modules.
+
+    Args:
+        name: Attribute name to resolve lazily.
+
+    Returns:
+        The lazily imported attribute.
+    """
     if name in _LAZY_IMPORTS:
         import importlib
         module = importlib.import_module(_LAZY_IMPORTS[name])
