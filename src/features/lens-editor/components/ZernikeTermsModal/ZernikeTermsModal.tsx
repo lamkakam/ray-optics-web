@@ -1,34 +1,3 @@
-/**
- * Describes the Zernike Terms Modal module.
- *
- * @remarks
- * ## Internal State
- *
- * | State | Type | Description |
- * |-------|------|-------------|
- * | `selectedFieldIndex` | `number` | Currently selected field index (reset to 0 on each open) |
- * | `selectedWvlIndex` | `number` | Currently selected wavelength index (initialized from `committedSpecs.wavelengths.referenceIndex` on each open) |
- * | `selectedOrdering` | `ZernikeOrdering` | "noll" or "fringe" (reset to "fringe" on each open) |
- * | `data` | `ZernikeData \| undefined` | Fetched Zernike data |
- * | `loading` | `boolean` | Whether a fetch is in progress |
- * | `requestCounter` | `MutableRefObject<number>` | Monotonic request id used to ignore stale async results |
- *
- * ## Layout
- *
- * - Row 1: Half-Field + Wavelength dropdowns in a flex row
- * - Row 2: Ordering dropdown (below Half-Field + Wavelength)
- * - `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
- * - Scrollable table area (`max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto`) — viewport-relative height reserves ~26rem for static overhead (title, dropdowns, summary chips, fixed footer, and modal padding), preventing the table from pushing modal content beyond the dialog height on smaller screens. The clamp keeps at least 5rem of table space when the viewport is tight and caps the table at 32rem on larger screens.
- * - Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
- * - First column header is "Noll j" or "Fringe j" depending on ordering
- * - Summary: wrapping flex row of `Chip` components for P-V WFE, RMS WFE, and Strehl ratio
- * - `<LoadingMask />` rendered inside the `relative` wrapper only when `loading && data`
- * - Ok button aligned right
- *
- * ## Modal Footer
- *
- * - The Ok action is passed to `Modal.footer` so it remains fixed while Zernike result content scrolls.
- */
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { MathJax } from "better-react-mathjax";
 import { Button } from "@/shared/components/primitives/Button";
@@ -93,6 +62,24 @@ interface ZernikeTermsModalProps {
  * - Initial load (`loading && !data`): shows "Loading…" text, no table.
  * - Re-fetch (`loading && data`): shows `<LoadingMask>` overlaid on the existing table (stale data stays visible behind the mask).
  * - Idle (`!loading && data`): table visible, no mask.
+ *
+ *
+ *
+ * ## Layout
+ *
+ * - Row 1: Half-Field + Wavelength dropdowns in a flex row
+ * - Row 2: Ordering dropdown (below Half-Field + Wavelength)
+ * - `relative` wrapper around the table area (needed for `LoadingMask` absolute positioning)
+ * - Scrollable table area (`max-h-[clamp(5rem,calc(90dvh-26rem),32rem)] overflow-y-auto`) — viewport-relative height reserves ~26rem for static overhead (title, dropdowns, summary chips, fixed footer, and modal padding), preventing the table from pushing modal content beyond the dialog height on smaller screens. The clamp keeps at least 5rem of table space when the viewport is tight and caps the table at 32rem on larger screens.
+ * - Table: 5 columns (j | Notation | Classical Name | Non-normalized Term | RMS Normalized Term (waves))
+ * - First column header is "Noll j" or "Fringe j" depending on ordering
+ * - Summary: wrapping flex row of `Chip` components for P-V WFE, RMS WFE, and Strehl ratio
+ * - `<LoadingMask />` rendered inside the `relative` wrapper only when `loading && data`
+ * - Ok button aligned right
+ *
+ * ## Modal Footer
+ *
+ * - The Ok action is passed to `Modal.footer` so it remains fixed while Zernike result content scrolls.
  */
 export function ZernikeTermsModal({
   isOpen,
@@ -113,11 +100,17 @@ function ZernikeTermsModalContent({
 }: Omit<ZernikeTermsModalProps, "isOpen">) {
   const specsStore = useSpecsConfiguratorStore();
   const committedReferenceWvlIndex = specsStore.getState().committedSpecs.wavelengths.referenceIndex;
+  /** Field index reset to zero whenever the modal opens. */
   const [selectedFieldIndex, setSelectedFieldIndex] = useState(0);
+  /** Wavelength index reset to the committed reference whenever the modal opens. */
   const [selectedWvlIndex, setSelectedWvlIndex] = useState(committedReferenceWvlIndex);
+  /** Zernike ordering reset to Fringe whenever the modal opens. */
   const [selectedOrdering, setSelectedOrdering] = useState<ZernikeOrdering>("fringe");
+  /** Most recently fetched coefficient payload. */
   const [data, setData] = useState<ZernikeData | undefined>();
+  /** Whether a coefficient request is in progress. */
   const [loading, setLoading] = useState(true);
+  /** Monotonic request id used to discard stale asynchronous results. */
   const requestCounter = useRef(0);
 
   const fetchData = useCallback(

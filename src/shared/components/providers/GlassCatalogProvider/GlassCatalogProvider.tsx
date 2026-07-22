@@ -1,30 +1,27 @@
 "use client";
-/**
- * Describes the Glass Catalog Provider module.
- *
- * @remarks
- * ## Behaviour
- * - `catalogs` contains normalized worker-backed glass catalog data once AppShell has successfully loaded and committed it to `GlassMapStore`
- * - `lookupMaps` contains the case-insensitive manufacturer and medium maps built by `GlassMapStore` from the same loaded catalog data
- * - `error` contains the AppShell-local preload failure message, if any
- * - `isLoaded` is derived from AppShell-local preload status
- * - `isLoading` is `true` while the shared shell preload is in flight before success or failure
- * - `preload()` reuses the shared loader path, commits successful data to `GlassMapStore`, updates AppShell-local status/error, and returns the cached result when available
- */
+/** App-wide catalog data and preload status injected by `AppShell`. */
 
 import React, { createContext, useContext } from "react";
 import type { AllGlassCatalogsData, GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { GlassCatalogsLoadResult } from "@/features/glass-map/lib/glassCatalogLoader";
 
+/** Catalog data, lookup maps, preload state, and shared preload action. */
 export interface GlassCatalogContextValue {
+  /** Normalized worker-backed catalogs after a successful store commit. */
   readonly catalogs: AllGlassCatalogsData | undefined;
+  /** Case-insensitive manufacturer and medium maps derived from the same catalogs. */
   readonly lookupMaps: GlassLookupMaps | undefined;
+  /** Shell-local preload failure message. */
   readonly error: string | undefined;
+  /** Whether preload completed successfully. */
   readonly isLoaded: boolean;
+  /** Whether initial preload is in flight. */
   readonly isLoading: boolean;
+  /** Reuses cached data or runs the shared loader and commits successful data. */
   readonly preload: () => Promise<GlassCatalogsLoadResult | undefined>;
 }
 
+/** Optional React context consumed by `useGlassCatalogs`. */
 export const GlassCatalogContext = createContext<GlassCatalogContextValue | undefined>(undefined);
 
 interface GlassCatalogProviderProps {
@@ -41,6 +38,11 @@ export function GlassCatalogProvider({ value, children }: GlassCatalogProviderPr
   );
 }
 
+/**
+ * Reads app-wide glass catalogs and preload state.
+ *
+ * @throws When used outside {@link GlassCatalogProvider}.
+ */
 export function useGlassCatalogs(): GlassCatalogContextValue {
   const context = useContext(GlassCatalogContext);
 

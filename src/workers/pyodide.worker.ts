@@ -1,127 +1,23 @@
 /**
- * Pyodide module worker that runs RayOptics computations off the main thread. Loads Pyodide v314.0.0, installs `rayoptics_web_utils` (internal Python package in `python/`), `rayoptics` and supporting packages, and exposes a typed API to React components via Comlink. This Pyodide web worker is long living.
+ * Long-lived Pyodide module worker for off-main-thread RayOptics computation.
  *
  * @remarks
- * Each exported function (except `init`) is **stateless**: it receives an `OpticalModel`, builds the Python `opm` locally in a single `runPython` call (using `buildScript` from `lib/pythonScript`), runs the computation, and returns the result. No global optical-model state persists between calls.
+ * Public computations are stateless: each builds an optical model inside one
+ * `runPython` call. The singleton owns only the initialized runtime, user-defined
+ * material registry, and active optimization-interrupt lifecycle.
  *
- * ## Initialization
+ * `init` reports deterministic startup milestones while loading the pinned Pyodide
+ * runtime, Python dependencies, and local wheel. Injectable `_*` variants accept a
+ * `runPython` dependency for isolated testing; their individual contracts live on
+ * their declarations. Comlink exposes the public wrappers at the end of this module.
  *
- * `init()` performs the following steps:
- *
- * 1. No-ops if `pyodide` singleton is already set.
- * 2. Emits `0%` with `"Starting worker"`.
- * 3. Emits `10%` with `"Loading Pyodide loader"`. The worker imports `loadPyodide` and `version` from the pinned npm package; it does not use `importScripts`.
- * 4. Emits `25%` with `"Starting Pyodide runtime"`, natively imports `pyodide.asm.mjs` from `https://cdn.jsdelivr.net/pyodide/v314.0.0/full/` with webpack processing disabled, and passes its module factory to `loadPyodide({ indexURL, createPyodideModule })`. This prevents webpack from converting Pyodide's computed CDN import into a local context lookup.
- * 5. Emits `40%` with `"Loading Pyodide packages"` and loads standard packages: `micropip`, `numpy`, `scipy`, `matplotlib`, `pandas`, `xlrd`, `traitlets`, `packaging`, `pyyaml`, `requests`, `deprecation`.
- * 6. Constructs the wheel URL from `self.location.origin` and the `NEXT_PUBLIC_BASE_PATH` env var (defaults to `""`), targeting `rayoptics_web_utils-0.22.0-py3-none-any.whl`.
- *
- * The public API includes `getSurfaceSemiDiameters(model)`, which builds and updates the model, invokes the Python helper, and parses the ordered JSON array.
- * 7. Delegates the rest to `_init(pyodide.runPythonAsync, wheelUrl, onProgress)`.
- * 8. Emits `100%` with `"Ready"`.
- *
- * `_init(runPython, wheelUrl)` performs three `runPython` calls:
- *
- * 1. Emits `60%` with `"Installing RayOptics packages"` and installs `rayoptics==0.9.8` and `opticalglass==1.1.1` (both with `deps=False` to avoid futile attempts to install Qt related packages).
- * 2. Emits `75%` with `"Installing supporting packages"` and installs supporting packages: `anytree`, `transforms3d`, `json-tricks`, `openpyxl`, `parsimonious`, which are required by `rayoptics` and `opticalglass`.
- * 3. Emits `85%` with `"Loading local wheel and imports"` and installs the local `rayoptics_web_utils` wheel, runs `_rwu_init()` to get the `caf2`, `fused_silica`, `water`, and `d263teco` glass objects, and imports the needed symbols from `rayoptics.environment`, `rayoptics.elem.surface` (`DecenterData`, `Circular`), `rayoptics_web_utils.aperture` (`Annular`, `OffsetCircular`, `OffsetRotatedRectangular`), `rayoptics_web_utils.analysis`, `rayoptics_web_utils.plotting`, `rayoptics_web_utils.focusing`, `rayoptics_web_utils.glass.glass`, and `rayoptics_web_utils.optimization`, including `evaluate_optimization_problem` and `optimize_opm`.
- *
- * ## Public API
- *
- * All public functions call `requirePyodide()` to obtain `pyodide.runPythonAsync`, then delegate to the corresponding `_*` injectable variant.
- *
- * | Function | Description |
- * |---|---|
- * | `init(onProgress?)` | Initializes Pyodide singleton and optionally emits determinate startup milestones. No-op if already initialized, except it can emit `100%` ready to a supplied callback. |
- * | `getFirstOrderData(model)` | Builds `opm` from model, returns optical data (EFL, f-number, etc.) as `Record<string, number>`. |
- * | `plotLensLayout(model, isDark)` | Builds `opm` from model, derives `show_ray_fan_vs_wvls` from any `surface.diffractionGrating`, forwards `is_dark`, and returns a lens layout plot as a base64-encoded PNG string. |
- * | `getRayFanData(model, fieldIndex, imagePoint?)` | Builds `opm` from model, returns grouped transverse ray-fan line data for all wavelengths at the selected field and image reference. Blocked samples are normalized to `undefined` gaps for ECharts. Used by the ECharts Ray Fan view. |
- * | `getOpdFanData(model, fieldIndex, imagePoint?)` | Builds `opm` from model, returns grouped OPD-fan line data for all wavelengths at the selected field. Blocked samples are normalized to `undefined` gaps for ECharts. Used by the ECharts OPD Fan view. |
- * | `getSpotDiagramData(model, fieldIndex, imagePoint?)` | Returns per-wavelength spot-diagram point clouds using `json.dumps(get_spot_data(..., image_point=...))`. Used by the ECharts Spot Diagram view. |
- * | `getFieldCurvatureData(model, wi)` | Returns `FieldCurveData` with sagittal/tangential focus-shift curves for the selected wavelength. |
- * | `getAstigmatismCurveData(model, wi)` | Returns `AstigmatismCurveData` with one `Astigmatism` separation curve for the selected wavelength. |
- * | `getWavefrontData(model, fi, wi, imagePoint?, numRays?)` | Returns `WavefrontMapData` for the given field and wavelength index using `json.dumps(get_wavefront_data(...))`. Used by the deck.gl Wavefront Map view. |
- * | `getStrehlVsWavelengthData(model, fi, imagePoint?, wavelengthSamples?, numRays?)` | Returns `StrehlVsWavelengthData` for the selected field using `json.dumps(get_strehl_vs_wavelength_data(...))`. Defaults to 100 wavelength samples and 21 rays. Used by the ECharts Strehl vs Wavelength view. |
- * | `getGeoPSFData(model, fi, wi, numRays?)` | Returns `GeoPsfData` for the given field and wavelength index using `json.dumps(get_geo_psf_data(...))`. Used by the deck.gl Geometric PSF view. |
- * | `getDiffractionPSFData(model, fi, wi, imagePoint?, numRays?, maxDims?)` | Returns `DiffractionPsfData` for the given field and wavelength index using `json.dumps(get_diffraction_psf_data(...))`. Defaults to 128 rays and `maxDims=1024`, with Python returning the cropped central PSF data. Used by the deck.gl Diffraction PSF view. |
- * | `getDiffractionMTFData(model, fi, wi, imagePoint?, numRays?, maxDims?)` | Returns `DiffractionMtfData` for the given field and wavelength index using `json.dumps(get_diffraction_mtf_data(...))`. Used by the ECharts Diffraction MTF view. |
- * | `get3rdOrderSeidelData(model)` | Builds `opm` from model, returns `SeidelData` with 3rd-order Seidel aberration data. |
- * | `getZernikeCoefficients(model, fi, wi, imagePoint?, n?, ordering?)` | Builds `opm` from model, converts `ordering`/`numTerms` to an explicit `(n, m)` term list in TypeScript, and returns `ZernikeData`. `numTerms` defaults to 37 and `ordering` defaults to `"noll"`. |
- * | `focusByMonoRmsSpot(model, fieldIndex)` | Focuses by minimizing monochromatic RMS spot radius. Returns `FocusingResult` with `delta_thi` and `metric_value`. |
- * | `focusByMonoStrehl(model, fieldIndex)` | Focuses by maximizing monochromatic Strehl ratio. Returns `FocusingResult`. |
- * | `focusByPolyRmsSpot(model, fieldIndex)` | Focuses by minimizing polychromatic RMS spot radius. Returns `FocusingResult`. |
- * | `focusByPolyStrehl(model, fieldIndex)` | Focuses by maximizing polychromatic Strehl ratio. Returns `FocusingResult`. |
- * | `getAllGlassCatalogsData()` | Returns glass catalog data for all 6 catalogs as `AllGlassCatalogsData`. No optical model required. |
- * | `addUserDefinedGlasses(materials)` | Adds user-defined tabulated materials through the Python `user_defined_materials` singleton after pre-validating existing names. Returns the bare material map for added names using NumPy-safe JSON serialization. |
- * | `deleteUserDefinedGlasses(names)` | Deletes user-defined materials after pre-validating missing names. Resolves with no payload. |
- * | `updateUserDefinedGlasses(materials)` | Replaces existing user-defined materials after pre-validating missing names. Deletes each existing entry, sets the replacement pairs, and returns the bare material map for updated names using NumPy-safe JSON serialization. |
- * | `getUserDefinedGlasses(names)` | Returns the bare material map from `user_defined_materials.get_materials_data(names)` using NumPy-safe JSON serialization. Missing names propagate Python `KeyError`. |
- * | `canInterruptOptimization()` | Returns whether the initialized Pyodide instance exposes `setInterruptBuffer` and the browser exposes `SharedArrayBuffer`. |
- * | `requestOptimizationStop(runId)` | Signals the active interrupt buffer only when `runId` matches the currently active optimization run; returns `{ signaled: false }` for late or stale requests. |
- * | `evaluateOptimizationProblem(model, config, imagePoint?)` | Builds `opm` from the model, calls Python `evaluate_optimization_problem(opm, config, image_point=...)`, and returns the parsed JSON-safe residual report without running SciPy. |
- * | `optimizeOpm(model, config, imagePoint?, onProgress?, runId?, interruptBuffer?)` | Builds `opm` from the model, optionally bridges a streamed progress callback into Python, optionally installs a per-run Pyodide interrupt buffer, calls `optimize_opm(opm, config, image_point=..., ...)`, and returns the parsed JSON-safe optimization report. |
- *
- * ## Injectable Variants (for testing)
- *
- * Each public function has a corresponding `_*` variant that accepts `runPython` as an explicit first argument instead of relying on the singleton. This enables unit tests to inject a mock `runPython` without loading Pyodide.
- *
- * Each `_*` variant (except `_init`) calls `buildScript(opticalModel, computation)` to produce a combined Python script (model-build wrapped in `def _build_opm():` + computation using `_build_opm()`) and runs it in a single `runPython` call.
- *
- * - `_init(runPython, wheelUrl, onProgress?)` — full package installation sequence with package-install progress milestones.
- * - `_getFirstOrderData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_first_order_data(${opm}))\`)`.
- * - `_plotLensLayout(runPython, model, isDark)` — checks `model.surfaces` for any `diffractionGrating` and runs `buildScript(model, (opm) => \`plot_lens_layout(${opm}, show_ray_fan_vs_wvls=..., is_dark=...)\`)`.
- * - `_getRayFanData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_ray_fan_data(${opm}, ${fieldIndex}, image_point=...))\`)`, parses the JSON, and normalizes JSON `null` fan ordinates to `undefined` gaps.
- * - `_getOpdFanData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_opd_fan_data(${opm}, ${fieldIndex}, image_point=...))\`)`, parses the JSON, and normalizes JSON `null` fan ordinates to `undefined` gaps.
- * - `_getSpotDiagramData(runPython, model, fieldIndex, imagePoint?)` — runs `buildScript(model, (opm) => \`json.dumps(get_spot_data(${opm}, ${fieldIndex}, image_point=...))\`)` and parses the JSON into `SpotDiagramData`.
- * - `_getFieldCurvatureData(runPython, model, wi)` — runs `buildScript(model, (opm) => \`json.dumps(get_field_curvature_data(${opm}, ${wi}))\`)` and parses the JSON into `FieldCurveData`.
- * - `_getAstigmatismCurveData(runPython, model, wi)` — runs `buildScript(model, (opm) => \`json.dumps(get_astigmatism_curve_data(${opm}, ${wi}))\`)` and parses the JSON into `AstigmatismCurveData`.
- * - `_getLSAData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_lsa_data(${opm}))\`)` and parses all wavelength series into `LongitudinalSphericalAberrationData`.
- * - `_getStrehlVsWavelengthData(runPython, model, fi, imagePoint?, wavelengthSamples?, numRays?)` — runs `buildScript(model, (opm) => \`json.dumps(get_strehl_vs_wavelength_data(${opm}, ${fi}, wavelength_samples=${wavelengthSamples}, num_rays=${numRays}, image_point=...))\`)` and parses the JSON into `StrehlVsWavelengthData`.
- * - `_getGeoPSFData(runPython, model, fi, wi, numRays?)` — runs `buildScript(model, (opm) => \`json.dumps(get_geo_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}))\`)` and parses the JSON into `GeoPsfData`.
- * - `_getDiffractionPSFData(runPython, model, fi, wi, imagePoint?, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_psf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}, image_point=...))\`)` and parses the JSON into `DiffractionPsfData`; the public wrapper defaults diffraction PSF calls to `numRays=128` and `maxDims=1024`.
- * - `_getDiffractionMTFData(runPython, model, fi, wi, imagePoint?, numRays?, maxDims?)` — runs `buildScript(model, (opm) => \`json.dumps(get_diffraction_mtf_data(${opm}, ${fi}, ${wi}, num_rays=${numRays}, max_dims=${maxDims}, image_point=...))\`)` and parses the JSON into `DiffractionMtfData`.
- * - `_get3rdOrderSeidelData(runPython, model)` — runs `buildScript(model, (opm) => \`json.dumps(get_3rd_order_seidel_data(${opm}))\`)`.
- * - `_getZernikeCoefficients(runPython, model, fi, wi, imagePoint?, n?, ordering?)` — computes `zernikeTermsForOrdering(ordering, numTerms)`, reconstructs it in Python with `json.loads(...)`, and calls `get_zernike_coefficients(..., zernike_terms=zernike_terms, image_point=...)`. Python does not receive an ordering name.
- * - `_addUserDefinedGlasses(runPython, materials)` — reconstructs the material request with `json.loads(...)`, pre-validates existing names, sets `user_defined_materials[name] = pairs`, and parses `json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)`.
- * - `_deleteUserDefinedGlasses(runPython, names)` — reconstructs names with `json.loads(...)`, pre-validates missing names, then deletes each entry with `del user_defined_materials[name]`. It does not parse or return a Python payload.
- * - `_updateUserDefinedGlasses(runPython, materials)` — reconstructs the material request with `json.loads(...)`, pre-validates missing names, deletes and re-sets each material, and parses `json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)`.
- * - `_getUserDefinedGlasses(runPython, names)` — reconstructs names with `json.loads(...)`, calls `user_defined_materials.get_materials_data(names)`, and parses the bare material map through `json.dumps(..., default=_json_default)`.
- * - `_evaluateOptimizationProblem(runPython, model, config, imagePoint?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, runs `evaluate_optimization_problem(..., image_point=...)`, and parses the returned report.
- * - `_optimizeOpm(runPython, model, config, imagePoint?, onProgress?, runId?, interruptBuffer?)` — serializes `config` with `JSON.stringify`, reconstructs it with `json.loads(...)` inside the generated Python script, and when a live callback is available binds `_optimization_progress_callback` through `pyodide.globals` so Python can push JSON snapshots back to JS while `optimize_opm(..., image_point=...)` is still running. When `runId`, `interruptBuffer`, and `pyodide.setInterruptBuffer` are available, it creates an `Int32Array` view over the buffer, resets the first cell, stores the active run id, installs the typed view before the Python call, and clears all interrupt state in `finally`.
- * - `_resetPyodideForTesting()` — sets `pyodide = null` and clears optimization interrupt state to allow `init()` to be re-exercised in tests.
- * - `_setPyodideForTesting(...)` and `_getOptimizationInterruptStateForTesting()` are test-only helpers for interrupt lifecycle coverage.
- *
- * ## Key Conventions
- *
- * - **Singleton `pyodide`**: `init()` is a no-op if the singleton is already set.
- * - **`requirePyodide()` guard**: All public functions call this helper. It throws `"Pyodide not initialized. Call init() first."` if `pyodide` is `null`.
- * - **Stateless**: Each computation function builds `opm` locally from the received `OpticalModel` within a single `runPython` call. No global `opm` state persists between calls.
- * - **Optimization progress bridging**: `_optimizeOpm(...)` is the only exception to the fully fire-and-return pattern; when a progress callback is supplied, it temporarily installs `_optimization_progress_callback` in Pyodide globals for that single optimization call and removes it in `finally`.
- * - **Optimization stop signaling**: stoppable runs are identified by a per-run string id and a shared interrupt buffer. `_optimizeOpm(...)` installs the buffer only for the matching active run and clears it in `finally` for success, stopped, failed, and thrown-error paths. `requestOptimizationStop(...)` is idempotent and returns a no-op result for stale or late run ids.
- * - **Plot return type**: `plotLensLayout` returns a `string` (base64-encoded image), while `getRayFanData`, `getOpdFanData`, `getSpotDiagramData`, `getFieldCurvatureData`, `getAstigmatismCurveData`, `getLSAData`, `getWavefrontData`, `getStrehlVsWavelengthData`, `getGeoPSFData`, `getDiffractionPSFData`, and `getDiffractionMTFData` return typed data for frontend rendering.
- * - **Custom material globals**: `_init()` binds `caf2`, `fused_silica`, `water`, `d263teco`, and `user_defined_materials` from `_rwu_init()` so worker-side Python scripts can reference the same runtime materials loaded by `rayoptics_web_utils.env.init()`.
- * - **User-defined materials**: Add/update pre-validate existence before mutating the Python singleton; delete pre-validates missing names. Add/update/get return `UserDefinedMaterialsData`, a bare `{ glassName: rawGlassData }` map with `"tabulated"` dispersion data. The worker readback snippets define `_json_default` so NumPy arrays and scalar values from `InterpolatedMedium` are serialized through `.tolist()` / `.item()` rather than failing plain `json.dumps`.
- * - **Offset aperture globals**: `_init()` imports `OffsetCircular` from `rayoptics_web_utils.aperture` so generated worker-side scripts can use offset-aware circular aperture edge targets.
- *
- * ## Edge Cases / Error Handling
- *
- * - `init()` sets `pyodide = null` and re-throws on any failure, so a failed init can be retried.
- * - `NEXT_PUBLIC_BASE_PATH` env var is used to prefix the wheel URL path; defaults to `""` when not set.
- * - Pyodide is pinned to **v314.0.0**. The npm package supplies the bundled loader and its exported `version` builds the matching jsDelivr runtime URL.
- * - `_init` is marked as a "dangerous zone" in comments — package versions are pinned and must not be changed without careful testing.
- *
- * ## Dependencies
- *
- * - `comlink` — `expose()` to register the worker API.
- * - `shared/lib/types/opticalModel` — `OpticalModel` (type only).
- * - `features/lens-editor/types/focusingResult` — `FocusingResult` (type only).
- * - `features/lens-editor/types/seidelData` — `SeidelData` (type only).
- * - `features/lens-editor/types/zernikeData` — `ZernikeData` and `ZernikeOrdering` (type only).
- * - `features/lens-editor/lib/zernikeData` — `zernikeTermsForOrdering`, the TypeScript-owned Noll/Fringe term-list generator.
- * - `lib/pythonScript` — `buildScript` (generates the combined model-build + computation Python script).
- * - `features/glass-map/types/glassMap` — catalog and user-defined glass data types plus `UserDefinedGlassInput` (type only).
- * - `features/optimization/types/optimizationWorkerTypes` — optimization config, report, and progress types (type only).
- *
- * The worker is instantiated as a singleton by `hooks/usePyodide.ts` via Comlink RPC.
+ * All public computations obtain the executor through `requirePyodide`, which throws
+ * until initialization succeeds. Initialization clears the singleton on failure so
+ * callers can retry, and prefixes the local-wheel URL with `NEXT_PUBLIC_BASE_PATH`.
+ * User-defined glass mutations share the Python material registry and use NumPy-safe
+ * JSON serialization. Optimization temporarily owns its progress callback and
+ * interrupt buffer, clearing both on every completion path; stop requests affect only
+ * the matching active run id.
  */
 import { expose } from "comlink";
 import { loadPyodide, version } from "pyodide";
@@ -194,6 +90,7 @@ export function _resetPyodideForTesting(): void {
   activeOptimizationInterruptView = undefined;
 }
 
+/** Injects or clears the Pyodide singleton and resets all optimization-interrupt state for tests. */
 export function _setPyodideForTesting(nextPyodide: any | undefined): void {
   pyodide = nextPyodide ?? null;
   activeOptimizationRunId = undefined;
@@ -201,6 +98,7 @@ export function _setPyodideForTesting(nextPyodide: any | undefined): void {
   activeOptimizationInterruptView = undefined;
 }
 
+/** Returns the active optimization run id and interrupt buffer for lifecycle assertions. */
 export function _getOptimizationInterruptStateForTesting(): {
   readonly activeRunId: string | undefined;
   readonly interruptBuffer: SharedArrayBuffer | undefined;
@@ -215,6 +113,14 @@ export function _getOptimizationInterruptStateForTesting(): {
 // WARNING: DON'T TOUCH THIS PART UNLESS YOU KNOW WHAT YOU ARE DOING
 
 // export for testing
+/**
+ * Installs pinned RayOptics and support packages, installs the local wheel, and
+ * binds the Python globals required by generated scripts.
+ *
+ * @param runPython - Injected asynchronous Python executor.
+ * @param wheelUrl - Absolute URL of the local `rayoptics_web_utils` wheel.
+ * @param onProgress - Optional receiver for the 60%, 75%, and 85% milestones.
+ */
 export async function _init(
   runPython: (code: string) => Promise<unknown>,
   wheelUrl: string,
@@ -270,6 +176,10 @@ from rayoptics_web_utils.optimization import evaluate_optimization_problem, opti
 `);
 }
 
+/**
+ * Initializes the singleton Pyodide runtime and reports determinate milestones.
+ * Repeated calls are no-ops except for reporting the ready milestone.
+ */
 export async function init(onProgress?: InitProgressCallback): Promise<void> {
   if (pyodide) {
     await emitInitProgress(onProgress, 100, "Ready");
@@ -340,11 +250,13 @@ function normalizeFanData<TFanData extends RayFanData | OpdFanData>(rawData: Raw
 
 // ─── Injectable variants for testing ─────────────────────────────────────────
 
+/** Runs `get_first_order_data` for an injected Python executor and parses the JSON result. */
 export async function _getFirstOrderData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<Record<string, number>> {
   const json = (await runPython(buildScript(opticalModel, (opm) => `json.dumps(get_first_order_data(${opm}))`))) as string;
   return JSON.parse(json);
 }
 
+/** Builds and updates the model with an injected executor, then parses ordered surface semi-diameters. */
 export async function _getSurfaceSemiDiameters(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -356,6 +268,7 @@ export async function _getSurfaceSemiDiameters(
   return JSON.parse(json) as number[];
 }
 
+/** Plots a lens layout with injected execution, deriving the wavelength-overlay flag from diffraction gratings. */
 export async function _plotLensLayout(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -370,6 +283,7 @@ export async function _plotLensLayout(
   )) as string;
 }
 
+/** Loads transverse ray-fan data with injected execution and normalizes blocked ordinates to `undefined` gaps. */
 export async function _getRayFanData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -382,6 +296,7 @@ export async function _getRayFanData(
   return normalizeFanData<RayFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
 
+/** Loads OPD-fan data with injected execution and normalizes blocked ordinates to `undefined` gaps. */
 export async function _getOpdFanData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -394,6 +309,7 @@ export async function _getOpdFanData(
   return normalizeFanData<OpdFanData>(JSON.parse(json) as RawFanSeriesData[]);
 }
 
+/** Loads and parses per-wavelength spot-diagram points with injected execution. */
 export async function _getSpotDiagramData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -406,6 +322,7 @@ export async function _getSpotDiagramData(
   return JSON.parse(json) as SpotDiagramData;
 }
 
+/** Loads and parses sagittal and tangential field-curvature data with injected execution. */
 export async function _getFieldCurvatureData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -417,6 +334,7 @@ export async function _getFieldCurvatureData(
   return JSON.parse(json) as FieldCurveData;
 }
 
+/** Loads and parses the astigmatic-separation curve with injected execution. */
 export async function _getAstigmatismCurveData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -428,6 +346,7 @@ export async function _getAstigmatismCurveData(
   return JSON.parse(json) as AstigmatismCurveData;
 }
 
+/** Loads and parses all-wavelength longitudinal spherical-aberration data with injected execution. */
 export async function _getLSAData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -438,11 +357,13 @@ export async function _getLSAData(
   return JSON.parse(json) as LongitudinalSphericalAberrationData;
 }
 
+/** Loads and parses third-order Seidel data with injected execution. */
 export async function _get3rdOrderSeidelData(runPython: (code: string) => Promise<unknown>, opticalModel: OpticalModel): Promise<SeidelData> {
   const json = (await runPython(buildScript(opticalModel, (opm) => `json.dumps(get_3rd_order_seidel_data(${opm}))`))) as string;
   return JSON.parse(json) as SeidelData;
 }
 
+/** Loads and parses a wavefront map for one field, wavelength, and image reference with injected execution. */
 export async function _getWavefrontData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -474,6 +395,12 @@ export async function _getWavefrontData(
   };
 }
 
+/**
+ * Loads and parses sampled Strehl-versus-wavelength data with injected execution.
+ *
+ * @param wavelengthSamples - Number of wavelength samples; defaults to 100.
+ * @param numRays - Ray-grid size; defaults to 21.
+ */
 export async function _getStrehlVsWavelengthData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -491,6 +418,7 @@ export async function _getStrehlVsWavelengthData(
   return JSON.parse(json) as StrehlVsWavelengthData;
 }
 
+/** Loads and parses geometric-PSF points with injected execution. */
 export async function _getGeoPSFData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -507,6 +435,13 @@ export async function _getGeoPSFData(
   return JSON.parse(json) as GeoPsfData;
 }
 
+/**
+ * Loads and parses a cropped central diffraction-PSF grid with injected execution.
+ *
+ * @param imagePoint - Image reference passed to Python; defaults to the chief ray.
+ * @param numRays - Ray-grid size; defaults to 128.
+ * @param maxDims - Maximum returned grid dimension; defaults to 1024.
+ */
 export async function _getDiffractionPSFData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -525,6 +460,13 @@ export async function _getDiffractionPSFData(
   return JSON.parse(json) as DiffractionPsfData;
 }
 
+/**
+ * Loads and parses diffraction-MTF sagittal and tangential series with injected execution.
+ *
+ * @param imagePoint - Image reference passed to Python; defaults to the chief ray.
+ * @param numRays - Ray-grid size; defaults to 128.
+ * @param maxDims - Maximum sampled grid dimension; defaults to 1024.
+ */
 export async function _getDiffractionMTFData(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -543,6 +485,14 @@ export async function _getDiffractionMTFData(
   return JSON.parse(json) as DiffractionMtfData;
 }
 
+/**
+ * Converts the requested ordering to explicit Zernike terms, reconstructs them in
+ * Python, and parses the returned coefficients. Python receives the explicit term
+ * list rather than the ordering name.
+ *
+ * @param numTerms - Number of coefficients; defaults to 37.
+ * @param ordering - TypeScript-owned term ordering; defaults to Noll ordering.
+ */
 export async function _getZernikeCoefficients(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -563,6 +513,7 @@ export async function _getZernikeCoefficients(
 }
 
 
+/** Focuses with an injected executor by minimizing monochromatic RMS spot radius. */
 export async function _focusByMonoRmsSpot(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -574,6 +525,7 @@ export async function _focusByMonoRmsSpot(
   return JSON.parse(json) as FocusingResult;
 }
 
+/** Focuses with an injected executor by maximizing monochromatic Strehl ratio. */
 export async function _focusByMonoStrehl(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -585,6 +537,7 @@ export async function _focusByMonoStrehl(
   return JSON.parse(json) as FocusingResult;
 }
 
+/** Focuses with an injected executor by minimizing polychromatic RMS spot radius. */
 export async function _focusByPolyRmsSpot(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -596,6 +549,7 @@ export async function _focusByPolyRmsSpot(
   return JSON.parse(json) as FocusingResult;
 }
 
+/** Focuses with an injected executor by maximizing polychromatic Strehl ratio. */
 export async function _focusByPolyStrehl(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -607,6 +561,7 @@ export async function _focusByPolyStrehl(
   return JSON.parse(json) as FocusingResult;
 }
 
+/** Loads and parses all built-in glass catalogs with injected execution. */
 export async function _getAllGlassCatalogsData(
   runPython: (code: string) => Promise<unknown>
 ): Promise<CompleteGlassCatalogsData> {
@@ -614,6 +569,7 @@ export async function _getAllGlassCatalogsData(
   return JSON.parse(json) as CompleteGlassCatalogsData;
 }
 
+/** Prevalidates absent names, adds tabulated materials, and returns NumPy-safe serialized material data. */
 export async function _addUserDefinedGlasses(
   runPython: (code: string) => Promise<unknown>,
   materials: readonly UserDefinedGlassInput[],
@@ -636,6 +592,7 @@ json.dumps(user_defined_materials.get_materials_data(names), default=_json_defau
   return JSON.parse(json) as UserDefinedMaterialsData;
 }
 
+/** Prevalidates existing names and deletes user-defined materials without a return payload. */
 export async function _deleteUserDefinedGlasses(
   runPython: (code: string) => Promise<unknown>,
   names: readonly string[],
@@ -651,6 +608,7 @@ for name in names:
 `);
 }
 
+/** Prevalidates existing names, replaces their pairs, and returns NumPy-safe serialized material data. */
 export async function _updateUserDefinedGlasses(
   runPython: (code: string) => Promise<unknown>,
   materials: readonly UserDefinedGlassInput[],
@@ -674,6 +632,7 @@ json.dumps(user_defined_materials.get_materials_data(names), default=_json_defau
   return JSON.parse(json) as UserDefinedMaterialsData;
 }
 
+/** Reads named user-defined materials and returns their NumPy-safe serialized data. */
 export async function _getUserDefinedGlasses(
   runPython: (code: string) => Promise<unknown>,
   names: readonly string[],
@@ -687,6 +646,7 @@ json.dumps(user_defined_materials.get_materials_data(names), default=_json_defau
   return JSON.parse(json) as UserDefinedMaterialsData;
 }
 
+/** Serializes the config into Python, evaluates residuals without solving, and parses the report. */
 export async function _evaluateOptimizationProblem(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -703,6 +663,16 @@ export async function _evaluateOptimizationProblem(
   return JSON.parse(json) as OptimizationReport;
 }
 
+/**
+ * Runs optimization with injected execution, optional streamed progress, and
+ * optional per-run interruption. The serialized config is reconstructed in Python;
+ * temporary callback globals and interrupt state are always cleared in `finally`.
+ *
+ * @param onProgress - Optional live receiver for parsed optimization snapshots.
+ * @param runId - Identifier used to reject stale stop requests.
+ * @param interruptBuffer - Shared buffer installed only for an interrupt-capable run.
+ * @returns The parsed JSON-safe optimization report.
+ */
 export async function _optimizeOpm(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -774,6 +744,7 @@ json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)}), image
   }
 }
 
+/** Signals the active interrupt view only when the requested run id still matches. */
 export async function _requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }> {
   if (runId !== activeOptimizationRunId || activeOptimizationInterruptView === undefined) {
     return { signaled: false };
@@ -786,18 +757,22 @@ export async function _requestOptimizationStop(runId: string): Promise<{ readonl
 
 // ─── Public API (exposed via Comlink) ─────────────────────────────────────────
 
+/** Returns first-order optical data, including EFL and f-number. */
 export async function getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>> {
   return await _getFirstOrderData(requirePyodide(), opticalModel);
 }
 
+/** Builds and updates the model, then returns ordered surface semi-diameters. */
 export async function getSurfaceSemiDiameters(opticalModel: OpticalModel): Promise<number[]> {
   return await _getSurfaceSemiDiameters(requirePyodide(), opticalModel);
 }
 
+/** Returns a base64 lens-layout PNG with theme and diffraction overlays applied. */
 export async function plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string> {
   return await _plotLensLayout(requirePyodide(), opticalModel, isDark);
 }
 
+/** Returns all-wavelength transverse ray-fan series with blocked samples represented as gaps. */
 export async function getRayFanData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -806,6 +781,7 @@ export async function getRayFanData(
   return await _getRayFanData(requirePyodide(), opticalModel, fieldIndex, imagePoint);
 }
 
+/** Returns all-wavelength OPD-fan series with blocked samples represented as gaps. */
 export async function getOpdFanData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -814,6 +790,7 @@ export async function getOpdFanData(
   return await _getOpdFanData(requirePyodide(), opticalModel, fieldIndex, imagePoint);
 }
 
+/** Returns per-wavelength spot-diagram point clouds. */
 export async function getSpotDiagramData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -822,18 +799,22 @@ export async function getSpotDiagramData(
   return await _getSpotDiagramData(requirePyodide(), opticalModel, fieldIndex, imagePoint);
 }
 
+/** Returns sagittal and tangential field-curvature data for one wavelength. */
 export async function getFieldCurvatureData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<FieldCurveData> {
   return await _getFieldCurvatureData(requirePyodide(), opticalModel, wavelengthIndex);
 }
 
+/** Returns the astigmatic-separation curve for one wavelength. */
 export async function getAstigmatismCurveData(opticalModel: OpticalModel, wavelengthIndex: number): Promise<AstigmatismCurveData> {
   return await _getAstigmatismCurveData(requirePyodide(), opticalModel, wavelengthIndex);
 }
 
+/** Returns longitudinal spherical aberration series for all wavelengths. */
 export async function getLSAData(opticalModel: OpticalModel): Promise<LongitudinalSphericalAberrationData> {
   return await _getLSAData(requirePyodide(), opticalModel);
 }
 
+/** Returns a wavefront-map grid for one field, wavelength, and image reference. */
 export async function getWavefrontData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -844,6 +825,7 @@ export async function getWavefrontData(
   return await _getWavefrontData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, imagePoint, numRays);
 }
 
+/** Returns sampled Strehl values across wavelength for one field, using 100 wavelength samples and 21 rays by default. */
 export async function getStrehlVsWavelengthData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -854,6 +836,7 @@ export async function getStrehlVsWavelengthData(
   return await _getStrehlVsWavelengthData(requirePyodide(), opticalModel, fieldIndex, imagePoint, wavelengthSamples, numRays);
 }
 
+/** Returns geometric-PSF points for one field and wavelength. */
 export async function getGeoPSFData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -863,6 +846,7 @@ export async function getGeoPSFData(
   return await _getGeoPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, numRays);
 }
 
+/** Returns the cropped central diffraction-PSF grid, using 128 rays and a 1024-pixel maximum dimension by default. */
 export async function getDiffractionPSFData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -874,6 +858,7 @@ export async function getDiffractionPSFData(
   return await _getDiffractionPSFData(requirePyodide(), opticalModel, fieldIndex, wavelengthIndex, imagePoint, numRays, maxDims);
 }
 
+/** Returns diffraction-MTF sagittal and tangential series, using 128 rays and a 1024-pixel maximum dimension by default. */
 export async function getDiffractionMTFData(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -886,10 +871,12 @@ export async function getDiffractionMTFData(
 }
 
 
+/** Returns third-order Seidel aberration data for the model. */
 export async function get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData> {
   return await _get3rdOrderSeidelData(requirePyodide(), opticalModel);
 }
 
+/** Returns explicitly ordered Zernike coefficients for one field and wavelength, defaulting to 37 Noll-ordered terms. */
 export async function getZernikeCoefficients(
   opticalModel: OpticalModel,
   fieldIndex: number,
@@ -901,52 +888,64 @@ export async function getZernikeCoefficients(
   return await _getZernikeCoefficients(requirePyodide(), opticalModel, fieldIndex, wvlIndex, imagePoint, numTerms, ordering);
 }
 
+/** Focuses by minimizing monochromatic RMS spot radius. */
 export async function focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
   return await _focusByMonoRmsSpot(requirePyodide(), opticalModel, fieldIndex);
 }
 
+/** Focuses by maximizing monochromatic Strehl ratio. */
 export async function focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
   return await _focusByMonoStrehl(requirePyodide(), opticalModel, fieldIndex);
 }
 
+/** Focuses by minimizing polychromatic RMS spot radius. */
 export async function focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
   return await _focusByPolyRmsSpot(requirePyodide(), opticalModel, fieldIndex);
 }
 
+/** Focuses by maximizing polychromatic Strehl ratio. */
 export async function focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult> {
   return await _focusByPolyStrehl(requirePyodide(), opticalModel, fieldIndex);
 }
 
+/** Returns normalized data for every built-in glass catalog. */
 export async function getAllGlassCatalogsData(): Promise<AllGlassCatalogsData> {
   return await _getAllGlassCatalogsData(requirePyodide());
 }
 
+/** Adds prevalidated user-defined materials and returns their serialized data. */
 export async function addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData> {
   return await _addUserDefinedGlasses(requirePyodide(), materials);
 }
 
+/** Deletes user-defined materials after verifying that every name exists. */
 export async function deleteUserDefinedGlasses(names: readonly string[]): Promise<void> {
   await _deleteUserDefinedGlasses(requirePyodide(), names);
 }
 
+/** Replaces existing user-defined materials and returns their serialized data. */
 export async function updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData> {
   return await _updateUserDefinedGlasses(requirePyodide(), materials);
 }
 
+/** Returns serialized data for named user-defined materials. */
 export async function getUserDefinedGlasses(names: readonly string[]): Promise<UserDefinedMaterialsData> {
   return await _getUserDefinedGlasses(requirePyodide(), names);
 }
 
+/** Reports whether Pyodide and the browser support shared-buffer interruption. */
 export async function canInterruptOptimization(): Promise<boolean> {
   return pyodide !== null
     && typeof pyodide.setInterruptBuffer === "function"
     && typeof SharedArrayBuffer !== "undefined";
 }
 
+/** Signals only the matching active optimization run. */
 export async function requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }> {
   return await _requestOptimizationStop(runId);
 }
 
+/** Evaluates and returns the optimization residual report without running SciPy. */
 export async function evaluateOptimizationProblem(
   opticalModel: OpticalModel,
   config: OptimizationConfig,
@@ -955,6 +954,7 @@ export async function evaluateOptimizationProblem(
   return await _evaluateOptimizationProblem(requirePyodide(), opticalModel, config, imagePoint);
 }
 
+/** Runs optimization with optional streamed progress and per-run interruption. */
 export async function optimizeOpm(
   opticalModel: OpticalModel,
   config: OptimizationConfig,

@@ -1,17 +1,4 @@
-/**
- * Provides the shared optimizer-capability lookup used by the optimization UI and store validation.
- *
- * @remarks
- * Type definitions for capability return values and algorithm selections live in `features/optimization/types/optimizationAlgorithmTypes.ts`.
- *
- * ## Key Behaviors
- *
- * - Derives both least-squares capability flags from `optimizerUiConfig.ts` so UI rendering and config validation do not drift.
- * - `trf` reports `canUseBounds: true` and does not enforce the Levenberg-Marquardt residual-dimension rule.
- * - `lm` reports `canUseBounds: false` and does enforce `residuals >= variables`.
- * - `differential_evolution` reports `canUseBounds: true` and does not enforce the least-squares residual-count dimension rule.
- * - Keeps `getOptimizationMethodCapabilities()` for least-squares method callers and `getOptimizationAlgorithmCapabilities()` for optimizer-kind-aware callers.
- */
+/** Optimizer capability lookup derived from the single runtime UI configuration. */
 import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 import type {
   OptimizationAlgorithmSelection,
@@ -19,6 +6,7 @@ import type {
 } from "@/features/optimization/types/optimizationAlgorithmTypes";
 import type { LeastSquaresMethod } from "@/features/optimization/types/optimizationWorkerTypes";
 
+/** Least-squares method capabilities derived from `OPTIMIZER_UI_CONFIG` so validation and rendering cannot drift. */
 const METHOD_CAPABILITIES: Record<LeastSquaresMethod, OptimizationMethodCapabilities> =
   OPTIMIZER_UI_CONFIG.least_squares.methods.reduce<Record<LeastSquaresMethod, OptimizationMethodCapabilities>>(
     (capabilities, method) => ({
@@ -31,10 +19,12 @@ const METHOD_CAPABILITIES: Record<LeastSquaresMethod, OptimizationMethodCapabili
     {} as Record<LeastSquaresMethod, OptimizationMethodCapabilities>,
   );
 
+/** Returns bounds and residual-dimension capabilities for one least-squares method. */
 export function getOptimizationMethodCapabilities(method: LeastSquaresMethod): OptimizationMethodCapabilities {
   return METHOD_CAPABILITIES[method];
 }
 
+/** Returns bounds and residual-dimension capabilities for any optimizer selection. */
 export function getOptimizationAlgorithmCapabilities(
   selection: OptimizationAlgorithmSelection,
 ): OptimizationMethodCapabilities {

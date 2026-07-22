@@ -1,24 +1,9 @@
-/**
- * Describes the Use Screen Breakpoint module.
- *
- * @remarks
- * ## Return Value
- *
- * - `"screenLG"` — viewport is ≥ 1440 px wide.
- * - `"screenSM"` — viewport is < 1440 px wide.
- *
- * ## Default
- *
- * The module-level default is `"screenLG"`. The usage of `useLayoutEffect` is to avoid a visible layout shift.
- *
- * ## Dependencies
- *
- * - `useState`, `useLayoutEffect` from React.
- * - Browser `window.matchMedia` API.
- */
+/** Shared media-query subscriptions for the application's 1440px layout breakpoint. */
 import { useLayoutEffect, useState } from "react";
 
+/** Small viewport below 1440px or large viewport at least 1440px wide. */
 export type ScreenSize = "screenSM" | "screenLG";
+/** SSR-safe initial layout until the pre-paint media-query subscription runs. */
 const DEFAULT_SCREEN: ScreenSize = "screenLG";
 
 const BREAKPOINT_QUERY = "(min-width: 1440px)";
@@ -32,6 +17,7 @@ interface SubscriptionEntry {
 let nextId = 0;
 const subscriptions = new Map<number, SubscriptionEntry>();
 
+/** Registers one listener and immediately reports the current breakpoint. */
 function subscribe(cb: (size: ScreenSize) => void): number {
   const id = nextId++;
   const mql = window.matchMedia(BREAKPOINT_QUERY);
@@ -48,6 +34,7 @@ function subscribe(cb: (size: ScreenSize) => void): number {
   return id;
 }
 
+/** Removes one registered media-query listener. */
 function unsubscribe(id: number): void {
   const entry = subscriptions.get(id);
   if (entry) {
@@ -89,7 +76,7 @@ export function useScreenBreakpoint(): ScreenSize {
   return size;
 }
 
-/** Reset module state. Only for testing. */
+/** Removes every media-query listener and resets ids for test isolation. */
 export function _resetRegistry(): void {
   subscriptions.forEach((entry) => {
     entry.mql.removeEventListener("change", entry.handler);

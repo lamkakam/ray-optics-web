@@ -2,6 +2,7 @@ import React, { useId } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Value and display label for one datalist option. */
 export type DatalistOption = {
   readonly value: string | number;
   readonly label: string;

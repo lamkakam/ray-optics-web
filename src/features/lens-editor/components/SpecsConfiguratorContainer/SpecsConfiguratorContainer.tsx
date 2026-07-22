@@ -1,11 +1,4 @@
 "use client";
-/**
- * Describes the Specs Configurator Container module.
- *
- * @remarks
- * ## Injected Dependencies
- * Imperative access to specs actions is via `useSpecsConfiguratorStore()` (stable, non-reactive). For reactive states, use `useSpecsConfiguratorStore` with Zustand's `useStore`.
- */
 
 import { useCallback } from "react";
 import { useStore } from "zustand";
@@ -35,6 +28,11 @@ import { WavelengthConfigModal } from "@/features/lens-editor/components/Wavelen
  * - Modal open/close is driven by `fieldModalOpen` and `wavelengthModalOpen` state from the store.
  *
  * - Mounted once in the main page inside the `BottomDrawer` tabs, alongside `LensPrescriptionContainer`.
+ *
+ *
+ *
+ * ## Injected Dependencies
+ * Imperative access to specs actions is via `useSpecsConfiguratorStore()` (stable, non-reactive). For reactive states, use `useSpecsConfiguratorStore` with Zustand's `useStore`.
  */
 export function SpecsConfiguratorContainer() {
   const store= useSpecsConfiguratorStore();

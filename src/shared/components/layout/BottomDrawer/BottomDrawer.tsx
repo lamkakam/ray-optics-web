@@ -1,15 +1,5 @@
 "use client";
-/**
- * Describes the Bottom Drawer module.
- *
- * @remarks
- * ## Internal State
- *
- * - `height: number` — current drawer height in pixels; initialized on first render from `initialHeight` or `window.innerHeight * 0.4`.
- * - `collapsed: boolean` — whether the drawer is currently collapsed to its minimum height.
- * - `dragging: React.MutableRefObject<boolean>` — pointer capture flag.
- * - `startY / startHeight: React.MutableRefObject<number>` — drag start coordinates.
- */
+/** Resizable and collapsible tabbed bottom drawer. */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import clsx from "clsx";
@@ -79,10 +69,15 @@ export function BottomDrawer({
 }: BottomDrawerProps) {
   const resolvedInitialHeight = initialHeight ?? 300;
   const resolvedInitialCollapsed = isCollapsedHeight(resolvedInitialHeight);
+  /** Current drawer height in CSS pixels. */
   const [height, setHeight] = useState(resolvedInitialHeight);
+  /** Whether the drawer is collapsed to its minimum height. */
   const [collapsed, setCollapsed] = useState(resolvedInitialCollapsed);
+  /** Whether the resize handle currently owns an active pointer drag. */
   const dragging = useRef(false);
+  /** Pointer Y coordinate captured at the start of a drag. */
   const startY = useRef(0);
+  /** Drawer height captured at the start of a drag. */
   const startHeight = useRef(0);
   const heightRef = useRef(resolvedInitialHeight);
   const collapsedRef = useRef(resolvedInitialCollapsed);

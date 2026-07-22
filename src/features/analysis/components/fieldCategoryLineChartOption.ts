@@ -11,31 +11,37 @@
  * - Shows every y-axis category label, tick mark, and horizontal split line when five or fewer field labels are available.
  * - Builds symbol-free line series from caller-provided series definitions.
  *
- * ## Public API
- *
- * This file is a feature-local implementation helper. It is imported directly by chart option modules and is not re-exported from a component `index.ts`.
+ * This feature-local helper is imported directly by chart option modules and is not re-exported from a component barrel.
  */
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 import type { LineAxisData } from "@/features/analysis/types/plotData";
 
+/** Top plot-grid inset in pixels. */
 export const FIELD_CATEGORY_LINE_GRID_TOP = 36;
+/** Bottom plot-grid inset in pixels. */
 export const FIELD_CATEGORY_LINE_GRID_BOTTOM = 56;
+/** Left plot-grid inset in pixels. */
 export const FIELD_CATEGORY_LINE_GRID_LEFT = 72;
+/** Right plot-grid inset in pixels. */
 export const FIELD_CATEGORY_LINE_GRID_RIGHT = 28;
+/** Shared light-gray split-line color. */
 export const FIELD_CATEGORY_LINE_SPLIT_LINE_COLOR = "#d1d5db";
 const FIELD_CATEGORY_LINE_MAX_VISIBLE_Y_TICKS = 5;
 
+/** Named x/y series accepted by the shared field-category series builder. */
 export interface FieldCategoryLineSeriesDefinition {
   readonly name: string;
   readonly data: LineAxisData;
 }
 
+/** Axes metadata shared by field curvature and astigmatism charts. */
 export interface FieldCategoryLineData {
   readonly fieldLabels: readonly string[];
   readonly unitX?: string;
   readonly unitY?: string;
 }
 
+/** Pairs x and y values, truncating to the shorter input axis. */
 export function toFieldCategoryLineData(axisData: LineAxisData): number[][] {
   const pointCount = Math.min(axisData.x.length, axisData.y.length);
   const lineData: number[][] = [];
@@ -47,6 +53,7 @@ export function toFieldCategoryLineData(axisData: LineAxisData): number[][] {
   return lineData;
 }
 
+/** Builds a predicate that exposes at most five evenly distributed field ticks. */
 export function buildVisibleFieldCategoryPredicate(fieldLabelCount: number): (index: number) => boolean {
   if (fieldLabelCount <= FIELD_CATEGORY_LINE_MAX_VISIBLE_Y_TICKS) {
     return () => true;
@@ -64,6 +71,7 @@ export function buildVisibleFieldCategoryPredicate(fieldLabelCount: number): (in
   return (index: number) => visibleFieldCategoryIndices.has(index);
 }
 
+/** Builds the shared ECharts grid and axes for field-category line charts. */
 export function buildFieldCategoryLineAxesAndGrid(
   data: FieldCategoryLineData,
   chartWidth: number,
@@ -133,6 +141,7 @@ export function buildFieldCategoryLineAxesAndGrid(
   };
 }
 
+/** Builds symbol-free ECharts line series from named field-category definitions. */
 export function buildFieldCategoryLineSeries(
   seriesDefinitions: readonly FieldCategoryLineSeriesDefinition[],
 ) {

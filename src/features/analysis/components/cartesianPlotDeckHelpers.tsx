@@ -23,26 +23,31 @@
 import { useEffect, useRef, useState } from "react";
 import { formatPlotValue } from "@/shared/lib/chart-formatting/formatPlotValue";
 
+/** Measured chart width and height. */
 export interface ChartSize {
   readonly width: number;
   readonly height: number;
 }
 
+/** Controlled target and zoom for a deck.gl orthographic view. */
 export interface OrthographicViewState {
   readonly target: [number, number, number];
   readonly zoom: number;
 }
 
+/** View state scoped to the data/layout extent that produced it. */
 export interface ViewStateOverride {
   readonly extentKey: string;
   readonly viewState: OrthographicViewState;
 }
 
+/** Visible minimum and maximum of one physical axis. */
 export interface AxisDomain {
   readonly min: number;
   readonly max: number;
 }
 
+/** Square plot viewport and surrounding chart geometry. */
 export interface CartesianPlotLayout {
   readonly plotSide: number;
   readonly plotLeft: number;
@@ -50,15 +55,24 @@ export interface CartesianPlotLayout {
   readonly yAxisLabelX: number;
 }
 
+/** Padding applied when fitting a physical extent into the initial view. */
 export const CARTESIAN_PLOT_PADDING_FACTOR = 1.12;
+/** Top chart inset in pixels. */
 export const CARTESIAN_CHART_TOP = 16;
+/** Bottom chart inset in pixels. */
 export const CARTESIAN_CHART_BOTTOM = 56;
+/** Left chart inset in pixels. */
 export const CARTESIAN_CHART_LEFT = 72;
+/** Right chart inset in pixels. */
 export const CARTESIAN_CHART_RIGHT = 56;
+/** Reserved legend width in pixels. */
 export const CARTESIAN_LEGEND_WIDTH = 80;
+/** Color-bar width in pixels. */
 export const CARTESIAN_COLOR_BAR_WIDTH = 16;
+/** Number of evenly spaced ticks per axis. */
 export const CARTESIAN_TICK_COUNT = 5;
 
+/** Parses a six-digit hex color into RGB bytes. */
 export function hexToRgb(hexColor: string): [number, number, number] {
   const red = Number.parseInt(hexColor.slice(1, 3), 16);
   const green = Number.parseInt(hexColor.slice(3, 5), 16);
@@ -66,6 +80,7 @@ export function hexToRgb(hexColor: string): [number, number, number] {
   return [red, green, blue];
 }
 
+/** Computes a padded zoom that fits a symmetric physical extent. */
 export function getInitialOrthographicZoom(plotSide: number, axisExtent: number): number {
   if (plotSide <= 0 || axisExtent <= 0) {
     return 0;
@@ -74,6 +89,7 @@ export function getInitialOrthographicZoom(plotSide: number, axisExtent: number)
   return Math.log2(plotSide / (2 * axisExtent * CARTESIAN_PLOT_PADDING_FACTOR));
 }
 
+/** Measures a chart container and applies fixed-height or auto-height sizing. */
 export function useMeasuredChartSize(autoHeight: boolean | undefined): [React.RefObject<HTMLDivElement | null>, ChartSize] {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<ChartSize>({ width: 0, height: 0 });
@@ -106,6 +122,7 @@ export function useMeasuredChartSize(autoHeight: boolean | undefined): [React.Re
   return [containerRef, size];
 }
 
+/** Computes the square plot viewport and surrounding chrome geometry. */
 export function getCartesianPlotLayout(size: ChartSize): CartesianPlotLayout {
   const plotSide = Math.max(
     0,
@@ -125,6 +142,7 @@ export function getCartesianPlotLayout(size: ChartSize): CartesianPlotLayout {
   };
 }
 
+/** Converts controlled orthographic view state to visible physical axis domains. */
 export function getVisibleAxisDomains(plotSide: number, viewState: OrthographicViewState): {
   readonly x: AxisDomain;
   readonly y: AxisDomain;
@@ -144,6 +162,7 @@ export function getVisibleAxisDomains(plotSide: number, viewState: OrthographicV
   };
 }
 
+/** Builds evenly spaced tick values over a visible domain. */
 export function buildCartesianTicks(axisDomain: AxisDomain): readonly number[] {
   const ticks: number[] = [];
   for (let index = 0; index < CARTESIAN_TICK_COUNT; index += 1) {
@@ -167,6 +186,7 @@ interface CartesianSvgOverlayProps {
   readonly colorBarTitle?: string;
 }
 
+/** Renders shared SVG axes, ticks, labels, and optional color-bar chrome above a deck.gl plot. */
 export function CartesianSvgOverlay({
   height,
   layout,

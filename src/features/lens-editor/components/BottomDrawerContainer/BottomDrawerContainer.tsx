@@ -1,24 +1,4 @@
 "use client";
-/**
- * Describes the Bottom Drawer Container module.
- *
- * @remarks
- * ## Internal Logic
- *
- * Builds a `tabs` array via `useMemo` containing:
- * 1. **System Specs** — `<SpecsConfiguratorContainer />`
- * 2. **Prescription** — `<LensPrescriptionContainer getOpticalModel={...} />`
- * 3. **Focusing** — `<FocusingContainer .../>`
- * 4. **Image Reference** — `<ImageReferencePanel />`
- *
- * Reads `activeBottomDrawerTabId` from the lens editor Zustand store and passes it to `BottomDrawer` as a controlled tab value. On tab change, writes the selected tab id back into `setActiveBottomDrawerTabId`, allowing Lens Editor to restore the previously selected drawer tab after navigation.
- *
- * Reads `bottomDrawerHeight` from the lens editor store via `lensStore.getState()` and forwards it to `BottomDrawer` as `initialHeight`. This is a persistence snapshot rather than a reactive subscription, so drag-resize updates do not cause the container to re-render while the drawer is mounted.
- *
- * Passes `onHeightCommit={(height) => lensStore.getState().setBottomDrawerHeight(height)}` so the most recent settled drawer height is restored after the Lens Editor route remounts.
- *
- * Renders `<BottomDrawer tabs={tabs} draggable={draggable} activeTabId={...} onTabChange={...} initialHeight={...} onHeightCommit={...} />`.
- */
 
 import { useMemo } from "react";
 import { useStore } from "zustand";
@@ -55,6 +35,24 @@ interface BottomDrawerContainerProps {
  * `SpecsConfiguratorContainer`, `LensPrescriptionContainer`, and `FocusingContainer` read their stores through the provider hooks, so this container only forwards the callbacks and worker state they still need.
  *
  * Used in `LensEditor.tsx` for both LG and SM layouts, with `draggable` toggled by breakpoint.
+ *
+ *
+ *
+ * ## Internal Logic
+ *
+ * Builds a `tabs` array via `useMemo` containing:
+ * 1. **System Specs** — `<SpecsConfiguratorContainer />`
+ * 2. **Prescription** — `<LensPrescriptionContainer getOpticalModel={...} />`
+ * 3. **Focusing** — `<FocusingContainer .../>`
+ * 4. **Image Reference** — `<ImageReferencePanel />`
+ *
+ * Reads `activeBottomDrawerTabId` from the lens editor Zustand store and passes it to `BottomDrawer` as a controlled tab value. On tab change, writes the selected tab id back into `setActiveBottomDrawerTabId`, allowing Lens Editor to restore the previously selected drawer tab after navigation.
+ *
+ * Reads `bottomDrawerHeight` from the lens editor store via `lensStore.getState()` and forwards it to `BottomDrawer` as `initialHeight`. This is a persistence snapshot rather than a reactive subscription, so drag-resize updates do not cause the container to re-render while the drawer is mounted.
+ *
+ * Passes `onHeightCommit={(height) => lensStore.getState().setBottomDrawerHeight(height)}` so the most recent settled drawer height is restored after the Lens Editor route remounts.
+ *
+ * Renders `<BottomDrawer tabs={tabs} draggable={draggable} activeTabId={...} onTabChange={...} initialHeight={...} onHeightCommit={...} />`.
  */
 export function BottomDrawerContainer({
   getOpticalModel,

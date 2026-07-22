@@ -11,10 +11,13 @@
  */
 import type { ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 
+/** Number of Noll-ordered terms exposed by the editor. */
 export const NUM_NOLL_TERMS = 56;
 
+/** Number of Fringe-ordered terms exposed by the editor. */
 export const NUM_FRINGE_TERMS = 37;
 
+/** Radial and azimuthal Zernike indices. */
 export type ZernikeTerm = readonly [number, number];
 
 /**
@@ -65,6 +68,7 @@ export function fringeToNm(j: number): [number, number] {
   return [n, sign * mAbs];
 }
 
+/** Returns the requested number of explicit `(n, m)` terms in Noll or Fringe order. */
 export function zernikeTermsForOrdering(ordering: ZernikeOrdering, numTerms: number): readonly ZernikeTerm[] {
   const indexToNm = ordering === "fringe" ? fringeToNm : nollToNm;
   return Array.from({ length: numTerms }, (_, index) => indexToNm(index + 1));

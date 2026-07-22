@@ -1,17 +1,3 @@
-/**
- * Describes the Radio Input module.
- *
- * @remarks
- * ## Styling
- *
- * Uses Tailwind CSS.
- *
- * - Group label text color uses `cx.label.color.textColor`.
- * - The option container uses fixed Tailwind grid classes based on `layout` and `columns`, avoiding dynamic class generation.
- * - `layout="full"` uses `grid grid-cols-* gap-1`; `layout="compact"` uses `inline-grid grid-cols-* gap-x-6 gap-y-1`.
- * - Each option row uses `componentTokens.radio`, including the shared hover background token reused from `CheckboxInput`.
- * - The radio control accent color comes from `componentTokens.radio.color.checkedColor`.
- */
 import React from "react";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
@@ -44,6 +30,7 @@ const OPTION_GRID_CLASSES = {
 
 type RadioInputLayout = keyof typeof OPTION_GRID_CLASSES;
 
+/** Value and label for one typed radio option. */
 export type RadioOption<T extends string> = {
   value: T;
   /** Used as the `aria-label` and as fallback visual text. */
@@ -82,6 +69,18 @@ interface RadioInputProps<T extends string> {
  * - `labelNode` allows rich content (e.g. MathJax nodes) while keeping plain-text accessibility.
  * - `columns` controls the option grid layout. Accepted values are `1`, `2`, `3`, and `4`; the default is `1`.
  * - `layout` controls whether the option grid stretches to the full available width (`"full"`, default) or shrinks to content width with compact horizontal gutters (`"compact"`).
+ *
+ *
+ *
+ * ## Styling
+ *
+ * Uses Tailwind CSS.
+ *
+ * - Group label text color uses `cx.label.color.textColor`.
+ * - The option container uses fixed Tailwind grid classes based on `layout` and `columns`, avoiding dynamic class generation.
+ * - `layout="full"` uses `grid grid-cols-* gap-1`; `layout="compact"` uses `inline-grid grid-cols-* gap-x-6 gap-y-1`.
+ * - Each option row uses `componentTokens.radio`, including the shared hover background token reused from `CheckboxInput`.
+ * - The radio control accent color comes from `componentTokens.radio.color.checkedColor`.
  */
 export function RadioInput<T extends string>({
   name,

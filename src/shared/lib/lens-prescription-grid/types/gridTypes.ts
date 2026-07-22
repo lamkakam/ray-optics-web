@@ -1,27 +1,13 @@
-/**
- * Defines the type used to represent rows in the LensEditor AG Grid, covering the object plane, optical surfaces, and the image plane.
- *
- * @remarks
- * ## Edge Cases / Error Handling
- *
- * - `id` is always present regardless of `kind`; it is used as the AG Grid row identifier.
- * - Object and image rows use the stable constants `OBJECT_ROW_ID` / `IMAGE_ROW_ID`; surface rows use generated IDs from `generateRowId()` in `gridTransform.ts`.
- * - The `kind` discriminant should be checked before accessing kind-specific fields.
- *
- * ## Dependencies
- *
- * - `shared/lib/types/opticalModel.ts` — `Surface`, `Surfaces` (type-only imports)
- */
+/** Lens-editor grid row ids and its Object/Surface/Image discriminated union. */
 import type { Surface, Surfaces } from "@/shared/lib/types/opticalModel";
 
+/** Stable Object-plane grid row id. */
 export const OBJECT_ROW_ID = "row-object";
+/** Stable Image-plane grid row id. */
 export const IMAGE_ROW_ID = "row-image";
 
 /**
- * Describes the Grid Types module.
- *
- * @remarks
- * ### `GridRow` discriminant
+ * Editor row discriminated by `kind`; every variant carries an AG Grid id.
  *
  * | `kind` | Extra fields | Notes |
  * |---|---|---|

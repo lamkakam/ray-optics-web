@@ -9,6 +9,7 @@ type ContextValue = StoreApi<SpecsConfiguratorState> | undefined;
 /** Raw context object. Use only in tests to supply a pre-built store directly via `<SpecsConfiguratorStoreContext.Provider value={store}>`. */
 export const SpecsConfiguratorStoreContext = createContext<ContextValue>(undefined);
 
+/** Initial state and child tree for an isolated specifications store. */
 export interface SpecsConfiguratorStoreProviderProps {
   children: ReactNode;
 }

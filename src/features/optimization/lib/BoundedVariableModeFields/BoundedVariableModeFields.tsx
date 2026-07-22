@@ -23,7 +23,6 @@ interface BoundedVariableModeFieldsProps {
 }
 
 /**
- * Describes the Bounded Variable Mode Fields module.
  *
  * @remarks
  * ## Behavior
@@ -34,7 +33,6 @@ interface BoundedVariableModeFieldsProps {
  * - Renders validation text with `Paragraph` variant `errorMessage`; `errorTextClassName` is for caller-owned layout/spacing overrides, not color ownership.
  * - Does not own state; callers pass current values and field-level change handlers.
  */
-/** Shared optimization-only Min/Max field group for variable-mode editors. */
 export function BoundedVariableModeFields({
   idPrefix,
   minLabel = "Min.",

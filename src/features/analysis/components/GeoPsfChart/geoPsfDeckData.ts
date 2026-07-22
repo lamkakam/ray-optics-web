@@ -1,5 +1,6 @@
 import type { GeoPsfData } from "@/features/analysis/types/plotData";
 
+/** One deck.gl-ready geometric-PSF point. */
 export interface GeoPsfPoint {
   readonly x: number;
   readonly y: number;
@@ -21,6 +22,7 @@ export interface GeoPsfDeckData {
   readonly axisExtent: number;
 }
 
+/** Converts worker coordinates to deck.gl points and symmetric physical bounds. */
 export function buildGeoPsfPoints(geoPsfData: GeoPsfData): GeoPsfDeckData {
   const points: GeoPsfPoint[] = [];
   let axisExtent = 0;

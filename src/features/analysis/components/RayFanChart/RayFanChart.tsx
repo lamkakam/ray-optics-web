@@ -1,14 +1,3 @@
-/**
- * Describes the Ray Fan Chart module.
- *
- * @remarks
- * ## Dependencies
- *
- * - `buildRayFanChartOption` from `./rayFanChartOption`
- * - `RayFanData` from `@/features/analysis/types/plotData`
- * - `createAnalysisChartComponent(...)` from `../../lib/createAnalysisChartComponent`
- * - `useScreenBreakpoint` from `@/shared/hooks/useScreenBreakpoint`
- */
 import { buildRayFanChartOption } from "./rayFanChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";

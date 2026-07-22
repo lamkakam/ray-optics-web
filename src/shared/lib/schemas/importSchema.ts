@@ -1,48 +1,11 @@
 /**
- * Compiles an AJV JSON Schema validator for `OpticalModel` and exports it for use at import-time boundaries (e.g. when a user uploads a lens JSON file).
- *
- * @remarks
- * ## Behavior
- *
- * - The validator enforces the full nested structure of `OpticalModel`.
- * - `object` now requires `distance`, `medium`, and `manufacturer`.
- * - Object medium rejects reflective values (`"REFL"` / `"refl"`).
- * - `specs.field.isWideAngle` is accepted as an optional boolean to support wide-angle ray-aiming mode while preserving compatibility with older imported files.
- * - Surface `aspherical` data must use the discriminated union shape with `kind`.
- * - Supported `aspherical.kind` values are `"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, and `"YToroid"`.
- * - Toroid shapes require `toricSweepRadiusOfCurvature`; all coefficient-bearing shapes limit `polynomialCoefficients` to at most 10 items.
- * - Surface `diffractionGrating` is optional and, when present, must contain numeric `lpmm` and integer `order`.
- * - Surface `clear_aperture` is optional and, when present, must be either `{ shape: "circular"; offsetX: number; offsetY: number }`, `{ shape: "annular"; obstructionRadius: number; offsetX: number; offsetY: number }`, or `{ shape: "rectangular"; xHalfWidth: number; yHalfWidth: number; rotation: number; offsetX: number; offsetY: number }`.
- * - Annular `obstructionRadius` must be greater than `0` and smaller than that surface's `semiDiameter`.
- * - Rectangular `xHalfWidth` and `yHalfWidth` must be positive finite numbers; rectangular offsets and rotation must be finite numbers.
- * - Surface `edge_aperture` is optional and, when present, must be `{ shape: "circular"; radius: number; offsetX: number; offsetY: number }` with `radius > 0` or `{ shape: "rectangular"; xHalfWidth: number; yHalfWidth: number; rotation: number; offsetX: number; offsetY: number }`.
- *
- * - **`additionalProperties: false`** is set on every schema object — any unknown key causes validation failure.
- * - Custom glass imports require string version `"1.0"`, a `Custom` object, `type: "tabulated"`, at least four wavelength/index pairs, exactly two positive finite numbers per pair, and no extra keys.
- *
- * ## Dependencies
- *
- * - `ajv` — JSON Schema validator
- * - `shared/lib/types/opticalModel.ts` — `OpticalModel` (type-only, used as AJV generic parameter)
- *
- * ## Edge Cases / Error Handling
- *
- * - Returns `false` and populates `.errors` for any structural mismatch, unknown property, or type error.
- * - Custom glass validation rejects numeric versions, malformed version strings, non-tabulated material types, fewer than four pairs, invalid pair lengths, non-positive or non-finite pair values, and unknown keys.
- * - Returns `false` if `object.medium` or `object.manufacturer` is missing, or if `object.medium` is reflective.
- * - `specs.field.isWideAngle` may be omitted, but if present it must be a boolean.
- * - Legacy aspherical payloads without `kind` are rejected.
- * - `XToroid` and `YToroid` payloads are rejected unless `toricSweepRadiusOfCurvature` is present and numeric.
- * - Aperture payloads reject missing offsets, non-finite or non-numeric offsets, unsupported shapes, non-positive edge radius values, non-positive rectangular half widths, non-finite rectangular rotation, and extra keys.
- * - Legacy circular aperture payloads without `offsetX` and `offsetY` are rejected.
- * - `additionalProperties: false` means evolved schemas (extra fields added by newer app versions) will fail validation against old validators; schema versioning should be considered if the format changes.
- * - The AJV instance and compiled validator are module singletons — compilation happens once at import time, not per call.
- *
- * Called when a user imports a lens JSON file before passing to Zustand store or Pyodide worker. Check return value and display `.errors` on failure.
+ * Strict import-boundary schemas compiled once with AJV. All object schemas reject
+ * unknown keys, so format evolution requires an explicit schema-versioning decision.
  */
 import Ajv from "ajv";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
+/** Shared AJV compiler with `$data` enabled for cross-field aperture validation. */
 const ajv = new Ajv({ $data: true });
 ajv.addKeyword({
   keyword: "finiteNumber",
@@ -50,16 +13,19 @@ ajv.addKeyword({
   validate: (_schema: boolean, data: number) => Number.isFinite(data),
 });
 
+/** Numeric schema that rejects JavaScript non-finite values. */
 const finiteNumberSchema = {
   type: "number",
   finiteNumber: true,
 } as const;
 
+/** Finite-number schema constrained to values greater than zero. */
 const positiveFiniteNumberSchema = {
   ...finiteNumberSchema,
   exclusiveMinimum: 0,
 } as const;
 
+/** Strict schema for all supported decenter coordinate-system strategies and offsets. */
 const decenterConfigSchema = {
   type: "object",
   required: ["coordinateSystemStrategy", "alpha", "beta", "gamma", "offsetX", "offsetY"],
@@ -77,6 +43,7 @@ const decenterConfigSchema = {
   },
 };
 
+/** Strict surface diffraction-grating schema. */
 const diffractionGratingSchema = {
   type: "object",
   required: ["lpmm", "order"],
@@ -87,6 +54,7 @@ const diffractionGratingSchema = {
   },
 };
 
+/** Circular clear aperture with required finite offsets. */
 const circularClearApertureSchema = {
   type: "object",
   required: ["shape", "offsetX", "offsetY"],
@@ -98,6 +66,7 @@ const circularClearApertureSchema = {
   },
 };
 
+/** Annular clear aperture whose obstruction is positive and smaller than `semiDiameter`. */
 const annularClearApertureSchema = {
   type: "object",
   required: ["shape", "obstructionRadius", "offsetX", "offsetY"],
@@ -110,6 +79,7 @@ const annularClearApertureSchema = {
   },
 };
 
+/** Shared positive dimensions and finite transform properties for rectangular apertures. */
 const rectangularApertureProperties = {
   shape: { type: "string", const: "rectangular" },
   xHalfWidth: positiveFiniteNumberSchema,
@@ -119,6 +89,7 @@ const rectangularApertureProperties = {
   offsetY: finiteNumberSchema,
 };
 
+/** Strict rectangular clear-aperture schema. */
 const rectangularClearApertureSchema = {
   type: "object",
   required: ["shape", "xHalfWidth", "yHalfWidth", "rotation", "offsetX", "offsetY"],
@@ -126,6 +97,7 @@ const rectangularClearApertureSchema = {
   properties: rectangularApertureProperties,
 };
 
+/** Strict rectangular edge-aperture schema. */
 const rectangularEdgeApertureSchema = {
   type: "object",
   required: ["shape", "xHalfWidth", "yHalfWidth", "rotation", "offsetX", "offsetY"],
@@ -133,6 +105,7 @@ const rectangularEdgeApertureSchema = {
   properties: rectangularApertureProperties,
 };
 
+/** Circular edge aperture with a positive radius and finite offsets. */
 const circularEdgeApertureSchema = {
   type: "object",
   required: ["shape", "radius", "offsetX", "offsetY"],
@@ -145,14 +118,17 @@ const circularEdgeApertureSchema = {
   },
 };
 
+/** Supported circular, annular, and rectangular clear-aperture union. */
 const clearApertureSchema = {
   oneOf: [circularClearApertureSchema, annularClearApertureSchema, rectangularClearApertureSchema],
 };
 
+/** Supported circular and rectangular edge-aperture union. */
 const edgeApertureSchema = {
   oneOf: [circularEdgeApertureSchema, rectangularEdgeApertureSchema],
 };
 
+/** Conic asphere discriminator and finite conic constant. */
 const conicAsphericalSchema = {
   type: "object",
   required: ["kind", "conicConstant"],
@@ -163,6 +139,7 @@ const conicAsphericalSchema = {
   },
 };
 
+/** Even-asphere schema with at most ten finite polynomial coefficients. */
 const evenAsphericalSchema = {
   type: "object",
   required: ["kind", "conicConstant", "polynomialCoefficients"],
@@ -178,6 +155,7 @@ const evenAsphericalSchema = {
   },
 };
 
+/** Radial-polynomial schema with at most ten finite coefficients. */
 const radialPolynomialSchema = {
   type: "object",
   required: ["kind", "conicConstant", "polynomialCoefficients"],
@@ -193,6 +171,7 @@ const radialPolynomialSchema = {
   },
 };
 
+/** X-toroid schema requiring a finite sweep radius and at most ten coefficients. */
 const xToroidSchema = {
   type: "object",
   required: ["kind", "conicConstant", "toricSweepRadiusOfCurvature", "polynomialCoefficients"],
@@ -209,6 +188,7 @@ const xToroidSchema = {
   },
 };
 
+/** Y-toroid schema requiring a finite sweep radius and at most ten coefficients. */
 const yToroidSchema = {
   type: "object",
   required: ["kind", "conicConstant", "toricSweepRadiusOfCurvature", "polynomialCoefficients"],
@@ -225,6 +205,7 @@ const yToroidSchema = {
   },
 };
 
+/** Strict physical-surface schema, including optional asphere, decenter, grating, and apertures. */
 const surfaceSchema = {
   type: "object",
   required: ["label", "curvatureRadius", "thickness", "medium", "manufacturer", "semiDiameter"],
@@ -246,6 +227,11 @@ const surfaceSchema = {
   },
 };
 
+/**
+ * Complete imported `OpticalModel` schema.
+ * Object distance, medium, and manufacturer are required; reflective object media
+ * are rejected, while `specs.field.isWideAngle` remains optional for legacy files.
+ */
 const importedLensDataSchema = {
   type: "object",
   required: ["setAutoAperture", "specs", "object", "image", "surfaces"],
@@ -325,6 +311,7 @@ const importedLensDataSchema = {
   },
 };
 
+/** Tabulated custom glass with at least four positive wavelength/index pairs. */
 const customGlassMaterialSchema = {
   type: "object",
   required: ["type", "data"],
@@ -344,6 +331,7 @@ const customGlassMaterialSchema = {
   },
 };
 
+/** Strict version-1.0 custom-glass import envelope. */
 const importedCustomGlassDataSchema = {
   type: "object",
   required: ["version", "Custom"],
@@ -357,7 +345,14 @@ const importedCustomGlassDataSchema = {
   },
 };
 
+/**
+ * Validates uploaded lens JSON before it reaches Zustand or the worker.
+ * Structural failures populate the validator's `.errors` property.
+ */
 const validateImportedLensData = ajv.compile<OpticalModel>(importedLensDataSchema);
+/**
+ * Validates strict version-1.0 custom-glass imports and exposes AJV errors on failure.
+ */
 const validateImportedCustomGlassData = ajv.compile(importedCustomGlassDataSchema);
 
 export { validateImportedCustomGlassData, validateImportedLensData };

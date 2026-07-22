@@ -1,24 +1,15 @@
 "use client";
-/**
- * Describes the App Shell Context module.
- *
- * @remarks
- * ## Behaviour
- * - `proxy` and `isReady` come from `usePyodide()` owned by `app/AppShell.tsx`
- * - `openErrorModal()` lets child pages surface worker/setup errors through the shared shell modal
- * - `useAppShell()` throws if called outside `AppShellProvider`
- *
- * ## Consumers
- * - `app/page.tsx`
- * - `app/glass-map/page.tsx`
- */
+/** Client context connecting routed pages to runtime state owned by `AppShell`. */
 
 import React, { createContext, useContext } from "react";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 interface AppShellContextValue {
+  /** Shared worker proxy, or `undefined` during initialization. */
   readonly proxy: PyodideWorkerAPI | undefined;
+  /** Whether the shared Pyodide runtime is ready. */
   readonly isReady: boolean;
+  /** Opens the shell-owned worker/setup error modal. */
   readonly openErrorModal: () => void;
 }
 
@@ -30,6 +21,7 @@ interface AppShellProviderProps {
   readonly children: React.ReactNode;
 }
 
+/** Provides shell-owned runtime state and actions to routed client pages. */
 export function AppShellProvider({ value, children }: AppShellProviderProps) {
   return (
     <AppShellContext.Provider value={value}>
@@ -38,6 +30,11 @@ export function AppShellProvider({ value, children }: AppShellProviderProps) {
   );
 }
 
+/**
+ * Reads the shared shell context.
+ *
+ * @throws When used outside {@link AppShellProvider}.
+ */
 export function useAppShell(): AppShellContextValue {
   const context = useContext(AppShellContext);
   if (!context) {

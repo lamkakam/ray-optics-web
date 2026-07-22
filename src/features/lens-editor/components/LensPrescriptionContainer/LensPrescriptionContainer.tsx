@@ -1,24 +1,4 @@
 "use client";
-/**
- * Supplies the editor cache to the grid. Toggling auto aperture changes display/read-only behavior without overwriting manual values or discarding the cache.
- *
- * @remarks
- * ## Injected Dependencies
- *
- * Lens store state is consumed via `LensEditorStoreContext`:
- * - `useLensEditorStore()` — imperative access (callbacks use `store.getState().*`). For reactive reads (`rows`, `autoAperture`, modal states), use it with Zustand's `useStore`.
- *
- * | Dependency | Type | Description |
- * |------------|------|-------------|
- * | `getOpticalModel` | `() => OpticalModel` | Returns the current optical model snapshot for Python script export |
- *
- * ## Internal State
- *
- * - `pythonScriptOpen: boolean` — controls `PythonScriptModal`.
- * - `formattingOpen: boolean` — controls `FormattingModal`.
- * - `formattingError: string | undefined` — controls the shared `ErrorModal` shown when formatting validation fails.
- * - `pendingReferenceSurfaceRows: GridRow[] | undefined` — holds a successful Reverse result while the user chooses whether to insert a flat air reference surface.
- */
 
 import React, { useState, useCallback } from "react";
 import { useStore } from "zustand";
@@ -47,6 +27,7 @@ import {
 } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
 
 interface LensPrescriptionContainerProps {
+  /** Returns the current optical-model snapshot for Python script export. */
   readonly getOpticalModel: () => OpticalModel;
 }
 
@@ -125,6 +106,16 @@ function getInitialToricSweepRadiusOfCurvature(asphericalRow: GridRow | undefine
  * - `LensPrescriptionGrid`, `PythonScriptModal`, `FormattingModal`, and `AddReferenceSurfaceModal` are internal to this directory; the nested barrel only exports components used outside `LensPrescriptionContainer/` (`MediumSelectorModal`, `AsphericalModal`, `DecenterModal`, `DiffractionGratingModal`, and `GridRowButtons`). `ConfirmImportModal` remains colocated here but is used by `LensEditorConfigToolbar`.
  *
  * - Mounted once in the main page inside the `BottomDrawer` tabs.
+ *
+ *
+ * Supplies the editor cache to the grid. Toggling auto aperture changes display/read-only behavior without overwriting manual values or discarding the cache.
+ *
+ * ## Injected Dependencies
+ *
+ * Lens store state is consumed via `LensEditorStoreContext`:
+ * - `useLensEditorStore()` — imperative access (callbacks use `store.getState().*`). For reactive reads (`rows`, `autoAperture`, modal states), use it with Zustand's `useStore`.
+ *
+ *
  */
 export function LensPrescriptionContainer({
   getOpticalModel,
@@ -140,9 +131,13 @@ export function LensPrescriptionContainer({
   const decenterModal = useStore(store, (s) => s.decenterModal);
   const diffractionGratingModal = useStore(store, (s) => s.diffractionGratingModal);
   const apertureModal = useStore(store, (s) => s.apertureModal);
+  /** Visibility of the generated Python-script modal. */
   const [pythonScriptOpen, setPythonScriptOpen] = useState(false);
+  /** Visibility of the prescription-formatting modal. */
   const [formattingOpen, setFormattingOpen] = useState(false);
+  /** Formatting validation error displayed by the shared error modal. */
   const [formattingError, setFormattingError] = useState<string | undefined>(undefined);
+  /** Reversed rows awaiting the optional reference-surface decision. */
   const [pendingReferenceSurfaceRows, setPendingReferenceSurfaceRows] = useState<GridRow[] | undefined>(undefined);
 
   // Stable callbacks — use store.getState() so they never change reference,

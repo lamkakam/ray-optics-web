@@ -5,6 +5,7 @@ const CACHEABLE_PATTERNS = [
   "pypi.org/pypi/",
 ];
 
+/** Returns whether a same-origin request is eligible for service-worker caching. */
 export function shouldCache(url: string, origin?: string): boolean {
   if (CACHEABLE_PATTERNS.some((pattern) => url.includes(pattern))) {
     return true;
@@ -16,6 +17,7 @@ export function shouldCache(url: string, origin?: string): boolean {
   return false;
 }
 
+/** Returns whether a same-origin URL targets a Next.js static asset. */
 export function isNextStaticAsset(
   url: string,
   origin: string,

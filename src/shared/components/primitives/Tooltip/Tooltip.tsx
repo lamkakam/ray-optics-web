@@ -1,16 +1,4 @@
-/**
- * Describes the Tooltip module.
- *
- * @remarks
- * ## Internal State
- *
- * - `visible: boolean` — portal mode only; controls opacity.
- * - `coords: { x, y }` — portal mode only; stores measured trigger position.
- * - `nonPortalHovered: boolean` — non-portal mode only; enables viewport remeasurement while the trigger is hovered.
- * - `horizontalOffset: number` — non-portal mode only; horizontal correction in pixels applied to keep the tooltip within the viewport.
- * - `triggerRef` / `nonPortalTooltipRef` — references used to measure trigger and tooltip geometry for non-portal positioning.
- * - `isTouchingRef: React.MutableRefObject<boolean>` — portal mode only; set to `true` on `touchstart` to detect synthetic mouse events from touch sequences.
- */
+/** Portal and in-flow tooltip positioning, viewport correction, and touch behavior. */
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
@@ -105,13 +93,20 @@ export function Tooltip({
   noTouch,
   triggerClassName,
 }: TooltipProps) {
+  /** Trigger geometry source used by both positioning modes. */
   const triggerRef = useRef<HTMLSpanElement>(null);
+  /** Tooltip geometry source used for non-portal viewport correction. */
   const nonPortalTooltipRef = useRef<HTMLSpanElement>(null);
+  /** Portal-mode visibility. */
   const [visible, setVisible] = useState(false);
+  /** Portal-mode trigger coordinates. */
   const [coords, setCoords] = useState({ x: 0, y: 0 });
+  /** Whether the in-flow trigger is hovered and should be remeasured. */
   const [nonPortalHovered, setNonPortalHovered] = useState(false);
+  /** Horizontal correction that keeps an in-flow tooltip inside the viewport. */
   const [horizontalOffset, setHorizontalOffset] = useState(0);
   const horizontalOffsetRef = useRef(0);
+  /** Suppresses synthetic mouse events emitted after portal-mode touch input. */
   const isTouchingRef = useRef(false);
 
   useEffect(() => {

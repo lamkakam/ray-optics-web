@@ -1,12 +1,4 @@
 "use client";
-/**
- * Renders the thickness variable/pickup modal with modal-local draft state.
- *
- * @remarks
- * ## Modal Footer
- *
- * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while thickness mode controls scroll.
- */
 
 import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -39,7 +31,6 @@ interface ThicknessModeModalProps {
 }
 
 /**
- * Describes the Thickness Mode Modal module.
  *
  * @remarks
  * ## Behavior
@@ -57,6 +48,13 @@ interface ThicknessModeModalProps {
  * - Commits the latest draft through `onSetMode(surfaceIndex, draft)` only when the user presses `Confirm`.
  * - Clicking or touching outside the modal does not close it.
  * - Pressing `Escape` does not close it.
+ *
+ *
+ * Renders the thickness variable/pickup modal with modal-local draft state.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while thickness mode controls scroll.
  */
 export function ThicknessModeModal({
   isOpen,

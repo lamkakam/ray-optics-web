@@ -10,7 +10,6 @@ import {
 type ContextValue = StoreApi<ImportCustomGlassStore> | undefined;
 
 /**
- * Describes the Import Custom Glass Store Provider module.
  *
  * @remarks
  * ### `ImportCustomGlassStoreContext`
@@ -18,6 +17,7 @@ type ContextValue = StoreApi<ImportCustomGlassStore> | undefined;
  */
 export const ImportCustomGlassStoreContext = createContext<ContextValue>(undefined);
 
+/** Initial state and child tree for an isolated custom-glass store. */
 export interface ImportCustomGlassStoreProviderProps {
   readonly children: ReactNode;
 }
@@ -38,7 +38,6 @@ export function ImportCustomGlassStoreProvider({
 }
 
 /**
- * Describes the Import Custom Glass Store Provider module.
  *
  * @remarks
  * ### `useImportCustomGlassStore`

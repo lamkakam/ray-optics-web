@@ -14,7 +14,6 @@ interface ModeSelectFieldProps {
 }
 
 /**
- * Describes the Mode Select Field module.
  *
  * @remarks
  * ## Behavior
@@ -23,7 +22,6 @@ interface ModeSelectFieldProps {
  * - Preserves caller-owned label text and aria-labels so consuming modals keep their existing copy and accessibility names.
  * - Does not own state; callers pass the current mode and receive the selected `ModalModeChoice` from `features/optimization/types/optimizationModalTypes.ts` through `onChange`.
  */
-/** Shared optimization-only mode selector for `constant`, `variable`, and `pickup`. */
 export function ModeSelectField({
   id,
   label,

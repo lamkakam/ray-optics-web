@@ -24,7 +24,6 @@ interface ApplyExampleSystemParams {
 }
 
 /**
- * Describes the Apply Example System module.
  *
  * @remarks
  * ## Behavior
@@ -40,7 +39,6 @@ interface ApplyExampleSystemParams {
  * - Leaves surface-by-surface Seidel plot results out of `AnalysisPlotState`; the full Seidel payload is committed to `AnalysisDataState` separately.
  * - Clears layout and plot loading flags in `finally`.
  */
-/** Reusable application flow for bundled example optical systems. */
 export async function applyExampleSystem({
   model,
   proxy,

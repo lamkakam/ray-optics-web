@@ -1,22 +1,4 @@
 "use client";
-/**
- * Describes the Medium Selector Modal module.
- *
- * @remarks
- * ## Internal State
- *
- * - `manufacturer: string` — selected catalog/manufacturer value.
- * - `medium: string` — selected glass/medium.
- * - `useModelGlass: boolean` — whether the modal is in numeric model-glass mode.
- * - `singleRefractiveIndex: boolean` — whether the model glass should omit Abbe number.
- * - `refractiveIndexAtDLine: string` — model-glass refractive index input.
- * - `abbeNumber: string` — model-glass Abbe-number input.
- * - `catalogs / error / isLoaded` — injected from `useGlassCatalogs()`.
- *
- * ## Modal Footer
- *
- * - Close, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while medium selection controls scroll.
- */
 
 import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
@@ -126,6 +108,12 @@ function normalizeNumericOrEmptyString(value: string): string {
  * - Model-glass validity is evaluated immediately while editing, before blur normalization. Catalog-glass Confirm validation remains based on an exact available-medium match.
  * - In `readOnly` mode, all checkboxes, selects, and inputs are disabled and the footer renders a single `Close` action instead of `Cancel` / `Confirm`.
  * - Uses `key` prop at the call site (in `LensPrescriptionContainer`) to reset state when the modal re-opens for a different row.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Close, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while medium selection controls scroll.
  */
 export function MediumSelectorModal({
   isOpen,
@@ -143,16 +131,23 @@ export function MediumSelectorModal({
   const initialHasAbbeNumber = isNumericString(initialManufacturer);
   const initialMfr = isSpecialMedium(initialManufacturer) ? "Special" : initialManufacturer;
   const { catalogs, error, isLoaded } = useGlassCatalogs();
+  /** Draft catalog or manufacturer selection. */
   const [localManufacturer, setLocalManufacturer] = useState(initialMfr);
+  /** Draft medium selection. */
   const [localMedium, setLocalMedium] = useState(initialMedium);
+  /** Visible glass-search input, kept separately from the committed draft medium. */
   const [glassInput, setGlassInput] = useState(selectedMedium ?? initialMedium);
+  /** Whether numeric model-glass inputs replace catalog selection. */
   const [useModelGlass, setUseModelGlass] = useState(initialUseModelGlass);
+  /** Whether the model glass omits an Abbe number. */
   const [singleRefractiveIndex, setSingleRefractiveIndex] = useState(
     initialUseModelGlass && !initialHasAbbeNumber,
   );
+  /** String draft of the model-glass d-line refractive index. */
   const [refractiveIndexAtDLine, setRefractiveIndexAtDLine] = useState(
     initialUseModelGlass ? initialMedium : "",
   );
+  /** String draft of the model-glass Abbe number. */
   const [abbeNumber, setAbbeNumber] = useState(initialHasAbbeNumber ? initialManufacturer : "");
   const manufacturer = selectedManufacturer ?? localManufacturer;
   const medium = selectedMedium ?? localMedium;

@@ -88,6 +88,7 @@ function hasKnownMedium(
     || lookupMaps.mediumMap.has(`custom:${normalizedMedium}`);
 }
 
+/** Returns canonical missing glass references from an optical model. */
 export function getMissingPrescriptionGlasses(
   surfaces: OpticalModel | Surfaces,
   lookupMaps: GlassLookupMaps | undefined,
@@ -105,6 +106,7 @@ export function getMissingPrescriptionGlasses(
   return [...missing];
 }
 
+/** Formats missing glass references as a user-facing validation message. */
 export function formatMissingGlassMessage(missingGlasses: readonly string[]): string | undefined {
   if (missingGlasses.length === 0) {
     return undefined;

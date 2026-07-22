@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+/** Surface labels, aberration names, and per-surface Seidel contributions. */
 export interface SeidelSurfaceBySurfaceData {
   aberrTypes: string[];    // ['S-I', 'S-II', 'S-III', 'S-IV', 'S-V']
   surfaceLabels: string[];  // surface labels + 'sum'
@@ -14,6 +15,7 @@ export interface SeidelData {
   curvature: Record<string, number>;   // TCV, SCV, PCV
 }
 
+/** Display labels keyed by Seidel aberration type. */
 export interface AberrationTypeToLabel extends Record<string, ReactNode> {
   TSA: ReactNode;
   TCO: ReactNode;

@@ -4,7 +4,6 @@ import { useAppShell } from "@/app/AppShellContext";
 import { ExampleSystemsPage } from "@/features/example-systems/ExampleSystemsPage";
 
 /**
- * Describes the Page module.
  *
  * @remarks
  * ## Behavior
@@ -12,7 +11,6 @@ import { ExampleSystemsPage } from "@/features/example-systems/ExampleSystemsPag
  * - Reads `proxy` and `openErrorModal` from `AppShellContext`.
  * - Renders `ExampleSystemsPage`.
  */
-/** Next.js App Router page for `/example-systems`. */
 export default function ExampleSystemsRoute() {
   const { proxy, openErrorModal } = useAppShell();
 

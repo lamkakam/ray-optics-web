@@ -1,20 +1,4 @@
 "use client";
-/**
- * Describes the Asphere Var Modal module.
- *
- * @remarks
- * ## Key Conventions
- *
- * - Coefficient label mapping: EvenAspherical/XToroid/YToroid use `a_${(index+1)*2}` (a_2, a_4…); RadialPolynomial uses `a_${index+1}` (a_1, a_2…).
- * - `sourceTermKey` for coefficient pickups is stored as the template literal `"coefficient:N"` where `N` is a zero-based coefficient slot, and is validated by `buildOptimizationConfig()` in the store.
- * - Source coefficient pickup labels are intentionally plain text (`a_1`, `a_2`, etc.) instead of MathJax because they render inside a native `Select`.
- * - Conic and toricSweep pickups do not require a `sourceTermKey`.
- * - Uses `<MathJax inline>` for coefficient labels only; this component does not own a `MathJaxContext` and relies on the app-level provider.
- *
- * ## Modal Footer
- *
- * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while asphere variable controls scroll.
- */
 
 import React from "react";
 import { MathJax } from "better-react-mathjax";
@@ -201,6 +185,20 @@ interface AsphereVarModalProps {
  * - **Confirm button**: when `canUseBounds === true`, disabled when any variable term has non-finite bounds or `min >= max`, and also when `Toroid sweep R` variable bounds straddle `0` (negative min with positive max). Calls `onSave(surfaceIndex, draft)` then `onClose()`.
  * - Clicking or touching outside the modal does not close it.
  * - Pressing `Escape` does not close it.
+ *
+ *
+ *
+ * ## Key Conventions
+ *
+ * - Coefficient label mapping: EvenAspherical/XToroid/YToroid use `a_${(index+1)*2}` (a_2, a_4…); RadialPolynomial uses `a_${index+1}` (a_1, a_2…).
+ * - `sourceTermKey` for coefficient pickups is stored as the template literal `"coefficient:N"` where `N` is a zero-based coefficient slot, and is validated by `buildOptimizationConfig()` in the store.
+ * - Source coefficient pickup labels are intentionally plain text (`a_1`, `a_2`, etc.) instead of MathJax because they render inside a native `Select`.
+ * - Conic and toricSweep pickups do not require a `sourceTermKey`.
+ * - Uses `<MathJax inline>` for coefficient labels only; this component does not own a `MathJaxContext` and relies on the app-level provider.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while asphere variable controls scroll.
  */
 export function AsphereVarModal({
   isOpen,

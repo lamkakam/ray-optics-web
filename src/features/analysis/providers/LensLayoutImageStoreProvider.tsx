@@ -9,6 +9,7 @@ type ContextValue = StoreApi<LensLayoutImageState> | undefined;
 /** Raw context object. Use only in tests to supply a pre-built store directly via `<LensLayoutImageStoreContext.Provider value={store}>`. */
 export const LensLayoutImageStoreContext = createContext<ContextValue>(undefined);
 
+/** Initial state and child tree for an isolated lens-layout-image store. */
 export interface LensLayoutImageStoreProviderProps {
   children: ReactNode;
 }

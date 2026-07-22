@@ -22,12 +22,14 @@ import type {
   OptimizerUiMetadataWithMethods,
 } from "@/features/optimization/types/optimizationUiTypes";
 
+/** Narrows optimizer metadata to the method-based shape. */
 export function optimizerUiMetadataHasMethods<TKind extends OptimizerKind>(
   metadata: OptimizerUiMetadata<TKind>,
 ): metadata is OptimizerUiMetadataWithMethods<TKind> {
   return metadata.methods !== undefined;
 }
 
+/** Canonical labels, tolerances, methods, defaults, and capabilities for every optimizer. */
 export const OPTIMIZER_UI_CONFIG = {
   least_squares: {
     label: "Least Squares",
@@ -62,6 +64,7 @@ export const OPTIMIZER_UI_CONFIG = {
   },
 } satisfies OptimizerUiConfig;
 
+/** Formats a numeric optimizer default for an editable string field. */
 export function formatOptimizerUiDefaultValue(value: number): string {
   return value.toExponential().replace(".0e", "e");
 }

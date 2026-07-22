@@ -1,23 +1,3 @@
-/**
- * Describes the Layout module.
- *
- * @remarks
- * ## Rendered Structure
- * ```tsx
- * <html>
- * <body>
- * <ThemeProvider>
- * <ImagePointProvider>
- * <ServiceWorkerRegistrar />
- * <...store providers...>
- * <AppShell>{children}</AppShell>
- * </...store providers...>
- * </ImagePointProvider>
- * </ThemeProvider>
- * </body>
- * </html>
- * ```
- */
 import type { Metadata } from "next";
 import "./globals.css";
 import ServiceWorkerRegistrar from "@/shared/components/providers/ServiceWorkerRegistrar";
@@ -33,6 +13,7 @@ import { ImportCustomGlassStoreProvider } from "@/features/import-custom-glass/p
 import { OptimizationStoreProvider } from "@/features/optimization/providers/OptimizationStoreProvider";
 import AppShell from "@/app/AppShell";
 
+/** Application metadata supplied by the root Next.js layout. */
 export const metadata: Metadata = {
   title: "Ray Optics Web",
   description: "Web-based GUI for RayOptics",
@@ -50,6 +31,24 @@ export const metadata: Metadata = {
  * - Mounts `GlassMapStoreProvider` at the app root so glass-map UI state persists across route switches
  * - Mounts `ImportCustomGlassStoreProvider` at the app root so Import Custom Glass readonly table sort/filter state persists across route switches
  * - Mounts `OptimizationStoreProvider` at the app root so optimization UI state persists across route switches
+ *
+ *
+ *
+ * ## Rendered Structure
+ * ```tsx
+ * <html>
+ * <body>
+ * <ThemeProvider>
+ * <ImagePointProvider>
+ * <ServiceWorkerRegistrar />
+ * <...store providers...>
+ * <AppShell>{children}</AppShell>
+ * </...store providers...>
+ * </ImagePointProvider>
+ * </ThemeProvider>
+ * </body>
+ * </html>
+ * ```
  */
 export default function RootLayout({
   children,

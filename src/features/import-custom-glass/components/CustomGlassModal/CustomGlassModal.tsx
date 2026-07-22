@@ -1,14 +1,4 @@
 "use client";
-/**
- * Describes the Custom Glass Modal module.
- *
- * @remarks
- * ## Accessibility
- * - The label input exposes `aria-label="Label"`.
- * - Row delete actions expose `aria-label="Delete row {id}"`.
- * - Footer actions keep the visible labels and aria labels `Cancel` and `Confirm`.
- * - `Add row` keeps the same visible label and aria label.
- */
 
 import { useMemo, useState } from "react";
 import { AgGridProvider } from "ag-grid-react";
@@ -69,6 +59,14 @@ function duplicateWavelengths(rows: readonly EditablePair[]): Set<string> {
  * - Duplicate wavelengths are marked with `text-red-600` and a validation message.
  * - Wraps the coefficient grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores horizontal and vertical touch panning plus scroll chaining for AG Grid viewports in this modal only.
  * - Keeps AG Grid touch handling enabled so resizable coefficient-column headers respond to touchscreen drags while native two-axis viewport scrolling remains available.
+ *
+ *
+ *
+ * ## Accessibility
+ * - The label input exposes `aria-label="Label"`.
+ * - Row delete actions expose `aria-label="Delete row {id}"`.
+ * - Footer actions keep the visible labels and aria labels `Cancel` and `Confirm`.
+ * - `Add row` keeps the same visible label and aria label.
  */
 export function CustomGlassModal({
   mode,

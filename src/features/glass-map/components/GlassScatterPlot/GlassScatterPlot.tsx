@@ -1,6 +1,5 @@
 "use client";
 /**
- * Describes the Glass Scatter Plot module.
  *
  * @remarks
  * ## Implementation
@@ -37,11 +36,6 @@
  * - y-axis: lower position = lower value (standard orientation). `visYMin`/`visYMax` derived from zoom transform so that the axis labels track the zoom-transformed data range correctly.
  * - y-axis domain: data-driven by default; `yDomainMin`/`yDomainMax` props optionally enforce bounds (e.g. 1.4–2.0 for refractive index, omitted for partial dispersion where the tight data range should govern the axis)
  * - Margins: `{ top: 20, right: 20, bottom: 50, left: 60 }`
- *
- * ## Internal Helpers
- * - `computeRenderedCircleStyle()` converts base plot coordinates into zoomed screen coordinates while keeping the circle radius and selected stroke width fixed in screen space
- * - `computePinchDelta()` translates VisX pinch state into damped zoom scale factors for touch pinch gestures
- * - `isSingleTouchGesture()` centralizes the one-finger guard shared by point taps and plot pan touch handling
  *
  * ## Tooltip Theming
  * CSS variables in `globals.css`:
@@ -123,10 +117,12 @@ interface PinchDeltaState {
 const PINCH_ZOOM_IN_SCALE = 1.03;
 const PINCH_ZOOM_OUT_SCALE = 0.97;
 
+/** Returns whether a touch interaction contains exactly one contact. */
 export function isSingleTouchGesture(touchCount: number): boolean {
   return touchCount === 1;
 }
 
+/** Converts VisX pinch offsets into damped zoom scale factors. */
 export function computePinchDelta({ offset, lastOffset }: PinchDeltaState) {
   const [currentScaleOffset] = offset;
   const [previousScaleOffset] = lastOffset;
@@ -139,6 +135,7 @@ export function computePinchDelta({ offset, lastOffset }: PinchDeltaState) {
   };
 }
 
+/** Converts plot coordinates to screen coordinates without scaling point styling. */
 export function computeRenderedCircleStyle({
   cx,
   cy,

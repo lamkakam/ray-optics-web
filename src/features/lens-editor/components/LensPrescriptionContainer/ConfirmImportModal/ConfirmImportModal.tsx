@@ -1,12 +1,4 @@
 "use client";
-/**
- * Describes the Confirm Import Modal module.
- *
- * @remarks
- * ## Modal Footer
- *
- * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
- */
 
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Button } from "@/shared/components/primitives/Button";
@@ -28,6 +20,12 @@ interface ConfirmImportModalProps {
  * ## Key Behaviors
  *
  * - Stateless — purely presentational.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
  */
 export function ConfirmImportModal({ isOpen, onConfirm, onCancel }: ConfirmImportModalProps) {
   return (

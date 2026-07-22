@@ -1,17 +1,4 @@
 "use client";
-/**
- * Describes the Formatting Modal module.
- *
- * @remarks
- * ## Dependencies
- *
- * - UI primitives: `Modal`, `RadioInput`, `Input`, `Select`, `Button`, and `Label`.
- * - Formatting logic: `buildScaleSurfaceOptions`, `buildReverseSurfaceOptions`, and `formatPrescriptionRows`.
- *
- * ## Modal Footer
- *
- * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while formatting controls scroll.
- */
 
 import React, { useMemo, useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
@@ -27,6 +14,7 @@ import {
 } from "@/shared/lib/lens-prescription-grid/lib/prescriptionFormatting";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
+/** Scale or reverse prescription formatting mode. */
 export type FormattingMode = "scale" | "reverse";
 
 interface FormattingModalProps {
@@ -68,6 +56,17 @@ function clampSurfaceIndex(value: number, max: number): number {
  * - If a local surface index is outside the current row range, the rendered selector value and confirm input are clamped to the nearest valid index. Valid local selections are not rewritten while rendering.
  * - `Cancel` calls `onCancel` without producing rows.
  * - `Confirm` converts the Factor draft with `Number(scaleFactor)` and calls `formatPrescriptionRows`; valid results are passed to `onConfirm` with the active formatting mode, while invalid, non-positive, non-finite, or overflowing results call `onError` and do not mutate rows.
+ *
+ *
+ *
+ * ## Dependencies
+ *
+ * - UI primitives: `Modal`, `RadioInput`, `Input`, `Select`, `Button`, and `Label`.
+ * - Formatting logic: `buildScaleSurfaceOptions`, `buildReverseSurfaceOptions`, and `formatPrescriptionRows`.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while formatting controls scroll.
  */
 export function FormattingModal({
   isOpen,

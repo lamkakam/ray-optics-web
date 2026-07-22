@@ -9,6 +9,7 @@ type ContextValue = StoreApi<AnalysisDataState> | undefined;
 /** Raw context object. Use only in tests to supply a pre-built store directly via `<AnalysisDataStoreContext.Provider value={store}>`. */
 export const AnalysisDataStoreContext = createContext<ContextValue>(undefined);
 
+/** Initial state and child tree for an isolated analysis-data store. */
 export interface AnalysisDataStoreProviderProps {
   children: ReactNode;
 }

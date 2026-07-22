@@ -1,16 +1,4 @@
 /**
- * Describes the Create Pyodide Worker module.
- *
- * @remarks
- * ## Return Value
- * Returns a new `Worker` instance backed by `workers/pyodide.worker.ts`.
- */
-/**
- * Factory for the Pyodide web worker.
- * Extracted to its own module so tests can mock it
- * without hitting import.meta.url issues.
- */
-/**
  * Instantiate the Pyodide web worker. Extracted into its own module so that tests can mock it without encountering `import.meta.url` resolution issues.
  *
  * @remarks
@@ -31,7 +19,9 @@
  * - Each call returns a **new** `Worker` instance. Callers (i.e. `usePyodide`) are responsible for ensuring this is only called once (singleton pattern).
  * - No error handling inside — if the worker script fails to load, the `Worker` constructor throws and the caller handles it.
  *
- * *In tests**, this module is replaced with a mock that returns a fake worker, avoiding `import.meta.url` and Pyodide initialisation overhead.
+ * **In tests**, this module is replaced with a mock that returns a fake worker, avoiding `import.meta.url` and Pyodide initialisation overhead.
+ *
+ * @returns A new module worker backed by `workers/pyodide.worker.ts`.
  */
 export function createPyodideWorker(): Worker {
   return new Worker(

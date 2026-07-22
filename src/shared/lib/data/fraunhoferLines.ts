@@ -1,5 +1,7 @@
+/** Supported Fraunhofer spectral-line symbol. */
 export type FraunhoferSymbol = "t" | "s" | "A'" | "r" | "C" | "C'" | "D" | "d" | "e" | "F" | "F'" | "g" | "h" | "i";
 
+/** Fraunhofer symbol and wavelength in nanometers. */
 export interface FraunhoferLine {
   readonly symbol: FraunhoferSymbol;
   readonly wavelength: number; // nm
@@ -27,8 +29,7 @@ const wavelengthMap = new Map<FraunhoferSymbol, number>(
   FRAUNHOFER_LINES.map((l) => [l.symbol, l.wavelength])
 );
 
-/** Look up a wavelength (nm) by Fraunhofer line symbol. Case-sensitive. */
-/** Provides the canonical set of Fraunhofer spectral lines used in optical design, and a symbol-to-wavelength lookup function. */
+/** Looks up a wavelength in nanometers by its case-sensitive Fraunhofer symbol. */
 export function lookupWavelength(symbol: FraunhoferSymbol): number {
   return wavelengthMap.get(symbol)!;
 }

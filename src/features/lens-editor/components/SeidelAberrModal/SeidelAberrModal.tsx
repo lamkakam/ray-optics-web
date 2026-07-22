@@ -1,11 +1,3 @@
-/**
- * Describes the Seidel Aberr Modal module.
- *
- * @remarks
- * ## Modal Footer
- *
- * - The Ok action is passed to `Modal.footer` so it remains fixed while Seidel aberration content scrolls.
- */
 import { useMemo } from "react";
 import { MathJax } from "better-react-mathjax";
 import { Button } from "@/shared/components/primitives/Button";
@@ -54,6 +46,12 @@ const ABERRATION_TYPE_TO_LABEL: AberrationTypeToLabel = {
  * - Aberration type keys (e.g. `"TSA"`, `"W040"`) are mapped to human-readable labels via `ABERRATION_TYPE_TO_LABEL`.
  * - Field Curvature tab includes a Curvature Radius column (reciprocal of value; `"Infinite"` when value is 0).
  * - Uses `<MathJax inline>` for LaTeX rendering; `MathJaxContext` is provided by the ancestor (`page.tsx`).
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - The Ok action is passed to `Modal.footer` so it remains fixed while Seidel aberration content scrolls.
  */
 export function SeidelAberrModal({ isOpen, data, onClose }: SeidelAberrModalProps) {
   const { surfaceBySurface, transverse, wavefront, curvature } = data;

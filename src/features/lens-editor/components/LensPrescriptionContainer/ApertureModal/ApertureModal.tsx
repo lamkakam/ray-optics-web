@@ -703,7 +703,6 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
 });
 
 /**
- * Describes the Aperture Modal module.
  *
  * @remarks
  * ## Behavior
@@ -736,7 +735,6 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
  * - Rectangular offsets must parse to finite signed numbers; `0` and negative values are accepted.
  * - Shape-specific field content is selected through two module-scope component maps: one for clear aperture shapes and one for edge aperture shapes.
  */
-/** Modal for editing or inspecting a surface's aperture configuration. */
 export function ApertureModal({
   isOpen,
   autoAperture = false,

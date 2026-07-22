@@ -34,7 +34,6 @@ interface PickupModeFieldsProps {
 }
 
 /**
- * Describes the Pickup Mode Fields module.
  *
  * @remarks
  * ## Behavior
@@ -46,7 +45,6 @@ interface PickupModeFieldsProps {
  * - Supports stacked or two-column scale/offset layouts so consuming modals can keep their existing arrangement.
  * - Does not own state; callers pass current values and field-level change handlers.
  */
-/** Shared optimization-only pickup field group for source-surface based editors. */
 export function PickupModeFields({
   idPrefix,
   sourceSurfaceLabel = "Source surface index",

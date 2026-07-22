@@ -1,24 +1,3 @@
-/**
- * Describes the Wavelength Config Modal module.
- *
- * @remarks
- * ## Internal State
- *
- * - `rows: WavelengthRow[]` — AG Grid row data; each row has `id`, `fraunhofer` symbol, `wavelength`, and `weight`.
- * - `referenceIndex: number` — index of the reference wavelength.
- *
- * ## Grid Columns
- *
- * - Row actions: 100px.
- * - Fraunhofer: 110px.
- * - Wavelength (nm): 150px.
- * - Weight: 85px.
- * - Reference: 100px.
- *
- * ## Modal Footer
- *
- * - Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while the wavelength grid scrolls.
- */
 import { useState, useCallback } from "react";
 import { AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
@@ -90,6 +69,20 @@ const MAX_ROWS = 7;
  * - When a row is deleted, `referenceIndex` is adjusted to remain valid.
  * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so pending wavelength or weight edits are committed before footer actions such as Apply read the draft rows.
  * - Keeps the caption outside a `400px`-high grid container at all screen sizes and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
+ *
+ *
+ *
+ * ## Grid Columns
+ *
+ * - Row actions: 100px.
+ * - Fraunhofer: 110px.
+ * - Wavelength (nm): 150px.
+ * - Weight: 85px.
+ * - Reference: 100px.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while the wavelength grid scrolls.
  */
 export function WavelengthConfigModal({
   isOpen,
@@ -110,7 +103,9 @@ function WavelengthConfigModalContent({
 }: Omit<WavelengthConfigModalProps, "isOpen">) {
   const gridTheme = useAgGridTheme();
 
+  /** Editable AG Grid rows with stable ids and Fraunhofer metadata. */
   const [rows, setRows] = useState<WavelengthRow[]>(() => weightsToRows(initialWeights));
+  /** Index of the wavelength used as the reference. */
   const [referenceIndex, setReferenceIndex] = useState(() => initialReferenceIndex);
 
   const addRow = useCallback((afterId: string) => {

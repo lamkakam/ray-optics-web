@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 import { Header } from "@/shared/components/primitives/Header";
 
+/** Supported modal width presets. */
 export type ModalSize = "md" | "lg" | "4xl";
 
 const sizeClasses: Record<ModalSize, string> = {

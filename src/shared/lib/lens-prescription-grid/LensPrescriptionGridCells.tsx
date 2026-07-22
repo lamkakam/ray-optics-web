@@ -39,6 +39,7 @@ interface ActionWrapperProps {
   readonly onAction: () => void;
 }
 
+/** Wraps an interactive grid cell action with consistent keyboard and pointer behavior. */
 export function LensPrescriptionActionWrapper({ children, onAction }: ActionWrapperProps) {
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("button,a,input,select,textarea") !== null) {
@@ -65,6 +66,7 @@ interface MediumCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the medium cell and opens its selector action. */
 export function MediumCell({
   medium,
   onOpenModal,
@@ -109,6 +111,7 @@ interface AsphericalCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the asphere summary and opens its editor action. */
 export function AsphericalCell({
   aspherical,
   onOpenModal,
@@ -130,6 +133,7 @@ interface ApertureCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the aperture summary and opens its editor action. */
 export function ApertureCell({
   clearAperture,
   edgeAperture,
@@ -151,6 +155,7 @@ interface DecenterCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the decenter summary and opens its editor action. */
 export function DecenterCell({
   decenter,
   onOpenModal,
@@ -171,6 +176,7 @@ interface DiffractionGratingCellProps {
   readonly tooltipText?: string;
 }
 
+/** Renders the grating summary and opens its editor action. */
 export function DiffractionGratingCell({
   diffractionGrating,
   onOpenModal,

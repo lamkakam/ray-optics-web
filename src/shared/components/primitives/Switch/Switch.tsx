@@ -3,8 +3,10 @@ import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Supported switch-control sizes. */
 export type SwitchSize = "sm" | "md";
 
+/** Accessible controlled switch props. */
 export interface SwitchProps
   extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onChange"> {
   /** Controlled checked state */

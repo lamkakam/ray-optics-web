@@ -2,6 +2,7 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Value and display label for one select option. */
 export type SelectOption = {
   readonly value: string | number;
   readonly label: string;

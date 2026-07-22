@@ -1,27 +1,4 @@
 "use client";
-/**
- * Describes the Diffraction Psf Chart module.
- *
- * @remarks
- * ## Axis Tick Calculation Flow
- *
- * - `buildDiffractionPsfBitmap(...)` derives `axisExtent` from the maximum absolute physical coordinate across `diffractionPsfData.x` and `diffractionPsfData.y`, falling back to `1` when no positive extent is available.
- * - The initial controlled orthographic view state uses `target: [0, 0, 0]` and `zoom = log2(plotSide / (2 * axisExtent * 1.12))`, so the full symmetric prepared extent fits inside the square plot with padding.
- * - The visible physical domains are derived from the controlled view state: `scale = 2 ** zoom`, `visibleHalfRange = plotSide / (2 * scale)`, x uses `target[0] +/- visibleHalfRange`, and y uses `target[1] +/- visibleHalfRange`.
- * - `TICK_COUNT = 5`; each tick value is linearly interpolated from the visible domain minimum to maximum.
- * - X ticks render left-to-right in domain order.
- * - Y ticks render bottom-to-top in value order. The SVG offset is inverted from the interpolation index so larger y values appear higher on screen.
- * - Tick labels are formatted with `formatPlotValue(...)`.
- * - Pan and zoom updates replace the controlled view state, so tick labels follow the currently visible physical coordinate range rather than fixed raw PSF array indices.
- *
- * ## Dependencies
- *
- * - `DiffractionPsfData` from `features/analysis/types/plotData`
- * - `DeckGL`, `BitmapLayer`, and `OrthographicView` from `deck.gl`
- * - Shared layout, view-state, tick, palette, and SVG overlay helpers from `cartesianPlotDeckHelpers.tsx`
- * - `buildDiffractionPsfBitmap(...)` and `formatDiffractionPsfFluxLabel(...)` from `diffractionPsfDeckData.ts`
- * - `ANALYSIS_HEATMAP_COLOR_PALETTE` from `features/analysis/lib/analysisChartPalette`
- */
 
 import { BitmapLayer, COORDINATE_SYSTEM, DeckGL, OrthographicView } from "deck.gl";
 import { useMemo, useState } from "react";

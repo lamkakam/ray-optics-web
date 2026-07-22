@@ -3,7 +3,9 @@ import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Supported visual button variants. */
 export type ButtonVariant = "primary" | "secondary" | "toggle" | "danger" | "floating";
+/** Supported button density sizes. */
 export type ButtonSize = "md" | "sm" | "xs";
 
 const { color: c, size: sz, style: s } = cx.button;

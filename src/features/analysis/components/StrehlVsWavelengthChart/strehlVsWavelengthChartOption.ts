@@ -1,18 +1,4 @@
-/**
- * Describes the Strehl Vs Wavelength Chart Option module.
- *
- * @remarks
- * ## Series
- *
- * - `Strehl` - one `line` series using paired `[x, y]` samples and `showSymbol: false`.
- *
- * ## Axes
- *
- * - X axis is `Wavelength` and appends `(${unitX})` when `unitX` is non-empty.
- * - X axis `min` and `max` are pinned to the first and last sampled wavelengths so ECharts does not add value-axis padding.
- * - Y axis is `Strehl Ratio` with fixed range `[0, 1]`.
- * - Tick labels use `formatPlotValue`.
- */
+/** Strehl-vs-wavelength ECharts registration and shared plot geometry. */
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
 import { GridComponent, TooltipComponent } from "echarts/components";
@@ -38,7 +24,11 @@ function toLineData(strehlVsWavelengthData: StrehlVsWavelengthData): number[][] 
   return lineData;
 }
 
-/** Builds the Apache ECharts option for the Strehl vs Wavelength line chart. */
+/**
+ * Builds the Apache ECharts option for the Strehl-vs-wavelength line chart.
+ * The symbol-free series pairs x/y samples, pins the wavelength domain to the
+ * sampled endpoints, and fixes the Strehl-ratio range to `[0, 1]`.
+ */
 export function buildStrehlVsWavelengthOption(
   strehlVsWavelengthData: StrehlVsWavelengthData,
   chartWidth: number,

@@ -1,13 +1,3 @@
-/**
- * Describes the Checkbox Input module.
- *
- * @remarks
- * ## Styling
- *
- * - Wrapper hover styling comes from `componentTokens.checkbox.color.hoverBgColor`.
- * - Checkbox border, checked state color, focus ring, size, and radius come from `componentTokens.checkbox`.
- * - Label text inherits the shared secondary text color and can be extended via `labelClassName`.
- */
 import { type JSX } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
@@ -59,6 +49,14 @@ const INPUT_CLASSES = [
  * - When `label` is a string, wraps it in the component-owned `<span>` with the shared text styling and optional `labelClassName`.
  * - When `label` is a JSX element, renders that JSX directly with no extra wrapper so the caller controls container layout and styling.
  * - Supports composed visual labels such as the glass-map catalog color dot without a separate adornment prop.
+ *
+ *
+ *
+ * ## Styling
+ *
+ * - Wrapper hover styling comes from `componentTokens.checkbox.color.hoverBgColor`.
+ * - Checkbox border, checked state color, focus ring, size, and radius come from `componentTokens.checkbox`.
+ * - Label text inherits the shared secondary text color and can be extended via `labelClassName`.
  */
 export function CheckboxInput({
   id,

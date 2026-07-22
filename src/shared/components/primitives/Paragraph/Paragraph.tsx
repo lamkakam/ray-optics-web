@@ -2,6 +2,7 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Supported semantic paragraph styles. */
 export type ParagraphVariant = "body" | "caption" | "subheading" | "placeholder" | "errorMessage" | "description";
 
 const VARIANT_CLASSES: Record<ParagraphVariant, readonly string[]> = {

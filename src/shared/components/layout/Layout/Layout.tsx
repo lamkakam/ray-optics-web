@@ -1,12 +1,19 @@
 "use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import { Button } from "@/shared/components/primitives/Button";
+import { Header } from "@/shared/components/primitives/Header";
+import { SideNav } from "@/shared/components/layout/SideNav";
+import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
+
+interface LayoutProps {
+  /** Active view content */
+  readonly children: React.ReactNode;
+  /** Optional SideNav navigation interceptor supplied by the app shell */
+  readonly onNavigate?: (href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean;
+}
+
 /**
- * Describes the Layout module.
- *
- * @remarks
- * ## State
- * | State | Type | Description |
- * |-------|------|-------------|
- * | `sideNavOpen` | `boolean` | Whether the side nav panel is open |
  *
  * ## Internal behaviour
  * - Calls `useScreenBreakpoint()` to derive `isLG`
@@ -49,28 +56,15 @@
  * ## iOS Safari height note
  * `globals.css` sets `html, body { height: 100%; overflow: hidden; }`. This locks the document so it can never scroll. Without this, `h-screen` (`100vh`) on iOS Safari equals the "large viewport height" (address bar hidden), causing the layout to overflow when the address bar is visible. The resulting micro-scroll triggers the address bar to animate in/out, resizing the viewport and making the header jump. The `h-full` on the outer div fills the locked `body` height instead.
  */
-
-import React, { useEffect, useRef, useState } from "react";
-import { Button } from "@/shared/components/primitives/Button";
-import { Header } from "@/shared/components/primitives/Header";
-import { SideNav } from "@/shared/components/layout/SideNav";
-import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
-
-interface LayoutProps {
-  /** Active view content */
-  readonly children: React.ReactNode;
-  /** Optional SideNav navigation interceptor supplied by the app shell */
-  readonly onNavigate?: (href: string, event: React.MouseEvent<HTMLAnchorElement>) => boolean;
-}
-
-/** Composite client layout shell. Owns hamburger/side-nav open state and screen-size detection. Renders the shared app chrome and delegates route content to `children`. */
 export function Layout({ children, onNavigate }: LayoutProps) {
+  /** Whether the side-navigation panel is open. */
   const [sideNavOpen, setSideNavOpen] = useState(false);
   const hamburgerRef = useRef<HTMLSpanElement>(null);
   const sideNavRef = useRef<HTMLDivElement>(null);
   const screenSize = useScreenBreakpoint();
   const isLG = screenSize === "screenLG";
 
+  /** Installs outside-pointer dismissal only while the side navigation is open. */
   useEffect(() => {
     if (!sideNavOpen) {
       return;
@@ -97,6 +91,7 @@ export function Layout({ children, onNavigate }: LayoutProps) {
     };
   }, [sideNavOpen]);
 
+  /** Breakpoint-independent navigation toggle reused by both layouts. */
   const hamburgerButton = (
     <span ref={hamburgerRef}>
       <Button
@@ -110,6 +105,7 @@ export function Layout({ children, onNavigate }: LayoutProps) {
     </span>
   );
 
+  /** Side-navigation node reused by both layouts. */
   const sideNavNode = (
     <div ref={sideNavRef} className="contents">
       <SideNav

@@ -1,36 +1,28 @@
-/**
- * Pure helper utilities shared by optimization variable/pickup modals.
- *
- * @remarks
- * ## Behavior
- *
- * - `validateVariableBounds()` applies rules sequentially and stops at the first returned error string. This lets callers prioritize min/max ordering before field-specific rules such as curvature-radius zero-straddling.
- * - `minLessThanMaxRule` formats errors as `{label} variable bounds must have Min. less than Max.` when either bound is non-finite or the numeric minimum is greater than or equal to the numeric maximum.
- * - `CURVATURE_RADIUS_GUIDANCE_TEXT`, `getCurvatureRadiusBoundsErrorText()`, and `curvatureRadiusNoZeroStraddleRule` are shared by `features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal.tsx` and the toroid-sweep variable row in `features/optimization/components/LensPrescriptionGrid/AsphereVarModal/AsphereVarModal.tsx` so the flat-surface guidance and zero-crossing error copy stay in sync.
- * - `curvatureRadiusCrossesZero()` is intended for curvature-radius style bounds, where `R = 0` represents a flat surface with infinite radius and bounds must stay entirely negative or entirely positive.
- * - The draft builders are shared by both `features/optimization/components/LensPrescriptionGrid/RadiusModeModal/RadiusModeModal.tsx` and `features/optimization/components/LensPrescriptionGrid/ThicknessModeModal/ThicknessModeModal.tsx` to keep default mode transitions consistent.
- * - The pickup source-surface option builders keep radius and thickness dropdown bounds consistent with their optimizer validation rules.
- */
+/** Pure draft, validation, and source-option helpers shared by optimization variable and pickup modals. */
 import type { RadiusMode, RadiusModeDraft } from "@/features/optimization/stores/optimizationStore";
 import type { SourceSurfaceSelectOption } from "@/features/optimization/types/optimizationModalTypes";
 
+/** Ordered constant, variable, and pickup choices used by optimization mode controls. */
 export const MODAL_MODE_OPTIONS = [
   { value: "constant", label: "constant" },
   { value: "variable", label: "variable" },
   { value: "pickup", label: "pickup" },
 ] as const;
 
+/** Shared flat-surface and zero-straddling guidance shown by radius-like variable editors. */
 export const CURVATURE_RADIUS_GUIDANCE_TEXT = [
   "R = 0 means a flat surface (infinite radius).",
   "Use variable bounds entirely below 0 or entirely above 0; do not straddle 0.",
 ] as const;
 
+/** Validation rule that returns its first user-facing bounds error or `undefined`. */
 export type VariableBoundsValidationRule = (
   label: string,
   minValue: string,
   maxValue: string,
 ) => string | undefined;
 
+/** Rejects non-finite bounds or a minimum that is not strictly less than the maximum. */
 export const minLessThanMaxRule: VariableBoundsValidationRule = (label, minValue, maxValue) => {
   const min = Number(minValue);
   const max = Number(maxValue);
@@ -42,6 +34,7 @@ export const minLessThanMaxRule: VariableBoundsValidationRule = (label, minValue
   return undefined;
 };
 
+/** Reports whether finite curvature-radius bounds span zero, where zero represents an infinite-radius flat surface. */
 export function curvatureRadiusCrossesZero(minValue: string, maxValue: string): boolean {
   const min = Number(minValue);
   const max = Number(maxValue);
@@ -53,10 +46,12 @@ export function curvatureRadiusCrossesZero(minValue: string, maxValue: string): 
   return min < 0 && max > 0;
 }
 
+/** Builds the shared one-side-of-zero bounds error for a labeled radius-like field. */
 export function getCurvatureRadiusBoundsErrorText(label: string): string {
   return `${label} variable bounds must stay on one side of 0.`;
 }
 
+/** Rejects curvature-radius bounds that span zero. */
 export const curvatureRadiusNoZeroStraddleRule: VariableBoundsValidationRule = (label, minValue, maxValue) => {
   if (curvatureRadiusCrossesZero(minValue, maxValue)) {
     return getCurvatureRadiusBoundsErrorText(label);
@@ -65,6 +60,7 @@ export const curvatureRadiusNoZeroStraddleRule: VariableBoundsValidationRule = (
   return undefined;
 };
 
+/** Applies bounds rules in order and returns the first error. */
 export function validateVariableBounds(
   label: string,
   minValue: string,
@@ -81,6 +77,7 @@ export function validateVariableBounds(
   return undefined;
 }
 
+/** Creates a variable-mode draft initialized to one numeric value. */
 export function createVariableDraft(value: number): RadiusModeDraft {
   return {
     mode: "variable",
@@ -89,6 +86,7 @@ export function createVariableDraft(value: number): RadiusModeDraft {
   };
 }
 
+/** Creates the default pickup-mode draft. */
 export function createPickupDraft(): RadiusModeDraft {
   return {
     mode: "pickup",
@@ -98,6 +96,7 @@ export function createPickupDraft(): RadiusModeDraft {
   };
 }
 
+/** Builds radius pickup sources, including Image and excluding the target surface. */
 export function getRadiusPickupSourceSurfaceOptions(
   realSurfaceCount: number,
   targetSurfaceIndex: number,
@@ -111,6 +110,7 @@ export function getRadiusPickupSourceSurfaceOptions(
   }).filter((option) => option.value !== targetSurfaceIndex);
 }
 
+/** Builds physical-surface thickness pickup sources, excluding the target surface. */
 export function getThicknessPickupSourceSurfaceOptions(
   realSurfaceCount: number,
   targetSurfaceIndex: number,
@@ -124,6 +124,7 @@ export function getThicknessPickupSourceSurfaceOptions(
   }).filter((option) => option.value !== targetSurfaceIndex);
 }
 
+/** Converts a committed radius mode into editable string-valued modal state. */
 export function toRadiusModeDraft(mode: RadiusMode): RadiusModeDraft {
   switch (mode.mode) {
     case "constant":
@@ -144,6 +145,7 @@ export function toRadiusModeDraft(mode: RadiusMode): RadiusModeDraft {
   }
 }
 
+/** Creates a stable serialized representation of a committed radius mode. */
 export function serializeRadiusMode(mode: RadiusMode): string {
   switch (mode.mode) {
     case "constant":

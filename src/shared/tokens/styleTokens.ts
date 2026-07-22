@@ -36,16 +36,9 @@
  * - `menuContainer` and `descriptionContainer` reuse global surface, border, and secondary text tokens for the example-systems page primitives.
  *
  * - Imported by every component in `components/micro/` and by `AnalysisPlotView` in `components/composite/`.
- */
-/**
- * Shared Tailwind class tokens — nested per-component design token system.
  *
- * @remarks
- * Each component entry has `color` / `size` / `style` sub-objects.
- * Import `componentTokens` (aliased as `cx`) from this module instead of
- * duplicating class strings in every component.
+ * `globalTokens` exposes the shared Tailwind primitives and raw chart-theme values.
  */
-
 export const globalTokens = {
   color: {
     primaryColor: "bg-blue-600",
@@ -84,6 +77,7 @@ export const globalTokens = {
 
 const g = globalTokens;
 
+/** Component-scoped token groups derived from global style tokens. */
 export const componentTokens = {
   button: {
     color: {

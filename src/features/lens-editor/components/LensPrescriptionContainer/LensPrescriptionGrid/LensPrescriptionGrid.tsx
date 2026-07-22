@@ -62,7 +62,6 @@ interface LensPrescriptionGridProps {
  * - Keeps AG Grid's native touch handling enabled so resizable header handles respond to touchscreen drags. The shared `ag-grid-touch-scroll` coarse-pointer styles continue to provide native horizontal and vertical panning, iOS momentum scrolling, and scroll chaining on viewport areas; AG Grid owns gestures that begin on resize handles.
  * - Uses `h-[calc(100vh-160px)]` below `1440px`; at `1440px` and above it fills the remaining flex-column drawer-panel height with a `200px` minimum.
  */
-/** Passes the computed semi-diameter cache into the shared semi-diameter column while preserving stable row-ID lookup. */
 export function LensPrescriptionGrid({
   rows,
   onRowChange,

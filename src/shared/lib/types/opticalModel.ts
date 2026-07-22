@@ -1,25 +1,6 @@
 /**
- * Describes the Optical Model module.
- *
- * @remarks
- * ## Key Conventions
- *
- * - **`curvatureRadius: 0`** means flat surface (infinite radius of curvature) — used throughout the codebase.
- * - **`medium: "REFL"`** denotes a reflective surface (mirror).
- * - **`medium: "CaF2"`** is a special-cased medium.
- * - `manufacturer` is always `""` when `medium` is `"air"` or `"REFL"`.
- * - `Surfaces["object"]` stores `distance`, `medium`, and `manufacturer`; object medium must be non-reflective.
- * - `aspherical` is a discriminated union:
- * - `{ kind: "Conic", conicConstant }`
- * - `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
- * - `{ kind: "RadialPolynomial", conicConstant, polynomialCoefficients }`
- * - `{ kind: "XToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
- * - `{ kind: "YToroid", conicConstant, toricSweepRadiusOfCurvature, polynomialCoefficients }`
- * - `diffractionGrating`, when present on a surface, is `{ lpmm: number; order: number }`.
- * - `clear_aperture`, when present on a surface, records the clear aperture shape and signed X/Y offsets. Circular and annular outer clear aperture radii are derived from `semiDiameter`; annular clear apertures additionally store `obstructionRadius`; rectangular clear apertures store `xHalfWidth`, `yHalfWidth`, and `rotation`.
- * - `edge_aperture`, when present on a surface, records an explicit circular edge aperture radius or rectangular half widths, rotation, and signed X/Y offsets. When omitted, the edge aperture follows the clear aperture.
- * - `OpticalModel` extends `Surfaces`, so all surface data is directly on the model object.
- * - `setAutoAperture: "autoAperture"` tells RayOptics to recompute semi-diameters; `"manualAperture"` preserves them.
+ * Core sequential optical-model contracts. Across the model, curvature radius zero
+ * means a flat surface and medium `REFL` denotes reflection.
  */
 import type { SetAutoApertureFlag } from "@/shared/lib/utils/apertureFlag";
 export type { SetAutoApertureFlag };
@@ -27,11 +8,13 @@ export type { SetAutoApertureFlag };
 
 /** Optical system specifications. */
 export interface OpticalSpecs {
+  /** Pupil definition in object or image space. */
   pupil: {
     space: "object" | "image"; // whether the value is defined over object or image space
     type: "epd" | "f/#" | "NA"; // match with rayoptics PupilSpec
     value: number;
   };
+  /** Absolute or relative field samples and optional wide-angle ray aiming. */
   field: {
     space: "object" | "image";
     type: "angle" | "height";
@@ -42,12 +25,14 @@ export interface OpticalSpecs {
     // for the chief ray in a wide-angled field
     isWideAngle?: boolean; 
   };
+  /** Wavelength/weight pairs and their zero-based reference index. */
   wavelengths: {
     weights: [number, number][]; // [wavelength in nm, weight][]
     referenceIndex: number;
   };
 }
 
+/** Surface orientation and signed positional offset. */
 export type DecenterConfig = {
   coordinateSystemStrategy: "bend" | "dec and return" | "decenter" | "reverse";
   alpha: number,
@@ -57,6 +42,7 @@ export type DecenterConfig = {
   offsetY: number,
 };
 
+/** Surface grating density and diffraction order. */
 export type DiffractionGrating = {
   lpmm: number,
   order: number,
@@ -67,11 +53,13 @@ type BaseAperture = {
   offsetY: number,
 };
 
+/** Annular aperture whose outer radius comes from the surface semi-diameter. */
 export type AnnularAperture = {
   shape: "annular",
   obstructionRadius: number,
 };
 
+/** Rotated rectangular aperture dimensions. */
 export type RectangularAperture = {
   shape: "rectangular",
   xHalfWidth: number,
@@ -79,15 +67,18 @@ export type RectangularAperture = {
   rotation: number,
 };
 
+/** Circular, annular, or rectangular clear aperture with signed offsets. */
 export type ClearAperture = ({
   shape: "circular",
 } | AnnularAperture | RectangularAperture) & BaseAperture;
 
+/** Explicit circular or rectangular edge aperture; omission means follow the clear aperture. */
 export type EdgeAperture = ({
   shape: "circular",
   radius: number,
 } | RectangularAperture) & BaseAperture;
 
+/** At most ten polynomial coefficients for coefficient-bearing aspheres. */
 export type AsphericalPolynomialCoeffs = number[];
 
 type AsphericalConfigMap = {
@@ -103,6 +94,7 @@ type AsphericalConfigConstructor<T extends keyof AsphericalConfigMap> = {
   [K in keyof AsphericalConfigMap]: { kind: K } & AsphericalConfigMap[K];
 }[T];
 
+/** Discriminated conic, polynomial, or toroidal asphere configuration. */
 type AsphericalConfig = 
   | AsphericalConfigConstructor<"Conic">
   | AsphericalConfigConstructor<"EvenAspherical">
@@ -110,6 +102,7 @@ type AsphericalConfig =
   | AsphericalConfigConstructor<"XToroid">
   | AsphericalConfigConstructor<"YToroid">;
 
+/** Supported aspherical configuration discriminators. */
 export type AsphericalType = AsphericalConfig["kind"];
 
 /** Represents a single optical surface in the sequential model. */
@@ -118,16 +111,22 @@ export interface Surface {
   curvatureRadius: number; // 0 means flat (infinite radius).
   thickness: number;
   medium: string; // can be "air" or "REFL"
-  manufacturer: string; // if medium is "air" or "REFL", manufacturer is ""
+  /** Empty when the medium is air or reflective. */
+  manufacturer: string;
   semiDiameter: number;
+  /** Clear aperture; circular and annular outer radii come from `semiDiameter`. */
   clear_aperture?: ClearAperture;
+  /** Explicit edge aperture, or `undefined` to follow the clear aperture. */
   edge_aperture?: EdgeAperture;
+  /** Optional discriminated aspherical surface configuration. */
   aspherical?: AsphericalConfig;
   decenter?: DecenterConfig,
   diffractionGrating?: DiffractionGrating,
 }
 
+/** Object plane, ordered physical surfaces, and image plane. */
 export interface Surfaces {
+  /** Object-space gap and non-reflective medium. */
   object: {
     distance: number,
     medium: Exclude<string, "REFL" | "refl">,
@@ -140,21 +139,9 @@ export interface Surfaces {
   surfaces: Surface[];
 }
 
-/** Complete optical model returned from the worker. */
-/**
- * Defines core TypeScript domain types for the optical model, including system specifications, surfaces, and aspherical surface configuration. Feature-owned analysis, focusing, Seidel, Zernike, and glass-map payload types live under their owning feature directories.
- *
- * @remarks
- * ## Edge Cases / Error Handling
- *
- * - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`, and has a maximum of 10 coefficients.
- * - `toricSweepRadiusOfCurvature` is required for toroidal kinds.
- * - `fields` in `OpticalSpecs.field` may be absolute or relative values depending on `isRelative`.
- * - `referenceIndex` in `wavelengths` is a zero-based index into `weights`; callers must ensure it is in range.
- *
- * Imported by modules that need the core optical model contract. Types are validated by `lib/importSchema.ts` for uploaded files.
- */
+/** Complete sequential optical model validated at upload boundaries by `importSchema.ts`. */
 export interface OpticalModel extends Surfaces {
+  /** Whether RayOptics recomputes semi-diameters or preserves manual values. */
   setAutoAperture: SetAutoApertureFlag;
   specs: OpticalSpecs;
 }

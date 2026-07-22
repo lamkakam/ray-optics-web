@@ -1,34 +1,4 @@
 "use client";
-/**
- * Describes the Glass Map View module.
- *
- * @remarks
- * ## Layout
- * - **Loading state** (`!isReady || !proxy`, or missing `catalogsData`): centered loading message
- * - Catalog load failures are handled by `AppShell` through the blocking initialization overlay, not by this route view
- * - In normal app flow the missing-data placeholder is uncommon after the initial shell overlay because the shared shell preload has already populated the store
- * - **Loaded**: `flex-col lg:flex-row h-full`
- * - Left: flex-1 (lg: 60%) — `GlassScatterPlot`
- * - Right: overflow-y-auto (lg: 40%) — `GlassMapCatalogSelector` + `GlassMapControls` + `GlassDetailPanel`
- * - When present, the back link is rendered above `GlassMapControls`
- *
- * ## Axis Label Logic
- * | plotType | abbeNumCenterLine | xLabel | yLabel |
- * |---|---|---|---|
- * | refractiveIndex | d | Vd | Nd |
- * | refractiveIndex | e | Ve | Ne |
- * | partialDispersion | d | Vd | P_F,d / P_F,e / P_g,F |
- * | partialDispersion | e | Ve | P_F,d / P_F,e / P_g,F |
- *
- * ## MathJax
- * MathJax context is provided by `app/AppShell.tsx`. This component does not own a `MathJaxContext`.
- *
- * ## Children
- * - `GlassScatterPlot` — scatter plot with zoom/pan
- * - `GlassMapCatalogSelector` — catalog dropdown, searchable glass datalist, and Select action
- * - `GlassMapControls` — filter/selector controls (uses MathJax from parent context)
- * - `GlassDetailPanel` — selected glass details (uses MathJax from parent context)
- */
 
 import { useState } from "react";
 import { useStore } from "zustand";
@@ -56,6 +26,11 @@ interface GlassMapViewProps {
   readonly onUseSelectedGlass?: (glass: SelectedGlass) => void;
 }
 
+/**
+ * Resolves conventional glass-map axis labels.
+ * Refractive-index plots use Nd/Ne; partial-dispersion plots use the selected
+ * P_F,d, P_F,e, or P_g,F ordinate, while the abscissa is Vd or Ve.
+ */
 function axisLabels(
   plotType: GlassMapStore["plotType"],
   abbeNumCenterLine: GlassMapStore["abbeNumCenterLine"],
@@ -95,6 +70,26 @@ function axisLabels(
  * - Renders a `Back to lens editor` inline link above the controls panel when opened from `MediumSelectorModal`
  * - Renders `Use selected glass` next to the back link only for medium-selector route intent when the selected glass is valid and the route supplied an apply callback
  * - Invokes `onUseSelectedGlass` with the effective selection (the route glass initially or a subsequently selected point) before the link navigates to `/`
+ *
+ *
+ *
+ * ## Layout
+ * - **Loading state** (`!isReady || !proxy`, or missing `catalogsData`): centered loading message
+ * - Catalog load failures are handled by `AppShell` through the blocking initialization overlay, not by this route view
+ * - In normal app flow the missing-data placeholder is uncommon after the initial shell overlay because the shared shell preload has already populated the store
+ * - **Loaded**: `flex-col lg:flex-row h-full`
+ * - Left: flex-1 (lg: 60%) — `GlassScatterPlot`
+ * - Right: overflow-y-auto (lg: 40%) — `GlassMapCatalogSelector` + `GlassMapControls` + `GlassDetailPanel`
+ * - When present, the back link is rendered above `GlassMapControls`
+ *
+ * ## MathJax
+ * MathJax context is provided by `app/AppShell.tsx`. This component does not own a `MathJaxContext`.
+ *
+ * ## Children
+ * - `GlassScatterPlot` — scatter plot with zoom/pan
+ * - `GlassMapCatalogSelector` — catalog dropdown, searchable glass datalist, and Select action
+ * - `GlassMapControls` — filter/selector controls (uses MathJax from parent context)
+ * - `GlassDetailPanel` — selected glass details (uses MathJax from parent context)
  */
 export function GlassMapView({ proxy, isReady, routeIntent, onUseSelectedGlass }: GlassMapViewProps) {
   const store = useGlassMapStore();

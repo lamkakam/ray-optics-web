@@ -1,17 +1,11 @@
 "use client";
-/**
- * Describes the Tabs module.
- *
- * @remarks
- * ## Internal State
- *
- * - `internalActiveTabId: string` — uncontrolled active tab id, initialized to `tabs[0]?.id`.
- */
+/** Controlled and uncontrolled tab navigation. */
 
 import React, { useState } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Stable tab id, label, and content. */
 export interface TabItem {
   readonly id: string;
   readonly label: string;
@@ -53,6 +47,7 @@ export function Tabs({
   activeTabId,
   onTabChange,
 }: TabsProps) {
+  /** Uncontrolled active tab, initialized from the first available tab. */
   const [internalActiveTabId, setInternalActiveTabId] = useState(tabs[0]?.id ?? "");
   const resolvedActiveTabId = tabs.some((tab) => tab.id === activeTabId)
     ? activeTabId

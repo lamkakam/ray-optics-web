@@ -3,9 +3,12 @@ import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Supported progress-indicator presentation. */
 export type ProgressVariant = "linear";
+/** Supported progress-indicator sizes. */
 export type ProgressSize = "sm" | "md";
 
+/** Accessible determinate progress-indicator props. */
 export interface ProgressProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "children"> {
   /** Current determinate progress value */

@@ -1,19 +1,6 @@
 /**
- * Pure scaling policy and helpers for numeric values owned by lens prescription grid object, surface, and image rows. The module centralizes which numeric fields participate in scale formatting, which fields are preserved, and which values are collected for formatting validation.
- *
- * @remarks
- * ## Scaling Policy
- *
- * - Executable scaling is table-driven through `SURFACE_VALUE_SCALING_POLICY`. Top-level object keys are derived from `Surfaces["object"]`, `Surfaces["image"]`, and `Surface` instead of being duplicated as untyped string lists.
- * - A policy leaf that is a function transforms the matching value. A policy leaf that is `undefined` preserves the matching value while still including numeric values in validation.
- * - Linear dimensions multiply by `factor`: object distance below `1e10`, surface and image curvature radius, surface thickness, semi-diameter, decenter offsets, clear aperture offsets and dimensional fields, edge aperture offsets and dimensional fields, and toroid sweep radius.
- * - Asphere polynomial coefficients divide by `factor ** (order - 1)`.
- * - `RadialPolynomial` coefficient orders are `1..n`.
- * - `EvenAspherical`, `XToroid`, and `YToroid` coefficient orders are `2, 4, ...`.
- * - Dimensionless or angular values are preserved: conic constants, decenter `alpha`/`beta`/`gamma`, rectangular aperture rotation, diffraction grating `lpmm`, and diffraction grating `order`.
- * - Object distances at or above `1e10` are preserved.
- *
- * `collectSurfaceScalingNumericValues` walks `SURFACE_VALUE_SCALING_POLICY` and collects all numeric values covered by the policy, including preserved values. This keeps finite-number and precision-underflow validation aligned with the same fields that scale formatting recognizes.
+ * Table-driven scaling for numeric values owned by Object, Surface, and Image rows.
+ * The same policy drives transformation and finite/underflow validation coverage.
  */
 import type {
   ClearAperture,
@@ -24,8 +11,10 @@ import type {
 } from "@/shared/lib/types/opticalModel";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 
+/** Object distances at or above this value represent infinity and are preserved during scaling. */
 export const OBJECT_DISTANCE_INFINITY_THRESHOLD = 1e10;
 
+/** Transforms one policy-owned value using its parent object and scale factor. */
 export type SurfaceValueScaler<TValue = unknown, TParent = unknown> = (
   value: TValue,
   factor: number,
@@ -34,15 +23,18 @@ export type SurfaceValueScaler<TValue = unknown, TParent = unknown> = (
 
 type AnySurfaceValueScaler = (value: never, factor: number, parent: never) => unknown;
 
+/** Recursive scaling-policy entry; `undefined` preserves a numeric field while keeping it in validation. */
 export type SurfaceValueScalingPolicyEntry =
   | AnySurfaceValueScaler
   | undefined
   | { readonly [field: string]: SurfaceValueScalingPolicyEntry };
 
+/** Type-safe partial scaling policy for an optical-model object. */
 export type OpticalModelValueScalingPolicy<T extends object> = {
   readonly [K in keyof T]?: SurfaceValueScaler<T[K], T> | SurfaceValueScalingPolicyEntry;
 };
 
+/** Scaling ownership policy. Linear dimensions multiply by the factor; asphere coefficients divide by the factor raised to their radial order minus one; angular and dimensionless values are preserved. Radial-polynomial orders are sequential, while even and toroidal polynomial orders are even. */
 export const SURFACE_VALUE_SCALING_POLICY = {
   object: {
     distance: scaleObjectDistance,
@@ -105,8 +97,11 @@ export const SURFACE_VALUE_SCALING_POLICY = {
   readonly surface: OpticalModelValueScalingPolicy<Surface>;
 };
 
+/** Object-row branch of the shared scaling policy. */
 export const OBJECT_VALUE_SCALERS = SURFACE_VALUE_SCALING_POLICY.object;
+/** Image-row branch of the shared scaling policy. */
 export const IMAGE_VALUE_SCALERS = SURFACE_VALUE_SCALING_POLICY.image;
+/** Physical-surface branch of the shared scaling policy. */
 export const SURFACE_VALUE_SCALERS = SURFACE_VALUE_SCALING_POLICY.surface;
 
 function isScaler(policy: SurfaceValueScalingPolicyEntry): policy is AnySurfaceValueScaler {
@@ -117,10 +112,12 @@ function scaleNumber(value: number, factor: number): number {
   return value * factor;
 }
 
+/** Scales finite object distances below the infinity threshold and preserves larger values. */
 export function scaleObjectDistance(distance: number, factor: number): number {
   return distance < OBJECT_DISTANCE_INFINITY_THRESHOLD ? scaleNumber(distance, factor) : distance;
 }
 
+/** Scales decenter offsets while preserving angular coordinates. */
 export function scaleDecenter(decenter: DecenterConfig | undefined, factor: number): DecenterConfig | undefined {
   if (decenter === undefined) {
     return undefined;
@@ -133,6 +130,7 @@ export function scaleDecenter(decenter: DecenterConfig | undefined, factor: numb
   };
 }
 
+/** Scales clear-aperture dimensions and offsets while preserving rectangular rotation. */
 export function scaleClearAperture(aperture: ClearAperture | undefined, factor: number): ClearAperture | undefined {
   if (aperture === undefined) {
     return undefined;
@@ -164,6 +162,7 @@ export function scaleClearAperture(aperture: ClearAperture | undefined, factor: 
   };
 }
 
+/** Scales edge-aperture dimensions and offsets while preserving rectangular rotation. */
 export function scaleEdgeAperture(aperture: EdgeAperture | undefined, factor: number): EdgeAperture | undefined {
   if (aperture === undefined) {
     return undefined;
@@ -187,6 +186,7 @@ export function scaleEdgeAperture(aperture: EdgeAperture | undefined, factor: nu
   };
 }
 
+/** Scales toroidal sweep radii and polynomial coefficients while preserving conic constants. */
 export function scaleAspherical(
   aspherical: Extract<GridRow, { kind: "surface" }>["aspherical"],
   factor: number,
@@ -254,6 +254,7 @@ function applyScalingPolicy<T>(value: T, policy: SurfaceValueScalingPolicyEntry,
   return result as T;
 }
 
+/** Scales the dimensional fields owned by an Object row. */
 export function scaleObjectSurface(
   row: Extract<GridRow, { kind: "object" }>,
   factor: number,
@@ -264,6 +265,7 @@ export function scaleObjectSurface(
   };
 }
 
+/** Scales the dimensional fields owned by an Image row. */
 export function scaleImageSurface(
   row: Extract<GridRow, { kind: "image" }>,
   factor: number,
@@ -275,6 +277,7 @@ export function scaleImageSurface(
   };
 }
 
+/** Scales the dimensional fields owned by one physical Surface row. */
 export function scaleNormalSurface(
   row: Extract<GridRow, { kind: "surface" }>,
   factor: number,
@@ -287,6 +290,7 @@ export function scaleNormalSurface(
   };
 }
 
+/** Dispatches scaling by grid-row kind. */
 export function scaleSurfaceValueRow(row: Extract<GridRow, { kind: "object" }>, factor: number): Extract<GridRow, { kind: "object" }>;
 export function scaleSurfaceValueRow(row: Extract<GridRow, { kind: "image" }>, factor: number): Extract<GridRow, { kind: "image" }>;
 export function scaleSurfaceValueRow(row: Extract<GridRow, { kind: "surface" }>, factor: number): Extract<GridRow, { kind: "surface" }>;
@@ -336,6 +340,7 @@ function collectByPolicy(value: unknown, policy: SurfaceValueScalingPolicyEntry)
   return Object.entries(policy).flatMap(([field, fieldPolicy]) => collectByPolicy(record[field], fieldPolicy));
 }
 
+/** Collects every numeric value covered by the policy, including preserved fields, for finite and precision-underflow validation. */
 export function collectSurfaceScalingNumericValues(row: GridRow): number[] {
   if (row.kind === "object") {
     return collectByPolicy({ distance: row.objectDistance }, SURFACE_VALUE_SCALING_POLICY.object);

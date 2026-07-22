@@ -12,6 +12,7 @@ type ContextValue = StoreApi<GlassMapStore> | undefined;
 /** Raw context object. Use only in tests to supply a pre-built store directly via `<GlassMapStoreContext.Provider value={store}>`. */
 export const GlassMapStoreContext = createContext<ContextValue>(undefined);
 
+/** Initial state and child tree for an isolated glass-map store. */
 export interface GlassMapStoreProviderProps {
   readonly children: ReactNode;
 }

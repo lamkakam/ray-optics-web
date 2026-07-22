@@ -1,17 +1,4 @@
 "use client";
-/**
- * Describes the Decenter Modal module.
- *
- * @remarks
- * ## Internal State
- *
- * - `posAndOrientation: DecenterCoordinateSystemStrategy` — selected strategy.
- * - `alphaStr`, `betaStr`, `gammaStr`, `offsetXStr`, `offsetYStr: string` — draft strings for numeric inputs.
- *
- * ## Modal Footer
- *
- * - Close, Remove Decenter, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while decenter fields scroll.
- */
 
 import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
@@ -22,6 +9,7 @@ import { Select } from "@/shared/components/primitives/Select";
 import { type DecenterConfig } from "@/shared/lib/types/opticalModel";
 
 type DecenterCoordinateSystemStrategy = DecenterConfig["coordinateSystemStrategy"];
+/** Editable optical-surface decenter configuration. */
 export type DecenterType = DecenterConfig;
 
 interface DecenterModalProps {
@@ -62,6 +50,12 @@ const POS_AND_ORIENTATION_OPTIONS = [
  * - When `initialDecenter` is `undefined`, all fields default to `0` and strategy defaults to `"bend"`.
  * - Invalid or empty numeric strings fall back to the initial value.
  * - In `readOnly` mode, the strategy select and all numeric inputs are disabled; the footer renders only `Close`.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Close, Remove Decenter, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while decenter fields scroll.
  */
 export function DecenterModal({
   isOpen,
@@ -80,7 +74,9 @@ export function DecenterModal({
     offsetY: 0,
   };
 
+  /** Selected coordinate-system strategy. */
   const [posAndOrientation, setPosAndOrientation] = useState<DecenterCoordinateSystemStrategy>(init.coordinateSystemStrategy);
+  /** String drafts for the three angular and two positional coordinates. */
   const [alphaStr, setAlphaStr] = useState(String(init.alpha));
   const [betaStr, setBetaStr] = useState(String(init.beta));
   const [gammaStr, setGammaStr] = useState(String(init.gamma));

@@ -1,12 +1,4 @@
 "use client";
-/**
- * Describes the Focal Length Selection Modal module.
- *
- * @remarks
- * ## Modal Footer
- *
- * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while the focal-length choices scroll.
- */
 
 import { useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
@@ -34,6 +26,12 @@ interface FocalLengthSelectionModalProps {
  * - Renders a non-backdrop-dismissible `Modal` titled `Select Focal Length`.
  * - Uses shared `RadioInput` with labels like `24.376 mm`; the first choice is selected initially.
  * - `Cancel` closes without importing. `Confirm` passes the selected choice index back to the toolbar.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while the focal-length choices scroll.
  */
 export function FocalLengthSelectionModal({
   isOpen,

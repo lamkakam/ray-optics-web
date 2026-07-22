@@ -1,14 +1,3 @@
-/**
- * Describes the Opd Fan Chart module.
- *
- * @remarks
- * ## Dependencies
- *
- * - `buildOpdFanChartOption` from `./opdFanChartOption`
- * - `OpdFanData` from `@/features/analysis/types/plotData`
- * - `createAnalysisChartComponent(...)` from `../../lib/createAnalysisChartComponent`
- * - `useScreenBreakpoint` from `@/shared/hooks/useScreenBreakpoint`
- */
 import { buildOpdFanChartOption } from "./opdFanChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";

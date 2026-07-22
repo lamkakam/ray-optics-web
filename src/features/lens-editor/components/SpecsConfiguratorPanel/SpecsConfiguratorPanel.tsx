@@ -1,11 +1,4 @@
-/**
- * Describes the Specs Configurator Panel module.
- *
- * @remarks
- * ## Internal State
- *
- * - `ApertureValueInput.valueStr: string` — local string draft of `pupilValue` held by a keyed child input. The child remounts when the committed `pupilValue` changes, so no prop-sync `useEffect` is needed. The draft is committed on `blur` if it parses to a valid number; otherwise it reverts to the last committed value.
- */
+/** Specs configurator presentation and keyed aperture-draft editing behavior. */
 import React, { useState } from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { Button } from "@/shared/components/primitives/Button";
@@ -140,6 +133,7 @@ interface ApertureValueInputProps {
 }
 
 function ApertureValueInput({ pupilValue, onCommit }: ApertureValueInputProps) {
+  /** String draft committed on blur or reverted when it is not numeric. */
   const [valueStr, setValueStr] = useState(() => String(pupilValue));
 
   const handleValueBlur = () => {

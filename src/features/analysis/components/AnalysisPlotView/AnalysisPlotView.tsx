@@ -17,6 +17,7 @@ import { Select, type SelectOption } from "@/shared/components/primitives/Select
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";
 
+/** Supported analysis plot discriminator. */
 export type PlotType = "rayFan"
   | "opdFan"
   | "spotDiagram"
@@ -80,6 +81,7 @@ interface AnalysisPlotViewProps {
   readonly autoHeight?: boolean;
 }
 
+/** User-facing label and selector dependencies for one plot type. */
 export interface PlotTypeConfig {
   readonly label: string;
   readonly fieldDependent: boolean;
@@ -87,7 +89,6 @@ export interface PlotTypeConfig {
 }
 
 /**
- * Describes the Analysis Plot View module.
  *
  * @remarks
  * ## PLOT_TYPE_CONFIG

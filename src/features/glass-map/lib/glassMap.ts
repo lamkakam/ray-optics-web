@@ -19,6 +19,7 @@ import {
 } from "@/features/glass-map/types/glassMap";
 import { builtInSpecialMaterial } from "@/shared/lib/utils/specialMaterials";
 
+/** Stable display color assigned to each glass catalog. */
 export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {
   CDGM: "#3b82f6",
   Hikari: "#10b981",
@@ -30,6 +31,7 @@ export const CATALOG_COLOR_MAP: Record<CatalogName, string> = {
   Custom: "#64748b",
 };
 
+/** Fills missing catalog keys with empty objects. */
 export function completeAllCatalogsData(raw: AllGlassCatalogsData): CompleteGlassCatalogsData {
   const result = {} as Record<CatalogName, Record<string, CatalogGlassData>>;
   for (const catalogName of CATALOG_NAMES) {
@@ -45,6 +47,7 @@ function normalizeLookupKey(value: string): string {
   return value.trim().toLowerCase();
 }
 
+/** Builds case-insensitive manufacturer and medium lookup maps. */
 export function buildGlassLookupMaps(
   catalogsData: CompleteGlassCatalogsData,
 ): GlassLookupMaps {
@@ -90,6 +93,7 @@ export function buildGlassLookupMaps(
   return { manufacturerMap, mediumMap, customMediumMap };
 }
 
+/** Returns selectable glass names for one catalog. */
 export function getEligibleGlassNames(
   catalogsData: AllGlassCatalogsData,
   catalogName: CatalogName,
@@ -102,6 +106,7 @@ export function getEligibleGlassNames(
   );
 }
 
+/** Resolves a catalog glass through canonical lookup maps. */
 export function resolveCatalogGlass(
   catalogsData: CompleteGlassCatalogsData,
   lookupMaps: GlassLookupMaps,
@@ -125,6 +130,7 @@ export function resolveCatalogGlass(
   return data === undefined ? undefined : { catalogName, glassName, data };
 }
 
+/** Converts enabled catalog glasses to refractive-index or partial-dispersion plot points. */
 export function computePlotPoints(
   catalogsData: AllGlassCatalogsData,
   enabledCatalogs: Record<CatalogName, boolean>,

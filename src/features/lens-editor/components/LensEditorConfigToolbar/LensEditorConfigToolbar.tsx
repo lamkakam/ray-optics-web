@@ -1,18 +1,5 @@
 "use client";
-/**
- * Describes the Lens Editor Config Toolbar module.
- *
- * @remarks
- * ## State
- *
- * - `importErrorOpen: boolean` — controls the invalid-import `ErrorModal`.
- * - `importErrorMessage: string` — specific invalid-import message for JSON schema, TXT extension, TXT parse, or TXT schema failures.
- * - `pendingImportData: OpticalModel | undefined` — stores validated JSON or TXT-derived data awaiting confirmation.
- * - `pendingZoomImport: zoom parse result | undefined` — stores a parsed zoom TXT file while the user chooses a focal-length column.
- * - `fileInputRef: React.RefObject<HTMLInputElement>` — hidden `.json` file input triggered by `Load Config`.
- * - `photonsToPhotosFileInputRef: React.RefObject<HTMLInputElement>` — hidden `.txt` file input triggered by `Import a file from Photons to Photos`.
- * - `lookupMaps` — app-wide glass lookup maps read from `useGlassCatalogs()` and passed to Photons to Photos parsing.
- */
+/** Lens-editor JSON and Photons to Photos import/export controls. */
 
 import React, { useRef, useState } from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -61,11 +48,17 @@ export function LensEditorConfigToolbar({
   isUpdateSystemDisabled,
 }: LensEditorConfigToolbarProps) {
   const { lookupMaps } = useGlassCatalogs();
+  /** Whether the invalid-import error modal is open. */
   const [importErrorOpen, setImportErrorOpen] = useState(false);
+  /** Current JSON, extension, TXT parse, or schema error message. */
   const [importErrorMessage, setImportErrorMessage] = useState("The JSON file is invalid. Schema validation failed.");
+  /** Validated JSON or TXT model awaiting confirmation. */
   const [pendingImportData, setPendingImportData] = useState<OpticalModel | undefined>();
+  /** Parsed multi-column TXT import awaiting a focal-length choice. */
   const [pendingZoomImport, setPendingZoomImport] = useState<Extract<PhotonsToPhotosParseResult, { kind: "zoom" }> | undefined>();
+  /** Hidden JSON input activated by Load Config. */
   const fileInputRef = useRef<HTMLInputElement>(null);
+  /** Hidden TXT input activated by Import from Photons to Photos. */
   const photonsToPhotosFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = () => {

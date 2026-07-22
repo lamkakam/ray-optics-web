@@ -3,6 +3,7 @@ const LEGEND_ITEM_GAP = 16;
 const LEGEND_CHARACTER_WIDTH = 7;
 const LEGEND_EXTRA_ROW_HEIGHT = 24;
 
+/** Computed wrapped-legend rows and chart top inset. */
 export interface LegendWrapLayout {
   readonly left: number;
   readonly right: number;

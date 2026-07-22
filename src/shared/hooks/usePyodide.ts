@@ -1,31 +1,8 @@
-/**
- * `PyodideWorkerAPI` exposes `getSurfaceSemiDiameters(opticalModel): Promise<number[]>` for sequential Object-through-Image `surface_od()` values.
- *
- * @remarks
- * ## Dependencies
- *
- * - `createPyodideWorker` — function that creates the `Worker` instance.
- * - `comlink.wrap` — wraps the worker as a typed async proxy.
- * - `OpticalModel` — imported from `shared/lib/types/opticalModel` (type only).
- * - `FocusingResult` — imported from `features/lens-editor/types/focusingResult` (type only).
- * - `SeidelData` — imported from `features/lens-editor/types/seidelData` (type only).
- * - `DiffractionPsfData` — imported from `features/analysis/types/plotData` (type only).
- * - `DiffractionMtfData` — imported from `features/analysis/types/plotData` (type only).
- * - `WavefrontMapData` — imported from `features/analysis/types/plotData` (type only).
- * - `StrehlVsWavelengthData` — imported from `features/analysis/types/plotData` (type only).
- * - `GeoPsfData` — imported from `features/analysis/types/plotData` (type only).
- * - `RayFanData` — imported from `features/analysis/types/plotData` (type only).
- * - `OpdFanData` — imported from `features/analysis/types/plotData` (type only).
- * - `SpotDiagramData` — imported from `features/analysis/types/plotData` (type only).
- * - `FieldCurveData`, `AstigmatismCurveData`, and `LongitudinalSphericalAberrationData` — imported from `features/analysis/types/plotData` (type only).
- * - `ZernikeData`, `ZernikeOrdering` — imported from `features/lens-editor/types/zernikeData` (type only).
- * - `getZernikeCoefficients` keeps `ordering` as a frontend API parameter; the worker converts it to an explicit `(n, m)` term list before calling Python.
- * - `SetAutoApertureFlag` — imported from `shared/lib/utils/apertureFlag` (type only).
- * - `OptimizationConfig`, `OptimizationProgressEntry`, `OptimizationReport` — imported from `features/optimization/types/optimizationWorkerTypes` (type only).
- * - `AllGlassCatalogsData`, `UserDefinedMaterialsData`, and `UserDefinedGlassInput` — imported from `features/glass-map/types/glassMap` for catalog and user-defined glass worker APIs (type only).
- * - `ImagePoint` — imported from `shared/components/providers/ImagePointProvider` (type only). Image-point-aware APIs default to `"chief_ray"` when omitted.
- */
 "use client";
+/**
+ * React ownership of the singleton Pyodide worker, Comlink proxy, initialization
+ * promise, and progress fan-out shared by all hook instances.
+ */
 
 import { useState, useEffect, useRef } from "react";
 import { proxy as comlinkProxy, wrap } from "comlink";
@@ -47,6 +24,7 @@ import type {
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
 import { createPyodideWorker } from "@/workers/createPyodideWorker";
 
+/** Determinate worker initialization percentage and status text. */
 export interface InitProgress {
   readonly value: number;
   readonly status: string;
@@ -54,36 +32,67 @@ export interface InitProgress {
 
 type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
 
+/** Typed Comlink surface exposed by the Pyodide worker. */
 export interface PyodideWorkerAPI {
+  /** Initializes the worker and optionally reports deterministic startup milestones. */
   init(onProgress?: InitProgressCallback): Promise<void>;
+  /** Returns first-order optical data for a model. */
   getFirstOrderData(opticalModel: OpticalModel): Promise<Record<string, number>>;
+  /** Returns sequential Object-through-Image surface semi-diameters. */
   getSurfaceSemiDiameters(opticalModel: OpticalModel): Promise<number[]>;
+  /** Returns a themed base64 lens-layout image. */
   plotLensLayout(opticalModel: OpticalModel, isDark: boolean): Promise<string>;
+  /** Returns transverse ray-fan data for one field and image reference. */
   getRayFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<RayFanData>;
+  /** Returns OPD-fan data for one field and image reference. */
   getOpdFanData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<OpdFanData>;
+  /** Returns spot-diagram points for one field and image reference. */
   getSpotDiagramData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint): Promise<SpotDiagramData>;
+  /** Returns field-curvature data for one wavelength. */
   getFieldCurvatureData(opticalModel: OpticalModel, wvlIndex: number): Promise<FieldCurveData>;
+  /** Returns astigmatism data for one wavelength. */
   getAstigmatismCurveData(opticalModel: OpticalModel, wvlIndex: number): Promise<AstigmatismCurveData>;
+  /** Returns longitudinal spherical-aberration data for all wavelengths. */
   getLSAData(opticalModel: OpticalModel): Promise<LongitudinalSphericalAberrationData>;
+  /** Returns a sampled wavefront map. */
   getWavefrontData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numRays?: number): Promise<WavefrontMapData>;
+  /** Returns Strehl values sampled across wavelength. */
   getStrehlVsWavelengthData(opticalModel: OpticalModel, fieldIndex: number, imagePoint?: ImagePoint, wavelengthSamples?: number, numRays?: number): Promise<StrehlVsWavelengthData>;
+  /** Returns geometric-PSF points. */
   getGeoPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number): Promise<GeoPsfData>;
+  /** Returns a sampled diffraction-PSF grid. */
   getDiffractionPSFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionPsfData>;
+  /** Returns diffraction-MTF line data. */
   getDiffractionMTFData(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numRays?: number, maxDims?: number): Promise<DiffractionMtfData>;
+  /** Returns third-order Seidel aberration data. */
   get3rdOrderSeidelData(opticalModel: OpticalModel): Promise<SeidelData>;
+  /** Returns coefficients for an explicit frontend-selected Zernike ordering. */
   getZernikeCoefficients(opticalModel: OpticalModel, fieldIndex: number, wvlIndex: number, imagePoint?: ImagePoint, numTerms?: number, ordering?: ZernikeOrdering): Promise<ZernikeData>;
+  /** Focuses by monochromatic RMS spot radius. */
   focusByMonoRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  /** Focuses by monochromatic Strehl ratio. */
   focusByMonoStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  /** Focuses by polychromatic RMS spot radius. */
   focusByPolyRmsSpot(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  /** Focuses by polychromatic Strehl ratio. */
   focusByPolyStrehl(opticalModel: OpticalModel, fieldIndex: number): Promise<FocusingResult>;
+  /** Returns all normalized built-in glass catalogs. */
   getAllGlassCatalogsData(): Promise<AllGlassCatalogsData>;
+  /** Adds tabulated user-defined materials. */
   addUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>;
+  /** Deletes named user-defined materials. */
   deleteUserDefinedGlasses(names: readonly string[]): Promise<void>;
+  /** Replaces tabulated user-defined materials. */
   updateUserDefinedGlasses(materials: readonly UserDefinedGlassInput[]): Promise<UserDefinedMaterialsData>;
+  /** Returns named user-defined materials. */
   getUserDefinedGlasses(names: readonly string[]): Promise<UserDefinedMaterialsData>;
+  /** Reports whether shared-buffer optimization interruption is available. */
   canInterruptOptimization(): Promise<boolean>;
+  /** Signals the active optimization only when its run id matches. */
   requestOptimizationStop(runId: string): Promise<{ readonly signaled: boolean }>;
+  /** Evaluates residuals without running the optimizer. */
   evaluateOptimizationProblem(opticalModel: OpticalModel, config: OptimizationConfig, imagePoint?: ImagePoint): Promise<OptimizationReport>;
+  /** Runs optimization with optional proxied progress and per-run interruption. */
   optimizeOpm(
     opticalModel: OpticalModel,
     config: OptimizationConfig,

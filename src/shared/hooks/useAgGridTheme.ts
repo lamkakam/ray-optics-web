@@ -1,32 +1,5 @@
-/**
- * Describes the Use Ag Grid Theme module.
- *
- * @remarks
- * ## Return Value
- *
- * An AG Grid theme object — specifically `themeQuartz` composed with either `colorSchemeDark` or `colorSchemeLight` via `.withPart()`:
- *
- * ```ts
- * themeQuartz.withPart(colorSchemeDark)   // when theme === "dark"
- * themeQuartz.withPart(colorSchemeLight)  // otherwise
- * ```
- *
- * On `screenSM`, the color-scheme theme is further composed with:
- *
- * ```ts
- * .withParams({ fontSize: 16 })
- * ```
- *
- * The return type is the opaque theme object accepted by AG Grid's `theme` prop.
- *
- * ## Dependencies
- *
- * - `useMemo` from React.
- * - `useTheme` from `@/shared/components/providers/ThemeProvider`.
- * - `useScreenBreakpoint` from `@/shared/hooks/useScreenBreakpoint`.
- * - `themeQuartz`, `colorSchemeDark`, `colorSchemeLight` from `ag-grid-community`.
- */
 "use client";
+/** Responsive light/dark AG Grid theming shared by editable grids. */
 
 import { useMemo } from "react";
 import { themeQuartz, colorSchemeDark, colorSchemeLight } from "ag-grid-community";

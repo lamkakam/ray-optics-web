@@ -1,14 +1,7 @@
-/**
- * Shared type definitions for optimization variable/pickup modal helpers and fields.
- *
- * @remarks
- * ## Key Conventions
- *
- * - Runtime option arrays and source-surface option builders stay in `features/optimization/lib/modalHelpers.ts`.
- * - `ModalModeChoice` matches the values in `MODAL_MODE_OPTIONS`.
- */
+/** Mode values mirrored by `MODAL_MODE_OPTIONS`. */
 export type ModalModeChoice = "constant" | "variable" | "pickup";
 
+/** One numeric source-surface choice and its user-facing label. */
 export type SourceSurfaceSelectOption = {
   readonly value: number;
   readonly label: string;

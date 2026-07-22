@@ -1,12 +1,4 @@
 "use client";
-/**
- * Describes the Custom Glass Table module.
- *
- * @remarks
- * ## Accessibility
- * - Each row checkbox exposes `aria-label="Select {label}"`.
- * - The header checkbox exposes `aria-label="Select all custom glasses"` in tests through the AG Grid mock.
- */
 
 import { useEffect, useMemo, useRef } from "react";
 import { AgGridProvider } from "ag-grid-react";
@@ -76,6 +68,12 @@ interface CustomGlassTableProps {
  * - Persisted sort/filter state is sanitized by the store so only readonly data columns are kept; the AG Grid selection column is ignored.
  * - Wraps the grid with `import-custom-glass-touch-scroll` and component-local coarse-pointer CSS that restores horizontal and vertical touch panning plus scroll chaining for AG Grid viewports in this component only.
  * - Keeps AG Grid touch handling enabled so every resizable data-column header responds to touchscreen drags; the intentionally fixed selection column remains non-resizable.
+ *
+ *
+ *
+ * ## Accessibility
+ * - Each row checkbox exposes `aria-label="Select {label}"`.
+ * - The header checkbox exposes `aria-label="Select all custom glasses"` in tests through the AG Grid mock.
  */
 export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlassTableProps) {
   const gridTheme = useAgGridTheme();

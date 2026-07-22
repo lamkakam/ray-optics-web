@@ -28,7 +28,6 @@ interface ExampleSystemsPageProps {
 }
 
 /**
- * Describes the Example Systems Page module.
  *
  * @remarks
  * ## Behavior
@@ -50,7 +49,6 @@ interface ExampleSystemsPageProps {
  * - Keeps background apply completion attached after navigation: `applyExampleSystem()` continues computing first-order/layout/selected plot/Seidel data with the app-wide `imagePoint`, commits specs/model when ready, and clears local applying state only if the page remains mounted.
  * - Calls `onError` when the background apply promise rejects after navigation; the route is not moved back to `/example-systems`.
  */
-/** Client route component for selecting and applying bundled example optical systems. */
 export function ExampleSystemsPage({ proxy, onError }: ExampleSystemsPageProps) {
   const router = useRouter();
   const { theme } = useTheme();

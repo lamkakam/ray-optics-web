@@ -1,6 +1,5 @@
 "use client";
 /**
- * Describes the Bottom Drawer Container module.
  *
  * @remarks
  * ## Key Conventions
@@ -38,6 +37,7 @@ type PrescriptionProps = Omit<
   | "onCellEditingStopped"
 >;
 
+/** Optimization drawer lifecycle callbacks supplied by the page. */
 export interface BottomDrawerContainerProps {
   /** Controls responsive drawer behavior. */
   readonly layout: {

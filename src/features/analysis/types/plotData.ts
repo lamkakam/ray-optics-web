@@ -4,11 +4,13 @@ export interface LineAxisData {
   y: number[];
 }
 
+/** Paired pupil-coordinate and aberration samples for one fan axis. */
 export interface FanLineAxisData {
   x: number[];
   y: Array<number | undefined>;
 }
 
+/** Physical coordinate axes and normalized diffraction-PSF intensity grid. */
 export interface DiffractionPsfData {
   fieldIdx: number;
   wvlIdx: number;
@@ -20,6 +22,7 @@ export interface DiffractionPsfData {
   unitZ: string;
 }
 
+/** Measured and ideal sagittal/tangential MTF series. */
 export interface DiffractionMtfData {
   fieldIdx: number;
   wvlIdx: number;
@@ -38,6 +41,7 @@ export interface DiffractionMtfData {
   exitPupilDiameterSagittal?: number;
 }
 
+/** Physical coordinate axes and wavefront-error grid. */
 export interface WavefrontMapData {
   fieldIdx: number;
   wvlIdx: number;
@@ -49,6 +53,7 @@ export interface WavefrontMapData {
   unitZ: string;
 }
 
+/** Wavelength samples and corresponding Strehl ratios. */
 export interface StrehlVsWavelengthData {
   fieldIdx: number;
   x: number[];
@@ -57,6 +62,7 @@ export interface StrehlVsWavelengthData {
   unitY: string;
 }
 
+/** Geometric-PSF point coordinates and physical units. */
 export interface GeoPsfData {
   fieldIdx: number;
   wvlIdx: number;
@@ -66,6 +72,7 @@ export interface GeoPsfData {
   unitY: string;
 }
 
+/** One wavelength's spot-diagram point cloud. */
 export interface SpotDiagramSeriesData {
   fieldIdx: number;
   wvlIdx: number;
@@ -75,8 +82,10 @@ export interface SpotDiagramSeriesData {
   unitY: string;
 }
 
+/** All wavelength series in a spot diagram. */
 export type SpotDiagramData = SpotDiagramSeriesData[];
 
+/** Sagittal and tangential field-curvature curves. */
 export interface FieldCurveData {
   wvlIdx: number;
   Sagittal: LineAxisData;
@@ -86,6 +95,7 @@ export interface FieldCurveData {
   unitY: string;
 }
 
+/** Astigmatic-separation curve across field. */
 export interface AstigmatismCurveData {
   wvlIdx: number;
   Astigmatism: LineAxisData;
@@ -94,6 +104,7 @@ export interface AstigmatismCurveData {
   unitY: string;
 }
 
+/** One wavelength's longitudinal spherical-aberration curve. */
 export interface LongitudinalSphericalAberrationSeriesData {
   wvlIdx: number;
   LSA: LineAxisData;
@@ -101,10 +112,13 @@ export interface LongitudinalSphericalAberrationSeriesData {
   unitY: string;
 }
 
+/** All wavelength series in the longitudinal spherical-aberration view. */
 export type LongitudinalSphericalAberrationData = LongitudinalSphericalAberrationSeriesData[];
 
+/** Transverse ray-fan axis samples. */
 export type RayFanAxisData = FanLineAxisData;
 
+/** Sagittal and tangential transverse fan data for one field and wavelength. */
 export interface RayFanSeriesData {
   fieldIdx: number;
   wvlIdx: number;
@@ -114,10 +128,13 @@ export interface RayFanSeriesData {
   unitY: string;
 }
 
+/** All transverse ray-fan series. */
 export type RayFanData = RayFanSeriesData[];
 
+/** OPD-fan axis samples. */
 export type OpdFanAxisData = FanLineAxisData;
 
+/** Sagittal and tangential OPD fan data for one field and wavelength. */
 export interface OpdFanSeriesData {
   fieldIdx: number;
   wvlIdx: number;
@@ -127,4 +144,5 @@ export interface OpdFanSeriesData {
   unitY: string;
 }
 
+/** All OPD-fan series. */
 export type OpdFanData = OpdFanSeriesData[];

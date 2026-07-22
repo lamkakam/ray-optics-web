@@ -1,12 +1,4 @@
 "use client";
-/**
- * Confirmation modal used before loading an example optical system.
- *
- * @remarks
- * ## Modal Footer
- *
- * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
- */
 
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Button } from "@/shared/components/primitives/Button";
@@ -21,6 +13,13 @@ interface ConfirmOverwriteModalProps {
   readonly onCancel: () => void;
 }
 
+/**
+ * Confirmation modal used before loading an example optical system.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Load actions are passed to `Modal.footer` so they remain fixed outside the message body.
+ */
 export function ConfirmOverwriteModal({ isOpen, onConfirm, onCancel }: ConfirmOverwriteModalProps) {
   return (
     <Modal

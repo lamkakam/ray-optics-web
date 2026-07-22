@@ -3,6 +3,7 @@ import React from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
+/** Supported semantic heading levels. */
 export type HeaderLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface HeaderProps extends React.HTMLAttributes<HTMLHeadingElement> {

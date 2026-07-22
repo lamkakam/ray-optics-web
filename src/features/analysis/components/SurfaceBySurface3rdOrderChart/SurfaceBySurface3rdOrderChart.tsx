@@ -1,13 +1,3 @@
-/**
- * Describes the Surface By Surface3rd Order Chart module.
- *
- * @remarks
- * ## Data Shape
- *
- * - `surfaceBySurface3rdOrderData.aberrTypes` provides the five legend/series names.
- * - `surfaceBySurface3rdOrderData.surfaceLabels` provides the x-axis categories.
- * - `surfaceBySurface3rdOrderData.data[rowIdx]` provides one bar series per Seidel aberration type.
- */
 import { buildSurfaceBySurface3rdOrderChartOption } from "./surfaceBySurface3rdOrderChartOption";
 import { createAnalysisChartComponent } from "@/features/analysis/lib/createAnalysisChartComponent";
 import type { SeidelSurfaceBySurfaceData } from "@/features/lens-editor/types/seidelData";

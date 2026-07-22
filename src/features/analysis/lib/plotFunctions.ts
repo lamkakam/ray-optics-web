@@ -1,22 +1,6 @@
 /**
- * Shared utility that maps `PlotType` values to Pyodide worker proxy calls and commits typed plot load results into the analysis plot store. Eliminates duplication between `LensEditor.tsx`, `applyExampleSystem.ts`, and `AnalysisPlotContainer.tsx`.
- *
- * @remarks
- * ## Dependencies
- *
- * - `OpticalModel` (type-only) from `@/shared/lib/types/opticalModel`
- * - `PlotType` (type-only) from `@/features/analysis/components`
- * - `RayFanData`, `FieldCurveData`, `AstigmatismCurveData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`
- * - `SeidelSurfaceBySurfaceData` (type-only) from `@/features/lens-editor/types/seidelData`
- * - `PyodideWorkerAPI` (type-only) from `@/shared/hooks/usePyodide`
- * - `StoreApi` (type-only) from `zustand`
- * - `AnalysisPlotState` (type-only) from `@/features/analysis/stores/analysisPlotStore`
- *
- * - Used in `LensEditor.tsx` after "Update System" completes.
- * - Used in `applyExampleSystem.ts` after bundled example-system computation completes.
- * - Used in `AnalysisPlotContainer.tsx` when field/wavelength/plot-type changes.
- * - `loadAnalysisPlot(...)` is the preferred API for any code path that needs the correct worker call for every `PlotType`.
- * - `commitAnalysisPlotResult(...)` is the preferred API for storing every plot-store-backed `AnalysisPlotLoadResult`.
+ * Central plot-type dispatch and typed result commits shared by editor submission,
+ * example-system application, and interactive analysis-panel changes.
  */
 import type { StoreApi } from "zustand";
 import type { PlotType } from "@/features/analysis/components";

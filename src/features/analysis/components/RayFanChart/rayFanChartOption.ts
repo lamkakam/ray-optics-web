@@ -1,15 +1,3 @@
-/**
- * Describes the Ray Fan Chart Option module.
- *
- * @remarks
- * ## Output Shape
- *
- * - `title`: two subplot titles
- * - `grid`: two plotting regions
- * - `xAxis`: paired `value` axes labeled `Pupil Radius (Relative)`
- * - `yAxis`: paired `value` axes, with the first labeled `Transverse Aberr. (...)` and the second left unlabeled
- * - `series`: two line series per wavelength, tangential first then sagittal
- */
 import * as echarts from "echarts/core";
 import { LineChart } from "echarts/charts";
 import { GridComponent, LegendComponent, TitleComponent, TooltipComponent } from "echarts/components";
@@ -188,6 +176,16 @@ function getAxisExtents(rayFanData: RayFanData): RayFanAxisExtents {
  * - Rounds computed axis min/max extents with the shared analysis plot-value formatter before assigning them to subplots, including clamping magnitudes smaller than `1e-9` to `0`.
  * - Falls back to `[-1e-6, 1e-6]` for a subplot's y-axis extent when that subplot has no finite y values or only one constant finite y value.
  * - Labels only the first y-axis. `arcsec` payloads use `Angular Aberr. (arcsec)`; finite transverse payloads retain `Transverse Aberr. (${unitY})`.
+ *
+ *
+ *
+ * ## Output Shape
+ *
+ * - `title`: two subplot titles
+ * - `grid`: two plotting regions
+ * - `xAxis`: paired `value` axes labeled `Pupil Radius (Relative)`
+ * - `yAxis`: paired `value` axes, with the first labeled `Transverse Aberr. (...)` and the second left unlabeled
+ * - `series`: two line series per wavelength, tangential first then sagittal
  */
 export function buildRayFanChartOption(
   rayFanData: RayFanData,

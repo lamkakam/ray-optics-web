@@ -1,18 +1,4 @@
 "use client";
-/**
- * Describes the Image Reference Panel module.
- *
- * @remarks
- * ## Behaviour
- *
- * - Reads `imagePoint` and `setImagePoint` from `ImagePointProvider`.
- * - Renders one `Select` labeled `Image point`.
- * - Offers exactly two options:
- * - `"chief_ray"` — `Chief ray`
- * - `"centroid"` — `Centroid`
- * - Calls `setImagePoint(...)` only when the selected option differs from the current value.
- * - Does not own persistence; persistence remains handled by `ImagePointProvider`.
- */
 
 import React from "react";
 import { type ImagePoint, useImagePoint } from "@/shared/components/providers/ImagePointProvider";
@@ -29,6 +15,18 @@ const imagePointOptions: ReadonlyArray<{ value: ImagePoint; label: string }> = [
  *
  * @remarks
  * Rendered as the `Image Reference` tab in `BottomDrawerContainer`.
+ *
+ *
+ *
+ * ## Behaviour
+ *
+ * - Reads `imagePoint` and `setImagePoint` from `ImagePointProvider`.
+ * - Renders one `Select` labeled `Image point`.
+ * - Offers exactly two options:
+ * - `"chief_ray"` — `Chief ray`
+ * - `"centroid"` — `Centroid`
+ * - Calls `setImagePoint(...)` only when the selected option differs from the current value.
+ * - Does not own persistence; persistence remains handled by `ImagePointProvider`.
  */
 export function ImageReferencePanel() {
   const { imagePoint, setImagePoint } = useImagePoint();

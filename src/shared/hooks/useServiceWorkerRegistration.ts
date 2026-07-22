@@ -1,5 +1,4 @@
 /**
- * Describes the Use Service Worker Registration module.
  *
  * @remarks
  * ## Dependencies
@@ -11,7 +10,6 @@
 import { useEffect } from "react";
 
 /**
- * Describes the Use Service Worker Registration module.
  *
  * @remarks
  * ### `registerServiceWorker()`

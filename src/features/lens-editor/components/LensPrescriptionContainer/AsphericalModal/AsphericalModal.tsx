@@ -1,19 +1,4 @@
 "use client";
-/**
- * Describes the Aspherical Modal module.
- *
- * @remarks
- * ## Internal State
- *
- * - `conicConstantStr: string` — draft string for conic constant input.
- * - `type: AsphericalType` — selected type.
- * - `toricSweepRadiusOfCurvatureStr: string` — draft string for the toroid sweep radius input.
- * - `coefficientStrs: string[]` — draft strings for all 10 coefficient inputs.
- *
- * ## Modal Footer
- *
- * - Close, Remove Aspherical, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while aspherical fields scroll.
- */
 
 import React, { useState } from "react";
 import { MathJax } from "better-react-mathjax";
@@ -263,6 +248,12 @@ const contentMap: {
  * - Coefficients array is padded to length 10 on initialization.
  * - Uses `<MathJax>` for the sag formula and coefficient labels; `MathJaxContext` is provided by the ancestor (`page.tsx`).
  * - In `readOnly` mode, the type selector and all numeric inputs are disabled; `Remove Aspherical`, `Cancel`, and `Confirm` are replaced by a single `Close` button.
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - Close, Remove Aspherical, Cancel, and Confirm actions are passed to `Modal.footer` so they remain fixed while aspherical fields scroll.
  */
 export function AsphericalModal({
   isOpen,
@@ -275,11 +266,15 @@ export function AsphericalModal({
   onClose,
   onRemove,
 }: AsphericalModalProps) {
+  /** String draft of the conic constant. */
   const [conicConstantStr, setConicConstantStr] = useState(String(initialConicConstant));
+  /** Selected aspherical surface representation. */
   const [type, setType] = useState<AsphericalType>(initialType);
+  /** String draft of the toroidal sweep radius. */
   const [toricSweepRadiusOfCurvatureStr, setToricSweepRadiusOfCurvatureStr] = useState(
     String(initialToricSweepRadiusOfCurvature)
   );
+  /** String drafts for all ten polynomial coefficients. */
   const [coefficientStrs, setCoefficientStrs] = useState<string[]>(() =>
     padCoefficients(initialCoefficients)
   );

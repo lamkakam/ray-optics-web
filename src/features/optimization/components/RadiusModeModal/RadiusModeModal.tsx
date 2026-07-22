@@ -1,12 +1,4 @@
 "use client";
-/**
- * Renders the radius variable/pickup modal with modal-local draft state.
- *
- * @remarks
- * ## Modal Footer
- *
- * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while radius mode controls scroll.
- */
 
 import React from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -41,7 +33,6 @@ interface RadiusModeModalProps {
 }
 
 /**
- * Describes the Radius Mode Modal module.
  *
  * @remarks
  * ## Behavior
@@ -59,6 +50,13 @@ interface RadiusModeModalProps {
  * - Commits the latest draft through `onSetMode(surfaceIndex, draft)` only when the user presses `Confirm`.
  * - Clicking or touching outside the modal does not close it.
  * - Pressing `Escape` does not close it.
+ *
+ *
+ * Renders the radius variable/pickup modal with modal-local draft state.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Confirm actions are passed to `Modal.footer` so they remain fixed while radius mode controls scroll.
  */
 export function RadiusModeModal({
   isOpen,

@@ -1,13 +1,4 @@
-/**
- * Describes the Zernike Data module.
- *
- * @remarks
- * ## Notes
- *
- * - `ZernikeData` is the return type of `getZernikeCoefficients` in the worker API.
- * - Runtime constants and helpers are defined in `features/lens-editor/lib/zernikeData.ts`.
- */
-/** TypeScript types for Zernike coefficient data exchanged between the lens editor UI and Pyodide worker. */
+/** Zernike coefficient payload returned by the worker API. */
 export interface ZernikeData {
   readonly coefficients: readonly number[];
   readonly rms_normalized_coefficients: readonly number[];
@@ -19,4 +10,5 @@ export interface ZernikeData {
   readonly wavelength_nm: number;
 }
 
+/** Frontend-selected coefficient indexing convention. */
 export type ZernikeOrdering = "noll" | "fringe";

@@ -9,6 +9,7 @@
  */
 import type React from "react";
 
+/** Shared bounded or unbounded variable-field props. */
 export interface VariableModeFieldsProps {
   readonly idPrefix: string;
   readonly minLabel?: string;
@@ -27,6 +28,7 @@ export interface VariableModeFieldsProps {
   readonly errorTextClassName?: string;
 }
 
+/** Component contract for rendering optimization variable fields. */
 export interface VariableModeFieldsRenderer {
   readonly Component: (props: VariableModeFieldsProps) => React.JSX.Element;
 }

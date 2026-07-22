@@ -16,9 +16,6 @@
  * - `OffsetCircular` is required only when a circular aperture offset is nonzero. `Annular` is required when a clear aperture has `shape: "annular"`. `OffsetRotatedRectangular` is required when a clear or edge aperture has `shape: "rectangular"`. Worker scripts get these helpers from `rayoptics_web_utils.aperture`; export scripts define them inline from the generated TypeScript string so copied notebook code remains standalone without installing `rayoptics_web_utils`.
  * - The generated helper block is expected to match the concatenation of `annular.py`, `offset_circular.py`, and `offset_rotated_rectangular.py` in that order, separated by a single newline. NPM lifecycle scripts regenerate the ignored TypeScript output before install/check/test/build commands, and the Jest tests keep the export behavior pinned to the Python sources.
  * - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.
- *
- * - `buildScript` is called by `workers/pyodide.worker.ts` to produce combined model + computation Python code.
- * - `buildExportScript` is called by "Export to notebook" UI action to generate copyable snippets.
  */
 
 import type { OpticalModel, AsphericalPolynomialCoeffs, ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalModel";
@@ -357,7 +354,6 @@ d263teco = create_glass(d263teco_url, "rindexinfo")
 }
 
 /**
- * Describes the Python Script module.
  *
  * @remarks
  * ### `buildOpticalModelScript(model)`
@@ -403,11 +399,6 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
 }
 
 /**
- * Describes the Python Script module.
- *
- * @remarks
- * ### `buildScript(model, computation)`
- *
  * Combines the model-build script with a computation into a single Python string suitable for a single `runPythonAsync` call. The model-build code is wrapped in a `def _build_opm():` function so that `opm`, `sm`, `osp`, and `pm` are local variables rather than globals. `buildScript` calls `computation("_build_opm()")`, injecting the expression token so the computation can reference the model inline without hardcoding the function name. Example output:
  *
  * ```python
@@ -434,11 +425,6 @@ export function buildScript(
 }
 
 /**
- * Describes the Python Script module.
- *
- * @remarks
- * ### `buildExportScript(model)`
- *
  * Returns a string with:
  * > **Warning**: Not for execution inside the Pyodide worker. This script is intended for copy-paste into a Jupyter / RayOptics notebook environment.
  *

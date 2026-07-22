@@ -2119,6 +2119,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
 
 
 
+/** Canonical bundled example optical models keyed by display name. */
 export const ExampleSystemList = {
   "Sasian Triplet": SasianTriplet,
   "Newtonian Reflector with Optical Window": ReflectorWithOpticalWindow,
@@ -2145,4 +2146,5 @@ export const ExampleSystemList = {
   "Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)": superachromaticAirMicroscopeObjective,
 } as const satisfies { [key: string]: OpticalModel };
 
+/** Canonical bundled example-system name. */
 export type ExampleSystemName = keyof typeof ExampleSystemList;

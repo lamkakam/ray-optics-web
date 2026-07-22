@@ -1,16 +1,4 @@
-/**
- * Describes the Apply Optimization Model To Editor module.
- *
- * @remarks
- * ## Behavior
- *
- * - `applyOptimizationModelToEditor({ model, lensStore, specsStore, proxy })` fetches and validates fresh auto-aperture semi-diameters before atomically writing editor state. Manual models bypass extraction and clear the cache; fetch failures leave the editor unchanged.
- *
- * ## Consumers
- *
- * - `features/optimization/OptimizationPage.tsx`
- * - `app/AppShell.tsx`
- */
+/** Shared editor-application path used by the Optimization page and guarded app navigation. */
 import type { StoreApi } from "zustand";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import type { SpecsConfiguratorState } from "@/features/lens-editor/stores/specsConfiguratorStore";

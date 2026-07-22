@@ -9,8 +9,10 @@ import {
 
 type ContextValue = StoreApi<OptimizationState> | undefined;
 
+/** Optional optimization store context used to detect a missing provider. */
 export const OptimizationStoreContext = createContext<ContextValue>(undefined);
 
+/** Child tree for an isolated optimization store. */
 export interface OptimizationStoreProviderProps {
   readonly children: ReactNode;
 }
@@ -39,6 +41,7 @@ export function OptimizationStoreProvider({
   );
 }
 
+/** Returns the optimization store or throws when no provider is mounted. */
 export function useOptimizationStore(): StoreApi<OptimizationState> {
   const store = useContext(OptimizationStoreContext);
   if (store === undefined) {

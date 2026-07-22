@@ -1,24 +1,4 @@
 "use client";
-/**
- * Describes the Focusing Container module.
- *
- * @remarks
- * ## Internal State
- *
- * - `chromaticity: "mono" | "poly"` (default `"mono"`)
- * - `metric: "rmsSpot" | "wavefront"` (default `"rmsSpot"`)
- * - `fieldIndex: number` (default `0`)
- * - `focusing: boolean` (default `false`)
- *
- * ## Rendering
- *
- * ```tsx
- * <div className="relative p-4">
- * {focusing && <LoadingOverlay title="Focusing…" contents="Optimizing image plane position…" />}
- * <FocusingPanel ... />
- * </div>
- * ```
- */
 
 import { useState, useMemo } from "react";
 import { useStore } from "zustand";
@@ -64,6 +44,17 @@ interface FocusingContainerProps {
  * `fieldOptions` are derived reactively from `useSpecsConfiguratorStore` and Zustand's `useStore` (subscribes to `relativeFields`, `maxField`, `fieldType`). This means the Field dropdown updates immediately when field configuration changes in `specsStore`, even before the user clicks "Update System".
  *
  * Instantiated in `BottomDrawerContainer.tsx` as the "Focusing" tab content.
+ *
+ *
+ *
+ * ## Rendering
+ *
+ * ```tsx
+ * <div className="relative p-4">
+ * {focusing && <LoadingOverlay title="Focusing…" contents="Optimizing image plane position…" />}
+ * <FocusingPanel ... />
+ * </div>
+ * ```
  */
 export function FocusingContainer({
   proxy,
@@ -74,9 +65,13 @@ export function FocusingContainer({
   onError,
 }: FocusingContainerProps) {
   const lensStore = useLensEditorStore();
+  /** Monochromatic or polychromatic focus mode. */
   const [chromaticity, setChromaticity] = useState<Chromaticity>("mono");
+  /** RMS-spot or wavefront focus metric. */
   const [metric, setMetric] = useState<Metric>("rmsSpot");
+  /** Selected field index for the focusing operation. */
   const [fieldIndex, setFieldIndex] = useState(0);
+  /** Whether a focusing worker call is in progress. */
   const [focusing, setFocusing] = useState(false);
 
   const specsStore = useSpecsConfiguratorStore();

@@ -30,11 +30,13 @@ import {
 } from "@/shared/lib/lens-prescription-grid/LensPrescriptionGridCells";
 import { formatApertureLabel } from "@/shared/lib/lens-prescription-grid/displayLabels";
 
+/** Shared resizable, non-sortable prescription grid defaults. */
 export const lensPrescriptionGridDefaultColDef = {
   sortable: false,
   suppressMovable: true,
 } satisfies ColDef;
 
+/** Canonical widths for prescription-grid columns. */
 export const LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS = {
   surface: 85,
   index: 80,
@@ -48,6 +50,7 @@ export const LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS = {
   diffractionGrating: 165,
 } as const;
 
+/** Pinned row-index column shared by prescription grids. */
 export const lensPrescriptionGridIndexColumnDef = {
   headerName: "Index",
   width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.index,
@@ -56,6 +59,7 @@ export const lensPrescriptionGridIndexColumnDef = {
 
 const VALID_NUMBER = /^-?\d+(\.\d+)?([eE][+-]?\d+)?$/;
 
+/** Parses a finite numeric edit and otherwise preserves the old value. */
 export function numberValueParser(params: { readonly newValue: string; readonly oldValue: unknown }) {
   const raw = String(params.newValue ?? "").trim();
   if (raw === "" || !VALID_NUMBER.test(raw)) return params.oldValue;
@@ -113,6 +117,7 @@ interface DiffractionGratingColumnOptions<TData> extends BaseColumnOptions<TData
   readonly tooltipText?: string;
 }
 
+/** Creates the shared surface-label column. */
 export function createSurfaceColumn<TData>({
   getGridRow,
   onSurfaceLabelChange,
@@ -141,6 +146,7 @@ export function createSurfaceColumn<TData>({
   };
 }
 
+/** Creates the editable or mode-aware radius column. */
 export function createRadiusOfCurvatureColumn<TData>({
   getGridRow,
   onRadiusChange,
@@ -167,6 +173,7 @@ export function createRadiusOfCurvatureColumn<TData>({
   };
 }
 
+/** Creates the editable or mode-aware thickness column. */
 export function createThicknessColumn<TData>({
   getGridRow,
   onThicknessChange,
@@ -194,6 +201,7 @@ export function createThicknessColumn<TData>({
   };
 }
 
+/** Creates the medium display/action column. */
 export function createMediumColumn<TData>({
   getGridRow,
   onOpenMediumModal,
@@ -225,6 +233,7 @@ export function createMediumColumn<TData>({
   };
 }
 
+/** Creates the semi-diameter column with auto-aperture presentation. */
 export function createSemiDiameterColumn<TData>({
   getGridRow,
   semiDiameterReadonly = false,
@@ -266,6 +275,7 @@ export function createSemiDiameterColumn<TData>({
   };
 }
 
+/** Creates the clear/edge aperture display/action column. */
 export function createApertureColumn<TData>({
   getGridRow,
   onOpenApertureModal,
@@ -298,6 +308,7 @@ export function createApertureColumn<TData>({
   };
 }
 
+/** Creates the asphere display/action column. */
 export function createAsphericalColumn<TData>({
   getGridRow,
   onOpenAsphericalModal,
@@ -329,6 +340,7 @@ export function createAsphericalColumn<TData>({
   };
 }
 
+/** Creates the decenter display/action column. */
 export function createDecenterColumn<TData>({
   getGridRow,
   onOpenDecenterModal,
@@ -360,6 +372,7 @@ export function createDecenterColumn<TData>({
   };
 }
 
+/** Creates the diffraction-grating display/action column. */
 export function createDiffractionGratingColumn<TData>({
   getGridRow,
   onOpenDiffractionGratingModal,
@@ -402,6 +415,7 @@ interface CommonColumnOptions<TData>
     DecenterColumnOptions<TData>,
     DiffractionGratingColumnOptions<TData> {}
 
+/** Creates the complete shared prescription-column set for a grid consumer. */
 export function createLensPrescriptionCommonColumns<TData>(
   options: CommonColumnOptions<TData>,
 ): ColDef<TData>[] {

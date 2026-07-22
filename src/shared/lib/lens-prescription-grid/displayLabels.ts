@@ -8,8 +8,10 @@ import type {
   Surface,
 } from "@/shared/lib/types/opticalModel";
 
+/** Display label for an unset optional prescription value. */
 export const EMPTY_LENS_PRESCRIPTION_CELL_LABEL = "None";
 
+/** User-facing labels keyed by aspherical kind. */
 export const ASPHERICAL_TYPE_LABELS = {
   Conic: "Conic",
   EvenAspherical: "Even Aspherical",
@@ -18,19 +20,23 @@ export const ASPHERICAL_TYPE_LABELS = {
   YToroid: "Y Toroid",
 } satisfies Record<AsphericalType, string>;
 
+/** Select options derived from the canonical asphere labels. */
 export const ASPHERICAL_TYPE_OPTIONS = Object.entries(ASPHERICAL_TYPE_LABELS).map(([value, label]) => ({
   value: value as AsphericalType,
   label,
 }));
 
+/** Formats an optional asphere for a grid cell. */
 export function formatAsphericalLabel(aspherical: Surface["aspherical"] | undefined): string {
   return aspherical === undefined ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL : ASPHERICAL_TYPE_LABELS[aspherical.kind];
 }
 
+/** Formats an optional decenter strategy for a grid cell. */
 export function formatDecenterLabel(decenter: DecenterConfig | undefined): string {
   return decenter === undefined ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL : decenter.coordinateSystemStrategy;
 }
 
+/** Formats optional grating density for a grid cell. */
 export function formatDiffractionGratingLabel(diffractionGrating: DiffractionGrating | undefined): string {
   return diffractionGrating === undefined
     ? EMPTY_LENS_PRESCRIPTION_CELL_LABEL
@@ -78,6 +84,7 @@ function formatEdgeApertureLabel(edgeAperture: EdgeAperture): string {
   return hasOffset(edgeAperture) ? `${baseLabel}, ${formatOffset(edgeAperture)}` : baseLabel;
 }
 
+/** Formats clear and edge aperture shapes and dimensions for a grid cell. */
 export function formatApertureLabel(
   clearAperture: ClearAperture | undefined,
   edgeAperture: EdgeAperture | undefined,

@@ -1,16 +1,4 @@
 "use client";
-/**
- * Describes the Python Script Modal module.
- *
- * @remarks
- * ## Internal State
- *
- * - `copied: boolean` — `true` for 2 seconds after a successful clipboard write, then reset to `false`.
- *
- * ## Modal Footer
- *
- * - The Ok action is passed to `Modal.footer` so it remains fixed while script content scrolls.
- */
 
 import { useState } from "react";
 import { Modal } from "@/shared/components/primitives/Modal";
@@ -35,8 +23,15 @@ interface PythonScriptModalProps {
  * - Script is displayed in a `<pre><code>` block with `max-h-[60vh]` overflow scroll.
  * - Copy button uses `variant="floating"` positioned at top-right of the code block.
  * - `script` is computed lazily by the caller only when `isOpen` is `true` (performance optimization).
+ *
+ *
+ *
+ * ## Modal Footer
+ *
+ * - The Ok action is passed to `Modal.footer` so it remains fixed while script content scrolls.
  */
 export function PythonScriptModal({ isOpen, script, onClose }: PythonScriptModalProps) {
+  /** Whether the transient successful-copy confirmation is visible. */
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {

@@ -1,33 +1,31 @@
 "use client";
-/**
- * Describes the Image Point Provider module.
- *
- * @remarks
- * ## API
- *
- * - `ImagePoint` is `"chief_ray" | "centroid"`.
- * - `ImagePointProvider` initializes from `localStorage` key `ray-optics-web-image-point`, falling back to the legacy `ray-optics-web-opd-aim-point` key for migration.
- * - `useImagePoint()` returns `{ imagePoint, setImagePoint }`.
- */
+/** App-wide image-reference selection and its persistent browser-storage contract. */
 
 import React, { createContext, useCallback, useContext, useState } from "react";
 
+/** Reference point used by spot, wavefront-like, and OPD-related analyses. */
 export type ImagePoint = "chief_ray" | "centroid";
 
 interface ImagePointContextValue {
+  /** Currently selected analysis reference point. */
   readonly imagePoint: ImagePoint;
+  /** Validates, stores, and persists a new analysis reference point. */
   readonly setImagePoint: (newImagePoint: ImagePoint) => void;
 }
 
 const ImagePointContext = createContext<ImagePointContextValue | undefined>(undefined);
 
+/** Current browser-storage key for the image-reference preference. */
 const STORAGE_KEY = "ray-optics-web-image-point";
+/** Previous browser-storage key read once for preference migration. */
 const LEGACY_STORAGE_KEY = "ray-optics-web-opd-aim-point";
 
+/** Checks whether an unknown persisted value is a supported image reference. */
 function isImagePoint(value: unknown): value is ImagePoint {
   return value === "chief_ray" || value === "centroid";
 }
 
+/** Reads the persisted preference, including the legacy-key fallback. */
 function getInitialImagePoint(): ImagePoint {
   if (typeof window === "undefined") return "chief_ray";
 
@@ -61,6 +59,11 @@ export function ImagePointProvider({ children }: { readonly children: React.Reac
   );
 }
 
+/**
+ * Reads the app-wide image-reference state and updater.
+ *
+ * @throws When called outside an {@link ImagePointProvider}.
+ */
 export function useImagePoint(): ImagePointContextValue {
   const ctx = useContext(ImagePointContext);
   if (ctx === undefined) {

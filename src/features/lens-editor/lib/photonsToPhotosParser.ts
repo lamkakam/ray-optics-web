@@ -1,44 +1,15 @@
-/**
- * Describes the Photons To Photos Parser module.
- *
- * @remarks
- * ## API
- *
- * - `parsePhotonsToPhotosText(text, lookupMaps?)` returns either:
- * - `{ kind: "prime", model }` for single-focal-length files.
- * - `{ kind: "zoom", focalLengthChoices, resolve }` for multi-column zoom files; `resolve(choiceIndex)` builds the selected focal-length `OpticalModel`.
- *
- * ## Parsing Rules
- *
- * - Required sections are `[descriptive data]`, `[variable distances]`, and `[lens data]`; `[constants]` and `[aspherical data]` are optional. `[figure]` and `[notes]` are ignored.
- * - `Infinity`, `CG`, and `FS` radii become flat default surfaces (`curvatureRadius: 0`). `AS` radii become flat aperture-stop surfaces. `Infinity` object distances and apertures become `1e10`.
- * - `[lens data]` material columns are interpreted by tab-delimited position: cell 4 (`row[3]`) is refractive index `nd`, cell 6 (`row[5]`) is Abbe number `vd`, cell 7 (`row[6]`) is the material/glass label, and cell 8 (`row[7]`) is the catalog/manufacturer label.
- * - Lens-data aperture values become `semiDiameter = aperture / 2`.
- * - Rows with `AS` radius are aperture stops (`label: "Stop"`). Rows with `FS` radius are flat non-stop surfaces (`label: "Default"`).
- * - Glass name/catalog columns take precedence. When lookup maps are provided, special media and catalog glasses resolve case-insensitively to canonical app names. Special media `CaF2`, `Fused silica`, and `Water` use an empty manufacturer, and `fluorite` / `fluorspar` resolve to `CaF2`.
- * - User-defined custom glass resolves case-insensitively from the cell 7 material/glass label only. The cell 8 catalog/manufacturer label is ignored for this custom-glass import path, so blank, wrong, or mismatched catalog cells still resolve to the canonical stored custom label with `manufacturer: "Custom"`; Python script export then emits `user_defined_materials["<label>"]`.
- * - Unsupported named glasses never import the literal glass name as the medium. After lookup failure, with or without lookup maps, parser falls back to model-glass data: `nd` becomes `medium`, `vd` becomes `manufacturer`, blank `vd` becomes an empty manufacturer, and blank `nd` maps to air with an empty manufacturer.
- * - Without glass names, the same model-glass fallback is used: `nd` and `vd` are preserved as string `medium` and `manufacturer`; blank material data maps to air.
- * - Variable thickness tokens such as `Bf`, `d5`, and `d12` resolve from the selected variable-distance column.
- * - Object distance normally comes from variable distance `d0` and uses air with an empty manufacturer. When `d0` resolves to `0`, the object is derived from the first parsed surface with non-zero `thickness`: `distance` copies that surface thickness, and `medium` / `manufacturer` copy the already resolved surface material, including unsupported-name model-glass fallback. That source surface and every surface before it are removed from imported `surfaces`. If every parsed surface has zero thickness, the object falls back to `{ distance: 0, medium: "air", manufacturer: "" }` and no surfaces are removed.
- * - `[aspherical data]` rows attach `EvenAspherical` configs to matching surfaces and reject radius disagreement beyond a small tolerance.
- * - Imported specs use Fraunhofer d/F/C wavelengths, field samples `[0, 0.707, 1]`, and `setAutoAperture: "manualAperture"`.
- * - When `F-Number` is present, imported pupil specs use image-space `f/#`. When `F-Number` is absent, `NA` is required and imported pupil specs use object-space `NA`.
- * - When `Angle of View` is present, it is the full angle of view; imported `specs.field.maxField` is the app Field half-angle (`Angle of View / 2`). `isWideAngle` still uses the original full angle of view and is true when that value is at least 80 degrees.
- * - When `Angle of View` is absent, `Image Height` is required and imported field specs use image-space height with `maxField = Image Height / 2`. For this fallback, `isWideAngle` is true when the imported pupil is `NA >= 0.5`; otherwise it is false.
- *
- * ## Tests
- *
- * Covered by `photonsToPhotosParser.test.ts` with prime, microscope NA/Image Height fallback, flat `FS` rows, glass, case-insensitive lookup resolution, custom glass label-only lookup, special material aliases, unsupported named-glass fallback, fisheye stop, zoom column selection, unresolved variables, missing sections, and aspherical radius disagreement.
- */
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { OpticalModel, OpticalSpecs, Surface } from "@/shared/lib/types/opticalModel";
 
+/** Selectable focal-length column discovered in a zoom prescription. */
 export interface PhotonsToPhotosFocalLengthChoice {
+  /** Zero-based variable-distance column index. */
   readonly index: number;
+  /** Focal length reported for the column. */
   readonly focalLength: number;
 }
 
+/** Prime model or deferred zoom-column resolver produced by TXT parsing. */
 export type PhotonsToPhotosParseResult =
   | { readonly kind: "prime"; readonly model: OpticalModel }
   | {
@@ -78,7 +49,40 @@ const REQUIRED_SECTIONS: readonly SectionName[] = ["descriptive data", "variable
 const IGNORED_SECTIONS = new Set<SectionName>(["figure", "notes"]);
 const RADIUS_TOLERANCE = 1e-6;
 
-/** Parses Photons to Photos lens prescription `.txt` files into app `OpticalModel` data for import. */
+/**
+ * Parses a Photons to Photos lens prescription into importable optical-model data.
+ *
+ * @param text - Complete tab-delimited prescription text.
+ * @param lookupMaps - Optional canonical catalog and custom-glass lookup maps.
+ * @returns A prime model, or focal-length choices with a resolver for a zoom model.
+ * @throws When required sections or values are missing, variables cannot be resolved,
+ * or aspherical rows disagree with their corresponding lens rows.
+ *
+ *
+ *
+ * ## Parsing Rules
+ *
+ * - Required sections are `[descriptive data]`, `[variable distances]`, and `[lens data]`; `[constants]` and `[aspherical data]` are optional. `[figure]` and `[notes]` are ignored.
+ * - `Infinity`, `CG`, and `FS` radii become flat default surfaces (`curvatureRadius: 0`). `AS` radii become flat aperture-stop surfaces. `Infinity` object distances and apertures become `1e10`.
+ * - `[lens data]` material columns are interpreted by tab-delimited position: cell 4 (`row[3]`) is refractive index `nd`, cell 6 (`row[5]`) is Abbe number `vd`, cell 7 (`row[6]`) is the material/glass label, and cell 8 (`row[7]`) is the catalog/manufacturer label.
+ * - Lens-data aperture values become `semiDiameter = aperture / 2`.
+ * - Rows with `AS` radius are aperture stops (`label: "Stop"`). Rows with `FS` radius are flat non-stop surfaces (`label: "Default"`).
+ * - Glass name/catalog columns take precedence. When lookup maps are provided, special media and catalog glasses resolve case-insensitively to canonical app names. Special media `CaF2`, `Fused silica`, and `Water` use an empty manufacturer, and `fluorite` / `fluorspar` resolve to `CaF2`.
+ * - User-defined custom glass resolves case-insensitively from the cell 7 material/glass label only. The cell 8 catalog/manufacturer label is ignored for this custom-glass import path, so blank, wrong, or mismatched catalog cells still resolve to the canonical stored custom label with `manufacturer: "Custom"`; Python script export then emits `user_defined_materials["<label>"]`.
+ * - Unsupported named glasses never import the literal glass name as the medium. After lookup failure, with or without lookup maps, parser falls back to model-glass data: `nd` becomes `medium`, `vd` becomes `manufacturer`, blank `vd` becomes an empty manufacturer, and blank `nd` maps to air with an empty manufacturer.
+ * - Without glass names, the same model-glass fallback is used: `nd` and `vd` are preserved as string `medium` and `manufacturer`; blank material data maps to air.
+ * - Variable thickness tokens such as `Bf`, `d5`, and `d12` resolve from the selected variable-distance column.
+ * - Object distance normally comes from variable distance `d0` and uses air with an empty manufacturer. When `d0` resolves to `0`, the object is derived from the first parsed surface with non-zero `thickness`: `distance` copies that surface thickness, and `medium` / `manufacturer` copy the already resolved surface material, including unsupported-name model-glass fallback. That source surface and every surface before it are removed from imported `surfaces`. If every parsed surface has zero thickness, the object falls back to `{ distance: 0, medium: "air", manufacturer: "" }` and no surfaces are removed.
+ * - `[aspherical data]` rows attach `EvenAspherical` configs to matching surfaces and reject radius disagreement beyond a small tolerance.
+ * - Imported specs use Fraunhofer d/F/C wavelengths, field samples `[0, 0.707, 1]`, and `setAutoAperture: "manualAperture"`.
+ * - When `F-Number` is present, imported pupil specs use image-space `f/#`. When `F-Number` is absent, `NA` is required and imported pupil specs use object-space `NA`.
+ * - When `Angle of View` is present, it is the full angle of view; imported `specs.field.maxField` is the app Field half-angle (`Angle of View / 2`). `isWideAngle` still uses the original full angle of view and is true when that value is at least 80 degrees.
+ * - When `Angle of View` is absent, `Image Height` is required and imported field specs use image-space height with `maxField = Image Height / 2`. For this fallback, `isWideAngle` is true when the imported pupil is `NA >= 0.5`; otherwise it is false.
+ *
+ * ## Tests
+ *
+ * Covered by `photonsToPhotosParser.test.ts` with prime, microscope NA/Image Height fallback, flat `FS` rows, glass, case-insensitive lookup resolution, custom glass label-only lookup, special material aliases, unsupported named-glass fallback, fisheye stop, zoom column selection, unresolved variables, missing sections, and aspherical radius disagreement.
+ */
 export function parsePhotonsToPhotosText(
   text: string,
   lookupMaps?: GlassLookupMaps,

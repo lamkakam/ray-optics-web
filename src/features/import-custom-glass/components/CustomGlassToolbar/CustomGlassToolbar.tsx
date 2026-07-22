@@ -1,12 +1,4 @@
 "use client";
-/**
- * Describes the Custom Glass Toolbar module.
- *
- * @remarks
- * ## Accessibility
- * - Hidden inputs retain `aria-label="Import custom glass JSON file"` and `aria-label="Import custom glass CSV files"` for tests and assistive technology.
- * - Visible command buttons expose aria labels matching their visible text.
- */
 
 import type { RefObject } from "react";
 import { Button } from "@/shared/components/primitives/Button";
@@ -43,6 +35,12 @@ interface CustomGlassToolbarProps {
  * - The CSV input accepts `text/csv,.csv` and supports multiple files.
  * - File inputs reset their value after dispatching selection callbacks so the same file can be selected again.
  * - Edit is enabled only for one selected row; Delete is enabled for at least one selected row.
+ *
+ *
+ *
+ * ## Accessibility
+ * - Hidden inputs retain `aria-label="Import custom glass JSON file"` and `aria-label="Import custom glass CSV files"` for tests and assistive technology.
+ * - Visible command buttons expose aria labels matching their visible text.
  */
 export function CustomGlassToolbar({
   jsonFileInputRef,

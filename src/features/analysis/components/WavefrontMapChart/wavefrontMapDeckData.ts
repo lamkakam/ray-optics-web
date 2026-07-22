@@ -1,12 +1,14 @@
 import { interpolateAnalysisHeatmapColor } from "@/features/analysis/lib/analysisChartPalette";
 import type { WavefrontMapData } from "@/features/analysis/types/plotData";
 
+/** Raw wavefront RGBA bitmap dimensions and bytes. */
 export interface WavefrontBitmapImage {
   readonly data: Uint8ClampedArray<ArrayBuffer>;
   readonly width: number;
   readonly height: number;
 }
 
+/** Prepared wavefront bitmap, physical bounds, and legend range. */
 export interface WavefrontMapPreparedData {
   readonly image: WavefrontBitmapImage;
   readonly bounds: [number, number, number, number];

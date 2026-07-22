@@ -9,6 +9,7 @@ type ContextValue = StoreApi<LensEditorState> | undefined;
 /** Raw context object. Use only in tests to supply a pre-built store directly via `<LensEditorStoreContext.Provider value={store}>`. */
 export const LensEditorStoreContext = createContext<ContextValue>(undefined);
 
+/** Initial state and child tree for an isolated lens-editor store. */
 export interface LensEditorStoreProviderProps {
   children: ReactNode;
 }

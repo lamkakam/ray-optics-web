@@ -1,11 +1,11 @@
 "use client";
-/** - `theme: Theme` — the active theme, initialized by `getInitialTheme()` which reads `localStorage` then falls back to the OS preference. */
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { Theme } from "@/shared/tokens/theme";
 
 interface ThemeContextValue {
+  /** Active theme initialized from persisted state or the OS preference. */
   theme: Theme;
+  /** Persists and applies a new theme. */
   setTheme: (newTheme: Theme) => void;
 }
 
@@ -68,6 +68,7 @@ export function ThemeProvider({ children }: { readonly children: React.ReactNode
   );
 }
 
+/** Returns the active theme context or throws outside the provider. */
 export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) {

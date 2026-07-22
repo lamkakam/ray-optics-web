@@ -1,15 +1,12 @@
 "use client";
-/**
- * Next.js App Router entry for `/import-custom-glass`.
- *
- * @remarks
- * ## Behavior
- * - Client-only route.
- * - Dynamically loads `features/import-custom-glass/ImportCustomGlassPage` with SSR disabled because it depends on browser APIs, the app shell worker context, and Zustand client state.
- */
-
 import dynamic from "next/dynamic";
 
+/**
+ * Client-only `/import-custom-glass` route.
+ *
+ * Dynamically loads the feature page with SSR disabled because it depends on
+ * browser APIs, the app-shell worker context, and Zustand client state.
+ */
 const ImportCustomGlassPage = dynamic(
   () => import("@/features/import-custom-glass/ImportCustomGlassPage"),
   { ssr: false },

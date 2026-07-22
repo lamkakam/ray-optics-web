@@ -1,14 +1,3 @@
-/**
- * Describes the Create Analysis Chart Component module.
- *
- * @remarks
- * ## Dependencies
- *
- * - `echarts/core`
- * - `useTheme()` from `shared/components/providers/ThemeProvider`
- * - `useDebouncedCallback()` from `shared/hooks/useDebouncedCallback`
- * - `globalTokens` from `shared/tokens/styleTokens`
- */
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as echarts from "echarts/core";
 import type { EChartsCoreOption } from "echarts/core";

@@ -1,3 +1,4 @@
+/** Shared perceptual RGB palette for analysis heatmaps. */
 export const ANALYSIS_HEATMAP_COLOR_PALETTE = [
   "#5b2a86",
   "#5a3d9a",

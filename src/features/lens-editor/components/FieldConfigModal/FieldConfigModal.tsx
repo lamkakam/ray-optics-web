@@ -1,21 +1,3 @@
-/**
- * Describes the Field Config Modal module.
- *
- * @remarks
- * ## Internal State
- *
- * - `space`, `fieldType`, `maxFieldStr`, `isWideAngle` — draft values for the controls.
- * - `rows: FieldRow[]` — AG Grid row data for relative field values; each row has a stable `id`.
- *
- * ## Grid Columns
- *
- * - Row actions: 100px.
- * - Relative Field: 125px.
- *
- * ## Modal Footer
- *
- * - Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while field settings and the field grid scroll.
- */
 import { useState, useCallback } from "react";
 import { AgGridProvider } from "ag-grid-react";
 import type { ColDef } from "ag-grid-community";
@@ -89,6 +71,17 @@ const MAX_ROWS = 10;
  * - Row ids use a module-level counter for stable AG Grid `getRowId`.
  * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
  * - Keeps the caption outside a grid container that is `200px` high below the project-standard `1440px` breakpoint and `400px` high at `1440px` and above, and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
+ *
+ *
+ *
+ * ## Grid Columns
+ *
+ * - Row actions: 100px.
+ * - Relative Field: 125px.
+ *
+ * ## Modal Footer
+ *
+ * - Cancel and Apply actions are passed to `Modal.footer` so they remain fixed while field settings and the field grid scroll.
  */
 export function FieldConfigModal({
   isOpen,
@@ -112,10 +105,15 @@ function FieldConfigModalContent({
 }: Omit<FieldConfigModalProps, "isOpen">) {
   const gridTheme = useAgGridTheme();
 
+  /** Draft object- or image-space selection. */
   const [space, setSpace] = useState(() => initialSpace);
+  /** Draft angle- or height-field selection. */
   const [fieldType, setFieldType] = useState(() => initialType);
+  /** String draft of the maximum absolute field. */
   const [maxFieldStr, setMaxFieldStr] = useState(() => String(initialMaxField));
+  /** Editable relative-field rows with stable grid ids. */
   const [rows, setRows] = useState<FieldRow[]>(() => fieldsToRows(initialRelativeFields));
+  /** Draft wide-angle ray-aiming setting. */
   const [isWideAngle, setIsWideAngle] = useState(() => initialIsWideAngle);
 
   const addRow = useCallback((afterId: string) => {
