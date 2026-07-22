@@ -13,7 +13,8 @@
  *
  * All public computations obtain the executor through `requirePyodide`, which throws
  * until initialization succeeds. Initialization clears the singleton on failure so
- * callers can retry, and prefixes the local-wheel URL with `NEXT_PUBLIC_BASE_PATH`.
+ * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.23.0` wheel
+ * URL with `NEXT_PUBLIC_BASE_PATH`.
  * User-defined glass mutations share the Python material registry and use NumPy-safe
  * JSON serialization. Optimization temporarily owns its progress callback and
  * interrupt buffer, clearing both on every completion path; stop requests affect only
@@ -211,7 +212,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.22.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.23.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
