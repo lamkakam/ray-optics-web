@@ -5,6 +5,8 @@ import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalMod
 export type OptimizerKind = "least_squares" | "differential_evolution";
 /** Worker-supported SciPy least-squares methods. */
 export type LeastSquaresMethod = "trf" | "lm";
+/** Catalogs eligible for glass-expert candidate substitution. */
+export type GlassCatalogName = "CDGM" | "Hikari" | "Hoya" | "Ohara" | "Schott" | "Sumita";
 /** Worker-supported merit operand discriminators. */
 export type OptimizationOperandKind =
   | "focal_length"
@@ -62,6 +64,34 @@ export interface OptimizationConfig {
   /** Independently optimized radius, thickness, or asphere terms. */
   readonly variables: ReadonlyArray<OptimizationVariableConfig>;
   /** Radius, thickness, or asphere terms derived from another term. */
+  readonly pickups: ReadonlyArray<OptimizationPickupConfig>;
+  readonly merit_function: {
+    readonly operands: ReadonlyArray<OptimizationOperandConfig>;
+  };
+}
+
+/** Catalog-qualified real-glass candidate. */
+export interface GlassCandidateConfig {
+  readonly name: string;
+  readonly catalog: GlassCatalogName;
+}
+
+/**
+ * Flat mixed categorical/continuous glass-expert configuration.
+ * Each numeric variable is either wholly unbounded or supplies finite strict
+ * min/max bounds; candidate and surface ordering is significant.
+ */
+export interface GlassOptimizationConfig {
+  readonly glass_optimizer?: {
+    readonly num_neighbours?: number;
+    readonly maxiter?: number;
+    readonly tol?: number;
+  };
+  readonly glass_variables: ReadonlyArray<{
+    readonly surface_index: number;
+    readonly candidates: ReadonlyArray<GlassCandidateConfig>;
+  }>;
+  readonly variables: ReadonlyArray<OptimizationVariableConfig>;
   readonly pickups: ReadonlyArray<OptimizationPickupConfig>;
   readonly merit_function: {
     readonly operands: ReadonlyArray<OptimizationOperandConfig>;
@@ -197,12 +227,18 @@ export interface OptimizationProgressEntry {
   readonly iteration: number;
   readonly merit_function_value: number;
   readonly log10_merit_function_value: number;
+  /** Glass-expert phase; absent for ordinary continuous optimization. */
+  readonly phase?: "global" | "local" | "polish";
+  /** Candidate surface context; absent during final polishing. */
+  readonly surface_index?: number;
+  /** Candidate identity; absent during final polishing. */
+  readonly candidate?: GlassCandidateConfig;
 }
 
 /** Python optimization report with snake_case keys preserved for direct JSON parsing. */
 export interface OptimizationReport {
   readonly success: boolean;
-  readonly status: string;
+  readonly status: string | number;
   readonly message: string;
   /** Solver identity plus optional solve metadata available after a full run. */
   readonly optimizer: {
@@ -224,6 +260,27 @@ export interface OptimizationReport {
   };
   /** Chronological raw and precomputed log10 merit history. */
   readonly optimization_progress: ReadonlyArray<OptimizationProgressEntry>;
+}
+
+/** Material identity before or after a glass-expert run. */
+export interface GlassOptimizationValueEntry extends GlassCandidateConfig {
+  readonly surface_index: number;
+}
+
+/** Python glass-expert report with aggregate nested L-BFGS-B metadata. */
+export interface GlassOptimizationReport extends Omit<OptimizationReport, "optimizer"> {
+  readonly optimizer: {
+    readonly kind: "glass_expert";
+    readonly method: "L-BFGS-B";
+    readonly runs: number;
+    readonly nfev: number;
+    readonly nit: number;
+    readonly num_neighbours: number;
+    readonly maxiter: number;
+    readonly tol: number;
+  };
+  readonly initial_glasses: ReadonlyArray<GlassOptimizationValueEntry>;
+  readonly final_glasses: ReadonlyArray<GlassOptimizationValueEntry>;
 }
 
 /** Optimized optical model paired with its worker report. */
