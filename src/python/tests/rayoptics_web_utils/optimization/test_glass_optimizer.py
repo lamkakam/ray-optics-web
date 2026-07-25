@@ -17,11 +17,11 @@ def glass_opm(cooke_triplet):
     return deepcopy(cooke_triplet)
 
 
-def _config(*, glass_variables=None, variables=None, glass_optimizer=None):
+def _config(*, glass_variables=None, variables=None, pickups=None, glass_optimizer=None):
     config = {
         "glass_variables": glass_variables or [],
         "variables": variables or [],
-        "pickups": [],
+        "pickups": pickups or [],
         "merit_function": {
             "operands": [
                 {
@@ -48,6 +48,15 @@ def _glass_variable(surface_index=1, candidates=None):
     }
 
 
+def _model_glass_with_coordinates(nd, vd):
+    from opticalglass.modelglass import ModelGlass
+
+    medium = ModelGlass(1.5, 50.0, "test model glass")
+    medium.n = nd
+    medium.v = vd
+    return medium
+
+
 class TestGlassConfig:
     def test_normalizes_defaults_and_resolved_candidate_coordinates(self, glass_opm):
         from rayoptics_web_utils.optimization.glass_config import normalize_glass_optimization_config
@@ -67,6 +76,74 @@ class TestGlassConfig:
         assert candidate.catalog == "Schott"
         assert math.isfinite(candidate.nd)
         assert math.isfinite(candidate.vd)
+
+    @pytest.mark.parametrize(
+        ("medium_factory", "detail"),
+        [
+            (
+                lambda: SimpleNamespace(rindex=lambda wavelength: object() if wavelength == "d" else 1.0),
+                "n_d is unreadable",
+            ),
+            (
+                lambda: SimpleNamespace(rindex=lambda wavelength: object() if wavelength == "F" else 1.0),
+                "n_f is unreadable",
+            ),
+            (
+                lambda: SimpleNamespace(rindex=lambda wavelength: object() if wavelength == "C" else 1.0),
+                "n_c is unreadable",
+            ),
+            (
+                lambda: _model_glass_with_coordinates(1.5, object()),
+                "ModelGlass Vd is unreadable",
+            ),
+            (
+                lambda: SimpleNamespace(rindex=lambda wavelength: float("nan") if wavelength == "d" else 1.0),
+                "n_d is not finite",
+            ),
+            (
+                lambda: SimpleNamespace(rindex=lambda wavelength: float("inf") if wavelength == "F" else 1.0),
+                "n_f is not finite",
+            ),
+            (
+                lambda: SimpleNamespace(rindex=lambda wavelength: float("-inf") if wavelength == "C" else 1.0),
+                "n_c is not finite",
+            ),
+            (
+                lambda: _model_glass_with_coordinates(1.5, float("nan")),
+                "ModelGlass Vd is not finite",
+            ),
+            (
+                lambda: SimpleNamespace(
+                    rindex=lambda wavelength: {"d": 1.5, "F": 1.6, "C": 1.6}[wavelength]
+                ),
+                "n_f equals n_c",
+            ),
+            (
+                lambda: SimpleNamespace(
+                    rindex=lambda wavelength: {
+                        "d": 1e308,
+                        "F": 1e-308,
+                        "C": -1e-308,
+                    }[wavelength]
+                ),
+                "calculated Vd is not finite",
+            ),
+        ],
+    )
+    def test_raw_coordinates_report_the_exact_failed_coordinate_or_condition(
+        self,
+        medium_factory,
+        detail,
+    ):
+        from rayoptics_web_utils.optimization.glass_config import _raw_nd_vd
+
+        with pytest.raises(ValueError) as exception_info:
+            _raw_nd_vd(medium_factory())
+
+        assert str(exception_info.value) == (
+            f"Unable to calculate glass nd/Vd coordinates: {detail}"
+        )
+        assert exception_info.value.__cause__ is not None
 
     @pytest.mark.parametrize(
         ("mutator", "message"),
@@ -436,37 +513,145 @@ class TestOptimizeGlasses:
 
         assert glass_opm["seq_model"].gaps[1].medium is incumbent
 
-    def test_unexpected_error_restores_material_and_numeric_pickup_state(self, monkeypatch, glass_opm):
+    def test_setup_error_returns_complete_empty_json_safe_report(self, glass_opm):
+        from rayoptics_web_utils.optimization import optimize_glasses
+
+        report = optimize_glasses(
+            glass_opm,
+            _config(
+                glass_variables=[_glass_variable()],
+                glass_optimizer={"num_neighbours": 0},
+            ),
+        )
+
+        assert report["success"] is False
+        assert report["status"] == "error"
+        assert report["message"] == "num_neighbours must be a positive integer"
+        assert report["initial_values"] == report["final_values"] == []
+        assert report["pickups"] == []
+        assert report["initial_glasses"] == report["final_glasses"] == []
+        assert report["residuals"] == []
+        assert report["optimization_progress"] == []
+        assert report["optimizer"] == {
+            "kind": "glass_expert",
+            "method": "L-BFGS-B",
+            "runs": 0,
+            "nfev": 0,
+            "nit": 0,
+            "num_neighbours": 7,
+            "maxiter": 1000,
+            "tol": 1e-3,
+        }
+        assert report["merit_function"] == {
+            "sum_of_squares": pytest.approx(1e10),
+            "rss": pytest.approx(1e5),
+        }
+        json.dumps(report, allow_nan=False)
+
+    def test_unexpected_error_returns_rollback_report_with_completed_counters_and_partial_progress(
+        self,
+        monkeypatch,
+        glass_opm,
+    ):
         import rayoptics_web_utils.optimization.glass_optimizer as module
 
         original_medium = glass_opm["seq_model"].gaps[1].medium
         original_thickness = glass_opm["seq_model"].gaps[6].thi
+        original_pickup_thickness = glass_opm["seq_model"].gaps[5].thi
+        calls = 0
+
+        monkeypatch.setattr(
+            module,
+            "select_global_representatives",
+            lambda candidates, _count: list(candidates),
+        )
+        monkeypatch.setattr(module, "nearest_candidates", lambda *_args: [])
 
         def raise_after_mutation(self, progress_reporter=None):
-            del progress_reporter
-            self.problem.opm["seq_model"].gaps[6].thi = 123.0
-            raise RuntimeError("boom")
+            nonlocal calls
+            calls += 1
+            evaluation = {
+                "optimizer": {"kind": "least_squares", "method": "lm"},
+                "initial_values": self.problem.variable_state(),
+                "final_values": self.problem.variable_state(),
+                "pickups": [],
+                "residuals": [],
+                "merit_function": {
+                    "sum_of_squares": float(100 - calls),
+                    "rss": math.sqrt(100 - calls),
+                },
+                "optimization_progress": [],
+            }
+            self.problem.progress.record(
+                self.problem.current_vector(),
+                evaluation,
+                progress_reporter,
+                context=self.problem.progress_context,
+            )
+            if calls == 2:
+                self.problem.opm["seq_model"].gaps[6].thi = 123.0
+                self.problem.opm["seq_model"].gaps[5].thi = 456.0
+                raise RuntimeError("boom")
+            return {
+                "x": self.problem.current_vector(),
+                "fun": 0.0,
+                "success": True,
+                "status": 0,
+                "message": "completed",
+                "nfev": 4,
+                "nit": 2,
+            }
 
         monkeypatch.setattr(module.LBFGSBSolver, "solve", raise_after_mutation)
 
-        with pytest.raises(RuntimeError, match="boom"):
-            module.optimize_glasses(
-                glass_opm,
-                _config(
-                    glass_variables=[_glass_variable()],
-                    variables=[
-                        {
-                            "kind": "thickness",
-                            "surface_index": 6,
-                            "min": 35.0,
-                            "max": 50.0,
-                        }
-                    ],
-                ),
-            )
+        report = module.optimize_glasses(
+            glass_opm,
+            _config(
+                glass_variables=[_glass_variable()],
+                variables=[
+                    {
+                        "kind": "thickness",
+                        "surface_index": 6,
+                        "min": 35.0,
+                        "max": 50.0,
+                    }
+                ],
+                pickups=[
+                    {
+                        "kind": "thickness",
+                        "surface_index": 5,
+                        "source_surface_index": 6,
+                        "scale": 1.0,
+                        "offset": 0.0,
+                    }
+                ],
+            ),
+        )
 
         assert glass_opm["seq_model"].gaps[1].medium is original_medium
         assert glass_opm["seq_model"].gaps[6].thi == pytest.approx(original_thickness)
+        assert glass_opm["seq_model"].gaps[5].thi == pytest.approx(
+            original_pickup_thickness
+        )
+        assert report["success"] is False
+        assert report["status"] == "error"
+        assert report["message"] == "boom"
+        assert report["initial_values"] == report["final_values"]
+        assert report["final_values"][0]["value"] == pytest.approx(original_thickness)
+        assert report["pickups"][0]["value"] == pytest.approx(
+            original_pickup_thickness
+        )
+        assert report["initial_glasses"] == report["final_glasses"]
+        assert report["initial_glasses"][0]["name"] == "N-LAK9"
+        assert report["optimizer"]["runs"] == 1
+        assert report["optimizer"]["nfev"] == 4
+        assert report["optimizer"]["nit"] == 2
+        assert len(report["optimization_progress"]) == 2
+        assert report["merit_function"] == {
+            "sum_of_squares": pytest.approx(1e10),
+            "rss": pytest.approx(1e5),
+        }
+        json.dumps(report, allow_nan=False)
 
     def test_interrupt_discards_partial_candidate_and_returns_best_completed_state(self, monkeypatch, glass_opm):
         import rayoptics_web_utils.optimization.glass_optimizer as module

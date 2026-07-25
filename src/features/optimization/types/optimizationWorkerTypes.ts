@@ -235,10 +235,27 @@ export interface OptimizationProgressEntry {
   readonly candidate?: GlassCandidateConfig;
 }
 
-/** Python optimization report with snake_case keys preserved for direct JSON parsing. */
+/**
+ * Python optimization status. Numeric values come from completed SciPy solvers;
+ * named values cover evaluation, successful special cases, interruption, and
+ * rollback reports for ordinary Python failures.
+ */
+export type OptimizationStatus =
+  | number
+  | "evaluated"
+  | "optimized"
+  | "no_variables"
+  | "stopped"
+  | "error";
+
+/**
+ * Python optimization report with snake_case keys preserved for direct JSON
+ * parsing. `status: "error"` is a resolved rollback report, not a rejected
+ * worker transport call.
+ */
 export interface OptimizationReport {
   readonly success: boolean;
-  readonly status: string | number;
+  readonly status: OptimizationStatus;
   readonly message: string;
   /** Solver identity plus optional solve metadata available after a full run. */
   readonly optimizer: {

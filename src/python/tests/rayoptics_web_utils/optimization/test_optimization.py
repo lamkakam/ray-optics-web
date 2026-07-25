@@ -1,6 +1,7 @@
 """Tests for rayoptics_web_utils.optimization."""
 
 import json
+import math
 
 import numpy as np
 import pytest
@@ -868,6 +869,254 @@ class TestOptimizeOpm:
         assert report["final_values"][0]["value"] == pytest.approx(42.0)
         assert report["optimization_progress"] == progress_snapshots[-1]
         assert report["optimizer"]["nfev"] == 1
+
+    def test_setup_error_returns_complete_empty_json_safe_report(
+        self,
+        fresh_cooke_triplet,
+    ):
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {
+                    "kind": "least_squares",
+                    "method": "unsupported",
+                },
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 90.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert report["success"] is False
+        assert report["status"] == "error"
+        assert report["message"] == "Unknown least-squares method: unsupported"
+        assert report["initial_values"] == report["final_values"] == []
+        assert report["pickups"] == []
+        assert report["residuals"] == []
+        assert report["optimization_progress"] == []
+        assert report["optimizer"] == {
+            "kind": "least_squares",
+            "nfev": 0,
+            "njev": 0,
+            "cost": pytest.approx(5e11),
+            "optimality": 0.0,
+        }
+        assert report["merit_function"] == {
+            "sum_of_squares": pytest.approx(1e12),
+            "rss": pytest.approx(1e6),
+        }
+        json.dumps(report, allow_nan=False)
+
+    def test_runtime_error_restores_state_without_retrying_failed_merit_evaluation(
+        self,
+        monkeypatch,
+        fresh_cooke_triplet,
+    ):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        original_thickness = fresh_cooke_triplet["seq_model"].gaps[6].thi
+        original_pickup_thickness = fresh_cooke_triplet["seq_model"].gaps[5].thi
+        evaluation_calls = 0
+
+        class FakeSolver:
+            def __init__(self, problem):
+                self.problem = problem
+
+            def solve(self, progress_reporter=None):
+                vector = np.array([42.0], dtype=float)
+                self.problem.apply_vector(vector)
+                evaluation = {
+                    "optimizer": {"kind": "least_squares", "method": "trf"},
+                    "initial_values": self.problem.variable_state(),
+                    "final_values": self.problem.variable_state(),
+                    "pickups": [],
+                    "residuals": [],
+                    "merit_function": {
+                        "sum_of_squares": 25.0,
+                        "rss": 5.0,
+                    },
+                    "optimization_progress": [],
+                }
+                self.problem.progress.record(
+                    vector,
+                    evaluation,
+                    progress_reporter,
+                )
+                return {
+                    "x": vector,
+                    "success": True,
+                    "status": 1,
+                    "message": "solver completed",
+                    "nfev": 7,
+                    "njev": 3,
+                }
+
+        def fail_final_evaluation(self, values=None):
+            nonlocal evaluation_calls
+            del self, values
+            evaluation_calls += 1
+            raise RuntimeError("final merit failed")
+
+        monkeypatch.setitem(
+            optimization_module._SOLVER_REGISTRY,
+            "least_squares",
+            FakeSolver,
+        )
+        monkeypatch.setattr(
+            optimization_module._OptimizationProblem,
+            "evaluate",
+            fail_final_evaluation,
+        )
+
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {
+                    "kind": "least_squares",
+                    "method": "trf",
+                    "max_nfev": 10,
+                },
+                "variables": [
+                    {
+                        "kind": "thickness",
+                        "surface_index": 6,
+                        "min": 35.0,
+                        "max": 50.0,
+                    }
+                ],
+                "pickups": [
+                    {
+                        "kind": "thickness",
+                        "surface_index": 5,
+                        "source_surface_index": 6,
+                        "scale": 1.0,
+                        "offset": 0.0,
+                    }
+                ],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 90.0,
+                            "weight": 1.0,
+                        },
+                        {
+                            "kind": "f_number",
+                            "target": 4.0,
+                            "weight": 1.0,
+                        },
+                    ]
+                },
+            },
+        )
+
+        assert evaluation_calls == 1
+        assert fresh_cooke_triplet["seq_model"].gaps[6].thi == pytest.approx(
+            original_thickness
+        )
+        assert fresh_cooke_triplet["seq_model"].gaps[5].thi == pytest.approx(
+            original_pickup_thickness
+        )
+        assert report["success"] is False
+        assert report["status"] == "error"
+        assert report["message"] == "final merit failed"
+        assert report["initial_values"] == report["final_values"]
+        assert report["final_values"][0]["value"] == pytest.approx(
+            original_thickness
+        )
+        assert report["pickups"][0]["value"] == pytest.approx(
+            original_pickup_thickness
+        )
+        assert report["residuals"] == []
+        assert len(report["optimization_progress"]) == 1
+        assert report["optimizer"]["nfev"] == 7
+        assert report["optimizer"]["njev"] == 3
+        assert report["optimizer"]["cost"] == pytest.approx(1e12)
+        assert report["optimizer"]["optimality"] == 0.0
+        assert report["merit_function"] == {
+            "sum_of_squares": pytest.approx(2e12),
+            "rss": pytest.approx(math.sqrt(2) * 1e6),
+        }
+        json.dumps(report, allow_nan=False)
+
+    def test_differential_evolution_runtime_error_uses_scalar_penalty(
+        self,
+        monkeypatch,
+        fresh_cooke_triplet,
+    ):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.optimization import optimize_opm
+
+        original_thickness = fresh_cooke_triplet["seq_model"].gaps[6].thi
+
+        class FailingSolver:
+            def __init__(self, problem):
+                self.problem = problem
+
+            def solve(self, progress_reporter=None):
+                del progress_reporter
+                self.problem.apply_vector(np.array([42.0], dtype=float))
+                raise RuntimeError("differential evolution failed")
+
+        monkeypatch.setitem(
+            optimization_module._SOLVER_REGISTRY,
+            "differential_evolution",
+            FailingSolver,
+        )
+
+        report = optimize_opm(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {
+                    "kind": "differential_evolution",
+                    "max_nfev": 10,
+                },
+                "variables": [
+                    {
+                        "kind": "thickness",
+                        "surface_index": 6,
+                        "min": 35.0,
+                        "max": 50.0,
+                    }
+                ],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "focal_length",
+                            "target": 90.0,
+                            "weight": 1.0,
+                        }
+                    ]
+                },
+            },
+        )
+
+        assert fresh_cooke_triplet["seq_model"].gaps[6].thi == pytest.approx(
+            original_thickness
+        )
+        assert report["success"] is False
+        assert report["status"] == "error"
+        assert report["optimizer"] == {
+            "kind": "differential_evolution",
+            "nfev": 0,
+            "nit": 0,
+        }
+        assert report["merit_function"] == {
+            "sum_of_squares": pytest.approx(1e6),
+            "rss": pytest.approx(1e3),
+        }
 
     def test_reports_differential_evolution_metadata_without_method(self, monkeypatch, fresh_cooke_triplet):
         import numpy as np

@@ -48,7 +48,7 @@ The shared optimization runner used by `_optimizeOpm(...)` and `_optimizeGlasses
 - clears the active interrupt buffer reference
 - removes the temporary progress callback global
 
-This cleanup runs for optimized, stopped, failed, and thrown-error paths.
+This cleanup runs for optimized, stopped, returned Python-error, and rejected paths.
 
 ## Python Result Semantics
 
@@ -63,7 +63,24 @@ Pyodide delivers the interrupt to Python as `KeyboardInterrupt`. `optimize_opm(.
 
 The UI applies this report exactly like a successful optimization and does not open the warning modal for the user-requested stopped status.
 
-`optimize_glasses(...)` uses the same successful `"stopped"` status, but restores the best fully completed candidate snapshot before reporting. Any material or continuous changes made by the interrupted partial candidate are discarded. Unexpected exceptions restore the original material and numeric/pickup snapshots and are rethrown to the worker caller.
+`optimize_glasses(...)` uses the same successful `"stopped"` status, but restores the best fully completed candidate snapshot before reporting. Any material or continuous changes made by the interrupted partial candidate are discarded.
+
+Ordinary Python exceptions from optimizer setup, solver execution, or final merit evaluation resolve through Comlink as a normal report:
+
+- `success: false`
+- `status: "error"`
+- `message: str(exception)`
+- the complete optimizer report shape
+- original variable, pickup, and glass state after rollback
+- completed counters and any progress recorded before the failure
+
+If setup fails before state can be captured, state arrays are empty and counters are zero. Failure reporting does not retry merit evaluation. Instead, it uses the solver-family penalty: the least-squares penalty residual vector determines its merit and RSS, Differential Evolution uses its scalar `1e6` merit penalty, and glass optimization uses `1e10`.
+
+The generated Python invocation also starts its `try` block before `_build_opm()` is called. Model-construction and other ordinary Python exceptions that occur before an optimizer facade is entered therefore return the same empty-state failure report.
+
+Executor rejection, invalid returned JSON, and Comlink transport failures are not Python optimization reports and may still reject the RPC. The worker still performs callback and interrupt cleanup in `finally`. `evaluateOptimizationProblem(...)` is unchanged and continues to reject when its Python evaluation raises.
+
+`OptimizationPage` displays the message from a returned `"error"` report without applying its values to the page-local model and without invoking the rejected-call error path. Numeric unsuccessful solver reports retain their existing behavior and can still provide an applicable final design.
 
 ## Glass-Expert RPC
 

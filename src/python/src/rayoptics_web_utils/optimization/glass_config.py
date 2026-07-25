@@ -97,25 +97,61 @@ def material_report_entry(surface_index: int, medium: object) -> dict[str, str |
     return {"surface_index": surface_index, "name": name, "catalog": catalog}
 
 
-def _raw_nd_vd(medium: object) -> tuple[float, float]:
-    """Calculate unscaled Fraunhofer d-index and V-number coordinates."""
-    if isinstance(medium, ModelGlass):
-        nd = float(medium.n)
-        vd = float(medium.v)
-    else:
-        try:
-            nd = float(medium.rindex("d"))  # type: ignore[attr-defined]
-            n_f = float(medium.rindex("F"))  # type: ignore[attr-defined]
-            n_c = float(medium.rindex("C"))  # type: ignore[attr-defined]
-        except (AttributeError, KeyError, TypeError, ValueError) as error:
-            raise ValueError("Unable to calculate glass nd/Vd coordinates") from error
-        denominator = n_f - n_c
-        if denominator == 0.0:
-            raise ValueError("Unable to calculate glass nd/Vd coordinates")
-        vd = (nd - 1.0) / denominator
+_COORDINATE_ERROR_PREFIX = "Unable to calculate glass nd/Vd coordinates"
 
-    if not math.isfinite(nd) or not math.isfinite(vd):
-        raise ValueError("Unable to calculate glass nd/Vd coordinates")
+
+def _read_finite_coordinate(reader, label: str) -> float:
+    """Read one coordinate and label conversion or finiteness failures."""
+    try:
+        value = float(reader())
+    except Exception as error:
+        raise ValueError(
+            f"{_COORDINATE_ERROR_PREFIX}: {label} is unreadable"
+        ) from error
+    if not math.isfinite(value):
+        cause = ValueError(f"{label} is not finite")
+        raise ValueError(
+            f"{_COORDINATE_ERROR_PREFIX}: {label} is not finite"
+        ) from cause
+    return value
+
+
+def _raw_nd_vd(medium: object) -> tuple[float, float]:
+    """Calculate finite raw coordinates with coordinate-specific chained errors."""
+    if isinstance(medium, ModelGlass):
+        nd = _read_finite_coordinate(lambda: medium.n, "n_d")
+        vd = _read_finite_coordinate(lambda: medium.v, "ModelGlass Vd")
+        return nd, vd
+
+    nd = _read_finite_coordinate(
+        lambda: medium.rindex("d"),  # type: ignore[attr-defined]
+        "n_d",
+    )
+    n_f = _read_finite_coordinate(
+        lambda: medium.rindex("F"),  # type: ignore[attr-defined]
+        "n_f",
+    )
+    n_c = _read_finite_coordinate(
+        lambda: medium.rindex("C"),  # type: ignore[attr-defined]
+        "n_c",
+    )
+    denominator = n_f - n_c
+    if denominator == 0.0:
+        cause = ValueError("n_f equals n_c")
+        raise ValueError(
+            f"{_COORDINATE_ERROR_PREFIX}: n_f equals n_c"
+        ) from cause
+    try:
+        vd = (nd - 1.0) / denominator
+    except ArithmeticError as error:
+        raise ValueError(
+            f"{_COORDINATE_ERROR_PREFIX}: calculated Vd is not finite"
+        ) from error
+    if not math.isfinite(vd):
+        cause = ValueError("calculated Vd is not finite")
+        raise ValueError(
+            f"{_COORDINATE_ERROR_PREFIX}: calculated Vd is not finite"
+        ) from cause
     return nd, vd
 
 

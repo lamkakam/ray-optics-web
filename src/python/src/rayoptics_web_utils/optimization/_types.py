@@ -3,9 +3,11 @@
 Input and normalized configs remain distinct. Solver options are discriminated by
 kind, mutable targets by target kind, and result mappings allow solver-specific
 metadata. Glass-expert inputs keep categorical candidates ordered separately from
-continuous targets. Operand evaluators may return scalars or residual vectors and
-receive the image-point convention explicitly. Snapshot entries retain the complete
-target descriptor so rollback preserves asphere kinds.
+continuous targets. Returned statuses distinguish successful evaluation/stop states,
+numeric solver statuses, and ordinary Python ``"error"`` reports. Operand evaluators
+may return scalars or residual vectors and receive the image-point convention
+explicitly. Snapshot entries retain the complete target descriptor so rollback
+preserves asphere kinds.
 """
 
 from __future__ import annotations
@@ -33,7 +35,7 @@ type AsphereKind = Literal["Conic", "EvenAspherical", "RadialPolynomial", "XToro
 type BaseTargetKey = tuple[TargetKind, int]
 type PolynomialTargetKey = tuple[Literal["asphere_polynomial_coefficient"], int, int]
 type TargetKey = BaseTargetKey | PolynomialTargetKey
-type OptimizationStatus = int | Literal["evaluated", "optimized", "no_variables", "stopped"]
+type OptimizationStatus = int | Literal["evaluated", "optimized", "no_variables", "stopped", "error"]
 
 
 class OperandOptions(TypedDict, total=False):

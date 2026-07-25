@@ -1452,7 +1452,7 @@ describe("OptimizationPage", () => {
     const proxy = makeProxy({
       optimizeOpm: jest.fn().mockResolvedValue({
         success: false,
-        status: "failed",
+        status: -1,
         message: "bad config",
         optimizer: { kind: "least_squares", method: "trf" },
         initial_values: [],
@@ -1474,6 +1474,63 @@ describe("OptimizationPage", () => {
     expect(evaluationPanel).not.toBeNull();
     expect(await within(evaluationPanel as HTMLElement).findByText("bad config")).toBeInTheDocument();
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(33);
+  });
+
+  it("shows a returned Python error without mutating the model or entering the thrown-error path", async () => {
+    const onError = jest.fn();
+    const proxy = makeProxy({
+      optimizeOpm: jest.fn().mockResolvedValue({
+        success: false,
+        status: "error",
+        message: "final merit failed",
+        optimizer: {
+          kind: "least_squares",
+          method: "trf",
+          nfev: 0,
+          njev: 0,
+          cost: 5e11,
+          optimality: 0,
+        },
+        initial_values: [
+          {
+            kind: "radius",
+            surface_index: 1,
+            value: 50,
+            min: 20,
+            max: 60,
+          },
+        ],
+        final_values: [
+          {
+            kind: "radius",
+            surface_index: 1,
+            value: 33,
+            min: 20,
+            max: 60,
+          },
+        ],
+        pickups: [],
+        residuals: [],
+        merit_function: { sum_of_squares: 1e12, rss: 1e6 },
+        optimization_progress: [],
+      }),
+    });
+    const user = userEvent.setup();
+
+    const { optimizationStore } = renderOptimizationPage(proxy, onError);
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+
+    const evaluationPanel = screen.getByText("Operand Evaluation").closest("div")?.parentElement;
+    expect(evaluationPanel).not.toBeNull();
+    expect(
+      await within(evaluationPanel as HTMLElement).findByText("final merit failed"),
+    ).toBeInTheDocument();
+    expect(
+      optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius,
+    ).toBe(50);
+    expect(onError).not.toHaveBeenCalled();
   });
 
   it("applies an optimized image-surface radius to the page-local model", async () => {

@@ -4,6 +4,7 @@ import type {
   GlassOptimizationConfig,
   GlassOptimizationReport,
   OptimizationProgressEntry,
+  OptimizationReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import {
   _evaluateOptimizationProblem,
@@ -81,6 +82,28 @@ function glassReport(
   };
 }
 
+function optimizationErrorReport(): OptimizationReport {
+  return {
+    success: false,
+    status: "error",
+    message: "model construction failed",
+    optimizer: {
+      kind: "least_squares",
+      method: "trf",
+      nfev: 0,
+      njev: 0,
+      cost: 5e11,
+      optimality: 0,
+    },
+    initial_values: [],
+    final_values: [],
+    pickups: [],
+    residuals: [],
+    merit_function: { sum_of_squares: 1e12, rss: 1e6 },
+    optimization_progress: [],
+  };
+}
+
 describe("_optimizeGlasses", () => {
   beforeEach(() => {
     _setPyodideForTesting(undefined);
@@ -96,6 +119,45 @@ describe("_optimizeGlasses", () => {
     expect(source).toContain("optimize_glasses(");
     expect(source).toContain('\\"glass_optimizer\\":{\\"num_neighbours\\":2,\\"maxiter\\":20,\\"tol\\":0.0001}');
     expect(source).toContain('\\"candidates\\":[{\\"name\\":\\"N-BK7\\",\\"catalog\\":\\"Schott\\"}');
+  });
+
+  it("resolves a generated Python fallback report when setup fails before the facade", async () => {
+    const report: GlassOptimizationReport = {
+      ...glassReport(),
+      success: false,
+      status: "error",
+      message: "model construction failed",
+      optimizer: {
+        kind: "glass_expert",
+        method: "L-BFGS-B",
+        runs: 0,
+        nfev: 0,
+        nit: 0,
+        num_neighbours: 2,
+        maxiter: 20,
+        tol: 1e-4,
+      },
+      initial_glasses: [],
+      final_glasses: [],
+      initial_values: [],
+      final_values: [],
+      merit_function: { sum_of_squares: 1e10, rss: 1e5 },
+      optimization_progress: [],
+    };
+    const runPython = jest.fn().mockResolvedValue(JSON.stringify(report));
+
+    const result = await _optimizeGlasses(runPython, baseModel, glassConfig);
+
+    expect(result).toEqual(report);
+    const source = runPython.mock.calls[0]?.[0] ?? "";
+    expect(source).toContain("try:");
+    expect(source).toContain("except Exception as _optimization_error:");
+    expect(source).toContain(
+      "_build_glass_optimization_failure_report(_optimization_error, _optimization_config)",
+    );
+    expect(source.indexOf("optimize_glasses(_build_opm()")).toBeGreaterThan(
+      source.indexOf("try:"),
+    );
   });
 
   it("parses candidate-aware progress and forwards the final history", async () => {
@@ -143,7 +205,7 @@ describe("_optimizeGlasses", () => {
     });
   });
 
-  it("shares interrupt setup and guaranteed cleanup on Python errors", async () => {
+  it("rejects executor errors and still guarantees interrupt and callback cleanup", async () => {
     const setInterruptBuffer = jest.fn();
     const globalsSet = jest.fn();
     const globalsDelete = jest.fn();
@@ -244,6 +306,29 @@ describe("_optimizeOpm", () => {
     expect(result.success).toBe(true);
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining("optimize_opm("));
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));
+  });
+
+  it("resolves a generated Python fallback report when setup fails before the facade", async () => {
+    const report = optimizationErrorReport();
+    const runPython = jest.fn().mockResolvedValue(JSON.stringify(report));
+
+    const result = await _optimizeOpm(runPython, baseModel, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [],
+      pickups: [],
+      merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
+    });
+
+    expect(result).toEqual(report);
+    const source = runPython.mock.calls[0]?.[0] ?? "";
+    expect(source).toContain("try:");
+    expect(source).toContain("except Exception as _optimization_error:");
+    expect(source).toContain(
+      "_build_optimization_failure_report(_optimization_error, _optimization_config)",
+    );
+    expect(source.indexOf("optimize_opm(_build_opm()")).toBeGreaterThan(
+      source.indexOf("try:"),
+    );
   });
 
   it("passes Differential Evolution optimizer config without least-squares keys", async () => {

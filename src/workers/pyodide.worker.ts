@@ -17,9 +17,11 @@
  * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.24.0` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`.
  * User-defined glass mutations share the Python material registry and use NumPy-safe
- * JSON serialization. Both optimization RPCs temporarily own the same progress
- * callback and interrupt-buffer lifecycle, clearing both on every completion path;
- * stop requests affect only the matching active run id.
+ * JSON serialization. Both optimization RPCs return ordinary Python failures as
+ * typed `status: "error"` reports, temporarily own the same progress callback and
+ * interrupt-buffer lifecycle, and clear both on every completion path; executor,
+ * parsing, and transport failures may still reject. Stop requests affect only the
+ * matching active run id.
  */
 import { expose } from "comlink";
 import { loadPyodide, version } from "pyodide";
@@ -177,6 +179,10 @@ from rayoptics_web_utils.plotting import (
 from rayoptics_web_utils.focusing import focus_by_mono_rms_spot, focus_by_mono_strehl, focus_by_poly_rms_spot, focus_by_poly_strehl
 from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
 from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_glasses, optimize_opm
+from rayoptics_web_utils.optimization.failure_reports import (
+    build_glass_optimization_failure_report as _build_glass_optimization_failure_report,
+    build_optimization_failure_report as _build_optimization_failure_report,
+)
 `);
 }
 
@@ -670,12 +676,13 @@ export async function _evaluateOptimizationProblem(
 /**
  * Runs optimization with injected execution, optional streamed progress, and
  * optional per-run interruption. The serialized config is reconstructed in Python;
+ * ordinary Python setup/runtime exceptions resolve as complete failure reports, and
  * temporary callback globals and interrupt state are always cleared in `finally`.
  *
  * @param onProgress - Optional live receiver for parsed optimization snapshots.
  * @param runId - Identifier used to reject stale stop requests.
  * @param interruptBuffer - Shared buffer installed only for an interrupt-capable run.
- * @returns The parsed JSON-safe optimization report.
+ * @returns The parsed JSON-safe success, stopped, solver, or Python-error report.
  */
 export async function _optimizeOpm(
   runPython: (code: string) => Promise<unknown>,
@@ -702,6 +709,7 @@ export async function _optimizeOpm(
  * Runs glass-expert optimization with the shared callback/interrupt lifecycle.
  * The flat config is JSON-reconstructed inside Python and the candidate-aware
  * progress history is parsed without replacing absent optional fields with null.
+ * Ordinary Python setup/runtime exceptions resolve through the glass failure builder.
  */
 export async function _optimizeGlasses(
   runPython: (code: string) => Promise<unknown>,
@@ -724,7 +732,12 @@ export async function _optimizeGlasses(
   );
 }
 
-/** Owns temporary Pyodide progress globals and per-run interrupt state for either optimizer RPC. */
+/**
+ * Owns temporary Pyodide progress globals and per-run interrupt state for either
+ * optimizer RPC. The generated Python `try` begins before model construction and
+ * converts ordinary Python exceptions to the matching complete failure report.
+ * Executor rejection and JSON parsing errors still reject after guaranteed cleanup.
+ */
 async function runOptimization<TReport extends OptimizationReport | GlassOptimizationReport>(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
@@ -757,6 +770,9 @@ async function runOptimization<TReport extends OptimizationReport | GlassOptimiz
     && typeof pyodide.setInterruptBuffer === "function";
   let progressBindingStarted = false;
   let interruptBindingStarted = false;
+  const failureReportBuilder = pythonFunction === "optimize_glasses"
+    ? "_build_glass_optimization_failure_report"
+    : "_build_optimization_failure_report";
   try {
     if (canBindProgressCallback) {
       progressBindingStarted = true;
@@ -774,12 +790,18 @@ async function runOptimization<TReport extends OptimizationReport | GlassOptimiz
     const json = (await runPython(
       buildScript(
         opticalModel,
-        (opm) => !canBindProgressCallback
-          ? `json.dumps(${pythonFunction}(${opm}, json.loads(${JSON.stringify(configJson)}), image_point='${imagePoint}'))`
-          : `
+        (opm) => `
+${canBindProgressCallback ? `
 def _report_optimization_progress(progress):
     _optimization_progress_callback(json.dumps(progress))
-json.dumps(${pythonFunction}(${opm}, json.loads(${JSON.stringify(configJson)}), image_point='${imagePoint}', progress_reporter=_report_optimization_progress))
+` : ""}
+_optimization_config = {}
+try:
+    _optimization_config = json.loads(${JSON.stringify(configJson)})
+    _optimization_report = ${pythonFunction}(${opm}, _optimization_config, image_point='${imagePoint}'${canBindProgressCallback ? ", progress_reporter=_report_optimization_progress" : ""})
+except Exception as _optimization_error:
+    _optimization_report = ${failureReportBuilder}(_optimization_error, _optimization_config)
+json.dumps(_optimization_report)
 `,
       ),
     )) as string;

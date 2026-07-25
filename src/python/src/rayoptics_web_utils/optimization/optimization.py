@@ -9,6 +9,8 @@ Residual weights are ``operand_weight * sqrt(field_weight) *
 sqrt(wavelength_weight)``. The merit sum of squares is the sum of squared weighted
 residuals and ``rss`` is its square root. Scalar operands expand by selected
 field/wavelength samples; ray-fan operands retain fixed, penalty-padded dimensions.
+Ordinary setup/runtime exceptions return rollback reports with ``status="error"``;
+user interruption retains the successful partial ``status="stopped"`` contract.
 """
 
 from __future__ import annotations
@@ -26,6 +28,10 @@ from rayoptics_web_utils.optimization._types import (
     OptimizationReport,
     ProblemEvaluation,
     ProgressReporter,
+    SolverResult,
+)
+from rayoptics_web_utils.optimization.failure_reports import (
+    build_optimization_failure_report,
 )
 from rayoptics_web_utils.optimization.operands import (
     OPERAND_REGISTRY as _OPERAND_REGISTRY,
@@ -142,6 +148,16 @@ def _build_stopped_report(
     return report
 
 
+def _restore_failure_snapshot(opm: OpticalModel, snapshot) -> None:
+    """Best-effort restore all captured targets before returning an error report."""
+    try:
+        _restore_state(opm, snapshot)
+    except Exception:
+        # Target writes occur before update_model(), so retain the original
+        # optimizer exception even if the model cannot update while rolling back.
+        pass
+
+
 def optimize_opm(
     opm: OpticalModel,
     config: OptimizationConfig,
@@ -164,7 +180,7 @@ def optimize_opm(
     6. Exceptions during objective evaluation return a large penalty residual vector (`1e6` per residual, minimum length 1) for residual solvers or a scalar `1e6` penalty for scalar solvers so SciPy can continue.
     7. Leaves `opm` at the optimized state and returns a detailed report including `optimization_progress`.
     8. If SciPy raises `KeyboardInterrupt`, treats it as a user stop, evaluates the latest recorded optimizer vector (or the current vector if no progress was recorded), returns `success == True`, `status == "stopped"`, and `message == "Optimization stopped by user"`, and includes the partial progress history and final values from that latest state.
-    9. If SciPy setup or the final evaluation fails for any other exception, restores the snapshotted state and re-raises.
+    9. If setup, SciPy, or final evaluation fails with another ordinary exception, restores the snapshotted state and returns a complete `success == False`, `status == "error"` report without retrying merit evaluation. Failures before snapshot capture use empty state arrays and zero counters.
 
     If there are no variables, `optimize_opm()` skips SciPy, records one progress point from the evaluated merit report, and returns `status == "no_variables"`.
 
@@ -177,37 +193,58 @@ def optimize_opm(
     Returns:
         Detailed optimization result and progress report.
     """
-    _sync_legacy_hooks()
-    problem = _OptimizationProblem(opm, config, image_point=image_point)
-    snapshot = _snapshot_state(opm, problem.variables, problem.pickups)
-    initial_values = problem.variable_state()
+    try:
+        _sync_legacy_hooks()
+        problem = _OptimizationProblem(opm, config, image_point=image_point)
+        snapshot = _snapshot_state(opm, problem.variables, problem.pickups)
+        initial_values = problem.variable_state()
+    except Exception as error:
+        return build_optimization_failure_report(error, config)
 
     if len(problem.variables) == 0:
-        report = cast(OptimizationReport, problem.evaluate())
-        problem.progress.record(problem.current_vector(), report, progress_reporter)
-        report["success"] = True
-        report["status"] = "no_variables"
-        report["message"] = "No optimization variables supplied"
-        report["initial_values"] = initial_values
-        report["optimization_progress"] = list(problem.optimization_progress)
-        report["optimizer"]["nfev"] = 0
-        if problem.optimizer["kind"] == "least_squares":
-            report["optimizer"]["njev"] = 0
-            report["optimizer"]["cost"] = float(report["merit_function"]["sum_of_squares"]) / 2.0
-            report["optimizer"]["optimality"] = 0.0
-        elif problem.optimizer["kind"] == "differential_evolution":
-            report["optimizer"]["nit"] = 0
-        return report
+        try:
+            report = cast(OptimizationReport, problem.evaluate())
+            problem.progress.record(problem.current_vector(), report, progress_reporter)
+            report["success"] = True
+            report["status"] = "no_variables"
+            report["message"] = "No optimization variables supplied"
+            report["initial_values"] = initial_values
+            report["optimization_progress"] = list(problem.optimization_progress)
+            report["optimizer"]["nfev"] = 0
+            if problem.optimizer["kind"] == "least_squares":
+                report["optimizer"]["njev"] = 0
+                report["optimizer"]["cost"] = float(report["merit_function"]["sum_of_squares"]) / 2.0
+                report["optimizer"]["optimality"] = 0.0
+            elif problem.optimizer["kind"] == "differential_evolution":
+                report["optimizer"]["nit"] = 0
+            return report
+        except Exception as error:
+            _restore_failure_snapshot(opm, snapshot)
+            return build_optimization_failure_report(
+                error,
+                config,
+                problem=problem,
+                initial_values=initial_values,
+                snapshot=snapshot,
+            )
 
+    result: SolverResult | None = None
     try:
         solver = _SOLVER_REGISTRY[problem.optimizer["kind"]](problem)
         result = solver.solve(progress_reporter)
         report = problem.evaluate(result["x"])
     except KeyboardInterrupt:
         return _build_stopped_report(problem, initial_values)
-    except Exception:
-        _restore_state(opm, snapshot)
-        raise
+    except Exception as error:
+        _restore_failure_snapshot(opm, snapshot)
+        return build_optimization_failure_report(
+            error,
+            config,
+            problem=problem,
+            initial_values=initial_values,
+            snapshot=snapshot,
+            solver_result=result,
+        )
 
     report = cast(OptimizationReport, report)
     report["success"] = bool(result["success"])

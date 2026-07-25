@@ -4,7 +4,8 @@ The implementation mirrors Optiland's glass-expert search without importing it:
 ordered greedy surface passes, deterministic K-means representatives, raw
 ``(nd, Vd)`` nearest neighbours, strict merit improvement, and a final continuous
 polish. Optical materials and all numeric/pickup targets are snapshotted together
-so candidate trials and failures restore coherent designs.
+so candidate trials and failures restore coherent designs. Ordinary setup/runtime
+exceptions return complete ``status="error"`` reports without retrying merit.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ from .glass_config import (
     material_report_entry,
     normalize_glass_optimization_config,
 )
+from .failure_reports import build_glass_optimization_failure_report
 from .optimization import _sync_legacy_hooks
 from .problem import OptimizationProblem
 from .solvers.lbfgsb import GLASS_OBJECTIVE_PENALTY, LBFGSBSolver
@@ -219,12 +221,12 @@ class GlassExpertOptimizer:
                 "surface_index": surface_index,
                 "candidate": candidate.report_identity(),
             }
-            self.runs += 1
             result = LBFGSBSolver(
                 self.problem,
                 self.settings["maxiter"],
                 self.settings["tol"],
             ).solve(self.progress_reporter)
+            self.runs += 1
             self._record_result(result)
             merit = float(result.get("fun", GLASS_OBJECTIVE_PENALTY))
             candidate_state = self.capture_state()
@@ -259,12 +261,12 @@ class GlassExpertOptimizer:
         pre_polish_state = self.capture_state()
         self.best_completed_state = pre_polish_state
         self.problem.progress_context = {"phase": "polish"}
-        self.runs += 1
         result = LBFGSBSolver(
             self.problem,
             self.settings["maxiter"],
             self.settings["tol"],
         ).solve(self.progress_reporter)
+        self.runs += 1
         self._record_result(result)
         self.best_completed_state = self.capture_state()
         self.current_merit = float(result.get("fun", self.current_merit))
@@ -336,9 +338,10 @@ def optimize_glasses(
     The function validates and resolves all candidates before mutation, snapshots
     both material and numeric state, converts ModelGlass incumbents to the nearest
     allowed real glass, performs global/local greedy passes, and finishes with one
-    continuous L-BFGS-B polish. Unexpected failures restore the original design.
-    ``KeyboardInterrupt`` instead restores the best fully completed candidate and
-    returns a successful ``"stopped"`` report.
+    continuous L-BFGS-B polish. Ordinary failures restore the original design and
+    return a complete ``"error"`` report without retrying the failed merit
+    evaluation. ``KeyboardInterrupt`` instead restores the best fully completed
+    candidate and returns a successful ``"stopped"`` report.
 
     Args:
         opm: RayOptics optical model to optimize in place.
@@ -349,14 +352,17 @@ def optimize_glasses(
     Returns:
         Detailed JSON-safe mixed optimization report.
     """
-    _sync_legacy_hooks()
-    normalized = normalize_glass_optimization_config(opm, config)
-    problem = OptimizationProblem.from_normalized_config(
-        opm,
-        normalized["problem_config"],
-        image_point=image_point,
-    )
-    optimizer = GlassExpertOptimizer(opm, normalized, problem, progress_reporter)
+    try:
+        _sync_legacy_hooks()
+        normalized = normalize_glass_optimization_config(opm, config)
+        problem = OptimizationProblem.from_normalized_config(
+            opm,
+            normalized["problem_config"],
+            image_point=image_point,
+        )
+        optimizer = GlassExpertOptimizer(opm, normalized, problem, progress_reporter)
+    except Exception as error:
+        return build_glass_optimization_failure_report(error, config)
 
     try:
         optimizer.initialize()
@@ -367,9 +373,23 @@ def optimize_glasses(
         try:
             optimizer.restore_state(optimizer.best_completed_state)
             return optimizer.build_report(stopped=True)
-        except Exception:
+        except Exception as error:
+            try:
+                optimizer.restore_state(optimizer.original_state)
+            except Exception:
+                pass
+            return build_glass_optimization_failure_report(
+                error,
+                config,
+                optimizer=optimizer,
+            )
+    except Exception as error:
+        try:
             optimizer.restore_state(optimizer.original_state)
-            raise
-    except Exception:
-        optimizer.restore_state(optimizer.original_state)
-        raise
+        except Exception:
+            pass
+        return build_glass_optimization_failure_report(
+            error,
+            config,
+            optimizer=optimizer,
+        )
