@@ -4,33 +4,33 @@ Glass selection is categorical: a surface must end with one real glass from its 
 
 ## From Glasses to Points
 
-Each candidate glass \(g\) is mapped to the two-dimensional point
+Each candidate glass $g$ is mapped to the two-dimensional point
 
-\[
+$$
 x_g = (n_d, V_d),
 \qquad
 V_d = \frac{n_d - 1}{n_F - n_C}.
-\]
+$$
 
-All four values involved in the coordinate calculation must produce finite coordinates, and \(n_F\) must differ from \(n_C\). A candidate with unreadable or non-finite data cannot enter clustering.
+All four values involved in the coordinate calculation must produce finite coordinates, and $n_F$ must differ from $n_C$. A candidate with unreadable or non-finite data cannot enter clustering.
 
 The distance calculation uses raw Euclidean coordinates:
 
-\[
+$$
 d(g_1, g_2)
 =
 \sqrt{(n_{d,1}-n_{d,2})^2 + (V_{d,1}-V_{d,2})^2}.
-\]
+$$
 
-There is no normalization or feature scaling. Since \(V_d\) commonly spans a much larger numeric range than \(n_d\), differences in \(V_d\) can dominate clustering and nearest-neighbour selection. This is a deliberate property of the current search and should be considered when choosing candidate pools.
+There is no normalization or feature scaling. Since $V_d$ commonly spans a much larger numeric range than $n_d$, differences in $V_d$ can dominate clustering and nearest-neighbour selection. This is a deliberate property of the current search and should be considered when choosing candidate pools.
 
 ## Independent Clustering Per Surface
 
-For each optimizable surface \(s\), let \(G_s\) be its finite candidate pool. That surface is clustered independently with
+For each optimizable surface $s$, let $G_s$ be its finite candidate pool. That surface is clustered independently with
 
-\[
+$$
 k_s = \min(\text{num\_neighbours}, |G_s|).
-\]
+$$
 
 Independent clustering matters because surfaces may have different catalogs, candidate counts, or intended optical roles. Candidates from separate surfaces are never mixed into one k-means fit.
 
@@ -50,9 +50,9 @@ With multiple glass surfaces, the algorithm is an ordered greedy search. It fini
 
 Suppose three surfaces each have 24 candidates and `num_neighbours = 4`.
 
-- A Cartesian search contains \(24^3 = 13{,}824\) glass combinations before continuous refinement.
-- Independent k-means selection produces \(4\) global representatives per surface, for \(3 \times 4 = 12\) global candidate trials.
-- Trying up to \(4\) local neighbours per surface adds at most another \(12\) candidate trials.
-- One final continuous polish gives at most \(25\) refinement runs in this simplified count.
+- A Cartesian search contains $24^3 = 13{,}824$ glass combinations before continuous refinement.
+- Independent k-means selection produces $4$ global representatives per surface, for $3 \times 4 = 12$ global candidate trials.
+- Trying up to $4$ local neighbours per surface adds at most another $12$ candidate trials.
+- One final continuous polish gives at most $25$ refinement runs in this simplified count.
 
 The reduction comes from using the coordinate map to choose representative real glasses, while every accepted or rejected decision still comes from the full optical merit evaluation.
