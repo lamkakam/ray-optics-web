@@ -5,6 +5,7 @@
  * ## Responsibilities
  *
  * - Reads `NEXT_PUBLIC_BASE_PATH` and applies it as `basePath`, defaulting to an empty string for local development.
+ * - Preserves trailing slashes instead of allowing Next.js to redirect root-slash requests, keeping cold App Router navigation on the requested URL.
  * - Sets cross-origin isolation response headers for every route served by `next dev`:
  * - `Cross-Origin-Opener-Policy: same-origin`
  * - `Cross-Origin-Embedder-Policy: require-corp`
@@ -32,6 +33,7 @@ const crossOriginIsolationHeaders = [
 
 const developmentConfig: NextConfig = {
   basePath,
+  skipTrailingSlashRedirect: true,
   headers: async () => [
     {
       source: "/:path*",
