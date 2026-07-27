@@ -140,6 +140,7 @@ function makeProxy(overrides?: Partial<PyodideWorkerAPI>): PyodideWorkerAPI {
     requestOptimizationStop: jest.fn().mockResolvedValue({ signaled: true }),
     evaluateOptimizationProblem: jest.fn(),
     optimizeOpm: jest.fn(),
+    optimizeGlasses: jest.fn(),
     ...overrides,
   };
 }

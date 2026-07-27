@@ -4,7 +4,8 @@
  * @remarks
  * Public computations are stateless: each builds an optical model inside one
  * `runPython` call. The singleton owns only the initialized runtime, user-defined
- * material registry, and active optimization-interrupt lifecycle.
+ * material registry, and active optimization-interrupt lifecycle shared by
+ * continuous and glass-expert runs.
  *
  * `init` reports deterministic startup milestones while loading the pinned Pyodide
  * runtime, Python dependencies, and local wheel. Injectable `_*` variants accept a
@@ -13,12 +14,14 @@
  *
  * All public computations obtain the executor through `requirePyodide`, which throws
  * until initialization succeeds. Initialization clears the singleton on failure so
- * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.23.0` wheel
+ * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.24.0` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`.
  * User-defined glass mutations share the Python material registry and use NumPy-safe
- * JSON serialization. Optimization temporarily owns its progress callback and
- * interrupt buffer, clearing both on every completion path; stop requests affect only
- * the matching active run id.
+ * JSON serialization. Both optimization RPCs return ordinary Python failures as
+ * typed `status: "error"` reports, temporarily own the same progress callback and
+ * interrupt-buffer lifecycle, and clear both on every completion path; executor,
+ * parsing, and transport failures may still reject. Stop requests affect only the
+ * matching active run id.
  */
 import { expose } from "comlink";
 import { loadPyodide, version } from "pyodide";
@@ -27,6 +30,8 @@ import type { FocusingResult } from "@/features/lens-editor/types/focusingResult
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 import {
+  type GlassOptimizationConfig,
+  type GlassOptimizationReport,
   type OptimizationConfig,
   type OptimizationProgressEntry,
   type OptimizationReport,
@@ -173,7 +178,11 @@ from rayoptics_web_utils.plotting import (
 )
 from rayoptics_web_utils.focusing import focus_by_mono_rms_spot, focus_by_mono_strehl, focus_by_poly_rms_spot, focus_by_poly_strehl
 from rayoptics_web_utils.glass.glass import get_all_glass_catalogs_data
-from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_opm
+from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_glasses, optimize_opm
+from rayoptics_web_utils.optimization.failure_reports import (
+    build_glass_optimization_failure_report as _build_glass_optimization_failure_report,
+    build_optimization_failure_report as _build_optimization_failure_report,
+)
 `);
 }
 
@@ -212,7 +221,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.23.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.24.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
@@ -667,12 +676,13 @@ export async function _evaluateOptimizationProblem(
 /**
  * Runs optimization with injected execution, optional streamed progress, and
  * optional per-run interruption. The serialized config is reconstructed in Python;
+ * ordinary Python setup/runtime exceptions resolve as complete failure reports, and
  * temporary callback globals and interrupt state are always cleared in `finally`.
  *
  * @param onProgress - Optional live receiver for parsed optimization snapshots.
  * @param runId - Identifier used to reject stale stop requests.
  * @param interruptBuffer - Shared buffer installed only for an interrupt-capable run.
- * @returns The parsed JSON-safe optimization report.
+ * @returns The parsed JSON-safe success, stopped, solver, or Python-error report.
  */
 export async function _optimizeOpm(
   runPython: (code: string) => Promise<unknown>,
@@ -683,6 +693,61 @@ export async function _optimizeOpm(
   runId?: string,
   interruptBuffer?: SharedArrayBuffer,
 ): Promise<OptimizationReport> {
+  return await runOptimization(
+    runPython,
+    opticalModel,
+    config,
+    "optimize_opm",
+    imagePoint,
+    onProgress,
+    runId,
+    interruptBuffer,
+  );
+}
+
+/**
+ * Runs glass-expert optimization with the shared callback/interrupt lifecycle.
+ * The flat config is JSON-reconstructed inside Python and the candidate-aware
+ * progress history is parsed without replacing absent optional fields with null.
+ * Ordinary Python setup/runtime exceptions resolve through the glass failure builder.
+ */
+export async function _optimizeGlasses(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  config: GlassOptimizationConfig,
+  imagePoint: ImagePoint = "chief_ray",
+  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  runId?: string,
+  interruptBuffer?: SharedArrayBuffer,
+): Promise<GlassOptimizationReport> {
+  return await runOptimization(
+    runPython,
+    opticalModel,
+    config,
+    "optimize_glasses",
+    imagePoint,
+    onProgress,
+    runId,
+    interruptBuffer,
+  );
+}
+
+/**
+ * Owns temporary Pyodide progress globals and per-run interrupt state for either
+ * optimizer RPC. The generated Python `try` begins before model construction and
+ * converts ordinary Python exceptions to the matching complete failure report.
+ * Executor rejection and JSON parsing errors still reject after guaranteed cleanup.
+ */
+async function runOptimization<TReport extends OptimizationReport | GlassOptimizationReport>(
+  runPython: (code: string) => Promise<unknown>,
+  opticalModel: OpticalModel,
+  config: OptimizationConfig | GlassOptimizationConfig,
+  pythonFunction: "optimize_opm" | "optimize_glasses",
+  imagePoint: ImagePoint,
+  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  runId?: string,
+  interruptBuffer?: SharedArrayBuffer,
+): Promise<TReport> {
   const progressCallback = onProgress;
   const configJson = JSON.stringify(config);
   const reportProgress = (progressJson: string) => {
@@ -699,48 +764,66 @@ export async function _optimizeOpm(
     && typeof pyodide.globals?.set === "function"
     && typeof pyodide.globals?.delete === "function";
 
-  if (canBindProgressCallback) {
-    pyodide.globals.set("_optimization_progress_callback", reportProgress);
-  }
   const canBindInterruptBuffer = runId !== undefined
     && interruptBuffer !== undefined
     && pyodide !== null
     && typeof pyodide.setInterruptBuffer === "function";
-
-  if (canBindInterruptBuffer) {
-    const interruptView = new Int32Array(interruptBuffer);
-    Atomics.store(interruptView, 0, 0);
-    activeOptimizationRunId = runId;
-    activeOptimizationInterruptBuffer = interruptBuffer;
-    activeOptimizationInterruptView = interruptView;
-    pyodide.setInterruptBuffer(interruptView);
-  }
+  let progressBindingStarted = false;
+  let interruptBindingStarted = false;
+  const failureReportBuilder = pythonFunction === "optimize_glasses"
+    ? "_build_glass_optimization_failure_report"
+    : "_build_optimization_failure_report";
   try {
+    if (canBindProgressCallback) {
+      progressBindingStarted = true;
+      pyodide.globals.set("_optimization_progress_callback", reportProgress);
+    }
+    if (canBindInterruptBuffer) {
+      const interruptView = new Int32Array(interruptBuffer);
+      Atomics.store(interruptView, 0, 0);
+      activeOptimizationRunId = runId;
+      activeOptimizationInterruptBuffer = interruptBuffer;
+      activeOptimizationInterruptView = interruptView;
+      interruptBindingStarted = true;
+      pyodide.setInterruptBuffer(interruptView);
+    }
     const json = (await runPython(
       buildScript(
         opticalModel,
-        (opm) => !canBindProgressCallback
-          ? `json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)}), image_point='${imagePoint}'))`
-          : `
+        (opm) => `
+${canBindProgressCallback ? `
 def _report_optimization_progress(progress):
     _optimization_progress_callback(json.dumps(progress))
-json.dumps(optimize_opm(${opm}, json.loads(${JSON.stringify(configJson)}), image_point='${imagePoint}', progress_reporter=_report_optimization_progress))
+` : ""}
+_optimization_config = {}
+try:
+    _optimization_config = json.loads(${JSON.stringify(configJson)})
+    _optimization_report = ${pythonFunction}(${opm}, _optimization_config, image_point='${imagePoint}'${canBindProgressCallback ? ", progress_reporter=_report_optimization_progress" : ""})
+except Exception as _optimization_error:
+    _optimization_report = ${failureReportBuilder}(_optimization_error, _optimization_config)
+json.dumps(_optimization_report)
 `,
       ),
     )) as string;
-    return JSON.parse(json) as OptimizationReport;
+    return JSON.parse(json) as TReport;
   } finally {
-    if (canBindInterruptBuffer) {
-      pyodide.setInterruptBuffer(undefined);
-      if (activeOptimizationInterruptView !== undefined) {
-        Atomics.store(activeOptimizationInterruptView, 0, 0);
+    try {
+      if (interruptBindingStarted) {
+        try {
+          pyodide.setInterruptBuffer(undefined);
+        } finally {
+          if (activeOptimizationInterruptView !== undefined) {
+            Atomics.store(activeOptimizationInterruptView, 0, 0);
+          }
+          activeOptimizationRunId = undefined;
+          activeOptimizationInterruptBuffer = undefined;
+          activeOptimizationInterruptView = undefined;
+        }
       }
-      activeOptimizationRunId = undefined;
-      activeOptimizationInterruptBuffer = undefined;
-      activeOptimizationInterruptView = undefined;
-    }
-    if (canBindProgressCallback) {
-      pyodide.globals.delete("_optimization_progress_callback");
+    } finally {
+      if (progressBindingStarted) {
+        pyodide.globals.delete("_optimization_progress_callback");
+      }
     }
   }
 }
@@ -967,6 +1050,18 @@ export async function optimizeOpm(
   return await _optimizeOpm(requirePyodide(), opticalModel, config, imagePoint, onProgress, runId, interruptBuffer);
 }
 
+/** Runs mixed glass/continuous optimization with optional progress and interruption. */
+export async function optimizeGlasses(
+  opticalModel: OpticalModel,
+  config: GlassOptimizationConfig,
+  imagePoint: ImagePoint = "chief_ray",
+  onProgress?: (progress: ReadonlyArray<OptimizationProgressEntry>) => void | Promise<void>,
+  runId?: string,
+  interruptBuffer?: SharedArrayBuffer,
+): Promise<GlassOptimizationReport> {
+  return await _optimizeGlasses(requirePyodide(), opticalModel, config, imagePoint, onProgress, runId, interruptBuffer);
+}
+
 expose({
   init,
   getFirstOrderData,
@@ -997,5 +1092,6 @@ expose({
   canInterruptOptimization,
   requestOptimizationStop,
   evaluateOptimizationProblem,
+  optimizeGlasses,
   optimizeOpm,
 });

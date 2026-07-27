@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from typing import Self
 
 import numpy as np
 from rayoptics.environment import OpticalModel
@@ -42,16 +43,48 @@ class OptimizationProblem:
     - Evaluates all normalized merit operands and returns the same report shape consumed by the existing public API.
     - Passes `image_point` into every operand evaluator; OPD-based operands consume it and non-OPD operands ignore it.
     - Expands vector-valued operand outputs into one residual report entry per returned sample, so target-less operands such as Ray Fan variants can contribute many least-squares residuals from one normalized field/wavelength selection.
-    - Exposes both residual-vector and scalar-merit objective methods so future solvers can choose the representation they need.
+    - Exposes residual-vector, scalar-merit, and glass-safe scalar objective methods so solver adapters can choose the representation they need.
     - For targeted scalar operands, weighted residuals remain `total_weight * (actual - target)`. For target-less vector operands, weighted residuals are `total_weight * sample_value`.
     - The penalty residual vector length matches the nominal expanded residual dimension using the same shared operand residual-count helper as config validation. For `ray_fan`, that means `num_rays * 2` entries per normalized field/wavelength sample; for axis-specific Ray Fan operands, that means `num_rays` entries.
-    - Records progress only when the evaluated optimizer vector changes materially.
+    - Records progress only when the evaluated optimizer vector or glass-search context changes materially.
+    - `from_normalized_config(...)` lets the glass facade reuse the problem core after its distinct flat configuration has already been validated.
+    - Converts optional bounds into SciPy-compatible `(None, None)` intervals for L-BFGS-B while preserving the existing array bounds used by current solvers.
     - Uses `OpticalModel` plus package-local typed config/report aliases for all internal mappings."""
 
     def __init__(self, opm: OpticalModel, config: OptimizationConfig, image_point: str = "chief_ray"):
+        self._bind_config(opm, normalize_config(opm, config), image_point)
+
+    @classmethod
+    def from_normalized_config(
+        cls,
+        opm: OpticalModel,
+        config: NormalizedOptimizationConfig,
+        image_point: str = "chief_ray",
+    ) -> Self:
+        """Bind a pre-normalized config without applying standard solver validation.
+
+        Args:
+            opm: RayOptics optical model.
+            config: Already normalized problem configuration.
+            image_point: Image-point reference convention.
+
+        Returns:
+            Problem bound to the supplied normalized configuration.
+        """
+        problem = cls.__new__(cls)
+        problem._bind_config(opm, config, image_point)
+        return problem
+
+    def _bind_config(
+        self,
+        opm: OpticalModel,
+        config: NormalizedOptimizationConfig,
+        image_point: str,
+    ) -> None:
+        """Initialize common problem state from a normalized configuration."""
         self.opm = opm
         self.image_point = image_point
-        self.config: NormalizedOptimizationConfig = normalize_config(opm, config)
+        self.config = config
         self.variables = self.config["variables"]
         self.pickups = self.config["pickups"]
         self.ordered_pickups = pickup_order(self.pickups)
@@ -60,6 +93,7 @@ class OptimizationProblem:
         self.progress = OptimizationProgress()
         self.optimization_progress = self.progress.entries
         self._progress_reporter: ProgressReporter | None = None
+        self.progress_context: dict[str, object] | None = None
 
     def current_vector(self) -> FloatArray:
         return np.array(
@@ -73,6 +107,21 @@ class OptimizationProblem:
         lower = np.array([self._internal_lower_bound(variable) for variable in self.variables], dtype=float)
         upper = np.array([self._internal_upper_bound(variable) for variable in self.variables], dtype=float)
         return lower, upper
+
+    def scipy_bounds(self) -> list[tuple[float | None, float | None]]:
+        """Return optional per-variable bounds accepted by SciPy minimize."""
+        bounds: list[tuple[float | None, float | None]] = []
+        for variable in self.variables:
+            if "min" not in variable or "max" not in variable:
+                bounds.append((None, None))
+                continue
+            bounds.append(
+                (
+                    self._internal_lower_bound(variable),
+                    self._internal_upper_bound(variable),
+                )
+            )
+        return bounds
 
     def apply_vector(self, values: FloatArray | list[float]) -> list[PickupReportEntry]:
         for value, variable in zip(values, self.variables):
@@ -180,7 +229,12 @@ class OptimizationProblem:
             evaluation = self.evaluate(vector)
         except Exception:
             return self.penalty_residual_vector()
-        self.progress.record(vector, evaluation, self._progress_reporter)
+        self.progress.record(
+            vector,
+            evaluation,
+            self._progress_reporter,
+            context=self.progress_context,
+        )
         return np.array([entry["weighted_residual"] for entry in evaluation["residuals"]], dtype=float)
 
     def scalar_objective(self, vector: FloatArray) -> float:
@@ -188,8 +242,36 @@ class OptimizationProblem:
             evaluation = self.evaluate(vector)
         except Exception:
             return float(PENALTY_RESIDUAL)
-        self.progress.record(vector, evaluation, self._progress_reporter)
+        self.progress.record(
+            vector,
+            evaluation,
+            self._progress_reporter,
+            context=self.progress_context,
+        )
         return float(evaluation["merit_function"]["sum_of_squares"])
+
+    def glass_scalar_objective(self, vector: FloatArray) -> float:
+        """Evaluate scalar merit and normalize non-finite values to ``1e10``.
+
+        Evaluation exceptions deliberately propagate to the dedicated L-BFGS-B
+        adapter, which applies the same penalty while leaving ``KeyboardInterrupt``
+        available to the glass workflow.
+        """
+        evaluation = self.evaluate(vector)
+        merit = float(evaluation["merit_function"]["sum_of_squares"])
+        if not math.isfinite(merit):
+            merit = 1e10
+            evaluation["merit_function"] = {
+                "sum_of_squares": merit,
+                "rss": float(math.sqrt(merit)),
+            }
+        self.progress.record(
+            vector,
+            evaluation,
+            self._progress_reporter,
+            context=self.progress_context,
+        )
+        return merit
 
     def _to_internal_value(self, variable: VariableConfig, value: float) -> float:
         if variable["kind"] == "radius":
@@ -208,6 +290,8 @@ class OptimizationProblem:
         return max(self._internal_bound_candidates(variable))
 
     def _internal_bound_candidates(self, variable: VariableConfig) -> list[float]:
+        if "min" not in variable or "max" not in variable:
+            return [float("-inf"), float("inf")]
         if variable["kind"] != "radius":
             return [float(variable["min"]), float(variable["max"])]
 

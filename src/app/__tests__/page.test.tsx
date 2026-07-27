@@ -352,6 +352,7 @@ const mockProxy = {
     residuals: [],
     merit_function: { sum_of_squares: 0, rss: 0 },
   }),
+  optimizeGlasses: jest.fn(),
 } satisfies Record<keyof PyodideWorkerAPI, jest.Mock>;
 
 const optimizationGuardModel: OpticalModel = {
