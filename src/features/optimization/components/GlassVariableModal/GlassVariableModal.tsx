@@ -7,10 +7,13 @@
  * The editor exposes only Constant and Variable modes. Switching a constant
  * incumbent to Variable for the first time selects every live candidate in that
  * incumbent's catalog; air, REFL, and numeric ModelGlass incumbents start empty.
- * Eight tri-state catalog controls and AG Grid row checkboxes update one explicit
- * identity set. Confirm persists sorted `{catalog, name}` pairs only. Missing
- * persisted identities remain visible as unavailable rows so deleted Custom
- * entries can be deselected.
+ * Eight tri-state catalog controls and AG Grid row/header checkboxes update one
+ * explicit identity set. The grid exposes catalog/name text filters and seven
+ * sortable/filterable optical coordinates formatted to six decimals. Confirm
+ * persists sorted `{catalog, name}` pairs only. Missing persisted identities
+ * remain visible with blank optical values so deleted Custom entries can be
+ * deselected. A definite `280px` viewport height lets normal-layout AG Grid
+ * render and own its internal scrolling.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgGridProvider } from "ag-grid-react";
@@ -27,6 +30,11 @@ import { CATALOG_NAMES, type AllGlassCatalogsData } from "@/features/glass-map/t
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { GlassCandidateConfig, GlassCatalogName } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { GlassMode, GlassModeDraft } from "@/features/optimization/stores/optimizationStore";
+import {
+  formatOptionalSixDecimal,
+  NO_BLANK_NUMBER_FILTER_OPTIONS,
+  NO_BLANK_TEXT_FILTER_OPTIONS,
+} from "@/shared/components/ag-grid/readonlyGridConfig";
 import {
   buildLiveGlassCandidateRows,
   getGlassCandidateIdentity,
@@ -139,7 +147,7 @@ function GlassVariableModalEditor({
   const rowSelection = useMemo<RowSelectionOptions<GlassCandidateRow>>(() => ({
     mode: "multiRow",
     checkboxes: true,
-    headerCheckbox: false,
+    headerCheckbox: true,
     selectAll: "all",
   }), []);
   const selectionColumnDef = useMemo<SelectionColumnDef>(() => ({
@@ -151,11 +159,23 @@ function GlassVariableModalEditor({
     suppressMovable: true,
   }), []);
   const columnDefs = useMemo<ColDef<GlassCandidateRow>[]>(() => [
-    { headerName: "Catalog", field: "catalog", width: 120 },
     {
-      headerName: "Glass",
+      headerName: "Catalog",
+      field: "catalog",
+      width: 120,
+      sortable: true,
+      filter: "agTextColumnFilter",
+      filterParams: { filterOptions: NO_BLANK_TEXT_FILTER_OPTIONS },
+      unSortIcon: true,
+    },
+    {
+      headerName: "Label",
       field: "name",
       width: 180,
+      sortable: true,
+      filter: "agTextColumnFilter",
+      filterParams: { filterOptions: NO_BLANK_TEXT_FILTER_OPTIONS },
+      unSortIcon: true,
       cellRenderer: ({ data }: { data: GlassCandidateRow }) =>
         data.available ? data.name : `${data.name} (Unavailable)`,
     },
@@ -163,13 +183,71 @@ function GlassVariableModalEditor({
       headerName: "nd",
       field: "nd",
       width: 110,
-      valueFormatter: ({ value }) => value === undefined ? "" : Number(value).toFixed(6),
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      valueFormatter: formatOptionalSixDecimal,
     },
     {
-      headerName: "Vd",
+      headerName: "vd",
       field: "vd",
       width: 110,
-      valueFormatter: ({ value }) => value === undefined ? "" : Number(value).toFixed(6),
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      valueFormatter: formatOptionalSixDecimal,
+    },
+    {
+      headerName: "ne",
+      field: "ne",
+      width: 110,
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      valueFormatter: formatOptionalSixDecimal,
+    },
+    {
+      headerName: "ve",
+      field: "ve",
+      width: 110,
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      valueFormatter: formatOptionalSixDecimal,
+    },
+    {
+      headerName: "Pg,F",
+      field: "pgF",
+      width: 110,
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      valueFormatter: formatOptionalSixDecimal,
+    },
+    {
+      headerName: "PF,e",
+      field: "pFe",
+      width: 110,
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      valueFormatter: formatOptionalSixDecimal,
+    },
+    {
+      headerName: "PF,d",
+      field: "pFd",
+      width: 110,
+      sortable: true,
+      filter: "agNumberColumnFilter",
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
+      unSortIcon: true,
+      valueFormatter: formatOptionalSixDecimal,
     },
   ], []);
 
@@ -323,13 +401,14 @@ function GlassVariableModalEditor({
                 Select at least one glass candidate.
               </Paragraph>
             ) : undefined}
-            <div className="ag-grid-touch-scroll min-h-[280px] overflow-x-auto">
+            <div className="ag-grid-touch-scroll h-[280px] overflow-x-auto">
               <AgGridProvider modules={[AllCommunityModule]}>
                 <EditableAgGridReact<GlassCandidateRow>
                   theme={gridTheme}
                   rowData={rows}
                   columnDefs={columnDefs}
                   defaultColDef={{ sortable: false, filter: false, suppressMovable: true }}
+                  domLayout="normal"
                   getRowId={(params) => params.data.id}
                   rowSelection={rowSelection}
                   selectionColumnDef={selectionColumnDef}

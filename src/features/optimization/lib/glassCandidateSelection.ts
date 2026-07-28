@@ -3,8 +3,8 @@
  *
  * @remarks
  * Candidate identity is always the explicit `(catalog, name)` pair sent to the
- * worker. Live optical coordinates remain UI-only data, so future nd/Vd range
- * selectors can update the same identity set without changing worker payloads.
+ * worker. All seven live optical coordinates remain UI-only data, so grid
+ * sorting and filtering can update the presentation without changing worker payloads.
  * Special candidates are deliberately restricted to the four bundled optical
  * materials; `air`, `REFL`, and any unexpected Special bucket entries are never
  * eligible. Persisted identities missing from the current catalog snapshot are
@@ -42,8 +42,20 @@ export interface GlassCandidateRow extends GlassCandidateConfig {
   readonly id: string;
   /** Accessible row-selection label used by the AG Grid test and browser UI. */
   readonly label: string;
+  /** Refractive index at the Fraunhofer d line. */
   readonly nd?: number;
+  /** Abbe number centered on the Fraunhofer d line. */
   readonly vd?: number;
+  /** Refractive index at the Fraunhofer e line. */
+  readonly ne?: number;
+  /** Abbe number centered on the Fraunhofer e line. */
+  readonly ve?: number;
+  /** Relative partial dispersion Pg,F. */
+  readonly pgF?: number;
+  /** Relative partial dispersion PF,e. */
+  readonly pFe?: number;
+  /** Relative partial dispersion PF,d. */
+  readonly pFd?: number;
   readonly available: boolean;
 }
 
@@ -63,7 +75,7 @@ function isEligibleCatalogGlass(catalog: CatalogName, name: string): boolean {
   return catalog !== "Special" || ELIGIBLE_SPECIAL_GLASS_NAME_SET.has(name);
 }
 
-/** Builds sorted live rows from all eight catalog buckets. */
+/** Builds sorted live rows with seven optical coordinates from all eight catalog buckets. */
 export function buildLiveGlassCandidateRows(
   catalogs: AllGlassCatalogsData | undefined,
 ): GlassCandidateRow[] {
@@ -78,6 +90,11 @@ export function buildLiveGlassCandidateRows(
           label: `${catalog} ${name}`,
           nd: data.refractiveIndexD,
           vd: data.abbeNumberD,
+          ne: data.refractiveIndexE,
+          ve: data.abbeNumberE,
+          pgF: data.partialDispersions.P_gF,
+          pFe: data.partialDispersions.P_fe,
+          pFd: data.partialDispersions.P_Fd,
           available: true,
         };
       }),

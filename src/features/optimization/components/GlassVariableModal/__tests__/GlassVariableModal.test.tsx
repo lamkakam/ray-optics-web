@@ -1,6 +1,10 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { AllGlassCatalogsData, CatalogGlassData } from "@/features/glass-map/types/glassMap";
+import {
+  CATALOG_NAMES,
+  type AllGlassCatalogsData,
+  type CatalogGlassData,
+} from "@/features/glass-map/types/glassMap";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import { GlassVariableModal } from "@/features/optimization/components/GlassVariableModal/GlassVariableModal";
 
@@ -66,6 +70,258 @@ const model: OpticalModel = {
 };
 
 describe("GlassVariableModal", () => {
+  it("shows the selection plus nine-column candidate grid only in Variable mode", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId("ag-grid-mock")).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
+
+    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
+    expect([...headers].map((header) => header.textContent)).toEqual([
+      "",
+      "Catalog",
+      "Label",
+      "nd",
+      "vd",
+      "ne",
+      "ve",
+      "Pg,F",
+      "PF,e",
+      "PF,d",
+    ]);
+  });
+
+  it("gives the normal-layout candidate grid a definite viewport height", () => {
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Schott", name: "N-BK7" }],
+        }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    const grid = screen.getByTestId("ag-grid-mock");
+    expect(grid.parentElement).toHaveClass("ag-grid-touch-scroll", "h-[280px]");
+    expect(grid).toHaveAttribute("data-dom-layout", "normal");
+  });
+
+  it("makes only candidate data columns sortable and filterable without blank filters", () => {
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Schott", name: "N-BK7" }],
+        }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
+    const expectedTextFilterOptions = "contains,notContains,equals,notEqual,startsWith,endsWith";
+    const expectedNumberFilterOptions = "equals,notEqual,greaterThan,greaterThanOrEqual,lessThan,lessThanOrEqual,inRange";
+
+    expect(headers[0]).toHaveAttribute("data-sortable", "false");
+    expect(headers[0]).toHaveAttribute("data-filter", "false");
+    expect(headers[0]).toHaveAttribute("data-un-sort-icon", "false");
+    expect(headers[0]).not.toHaveAttribute("data-filter-options");
+    for (const header of [...headers].slice(1)) {
+      expect(header).toHaveAttribute("data-sortable", "true");
+      expect(header).toHaveAttribute("data-filter", "true");
+      expect(header).toHaveAttribute("data-un-sort-icon", "true");
+    }
+    for (const header of [...headers].slice(1, 3)) {
+      expect(header).toHaveAttribute("data-filter-options", expectedTextFilterOptions);
+    }
+    for (const header of [...headers].slice(3)) {
+      expect(header).toHaveAttribute("data-filter-options", expectedNumberFilterOptions);
+      expect(header.getAttribute("data-filter-options")?.split(",")).not.toEqual(
+        expect.arrayContaining(["blank", "notBlank"]),
+      );
+    }
+  });
+
+  it("maps and formats all seven optical values to six decimal places", () => {
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Schott", name: "N-BK7" }],
+        }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    const nBk7Row = screen.getByRole("checkbox", { name: "Select Schott N-BK7" }).closest("tr");
+    expect(nBk7Row).not.toBeNull();
+    expect([...nBk7Row!.querySelectorAll("td")].map((cell) => cell.textContent)).toEqual([
+      "",
+      "Schott",
+      "N-BK7",
+      "1.516800",
+      "64.170000",
+      "1.518800",
+      "63.970000",
+      "0.500000",
+      "0.400000",
+      "0.600000",
+    ]);
+  });
+
+  it("keeps global, catalog, and individual row selection synchronized", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Schott", name: "N-BK7" }],
+        }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    const grid = screen.getByTestId("ag-grid-mock");
+    const selectionHeader = grid.querySelector("thead th");
+    expect(selectionHeader).not.toBeNull();
+    const globalCheckbox = within(selectionHeader as HTMLElement).getByRole("checkbox");
+
+    await user.click(globalCheckbox);
+
+    for (const catalog of CATALOG_NAMES) {
+      expect(screen.getByRole("checkbox", { name: `Select all ${catalog} candidates` })).toBeChecked();
+    }
+    for (const rowCheckbox of within(grid).getAllByRole("checkbox").slice(1)) {
+      expect(rowCheckbox).toBeChecked();
+    }
+
+    await user.click(screen.getByRole("checkbox", { name: "Select all Hoya candidates" }));
+
+    expect(screen.getByRole("checkbox", { name: "Select Hoya BSC7" })).not.toBeChecked();
+    expect(globalCheckbox).not.toBeChecked();
+
+    await user.click(screen.getByRole("checkbox", { name: "Select Hoya BSC7" }));
+
+    expect(screen.getByRole("checkbox", { name: "Select all Hoya candidates" })).toBeChecked();
+    await waitFor(() => expect(globalCheckbox).toBeChecked());
+
+    await user.click(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }));
+
+    expect(screen.getByRole("checkbox", { name: "Select all Schott candidates" })).toBePartiallyChecked();
+    expect(globalCheckbox).not.toBeChecked();
+
+    await user.click(globalCheckbox);
+    await user.click(globalCheckbox);
+
+    for (const catalog of CATALOG_NAMES) {
+      expect(screen.getByRole("checkbox", { name: `Select all ${catalog} candidates` })).not.toBeChecked();
+    }
+    for (const rowCheckbox of within(grid).getAllByRole("checkbox").slice(1)) {
+      expect(rowCheckbox).not.toBeChecked();
+    }
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+  });
+
+  it("preserves selected identities and canonical confirm order across sort and filter changes", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [
+            { catalog: "Schott", name: "N-LAK9" },
+            { catalog: "CDGM", name: "H-ZK1" },
+            { catalog: "Hoya", name: "BSC7" },
+          ],
+        }}
+        catalogs={catalogs}
+        onSetMode={onSetMode}
+        onClose={jest.fn()}
+      />,
+    );
+
+    const grid = screen.getByTestId("ag-grid-mock");
+    act(() => {
+      grid.dispatchEvent(new CustomEvent("mockSortChanged", {
+        bubbles: true,
+        detail: {
+          columnState: [
+            { colId: "vd", sort: "asc" },
+            { colId: "label", sort: "desc", sortIndex: 1 },
+          ],
+        },
+      }));
+      grid.dispatchEvent(new CustomEvent("mockFilterChanged", {
+        bubbles: true,
+        detail: {
+          filterModel: {
+            catalog: { filterType: "text", type: "contains", filter: "o" },
+            nd: { filterType: "number", type: "greaterThan", filter: 1.5 },
+          },
+        },
+      }));
+    });
+
+    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select CDGM H-ZK1" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select Hoya BSC7" })).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSetMode).toHaveBeenCalledWith(1, {
+      mode: "variable",
+      candidates: [
+        { catalog: "CDGM", name: "H-ZK1" },
+        { catalog: "Hoya", name: "BSC7" },
+        { catalog: "Schott", name: "N-LAK9" },
+      ],
+    });
+  });
+
   it("selects every live glass from the incumbent catalog on the first Variable switch", async () => {
     const user = userEvent.setup();
     const onSetMode = jest.fn();
@@ -263,6 +519,20 @@ describe("GlassVariableModal", () => {
     expect(within(grid).getByText("DELETED_CUSTOM (Unavailable)")).toBeInTheDocument();
     const staleCheckbox = screen.getByRole("checkbox", { name: "Select Custom DELETED_CUSTOM" });
     expect(staleCheckbox).toBeChecked();
+    const staleRow = staleCheckbox.closest("tr");
+    expect(staleRow).not.toBeNull();
+    expect([...staleRow!.querySelectorAll("td")].map((cell) => cell.textContent)).toEqual([
+      "",
+      "Custom",
+      "DELETED_CUSTOM (Unavailable)",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+    ]);
 
     await user.click(staleCheckbox);
     await user.click(screen.getByRole("button", { name: "Confirm" }));
