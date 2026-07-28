@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { RadiusMode, AsphereOptimizationState } from "@/features/optimization/stores/optimizationStore";
+import type { RadiusMode, AsphereOptimizationState, GlassMode } from "@/features/optimization/stores/optimizationStore";
 import { OptimizationLensPrescriptionGrid } from "@/features/optimization/components/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid/OptimizationLensPrescriptionGrid";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
@@ -595,5 +595,68 @@ describe("OptimizationLensPrescriptionGrid", () => {
     await user.unhover(thicknessTooltipTrigger);
     await user.hover(asphereTooltipTrigger);
     expect(screen.getByText("Click to configure asphere variable or pickup")).toHaveClass("opacity-100");
+  });
+
+  it("inserts a Glass Expert Var. column immediately after Medium for Object and physical surfaces only", async () => {
+    const user = userEvent.setup();
+    const onOpenGlassModal = jest.fn();
+    const glassModes: GlassMode[] = [
+      {
+        surfaceIndex: 0,
+        mode: "variable",
+        candidates: [{ catalog: "Schott", name: "N-BK7" }],
+      },
+      { surfaceIndex: 1, mode: "constant" },
+    ];
+
+    render(
+      <OptimizationLensPrescriptionGrid
+        canOptimizeGlass
+        rows={[
+          { id: "optimization-row-0", radiusSurfaceIndex: undefined, thicknessSurfaceIndex: undefined, row: objectRow },
+          { id: "optimization-row-1", radiusSurfaceIndex: 1, thicknessSurfaceIndex: 1, row: surfaceRow },
+          { id: "optimization-row-2", radiusSurfaceIndex: 2, thicknessSurfaceIndex: undefined, row: imageRow },
+        ]}
+        radiusModes={[]}
+        thicknessModes={[]}
+        glassModes={glassModes}
+        asphereStates={[]}
+        onOpenRadiusModal={jest.fn()}
+        onOpenThicknessModal={jest.fn()}
+        onOpenGlassModal={onOpenGlassModal}
+        onOpenMediumModal={jest.fn()}
+        onOpenAsphericalModal={jest.fn()}
+        onOpenAsphereVarModal={jest.fn()}
+        onOpenDecenterModal={jest.fn()}
+        onOpenDiffractionGratingModal={jest.fn()}
+        onOpenApertureModal={jest.fn()}
+      />,
+    );
+
+    expect(Array.from(screen.getByTestId("ag-grid-mock").querySelectorAll("th"), (header) => header.textContent)).toEqual([
+      "Index",
+      "Surface",
+      "Radius of Curvature",
+      "Var.",
+      "Thickness",
+      "Var.",
+      "Medium",
+      "Var.",
+      "Semi-diam.",
+      "Aperture",
+      "Asph.",
+      "Var.",
+      "Tilt & Decenter",
+      "Diffraction Grating",
+    ]);
+    expect(screen.getByRole("button", { name: "Glass mode for Object" })).toHaveTextContent("V");
+    expect(screen.getByRole("button", { name: "Glass mode for surface 1" })).toHaveTextContent("C");
+    expect(screen.queryByRole("button", { name: "Glass mode for Image" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Glass mode for Object" }));
+    await user.click(screen.getByRole("button", { name: "Glass mode for surface 1" }));
+
+    expect(onOpenGlassModal).toHaveBeenNthCalledWith(1, 0);
+    expect(onOpenGlassModal).toHaveBeenNthCalledWith(2, 1);
   });
 });

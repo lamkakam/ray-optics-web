@@ -4,10 +4,11 @@
  * @remarks
  * ## Internal Structure
  *
- * - `buildOptimizationConfig()` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
+ * - `buildOptimizationConfig(catalogs)` is a thin coordinator that delegates optimizer parsing, surface variable/pickup extraction, asphere variable/pickup extraction, glass-pool validation, and merit-function operand assembly to file-local pure helpers in `optimizationStore.ts`.
+ * - `buildOptimizationEvaluationConfig(catalogs)` projects a Glass Expert run into bounded `least_squares/trf` evaluation config while retaining the same numeric variables, pickups, and merit operands.
  * - Store-local optimizer and surface-mode helper types derive shared contract fields from `features/optimization/types/optimizationWorkerTypes.ts` via indexed-access / `Extract` types, so the worker-boundary kind unions stay defined in one place. Optimizer form state keeps the shared field names and maps only numeric values to input strings.
- * - Shared optimizer capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the selected optimizer's rule set.
- * - Default optimizer method and tolerance strings are seeded from `features/optimization/lib/optimizerUiConfig.ts` so the form defaults, labels, and capability rules stay aligned.
+ * - Shared optimizer capability lookup stays centralized so radius, thickness, and asphere variable entries all switch between bounded and unbounded config shapes from the selected optimizer's rule set; Glass Expert requires bounds and enables the separate glass mode column.
+ * - Every optimizer numeric-field default, label, and validation category is seeded from `features/optimization/lib/optimizerUiConfig.ts`.
  * - Shared validation for bounded variable ranges stays centralized so radius, thickness, and asphere variable entries continue to use the same `min < max` rule and error text when the active method requires bounds.
  * - Surface pickup source-index validation stays centralized so radius and thickness pickups continue to share the same same-surface and out-of-range checks.
  *
@@ -17,12 +18,15 @@
  * - For least squares, `ftol`, `xtol`, and `gtol` must be finite positive values greater than `Number.EPSILON`, matching SciPy's double-precision machine-epsilon tolerance guard before the worker is called.
  * - For Differential Evolution, `tol` must be a positive non-zero number and `atol` must be a non-negative number.
  * - Operand `weight` must be a positive non-zero number.
- * - For bounded optimizers such as `trf` and `differential_evolution`, variable `min` and `max` must be numeric, and `min < max`.
+ * - For bounded optimizers such as `trf`, `differential_evolution`, and `glass_expert`, variable `min` and `max` must be numeric, and `min < max`.
  * - For least-squares `lm`, the built config must provide at least as many residual samples as optimization variables; otherwise `buildOptimizationConfig()` throws before the page tries to evaluate or optimize.
  * - Pickup `source_surface_index` must be in range and must not equal the target surface index.
  * - Asphere coefficient pickups require a coefficient `sourceTermKey`.
  * - Asphere coefficient pickup `source_coefficient_index` must be a non-negative integer so zero-based coefficient slot `0` is allowed.
  * - At least one operand is required before `buildOptimizationConfig()` succeeds.
+ * - Each variable glass pool must contain at least one unique live candidate from the supplied catalog snapshot. Special is restricted to CaF2, Fused Silica, Water, and D263TECO.
+ * - Non-ModelGlass incumbents must be selected in their own pool. Numeric ModelGlass incumbents retain the backend nearest-real-candidate exception.
+ * - Air and `REFL` incumbents cannot be variable glass rows.
  * - `hasNonZeroOptimizationContribution(...)` treats missing `fields` or `wavelengths` as a neutral factor of `1`, and otherwise checks all operand/field/wavelength weight combinations for any product greater than `0`.
  *
  * ## Key Conventions
@@ -34,37 +38,49 @@
  * - `syncFromOpticalModel()` resets wavelength weights from `model.specs.wavelengths.weights[*][1]` only when editor wavelength specs changed since the last baseline.
  * - Editor wide-angle mode changes update `optimizationModel.specs.field.isWideAngle` but do not count as field-spec changes for Optimization settings reset purposes.
  * - Editor reference wavelength changes update `optimizationModel.specs.wavelengths.referenceIndex` but do not count as wavelength-spec changes for Optimization settings reset purposes.
- * - `syncFromOpticalModel()` resets radius, thickness, and asphere variable/pickup modes to constants when the editor prescription changed with the default `"resetOptimizationModes"` policy.
+ * - `syncFromOpticalModel()` resets radius, thickness, glass, and asphere variable/pickup modes to constants when the editor prescription changed with the default `"resetOptimizationModes"` policy.
  * - `syncFromOpticalModel()` updates `optimizationModel` and the baseline without clearing prescription modes when the editor prescription changed with `"preserveOptimizationModes"`.
  * - Algorithm settings and operand rows are never reset by editor sync.
  * - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, either axis-specific OPD Difference operand, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
- * - For preserved prescription sync, `syncFromOpticalModel()` reconciles radius modes, thickness modes, and `asphereStates` by index so model-shape-compatible modes survive while new targets receive default constant modes.
+ * - For preserved prescription sync, `syncFromOpticalModel()` reconciles radius modes, thickness modes, glass modes, and `asphereStates` by index so model-shape-compatible modes survive while new targets receive default constant modes.
  * - `buildOptimizationConfig()` appends asphere variables and pickups alongside radius/thickness entries, using `asphere_kind` plus zero-based `coefficient_index` / `source_coefficient_index` metadata for the Python optimizer.
- * - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf` and `differential_evolution`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching least-squares methods does not discard prior inputs.
+ * - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf`, `differential_evolution`, and `glass_expert`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching least-squares methods does not discard prior inputs.
  * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
  * - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal`.
  * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count. `ray_fan` contributes `num_rays * 2` residuals per selected field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
- * - `applyOptimizationResult()` can create or update `surface.aspherical` on the optimization-local optical model when optimized asphere results come back from Python.
+ * - `applyOptimizationResult()` can create or update `surface.aspherical` and applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`. Special results store an empty manufacturer; manufacturer and Custom results store their catalog name.
  * - `syncFromOpticalModel()` clears `hasUnappliedOptimizationResult` when a normal editor sync replaces the Optimization-local snapshot through field, wavelength, or reset-policy prescription changes.
  * - `syncFromOpticalModel()` preserves `hasUnappliedOptimizationResult` during Optimization-origin prescription syncs that use `prescriptionSyncPolicy: "preserveOptimizationModes"`; the apply path clears the marker explicitly after the editor has been updated.
  * - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
- * - `RadiusMode`, `RadiusModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.
+ * - `RadiusMode`, `RadiusModeDraft`, `GlassMode`, `GlassModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.
  */
 import { type StateCreator } from "zustand";
+import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
+  GlassOptimizationConfig,
   OptimizationConfig,
+  OptimizationAlgorithmConfig,
+  GlassCandidateConfig,
   OptimizationOperandKind,
   OptimizationOperandConfig,
   OptimizationPickupConfig,
-  OptimizationReport,
+  OptimizationRunConfig,
+  OptimizationRunReport,
   OptimizationValueEntry,
 } from "@/features/optimization/types/optimizationWorkerTypes";
 import { getOptimizationOperandMetadata } from "@/features/optimization/lib/operandMetadata";
 import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 import { formatOptimizerUiDefaultValue, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
+import {
+  ELIGIBLE_SPECIAL_GLASS_NAMES,
+  getGlassCandidateIdentity,
+  getIncumbentGlassCatalog,
+  sortGlassCandidates,
+} from "@/features/optimization/lib/glassCandidateSelection";
+import type { OptimizerNumericFieldValidation } from "@/features/optimization/types/optimizationUiTypes";
 
-type SharedOptimizerConfig = OptimizationConfig["optimizer"];
+type SharedOptimizerConfig = OptimizationAlgorithmConfig;
 type SharedSurfaceVariableConfig = Extract<OptimizationConfig["variables"][number], { readonly kind: "radius" | "thickness" }>;
 type SharedSurfacePickupConfig = Extract<OptimizationPickupConfig, { readonly kind: "radius" | "thickness" }>;
 type OptimizerFormStateByConfig<TConfig extends SharedOptimizerConfig> = {
@@ -113,6 +129,23 @@ export type RadiusModeDraft =
       readonly sourceSurfaceIndex: string;
       readonly scale: string;
       readonly offset: string;
+    };
+
+/** Constant or explicit candidate-pool mode for one RayOptics gap index. */
+export type GlassMode =
+  | { readonly surfaceIndex: number; readonly mode: "constant" }
+  | {
+      readonly surfaceIndex: number;
+      readonly mode: "variable";
+      readonly candidates: ReadonlyArray<GlassCandidateConfig>;
+    };
+
+/** Modal-local glass mode without the target gap index. */
+export type GlassModeDraft =
+  | { readonly mode: "constant" }
+  | {
+      readonly mode: "variable";
+      readonly candidates: ReadonlyArray<GlassCandidateConfig>;
     };
 
 export type AsphereTermKey = "conic" | "toricSweep" | `coefficient:${number}`;
@@ -183,6 +216,11 @@ interface AsphereModalState {
   readonly surfaceIndex: number | undefined;
 }
 
+interface GlassModalState {
+  readonly open: boolean;
+  readonly surfaceIndex: number | undefined;
+}
+
 export interface OptimizationState {
   /** Active Optimization page tab. Defaults to `"algorithm"`. */
   activeTabId: string;
@@ -200,6 +238,8 @@ export interface OptimizationState {
   radiusModes: RadiusMode[];
   /** Constant, variable, or pickup mode for every surface-row thickness target. */
   thicknessModes: RadiusMode[];
+  /** Constant or explicit candidate-pool mode for Object gap 0 and physical gaps 1..N. */
+  glassModes: GlassMode[];
   /** Optimization asphere type and independent term modes for every real surface. */
   asphereStates: AsphereOptimizationState[];
   /** Merit-function operand rows. Defaults to an empty array; target-less kinds store `target: undefined`. */
@@ -208,8 +248,8 @@ export interface OptimizationState {
   isOptimizing: boolean;
   /** Whether the page-local optimized model contains returned values not yet applied to the Editor. Defaults to `false`. */
   hasUnappliedOptimizationResult: boolean;
-  /** Last successful worker report, or `undefined` before a report is applied. */
-  lastOptimizationReport: OptimizationReport | undefined;
+  /** Last successful continuous or Glass Expert worker report, or `undefined` before a report is applied. */
+  lastOptimizationReport: OptimizationRunReport | undefined;
   /** Whether the apply-to-Editor confirmation modal is open. Defaults to `false`. */
   applyConfirmOpen: boolean;
   /** Radius variable/pickup modal state. Defaults to closed without a surface index. */
@@ -218,6 +258,8 @@ export interface OptimizationState {
   thicknessModal: ThicknessModalState;
   /** Asphere variable/pickup modal state. Defaults to closed without a surface index. */
   asphereModal: AsphereModalState;
+  /** Glass candidate-pool modal state. Defaults to closed without a gap index. */
+  glassModal: GlassModalState;
 
   /** Seeds Optimization state and its sync baseline only when no local model exists; otherwise only backfills a missing baseline. */
   initializeFromOpticalModel: (model: OpticalModel) => void;
@@ -233,6 +275,8 @@ export interface OptimizationState {
   setRadiusMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
   /** Replaces the matching thickness target's constant, variable, or pickup mode. */
   setThicknessMode: (surfaceIndex: number, mode: RadiusModeDraft) => void;
+  /** Replaces Object or a physical surface's constant/variable glass mode. */
+  setGlassMode: (surfaceIndex: number, mode: GlassModeDraft) => void;
   /** Sets an optimization-only asphere type unless the surface's editor-defined type is locked. */
   setAsphereType: (surfaceIndex: number, type: AsphericalType) => void;
   /** Replaces a surface's full asphere state while preserving its index and any existing type lock. */
@@ -251,6 +295,10 @@ export interface OptimizationState {
   openAsphereModal: (surfaceIndex: number) => void;
   /** Closes the asphere modal and clears its surface index. */
   closeAsphereModal: () => void;
+  /** Opens the glass candidate-pool modal for one gap index. */
+  openGlassModal: (surfaceIndex: number) => void;
+  /** Closes the glass candidate-pool modal and clears its gap index. */
+  closeGlassModal: () => void;
   /** Appends a default focal-length operand with target `"100"` and weight `"1"`. */
   addOperand: () => void;
   /** Deletes the operand with `id`; an unknown ID leaves the rows unchanged. */
@@ -269,10 +317,12 @@ export interface OptimizationState {
   markOptimizationResultAppliedToEditor: () => void;
   /** Switches optimizer kind and resets all algorithm fields to that kind's UI defaults. */
   setOptimizerKind: (kind: OptimizationAlgorithmState["kind"]) => void;
-  /** Validates current UI state and builds the Python worker configuration with method-aware variables, pickups, and expanded operands. Throws on invalid or incomplete state. */
-  buildOptimizationConfig: () => OptimizationConfig;
-  /** Applies returned radius, thickness, asphere, and pickup values to the local model, stores the report, and marks non-empty results as unapplied. Does nothing when no local model exists. */
-  applyOptimizationResult: (report: OptimizationReport) => void;
+  /** Validates current UI state and the supplied live catalogs, then builds a continuous or Glass Expert worker run config. */
+  buildOptimizationConfig: (catalogs?: AllGlassCatalogsData) => OptimizationRunConfig;
+  /** Builds live Operand Evaluation config, projecting Glass Expert to bounded least-squares/trf after the same validation. */
+  buildOptimizationEvaluationConfig: (catalogs?: AllGlassCatalogsData) => OptimizationConfig;
+  /** Applies returned numeric, pickup, and glass values to the local model, stores the report, and marks non-empty results as unapplied. */
+  applyOptimizationResult: (report: OptimizationRunReport) => void;
 }
 
 let nextOperandId = 0;
@@ -291,7 +341,7 @@ function getFactorWeights(factors?: ReadonlyArray<WeightedFactor>): number[] {
 
 /** Provider-backed Zustand slice for the optimization route. Owns page state including the page-local optical-model snapshot, algorithm inputs, field and wavelength weights, radius variable/pickup selections, operands, loading state, and store-backed modal state. */
 export function hasNonZeroOptimizationContribution(
-  config: Pick<OptimizationConfig, "merit_function">,
+  config: { readonly merit_function: OptimizationConfig["merit_function"] },
 ): boolean {
   return config.merit_function.operands.some((operand) => {
     const fieldWeights = getFactorWeights(operand.fields);
@@ -314,7 +364,7 @@ function getDefaultOperandTarget(kind: OptimizationOperandKind): string | undefi
 }
 
 function parsePositiveInteger(value: string, label: string): number {
-  const parsed = Number.parseInt(value, 10);
+  const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new Error(`${label} must be a positive integer.`);
   }
@@ -322,7 +372,7 @@ function parsePositiveInteger(value: string, label: string): number {
 }
 
 function parseNonNegativeInteger(value: string, label: string): number {
-  const parsed = Number.parseInt(value, 10);
+  const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 0) {
     throw new Error(`${label} must be a non-negative integer.`);
   }
@@ -352,6 +402,38 @@ function parseNonNegativeFloat(value: string, label: string): number {
     throw new Error(`${label} must be a non-negative number.`);
   }
   return parsed;
+}
+
+function parseOptimizerNumericField(
+  value: string,
+  label: string,
+  validation: OptimizerNumericFieldValidation,
+): number {
+  switch (validation) {
+    case "positiveInteger":
+      return parsePositiveInteger(value, label);
+    case "positiveFloat":
+      return parsePositiveFloat(value, label);
+    case "nonNegativeFloat":
+      return parseNonNegativeFloat(value, label);
+    case "leastSquaresTolerance":
+      return parseLeastSquaresTolerance(value, label);
+  }
+}
+
+function getParsedOptimizerNumericField(
+  optimizer: OptimizationState["optimizer"],
+  fieldKind: string,
+): number {
+  const field = OPTIMIZER_UI_CONFIG[optimizer.kind].numericFields.find(
+    ({ kind }) => kind === fieldKind,
+  );
+  if (field === undefined) {
+    throw new Error(`Optimizer kind "${optimizer.kind}" does not expose numeric field "${fieldKind}".`);
+  }
+
+  const value = (optimizer as unknown as Record<string, string>)[fieldKind];
+  return parseOptimizerNumericField(value, field.label, field.validation);
 }
 
 function parseFloatValue(value: string, label: string): number {
@@ -386,22 +468,36 @@ function parseVariableBounds(minValue: string, maxValue: string): { readonly min
 function buildOptimizerConfig(
   optimizer: OptimizationState["optimizer"],
 ): OptimizationConfig["optimizer"] {
+  if (optimizer.kind === "glass_expert") {
+    throw new Error("Glass Expert does not use a continuous optimizer config.");
+  }
+
   if (optimizer.kind === "differential_evolution") {
     return {
       kind: optimizer.kind,
-      max_nfev: parsePositiveInteger(optimizer.max_nfev, "Max. num of steps"),
-      tol: parsePositiveFloat(optimizer.tol, "Relative tolerance"),
-      atol: parseNonNegativeFloat(optimizer.atol, "Absolute tolerance"),
+      max_nfev: getParsedOptimizerNumericField(optimizer, "max_nfev"),
+      tol: getParsedOptimizerNumericField(optimizer, "tol"),
+      atol: getParsedOptimizerNumericField(optimizer, "atol"),
     };
   }
 
   return {
     kind: optimizer.kind,
     method: optimizer.method,
-    max_nfev: parsePositiveInteger(optimizer.max_nfev, "Max. num of steps"),
-    ftol: parseLeastSquaresTolerance(optimizer.ftol, "Merit function change tolerance"),
-    xtol: parseLeastSquaresTolerance(optimizer.xtol, "Independent variable change tolerance"),
-    gtol: parseLeastSquaresTolerance(optimizer.gtol, "Gradient tolerance"),
+    max_nfev: getParsedOptimizerNumericField(optimizer, "max_nfev"),
+    ftol: getParsedOptimizerNumericField(optimizer, "ftol"),
+    xtol: getParsedOptimizerNumericField(optimizer, "xtol"),
+    gtol: getParsedOptimizerNumericField(optimizer, "gtol"),
+  };
+}
+
+function buildGlassOptimizerConfig(
+  optimizer: Extract<OptimizationState["optimizer"], { readonly kind: "glass_expert" }>,
+): NonNullable<GlassOptimizationConfig["glass_optimizer"]> {
+  return {
+    num_neighbours: getParsedOptimizerNumericField(optimizer, "num_neighbours"),
+    maxiter: getParsedOptimizerNumericField(optimizer, "maxiter"),
+    tol: getParsedOptimizerNumericField(optimizer, "tol"),
   };
 }
 
@@ -629,6 +725,88 @@ function buildMeritFunctionOperands(
   return configOperands;
 }
 
+const ELIGIBLE_SPECIAL_GLASS_NAME_SET = new Set<string>(ELIGIBLE_SPECIAL_GLASS_NAMES);
+
+function getGlassTarget(
+  model: OpticalModel,
+  surfaceIndex: number,
+): Pick<OpticalModel["object"], "medium" | "manufacturer"> {
+  if (surfaceIndex === 0) {
+    return model.object;
+  }
+
+  const surface = model.surfaces[surfaceIndex - 1];
+  if (surface === undefined) {
+    throw new Error(`Glass variable surface ${surfaceIndex} is out of range.`);
+  }
+  return surface;
+}
+
+function isNumericModelGlass(medium: string): boolean {
+  return !Number.isNaN(Number.parseFloat(medium));
+}
+
+function buildGlassVariables(
+  model: OpticalModel,
+  modes: ReadonlyArray<GlassMode>,
+  catalogs: AllGlassCatalogsData | undefined,
+): GlassOptimizationConfig["glass_variables"] {
+  return modes.flatMap((mode) => {
+    if (mode.mode !== "variable") {
+      return [];
+    }
+    if (mode.candidates.length === 0) {
+      throw new Error(`Glass variable surface ${mode.surfaceIndex} must provide candidates.`);
+    }
+    if (catalogs === undefined) {
+      throw new Error("Glass catalog data is not loaded.");
+    }
+
+    const candidates = sortGlassCandidates(mode.candidates);
+    const seenCandidates = new Set<string>();
+    for (const candidate of candidates) {
+      const identity = getGlassCandidateIdentity(candidate);
+      if (seenCandidates.has(identity)) {
+        throw new Error(`Duplicate glass candidate "${candidate.catalog}: ${candidate.name}".`);
+      }
+      seenCandidates.add(identity);
+
+      if (candidate.catalog === "Special" && !ELIGIBLE_SPECIAL_GLASS_NAME_SET.has(candidate.name)) {
+        throw new Error(`Glass candidate "Special: ${candidate.name}" is not eligible.`);
+      }
+      if (!Object.prototype.hasOwnProperty.call(catalogs[candidate.catalog] ?? {}, candidate.name)) {
+        throw new Error(`Glass candidate "${candidate.catalog}: ${candidate.name}" is unavailable.`);
+      }
+    }
+
+    const incumbent = getGlassTarget(model, mode.surfaceIndex);
+    const incumbentMedium = incumbent.medium.trim();
+    if (incumbentMedium.toLowerCase() === "air" || incumbentMedium.toUpperCase() === "REFL") {
+      throw new Error(`${incumbent.medium} cannot be optimized as a glass variable at surface ${mode.surfaceIndex}.`);
+    }
+
+    if (!isNumericModelGlass(incumbentMedium)) {
+      const incumbentCatalog = getIncumbentGlassCatalog(model, mode.surfaceIndex, catalogs);
+      if (incumbentCatalog === undefined) {
+        throw new Error(
+          `Unsupported current material at surface ${mode.surfaceIndex}: ${incumbent.medium}, ${incumbent.manufacturer}`,
+        );
+      }
+      if (!seenCandidates.has(getGlassCandidateIdentity({
+        catalog: incumbentCatalog,
+        name: incumbent.medium,
+      }))) {
+        throw new Error(`Current glass must be included in candidates for surface ${mode.surfaceIndex}.`);
+      }
+    }
+
+    return [{
+      surface_index: mode.surfaceIndex,
+      candidates,
+    }];
+  });
+}
+
 function countResidualSamples(
   operands: ReadonlyArray<OptimizationConfig["merit_function"]["operands"][number]>,
 ): number {
@@ -735,6 +913,22 @@ function createThicknessModes(model: OpticalModel): RadiusMode[] {
   }));
 }
 
+function createGlassModes(model: OpticalModel): GlassMode[] {
+  return Array.from({ length: model.surfaces.length + 1 }, (_, surfaceIndex) => ({
+    surfaceIndex,
+    mode: "constant" as const,
+  }));
+}
+
+function reconcileGlassModes(previous: GlassMode[], model: OpticalModel): GlassMode[] {
+  const previousBySurfaceIndex = new Map(
+    previous.map((entry) => [entry.surfaceIndex, entry] as const),
+  );
+  return createGlassModes(model).map(
+    (entry) => previousBySurfaceIndex.get(entry.surfaceIndex) ?? entry,
+  );
+}
+
 function fingerprintFieldSpecs(model: OpticalModel): string {
   const { isWideAngle: _isWideAngle, ...fieldSpecsAffectingOptimizationSettings } = model.specs.field;
   return JSON.stringify(fieldSpecsAffectingOptimizationSettings);
@@ -761,41 +955,44 @@ function createEditorSyncBaseline(model: OpticalModel): EditorSyncBaseline {
   };
 }
 
-function getOptimizerToleranceDefault<TKind extends OptimizationAlgorithmState["kind"]>(
-  kind: TKind,
-  toleranceKind: Extract<OptimizationConfig["optimizer"], { readonly kind: TKind }> extends infer TOptimizer
-    ? Exclude<keyof TOptimizer, "kind" | "method" | "max_nfev">
-    : never,
-): string {
-  const tolerance = OPTIMIZER_UI_CONFIG[kind].tolerances.find(({ kind: currentKind }) => currentKind === toleranceKind);
-  if (tolerance === undefined) {
-    throw new Error(`Optimizer kind "${kind}" does not expose tolerance "${String(toleranceKind)}".`);
-  }
-
-  return formatOptimizerUiDefaultValue(tolerance.default);
-}
-
 function createDefaultOptimizerState(
   kind: OptimizationAlgorithmState["kind"] = "least_squares",
 ): OptimizationState["optimizer"] {
-  if (kind === "differential_evolution") {
+  const metadata = OPTIMIZER_UI_CONFIG[kind];
+  const numericValues = Object.fromEntries(
+    metadata.numericFields.map((field) => [
+      field.kind,
+      field.validation === "positiveInteger"
+        ? String(field.default)
+        : formatOptimizerUiDefaultValue(field.default),
+    ]),
+  );
+
+  if (kind === "glass_expert") {
     return {
       kind,
-      max_nfev: "200",
-      tol: getOptimizerToleranceDefault(kind, "tol"),
-      atol: getOptimizerToleranceDefault(kind, "atol"),
+      num_neighbours: numericValues.num_neighbours,
+      maxiter: numericValues.maxiter,
+      tol: numericValues.tol,
     };
   }
 
-  const optimizerConfig = OPTIMIZER_UI_CONFIG.least_squares;
+  if (kind === "differential_evolution") {
+    return {
+      kind,
+      max_nfev: numericValues.max_nfev,
+      tol: numericValues.tol,
+      atol: numericValues.atol,
+    };
+  }
 
   return {
     kind: "least_squares",
-    method: optimizerConfig.methods[0].kind,
-    max_nfev: "200",
-    ftol: getOptimizerToleranceDefault(kind, "ftol"),
-    xtol: getOptimizerToleranceDefault(kind, "xtol"),
-    gtol: getOptimizerToleranceDefault(kind, "gtol"),
+    method: OPTIMIZER_UI_CONFIG.least_squares.methods[0].kind,
+    max_nfev: numericValues.max_nfev,
+    ftol: numericValues.ftol,
+    xtol: numericValues.xtol,
+    gtol: numericValues.gtol,
   };
 }
 
@@ -919,6 +1116,39 @@ function applyThicknessToModel(model: OpticalModel, surfaceIndex: number, value:
   };
 }
 
+function applyGlassToModel(
+  model: OpticalModel,
+  entry: Extract<OptimizationRunReport, { readonly final_glasses: unknown }>["final_glasses"][number],
+): OpticalModel {
+  const manufacturer = entry.catalog === "Special" ? "" : entry.catalog;
+  if (entry.surface_index === 0) {
+    return {
+      ...model,
+      object: {
+        ...model.object,
+        medium: entry.name,
+        manufacturer,
+      },
+    };
+  }
+
+  const zeroBased = entry.surface_index - 1;
+  return {
+    ...model,
+    surfaces: model.surfaces.map((surface, index) =>
+      index === zeroBased
+        ? { ...surface, medium: entry.name, manufacturer }
+        : surface,
+    ),
+  };
+}
+
+function hasGlassResults(
+  report: OptimizationRunReport,
+): report is Extract<OptimizationRunReport, { readonly final_glasses: unknown }> {
+  return "final_glasses" in report;
+}
+
 export const createOptimizationSlice: StateCreator<OptimizationState> = (set, get) => ({
   activeTabId: "algorithm",
   optimizationModel: undefined,
@@ -928,6 +1158,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   wavelengthWeights: [],
   radiusModes: [],
   thicknessModes: [],
+  glassModes: [],
   asphereStates: [],
   operands: [],
   isOptimizing: false,
@@ -937,6 +1168,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   radiusModal: { open: false, surfaceIndex: undefined },
   thicknessModal: { open: false, surfaceIndex: undefined },
   asphereModal: { open: false, surfaceIndex: undefined },
+  glassModal: { open: false, surfaceIndex: undefined },
 
   initializeFromOpticalModel: (model) =>
     set((state) => {
@@ -953,6 +1185,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
         wavelengthWeights: createInitialWavelengthWeights(model),
         radiusModes: createRadiusModes(model),
         thicknessModes: createThicknessModes(model),
+        glassModes: createGlassModes(model),
         asphereStates: createAsphereStates(model),
         operands: [],
         lastOptimizationReport: undefined,
@@ -970,6 +1203,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           wavelengthWeights: createInitialWavelengthWeights(model),
           radiusModes: createRadiusModes(model),
           thicknessModes: createThicknessModes(model),
+          glassModes: createGlassModes(model),
           asphereStates: createAsphereStates(model),
           operands: [],
           lastOptimizationReport: undefined,
@@ -1007,6 +1241,9 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
         thicknessModes: shouldResetPrescriptionModes
           ? createThicknessModes(model)
           : reconcileModes(state.thicknessModes, createThicknessModes(model)),
+        glassModes: shouldResetPrescriptionModes
+          ? createGlassModes(model)
+          : reconcileGlassModes(state.glassModes, model),
         asphereStates: shouldResetPrescriptionModes
           ? createAsphereStates(model)
           : reconcileAsphereStates(state.asphereStates, model),
@@ -1043,6 +1280,15 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       thicknessModes: state.thicknessModes.map((entry) =>
         entry.surfaceIndex === surfaceIndex
           ? { surfaceIndex, ...mode } as RadiusMode
+          : entry,
+      ),
+    })),
+
+  setGlassMode: (surfaceIndex, mode) =>
+    set((state) => ({
+      glassModes: state.glassModes.map((entry) =>
+        entry.surfaceIndex === surfaceIndex
+          ? { surfaceIndex, ...mode } as GlassMode
           : entry,
       ),
     })),
@@ -1108,6 +1354,12 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   closeAsphereModal: () =>
     set({ asphereModal: { open: false, surfaceIndex: undefined } }),
 
+  openGlassModal: (surfaceIndex) =>
+    set({ glassModal: { open: true, surfaceIndex } }),
+
+  closeGlassModal: () =>
+    set({ glassModal: { open: false, surfaceIndex: undefined } }),
+
   addOperand: () =>
     set((state) => ({
       operands: [...state.operands, createDefaultOperand()],
@@ -1147,7 +1399,7 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
   markOptimizationResultAppliedToEditor: () => set({ hasUnappliedOptimizationResult: false }),
   setOptimizerKind: (kind) => set({ optimizer: createDefaultOptimizerState(kind) }),
 
-  buildOptimizationConfig: () => {
+  buildOptimizationConfig: (catalogs) => {
     const state = get();
     if (state.optimizationModel === undefined) {
       throw new Error("No optical model available for optimization.");
@@ -1174,16 +1426,51 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
       throw new Error("Levenberg-Marquardt requires at least as many residuals as variables.");
     }
 
+    const pickups = [
+      ...buildSurfacePickups(state.radiusModes, state.thicknessModes),
+      ...buildAspherePickups(state.asphereStates),
+    ];
+    const merit_function = {
+      operands: meritOperands,
+    };
+
+    if (state.optimizer.kind === "glass_expert") {
+      return {
+        glass_optimizer: buildGlassOptimizerConfig(state.optimizer),
+        glass_variables: buildGlassVariables(
+          state.optimizationModel,
+          state.glassModes,
+          catalogs,
+        ),
+        variables,
+        pickups,
+        merit_function,
+      };
+    }
+
     return {
       optimizer: buildOptimizerConfig(state.optimizer),
       variables,
-      pickups: [
-        ...buildSurfacePickups(state.radiusModes, state.thicknessModes),
-        ...buildAspherePickups(state.asphereStates),
-      ],
-      merit_function: {
-        operands: meritOperands,
-      },
+      pickups,
+      merit_function,
+    };
+  },
+
+  buildOptimizationEvaluationConfig: (catalogs) => {
+    const runConfig = get().buildOptimizationConfig(catalogs);
+    if ("optimizer" in runConfig) {
+      return runConfig;
+    }
+
+    const evaluationOptimizer = createDefaultOptimizerState("least_squares");
+    if (evaluationOptimizer.kind !== "least_squares") {
+      throw new Error("Unable to build the Glass Expert evaluation optimizer.");
+    }
+    return {
+      optimizer: buildOptimizerConfig(evaluationOptimizer),
+      variables: runConfig.variables,
+      pickups: runConfig.pickups,
+      merit_function: runConfig.merit_function,
     };
   },
 
@@ -1228,12 +1515,19 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
           };
         }
       }
+      if (hasGlassResults(report)) {
+        for (const entry of report.final_glasses) {
+          nextModel = applyGlassToModel(nextModel, entry);
+        }
+      }
 
       return {
         optimizationModel: nextModel,
         lastOptimizationReport: report,
         hasUnappliedOptimizationResult:
-          report.final_values.length > 0 || report.pickups.length > 0
+          report.final_values.length > 0
+          || report.pickups.length > 0
+          || (hasGlassResults(report) && report.final_glasses.length > 0)
             ? true
             : state.hasUnappliedOptimizationResult,
       };

@@ -13,18 +13,19 @@ const METHOD_CAPABILITIES: Record<LeastSquaresMethod, OptimizationMethodCapabili
       ...capabilities,
       [method.kind]: {
         canUseBounds: method.canUseBounds,
+        canOptimizeGlass: method.canOptimizeGlass,
         requiresResidualCountAtLeastVariableCount: method.requiresResidualCountAtLeastVariableCount,
       },
     }),
     {} as Record<LeastSquaresMethod, OptimizationMethodCapabilities>,
   );
 
-/** Returns bounds and residual-dimension capabilities for one least-squares method. */
+/** Returns bounds, glass, and residual-dimension capabilities for one least-squares method. */
 export function getOptimizationMethodCapabilities(method: LeastSquaresMethod): OptimizationMethodCapabilities {
   return METHOD_CAPABILITIES[method];
 }
 
-/** Returns bounds and residual-dimension capabilities for any optimizer selection. */
+/** Returns bounds, glass, and residual-dimension capabilities for any optimizer selection. */
 export function getOptimizationAlgorithmCapabilities(
   selection: OptimizationAlgorithmSelection,
 ): OptimizationMethodCapabilities {
@@ -36,6 +37,7 @@ export function getOptimizationAlgorithmCapabilities(
 
   return {
     canUseBounds: metadata.canUseBounds,
+    canOptimizeGlass: metadata.canOptimizeGlass,
     requiresResidualCountAtLeastVariableCount: metadata.requiresResidualCountAtLeastVariableCount,
   };
 }

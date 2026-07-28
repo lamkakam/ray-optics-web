@@ -4,7 +4,7 @@ import { createStore } from "zustand";
 import * as echarts from "echarts/core";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
-import type { OptimizationConfig } from "@/features/optimization/types/optimizationWorkerTypes";
+import type { GlassOptimizationConfig, OptimizationConfig } from "@/features/optimization/types/optimizationWorkerTypes";
 import { SpecsConfiguratorStoreContext } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { LensEditorStoreContext } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { OptimizationStoreContext } from "@/features/optimization/providers/OptimizationStoreProvider";
@@ -998,6 +998,87 @@ describe("OptimizationPage", () => {
       expect.any(SharedArrayBuffer),
     );
     expect(optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
+  });
+
+  it("evaluates Glass Expert with bounded trf, routes Optimize to optimizeGlasses, and applies final glasses", async () => {
+    const optimizeGlasses = jest.fn().mockResolvedValue({
+      success: true,
+      status: "optimized",
+      message: "done",
+      optimizer: {
+        kind: "glass_expert",
+        method: "L-BFGS-B",
+        runs: 3,
+        nfev: 12,
+        nit: 2,
+        num_neighbours: 7,
+        maxiter: 1000,
+        tol: 1e-3,
+      },
+      initial_glasses: [{ surface_index: 1, name: "BK7", catalog: "Schott" }],
+      final_glasses: [{ surface_index: 1, name: "N-LAK9", catalog: "Schott" }],
+      initial_values: [],
+      final_values: [],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 0, rss: 0 },
+      optimization_progress: [],
+    });
+    const proxy = makeProxy({ optimizeGlasses });
+    const { optimizationStore } = renderOptimizationPage(proxy, jest.fn(), {
+      catalogs: {
+        CDGM: {},
+        Hikari: {},
+        Hoya: {},
+        Ohara: {},
+        Schott: {
+          BK7: {} as never,
+          "N-LAK9": {} as never,
+        },
+        Sumita: {},
+        Special: {},
+        Custom: {},
+      },
+    });
+
+    act(() => {
+      optimizationStore.getState().setOptimizerKind("glass_expert");
+      optimizationStore.getState().setGlassMode(1, {
+        mode: "variable",
+        candidates: [
+          { catalog: "Schott", name: "N-LAK9" },
+          { catalog: "Schott", name: "BK7" },
+        ],
+      });
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-glass", kind: "focal_length", target: "100", weight: "1" },
+      ]);
+    });
+
+    await waitFor(() => expect(proxy.evaluateOptimizationProblem).toHaveBeenCalled());
+    const evaluationConfig = (proxy.evaluateOptimizationProblem as jest.Mock).mock.calls.at(-1)?.[1] as OptimizationConfig;
+    expect(evaluationConfig.optimizer).toMatchObject({
+      kind: "least_squares",
+      method: "trf",
+    });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled());
+
+    await userEvent.click(screen.getByRole("button", { name: "Optimize" }));
+
+    await waitFor(() => expect(optimizeGlasses).toHaveBeenCalled());
+    expect(proxy.optimizeOpm).not.toHaveBeenCalled();
+    const runConfig = optimizeGlasses.mock.calls[0]?.[1] as GlassOptimizationConfig;
+    expect(runConfig.glass_variables).toEqual([{
+      surface_index: 1,
+      candidates: [
+        { catalog: "Schott", name: "BK7" },
+        { catalog: "Schott", name: "N-LAK9" },
+      ],
+    }]);
+    expect(optimizationStore.getState().optimizationModel?.surfaces[0]).toMatchObject({
+      medium: "N-LAK9",
+      manufacturer: "Schott",
+    });
   });
 
   it("keeps Optimize disabled while grid edits and post-edit evaluation are pending", async () => {

@@ -709,6 +709,8 @@ export async function _optimizeOpm(
  * Runs glass-expert optimization with the shared callback/interrupt lifecycle.
  * The flat config is JSON-reconstructed inside Python and the candidate-aware
  * progress history is parsed without replacing absent optional fields with null.
+ * The worker injects the four bundled Special media and the current mutable Custom
+ * registry so Python resolves dynamic candidates from the same live catalog snapshot.
  * Ordinary Python setup/runtime exceptions resolve through the glass failure builder.
  */
 export async function _optimizeGlasses(
@@ -773,6 +775,9 @@ async function runOptimization<TReport extends OptimizationReport | GlassOptimiz
   const failureReportBuilder = pythonFunction === "optimize_glasses"
     ? "_build_glass_optimization_failure_report"
     : "_build_optimization_failure_report";
+  const candidateMaterialsArgument = pythonFunction === "optimize_glasses"
+    ? ", candidate_materials={'Special': {'CaF2': caf2, 'Fused Silica': fused_silica, 'Water': water, 'D263TECO': d263teco}, 'Custom': user_defined_materials}"
+    : "";
   try {
     if (canBindProgressCallback) {
       progressBindingStarted = true;
@@ -798,7 +803,7 @@ def _report_optimization_progress(progress):
 _optimization_config = {}
 try:
     _optimization_config = json.loads(${JSON.stringify(configJson)})
-    _optimization_report = ${pythonFunction}(${opm}, _optimization_config, image_point='${imagePoint}'${canBindProgressCallback ? ", progress_reporter=_report_optimization_progress" : ""})
+    _optimization_report = ${pythonFunction}(${opm}, _optimization_config, image_point='${imagePoint}'${canBindProgressCallback ? ", progress_reporter=_report_optimization_progress" : ""}${candidateMaterialsArgument})
 except Exception as _optimization_error:
     _optimization_report = ${failureReportBuilder}(_optimization_error, _optimization_config)
 json.dumps(_optimization_report)

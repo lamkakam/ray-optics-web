@@ -6,6 +6,7 @@ describe("methodCapabilities", () => {
     for (const method of OPTIMIZER_UI_CONFIG.least_squares.methods) {
       expect(getOptimizationAlgorithmCapabilities({ kind: "least_squares", method: method.kind })).toEqual({
         canUseBounds: method.canUseBounds,
+        canOptimizeGlass: method.canOptimizeGlass,
         requiresResidualCountAtLeastVariableCount: method.requiresResidualCountAtLeastVariableCount,
       });
     }
@@ -14,6 +15,13 @@ describe("methodCapabilities", () => {
   it("derives methodless optimizer capabilities from the optimizer UI config", () => {
     expect(getOptimizationAlgorithmCapabilities({ kind: "differential_evolution" })).toEqual({
       canUseBounds: true,
+      canOptimizeGlass: false,
+      requiresResidualCountAtLeastVariableCount: false,
+    });
+
+    expect(getOptimizationAlgorithmCapabilities({ kind: "glass_expert" })).toEqual({
+      canUseBounds: true,
+      canOptimizeGlass: true,
       requiresResidualCountAtLeastVariableCount: false,
     });
   });

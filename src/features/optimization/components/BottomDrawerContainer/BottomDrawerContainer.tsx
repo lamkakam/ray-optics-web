@@ -21,6 +21,7 @@ import {
   type OptimizationLensPrescriptionGridProps,
 } from "@/features/optimization/components/OptimizationLensPrescriptionGrid";
 import { OptimizationOperandsTab } from "@/features/optimization/components/OptimizationOperandsTab";
+import { getOptimizationAlgorithmCapabilities } from "@/features/optimization/lib/methodCapabilities";
 
 type OptimizerPatch = Parameters<ComponentProps<typeof OptimizationAlgorithmTab>["onChangeOptimizer"]>[0];
 type FieldsProps = Pick<ComponentProps<typeof OptimizationWeightsGrid>, "rows">;
@@ -29,9 +30,12 @@ type PrescriptionProps = Omit<
   OptimizationLensPrescriptionGridProps,
   | "radiusModes"
   | "thicknessModes"
+  | "glassModes"
   | "asphereStates"
+  | "canOptimizeGlass"
   | "onOpenRadiusModal"
   | "onOpenThicknessModal"
+  | "onOpenGlassModal"
   | "onOpenAsphereVarModal"
   | "onCellEditingStarted"
   | "onCellEditingStopped"
@@ -72,12 +76,13 @@ export interface BottomDrawerContainerProps {
  * - Uses `mt-auto pb-4` on large screens and `pb-4` on smaller screens.
  * - Passes `panelClassName="p-0"` so tab contents keep their own gutter.
  * - Sets `draggable` from `layout.isLG`.
- * - Reads the optimization store for active tab state, optimizer state, radius/thickness/asphere modes, operands, and all store-backed drawer callbacks.
+ * - Reads the optimization store for active tab state, optimizer state, radius/thickness/glass/asphere modes, operands, and all store-backed drawer callbacks.
  * - Handles optimizer patch updates locally, including optimizer-kind resets through `setOptimizerKind()` and method-change config validation warnings through `onWarning`.
  * - Updates field and wavelength weights through the optimization store.
  * - Forwards shared AG Grid edit lifecycle callbacks into Half-Fields, Wavelengths, Lens Prescription, and Operands grids so `OptimizationPage` can disable Optimize while edits and post-edit evaluations are pending.
  * - Renders the shared weight grid with tab-specific `Value` column widths: `95px` for fields and `130px` for wavelengths.
- * - Opens radius, thickness, and asphere variable modals through the optimization store while forwarding inspection-modal callbacks supplied by `OptimizationPage`.
+ * - Opens radius, thickness, glass, and asphere variable modals through the optimization store while forwarding inspection-modal callbacks supplied by `OptimizationPage`.
+ * - Derives `canOptimizeGlass` from centralized optimizer capabilities so the fourth `Var.` column appears only for Glass Expert.
  * - Forwards `prescription.autoAperture` to `OptimizationLensPrescriptionGrid` so the shared semi-diameter column uses the synchronized mode.
  * - Adds, deletes, and updates operands through the optimization store.
  * - Is wrapped in `React.memo` and memoizes store-backed callbacks, prescription props, and the drawer `tabs` array so unrelated `OptimizationPage` state changes, including Operand Evaluation loading and completion, do not recreate AG Grid column definitions or reset active grid editors.
@@ -95,6 +100,7 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
   const optimizer = useStore(optimizationStore, (state) => state.optimizer);
   const radiusModes = useStore(optimizationStore, (state) => state.radiusModes);
   const thicknessModes = useStore(optimizationStore, (state) => state.thicknessModes);
+  const glassModes = useStore(optimizationStore, (state) => state.glassModes);
   const asphereStates = useStore(optimizationStore, (state) => state.asphereStates);
   const operands = useStore(optimizationStore, (state) => state.operands);
 
@@ -103,11 +109,15 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
       optimizationStore.getState().setOptimizerKind(patch.kind);
       return;
     }
-    optimizationStore.setState((state) => ({
-      optimizer: state.optimizer.kind === "least_squares"
-        ? { ...state.optimizer, ...patch, kind: "least_squares" }
-        : { ...state.optimizer, ...patch, kind: "differential_evolution" },
-    }));
+    optimizationStore.setState((state) => {
+      if (state.optimizer.kind === "least_squares") {
+        return { optimizer: { ...state.optimizer, ...patch, kind: "least_squares" } };
+      }
+      if (state.optimizer.kind === "glass_expert") {
+        return { optimizer: { ...state.optimizer, ...patch, kind: "glass_expert" } };
+      }
+      return { optimizer: { ...state.optimizer, ...patch, kind: "differential_evolution" } };
+    });
     if ("method" in patch && patch.method !== undefined) {
       try {
         optimizationStore.getState().buildOptimizationConfig();
@@ -128,6 +138,10 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
 
   const handleOpenAsphereModal = useCallback((surfaceIndex: number) => {
     optimizationStore.getState().openAsphereModal(surfaceIndex);
+  }, [optimizationStore]);
+
+  const handleOpenGlassModal = useCallback((surfaceIndex: number) => {
+    optimizationStore.getState().openGlassModal(surfaceIndex);
   }, [optimizationStore]);
 
   const handleUpdateFieldWeight = useCallback((index: number, value: number) => {
@@ -154,14 +168,23 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     optimizationStore.getState().setActiveTabId(tabId);
   }, [optimizationStore]);
 
+  const { canOptimizeGlass } = getOptimizationAlgorithmCapabilities(
+    optimizer.kind === "least_squares"
+      ? { kind: optimizer.kind, method: optimizer.method }
+      : { kind: optimizer.kind },
+  );
+
   const prescriptionProps = useMemo<OptimizationLensPrescriptionGridProps>(() => ({
     autoAperture: prescription.autoAperture,
     rows: prescription.rows,
     radiusModes,
     thicknessModes,
+    glassModes,
+    canOptimizeGlass,
     asphereStates,
     onOpenRadiusModal: handleOpenRadiusModal,
     onOpenThicknessModal: handleOpenThicknessModal,
+    onOpenGlassModal: handleOpenGlassModal,
     onOpenMediumModal: prescription.onOpenMediumModal,
     onOpenAsphericalModal: prescription.onOpenAsphericalModal,
     onOpenApertureModal: prescription.onOpenApertureModal,
@@ -172,9 +195,12 @@ export const BottomDrawerContainer = memo(function BottomDrawerContainer({
     onCellEditingStopped: gridEditLifecycle?.onCellEditingStopped,
   }), [
     asphereStates,
+    canOptimizeGlass,
+    glassModes,
     gridEditLifecycle?.onCellEditingStarted,
     gridEditLifecycle?.onCellEditingStopped,
     handleOpenAsphereModal,
+    handleOpenGlassModal,
     handleOpenRadiusModal,
     handleOpenThicknessModal,
     prescription.onOpenApertureModal,

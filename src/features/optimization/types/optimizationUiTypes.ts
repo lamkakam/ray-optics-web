@@ -1,16 +1,19 @@
 /** UI metadata types derived from the worker-boundary optimizer discriminated union. */
-import type { OptimizationConfig, OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
+import type {
+  OptimizationAlgorithmConfig,
+  OptimizerKind,
+} from "@/features/optimization/types/optimizationWorkerTypes";
 
-type SharedOptimizerConfig = OptimizationConfig["optimizer"];
+type SharedOptimizerConfig = OptimizationAlgorithmConfig;
 type SharedOptimizerConfigByKind<TKind extends OptimizerKind> = Extract<SharedOptimizerConfig, { readonly kind: TKind }>;
 
 /** Method discriminator supported by one optimizer kind. */
 export type OptimizerMethodKind<TKind extends OptimizerKind> =
   SharedOptimizerConfigByKind<TKind> extends { readonly method: infer TMethod extends string } ? TMethod : never;
-/** Tolerance keys supported by one optimizer kind. */
-export type OptimizerToleranceKind<TKind extends OptimizerKind> = Exclude<
+/** Numeric field keys supported by one optimizer kind. */
+export type OptimizerNumericFieldKind<TKind extends OptimizerKind> = Exclude<
   keyof SharedOptimizerConfigByKind<TKind>,
-  "kind" | "method" | "max_nfev"
+  "kind" | "method"
 >;
 
 /** Display and capability metadata for one optimizer method. */
@@ -18,20 +21,29 @@ export interface OptimizerMethodUiConfig<TKind extends OptimizerKind> {
   readonly kind: OptimizerMethodKind<TKind>;
   readonly label: string;
   readonly canUseBounds: boolean;
+  readonly canOptimizeGlass: boolean;
   readonly requiresResidualCountAtLeastVariableCount: boolean;
 }
 
-/** Display label and default for one optimizer tolerance. */
-export interface OptimizerToleranceUiConfig<TKind extends OptimizerKind> {
-  readonly kind: OptimizerToleranceKind<TKind>;
+/** Supported validation rule for one string-backed numeric optimizer field. */
+export type OptimizerNumericFieldValidation =
+  | "positiveInteger"
+  | "positiveFloat"
+  | "nonNegativeFloat"
+  | "leastSquaresTolerance";
+
+/** Display label, default, and validation rule for one numeric optimizer field. */
+export interface OptimizerNumericFieldUiConfig<TKind extends OptimizerKind> {
+  readonly kind: OptimizerNumericFieldKind<TKind>;
   readonly label: string;
   readonly default: number;
+  readonly validation: OptimizerNumericFieldValidation;
 }
 
 /** Metadata shared by optimizer kinds with and without method choices. */
 export interface BaseOptimizerUiMetadata<TKind extends OptimizerKind> {
   readonly label: string;
-  readonly tolerances: ReadonlyArray<OptimizerToleranceUiConfig<TKind>>;
+  readonly numericFields: ReadonlyArray<OptimizerNumericFieldUiConfig<TKind>>;
 }
 
 /** Optimizer metadata that requires an explicit method choice. */
@@ -42,6 +54,7 @@ export interface OptimizerUiMetadataWithMethods<TKind extends OptimizerKind> ext
 /** Optimizer metadata whose capabilities live directly on the optimizer kind. */
 export interface OptimizerUiMetadataWithoutMethods<TKind extends OptimizerKind> extends BaseOptimizerUiMetadata<TKind> {
   readonly canUseBounds: boolean;
+  readonly canOptimizeGlass: boolean;
   readonly requiresResidualCountAtLeastVariableCount: boolean;
   readonly methods?: undefined;
 }
