@@ -1,6 +1,10 @@
-"""Tests for rayoptics_web_utils.glass.custom-materials module."""
+"""Verify observable coefficient layouts and catalog data for custom materials.
+
+The supported contract is the generated material data, not private helper names.
+"""
 
 import math
+
 import pytest
 
 REQUIRED_CaF2_KEYS = {
@@ -15,23 +19,48 @@ REQUIRED_CaF2_KEYS = {
 PARTIAL_DISPERSION_KEYS = {"P_fe", "P_Fd", "P_gF"}
 
 
-class TestHelperNaming:
-    """Tests for helper names that document supported custom-material formats."""
+@pytest.fixture(scope="module")
+def caf2_data():
+    """Cache deterministic CaF2 material data for this test module."""
+    from rayoptics_web_utils.glass.custom_materials import _get_caf2_data
 
-    def test_uses_formula1_six_coeffs_specific_helper_name(self):
-        from rayoptics_web_utils.glass import custom_materials
+    return _get_caf2_data()
 
-        assert hasattr(custom_materials, "_build_formula1_six_coeff_special_material_data")
-        assert not hasattr(custom_materials, "_build_special_material_data")
+
+@pytest.fixture(scope="module")
+def fused_silica_data():
+    """Cache deterministic fused-silica material data for this test module."""
+    from rayoptics_web_utils.glass.custom_materials import _get_fused_silica_data
+
+    return _get_fused_silica_data()
+
+
+@pytest.fixture(scope="module")
+def water_data():
+    """Cache deterministic water material data for this test module."""
+    from rayoptics_web_utils.glass.custom_materials import _get_water_data
+
+    return _get_water_data()
+
+
+@pytest.fixture(scope="module")
+def d263teco_data():
+    """Cache deterministic D263TECO material data for this test module."""
+    from rayoptics_web_utils.glass.custom_materials import _get_d263teco_data
+
+    return _get_d263teco_data()
+
+
+@pytest.fixture(scope="module")
+def special_data():
+    """Cache the deterministic special-material catalog for this test module."""
+    from rayoptics_web_utils.glass.custom_materials import get_special_materials_data
+
+    return get_special_materials_data()
 
 
 class TestGetCaF2Data:
     """Tests for _get_caf2_data()."""
-
-    @pytest.fixture(scope="class")
-    def caf2_data(self):
-        from rayoptics_web_utils.glass.custom_materials import _get_caf2_data
-        return _get_caf2_data()
 
     def test_returns_dict_with_required_keys(self, caf2_data):
         assert isinstance(caf2_data, dict)
@@ -103,11 +132,6 @@ class TestGetCaF2Data:
 class TestGetFusedSilicaData:
     """Tests for _get_fused_silica_data()."""
 
-    @pytest.fixture(scope="class")
-    def fused_silica_data(self):
-        from rayoptics_web_utils.glass.custom_materials import _get_fused_silica_data
-        return _get_fused_silica_data()
-
     def test_returns_dict_with_required_keys(self, fused_silica_data):
         assert isinstance(fused_silica_data, dict)
         assert REQUIRED_CaF2_KEYS == set(fused_silica_data.keys())
@@ -131,11 +155,6 @@ class TestGetFusedSilicaData:
 
 class TestGetWaterData:
     """Tests for _get_water_data()."""
-
-    @pytest.fixture(scope="class")
-    def water_data(self):
-        from rayoptics_web_utils.glass.custom_materials import _get_water_data
-        return _get_water_data()
 
     def test_returns_dict_with_required_keys(self, water_data):
         assert isinstance(water_data, dict)
@@ -174,11 +193,6 @@ class TestGetWaterData:
 class TestGetD263TECOData:
     """Tests for _get_d263teco_data()."""
 
-    @pytest.fixture(scope="class")
-    def d263teco_data(self):
-        from rayoptics_web_utils.glass.custom_materials import _get_d263teco_data
-        return _get_d263teco_data()
-
     def test_returns_dict_with_required_keys(self, d263teco_data):
         assert isinstance(d263teco_data, dict)
         assert REQUIRED_CaF2_KEYS == set(d263teco_data.keys())
@@ -213,11 +227,6 @@ class TestGetD263TECOData:
 
 class TestGetSpecialMaterialsData:
     """Tests for get_special_materials_data()."""
-
-    @pytest.fixture(scope="class")
-    def special_data(self):
-        from rayoptics_web_utils.glass.custom_materials import get_special_materials_data
-        return get_special_materials_data()
 
     def test_returns_dict_with_special_key(self, special_data):
         assert isinstance(special_data, dict)

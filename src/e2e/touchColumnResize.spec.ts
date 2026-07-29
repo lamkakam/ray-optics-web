@@ -1,17 +1,18 @@
 /**
- * Verifies that a real AG Grid column resize handle responds to a touchscreen pointer drag.
+ * Verifies native viewport panning styles and touchscreen column resizing on a real AG Grid.
  *
  * @remarks
  * ## Coverage
  *
  * - Creates a touch-enabled Chromium browser context.
- * - Opens the Lens Editor prescription grid and drags the resizable `Surface` header handle with touch pointer events.
+ * - Asserts the computed `touch-action` and `overscroll-behavior` on the header, body, and center-column viewports.
+ * - Drags the resizable `Surface` header handle with touch pointer events.
  * - Asserts that the rendered header width increases after the drag.
  */
 import { test, expect } from "@playwright/test";
 import { waitForPyodide } from "./utils";
 
-test("resizes an AG Grid column with a touchscreen drag", async ({ browser }) => {
+test("allows native viewport panning and resizes a column with a touchscreen drag", async ({ browser }) => {
   const context = await browser.newContext({
     hasTouch: true,
     viewport: { width: 1024, height: 768 },
@@ -23,8 +24,20 @@ test("resizes an AG Grid column with a touchscreen drag", async ({ browser }) =>
     await waitForPyodide(page);
     await page.getByRole("tab", { name: "Prescription" }).click();
 
-    const header = page
-      .locator('[aria-label="Lens prescription editor"] .ag-header-cell-text')
+    const grid = page.locator('[aria-label="Lens prescription editor"]');
+    for (const selector of [
+      ".ag-header-viewport",
+      ".ag-body-viewport",
+      ".ag-center-cols-viewport",
+    ]) {
+      const viewport = grid.locator(selector);
+      await expect(viewport).toHaveCount(1);
+      await expect(viewport).toHaveCSS("touch-action", "pan-x pan-y");
+      await expect(viewport).toHaveCSS("overscroll-behavior", "auto");
+    }
+
+    const header = grid
+      .locator(".ag-header-cell-text")
       .getByText("Surface", { exact: true })
       .locator("xpath=ancestor::div[contains(concat(' ', normalize-space(@class), ' '), ' ag-header-cell ')]");
     const resizeHandle = header.locator(".ag-header-cell-resize");

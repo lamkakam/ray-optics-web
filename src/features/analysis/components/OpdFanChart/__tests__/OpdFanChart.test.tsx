@@ -56,6 +56,7 @@ describe("OpdFanChart", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
     mockBuildOpdFanChartOption = jest.fn(() => ({ series: [] }));
     Object.defineProperty(HTMLElement.prototype, "clientWidth", {
       configurable: true,
