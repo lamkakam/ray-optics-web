@@ -14,7 +14,7 @@
  * - Requires `least_squares` to remain method-based inside `OptimizerUiConfig`, while allowing other optimizer kinds to use either metadata shape in the future.
  * - Stores every numeric field's label, default, and validation category in one UI-facing config object; the Algorithm component does not special-case Glass Expert controls.
  * - Existing continuous optimizers expose `canOptimizeGlass: false`.
- * - Stores Glass Expert as a methodless optimizer with required bounds, glass substitution enabled, no residual-count dimension rule, and `num_neighbours`, `maxiter`, and `tol` fields.
+ * - Stores Glass Expert as a methodless optimizer with required bounds, glass substitution enabled, no residual-count dimension rule, and `num_neighbours`, `maxiter`, and `tol` fields; `maxiter` is labeled as the per-refinement-run limit.
  */
 import type { OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
 import type {
@@ -75,7 +75,7 @@ export const OPTIMIZER_UI_CONFIG = {
     requiresResidualCountAtLeastVariableCount: false,
     numericFields: [
       { kind: "num_neighbours", label: "Num. of neighbours", default: 7, validation: "positiveInteger" },
-      { kind: "maxiter", label: "Max. num of iterations", default: 1000, validation: "positiveInteger" },
+      { kind: "maxiter", label: "Max. iterations per refinement run", default: 1000, validation: "positiveInteger" },
       { kind: "tol", label: "Tolerance", default: 1e-3, validation: "positiveFloat" },
     ],
   },

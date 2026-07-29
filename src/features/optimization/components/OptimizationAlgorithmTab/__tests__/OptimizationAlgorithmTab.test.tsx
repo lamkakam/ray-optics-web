@@ -99,7 +99,8 @@ describe("OptimizationAlgorithmTab", () => {
     expect(screen.getByRole("option", { name: "Glass Expert" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Method")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Num. of neighbours")).toHaveValue("7");
-    expect(screen.getByLabelText("Max. num of iterations")).toHaveValue("1000");
+    expect(screen.getByLabelText("Max. iterations per refinement run")).toHaveValue("1000");
+    expect(screen.queryByLabelText("Max. num of iterations")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Tolerance")).toHaveValue("1e-3");
     expect(screen.queryByLabelText("Max. num of steps")).not.toBeInTheDocument();
   });

@@ -45,7 +45,7 @@ function createNumericFieldPatch(
  * - Uses the shared `OptimizationAlgorithmConfig` attribute names for form state. Numeric optimizer fields are represented as strings for inputs.
  * - The Optimizer Kind select is controlled by the parent and emits kind changes so the store can reset kind-specific algorithm defaults.
  * - The Method select is rendered only for method-based optimizers. Least squares supports both `Trust Region Reflective` (`trf`) and `Levenberg-Marquardt` (`lm`) through the centralized optimizer UI metadata.
- * - Differential Evolution and Glass Expert are methodless. Glass Expert renders `Num. of neighbours`, `Max. num of iterations`, and `Tolerance`.
+ * - Differential Evolution and Glass Expert are methodless. Glass Expert renders `Num. of neighbours`, `Max. iterations per refinement run`, and `Tolerance`.
  * - All numeric controls, including continuous `max_nfev`, are rendered from metadata rather than hardcoded by optimizer kind.
  */
 export function OptimizationAlgorithmTab({
