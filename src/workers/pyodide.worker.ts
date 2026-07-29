@@ -14,7 +14,7 @@
  *
  * All public computations obtain the executor through `requirePyodide`, which throws
  * until initialization succeeds. Initialization clears the singleton on failure so
- * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.24.0` wheel
+ * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.25.0` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`.
  * User-defined glass mutations share the Python material registry and use NumPy-safe
  * JSON serialization. Both optimization RPCs return ordinary Python failures as
@@ -221,7 +221,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.24.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.25.0-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
@@ -709,6 +709,8 @@ export async function _optimizeOpm(
  * Runs glass-expert optimization with the shared callback/interrupt lifecycle.
  * The flat config is JSON-reconstructed inside Python and the candidate-aware
  * progress history is parsed without replacing absent optional fields with null.
+ * The worker injects the four bundled Special media and the current mutable Custom
+ * registry so Python resolves dynamic candidates from the same live catalog snapshot.
  * Ordinary Python setup/runtime exceptions resolve through the glass failure builder.
  */
 export async function _optimizeGlasses(
@@ -773,6 +775,9 @@ async function runOptimization<TReport extends OptimizationReport | GlassOptimiz
   const failureReportBuilder = pythonFunction === "optimize_glasses"
     ? "_build_glass_optimization_failure_report"
     : "_build_optimization_failure_report";
+  const candidateMaterialsArgument = pythonFunction === "optimize_glasses"
+    ? ", candidate_materials={'Special': {'CaF2': caf2, 'Fused Silica': fused_silica, 'Water': water, 'D263TECO': d263teco}, 'Custom': user_defined_materials}"
+    : "";
   try {
     if (canBindProgressCallback) {
       progressBindingStarted = true;
@@ -798,7 +803,7 @@ def _report_optimization_progress(progress):
 _optimization_config = {}
 try:
     _optimization_config = json.loads(${JSON.stringify(configJson)})
-    _optimization_report = ${pythonFunction}(${opm}, _optimization_config, image_point='${imagePoint}'${canBindProgressCallback ? ", progress_reporter=_report_optimization_progress" : ""})
+    _optimization_report = ${pythonFunction}(${opm}, _optimization_config, image_point='${imagePoint}'${canBindProgressCallback ? ", progress_reporter=_report_optimization_progress" : ""}${candidateMaterialsArgument})
 except Exception as _optimization_error:
     _optimization_report = ${failureReportBuilder}(_optimization_error, _optimization_config)
 json.dumps(_optimization_report)

@@ -191,13 +191,13 @@ describe("optimizationStore", () => {
     expect(state.optimizer.method).toBe("trf");
     expect(state.optimizer.max_nfev).toBe("200");
     expect(state.optimizer.ftol).toBe(
-      formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[0].default),
+      formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.numericFields[1].default),
     );
     expect(state.optimizer.xtol).toBe(
-      formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[1].default),
+      formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.numericFields[2].default),
     );
     expect(state.optimizer.gtol).toBe(
-      formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.tolerances[2].default),
+      formatOptimizerUiDefaultValue(OPTIMIZER_UI_CONFIG.least_squares.numericFields[3].default),
     );
     expect(state.fieldWeights).toEqual([1, 0, 0]);
     expect(state.wavelengthWeights).toEqual([1, 2, 1]);
@@ -383,6 +383,9 @@ describe("optimizationStore", () => {
     ]);
 
     const config = store.getState().buildOptimizationConfig();
+    if (!("optimizer" in config)) {
+      throw new Error("Expected a continuous optimization configuration");
+    }
 
     expect(config.optimizer).toEqual({
       kind: "differential_evolution",
@@ -450,10 +453,10 @@ describe("optimizationStore", () => {
       kind: "differential_evolution",
       max_nfev: "200",
       tol: formatOptimizerUiDefaultValue(
-        OPTIMIZER_UI_CONFIG.differential_evolution.tolerances[0].default,
+        OPTIMIZER_UI_CONFIG.differential_evolution.numericFields[1].default,
       ),
       atol: formatOptimizerUiDefaultValue(
-        OPTIMIZER_UI_CONFIG.differential_evolution.tolerances[1].default,
+        OPTIMIZER_UI_CONFIG.differential_evolution.numericFields[2].default,
       ),
     });
   });

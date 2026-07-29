@@ -119,6 +119,9 @@ describe("_optimizeGlasses", () => {
     expect(source).toContain("optimize_glasses(");
     expect(source).toContain('\\"glass_optimizer\\":{\\"num_neighbours\\":2,\\"maxiter\\":20,\\"tol\\":0.0001}');
     expect(source).toContain('\\"candidates\\":[{\\"name\\":\\"N-BK7\\",\\"catalog\\":\\"Schott\\"}');
+    expect(source).toContain(
+      "candidate_materials={'Special': {'CaF2': caf2, 'Fused Silica': fused_silica, 'Water': water, 'D263TECO': d263teco}, 'Custom': user_defined_materials}",
+    );
   });
 
   it("resolves a generated Python fallback report when setup fails before the facade", async () => {

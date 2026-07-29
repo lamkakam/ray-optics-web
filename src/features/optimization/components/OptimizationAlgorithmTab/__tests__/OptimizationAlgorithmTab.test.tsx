@@ -4,7 +4,8 @@ import { OptimizationAlgorithmTab } from "@/features/optimization/components/Opt
 import { formatOptimizerUiDefaultValue, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 
 describe("OptimizationAlgorithmTab", () => {
-  it("renders optimizer methods and tolerances from shared UI config", () => {
+  it("renders optimizer methods and numeric fields from shared UI config", () => {
+    const numericFields = OPTIMIZER_UI_CONFIG.least_squares.numericFields;
     render(
       <OptimizationAlgorithmTab
         optimizer={{
@@ -12,13 +13,13 @@ describe("OptimizationAlgorithmTab", () => {
           method: "trf",
           max_nfev: "200",
           ftol: formatOptimizerUiDefaultValue(
-            OPTIMIZER_UI_CONFIG.least_squares.tolerances[0].default,
+            numericFields[1].default,
           ),
           xtol: formatOptimizerUiDefaultValue(
-            OPTIMIZER_UI_CONFIG.least_squares.tolerances[1].default,
+            numericFields[2].default,
           ),
           gtol: formatOptimizerUiDefaultValue(
-            OPTIMIZER_UI_CONFIG.least_squares.tolerances[2].default,
+            numericFields[3].default,
           ),
         }}
         onChangeOptimizer={jest.fn()}
@@ -29,8 +30,11 @@ describe("OptimizationAlgorithmTab", () => {
       expect(screen.getByRole("option", { name: method.label })).toBeInTheDocument();
     }
 
-    for (const tolerance of OPTIMIZER_UI_CONFIG.least_squares.tolerances) {
-      expect(screen.getByLabelText(tolerance.label)).toHaveValue(formatOptimizerUiDefaultValue(tolerance.default));
+    for (const field of numericFields) {
+      const expectedValue = field.validation === "positiveInteger"
+        ? String(field.default)
+        : formatOptimizerUiDefaultValue(field.default);
+      expect(screen.getByLabelText(field.label)).toHaveValue(expectedValue);
     }
   });
 
@@ -77,5 +81,48 @@ describe("OptimizationAlgorithmTab", () => {
     await user.selectOptions(screen.getByLabelText("Optimizer Kind"), "differential_evolution");
 
     expect(onChangeOptimizer).toHaveBeenCalledWith({ kind: "differential_evolution" });
+  });
+
+  it("renders Glass Expert numeric fields from shared UI metadata without a Method selector", () => {
+    render(
+      <OptimizationAlgorithmTab
+        optimizer={{
+          kind: "glass_expert",
+          num_neighbours: "7",
+          maxiter: "1000",
+          tol: "1e-3",
+        }}
+        onChangeOptimizer={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("option", { name: "Glass Expert" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Method")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Num. of neighbours")).toHaveValue("7");
+    expect(screen.getByLabelText("Max. iterations per refinement run")).toHaveValue("1000");
+    expect(screen.queryByLabelText("Max. num of iterations")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Tolerance")).toHaveValue("1e-3");
+    expect(screen.queryByLabelText("Max. num of steps")).not.toBeInTheDocument();
+  });
+
+  it("emits metadata-driven Glass Expert numeric field changes", async () => {
+    const user = userEvent.setup();
+    const onChangeOptimizer = jest.fn();
+
+    render(
+      <OptimizationAlgorithmTab
+        optimizer={{
+          kind: "glass_expert",
+          num_neighbours: "7",
+          maxiter: "1000",
+          tol: "1e-3",
+        }}
+        onChangeOptimizer={onChangeOptimizer}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("Num. of neighbours"), "9");
+
+    expect(onChangeOptimizer).toHaveBeenLastCalledWith({ num_neighbours: "79" });
   });
 });

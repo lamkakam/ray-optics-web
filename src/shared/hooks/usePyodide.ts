@@ -103,7 +103,7 @@ export interface PyodideWorkerAPI {
     runId?: string,
     interruptBuffer?: SharedArrayBuffer,
   ): Promise<OptimizationReport>;
-  /** Runs mixed optimization; ordinary Python failures resolve as typed rollback reports. */
+  /** Runs mixed optimization with live Special/Custom materials; ordinary Python failures resolve as typed rollback reports. */
   optimizeGlasses(
     opticalModel: OpticalModel,
     config: GlassOptimizationConfig,
@@ -168,7 +168,7 @@ function initOnce(): Promise<void> {
  * - User-defined glass APIs are passed through to the worker as typed Comlink methods. Add/update/get return the bare Python material map keyed by glass name; delete resolves with no payload.
  * - `canInterruptOptimization()` reports whether the initialized worker can install a Pyodide interrupt buffer.
  * - `requestOptimizationStop(runId)` asks the worker to signal the currently active optimization only when the run id still matches; late or stale run ids return `{ signaled: false }`.
- * - `optimizeOpm` and `optimizeGlasses` accept the same optional streamed progress callback and interruption arguments; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker. Glass progress may additionally include phase, surface, and candidate context. Ordinary Python setup/runtime exceptions resolve with `success: false`, `status: "error"`, and restored or empty state; executor, JSON parsing, and Comlink transport failures still reject.
+ * - `optimizeOpm` and `optimizeGlasses` accept the same optional streamed progress callback and interruption arguments; callers that pass a function must wrap it with `comlink.proxy(...)` before invoking the worker. The worker injects its four bundled Special media and live user-defined registry into glass runs, and glass progress may additionally include canonical phase, surface, and candidate context. Ordinary Python setup/runtime exceptions resolve with `success: false`, `status: "error"`, and restored or empty state; executor, JSON parsing, and Comlink transport failures still reject.
  * - `init` accepts an optional progress callback for determinate startup milestones; `usePyodide` owns the Comlink proxy wrapping for this callback.
  * - `_resetSingleton()` is exported for test isolation only — NOT for production use.
  *

@@ -181,7 +181,7 @@ class TestGlassConfig:
                         )
                     ]
                 ),
-                "Unsupported glass catalog",
+                "not eligible",
             ),
             (
                 lambda config: config.update(
@@ -289,6 +289,155 @@ class TestGlassConfig:
             "name": "N-BK7",
             "catalog": "Schott",
         }
+
+    @pytest.mark.parametrize(
+        ("catalog", "name"),
+        [
+            ("Special", "CaF2"),
+            ("Custom", "CUSTOM_A"),
+        ],
+    )
+    def test_resolves_injected_special_and_custom_candidates_with_canonical_identity(
+        self,
+        glass_opm,
+        catalog,
+        name,
+    ):
+        from rayoptics_web_utils.optimization.glass_config import (
+            normalize_glass_optimization_config,
+        )
+
+        current_medium = glass_opm["seq_model"].gaps[1].medium
+        normalized = normalize_glass_optimization_config(
+            glass_opm,
+            _config(
+                glass_variables=[
+                    _glass_variable(
+                        candidates=[{"name": name, "catalog": catalog}],
+                    )
+                ]
+            ),
+            candidate_materials={catalog: {name: current_medium}},
+        )
+
+        candidate = normalized["glass_variables"][0]["candidates"][0]
+        assert candidate.name == name
+        assert candidate.catalog == catalog
+        assert candidate.medium is current_medium
+
+    def test_injected_incumbent_still_must_be_in_its_candidate_pool(self, glass_opm):
+        from rayoptics_web_utils.optimization.glass_config import (
+            normalize_glass_optimization_config,
+        )
+
+        current_medium = glass_opm["seq_model"].gaps[1].medium
+        other_medium = glass_opm["seq_model"].gaps[3].medium
+
+        with pytest.raises(
+            ValueError,
+            match="Current glass must be included in candidates for surface 1",
+        ):
+            normalize_glass_optimization_config(
+                glass_opm,
+                _config(
+                    glass_variables=[
+                        _glass_variable(
+                            candidates=[
+                                {"name": "CUSTOM_B", "catalog": "Custom"}
+                            ],
+                        )
+                    ]
+                ),
+                candidate_materials={
+                    "Custom": {
+                        "CUSTOM_A": current_medium,
+                        "CUSTOM_B": other_medium,
+                    }
+                },
+            )
+
+    @pytest.mark.parametrize(
+        ("catalog", "name"),
+        [
+            ("Custom", "DELETED_CUSTOM"),
+            ("Special", "CaF2"),
+        ],
+    )
+    def test_rejects_removed_or_missing_injected_candidates(
+        self,
+        glass_opm,
+        catalog,
+        name,
+    ):
+        from rayoptics_web_utils.optimization.glass_config import (
+            normalize_glass_optimization_config,
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=(
+                f"Glass candidate {name!r} is unavailable in injected "
+                f"catalog {catalog!r}"
+            ),
+        ):
+            normalize_glass_optimization_config(
+                glass_opm,
+                _config(
+                    glass_variables=[
+                        _glass_variable(
+                            candidates=[{"name": name, "catalog": catalog}],
+                        )
+                    ]
+                ),
+                candidate_materials={catalog: {}},
+            )
+
+    @pytest.mark.parametrize("name", ["air", "REFL"])
+    def test_rejects_air_and_reflection_even_when_injected(self, glass_opm, name):
+        from rayoptics_web_utils.optimization.glass_config import (
+            normalize_glass_optimization_config,
+        )
+
+        medium = glass_opm["seq_model"].gaps[0].medium
+        with pytest.raises(
+            ValueError,
+            match=f"Glass candidate {name!r} is not eligible",
+        ):
+            normalize_glass_optimization_config(
+                glass_opm,
+                _config(
+                    glass_variables=[
+                        _glass_variable(
+                            candidates=[{"name": name, "catalog": "Special"}],
+                        )
+                    ]
+                ),
+                candidate_materials={"Special": {name: medium}},
+            )
+
+    def test_accepts_object_gap_zero_for_injected_glass(self, glass_opm):
+        from rayoptics_web_utils.optimization.glass_config import (
+            normalize_glass_optimization_config,
+        )
+
+        current_medium = glass_opm["seq_model"].gaps[1].medium
+        glass_opm["seq_model"].gaps[0].medium = current_medium
+        normalized = normalize_glass_optimization_config(
+            glass_opm,
+            _config(
+                glass_variables=[
+                    _glass_variable(
+                        surface_index=0,
+                        candidates=[
+                            {"name": "OBJECT_CUSTOM", "catalog": "Custom"}
+                        ],
+                    )
+                ]
+            ),
+            candidate_materials={"Custom": {"OBJECT_CUSTOM": current_medium}},
+        )
+
+        assert normalized["glass_variables"][0]["surface_index"] == 0
 
 
 class TestGlassSearchHelpers:
@@ -425,6 +574,42 @@ class TestLBFGSBSolver:
 
 
 class TestOptimizeGlasses:
+    def test_canonicalizes_injected_custom_identity_in_reports_and_progress(
+        self,
+        glass_opm,
+    ):
+        from rayoptics_web_utils.optimization import optimize_glasses
+
+        current_medium = glass_opm["seq_model"].gaps[1].medium
+        report = optimize_glasses(
+            glass_opm,
+            _config(
+                glass_variables=[
+                    _glass_variable(
+                        candidates=[
+                            {"name": "CUSTOM_A", "catalog": "Custom"}
+                        ],
+                    )
+                ],
+                glass_optimizer={"num_neighbours": 1, "maxiter": 1},
+            ),
+            candidate_materials={"Custom": {"CUSTOM_A": current_medium}},
+        )
+
+        expected_identity = {
+            "surface_index": 1,
+            "name": "CUSTOM_A",
+            "catalog": "Custom",
+        }
+        assert report["initial_glasses"] == [expected_identity]
+        assert report["final_glasses"] == [expected_identity]
+        assert any(
+            entry.get("candidate") == {
+                "name": "CUSTOM_A",
+                "catalog": "Custom",
+            }
+            for entry in report["optimization_progress"]
+        )
     def test_processes_surfaces_in_config_order_and_restores_each_incumbent(self, monkeypatch, glass_opm):
         import rayoptics_web_utils.optimization.glass_optimizer as module
 

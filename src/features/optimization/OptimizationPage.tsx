@@ -14,6 +14,7 @@ import {
   OptimizationInspectionModals,
   OptimizationProgressModal,
   AsphereVarModal,
+  GlassVariableModal,
   RadiusModeModal,
   ThicknessModeModal,
 } from "./components";
@@ -26,6 +27,7 @@ import { formatMissingGlassMessage, getMissingPrescriptionGlasses } from "@/shar
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
 import type { OptimizationProgressEntry, OptimizationReport } from "./types/optimizationWorkerTypes";
+import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
 import { useScreenBreakpoint } from "@/shared/hooks/useScreenBreakpoint";
@@ -69,7 +71,7 @@ function buildCurrentEditorModel(
  * - Listens to live Lens Editor and Specs store changes and calls `syncFromOpticalModel(...)` so optimization reflects the latest prescription/spec state instead of staying stale.
  * - Builds the synchronized editor model through a pure `buildCurrentEditorModel(...)` helper whose explicit inputs are the reactive editor rows, reactive auto-aperture mode, reactive row-ID-keyed auto semi-diameter cache, and current optical specs.
  * - In auto-aperture mode, the synchronized model replaces each physical surface row's manual `semiDiameter` with its cached computed value and falls back to the manual value when that row ID is absent from the cache. In manual mode, the retained cache is ignored and the editable row values are synchronized unchanged.
- * - Both `editorAutoAperture` and `editorAutoSemiDiameters` are synchronization dependencies, so mode-only changes and new worker-computed cache values update `optimizationModel`. Consequently, both `evaluateOptimizationProblem(...)` and `optimizeOpm(...)` receive the effective semi-diameters without a separate Optimization worker request.
+ * - Both `editorAutoAperture` and `editorAutoSemiDiameters` are synchronization dependencies, so mode-only changes and new worker-computed cache values update `optimizationModel`. Consequently, evaluation and either optimizer run receive the effective semi-diameters without a separate Optimization worker request.
  * - Passes the Lens Editor `optimizationSyncPolicy` into `syncFromOpticalModel(...)` so normal editor prescription edits reset Optimization prescription modes, while Optimization Apply and Focusing-origin edits preserve those modes.
  * - Renders the extracted `OptimizationActionBar` above the tabs with:
  * - `Optimize`
@@ -103,17 +105,18 @@ function buildCurrentEditorModel(
  * - a second `Var.` column after `Thickness` for thickness variable/pickup configuration
  * - read-only `Medium`, `Semi-diam.`, `Asph.` columns
  * - read-only `Aperture` column after `Semi-diam.` that opens the aperture inspection modal
- * - a third `Var.` column after `Asph.` for asphere variable/pickup configuration (real surface rows only; opens `AsphereVarModal`)
+ * - a conditional fourth `Var.` column immediately after `Medium` for Object and physical-surface glass pools when Glass Expert is selected
+ * - a third always-present `Var.` column after `Asph.` for asphere variable/pickup configuration (real surface rows only; opens `AsphereVarModal`)
  * - read-only `Tilt & Decenter` and `Diffraction Grating` columns
  * - Passes the auto/manual mode from the synchronized optimization model through `BottomDrawerContainer` to `OptimizationLensPrescriptionGrid`, keeping the prescription display aligned with the model used by evaluation and optimization.
  * - `OptimizationOperandsTab` renders an add/delete AG Grid table with `Operand Kind`, `Target`, and `Weight`, including combined and axis-specific OPD Difference and Ray Fan operand options.
  * - The `Weight` column is editable, defaults to `"1"` for new rows, and is validated as a positive non-zero number when optimization config is built.
- * - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests.
+ * - Whenever the committed optimization config changes, the component debounces a worker-side evaluation call through `useDebouncedCallback(...)`, passes the app-wide `imagePoint`, updates the static table from the returned residuals, and ignores stale async responses from older requests. Glass Expert is evaluated through a separately built bounded `least_squares/trf` config.
  * - Radius, thickness, and asphere variable/pickup mode dialogs keep edits in modal-local draft state, so changing mode or typing values does not refresh the live evaluation table until the user presses `Done`. Changes to `asphereStates` are included in the evaluation dependency array so commits trigger a re-evaluation debounce.
- * - The page derives one shared `canUseBounds` boolean from the selected least-squares method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from optimizer-kind/method details.
+ * - The page derives one shared `canUseBounds` boolean from the selected optimizer kind/method and passes that boolean to the radius, thickness, and asphere modals so their `variable` mode rendering stays decoupled from algorithm details.
  * - When the user explicitly switches the Method select and the updated config fails `buildOptimizationConfig()`, `BottomDrawerContainer` reports the thrown error message through the page-local warning callback instead of filtering to one hardcoded `lm` warning.
  * - When the user switches Optimizer Kind, `BottomDrawerContainer` delegates to the store's `setOptimizerKind()` action so algorithm fields reset to the selected optimizer's defaults.
- * - Variable-bound affordances use optimizer-kind-aware capabilities, so both bounded least-squares (`trf`) and methodless Differential Evolution can use the min/max variable UI while `lm` remains unbounded.
+ * - Variable-bound affordances use optimizer-kind-aware capabilities, so bounded least-squares (`trf`), Differential Evolution, and Glass Expert use the min/max variable UI while `lm` remains unbounded.
  * - Invalid intermediate configs clear the evaluation table and show the current `buildOptimizationConfig()` error in Operand Evaluation.
  * - Missing-glass validation also clears the evaluation table; config-build errors take precedence when both a config error and a missing-glass error are present.
  * - Operand Evaluation loading and completion state updates must not re-render the bottom drawer grid subtree or reset active AG Grid editors; the page passes memoized drawer `layout`, `fields`, `wavelengths`, and `prescription` prop objects, with `onHeightChange` present only for large-screen drawer mode.
@@ -122,8 +125,8 @@ function buildCurrentEditorModel(
  * - `Optimize` is also disabled when the current built merit function has no non-zero effective contribution after combining operand, field, and wavelength weights.
  * - `Optimize` is disabled while any Optimization AG Grid cell edit is active, while a post-edit Operand Evaluation refresh is pending, and while Operand Evaluation is currently evaluating.
  * - Page-level AG Grid edit lifecycle tracking increments on `onCellEditingStarted`, decrements on `onCellEditingStopped`, increments an edit-stop revision so even no-op edits schedule a refresh, and marks the committed post-edit state as pending until the next debounced Operand Evaluation request settles; invalid config or missing worker prerequisites clear that pending gate without running an evaluation.
- * - `Optimize` does not blur active AG Grid editors to force a commit. If the handler is triggered programmatically while editing, waiting for post-edit evaluation, evaluating, invalid, or zero-contribution, it returns without calling `optimizeOpm`.
- * - `Optimize` validates the store state, rejects zero-contribution configs with an Operand Evaluation warning even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id, creates a `SharedArrayBuffer` interrupt buffer when worker/browser support is available, calls `proxy.optimizeOpm` with the app-wide `imagePoint`, and streams merit-history updates into the modal chart through a Comlink progress callback. Successful/stopped and numeric solver reports are applied to the page-local model; a returned Python `status: "error"` report shows its message without applying values or entering the rejected-call error path.
+ * - `Optimize` does not blur active AG Grid editors to force a commit. If the handler is triggered programmatically while editing, waiting for post-edit evaluation, evaluating, invalid, or zero-contribution, it returns without calling either optimizer RPC.
+ * - `Optimize` validates the store state against the live catalog snapshot, rejects zero-contribution configs with an Operand Evaluation warning even if the handler is triggered programmatically, opens `OptimizationProgressModal`, creates a per-run id and optional interrupt buffer, branches between `proxy.optimizeOpm` and `proxy.optimizeGlasses`, and streams merit-history updates into the modal chart through a Comlink progress callback.
  * - The page checks `proxy.canInterruptOptimization()` and disables the progress modal Stop control when Pyodide interrupt support or `SharedArrayBuffer` is unavailable.
  * - Clicking Stop is idempotent for the active run: it writes Pyodide's interrupt signal into the shared interrupt buffer immediately, calls `proxy.requestOptimizationStop(activeRunId)` for worker-side run validation, disables the Stop button while the run is settling, and leaves the progress modal open.
  * - A stopped report with `status: "stopped"` is treated as a successful partial optimization result: the page applies its `final_values`, preserves the final chart history, switches the modal to completed `OK` controls in the normal `finally` path, and does not show a warning for that user-requested status.
@@ -171,7 +174,7 @@ export function OptimizationPage({
     : Math.round(window.innerHeight * 0.4);
   const screenSize = useScreenBreakpoint();
   const { imagePoint } = useImagePoint();
-  const { lookupMaps } = useGlassCatalogs();
+  const { catalogs, lookupMaps } = useGlassCatalogs();
   const isLG = screenSize === "screenLG";
   const lensStore = useLensEditorStore();
   const specsStore = useSpecsConfiguratorStore();
@@ -197,10 +200,11 @@ export function OptimizationPage({
   const fieldWeights = useStore(optimizationStore, (state) => state.fieldWeights);
   const wavelengthWeights = useStore(optimizationStore, (state) => state.wavelengthWeights);
   const radiusModes = useStore(optimizationStore, (state) => state.radiusModes);
+  const glassModes = useStore(optimizationStore, (state) => state.glassModes);
   const operands = useStore(optimizationStore, (state) => state.operands);
   const canBuildOptimizationConfig = useStore(optimizationStore, (state) => {
     try {
-      state.buildOptimizationConfig();
+      state.buildOptimizationConfig(catalogs);
       return true;
     } catch {
       return false;
@@ -208,7 +212,7 @@ export function OptimizationPage({
   });
   const invalidConfigMessage = useStore(optimizationStore, (state) => {
     try {
-      state.buildOptimizationConfig();
+      state.buildOptimizationConfig(catalogs);
       return undefined;
     } catch (error) {
       return error instanceof Error ? error.message : "Optimization config is invalid.";
@@ -216,7 +220,7 @@ export function OptimizationPage({
   });
   const hasNonZeroContribution = useStore(optimizationStore, (state) => {
     try {
-      return hasNonZeroOptimizationContribution(state.buildOptimizationConfig());
+      return hasNonZeroOptimizationContribution(state.buildOptimizationConfig(catalogs));
     } catch {
       return false;
     }
@@ -228,6 +232,7 @@ export function OptimizationPage({
   const thicknessModes = useStore(optimizationStore, (state) => state.thicknessModes);
   const asphereStates = useStore(optimizationStore, (state) => state.asphereStates);
   const asphereModal = useStore(optimizationStore, (state) => state.asphereModal);
+  const glassModal = useStore(optimizationStore, (state) => state.glassModal);
   const [mediumModalRow, setMediumModalRow] = useState<GridRow | undefined>();
   const [asphericalModalRow, setAsphericalModalRow] = useState<GridRow | undefined>();
   const [apertureModalRow, setApertureModalRow] = useState<GridRow | undefined>();
@@ -389,6 +394,10 @@ export function OptimizationPage({
     ? undefined
     : asphereStates.find((state) => state.surfaceIndex === asphereModal.surfaceIndex);
 
+  const selectedGlassMode = glassModal.surfaceIndex === undefined
+    ? undefined
+    : glassModes.find((mode) => mode.surfaceIndex === glassModal.surfaceIndex);
+
   const evaluationRows = useMemo(
     () => evaluationReport?.residuals.flatMap((residual, index) => {
       const row = createEvaluationRow(residual, index);
@@ -454,10 +463,11 @@ export function OptimizationPage({
     requestId: number,
     model: OpticalModel,
     currentImagePoint: typeof imagePoint,
+    catalogSnapshot: AllGlassCatalogsData | undefined,
   ) => {
     let config;
     try {
-      config = optimizationStore.getState().buildOptimizationConfig();
+      config = optimizationStore.getState().buildOptimizationEvaluationConfig(catalogSnapshot);
     } catch {
       if (evaluationRequestIdRef.current === requestId) {
         setEvaluationReport(undefined);
@@ -510,7 +520,7 @@ export function OptimizationPage({
 
     const requestId = evaluationRequestIdRef.current + 1;
     evaluationRequestIdRef.current = requestId;
-    runDebouncedEvaluation(requestId, optimizationModel, imagePoint);
+    runDebouncedEvaluation(requestId, optimizationModel, imagePoint, catalogs);
 
     return () => {
       cancelDebouncedEvaluation();
@@ -522,11 +532,13 @@ export function OptimizationPage({
     optimizationStore,
     canBuildOptimizationConfig,
     missingGlassMessage,
+    catalogs,
     optimizer,
     fieldWeights,
     wavelengthWeights,
     radiusModes,
     thicknessModes,
+    glassModes,
     asphereStates,
     operands,
     gridEditStopRevision,
@@ -565,21 +577,31 @@ export function OptimizationPage({
     setIsStoppingOptimization(false);
     optimizationStore.getState().setIsOptimizing(true);
     try {
-      const config = optimizationStore.getState().buildOptimizationConfig();
+      const config = optimizationStore.getState().buildOptimizationConfig(catalogs);
       if (!hasNonZeroOptimizationContribution(config)) {
         setOptimizationWarningMessage(ZERO_WEIGHT_WARNING_MESSAGE);
         return;
       }
-      const report = await proxy.optimizeOpm(
-        optimizationModel,
-        config,
-        imagePoint,
-        comlinkProxy((progress: ReadonlyArray<OptimizationProgressEntry>) => {
-          setOptimizationProgress(progress);
-        }),
-        runId,
-        interruptBuffer,
-      );
+      const progressCallback = comlinkProxy((progress: ReadonlyArray<OptimizationProgressEntry>) => {
+        setOptimizationProgress(progress);
+      });
+      const report = "glass_variables" in config
+        ? await proxy.optimizeGlasses(
+            optimizationModel,
+            config,
+            imagePoint,
+            progressCallback,
+            runId,
+            interruptBuffer,
+          )
+        : await proxy.optimizeOpm(
+            optimizationModel,
+            config,
+            imagePoint,
+            progressCallback,
+            runId,
+            interruptBuffer,
+          );
       setOptimizationProgress(report.optimization_progress ?? []);
       if (report.status === "error") {
         setOptimizationWarningMessage(report.message);
@@ -735,6 +757,16 @@ export function OptimizationPage({
         canUseBounds={canUseBounds}
         onSave={(surfaceIndex, state) => optimizationStore.getState().replaceAsphereState(surfaceIndex, state)}
         onClose={() => optimizationStore.getState().closeAsphereModal()}
+      />
+
+      <GlassVariableModal
+        isOpen={glassModal.open}
+        optimizationModel={optimizationModel}
+        surfaceIndex={glassModal.surfaceIndex}
+        selectedMode={selectedGlassMode}
+        catalogs={catalogs}
+        onSetMode={(surfaceIndex, mode) => optimizationStore.getState().setGlassMode(surfaceIndex, mode)}
+        onClose={() => optimizationStore.getState().closeGlassModal()}
       />
 
       <OptimizationApplyConfirmModal

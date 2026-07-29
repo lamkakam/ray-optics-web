@@ -1,10 +1,10 @@
 # Optimization Worker Communication
 
-Optimization runs execute inside the long-lived Pyodide web worker through the typed Comlink proxy exposed by `usePyodide`. `OptimizationPage` currently calls `optimizeOpm(...)`; the worker also exposes the backend-only `optimizeGlasses(...)` API for mixed categorical/continuous runs.
+Optimization runs execute inside the long-lived Pyodide web worker through the typed Comlink proxy exposed by `usePyodide`. `OptimizationPage` calls `optimizeOpm(...)` for the continuous optimizers and `optimizeGlasses(...)` when Glass Expert is selected.
 
 ## Progress Streaming
 
-`OptimizationPage` calls `proxy.optimizeOpm(...)` with:
+`OptimizationPage` calls the selected optimizer RPC with:
 
 - the page-local optical model
 - the built optimization config
@@ -86,4 +86,10 @@ Executor rejection, invalid returned JSON, and Comlink transport failures are no
 
 `proxy.optimizeGlasses(...)` accepts the same model, image-point, progress callback, run id, and interrupt buffer positions as `optimizeOpm(...)`. Its flat config contains `glass_optimizer`, ordered `glass_variables`, numeric `variables`, `pickups`, and `merit_function`.
 
-The result extends the continuous report with `initial_glasses` and `final_glasses`. Optimizer metadata identifies `glass_expert` / `L-BFGS-B`, normalized `num_neighbours`, `maxiter`, and `tol`, plus aggregate `runs`, `nfev`, and `nit`. This RPC is intentionally exposed without adding an Optimization-page UI in this change.
+Candidate identities can reference the six manufacturer catalogs (`CDGM`, `Hikari`, `Hoya`, `Ohara`, `Schott`, and `Sumita`), the four bundled `Special` materials (`CaF2`, `Fused Silica`, `Water`, and `D263TECO`), or the live `Custom` registry. Manufacturer candidates continue through the cached `create_glass(...)` path. The generated worker call injects the already-loaded Special material objects and the mutable `user_defined_materials` mapping through the keyword-only `candidate_materials` argument; dynamic Custom objects are not cached.
+
+Python canonicalizes injected objects back to their configured `Special` or `Custom` identity in validation, progress, and final reports. It rejects air, `REFL`, absent Special entries, and Custom entries removed after a pool was saved. A non-ModelGlass incumbent must remain in its configured pool; a numeric ModelGlass incumbent is replaced by the nearest selected real candidate.
+
+The result extends the continuous report with `initial_glasses` and `final_glasses`. Optimizer metadata identifies `glass_expert` / `L-BFGS-B`, normalized `num_neighbours`, `maxiter`, and `tol`, plus aggregate `runs`, `nfev`, and `nit`.
+
+The Optimization page validates pools against its current catalog snapshot before both evaluation and optimization. Live Operand Evaluation remains a separate bounded `least_squares` / `trf` call over the same numeric variables, pickups, and merit operands. Optimize routes the mixed config to `optimizeGlasses(...)`, then applies returned gap `0` glass to Object and gaps `1..N` to physical surfaces. `Special` results use an empty frontend manufacturer; manufacturer and `Custom` results preserve their catalog name.

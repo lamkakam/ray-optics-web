@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { AgGridProvider } from "ag-grid-react";
 import { AllCommunityModule, type ColDef } from "ag-grid-community";
-import type { RadiusMode, AsphereOptimizationState } from "@/features/optimization/stores/optimizationStore";
+import type { RadiusMode, AsphereOptimizationState, GlassMode } from "@/features/optimization/stores/optimizationStore";
 import type { RadiusRow } from "@/features/optimization/lib/optimizationViewModels";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
@@ -34,6 +34,20 @@ function getSurfaceModeLabel(mode: RadiusMode["mode"] | undefined): string {
     return "P";
   }
   return "C";
+}
+
+function getGlassModeLabel(mode: GlassMode["mode"] | undefined): string {
+  return mode === "variable" ? "V" : "C";
+}
+
+function getGlassSurfaceIndex(row: RadiusRow): number | undefined {
+  if (row.row.kind === "object") {
+    return 0;
+  }
+  if (row.row.kind === "surface") {
+    return row.thicknessSurfaceIndex ?? row.radiusSurfaceIndex;
+  }
+  return undefined;
 }
 
 function getAsphereModeLabel(asphereState: AsphereOptimizationState | undefined): string {
@@ -85,9 +99,14 @@ export interface OptimizationLensPrescriptionGridProps {
   readonly rows: ReadonlyArray<RadiusRow>;
   readonly radiusModes: ReadonlyArray<RadiusMode>;
   readonly thicknessModes: ReadonlyArray<RadiusMode>;
+  /** Whether the selected optimizer exposes categorical glass modes. */
+  readonly canOptimizeGlass?: boolean;
+  /** Constant or explicit-pool mode for Object gap 0 and physical gaps 1..N. */
+  readonly glassModes?: ReadonlyArray<GlassMode>;
   readonly asphereStates: ReadonlyArray<AsphereOptimizationState>;
   readonly onOpenRadiusModal: (surfaceIndex: number) => void;
   readonly onOpenThicknessModal: (surfaceIndex: number) => void;
+  readonly onOpenGlassModal?: (surfaceIndex: number) => void;
   readonly onOpenMediumModal: (row: GridRow) => void;
   readonly onOpenAsphericalModal: (row: GridRow) => void;
   readonly onOpenApertureModal: (row: GridRow) => void;
@@ -99,7 +118,7 @@ export interface OptimizationLensPrescriptionGridProps {
 }
 
 /**
- * Renders the optimization lens prescription grid, including a read-only surface `Index` column, radius/thickness variable buttons, asphere variable/pickup button, and read-only inspection cells that open existing lens-editor dialogs.
+ * Renders the optimization lens prescription grid, including a read-only surface `Index` column, radius/thickness variable buttons, the conditional Glass Expert variable button, asphere variable/pickup button, and read-only inspection cells that open existing lens-editor dialogs.
  *
  * - Exports `OptimizationLensPrescriptionGridProps` so the component directory barrels can expose the grid's public prop type without widening the `LensPrescriptionGrid` public surface.
  * - Accepts an optional `autoAperture` prop (default `false`) and passes it to the shared semi-diameter column as its read-only mode. Auto mode displays each effective model `semiDiameter`, including rectangular-aperture surfaces; manual mode keeps editable/manual values and the existing blank rectangular-aperture cell behavior.
@@ -115,7 +134,8 @@ export interface OptimizationLensPrescriptionGridProps {
  * - The `Index`, `Surface`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`.
  * - The radius and thickness `Var.` cells use the same `ActionWrapper` plus Tooltip-wrapped native `<button>` pattern as `Medium`; clicking either the button or the surrounding cell body opens the corresponding optimization modal for the surface. Their Tooltip trigger fills the cell action wrapper so hovering anywhere in the cell action area displays the tooltip. The buttons show the saved optimization mode as `C` for missing or `constant` modes, `V` for `variable`, and `P` for `pickup`.
  * - Adds a `Var.` column after `Asph.` for configuring asphere variable/pickup optimization targets; shown only for real surface rows. The button summarizes all saved asphere term modes as `C` when the asphere state is missing or every term is `constant`, `V` when any term is variable-only, `P` when any term is pickup-only, and `V,P` when variable and pickup terms are both present. Requires `asphereStates` and `onOpenAsphereVarModal` props.
- * - Sets the three optimization `Var.` columns to a narrow `60px` initial width sized for the `Var.` header text, while leaving them otherwise resizable by AG Grid defaults.
+ * - When `canOptimizeGlass` is true, inserts a fourth `Var.` column immediately after `Medium`. It renders `C`/`V` controls for Object gap `0` and every physical surface gap `1..N`; Image is blank. The column is omitted entirely for existing optimizers.
+ * - Sets all optimization `Var.` columns to a narrow `60px` initial width sized for the `Var.` header text, while leaving them otherwise resizable by AG Grid defaults.
  * - Uses shared text action cells for non-optimization-mode inspection cells such as `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating`; those cells show aperture defaults or circular radius labels, `None`, asphere type labels, decenter strategy values, or diffraction grating `lp/mm` labels while preserving the read-only modal callbacks.
  */
 export function OptimizationLensPrescriptionGrid({
@@ -123,9 +143,12 @@ export function OptimizationLensPrescriptionGrid({
   rows,
   radiusModes,
   thicknessModes,
+  canOptimizeGlass = false,
+  glassModes = [],
   asphereStates,
   onOpenRadiusModal,
   onOpenThicknessModal,
+  onOpenGlassModal,
   onOpenMediumModal,
   onOpenAsphericalModal,
   onOpenApertureModal,
@@ -214,6 +237,36 @@ export function OptimizationLensPrescriptionGrid({
       onOpenMediumModal,
       tooltipText: "Click to view medium or glass",
     }),
+    ...(canOptimizeGlass ? [{
+      headerName: "Var.",
+      width: OPTIMIZATION_VAR_COLUMN_WIDTH,
+      cellRenderer: (params: { data: RadiusRow }) => {
+        const surfaceIndex = getGlassSurfaceIndex(params.data);
+        if (surfaceIndex === undefined || onOpenGlassModal === undefined) {
+          return undefined;
+        }
+
+        const mode = glassModes.find((entry) => entry.surfaceIndex === surfaceIndex);
+        const targetLabel = surfaceIndex === 0 ? "Object" : `surface ${surfaceIndex}`;
+        return (
+          <LensPrescriptionActionWrapper onAction={() => onOpenGlassModal(surfaceIndex)}>
+            <Tooltip
+              text="Click to configure glass candidates"
+              position="top"
+              portal
+              noTouch
+              triggerClassName="flex h-full w-full"
+            >
+              <OptimizationVariableModeCell
+                label={getGlassModeLabel(mode?.mode)}
+                ariaLabel={`Glass mode for ${targetLabel}`}
+                onOpenModal={() => onOpenGlassModal(surfaceIndex)}
+              />
+            </Tooltip>
+          </LensPrescriptionActionWrapper>
+        );
+      },
+    } satisfies ColDef<RadiusRow>] : []),
     createSemiDiameterColumn<RadiusRow>({
       getGridRow: (data) => data.row,
       semiDiameterReadonly: autoAperture,
@@ -270,12 +323,15 @@ export function OptimizationLensPrescriptionGrid({
   ], [
     autoAperture,
     asphereStates,
+    canOptimizeGlass,
+    glassModes,
     onOpenAsphericalModal,
     onOpenApertureModal,
     onOpenAsphereVarModal,
     onOpenDecenterModal,
     onOpenDiffractionGratingModal,
     onOpenMediumModal,
+    onOpenGlassModal,
     onOpenRadiusModal,
     onOpenThicknessModal,
     radiusModes,

@@ -1,9 +1,10 @@
 /** Optimization algorithm selections and runtime capability results. */
 import type { LeastSquaresMethod, OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
 
-/** Bounds and residual-dimension capabilities used by optimization validation and UI rendering. */
+/** Bounds, glass, and residual-dimension capabilities used by optimization validation and UI rendering. */
 export interface OptimizationMethodCapabilities {
   readonly canUseBounds: boolean;
+  readonly canOptimizeGlass: boolean;
   readonly requiresResidualCountAtLeastVariableCount: boolean;
 }
 

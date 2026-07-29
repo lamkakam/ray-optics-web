@@ -4,31 +4,35 @@ import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Select } from "@/shared/components/primitives/Select";
 import { OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
-import type { LeastSquaresMethod, OptimizationConfig, OptimizerKind } from "@/features/optimization/types/optimizationWorkerTypes";
+import type {
+  LeastSquaresMethod,
+  OptimizationAlgorithmConfig,
+  OptimizerKind,
+} from "@/features/optimization/types/optimizationWorkerTypes";
 
-type SharedOptimizerConfig = OptimizationConfig["optimizer"];
+type SharedOptimizerConfig = OptimizationAlgorithmConfig;
 type OptimizerFormStateByConfig<TConfig extends SharedOptimizerConfig> = {
   readonly [TKey in keyof TConfig]: TConfig[TKey] extends number ? string : TConfig[TKey];
 };
 type OptimizerFormState<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
   TConfig extends SharedOptimizerConfig ? OptimizerFormStateByConfig<TConfig> : never;
-type OptimizerToleranceKind<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
-  TConfig extends SharedOptimizerConfig ? Exclude<keyof TConfig, "kind" | "method" | "max_nfev"> : never;
+type OptimizerNumericFieldKind<TConfig extends SharedOptimizerConfig = SharedOptimizerConfig> =
+  TConfig extends SharedOptimizerConfig ? Exclude<keyof TConfig, "kind" | "method"> : never;
 
 interface OptimizationAlgorithmTabProps {
   readonly optimizer: OptimizerFormState;
   readonly onChangeOptimizer: (patch: Partial<OptimizerFormState>) => void;
 }
 
-function getToleranceValue(optimizer: OptimizerFormState, toleranceKind: OptimizerToleranceKind): string {
-  return (optimizer as unknown as Record<OptimizerToleranceKind, string>)[toleranceKind];
+function getNumericFieldValue(optimizer: OptimizerFormState, fieldKind: OptimizerNumericFieldKind): string {
+  return (optimizer as unknown as Record<OptimizerNumericFieldKind, string>)[fieldKind];
 }
 
-function createTolerancePatch(
-  toleranceKind: OptimizerToleranceKind,
+function createNumericFieldPatch(
+  fieldKind: OptimizerNumericFieldKind,
   value: string,
 ): Partial<OptimizerFormState> {
-  return { [toleranceKind]: value } as Partial<OptimizerFormState>;
+  return { [fieldKind]: value } as Partial<OptimizerFormState>;
 }
 
 /**
@@ -36,13 +40,13 @@ function createTolerancePatch(
  *
  * @remarks
  * - Uses the drawer panel padding provided by the parent layout and does not add its own outer `p-4` wrapper.
- * - Reads optimizer kind labels, method options, and tolerance field labels from `features/optimization/lib/optimizerUiConfig.ts`.
+ * - Reads optimizer kind labels, method options, and every numeric field label/default contract from `features/optimization/lib/optimizerUiConfig.ts`.
  * - Imports optimization worker-boundary optimizer types from `features/optimization/types/optimizationWorkerTypes.ts`.
- * - Uses the shared `OptimizationConfig["optimizer"]` attribute names for form state. Numeric optimizer fields are represented as strings for inputs, so the tab reads and patches `max_nfev`, `ftol`, `xtol`, `gtol`, `tol`, and `atol` directly.
+ * - Uses the shared `OptimizationAlgorithmConfig` attribute names for form state. Numeric optimizer fields are represented as strings for inputs.
  * - The Optimizer Kind select is controlled by the parent and emits kind changes so the store can reset kind-specific algorithm defaults.
  * - The Method select is rendered only for method-based optimizers. Least squares supports both `Trust Region Reflective` (`trf`) and `Levenberg-Marquardt` (`lm`) through the centralized optimizer UI metadata.
- * - Differential Evolution is methodless and renders only `Max. num of steps`, `Relative tolerance`, and `Absolute tolerance`.
- * - Keeps `Max. num of steps` as a separately rendered field rather than treating it as metadata-driven.
+ * - Differential Evolution and Glass Expert are methodless. Glass Expert renders `Num. of neighbours`, `Max. iterations per refinement run`, and `Tolerance`.
+ * - All numeric controls, including continuous `max_nfev`, are rendered from metadata rather than hardcoded by optimizer kind.
  */
 export function OptimizationAlgorithmTab({
   optimizer,
@@ -77,24 +81,15 @@ export function OptimizationAlgorithmTab({
           />
         </div>
       ) : undefined}
-      <div>
-        <Label htmlFor="optimizer-max-steps">Max. num of steps</Label>
-        <Input
-          id="optimizer-max-steps"
-          aria-label="Max. num of steps"
-          value={optimizer.max_nfev}
-          onChange={(event) => onChangeOptimizer({ max_nfev: event.target.value })}
-        />
-      </div>
-      {optimizerConfig.tolerances.map((tolerance) => {
+      {optimizerConfig.numericFields.map((field) => {
         return (
-          <div key={tolerance.kind}>
-            <Label htmlFor={`optimizer-${tolerance.kind}`}>{tolerance.label}</Label>
+          <div key={field.kind}>
+            <Label htmlFor={`optimizer-${field.kind}`}>{field.label}</Label>
             <Input
-              id={`optimizer-${tolerance.kind}`}
-              aria-label={tolerance.label}
-              value={getToleranceValue(optimizer, tolerance.kind)}
-              onChange={(event) => onChangeOptimizer(createTolerancePatch(tolerance.kind, event.target.value))}
+              id={`optimizer-${field.kind}`}
+              aria-label={field.label}
+              value={getNumericFieldValue(optimizer, field.kind)}
+              onChange={(event) => onChangeOptimizer(createNumericFieldPatch(field.kind, event.target.value))}
             />
           </div>
         );

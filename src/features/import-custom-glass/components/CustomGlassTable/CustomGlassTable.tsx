@@ -7,23 +7,13 @@ import { AllCommunityModule } from "ag-grid-community";
 import { useStore } from "zustand";
 import { useImportCustomGlassStore } from "@/features/import-custom-glass/providers/ImportCustomGlassStoreProvider";
 import { EditableAgGridReact } from "@/shared/components/ag-grid";
+import {
+  formatOptionalSixDecimal,
+  NO_BLANK_NUMBER_FILTER_OPTIONS,
+  NO_BLANK_TEXT_FILTER_OPTIONS,
+} from "@/shared/components/ag-grid/readonlyGridConfig";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import type { CustomGlassRow } from "@/features/import-custom-glass/types/customGlassImport";
-
-const TEXT_FILTER_OPTIONS = ["contains", "notContains", "equals", "notEqual", "startsWith", "endsWith"] as const;
-const NUMBER_FILTER_OPTIONS = [
-  "equals",
-  "notEqual",
-  "greaterThan",
-  "greaterThanOrEqual",
-  "lessThan",
-  "lessThanOrEqual",
-  "inRange",
-] as const;
-
-function formatReadonlyNumber(value: unknown): string {
-  return Number(value).toFixed(6);
-}
 
 function areSetsEqual<T>(left: ReadonlySet<T>, right: ReadonlySet<T>): boolean {
   if (left.size !== right.size) {
@@ -58,8 +48,8 @@ interface CustomGlassTableProps {
  * - Keeps the AG Grid selection column fixed at `81px`, `Label` at `125px`, and each numeric optical property column at `137px`.
  * - Selection is neither sortable nor filterable; data columns are sortable/filterable with `unSortIcon: true`.
  * - `Label` uses `agTextColumnFilter`; numeric columns use `agNumberColumnFilter`.
- * - Filter options intentionally omit AG Grid `blank` and `notBlank` choices.
- * - Numeric optical values are formatted with `Number(value).toFixed(6)`.
+ * - Filter options reuse the shared readonly-grid configuration and intentionally omit AG Grid `blank` and `notBlank` choices.
+ * - Numeric optical values reuse the shared optional six-decimal formatter.
  * - `getRowId` uses the custom glass label so AG Grid can preserve row selection across row-data refreshes.
  * - `onSelectionChanged` maps AG Grid selected row nodes back into the page-level `ReadonlySet<string>` checked state.
  * - When `checked` changes externally after add, edit, delete, or import flows, the grid row selection is synchronized from that set.
@@ -106,7 +96,7 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
       field: "label",
       sortable: true,
       filter: "agTextColumnFilter",
-      filterParams: { filterOptions: TEXT_FILTER_OPTIONS },
+      filterParams: { filterOptions: NO_BLANK_TEXT_FILTER_OPTIONS },
       unSortIcon: true,
       width: 125,
     },
@@ -115,70 +105,70 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
       field: "nd",
       sortable: true,
       filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
       unSortIcon: true,
       width: 137,
-      valueFormatter: (params) => formatReadonlyNumber(params.value),
+      valueFormatter: formatOptionalSixDecimal,
     },
     {
       headerName: "vd",
       field: "vd",
       sortable: true,
       filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
       unSortIcon: true,
       width: 137,
-      valueFormatter: (params) => formatReadonlyNumber(params.value),
+      valueFormatter: formatOptionalSixDecimal,
     },
     {
       headerName: "ne",
       field: "ne",
       sortable: true,
       filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
       unSortIcon: true,
       width: 137,
-      valueFormatter: (params) => formatReadonlyNumber(params.value),
+      valueFormatter: formatOptionalSixDecimal,
     },
     {
       headerName: "ve",
       field: "ve",
       sortable: true,
       filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
       unSortIcon: true,
       width: 137,
-      valueFormatter: (params) => formatReadonlyNumber(params.value),
+      valueFormatter: formatOptionalSixDecimal,
     },
     {
       headerName: "Pg,F",
       field: "pgF",
       sortable: true,
       filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
       unSortIcon: true,
       width: 137,
-      valueFormatter: (params) => formatReadonlyNumber(params.value),
+      valueFormatter: formatOptionalSixDecimal,
     },
     {
       headerName: "PF,e",
       field: "pFe",
       sortable: true,
       filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
       unSortIcon: true,
       width: 137,
-      valueFormatter: (params) => formatReadonlyNumber(params.value),
+      valueFormatter: formatOptionalSixDecimal,
     },
     {
       headerName: "PF,d",
       field: "pFd",
       sortable: true,
       filter: "agNumberColumnFilter",
-      filterParams: { filterOptions: NUMBER_FILTER_OPTIONS },
+      filterParams: { filterOptions: NO_BLANK_NUMBER_FILTER_OPTIONS },
       unSortIcon: true,
       width: 137,
-      valueFormatter: (params) => formatReadonlyNumber(params.value),
+      valueFormatter: formatOptionalSixDecimal,
     },
   ], []);
 

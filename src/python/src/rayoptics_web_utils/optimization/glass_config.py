@@ -1,9 +1,11 @@
 """Normalize glass-expert configuration and resolve catalog materials.
 
-The categorical contract accepts only the six bundled manufacturer catalogs.
+The categorical contract accepts the six bundled manufacturer catalogs plus
+injected ``Special`` and ``Custom`` mappings. Manufacturer lookup remains cached;
+dynamic injected materials are resolved from the current mapping snapshot.
 Resolved candidates retain canonical identity, the reusable optical medium, and
 raw Fraunhofer ``(nd, Vd)`` coordinates so both search phases avoid repeated
-catalog access.
+catalog access and reports never leak underlying ``rindexinfo``/``custom`` names.
 """
 
 from __future__ import annotations
@@ -12,6 +14,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from functools import lru_cache
 import math
+from collections.abc import Mapping
 from typing import NotRequired, TypedDict, cast
 
 from opticalglass.glassfactory import create_glass
@@ -31,8 +34,13 @@ from ._types import (
 from .targets import target_key, validate_surface_index
 
 
-SUPPORTED_GLASS_CATALOGS = frozenset(
+MANUFACTURER_GLASS_CATALOGS = frozenset(
     {"CDGM", "Hikari", "Hoya", "Ohara", "Schott", "Sumita"}
+)
+INJECTED_GLASS_CATALOGS = frozenset({"Special", "Custom"})
+SUPPORTED_GLASS_CATALOGS = MANUFACTURER_GLASS_CATALOGS | INJECTED_GLASS_CATALOGS
+ELIGIBLE_SPECIAL_GLASS_NAMES = frozenset(
+    {"CaF2", "Fused Silica", "Water", "D263TECO"}
 )
 GLASS_OPTIMIZER_KEYS = frozenset({"num_neighbours", "maxiter", "tol"})
 GLASS_CONFIG_KEYS = frozenset(
@@ -40,6 +48,8 @@ GLASS_CONFIG_KEYS = frozenset(
 )
 GLASS_VARIABLE_KEYS = frozenset({"surface_index", "candidates"})
 GLASS_CANDIDATE_KEYS = frozenset({"name", "catalog"})
+
+type CandidateMaterials = Mapping[str, Mapping[str, object]]
 
 
 @dataclass(frozen=True)
@@ -79,10 +89,11 @@ class NormalizedGlassOptimizationConfig(TypedDict):
     pickups: list[PickupConfig]
     merit_function: MeritFunctionConfig
     problem_config: NormalizedOptimizationConfig
+    candidate_materials: CandidateMaterials | None
 
 
-def _material_identity(medium: object) -> tuple[str, str]:
-    """Read a RayOptics-compatible medium's name and catalog as strings."""
+def _native_material_identity(medium: object) -> tuple[str, str]:
+    """Read a medium's native RayOptics name and catalog as strings."""
     try:
         name = str(medium.name())  # type: ignore[attr-defined]
         catalog = str(medium.catalog_name())  # type: ignore[attr-defined]
@@ -91,9 +102,41 @@ def _material_identity(medium: object) -> tuple[str, str]:
     return name, catalog
 
 
-def material_report_entry(surface_index: int, medium: object) -> dict[str, str | int]:
-    """Return one JSON-safe material identity with its surface index."""
-    name, catalog = _material_identity(medium)
+def _injected_material_identity(
+    medium: object,
+    candidate_materials: CandidateMaterials | None,
+) -> tuple[str, str] | None:
+    """Return the canonical injected identity matched by object reference."""
+    if candidate_materials is None:
+        return None
+    for catalog in ("Special", "Custom"):
+        materials = candidate_materials.get(catalog)
+        if materials is None:
+            continue
+        for name, candidate_medium in materials.items():
+            if candidate_medium is medium:
+                return str(name), catalog
+    return None
+
+
+def _material_identity(
+    medium: object,
+    candidate_materials: CandidateMaterials | None = None,
+) -> tuple[str, str]:
+    """Read canonical injected identity first, then the medium's native identity."""
+    return (
+        _injected_material_identity(medium, candidate_materials)
+        or _native_material_identity(medium)
+    )
+
+
+def material_report_entry(
+    surface_index: int,
+    medium: object,
+    candidate_materials: CandidateMaterials | None = None,
+) -> dict[str, str | int]:
+    """Return one JSON-safe canonical material identity with its surface index."""
+    name, catalog = _material_identity(medium, candidate_materials)
     return {"surface_index": surface_index, "name": name, "catalog": catalog}
 
 
@@ -157,8 +200,8 @@ def _raw_nd_vd(medium: object) -> tuple[float, float]:
 
 @lru_cache(maxsize=None)
 def resolve_glass_candidate(name: str, catalog: str) -> ResolvedGlassCandidate:
-    """Resolve and cache one catalog-qualified candidate and its coordinates."""
-    if catalog not in SUPPORTED_GLASS_CATALOGS:
+    """Resolve and cache one manufacturer-catalog candidate and its coordinates."""
+    if catalog not in MANUFACTURER_GLASS_CATALOGS:
         raise ValueError(f"Unsupported glass catalog: {catalog}")
     if not isinstance(name, str) or not name.strip():
         raise ValueError("Glass candidate name must be a non-empty string")
@@ -168,8 +211,8 @@ def resolve_glass_candidate(name: str, catalog: str) -> ResolvedGlassCandidate:
     except Exception as error:
         raise ValueError(f"Unable to resolve glass {name!r} in catalog {catalog!r}") from error
 
-    canonical_name, canonical_catalog = _material_identity(medium)
-    if canonical_catalog not in SUPPORTED_GLASS_CATALOGS:
+    canonical_name, canonical_catalog = _native_material_identity(medium)
+    if canonical_catalog not in MANUFACTURER_GLASS_CATALOGS:
         raise ValueError(f"Unsupported glass catalog: {canonical_catalog}")
     nd, vd = _raw_nd_vd(medium)
     return ResolvedGlassCandidate(
@@ -179,6 +222,57 @@ def resolve_glass_candidate(name: str, catalog: str) -> ResolvedGlassCandidate:
         nd=nd,
         vd=vd,
     )
+
+
+def _resolve_injected_glass_candidate(
+    name: str,
+    catalog: str,
+    candidate_materials: CandidateMaterials | None,
+) -> ResolvedGlassCandidate:
+    """Resolve one uncached Special or dynamic Custom candidate."""
+    if name.casefold() in {"air", "refl"}:
+        raise ValueError(f"Glass candidate {name!r} is not eligible")
+    if catalog == "Special" and name not in ELIGIBLE_SPECIAL_GLASS_NAMES:
+        raise ValueError(f"Glass candidate {name!r} is not eligible")
+
+    materials = (
+        candidate_materials.get(catalog)
+        if candidate_materials is not None
+        else None
+    )
+    if materials is None or name not in materials:
+        raise ValueError(
+            f"Glass candidate {name!r} is unavailable in injected catalog {catalog!r}"
+        )
+    medium = materials[name]
+    native_name, _ = _native_material_identity(medium)
+    if native_name.casefold() in {"air", "refl"}:
+        raise ValueError(f"Glass candidate {name!r} is not eligible")
+    nd, vd = _raw_nd_vd(medium)
+    return ResolvedGlassCandidate(
+        name=name,
+        catalog=catalog,
+        medium=medium,
+        nd=nd,
+        vd=vd,
+    )
+
+
+def _resolve_configured_glass_candidate(
+    name: str,
+    catalog: str,
+    candidate_materials: CandidateMaterials | None,
+) -> ResolvedGlassCandidate:
+    """Route manufacturer candidates through the cache and injected ones directly."""
+    if catalog in MANUFACTURER_GLASS_CATALOGS:
+        return resolve_glass_candidate(name, catalog)
+    if catalog in INJECTED_GLASS_CATALOGS:
+        return _resolve_injected_glass_candidate(
+            name,
+            catalog,
+            candidate_materials,
+        )
+    raise ValueError(f"Unsupported glass catalog: {catalog}")
 
 
 def _positive_integer(value: object, label: str) -> int:
@@ -229,6 +323,7 @@ def _validate_numeric_bounds(entries: list[dict[str, object]]) -> None:
 def _resolve_glass_variables(
     opm: OpticalModel,
     entries: list[dict[str, object]],
+    candidate_materials: CandidateMaterials | None,
 ) -> list[NormalizedGlassVariable]:
     """Validate ordered surface entries and resolve their candidate pools."""
     normalized: list[NormalizedGlassVariable] = []
@@ -265,7 +360,11 @@ def _resolve_glass_variables(
             catalog = candidate_input.get("catalog")
             if not isinstance(name, str) or not isinstance(catalog, str):
                 raise ValueError("Glass candidates must provide name and catalog")
-            candidate = resolve_glass_candidate(name, catalog)
+            candidate = _resolve_configured_glass_candidate(
+                name,
+                catalog,
+                candidate_materials,
+            )
             if candidate.identity in seen_candidates:
                 raise ValueError(
                     f"Duplicate glass candidate: {candidate.name}, {candidate.catalog}"
@@ -274,7 +373,11 @@ def _resolve_glass_variables(
             candidates.append(candidate)
 
         current_medium = gaps[surface_index].medium
-        current_name, current_catalog = _material_identity(current_medium)
+        native_current_name, _ = _native_material_identity(current_medium)
+        current_name, current_catalog = _material_identity(
+            current_medium,
+            candidate_materials,
+        )
         normalized_entry: NormalizedGlassVariable = {
             "surface_index": surface_index,
             "candidates": candidates,
@@ -286,6 +389,11 @@ def _resolve_glass_variables(
                 key=lambda candidate: (candidate.nd - nd) ** 2 + (candidate.vd - vd) ** 2,
             )
         else:
+            if native_current_name.casefold() in {"air", "refl"}:
+                raise ValueError(
+                    f"Unsupported current material at surface {surface_index}: "
+                    f"{current_name}, {current_catalog}"
+                )
             if current_catalog not in SUPPORTED_GLASS_CATALOGS:
                 raise ValueError(
                     f"Unsupported current material at surface {surface_index}: "
@@ -303,6 +411,8 @@ def _resolve_glass_variables(
 def normalize_glass_optimization_config(
     opm: OpticalModel,
     config: GlassOptimizationConfig,
+    *,
+    candidate_materials: CandidateMaterials | None = None,
 ) -> NormalizedGlassOptimizationConfig:
     """Validate a flat mixed glass/continuous optimization configuration.
 
@@ -314,6 +424,7 @@ def normalize_glass_optimization_config(
     Args:
         opm: RayOptics optical model to validate against.
         config: Flat glass-expert configuration.
+        candidate_materials: Optional live ``Special``/``Custom`` material maps.
 
     Returns:
         Normalized settings, candidates, and problem configuration.
@@ -344,6 +455,7 @@ def normalize_glass_optimization_config(
     glass_variables = _resolve_glass_variables(
         opm,
         cast(list[dict[str, object]], deepcopy(config.get("glass_variables") or [])),
+        candidate_materials,
     )
     problem_config = cast(
         NormalizedOptimizationConfig,
@@ -361,4 +473,5 @@ def normalize_glass_optimization_config(
         "pickups": pickups,
         "merit_function": merit_function,
         "problem_config": problem_config,
+        "candidate_materials": candidate_materials,
     }

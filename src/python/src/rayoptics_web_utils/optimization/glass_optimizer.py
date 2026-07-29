@@ -19,6 +19,7 @@ from rayoptics.environment import OpticalModel
 from scipy.cluster.vq import kmeans2
 
 from .glass_config import (
+    CandidateMaterials,
     NormalizedGlassOptimizationConfig,
     NormalizedGlassVariable,
     ResolvedGlassCandidate,
@@ -112,6 +113,7 @@ class GlassExpertOptimizer:
         self.progress_reporter = progress_reporter
         self.settings = config["glass_optimizer"]
         self.glass_variables = config["glass_variables"]
+        self.candidate_materials = config["candidate_materials"]
         self.runs = 0
         self.nfev = 0
         self.nit = 0
@@ -159,6 +161,7 @@ class GlassExpertOptimizer:
                 material_report_entry(
                     variable["surface_index"],
                     gaps[variable["surface_index"]].medium,
+                    self.candidate_materials,
                 )
                 for variable in self.glass_variables
             ],
@@ -188,7 +191,11 @@ class GlassExpertOptimizer:
         """Resolve the current surface medium back into its configured pool."""
         surface_index = variable["surface_index"]
         medium = self.opm["seq_model"].gaps[surface_index].medium
-        identity_entry = material_report_entry(surface_index, medium)
+        identity_entry = material_report_entry(
+            surface_index,
+            medium,
+            self.candidate_materials,
+        )
         identity = cast(str, identity_entry["name"]), cast(str, identity_entry["catalog"])
         for candidate in variable["candidates"]:
             if candidate.identity == identity:
@@ -332,6 +339,8 @@ def optimize_glasses(
     config: GlassOptimizationConfig,
     image_point: str = "chief_ray",
     progress_reporter: ProgressReporter | None = None,
+    *,
+    candidate_materials: CandidateMaterials | None = None,
 ) -> GlassOptimizationReport:
     """Optimize ordered glass choices and optional continuous RayOptics targets.
 
@@ -348,13 +357,18 @@ def optimize_glasses(
         config: Flat glass-expert, variable, pickup, and merit configuration.
         image_point: Image-point reference convention forwarded to operands.
         progress_reporter: Optional callback receiving the globally monotonic history.
+        candidate_materials: Optional live ``Special``/``Custom`` material maps.
 
     Returns:
         Detailed JSON-safe mixed optimization report.
     """
     try:
         _sync_legacy_hooks()
-        normalized = normalize_glass_optimization_config(opm, config)
+        normalized = normalize_glass_optimization_config(
+            opm,
+            config,
+            candidate_materials=candidate_materials,
+        )
         problem = OptimizationProblem.from_normalized_config(
             opm,
             normalized["problem_config"],

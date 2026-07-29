@@ -1,12 +1,22 @@
 /** Optimization-specific contracts shared by the UI and Pyodide worker boundary. */
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 
-/** Worker-supported optimizer families. */
-export type OptimizerKind = "least_squares" | "differential_evolution";
+/** Worker-supported continuous optimizer families. */
+export type ContinuousOptimizerKind = "least_squares" | "differential_evolution";
+/** Optimizer families selectable by the Optimization UI. */
+export type OptimizerKind = ContinuousOptimizerKind | "glass_expert";
 /** Worker-supported SciPy least-squares methods. */
 export type LeastSquaresMethod = "trf" | "lm";
 /** Catalogs eligible for glass-expert candidate substitution. */
-export type GlassCatalogName = "CDGM" | "Hikari" | "Hoya" | "Ohara" | "Schott" | "Sumita";
+export type GlassCatalogName =
+  | "CDGM"
+  | "Hikari"
+  | "Hoya"
+  | "Ohara"
+  | "Schott"
+  | "Sumita"
+  | "Special"
+  | "Custom";
 /** Worker-supported merit operand discriminators. */
 export type OptimizationOperandKind =
   | "focal_length"
@@ -40,27 +50,40 @@ export type OptimizationOperandConfig =
     };
 
 /**
- * Complete Python optimization configuration.
+ * Solver-specific continuous optimizer configuration.
  * Least-squares and differential-evolution settings remain discriminated by
  * optimizer kind; bounded runs populate variable limits while LM may omit them.
  */
+export type ContinuousOptimizerConfig =
+  | {
+      readonly kind: "least_squares";
+      readonly method: LeastSquaresMethod;
+      readonly max_nfev: number;
+      readonly ftol: number;
+      readonly xtol: number;
+      readonly gtol: number;
+    }
+  | {
+      readonly kind: "differential_evolution";
+      readonly max_nfev: number;
+      readonly tol: number;
+      readonly atol: number;
+    };
+
+/** UI-facing Glass Expert algorithm settings before they are nested in a run config. */
+export interface GlassExpertOptimizerConfig {
+  readonly kind: "glass_expert";
+  readonly num_neighbours: number;
+  readonly maxiter: number;
+  readonly tol: number;
+}
+
+/** Any optimizer settings displayed by the Algorithm tab. */
+export type OptimizationAlgorithmConfig = ContinuousOptimizerConfig | GlassExpertOptimizerConfig;
+
 export interface OptimizationConfig {
-  /** Solver-specific configuration discriminated by optimizer kind. */
-  readonly optimizer:
-    | {
-        readonly kind: "least_squares";
-        readonly method: LeastSquaresMethod;
-        readonly max_nfev: number;
-        readonly ftol: number;
-        readonly xtol: number;
-        readonly gtol: number;
-      }
-    | {
-        readonly kind: "differential_evolution";
-        readonly max_nfev: number;
-        readonly tol: number;
-        readonly atol: number;
-      };
+  /** Solver-specific continuous configuration discriminated by optimizer kind. */
+  readonly optimizer: ContinuousOptimizerConfig;
   /** Independently optimized radius, thickness, or asphere terms. */
   readonly variables: ReadonlyArray<OptimizationVariableConfig>;
   /** Radius, thickness, or asphere terms derived from another term. */
@@ -97,6 +120,9 @@ export interface GlassOptimizationConfig {
     readonly operands: ReadonlyArray<OptimizationOperandConfig>;
   };
 }
+
+/** Config accepted by one of the two optimization worker run paths. */
+export type OptimizationRunConfig = OptimizationConfig | GlassOptimizationConfig;
 
 /** Variable configuration discriminated by radius, thickness, or asphere term kind. */
 export type OptimizationVariableConfig =
@@ -259,7 +285,7 @@ export interface OptimizationReport {
   readonly message: string;
   /** Solver identity plus optional solve metadata available after a full run. */
   readonly optimizer: {
-    readonly kind: OptimizerKind;
+    readonly kind: ContinuousOptimizerKind;
     readonly method?: LeastSquaresMethod;
     readonly nfev?: number;
     readonly nit?: number;
@@ -300,8 +326,11 @@ export interface GlassOptimizationReport extends Omit<OptimizationReport, "optim
   readonly final_glasses: ReadonlyArray<GlassOptimizationValueEntry>;
 }
 
-/** Optimized optical model paired with its worker report. */
+/** Report returned by one of the two optimization worker run paths. */
+export type OptimizationRunReport = OptimizationReport | GlassOptimizationReport;
+
+/** Optimized optical model paired with its continuous or mixed report. */
 export interface OptimizationRunResult {
   readonly model: OpticalModel;
-  readonly report: OptimizationReport;
+  readonly report: OptimizationRunReport;
 }

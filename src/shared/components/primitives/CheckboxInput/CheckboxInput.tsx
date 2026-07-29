@@ -1,4 +1,4 @@
-import { type JSX } from "react";
+import { type JSX, useEffect, useRef } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
@@ -6,6 +6,7 @@ interface CheckboxInputProps {
   readonly id: string;
   readonly label: string | JSX.Element;
   readonly checked: boolean;
+  readonly indeterminate?: boolean;
   readonly onChange: (checked: boolean) => void;
   readonly disabled?: boolean;
   readonly ariaLabel?: string;
@@ -45,6 +46,7 @@ const INPUT_CLASSES = [
  *
  * - Renders a wrapper `<label>` containing the checkbox input and visible label content.
  * - Calls `onChange(event.target.checked)` on checkbox changes.
+ * - Applies the native `indeterminate` property when requested, allowing callers to render tri-state bulk-selection controls while retaining a boolean change callback.
  * - Uses `ariaLabel` when provided; otherwise the visible label supplies the accessible name.
  * - When `label` is a string, wraps it in the component-owned `<span>` with the shared text styling and optional `labelClassName`.
  * - When `label` is a JSX element, renders that JSX directly with no extra wrapper so the caller controls container layout and styling.
@@ -62,15 +64,25 @@ export function CheckboxInput({
   id,
   label,
   checked,
+  indeterminate = false,
   onChange,
   disabled = false,
   ariaLabel,
   className,
   labelClassName,
 }: CheckboxInputProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (inputRef.current !== null) {
+      inputRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
   return (
     <label htmlFor={id} className={clsx(WRAPPER_CLASSES, className)}>
       <input
+        ref={inputRef}
         id={id}
         type="checkbox"
         aria-label={ariaLabel}
