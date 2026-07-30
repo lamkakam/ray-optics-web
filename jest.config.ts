@@ -1,3 +1,9 @@
+/**
+ * Jest configuration for canonical source tests.
+ *
+ * Generated static exports under `out/` are deployment artifacts rather than
+ * canonical test inputs, even when the export contains copied test files.
+ */
 import type { Config } from "jest";
 
 const config: Config = {
@@ -25,7 +31,12 @@ const config: Config = {
     "^deck\\.gl$": "<rootDir>/src/__mocks__/deck.gl.tsx",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
-  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/", "<rootDir>/src/e2e/"],
+  testPathIgnorePatterns: [
+    "<rootDir>/node_modules/",
+    "<rootDir>/.next/",
+    "<rootDir>/out/",
+    "<rootDir>/src/e2e/",
+  ],
 };
 
 export default config;

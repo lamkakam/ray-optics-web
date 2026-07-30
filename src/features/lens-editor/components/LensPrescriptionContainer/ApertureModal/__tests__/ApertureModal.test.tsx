@@ -1,36 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import fs from "node:fs";
-import path from "node:path";
 import { ApertureModal } from "../";
 
 describe("ApertureModal", () => {
-  it("declares aperture shape component maps at module scope before ApertureModal", () => {
-    const source = fs.readFileSync(path.join(__dirname, "../ApertureModal.tsx"), "utf8");
-    const modalDeclarationIndex = source.indexOf("export function ApertureModal");
-    const clearMapIndex = source.indexOf("const CLEAR_APERTURE_SHAPE_COMPONENTS");
-    const edgeMapIndex = source.indexOf("const EDGE_APERTURE_SHAPE_COMPONENTS");
-
-    expect(clearMapIndex).toBeGreaterThan(-1);
-    expect(edgeMapIndex).toBeGreaterThan(-1);
-    expect(clearMapIndex).toBeLessThan(modalDeclarationIndex);
-    expect(edgeMapIndex).toBeLessThan(modalDeclarationIndex);
-  });
-
-  it("keeps aperture draft state inside clear and edge section components", () => {
-    const source = fs.readFileSync(path.join(__dirname, "../ApertureModal.tsx"), "utf8");
-    const clearSectionIndex = source.indexOf("const ClearApertureSection");
-    const edgeSectionIndex = source.indexOf("const EdgeApertureSection");
-    const modalDeclarationIndex = source.indexOf("export function ApertureModal");
-    const modalSource = source.slice(modalDeclarationIndex);
-
-    expect(clearSectionIndex).toBeGreaterThan(-1);
-    expect(edgeSectionIndex).toBeGreaterThan(-1);
-    expect(clearSectionIndex).toBeLessThan(modalDeclarationIndex);
-    expect(edgeSectionIndex).toBeLessThan(modalDeclarationIndex);
-    expect(modalSource).not.toMatch(/\[\s*(clearShape|edgeShape|clearOffsetX|clearOffsetY|edgeRadius|edgeOffsetX|edgeOffsetY|obstructionRadius)\s*,/);
-  });
-
   it("does not render when closed", () => {
     render(
       <ApertureModal
@@ -514,13 +486,14 @@ describe("ApertureModal", () => {
     expect(screen.getByText("Central obstruction ratio must be greater than 0 and smaller than 1.")).toBeInTheDocument();
   });
 
-  it("converts annular obstruction draft when auto aperture changes while open", async () => {
+  it("converts annular obstruction and preserves clear and edge drafts when auto aperture changes while open", async () => {
+    const onConfirm = jest.fn();
     const defaultProps = {
       isOpen: true,
       semiDiameter: 8,
       initialClearAperture: undefined,
       initialEdgeAperture: undefined,
-      onConfirm: jest.fn(),
+      onConfirm,
       onClose: jest.fn(),
     };
     const { rerender } = render(<ApertureModal {...defaultProps} />);
@@ -528,10 +501,28 @@ describe("ApertureModal", () => {
     await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "annular");
     await userEvent.clear(screen.getByRole("textbox", { name: "Central Obstruction Radius" }));
     await userEvent.type(screen.getByRole("textbox", { name: "Central Obstruction Radius" }), "2");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Offset X" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Offset X" }), "-1.25");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Offset Y" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Offset Y" }), "3.5");
+    await userEvent.selectOptions(screen.getByLabelText("Edge Aperture Shape"), "circular");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Radius" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Radius" }), "4.25");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Edge Offset X" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Edge Offset X" }), "-3.5");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Edge Offset Y" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Edge Offset Y" }), "0.75");
 
     rerender(<ApertureModal {...defaultProps} autoAperture />);
 
+    expect(screen.getByLabelText("Clear Aperture Shape")).toHaveValue("annular");
     expect(screen.getByRole("textbox", { name: "Central Obstruction Ratio" })).toHaveValue("0.25");
+    expect(screen.getByRole("textbox", { name: "Clear Offset X" })).toHaveValue("-1.25");
+    expect(screen.getByRole("textbox", { name: "Clear Offset Y" })).toHaveValue("3.5");
+    expect(screen.getByLabelText("Edge Aperture Shape")).toHaveValue("circular");
+    expect(screen.getByRole("textbox", { name: "Radius" })).toHaveValue("4.25");
+    expect(screen.getByRole("textbox", { name: "Edge Offset X" })).toHaveValue("-3.5");
+    expect(screen.getByRole("textbox", { name: "Edge Offset Y" })).toHaveValue("0.75");
 
     await userEvent.clear(screen.getByRole("textbox", { name: "Central Obstruction Ratio" }));
     await userEvent.type(screen.getByRole("textbox", { name: "Central Obstruction Ratio" }), "0.5");
@@ -539,6 +530,28 @@ describe("ApertureModal", () => {
     rerender(<ApertureModal {...defaultProps} />);
 
     expect(screen.getByRole("textbox", { name: "Central Obstruction Radius" })).toHaveValue("4");
+    expect(screen.getByRole("textbox", { name: "Clear Offset X" })).toHaveValue("-1.25");
+    expect(screen.getByRole("textbox", { name: "Clear Offset Y" })).toHaveValue("3.5");
+    expect(screen.getByRole("textbox", { name: "Radius" })).toHaveValue("4.25");
+    expect(screen.getByRole("textbox", { name: "Edge Offset X" })).toHaveValue("-3.5");
+    expect(screen.getByRole("textbox", { name: "Edge Offset Y" })).toHaveValue("0.75");
+
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      clear_aperture: {
+        shape: "annular",
+        obstructionRadius: 4,
+        offsetX: -1.25,
+        offsetY: 3.5,
+      },
+      edge_aperture: {
+        shape: "circular",
+        radius: 4.25,
+        offsetX: -3.5,
+        offsetY: 0.75,
+      },
+    });
   });
 
   it("displays and disables annular obstruction ratio in read-only auto aperture mode", () => {

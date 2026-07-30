@@ -56,6 +56,7 @@ describe("RayFanChart", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(useScreenBreakpoint).mockReturnValue("screenLG");
     mockBuildRayFanChartOption = jest.fn(() => ({ series: [] }));
     Object.defineProperty(HTMLElement.prototype, "clientWidth", {
       configurable: true,
