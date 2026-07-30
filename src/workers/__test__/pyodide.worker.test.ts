@@ -71,6 +71,9 @@ describe("_getFirstOrderData", () => {
     expect(scripts.join("\n")).toContain(
       "from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular",
     );
+    expect(scripts.join("\n")).toContain(
+      "from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactOpticalModel",
+    );
   });
 
   it("should build the full model script and include the computation", async () => {
@@ -79,7 +82,7 @@ describe("_getFirstOrderData", () => {
       pythonScript = code;
       return JSON.stringify({ efl: 200, bfl: 100 });
     }, allSphericalOpticalModel);
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_first_order_data(_build_opm()))");
     expect(result).toMatchObject({ efl: 200, bfl: 100 });
   });
@@ -114,7 +117,7 @@ describe("_plotLensLayout", () => {
       pythonScript = code;
       return mockBase64;
     }, allSphericalOpticalModel, false);
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("plot_lens_layout(_build_opm(), show_ray_fan_vs_wvls=False, is_dark=False)");
     expect(result).toBe(mockBase64);
   });
@@ -169,7 +172,7 @@ describe("_getRayFanData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 1, "centroid");
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_ray_fan_data(_build_opm(), 1, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
@@ -224,7 +227,7 @@ describe("_getOpdFanData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 1, "centroid");
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_opd_fan_data(_build_opm(), 1, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
@@ -281,7 +284,7 @@ describe("_getSpotDiagramData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 1, "centroid");
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_spot_data(_build_opm(), 1, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
@@ -303,7 +306,7 @@ describe("_getFieldCurvatureData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 2);
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_field_curvature_data(_build_opm(), 2))");
     expect(result).toEqual(mockData);
   });
@@ -324,7 +327,7 @@ describe("_getAstigmatismCurveData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 1);
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_astigmatism_curve_data(_build_opm(), 1))");
     expect(result).toEqual(mockData);
   });
@@ -352,7 +355,7 @@ describe("_getLSAData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel);
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_lsa_data(_build_opm()))");
     expect(result).toEqual(mockData);
   });
@@ -380,7 +383,7 @@ describe("_getDiffractionMTFData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 2, 1, "centroid", 64, 256);
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_diffraction_mtf_data(_build_opm(), 2, 1, num_rays=64, max_dims=256, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
@@ -409,7 +412,7 @@ describe("_getWavefrontData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 1, 2, "centroid", 64);
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_wavefront_data(_build_opm(), 1, 2, num_rays=64, image_point='centroid'))");
     expect(result).toEqual({
       ...mockData,
@@ -437,7 +440,7 @@ describe("_getStrehlVsWavelengthData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 1, "centroid", 100, 21);
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_strehl_vs_wavelength_data(_build_opm(), 1, wavelength_samples=100, num_rays=21, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
@@ -460,7 +463,7 @@ describe("_getGeoPSFData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 1, 2);
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_geo_psf_data(_build_opm(), 1, 2, num_rays=64))");
     expect(result).toEqual(mockData);
   });
@@ -493,7 +496,7 @@ describe("_getDiffractionPSFData", () => {
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel, 1, 2, "centroid", 64, 256);
 
-    expect(pythonScript).toContain("opm = OpticalModel()");
+    expect(pythonScript).toContain("opm = ExactOpticalModel()");
     expect(pythonScript).toContain("json.dumps(get_diffraction_psf_data(_build_opm(), 1, 2, num_rays=64, max_dims=256, image_point='centroid'))");
     expect(result).toEqual(mockData);
   });
@@ -541,7 +544,7 @@ describe("_get3rdOrderSeidelData", () => {
       capturedCode = code as string;
       return JSON.stringify(mockData);
     }, allSphericalOpticalModel);
-    expect(capturedCode).toContain("opm = OpticalModel()");
+    expect(capturedCode).toContain("opm = ExactOpticalModel()");
     expect(capturedCode).toContain("json.dumps(get_3rd_order_seidel_data(_build_opm()))");
     expect(result).toMatchObject(mockData);
   });

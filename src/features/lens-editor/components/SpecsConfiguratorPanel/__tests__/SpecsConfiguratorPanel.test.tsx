@@ -68,6 +68,9 @@ describe("SpecsConfiguratorPanel", () => {
       render(<SpecsConfiguratorPanel {...defaultProps} pupilSpace="image" pupilType="f/#" />);
       const dropdown = screen.getByLabelText("System aperture type") as HTMLSelectElement;
       expect(dropdown.value).toBe("image:f/#");
+      expect(dropdown.selectedOptions[0]).toHaveTextContent(
+        "Image Space Geometric F/#",
+      );
     });
 
     it("selects correct dropdown option for Object Space NA", () => {

@@ -23,6 +23,7 @@ const CHIP_CONFIG: { key: string; format: (v: number) => string }[] = [
  * @remarks
  * ## Key Behaviors
  *
+ * - A visible `Paraxial first-order results` label distinguishes every chip from exact physical pupil and field specifications.
  * - Only keys present in `data` are rendered; missing keys are silently skipped.
  * - EFL, BFL, IMG HT are formatted with 2 decimal places; f/#, NA OBJ, NA IMG use 4 significant figures.
  * - Returns `null` when `data` is `undefined`.
@@ -34,5 +35,12 @@ export function FirstOrderChips({ data }: FirstOrderChipsProps) {
     ({ key, format }) => <Chip key={key}>{format(data[key])}</Chip>
   );
 
-  return <>{chips}</>;
+  return (
+    <>
+      <span className="text-xs text-gray-600 dark:text-gray-400">
+        Paraxial first-order results
+      </span>
+      {chips}
+    </>
+  );
 }

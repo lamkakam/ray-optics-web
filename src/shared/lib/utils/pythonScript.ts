@@ -2,7 +2,7 @@
  * Builds the Python source code string that reconstructs the definition of an optical system for RayOptics inside the Pyodide worker. It is also for UI components to let users copy the Python snippet to the clipboard so that users may use the code string for their own RayOptics instance on Jupyter notebook.
  *
  * @remarks
- * Special-material recognition and Python-variable mappings are imported from `specialMaterials.ts` so other UI behavior uses the same definitions. Export-only aperture helper definitions are imported from the generated `generated/pythonExportApertureHelpers.ts` string, which is produced automatically from the Python helper sources under `src/python/src/rayoptics_web_utils/aperture/`.
+ * Special-material recognition and Python-variable mappings are imported from `specialMaterials.ts` so other UI behavior uses the same definitions. Standalone exports inline generated aperture helpers plus the exact-spec implementation from `rayoptics_web_utils/optical_specs.py`; worker scripts import those same definitions from the local wheel.
  *
  * ## Edge Cases / Error Handling
  *
@@ -13,13 +13,15 @@
  * - Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.
  * - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.
  * - Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`, so worker computations use the user-defined material table initialized by Pyodide.
+ * - Every model uses `ExactOpticalModel`. Image Height uses `ExactImageHeightFieldSpec`; Object Height, Object Angle, and their field samples retain RayOptics `FieldSpec`.
  * - `OffsetCircular` is required only when a circular aperture offset is nonzero. `Annular` is required when a clear aperture has `shape: "annular"`. `OffsetRotatedRectangular` is required when a clear or edge aperture has `shape: "rectangular"`. Worker scripts get these helpers from `rayoptics_web_utils.aperture`; export scripts define them inline from the generated TypeScript string so copied notebook code remains standalone without installing `rayoptics_web_utils`.
- * - The generated helper block is expected to match the concatenation of `annular.py`, `offset_circular.py`, and `offset_rotated_rectangular.py` in that order, separated by a single newline. NPM lifecycle scripts regenerate the ignored TypeScript output before install/check/test/build commands, and the Jest tests keep the export behavior pinned to the Python sources.
+ * - Generated helper blocks exactly match their Python sources. NPM lifecycle scripts regenerate both ignored TypeScript outputs before install/check/test/build commands, and Jest keeps the standalone export behavior pinned to those sources.
  * - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.
  */
 
 import type { OpticalModel, AsphericalPolynomialCoeffs, ClearAperture, EdgeAperture } from "@/shared/lib/types/opticalModel";
 import { pythonExportApertureHelpers } from "./generated/pythonExportApertureHelpers";
+import { pythonExportExactSpecHelpers } from "./generated/pythonExportExactSpecHelpers";
 import { builtInSpecialMaterial, nonBuiltInSpecialMaterial } from "./specialMaterials";
 
 type PythonLine = string;
@@ -90,8 +92,10 @@ function formatFieldSpec(opticalModel: OpticalModel): PythonLine {
     },
   } = opticalModel;
   const isWideAngleFlag = isFieldWideAngle === true ? ", is_wide_angle=True" : "";
+  const fieldSpecClass =
+    fieldSpace === "image" ? "ExactImageHeightFieldSpec" : "FieldSpec";
 
-  return `osp['fov'] = FieldSpec(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"}${isWideAngleFlag})`;
+  return `osp['fov'] = ${fieldSpecClass}(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"}${isWideAngleFlag})`;
 }
 
 function formatPupilSpec(opticalModel: OpticalModel): PythonLine {
@@ -291,7 +295,7 @@ function buildOpticalModelLines(opticalModel: OpticalModel): PythonLine[] {
   const { setAutoAperture, surfaces } = opticalModel;
   const doApertureFlag = setAutoAperture === "autoAperture" ? "True" : "False";
   const lines: PythonLine[] = [
-    "opm = OpticalModel()",
+    "opm = ExactOpticalModel()",
     "sm  = opm['seq_model']",
     "osp = opm['optical_spec']",
     "pm  = opm['parax_model']",
@@ -339,6 +343,8 @@ from opticalglass.rindexinfo import create_material
 
 ${pythonExportApertureHelpers}
 
+${pythonExportExactSpecHelpers}
+
 caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'
 caf2 = create_glass(caf2_url, "rindexinfo")
 
@@ -363,9 +369,9 @@ d263teco = create_glass(d263teco_url, "rindexinfo")
  * - Reads `model.setAutoAperture` to determine `sm.do_apertures`.
  * - Returns a Python string (no leading imports) that:
  *
- * 1. Creates `opm`, `sm`, `osp`, `pm` variables from `OpticalModel()`, as a recommended practice mentioned in the official docs of RayOptics.
+ * 1. Creates `opm`, `sm`, `osp`, `pm` variables from `ExactOpticalModel()`. The subclass retains RayOptics' paraxial model while resolving exact physical pupil launches after every update.
  * 2. Sets `opm.system_spec.dimensions = 'MM'`.
- * 3. Configures `osp['pupil']`, `osp['fov']`, `osp['wvls']` from `OpticalSpecs`.
+ * 3. Configures `osp['pupil']`, `osp['fov']`, `osp['wvls']` from `OpticalSpecs`; Image Height instantiates `ExactImageHeightFieldSpec`.
  * 4. Sets `opm.radius_mode = True`. Sets `sm.do_apertures` based on `model.setAutoAperture`.
  * 5. Sets `sm.gaps[0].thi` to the object distance and `sm.gaps[0].medium = decode_medium(...)` from `model.object.medium` / `model.object.manufacturer`.
  * 6. Calls `sm.add_surface(...)` for each surface in order. Per surface:
@@ -389,7 +395,7 @@ d263teco = create_glass(d263teco_url, "rindexinfo")
  * - If `label === "Stop"`, emits `sm.set_stop()`.
  * 7. Sets `sm.ifcs[-1].profile.r` to the image surface curvature radius.
  * 8. If the image surface has `decenter`, emits `sm.ifcs[-1].decenter = DecenterData(...)`.
- * 9. Calls `opm.update_model()` then `set_vig(opm)`.
+ * 9. Calls the exact subclass's final `opm.update_model()` before `set_vig(opm)`, so vignetting and every subsequent analysis consume resolved real-ray launches.
  * - The object-side setup is isolated in its own builder phase so future object-gap mutations such as `sm.gaps[0].medium = ...` can be added without changing surface-step logic.
  * - The surface-step structure is intentionally extensible so future interface mutations such as `sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(...)` can be appended alongside asphere and decenter lines for the same surface.
  * - Clear and edge aperture assignments are formatted through dedicated helpers. The clear-aperture helper accepts an optional aperture and defaults omitted offsets to `0`, while the edge-aperture helper requires a present edge aperture before reading its radius and offsets.
@@ -403,7 +409,7 @@ export function buildOpticalModelScript(opticalModel: OpticalModel): string {
  *
  * ```python
  * def _build_opm():
- * opm = OpticalModel()
+ * opm = ExactOpticalModel()
  * ...
  * return opm
  * plot_lens_layout(_build_opm())
@@ -428,7 +434,7 @@ export function buildScript(
  * Returns a string with:
  * > **Warning**: Not for execution inside the Pyodide worker. This script is intended for copy-paste into a Jupyter / RayOptics notebook environment.
  *
- * 1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface` (`DecenterData`, `Circular`, `Aperture`, `Rectangular`), `rayoptics.elem.profiles`, `rayoptics.seq.medium`, and `opticalglass.rindexinfo`. It interpolates the generated standalone aperture helper source, defining `Annular(Aperture)`, `OffsetCircular(Circular)`, and `OffsetRotatedRectangular(Rectangular)` classes for copied notebook use, then creates `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`. The helper source is generated from the Python implementation files, including their math imports and geometry comments.
+ * 1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface` (`DecenterData`, `Circular`, `Aperture`, `Rectangular`), `rayoptics.elem.profiles`, `rayoptics.seq.medium`, and `opticalglass.rindexinfo`. It interpolates the generated standalone aperture classes and the exact-spec classes from `optical_specs.py` before creating `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`.
  * 2. The full output of `buildOpticalModelScript(model)`.
  * 3. Calls to `sm.list_model()`, `pm.first_order_data()`, and `plt.figure(FigureClass=InteractiveLayout, ...)`.
  *

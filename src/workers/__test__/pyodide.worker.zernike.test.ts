@@ -35,7 +35,7 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 0, 1, "centroid", 56, "noll");
-    expect(capturedCode).toContain("opm = OpticalModel()");
+    expect(capturedCode).toContain("opm = ExactOpticalModel()");
     expect(capturedCode).toContain("from rayoptics_web_utils.zernike import get_zernike_coefficients");
     expect(capturedCode).toContain("zernike_terms=json.loads(");
     expect(capturedCode).toContain("get_zernike_coefficients(_build_opm(), 0, 1, zernike_terms=zernike_terms, image_point='centroid')");

@@ -3,6 +3,7 @@ import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pythonExportApertureHelpers } from "../generated/pythonExportApertureHelpers";
+import { pythonExportExactSpecHelpers } from "../generated/pythonExportExactSpecHelpers";
 
 const apertureHelperSourceFiles = [
   "src/python/src/rayoptics_web_utils/aperture/annular.py",
@@ -14,6 +15,16 @@ function readPythonApertureHelperSources(): string {
   return apertureHelperSourceFiles
     .map((filePath) => readFileSync(resolve(process.cwd(), filePath), "utf8"))
     .join("\n");
+}
+
+function readPythonExactSpecHelperSource(): string {
+  return readFileSync(
+    resolve(
+      process.cwd(),
+      "src/python/src/rayoptics_web_utils/optical_specs.py",
+    ),
+    "utf8",
+  );
 }
 
 const baseModel: OpticalModel = {
@@ -55,6 +66,24 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)");
     expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True)");
     expect(script).toContain("osp['wvls'] = WvlSpec([(656.3, 1),(587, 2),(486.1, 1)], ref_wl=1)");
+  });
+
+  it("uses the exact image-height field class for image-space height", () => {
+    const script = buildOpticalModelScript({
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: {
+          ...baseModel.specs.field,
+          space: "image",
+          type: "height",
+        },
+      },
+    });
+
+    expect(script).toContain(
+      "osp['fov'] = ExactImageHeightFieldSpec(osp, key=['image', 'height']",
+    );
   });
 
   it("should set sm.do_apertures = False when setAutoAperture is manualAperture", () => {
@@ -146,7 +175,7 @@ describe("buildOpticalModelScript", () => {
 
   it("should call the OpticalModel constructor correctly", () => {
     const script = buildOpticalModelScript(baseModel);
-    expect(script).toContain("opm = OpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']");
+    expect(script).toContain("opm = ExactOpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']");
   });
 
   it("should set an aspherical surface correctly", () => {
@@ -538,10 +567,32 @@ describe("buildExportScript", () => {
   it("places the generated aperture helper block before model construction", () => {
     const script = buildExportScript(baseModel);
     const helpersIdx = script.indexOf(pythonExportApertureHelpers);
-    const modelIdx = script.indexOf("opm = OpticalModel()");
+    const modelIdx = script.indexOf("opm = ExactOpticalModel()");
 
     expect(helpersIdx).toBeGreaterThan(-1);
     expect(modelIdx).toBeGreaterThan(helpersIdx);
+  });
+
+  it("keeps the generated exact-spec helper block in sync with Python", () => {
+    expect(pythonExportExactSpecHelpers).toBe(
+      readPythonExactSpecHelperSource(),
+    );
+  });
+
+  it("defines the exact model and image-height field inline before construction", () => {
+    const script = buildExportScript(baseModel);
+    const helpersIdx = script.indexOf(
+      "class ExactOpticalModel(OpticalModel):",
+    );
+    const fieldIdx = script.indexOf(
+      "class ExactImageHeightFieldSpec(FieldSpec):",
+    );
+    const modelIdx = script.indexOf("opm = ExactOpticalModel()");
+
+    expect(helpersIdx).toBeGreaterThan(-1);
+    expect(fieldIdx).toBeGreaterThan(-1);
+    expect(modelIdx).toBeGreaterThan(helpersIdx);
+    expect(modelIdx).toBeGreaterThan(fieldIdx);
   });
 
   it("imports Circular and Rectangular in the export preamble", () => {
@@ -589,7 +640,7 @@ describe("buildScript", () => {
     const script = buildScript(baseModel, (opm) => `json.dumps(get_first_order_data(${opm}))`);
     expect(script).toContain("def _build_opm():");
     expect(script).toContain("    return opm");
-    expect(script).toContain("    opm = OpticalModel()");
+    expect(script).toContain("    opm = ExactOpticalModel()");
     expect(script).toContain("json.dumps(get_first_order_data(_build_opm()))");
   });
 
