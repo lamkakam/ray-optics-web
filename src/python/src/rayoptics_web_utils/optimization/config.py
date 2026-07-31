@@ -4,7 +4,10 @@ Least-squares supports ``trf`` and ``lm``; differential evolution has its own
 methodless option set. Bounded solvers require finite bounds, while ``lm`` permits
 fully unbounded variables and requires at least as many nominal residuals as
 variables. Validation also enforces unique mutable targets, acyclic pickups, and
-stable option-driven residual counts after field/wavelength expansion.
+stable option-driven residual counts after field/wavelength expansion. Operand
+normalization validates every supplied field and wavelength index, preserves
+sample order, and then removes combinations with an exactly zero operand, field,
+or wavelength weight.
 """
 
 from __future__ import annotations
@@ -287,6 +290,18 @@ def pickup_order(pickups: list[PickupConfig]) -> list[PickupConfig]:
 
 
 def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) -> list[OperandSample]:
+    """Expand one operand into ordered non-zero-weight field/wavelength samples.
+
+    All supplied indices are validated before exact-zero weights are filtered, so
+    disabled UI rows cannot conceal an invalid field or wavelength reference.
+
+    Args:
+        opm: RayOptics optical model.
+        operand: Unnormalized operand configuration.
+
+    Returns:
+        Normalized samples in the input field-major, wavelength-minor order.
+    """
     kind = operand.get("kind")
     if kind not in OPERAND_REGISTRY:
         raise ValueError(f"Unknown operand kind: {kind}")
@@ -300,6 +315,8 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
         base["target"] = float(operand.get("target", 0.0))
 
     if kind in {"focal_length", "f_number"}:
+        if base["weight"] == 0.0:
+            return []
         return [{**base, "field_index": None, "field_weight": 1.0, "wavelength_index": None, "wavelength_weight": 1.0}]
 
     fields = operand.get("fields") or [{"index": idx, "weight": 1.0} for idx in range(len(opm["optical_spec"]["fov"].fields))]
@@ -307,15 +324,23 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
         {"index": idx, "weight": 1.0} for idx in range(len(opm["optical_spec"]["wvls"].wavelengths))
     ]
 
-    normalized: list[OperandSample] = []
+    normalized_fields: list[tuple[int, float]] = []
     for field in fields:
         field_index = field.get("index")
         validate_surface_index(opm["optical_spec"]["fov"].fields, field_index, "field index")
-        field_weight = float(field.get("weight", 1.0))
-        for wavelength in wavelengths:
-            wavelength_index = wavelength.get("index")
-            validate_surface_index(opm["optical_spec"]["wvls"].wavelengths, wavelength_index, "wavelength index")
-            wavelength_weight = float(wavelength.get("weight", 1.0))
+        normalized_fields.append((field_index, float(field.get("weight", 1.0))))
+
+    normalized_wavelengths: list[tuple[int, float]] = []
+    for wavelength in wavelengths:
+        wavelength_index = wavelength.get("index")
+        validate_surface_index(opm["optical_spec"]["wvls"].wavelengths, wavelength_index, "wavelength index")
+        normalized_wavelengths.append((wavelength_index, float(wavelength.get("weight", 1.0))))
+
+    normalized: list[OperandSample] = []
+    for field_index, field_weight in normalized_fields:
+        for wavelength_index, wavelength_weight in normalized_wavelengths:
+            if base["weight"] == 0.0 or field_weight == 0.0 or wavelength_weight == 0.0:
+                continue
             normalized.append(
                 {
                     **base,
@@ -329,12 +354,20 @@ def normalize_operand_samples(opm: OpticalModel, operand: OperandConfigInput) ->
 
 
 def normalize_merit_function(opm: OpticalModel, merit_function: MeritFunctionConfigInput) -> MeritFunctionConfig:
+    """Return normalized non-zero-weight merit samples.
+
+    Raises:
+        ValueError: If no operand is supplied or every expanded sample has an
+            exactly zero effective weight.
+    """
     operands = merit_function.get("operands") or []
     if len(operands) == 0:
         raise ValueError("merit_function.operands must not be empty")
     normalized_operands: list[OperandSample] = []
     for operand in operands:
         normalized_operands.extend(normalize_operand_samples(opm, operand))
+    if len(normalized_operands) == 0:
+        raise ValueError("merit_function.operands must include at least one non-zero weighted sample")
     return {"operands": normalized_operands}
 
 
