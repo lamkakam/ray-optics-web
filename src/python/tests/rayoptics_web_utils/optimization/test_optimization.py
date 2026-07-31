@@ -405,6 +405,36 @@ class TestEvaluateOptimizationProblem:
                 },
             )
 
+    def test_lm_dimension_validation_ignores_zero_weight_samples(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        with pytest.raises(ValueError, match="Levenberg-Marquardt requires at least as many residuals as variables"):
+            evaluate_optimization_problem(
+                fresh_cooke_triplet,
+                {
+                    "optimizer": {"kind": "least_squares", "method": "lm"},
+                    "variables": [
+                        {"kind": "radius", "surface_index": 1},
+                        {"kind": "thickness", "surface_index": 6},
+                    ],
+                    "pickups": [],
+                    "merit_function": {
+                        "operands": [
+                            {
+                                "kind": "rms_spot_size",
+                                "target": 0.0,
+                                "weight": 1.0,
+                                "fields": [
+                                    {"index": 0, "weight": 1.0},
+                                    {"index": 1, "weight": 0.0},
+                                ],
+                                "wavelengths": [{"index": 0, "weight": 1.0}],
+                            }
+                        ]
+                    },
+                },
+            )
+
     def test_returns_json_safe_report_with_merit_breakdown(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
 
@@ -509,6 +539,84 @@ class TestEvaluateOptimizationProblem:
         assert residual_by_field[1]["total_weight"] == pytest.approx(6.0)
         assert residual_by_field[0]["total_weight"] == pytest.approx(2.0)
 
+    def test_zero_weight_operand_field_and_wavelength_samples_are_not_evaluated_or_reported(
+        self,
+        monkeypatch,
+        fresh_cooke_triplet,
+    ):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        calls = []
+
+        def fake_get_opd_fan_data_for_wavelength(opm, fi, wvl_idx, image_point="chief_ray"):
+            del opm
+            calls.append((fi, wvl_idx, image_point))
+            return {
+                "fieldIdx": fi,
+                "wvlIdx": wvl_idx,
+                "Tangential": {"x": [-1.0, 1.0], "y": [1.0, 3.0]},
+                "Sagittal": {"x": [-1.0, 1.0], "y": [5.0, 7.0]},
+                "unitX": "",
+                "unitY": "waves",
+            }
+
+        monkeypatch.setattr(
+            optimization_module,
+            "get_opd_fan_data_for_wavelength",
+            fake_get_opd_fan_data_for_wavelength,
+            raising=False,
+        )
+
+        report = evaluate_optimization_problem(
+            fresh_cooke_triplet,
+            {
+                "optimizer": {"kind": "least_squares"},
+                "variables": [],
+                "pickups": [],
+                "merit_function": {
+                    "operands": [
+                        {
+                            "kind": "opd_difference",
+                            "target": 0.0,
+                            "weight": 0.0,
+                            "fields": [{"index": 0, "weight": 1.0}],
+                            "wavelengths": [{"index": 0, "weight": 1.0}],
+                        },
+                        {
+                            "kind": "opd_difference",
+                            "target": 0.0,
+                            "weight": 1.0,
+                            "fields": [
+                                {"index": 0, "weight": 0.0},
+                                {"index": 1, "weight": 1.0},
+                            ],
+                            "wavelengths": [
+                                {"index": 0, "weight": 0.0},
+                                {"index": 2, "weight": 1.0},
+                            ],
+                        },
+                    ]
+                },
+            },
+            image_point="centroid",
+        )
+
+        assert calls == [(1, 2, "centroid")]
+        assert len(report["residuals"]) == 1
+        assert report["residuals"][0] == {
+            "kind": "opd_difference",
+            "target": 0.0,
+            "value": pytest.approx(2.0),
+            "field_index": 1,
+            "wavelength_index": 2,
+            "operand_weight": 1.0,
+            "field_weight": 1.0,
+            "wavelength_weight": 1.0,
+            "total_weight": 1.0,
+            "weighted_residual": pytest.approx(2.0),
+        }
+
     def test_evaluates_opd_operand_using_combined_tangential_and_sagittal_fans(self, fresh_cooke_triplet):
         from rayoptics_web_utils.analysis import get_opd_fan_data
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
@@ -560,21 +668,24 @@ class TestEvaluateOptimizationProblem:
         import rayoptics_web_utils.optimization.optimization as optimization_module
         from rayoptics_web_utils.optimization import evaluate_optimization_problem
 
-        def fake_get_opd_fan_data(opm, fi, image_point="chief_ray"):
-            del opm, fi
+        def fake_get_opd_fan_data_for_wavelength(opm, fi, wvl_idx, image_point="chief_ray"):
+            del opm, fi, wvl_idx
             assert image_point == "chief_ray"
-            return [
-                {
-                    "fieldIdx": 0,
-                    "wvlIdx": 0,
-                    "Tangential": {"x": [0.0], "y": [float("nan")]},
-                    "Sagittal": {"x": [0.0], "y": [float("nan")]},
-                    "unitX": "",
-                    "unitY": "waves",
-                }
-            ]
+            return {
+                "fieldIdx": 0,
+                "wvlIdx": 0,
+                "Tangential": {"x": [0.0], "y": [float("nan")]},
+                "Sagittal": {"x": [0.0], "y": [float("nan")]},
+                "unitX": "",
+                "unitY": "waves",
+            }
 
-        monkeypatch.setattr(optimization_module, "get_opd_fan_data", fake_get_opd_fan_data, raising=False)
+        monkeypatch.setattr(
+            optimization_module,
+            "get_opd_fan_data_for_wavelength",
+            fake_get_opd_fan_data_for_wavelength,
+            raising=False,
+        )
 
         report = evaluate_optimization_problem(
             fresh_cooke_triplet,
@@ -1658,8 +1769,27 @@ class TestOptimizeOpm:
         assert result["optimization_progress"][0]["merit_function_value"] >= 0.0
         assert "log10_merit_function_value" in result["optimization_progress"][0]
 
-    def test_optimizes_sasian_triplet_image_surface_radius_for_opd_difference(self, sasian_triplet_autoaperture):
+    def test_optimizes_sasian_triplet_image_surface_radius_for_opd_difference(
+        self,
+        monkeypatch,
+        sasian_triplet_autoaperture,
+    ):
+        import rayoptics_web_utils.optimization.optimization as optimization_module
+        from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
         from rayoptics_web_utils.optimization import evaluate_optimization_problem, optimize_opm
+
+        requested_samples = []
+
+        def recording_get_opd_fan_data_for_wavelength(opm, fi, wvl_idx, image_point="chief_ray"):
+            requested_samples.append((fi, wvl_idx))
+            return get_opd_fan_data_for_wavelength(opm, fi, wvl_idx, image_point=image_point)
+
+        monkeypatch.setattr(
+            optimization_module,
+            "get_opd_fan_data_for_wavelength",
+            recording_get_opd_fan_data_for_wavelength,
+            raising=False,
+        )
 
         image_surface_index = len(sasian_triplet_autoaperture["seq_model"].ifcs) - 1
         config = {
@@ -1696,6 +1826,8 @@ class TestOptimizeOpm:
         assert result["final_values"][0]["surface_index"] == image_surface_index
         assert result["final_values"][0]["value"] != pytest.approx(before["final_values"][0]["value"])
         assert result["merit_function"]["sum_of_squares"] < before["merit_function"]["sum_of_squares"]
+        assert requested_samples
+        assert set(requested_samples) == {(2, 1)}
 
 
 class TestOptimizationValidation:
@@ -1712,6 +1844,88 @@ class TestOptimizationValidation:
                     "merit_function": {"operands": [{"kind": "unknown_metric", "target": 0.0, "weight": 1.0}]},
                 },
             )
+
+    def test_rejects_all_zero_effective_merit_samples(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization import evaluate_optimization_problem
+
+        with pytest.raises(
+            ValueError,
+            match="merit_function.operands must include at least one non-zero weighted sample",
+        ):
+            evaluate_optimization_problem(
+                fresh_cooke_triplet,
+                {
+                    "optimizer": {"kind": "least_squares"},
+                    "variables": [],
+                    "pickups": [],
+                    "merit_function": {
+                        "operands": [
+                            {
+                                "kind": "opd_difference",
+                                "target": 0.0,
+                                "weight": 1.0,
+                                "fields": [{"index": 0, "weight": 0.0}],
+                                "wavelengths": [{"index": 0, "weight": 1.0}],
+                            }
+                        ]
+                    },
+                },
+            )
+
+    @pytest.mark.parametrize(
+        ("fields", "wavelengths", "error"),
+        [
+            ([{"index": 99, "weight": 0.0}], [{"index": 0, "weight": 0.0}], "field index 99"),
+            ([{"index": 0, "weight": 0.0}], [{"index": 99, "weight": 0.0}], "wavelength index 99"),
+        ],
+    )
+    def test_validates_indices_before_filtering_zero_weight_samples(
+        self,
+        fresh_cooke_triplet,
+        fields,
+        wavelengths,
+        error,
+    ):
+        from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+        with pytest.raises(IndexError, match=error):
+            normalize_operand_samples(
+                fresh_cooke_triplet,
+                {
+                    "kind": "opd_difference",
+                    "target": 0.0,
+                    "weight": 0.0,
+                    "fields": fields,
+                    "wavelengths": wavelengths,
+                },
+            )
+
+    def test_filters_zero_weight_samples_without_reordering_retained_samples(self, fresh_cooke_triplet):
+        from rayoptics_web_utils.optimization.config import normalize_operand_samples
+
+        samples = normalize_operand_samples(
+            fresh_cooke_triplet,
+            {
+                "kind": "opd_difference",
+                "target": 0.0,
+                "weight": 2.0,
+                "fields": [
+                    {"index": 2, "weight": 4.0},
+                    {"index": 0, "weight": 0.0},
+                    {"index": 1, "weight": 9.0},
+                ],
+                "wavelengths": [
+                    {"index": 2, "weight": 16.0},
+                    {"index": 1, "weight": 0.0},
+                    {"index": 0, "weight": 25.0},
+                ],
+            },
+        )
+
+        assert [
+            (sample["field_index"], sample["wavelength_index"])
+            for sample in samples
+        ] == [(2, 2), (2, 0), (1, 2), (1, 0)]
 
     def test_rejects_variable_and_pickup_collision(self, fresh_cooke_triplet):
         from rayoptics_web_utils.optimization import evaluate_optimization_problem

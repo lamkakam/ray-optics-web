@@ -35,6 +35,7 @@ class TestAnalysisConcreteModuleExports:
         [
             ("ray_fan", "get_ray_fan_data"),
             ("opd_fan", "get_opd_fan_data"),
+            ("opd_fan", "get_opd_fan_data_for_wavelength"),
             ("spot", "get_spot_data"),
             ("wavefront", "get_wavefront_data"),
             ("geometric_psf", "get_geo_psf_data"),
@@ -75,6 +76,14 @@ class TestGetAnalysisPlotDataSignatures:
 
         sig = inspect.signature(get_opd_fan_data)
         assert list(sig.parameters.keys()) == ["opm", "fi", "image_point"]
+        assert sig.parameters["image_point"].default == "chief_ray"
+
+    def test_get_opd_fan_data_for_wavelength_accepts_opm_fi_and_wvl_idx(self):
+        from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
+        import inspect
+
+        sig = inspect.signature(get_opd_fan_data_for_wavelength)
+        assert list(sig.parameters.keys()) == ["opm", "fi", "wvl_idx", "image_point"]
         assert sig.parameters["image_point"].default == "chief_ray"
 
     def test_get_spot_data_accepts_opm_and_fi(self):
@@ -296,6 +305,108 @@ class TestGetRayFanData:
 class TestGetOpdFanData:
     """Tests for get_opd_fan_data()."""
 
+    def test_single_wavelength_forwards_requested_index_to_both_fan_axes(self, monkeypatch):
+        import rayoptics_web_utils.analysis.opd_fan as opd_fan_module
+
+        opm = object()
+        calls = []
+
+        def fake_trace_fan_series(
+            opm_arg,
+            fi,
+            xy,
+            fan_filter,
+            image_point="chief_ray",
+            wvl_idx=None,
+        ):
+            del fan_filter
+            calls.append((opm_arg, fi, xy, image_point, wvl_idx))
+            return [[-1.0, 1.0]], [[float(xy), float(xy + 1)]]
+
+        monkeypatch.setattr(opd_fan_module, "is_afocal_image_space", lambda _opm: False)
+        monkeypatch.setattr(opd_fan_module, "_trace_fan_series", fake_trace_fan_series)
+
+        result = opd_fan_module.get_opd_fan_data_for_wavelength(
+            opm,
+            fi=3,
+            wvl_idx=2,
+            image_point="centroid",
+        )
+
+        assert calls == [
+            (opm, 3, 0, "centroid", 2),
+            (opm, 3, 1, "centroid", 2),
+        ]
+        assert result == {
+            "fieldIdx": 3,
+            "wvlIdx": 2,
+            "Sagittal": {"x": [-1.0, 1.0], "y": [0.0, 1.0]},
+            "Tangential": {"x": [-1.0, 1.0], "y": [1.0, 2.0]},
+            "unitX": "",
+            "unitY": "waves",
+        }
+
+    def test_all_wavelength_api_delegates_once_per_wavelength_in_order(self, monkeypatch):
+        from types import SimpleNamespace
+
+        import rayoptics_web_utils.analysis.opd_fan as opd_fan_module
+
+        opm = SimpleNamespace(
+            optical_spec=SimpleNamespace(
+                spectral_region=SimpleNamespace(wavelengths=[486.133, 587.562, 656.273]),
+            ),
+        )
+        calls = []
+
+        def fake_single_wavelength(opm_arg, fi, wvl_idx, image_point="chief_ray"):
+            calls.append((opm_arg, fi, wvl_idx, image_point))
+            return {
+                "fieldIdx": fi,
+                "wvlIdx": wvl_idx,
+                "Sagittal": {"x": [-1.0, 1.0], "y": [float(wvl_idx), 1.0]},
+                "Tangential": {"x": [-1.0, 1.0], "y": [2.0, float(wvl_idx)]},
+                "unitX": "",
+                "unitY": "waves",
+            }
+
+        monkeypatch.setattr(
+            opd_fan_module,
+            "get_opd_fan_data_for_wavelength",
+            fake_single_wavelength,
+        )
+
+        result = opd_fan_module.get_opd_fan_data(opm, fi=2, image_point="centroid")
+
+        assert calls == [
+            (opm, 2, 0, "centroid"),
+            (opm, 2, 1, "centroid"),
+            (opm, 2, 2, "centroid"),
+        ]
+        assert [entry["wvlIdx"] for entry in result] == [0, 1, 2]
+        assert all(
+            set(entry) == {"fieldIdx", "wvlIdx", "Sagittal", "Tangential", "unitX", "unitY"}
+            for entry in result
+        )
+
+    @pytest.mark.parametrize("image_point", ["chief_ray", "centroid"])
+    def test_single_wavelength_returns_finite_model_entry(self, cooke_triplet, image_point):
+        from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
+
+        result = get_opd_fan_data_for_wavelength(
+            cooke_triplet,
+            fi=1,
+            wvl_idx=1,
+            image_point=image_point,
+        )
+
+        assert result["fieldIdx"] == 1
+        assert result["wvlIdx"] == 1
+        assert result["unitX"] == ""
+        assert result["unitY"] == "waves"
+        assert any(value is not None for value in result["Sagittal"]["y"])
+        assert any(value is not None for value in result["Tangential"]["y"])
+        json.dumps(result)
+
     def test_returns_per_wavelength_entries_with_fan_axes(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_opd_fan_data
 
@@ -337,7 +448,7 @@ class TestGetOpdFanData:
         from rayoptics.environment import OpticalModel
         from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
         from rayoptics.raytr.vigcalc import set_vig
-        from rayoptics_web_utils.analysis import get_opd_fan_data
+        from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
         from rayoptics_web_utils.aperture import Annular
 
         opm = OpticalModel()
@@ -357,8 +468,8 @@ class TestGetOpdFanData:
         opm.update_model()
         set_vig(opm)
 
-        result = get_opd_fan_data(opm, fi=0)
-        tangential = result[0]["Tangential"]
+        result = get_opd_fan_data_for_wavelength(opm, fi=0, wvl_idx=0)
+        tangential = result["Tangential"]
 
         assert tangential["x"] == pytest.approx([index / 10 for index in range(-10, 11)])
         assert tangential["y"][10] is None

@@ -3,7 +3,8 @@
 Scalar and ray-fan operands share a penalty value of ``1e6`` when analysis data is
 unavailable. Fan operands preserve a stable residual dimension by padding blocked
 or non-finite samples. OPD-based operands propagate the app-wide image-point
-reference and scale wavefront grids to the traced wavelength before evaluation.
+reference, trace only their normalized sample's wavelength, and scale wavefront
+grids to the traced wavelength before evaluation.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ import numpy as np
 import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
 
-from rayoptics_web_utils.analysis import get_opd_fan_data
+from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
 from rayoptics_web_utils.analysis import get_ray_fan_data
 from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.zernike.zernike import _scale_opd_grid_to_wavelength
@@ -182,7 +183,7 @@ def _compute_opd_difference_for_axis(
         wavelength_index: Wavelength index.
         options: Normalized operand options.
         image_point: Image-point reference convention.
-        axis: Axis to evaluate, where 0 is sagittal and 1 is tangential.
+        axis: Fan-axis payload key, or `None` to combine both axes.
 
     Returns:
         Mean absolute OPD deviation in waves for one field/wavelength sample.
@@ -190,9 +191,12 @@ def _compute_opd_difference_for_axis(
     if field_index is None or wavelength_index is None:
         raise ValueError("opd_difference requires field and wavelength indices")
     del options
-    fan_data = get_opd_fan_data(opm, fi=field_index, image_point=image_point)
-    validate_surface_index(fan_data, wavelength_index, "wavelength index")
-    wavelength_fan = fan_data[wavelength_index]
+    wavelength_fan = get_opd_fan_data_for_wavelength(
+        opm,
+        fi=field_index,
+        wvl_idx=wavelength_index,
+        image_point=image_point,
+    )
     samples = np.array(_select_fan_samples(wavelength_fan, axis), dtype=float)
     valid = samples[np.isfinite(samples)]
     if len(valid) == 0:

@@ -1,4 +1,4 @@
-"""Extract optical-path-difference fan data."""
+"""Extract single- and all-wavelength optical-path-difference fan data."""
 
 import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
@@ -9,25 +9,33 @@ from rayoptics_web_utils.analysis._afocal import afocal_opd, exit_pupil_plane, i
 from rayoptics_web_utils.utils import _json_float_list
 
 
-def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]:
-    """Return OPD fan data for all wavelengths at field index ``fi``.
+def get_opd_fan_data_for_wavelength(
+    opm: OpticalModel,
+    fi: int,
+    wvl_idx: int,
+    image_point: str = "chief_ray",
+) -> dict:
+    """Return OPD fan data for one field and configured wavelength.
 
-    Results have the same shape as `get_ray_fan_data`, with `unitY="waves"`.
-    Blocked aperture samples remain as `None` gaps in `y`.
+    The result has the same schema and semantics as one entry returned by
+    `get_opd_fan_data`, including `fieldIdx`, `wvlIdx`, sagittal and tangential
+    21-point fans, blocked-sample gaps, and wave units.
 
     Finite image space uses `wave_abr_full_calc(...) / opm.nm_to_sys_units(wvl)`.
     Infinite image space uses the shared exit-pupil plane-wave OPD, excludes the
     artificial final gap, makes chief-ray OPD zero, and converts to the traced
     wavelength's waves. `image_point="chief_ray"` preserves the historical
-    reference, while `"centroid"` uses the shared centroid image point.
+    reference, while `"centroid"` uses the shared centroid image point. The
+    selected wavelength's afocal reference is shared by both fan axes.
 
     Args:
         opm: RayOptics optical model.
         fi: Field index.
+        wvl_idx: Configured wavelength index.
         image_point: Image-point reference convention.
 
     Returns:
-        OPD fan data for all wavelengths at field index ``fi``.
+        OPD fan data for one field and wavelength.
     """
 
     afocal = is_afocal_image_space(opm)
@@ -47,23 +55,56 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
             return opd_val / opm.nm_to_sys_units(wvl)
         return None
 
-    sagittal_x, sagittal_y = _trace_fan_series(opm, fi, 0, _opd_abr, image_point=image_point)
-    tangential_x, tangential_y = _trace_fan_series(opm, fi, 1, _opd_abr, image_point=image_point)
+    sagittal_x, sagittal_y = _trace_fan_series(
+        opm,
+        fi,
+        0,
+        _opd_abr,
+        image_point=image_point,
+        wvl_idx=wvl_idx,
+    )
+    tangential_x, tangential_y = _trace_fan_series(
+        opm,
+        fi,
+        1,
+        _opd_abr,
+        image_point=image_point,
+        wvl_idx=wvl_idx,
+    )
 
-    data: list[dict] = []
-    for wvl_idx in range(len(sagittal_x)):
-        data.append({
-            "fieldIdx": fi,
-            "wvlIdx": wvl_idx,
-            "Sagittal": {
-                "x": _json_float_list(sagittal_x[wvl_idx]),
-                "y": _json_float_list(sagittal_y[wvl_idx]),
-            },
-            "Tangential": {
-                "x": _json_float_list(tangential_x[wvl_idx]),
-                "y": _json_float_list(tangential_y[wvl_idx]),
-            },
-            "unitX": "",
-            "unitY": "waves",
-        })
-    return data
+    return {
+        "fieldIdx": fi,
+        "wvlIdx": wvl_idx,
+        "Sagittal": {
+            "x": _json_float_list(sagittal_x[0]),
+            "y": _json_float_list(sagittal_y[0]),
+        },
+        "Tangential": {
+            "x": _json_float_list(tangential_x[0]),
+            "y": _json_float_list(tangential_y[0]),
+        },
+        "unitX": "",
+        "unitY": "waves",
+    }
+
+
+def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray") -> list[dict]:
+    """Return OPD fan data for all wavelengths at field index ``fi``.
+
+    The public all-wavelength plotting contract is unchanged. Results retain the
+    same ordering and schema as `get_ray_fan_data`, with `unitY="waves"`, by
+    delegating once per configured wavelength to
+    `get_opd_fan_data_for_wavelength`.
+
+    Args:
+        opm: RayOptics optical model.
+        fi: Field index.
+        image_point: Image-point reference convention.
+
+    Returns:
+        OPD fan data for all configured wavelengths at field index ``fi``.
+    """
+    return [
+        get_opd_fan_data_for_wavelength(opm, fi, wvl_idx, image_point=image_point)
+        for wvl_idx in range(len(opm.optical_spec.spectral_region.wavelengths))
+    ]

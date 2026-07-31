@@ -85,7 +85,11 @@ def test_afocal_transverse_analyses_are_angular_and_image_gap_invariant(afocal_t
 
 
 def test_afocal_opd_and_wavefront_are_finite_and_image_gap_invariant(afocal_two_lens):
-    from rayoptics_web_utils.analysis import get_opd_fan_data, get_wavefront_data
+    from rayoptics_web_utils.analysis import (
+        get_opd_fan_data,
+        get_opd_fan_data_for_wavelength,
+        get_wavefront_data,
+    )
 
     first = copy.deepcopy(afocal_two_lens)
     second = copy.deepcopy(afocal_two_lens)
@@ -96,11 +100,16 @@ def test_afocal_opd_and_wavefront_are_finite_and_image_gap_invariant(afocal_two_
 
     fan_a = get_opd_fan_data(first, 0)
     fan_b = get_opd_fan_data(second, 0)
+    centroid_fan_a = get_opd_fan_data_for_wavelength(first, 0, 1, image_point="centroid")
+    centroid_fan_b = get_opd_fan_data_for_wavelength(second, 0, 1, image_point="centroid")
     wave_a = get_wavefront_data(first, 0, 1, num_rays=11)
     wave_b = get_wavefront_data(second, 0, 1, num_rays=11)
 
     assert _finite_values(fan_a[1]["Tangential"]["y"]) == pytest.approx(
         _finite_values(fan_b[1]["Tangential"]["y"]), abs=1e-6
+    )
+    assert _finite_values(centroid_fan_a["Tangential"]["y"]) == pytest.approx(
+        _finite_values(centroid_fan_b["Tangential"]["y"]), abs=1e-6
     )
     finite_wave_a = [value for row in wave_a["z"] for value in row if value is not None]
     finite_wave_b = [value for row in wave_b["z"] for value in row if value is not None]

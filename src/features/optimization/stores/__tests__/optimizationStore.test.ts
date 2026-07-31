@@ -742,6 +742,42 @@ describe("optimizationStore", () => {
     );
   });
 
+  it("ignores zero-weight field and wavelength combinations for lm residual-count validation", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.setState((state) => ({
+      optimizer: {
+        ...state.optimizer,
+        method: "lm",
+      },
+      fieldWeights: [1, 0, 0],
+      wavelengthWeights: [1, 0, 0],
+    }));
+    store.getState().setRadiusMode(1, {
+      mode: "variable",
+      min: "40",
+      max: "60",
+    });
+    store.getState().setThicknessMode(2, {
+      mode: "variable",
+      min: "10",
+      max: "30",
+    });
+    store.getState().replaceOperands([
+      {
+        id: "operand-1",
+        kind: "rms_spot_size",
+        target: "0",
+        weight: "1",
+      },
+    ]);
+
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(
+      "Levenberg-Marquardt requires at least as many residuals as variables.",
+    );
+  });
+
   it("builds asphere variables and pickups into the Python optimization config", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(asphericModel);
