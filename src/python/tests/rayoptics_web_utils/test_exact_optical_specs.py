@@ -3,7 +3,9 @@
 The exact specification path keeps RayOptics' paraxial data available for
 first-order reporting, but it must never use a paraxial conversion as the final
 physical launch.  These tests exercise the public exact model and field classes
-through normal RayOptics tracing calls.
+through normal RayOptics tracing calls.  The baseline model comes from the core
+optical module so test collection stays headless before the session fixture can
+install GUI stubs.
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from typing import Callable
 import numpy as np
 import pytest
 import rayoptics.optical.model_constants as mc
-from rayoptics.environment import OpticalModel
+from rayoptics.optical.opticalmodel import OpticalModel
 from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
 from rayoptics.raytr.trace import trace_base
 from rayoptics.seq.medium import decode_medium
