@@ -40,10 +40,10 @@ ray's image-space Y direction need not remain positive.
 
 | Specification | Physical constraint | Exact launch quantity | Final verification |
 | --- | --- | --- | --- |
-| Image-space geometric F-number, `("image", "f/#")` | $F/\#=1/(2\tan u')$, where $u'$ is the real image-space angle between the axial chief and +Y marginal rays | Object-space entrance-pupil diameter $D_o$, found by a scalar real-ray solve | Retrace both unclipped rays and compare $u'$ with $\arctan(1/[2(F/\#)])$ |
+| Image-space geometric F-number, `("image", "f/#")` | $F/\mathrm{number}=1/(2\tan u')$, where $u'$ is the real image-space angle between the axial chief and +Y marginal rays | Object-space entrance-pupil diameter $D_o$, found by a scalar real-ray solve | Retrace both unclipped rays and compare $u'$ with $\arctan(1/[2(F/\mathrm{number})])$ |
 | Object-space numerical aperture, `("object", "NA")` | $\mathrm{NA}=n_o\sin u$, where $u$ is the real object-space chief-to-+Y angle | Chief-centred cone tangent $\tan u=\mathrm{NA}/\sqrt{n_o^2-\mathrm{NA}^2}$ | Retrace both unclipped rays and compare $n_o\sin u$ with the requested NA |
 | Object-space entrance-pupil diameter, `("object", "epd")` | A normalized pupil radius of one represents $D_o/2$ | The supplied $D_o$ is used directly; no root solve or module-level range check is performed | No independent pupil residual; the launch is constructed at radius $D_o/2$, and an exact image-height chief is separately forward verified |
-| Exact image height, `("image", "height")` | The chief ray must intersect the image profile at $[x,y,\operatorname{sag}(x,y)]$ and pass through the physical stop centre | A finite object point and direction, or an infinite-conjugate input-plane anchor and direction | A mandatory unclipped forward retrace must return to both the stop centre and requested image coordinate |
+| Exact image height, `("image", "height")` | The chief ray must intersect the image profile at $[x,y,\mathrm{sag}(x,y)]$ and pass through the physical stop centre | A finite object point and direction, or an infinite-conjugate input-plane anchor and direction | A mandatory unclipped forward retrace must return to both the stop centre and requested image coordinate |
 
 Other pupil keys are rejected by `ExactOpticalModel`, and
 `ExactImageHeightFieldSpec` rejects any field key other than
@@ -65,13 +65,13 @@ For a geometric cone with axial distance $l'$ and radius $r'$,
 $\tan u'=r'/l'$. The diameter is $2r'$, so
 
 $$
-F/\# = \frac{l'}{2r'} = \frac{1}{2\tan u'}.
+F/\mathrm{number} = \frac{l'}{2r'} = \frac{1}{2\tan u'}.
 $$
 
 The requested F-number is therefore converted to the target angle
 
 $$
-u'_{\mathrm{target}}=\arctan\!\left(\frac{1}{2(F/\#)}\right).
+u'_{\mathrm{target}}=\arctan\!\left(\frac{1}{2(F/\mathrm{number})}\right).
 $$
 
 The solver varies object-space EPD, not a paraxial ray slope. It begins at zero
@@ -121,10 +121,10 @@ object-local +X,
 
 $$
 \boldsymbol e_x=
-\operatorname{normalize}\!\left(\boldsymbol X_o
+\mathrm{normalize}\!\left(\boldsymbol X_o
 -(\boldsymbol X_o\mathbin{\cdot}\boldsymbol c)\boldsymbol c\right),
 \qquad
-\boldsymbol e_y=\operatorname{normalize}(\boldsymbol c\times\boldsymbol e_x).
+\boldsymbol e_y=\mathrm{normalize}(\boldsymbol c\times\boldsymbol e_x).
 $$
 
 Object-local +Y is used as the projection seed only if the chief ray is
@@ -132,7 +132,7 @@ parallel to object-local +X. An object-NA ray is then launched as
 
 $$
 \boldsymbol d(\xi,\eta)=
-\operatorname{normalize}\!\left[
+\mathrm{normalize}\!\left[
 \boldsymbol c+\tan u\left(\xi\boldsymbol e_x+\eta\boldsymbol e_y\right)
 \right].
 $$
@@ -167,7 +167,7 @@ $$
 \boldsymbol q(\xi,\eta)=\boldsymbol q_c+
 \frac{D_o}{2}(\xi\boldsymbol X_o+\eta\boldsymbol Y_o),
 \qquad
-\boldsymbol d=\operatorname{normalize}(\boldsymbol q-\boldsymbol p_c).
+\boldsymbol d=\mathrm{normalize}(\boldsymbol q-\boldsymbol p_c).
 $$
 
 The paraxial data locates the pupil plane, but its origin is replaced by the
@@ -200,7 +200,7 @@ field coordinates: for a relative field they already include multiplication by
 the maximum field value. A sample $(x,y)$ means the image-surface-local point
 
 $$
-\boldsymbol p_i=[x,\ y,\ \operatorname{sag}(x,y)].
+\boldsymbol p_i=[x,\ y,\ \mathrm{sag}(x,y)].
 $$
 
 Consequently, image height is not a request for the paraxial image plane or
