@@ -9,6 +9,7 @@ describe("FirstOrderChips", () => {
 
   it("renders EFL chip when efl is present", () => {
     render(<FirstOrderChips data={{ efl: 100.234 }} />);
+    expect(screen.getByText("Paraxial first-order results")).toBeInTheDocument();
     expect(screen.getByText("EFL: 100.23mm")).toBeInTheDocument();
   });
 

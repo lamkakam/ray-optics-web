@@ -27,6 +27,74 @@ const baseModel: OpticalModel = {
 };
 
 describe("validateImportedLensData", () => {
+  it.each([
+    { space: "object", type: "epd", value: 25 },
+    { space: "object", type: "NA", value: 0.8 },
+    { space: "image", type: "f/#", value: 4 },
+  ])("accepts the supported pupil combination $space $type", (pupil) => {
+    const model = {
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        pupil,
+      },
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it.each([
+    { space: "object", type: "f/#", value: 4 },
+    { space: "image", type: "epd", value: 25 },
+    { space: "image", type: "NA", value: 0.8 },
+  ])("rejects the forbidden pupil combination $space $type", (pupil) => {
+    const model = {
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        pupil,
+      },
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it.each([
+    { space: "object", type: "height" },
+    { space: "object", type: "angle" },
+    { space: "image", type: "height" },
+  ])("accepts the supported field combination $space $type", ({ space, type }) => {
+    const model = {
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: {
+          ...baseModel.specs.field,
+          space,
+          type,
+        },
+      },
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it("rejects image-space angle fields", () => {
+    const model = {
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: {
+          ...baseModel.specs.field,
+          space: "image",
+          type: "angle",
+        },
+      },
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
   it("accepts models with field.isWideAngle set to true", () => {
     const model: OpticalModel = {
       ...baseModel,

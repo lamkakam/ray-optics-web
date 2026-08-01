@@ -231,6 +231,8 @@ const surfaceSchema = {
  * Complete imported `OpticalModel` schema.
  * Object distance, medium, and manufacturer are required; reflective object media
  * are rejected, while `specs.field.isWideAngle` remains optional for legacy files.
+ * Pupil keys accept only Object EPD, Object NA, and Image F/#. Field keys accept
+ * only Object Height, Object Angle, and Image Height.
  */
 const importedLensDataSchema = {
   type: "object",
@@ -244,27 +246,58 @@ const importedLensDataSchema = {
       additionalProperties: false,
       properties: {
         pupil: {
-          type: "object",
-          required: ["space", "type", "value"],
-          additionalProperties: false,
-          properties: {
-            space: { type: "string", enum: ["object", "image"] },
-            type: { type: "string", enum: ["epd", "f/#", "NA"] },
-            value: finiteNumberSchema,
-          },
+          oneOf: [
+            {
+              type: "object",
+              required: ["space", "type", "value"],
+              additionalProperties: false,
+              properties: {
+                space: { type: "string", const: "object" },
+                type: { type: "string", enum: ["epd", "NA"] },
+                value: finiteNumberSchema,
+              },
+            },
+            {
+              type: "object",
+              required: ["space", "type", "value"],
+              additionalProperties: false,
+              properties: {
+                space: { type: "string", const: "image" },
+                type: { type: "string", const: "f/#" },
+                value: finiteNumberSchema,
+              },
+            },
+          ],
         },
         field: {
-          type: "object",
-          required: ["space", "type", "maxField", "fields", "isRelative"],
-          additionalProperties: false,
-          properties: {
-            space: { type: "string", enum: ["object", "image"] },
-            type: { type: "string", enum: ["angle", "height"] },
-            maxField: finiteNumberSchema,
-            fields: { type: "array", items: finiteNumberSchema },
-            isRelative: { type: "boolean" },
-            isWideAngle: { type: "boolean" },
-          },
+          oneOf: [
+            {
+              type: "object",
+              required: ["space", "type", "maxField", "fields", "isRelative"],
+              additionalProperties: false,
+              properties: {
+                space: { type: "string", const: "object" },
+                type: { type: "string", enum: ["angle", "height"] },
+                maxField: finiteNumberSchema,
+                fields: { type: "array", items: finiteNumberSchema },
+                isRelative: { type: "boolean" },
+                isWideAngle: { type: "boolean" },
+              },
+            },
+            {
+              type: "object",
+              required: ["space", "type", "maxField", "fields", "isRelative"],
+              additionalProperties: false,
+              properties: {
+                space: { type: "string", const: "image" },
+                type: { type: "string", const: "height" },
+                maxField: finiteNumberSchema,
+                fields: { type: "array", items: finiteNumberSchema },
+                isRelative: { type: "boolean" },
+                isWideAngle: { type: "boolean" },
+              },
+            },
+          ],
         },
         wavelengths: {
           type: "object",
