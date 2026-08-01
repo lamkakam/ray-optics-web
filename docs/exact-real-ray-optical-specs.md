@@ -57,7 +57,7 @@ Let $u'$ be the unsigned angle between the last-segment directions of the
 on-axis chief ray and the on-axis +Y marginal ray:
 
 $$
-u' = \cos^{-1}\!\left(\hat{\boldsymbol d}'_c \mathbin{\cdot}
+u' = \arccos\left(\hat{\boldsymbol d}'_c \mathbin{\cdot}
 \hat{\boldsymbol d}'_{+Y}\right).
 $$
 
@@ -71,7 +71,7 @@ $$
 The requested F-number is therefore converted to the target angle
 
 $$
-u'_{\mathrm{target}}=\arctan\!\left(\frac{1}{2(F/\mathrm{number})}\right).
+u'_{\mathrm{target}}=\arctan\left(\frac{1}{2(F/\mathrm{number})}\right).
 $$
 
 The solver varies object-space EPD, not a paraxial ray slope. It begins at zero
@@ -121,7 +121,7 @@ object-local +X,
 
 $$
 \boldsymbol e_x=
-\mathrm{normalize}\!\left(\boldsymbol X_o
+\mathrm{normalize}\left(\boldsymbol X_o
 -(\boldsymbol X_o\mathbin{\cdot}\boldsymbol c)\boldsymbol c\right),
 \qquad
 \boldsymbol e_y=\mathrm{normalize}(\boldsymbol c\times\boldsymbol e_x).
@@ -132,7 +132,7 @@ parallel to object-local +X. An object-NA ray is then launched as
 
 $$
 \boldsymbol d(\xi,\eta)=
-\mathrm{normalize}\!\left[
+\mathrm{normalize}\left[
 \boldsymbol c+\tan u\left(\xi\boldsymbol e_x+\eta\boldsymbol e_y\right)
 \right].
 $$
