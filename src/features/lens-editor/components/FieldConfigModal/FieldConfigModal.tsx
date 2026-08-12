@@ -69,6 +69,7 @@ const MAX_ROWS = 10;
  * - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for field row insertion and deletion controls.
  * - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
  * - Row ids use a module-level counter for stable AG Grid `getRowId`.
+ * - Image space offers Height only. Selecting Image while Object Angle is active atomically changes the draft type to Height, so the modal can never emit Image Angle.
  * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
  * - Keeps the caption outside a grid container that is `200px` high below the project-standard `1440px` breakpoint and `400px` high at `1440px` and above, and uses AG Grid's normal layout for internal scrolling. AG Grid touch handling remains enabled for touchscreen column resizing while the shared `ag-grid-touch-scroll` coarse-pointer styles preserve native two-axis panning and iOS momentum scrolling on viewport areas.
  *
@@ -115,6 +116,20 @@ function FieldConfigModalContent({
   const [rows, setRows] = useState<FieldRow[]>(() => fieldsToRows(initialRelativeFields));
   /** Draft wide-angle ray-aiming setting. */
   const [isWideAngle, setIsWideAngle] = useState(() => initialIsWideAngle);
+  const fieldTypeOptions =
+    space === "image"
+      ? [{ value: "height", label: "Height" }]
+      : [
+          { value: "height", label: "Height" },
+          { value: "angle", label: "Angle" },
+        ];
+
+  const handleSpaceChange = (nextSpace: FieldSpace) => {
+    setSpace(nextSpace);
+    if (nextSpace === "image") {
+      setFieldType("height");
+    }
+  };
 
   const addRow = useCallback((afterId: string) => {
     setRows((prev) => {
@@ -215,7 +230,7 @@ function FieldConfigModalContent({
             id="field-space"
             aria-label="Field space"
             value={space}
-            onChange={(e) => setSpace(e.target.value as FieldSpace)}
+            onChange={(e) => handleSpaceChange(e.target.value as FieldSpace)}
             options={[
               { value: "object", label: "Object" },
               { value: "image", label: "Image" },
@@ -229,10 +244,7 @@ function FieldConfigModalContent({
             aria-label="Field type"
             value={fieldType}
             onChange={(e) => setFieldType(e.target.value as FieldType)}
-            options={[
-              { value: "height", label: "Height" },
-              { value: "angle", label: "Angle" },
-            ]}
+            options={fieldTypeOptions}
           />
         </div>
         <div className="col-span-2 sm:col-span-1">

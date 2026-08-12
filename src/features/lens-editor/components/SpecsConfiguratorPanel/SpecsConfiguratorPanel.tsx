@@ -39,7 +39,7 @@ const APERTURE_OPTIONS: readonly {
   pupilType: PupilType;
 }[] = [
     { label: "Entrance Pupil Diameter", value: "object:epd", pupilSpace: "object", pupilType: "epd" },
-    { label: "Image Space F/#", value: "image:f/#", pupilSpace: "image", pupilType: "f/#" },
+    { label: "Image Space Geometric F/#", value: "image:f/#", pupilSpace: "image", pupilType: "f/#" },
     { label: "Object Space NA", value: "object:NA", pupilSpace: "object", pupilType: "NA" },
   ];
 
@@ -49,7 +49,7 @@ const APERTURE_OPTIONS: readonly {
  * @remarks
  * ## Key Behaviors
  *
- * - Aperture dropdown selects from three pre-defined combinations of `pupilSpace`+`pupilType`.
+ * - Aperture dropdown selects from three physical combinations of `pupilSpace`+`pupilType`; Image F/# is labelled as geometric to distinguish it from paraxial first-order output.
  * - Half-Field and wavelength sections show their summaries as toggle-style buttons that open the respective modals.
  */
 export function SpecsConfiguratorPanel({

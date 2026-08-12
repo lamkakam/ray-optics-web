@@ -6,25 +6,36 @@ import type { SetAutoApertureFlag } from "@/shared/lib/utils/apertureFlag";
 export type { SetAutoApertureFlag };
 
 
-/** Optical system specifications. */
+/** Supported physical pupil definitions; cross-space combinations are invalid. */
+export type PupilSpec =
+  | { space: "object"; type: "epd" | "NA"; value: number }
+  | { space: "image"; type: "f/#"; value: number };
+
+/** Supported physical field definitions; image-space angle is invalid. */
+export type FieldSpec =
+  | {
+      space: "object";
+      type: "angle" | "height";
+      maxField: number;
+      fields: number[];
+      isRelative: boolean;
+      isWideAngle?: boolean;
+    }
+  | {
+      space: "image";
+      type: "height";
+      maxField: number;
+      fields: number[];
+      isRelative: boolean;
+      isWideAngle?: boolean;
+    };
+
+/** Optical system specifications using only physically resolved combinations. */
 export interface OpticalSpecs {
-  /** Pupil definition in object or image space. */
-  pupil: {
-    space: "object" | "image"; // whether the value is defined over object or image space
-    type: "epd" | "f/#" | "NA"; // match with rayoptics PupilSpec
-    value: number;
-  };
-  /** Absolute or relative field samples and optional wide-angle ray aiming. */
-  field: {
-    space: "object" | "image";
-    type: "angle" | "height";
-    maxField: number; // must be absolute number
-    fields: number[];
-    isRelative: boolean; // if true, the fields are relative to maxField
-    // if true, a more robust built-in ray aiming method is used to determine the centre of the stop
-    // for the chief ray in a wide-angled field
-    isWideAngle?: boolean; 
-  };
+  /** Object EPD, exact Object NA, or geometric Image F/#. */
+  pupil: PupilSpec;
+  /** Object height/angle or exact real Image Height samples. */
+  field: FieldSpec;
   /** Wavelength/weight pairs and their zero-based reference index. */
   wavelengths: {
     weights: [number, number][]; // [wavelength in nm, weight][]

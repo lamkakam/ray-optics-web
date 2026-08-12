@@ -8,6 +8,7 @@
  * - `isWideAngle` maps to `OpticalSpecs.field.isWideAngle` and is normalized to `false` when absent in imported data.
  * - `wavelengthWeights` is an array of `[wavelength_nm, weight]` tuples.
  * - `referenceIndex` is a zero-based index into `wavelengthWeights`; callers must keep it in range.
+ * - `toOpticalSpecs` rejects invalid cross-products instead of constructing Object F/#, Image EPD/NA, or Image Angle.
  *
  * ## Dependencies
  *
@@ -18,7 +19,11 @@
  * Form components receive state slices and actions as props via DI to keep them testable.
  */
 import type { StateCreator } from "zustand";
-import type { OpticalSpecs } from "@/shared/lib/types/opticalModel";
+import type {
+  FieldSpec,
+  OpticalSpecs,
+  PupilSpec,
+} from "@/shared/lib/types/opticalModel";
 import { lookupWavelength } from "@/shared/lib/data/fraunhoferLines";
 
 /** Reusable type aliases derived from OpticalSpecs */
@@ -28,6 +33,42 @@ export type FieldSpace = OpticalSpecs["field"]["space"];
 export type FieldType = OpticalSpecs["field"]["type"];
 export type WavelengthWeights = OpticalSpecs["wavelengths"]["weights"];
 export type ReferenceIndex = OpticalSpecs["wavelengths"]["referenceIndex"];
+
+function buildPupilSpec(
+  space: PupilSpace,
+  type: PupilType,
+  value: number,
+): PupilSpec {
+  if (space === "image" && type === "f/#") {
+    return { space, type, value };
+  }
+  if (space === "object" && (type === "epd" || type === "NA")) {
+    return { space, type, value };
+  }
+  throw new Error(`Invalid pupil specification: ${space} ${type}`);
+}
+
+function buildFieldSpec(
+  space: FieldSpace,
+  type: FieldType,
+  maxField: number,
+  fields: number[],
+  isWideAngle: boolean,
+): FieldSpec {
+  const shared = {
+    maxField,
+    fields,
+    isRelative: true,
+    isWideAngle,
+  };
+  if (space === "image" && type === "height") {
+    return { space, type, ...shared };
+  }
+  if (space === "object") {
+    return { space, type, ...shared };
+  }
+  throw new Error(`Invalid field specification: ${space} ${type}`);
+}
 
 export interface SpecsConfiguratorState {
   /** Pupil coordinate space. Defaults to `"object"`. */
@@ -192,19 +233,14 @@ export const createSpecsConfiguratorSlice: StateCreator<SpecsConfiguratorState> 
   toOpticalSpecs: (): OpticalSpecs => {
     const s = get();
     return {
-      pupil: {
-        space: s.pupilSpace,
-        type: s.pupilType,
-        value: s.pupilValue,
-      },
-      field: {
-        space: s.fieldSpace,
-        type: s.fieldType,
-        maxField: s.maxField,
-        fields: s.relativeFields,
-        isRelative: true,
-        isWideAngle: s.isWideAngle,
-      },
+      pupil: buildPupilSpec(s.pupilSpace, s.pupilType, s.pupilValue),
+      field: buildFieldSpec(
+        s.fieldSpace,
+        s.fieldType,
+        s.maxField,
+        s.relativeFields,
+        s.isWideAngle,
+      ),
       wavelengths: {
         weights: s.wavelengthWeights,
         referenceIndex: s.referenceIndex,

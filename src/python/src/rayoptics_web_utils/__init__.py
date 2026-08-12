@@ -1,8 +1,9 @@
 """Expose RayOptics web utilities with deferred RayOptics imports.
 
 Environment initialization and optical-glass catalog helpers are safe to import
-eagerly. Analysis, plotting, focusing, Zernike, and optimization symbols remain
-lazy so ``init()`` can install Pyodide's unavailable-GUI stubs first.
+eagerly. Exact optical specs, analysis, plotting, focusing, Zernike, and
+optimization symbols remain lazy so ``init()`` can install Pyodide's
+unavailable-GUI stubs first.
 """
 
 from rayoptics_web_utils.env import init
@@ -15,6 +16,11 @@ from rayoptics_web_utils.glass.glass import (  # noqa: E402
 
 # Lazy imports for modules that depend on rayoptics (must be imported after init())
 _LAZY_IMPORTS = {
+    'ExactOpticalModel': 'rayoptics_web_utils.optical_specs',
+    'ExactImageHeightFieldSpec': 'rayoptics_web_utils.optical_specs',
+    'ExactSpecError': 'rayoptics_web_utils.optical_specs',
+    'ExactSpecTraceError': 'rayoptics_web_utils.optical_specs',
+    'ExactSpecConvergenceError': 'rayoptics_web_utils.optical_specs',
     'get_first_order_data': 'rayoptics_web_utils.analysis.first_order',
     'get_3rd_order_seidel_data': 'rayoptics_web_utils.analysis.seidel',
     'get_ray_fan_data': 'rayoptics_web_utils.analysis.ray_fan',
