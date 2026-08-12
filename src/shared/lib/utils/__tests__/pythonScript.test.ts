@@ -570,9 +570,10 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("opm.update_model()");
   });
 
-  it("should call set_vig(opm) for real ray tracing vignetting", () => {
+  it("should calculate vignetting from Ronchi outer envelopes", () => {
     const script = buildOpticalModelScript(baseModel);
-    expect(script).toContain("set_vig(opm)");
+    expect(script).toContain("set_vig_with_ronchi_envelopes(opm)");
+    expect(script).not.toContain("\nset_vig(opm)");
     expect(script).not.toContain("apply_paraxial_vignetting");
   });
 
@@ -658,6 +659,7 @@ describe("buildExportScript", () => {
     expect(script).toContain("pitch = 1 / self.lpmm");
     expect(script).toContain("def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:");
     expect(script).toContain("def apply_scale_factor(self, scale_factor):");
+    expect(script).toContain("def set_vig_with_ronchi_envelopes(opm, set_vig_fn=None):");
   });
 
   it("defines the water material in the export preamble", () => {

@@ -7,10 +7,13 @@ import pytest
 from pytest import approx
 from rayoptics.environment import OpticalModel
 from rayoptics.raytr import raytrace
+from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
 from rayoptics.raytr.traceerror import TraceRayBlockedError
 from rayoptics.raytr.vigcalc import set_vig
 
-from rayoptics_web_utils.aperture import RonchiRuling
+from rayoptics_web_utils.analysis import get_geo_psf_data
+from rayoptics_web_utils.aperture import RonchiRuling, set_vig_with_ronchi_envelopes
+from rayoptics_web_utils.optical_specs import ExactOpticalModel
 
 
 def test_exported_from_aperture_package_with_documented_defaults():
@@ -222,3 +225,84 @@ def test_aperture_checked_trace_passes_clear_band_and_blocks_opaque_band():
             wavelength,
             check_apertures=True,
         )
+
+
+def test_vignetting_uses_outer_envelope_and_restores_ruling_on_error():
+    opm = OpticalModel()
+    ruling = RonchiRuling(
+        radius=2,
+        lpmm=10,
+        x_offset=1,
+        y_offset=-2,
+    )
+    interface = opm.seq_model.ifcs[0]
+    original_apertures = [ruling]
+    interface.clear_apertures = original_apertures
+
+    def failing_set_vig(model):
+        assert model is opm
+        envelope = interface.clear_apertures[0]
+        assert envelope is not ruling
+        assert envelope.point_inside(1.05, -2, fuzz=0)
+        assert envelope.edge_pt_target([1, 0]) == [3, -2]
+        raise RuntimeError("stop after inspecting the temporary envelope")
+
+    with pytest.raises(RuntimeError, match="temporary envelope"):
+        set_vig_with_ronchi_envelopes(opm, set_vig_fn=failing_set_vig)
+
+    assert interface.clear_apertures is original_apertures
+    assert interface.clear_apertures[0] is ruling
+
+
+def test_focused_sasian_triplet_geometric_psf_keeps_preimage_ronchi_bands():
+    opm = ExactOpticalModel()
+    osp = opm["optical_spec"]
+    sm = opm["seq_model"]
+    opm.system_spec.dimensions = "mm"
+    osp["pupil"] = PupilSpec(osp, key=["object", "epd"], value=12.5)
+    osp["fov"] = FieldSpec(
+        osp,
+        key=["object", "angle"],
+        value=20,
+        flds=[0, 0.707, 1],
+        is_relative=True,
+    )
+    osp["wvls"] = WvlSpec(
+        [(486.133, 1), (587.562, 2), (656.273, 1)],
+        ref_wl=1,
+    )
+    opm.radius_mode = True
+    sm.do_apertures = False
+    sm.gaps[0].thi = 1e10
+
+    for surface, semi_diameter, is_stop in (
+        ([23.713, 4.831, "N-LAK9", "Schott"], 10.009, False),
+        ([7331.288, 5.86, "air"], 8.9482, False),
+        ([-24.456, 0.975, "N-SF5", "Schott"], 4.7919, True),
+        ([21.896, 4.822, "air"], 4.7761, False),
+        ([86.759, 3.127, "N-LAK9", "Schott"], 8.0217, False),
+        ([-20.4942, 41.12038619, "air"], 8.3321, False),
+        ([0, 0.125, "air"], 18.190071, False),
+    ):
+        sm.add_surface(surface)
+        sm.ifcs[sm.cur_surface].set_max_aperture(semi_diameter)
+        if is_stop:
+            sm.set_stop()
+
+    ruling = RonchiRuling(radius=18.190071, lpmm=250)
+    sm.ifcs[sm.cur_surface].clear_apertures = [ruling]
+    sm.ifcs[-1].profile.r = 0
+    opm.update_model()
+
+    set_vig_with_ronchi_envelopes(opm)
+    result = get_geo_psf_data(opm, fi=0, wvl_idx=1, num_rays=64)
+    x = np.asarray(result["x"])
+
+    assert abs(osp.field_of_view.fields[0].vux) < 0.1
+    assert abs(osp.field_of_view.fields[0].vlx) < 0.1
+    assert np.ptp(x) > 0.03
+    assert np.count_nonzero(np.abs(x) < 0.003) > 100
+    assert np.count_nonzero((0.015 < x) & (x < 0.019)) > 100
+    assert np.count_nonzero((-0.019 < x) & (x < -0.015)) > 100
+    assert np.count_nonzero((0.01205 < x) & (x < 0.0127)) == 0
+    assert np.count_nonzero((-0.0127 < x) & (x < -0.01205)) == 0

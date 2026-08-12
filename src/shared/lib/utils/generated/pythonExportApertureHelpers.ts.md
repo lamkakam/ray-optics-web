@@ -19,6 +19,7 @@ export const pythonExportApertureHelpers: string;
   2. `src/python/src/rayoptics_web_utils/aperture/offset_circular.py`
   3. `src/python/src/rayoptics_web_utils/aperture/offset_rotated_rectangular.py`
   4. `src/python/src/rayoptics_web_utils/aperture/ronchi_ruling.py`
+- The Ronchi source also defines `set_vig_with_ronchi_envelopes(...)`. Standalone notebook models use it to replace binary rulings with their circular envelopes only while RayOptics calculates field vignetting, restoring the original aperture lists before tracing analyses.
 - Source files are joined with a single newline.
 - The generator writes the string with `JSON.stringify`, so Python syntax, docstrings, and backslashes cannot break TypeScript parsing.
 

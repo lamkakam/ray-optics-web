@@ -1,12 +1,15 @@
-"""Provide a binary geometric Ronchi ruling clear aperture.
+"""Provide a binary geometric Ronchi ruling and safe vignetting setup.
 
 The aperture is a ray-blocking mask only. It does not model diffraction,
-partial transmission, intensity, or a Ronchigram analysis.
+partial transmission, intensity, or a Ronchigram analysis. Vignetting setup
+uses only the ruling's circular outer envelope so RayOptics does not mistake an
+internal opaque band for the pupil rim.
 """
 
 from math import cos, hypot, isfinite, radians, remainder, sin, ulp
 
 from rayoptics.elem.surface import Aperture
+from rayoptics.raytr.vigcalc import set_vig as _rayoptics_set_vig
 
 
 def _require_finite(name, value):
@@ -117,3 +120,62 @@ class RonchiRuling(Aperture):
         """Scale the envelope and offsets without changing ruling density."""
         super().apply_scale_factor(scale_factor)
         self.radius *= scale_factor
+
+
+class _RonchiEnvelope(Aperture):
+    """Temporary clear circle used only while RayOptics sizes vignetting."""
+
+    def __init__(self, ruling):
+        super().__init__(
+            x_offset=ruling.x_offset,
+            y_offset=ruling.y_offset,
+            rotation=ruling.rotation,
+        )
+        self.radius = ruling.radius
+
+    def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:
+        """Check only the translated circular envelope, not ruling bands."""
+        return hypot(x - self.x_offset, y - self.y_offset) <= self.radius + fuzz
+
+    def edge_pt_target(self, rel_dir):
+        """Target the translated circular envelope for pupil-edge aiming."""
+        return [
+            self.x_offset + self.radius * rel_dir[0],
+            self.y_offset + self.radius * rel_dir[1],
+        ]
+
+
+def set_vig_with_ronchi_envelopes(opm, set_vig_fn=None):
+    """Calculate vignetting without treating opaque bands as pupil edges.
+
+    Each ``RonchiRuling`` in an interface's clear-aperture list is temporarily
+    replaced by an offset-aware clear circular envelope. Other apertures retain
+    their identity and order. The original lists are restored in ``finally``,
+    including when the injected or RayOptics vignetting function raises.
+
+    Args:
+        opm: RayOptics optical model to update.
+        set_vig_fn: Optional vignetting function for dependency injection.
+
+    Returns:
+        The return value of the selected vignetting function.
+    """
+    calculate_vignetting = _rayoptics_set_vig if set_vig_fn is None else set_vig_fn
+    replaced_aperture_lists = []
+
+    for interface in opm["seq_model"].ifcs:
+        original_apertures = interface.clear_apertures
+        if any(isinstance(aperture, RonchiRuling) for aperture in original_apertures):
+            replaced_aperture_lists.append((interface, original_apertures))
+            interface.clear_apertures = [
+                _RonchiEnvelope(aperture)
+                if isinstance(aperture, RonchiRuling)
+                else aperture
+                for aperture in original_apertures
+            ]
+
+    try:
+        return calculate_vignetting(opm)
+    finally:
+        for interface, original_apertures in replaced_aperture_lists:
+            interface.clear_apertures = original_apertures
