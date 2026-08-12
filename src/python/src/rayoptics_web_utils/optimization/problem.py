@@ -41,11 +41,12 @@ class OptimizationProblem:
     - Keeps variable-state report entries aligned with the normalized config shape, so `min` / `max` appear only for bounded variables.
     - Applies variables, then pickups in dependency order, then calls `opm.update_model()`.
     - Evaluates all normalized merit operands and returns the same report shape consumed by the existing public API.
+    - Receives only non-zero-weight operand samples from config normalization, so disabled operands and field/wavelength combinations are neither evaluated nor reported.
     - Passes `image_point` into every operand evaluator; OPD-based operands consume it and non-OPD operands ignore it.
     - Expands vector-valued operand outputs into one residual report entry per returned sample, so target-less operands such as Ray Fan variants can contribute many least-squares residuals from one normalized field/wavelength selection.
     - Exposes residual-vector, scalar-merit, and glass-safe scalar objective methods so solver adapters can choose the representation they need.
     - For targeted scalar operands, weighted residuals remain `total_weight * (actual - target)`. For target-less vector operands, weighted residuals are `total_weight * sample_value`.
-    - The penalty residual vector length matches the nominal expanded residual dimension using the same shared operand residual-count helper as config validation. For `ray_fan`, that means `num_rays * 2` entries per normalized field/wavelength sample; for axis-specific Ray Fan operands, that means `num_rays` entries.
+    - The penalty residual vector length matches the nominal non-zero-weight residual dimension using the same shared operand residual-count helper as config validation. For `ray_fan`, that means `num_rays * 2` entries per retained field/wavelength sample; for axis-specific Ray Fan operands, that means `num_rays` entries.
     - Records progress only when the evaluated optimizer vector or glass-search context changes materially.
     - `from_normalized_config(...)` lets the glass facade reuse the problem core after its distinct flat configuration has already been validated.
     - Converts optional bounds into SciPy-compatible `(None, None)` intervals for L-BFGS-B while preserving the existing array bounds used by current solvers.

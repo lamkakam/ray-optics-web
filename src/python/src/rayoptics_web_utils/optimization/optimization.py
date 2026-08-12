@@ -8,7 +8,9 @@ direct value space.
 Residual weights are ``operand_weight * sqrt(field_weight) *
 sqrt(wavelength_weight)``. The merit sum of squares is the sum of squared weighted
 residuals and ``rss`` is its square root. Scalar operands expand by selected
-field/wavelength samples; ray-fan operands retain fixed, penalty-padded dimensions.
+non-zero-weight field/wavelength samples; ray-fan operands retain fixed,
+penalty-padded dimensions. OPD operands trace only each retained sample's
+wavelength through the single-wavelength analysis helper.
 Ordinary setup/runtime exceptions return rollback reports with ``status="error"``;
 user interruption retains the successful partial ``status="stopped"`` contract.
 """
@@ -21,7 +23,7 @@ from scipy.optimize import least_squares
 from rayoptics.environment import OpticalModel
 
 import rayoptics_web_utils.optimization.operands as _operands_module
-from rayoptics_web_utils.analysis import get_opd_fan_data
+from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
 from rayoptics_web_utils.optimization._types import (
     FloatArray,
     OptimizationConfig,
@@ -48,7 +50,12 @@ _SOLVER_REGISTRY = {
 
 
 def _sync_legacy_hooks() -> None:
-    _operands_module.get_opd_fan_data = get_opd_fan_data
+    """Propagate the facade-level OPD helper hook to the operand module.
+
+    Tests and existing embedders can replace the facade symbol before evaluation;
+    optimization then consumes the injected single-wavelength implementation.
+    """
+    _operands_module.get_opd_fan_data_for_wavelength = get_opd_fan_data_for_wavelength
 
 
 class _OptimizationProblem(OptimizationProblem):

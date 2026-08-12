@@ -19,7 +19,7 @@
  * - For Differential Evolution, `tol` must be a positive non-zero number and `atol` must be a non-negative number.
  * - Operand `weight` must be a positive non-zero number.
  * - For bounded optimizers such as `trf`, `differential_evolution`, and `glass_expert`, variable `min` and `max` must be numeric, and `min < max`.
- * - For least-squares `lm`, the built config must provide at least as many residual samples as optimization variables; otherwise `buildOptimizationConfig()` throws before the page tries to evaluate or optimize.
+ * - For least-squares `lm`, the built config must provide at least as many non-zero-weight residual samples as optimization variables; otherwise `buildOptimizationConfig()` throws before the page tries to evaluate or optimize.
  * - Pickup `source_surface_index` must be in range and must not equal the target surface index.
  * - Asphere coefficient pickups require a coefficient `sourceTermKey`.
  * - Asphere coefficient pickup `source_coefficient_index` must be a non-negative integer so zero-based coefficient slot `0` is allowed.
@@ -47,7 +47,7 @@
  * - `buildOptimizationConfig()` emits `min` / `max` for bounded `trf`, `differential_evolution`, and `glass_expert`, and omits `min` / `max` for unbounded `lm` while preserving hidden bound strings in local Zustand state so switching least-squares methods does not discard prior inputs.
  * - Operand metadata is shared through `features/optimization/lib/operandMetadata.ts`, which defines the user label, default target behavior, default operand options, field/wavelength expansion, and nominal least-squares residual multiplicity for each operand kind.
  * - `buildOptimizationConfig()` omits `target` for target-less operands such as `ray_fan`, `ray_fan_tangential`, and `ray_fan_sagittal`.
- * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count. `ray_fan` contributes `num_rays * 2` residuals per selected field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
+ * - `buildOptimizationConfig()` also enforces the SciPy `lm` dimension rule using the same shared optimizer-capability helper and the nominal expanded merit-function sample count after combinations with an exactly zero operand, field, or wavelength weight are excluded. `ray_fan` contributes `num_rays * 2` residuals per retained field/wavelength pair, while axis-specific Ray Fan operands contribute `num_rays`; Differential Evolution does not use this least-squares residual-count rule.
  * - `applyOptimizationResult()` can create or update `surface.aspherical` and applies Glass Expert `final_glasses` to Object gap `0` or physical gaps `1..N`. Special results store an empty manufacturer; manufacturer and Custom results store their catalog name.
  * - `syncFromOpticalModel()` clears `hasUnappliedOptimizationResult` when a normal editor sync replaces the Optimization-local snapshot through field, wavelength, or reset-policy prescription changes.
  * - `syncFromOpticalModel()` preserves `hasUnappliedOptimizationResult` during Optimization-origin prescription syncs that use `prescriptionSyncPolicy: "preserveOptimizationModes"`; the apply path clears the marker explicitly after the editor has been updated.
@@ -811,8 +811,11 @@ function countResidualSamples(
   operands: ReadonlyArray<OptimizationConfig["merit_function"]["operands"][number]>,
 ): number {
   return operands.reduce((count, operand) => {
-    const fieldCount = operand.fields?.length ?? 1;
-    const wavelengthCount = operand.wavelengths?.length ?? 1;
+    if (operand.weight === 0) {
+      return count;
+    }
+    const fieldCount = operand.fields?.filter(({ weight }) => weight !== 0).length ?? 1;
+    const wavelengthCount = operand.wavelengths?.filter(({ weight }) => weight !== 0).length ?? 1;
     const perSampleCount = getOptimizationOperandMetadata(operand.kind).getNominalResidualCountPerSample(operand.options);
     return count + (fieldCount * wavelengthCount * perSampleCount);
   }, 0);

@@ -25,6 +25,7 @@ _LAZY_IMPORTS = {
     'get_3rd_order_seidel_data': 'rayoptics_web_utils.analysis.seidel',
     'get_ray_fan_data': 'rayoptics_web_utils.analysis.ray_fan',
     'get_opd_fan_data': 'rayoptics_web_utils.analysis.opd_fan',
+    'get_opd_fan_data_for_wavelength': 'rayoptics_web_utils.analysis.opd_fan',
     'get_spot_data': 'rayoptics_web_utils.analysis.spot',
     'get_wavefront_data': 'rayoptics_web_utils.analysis.wavefront',
     'get_geo_psf_data': 'rayoptics_web_utils.analysis.geometric_psf',

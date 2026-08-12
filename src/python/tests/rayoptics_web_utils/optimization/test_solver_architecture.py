@@ -428,16 +428,42 @@ def test_axis_specific_opd_difference_uses_selected_fan_axis(monkeypatch):
     from rayoptics_web_utils.optimization.operands import compute_opd_difference_sagittal
     from rayoptics_web_utils.optimization.operands import compute_opd_difference_tangential
 
+    calls = []
+
     monkeypatch.setattr(
-        "rayoptics_web_utils.optimization.operands.get_opd_fan_data",
-        lambda opm, fi, image_point="chief_ray": [{
+        "rayoptics_web_utils.optimization.operands.get_opd_fan_data_for_wavelength",
+        lambda opm, fi, wvl_idx, image_point="chief_ray": calls.append(
+            (opm, fi, wvl_idx, image_point)
+        ) or {
             "Tangential": {"y": [1.0, 3.0, 5.0]},
             "Sagittal": {"y": [10.0, 14.0]},
-        }],
+        },
     )
 
-    assert compute_opd_difference_tangential(None, 0, 0, None) == pytest.approx(4.0 / 3.0)
-    assert compute_opd_difference_sagittal(None, 0, 0, None) == pytest.approx(2.0)
+    assert compute_opd_difference_tangential(None, 3, 2, None, image_point="centroid") == pytest.approx(4.0 / 3.0)
+    assert compute_opd_difference_sagittal(None, 4, 1, None) == pytest.approx(2.0)
+    assert calls == [
+        (None, 3, 2, "centroid"),
+        (None, 4, 1, "chief_ray"),
+    ]
+
+
+def test_combined_opd_difference_requests_only_selected_wavelength(monkeypatch):
+    from rayoptics_web_utils.optimization.operands import compute_opd_difference
+
+    calls = []
+    monkeypatch.setattr(
+        "rayoptics_web_utils.optimization.operands.get_opd_fan_data_for_wavelength",
+        lambda opm, fi, wvl_idx, image_point="chief_ray": calls.append(
+            (opm, fi, wvl_idx, image_point)
+        ) or {
+            "Tangential": {"y": [1.0, 3.0]},
+            "Sagittal": {"y": [5.0, 7.0]},
+        },
+    )
+
+    assert compute_opd_difference(None, 2, 1, None, image_point="centroid") == pytest.approx(2.0)
+    assert calls == [(None, 2, 1, "centroid")]
 
 
 def test_axis_specific_opd_difference_returns_penalty_when_selected_axis_has_no_valid_samples(monkeypatch):
@@ -445,11 +471,11 @@ def test_axis_specific_opd_difference_returns_penalty_when_selected_axis_has_no_
     from rayoptics_web_utils.optimization.operands import compute_opd_difference_tangential
 
     monkeypatch.setattr(
-        "rayoptics_web_utils.optimization.operands.get_opd_fan_data",
-        lambda opm, fi, image_point="chief_ray": [{
+        "rayoptics_web_utils.optimization.operands.get_opd_fan_data_for_wavelength",
+        lambda opm, fi, wvl_idx, image_point="chief_ray": {
             "Tangential": {"y": [float("nan"), float("inf")]},
             "Sagittal": {"y": [1.0, 2.0]},
-        }],
+        },
     )
 
     assert compute_opd_difference_tangential(None, 0, 0, None) == pytest.approx(PENALTY_RESIDUAL)

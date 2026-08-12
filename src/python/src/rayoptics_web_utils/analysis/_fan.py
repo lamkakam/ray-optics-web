@@ -12,13 +12,15 @@ def _trace_fan_series(
     xy: int,
     fan_filter,
     image_point: str = "chief_ray",
+    wvl_idx: int | None = None,
 ) -> tuple[list[list[float]], list[list[float | None]]]:
-    """Trace one pupil fan for each wavelength at a given field index `fi` and fan axis `xy`
-    , and preserve failed traces (blocked rays) as gaps instead of dropping them.
+    """Trace one pupil fan at one or every configured wavelength.
 
+    - The central wavelength always establishes the shared finite image reference before the requested wavelength set is traced.
     - For afocal systems, skips the artificial image-plane centroid; fan callbacks resolve chief or centroid references directly in direction space.
     - Delegates fan ordinate calculation to the provided `fan_filter` callback.
     - Blocked rays (eg. from annular central-obstruction samples) are represented as `None` ordinates.
+    - When `wvl_idx` is supplied, the returned outer lists contain exactly one series for that configured wavelength.
 
     Args:
         opm: RayOptics optical model.
@@ -26,12 +28,20 @@ def _trace_fan_series(
         xy: Fan axis selector.
         fan_filter: Callback that calculates each fan ordinate.
         image_point: Image-point reference convention.
+        wvl_idx: Optional configured wavelength index to trace exclusively.
 
     Returns:
-        Tuple of x-axis values and pupil-fan series for every wavelength.
+        Tuple of x-axis values and pupil-fan series for the selected wavelength set.
     """
     osp = opm.optical_spec
     fld = osp.field_of_view.fields[fi]
+    wavelengths = osp.spectral_region.wavelengths
+    if wvl_idx is None:
+        selected_wavelengths = wavelengths
+    else:
+        if not isinstance(wvl_idx, int) or wvl_idx < 0 or wvl_idx >= len(wavelengths):
+            raise IndexError(f"wavelength index {wvl_idx} is out of range")
+        selected_wavelengths = [wavelengths[wvl_idx]]
     central_wvl = opm.seq_model.central_wavelength()
     foc = osp.defocus.get_focus()
 
@@ -52,7 +62,7 @@ def _trace_fan_series(
 
     fans_x: list[list[float]] = []
     fans_y: list[list[float | None]] = []
-    for wavelength_nm in osp.spectral_region.wavelengths:
+    for wavelength_nm in selected_wavelengths:
         ref_sphere, chief_ray = trace.setup_pupil_coords(
             opm,
             fld,
