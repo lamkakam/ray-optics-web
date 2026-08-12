@@ -10,6 +10,7 @@ Generates the ignored TypeScript string constants used to inline Python aperture
   1. `src/python/src/rayoptics_web_utils/aperture/annular.py`
   2. `src/python/src/rayoptics_web_utils/aperture/offset_circular.py`
   3. `src/python/src/rayoptics_web_utils/aperture/offset_rotated_rectangular.py`
+  4. `src/python/src/rayoptics_web_utils/aperture/ronchi_ruling.py`
 - Joins those aperture sources with a single newline.
 - Reads `src/python/src/rayoptics_web_utils/optical_specs.py` as the exact-spec helper source.
 - Creates `src/shared/lib/utils/generated/` if needed.

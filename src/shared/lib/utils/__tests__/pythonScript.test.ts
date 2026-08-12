@@ -9,6 +9,7 @@ const apertureHelperSourceFiles = [
   "src/python/src/rayoptics_web_utils/aperture/annular.py",
   "src/python/src/rayoptics_web_utils/aperture/offset_circular.py",
   "src/python/src/rayoptics_web_utils/aperture/offset_rotated_rectangular.py",
+  "src/python/src/rayoptics_web_utils/aperture/ronchi_ruling.py",
 ];
 
 function readPythonApertureHelperSources(): string {
@@ -455,6 +456,35 @@ describe("buildOpticalModelScript", () => {
     );
   });
 
+  it("should emit RonchiRuling using semi-diameter as its outer radius", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          ...baseModel.surfaces[0],
+          semiDiameter: 6,
+          clear_aperture: {
+            shape: "ronchi",
+            lpmm: 12.5,
+            rotation: 15,
+            offsetX: -1,
+            offsetY: 2,
+          },
+        },
+      ],
+    };
+
+    const script = buildOpticalModelScript(model);
+
+    expect(script).toContain(
+      [
+        "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])",
+        "sm.ifcs[sm.cur_surface].clear_apertures = [RonchiRuling(radius=6, lpmm=12.5, rotation=15, x_offset=-1, y_offset=2)]",
+      ].join("\n"),
+    );
+    expect(script).not.toContain("RonchiRuling(radius=6, radius=");
+  });
+
   it("should omit clear aperture for non-positive semi-diameter and edge aperture for default follow-clear", () => {
     const model: OpticalModel = {
       ...baseModel,
@@ -620,6 +650,14 @@ describe("buildExportScript", () => {
     expect(script).toMatch(
       /class OffsetRotatedRectangular\(Rectangular\):[\s\S]*def set_dimension\(self, x, y\):[\s\S]*target = abs\(x\)[\s\S]*max_projection = max\(/,
     );
+  });
+
+  it("defines RonchiRuling inline in the export preamble", () => {
+    const script = buildExportScript(baseModel);
+    expect(script).toContain("class RonchiRuling(Aperture):");
+    expect(script).toContain("pitch = 1 / self.lpmm");
+    expect(script).toContain("def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:");
+    expect(script).toContain("def apply_scale_factor(self, scale_factor):");
   });
 
   it("defines the water material in the export preamble", () => {

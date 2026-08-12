@@ -78,10 +78,19 @@ export type RectangularAperture = {
   rotation: number,
 };
 
-/** Circular, annular, or rectangular clear aperture with signed offsets. */
+/** Binary Ronchi ruling whose circular outer radius comes from the surface semi-diameter. */
+export type RonchiRulingAperture = {
+  shape: "ronchi",
+  /** Line-pair density in cycles per millimetre. */
+  lpmm: number,
+  /** In-plane rotation in degrees; zero produces vertical lines. */
+  rotation: number,
+};
+
+/** Circular, annular, rectangular, or Ronchi clear aperture with signed offsets. */
 export type ClearAperture = ({
   shape: "circular",
-} | AnnularAperture | RectangularAperture) & BaseAperture;
+} | AnnularAperture | RectangularAperture | RonchiRulingAperture) & BaseAperture;
 
 /** Explicit circular or rectangular edge aperture; omission means follow the clear aperture. */
 export type EdgeAperture = ({
@@ -125,7 +134,7 @@ export interface Surface {
   /** Empty when the medium is air or reflective. */
   manufacturer: string;
   semiDiameter: number;
-  /** Clear aperture; circular and annular outer radii come from `semiDiameter`. */
+  /** Clear aperture; circular, annular, and Ronchi outer radii come from `semiDiameter`. */
   clear_aperture?: ClearAperture;
   /** Explicit edge aperture, or `undefined` to follow the clear aperture. */
   edge_aperture?: EdgeAperture;

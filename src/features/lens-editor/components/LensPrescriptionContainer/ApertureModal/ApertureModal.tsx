@@ -25,9 +25,9 @@ interface ApertureModalProps {
   readonly isOpen: boolean;
   /** optional flag that switches Clear Rectangular size labels from half dimensions to ratios and switches Clear Annular central obstruction display from radius to ratio. Defaults to `false`. */
   readonly autoAperture?: boolean;
-  /** outer clear aperture radius for the selected surface, used to validate annular obstruction radius and convert annular obstruction ratio display to stored radius. */
+  /** outer clear aperture radius for the selected surface, used by annular validation/ratio conversion and as the Ronchi ruling envelope. */
   readonly semiDiameter: number;
-  /** optional current clear aperture. Supports circular, annular, and rectangular clear apertures. */
+  /** optional current clear aperture. Supports circular, annular, rectangular, and Ronchi clear apertures. */
   readonly initialClearAperture: ClearAperture | undefined;
   /** optional current edge aperture. When omitted, Edge Aperture uses `Default (Follow Clear Aperture)`. */
   readonly initialEdgeAperture: EdgeAperture | undefined;
@@ -74,6 +74,19 @@ interface ClearAnnularFieldsProps extends ClearCircularFieldsProps {
   readonly autoAperture: boolean;
   readonly obstructionValue: string;
   readonly setObstructionValue: StringSetter;
+}
+
+interface RonchiFieldsProps {
+  readonly lpmm: string;
+  readonly rotation: string;
+  readonly offsetX: string;
+  readonly offsetY: string;
+  readonly readOnly: boolean;
+  readonly setLpmm: StringSetter;
+  readonly setRotation: StringSetter;
+  readonly setOffsetX: StringSetter;
+  readonly setOffsetY: StringSetter;
+  readonly clearError: () => void;
 }
 
 interface EdgeCircularFieldsProps {
@@ -211,6 +224,82 @@ function ClearAnnularFields(props: ClearAnnularFieldsProps) {
         />
       </div>
       <ClearCircularFields {...props} />
+    </div>
+  );
+}
+
+function RonchiFields({
+  lpmm,
+  rotation,
+  offsetX,
+  offsetY,
+  readOnly,
+  setLpmm,
+  setRotation,
+  setOffsetX,
+  setOffsetY,
+  clearError,
+}: RonchiFieldsProps) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <Label htmlFor="clear-aperture-ronchi-lpmm">Line Density (lp/mm)</Label>
+        <Input
+          id="clear-aperture-ronchi-lpmm"
+          aria-label="Ronchi Line Density"
+          type="text"
+          value={lpmm}
+          disabled={readOnly}
+          onChange={(event) => {
+            setLpmm(event.target.value);
+            clearError();
+          }}
+        />
+      </div>
+      <div>
+        <Label htmlFor="clear-aperture-ronchi-rotation">Rotation (°)</Label>
+        <Input
+          id="clear-aperture-ronchi-rotation"
+          aria-label="Ronchi Rotation"
+          type="text"
+          value={rotation}
+          disabled={readOnly}
+          onChange={(event) => {
+            setRotation(event.target.value);
+            clearError();
+          }}
+        />
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="clear-aperture-ronchi-offset-x">Offset X</Label>
+          <Input
+            id="clear-aperture-ronchi-offset-x"
+            aria-label="Ronchi Offset X"
+            type="text"
+            value={offsetX}
+            disabled={readOnly}
+            onChange={(event) => {
+              setOffsetX(event.target.value);
+              clearError();
+            }}
+          />
+        </div>
+        <div>
+          <Label htmlFor="clear-aperture-ronchi-offset-y">Offset Y</Label>
+          <Input
+            id="clear-aperture-ronchi-offset-y"
+            aria-label="Ronchi Offset Y"
+            type="text"
+            value={offsetY}
+            disabled={readOnly}
+            onChange={(event) => {
+              setOffsetY(event.target.value);
+              clearError();
+            }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -381,10 +470,12 @@ const CLEAR_APERTURE_SHAPE_COMPONENTS = {
   circular: ClearCircularFields,
   annular: ClearAnnularFields,
   rectangular: RectangularFields,
+  ronchi: RonchiFields,
 } satisfies {
   readonly circular: React.ComponentType<ClearCircularFieldsProps>;
   readonly annular: React.ComponentType<ClearAnnularFieldsProps>;
   readonly rectangular: React.ComponentType<RectangularFieldsProps>;
+  readonly ronchi: React.ComponentType<RonchiFieldsProps>;
 };
 
 const EDGE_APERTURE_SHAPE_COMPONENTS = {
@@ -412,8 +503,12 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
     autoAperture,
     value: getInitialObstructionValue(initialClearAperture, autoAperture, semiDiameter),
   });
-  const [clearOffsetX, setClearOffsetX] = useState(String(initialClearAperture?.offsetX ?? 0));
-  const [clearOffsetY, setClearOffsetY] = useState(String(initialClearAperture?.offsetY ?? 0));
+  const [clearOffsetX, setClearOffsetX] = useState(String(
+    initialClearAperture?.shape === "ronchi" ? 0 : (initialClearAperture?.offsetX ?? 0),
+  ));
+  const [clearOffsetY, setClearOffsetY] = useState(String(
+    initialClearAperture?.shape === "ronchi" ? 0 : (initialClearAperture?.offsetY ?? 0),
+  ));
   const [clearXHalfWidth, setClearXHalfWidth] = useState(String(
     initialClearAperture?.shape === "rectangular" ? initialClearAperture.xHalfWidth : semiDiameter,
   ));
@@ -422,6 +517,18 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
   ));
   const [clearRotation, setClearRotation] = useState(String(
     initialClearAperture?.shape === "rectangular" ? initialClearAperture.rotation : 0,
+  ));
+  const [ronchiLpmm, setRonchiLpmm] = useState(String(
+    initialClearAperture?.shape === "ronchi" ? initialClearAperture.lpmm : 10,
+  ));
+  const [ronchiRotation, setRonchiRotation] = useState(String(
+    initialClearAperture?.shape === "ronchi" ? initialClearAperture.rotation : 0,
+  ));
+  const [ronchiOffsetX, setRonchiOffsetX] = useState(String(
+    initialClearAperture?.shape === "ronchi" ? initialClearAperture.offsetX : 0,
+  ));
+  const [ronchiOffsetY, setRonchiOffsetY] = useState(String(
+    initialClearAperture?.shape === "ronchi" ? initialClearAperture.offsetY : 0,
   ));
   const obstructionValue = convertObstructionValue(
     obstructionDraft.value,
@@ -446,6 +553,38 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
 
   useImperativeHandle(ref, () => ({
     getValue: () => {
+      if (clearShape === "ronchi") {
+        const parsedOffsetX = parseFiniteNumber(ronchiOffsetX);
+        const parsedOffsetY = parseFiniteNumber(ronchiOffsetY);
+        if (parsedOffsetX === undefined || parsedOffsetY === undefined) {
+          return { error: "Offsets must be finite numbers." };
+        }
+
+        const parsedLpmm = parsePositiveFiniteNumber(ronchiLpmm);
+        if (parsedLpmm === undefined) {
+          return { error: "Line density must be greater than 0." };
+        }
+
+        const parsedRotation = parseFiniteNumber(ronchiRotation);
+        if (parsedRotation === undefined) {
+          return { error: "Rotation must be a finite number." };
+        }
+
+        if (parsePositiveFiniteNumber(String(semiDiameter)) === undefined) {
+          return { error: "Semi-diameter must be greater than 0." };
+        }
+
+        return {
+          value: {
+            shape: "ronchi",
+            lpmm: parsedLpmm,
+            rotation: parsedRotation,
+            offsetX: parsedOffsetX,
+            offsetY: parsedOffsetY,
+          },
+        };
+      }
+
       const parsedClearOffsetX = parseFiniteNumber(clearOffsetX);
       const parsedClearOffsetY = parseFiniteNumber(clearOffsetY);
       if (parsedClearOffsetX === undefined || parsedClearOffsetY === undefined) {
@@ -509,7 +648,7 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
 
       return { value: { shape: "circular", offsetX: parsedClearOffsetX, offsetY: parsedClearOffsetY } };
     },
-  }), [autoAperture, clearOffsetX, clearOffsetY, clearRotation, clearShape, clearXHalfWidth, clearYHalfWidth, obstructionValue, semiDiameter]);
+  }), [autoAperture, clearOffsetX, clearOffsetY, clearRotation, clearShape, clearXHalfWidth, clearYHalfWidth, obstructionValue, ronchiLpmm, ronchiOffsetX, ronchiOffsetY, ronchiRotation, semiDiameter]);
 
   return (
     <section className="space-y-3">
@@ -525,6 +664,7 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
             { value: "circular", label: "Circular" },
             { value: "annular", label: "Annular" },
             { value: "rectangular", label: "Rectangular" },
+            { value: "ronchi", label: "Ronchi Ruling" },
           ]}
           onChange={(event) => {
             setClearShape(event.target.value as ClearApertureShape);
@@ -561,6 +701,19 @@ const ClearApertureSection = forwardRef<ClearApertureSectionHandle, ClearApertur
           setRotation={setClearRotation}
           setOffsetX={setClearOffsetX}
           setOffsetY={setClearOffsetY}
+          clearError={clearError}
+        />
+      ) : clearShape === "ronchi" ? (
+        <CLEAR_APERTURE_SHAPE_COMPONENTS.ronchi
+          lpmm={ronchiLpmm}
+          rotation={ronchiRotation}
+          offsetX={ronchiOffsetX}
+          offsetY={ronchiOffsetY}
+          readOnly={readOnly}
+          setLpmm={setRonchiLpmm}
+          setRotation={setRonchiRotation}
+          setOffsetX={setRonchiOffsetX}
+          setOffsetY={setRonchiOffsetY}
           clearError={clearError}
         />
       ) : (
@@ -709,7 +862,7 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
  *
  * - Renders Clear Aperture and Edge Aperture as two sections.
  * - Clear and edge edits remain drafts while the modal is open and are emitted only after Confirm validates both sections.
- * - Clear Aperture shape supports `Circular`, `Annular`, and `Rectangular`; circular and annular outer radius is derived from `semiDiameter`, while rectangular stores its own `xHalfWidth`, `yHalfWidth`, `rotation`, and signed X/Y offsets.
+ * - Clear Aperture shape supports `Circular`, `Annular`, `Rectangular`, and `Ronchi Ruling`; circular, annular, and Ronchi outer radius is derived from `semiDiameter`, while rectangular stores its own `xHalfWidth`, `yHalfWidth`, `rotation`, and signed X/Y offsets.
  * - Edge Aperture shape supports `Default (Follow Clear Aperture)`, `Circular`, and `Rectangular`.
  * - Clear `Circular` shows Offset X and Offset Y text inputs.
  * - Clear `Annular` shows Central Obstruction Radius above Offset X and Offset Y when `autoAperture` is `false`.
@@ -717,10 +870,11 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
  * - Clear `Annular` stores `clear_aperture.obstructionRadius` as an absolute radius in both modes. In auto aperture mode, the modal displays `obstructionRadius / semiDiameter` and converts the entered ratio back to `obstructionRatio * semiDiameter` on confirm.
  * - When `autoAperture` changes while the modal is open, all selected shapes and current clear and edge drafts are preserved. Clear `Annular` converts its current numeric obstruction draft between absolute radius and ratio; non-numeric drafts remain unchanged so confirm validation can report the invalid input.
  * - Clear `Rectangular` shows Half-Length, Half-Width, Rotation (°), Offset X, and Offset Y when `autoAperture` is `false`; it shows Length Ratio and Width Ratio instead of Half-Length and Half-Width when `autoAperture` is `true`.
+ * - Clear `Ronchi Ruling` shows Line Density (lp/mm), Rotation (°), Offset X, and Offset Y. Its defaults are `10`, `0`, `0`, and `0`; these drafts are preserved across clear-shape and auto-aperture changes.
  * - Edge `Circular` shows Radius, Offset X, and Offset Y text inputs.
  * - Edge `Rectangular` always shows Half-Length, Half-Width, Rotation (°), Offset X, and Offset Y.
  * - Missing initial offsets default to `0`.
- * - Confirm writes circular, annular, or rectangular `clear_aperture` based on the selected clear aperture shape.
+ * - Confirm writes circular, annular, rectangular, or Ronchi `clear_aperture` based on the selected clear aperture shape. Ronchi stores line density, rotation, and offsets while its outer radius remains the surface `semiDiameter`.
  * - Confirm writes `edge_aperture: { shape: "circular", radius, offsetX, offsetY }` when Edge Aperture is Circular and `edge_aperture: { shape: "rectangular", xHalfWidth, yHalfWidth, rotation, offsetX, offsetY }` when Edge Aperture is Rectangular.
  * - Confirm clears `edge_aperture` by returning `undefined` when Edge Aperture is Default.
  * - On confirm, Clear Aperture validates first; Edge Aperture validates only after Clear Aperture succeeds.
@@ -729,6 +883,7 @@ const EdgeApertureSection = forwardRef<EdgeApertureSectionHandle, EdgeApertureSe
  * - Circular edge radius must parse to a finite number greater than `0`; invalid values keep the modal open and show an inline error.
  * - Rectangular half lengths/widths must parse to finite numbers greater than `0`; invalid values keep the modal open and show an inline error.
  * - Rectangular rotation must parse to a finite signed number; invalid values keep the modal open and show an inline error.
+ * - Ronchi line density and the surface semi-diameter must parse to finite numbers greater than `0`; Ronchi rotation must be finite.
  * - Circular offsets must parse to finite signed numbers; `0` and negative values are accepted.
  * - Rectangular offsets must parse to finite signed numbers; `0` and negative values are accepted.
  */

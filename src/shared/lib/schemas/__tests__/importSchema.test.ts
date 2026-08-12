@@ -379,6 +379,94 @@ describe("validateImportedLensData", () => {
     expect(validateImportedLensData(model)).toBe(true);
   });
 
+  it("accepts a Ronchi ruling clear aperture whose radius comes from semiDiameter", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          clear_aperture: {
+            shape: "ronchi",
+            lpmm: 10,
+            rotation: 15,
+            offsetX: -1.25,
+            offsetY: 2.5,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it.each([
+    ["lpmm", 0, 5],
+    ["lpmm", -1, 5],
+    ["lpmm", Number.POSITIVE_INFINITY, 5],
+    ["rotation", Number.POSITIVE_INFINITY, 5],
+    ["offsetX", Number.NaN, 5],
+    ["offsetY", Number.NEGATIVE_INFINITY, 5],
+    ["semiDiameter", 0, 0],
+    ["semiDiameter", -1, -1],
+    ["semiDiameter", Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY],
+  ])("rejects invalid Ronchi field %s=%s", (field, value, semiDiameter) => {
+    const clearAperture = {
+      shape: "ronchi",
+      lpmm: 10,
+      rotation: 0,
+      offsetX: 0,
+      offsetY: 0,
+      ...(field === "semiDiameter" ? {} : { [field]: value }),
+    };
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter,
+          clear_aperture: clearAperture,
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects a Ronchi ruling that duplicates its radius", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          clear_aperture: {
+            shape: "ronchi",
+            lpmm: 10,
+            rotation: 0,
+            offsetX: 0,
+            offsetY: 0,
+            radius: 5,
+          },
+        },
+      ],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
   it("accepts rectangular clear and edge aperture fields on a surface", () => {
     const model: OpticalModel = {
       ...baseModel,

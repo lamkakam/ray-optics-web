@@ -6,7 +6,7 @@
  *
  * ## Edge Cases / Error Handling
  *
- * - Semi-diameter is never emitted as an `sd=` argument. Positive semi-diameters are emitted as explicit clear aperture assignments after each surface is added, with clear aperture offsets when present and `0, 0` otherwise. Circular centered apertures use RayOptics `Circular`; nonzero-offset circular apertures use `OffsetCircular`; annular clear apertures use `Annular`; rectangular clear apertures use `OffsetRotatedRectangular` and do not depend on `semiDiameter`.
+ * - Semi-diameter is never emitted as an `sd=` argument. Positive semi-diameters are emitted as explicit clear aperture assignments after each surface is added, with clear aperture offsets when present and `0, 0` otherwise. Circular centered apertures use RayOptics `Circular`; nonzero-offset circular apertures use `OffsetCircular`; annular clear apertures use `Annular`; Ronchi clear apertures use `RonchiRuling`; rectangular clear apertures use `OffsetRotatedRectangular` and do not depend on `semiDiameter`.
  * - Edge aperture assignments are omitted when `edge_aperture` is unset, which represents the default/follow-clear behavior. Centered edge apertures use `Circular`; nonzero-offset edge apertures use `OffsetCircular`; rectangular edge apertures use `OffsetRotatedRectangular`.
  * - Exported `OffsetRotatedRectangular.set_dimension(x, y)` matches the worker helper: non-equal values directly set explicit half widths, while equal values are interpreted as RayOptics auto-aperture radius targets and uniformly scale the existing rectangle so the farthest rotated, offset corner reaches `abs(x)` without changing offsets or rotation.
  * - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
@@ -14,7 +14,7 @@
  * - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.
  * - Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`, so worker computations use the user-defined material table initialized by Pyodide.
  * - Every model uses `ExactOpticalModel`. Image Height uses `ExactImageHeightFieldSpec`; Object Height, Object Angle, and their field samples retain RayOptics `FieldSpec`.
- * - `OffsetCircular` is required only when a circular aperture offset is nonzero. `Annular` is required when a clear aperture has `shape: "annular"`. `OffsetRotatedRectangular` is required when a clear or edge aperture has `shape: "rectangular"`. Worker scripts get these helpers from `rayoptics_web_utils.aperture`; export scripts define them inline from the generated TypeScript string so copied notebook code remains standalone without installing `rayoptics_web_utils`.
+ * - `OffsetCircular` is required only when a circular aperture offset is nonzero. `Annular` is required when a clear aperture has `shape: "annular"`. `RonchiRuling` is required when a clear aperture has `shape: "ronchi"`. `OffsetRotatedRectangular` is required when a clear or edge aperture has `shape: "rectangular"`. Worker scripts get these helpers from `rayoptics_web_utils.aperture`; export scripts define them inline from the generated TypeScript string so copied notebook code remains standalone without installing `rayoptics_web_utils`.
  * - Generated helper blocks exactly match their Python sources. NPM lifecycle scripts regenerate both ignored TypeScript outputs before install/check/test/build commands, and Jest keeps the standalone export behavior pinned to those sources.
  * - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.
  */
@@ -185,6 +185,10 @@ function formatClearApertureAssignment(
 
   if (clearAperture?.shape === "annular") {
     return `${targetExpr}.clear_apertures = [Annular(radius=${semiDiameter}, obstruction_radius=${clearAperture.obstructionRadius}, x_offset=${offsetX}, y_offset=${offsetY})]`;
+  }
+
+  if (clearAperture?.shape === "ronchi") {
+    return `${targetExpr}.clear_apertures = [RonchiRuling(radius=${semiDiameter}, lpmm=${clearAperture.lpmm}, rotation=${clearAperture.rotation}, x_offset=${offsetX}, y_offset=${offsetY})]`;
   }
 
   return formatCircularApertureAssignment(
@@ -382,6 +386,7 @@ d263teco = create_glass(d263teco_url, "rindexinfo")
  * - Emits `sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=<semiDiameter>, x_offset=0, y_offset=0)]` after `sm.add_surface(...)` for centered circular clear apertures when `semiDiameter > 0`. If `clear_aperture` is omitted, offsets default to `0`.
  * - Emits `OffsetCircular(...)` instead of `Circular(...)` for circular clear apertures when either `offsetX` or `offsetY` is nonzero, so RayOptics edge ray targets include the aperture offset.
  * - Emits `Annular(radius=<semiDiameter>, obstruction_radius=<obstructionRadius>, x_offset=<offsetX>, y_offset=<offsetY>)` for annular clear apertures.
+ * - Emits `RonchiRuling(radius=<semiDiameter>, lpmm=<lpmm>, rotation=<rotation>, x_offset=<offsetX>, y_offset=<offsetY>)` for Ronchi clear apertures. Density and rotation remain independent of the surface semi-diameter.
  * - Emits `OffsetRotatedRectangular(x_half_width=<xHalfWidth>, y_half_width=<yHalfWidth>, x_offset=<offsetX>, y_offset=<offsetY>, rotation=<rotation>)` for rectangular clear apertures, independent of `semiDiameter`.
  * - Emits `sm.ifcs[sm.cur_surface].edge_apertures = [Circular(...)]` only when `edge_aperture` is explicitly set and centered; emits `OffsetCircular(...)` when the edge aperture has a nonzero offset; emits `OffsetRotatedRectangular(...)` for rectangular edge apertures.
  * - Surface-specific follow-up mutations are emitted after `sm.add_surface(...)`, in order, so multiple mutations may coexist on the same surface.

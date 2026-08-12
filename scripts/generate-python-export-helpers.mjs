@@ -9,6 +9,7 @@ const apertureSourceFiles = [
   "src/python/src/rayoptics_web_utils/aperture/annular.py",
   "src/python/src/rayoptics_web_utils/aperture/offset_circular.py",
   "src/python/src/rayoptics_web_utils/aperture/offset_rotated_rectangular.py",
+  "src/python/src/rayoptics_web_utils/aperture/ronchi_ruling.py",
 ];
 
 const apertureHelperSource = apertureSourceFiles

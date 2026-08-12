@@ -97,6 +97,20 @@ const rectangularClearApertureSchema = {
   properties: rectangularApertureProperties,
 };
 
+/** Binary Ronchi ruling with positive line-pair density and finite transform values. */
+const ronchiClearApertureSchema = {
+  type: "object",
+  required: ["shape", "lpmm", "rotation", "offsetX", "offsetY"],
+  additionalProperties: false,
+  properties: {
+    shape: { type: "string", const: "ronchi" },
+    lpmm: positiveFiniteNumberSchema,
+    rotation: finiteNumberSchema,
+    offsetX: finiteNumberSchema,
+    offsetY: finiteNumberSchema,
+  },
+};
+
 /** Strict rectangular edge-aperture schema. */
 const rectangularEdgeApertureSchema = {
   type: "object",
@@ -118,9 +132,14 @@ const circularEdgeApertureSchema = {
   },
 };
 
-/** Supported circular, annular, and rectangular clear-aperture union. */
+/** Supported circular, annular, rectangular, and Ronchi clear-aperture union. */
 const clearApertureSchema = {
-  oneOf: [circularClearApertureSchema, annularClearApertureSchema, rectangularClearApertureSchema],
+  oneOf: [
+    circularClearApertureSchema,
+    annularClearApertureSchema,
+    rectangularClearApertureSchema,
+    ronchiClearApertureSchema,
+  ],
 };
 
 /** Supported circular and rectangular edge-aperture union. */
@@ -205,11 +224,28 @@ const yToroidSchema = {
   },
 };
 
-/** Strict physical-surface schema, including optional asphere, decenter, grating, and apertures. */
+/** Strict physical-surface schema, including optional asphere, decenter, grating, and apertures; Ronchi surfaces require a positive semi-diameter envelope. */
 const surfaceSchema = {
   type: "object",
   required: ["label", "curvatureRadius", "thickness", "medium", "manufacturer", "semiDiameter"],
   additionalProperties: false,
+  allOf: [
+    {
+      if: {
+        required: ["clear_aperture"],
+        properties: {
+          clear_aperture: {
+            type: "object",
+            required: ["shape"],
+            properties: { shape: { const: "ronchi" } },
+          },
+        },
+      },
+      then: {
+        properties: { semiDiameter: positiveFiniteNumberSchema },
+      },
+    },
+  ],
   properties: {
     label: { type: "string", enum: ["Default", "Stop"] },
     curvatureRadius: finiteNumberSchema,

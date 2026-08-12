@@ -73,6 +73,20 @@ describe("LensPrescriptionGridCells", () => {
       offsetX: 0.5,
       offsetY: -0.75,
     })).toBe("Rect (4,2), rot 15°, offset (-1, 2); Edge Rect (5,3), rot -30°, offset (0.5, -0.75)");
+    expect(formatApertureLabel({
+      shape: "ronchi",
+      lpmm: 10,
+      rotation: 0,
+      offsetX: 0,
+      offsetY: 0,
+    }, undefined)).toBe("Ronchi 10 lp/mm");
+    expect(formatApertureLabel({
+      shape: "ronchi",
+      lpmm: 12.5,
+      rotation: 22,
+      offsetX: -1,
+      offsetY: 2,
+    }, undefined)).toBe("Ronchi 12.5 lp/mm, rot 22°, offset (-1, 2)");
   });
 
   it("renders aperture labels and opens the modal", async () => {

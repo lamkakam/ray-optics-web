@@ -18,6 +18,7 @@ export const pythonExportApertureHelpers: string;
   1. `src/python/src/rayoptics_web_utils/aperture/annular.py`
   2. `src/python/src/rayoptics_web_utils/aperture/offset_circular.py`
   3. `src/python/src/rayoptics_web_utils/aperture/offset_rotated_rectangular.py`
+  4. `src/python/src/rayoptics_web_utils/aperture/ronchi_ruling.py`
 - Source files are joined with a single newline.
 - The generator writes the string with `JSON.stringify`, so Python syntax, docstrings, and backslashes cannot break TypeScript parsing.
 

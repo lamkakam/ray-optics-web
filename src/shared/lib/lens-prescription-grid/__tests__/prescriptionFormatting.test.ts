@@ -144,6 +144,12 @@ describe("prescriptionFormatting", () => {
       curvatureRadius: expect.any(Function),
       thickness: expect.any(Function),
       semiDiameter: expect.any(Function),
+      clear_aperture: {
+        lpmm: undefined,
+        rotation: undefined,
+        offsetX: expect.any(Function),
+        offsetY: expect.any(Function),
+      },
       diffractionGrating: {
         lpmm: undefined,
         order: undefined,
@@ -361,6 +367,42 @@ describe("prescriptionFormatting", () => {
       offsetX: 1,
       offsetY: -1.5,
     });
+  });
+
+  it("scales a Ronchi ruling envelope and offsets while preserving density and rotation", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [
+        {
+          ...baseSurfaces.surfaces[0],
+          clear_aperture: {
+            shape: "ronchi",
+            lpmm: 12.5,
+            rotation: 15,
+            offsetX: -1,
+            offsetY: 1.5,
+          },
+        },
+      ],
+    });
+
+    const result = scaleRows(rows, { first: 1, last: 1, factor: 2 });
+    const surface = surfaceRows(result)[0];
+
+    expect(surface.semiDiameter).toBe(10);
+    expect(surface.clear_aperture).toEqual({
+      shape: "ronchi",
+      lpmm: 12.5,
+      rotation: 15,
+      offsetX: -2,
+      offsetY: 3,
+    });
+    expect(collectSurfaceScalingNumericValues(surface)).toEqual(expect.arrayContaining([
+      12.5,
+      15,
+      -2,
+      3,
+    ]));
   });
 
   it("scales object distance below 1e10 and image decenter offsets when Image is included", () => {

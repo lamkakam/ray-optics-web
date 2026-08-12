@@ -121,7 +121,8 @@ export function _getOptimizationInterruptStateForTesting(): {
 // export for testing
 /**
  * Installs pinned RayOptics and support packages, installs the local wheel, and
- * binds the Python globals required by generated scripts.
+ * binds the Python globals required by generated scripts, including circular,
+ * annular, rectangular, and Ronchi aperture helpers.
  *
  * @param runPython - Injected asynchronous Python executor.
  * @param wheelUrl - Absolute URL of the local `rayoptics_web_utils` wheel.
@@ -171,7 +172,7 @@ from rayoptics.elem.surface import DecenterData, Circular
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 
-from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular
+from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular, RonchiRuling
 from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactOpticalModel
 from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data, get_lsa_data, get_surface_semi_diameters
 from rayoptics_web_utils.plotting import (
