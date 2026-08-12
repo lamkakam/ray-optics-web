@@ -7,7 +7,7 @@ Build metadata for the internal `rayoptics-web-utils` Python package that is com
 ## Project Metadata
 
 - Package name: `rayoptics-web-utils`
-- Current version: `0.25.0`
+- Current version: `0.26.0`
 - Requires Python `>=3.12`
 - Uses `setuptools.build_meta` with `setuptools>=68.0`
 
@@ -33,4 +33,4 @@ The package includes YAML data files under `rayoptics_web_utils/data/*.yml`, whi
 
 ## Versioning Contract
 
-When the `version` field changes, update the Pyodide worker wheel URL in `src/workers/pyodide.worker.ts` and its adjacent spec so the browser loads the matching generated wheel.
+When the `version` field changes, update the Pyodide worker wheel URL and module documentation in `src/workers/pyodide.worker.ts` so the browser loads the matching generated wheel.

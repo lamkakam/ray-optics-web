@@ -58,6 +58,43 @@ describe("FieldConfigModal", () => {
     expect(options[1]).toHaveTextContent("Angle");
   });
 
+  it("offers only Height for image-space fields", () => {
+    render(
+      <FieldConfigModal
+        {...defaultProps}
+        initialSpace="image"
+        initialType="height"
+      />,
+    );
+
+    const dropdown = screen.getByLabelText("Field type");
+    const options = within(dropdown).getAllByRole("option");
+    expect(options).toHaveLength(1);
+    expect(options[0]).toHaveTextContent("Height");
+    expect(options[0]).toHaveValue("height");
+  });
+
+  it("switches an object angle field to height when Image is selected", async () => {
+    const onApply = jest.fn();
+    render(<FieldConfigModal {...defaultProps} onApply={onApply} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Field space"), "image");
+    expect(screen.getByLabelText("Field type")).toHaveValue("height");
+    expect(
+      within(screen.getByLabelText("Field type")).queryByRole("option", {
+        name: "Angle",
+      }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByText("Apply"));
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        space: "image",
+        type: "height",
+      }),
+    );
+  });
+
   it("renders max half-field textbox with initial value", () => {
     render(<FieldConfigModal {...defaultProps} />);
     const input = screen.getByLabelText("Max half-field value");
