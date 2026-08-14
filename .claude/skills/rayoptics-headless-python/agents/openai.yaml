@@ -1,0 +1,4 @@
+interface:
+  display_name: "RayOptics Headless Python"
+  short_description: "Keep RayOptics Python imports safe in headless CI"
+  default_prompt: "Use $rayoptics-headless-python to make this Python change safe for headless collection and runtime."

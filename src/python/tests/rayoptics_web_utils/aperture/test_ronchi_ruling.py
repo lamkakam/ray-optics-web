@@ -1,17 +1,21 @@
-"""Tests for the geometric Ronchi ruling clear aperture."""
+"""Test the geometric Ronchi ruling with collection-safe imports.
+
+Keep module-level RayOptics imports on headless core modules. Pytest fixtures do
+not run during collection, so GUI-transitive imports must be deferred until a
+test body runs after the autouse environment initialization fixture.
+"""
 
 from math import nan
 
 import numpy as np
 import pytest
 from pytest import approx
-from rayoptics.environment import OpticalModel
+from rayoptics.optical.opticalmodel import OpticalModel
 from rayoptics.raytr import raytrace
 from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
 from rayoptics.raytr.traceerror import TraceRayBlockedError
 from rayoptics.raytr.vigcalc import set_vig
 
-from rayoptics_web_utils.analysis import get_geo_psf_data
 from rayoptics_web_utils.aperture import RonchiRuling, set_vig_with_ronchi_envelopes
 from rayoptics_web_utils.optical_specs import ExactOpticalModel
 
@@ -255,6 +259,8 @@ def test_vignetting_uses_outer_envelope_and_restores_ruling_on_error():
 
 
 def test_focused_sasian_triplet_geometric_psf_keeps_preimage_ronchi_bands():
+    from rayoptics_web_utils.analysis import get_geo_psf_data
+
     opm = ExactOpticalModel()
     osp = opm["optical_spec"]
     sm = opm["seq_model"]

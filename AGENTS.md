@@ -16,7 +16,7 @@
 
 - All type checking and linting (commands specified in the skill of "commands-for-development") must be passed
 
-- The skills md files are under `<project-root>/.claude/skills`. Before doing code changes, in plan mode or not, always read the skill of "commands-for-development".
+- The skills md files are under `<project-root>/.claude/skills`. Before doing code changes, in plan mode or not, always read the skill of "commands-for-development". Before any change under `<project-root>/src/python/`, also read the skill of "rayoptics-headless-python".
 
 - TypeScript, TSX, and Python specifications are embedded in their source files. Symbol-specific documentation belongs at the narrowest corresponding function, component, class, type, interface, or constant; reserve the file header or module docstring for genuinely module-wide documentation. Read the relevant embedded documentation before planning or implementation. JavaScript (including MJS) and shell specifications remain in `<FILENAME_INCLUDING_FILENAME_EXTENSION>.md` sidecars. The generated `src/shared/lib/utils/generated/pythonExportApertureHelpers.ts` also retains its sidecar because its source is generated.
 

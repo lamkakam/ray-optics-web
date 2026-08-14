@@ -1,6 +1,47 @@
-"""Tests for rayoptics_web_utils.env module."""
+"""Test headless environment setup and collection-time import safety."""
 
+from pathlib import Path
+import subprocess
 import sys
+import textwrap
+
+
+def test_python_suite_collection_rejects_pyside6_imports():
+    """The entire test suite must collect without importing any PySide6 module.
+
+    Pytest fixtures run only after collection, so the session initialization
+    fixture cannot protect imports performed at test-module scope.
+    """
+    python_root = Path(__file__).parents[3]
+    collection_script = textwrap.dedent(
+        """
+        import importlib.abc
+        import sys
+
+        import pytest
+
+
+        class RejectPySide6Imports(importlib.abc.MetaPathFinder):
+            def find_spec(self, fullname, path=None, target=None):
+                if fullname == "PySide6" or fullname.startswith("PySide6."):
+                    raise ImportError(f"PySide6 import rejected during collection: {fullname}")
+                return None
+
+
+        sys.meta_path.insert(0, RejectPySide6Imports())
+        raise SystemExit(pytest.main(["--collect-only", "-q", "tests"]))
+        """
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", collection_script],
+        cwd=python_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 class TestInit:
