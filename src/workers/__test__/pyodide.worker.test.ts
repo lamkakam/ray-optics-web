@@ -61,7 +61,7 @@ const allSphericalOpticalModel: OpticalModel = {
 
 
 describe("_getFirstOrderData", () => {
-  it("imports the rectangular aperture helper during initialization", async () => {
+  it("imports the custom aperture helpers during initialization", async () => {
     const scripts: string[] = [];
     await _init(async (code) => {
       scripts.push(code);
@@ -69,7 +69,7 @@ describe("_getFirstOrderData", () => {
     }, "/rayoptics_web_utils-test.whl");
 
     expect(scripts.join("\n")).toContain(
-      "from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular",
+      "from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular, RonchiRuling, set_vig_with_ronchi_envelopes",
     );
     expect(scripts.join("\n")).toContain(
       "from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactOpticalModel",

@@ -34,7 +34,7 @@ export type OpticalModelValueScalingPolicy<T extends object> = {
   readonly [K in keyof T]?: SurfaceValueScaler<T[K], T> | SurfaceValueScalingPolicyEntry;
 };
 
-/** Scaling ownership policy. Linear dimensions multiply by the factor; asphere coefficients divide by the factor raised to their radial order minus one; angular and dimensionless values are preserved. Radial-polynomial orders are sequential, while even and toroidal polynomial orders are even. */
+/** Scaling ownership policy. Linear dimensions multiply by the factor; asphere coefficients divide by the factor raised to their radial order minus one; angular and dimensionless values plus Ronchi line-pair density are preserved. Radial-polynomial orders are sequential, while even and toroidal polynomial orders are even. */
 export const SURFACE_VALUE_SCALING_POLICY = {
   object: {
     distance: scaleObjectDistance,
@@ -59,6 +59,7 @@ export const SURFACE_VALUE_SCALING_POLICY = {
       obstructionRadius: scaleNumber,
       xHalfWidth: scaleNumber,
       yHalfWidth: scaleNumber,
+      lpmm: undefined,
       rotation: undefined,
     },
     edge_aperture: {
@@ -130,7 +131,7 @@ export function scaleDecenter(decenter: DecenterConfig | undefined, factor: numb
   };
 }
 
-/** Scales clear-aperture dimensions and offsets while preserving rectangular rotation. */
+/** Scales clear-aperture dimensions and offsets while preserving rotations and Ronchi density. */
 export function scaleClearAperture(aperture: ClearAperture | undefined, factor: number): ClearAperture | undefined {
   if (aperture === undefined) {
     return undefined;

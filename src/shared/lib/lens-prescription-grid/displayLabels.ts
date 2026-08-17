@@ -51,7 +51,11 @@ function formatOffset(aperture: Pick<ClearAperture, "offsetX" | "offsetY">): str
   return `offset (${aperture.offsetX}, ${aperture.offsetY})`;
 }
 
-function formatRectangularSuffix(aperture: Extract<ClearAperture | EdgeAperture, { shape: "rectangular" }>): string {
+function formatTransformSuffix(aperture: {
+  readonly rotation: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
+}): string {
   const suffixes = [
     aperture.rotation !== 0 ? `rot ${aperture.rotation}°` : undefined,
     hasOffset(aperture) ? formatOffset(aperture) : undefined,
@@ -68,7 +72,11 @@ function formatClearApertureLabel(clearAperture: ClearAperture | undefined): str
   }
 
   if (clearAperture.shape === "rectangular") {
-    return `Rect (${clearAperture.xHalfWidth},${clearAperture.yHalfWidth})${formatRectangularSuffix(clearAperture)}`;
+    return `Rect (${clearAperture.xHalfWidth},${clearAperture.yHalfWidth})${formatTransformSuffix(clearAperture)}`;
+  }
+
+  if (clearAperture.shape === "ronchi") {
+    return `Ronchi ${clearAperture.lpmm} lp/mm${formatTransformSuffix(clearAperture)}`;
   }
 
   const baseLabel = `Annu obs ${clearAperture.obstructionRadius}`;
@@ -77,14 +85,14 @@ function formatClearApertureLabel(clearAperture: ClearAperture | undefined): str
 
 function formatEdgeApertureLabel(edgeAperture: EdgeAperture): string {
   if (edgeAperture.shape === "rectangular") {
-    return `Edge Rect (${edgeAperture.xHalfWidth},${edgeAperture.yHalfWidth})${formatRectangularSuffix(edgeAperture)}`;
+    return `Edge Rect (${edgeAperture.xHalfWidth},${edgeAperture.yHalfWidth})${formatTransformSuffix(edgeAperture)}`;
   }
 
   const baseLabel = `Edge Cir ${edgeAperture.radius}`;
   return hasOffset(edgeAperture) ? `${baseLabel}, ${formatOffset(edgeAperture)}` : baseLabel;
 }
 
-/** Formats clear and edge aperture shapes and dimensions for a grid cell. */
+/** Formats clear and edge aperture shapes, including Ronchi density and nonzero transforms, for a grid cell. */
 export function formatApertureLabel(
   clearAperture: ClearAperture | undefined,
   edgeAperture: EdgeAperture | undefined,

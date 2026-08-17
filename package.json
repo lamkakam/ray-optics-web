@@ -1,6 +1,6 @@
 {
   "name": "ray-optics-web",
-  "version": "0.38.1",
+  "version": "0.39.0",
   "license": "BSD-3-Clause",
   "private": true,
   "scripts": {
@@ -11,8 +11,8 @@
     "prebuild": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
     "build": "next build --webpack",
     "generate:python-third-party-licenses": "src/python/.venv/bin/pip-licenses --format=markdown --with-urls --ignore-packages=rayoptics-web-utils --output-file=THIRD-PARTY-PYTHON-LICENSES.md",
-    "generate:third-party-licenses": "license-checker-rseidelsohn --production --markdown --out THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && npm run generate:python-third-party-licenses",
-    "postbuild": "node scripts/generate-next-static-sw.js && license-checker-rseidelsohn --production --markdown --out out/THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && src/python/.venv/bin/pip-licenses --format=markdown --with-urls --ignore-packages=rayoptics-web-utils --output-file=out/THIRD-PARTY-PYTHON-LICENSES.md",
+    "generate:third-party-licenses": "license-checker-rseidelsohn --production --markdown --excludePackages=ray-optics-web --out THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && npm run generate:python-third-party-licenses",
+    "postbuild": "node scripts/generate-next-static-sw.js && license-checker-rseidelsohn --production --markdown --excludePackages=ray-optics-web --out out/THIRD-PARTY-LICENSES.md --clarificationsFile license-checker-clarifications.json && src/python/.venv/bin/pip-licenses --format=markdown --with-urls --ignore-packages=rayoptics-web-utils --output-file=out/THIRD-PARTY-PYTHON-LICENSES.md",
     "serve": "npx serve out",
     "pretype-check": "npm run generate:python-export-helpers",
     "type-check": "tsc --noEmit",

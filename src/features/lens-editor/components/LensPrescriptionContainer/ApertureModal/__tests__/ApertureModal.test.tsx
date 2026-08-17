@@ -259,6 +259,183 @@ describe("ApertureModal", () => {
     });
   });
 
+  it("offers Ronchi Ruling with documented defaults and saves its clear aperture", async () => {
+    const onConfirm = jest.fn();
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Clear Aperture Shape")).toHaveTextContent("Ronchi Ruling");
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "ronchi");
+
+    expect(screen.getByRole("textbox", { name: "Ronchi Line Density" })).toHaveValue("10");
+    expect(screen.getByRole("textbox", { name: "Ronchi Rotation" })).toHaveValue("0");
+    expect(screen.getByRole("textbox", { name: "Ronchi Offset X" })).toHaveValue("0");
+    expect(screen.getByRole("textbox", { name: "Ronchi Offset Y" })).toHaveValue("0");
+
+    await userEvent.clear(screen.getByRole("textbox", { name: "Ronchi Line Density" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Ronchi Line Density" }), "12.5");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Ronchi Rotation" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Ronchi Rotation" }), "15");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Ronchi Offset X" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Ronchi Offset X" }), "-1.25");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Ronchi Offset Y" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Ronchi Offset Y" }), "2.5");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).toHaveBeenCalledWith({
+      clear_aperture: {
+        shape: "ronchi",
+        lpmm: 12.5,
+        rotation: 15,
+        offsetX: -1.25,
+        offsetY: 2.5,
+      },
+      edge_aperture: undefined,
+    });
+  });
+
+  it("preloads and disables Ronchi ruling controls in read-only mode", () => {
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={9}
+        readOnly
+        initialClearAperture={{
+          shape: "ronchi",
+          lpmm: 8,
+          rotation: -12,
+          offsetX: 1,
+          offsetY: -2,
+        }}
+        initialEdgeAperture={undefined}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText("Clear Aperture Shape")).toHaveValue("ronchi");
+    expect(screen.getByRole("textbox", { name: "Ronchi Line Density" })).toHaveValue("8");
+    expect(screen.getByRole("textbox", { name: "Ronchi Rotation" })).toHaveValue("-12");
+    expect(screen.getByRole("textbox", { name: "Ronchi Offset X" })).toHaveValue("1");
+    expect(screen.getByRole("textbox", { name: "Ronchi Offset Y" })).toHaveValue("-2");
+    expect(screen.getByRole("textbox", { name: "Ronchi Line Density" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Ronchi Rotation" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Ronchi Offset X" })).toBeDisabled();
+    expect(screen.getByRole("textbox", { name: "Ronchi Offset Y" })).toBeDisabled();
+  });
+
+  it.each(["0", "-1", "abc", "Infinity"])("rejects invalid Ronchi line density %s", async (lpmm) => {
+    const onConfirm = jest.fn();
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "ronchi");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Ronchi Line Density" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Ronchi Line Density" }), lpmm);
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText("Line density must be greater than 0.")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["Ronchi Rotation", "Infinity", "Rotation must be a finite number."],
+    ["Ronchi Offset X", "abc", "Offsets must be finite numbers."],
+    ["Ronchi Offset Y", "Infinity", "Offsets must be finite numbers."],
+  ])("rejects invalid Ronchi field %s=%s", async (fieldName, value, errorMessage) => {
+    const onConfirm = jest.fn();
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "ronchi");
+    await userEvent.clear(screen.getByRole("textbox", { name: fieldName }));
+    await userEvent.type(screen.getByRole("textbox", { name: fieldName }), value);
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText(errorMessage)).toBeInTheDocument();
+  });
+
+  it.each([0, -1, Number.POSITIVE_INFINITY])("rejects Ronchi ruling with semi-diameter %s", async (semiDiameter) => {
+    const onConfirm = jest.fn();
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={semiDiameter}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "ronchi");
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText("Semi-diameter must be greater than 0.")).toBeInTheDocument();
+  });
+
+  it("preserves Ronchi drafts across shape and auto-aperture changes", async () => {
+    const defaultProps = {
+      isOpen: true,
+      semiDiameter: 8,
+      initialClearAperture: undefined,
+      initialEdgeAperture: undefined,
+      onConfirm: jest.fn(),
+      onClose: jest.fn(),
+    };
+    const { rerender } = render(<ApertureModal {...defaultProps} />);
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "ronchi");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Ronchi Line Density" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Ronchi Line Density" }), "12.5");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Ronchi Rotation" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Ronchi Rotation" }), "22");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Ronchi Offset X" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Ronchi Offset X" }), "-1.5");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Ronchi Offset Y" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Ronchi Offset Y" }), "2.25");
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "circular");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Offset X" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Offset X" }), "4");
+    await userEvent.clear(screen.getByRole("textbox", { name: "Clear Offset Y" }));
+    await userEvent.type(screen.getByRole("textbox", { name: "Clear Offset Y" }), "5");
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "ronchi");
+    rerender(<ApertureModal {...defaultProps} autoAperture />);
+
+    expect(screen.getByLabelText("Clear Aperture Shape")).toHaveValue("ronchi");
+    expect(screen.getByRole("textbox", { name: "Ronchi Line Density" })).toHaveValue("12.5");
+    expect(screen.getByRole("textbox", { name: "Ronchi Rotation" })).toHaveValue("22");
+    expect(screen.getByRole("textbox", { name: "Ronchi Offset X" })).toHaveValue("-1.5");
+    expect(screen.getByRole("textbox", { name: "Ronchi Offset Y" })).toHaveValue("2.25");
+  });
+
   it("shows Half-Length and Half-Width for clear rectangular aperture when auto aperture is disabled", async () => {
     render(
       <ApertureModal
