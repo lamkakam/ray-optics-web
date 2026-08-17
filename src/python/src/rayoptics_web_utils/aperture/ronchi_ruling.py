@@ -98,15 +98,26 @@ class RonchiRuling(Aperture):
 
     def point_inside(self, x: float, y: float, fuzz: float = 1e-5) -> bool:
         """Return whether a surface point lies in a clear ruling band."""
+        # x and y are in the surface's local right-handed frame, where X × Y = Z.
         dx = x - self.x_offset
         dy = y - self.y_offset
         if hypot(dx, dy) > self.radius + fuzz:
             return False
 
         angle = radians(self.rotation)
-        u = cos(angle) * dx - sin(angle) * dy
+        # At 0° the lines run along +Y. Positive rotation turns them
+        # toward +X, clockwise when viewed from +Z toward the surface.
+        # This dot product is the signed projection of the offset point onto the
+        # axis across the lines.
+        coordinate_across_lines = cos(angle) * dx - sin(angle) * dy
+        # pitch = 1 / lpmm is one complete clear-plus-opaque line-pair period.
         pitch = 1 / self.lpmm
-        wrapped_distance = abs(remainder(u, pitch))
+        # remainder wraps the coordinate to the nearest period center.
+        wrapped_distance = abs(remainder(coordinate_across_lines, pitch))
+        # The clear band is pitch / 2 wide, so each boundary is pitch / 4 from
+        # its center. 4 * ulp(pitch) covers the few rounding steps in calculating
+        # pitch, wrapping the coordinate, and boundary arithmetic. The factor four
+        # allows this safety margin without meaningfully widening the clear band.
         return wrapped_distance <= pitch / 4 + fuzz + 4 * ulp(pitch)
 
     def edge_pt_target(self, rel_dir):
