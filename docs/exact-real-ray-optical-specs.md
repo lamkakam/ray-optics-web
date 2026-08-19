@@ -6,8 +6,22 @@ It describes the current behavior against the project's pinned
 [RayOptics 0.9.8](../src/python/pyproject.toml); it does not propose a different
 API or tracing model.
 
-The module separates two jobs that RayOptics normally derives from the same
-specification:
+`field.isWideAngle === true` is the sole application-level opt-in for this
+entire exact stack. Script generation uses `ExactOpticalModel` only for that
+explicit opt-in and uses `ExactImageHeightFieldSpec` only for opted-in Image
+Height. A false or omitted flag generates RayOptics' ordinary `OpticalModel`
+and `FieldSpec`, preserving native Object NA, Image F/#, field conversion, and
+aiming behavior. The public exact classes apply the same guard internally and
+delegate to their RayOptics superclasses unless `is_wide_angle is True`.
+
+Object Height is intentionally incompatible with wide-angle aiming. The field
+editor disables and clears the option, imported/store state normalizes it to
+false, and script generation repeats that normalization defensively. Existing
+files remain loadable, but `("object", "height")` never activates the exact
+stack.
+
+When opted in, the module separates two jobs that RayOptics normally derives
+from the same specification:
 
 - RayOptics keeps the requested pupil key and value and uses them to compute
   paraxial first-order data.
@@ -36,18 +50,19 @@ For relative pupil coordinate $(\xi,\eta)$:
 The +Y label identifies the launched pupil boundary. After refraction, that
 ray's image-space Y direction need not remain positive.
 
-## Supported exact specifications
+## Opted-in exact specifications
 
 | Specification | Physical constraint | Exact launch quantity | Final verification |
 | --- | --- | --- | --- |
 | Image-space geometric F-number, `("image", "f/#")` | $F/\mathrm{number}=1/(2\tan u')$, where $u'$ is the real image-space angle between the axial chief and +Y marginal rays | Object-space entrance-pupil diameter $D_o$, found by a scalar real-ray solve | Retrace both unclipped rays and compare $u'$ with $\arctan(1/[2(F/\mathrm{number})])$ |
 | Object-space numerical aperture, `("object", "NA")` | $\mathrm{NA}=n_o\sin u$, where $u$ is the real object-space chief-to-+Y angle | Chief-centred cone tangent $\tan u=\mathrm{NA}/\sqrt{n_o^2-\mathrm{NA}^2}$ | Retrace both unclipped rays and compare $n_o\sin u$ with the requested NA |
 | Object-space entrance-pupil diameter, `("object", "epd")` | A normalized pupil radius of one represents $D_o/2$ | The supplied $D_o$ is used directly; no root solve or module-level range check is performed | No independent pupil residual; the launch is constructed at radius $D_o/2$, and an exact image-height chief is separately forward verified |
-| Exact image height, `("image", "height")` | The chief ray must intersect the image profile at $[x,y,\mathrm{sag}(x,y)]$ and pass through the physical stop centre | A finite object point and direction, or an infinite-conjugate input-plane anchor and direction | A mandatory unclipped forward retrace must return to both the stop centre and requested image coordinate |
+| Exact image height, `("image", "height")` | The chief ray must intersect the image profile at $[x,y,\mathrm{sag}(x,y)]$ and pass through the physical stop centre | RayOptics' native real-image-height launch when supported, otherwise or after strict refinement a finite object point/direction or infinite-conjugate input-plane anchor/direction | A mandatory unclipped forward retrace must return to both the stop centre and requested image coordinate |
 
-Other pupil keys are rejected by `ExactOpticalModel`, and
-`ExactImageHeightFieldSpec` rejects any field key other than
-`("image", "height")`.
+Other pupil keys are rejected by an opted-in `ExactOpticalModel`, and an
+opted-in `ExactImageHeightFieldSpec` rejects any field key other than
+`("image", "height")`. Without the opt-in, those classes do not impose these
+constraints and instead delegate.
 
 ## Pupil constraints
 
@@ -207,11 +222,26 @@ Consequently, image height is not a request for the paraxial image plane or
 for a flat $z=0$ target on a curved image surface. The profile's own sag
 function supplies Z in the model's length units.
 
-### Reverse solve through the physical stop centre
+### Native-first solve and strict verification
 
-The chief ray is known by two physical constraints: its image point and its
-stop intercept. The implementation uses optical reversibility to recover the
-otherwise unknown object launch:
+For an infinite-conjugate model with a flat image and a centred, non-decentered
+stop, each distinct configured coordinate first calls RayOptics 0.9.8's
+`eval_real_image_ht`. The returned object launch and scalar real-entrance-pupil
+distance are forward traced with aperture checks disabled. If both the stop
+and image residuals already meet the project's `1e-9` tolerance, that native
+solution is accepted without invoking the extension solver.
+
+If a traceable native result misses the stricter project tolerance, its
+forward image-segment direction seeds a reverse refinement. Trace failures
+remain hard errors; they do not cause a paraxial or approximate fallback. The
+native evaluator is injected only as an optional constructor dependency for
+isolated tests, and the public class/schema names remain unchanged.
+
+Finite conjugates, curved image profiles, offset or physically decentered
+stops, and continuation use the extension solve through the physical stop
+centre. The chief ray is known by two physical constraints: its image point
+and its stop intercept. Optical reversibility recovers the otherwise unknown
+object launch:
 
 1. Start at $\boldsymbol p_i$ and trace the sequential model in reverse at the
    central wavelength.
@@ -236,9 +266,9 @@ representation of a collimated ray. The implementation instead takes the
 reverse segment at the first physical surface, negates its direction,
 back-projects it to that surface's local vertex plane, and transforms the point
 and direction into the input coordinate frame. The result is an anchor and a
-direction for the parallel input bundle. Infinite exact image-height fields
-are marked wide-angle so RayOptics uses that launch directly instead of trying
-to intersect a remote object surface.
+direction for the parallel input bundle. The caller-supplied wide-angle flag
+makes RayOptics use that launch directly instead of trying to intersect a
+remote object surface; Image Height no longer turns that flag on automatically.
 
 Forward verification is mandatory even after the reverse solver reports
 success. The image profile intersection itself supplies the target Z, so the
@@ -256,12 +286,14 @@ For image F-number, EPD increases from zero in at most 256 steps. The first
 sign-changing interval is used, which favors the first continuously reachable
 real-ray solution rather than an arbitrary later root.
 
-For image height, the axial target is solved and cached first even when the
-user did not request an axial sample. Requested fields are sorted by radial
-distance $\sqrt{x^2+y^2}$. Each new target continues from the preceding solved
-coordinate and tangent along a straight interpolation. There are at least
-eight subdivisions, with more added so a continuation interval is no longer
-than 0.1 model units.
+For image-height geometries that require the extension, the axial target is
+solved and cached first even when the user did not request an axial sample.
+Requested fields are sorted by radial distance $\sqrt{x^2+y^2}$. Each new
+target continues from the preceding solved coordinate and tangent along a
+straight interpolation. There are at least eight subdivisions, with more
+added so a continuation interval is no longer than 0.1 model units. Supported
+native coordinates are evaluated directly once per distinct coordinate;
+continuation is entered only for an extension geometry or strict refinement.
 
 Any missed profile or total internal reflection along that continuation is a
 physical loss of the branch, not a reason to jump to a paraxial answer.
@@ -304,38 +336,43 @@ Specification rays are unvignetted and unclipped. Pupil traces explicitly use
 traces also disable aperture checks. Surface intersections, refraction,
 reflection, missed profiles, and total internal reflection remain active.
 
-This ordering avoids a circular dependency: an old or undersized aperture
-must not prevent the ray needed to define the requested pupil or field from
-being found. The exact ray defines the requested bundle first. Vignetting can
-then measure clipping, and, when `seq_model.do_apertures` is enabled,
-`ExactOpticalModel.update_model()` recalculates clear apertures after resolving
-the exact pupil. See
+For opted-in models, this ordering avoids a circular dependency: an old or
+undersized aperture must not prevent the ray needed to define the requested
+pupil or field from being found. The exact ray defines the requested bundle
+first. Vignetting can then measure clipping, and, when
+`seq_model.do_apertures` is enabled, `ExactOpticalModel.update_model()`
+recalculates clear apertures after resolving the exact pupil. See
 [`rayoptics-aperture-findings.md`](./rayoptics-aperture-findings.md) for how
 RayOptics 0.9.8 distinguishes clear apertures, edge apertures, `max_aperture`,
 automatic aperture sizing, and vignetting.
 
 Exact state is update-scoped:
 
-- `ExactOpticalModel.update_model()` clears the resolved EPD and NA tangent,
-  performs the normal RayOptics update, resolves the requested pupil again,
-  and only then performs the final automatic-aperture pass.
-- `ExactImageHeightFieldSpec.update_model()` clears its launch maps and solves
-  every requested coordinate again. Exact image-height fields temporarily
-  disable RayOptics' paraxial chief-ray aiming while first-order properties are
-  refreshed.
+- `ExactOpticalModel.update_model()` clears the resolved EPD and NA tangent and
+  performs the normal RayOptics update. It resolves the requested pupil and
+  performs the final automatic-aperture pass only when wide-angle mode is
+  explicitly enabled.
+- `ExactImageHeightFieldSpec.update_model()` clears its launch maps and native
+  analysis caches. For an opted-in exact image field,
+  `ExactOpticalSpecs.update_optical_properties()` first refreshes RayOptics'
+  current first-order data with ordinary aiming disabled, then resolves every
+  requested coordinate against that current data.
 - Launches are cached both by field identity and by absolute $(x,y)$
-  coordinate. Duplicate coordinates share a solution, and an ad hoc field can
-  continue from the cached axial solution. No cache survives the next model
-  update.
+  coordinate. Duplicate coordinates share a solution. Each configured field
+  also receives RayOptics-compatible scalar `aim_info` and a complete
+  `chief_ray` package, so later analysis does not repeat `find_real_enp` for the
+  same configured chief. An ad hoc extension field can continue from the
+  cached axial solution. No cache survives the next model update.
 
 Geometry, material, wavelength, stop, or field edits therefore take effect
 when the caller invokes `update_model()`; stale exact launches are not retained
 through that update.
 
-Before the exact pupil state exists, launch dispatch may delegate to RayOptics
-while `super().update_model()` builds its first-order scaffolding. This is not a
-failure fallback. The subsequent exact resolution must succeed. Invalid
-values, unsupported keys, a missing real-ray branch, missed surfaces, total
-internal reflection, solver failure, or a final residual outside tolerance
-raises `ExactSpecError` (or its trace/convergence subclass) and aborts the
-update. A paraxial launch is never substituted as the final physical result.
+Without wide-angle opt-in, delegation to RayOptics is the final intended
+behavior. With the opt-in, launch dispatch may temporarily delegate while
+`super().update_model()` builds its first-order scaffolding; the subsequent
+exact resolution must succeed. Invalid values, unsupported keys, a missing
+real-ray branch, missed surfaces, total internal reflection, solver failure,
+or a final residual outside tolerance raises `ExactSpecError` (or its
+trace/convergence subclass) and aborts the update. The opted-in path never
+substitutes a paraxial launch as its final physical result.

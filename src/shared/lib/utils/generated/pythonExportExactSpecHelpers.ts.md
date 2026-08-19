@@ -19,5 +19,6 @@ do not edit it directly.
 ## Consumers
 
 `shared/lib/utils/pythonScript.ts` places this source in the standalone export
-preamble before constructing `ExactOpticalModel`. Worker scripts import the
-same classes from the wheel instead of inlining them.
+preamble only when a compatible `field.isWideAngle === true` selects
+`ExactOpticalModel`; native RayOptics exports omit the block. Worker scripts
+import the same classes from the wheel instead of inlining them.

@@ -67,6 +67,24 @@ describe("specsConfiguratorStore", () => {
       expect(store.getState().isWideAngle).toBe(false);
     });
 
+    it("normalizes imported object height wide-angle mode to false", () => {
+      const store = makeStore();
+      store.getState().loadFromSpecs({
+        ...sampleSpecs,
+        field: {
+          space: "object",
+          type: "height",
+          maxField: 2,
+          fields: [0, 1],
+          isRelative: true,
+          isWideAngle: true,
+        },
+      });
+
+      expect(store.getState().isWideAngle).toBe(false);
+      expect(store.getState().toOpticalSpecs().field.isWideAngle).toBe(false);
+    });
+
     it("populates all wavelength fields", () => {
       const store = makeStore();
       store.getState().loadFromSpecs(sampleSpecs);
@@ -130,6 +148,20 @@ describe("specsConfiguratorStore", () => {
       expect(s.relativeFields).toEqual([0, 0.5, 1]);
       expect(s.isWideAngle).toBe(true);
     });
+
+    it("clears wide-angle mode when object height is stored", () => {
+      const store = makeStore();
+      store.getState().setField({
+        space: "object",
+        type: "height",
+        maxField: 10,
+        relativeFields: [0, 1],
+        isWideAngle: true,
+      });
+
+      expect(store.getState().isWideAngle).toBe(false);
+      expect(store.getState().toOpticalSpecs().field.isWideAngle).toBe(false);
+    });
   });
 
   describe("setWavelengths", () => {
@@ -179,6 +211,23 @@ describe("specsConfiguratorStore", () => {
       const store = makeStore();
       store.getState().setCommittedSpecs(sampleSpecs);
       expect(store.getState().committedSpecs).toEqual(sampleSpecs);
+    });
+
+    it("normalizes object height in committed specs", () => {
+      const store = makeStore();
+      store.getState().setCommittedSpecs({
+        ...sampleSpecs,
+        field: {
+          space: "object",
+          type: "height",
+          maxField: 2,
+          fields: [0, 1],
+          isRelative: true,
+          isWideAngle: true,
+        },
+      });
+
+      expect(store.getState().committedSpecs.field.isWideAngle).toBe(false);
     });
 
     it("getFieldOptions returns angle labels after setCommittedSpecs", () => {

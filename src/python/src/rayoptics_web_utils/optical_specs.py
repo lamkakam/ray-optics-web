@@ -1,18 +1,23 @@
-"""Resolve physical optical specifications with exact real rays.
+"""Resolve opt-in physical optical specifications with exact real rays.
 
 ``ExactOpticalModel`` preserves RayOptics' requested pupil key/value for
 paraxial first-order reporting while resolving a separate physical launch after
 every ``update_model()``.  Image-space geometric F-number is solved from the
 real angle between the axial chief and +Y marginal rays.  Object-space
 numerical aperture is converted with the reference-wavelength object index.
+These pupil extensions are active only when the field's ``is_wide_angle``
+attribute is exactly ``True``; otherwise the exact classes delegate to their
+RayOptics superclasses.
 
 ``ExactImageHeightFieldSpec`` treats every image-height sample as a requested
-local image-surface intersection.  It continues a reverse real chief ray from
-the axial solution through the physical stop centre, then forward retraces the
-result before exposing object-space launch coordinates.  Centred meridional
-targets are solved in their one physical degree of freedom so their
-identically-zero sagittal residual cannot make the numerical Jacobian
-singular.
+local image-surface intersection.  Centred, flat-image, infinite-conjugate
+fields first reuse RayOptics' native real-image-height evaluator and refine its
+launch only when strict forward verification requires it.  Finite conjugates,
+curved images, decentered stops, and continuation retain the extension's
+reverse solve through the physical stop centre.  Configured launches also
+populate RayOptics-compatible aiming and chief-ray caches for later analysis.
+Centred meridional refinements use their one physical degree of freedom so an
+identically-zero sagittal residual cannot make the numerical Jacobian singular.
 
 All final residuals use a combined relative/absolute tolerance of ``1e-9``.
 Clear apertures are ignored while resolving specifications; later vignetting is
@@ -26,6 +31,7 @@ import math
 import numpy as np
 import rayoptics.optical.model_constants as mc
 from rayoptics.optical.opticalmodel import OpticalModel
+from rayoptics.raytr import RayPkg
 from rayoptics.raytr import raytrace
 from rayoptics.raytr.opticalspec import Field, FieldSpec, OpticalSpecs
 from rayoptics.raytr.trace import trace_base
@@ -34,6 +40,8 @@ from rayoptics.raytr.traceerror import (
     TraceMissedSurfaceError,
     TraceTIRError,
 )
+from rayoptics.raytr.waveabr import transfer_to_exit_pupil
+from rayoptics.raytr.wideangle import eval_real_image_ht
 from scipy.optimize import least_squares, root_scalar
 
 
@@ -134,24 +142,35 @@ def _is_close(actual, expected):
     )
 
 
+def _is_exact_stack_enabled(optical_spec):
+    """Return whether the field explicitly opts into exact real-ray handling."""
+    return getattr(optical_spec["fov"], "is_wide_angle", False) is True
+
+
 class ExactOpticalSpecs(OpticalSpecs):
-    """Optical specs whose real-ray launches use the model's resolved pupil."""
+    """Optical specs whose opted-in launches use the model's resolved pupil."""
 
     def update_optical_properties(self, **kwargs):
-        """Keep exact image-height chief rays independent of paraxial aiming."""
-        if not isinstance(self["fov"], ExactImageHeightFieldSpec):
+        """Resolve exact image fields after current first-order properties."""
+        field_of_view = self["fov"]
+        if (
+            not _is_exact_stack_enabled(self)
+            or not isinstance(field_of_view, ExactImageHeightFieldSpec)
+        ):
             return super().update_optical_properties(**kwargs)
 
         do_aiming = self.do_aiming
         self.do_aiming = False
         try:
-            return super().update_optical_properties(**kwargs)
+            result = super().update_optical_properties(**kwargs)
         finally:
             self.do_aiming = do_aiming
+        field_of_view._resolve_all_fields()
+        return result
 
     def ray_start_from_osp(self, pupil, fld, pupil_type):
         """Return an exact physical start when the pupil requires resolution."""
-        if pupil_type != "rel pupil":
+        if pupil_type != "rel pupil" or not _is_exact_stack_enabled(self):
             return super().ray_start_from_osp(pupil, fld, pupil_type)
 
         opm = self.opt_model
@@ -250,40 +269,62 @@ class ExactOpticalSpecs(OpticalSpecs):
 
 
 class ExactImageHeightFieldSpec(FieldSpec):
-    """Image-height field specification backed by reverse real chief rays."""
+    """Native-first image-height fields with strict real-ray extensions."""
 
-    def __init__(self, *args, vector_solver=None, **kwargs):
-        """Initialize the field and injectable vector root solver."""
+    def __init__(
+        self,
+        *args,
+        vector_solver=None,
+        native_image_height_evaluator=None,
+        **kwargs,
+    ):
+        """Initialize injectable native evaluation and refinement solvers."""
         self._vector_solver = vector_solver or _least_squares_vector_solver
-        self._object_launches = {}
-        self._coordinate_launches = {}
+        self._native_image_height_evaluator = (
+            native_image_height_evaluator or eval_real_image_ht
+        )
+        self._clear_solution_cache()
         super().__init__(*args, **kwargs)
 
+    def _clear_solution_cache(self):
+        """Discard launches and RayOptics analysis caches from prior geometry."""
+        self._object_launches = {}
+        self._coordinate_launches = {}
+        self._coordinate_tangents = {}
+        self._coordinate_aim_info = {}
+        self._coordinate_chief_rays = {}
+
     def update_model(self, **kwargs):
-        """Clear stale field state and re-resolve every requested image point."""
-        super().update_model(**kwargs)
-        if self.key != ("image", "height"):
+        """Clear stale exact state and otherwise follow RayOptics' field update."""
+        self._clear_solution_cache()
+        result = super().update_model(**kwargs)
+        if self.is_wide_angle is True and self.key != ("image", "height"):
             raise ExactSpecError(
                 "ExactImageHeightFieldSpec requires key ('image', 'height')"
             )
-        if self.optical_spec.conjugate_type("object") == "infinite":
-            self.is_wide_angle = True
-        self._resolve_all_fields()
-        return self
+        return result
 
     def obj_coords(self, fld):
         """Return the verified object-space launch for ``fld``."""
-        if self.key != ("image", "height"):
+        if self.key != ("image", "height") or self.is_wide_angle is not True:
             return super().obj_coords(fld)
 
         launch = self._object_launches.get(id(fld))
         if launch is None:
             coordinate = self._absolute_field_coordinate(fld)
-            launch = self._coordinate_launches.get(self._coordinate_key(coordinate))
+            key = self._coordinate_key(coordinate)
+            launch = self._coordinate_launches.get(key)
         if launch is None:
-            launch = self._solve_coordinate_from_axis(
-                self._absolute_field_coordinate(fld)
-            )
+            coordinate = self._absolute_field_coordinate(fld)
+            if self._supports_native_image_height_evaluator():
+                solution = self._solve_native_first(fld, coordinate)
+            else:
+                solution = self._solve_coordinate_from_axis(coordinate)
+            self._store_coordinate_solution(coordinate, solution)
+            self._apply_coordinate_solution(fld, coordinate)
+            launch = solution[1]
+        elif id(fld) not in self._object_launches:
+            self._apply_coordinate_solution(fld, coordinate)
         point, direction = launch
         return np.array(point, copy=True), np.array(direction, copy=True)
 
@@ -297,59 +338,83 @@ class ExactImageHeightFieldSpec(FieldSpec):
         return tuple(float(value) for value in coordinate)
 
     def _resolve_all_fields(self):
-        """Resolve fields in radial order using real-ray continuation."""
-        self._object_launches = {}
-        self._coordinate_launches = {}
+        """Resolve configured fields natively or by radial continuation."""
+        self._clear_solution_cache()
         if len(self.fields) == 0:
             return
 
-        axial_tangent, axial_launch = self._solve_reverse_direction(
-            np.array([0.0, 0.0], dtype=float),
-            np.array([0.0, 0.0], dtype=float),
-        )
-        axial_key = self._coordinate_key(np.array([0.0, 0.0]))
-        self._coordinate_launches[axial_key] = axial_launch
-
-        previous_coordinate = np.array([0.0, 0.0], dtype=float)
-        previous_tangent = axial_tangent
         ordered_fields = sorted(
             self.fields,
             key=lambda field: float(
                 np.linalg.norm(self._absolute_field_coordinate(field))
             ),
         )
+        if self._supports_native_image_height_evaluator():
+            for field in ordered_fields:
+                coordinate = self._absolute_field_coordinate(field)
+                key = self._coordinate_key(coordinate)
+                if key not in self._coordinate_launches:
+                    solution = self._solve_native_first(field, coordinate)
+                    self._store_coordinate_solution(coordinate, solution)
+                self._apply_coordinate_solution(field, coordinate)
+            return
+
+        axial_coordinate = np.array([0.0, 0.0], dtype=float)
+        axial_solution = self._solve_reverse_direction(
+            axial_coordinate,
+            np.array([0.0, 0.0], dtype=float),
+        )
+        self._store_coordinate_solution(axial_coordinate, axial_solution)
+
+        previous_coordinate = axial_coordinate
+        previous_tangent = axial_solution[0]
         for field in ordered_fields:
             coordinate = self._absolute_field_coordinate(field)
             key = self._coordinate_key(coordinate)
-            if key in self._coordinate_launches:
-                launch = self._coordinate_launches[key]
-            else:
-                previous_tangent, launch = self._continue_reverse_solution(
+            if key not in self._coordinate_launches:
+                solution = self._continue_reverse_solution(
                     previous_coordinate,
                     coordinate,
                     previous_tangent,
                 )
                 previous_coordinate = coordinate
-                self._coordinate_launches[key] = launch
-            self._object_launches[id(field)] = launch
+                previous_tangent = solution[0]
+                self._store_coordinate_solution(coordinate, solution)
+            self._apply_coordinate_solution(field, coordinate)
+
+    def _store_coordinate_solution(self, coordinate, solution):
+        """Cache a verified coordinate launch and its RayOptics metadata."""
+        tangent, launch, aim_info, chief_ray = solution
+        key = self._coordinate_key(coordinate)
+        self._coordinate_tangents[key] = tangent
+        self._coordinate_launches[key] = launch
+        self._coordinate_aim_info[key] = aim_info
+        self._coordinate_chief_rays[key] = chief_ray
+
+    def _apply_coordinate_solution(self, field, coordinate):
+        """Attach one cached solution to a configured RayOptics field."""
+        key = self._coordinate_key(coordinate)
+        launch = self._coordinate_launches[key]
+        self._object_launches[id(field)] = launch
+        field.aim_info = self._coordinate_aim_info[key]
+        field.chief_ray = self._coordinate_chief_rays[key]
 
     def _solve_coordinate_from_axis(self, coordinate):
         """Solve an ad-hoc field coordinate from the cached axial real ray."""
-        axial_key = self._coordinate_key(np.array([0.0, 0.0]))
+        axial_coordinate = np.array([0.0, 0.0], dtype=float)
+        axial_key = self._coordinate_key(axial_coordinate)
         if axial_key not in self._coordinate_launches:
-            _, axial_launch = self._solve_reverse_direction(
-                np.array([0.0, 0.0], dtype=float),
+            axial_solution = self._solve_reverse_direction(
+                axial_coordinate,
                 np.array([0.0, 0.0], dtype=float),
             )
-            self._coordinate_launches[axial_key] = axial_launch
-        tangent, launch = self._continue_reverse_solution(
-            np.array([0.0, 0.0], dtype=float),
+            self._store_coordinate_solution(axial_coordinate, axial_solution)
+        solution = self._continue_reverse_solution(
+            axial_coordinate,
             coordinate,
-            np.array([0.0, 0.0], dtype=float),
+            self._coordinate_tangents[axial_key],
         )
-        del tangent
-        self._coordinate_launches[self._coordinate_key(coordinate)] = launch
-        return launch
+        return solution
 
     def _continue_reverse_solution(
         self,
@@ -359,7 +424,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
     ):
         """Continue a verified real reverse ray to ``target_coordinate``."""
         tangent = np.asarray(initial_tangent, dtype=float)
-        launch = None
+        solution = None
         continuation_distance = float(
             np.linalg.norm(target_coordinate - start_coordinate)
         )
@@ -378,13 +443,88 @@ class ExactImageHeightFieldSpec(FieldSpec):
                 start_coordinate
                 + fraction * (target_coordinate - start_coordinate)
             )
-            tangent, launch = self._solve_reverse_direction(coordinate, tangent)
-        if launch is None:
-            tangent, launch = self._solve_reverse_direction(
+            solution = self._solve_reverse_direction(coordinate, tangent)
+            tangent = solution[0]
+        if solution is None:
+            solution = self._solve_reverse_direction(
                 target_coordinate,
                 tangent,
             )
-        return tangent, launch
+        return solution
+
+    def _supports_native_image_height_evaluator(self):
+        """Return whether RayOptics supports this exact image-height geometry."""
+        if self.optical_spec.conjugate_type("object") != "infinite":
+            return False
+
+        seq_model = self.optical_spec.opt_model["seq_model"]
+        image_profile = seq_model.ifcs[-1].profile
+        image_curvature = getattr(image_profile, "cv", None)
+        if image_curvature is None or float(image_curvature) != 0.0:
+            return False
+
+        stop_index, stop_centre = _stop_index_and_center(seq_model)
+        stop_interface = seq_model.ifcs[stop_index]
+        if not _is_close(stop_centre, np.zeros(2)):
+            return False
+        return getattr(stop_interface, "decenter", None) is None
+
+    def _solve_native_first(self, field, image_coordinate):
+        """Use RayOptics' launch, refining only failed strict verification."""
+        opm = self.optical_spec.opt_model
+        wavelength = self.optical_spec["wvls"].central_wvl
+        try:
+            native_launch, native_aim_info = (
+                self._native_image_height_evaluator(opm, field, wavelength)
+            )
+        except TraceError as error:
+            _raise_trace_error(error, "Native image-height evaluation")
+
+        native_point, native_direction = native_launch
+        launch = (
+            np.asarray(native_point, dtype=float),
+            _normalize(native_direction),
+        )
+        stop_index, stop_centre = _stop_index_and_center(opm["seq_model"])
+        forward_ray, stop_residual, image_residual = (
+            self._trace_forward_retrace(
+                launch,
+                image_coordinate,
+                stop_index,
+                stop_centre,
+                wavelength,
+            )
+        )
+        initial_tangent = self._reverse_tangent_from_forward_ray(forward_ray)
+        if not (
+            _is_close(stop_residual, np.zeros(2))
+            and _is_close(image_residual, np.zeros(2))
+        ):
+            return self._solve_reverse_direction(
+                image_coordinate,
+                initial_tangent,
+            )
+
+        aim_info = float(native_aim_info)
+        if not math.isfinite(aim_info):
+            raise ExactSpecConvergenceError(
+                "Native image-height evaluation returned invalid aiming data"
+            )
+        chief_ray = self._chief_ray_cache(forward_ray)
+        return initial_tangent, launch, aim_info, chief_ray
+
+    @staticmethod
+    def _reverse_tangent_from_forward_ray(forward_ray):
+        """Return a reverse-image tangent seeded by a forward chief ray."""
+        reverse_direction = -np.asarray(
+            forward_ray[mc.ray][-1][mc.d],
+            dtype=float,
+        )
+        if abs(float(reverse_direction[2])) <= np.finfo(float).eps:
+            raise ExactSpecError(
+                "Exact image-height chief ray is parallel to the image plane"
+            )
+        return reverse_direction[:2] / abs(float(reverse_direction[2]))
 
     def _solve_reverse_direction(self, image_coordinate, initial_tangent):
         """Solve a reverse real direction through the physical stop centre.
@@ -522,14 +662,65 @@ class ExactImageHeightFieldSpec(FieldSpec):
             object_point = np.asarray(object_segment[mc.p], dtype=float)
             object_direction = -np.asarray(object_segment[mc.d], dtype=float)
         launch = (object_point, _normalize(object_direction))
-        self._verify_forward_retrace(
+        forward_ray = self._verify_forward_retrace(
             launch,
             image_coordinate,
             stop_index,
             stop_centre,
             wavelength,
         )
-        return final_tangent, launch
+        aim_info = self._aim_info_from_reverse_ray(last_reverse_ray)
+        chief_ray = self._chief_ray_cache(forward_ray)
+        return final_tangent, launch, aim_info, chief_ray
+
+    def _aim_info_from_reverse_ray(self, reverse_ray):
+        """Derive RayOptics' scalar real entrance-pupil cache value."""
+        first_surface_segment = reverse_ray[mc.ray][-2]
+        first_surface_point = np.asarray(
+            first_surface_segment[mc.p],
+            dtype=float,
+        )
+        reverse_direction = np.asarray(
+            first_surface_segment[mc.d],
+            dtype=float,
+        )
+        transverse_direction = float(np.linalg.norm(reverse_direction[:2]))
+        if transverse_direction == 0.0:
+            paraxial_data = self.optical_spec.opt_model["analysis_results"][
+                "parax_data"
+            ]
+            if paraxial_data is None:
+                raise ExactSpecError(
+                    "Exact image-height aiming requires current first-order data"
+                )
+            return float(paraxial_data.fod.enp_dist)
+
+        object_direction = -reverse_direction
+        return float(
+            first_surface_point[2]
+            + np.linalg.norm(first_surface_point[:2])
+            * object_direction[2]
+            / transverse_direction
+        )
+
+    def _chief_ray_cache(self, forward_ray):
+        """Build the chief-ray package expected by RayOptics analyses."""
+        opm = self.optical_spec.opt_model
+        paraxial_data = opm["analysis_results"]["parax_data"]
+        if paraxial_data is None:
+            raise ExactSpecError(
+                "Exact image-height caching requires current first-order data"
+            )
+        chief_ray = RayPkg(*forward_ray)
+        chief_exit_segment = transfer_to_exit_pupil(
+            opm["seq_model"].ifcs[-2],
+            (
+                chief_ray.ray[-2][mc.p],
+                chief_ray.ray[-2][mc.d],
+            ),
+            paraxial_data.fod.exp_dist,
+        )
+        return chief_ray, chief_exit_segment
 
     def _image_surface_point(self, image_coordinate):
         """Return the exact local point on the possibly curved image profile."""
@@ -557,6 +748,33 @@ class ExactImageHeightFieldSpec(FieldSpec):
         wavelength,
     ):
         """Forward retrace a reverse solution and verify stop/image residuals."""
+        forward_ray, stop_residual, image_residual = self._trace_forward_retrace(
+            launch,
+            image_coordinate,
+            stop_index,
+            stop_centre,
+            wavelength,
+        )
+        if not _is_close(stop_residual, np.zeros(2)):
+            raise ExactSpecConvergenceError(
+                "Exact image-height forward retrace did not reach the stop centre"
+            )
+        if not _is_close(image_residual, np.zeros(2)):
+            raise ExactSpecConvergenceError(
+                "Exact image-height forward retrace did not reach the requested "
+                "image-surface intersection"
+            )
+        return forward_ray
+
+    def _trace_forward_retrace(
+        self,
+        launch,
+        image_coordinate,
+        stop_index,
+        stop_centre,
+        wavelength,
+    ):
+        """Trace a candidate launch and return its stop and image residuals."""
         seq_model = self.optical_spec.opt_model["seq_model"]
         point, direction = launch
         try:
@@ -576,19 +794,15 @@ class ExactImageHeightFieldSpec(FieldSpec):
             dtype=float,
         )
         image_point = np.asarray(forward_ray[mc.ray][-1][mc.p], dtype=float)
-        if not _is_close(stop_point[:2], stop_centre):
-            raise ExactSpecConvergenceError(
-                "Exact image-height forward retrace did not reach the stop centre"
-            )
-        if not _is_close(image_point[:2], image_coordinate):
-            raise ExactSpecConvergenceError(
-                "Exact image-height forward retrace did not reach the requested "
-                "image-surface intersection"
-            )
+        return (
+            forward_ray,
+            stop_point[:2] - stop_centre,
+            image_point[:2] - image_coordinate,
+        )
 
 
 class ExactOpticalModel(OpticalModel):
-    """RayOptics model that re-resolves exact pupil constraints on every update."""
+    """RayOptics model that re-resolves opted-in exact pupil constraints."""
 
     def __init__(
         self,
@@ -624,10 +838,12 @@ class ExactOpticalModel(OpticalModel):
         return self._exact_pupil_resolve_count
 
     def update_model(self, **kwargs):
-        """Update RayOptics, then replace every physical pupil launch exactly."""
+        """Update RayOptics, resolving pupils only for explicit wide-angle use."""
         self._resolved_object_epd = None
         self._resolved_object_na_tangent = None
         super().update_model(**kwargs)
+        if not _is_exact_stack_enabled(self["optical_spec"]):
+            return
         self._resolve_exact_pupil()
         if self["seq_model"].do_apertures and len(self["seq_model"].ifcs) > 2:
             self["seq_model"].set_clear_apertures()

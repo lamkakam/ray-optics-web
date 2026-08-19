@@ -11,7 +11,7 @@ export type PupilSpec =
   | { space: "object"; type: "epd" | "NA"; value: number }
   | { space: "image"; type: "f/#"; value: number };
 
-/** Supported physical field definitions; image-space angle is invalid. */
+/** Supported physical field definitions; image-space angle is invalid and Object Height normalizes wide-angle mode off. */
 export type FieldSpec =
   | {
       space: "object";

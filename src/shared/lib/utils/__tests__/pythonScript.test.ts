@@ -47,6 +47,14 @@ const baseModel: OpticalModel = {
   ],
 };
 
+const wideAngleModel: OpticalModel = {
+  ...baseModel,
+  specs: {
+    ...baseModel.specs,
+    field: { ...baseModel.specs.field, isWideAngle: true },
+  },
+};
+
 describe("buildOpticalModelScript", () => {
   it("uses user_defined_materials lookup for Custom media", () => {
     const script = buildOpticalModelScript({
@@ -69,22 +77,72 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("osp['wvls'] = WvlSpec([(656.3, 1),(587, 2),(486.1, 1)], ref_wl=1)");
   });
 
-  it("uses the exact image-height field class for image-space height", () => {
+  it("uses the exact model and image-height field class when wide angle is enabled", () => {
     const script = buildOpticalModelScript({
-      ...baseModel,
+      ...wideAngleModel,
       specs: {
-        ...baseModel.specs,
+        ...wideAngleModel.specs,
         field: {
-          ...baseModel.specs.field,
+          ...wideAngleModel.specs.field,
           space: "image",
           type: "height",
         },
       },
     });
 
+    expect(script).toContain("opm = ExactOpticalModel()");
     expect(script).toContain(
       "osp['fov'] = ExactImageHeightFieldSpec(osp, key=['image', 'height']",
     );
+  });
+
+  it.each([undefined, false])(
+    "uses plain RayOptics for image height when wide angle is %s",
+    (isWideAngle) => {
+      const script = buildOpticalModelScript({
+        ...baseModel,
+        specs: {
+          ...baseModel.specs,
+          field: {
+            space: "image",
+            type: "height",
+            maxField: 2,
+            fields: [0, 1],
+            isRelative: true,
+            isWideAngle,
+          },
+        },
+      });
+
+      expect(script).toContain("opm = OpticalModel()");
+      expect(script).toContain(
+        "osp['fov'] = FieldSpec(osp, key=['image', 'height']",
+      );
+      expect(script).not.toContain("ExactImageHeightFieldSpec(");
+    },
+  );
+
+  it("normalizes object height wide-angle input to plain RayOptics", () => {
+    const script = buildOpticalModelScript({
+      ...wideAngleModel,
+      specs: {
+        ...wideAngleModel.specs,
+        field: {
+          space: "object",
+          type: "height",
+          maxField: 2,
+          fields: [0, 1],
+          isRelative: true,
+          isWideAngle: true,
+        },
+      },
+    });
+
+    expect(script).toContain("opm = OpticalModel()");
+    expect(script).toContain(
+      "osp['fov'] = FieldSpec(osp, key=['object', 'height'], value=2, flds=[0,1], is_relative=True)",
+    );
+    expect(script).not.toContain("is_wide_angle=True");
   });
 
   it("should set sm.do_apertures = False when setAutoAperture is manualAperture", () => {
@@ -176,7 +234,7 @@ describe("buildOpticalModelScript", () => {
 
   it("should call the OpticalModel constructor correctly", () => {
     const script = buildOpticalModelScript(baseModel);
-    expect(script).toContain("opm = ExactOpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']");
+    expect(script).toContain("opm = OpticalModel()\nsm  = opm['seq_model']\nosp = opm['optical_spec']\npm  = opm['parax_model']");
   });
 
   it("should set an aspherical surface correctly", () => {
@@ -578,14 +636,8 @@ describe("buildOpticalModelScript", () => {
   });
 
   it("should set the flag `is_wide_angle` to be True if the attribute of isWideAngle is true in field", () => {
-    const opticalModel = {
-      ...baseModel,
-      specs: {
-        ...baseModel.specs,
-        field: { ...baseModel.specs.field, isWideAngle: true }
-      },
-    };
-    const script = buildOpticalModelScript(opticalModel);
+    const script = buildOpticalModelScript(wideAngleModel);
+    expect(script).toContain("opm = ExactOpticalModel()");
     expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True, is_wide_angle=True)");
   });
 });
@@ -598,7 +650,7 @@ describe("buildExportScript", () => {
   it("places the generated aperture helper block before model construction", () => {
     const script = buildExportScript(baseModel);
     const helpersIdx = script.indexOf(pythonExportApertureHelpers);
-    const modelIdx = script.indexOf("opm = ExactOpticalModel()");
+    const modelIdx = script.indexOf("opm = OpticalModel()");
 
     expect(helpersIdx).toBeGreaterThan(-1);
     expect(modelIdx).toBeGreaterThan(helpersIdx);
@@ -611,7 +663,7 @@ describe("buildExportScript", () => {
   });
 
   it("defines the exact model and image-height field inline before construction", () => {
-    const script = buildExportScript(baseModel);
+    const script = buildExportScript(wideAngleModel);
     const helpersIdx = script.indexOf(
       "class ExactOpticalModel(OpticalModel):",
     );
@@ -624,6 +676,14 @@ describe("buildExportScript", () => {
     expect(fieldIdx).toBeGreaterThan(-1);
     expect(modelIdx).toBeGreaterThan(helpersIdx);
     expect(modelIdx).toBeGreaterThan(fieldIdx);
+  });
+
+  it("omits the exact helper block from non-wide standalone exports", () => {
+    const script = buildExportScript(baseModel);
+
+    expect(script).not.toContain("class ExactOpticalModel(OpticalModel):");
+    expect(script).not.toContain("class ExactImageHeightFieldSpec(FieldSpec):");
+    expect(script).toContain("opm = OpticalModel()");
   });
 
   it("imports Circular and Rectangular in the export preamble", () => {
@@ -680,7 +740,7 @@ describe("buildScript", () => {
     const script = buildScript(baseModel, (opm) => `json.dumps(get_first_order_data(${opm}))`);
     expect(script).toContain("def _build_opm():");
     expect(script).toContain("    return opm");
-    expect(script).toContain("    opm = ExactOpticalModel()");
+    expect(script).toContain("    opm = OpticalModel()");
     expect(script).toContain("json.dumps(get_first_order_data(_build_opm()))");
   });
 
