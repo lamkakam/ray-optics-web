@@ -361,8 +361,14 @@ Exact state is update-scoped:
   coordinate. Duplicate coordinates share a solution. Each configured field
   also receives RayOptics-compatible scalar `aim_info` and a complete
   `chief_ray` package, so later analysis does not repeat `find_real_enp` for the
-  same configured chief. An ad hoc extension field can continue from the
-  cached axial solution. No cache survives the next model update.
+  same configured chief. The strict forward-verification trace covers the
+  complete raw path, including dummy object and image gaps, but its optical-path
+  total is not copied into that package. The verified launch is retraced once
+  with RayOptics' standard trace wrapper, which excludes those dummy gaps from
+  optical-path bookkeeping just like every analysis ray. This keeps the
+  reference-wavelength chief-ray OPD at zero without repeating entrance-pupil
+  aiming. An ad hoc extension field can continue from the cached axial
+  solution. No cache survives the next model update.
 
 Geometry, material, wavelength, stop, or field edits therefore take effect
 when the caller invokes `update_model()`; stale exact launches are not retained

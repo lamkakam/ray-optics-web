@@ -2,11 +2,12 @@
 
 Wide-angle fields keep RayOptics' paraxial data for first-order reporting while
 requiring verified physical launches, reusing native real-image-height aiming
-when it already meets the stricter project tolerance. False and omitted flags
-must delegate to plain RayOptics. These tests exercise the public exact model
-and field classes through normal tracing calls. The baseline model comes from
-the core optical module so collection stays headless before the session fixture
-can install GUI stubs.
+when it already meets the stricter project tolerance, and caching chief rays
+with the optical-path convention expected by OPD analysis. False and omitted
+flags must delegate to plain RayOptics. These tests exercise the public exact
+model and field classes through normal tracing calls. The baseline model comes
+from the core optical module so collection stays headless before the session
+fixture can install GUI stubs.
 """
 
 from __future__ import annotations
@@ -529,6 +530,31 @@ def test_configured_image_height_fields_cache_native_aiming_for_analysis(
     wavelength = opm["optical_spec"]["wvls"].central_wvl
     for field, cached_chief_ray in zip(fields, cached_chief_rays):
         assert get_chief_ray_pkg(opm, field, wavelength, 0.0) is cached_chief_ray
+
+
+def test_cached_native_chief_ray_keeps_reference_wavelength_opd_zero():
+    """The cached chief must not add the artificial infinite-object gap to OPD."""
+    from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
+
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=("image", "height"),
+        max_field=0.01,
+        fields=[0.0],
+        object_distance=1.0e10,
+    )
+
+    result = get_opd_fan_data_for_wavelength(opm, fi=0, wvl_idx=0)
+
+    for axis in ("Tangential", "Sagittal"):
+        zero_index = min(
+            range(len(result[axis]["x"])),
+            key=lambda index: abs(result[axis]["x"][index]),
+        )
+        assert result[axis]["x"][zero_index] == pytest.approx(0.0, abs=1.0e-12)
+        assert result[axis]["y"][zero_index] == pytest.approx(0.0, abs=1.0e-9)
 
 
 def test_meridional_image_height_uses_a_nonsingular_scalar_solve():

@@ -16,8 +16,11 @@ launch only when strict forward verification requires it.  Finite conjugates,
 curved images, decentered stops, and continuation retain the extension's
 reverse solve through the physical stop centre.  Configured launches also
 populate RayOptics-compatible aiming and chief-ray caches for later analysis.
-Centred meridional refinements use their one physical degree of freedom so an
-identically-zero sagittal residual cannot make the numerical Jacobian singular.
+Cached chief rays retain the verified geometry but use RayOptics' standard
+optical-path normalization so infinite-conjugate dummy gaps cannot contaminate
+OPD results.  Centred meridional refinements use their one physical degree of
+freedom so an identically-zero sagittal residual cannot make the numerical
+Jacobian singular.
 
 All final residuals use a combined relative/absolute tolerance of ``1e-9``.
 Clear apertures are ignored while resolving specifications; later vignetting is
@@ -704,14 +707,35 @@ class ExactImageHeightFieldSpec(FieldSpec):
         )
 
     def _chief_ray_cache(self, forward_ray):
-        """Build the chief-ray package expected by RayOptics analyses."""
+        """Build a geometrically verified, OPD-compatible chief-ray package.
+
+        ``_trace_forward_retrace`` deliberately uses ``trace_raw`` across the
+        complete path so strict stop and image intersection checks see every
+        segment. Its optical-path value therefore includes dummy object and
+        image gaps that RayOptics' normal analysis trace excludes. Retrace the
+        already-solved launch through the standard wrapper to normalize only
+        that bookkeeping; this does not repeat entrance-pupil aiming.
+        """
         opm = self.optical_spec.opt_model
         paraxial_data = opm["analysis_results"]["parax_data"]
         if paraxial_data is None:
             raise ExactSpecError(
                 "Exact image-height caching requires current first-order data"
             )
-        chief_ray = RayPkg(*forward_ray)
+        verified_ray = RayPkg(*forward_ray)
+        try:
+            chief_ray = RayPkg(
+                *raytrace.trace(
+                    opm["seq_model"],
+                    verified_ray.ray[0][mc.p],
+                    verified_ray.ray[0][mc.d],
+                    verified_ray.wvl,
+                    check_apertures=False,
+                    intersect_obj=False,
+                )
+            )
+        except TraceError as error:
+            _raise_trace_error(error, "Exact image-height chief-ray caching")
         chief_exit_segment = transfer_to_exit_pupil(
             opm["seq_model"].ifcs[-2],
             (

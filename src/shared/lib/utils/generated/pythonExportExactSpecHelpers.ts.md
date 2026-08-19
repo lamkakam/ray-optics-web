@@ -21,4 +21,6 @@ do not edit it directly.
 `shared/lib/utils/pythonScript.ts` places this source in the standalone export
 preamble only when a compatible `field.isWideAngle === true` selects
 `ExactOpticalModel`; native RayOptics exports omit the block. Worker scripts
-import the same classes from the wheel instead of inlining them.
+import the same classes from the wheel instead of inlining them. Consequently,
+standalone and worker exact models share the same OPD-compatible chief-ray
+cache normalization for infinite-conjugate fields.
