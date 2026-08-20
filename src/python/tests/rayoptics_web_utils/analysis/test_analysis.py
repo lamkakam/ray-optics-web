@@ -305,6 +305,56 @@ class TestGetRayFanData:
 class TestGetOpdFanData:
     """Tests for get_opd_fan_data()."""
 
+    @pytest.mark.parametrize("wvl_idx", [0, 1, 2], ids=["F", "d", "C"])
+    def test_finite_opd_uses_traced_wavelength_boundary_indices_without_mutation(
+        self,
+        dispersive_image_space_model,
+        monkeypatch,
+        wvl_idx,
+    ):
+        """Finite OPD uses copied F/d/C boundary indices, not cached d-line data."""
+        import rayoptics_web_utils.analysis.opd_fan as opd_fan_module
+
+        opm = dispersive_image_space_model
+        wavelengths = opm["optical_spec"]["wvls"].wavelengths
+        wavelength_nm = wavelengths[wvl_idx]
+        cached_fod = opm["analysis_results"]["parax_data"].fod
+        cached_indices = (cached_fod.n_obj, cached_fod.n_img)
+        captured_fod = []
+        original_wave_abr_full_calc = opd_fan_module.wave_abr_full_calc
+
+        def capture_first_order_data(fod, *args, **kwargs):
+            captured_fod.append(fod)
+            return original_wave_abr_full_calc(fod, *args, **kwargs)
+
+        monkeypatch.setattr(
+            opd_fan_module,
+            "wave_abr_full_calc",
+            capture_first_order_data,
+        )
+
+        opd_fan_module.get_opd_fan_data_for_wavelength(
+            opm,
+            fi=0,
+            wvl_idx=wvl_idx,
+        )
+
+        assert captured_fod
+        expected_n_obj = opm["seq_model"].gaps[0].medium.rindex(
+            wavelength_nm,
+        )
+        expected_n_img = opm["seq_model"].gaps[-1].medium.rindex(
+            wavelength_nm,
+        )
+        assert [fod.n_obj for fod in captured_fod] == pytest.approx(
+            [expected_n_obj] * len(captured_fod),
+        )
+        assert [fod.n_img for fod in captured_fod] == pytest.approx(
+            [expected_n_img] * len(captured_fod),
+        )
+        assert all(fod is not cached_fod for fod in captured_fod)
+        assert (cached_fod.n_obj, cached_fod.n_img) == cached_indices
+
     def test_single_wavelength_forwards_requested_index_to_both_fan_axes(self, monkeypatch):
         import rayoptics_web_utils.analysis.opd_fan as opd_fan_module
 

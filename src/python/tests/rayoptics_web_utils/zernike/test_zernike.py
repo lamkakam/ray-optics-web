@@ -464,11 +464,14 @@ class TestGetZernikeCoefficients:
 
         captured_kwargs: dict = {}
 
-        def capturing_raygrid(*args, **kwargs):
-            captured_kwargs.update(kwargs)
-            return RealRayGrid(*args, **kwargs)
+        class CapturingRayGrid(RealRayGrid):
+            """Capture construction kwargs while retaining subclass behavior."""
 
-        with patch('rayoptics.raytr.analyses.RayGrid', side_effect=capturing_raygrid):
+            def __init__(self, *args, **kwargs):
+                captured_kwargs.update(kwargs)
+                super().__init__(*args, **kwargs)
+
+        with patch('rayoptics.raytr.analyses.RayGrid', CapturingRayGrid):
             get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
 
         assert captured_kwargs.get('check_apertures') is True, (

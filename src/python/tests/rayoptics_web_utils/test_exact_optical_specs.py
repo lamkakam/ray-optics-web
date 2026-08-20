@@ -25,6 +25,7 @@ from rayoptics.optical.opticalmodel import OpticalModel
 from rayoptics.elem.surface import Circular, DecenterData
 from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
 from rayoptics.raytr.trace import get_chief_ray_pkg, trace_base
+from rayoptics.raytr.traceerror import TraceRayBlockedError
 from rayoptics.raytr.wideangle import (
     eval_real_image_ht as rayoptics_eval_real_image_ht,
 )
@@ -177,6 +178,7 @@ def _build_uniform_medium_na_model(
     na: float,
     *,
     object_index: float = 1.5,
+    field_angle: float = 0.0,
     is_wide_angle: bool | None = True,
 ) -> ExactOpticalModel:
     """Build an unpowered model whose object-space angle is easy to verify."""
@@ -190,8 +192,8 @@ def _build_uniform_medium_na_model(
     osp["fov"] = FieldSpec(
         osp,
         key=("object", "angle"),
-        value=0.0,
-        flds=[0.0],
+        value=field_angle,
+        flds=[0.0 if field_angle == 0.0 else 1.0],
         is_relative=True,
         **field_kwargs,
     )
@@ -254,6 +256,105 @@ def test_object_na_uses_the_reference_wavelength_object_medium_index():
         abs=1.0e-9,
     )
     assert actual_angle != pytest.approx(atan(requested_na))
+
+
+@pytest.mark.parametrize("radius", [0.0, 0.2, 0.5, 0.8, 1.0])
+def test_object_na_samples_pupil_radius_linearly_in_direction_sine(radius: float):
+    """Every interior radius obeys n*sin(theta)=radius*Object NA."""
+    requested_na = 1.2
+    object_index = 1.5
+    opm = _build_uniform_medium_na_model(
+        requested_na,
+        object_index=object_index,
+    )
+    opm.update_model()
+    osp = opm["optical_spec"]
+    field = osp["fov"].fields[0]
+    point, chief_direction = osp.ray_start_from_osp(
+        [0.0, 0.0],
+        field,
+        "rel pupil",
+    )
+    sample_point, sample_direction = osp.ray_start_from_osp(
+        [radius, 0.0],
+        field,
+        "rel pupil",
+    )
+
+    np.testing.assert_allclose(sample_point, point)
+    angle = _ray_angle(chief_direction, sample_direction)
+    assert object_index * sin(angle) == pytest.approx(
+        radius * requested_na,
+        rel=1.0e-9,
+        abs=1.0e-9,
+    )
+
+
+def test_object_na_direction_sines_use_the_off_axis_chief_basis():
+    """Sagittal, tangential, and longitudinal cosines follow an off-axis chief."""
+    requested_na = 1.2
+    object_index = 1.5
+    pupil = np.array([0.3, 0.4])
+    opm = _build_uniform_medium_na_model(
+        requested_na,
+        object_index=object_index,
+        field_angle=20.0,
+    )
+    opm.update_model()
+    osp = opm["optical_spec"]
+    field = osp["fov"].fields[0]
+    _, chief_direction = osp.ray_start_from_osp(
+        [0.0, 0.0],
+        field,
+        "rel pupil",
+    )
+    _, sample_direction = osp.ray_start_from_osp(
+        pupil,
+        field,
+        "rel pupil",
+    )
+    chief_direction = np.asarray(chief_direction, dtype=float)
+    sample_direction = np.asarray(sample_direction, dtype=float)
+    x_axis, y_axis = osp._transverse_axes(chief_direction)
+    sine_scale = requested_na / object_index
+
+    assert np.dot(sample_direction, x_axis) == pytest.approx(
+        sine_scale * pupil[0],
+        abs=1.0e-12,
+    )
+    assert np.dot(sample_direction, y_axis) == pytest.approx(
+        sine_scale * pupil[1],
+        abs=1.0e-12,
+    )
+    assert np.dot(sample_direction, chief_direction) == pytest.approx(
+        np.sqrt(1.0 - sine_scale * sine_scale * np.dot(pupil, pupil)),
+        abs=1.0e-12,
+    )
+
+
+def test_object_na_blocks_samples_outside_the_unit_angular_disk():
+    """Square analysis grids treat angular-pupil corners as blocked samples."""
+    from rayoptics_web_utils.raygrid import make_ray_grid
+
+    opm = _build_uniform_medium_na_model(1.2, object_index=1.5)
+    opm.update_model()
+    osp = opm["optical_spec"]
+    field = osp["fov"].fields[0]
+
+    with pytest.raises(TraceRayBlockedError):
+        osp.ray_start_from_osp([1.0, 1.0], field, "rel pupil")
+
+    ray_grid = make_ray_grid(
+        opm,
+        fi=0,
+        wavelength_nm=osp["wvls"].central_wvl,
+        num_rays=3,
+    )
+
+    assert np.isnan(ray_grid.grid[2, 0, 0])
+    assert np.isnan(ray_grid.grid[2, 0, 2])
+    assert np.isnan(ray_grid.grid[2, 2, 0])
+    assert np.isnan(ray_grid.grid[2, 2, 2])
 
 
 @pytest.mark.parametrize("is_wide_angle", [False, None], ids=["false", "missing"])

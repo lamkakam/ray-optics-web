@@ -57,7 +57,7 @@ ray's image-space Y direction need not remain positive.
 | Specification | Physical constraint | Exact launch quantity | Final verification |
 | --- | --- | --- | --- |
 | Image-space geometric F-number, `("image", "f/#")` | $F/\mathrm{number}=1/(2\tan u')$, where $u'$ is the real image-space angle between the axial chief and +Y marginal rays | Object-space entrance-pupil diameter $D_o$, found by a scalar real-ray solve | Retrace both unclipped rays and compare $u'$ with $\arctan(1/[2(F/\mathrm{number})])$ |
-| Object-space numerical aperture, `("object", "NA")` | $\mathrm{NA}=n_o\sin u$, where $u$ is the real object-space chief-to-+Y angle | Chief-centred cone tangent $\tan u=\mathrm{NA}/\sqrt{n_o^2-\mathrm{NA}^2}$ | Retrace both unclipped rays and compare $n_o\sin u$ with the requested NA |
+| Object-space numerical aperture, `("object", "NA")` | $\mathrm{NA}=n_o\sin u$, where $u$ is the real object-space chief-to-+Y angle | Chief-centred direction-sine disk with $\sin u_\rho=\rho\,\mathrm{NA}/n_o$ | Retrace both unclipped rays and compare the marginal value $n_o\sin u_1$ with the requested NA |
 | Object-space entrance-pupil diameter, `("object", "epd")` | A normalized pupil radius of one represents $D_o/2$ | The supplied $D_o$ is used directly; no root solve or module-level range check is performed | No independent pupil residual; the launch is constructed at radius $D_o/2$, and an exact height-field chief is separately forward verified |
 | Exact finite Object Height, `("object", "height")` | Every pupil ray starts at the requested object-local point $[x_v,y_v,0]$, and the chief passes through the local stop centre | Only the chief direction tangents $(t_x,t_y)$ are solved; the object point never moves | A mandatory complete unclipped forward trace must preserve the object point and hit the local stop centre |
 | Exact image height, `("image", "height")` | The chief ray must intersect the image profile at $[x,y,\mathrm{sag}(x,y)]$ and pass through the physical stop centre | RayOptics' native real-image-height launch when supported, otherwise or after strict refinement a finite object point/direction or infinite-conjugate input-plane anchor/direction | A mandatory unclipped forward retrace must return to both the stop centre and requested image coordinate |
@@ -107,25 +107,32 @@ a paraxial replacement for the real ray angle.
 ### Object-space numerical aperture
 
 At the reference wavelength, let $n_o$ be the absolute refractive index of the
-object-space gap and let $u$ be the unsigned angle between the first-segment
+object-space gap and let $u_1$ be the unsigned angle between the first-segment
 directions of the axial chief and +Y marginal rays. The physical definition is
 
 $$
-\mathrm{NA}=n_o\sin u.
+\mathrm{NA}=n_o\sin u_1.
 $$
 
-Writing $s=\sin u=\mathrm{NA}/n_o$ gives
+For normalized pupil radius
+$\rho=\sqrt{\xi^2+\eta^2}$, RayOptics' normalized-pupil convention requires
+linear sampling in direction sine:
 
 $$
-\tan u
-=\frac{s}{\sqrt{1-s^2}}
-=\frac{\mathrm{NA}}{\sqrt{n_o^2-\mathrm{NA}^2}}.
+\sin u_\rho=\rho\frac{\mathrm{NA}}{n_o},
+\qquad 0\leq\rho\leq1.
 $$
 
-This conversion is important outside the small-angle, unit-index limit:
-`tan(NA)` and `NA` are not valid general launch slopes. The implementation
-requires $0\leq\mathrm{NA}<n_o$; equality would produce a grazing,
-non-propagating limit with an infinite tangent.
+This direction-sine rule is important at high NA. Multiplying the marginal
+ray's tangent by $\rho$ produces the correct boundary angle but oversamples
+every interior radius. Treating NA itself as an angle or slope is also invalid
+outside the small-angle, unit-index limit. The implementation requires
+$0\leq\mathrm{NA}<n_o$; equality is the grazing, non-propagating limit.
+
+Samples with $\rho>1$ lie outside the normalized angular pupil and raise
+RayOptics' blocked-ray exception. Square wavefront grids consequently retain
+their normal shape while their four outside-disk corners become blocked/NaN
+samples instead of attempting non-physical longitudinal direction cosines.
 
 The index is `abs(seq_model.rndx[0][reference_wvl])`. Taking the absolute value
 removes RayOptics propagation-sign bookkeeping while retaining the physical
@@ -147,17 +154,20 @@ $$
 $$
 
 Object-local +Y is used as the projection seed only if the chief ray is
-parallel to object-local +X. An object-NA ray is then launched as
+parallel to object-local +X. Define $s=\mathrm{NA}/n_o$ and
+$\rho^2=\xi^2+\eta^2$. An object-NA ray inside the unit disk is then launched
+as
 
 $$
 \boldsymbol d(\xi,\eta)=
-\mathrm{normalize}\left[
-\boldsymbol c+\tan u\left(\xi\boldsymbol e_x+\eta\boldsymbol e_y\right)
-\right].
+\sqrt{1-s^2\rho^2}\,\boldsymbol c
++s\left(\xi\boldsymbol e_x+\eta\boldsymbol e_y\right).
 $$
 
-Thus $(0,1)$ makes exactly the requested angle with the chief direction even
-for an off-axis chief ray.
+The longitudinal and transverse components make this a unit direction by
+construction. Thus every radius is linear in direction sine, and $(0,1)$
+makes exactly the requested angle with the chief direction even for an
+off-axis chief ray.
 
 ### Object EPD at finite and infinite conjugates
 
@@ -215,6 +225,32 @@ For exact finite Object Height, Object NA uses the same fixed object point and
 the chief-centred angular basis above. Image F/# first resolves its physical
 object EPD and then uses the finite EPD construction. Thus Object EPD, Object
 NA, and Image F/# all preserve the requested object point for every pupil ray.
+
+## Wavelength-specific finite OPD indices
+
+RayOptics' cached `FirstOrderData` describes the configured reference
+wavelength. Its finite wave-aberration equations also read `n_obj` and `n_img`
+from that object, so passing it unchanged to an F- or C-line trace would reuse
+the reference-wavelength boundary indices.
+
+Before finite OPD evaluation, the application makes a shallow copy of the
+cached first-order data and replaces only those two fields:
+
+$$
+n_{\mathrm{obj}}(\lambda)
+=\mathrm{first\ gap.medium.rindex}(\lambda),
+\qquad
+n_{\mathrm{img}}(\lambda)
+=\mathrm{last\ gap.medium.rindex}(\lambda).
+$$
+
+OPD fans pass that copy to `wave_abr_full_calc`. Finite wavefront grids use a
+`RayGrid` subclass that exposes the same copy through a temporary read-only
+model view during build and refocus, then restores the original model on the
+returned grid. This covers wavefront maps and every downstream RayGrid
+consumer without mutating cached paraxial data or changing the public grid
+interface. The afocal plane-wave OPD path is unchanged because it already
+evaluates both boundary media directly at the traced wavelength.
 
 ## Exact finite Object Height fields
 
@@ -433,10 +469,10 @@ automatic aperture sizing, and vignetting.
 
 Exact state is update-scoped:
 
-- `ExactOpticalModel.update_model()` clears the resolved EPD and NA tangent and
-  performs the normal RayOptics update. It resolves the requested pupil and
-  performs the final automatic-aperture pass only when wide-angle mode is
-  explicitly enabled.
+- `ExactOpticalModel.update_model()` clears the resolved EPD and NA direction
+  sine, then performs the normal RayOptics update. It resolves the requested
+  pupil and performs the final automatic-aperture pass only when wide-angle
+  mode is explicitly enabled.
 - Both exact field classes clear their launch maps and analysis caches from
   `update_model()`. For an opted-in exact height field,
   `ExactOpticalSpecs.update_optical_properties()` first refreshes RayOptics'

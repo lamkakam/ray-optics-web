@@ -4,6 +4,7 @@ import rayoptics.optical.model_constants as mc
 from rayoptics.environment import OpticalModel
 from rayoptics.raytr.waveabr import wave_abr_full_calc
 
+from rayoptics_web_utils._finite_opd import first_order_data_for_wavelength
 from rayoptics_web_utils.analysis._fan import _trace_fan_series
 from rayoptics_web_utils.analysis._afocal import afocal_opd, exit_pupil_plane, is_afocal_image_space, reference_direction
 from rayoptics_web_utils.utils import _json_float_list
@@ -21,7 +22,11 @@ def get_opd_fan_data_for_wavelength(
     `get_opd_fan_data`, including `fieldIdx`, `wvlIdx`, sagittal and tangential
     21-point fans, blocked-sample gaps, and wave units.
 
-    Finite image space uses `wave_abr_full_calc(...) / opm.nm_to_sys_units(wvl)`.
+    Finite image space uses
+    `wave_abr_full_calc(...) / opm.nm_to_sys_units(wvl)` with a copy of the
+    model's first-order data whose object- and image-space indices come from
+    the boundary media at the traced wavelength. The cached reference-
+    wavelength first-order data is not changed.
     Infinite image space uses the shared exit-pupil plane-wave OPD, excludes the
     artificial final gap, makes chief-ray OPD zero, and converts to the traced
     wavelength's waves. `image_point="chief_ray"` preserves the historical
@@ -40,6 +45,7 @@ def get_opd_fan_data_for_wavelength(
 
     afocal = is_afocal_image_space(opm)
     references = {}
+    finite_first_order_data = {}
 
     def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
         if ray_pkg[mc.ray] is not None:
@@ -50,7 +56,12 @@ def get_opd_fan_data_for_wavelength(
                     references[wvl] = (reference, chief_pkg, plane_point)
                 reference, chief_pkg, plane_point = references[wvl]
                 return afocal_opd(opm, ray_pkg, chief_pkg, plane_point, reference, wvl) / opm.nm_to_sys_units(wvl)
-            fod = opm["analysis_results"]["parax_data"].fod
+            if wvl not in finite_first_order_data:
+                finite_first_order_data[wvl] = first_order_data_for_wavelength(
+                    opm,
+                    wvl,
+                )
+            fod = finite_first_order_data[wvl]
             opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg, fld.chief_ray, fld.ref_sphere)
             return opd_val / opm.nm_to_sys_units(wvl)
         return None

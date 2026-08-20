@@ -4,7 +4,9 @@
 paraxial first-order reporting while resolving a separate physical launch after
 every ``update_model()``.  Image-space geometric F-number is solved from the
 real angle between the axial chief and +Y marginal rays.  Object-space
-numerical aperture is converted with the reference-wavelength object index.
+numerical aperture uses a reference-wavelength direction-sine radius so every
+normalized pupil radius represents the same fraction of NA. Samples outside
+the unit angular disk are blocked before tracing.
 These pupil extensions are active only when the field's ``is_wide_angle``
 attribute is exactly ``True``; otherwise the exact classes delegate to their
 RayOptics superclasses.
@@ -47,6 +49,7 @@ from rayoptics.raytr.trace import trace_base
 from rayoptics.raytr.traceerror import (
     TraceError,
     TraceMissedSurfaceError,
+    TraceRayBlockedError,
     TraceTIRError,
 )
 from rayoptics.raytr.waveabr import transfer_to_exit_pupil
@@ -232,10 +235,14 @@ class ExactOpticalSpecs(OpticalSpecs):
         )
 
         if pupil_key == ("object", "NA"):
-            tangent = opm._resolved_object_na_tangent
-            if tangent is None:
+            direction_sine = opm._resolved_object_na_direction_sine
+            if direction_sine is None:
                 return super().ray_start_from_osp(pupil, fld, pupil_type)
-            return self._start_from_exact_object_na(pupil, fld, tangent)
+            return self._start_from_exact_object_na(
+                pupil,
+                fld,
+                direction_sine,
+            )
 
         if pupil_key == ("image", "f/#"):
             object_epd = opm._resolved_object_epd
@@ -294,15 +301,36 @@ class ExactOpticalSpecs(OpticalSpecs):
         )
         return point, _normalize(pupil_target - point)
 
-    def _start_from_exact_object_na(self, pupil, fld, tangent):
-        """Launch a rotational cone with the exact object-space NA tangent."""
+    def _start_from_exact_object_na(self, pupil, fld, direction_sine):
+        """Launch a unit-disk cone linear in object-space direction sine."""
         point, chief_direction = self.obj_coords(fld)
         chief_direction = _normalize(chief_direction)
         pupil = np.asarray(pupil, dtype=float)
+        pupil_radius_squared = float(np.dot(pupil, pupil))
+        if not math.isfinite(pupil_radius_squared):
+            raise TraceRayBlockedError(None, np.array(pupil, copy=True))
+        if pupil_radius_squared > 1.0:
+            if pupil_radius_squared > 1.0 + EXACT_SPEC_ABSOLUTE_TOLERANCE:
+                raise TraceRayBlockedError(None, np.array(pupil, copy=True))
+            pupil = pupil / math.sqrt(pupil_radius_squared)
+            pupil_radius_squared = 1.0
 
         x_axis, y_axis = self._transverse_axes(chief_direction)
-        direction = chief_direction + tangent * (
+        transverse_direction = direction_sine * (
             pupil[0] * x_axis + pupil[1] * y_axis
+        )
+        longitudinal_direction_cosine = math.sqrt(
+            max(
+                0.0,
+                1.0
+                - direction_sine
+                * direction_sine
+                * pupil_radius_squared,
+            )
+        )
+        direction = (
+            longitudinal_direction_cosine * chief_direction
+            + transverse_direction
         )
         return np.asarray(point, dtype=float), _normalize(direction)
 
@@ -1219,7 +1247,7 @@ class ExactOpticalModel(OpticalModel):
         """Create a model with exact launch state and injectable scalar solver."""
         self._scalar_solver = scalar_solver or root_scalar
         self._resolved_object_epd = None
-        self._resolved_object_na_tangent = None
+        self._resolved_object_na_direction_sine = None
         self._exact_pupil_resolve_count = 0
         self.optical_spec = ExactOpticalSpecs(
             self,
@@ -1245,7 +1273,7 @@ class ExactOpticalModel(OpticalModel):
     def update_model(self, **kwargs):
         """Update RayOptics, resolving pupils only for explicit wide-angle use."""
         self._resolved_object_epd = None
-        self._resolved_object_na_tangent = None
+        self._resolved_object_na_direction_sine = None
         super().update_model(**kwargs)
         if not _is_exact_stack_enabled(self["optical_spec"]):
             return
@@ -1377,7 +1405,7 @@ class ExactOpticalModel(OpticalModel):
             )
 
     def _resolve_object_na(self, numerical_aperture):
-        """Resolve Object NA analytically using the physical object medium."""
+        """Resolve reference-wavelength Object NA as a direction sine."""
         spectral_region = self["optical_spec"]["wvls"]
         reference_index = spectral_region.reference_wvl
         object_index = abs(
@@ -1393,14 +1421,10 @@ class ExactOpticalModel(OpticalModel):
                 f"reference-wavelength object index ({object_index})"
             )
 
-        denominator = math.sqrt(
-            object_index * object_index
-            - numerical_aperture * numerical_aperture
-        )
-        self._resolved_object_na_tangent = (
+        self._resolved_object_na_direction_sine = (
             0.0
             if numerical_aperture == 0.0
-            else numerical_aperture / denominator
+            else numerical_aperture / object_index
         )
 
         chief = self._trace_axial_pupil_ray(

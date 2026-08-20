@@ -40,6 +40,46 @@ def cooke_triplet():
 
 
 @pytest.fixture
+def dispersive_image_space_model():
+    """Build a finite Cooke model with dispersive image-space glass."""
+    from rayoptics.environment import OpticalModel
+    from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
+
+    opm = OpticalModel()
+    osp = opm["optical_spec"]
+    sm = opm["seq_model"]
+    opm.system_spec.dimensions = "mm"
+    osp["pupil"] = PupilSpec(osp, key=["object", "epd"], value=8.0)
+    osp["fov"] = FieldSpec(
+        osp,
+        key=["object", "height"],
+        value=0.2,
+        flds=[0.0, 1.0],
+        is_relative=True,
+    )
+    osp["wvls"] = WvlSpec(
+        [(486.133, 1.0), (587.562, 2.0), (656.273, 1.0)],
+        ref_wl=1,
+    )
+    opm.radius_mode = True
+    sm.do_apertures = False
+    sm.gaps[0].thi = 120.0
+    sm.add_surface([23.713, 4.831, "N-LAK9", "Schott"], sd=100.0)
+    sm.add_surface([7331.288, 5.86, "air"], sd=100.0)
+    sm.add_surface([-24.456, 0.975, "N-SF5", "Schott"], sd=100.0)
+    sm.set_stop()
+    sm.add_surface([21.896, 4.822, "air"], sd=100.0)
+    sm.add_surface([86.759, 3.127, "N-LAK9", "Schott"], sd=100.0)
+    sm.add_surface(
+        [-20.4942, 41.2365, "N-BK7", "Schott"],
+        sd=100.0,
+    )
+    sm.ifcs[-1].profile.r = 0.0
+    opm.update_model()
+    return opm
+
+
+@pytest.fixture
 def sasian_triplet_autoaperture():
     """Build the Sasian Triplet model with the app's auto-aperture defaults."""
     from rayoptics.environment import OpticalModel
