@@ -72,7 +72,7 @@ describe("_getFirstOrderData", () => {
       "from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular, RonchiRuling, set_vig_with_ronchi_envelopes",
     );
     expect(scripts.join("\n")).toContain(
-      "from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactOpticalModel",
+      "from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactObjectHeightFieldSpec, ExactOpticalModel",
     );
   });
 

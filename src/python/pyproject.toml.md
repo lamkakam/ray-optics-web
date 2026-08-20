@@ -7,7 +7,7 @@ Build metadata for the internal `rayoptics-web-utils` Python package that is com
 ## Project Metadata
 
 - Package name: `rayoptics-web-utils`
-- Current version: `0.28.0`
+- Current version: `0.29.0`
 - Requires Python `>=3.12`
 - Uses `setuptools.build_meta` with `setuptools>=68.0`
 

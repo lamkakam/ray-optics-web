@@ -23,7 +23,7 @@ import { WavelengthConfigModal } from "@/features/lens-editor/components/Wavelen
  *
  * - Subscribes to all relevant store slices individually with `useStore(store, selector)` for granular reactivity.
  * - Computes `fieldSummary` (e.g. `"3 fields, 20° max"`) for the visible Half-Field section and `wavelengthSummary` (e.g. `"3 wavelengths"`) inline.
- * - Subscribes to `isWideAngle` and passes it into `FieldConfigModal`; the modal and store both clear the flag when Object Height is selected.
+ * - Subscribes to `isWideAngle` and passes it into `FieldConfigModal`; explicit opt-in state is preserved across every supported field type.
  * - All store mutation callbacks (`handleApertureChange`, `handleFieldApply`, `handleWavelengthApply`) are wrapped in `useCallback` with `[store]` dependency and call `store.getState().<action>` to avoid stale closures.
  * - Modal open/close is driven by `fieldModalOpen` and `wavelengthModalOpen` state from the store.
  *

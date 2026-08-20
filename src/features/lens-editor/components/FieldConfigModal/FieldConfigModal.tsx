@@ -67,7 +67,7 @@ const MAX_ROWS = 10;
  * - Row limit is 10; the add button becomes hidden (not removed) at the limit.
  * - The first row cannot be deleted.
  * - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for field row insertion and deletion controls.
- * - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; Object Height disables and clears this incompatible option. The checkbox stays narrow while the label is left-aligned beside it.
+ * - A compact shared `CheckboxInput` below the grid toggles exact wide-angle ray aiming for Object Angle, Object Height, and Image Height. The checkbox stays narrow while the label is left-aligned beside it.
  * - Row ids use a module-level counter for stable AG Grid `getRowId`.
  * - Image space offers Height only. Selecting Image while Object Angle is active atomically changes the draft type to Height, so the modal can never emit Image Angle.
  * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
@@ -115,10 +115,7 @@ function FieldConfigModalContent({
   /** Editable relative-field rows with stable grid ids. */
   const [rows, setRows] = useState<FieldRow[]>(() => fieldsToRows(initialRelativeFields));
   /** Draft wide-angle ray-aiming setting. */
-  const [isWideAngle, setIsWideAngle] = useState(
-    () => initialIsWideAngle && !(initialSpace === "object" && initialType === "height"),
-  );
-  const wideAngleDisabled = space === "object" && fieldType === "height";
+  const [isWideAngle, setIsWideAngle] = useState(() => initialIsWideAngle);
   const fieldTypeOptions =
     space === "image"
       ? [{ value: "height", label: "Height" }]
@@ -131,18 +128,11 @@ function FieldConfigModalContent({
     setSpace(nextSpace);
     if (nextSpace === "image") {
       setFieldType("height");
-      return;
-    }
-    if (fieldType === "height") {
-      setIsWideAngle(false);
     }
   };
 
   const handleFieldTypeChange = (nextType: FieldType) => {
     setFieldType(nextType);
-    if (space === "object" && nextType === "height") {
-      setIsWideAngle(false);
-    }
   };
 
   const addRow = useCallback((afterId: string) => {
@@ -179,7 +169,7 @@ function FieldConfigModalContent({
       type: fieldType,
       maxField: isNaN(maxField) ? 0 : maxField,
       relativeFields: rows.map((r) => r.value),
-      isWideAngle: wideAngleDisabled ? false : isWideAngle,
+      isWideAngle,
     });
   };
 
@@ -293,7 +283,6 @@ function FieldConfigModalContent({
           <CheckboxInput
             id="field-wide-angle"
             checked={isWideAngle}
-            disabled={wideAngleDisabled}
             ariaLabel="Use wide angle mode for more robust ray aiming"
             label="Use wide angle mode for more robust ray aiming"
             onChange={setIsWideAngle}

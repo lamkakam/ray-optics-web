@@ -122,7 +122,7 @@ describe("buildOpticalModelScript", () => {
     },
   );
 
-  it("normalizes object height wide-angle input to plain RayOptics", () => {
+  it("uses the exact model and object-height field class when opted in", () => {
     const script = buildOpticalModelScript({
       ...wideAngleModel,
       specs: {
@@ -138,11 +138,10 @@ describe("buildOpticalModelScript", () => {
       },
     });
 
-    expect(script).toContain("opm = OpticalModel()");
+    expect(script).toContain("opm = ExactOpticalModel()");
     expect(script).toContain(
-      "osp['fov'] = FieldSpec(osp, key=['object', 'height'], value=2, flds=[0,1], is_relative=True)",
+      "osp['fov'] = ExactObjectHeightFieldSpec(osp, key=['object', 'height'], value=2, flds=[0,1], is_relative=True, is_wide_angle=True)",
     );
-    expect(script).not.toContain("is_wide_angle=True");
   });
 
   it("should set sm.do_apertures = False when setAutoAperture is manualAperture", () => {
@@ -662,7 +661,7 @@ describe("buildExportScript", () => {
     );
   });
 
-  it("defines the exact model and image-height field inline before construction", () => {
+  it("defines the exact model and field classes inline before construction", () => {
     const script = buildExportScript(wideAngleModel);
     const helpersIdx = script.indexOf(
       "class ExactOpticalModel(OpticalModel):",
@@ -670,12 +669,17 @@ describe("buildExportScript", () => {
     const fieldIdx = script.indexOf(
       "class ExactImageHeightFieldSpec(FieldSpec):",
     );
+    const objectFieldIdx = script.indexOf(
+      "class ExactObjectHeightFieldSpec(FieldSpec):",
+    );
     const modelIdx = script.indexOf("opm = ExactOpticalModel()");
 
     expect(helpersIdx).toBeGreaterThan(-1);
     expect(fieldIdx).toBeGreaterThan(-1);
+    expect(objectFieldIdx).toBeGreaterThan(-1);
     expect(modelIdx).toBeGreaterThan(helpersIdx);
     expect(modelIdx).toBeGreaterThan(fieldIdx);
+    expect(modelIdx).toBeGreaterThan(objectFieldIdx);
   });
 
   it("omits the exact helper block from non-wide standalone exports", () => {
@@ -683,6 +687,7 @@ describe("buildExportScript", () => {
 
     expect(script).not.toContain("class ExactOpticalModel(OpticalModel):");
     expect(script).not.toContain("class ExactImageHeightFieldSpec(FieldSpec):");
+    expect(script).not.toContain("class ExactObjectHeightFieldSpec(FieldSpec):");
     expect(script).toContain("opm = OpticalModel()");
   });
 

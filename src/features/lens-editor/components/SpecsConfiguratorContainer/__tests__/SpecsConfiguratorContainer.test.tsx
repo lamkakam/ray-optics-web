@@ -144,7 +144,7 @@ describe("SpecsConfiguratorContainer", () => {
     expect(store.getState().toOpticalSpecs().field.isWideAngle).toBe(true);
   });
 
-  it("clears wide angle mode when the modal applies Object Height", async () => {
+  it("preserves wide angle mode when the modal applies Object Height", async () => {
     const store = createTestStore();
     store.setState({ isWideAngle: true });
     render(
@@ -159,6 +159,6 @@ describe("SpecsConfiguratorContainer", () => {
 
     expect(store.getState().fieldSpace).toBe("object");
     expect(store.getState().fieldType).toBe("height");
-    expect(store.getState().isWideAngle).toBe(false);
+    expect(store.getState().isWideAngle).toBe(true);
   });
 });

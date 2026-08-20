@@ -149,6 +149,14 @@ describe("ExampleSystemsPage", () => {
     });
   });
 
+  it("materializes the air microscope implicit stop for reciprocal reversal", () => {
+    const airObjective = ExampleSystemList[
+      "Reversed Tracing of Superachromatic Air Microscope Objective US#7,158,310 Example 3 (2005)"
+    ];
+
+    expect(airObjective.surfaces[0].label).toBe("Stop");
+  });
+
   it("keeps only one selected item", async () => {
     renderPage();
     const user = userEvent.setup();

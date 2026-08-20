@@ -1,13 +1,13 @@
 /**
- * Pyodide integration regression for exact high-NA pupil and image-height specs.
+ * Pyodide integration regression for exact high-NA pupil and height specs.
  *
  * @remarks
  * Loads the original reversed high-NA microscope example, confirms its opted-in
  * exact Image Height path, and rebuilds it through the module worker. It also
  * fully reverses both bundled superachromatic microscope prescriptions, changes
- * them to Object NA/Object Height, verifies that Object Height clears the
- * wide-angle opt-in, and requires native RayOptics update, first-order, and
- * layout computations to finish without an Error dialog.
+ * them to Object NA/Object Height, explicitly opts both into the finite-point
+ * solver, and requires exact-model update, first-order, and layout computations
+ * to finish without an Error dialog.
  */
 import { expect, test } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
@@ -81,7 +81,7 @@ test("builds the original high-NA microscope with exact real-ray specs", async (
 });
 
 for (const objective of forwardObjectiveCases) {
-  test(`builds ${objective.exampleName} after full reversal with native Object NA`, async ({
+  test(`builds ${objective.exampleName} after full reversal with exact Object Height`, async ({
     pyodidePage: page,
   }) => {
     await dismissAnyOpenDialog(page);
@@ -121,8 +121,9 @@ for (const objective of forwardObjectiveCases) {
     const wideAngle = page.getByRole("checkbox", {
       name: "Use wide angle mode for more robust ray aiming",
     });
-    await expect(wideAngle).toBeDisabled();
-    await expect(wideAngle).not.toBeChecked();
+    await expect(wideAngle).toBeEnabled();
+    await wideAngle.check();
+    await expect(wideAngle).toBeChecked();
     await fieldDialog.getByRole("button", { name: "Apply", exact: true }).click();
 
     await page.getByRole("tab", { name: "Prescription" }).click();

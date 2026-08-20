@@ -2,7 +2,7 @@
  * Builds the Python source code string that reconstructs the definition of an optical system for RayOptics inside the Pyodide worker. It is also for UI components to let users copy the Python snippet to the clipboard so that users may use the code string for their own RayOptics instance on Jupyter notebook.
  *
  * @remarks
- * Special-material recognition and Python-variable mappings are imported from `specialMaterials.ts` so other UI behavior uses the same definitions. `field.isWideAngle === true` selects `ExactOpticalModel`, and wide-angle Image Height additionally selects `ExactImageHeightFieldSpec`; all other models use RayOptics' `OpticalModel` and `FieldSpec`. Object Height defensively normalizes wide-angle mode off. Standalone exports inline the exact-spec implementation from `rayoptics_web_utils/optical_specs.py` only for models that opt in, while worker scripts import the definitions from the local wheel. Final vignetting setup calls `set_vig_with_ronchi_envelopes(...)`, which sizes against every Ronchi ruling's circular envelope and restores its binary bands before analysis.
+ * Special-material recognition and Python-variable mappings are imported from `specialMaterials.ts` so other UI behavior uses the same definitions. `field.isWideAngle === true` selects `ExactOpticalModel`; opted-in Image Height and Object Height additionally select `ExactImageHeightFieldSpec` and `ExactObjectHeightFieldSpec`, respectively. False or omitted flags use RayOptics' `OpticalModel` and `FieldSpec`. Standalone exports inline the exact-spec implementation from `rayoptics_web_utils/optical_specs.py` only for models that opt in, while worker scripts import the definitions from the local wheel. Final vignetting setup calls `set_vig_with_ronchi_envelopes(...)`, which sizes against every Ronchi ruling's circular envelope and restores its binary bands before analysis.
  *
  * ## Edge Cases / Error Handling
  *
@@ -13,7 +13,7 @@
  * - Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.
  * - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.
  * - Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`, so worker computations use the user-defined material table initialized by Pyodide.
- * - Wide-angle Object Angle and Image Height models use `ExactOpticalModel`; wide-angle Image Height also uses `ExactImageHeightFieldSpec`. False or omitted flags use RayOptics `OpticalModel` and `FieldSpec`. Object Height always follows the latter path even if malformed input carries `isWideAngle: true`.
+ * - Wide-angle Object Angle, Object Height, and Image Height models use `ExactOpticalModel`. Object Height uses `ExactObjectHeightFieldSpec`, Image Height uses `ExactImageHeightFieldSpec`, and Object Angle retains `FieldSpec`. False or omitted flags use RayOptics `OpticalModel` and `FieldSpec`.
  * - `OffsetCircular` is required only when a circular aperture offset is nonzero. `Annular` is required when a clear aperture has `shape: "annular"`. `RonchiRuling` is required when a clear aperture has `shape: "ronchi"`. `OffsetRotatedRectangular` is required when a clear or edge aperture has `shape: "rectangular"`. Worker scripts get these helpers from `rayoptics_web_utils.aperture`; export scripts define them inline from the generated TypeScript string so copied notebook code remains standalone without installing `rayoptics_web_utils`.
  * - Generated helper blocks exactly match their Python sources. NPM lifecycle scripts regenerate both ignored TypeScript outputs before install/check/test/build commands, and Jest keeps the standalone export behavior pinned to those sources.
  * - `JSON.stringify` is used for Python string literals (medium name, manufacturer name, decenter strategy) — this correctly handles strings with special characters by quoting them as JSON strings, which are valid Python string literals.
@@ -33,11 +33,9 @@ type SurfaceBuildStep = {
 };
 type Surface = OpticalModel["surfaces"][number];
 
-/** Returns whether a compatible field explicitly selects the exact real-ray stack. */
+/** Returns whether a field explicitly selects the exact real-ray stack. */
 function usesExactRealRayStack(opticalModel: OpticalModel): boolean {
-  const { field } = opticalModel.specs;
-  const isObjectHeight = field.space === "object" && field.type === "height";
-  return field.isWideAngle === true && !isObjectHeight;
+  return opticalModel.specs.field.isWideAngle === true;
 }
 
 function formattedMedium(medium: string, glassManufacturer: string): { medium: string | number, glassManufacturer: string | number } {
@@ -102,9 +100,10 @@ function formatFieldSpec(opticalModel: OpticalModel): PythonLine {
   const isWideAngleFlag = usesExactStack && isFieldWideAngle === true
     ? ", is_wide_angle=True"
     : "";
-  const fieldSpecClass =
-    usesExactStack && fieldSpace === "image"
-      ? "ExactImageHeightFieldSpec"
+  const fieldSpecClass = usesExactStack && fieldSpace === "image"
+    ? "ExactImageHeightFieldSpec"
+    : usesExactStack && fieldSpace === "object" && fieldType === "height"
+      ? "ExactObjectHeightFieldSpec"
       : "FieldSpec";
 
   return `osp['fov'] = ${fieldSpecClass}(osp, key=['${fieldSpace}', '${fieldType}'], value=${maxField}, flds=${JSON.stringify(fields)}, is_relative=${isFieldRelative ? "True" : "False"}${isWideAngleFlag})`;
@@ -390,9 +389,9 @@ d263teco = create_glass(d263teco_url, "rindexinfo")
  * - Reads `model.setAutoAperture` to determine `sm.do_apertures`.
  * - Returns a Python string (no leading imports) that:
  *
- * 1. Creates `opm`, `sm`, `osp`, `pm` variables. An explicit compatible `field.isWideAngle === true` uses `ExactOpticalModel()`; false, omitted, and Object Height configurations use RayOptics `OpticalModel()`.
+ * 1. Creates `opm`, `sm`, `osp`, `pm` variables. An explicit `field.isWideAngle === true` uses `ExactOpticalModel()`; false and omitted flags use RayOptics `OpticalModel()`.
  * 2. Sets `opm.system_spec.dimensions = 'MM'`.
- * 3. Configures `osp['pupil']`, `osp['fov']`, `osp['wvls']` from `OpticalSpecs`; only opted-in Image Height instantiates `ExactImageHeightFieldSpec`, while every native path instantiates `FieldSpec`.
+ * 3. Configures `osp['pupil']`, `osp['fov']`, `osp['wvls']` from `OpticalSpecs`; opted-in Object Height and Image Height instantiate their exact field classes, while Object Angle and every non-opted-in path instantiate `FieldSpec`.
  * 4. Sets `opm.radius_mode = True`. Sets `sm.do_apertures` based on `model.setAutoAperture`.
  * 5. Sets `sm.gaps[0].thi` to the object distance and `sm.gaps[0].medium = decode_medium(...)` from `model.object.medium` / `model.object.manufacturer`.
  * 6. Calls `sm.add_surface(...)` for each surface in order. Per surface:

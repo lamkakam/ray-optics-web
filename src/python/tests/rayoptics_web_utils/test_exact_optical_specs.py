@@ -1,13 +1,14 @@
 """Regression tests for opt-in exact real-ray optical specifications.
 
 Wide-angle fields keep RayOptics' paraxial data for first-order reporting while
-requiring verified physical launches, reusing native real-image-height aiming
-when it already meets the stricter project tolerance, and caching chief rays
-with the optical-path convention expected by OPD analysis. False and omitted
-flags must delegate to plain RayOptics. These tests exercise the public exact
-model and field classes through normal tracing calls. The baseline model comes
-from the core optical module so collection stays headless before the session
-fixture can install GUI stubs.
+requiring verified physical launches. Finite Object Height holds every pupil
+ray at its requested object point and solves the chief direction locally;
+Image Height reuses native real-image-height aiming when it meets the stricter
+project tolerance. Both cache chief rays with the optical-path convention
+expected by OPD analysis. False and omitted flags delegate to plain RayOptics.
+These tests exercise the public exact model and field classes through normal
+tracing calls. The baseline model comes from the core optical module so
+collection stays headless before the session fixture can install GUI stubs.
 """
 
 from __future__ import annotations
@@ -19,8 +20,9 @@ from typing import Callable
 import numpy as np
 import pytest
 import rayoptics.optical.model_constants as mc
+from rayoptics.raytr import raytrace
 from rayoptics.optical.opticalmodel import OpticalModel
-from rayoptics.elem.surface import Circular
+from rayoptics.elem.surface import Circular, DecenterData
 from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
 from rayoptics.raytr.trace import get_chief_ray_pkg, trace_base
 from rayoptics.raytr.wideangle import (
@@ -31,6 +33,7 @@ from scipy.optimize import least_squares, root as scipy_root
 
 from rayoptics_web_utils.optical_specs import (
     ExactImageHeightFieldSpec,
+    ExactObjectHeightFieldSpec,
     ExactOpticalModel,
     ExactSpecConvergenceError,
     ExactSpecError,
@@ -39,6 +42,16 @@ from rayoptics_web_utils.optical_specs import (
 
 
 REFERENCE_WAVELENGTH_NM = 587.562
+
+
+def test_exact_object_height_field_is_a_lazy_public_export():
+    """The package root exposes the finite Object Height field class."""
+    import rayoptics_web_utils
+
+    assert (
+        rayoptics_web_utils.ExactObjectHeightFieldSpec
+        is ExactObjectHeightFieldSpec
+    )
 
 
 def _ray_angle(first_direction: np.ndarray, second_direction: np.ndarray) -> float:
@@ -89,7 +102,10 @@ def _build_cooke(
     is_wide_angle: bool | None = True,
     image_curvature_radius: float = 0.0,
     stop_offset_y: float = 0.0,
+    stop_offset_x: float = 0.0,
+    stop_decenter: tuple[float, float] | None = None,
     use_exact_image_height_field: bool = True,
+    use_exact_object_height_field: bool = True,
     update: bool = True,
 ) -> OpticalModel:
     """Build a clear-aperture-free Cooke triplet for exact-spec tests."""
@@ -97,14 +113,19 @@ def _build_cooke(
     osp = opm["optical_spec"]
     sm = opm["seq_model"]
     osp["pupil"] = PupilSpec(osp, key=pupil_key, value=pupil_value)
-    field_class = (
-        ExactImageHeightFieldSpec
-        if field_key == ("image", "height") and use_exact_image_height_field
-        else FieldSpec
-    )
+    if field_key == ("image", "height") and use_exact_image_height_field:
+        field_class = ExactImageHeightFieldSpec
+    elif (
+        field_key == ("object", "height")
+        and use_exact_object_height_field
+    ):
+        field_class = ExactObjectHeightFieldSpec
+    else:
+        field_class = FieldSpec
     field_kwargs = {}
-    if field_class is ExactImageHeightFieldSpec:
+    if field_class in (ExactImageHeightFieldSpec, ExactObjectHeightFieldSpec):
         field_kwargs["vector_solver"] = vector_solver
+    if field_class is ExactImageHeightFieldSpec:
         field_kwargs["native_image_height_evaluator"] = (
             native_image_height_evaluator
         )
@@ -128,10 +149,20 @@ def _build_cooke(
     sm.add_surface([7331.288, 5.86, "air"], sd=100.0)
     sm.add_surface([-24.456, 0.975, "N-SF5", "Schott"], sd=100.0)
     sm.set_stop()
-    if stop_offset_y != 0.0:
+    if stop_offset_x != 0.0 or stop_offset_y != 0.0:
         sm.ifcs[sm.stop_surface].clear_apertures = [
-            Circular(radius=100.0, y_offset=stop_offset_y)
+            Circular(
+                radius=100.0,
+                x_offset=stop_offset_x,
+                y_offset=stop_offset_y,
+            )
         ]
+    if stop_decenter is not None:
+        sm.ifcs[sm.stop_surface].decenter = DecenterData(
+            "decenter",
+            x=stop_decenter[0],
+            y=stop_decenter[1],
+        )
     sm.add_surface([21.896, 4.822, "air"], sd=100.0)
     sm.add_surface([86.759, 3.127, "N-LAK9", "Schott"], sd=100.0)
     sm.add_surface([-20.4942, image_distance, "air"], sd=100.0)
@@ -309,6 +340,42 @@ def test_exact_image_height_field_delegates_to_plain_rayoptics_when_not_wide(
         np.testing.assert_allclose(exact_direction, plain_direction)
 
 
+@pytest.mark.parametrize("is_wide_angle", [False, None], ids=["false", "missing"])
+def test_exact_object_height_field_delegates_when_not_wide(
+    is_wide_angle: bool | None,
+):
+    """The exact Object Height class is inert without explicit opt-in."""
+    exact = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=("object", "height"),
+        max_field=2.0,
+        fields=[0.0, 0.5, 1.0],
+        object_distance=120.0,
+        is_wide_angle=is_wide_angle,
+    )
+    plain = _build_cooke(
+        OpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=("object", "height"),
+        max_field=2.0,
+        fields=[0.0, 0.5, 1.0],
+        object_distance=120.0,
+        is_wide_angle=is_wide_angle,
+        use_exact_object_height_field=False,
+    )
+
+    exact_fov = exact["optical_spec"]["fov"]
+    plain_fov = plain["optical_spec"]["fov"]
+    for exact_field, plain_field in zip(exact_fov.fields, plain_fov.fields):
+        exact_point, exact_direction = exact_fov.obj_coords(exact_field)
+        plain_point, plain_direction = plain_fov.obj_coords(plain_field)
+        np.testing.assert_allclose(exact_point, plain_point)
+        np.testing.assert_allclose(exact_direction, plain_direction)
+
+
 @pytest.mark.parametrize("invalid_na", [-0.1, 1.5, 1.6])
 def test_object_na_rejects_negative_and_non_propagating_values(invalid_na: float):
     """Negative NA and NA at or above the object index are invalid."""
@@ -355,6 +422,305 @@ def test_image_height_samples_are_exact_real_chief_ray_intersections(
             relative_height * max_height,
             rel=1.0e-9,
             abs=1.0e-9,
+        )
+
+
+@pytest.mark.parametrize(
+    ("pupil_key", "pupil_value"),
+    [
+        (("object", "epd"), 8.0),
+        (("object", "NA"), 0.08),
+        (("image", "f/#"), 10.0),
+    ],
+    ids=["object-epd", "object-na", "image-f-number"],
+)
+def test_object_height_keeps_every_pupil_launch_at_the_requested_object_point(
+    pupil_key: tuple[str, str],
+    pupil_value: float,
+):
+    """Every supported pupil construction preserves exact Object Height."""
+    relative_samples = [0.0, 0.19, 0.63, 1.0]
+    max_height = 2.0
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=pupil_key,
+        pupil_value=pupil_value,
+        field_key=("object", "height"),
+        max_field=max_height,
+        fields=relative_samples,
+        object_distance=120.0,
+    )
+    osp = opm["optical_spec"]
+    stop_index = opm["seq_model"].stop_surface
+    wavelength = osp["wvls"].central_wvl
+
+    for relative_height, field in zip(relative_samples, osp["fov"].fields):
+        expected_point = np.array([0.0, relative_height * max_height, 0.0])
+        for pupil in ([0.0, 0.0], [0.0, 1.0], [1.0, 0.0]):
+            point, _ = osp.ray_start_from_osp(pupil, field, "rel pupil")
+            np.testing.assert_allclose(point, expected_point, rtol=1.0e-9, atol=1.0e-9)
+
+        chief = trace_base(
+            opm,
+            [0.0, 0.0],
+            field,
+            wavelength,
+            apply_vignetting=False,
+            check_apertures=False,
+        )
+        np.testing.assert_allclose(chief[mc.ray][0][mc.p], expected_point)
+        np.testing.assert_allclose(
+            chief[mc.ray][stop_index][mc.p][:2],
+            np.zeros(2),
+            rtol=1.0e-9,
+            atol=1.0e-9,
+        )
+
+
+def test_object_height_solves_general_two_axis_local_stop_residuals():
+    """Off-axis X/Y fields target an offset stop in its decentered frame."""
+    solve_dimensions: list[int] = []
+
+    def dimension_recording_solver(residual, initial, **kwargs):
+        initial = np.atleast_1d(initial)
+        solve_dimensions.append(initial.size)
+        options = kwargs.get("options", {})
+        return least_squares(
+            residual,
+            initial,
+            xtol=float(options.get("xtol", 1.0e-12)),
+            ftol=1.0e-12,
+            gtol=1.0e-12,
+            max_nfev=int(options.get("maxfev", 400)),
+        )
+
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=("object", "height"),
+        max_field=2.0,
+        fields=[0.0, 1.0],
+        object_distance=120.0,
+        stop_offset_x=0.12,
+        stop_offset_y=-0.08,
+        stop_decenter=(0.2, -0.15),
+        vector_solver=dimension_recording_solver,
+        update=False,
+    )
+    general_field = opm["optical_spec"]["fov"].fields[-1]
+    general_field.x = 0.3
+    general_field.y = 0.4
+    opm.update_model()
+
+    point, _ = opm["optical_spec"]["fov"].obj_coords(general_field)
+    np.testing.assert_allclose(point, [0.6, 0.8, 0.0])
+    chief = trace_base(
+        opm,
+        [0.0, 0.0],
+        general_field,
+        opm["optical_spec"]["wvls"].central_wvl,
+        apply_vignetting=False,
+        check_apertures=False,
+    )
+    stop_index = opm["seq_model"].stop_surface
+    np.testing.assert_allclose(
+        chief[mc.ray][stop_index][mc.p][:2],
+        [0.12, -0.08],
+        rtol=1.0e-9,
+        atol=1.0e-9,
+    )
+    assert 2 in solve_dimensions
+
+
+def test_object_height_continuation_caches_duplicates_and_analysis_chiefs(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Continuation starts axially, bounds steps, and shares duplicate rays."""
+    solve_dimensions: list[int] = []
+
+    def recording_solver(residual, initial, **kwargs):
+        initial = np.atleast_1d(initial)
+        solve_dimensions.append(initial.size)
+        options = kwargs.get("options", {})
+        return least_squares(
+            residual,
+            initial,
+            xtol=float(options.get("xtol", 1.0e-12)),
+            ftol=1.0e-12,
+            gtol=1.0e-12,
+            max_nfev=int(options.get("maxfev", 400)),
+        )
+
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=("object", "height"),
+        max_field=1.2,
+        fields=[0.0, 0.1, 0.1, 1.0],
+        object_distance=120.0,
+        vector_solver=recording_solver,
+    )
+    fov = opm["optical_spec"]["fov"]
+
+    assert len(solve_dimensions) == 21
+    assert set(solve_dimensions) == {1}
+    assert len(fov._coordinate_launches) == 3
+    assert fov.fields[1].chief_ray is fov.fields[2].chief_ray
+
+    def fail_find_real_enp(*_args, **_kwargs):
+        raise AssertionError("analysis repeated wide-angle chief aiming")
+
+    monkeypatch.setattr(
+        "rayoptics.raytr.trace.find_real_enp",
+        fail_find_real_enp,
+    )
+    wavelength = opm["optical_spec"]["wvls"].central_wvl
+    for field in fov.fields:
+        assert get_chief_ray_pkg(opm, field, wavelength, 0.0) is field.chief_ray
+
+
+def test_object_height_continuation_fully_retraces_only_cached_coordinates(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Intermediate continuation roots trace only through the physical stop."""
+    original_trace_raw = raytrace.trace_raw
+    trace_calls: list[tuple[int, bool]] = []
+
+    def recording_trace_raw(path, *args, **kwargs):
+        path_list = list(path)
+        trace_calls.append((len(path_list), "first_surf" in kwargs))
+        return original_trace_raw(iter(path_list), *args, **kwargs)
+
+    monkeypatch.setattr(raytrace, "trace_raw", recording_trace_raw)
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=("object", "height"),
+        max_field=0.8,
+        fields=[0.0, 1.0],
+        object_distance=120.0,
+    )
+    surface_count = len(opm["seq_model"].ifcs)
+    strict_full_traces = [
+        call for call in trace_calls if call == (surface_count, False)
+    ]
+
+    assert len(strict_full_traces) == 2
+    assert any(path_length < surface_count for path_length, _ in trace_calls)
+
+
+def test_object_height_rejects_an_out_of_tolerance_full_retrace(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Solver success cannot hide a final local stop-centre mismatch."""
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=("object", "height"),
+        max_field=0.2,
+        fields=[0.0, 1.0],
+        object_distance=120.0,
+        update=False,
+    )
+    original_trace_raw = raytrace.trace_raw
+    surface_count = len(opm["seq_model"].ifcs)
+    stop_index = opm["seq_model"].stop_surface
+
+    def perturbed_full_retrace(path, *args, **kwargs):
+        path_list = list(path)
+        result = original_trace_raw(iter(path_list), *args, **kwargs)
+        if len(path_list) == surface_count and "first_surf" not in kwargs:
+            result[mc.ray][stop_index][mc.p][1] += 1.0e-5
+        return result
+
+    monkeypatch.setattr(raytrace, "trace_raw", perturbed_full_retrace)
+    with pytest.raises(ExactSpecConvergenceError, match="local stop centre"):
+        opm.update_model()
+
+
+def test_cached_object_height_chief_keeps_reference_wavelength_opd_zero():
+    """Object Height chief caching follows RayOptics' OPD normalization."""
+    from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
+
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=("object", "height"),
+        max_field=0.2,
+        fields=[0.0, 1.0],
+        object_distance=120.0,
+    )
+
+    result = get_opd_fan_data_for_wavelength(opm, fi=1, wvl_idx=0)
+
+    for axis in ("Tangential", "Sagittal"):
+        zero_index = min(
+            range(len(result[axis]["x"])),
+            key=lambda index: abs(result[axis]["x"][index]),
+        )
+        assert result[axis]["x"][zero_index] == pytest.approx(0.0, abs=1.0e-12)
+        assert result[axis]["y"][zero_index] == pytest.approx(0.0, abs=1.0e-9)
+
+
+def test_object_height_launches_are_recomputed_after_geometry_changes():
+    """Cached Object Height directions and chief rays track model mutations."""
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=("object", "height"),
+        max_field=2.0,
+        fields=[0.0, 1.0],
+        object_distance=120.0,
+    )
+    fov = opm["optical_spec"]["fov"]
+    field = fov.fields[-1]
+    _, initial_direction = fov.obj_coords(field)
+    initial_chief = field.chief_ray
+
+    opm["seq_model"].ifcs[1].profile.r = 25.0
+    opm.update_model()
+    point, updated_direction = fov.obj_coords(field)
+
+    np.testing.assert_allclose(point, [0.0, 2.0, 0.0])
+    assert updated_direction != pytest.approx(initial_direction)
+    assert field.chief_ray is not initial_chief
+
+
+def test_exact_object_height_rejects_infinite_object_conjugates():
+    """Object Height has no finite point to preserve at infinite conjugates."""
+    with pytest.raises(ExactSpecError, match="finite object conjugate"):
+        _build_cooke(
+            ExactOpticalModel,
+            pupil_key=("object", "epd"),
+            pupil_value=8.0,
+            field_key=("object", "height"),
+            max_field=2.0,
+            fields=[0.0, 1.0],
+            object_distance=1.0e10,
+        )
+
+
+def test_non_converged_object_height_solve_is_a_hard_error():
+    """An unsuccessful direction solve must never supply an object launch."""
+    def non_converging_solver(*_args, **_kwargs):
+        return SimpleNamespace(success=False, message="no physical root")
+
+    with pytest.raises(ExactSpecConvergenceError, match="did not converge"):
+        _build_cooke(
+            ExactOpticalModel,
+            pupil_key=("object", "epd"),
+            pupil_value=8.0,
+            field_key=("object", "height"),
+            max_field=2.0,
+            fields=[0.0, 1.0],
+            object_distance=120.0,
+            vector_solver=non_converging_solver,
         )
 
 

@@ -18,6 +18,7 @@ from rayoptics_web_utils.glass.glass import (  # noqa: E402
 _LAZY_IMPORTS = {
     'ExactOpticalModel': 'rayoptics_web_utils.optical_specs',
     'ExactImageHeightFieldSpec': 'rayoptics_web_utils.optical_specs',
+    'ExactObjectHeightFieldSpec': 'rayoptics_web_utils.optical_specs',
     'ExactSpecError': 'rayoptics_web_utils.optical_specs',
     'ExactSpecTraceError': 'rayoptics_web_utils.optical_specs',
     'ExactSpecConvergenceError': 'rayoptics_web_utils.optical_specs',

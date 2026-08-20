@@ -11,6 +11,7 @@
  * - `{ kind: "Conic", conicConstant }`
  * - `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
  * - The Ortho-APO example uses Ohara's catalogue-supported canonical `S-BSL 7` glass name.
+ * - The superachromatic air microscope explicitly labels its first surface as the stop. This materializes RayOptics' otherwise implicit surface-1 stop so full prescription reversal preserves the same physical stop surface.
  */
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
@@ -2003,7 +2004,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
   image: { curvatureRadius: 0 },
   surfaces: [
     {
-      label: "Default",
+      label: "Stop",
       curvatureRadius: 0,
       thickness: -0.585158,
       medium: "air",
