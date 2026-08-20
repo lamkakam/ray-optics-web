@@ -591,8 +591,6 @@ const DESCRIPTIONS_BY_NAME = {
         Rolf Wartmann disclosed a high-NA oil-immersion microscope objective designed for confocal microscopy in US#9,645,380 (Example 1) 
         with aberrations corrected from 365 nm to 900 nm. 
         This superachromatic objective is specified as 40x, NA 1.3, with a 25 mm image field diameter.
-        The lens prescription here is from Lens Design website by Dr. Daniel J. Reiley, 
-        who converted the patent’s disclosed material refractive indices and dispersion data into real glass models. 
         In this reversed tracing, the image space half-field is 0.3125mm and the image space f-number is 0.319.
       </DescriptionParagraph>
       <DescriptionParagraph>
@@ -603,15 +601,6 @@ const DESCRIPTIONS_BY_NAME = {
         aria-label="Google Patents webpage for US#9,645,380"
       >
         Link to Google Patents for US#9,645,380
-      </DescriptionExternalLink>
-      <DescriptionParagraph>
-        The Lens Design website provides the lens prescription in Zemax format:
-      </DescriptionParagraph>
-      <DescriptionExternalLink
-        href="https://www.lens-designs.com/microscopes"
-        aria-label="Lens Design webpage for microscope objective examples in Zemax format"
-      >
-        Link to Lens Design
       </DescriptionExternalLink>
     </>
   ),
