@@ -467,6 +467,18 @@ recalculates clear apertures after resolving the exact pupil. See
 RayOptics 0.9.8 distinguishes clear apertures, edge apertures, `max_aperture`,
 automatic aperture sizing, and vignetting.
 
+Final script generation wraps vignetting in the Ronchi-envelope helper and
+injects `set_vig_respecting_exact_pupil` for exact models. For wide-angle
+Object NA, that helper aperture-checks each cardinal radius-one ray. A passing
+boundary sets the corresponding vignetting factor to zero because radius one
+already represents the complete requested NA; it never asks RayOptics to find
+a larger pupil. A blocked boundary retains RayOptics' existing bisection, whose
+first move is inward and whose subsequent samples remain at or below radius
+one. Other pupil modes and non-opted-in models delegate unchanged to
+RayOptics' native `set_vig`. This vignetting rule does not relax the general
+trace rule above: arbitrary Object-NA analysis samples with $\rho>1$ remain
+blocked.
+
 Exact state is update-scoped:
 
 - `ExactOpticalModel.update_model()` clears the resolved EPD and NA direction

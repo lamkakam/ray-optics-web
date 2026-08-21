@@ -627,11 +627,19 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("opm.update_model()");
   });
 
-  it("should calculate vignetting from Ronchi outer envelopes", () => {
+  it("should calculate native vignetting from Ronchi outer envelopes", () => {
     const script = buildOpticalModelScript(baseModel);
     expect(script).toContain("set_vig_with_ronchi_envelopes(opm)");
+    expect(script).not.toContain("set_vig_respecting_exact_pupil");
     expect(script).not.toContain("\nset_vig(opm)");
     expect(script).not.toContain("apply_paraxial_vignetting");
+  });
+
+  it("should keep exact Object-NA vignetting inside the unit pupil", () => {
+    const script = buildOpticalModelScript(wideAngleModel);
+    expect(script).toContain(
+      "set_vig_with_ronchi_envelopes(opm, set_vig_fn=set_vig_respecting_exact_pupil)",
+    );
   });
 
   it("should set the flag `is_wide_angle` to be True if the attribute of isWideAngle is true in field", () => {
@@ -680,6 +688,7 @@ describe("buildExportScript", () => {
     expect(modelIdx).toBeGreaterThan(helpersIdx);
     expect(modelIdx).toBeGreaterThan(fieldIdx);
     expect(modelIdx).toBeGreaterThan(objectFieldIdx);
+    expect(script).toContain("def set_vig_respecting_exact_pupil(opm):");
   });
 
   it("omits the exact helper block from non-wide standalone exports", () => {

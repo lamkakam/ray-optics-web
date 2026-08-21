@@ -2,7 +2,7 @@
  * Builds the Python source code string that reconstructs the definition of an optical system for RayOptics inside the Pyodide worker. It is also for UI components to let users copy the Python snippet to the clipboard so that users may use the code string for their own RayOptics instance on Jupyter notebook.
  *
  * @remarks
- * Special-material recognition and Python-variable mappings are imported from `specialMaterials.ts` so other UI behavior uses the same definitions. `field.isWideAngle === true` selects `ExactOpticalModel`; opted-in Image Height and Object Height additionally select `ExactImageHeightFieldSpec` and `ExactObjectHeightFieldSpec`, respectively. False or omitted flags use RayOptics' `OpticalModel` and `FieldSpec`. Standalone exports inline the exact-spec implementation from `rayoptics_web_utils/optical_specs.py` only for models that opt in, while worker scripts import the definitions from the local wheel. Final vignetting setup calls `set_vig_with_ronchi_envelopes(...)`, which sizes against every Ronchi ruling's circular envelope and restores its binary bands before analysis.
+ * Special-material recognition and Python-variable mappings are imported from `specialMaterials.ts` so other UI behavior uses the same definitions. `field.isWideAngle === true` selects `ExactOpticalModel`; opted-in Image Height and Object Height additionally select `ExactImageHeightFieldSpec` and `ExactObjectHeightFieldSpec`, respectively. False or omitted flags use RayOptics' `OpticalModel` and `FieldSpec`. Standalone exports inline the exact-spec implementation from `rayoptics_web_utils/optical_specs.py` only for models that opt in, while worker scripts import the definitions from the local wheel. Final vignetting setup calls `set_vig_with_ronchi_envelopes(...)`, which sizes against every Ronchi ruling's circular envelope and restores its binary bands before analysis. Exact models inject `set_vig_respecting_exact_pupil`, so a passing Object-NA unit boundary receives zero vignetting without RayOptics probing outside the requested angular pupil; other exact pupil modes delegate to native vignetting.
  *
  * ## Edge Cases / Error Handling
  *
@@ -339,7 +339,9 @@ function buildOpticalModelLines(opticalModel: OpticalModel): PythonLine[] {
     ...buildImageSetupLines(opticalModel),
     "",
     "opm.update_model()",
-    "set_vig_with_ronchi_envelopes(opm)",
+    usesExactRealRayStack(opticalModel)
+      ? "set_vig_with_ronchi_envelopes(opm, set_vig_fn=set_vig_respecting_exact_pupil)"
+      : "set_vig_with_ronchi_envelopes(opm)",
   );
 
   return lines;
@@ -416,7 +418,7 @@ d263teco = create_glass(d263teco_url, "rindexinfo")
  * - If `label === "Stop"`, emits `sm.set_stop()`.
  * 7. Sets `sm.ifcs[-1].profile.r` to the image surface curvature radius.
  * 8. If the image surface has `decenter`, emits `sm.ifcs[-1].decenter = DecenterData(...)`.
- * 9. Calls the selected model's final `opm.update_model()` before `set_vig_with_ronchi_envelopes(opm)`, so opted-in exact launches or native RayOptics launches are current before vignetting and analysis. The helper temporarily replaces each Ronchi mask with its offset circular envelope while RayOptics finds pupil boundaries, then restores the original mask before returning; internal opaque bands therefore cannot collapse a field's sampled pupil.
+ * 9. Calls the selected model's final `opm.update_model()` before vignetting, so opted-in exact launches or native RayOptics launches are current before analysis. Native models call `set_vig_with_ronchi_envelopes(opm)`. Exact models inject `set_vig_respecting_exact_pupil`; Object NA checks the four radius-one rays and bisects inward only when an aperture blocks a boundary, while every other pupil mode delegates to RayOptics. The outer wrapper temporarily replaces each Ronchi mask with its offset circular envelope while the selected vignetting function finds pupil boundaries, then restores the original mask before returning; internal opaque bands therefore cannot collapse a field's sampled pupil.
  * - The object-side setup is isolated in its own builder phase so future object-gap mutations such as `sm.gaps[0].medium = ...` can be added without changing surface-step logic.
  * - The surface-step structure is intentionally extensible so future interface mutations such as `sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(...)` can be appended alongside asphere and decenter lines for the same surface.
  * - Clear and edge aperture assignments are formatted through dedicated helpers. The clear-aperture helper accepts an optional aperture and defaults omitted offsets to `0`, while the edge-aperture helper requires a present edge aperture before reading its radius and offsets.

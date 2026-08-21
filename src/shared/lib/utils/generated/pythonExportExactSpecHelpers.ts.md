@@ -23,6 +23,9 @@ preamble whenever `field.isWideAngle === true` selects `ExactOpticalModel`;
 native RayOptics exports omit the block. Opted-in Object Height and Image
 Height scripts select `ExactObjectHeightFieldSpec` and
 `ExactImageHeightFieldSpec`, respectively. Worker scripts import the same
-classes from the wheel instead of inlining them. Consequently, standalone and
-worker exact models share the same strict residual checks and OPD-compatible
-chief-ray cache normalization.
+classes and `set_vig_respecting_exact_pupil` from the wheel instead of inlining
+them. Exact scripts inject that helper into the Ronchi-envelope wrapper so a
+passing Object-NA unit boundary receives zero vignetting without an outward
+probe, while physically clipped boundaries use inward bisection. Consequently,
+standalone and worker exact models share the same strict residual checks,
+unit-pupil vignetting, and OPD-compatible chief-ray cache normalization.

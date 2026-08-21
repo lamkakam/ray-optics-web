@@ -4,10 +4,11 @@
  * @remarks
  * Loads the original reversed high-NA microscope example, confirms its opted-in
  * exact Image Height path, and rebuilds it through the module worker. It also
- * fully reverses both bundled superachromatic microscope prescriptions, changes
- * them to Object NA/Object Height, explicitly opts both into the finite-point
- * solver, and requires exact-model update, first-order, and layout computations
- * to finish without an Error dialog.
+ * fully reverses a bundled superachromatic microscope prescription, changes it
+ * to Object NA/Object Height, explicitly opts into the finite-point solver, and
+ * requires exact-model update, first-order, and layout computations to finish
+ * without an Error dialog. The immersion objective is also rebuilt at a 0.1 mm
+ * Object Height, where its unit Object-NA boundary is unvignetted.
  */
 import { expect, test } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
@@ -20,6 +21,45 @@ const forwardObjectiveCases = [
     objectHeight: "4",
   },
 ] as const;
+
+const immersionObjectiveName =
+  "Superachromatic High NA Immersion Microscope Objective with Tube Lens US#9,645,380 Example 1 (2013)";
+
+
+test("updates the immersion objective at 0.1 mm half-field", async ({
+  pyodidePage: page,
+}) => {
+  await dismissAnyOpenDialog(page);
+  await page.goto("/example-systems");
+  await page
+    .getByRole("button", { name: immersionObjectiveName, exact: true })
+    .click();
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+
+  const loadDialog = page.getByRole("dialog", { name: "Load Example System" });
+  await expect(loadDialog).toBeVisible();
+  await loadDialog.getByRole("button", { name: "Load", exact: true }).click();
+  await page.waitForURL("**/");
+  await expect(page.getByText(/^(?:Loading lens layout|Updating)\.\.\.$/)).toBeHidden({
+    timeout: 120_000,
+  });
+
+  await page.getByRole("tab", { name: "System Specs" }).click();
+  await page.getByLabel("Configure field").click();
+  const fieldDialog = page.getByRole("dialog", { name: "Half-Field" });
+  await page.getByLabel("Max half-field value").fill("0.1");
+  await fieldDialog.getByRole("button", { name: "Apply", exact: true }).click();
+
+  await page.getByRole("tab", { name: "Prescription" }).click();
+  const updateButton = page.getByRole("button", { name: "Update System" });
+  await updateButton.click();
+  await expect(updateButton).toBeDisabled({ timeout: 5_000 });
+  await expect(updateButton).toBeEnabled({ timeout: 120_000 });
+
+  await expect(page.getByRole("dialog", { name: "Error" })).toBeHidden();
+  await expect(page.getByText("Paraxial first-order results")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Lens layout diagram" })).toBeVisible();
+});
 
 
 for (const objective of forwardObjectiveCases) {

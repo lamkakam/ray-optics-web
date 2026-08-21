@@ -6,7 +6,10 @@ every ``update_model()``.  Image-space geometric F-number is solved from the
 real angle between the axial chief and +Y marginal rays.  Object-space
 numerical aperture uses a reference-wavelength direction-sine radius so every
 normalized pupil radius represents the same fraction of NA. Samples outside
-the unit angular disk are blocked before tracing.
+the unit angular disk are blocked before tracing. Exact Object-NA vignetting
+tests the four unit-radius boundary rays first: a passing boundary receives
+zero vignetting without an outward search, while a physically blocked boundary
+uses RayOptics' existing inward bisection.
 These pupil extensions are active only when the field's ``is_wide_angle``
 attribute is exactly ``True``; otherwise the exact classes delegate to their
 RayOptics superclasses.
@@ -51,6 +54,10 @@ from rayoptics.raytr.traceerror import (
     TraceMissedSurfaceError,
     TraceRayBlockedError,
     TraceTIRError,
+)
+from rayoptics.raytr.vigcalc import (
+    calc_vignetted_ray_by_bisection,
+    set_vig as _rayoptics_set_vig,
 )
 from rayoptics.raytr.waveabr import transfer_to_exit_pupil
 from rayoptics.raytr.wideangle import eval_real_image_ht
@@ -157,6 +164,70 @@ def _is_close(actual, expected):
 def _is_exact_stack_enabled(optical_spec):
     """Return whether the field explicitly opts into exact real-ray handling."""
     return getattr(optical_spec["fov"], "is_wide_angle", False) is True
+
+
+def set_vig_respecting_exact_pupil(opm):
+    """Set vignetting without searching beyond an exact Object-NA pupil.
+
+    Wide-angle Object NA defines radius one as the requested physical angular
+    cone, not an initial guess for a larger pupil. Each cardinal unit-boundary
+    ray is therefore aperture-checked before RayOptics' vignetting search. A
+    passing ray receives zero vignetting; a blocked ray uses RayOptics' existing
+    bisection, whose first step then moves inward. Every other pupil mode and
+    non-opted-in model delegates unchanged to RayOptics' ``set_vig``.
+
+    Args:
+        opm: RayOptics optical model whose field vignetting will be updated.
+
+    Returns:
+        RayOptics' return value for delegated modes; otherwise ``None``.
+    """
+    optical_spec = opm["optical_spec"]
+    if (
+        not _is_exact_stack_enabled(optical_spec)
+        or optical_spec["pupil"].key != ("object", "NA")
+    ):
+        return _rayoptics_set_vig(opm)
+
+    pupil_starts = optical_spec["pupil"].pupil_rays[1:]
+    for field_index in range(len(optical_spec["fov"].fields)):
+        field, wavelength, _focus = optical_spec.lookup_fld_wvl_focus(
+            field_index
+        )
+        vignetting_factors = []
+        for index, start in enumerate(pupil_starts):
+            try:
+                trace_base(
+                    opm,
+                    np.asarray(start, dtype=float),
+                    field,
+                    wavelength,
+                    apply_vignetting=False,
+                    check_apertures=True,
+                    pt_inside_fuzz=1.0e-4,
+                )
+            except TraceError:
+                axis = index // 2
+                vignetting, _last_index, _ray_package = (
+                    calc_vignetted_ray_by_bisection(
+                        opm,
+                        axis,
+                        start,
+                        field,
+                        wavelength,
+                    )
+                )
+            else:
+                vignetting = 0.0
+            vignetting_factors.append(vignetting)
+
+        (
+            field.vux,
+            field.vlx,
+            field.vuy,
+            field.vly,
+        ) = vignetting_factors
+    return None
 
 
 def _cache_verified_chief_ray(optical_spec, forward_ray, context):

@@ -6,6 +6,8 @@ ray at its requested object point and solves the chief direction locally;
 Image Height reuses native real-image-height aiming when it meets the stricter
 project tolerance. Both cache chief rays with the optical-path convention
 expected by OPD analysis. False and omitted flags delegate to plain RayOptics.
+Exact Object-NA vignetting treats the unit angular-pupil boundary as a hard
+limit, while aperture-clipped boundary rays retain RayOptics' inward bisection.
 These tests exercise the public exact model and field classes through normal
 tracing calls. The baseline model comes from the core optical module so
 collection stays headless before the session fixture can install GUI stubs.
@@ -32,6 +34,7 @@ from rayoptics.raytr.wideangle import (
 from rayoptics.seq.medium import decode_medium
 from scipy.optimize import least_squares, root as scipy_root
 
+import rayoptics_web_utils.optical_specs as exact_optical_specs
 from rayoptics_web_utils.optical_specs import (
     ExactImageHeightFieldSpec,
     ExactObjectHeightFieldSpec,
@@ -355,6 +358,84 @@ def test_object_na_blocks_samples_outside_the_unit_angular_disk():
     assert np.isnan(ray_grid.grid[2, 0, 2])
     assert np.isnan(ray_grid.grid[2, 2, 0])
     assert np.isnan(ray_grid.grid[2, 2, 2])
+
+
+def test_exact_object_na_unvignetted_boundary_never_probes_outside_unit_pupil(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Passing Object-NA boundaries mean zero vignetting, not a wider NA."""
+    opm = _build_uniform_medium_na_model(1.2, object_index=1.5)
+    opm.update_model()
+    osp = opm["optical_spec"]
+    requested_radii: list[float] = []
+    original_start = osp._start_from_exact_object_na
+
+    def recording_start(pupil, field, direction_sine):
+        requested_radii.append(float(np.linalg.norm(pupil)))
+        return original_start(pupil, field, direction_sine)
+
+    monkeypatch.setattr(osp, "_start_from_exact_object_na", recording_start)
+
+    exact_optical_specs.set_vig_respecting_exact_pupil(opm)
+
+    field = osp["fov"].fields[0]
+    assert [field.vux, field.vlx, field.vuy, field.vly] == pytest.approx(
+        [0.0, 0.0, 0.0, 0.0]
+    )
+    assert requested_radii
+    assert max(requested_radii) <= 1.0
+
+
+def test_exact_object_na_clipped_boundary_bisects_inside_unit_pupil(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Physical clipping keeps positive vignetting and searches only inward."""
+    opm = _build_uniform_medium_na_model(1.2, object_index=1.5)
+    opm.update_model()
+    osp = opm["optical_spec"]
+    opm["seq_model"].ifcs[1].clear_apertures = [Circular(radius=8.0)]
+    requested_radii: list[float] = []
+    original_start = osp._start_from_exact_object_na
+
+    def recording_start(pupil, field, direction_sine):
+        requested_radii.append(float(np.linalg.norm(pupil)))
+        return original_start(pupil, field, direction_sine)
+
+    monkeypatch.setattr(osp, "_start_from_exact_object_na", recording_start)
+
+    exact_optical_specs.set_vig_respecting_exact_pupil(opm)
+
+    field = osp["fov"].fields[0]
+    vignetting = [field.vux, field.vlx, field.vuy, field.vly]
+    assert all(0.0 < factor < 1.0 for factor in vignetting)
+    assert requested_radii
+    assert max(requested_radii) <= 1.0
+
+
+def test_exact_pupil_vignetting_delegates_other_pupil_modes(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Non-Object-NA models retain RayOptics' complete vignetting behavior."""
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+    )
+    delegated_models: list[OpticalModel] = []
+
+    def recording_set_vig(model):
+        delegated_models.append(model)
+        return "delegated"
+
+    monkeypatch.setattr(
+        exact_optical_specs,
+        "_rayoptics_set_vig",
+        recording_set_vig,
+        raising=False,
+    )
+
+    assert exact_optical_specs.set_vig_respecting_exact_pupil(opm) == "delegated"
+    assert delegated_models == [opm]
 
 
 @pytest.mark.parametrize("is_wide_angle", [False, None], ids=["false", "missing"])

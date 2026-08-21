@@ -16,9 +16,9 @@
  * until initialization succeeds. Initialization clears the singleton on failure so
  * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.29.0` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
- * solvers and
- * `set_vig_with_ronchi_envelopes` so vignetting uses a Ronchi mask's circular
- * envelope without collapsing the analysis pupil onto one transparent band.
+ * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
+ * Object-NA searches remain inside the requested angular pupil while Ronchi
+ * masks use their circular envelopes instead of one transparent band.
  * User-defined glass mutations share the Python material registry and use NumPy-safe
  * JSON serialization. Both optimization RPCs return ordinary Python failures as
  * typed `status: "error"` reports, temporarily own the same progress callback and
@@ -176,7 +176,7 @@ from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
 
 from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular, RonchiRuling, set_vig_with_ronchi_envelopes
-from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactObjectHeightFieldSpec, ExactOpticalModel
+from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactObjectHeightFieldSpec, ExactOpticalModel, set_vig_respecting_exact_pupil
 from rayoptics_web_utils.analysis import get_first_order_data, get_3rd_order_seidel_data, get_ray_fan_data, get_opd_fan_data, get_spot_data, get_wavefront_data, get_strehl_vs_wavelength_data, get_geo_psf_data, get_diffraction_psf_data, get_diffraction_mtf_data, get_field_curvature_data, get_astigmatism_curve_data, get_lsa_data, get_surface_semi_diameters
 from rayoptics_web_utils.plotting import (
     plot_lens_layout,
