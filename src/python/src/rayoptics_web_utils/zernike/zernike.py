@@ -8,8 +8,9 @@ by ``sqrt((2 - δ[m,0]) * (n + 1))`` gives each term's RMS contribution.
 RayOptics computes OPD with the Hopkins equally inclined chord method. Finite-pupil
 fits use its precomputed exit-pupil ``p_coord`` values, normalized by their maximum
 radial extent, with paraxial exit-pupil radius only as a near-zero fallback.
-Telecentric grids use already-normalized entrance-pupil coordinates. Vignetted,
-blocked, non-finite, and ``rho > 1`` samples are excluded.
+Afocal grids do not carry that finite ``grid_pkg`` and instead use their existing
+normalized pupil-coordinate channels. Vignetted, blocked, non-finite, and
+``rho > 1`` samples are excluded.
 
 The model grid is expressed in central-wavelength waves and is scaled through the
 model's wavelength-unit conversion before fitting. ``image_point="chief_ray"``
@@ -177,12 +178,15 @@ def _scale_opd_grid_to_wavelength(opd_grid: NDArray, opm, wavelength_nm: float) 
 def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
     """Build (3, N, N) grid with exit pupil coordinates and corrected OPD.
 
-    Extracts pre-computed exit pupil coordinates from RayGrid's upd_grid
-    (populated by wave_abr_pre_calc during trace_wavefront), then normalizes
-    by the maximum extent of exit pupil coordinates (data-driven radius).
+    For finite image space, extracts pre-computed exit pupil coordinates from
+    RayGrid's upd_grid (populated by wave_abr_pre_calc during trace_wavefront),
+    then normalizes by the maximum extent of exit pupil coordinates
+    (data-driven radius). Afocal RayGrid-compatible results have no grid_pkg,
+    so their already-normalized pupil-coordinate channels are retained.
 
-    This avoids using the paraxial exit pupil radius, which can be very
-    wrong for tilted/decentered systems.
+    This avoids using the paraxial exit pupil radius for ordinary finite data,
+    where it can be very wrong for tilted/decentered systems. In both paths,
+    only the OPD channel is scaled to the requested wavelength.
 
     Args:
         rg: RayGrid instance (already traced).
@@ -190,13 +194,16 @@ def _extract_exit_pupil_grid(rg, opm, wavelength_nm: float) -> NDArray:
         wavelength_nm: traced wavelength in nm.
 
     Returns:
-        (3, N, N) array: [0]=exit_pupil_x, [1]=exit_pupil_y, [2]=OPD in waves.
+        (3, N, N) array: [0]=pupil_x, [1]=pupil_y, [2]=OPD in waves.
     """
-    _, upd_grid = rg.grid_pkg
+    opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm)
+    grid_pkg = getattr(rg, "grid_pkg", None)
+    if grid_pkg is None:
+        return np.array([rg.grid[0], rg.grid[1], opd_grid], dtype=float)
+
+    _, upd_grid = grid_pkg
     n_rows = len(upd_grid)
     n_cols = len(upd_grid[0])
-
-    opd_grid = _scale_opd_grid_to_wavelength(rg.grid[2], opm, wavelength_nm)
 
     exit_px_raw = np.full((n_rows, n_cols), np.nan)
     exit_py_raw = np.full((n_rows, n_cols), np.nan)
@@ -244,11 +251,12 @@ def get_zernike_coefficients(
 ) -> dict:
     """Return Zernike and wavefront metrics for one field and wavelength.
 
-    Fits the explicit ordered ``zernike_terms`` against EIC exit-pupil coordinates
-    using the requested image-point reference. The JSON-safe result contains
-    unnormalized ``coefficients`` and ``rms_normalized_coefficients`` in waves,
-    piston-excluded ``rms_wfe`` and ``pv_wfe`` over ``rho <= 1``, monochromatic
-    ``strehl_ratio``, ``num_terms``, ``field_index``, and ``wavelength_nm``.
+    Fits the explicit ordered ``zernike_terms`` against finite EIC exit-pupil
+    coordinates or afocal normalized pupil coordinates using the requested
+    image-point reference. The JSON-safe result contains unnormalized
+    ``coefficients`` and ``rms_normalized_coefficients`` in waves, piston-excluded
+    ``rms_wfe`` and ``pv_wfe`` over ``rho <= 1``, monochromatic ``strehl_ratio``,
+    ``num_terms``, ``field_index``, and ``wavelength_nm``.
 
     Args:
         opm: RayOptics optical model.

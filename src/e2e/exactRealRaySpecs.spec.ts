@@ -6,9 +6,11 @@
  * exact Image Height path, and rebuilds it through the module worker. It also
  * fully reverses a bundled superachromatic microscope prescription, changes it
  * to Object NA/Object Height, explicitly opts into the finite-point solver, and
- * requires exact-model update, first-order, and layout computations to finish
- * without an Error dialog. The immersion objective is also rebuilt at a 0.1 mm
- * Object Height, where its unit Object-NA boundary is unvignetted.
+ * requires exact-model update, first-order, layout, and Zernike computations to
+ * finish without an Error dialog. Zernike Terms is exercised first with manual
+ * aperture dimensions, then again after rebuilding with auto aperture dimensions.
+ * The immersion objective is also rebuilt at a 0.1 mm Object Height, where its
+ * unit Object-NA boundary is unvignetted.
  */
 import { expect, test } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
@@ -117,5 +119,34 @@ for (const objective of forwardObjectiveCases) {
     await expect(page.getByRole("dialog", { name: "Error" })).toBeHidden();
     await expect(page.getByText("Paraxial first-order results")).toBeVisible();
     await expect(page.getByRole("img", { name: "Lens layout diagram" })).toBeVisible();
+
+    const openAndVerifyZernikeTerms = async () => {
+      await page.getByRole("button", { name: "Zernike Terms" }).click();
+      const zernikeDialog = page.getByRole("dialog", { name: "Zernike Terms" });
+      await expect(zernikeDialog).toBeVisible();
+      await expect(zernikeDialog.getByText("Loading…")).toBeHidden({
+        timeout: 120_000,
+      });
+      await expect(page.getByRole("dialog", { name: "Error" })).toBeHidden();
+      await expect(zernikeDialog.getByText("P-V WFE:")).toBeVisible();
+      await expect(zernikeDialog.getByText("RMS WFE:")).toBeVisible();
+      await expect(zernikeDialog.getByText("Strehl Ratio:")).toBeVisible();
+      await zernikeDialog.getByRole("button", { name: "Ok", exact: true }).click();
+      await expect(zernikeDialog).toBeHidden();
+    };
+
+    const autoApertureSwitch = page.getByRole("switch", {
+      name: "Set auto aperture dimensions",
+    });
+    await expect(autoApertureSwitch).not.toBeChecked();
+    await openAndVerifyZernikeTerms();
+
+    await autoApertureSwitch.click();
+    await expect(autoApertureSwitch).toBeChecked();
+    await updateButton.click();
+    await expect(updateButton).toBeDisabled({ timeout: 5_000 });
+    await expect(updateButton).toBeEnabled({ timeout: 120_000 });
+    await expect(page.getByRole("dialog", { name: "Error" })).toBeHidden();
+    await openAndVerifyZernikeTerms();
   });
 }
