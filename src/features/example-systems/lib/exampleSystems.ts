@@ -1764,7 +1764,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.24725784075730356,
       medium: "1.515",
       manufacturer: "41.8",
-      semiDiameter: 0.29722040232312347,
+      semiDiameter: 0.563,
     },
     {
       label: "Default",
@@ -1772,7 +1772,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.57,
       medium: "N-BAK2",
       manufacturer: "Schott",
-      semiDiameter: 0.7311567784925053,
+      semiDiameter: 0.931,
     },
     {
       label: "Default",
@@ -1780,7 +1780,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 3.99,
       medium: "N-LASF31A",
       manufacturer: "Schott",
-      semiDiameter: 0.6977734450072373,
+      semiDiameter: 0.707,
     },
     {
       label: "Default",
@@ -1788,7 +1788,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.228,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 3.7350393864858753,
+      semiDiameter: 3.792,
     },
     {
       label: "Default",
@@ -1796,7 +1796,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 2.81,
       medium: "K-GFK68",
       manufacturer: "Sumita",
-      semiDiameter: 5.606360663910538,
+      semiDiameter: 5.721,
     },
     {
       label: "Default",
@@ -1804,7 +1804,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.264,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 6.002776785460184,
+      semiDiameter: 6.058,
     },
     {
       label: "Default",
@@ -1812,7 +1812,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 3,
       medium: "K-GFK68",
       manufacturer: "Sumita",
-      semiDiameter: 7.842973742553523,
+      semiDiameter: 7.992,
     },
     {
       label: "Default",
@@ -1820,7 +1820,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.1,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 8.00223079780065,
+      semiDiameter: 8.132,
     },
     {
       label: "Default",
@@ -1828,7 +1828,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 6.67,
       medium: "S-FPL53",
       manufacturer: "Ohara",
-      semiDiameter: 8.444983036884194,
+      semiDiameter: 8.781,
     },
     {
       label: "Stop",
@@ -1836,7 +1836,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 1.3,
       medium: "J-LASF09A",
       manufacturer: "Hikari",
-      semiDiameter: 8.214558386953318,
+      semiDiameter: 8.803,
     },
     {
       label: "Default",
@@ -1844,7 +1844,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.1,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 7.834141655725959,
+      semiDiameter: 8.374,
     },
     {
       label: "Default",
@@ -1852,7 +1852,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 1,
       medium: "N-LASF31A",
       manufacturer: "Schott",
-      semiDiameter: 7.043494159026291,
+      semiDiameter: 7.432,
     },
     {
       label: "Default",
@@ -1860,7 +1860,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 5.2,
       medium: "S-FPL53",
       manufacturer: "Ohara",
-      semiDiameter: 5.779851866449614,
+      semiDiameter: 5.979,
     },
     {
       label: "Default",
@@ -1868,7 +1868,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 1,
       medium: "TAC8",
       manufacturer: "Hoya",
-      semiDiameter: 5.760972182928101,
+      semiDiameter: 6.000,
     },
     {
       label: "Default",
@@ -1876,7 +1876,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.6,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 5.804463295474055,
+      semiDiameter: 6.086,
     },
     {
       label: "Default",
@@ -1884,7 +1884,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.9,
       medium: "N-KZFS11",
       manufacturer: "Schott",
-      semiDiameter: 5.773614567695917,
+      semiDiameter: 6.067,
     },
     {
       label: "Default",
@@ -1892,7 +1892,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 5.15,
       medium: "S-FPL53",
       manufacturer: "Ohara",
-      semiDiameter: 6.075240931044199,
+      semiDiameter: 6.533,
     },
     {
       label: "Default",
@@ -1900,7 +1900,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.1,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 6.217236301058041,
+      semiDiameter: 6.522,
     },
     {
       label: "Default",
@@ -1908,7 +1908,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 5.19,
       medium: "S-FPL53",
       manufacturer: "Ohara",
-      semiDiameter: 5.999940816735174,
+      semiDiameter: 6.482,
     },
     {
       label: "Default",
@@ -1916,7 +1916,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 1,
       medium: "N-KZFS2",
       manufacturer: "Schott",
-      semiDiameter: 5.765600775973282,
+      semiDiameter: 7.160,
     },
     {
       label: "Default",
@@ -1924,7 +1924,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 4.7,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 4.260488633668893,
+      semiDiameter: 4.799,
     },
     {
       label: "Default",
@@ -1932,7 +1932,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.96,
       medium: "S-FPL53",
       manufacturer: "Ohara",
-      semiDiameter: 4.2677355208415415,
+      semiDiameter: 4.516,
     },
     {
       label: "Default",
@@ -1940,7 +1940,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 0.278,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 5.169991112187416,
+      semiDiameter: 5.838,
     },
     {
       label: "Default",
@@ -1948,7 +1948,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 2.62,
       medium: "N-SF2",
       manufacturer: "Schott",
-      semiDiameter: 5.264136795776516,
+      semiDiameter: 5.968,
     },
     {
       label: "Default",
@@ -1956,7 +1956,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 126.5,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 5.822855645923882,
+      semiDiameter: 6.406,
     },
     {
       label: "Default",
@@ -1964,7 +1964,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 10.9,
       medium: "N-BALF4",
       manufacturer: "Schott",
-      semiDiameter: 20,
+      semiDiameter: 25.01,
     },
     {
       label: "Default",
@@ -1972,7 +1972,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 60,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 20,
+      semiDiameter: 25.30,
     },
     {
       label: "Default",
@@ -1980,7 +1980,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 80,
       medium: "N-BK7",
       manufacturer: "Schott",
-      semiDiameter: 20,
+      semiDiameter: 24.21,
     },
     {
       label: "Default",
@@ -1988,7 +1988,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
       thickness: 48.145924012317856,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 20,
+      semiDiameter: 23.28,
     }
   ]
 };
@@ -2130,7 +2130,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
       thickness: 2.4262,
       medium: "S-BSL 7",
       manufacturer: "Ohara",
-      semiDiameter: 6,
+      semiDiameter: 6.09,
     },
     {
       label: "Default",
@@ -2138,7 +2138,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
       thickness: 13.186,
       medium: "air",
       manufacturer: "",
-      semiDiameter: 6,
+      semiDiameter: 6.11,
     },
   ],
 };
