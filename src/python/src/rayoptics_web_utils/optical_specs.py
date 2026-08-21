@@ -30,6 +30,9 @@ reverse solve through the physical stop centre.  Both exact field classes
 populate RayOptics-compatible chief-ray caches for later analysis.  Cached
 chief rays retain the verified geometry but use RayOptics' standard
 optical-path normalization so dummy gaps cannot contaminate OPD results.
+Analysis-created field copies whose cache was deliberately cleared are
+resolved through the exact field specification before RayOptics can attempt
+native wide-angle entrance-pupil aiming.
 Centred meridional solves use their one physical degree of freedom so an
 identically-zero sagittal residual cannot make the numerical Jacobian singular.
 
@@ -293,6 +296,26 @@ class ExactOpticalSpecs(OpticalSpecs):
         field_of_view._resolve_all_fields()
         return result
 
+    def _prepare_analysis_field(self, field):
+        """Attach an exact chief cache to an uncached analysis field copy.
+
+        Afocal analysis differentiates neighboring chief rays by updating
+        shallow field copies, which correctly clears inherited RayOptics
+        caches. Resolve those ad-hoc coordinates through the configured exact
+        height field before generic analysis can invoke native wide-angle
+        entrance-pupil aiming. Other field specifications remain unchanged.
+        """
+        field_of_view = self["fov"]
+        if (
+            field.chief_ray is None
+            and _is_exact_stack_enabled(self)
+            and isinstance(
+                field_of_view,
+                (ExactImageHeightFieldSpec, ExactObjectHeightFieldSpec),
+            )
+        ):
+            field_of_view.obj_coords(field)
+
     def ray_start_from_osp(self, pupil, fld, pupil_type):
         """Return an exact physical start when the pupil requires resolution."""
         if pupil_type != "rel pupil" or not _is_exact_stack_enabled(self):
@@ -455,7 +478,7 @@ class ExactObjectHeightFieldSpec(FieldSpec):
         return result
 
     def obj_coords(self, fld):
-        """Return the fixed object point and verified chief direction for ``fld``."""
+        """Return the fixed point/direction and reattach a missing chief cache."""
         if self.key != ("object", "height") or self.is_wide_angle is not True:
             return super().obj_coords(fld)
         self._require_finite_object_conjugate()
@@ -470,7 +493,7 @@ class ExactObjectHeightFieldSpec(FieldSpec):
             self._store_coordinate_solution(coordinate, solution)
             self._apply_coordinate_solution(fld, coordinate)
             launch = solution[1]
-        elif id(fld) not in self._object_launches:
+        elif id(fld) not in self._object_launches or fld.chief_ray is None:
             self._apply_coordinate_solution(fld, coordinate)
         point, direction = launch
         return np.array(point, copy=True), np.array(direction, copy=True)
@@ -812,7 +835,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
         return result
 
     def obj_coords(self, fld):
-        """Return the verified object-space launch for ``fld``."""
+        """Return the verified launch and reattach a missing chief cache."""
         if self.key != ("image", "height") or self.is_wide_angle is not True:
             return super().obj_coords(fld)
 
@@ -830,7 +853,7 @@ class ExactImageHeightFieldSpec(FieldSpec):
             self._store_coordinate_solution(coordinate, solution)
             self._apply_coordinate_solution(fld, coordinate)
             launch = solution[1]
-        elif id(fld) not in self._object_launches:
+        elif id(fld) not in self._object_launches or fld.chief_ray is None:
             self._apply_coordinate_solution(fld, coordinate)
         point, direction = launch
         return np.array(point, copy=True), np.array(direction, copy=True)

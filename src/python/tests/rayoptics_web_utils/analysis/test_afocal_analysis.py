@@ -1,4 +1,8 @@
-"""Regression tests for infinite image-conjugate analysis payloads."""
+"""Regression tests for infinite image-conjugate analysis payloads.
+
+Exact finite Object Height coverage verifies that copied off-axis analysis
+fields rebuild their chief caches without native wide-angle pupil aiming.
+"""
 
 import copy
 from types import SimpleNamespace
@@ -30,6 +34,41 @@ def _wide_angle_afocal_model(afocal_two_lens):
     sm.stop_surface = 3
     for interface in sm.ifcs:
         interface.max_aperture = 100.0
+    opm.update_model()
+    return opm
+
+
+def _exact_object_height_afocal_model():
+    """Return a finite-object afocal model with exact 4 mm height fields."""
+    from rayoptics.raytr.opticalspec import PupilSpec, WvlSpec
+    from rayoptics_web_utils.optical_specs import (
+        ExactObjectHeightFieldSpec,
+        ExactOpticalModel,
+    )
+
+    opm = ExactOpticalModel()
+    osp = opm.optical_spec
+    sm = opm.seq_model
+    opm.system_spec.dimensions = "mm"
+    osp["pupil"] = PupilSpec(osp, key=["object", "epd"], value=1.0)
+    osp["fov"] = ExactObjectHeightFieldSpec(
+        osp,
+        key=["object", "height"],
+        value=4.0,
+        flds=[0.0, 0.707, 1.0],
+        is_relative=True,
+        is_wide_angle=True,
+    )
+    osp["wvls"] = WvlSpec([(587.562, 1)], ref_wl=0)
+    opm.radius_mode = True
+    sm.do_apertures = False
+    sm.gaps[0].thi = 100.0
+
+    sm.add_surface([100.0, 0.0, 1.5], sd=100.0)
+    sm.add_surface([-100.0, 200.0, "air"], sd=100.0)
+    sm.set_stop()
+    sm.add_surface([100.0, 0.0, 1.5], sd=100.0)
+    sm.add_surface([-100.0, 1.0e10, "air"], sd=100.0)
     opm.update_model()
     return opm
 
@@ -157,6 +196,44 @@ def test_wide_angle_wavefront_is_independent_of_ray_fan_order(afocal_two_lens):
     assert np.asarray(reordered_wavefront["z"]) == pytest.approx(
         np.asarray(direct_wavefront["z"]), abs=1e-8
     )
+
+
+@pytest.mark.parametrize(
+    ("field_index", "expected_height"),
+    [(1, 0.707 * 4.0), (2, 4.0)],
+    ids=["0.707-field", "full-field"],
+)
+def test_exact_object_height_afocal_analysis_prepares_perturbed_chiefs(
+    monkeypatch,
+    field_index,
+    expected_height,
+):
+    """Perturbed exact fields resolve caches before native wide-angle aiming."""
+    from rayoptics_web_utils.analysis import get_opd_fan_data
+    from rayoptics_web_utils.analysis._afocal import exit_pupil_plane
+
+    opm = _exact_object_height_afocal_model()
+    field = opm.optical_spec.field_of_view.fields[field_index]
+    wavelength_nm = opm.optical_spec["wvls"].central_wvl
+    assert field.yv == pytest.approx(expected_height)
+
+    def fail_find_real_enp(*_args, **_kwargs):
+        raise AssertionError("exact field used native entrance-pupil aiming")
+
+    monkeypatch.setattr(
+        "rayoptics.raytr.trace.find_real_enp",
+        fail_find_real_enp,
+    )
+
+    plane_point, plane_normal = exit_pupil_plane(opm, field, wavelength_nm)
+    result = get_opd_fan_data(opm, field_index)
+
+    assert np.all(np.isfinite(plane_point))
+    assert np.all(np.isfinite(plane_normal))
+    for axis in ("Tangential", "Sagittal"):
+        values = _finite_values(result[0][axis]["y"])
+        assert values
+        assert np.all(np.isfinite(values))
 
 
 @pytest.mark.parametrize("boundary", [-90.0, 90.0])

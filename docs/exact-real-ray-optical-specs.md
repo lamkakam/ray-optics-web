@@ -503,7 +503,14 @@ Exact state is update-scoped:
   which excludes those dummy gaps from optical-path bookkeeping just like every
   analysis ray. This keeps the reference-wavelength chief-ray OPD at zero
   without repeating aiming. An ad hoc exact field can continue from the cached
-  axial solution. No cache survives the next model update.
+  axial solution. Afocal exit-pupil analysis deliberately updates shallow
+  field copies after perturbing their coordinates, clearing inherited
+  `aim_info`, `chief_ray`, and `ref_sphere` values. Before generic RayOptics
+  pupil setup, the afocal chief-ray helper detects the internal preparation
+  capability on `ExactOpticalSpecs`; that hook resolves the perturbed coordinate
+  through the configured exact height field and attaches its newly verified
+  chief-ray cache. Plain `OpticalSpecs` and exact models using ordinary field
+  specifications retain native aiming. No cache survives the next model update.
 
 Geometry, material, wavelength, stop, or field edits therefore take effect
 when the caller invokes `update_model()`; stale exact launches are not retained

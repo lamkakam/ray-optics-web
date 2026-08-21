@@ -28,4 +28,7 @@ them. Exact scripts inject that helper into the Ronchi-envelope wrapper so a
 passing Object-NA unit boundary receives zero vignetting without an outward
 probe, while physically clipped boundaries use inward bisection. Consequently,
 standalone and worker exact models share the same strict residual checks,
-unit-pupil vignetting, and OPD-compatible chief-ray cache normalization.
+unit-pupil vignetting, OPD-compatible chief-ray cache normalization, and the
+internal preparation capability that resolves deliberately uncached analysis
+field copies through their exact height specification before generic
+wide-angle pupil setup.
