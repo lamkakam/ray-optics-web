@@ -43,7 +43,7 @@ const allSphericalOpticalModel: OpticalModel = {
   setAutoAperture: "manualAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
-    field: { space: "object", type: "angle", maxField: 20.0, fields: [0., 0.707, 1.], isRelative: true },
+    field: { space: "object", type: "angle", maxField: 20.0, fields: [0., 0.707, 1.], isRelative: true, isWideAngle: true },
     wavelengths: { weights: [[656.3, 1.], [587., 2.], [486.1, 1.]], referenceIndex: 1 },
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },
@@ -72,7 +72,7 @@ describe("_getFirstOrderData", () => {
       "from rayoptics_web_utils.aperture import Annular, OffsetCircular, OffsetRotatedRectangular, RonchiRuling, set_vig_with_ronchi_envelopes",
     );
     expect(scripts.join("\n")).toContain(
-      "from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactOpticalModel",
+      "from rayoptics_web_utils.optical_specs import ExactImageHeightFieldSpec, ExactObjectHeightFieldSpec, ExactOpticalModel, set_vig_respecting_exact_pupil",
     );
   });
 

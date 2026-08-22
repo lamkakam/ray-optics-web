@@ -7,6 +7,60 @@ import numpy as np
 class TestMakeRayGrid:
     """Tests for make_ray_grid()."""
 
+    @pytest.mark.parametrize("wvl_idx", [0, 1, 2], ids=["F", "d", "C"])
+    def test_finite_grid_uses_traced_wavelength_indices_without_mutating_cache(
+        self,
+        dispersive_image_space_model,
+        monkeypatch,
+        wvl_idx,
+    ):
+        """RayGrid consumers receive copied F/d/C object and image indices."""
+        from rayoptics.raytr import waveabr
+        from rayoptics_web_utils.raygrid import make_ray_grid
+
+        opm = dispersive_image_space_model
+        wavelengths = opm["optical_spec"]["wvls"].wavelengths
+        wavelength_nm = wavelengths[wvl_idx]
+        cached_fod = opm["analysis_results"]["parax_data"].fod
+        cached_indices = (cached_fod.n_obj, cached_fod.n_img)
+        captured_fod = []
+        original_pre_calc = waveabr.wave_abr_pre_calc
+        original_calc = waveabr.wave_abr_calc
+
+        def capture_pre_calc(fod, *args, **kwargs):
+            captured_fod.append(fod)
+            return original_pre_calc(fod, *args, **kwargs)
+
+        def capture_calc(fod, *args, **kwargs):
+            captured_fod.append(fod)
+            return original_calc(fod, *args, **kwargs)
+
+        monkeypatch.setattr(waveabr, "wave_abr_pre_calc", capture_pre_calc)
+        monkeypatch.setattr(waveabr, "wave_abr_calc", capture_calc)
+
+        make_ray_grid(
+            opm,
+            fi=0,
+            wavelength_nm=wavelength_nm,
+            num_rays=3,
+        )
+
+        assert captured_fod
+        expected_n_obj = opm["seq_model"].gaps[0].medium.rindex(
+            wavelength_nm,
+        )
+        expected_n_img = opm["seq_model"].gaps[-1].medium.rindex(
+            wavelength_nm,
+        )
+        assert [fod.n_obj for fod in captured_fod] == pytest.approx(
+            [expected_n_obj] * len(captured_fod),
+        )
+        assert [fod.n_img for fod in captured_fod] == pytest.approx(
+            [expected_n_img] * len(captured_fod),
+        )
+        assert all(fod is not cached_fod for fod in captured_fod)
+        assert (cached_fod.n_obj, cached_fod.n_img) == cached_indices
+
     def test_returns_ray_grid_instance(self, cooke_triplet):
         """make_ray_grid should return a RayGrid instance."""
         from rayoptics.raytr.analyses import RayGrid

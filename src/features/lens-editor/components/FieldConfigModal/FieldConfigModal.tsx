@@ -67,7 +67,7 @@ const MAX_ROWS = 10;
  * - Row limit is 10; the add button becomes hidden (not removed) at the limit.
  * - The first row cannot be deleted.
  * - Reuses `GridRowButtons` from the `LensPrescriptionContainer` barrel for field row insertion and deletion controls.
- * - A compact shared `CheckboxInput` below the grid toggles whether wide-angle mode is enabled for more robust ray aiming; the checkbox stays narrow while the label is left-aligned beside it.
+ * - A compact shared `CheckboxInput` below the grid toggles exact wide-angle ray aiming for Object Angle, Object Height, and Image Height. The checkbox stays narrow while the label is left-aligned beside it.
  * - Row ids use a module-level counter for stable AG Grid `getRowId`.
  * - Image space offers Height only. Selecting Image while Object Angle is active atomically changes the draft type to Height, so the modal can never emit Image Angle.
  * - Uses `EditableAgGridReact`, which defaults AG Grid `stopEditingWhenCellsLoseFocus` to `true`, so a pending Relative Field cell edit is committed before footer actions such as Apply read the draft rows.
@@ -129,6 +129,10 @@ function FieldConfigModalContent({
     if (nextSpace === "image") {
       setFieldType("height");
     }
+  };
+
+  const handleFieldTypeChange = (nextType: FieldType) => {
+    setFieldType(nextType);
   };
 
   const addRow = useCallback((afterId: string) => {
@@ -243,7 +247,7 @@ function FieldConfigModalContent({
             id="field-type"
             aria-label="Field type"
             value={fieldType}
-            onChange={(e) => setFieldType(e.target.value as FieldType)}
+            onChange={(e) => handleFieldTypeChange(e.target.value as FieldType)}
             options={fieldTypeOptions}
           />
         </div>

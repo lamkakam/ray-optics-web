@@ -273,6 +273,59 @@ describe("FieldConfigModal", () => {
     ).toBeChecked();
   });
 
+  it("enables and preserves wide angle mode for an initial object height field", async () => {
+    const onApply = jest.fn();
+    render(
+      <FieldConfigModal
+        {...defaultProps}
+        initialType="height"
+        initialIsWideAngle
+        onApply={onApply}
+      />,
+    );
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Use wide angle mode for more robust ray aiming",
+    });
+
+    expect(checkbox).toBeEnabled();
+    expect(checkbox).toBeChecked();
+    await userEvent.click(screen.getByText("Apply"));
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        space: "object",
+        type: "height",
+        isWideAngle: true,
+      }),
+    );
+  });
+
+  it("preserves checked wide angle mode when Object Height is selected", async () => {
+    const onApply = jest.fn();
+    render(
+      <FieldConfigModal
+        {...defaultProps}
+        initialIsWideAngle
+        onApply={onApply}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Field type"), "height");
+    const checkbox = screen.getByRole("checkbox", {
+      name: "Use wide angle mode for more robust ray aiming",
+    });
+    expect(checkbox).toBeEnabled();
+    expect(checkbox).toBeChecked();
+
+    await userEvent.click(screen.getByText("Apply"));
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        space: "object",
+        type: "height",
+        isWideAngle: true,
+      }),
+    );
+  });
+
   it("renders a compact checkbox with a left-aligned label", () => {
     render(<FieldConfigModal {...defaultProps} />);
 

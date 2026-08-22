@@ -261,6 +261,79 @@ class TestGetZernikeCoefficients:
         assert opm.converted_wavelengths == [500.0, 1000.0]
         assert grid[2, 0, 0] == pytest.approx(2.0 * 600.0 / 1100.0)
 
+    def test_afocal_grid_keeps_normalized_coordinates_and_scales_only_opd(self):
+        """Afocal coordinates should pass through while OPD changes wavelength."""
+        from rayoptics_web_utils.zernike.zernike import _extract_exit_pupil_grid
+
+        class FakeSpectralRegion:
+            central_wvl = 500.0
+
+        class FakeOpticalModel:
+            def __getitem__(self, key):
+                if key == "optical_spec":
+                    return {"wvls": FakeSpectralRegion()}
+                raise KeyError(key)
+
+            def nm_to_sys_units(self, wavelength_nm):
+                return float(wavelength_nm) + 100.0
+
+        class FakeAfocalRayGrid:
+            grid = np.array(
+                [
+                    [[-1.0, 0.25]],
+                    [[0.5, -0.75]],
+                    [[2.0, np.nan]],
+                ]
+            )
+
+        grid = _extract_exit_pupil_grid(
+            FakeAfocalRayGrid(), FakeOpticalModel(), wavelength_nm=1000.0
+        )
+
+        np.testing.assert_allclose(grid[0], FakeAfocalRayGrid.grid[0])
+        np.testing.assert_allclose(grid[1], FakeAfocalRayGrid.grid[1])
+        np.testing.assert_allclose(
+            grid[2],
+            np.array([[2.0 * 600.0 / 1100.0, np.nan]]),
+            equal_nan=True,
+        )
+
+    def test_afocal_grid_without_grid_pkg_returns_all_terms_and_finite_metrics(
+        self, afocal_two_lens
+    ):
+        """Afocal pupil-coordinate channels should support Zernike fitting."""
+        from rayoptics_web_utils.raygrid import make_ray_grid
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        wavelength_nm = afocal_two_lens["optical_spec"]["wvls"].wavelengths[1]
+        ray_grid = make_ray_grid(
+            afocal_two_lens,
+            fi=0,
+            wavelength_nm=wavelength_nm,
+            num_rays=11,
+        )
+
+        assert not hasattr(ray_grid, "grid_pkg")
+
+        result = get_zernike_coefficients(
+            afocal_two_lens,
+            field_index=0,
+            wvl_index=1,
+            zernike_terms=NOLL_TERMS_22,
+            num_rays=11,
+        )
+
+        assert result["num_terms"] == len(NOLL_TERMS_22)
+        assert len(result["coefficients"]) == len(NOLL_TERMS_22)
+        assert len(result["rms_normalized_coefficients"]) == len(NOLL_TERMS_22)
+        assert np.all(np.isfinite(result["coefficients"]))
+        assert np.all(np.isfinite(result["rms_normalized_coefficients"]))
+        assert np.all(
+            np.isfinite(
+                [result["rms_wfe"], result["pv_wfe"], result["strehl_ratio"]]
+            )
+        )
+
     def test_returns_dict_with_expected_keys(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         import inspect
@@ -464,11 +537,14 @@ class TestGetZernikeCoefficients:
 
         captured_kwargs: dict = {}
 
-        def capturing_raygrid(*args, **kwargs):
-            captured_kwargs.update(kwargs)
-            return RealRayGrid(*args, **kwargs)
+        class CapturingRayGrid(RealRayGrid):
+            """Capture construction kwargs while retaining subclass behavior."""
 
-        with patch('rayoptics.raytr.analyses.RayGrid', side_effect=capturing_raygrid):
+            def __init__(self, *args, **kwargs):
+                captured_kwargs.update(kwargs)
+                super().__init__(*args, **kwargs)
+
+        with patch('rayoptics.raytr.analyses.RayGrid', CapturingRayGrid):
             get_zernike_coefficients(cooke_triplet, field_index=0, wvl_index=1, zernike_terms=NOLL_TERMS_22)
 
         assert captured_kwargs.get('check_apertures') is True, (

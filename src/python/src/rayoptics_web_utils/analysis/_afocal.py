@@ -91,7 +91,12 @@ def output_segment(ray_pkg):
 
 
 def _chief_ray_pkg(opm, fld, wavelength_nm):
-    """Returns the chief ray package.
+    """Return the chief ray package after optional exact-field preparation.
+
+    Optical specifications may expose the internal
+    ``_prepare_analysis_field`` capability to resolve a deliberately uncached
+    analysis field copy before RayOptics performs generic pupil setup. Plain
+    RayOptics optical specifications have no such hook and remain unchanged.
 
     Args:
         opm: RayOptics optical model.
@@ -101,6 +106,13 @@ def _chief_ray_pkg(opm, fld, wavelength_nm):
     Returns:
         The chief ray package.
     """
+    prepare_analysis_field = getattr(
+        opm.optical_spec,
+        "_prepare_analysis_field",
+        None,
+    )
+    if callable(prepare_analysis_field):
+        prepare_analysis_field(fld)
     _, chief_ray = trace.setup_pupil_coords(opm, fld, wavelength_nm, opm.optical_spec.defocus.get_focus())
     return chief_ray[0]
 
@@ -285,7 +297,7 @@ def exit_pupil_plane(opm, fld, wavelength_nm, chief_pkg=None):
 
     - Estimates where neighboring chief rays cross the nominal chief ray.
     - If no chief package is supplied, it traces one.
-    - For ordinary fields, it samples both field coordinates (`xv`, then `yv`). RayOptics wide-angle aiming accepts meridional fields, so a wide-angle field samples its `yv` coordinate only. For every sampled coordinate, shallow field copies are perturbed by `+eps` and `-eps`, where `eps = 1e-4`. It calls `Field.update()` on every copy after changing its coordinate, clearing inherited `aim_info`, `chief_ray`, and `ref_sphere` caches before tracing.
+    - For ordinary fields, it samples both field coordinates (`xv`, then `yv`). RayOptics wide-angle aiming accepts meridional fields, so a wide-angle field samples its `yv` coordinate only. For every sampled coordinate, shallow field copies are perturbed by `+eps` and `-eps`, where `eps = 1e-4`. It calls `Field.update()` on every copy after changing its coordinate, clearing inherited `aim_info`, `chief_ray`, and `ref_sphere` caches before tracing. An optical specification with an exact-field preparation capability then resolves and attaches the perturbed field's verified chief cache before RayOptics pupil setup; ordinary optical specifications continue directly to native aiming.
     - A perturbation whose output point or direction contains a non-finite component is unavailable. Other trace and package errors propagate.
     - When both perturbations are available, the preferred central differences give the variation of the output point and direction:
 
