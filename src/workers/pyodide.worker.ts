@@ -14,7 +14,7 @@
  *
  * All public computations obtain the executor through `requirePyodide`, which throws
  * until initialization succeeds. Initialization clears the singleton on failure so
- * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.29.0` wheel
+ * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.29.1` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -226,7 +226,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
     ]);
 
     const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.29.0-py3-none-any.whl`;
+    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.29.1-py3-none-any.whl`;
 
     await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
     await emitInitProgress(onProgress, 100, "Ready");
