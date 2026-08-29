@@ -5,7 +5,9 @@ requiring verified physical launches. Finite Object Height holds every pupil
 ray at its requested object point and solves the chief direction locally;
 Image Height reuses native real-image-height aiming when it meets the stricter
 project tolerance. Both cache chief rays with the optical-path convention
-expected by OPD analysis. False and omitted flags delegate to plain RayOptics.
+expected by OPD analysis, keyed by absolute field coordinate so ``Field.update``
+can safely restore the matching launch and metadata. False and omitted flags
+delegate to plain RayOptics.
 Exact Object-NA vignetting treats the unit angular-pupil boundary as a hard
 limit, while aperture-clipped boundary rays retain RayOptics' inward bisection.
 These tests exercise the public exact model and field classes through normal
@@ -175,6 +177,127 @@ def _build_cooke(
     if update:
         opm.update_model()
     return opm
+
+
+def _build_exact_height_cache_model(field_key: tuple[str, str]) -> OpticalModel:
+    """Build a finite model with three cached exact height coordinates."""
+    return _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=field_key,
+        max_field=1.0,
+        fields=[0.0, 0.5, 1.0],
+        object_distance=120.0,
+    )
+
+
+def _assert_launch_matches_height(
+    opm: OpticalModel,
+    launch: tuple[np.ndarray, np.ndarray],
+    expected_height: float,
+) -> None:
+    """Verify an exact launch preserves its requested object or image height."""
+    fov = opm["optical_spec"]["fov"]
+    point, direction = launch
+    if fov.key == ("object", "height"):
+        np.testing.assert_allclose(point, [0.0, expected_height, 0.0])
+        return
+
+    wavelength = opm["optical_spec"]["wvls"].central_wvl
+    traced_ray = raytrace.trace_raw(
+        opm["seq_model"].path(wl=wavelength),
+        point,
+        direction,
+        wavelength,
+        check_apertures=False,
+        intersect_obj=False,
+    )
+    np.testing.assert_allclose(
+        traced_ray[mc.ray][-1][mc.p][:2],
+        [0.0, expected_height],
+        rtol=1.0e-9,
+        atol=1.0e-9,
+    )
+
+
+@pytest.mark.parametrize(
+    "field_key",
+    [("object", "height"), ("image", "height")],
+)
+def test_field_update_restores_the_same_coordinate_solution(field_key):
+    """A cleared field reuses its coordinate's launch and chief metadata."""
+    opm = _build_exact_height_cache_model(field_key)
+    fov = opm["optical_spec"]["fov"]
+    field = fov.fields[1]
+    coordinate = fov._absolute_field_coordinate(field)
+    key = fov._coordinate_key(coordinate)
+    cached_launch = fov._coordinate_launches[key]
+    cached_chief_ray = fov._coordinate_chief_rays[key]
+    cached_aim_info = field.aim_info
+    cache_size = len(fov._coordinate_launches)
+
+    field.update()
+    launch = fov.obj_coords(field)
+
+    assert len(fov._coordinate_launches) == cache_size
+    assert fov._coordinate_launches[key] is cached_launch
+    assert field.chief_ray is cached_chief_ray
+    assert field.aim_info == cached_aim_info
+    _assert_launch_matches_height(opm, launch, 0.5)
+
+
+@pytest.mark.parametrize(
+    "field_key",
+    [("object", "height"), ("image", "height")],
+)
+def test_field_update_resolves_an_unsolved_coordinate(field_key):
+    """A moved field solves and caches its new absolute coordinate."""
+    opm = _build_exact_height_cache_model(field_key)
+    fov = opm["optical_spec"]["fov"]
+    field = fov.fields[1]
+    cache_size = len(fov._coordinate_launches)
+
+    field.yv = 0.75
+    field.update()
+    launch = fov.obj_coords(field)
+
+    key = fov._coordinate_key([0.0, 0.75])
+    assert len(fov._coordinate_launches) == cache_size + 1
+    assert field.chief_ray is fov._coordinate_chief_rays[key]
+    np.testing.assert_allclose(launch[0], fov._coordinate_launches[key][0])
+    np.testing.assert_allclose(launch[1], fov._coordinate_launches[key][1])
+    _assert_launch_matches_height(opm, launch, 0.75)
+
+
+@pytest.mark.parametrize(
+    "field_key",
+    [("object", "height"), ("image", "height")],
+)
+def test_field_update_switches_to_an_already_cached_coordinate(field_key):
+    """A moved field reuses the target coordinate's launch and chief metadata."""
+    opm = _build_exact_height_cache_model(field_key)
+    fov = opm["optical_spec"]["fov"]
+    field = fov.fields[1]
+    target_field = fov.fields[2]
+    target_coordinate = fov._absolute_field_coordinate(target_field)
+    target_key = fov._coordinate_key(target_coordinate)
+    target_launch = fov._coordinate_launches[target_key]
+    target_chief_ray = fov._coordinate_chief_rays[target_key]
+    target_aim_info = target_field.aim_info
+    cache_size = len(fov._coordinate_launches)
+
+    field.yv = 1.0
+    field.update()
+    launch = fov.obj_coords(field)
+
+    assert len(fov._coordinate_launches) == cache_size
+    assert fov._coordinate_launches[target_key] is target_launch
+    assert field.chief_ray is target_chief_ray
+    assert field.aim_info == target_aim_info
+    np.testing.assert_allclose(launch[0], target_launch[0])
+    np.testing.assert_allclose(launch[1], target_launch[1])
+    _assert_launch_matches_height(opm, launch, 1.0)
 
 
 def _build_uniform_medium_na_model(

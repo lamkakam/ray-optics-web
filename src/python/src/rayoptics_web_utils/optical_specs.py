@@ -27,9 +27,10 @@ fields first reuse RayOptics' native real-image-height evaluator and refine its
 launch only when strict forward verification requires it.  Finite conjugates,
 curved images, decentered stops, and continuation retain the extension's
 reverse solve through the physical stop centre.  Both exact field classes
-populate RayOptics-compatible chief-ray caches for later analysis.  Cached
-chief rays retain the verified geometry but use RayOptics' standard
-optical-path normalization so dummy gaps cannot contaminate OPD results.
+cache launches and RayOptics-compatible analysis metadata by absolute field
+coordinate.  Cached chief rays retain the verified geometry but use
+RayOptics' standard optical-path normalization so dummy gaps cannot contaminate
+OPD results.
 Analysis-created field copies whose cache was deliberately cleared are
 resolved through the exact field specification before RayOptics can attempt
 native wide-angle entrance-pupil aiming.
@@ -445,7 +446,7 @@ class ExactOpticalSpecs(OpticalSpecs):
 
 
 class ExactObjectHeightFieldSpec(FieldSpec):
-    """Finite Object Height fields with fixed points and solved chief directions."""
+    """Exact object-height launches cached by absolute field coordinate."""
 
     def __init__(self, *args, vector_solver=None, **kwargs):
         """Initialize an injectable direction solver and empty launch caches."""
@@ -455,7 +456,6 @@ class ExactObjectHeightFieldSpec(FieldSpec):
 
     def _clear_solution_cache(self):
         """Discard launches and analysis rays resolved for prior geometry."""
-        self._object_launches = {}
         self._coordinate_launches = {}
         self._coordinate_tangents = {}
         self._coordinate_chief_rays = {}
@@ -478,23 +478,19 @@ class ExactObjectHeightFieldSpec(FieldSpec):
         return result
 
     def obj_coords(self, fld):
-        """Return the fixed point/direction and reattach a missing chief cache."""
+        """Resolve the absolute coordinate and restore its launch metadata."""
         if self.key != ("object", "height") or self.is_wide_angle is not True:
             return super().obj_coords(fld)
         self._require_finite_object_conjugate()
 
         coordinate = self._absolute_field_coordinate(fld)
-        launch = self._object_launches.get(id(fld))
-        if launch is None:
-            key = self._coordinate_key(coordinate)
-            launch = self._coordinate_launches.get(key)
+        key = self._coordinate_key(coordinate)
+        launch = self._coordinate_launches.get(key)
         if launch is None:
             solution = self._solve_coordinate_from_axis(coordinate)
             self._store_coordinate_solution(coordinate, solution)
-            self._apply_coordinate_solution(fld, coordinate)
             launch = solution[1]
-        elif id(fld) not in self._object_launches or fld.chief_ray is None:
-            self._apply_coordinate_solution(fld, coordinate)
+        self._apply_coordinate_solution(fld, coordinate)
         point, direction = launch
         return np.array(point, copy=True), np.array(direction, copy=True)
 
@@ -564,10 +560,8 @@ class ExactObjectHeightFieldSpec(FieldSpec):
         self._coordinate_chief_rays[key] = chief_ray
 
     def _apply_coordinate_solution(self, field, coordinate):
-        """Attach one shared coordinate solution to a configured field."""
+        """Restore coordinate-matched analysis metadata on a field."""
         key = self._coordinate_key(coordinate)
-        launch = self._coordinate_launches[key]
-        self._object_launches[id(field)] = launch
         field.aim_info = None
         field.chief_ray = self._coordinate_chief_rays[key]
 
@@ -799,7 +793,7 @@ class ExactObjectHeightFieldSpec(FieldSpec):
 
 
 class ExactImageHeightFieldSpec(FieldSpec):
-    """Native-first image-height fields with strict real-ray extensions."""
+    """Exact image-height launches cached by absolute field coordinate."""
 
     def __init__(
         self,
@@ -818,7 +812,6 @@ class ExactImageHeightFieldSpec(FieldSpec):
 
     def _clear_solution_cache(self):
         """Discard launches and RayOptics analysis caches from prior geometry."""
-        self._object_launches = {}
         self._coordinate_launches = {}
         self._coordinate_tangents = {}
         self._coordinate_aim_info = {}
@@ -835,26 +828,21 @@ class ExactImageHeightFieldSpec(FieldSpec):
         return result
 
     def obj_coords(self, fld):
-        """Return the verified launch and reattach a missing chief cache."""
+        """Resolve the absolute coordinate and restore its launch metadata."""
         if self.key != ("image", "height") or self.is_wide_angle is not True:
             return super().obj_coords(fld)
 
-        launch = self._object_launches.get(id(fld))
+        coordinate = self._absolute_field_coordinate(fld)
+        key = self._coordinate_key(coordinate)
+        launch = self._coordinate_launches.get(key)
         if launch is None:
-            coordinate = self._absolute_field_coordinate(fld)
-            key = self._coordinate_key(coordinate)
-            launch = self._coordinate_launches.get(key)
-        if launch is None:
-            coordinate = self._absolute_field_coordinate(fld)
             if self._supports_native_image_height_evaluator():
                 solution = self._solve_native_first(fld, coordinate)
             else:
                 solution = self._solve_coordinate_from_axis(coordinate)
             self._store_coordinate_solution(coordinate, solution)
-            self._apply_coordinate_solution(fld, coordinate)
             launch = solution[1]
-        elif id(fld) not in self._object_launches or fld.chief_ray is None:
-            self._apply_coordinate_solution(fld, coordinate)
+        self._apply_coordinate_solution(fld, coordinate)
         point, direction = launch
         return np.array(point, copy=True), np.array(direction, copy=True)
 
@@ -922,10 +910,8 @@ class ExactImageHeightFieldSpec(FieldSpec):
         self._coordinate_chief_rays[key] = chief_ray
 
     def _apply_coordinate_solution(self, field, coordinate):
-        """Attach one cached solution to a configured RayOptics field."""
+        """Restore coordinate-matched analysis metadata on a field."""
         key = self._coordinate_key(coordinate)
-        launch = self._coordinate_launches[key]
-        self._object_launches[id(field)] = launch
         field.aim_info = self._coordinate_aim_info[key]
         field.chief_ray = self._coordinate_chief_rays[key]
 
