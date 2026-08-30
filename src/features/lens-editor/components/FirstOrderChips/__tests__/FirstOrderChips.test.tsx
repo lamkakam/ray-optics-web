@@ -7,9 +7,9 @@ describe("FirstOrderChips", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("renders EFL chip when efl is present", () => {
+  it("renders EFL chip without a paraxial results label when efl is present", () => {
     render(<FirstOrderChips data={{ efl: 100.234 }} />);
-    expect(screen.getByText("Paraxial first-order results")).toBeInTheDocument();
+    expect(screen.queryByText("Paraxial first-order results")).not.toBeInTheDocument();
     expect(screen.getByText("EFL: 100.23mm")).toBeInTheDocument();
   });
 
