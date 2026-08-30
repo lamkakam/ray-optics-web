@@ -161,7 +161,7 @@ function formatAsphereAssignment(
 
 function formatDiffractionGrating(
   targetExpr: string,
-  grating: NonNullable<OpticalModel["surfaces"][number]["diffractionGrating"]>,
+  grating: NonNullable<NonNullable<OpticalModel["surfaces"][number]["diffractiveElement"]>["diffractionGrating"]>,
 ) {
   const { lpmm, order } = grating;
   return `${targetExpr}.phase_element = DiffractionGrating(grating_lpmm=${lpmm}, order=${order})`;
@@ -240,7 +240,7 @@ function buildSurfaceStep(surface: Surface): SurfaceBuildStep {
     edge_aperture,
     aspherical,
     decenter,
-    diffractionGrating,
+    diffractiveElement,
   } = surface;
   const { medium: mediumOption, glassManufacturer } = formattedMedium(medium, manufacturer);
   const mutationLines: SurfaceMutationLine[] = [];
@@ -263,8 +263,8 @@ function buildSurfaceStep(surface: Surface): SurfaceBuildStep {
     mutationLines.push(formatDecenterAssignment(currentSurfaceExpr, decenter));
   }
 
-  if (diffractionGrating !== undefined) {
-    mutationLines.push(formatDiffractionGrating(currentSurfaceExpr, diffractionGrating));
+  if (diffractiveElement?.diffractionGrating !== undefined) {
+    mutationLines.push(formatDiffractionGrating(currentSurfaceExpr, diffractiveElement.diffractionGrating));
   }
 
   if (label === "Stop") {
@@ -414,7 +414,7 @@ d263teco = create_glass(d263teco_url, "rindexinfo")
  * - If `aspherical.kind === "XToroid"`, emits `sm.ifcs[sm.cur_surface].profile = XToroid(r=..., cc=..., cr=..., coefs=[...])`.
  * - If `aspherical.kind === "YToroid"`, emits `sm.ifcs[sm.cur_surface].profile = YToroid(r=..., cc=..., cr=..., coefs=[...])`.
  * - If `decenter` is set, emits `sm.ifcs[sm.cur_surface].decenter = DecenterData(...)`.
- * - If `diffractionGrating` is set, emits `sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(...)`.
+ * - If `diffractiveElement.diffractionGrating` is set, emits `sm.ifcs[sm.cur_surface].phase_element = DiffractionGrating(...)`.
  * - If `label === "Stop"`, emits `sm.set_stop()`.
  * 7. Sets `sm.ifcs[-1].profile.r` to the image surface curvature radius.
  * 8. If the image surface has `decenter`, emits `sm.ifcs[-1].decenter = DecenterData(...)`.

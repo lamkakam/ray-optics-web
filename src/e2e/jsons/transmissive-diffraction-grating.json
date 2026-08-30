@@ -98,9 +98,11 @@
       "medium": "SF10",
       "manufacturer": "Schott",
       "semiDiameter": 12.7,
-      "diffractionGrating": {
-        "lpmm": 600,
-        "order": 1
+      "diffractiveElement": {
+        "diffractionGrating": {
+          "lpmm": 600,
+          "order": 1
+        }
       }
     },
     {

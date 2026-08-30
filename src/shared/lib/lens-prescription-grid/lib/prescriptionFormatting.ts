@@ -185,7 +185,7 @@ function isInsertedPropagationGapSurface(
     && row.comment === undefined
     && row.aspherical === undefined
     && row.decenter === undefined
-    && row.diffractionGrating === undefined;
+    && row.diffractiveElement === undefined;
 }
 
 function normalizeReverseRows(rows: readonly GridRow[], { first, last }: ReverseRowsOptions): NormalizedReverseRows {

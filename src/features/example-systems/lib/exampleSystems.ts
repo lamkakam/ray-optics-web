@@ -10,6 +10,7 @@
  * - Example models with aspherical surfaces use the discriminated domain shape:
  * - `{ kind: "Conic", conicConstant }`
  * - `{ kind: "EvenAspherical", conicConstant, polynomialCoefficients }`
+ * - Diffraction-grating examples store their grating under `surface.diffractiveElement.diffractionGrating`, matching the public import/export contract.
  * - The Ortho-APO example uses Ohara's catalogue-supported canonical `S-BSL 7` glass name.
  * - The superachromatic air microscope explicitly labels its first surface as the stop. This materializes RayOptics' otherwise implicit surface-1 stop so full prescription reversal preserves the same physical stop surface.
  */
@@ -1565,10 +1566,12 @@ const transmissiveDiffractionGrating: OpticalModel = {
       medium: "SF10",
       manufacturer: "Schott",
       semiDiameter: 12.7,
-      diffractionGrating: {
-        lpmm: 600,
-        order: 1,
-      }
+      diffractiveElement: {
+        diffractionGrating: {
+          lpmm: 600,
+          order: 1,
+        },
+      },
     },
     {
       label: "Default",
@@ -1694,10 +1697,12 @@ const reflectiveDiffractionGrating: OpticalModel = {
         offsetX: 0,
         offsetY: 0,
       },
-      diffractionGrating: {
-        lpmm: 600,
-        order: 1,
-      }
+      diffractiveElement: {
+        diffractionGrating: {
+          lpmm: 600,
+          order: 1,
+        },
+      },
     },
     {
       label: "Default",

@@ -31,7 +31,7 @@ const testRows: GridRow[] = [
       offsetX: 0,
       offsetY: 1,
     },
-    diffractionGrating: { lpmm: 600, order: 1 },
+    diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
   },
   {
     id: "s2",

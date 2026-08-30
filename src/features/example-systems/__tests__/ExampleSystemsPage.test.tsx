@@ -157,6 +157,21 @@ describe("ExampleSystemsPage", () => {
     expect(airObjective.surfaces[0].label).toBe("Stop");
   });
 
+  it.each([
+    "Diffraction Grating (Transmissive) Example",
+    "Diffraction Grating (Reflective) Example",
+  ] as const)("stores %s with the nested diffractive-element contract", (name) => {
+    const gratingSurface = ExampleSystemList[name].surfaces.find(
+      (surface) => surface.diffractiveElement?.diffractionGrating !== undefined,
+    );
+
+    expect(gratingSurface?.diffractiveElement?.diffractionGrating).toEqual({
+      lpmm: 600,
+      order: 1,
+    });
+    expect(gratingSurface).not.toHaveProperty("diffractionGrating");
+  });
+
   it("keeps only one selected item", async () => {
     renderPage();
     const user = userEvent.setup();

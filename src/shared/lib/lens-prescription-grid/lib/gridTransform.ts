@@ -9,7 +9,7 @@ export function generateRowId(): string {
   return `row-surface-${nextId++}`;
 }
 
-/** Converts sequential surfaces to Object, generated physical-surface, and Image grid rows while retaining defined optional comments. */
+/** Converts sequential surfaces to Object, generated physical-surface, and Image grid rows while retaining defined optional comments and complete diffractive-element wrappers. */
 export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
   const objectRow: GridRow = {
     id: OBJECT_ROW_ID,
@@ -33,7 +33,7 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
     ...(s.edge_aperture !== undefined ? { edge_aperture: s.edge_aperture } : {}),
     ...(s.aspherical !== undefined ? { aspherical: s.aspherical } : {}),
     ...(s.decenter !== undefined ? { decenter: s.decenter } : {}),
-    ...(s.diffractionGrating !== undefined ? { diffractionGrating: s.diffractionGrating } : {}),
+    ...(s.diffractiveElement !== undefined ? { diffractiveElement: s.diffractiveElement } : {}),
   }));
 
   const imageRow: GridRow = {
@@ -50,7 +50,7 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
  * Converts ordered grid rows to sequential surfaces without throwing for missing
  * Object or Image rows. Missing required values use the editor defaults: Default
  * label, zero radii/thickness, air, empty manufacturer, and semi-diameter one.
- * Defined comments are retained; omitted comments remain omitted.
+ * Defined comments and diffractive-element wrappers are retained; omitted values remain omitted.
  */
 export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
   const objectRow = rows.find((r): r is GridRow & { kind: "object" } => r.kind === "object");
@@ -81,8 +81,8 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
     if (r.decenter !== undefined) {
       surface.decenter = r.decenter;
     }
-    if (r.diffractionGrating !== undefined) {
-      surface.diffractionGrating = r.diffractionGrating;
+    if (r.diffractiveElement !== undefined) {
+      surface.diffractiveElement = r.diffractiveElement;
     }
     return surface;
   });

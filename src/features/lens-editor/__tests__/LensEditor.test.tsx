@@ -59,7 +59,7 @@ const testImportModelWithDiffractionGrating: OpticalModel = {
       medium: "air",
       manufacturer: "",
       semiDiameter: 10,
-      diffractionGrating: { lpmm: 1200, order: 1 },
+      diffractiveElement: { diffractionGrating: { lpmm: 1200, order: 1 } },
     },
   ],
 };
@@ -417,7 +417,7 @@ describe("LensEditor", () => {
         expect.objectContaining({
           surfaces: expect.arrayContaining([
             expect.objectContaining({
-              diffractionGrating: { lpmm: 1200, order: 1 },
+              diffractiveElement: { diffractionGrating: { lpmm: 1200, order: 1 } },
             }),
           ]),
         }),

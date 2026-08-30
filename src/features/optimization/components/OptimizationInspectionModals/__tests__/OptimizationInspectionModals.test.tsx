@@ -219,4 +219,35 @@ describe("OptimizationInspectionModals", () => {
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
   });
+
+  it("preloads nested diffraction-grating data in read-only mode", () => {
+    const row: GridRow = {
+      id: "surface-1",
+      kind: "surface",
+      label: "Default",
+      curvatureRadius: 50,
+      thickness: 5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 10,
+      diffractiveElement: { diffractionGrating: { lpmm: 1200, order: -1 } },
+    };
+    renderInspectionModals({
+      mediumModalRow: undefined,
+      asphericalModalRow: undefined,
+      apertureModalRow: undefined,
+      decenterModalRow: undefined,
+      diffractionGratingModalRow: row,
+      onCloseMediumModal: jest.fn(),
+      onCloseAsphericalModal: jest.fn(),
+      onCloseApertureModal: jest.fn(),
+      onCloseDecenterModal: jest.fn(),
+      onCloseDiffractionGratingModal: jest.fn(),
+    });
+
+    expect(screen.getByRole("textbox", { name: "lp/mm" })).toHaveValue("1200");
+    expect(screen.getByRole("textbox", { name: "order" })).toHaveValue("-1");
+    expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+  });
 });

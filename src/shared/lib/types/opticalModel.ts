@@ -143,7 +143,11 @@ export interface Surface {
   /** Optional discriminated aspherical surface configuration. */
   aspherical?: AsphericalConfig;
   decenter?: DecenterConfig,
-  diffractionGrating?: DiffractionGrating,
+  /** Optional diffractive-element wrapper; an empty wrapper is a valid no-op. */
+  diffractiveElement?: {
+    /** Optional ruled diffraction grating applied as the surface phase element. */
+    diffractionGrating?: DiffractionGrating,
+  },
 }
 
 /** Object plane, ordered physical surfaces, and image plane. */

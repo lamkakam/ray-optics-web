@@ -398,9 +398,11 @@ describe("buildOpticalModelScript", () => {
       surfaces: [
         {
           ...baseModel.surfaces[0],
-          diffractionGrating: {
-            lpmm: 1000,
-            order: 1,
+          diffractiveElement: {
+            diffractionGrating: {
+              lpmm: 1000,
+              order: 1,
+            },
           },
         },
         ...baseModel.surfaces.slice(1),

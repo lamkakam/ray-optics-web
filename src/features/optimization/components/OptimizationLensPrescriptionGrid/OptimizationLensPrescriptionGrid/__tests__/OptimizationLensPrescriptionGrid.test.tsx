@@ -336,7 +336,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
         offsetX: 0,
         offsetY: 0,
       },
-      diffractionGrating: { lpmm: 600, order: 1 },
+      diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
     };
     const constantModes: RadiusMode[] = [{ surfaceIndex: 1, mode: "constant" }];
 
