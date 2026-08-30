@@ -21,6 +21,7 @@ import {
   FirstOrderChips,
   LensEditorConfigToolbar,
   LensLayoutPanel,
+  ParaxialDataModal,
   SeidelAberrModal,
   ZernikeTermsModal,
 } from "@/features/lens-editor/components";
@@ -43,7 +44,7 @@ export interface LensEditorProps {
 }
 
 /**
- * Page-level component (`"use client"`). Owns the home-view lens editor workflow: manual/import submit-compute behavior, Lens Editor config toolbar placement, Seidel/Zernike modal state, and layout for LG and SM breakpoints. Calls `useScreenBreakpoint()` internally to derive `isLG`. Delegates the compute error modal to `page.tsx` via `onError`.
+ * Page-level component (`"use client"`). Owns the home-view lens editor workflow: manual/import submit-compute behavior, Lens Editor config toolbar placement, Paraxial/Seidel/Zernike modal state, and layout for LG and SM breakpoints. Calls `useScreenBreakpoint()` internally to derive `isLG`. Delegates the compute error modal to `page.tsx` via `onError`.
  * Lens-editor child components are imported through the `features/lens-editor/components` root barrel so `LensEditor` depends on the component package surface rather than individual component directories.
  * `AnalysisPlotContainer` is imported through the `features/analysis/components` root barrel for the same reason.
  *
@@ -55,19 +56,19 @@ export interface LensEditorProps {
  * ## Layout
  *
  * ### LG (`isLG === true`)
- * - Controls row: always rendered so config actions are available before any optical system has been computed. Row order is `Update System`, `Load Config`, `Import a file from Photons to Photos`, `Download Config`, then optional `3rd Order Seidel Aberr.` and optional `Zernike Terms`; `border-b` is applied here when `firstOrderData` is undefined. `seidelButton` is guarded by `seidelData`; `zernikeButton` is guarded by `committedOpticalModel` (not `seidelData`)
+ * - Controls row: always rendered so config actions are available before any optical system has been computed. Row order is `Update System`, `Load Config`, `Import a file from Photons to Photos`, `Download Config`, then optional `Paraxial Data`, optional `3rd Order Seidel Aberr.`, and optional `Zernike Terms`; `border-b` is applied here when `firstOrderData` is undefined. The Paraxial control is guarded by `firstOrderData`, the Seidel control by `seidelData`, and the Zernike control by `committedOpticalModel`.
  * - First-order chips row (border-bottom) — only rendered when `firstOrderData` is defined
  * - Split row: LensLayoutPanel (65%) | AnalysisPlotContainer (35%); the analysis panel wrapper has `overflow-hidden` (`data-testid="lg-analysis-plot-panel"`) to prevent content from bleeding over the BottomDrawer when viewport height is small
  * - BottomDrawerContainer (`draggable={true}`)
- * - SeidelAberrModal, ZernikeTermsModal
+ * - ParaxialDataModal, SeidelAberrModal, ZernikeTermsModal
  *
  * ### SM (`isLG === false`)
  * - Outer scroll wrapper: `data-testid="sm-scroll-container"` with `flex-1 min-h-0 overflow-y-auto flex flex-col` — makes all content scrollable on small screens
- * - Controls section: always rendered so config actions are available before any optical system has been computed. It wraps naturally and orders controls as `Update System`, `Load Config`, `Import a file from Photons to Photos`, `Download Config`, then optional Seidel/Zernike buttons; first-order chips render below only when `firstOrderData` is defined
+ * - Controls section: always rendered so config actions are available before any optical system has been computed. It wraps naturally and orders controls as `Update System`, `Load Config`, `Import a file from Photons to Photos`, `Download Config`, then optional Paraxial/Seidel/Zernike buttons; first-order chips render below only when `firstOrderData` is defined
  * - `data-testid="lens-layout-container"` wrapping LensLayoutPanel
  * - `data-testid="analysis-plot-container"` wrapping AnalysisPlotContainer
  * - BottomDrawerContainer (`draggable={false}`)
- * - SeidelAberrModal, ZernikeTermsModal
+ * - ParaxialDataModal, SeidelAberrModal, ZernikeTermsModal
  *
  * ## Notes
  * - `onError` delegates compute failures to `app/AppShell.tsx`, which owns the shared generic `ErrorModal`
@@ -108,6 +109,8 @@ export function LensEditor({
   const [computing, setComputing] = useState(false);
   /** Missing-glass validation error displayed by the editor-local error modal. */
   const [validationErrorMessage, setValidationErrorMessage] = useState<string | undefined>();
+  /** Visibility of the read-only paraxial first-order data modal. */
+  const [paraxialDataModalOpen, setParaxialDataModalOpen] = useState(false);
   /** Visibility of the third-order Seidel modal. */
   const [seidelModalOpen, setSeidelModalOpen] = useState(false);
   /** Visibility of the Zernike terms modal. */
@@ -225,6 +228,20 @@ export function LensEditor({
     </div>
   );
 
+  const paraxialDataButton = firstOrderData && (
+    <div className={isLG ? undefined : "mb-2"}>
+      <Tooltip text="View paraxial first-order data" position="bottom" noTouch>
+        <Button
+          variant="secondary"
+          aria-label="Paraxial Data"
+          onClick={() => setParaxialDataModalOpen(true)}
+        >
+          Paraxial Data
+        </Button>
+      </Tooltip>
+    </div>
+  );
+
   const zernikeButton = committedOpticalModel && (
     <div className={isLG ? undefined : "mb-2"}>
       <Tooltip text="View Zernike polynomial coefficients" position="bottom" noTouch>
@@ -249,7 +266,7 @@ export function LensEditor({
     />
   );
   /** Whether at least one analysis modal control can be rendered. */
-  const hasAnalysisControls = Boolean(seidelData || committedOpticalModel);
+  const hasAnalysisControls = Boolean(firstOrderData || seidelData || committedOpticalModel);
   const firstOrderChips = <FirstOrderChips data={firstOrderData} />;
 
   const lensLayoutPanel = (
@@ -284,6 +301,14 @@ export function LensEditor({
     />
   );
 
+  const paraxialDataModal = firstOrderData && (
+    <ParaxialDataModal
+      isOpen={paraxialDataModalOpen}
+      data={firstOrderData}
+      onClose={() => setParaxialDataModalOpen(false)}
+    />
+  );
+
   const zernikeModal = committedOpticalModel && (
     <ZernikeTermsModal
       isOpen={zernikeModalOpen}
@@ -299,6 +324,7 @@ export function LensEditor({
       {hasAnalysisControls && (
         <div className={`flex shrink-0 items-center gap-4 px-4 py-2${!firstOrderData ? " border-b border-gray-200 dark:border-gray-700" : ""}`}>
           {configToolbar}
+          {paraxialDataButton}
           {seidelButton}
           {zernikeButton}
         </div>
@@ -324,6 +350,7 @@ export function LensEditor({
       </div>
 
       {bottomDrawer}
+      {paraxialDataModal}
       {seidelModal}
       {zernikeModal}
       <ErrorModal
@@ -341,6 +368,7 @@ export function LensEditor({
           {configToolbar}
         </div>
         <div className="flex flex-wrap gap-2 mt-2">
+          {paraxialDataButton}
           {seidelButton}
           {zernikeButton}
         </div>
@@ -357,6 +385,7 @@ export function LensEditor({
         {analysisPlotContainer}
       </div>
       {bottomDrawer}
+      {paraxialDataModal}
       {seidelModal}
       {zernikeModal}
       <ErrorModal

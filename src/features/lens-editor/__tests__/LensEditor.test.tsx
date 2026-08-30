@@ -138,6 +138,22 @@ jest.mock("@/features/lens-editor/components/SeidelAberrModal", () => ({
     ) : null,
 }));
 
+jest.mock("@/features/lens-editor/components/ParaxialDataModal", () => ({
+  ParaxialDataModal: ({
+    isOpen,
+    onClose,
+  }: {
+    isOpen: boolean;
+    data: Record<string, number>;
+    onClose: () => void;
+  }) =>
+    isOpen ? (
+      <div data-testid="paraxial-data-modal">
+        <button onClick={onClose}>Close</button>
+      </div>
+    ) : null,
+}));
+
 jest.mock("@/features/lens-editor/components/ZernikeTermsModal", () => ({
   ZernikeTermsModal: ({
     isOpen,
@@ -529,6 +545,22 @@ describe("LensEditor", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("Paraxial Data button is absent before first-order data is computed", () => {
+    renderLensEditor();
+    expect(screen.queryByRole("button", { name: "Paraxial Data" })).not.toBeInTheDocument();
+  });
+
+  it("Paraxial Data button appears after first-order data is computed and opens its modal", async () => {
+    renderLensEditor();
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId("update-system-btn"));
+
+    const button = await screen.findByRole("button", { name: "Paraxial Data" });
+    expect(screen.getByRole("tooltip", { name: "View paraxial first-order data" })).toBeInTheDocument();
+    await user.click(button);
+    expect(screen.getByTestId("paraxial-data-modal")).toBeInTheDocument();
+  });
+
   it("Seidel button present after successful submit", async () => {
     renderLensEditor();
     const user = userEvent.setup();
@@ -609,6 +641,7 @@ describe("LensEditor", () => {
         "Load Config",
         "Import a file from Photons to Photos",
         "Download Config",
+        "Paraxial Data",
         "3rd Order Seidel Aberrations",
         "Zernike Terms",
       ]);
@@ -634,6 +667,7 @@ describe("LensEditor", () => {
         "Load Config",
         "Import a file from Photons to Photos",
         "Download Config",
+        "Paraxial Data",
         "3rd Order Seidel Aberrations",
         "Zernike Terms",
       ]);
@@ -829,6 +863,15 @@ describe("LensEditor", () => {
     expect(
       screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" })
     ).not.toBeInTheDocument();
+  });
+
+  it("renders the Paraxial Data control when first-order data exists independently", () => {
+    const { analysisDataStore } = renderLensEditor();
+    act(() => analysisDataStore.getState().setFirstOrderData({ efl: 100 }));
+
+    expect(screen.getByRole("button", { name: "Paraxial Data" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "3rd Order Seidel Aberrations" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Zernike Terms" })).not.toBeInTheDocument();
   });
 
 });
