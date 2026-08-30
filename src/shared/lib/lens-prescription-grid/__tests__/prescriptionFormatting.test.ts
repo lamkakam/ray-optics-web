@@ -118,6 +118,43 @@ const baseSurfaces: Surfaces = {
 };
 
 describe("prescriptionFormatting", () => {
+  it("preserves surface comments through scaling and moves them with surfaces during reversal", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: baseSurfaces.surfaces.slice(0, 2).map((surface, index) => ({
+        ...surface,
+        comment: index === 0 ? "First surface" : "Second surface",
+      })),
+    });
+
+    expect(surfaceRows(scaleRows(rows, { first: 1, last: 2, factor: 2 })).map((row) => row.comment)).toEqual([
+      "First surface",
+      "Second surface",
+    ]);
+    expect(surfaceRows(reverseRows(rows, { first: 1, last: 2 })).map((row) => row.comment)).toEqual([
+      "Second surface",
+      "First surface",
+    ]);
+  });
+
+  it("preserves complete diffractive-element wrappers through scaling and reversal", () => {
+    const firstWrapper = { diffractionGrating: { lpmm: 600, order: 1 } };
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: baseSurfaces.surfaces.slice(0, 2).map((surface, index) => ({
+        ...surface,
+        diffractiveElement: index === 0 ? firstWrapper : {},
+      })),
+    });
+
+    expect(surfaceRows(scaleRows(rows, { first: 1, last: 2, factor: 2 })).map(
+      (row) => row.diffractiveElement,
+    )).toEqual([firstWrapper, {}]);
+    expect(surfaceRows(reverseRows(rows, { first: 1, last: 2 })).map(
+      (row) => row.diffractiveElement,
+    )).toEqual([{}, firstWrapper]);
+  });
+
   it("exports the object distance infinity threshold", () => {
     expect(OBJECT_DISTANCE_INFINITY_THRESHOLD).toBe(1e10);
   });
@@ -150,9 +187,11 @@ describe("prescriptionFormatting", () => {
         offsetX: expect.any(Function),
         offsetY: expect.any(Function),
       },
-      diffractionGrating: {
-        lpmm: undefined,
-        order: undefined,
+      diffractiveElement: {
+        diffractionGrating: {
+          lpmm: undefined,
+          order: undefined,
+        },
       },
     });
   });
@@ -168,11 +207,13 @@ describe("prescriptionFormatting", () => {
       "edge_aperture",
       "aspherical",
       "decenter",
-      "diffractionGrating",
+      "diffractiveElement",
     ]);
 
     expect(OBJECT_VALUE_SCALERS.distance(500, 2)).toBe(1000);
-    expect(SURFACE_VALUE_SCALERS.diffractionGrating).toEqual({ lpmm: undefined, order: undefined });
+    expect(SURFACE_VALUE_SCALERS.diffractiveElement).toEqual({
+      diffractionGrating: { lpmm: undefined, order: undefined },
+    });
   });
 
   it("scales a surface row from the centralized policy while preserving grating values", () => {
@@ -180,7 +221,7 @@ describe("prescriptionFormatting", () => {
       ...baseSurfaces,
       surfaces: [{
         ...baseSurfaces.surfaces[0],
-        diffractionGrating: { lpmm: 600, order: 1 },
+        diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
       }],
     });
     const surface = surfaceRows(rows)[0];
@@ -191,7 +232,7 @@ describe("prescriptionFormatting", () => {
       curvatureRadius: 20,
       thickness: 2,
       semiDiameter: 10,
-      diffractionGrating: { lpmm: 600, order: 1 },
+      diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
     });
   });
 
@@ -208,7 +249,7 @@ describe("prescriptionFormatting", () => {
           offsetX: -1,
           offsetY: 1.5,
         },
-        diffractionGrating: { lpmm: 600, order: 1 },
+        diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
       }],
     });
 
@@ -655,7 +696,7 @@ describe("prescriptionFormatting", () => {
           semiDiameter: 12,
           decenter: { coordinateSystemStrategy: "decenter", alpha: 3, beta: 0, gamma: 0, offsetX: 2, offsetY: 0 },
           aspherical: { kind: "Conic", conicConstant: -1 },
-          diffractionGrating: { lpmm: 600, order: 1 },
+          diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } },
         },
         ...baseSurfaces.surfaces.slice(1),
       ],
@@ -679,7 +720,7 @@ describe("prescriptionFormatting", () => {
     });
     expect(surfaces[0].decenter).toBeUndefined();
     expect(surfaces[0].aspherical).toBeUndefined();
-    expect(surfaces[0].diffractionGrating).toBeUndefined();
+    expect(surfaces[0].diffractiveElement).toBeUndefined();
     expect(surfaces[1]).toEqual(originalFirstSurface);
   });
 

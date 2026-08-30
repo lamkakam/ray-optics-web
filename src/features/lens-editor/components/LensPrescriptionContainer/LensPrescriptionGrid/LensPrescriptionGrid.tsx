@@ -39,7 +39,7 @@ interface LensPrescriptionGridProps {
 }
 
 /**
- * AG Grid table for editing the lens prescription. Displays and edits surface rows (object, surface, image) with columns for surface index, surface label, radius of curvature, thickness, medium, semi-diameter, aspherical, tilt/decenter, and diffraction grating. Row action buttons appear in a leading column.
+ * AG Grid table for editing the lens prescription. Displays and edits surface rows (object, surface, image) with columns for surface index, surface label, optional physical-surface comment, radius of curvature, thickness, medium, semi-diameter, aspherical, tilt/decenter, and diffraction grating. Row action buttons appear in a leading column.
  *
  * @remarks
  * ## Key Behaviors
@@ -49,7 +49,7 @@ interface LensPrescriptionGridProps {
  * - A read-only `Index` column appears immediately after the leading row action column and before `Surface`; it is pinned left through the shared lens prescription grid `Index` column config.
  * - The `Index` column is display-only. It derives continuous one-based numbering from the current `rows` order, counting only `surface` rows; Object and Image rows render blank index cells.
  * - Common prescription columns are composed from `shared/lib/lens-prescription-grid` so Lens Editor and Optimization use the same value getters, numeric parsing, cell renderers, and AG Grid defaults.
- * - The `Index`, `Surface`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`; the leading row action column remains editor-specific at `100px`.
+ * - The `Index`, `Surface`, `Comment`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`; the leading row action column remains editor-specific at `100px`. Comment uses AG Grid's text editor only for physical surfaces; Object and Image stay blank.
  * - Shared `MediumCell`, `ApertureCell`, `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` render inside `LensPrescriptionActionWrapper`, which opens the modal when the non-interactive cell body is clicked.
  * - `AsphericalCell`, `DecenterCell`, and `DiffractionGratingCell` display text labels (`None`, asphere type labels, decenter strategy values, and `${lpmm} lp/mm`) instead of set/unset status text.
  * - The Medium column renders for the Object row and all surface rows; the Image row remains blank in that column.
@@ -119,6 +119,7 @@ export function LensPrescriptionGrid({
     ...createLensPrescriptionCommonColumns<GridRow>({
       getGridRow: (row) => row,
       onSurfaceLabelChange: (row, label) => onRowChange(row.id, { label }),
+      onCommentChange: (row, comment) => onRowChange(row.id, { comment }),
       onRadiusChange: (row, curvatureRadius) => onRowChange(row.id, { curvatureRadius }),
       onThicknessChange: (row, thickness) => {
         if (row.kind === "object") {

@@ -1026,7 +1026,13 @@ describe("optimizationStore", () => {
 
   it("applies optimization result radius and thickness values to the local optical model snapshot", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
-    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().initializeFromOpticalModel({
+      ...baseModel,
+      surfaces: [
+        { ...baseModel.surfaces[0], comment: "Front element" },
+        { ...baseModel.surfaces[1], comment: "Rear element" },
+      ],
+    });
 
     store.getState().applyOptimizationResult({
       success: true,
@@ -1059,6 +1065,7 @@ describe("optimizationStore", () => {
     expect(model?.surfaces[0].curvatureRadius).toBe(42);
     expect(model?.surfaces[1].curvatureRadius).toBe(-42);
     expect(model?.surfaces[1].thickness).toBe(25);
+    expect(model?.surfaces.map((surface) => surface.comment)).toEqual(["Front element", "Rear element"]);
     expect(model?.image.curvatureRadius).toBe(0);
     expect(store.getState().hasUnappliedOptimizationResult).toBe(true);
   });
@@ -1285,6 +1292,45 @@ describe("optimizationStore", () => {
     expect(store.getState().asphereStates[0].conic).toEqual({ mode: "constant" });
     expect(store.getState().operands).toHaveLength(1);
     expect(store.getState().optimizer.kind).toBe("differential_evolution");
+  });
+
+  it("preserves optimization modes and unapplied results on comment-only editor synchronization", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(asphericModel);
+    store.getState().setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().setThicknessMode(2, {
+      mode: "pickup", sourceSurfaceIndex: "1", scale: "1", offset: "0",
+    });
+    store.getState().setAsphereTermMode(1, "conic", { mode: "variable", min: "-2", max: "0" });
+    const report = {
+      success: true as const,
+      status: "optimized" as const,
+      message: "done",
+      optimizer: { kind: "least_squares" as const, method: "trf" as const },
+      initial_values: [],
+      final_values: [{ kind: "radius" as const, surface_index: 1, value: 42, min: 40, max: 60 }],
+      pickups: [],
+      residuals: [],
+      merit_function: { sum_of_squares: 0, rss: 0 },
+      optimization_progress: [],
+    };
+    store.getState().applyOptimizationResult(report);
+
+    store.getState().syncFromOpticalModel({
+      ...asphericModel,
+      surfaces: [
+        { ...asphericModel.surfaces[0], comment: "Updated note" },
+        asphericModel.surfaces[1],
+      ],
+    });
+
+    expect(store.getState().optimizationModel?.surfaces[0].comment).toBe("Updated note");
+    expect(store.getState().optimizationModel?.surfaces[0].curvatureRadius).toBe(42);
+    expect(store.getState().radiusModes[0]).toMatchObject({ mode: "variable", min: "40", max: "60" });
+    expect(store.getState().thicknessModes[1]).toMatchObject({ mode: "pickup", sourceSurfaceIndex: "1" });
+    expect(store.getState().asphereStates[0].conic).toMatchObject({ mode: "variable", min: "-2", max: "0" });
+    expect(store.getState().hasUnappliedOptimizationResult).toBe(true);
+    expect(store.getState().lastOptimizationReport).toBe(report);
   });
 
   it("preserves prescription modes on exempt prescription sync", () => {

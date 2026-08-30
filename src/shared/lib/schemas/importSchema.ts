@@ -54,6 +54,15 @@ const diffractionGratingSchema = {
   },
 };
 
+/** Strict optional diffractive-element wrapper; an empty wrapper is a valid no-op. */
+const diffractiveElementSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    diffractionGrating: diffractionGratingSchema,
+  },
+};
+
 /** Circular clear aperture with required finite offsets. */
 const circularClearApertureSchema = {
   type: "object",
@@ -224,7 +233,7 @@ const yToroidSchema = {
   },
 };
 
-/** Strict physical-surface schema, including optional asphere, decenter, grating, and apertures; Ronchi surfaces require a positive semi-diameter envelope. */
+/** Strict physical-surface schema, including an optional string comment plus optional asphere, decenter, diffractive element, and apertures; Ronchi surfaces require a positive semi-diameter envelope. */
 const surfaceSchema = {
   type: "object",
   required: ["label", "curvatureRadius", "thickness", "medium", "manufacturer", "semiDiameter"],
@@ -248,6 +257,7 @@ const surfaceSchema = {
   ],
   properties: {
     label: { type: "string", enum: ["Default", "Stop"] },
+    comment: { type: "string" },
     curvatureRadius: finiteNumberSchema,
     thickness: finiteNumberSchema,
     medium: { type: "string" },
@@ -257,7 +267,7 @@ const surfaceSchema = {
       oneOf: [conicAsphericalSchema, evenAsphericalSchema, radialPolynomialSchema, xToroidSchema, yToroidSchema],
     },
     decenter: decenterConfigSchema,
-    diffractionGrating: diffractionGratingSchema,
+    diffractiveElement: diffractiveElementSchema,
     clear_aperture: clearApertureSchema,
     edge_aperture: edgeApertureSchema,
   },

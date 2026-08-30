@@ -34,7 +34,7 @@ export type OpticalModelValueScalingPolicy<T extends object> = {
   readonly [K in keyof T]?: SurfaceValueScaler<T[K], T> | SurfaceValueScalingPolicyEntry;
 };
 
-/** Scaling ownership policy. Linear dimensions multiply by the factor; asphere coefficients divide by the factor raised to their radial order minus one; angular and dimensionless values plus Ronchi line-pair density are preserved. Radial-polynomial orders are sequential, while even and toroidal polynomial orders are even. */
+/** Scaling ownership policy. Linear dimensions multiply by the factor; asphere coefficients divide by the factor raised to their radial order minus one; angular and dimensionless values plus Ronchi and diffraction-grating line-pair densities are preserved. Radial-polynomial orders are sequential, while even and toroidal polynomial orders are even. */
 export const SURFACE_VALUE_SCALING_POLICY = {
   object: {
     distance: scaleObjectDistance,
@@ -87,9 +87,11 @@ export const SURFACE_VALUE_SCALING_POLICY = {
       offsetX: scaleNumber,
       offsetY: scaleNumber,
     },
-    diffractionGrating: {
-      lpmm: undefined,
-      order: undefined,
+    diffractiveElement: {
+      diffractionGrating: {
+        lpmm: undefined,
+        order: undefined,
+      },
     },
   },
 } as const satisfies {

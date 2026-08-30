@@ -131,7 +131,7 @@ describe("_plotLensLayout", () => {
         ...allSphericalOpticalModel.surfaces.slice(0, 1),
         {
           ...allSphericalOpticalModel.surfaces[1],
-          diffractionGrating: { lpmm: 1200, order: 1 },
+          diffractiveElement: { diffractionGrating: { lpmm: 1200, order: 1 } },
         },
         ...allSphericalOpticalModel.surfaces.slice(2),
       ],

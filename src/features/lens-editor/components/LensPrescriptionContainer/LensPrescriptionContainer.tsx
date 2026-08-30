@@ -92,7 +92,7 @@ function getInitialToricSweepRadiusOfCurvature(asphericalRow: GridRow | undefine
  * - The `MediumSelectorModal`, `AsphericalModal`, `DecenterModal`, `DiffractionGratingModal`, and `ApertureModal` each use a `key` prop that changes when the modal opens for a different row, ensuring local state is reset.
  * - `AsphericalModal` uses UI labels (`"Conic"`, `"EvenAspherical"`, `"RadialPolynomial"`, `"XToroid"`, `"YToroid"`), while this container maps them to the domain `Surface["aspherical"]` union.
  * - `getInitialAsphericalType`, `getInitialAsphericalCoefficients`, and `getInitialToricSweepRadiusOfCurvature` preload modal state from the selected row so toroidal and radial polynomial surfaces reopen with the correct draft values.
- * - `DiffractionGratingModal` only applies to `surface` rows and writes `surface.diffractionGrating` back into the row state on confirm.
+ * - `DiffractionGratingModal` only applies to `surface` rows and writes `surface.diffractiveElement.diffractionGrating` back into the row state on confirm; removal omits the wrapper.
  * - `ApertureModal` only applies to `surface` rows. The selected row's `semiDiameter` is passed so annular clear apertures can validate their central obstruction and Ronchi rulings can use it as their circular envelope; `autoAperture` is passed so Clear Rectangular fields are labeled Length Ratio / Width Ratio while auto aperture dimensions are enabled. Confirm writes the selected circular, annular, rectangular, or Ronchi `clear_aperture`; it writes an explicit circular or rectangular `edge_aperture` when selected and clears `edge_aperture` when Edge Aperture follows Clear Aperture. Rectangular clear aperture confirm also stores `semiDiameter: 0` so the semi-diameter cell remains blank and non-editable while the rectangle owns the aperture size. Ronchi density, rotation, and offsets remain stored while automatic aperture calculation changes only the surface semi-diameter/envelope.
  * - `PythonScriptModal` receives an empty string for `script` when closed, generating the script only when open.
  * - The `Formatting` toolbar button opens `FormattingModal` beside `Export Python Script`. Successful Scale confirms call `store.getState().setRows(updatedRows)` immediately so the prescription revision and Optimization sync policy follow normal prescription mutation behavior.
@@ -298,15 +298,19 @@ export function LensPrescriptionContainer({
         key={diffractionGratingModal.open ? diffractionGratingModal.rowId : "diffraction-grating-closed"}
         isOpen={diffractionGratingModal.open}
         initialDiffractionGrating={
-          diffractionGratingRow?.kind === "surface" ? diffractionGratingRow.diffractionGrating : undefined
+          diffractionGratingRow?.kind === "surface"
+            ? diffractionGratingRow.diffractiveElement?.diffractionGrating
+            : undefined
         }
         onConfirm={(diffractionGrating) => {
-          store.getState().updateRow(diffractionGratingModal.rowId, { diffractionGrating });
+          store.getState().updateRow(diffractionGratingModal.rowId, {
+            diffractiveElement: { diffractionGrating },
+          });
           store.getState().closeDiffractionGratingModal();
         }}
         onClose={() => store.getState().closeDiffractionGratingModal()}
         onRemove={() => {
-          store.getState().updateRow(diffractionGratingModal.rowId, { diffractionGrating: undefined });
+          store.getState().updateRow(diffractionGratingModal.rowId, { diffractiveElement: undefined });
           store.getState().closeDiffractionGratingModal();
         }}
       />

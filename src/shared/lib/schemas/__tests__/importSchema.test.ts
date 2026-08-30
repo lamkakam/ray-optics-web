@@ -27,6 +27,34 @@ const baseModel: OpticalModel = {
 };
 
 describe("validateImportedLensData", () => {
+  it.each([undefined, "", "Front element"])("accepts an optional string surface comment %p", (comment) => {
+    const surface = {
+      label: "Default",
+      curvatureRadius: 10,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+      ...(comment !== undefined ? { comment } : {}),
+    };
+
+    expect(validateImportedLensData({ ...baseModel, surfaces: [surface] })).toBe(true);
+  });
+
+  it.each([null, 42, false, { text: "Front element" }])("rejects non-string surface comment %p", (comment) => {
+    const surface = {
+      label: "Default",
+      curvatureRadius: 10,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+      comment,
+    };
+
+    expect(validateImportedLensData({ ...baseModel, surfaces: [surface] })).toBe(false);
+  });
+
   it.each([
     { space: "object", type: "epd", value: 25 },
     { space: "object", type: "NA", value: 0.8 },
@@ -329,9 +357,11 @@ describe("validateImportedLensData", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 5,
-          diffractionGrating: {
-            lpmm: 1000,
-            order: 1,
+          diffractiveElement: {
+            diffractionGrating: {
+              lpmm: 1000,
+              order: 1,
+            },
           },
         },
       ],
@@ -681,6 +711,94 @@ describe("validateImportedLensData", () => {
     expect(validateImportedLensData(extraKeyModel)).toBe(false);
   });
 
+  it("accepts an empty diffractive-element wrapper", () => {
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [{
+        label: "Default",
+        curvatureRadius: 12,
+        thickness: 3,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 5,
+        diffractiveElement: {},
+      }],
+    };
+
+    expect(validateImportedLensData(model)).toBe(true);
+  });
+
+  it("rejects the legacy flat diffraction-grating property", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [{
+        label: "Default",
+        curvatureRadius: 12,
+        thickness: 3,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 5,
+        diffractionGrating: { lpmm: 1000, order: 1 },
+      }],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it.each([null, "grating", 1, []])("rejects malformed diffractive-element parent %p", (diffractiveElement) => {
+    const model = {
+      ...baseModel,
+      surfaces: [{
+        label: "Default",
+        curvatureRadius: 12,
+        thickness: 3,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 5,
+        diffractiveElement,
+      }],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects unexpected diffractive-element keys", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [{
+        label: "Default",
+        curvatureRadius: 12,
+        thickness: 3,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 5,
+        diffractiveElement: { hologram: {} },
+      }],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it.each([null, "grating", 1, [], {}, { lpmm: 1000 }, { order: 1 }])(
+    "rejects malformed diffraction-grating child %p",
+    (diffractionGrating) => {
+      const model = {
+        ...baseModel,
+        surfaces: [{
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          diffractiveElement: { diffractionGrating },
+        }],
+      };
+
+      expect(validateImportedLensData(model)).toBe(false);
+    },
+  );
+
   it("rejects diffraction grating with non-numeric lpmm", () => {
     const model = {
       ...baseModel,
@@ -692,9 +810,11 @@ describe("validateImportedLensData", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 5,
-          diffractionGrating: {
-            lpmm: "1000",
-            order: 1,
+          diffractiveElement: {
+            diffractionGrating: {
+              lpmm: "1000",
+              order: 1,
+            },
           },
         },
       ],
@@ -714,9 +834,11 @@ describe("validateImportedLensData", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 5,
-          diffractionGrating: {
-            lpmm: 1000,
-            order: 1.5,
+          diffractiveElement: {
+            diffractionGrating: {
+              lpmm: 1000,
+              order: 1.5,
+            },
           },
         },
       ],
@@ -736,10 +858,12 @@ describe("validateImportedLensData", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 5,
-          diffractionGrating: {
-            lpmm: 1000,
-            order: 1,
-            grooveShape: "sawtooth",
+          diffractiveElement: {
+            diffractionGrating: {
+              lpmm: 1000,
+              order: 1,
+              grooveShape: "sawtooth",
+            },
           },
         },
       ],
@@ -747,6 +871,26 @@ describe("validateImportedLensData", () => {
 
     expect(validateImportedLensData(model)).toBe(false);
   });
+
+  it.each([Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NaN])(
+    "rejects diffraction grating with non-finite lpmm %p",
+    (lpmm) => {
+      const model = {
+        ...baseModel,
+        surfaces: [{
+          label: "Default",
+          curvatureRadius: 12,
+          thickness: 3,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 5,
+          diffractiveElement: { diffractionGrating: { lpmm, order: 1 } },
+        }],
+      };
+
+      expect(validateImportedLensData(model)).toBe(false);
+    },
+  );
 });
 
 describe("validateImportedCustomGlassData", () => {

@@ -260,9 +260,11 @@ describe("surfacesToGridRows", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 10,
-          diffractionGrating: {
-            lpmm: 900,
-            order: 1,
+          diffractiveElement: {
+            diffractionGrating: {
+              lpmm: 900,
+              order: 1,
+            },
           },
         },
       ],
@@ -270,9 +272,11 @@ describe("surfacesToGridRows", () => {
     const rows = surfacesToGridRows(withGrating);
     const surfaceRow = rows[1];
     if (surfaceRow.kind === "surface") {
-      expect(surfaceRow.diffractionGrating).toEqual({
-        lpmm: 900,
-        order: 1,
+      expect(surfaceRow.diffractiveElement).toEqual({
+        diffractionGrating: {
+          lpmm: 900,
+          order: 1,
+        },
       });
     }
   });
@@ -389,22 +393,26 @@ describe("gridRowsToSurfaces", () => {
         medium: "air",
         manufacturer: "",
         semiDiameter: 1,
-        diffractionGrating: {
-          lpmm: 1200,
-          order: -1,
+        diffractiveElement: {
+          diffractionGrating: {
+            lpmm: 1200,
+            order: -1,
+          },
         },
       },
       { id: IMAGE_ROW_ID, kind: "image", curvatureRadius: 0 },
     ];
 
     const surfaces = gridRowsToSurfaces(rows);
-    expect(surfaces.surfaces[0].diffractionGrating).toEqual({
-      lpmm: 1200,
-      order: -1,
+    expect(surfaces.surfaces[0].diffractiveElement).toEqual({
+      diffractionGrating: {
+        lpmm: 1200,
+        order: -1,
+      },
     });
   });
 
-  it("excludes diffraction grating key when undefined", () => {
+  it("excludes diffractive element when undefined", () => {
     const rows: GridRow[] = [
       { id: OBJECT_ROW_ID, kind: "object", objectDistance: 0, medium: "air", manufacturer: "" },
       {
@@ -421,7 +429,7 @@ describe("gridRowsToSurfaces", () => {
     ];
 
     const surfaces = gridRowsToSurfaces(rows);
-    expect(surfaces.surfaces[0]).not.toHaveProperty("diffractionGrating");
+    expect(surfaces.surfaces[0]).not.toHaveProperty("diffractiveElement");
   });
 });
 
@@ -514,15 +522,35 @@ describe("round-trip", () => {
           medium: "air",
           manufacturer: "",
           semiDiameter: 10,
-          diffractionGrating: {
-            lpmm: 1000,
-            order: 1,
+          diffractiveElement: {
+            diffractionGrating: {
+              lpmm: 1000,
+              order: 1,
+            },
           },
         },
       ],
     };
     const result = gridRowsToSurfaces(surfacesToGridRows(withGrating));
     expect(result).toEqual(withGrating);
+  });
+
+  it("round-trips an empty diffractive-element wrapper", () => {
+    const withEmptyWrapper: Surfaces = {
+      object: { distance: 0, medium: "air", manufacturer: "" },
+      image: { curvatureRadius: 0 },
+      surfaces: [{
+        label: "Default",
+        curvatureRadius: 50,
+        thickness: 5,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 10,
+        diffractiveElement: {},
+      }],
+    };
+
+    expect(gridRowsToSurfaces(surfacesToGridRows(withEmptyWrapper))).toEqual(withEmptyWrapper);
   });
 
   it("round-trips zero surfaces", () => {

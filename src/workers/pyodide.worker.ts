@@ -283,13 +283,15 @@ export async function _getSurfaceSemiDiameters(
   return JSON.parse(json) as number[];
 }
 
-/** Plots a lens layout with injected execution, deriving the wavelength-overlay flag from diffraction gratings. */
+/** Plots a lens layout with injected execution, enabling wavelength overlays when any surface has `diffractiveElement.diffractionGrating`. */
 export async function _plotLensLayout(
   runPython: (code: string) => Promise<unknown>,
   opticalModel: OpticalModel,
   isDark: boolean,
 ): Promise<string> {
-  const showRayFanVsWvls = opticalModel.surfaces.some((surface) => surface.diffractionGrating !== undefined);
+  const showRayFanVsWvls = opticalModel.surfaces.some(
+    (surface) => surface.diffractiveElement?.diffractionGrating !== undefined,
+  );
   return (await runPython(
     buildScript(
       opticalModel,

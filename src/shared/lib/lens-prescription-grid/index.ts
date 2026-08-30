@@ -19,6 +19,7 @@ export {
 export {
   createApertureColumn,
   createAsphericalColumn,
+  createCommentColumn,
   createDecenterColumn,
   createDiffractionGratingColumn,
   createLensPrescriptionCommonColumns,

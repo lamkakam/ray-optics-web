@@ -125,9 +125,11 @@ type AsphericalConfig =
 /** Supported aspherical configuration discriminators. */
 export type AsphericalType = AsphericalConfig["kind"];
 
-/** Represents a single optical surface in the sequential model. */
+/** Represents a single optical surface in the sequential model, including an optional user-authored comment retained only by the web application. */
 export interface Surface {
   label: "Default" | "Stop";
+  /** Optional single-line, untrimmed annotation; omitted comments remain `undefined`. */
+  comment?: string;
   curvatureRadius: number; // 0 means flat (infinite radius).
   thickness: number;
   medium: string; // can be "air" or "REFL"
@@ -141,7 +143,11 @@ export interface Surface {
   /** Optional discriminated aspherical surface configuration. */
   aspherical?: AsphericalConfig;
   decenter?: DecenterConfig,
-  diffractionGrating?: DiffractionGrating,
+  /** Optional diffractive-element wrapper; an empty wrapper is a valid no-op. */
+  diffractiveElement?: {
+    /** Optional ruled diffraction grating applied as the surface phase element. */
+    diffractionGrating?: DiffractionGrating,
+  },
 }
 
 /** Object plane, ordered physical surfaces, and image plane. */

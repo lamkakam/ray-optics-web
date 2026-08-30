@@ -30,6 +30,7 @@ interface OptimizationInspectionModalsProps {
  * - Remounts each reused modal with a row-based `key` so the modal-local draft state is reset whenever the selected optimization row changes.
  * - Mirrors the lens editor container's reset behavior for read-only inspection flows, preventing stale values from a previously opened row.
  * - Passes the inspected surface `semiDiameter` into the reused aperture modal so read-only annular and Ronchi clear aperture controls render with the same outer-radius context as the lens editor.
+ * - Reads diffraction-grating inspection values from the nested `diffractiveElement.diffractionGrating` surface contract.
  */
 export function OptimizationInspectionModals({
   mediumModalRow,
@@ -102,7 +103,11 @@ export function OptimizationInspectionModals({
         key={diffractionGratingModalRow?.id ?? "diffraction-grating-closed"}
         isOpen={diffractionGratingModalRow?.kind === "surface"}
         readOnly
-        initialDiffractionGrating={diffractionGratingModalRow?.kind === "surface" ? diffractionGratingModalRow.diffractionGrating : undefined}
+        initialDiffractionGrating={
+          diffractionGratingModalRow?.kind === "surface"
+            ? diffractionGratingModalRow.diffractiveElement?.diffractionGrating
+            : undefined
+        }
         onConfirm={() => undefined}
         onClose={onCloseDiffractionGratingModal}
         onRemove={() => undefined}

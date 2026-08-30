@@ -556,9 +556,11 @@ describe("LensPrescriptionContainer", () => {
 
     expect(store.getState().diffractionGratingModal.open).toBe(false);
     const updatedRow = store.getState().rows.find((r) => r.id === surfaceRow.id);
-    expect(updatedRow?.kind === "surface" && updatedRow.diffractionGrating).toEqual({
-      lpmm: 1000,
-      order: 1,
+    expect(updatedRow?.kind === "surface" && updatedRow.diffractiveElement).toEqual({
+      diffractionGrating: {
+        lpmm: 1000,
+        order: 1,
+      },
     });
   });
 
@@ -566,7 +568,7 @@ describe("LensPrescriptionContainer", () => {
     const store = createTestStore();
     const rowId = store.getState().rows.find((r) => r.kind === "surface")!.id;
     store.getState().updateRow(rowId, {
-      diffractionGrating: { lpmm: 1200, order: 1 },
+      diffractiveElement: { diffractionGrating: { lpmm: 1200, order: 1 } },
     });
 
     renderLPC(store);
@@ -579,7 +581,7 @@ describe("LensPrescriptionContainer", () => {
 
     expect(store.getState().diffractionGratingModal.open).toBe(false);
     const updatedRow = store.getState().rows.find((r) => r.id === rowId);
-    expect(updatedRow?.kind === "surface" && updatedRow.diffractionGrating).toBeUndefined();
+    expect(updatedRow?.kind === "surface" && updatedRow.diffractiveElement).toBeUndefined();
   });
 
   // --- Export Python Script ---
