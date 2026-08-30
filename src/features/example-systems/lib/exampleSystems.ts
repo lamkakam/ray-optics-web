@@ -203,6 +203,7 @@ const herschelReflector: OpticalModel = {
   surfaces: [
     {
       label: "Default",
+      comment: "dummy air surface",
       curvatureRadius: 0,
       thickness: 0,
       medium: "air",
@@ -262,6 +263,7 @@ const mikeJonesImprovedHerschelReflector: OpticalModel = {
   surfaces: [
     {
       label: "Default",
+      comment: "dummy air surface",
       curvatureRadius: 0,
       thickness: 0,
       medium: "air",
@@ -538,6 +540,7 @@ const quadSchiefspiegler: OpticalModel = {
   surfaces: [
     {
       label: "Default",
+      comment: "dummy air surface",
       curvatureRadius: 0,
       thickness: 0,
       medium: "air",
