@@ -1,6 +1,8 @@
 import { Button } from "@/shared/components/primitives/Button";
+import { Chip } from "@/shared/components/primitives/Chip";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Table } from "@/shared/components/primitives/Table";
+import { formatOptionalSixDecimal } from "@/shared/components/ag-grid/readonlyGridConfig";
 
 /** Visibility, worker data, and dismissal action for the paraxial-data dialog. */
 export interface ParaxialDataModalProps {
@@ -41,12 +43,18 @@ const PARAXIAL_ATTRIBUTE_LABELS: Readonly<Record<string, string>> = {
   img_na: "Image-Space Numerical Aperture",
 };
 
+/** Converts a worker attribute key to the short display text used by its Chip. */
+function formatAttributeKey(key: string): string {
+  return key === "fno" ? "f/#" : key.replaceAll("_", " ").toUpperCase();
+}
+
 /**
  * Read-only modal for the complete first-order data object returned by RayOptics.
  *
  * @remarks
- * - Rows preserve worker entry order and values are rendered without formatting or rounding.
- * - Documented fields show a readable label followed by their raw key; unknown fields show the raw key.
+ * - Rows preserve worker entry order and values use the shared optional six-decimal formatter.
+ * - Documented fields show a readable label followed by a normalized key Chip with explicit spacing;
+ *   unknown fields show only the normalized Chip. The `fno` key is displayed as `f/#`.
  * - The Data column is right-aligned, and vertical scrolling is delegated to the shared modal body
  *   within the dialog's existing `90dvh` limit.
  * - The fixed-footer Ok button is the sole dismissal action; backdrop clicks and Escape do not close it.
@@ -54,7 +62,12 @@ const PARAXIAL_ATTRIBUTE_LABELS: Readonly<Record<string, string>> = {
 export function ParaxialDataModal({ isOpen, data, onClose }: ParaxialDataModalProps) {
   const rows = Object.entries(data).map(([key, value]) => {
     const readableLabel = PARAXIAL_ATTRIBUTE_LABELS[key];
-    return [readableLabel === undefined ? key : `${readableLabel} (${key})`, value] as const;
+    const keyChip = <Chip>{formatAttributeKey(key)}</Chip>;
+    const attribute = readableLabel === undefined
+      ? keyChip
+      : <span className="inline-flex items-center gap-2">{readableLabel}{keyChip}</span>;
+
+    return [attribute, formatOptionalSixDecimal({ value })] as const;
   });
 
   return (

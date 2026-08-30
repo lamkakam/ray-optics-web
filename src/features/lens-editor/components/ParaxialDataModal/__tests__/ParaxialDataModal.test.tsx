@@ -49,56 +49,69 @@ describe("ParaxialDataModal", () => {
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
   });
 
-  it("renders readable labels with raw keys for every documented RayOptics field", () => {
+  it("renders readable labels with normalized key Chips for every documented RayOptics field", () => {
     render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
 
-    const expectedLabels = [
-      "Optical Invariant (opt_inv)",
-      "Optical Power (power)",
-      "Effective Focal Length (efl)",
-      "Object-Space Focal Length (fl_obj)",
-      "Image-Space Focal Length (fl_img)",
-      "Front Principal Plane Distance (pp1)",
-      "Rear Principal Plane Distance (ppk)",
-      "Principal Plane Separation (pp_sep)",
-      "Front Focal Length (ffl)",
-      "Back Focal Length (bfl)",
-      "F-Number (fno)",
-      "Transverse Magnification (m)",
-      "Reduction Ratio (red)",
-      "Object-Space Refractive Index (n_obj)",
-      "Image-Space Refractive Index (n_img)",
-      "Object Distance (obj_dist)",
-      "Image Distance (img_dist)",
-      "Object Angle (obj_ang)",
-      "Image Height (img_ht)",
-      "Entrance Pupil Distance (enp_dist)",
-      "Entrance Pupil Radius (enp_radius)",
-      "Exit Pupil Distance (exp_dist)",
-      "Exit Pupil Radius (exp_radius)",
-      "Object-Space Numerical Aperture (obj_na)",
-      "Image-Space Numerical Aperture (img_na)",
+    const expectedLabelsAndChips = [
+      ["Optical Invariant", "OPT INV"],
+      ["Optical Power", "POWER"],
+      ["Effective Focal Length", "EFL"],
+      ["Object-Space Focal Length", "FL OBJ"],
+      ["Image-Space Focal Length", "FL IMG"],
+      ["Front Principal Plane Distance", "PP1"],
+      ["Rear Principal Plane Distance", "PPK"],
+      ["Principal Plane Separation", "PP SEP"],
+      ["Front Focal Length", "FFL"],
+      ["Back Focal Length", "BFL"],
+      ["F-Number", "f/#"],
+      ["Transverse Magnification", "M"],
+      ["Reduction Ratio", "RED"],
+      ["Object-Space Refractive Index", "N OBJ"],
+      ["Image-Space Refractive Index", "N IMG"],
+      ["Object Distance", "OBJ DIST"],
+      ["Image Distance", "IMG DIST"],
+      ["Object Angle", "OBJ ANG"],
+      ["Image Height", "IMG HT"],
+      ["Entrance Pupil Distance", "ENP DIST"],
+      ["Entrance Pupil Radius", "ENP RADIUS"],
+      ["Exit Pupil Distance", "EXP DIST"],
+      ["Exit Pupil Radius", "EXP RADIUS"],
+      ["Object-Space Numerical Aperture", "OBJ NA"],
+      ["Image-Space Numerical Aperture", "IMG NA"],
     ];
 
-    expectedLabels.forEach((label) => expect(screen.getByRole("cell", { name: label })).toBeInTheDocument());
-    expect(screen.getByRole("cell", { name: "future_metric" })).toBeInTheDocument();
+    expectedLabelsAndChips.forEach(([label, chip]) => {
+      const cell = screen.getByRole("cell", { name: `${label} ${chip}` });
+      const wrapper = within(cell).getByText(chip).parentElement;
+      expect(wrapper).toHaveClass("inline-flex", "gap-2");
+      expect(within(cell).getByText(label)).toBeInTheDocument();
+      expect(within(cell).getByText(chip)).toBeInTheDocument();
+    });
   });
 
-  it("preserves worker entry order and renders numeric values without rounding", () => {
+  it("renders unknown fields as a normalized Chip without duplicated plain text", () => {
+    render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
+
+    const cell = screen.getByRole("cell", { name: "FUTURE METRIC" });
+    expect(within(cell).getByText("FUTURE METRIC")).toBeInTheDocument();
+    expect(cell).not.toHaveTextContent("future_metric");
+  });
+
+  it("preserves worker entry order and formats numeric values to six decimal places", () => {
     render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
     const bodyRows = screen.getAllByRole("row").slice(1);
 
-    expect(within(bodyRows[0]).getByText("Optical Invariant (opt_inv)")).toBeInTheDocument();
-    expect(within(bodyRows[1]).getByText("Optical Power (power)")).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "50.123456789" })).toBeInTheDocument();
-    expect(screen.queryByText("50.123457")).not.toBeInTheDocument();
+    expect(within(bodyRows[0]).getByText("Optical Invariant")).toBeInTheDocument();
+    expect(within(bodyRows[1]).getByText("Optical Power")).toBeInTheDocument();
+    expect(within(bodyRows[0]).getByRole("cell", { name: "0.100000" })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "50.123457" })).toBeInTheDocument();
   });
 
   it("right-aligns the Data column and delegates scrolling to the shared modal body", () => {
     render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
 
     expect(screen.getByRole("columnheader", { name: "Data" })).toHaveClass("text-right");
-    expect(screen.getByRole("cell", { name: "50.123456789" })).toHaveClass("text-right");
+    expect(screen.getByRole("cell", { name: "50.123457" })).toHaveClass("text-right");
 
     const dialog = screen.getByRole("dialog", { name: "Paraxial Data" });
     const verticalScrollers = dialog.querySelectorAll(".overflow-y-auto");
