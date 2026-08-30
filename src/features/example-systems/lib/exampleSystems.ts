@@ -1765,6 +1765,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
   surfaces: [
     {
       label: "Default",
+      comment: "Oil immersion (Cargille Type-300)",
       curvatureRadius: 0,
       thickness: 0.24725784075730356,
       medium: "1.515",
@@ -1773,6 +1774,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "1",
       curvatureRadius: 0,
       thickness: 0.57,
       medium: "N-BAK2",
@@ -1781,6 +1783,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "2",
       curvatureRadius: -0.707,
       thickness: 3.99,
       medium: "N-LASF31A",
@@ -1789,6 +1792,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "3",
       curvatureRadius: -3.868,
       thickness: 0.228,
       medium: "air",
@@ -1797,6 +1801,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "4",
       curvatureRadius: -11.546,
       thickness: 2.81,
       medium: "K-GFK68",
@@ -1805,6 +1810,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "5",
       curvatureRadius: -6.633,
       thickness: 0.264,
       medium: "air",
@@ -1813,6 +1819,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "6",
       curvatureRadius: -172.777,
       thickness: 3,
       medium: "K-GFK68",
@@ -1821,6 +1828,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "7",
       curvatureRadius: -13.433,
       thickness: 0.1,
       medium: "air",
@@ -1829,6 +1837,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "8",
       curvatureRadius: 10.366,
       thickness: 6.67,
       medium: "S-FPL53",
@@ -1837,6 +1846,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Stop",
+      comment: "9",
       curvatureRadius: -21.597,
       thickness: 1.3,
       medium: "J-LASF09A",
@@ -1845,6 +1855,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "10",
       curvatureRadius: -68.294,
       thickness: 0.1,
       medium: "air",
@@ -1853,6 +1864,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "11",
       curvatureRadius: 18.566,
       thickness: 1,
       medium: "N-LASF31A",
@@ -1861,6 +1873,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "12",
       curvatureRadius: 6.541,
       thickness: 5.2,
       medium: "S-FPL53",
@@ -1869,6 +1882,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "13",
       curvatureRadius: -11.799,
       thickness: 1,
       medium: "TAC8",
@@ -1877,6 +1891,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "14",
       curvatureRadius: -23.039,
       thickness: 0.6,
       medium: "air",
@@ -1885,6 +1900,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "15",
       curvatureRadius: -15.181,
       thickness: 0.9,
       medium: "N-KZFS11",
@@ -1893,6 +1909,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "16",
       curvatureRadius: 9.442,
       thickness: 5.15,
       medium: "S-FPL53",
@@ -1901,6 +1918,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "17",
       curvatureRadius: -9.576,
       thickness: 0.1,
       medium: "air",
@@ -1909,6 +1927,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "18",
       curvatureRadius: 6.876,
       thickness: 5.19,
       medium: "S-FPL53",
@@ -1917,6 +1936,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "19",
       curvatureRadius: -14.962,
       thickness: 1,
       medium: "N-KZFS2",
@@ -1925,6 +1945,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "20",
       curvatureRadius: 5.495,
       thickness: 4.7,
       medium: "air",
@@ -1933,6 +1954,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "21",
       curvatureRadius: -4.87,
       thickness: 0.96,
       medium: "S-FPL53",
@@ -1941,6 +1963,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "22",
       curvatureRadius: -9.442,
       thickness: 0.278,
       medium: "air",
@@ -1949,6 +1972,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "23",
       curvatureRadius: -9.576,
       thickness: 2.62,
       medium: "N-SF2",
@@ -1957,6 +1981,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "24",
       curvatureRadius: -7.079,
       thickness: 126.5,
       medium: "air",
@@ -1965,6 +1990,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "Tubular 1",
       curvatureRadius: 189.417,
       thickness: 10.9,
       medium: "N-BALF4",
@@ -1973,6 +1999,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "Tubular 2",
       curvatureRadius: -189.417,
       thickness: 60,
       medium: "air",
@@ -1981,6 +2008,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "Tubular 3",
       curvatureRadius: 0,
       thickness: 80,
       medium: "N-BK7",
@@ -1989,6 +2017,7 @@ const superachromaticHighNAImmersionMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "Tubular 4",
       curvatureRadius: 0,
       thickness: 48.145924012317856,
       medium: "air",
