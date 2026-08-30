@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { type OpticalModel } from "@/shared/lib/types/opticalModel";
 import { loadPyodide } from "pyodide";
+import { releaseProxy } from "comlink";
 
 jest.mock("@/workers/loadPyodideModule", () => ({
   loadPyodideModule: jest.fn().mockResolvedValue(jest.fn()),
@@ -28,6 +29,7 @@ import {
   _getAstigmatismCurveData,
   _getLSAData,
   _getSurfaceSemiDiameters,
+  getFirstOrderData,
 } from "../pyodide.worker";
 
 const readPyprojectVersion = (): string => {
@@ -512,9 +514,14 @@ describe("_getDiffractionPSFData", () => {
       unitY: "mm",
       unitZ: "",
     };
+    const scopedGlobals = { destroy: jest.fn() };
     const runPythonAsync = jest.fn().mockResolvedValue(JSON.stringify(mockData));
 
-    _setPyodideForTesting({ runPythonAsync });
+    _setPyodideForTesting({
+      runPython: jest.fn().mockReturnValue(scopedGlobals),
+      runPythonAsync,
+      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+    });
 
     const result = await getDiffractionPSFData(allSphericalOpticalModel, 1, 2, "centroid");
 
@@ -642,6 +649,7 @@ describe("init", () => {
     jest.mocked(loadPyodide).mockResolvedValueOnce({
       loadPackage,
       runPythonAsync,
+      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
       globals: new Map(),
       FS: {
         mkdirTree: jest.fn(),
@@ -672,5 +680,107 @@ describe("init", () => {
       { value: 85, status: "Loading local wheel and imports" },
       { value: 100, status: "Ready" },
     ]);
+  });
+
+  it("destroys and rejects an unexpected initialization PyProxy result", async () => {
+    const unexpectedResult = { destroy: jest.fn() };
+    const runPythonAsync = jest.fn()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(unexpectedResult);
+    jest.mocked(loadPyodide).mockResolvedValueOnce({
+      loadPackage: jest.fn().mockResolvedValue(undefined),
+      runPythonAsync,
+      ffi: { PyProxy: { [Symbol.hasInstance]: (value: unknown) => value === unexpectedResult } },
+      globals: new Map(),
+    } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
+
+    await expect(init()).rejects.toThrow(
+      "Pyodide initialization returned an unexpected PyProxy result",
+    );
+
+    expect(unexpectedResult.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["success", "failure"] as const)(
+    "releases the initialization callback proxy after %s",
+    async (outcome) => {
+      const onProgress = jest.fn() as jest.Mock & { [releaseProxy]?: () => void };
+      const release = jest.fn();
+      onProgress[releaseProxy] = release;
+      if (outcome === "failure") {
+        jest.mocked(loadPyodide).mockRejectedValueOnce(new Error("load failed"));
+      }
+
+      if (outcome === "success") {
+        await init(onProgress);
+      } else {
+        await expect(init(onProgress)).rejects.toThrow("load failed");
+      }
+
+      expect(release).toHaveBeenCalledTimes(1);
+    },
+  );
+});
+
+describe("Pyodide computation executor lifecycle", () => {
+  afterEach(() => {
+    _resetPyodideForTesting();
+  });
+
+  it("passes copied globals to runPythonAsync and destroys them after success", async () => {
+    const scopedGlobals = { destroy: jest.fn() };
+    const runPython = jest.fn().mockReturnValue(scopedGlobals);
+    const runPythonAsync = jest.fn().mockResolvedValue(JSON.stringify({ efl: 200 }));
+    _setPyodideForTesting({
+      runPython,
+      runPythonAsync,
+      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+    });
+
+    await expect(getFirstOrderData(allSphericalOpticalModel)).resolves.toEqual({ efl: 200 });
+
+    expect(runPython).toHaveBeenCalledWith("dict(globals())");
+    expect(runPythonAsync).toHaveBeenCalledWith(
+      expect.any(String),
+      { globals: scopedGlobals },
+    );
+    expect(scopedGlobals.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["execution", "parsing"] as const)(
+    "destroys copied globals when %s rejects",
+    async (failure) => {
+      const scopedGlobals = { destroy: jest.fn() };
+      const runPythonAsync = failure === "execution"
+        ? jest.fn().mockRejectedValue(new Error("python failed"))
+        : jest.fn().mockResolvedValue("not json");
+      _setPyodideForTesting({
+        runPython: jest.fn().mockReturnValue(scopedGlobals),
+        runPythonAsync,
+        ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      });
+
+      await expect(getFirstOrderData(allSphericalOpticalModel)).rejects.toThrow();
+
+      expect(scopedGlobals.destroy).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("destroys and rejects an unexpected computation PyProxy result", async () => {
+    const scopedGlobals = { destroy: jest.fn() };
+    const unexpectedResult = { destroy: jest.fn() };
+    _setPyodideForTesting({
+      runPython: jest.fn().mockReturnValue(scopedGlobals),
+      runPythonAsync: jest.fn().mockResolvedValue(unexpectedResult),
+      ffi: { PyProxy: { [Symbol.hasInstance]: (value: unknown) => value === unexpectedResult } },
+    });
+
+    await expect(getFirstOrderData(allSphericalOpticalModel)).rejects.toThrow(
+      "Pyodide computation returned an unexpected PyProxy result",
+    );
+
+    expect(unexpectedResult.destroy).toHaveBeenCalledTimes(1);
+    expect(scopedGlobals.destroy).toHaveBeenCalledTimes(1);
   });
 });

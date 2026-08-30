@@ -1,4 +1,5 @@
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import { releaseProxy } from "comlink";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import type {
   GlassOptimizationConfig,
@@ -411,6 +412,33 @@ describe("_optimizeOpm", () => {
       { iteration: 1, merit_function_value: 4, log10_merit_function_value: Math.log10(4) },
     ]);
   });
+
+  it.each(["success", "failure"] as const)(
+    "releases the progress callback proxy after %s",
+    async (outcome) => {
+      const progressCallback = jest.fn() as jest.Mock & { [releaseProxy]?: () => void };
+      const release = jest.fn();
+      progressCallback[releaseProxy] = release;
+      const report = optimizationErrorReport();
+      const runPython = outcome === "success"
+        ? jest.fn().mockResolvedValue(JSON.stringify(report))
+        : jest.fn().mockRejectedValue(new Error("python failed"));
+
+      const result = _optimizeOpm(runPython, baseModel, {
+        optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+        variables: [],
+        pickups: [],
+        merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
+      }, "chief_ray", progressCallback);
+
+      if (outcome === "success") {
+        await expect(result).resolves.toEqual(report);
+      } else {
+        await expect(result).rejects.toThrow("python failed");
+      }
+      expect(release).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("sets and clears interrupt state around an optimization run", async () => {
     const setInterruptBuffer = jest.fn();
