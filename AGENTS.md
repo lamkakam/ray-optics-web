@@ -34,7 +34,9 @@
 
 - Use `gh` outside the sandbox when making a Pull Request
 
-- Don't add verification section or test result section to the Pull Request body as tests are always run as a part of CI anyway.
+- Don't add verification section or test result section to the Pull Request body as tests are always run as a part of CI anyway
+
+- Don't add any test for checking the concrete version of this project or of the internal Python package
 
 <!-- BEGIN:nextjs-agent-rules -->
 
