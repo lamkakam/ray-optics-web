@@ -1,8 +1,683 @@
 # Exact Real-Ray Optical Specifications
 
-This document is both an optics overview and a maintainer reference for
-[`optical_specs.py`](../src/python/src/rayoptics_web_utils/optical_specs.py).
-It describes the current behavior against the project's pinned
+## Summary and workflow
+`optical_specs.py` extends RayOptics so that certain **wide-angle optical specifications are enforced using real ray tracing rather than paraxial approximations**.
+
+Its main job is to make statements such as:
+
+* “the object-space NA is exactly 0.5,”
+* “the image-space F-number is exactly F/2,”
+* “this field point is exactly at object height `(x, y)`,” or
+* “this chief ray must land exactly at image height `(x, y)`”
+
+mean something **physically true for the traced optical system**, rather than merely true in first-order/paraxial optics.
+
+It does that by numerically solving for ray launch positions/directions, tracing them through the actual surfaces, and verifying the requested geometry to roughly `1e-9` tolerance.
+
+The functionality is deliberately opt-in: it activates only when the field-of-view object's `is_wide_angle` attribute is **exactly `True`**. Otherwise it largely delegates to normal RayOptics behaviour.
+
+---
+
+### The problem it is solving
+
+Normal first-order optics can describe an optical system using quantities such as entrance pupil diameter, F/#, NA and field height.
+
+That works well near the optical axis.
+
+For large fields and strongly nonlinear systems, though, the paraxial interpretation can diverge from what an actual ray does.
+
+For example, suppose you ask for image-space `F/2`.
+
+Paraxially, RayOptics can derive a pupil diameter corresponding to F/2. But if the lens is fast or strongly aberrated, the **actual angle** between the chief ray and marginal ray at the image may not correspond precisely to F/2.
+
+This file changes the interpretation to roughly:
+
+> Find the physical ray bundle whose **real traced rays** satisfy F/2.
+
+The same philosophy is applied to NA and exact field heights.
+
+---
+
+### The main pieces
+
+There are four especially important components:
+
+| Component                    | Purpose                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------- |
+| `ExactOpticalModel`          | Controls when the exact calculations happen and resolves physical pupil specifications.       |
+| `ExactOpticalSpecs`          | Converts normalized pupil coordinates into physically correct ray launches.                   |
+| `ExactObjectHeightFieldSpec` | Keeps an exact finite object point fixed and solves the chief-ray direction through the stop. |
+| `ExactImageHeightFieldSpec`  | Solves a chief ray that goes through the stop and lands at an exact image-surface location.   |
+
+There is also custom vignetting logic in `set_vig_respecting_exact_pupil()` and a collection of numerical/trace-validation helpers.
+
+---
+
+### 1. `ExactOpticalModel`
+
+This is the top-level extension of RayOptics' `OpticalModel`.
+
+It maintains two important resolved quantities:
+
+```python
+self._resolved_object_epd
+self._resolved_object_na_direction_sine
+```
+
+These are distinct from the user's requested optical-spec values.
+
+That separation is important: the original requested `("image", "f/#")`, for example, remains available to RayOptics for first-order reporting, while this module independently calculates the **physical object-side beam required to produce it**.
+
+Its `update_model()` flow is essentially:
+
+```text
+clear previous exact pupil solution
+        ↓
+run normal RayOptics update_model()
+        ↓
+is exact/wide-angle mode enabled?
+        ↓ yes
+resolve requested pupil using real rays
+        ↓
+recalculate clear apertures if needed
+```
+
+---
+
+#### Resolving image-space F/#
+
+For:
+
+```python
+pupil.key == ("image", "f/#")
+```
+
+the code converts the requested F-number into a target marginal-ray angle:
+
+$$
+\theta_{\rm target}
+=
+\tan^{-1}\left(\frac{1}{2F/\#}\right)
+$$
+
+It then varies the **object-space entrance pupil diameter** until the actual traced image-space angle matches that target.
+
+Conceptually:
+
+```text
+requested F/#
+    ↓
+target real image-space angle
+    ↓
+try an object-space pupil diameter
+    ↓
+trace axial chief ray
+trace +Y marginal ray
+    ↓
+measure angle between them at image
+    ↓
+adjust pupil diameter
+    ↓
+repeat until angle is correct
+```
+
+The search has two phases.
+
+First it gradually increases EPD until it brackets the required solution.
+
+Then it uses SciPy's Brent root solver:
+
+```python
+root_scalar(..., method="brentq")
+```
+
+with very tight numerical tolerances.
+
+So the resulting:
+
+```python
+_resolved_object_epd
+```
+
+is the **physical object-space pupil diameter that actually produces the requested image F/#**.
+
+---
+
+### 2. Exact Object NA
+
+For:
+
+```python
+("object", "NA")
+```
+
+the relationship used is the normal physical one:
+
+$$
+NA = n\sin\theta
+$$
+
+Therefore the code calculates:
+
+$$
+\sin\theta = \frac{NA}{n}
+$$
+
+That value is stored as:
+
+```python
+_resolved_object_na_direction_sine
+```
+
+where `n` is the refractive index in object space at the **reference wavelength**.
+
+It then traces both the axial chief ray and a unit-radius marginal ray and independently checks that:
+
+```python
+actual_na = object_index * math.sin(actual_angle)
+```
+
+matches the requested NA.
+
+So this isn't merely calculating `NA/n` and trusting it; it verifies that the actual generated ray geometry has that NA.
+
+---
+
+### 3. `ExactOpticalSpecs`: turning pupil coordinates into real rays
+
+Once the pupil has been physically resolved, `ExactOpticalSpecs.ray_start_from_osp()` changes how RayOptics constructs rays.
+
+For ordinary operation it delegates to RayOptics.
+
+For exact wide-angle operation it has special handling for:
+
+```python
+("object", "NA")
+("image", "f/#")
+("object", "epd")
+```
+
+---
+
+#### Exact Object NA pupil
+
+For Object NA, the user normally supplies a normalized pupil coordinate such as:
+
+```text
+(0, 0)      chief ray
+(0, 1)      +Y edge
+(1, 0)      +X edge
+(0.5, 0.5)  intermediate pupil sample
+```
+
+This implementation interprets that normalized pupil as a **unit disk in direction-sine space**.
+
+It builds two axes perpendicular to the chief ray:
+
+```text
+               Ylocal
+                 ↑
+                 |
+        pupil    •----→ Xlocal
+                 |
+                 |
+              chief-ray direction
+```
+
+and constructs the new ray direction as:
+
+$$
+\mathbf d =
+\sqrt{1-s^2r^2}\,\mathbf d_{\rm chief}
++
+s(p_x\mathbf x+p_y\mathbf y)
+$$
+
+where:
+
+* \(s = NA/n\),
+* \(r^2=p_x^2+p_y^2\),
+* `p_x`, `p_y` are normalized pupil coordinates.
+
+This has a useful consequence: **equal normalized pupil radii correspond to equal fractions of the physical NA**.
+
+Coordinates outside the unit pupil disk are rejected with `TraceRayBlockedError`, rather than silently extending the pupil.
+
+---
+
+### 4. Exact Object Height
+
+`ExactObjectHeightFieldSpec` handles specifications like:
+
+```python
+("object", "height")
+```
+
+for a finite object conjugate.
+
+Its fundamental constraint is:
+
+> Do not move the requested object point. Change only the launch direction so the chief ray passes through the physical stop centre.
+
+Suppose the requested object point is:
+
+$$
+(x_o,y_o,0)
+$$
+
+The solver parameterizes the direction approximately as:
+
+```python
+normalize([tx, ty, z_direction])
+```
+
+and adjusts `tx` and `ty`.
+
+Each trial ray is traced only as far as the stop.
+
+The residual supplied to SciPy is:
+
+$$
+\begin{bmatrix}
+x_{\rm ray,stop}-x_{\rm stop}\\
+y_{\rm ray,stop}-y_{\rm stop}
+\end{bmatrix}
+$$
+
+The numerical solver minimizes that residual until the ray crosses the stop centre.
+
+---
+
+#### Why it uses continuation
+
+Jumping directly from the axial field to a very large object height can give a nonlinear solver a terrible starting point.
+
+So it uses **continuation**.
+
+Instead of solving:
+
+```text
+height 0 ───────────────────────→ height 20
+```
+
+it does roughly:
+
+```text
+0 → 0.1 → 0.2 → 0.3 → ... → 20
+```
+
+using the previous ray direction as the next initial guess.
+
+The configured maximum height step is:
+
+```python
+_MAX_HEIGHT_CONTINUATION_STEP = 0.1
+```
+
+and it always uses at least eight continuation subdivisions.
+
+This makes difficult wide-field chief-ray solves much more robust.
+
+---
+
+#### Special meridional handling
+
+There is a useful numerical detail here.
+
+For a centred optical system and a Y-only field point, the correct chief ray should remain in the Y-Z plane:
+
+```text
+x = 0
+```
+
+Trying to solve both X and Y can produce a singular numerical Jacobian because the X residual is identically zero.
+
+The code detects that situation and reduces the solve to **one variable** instead of two.
+
+That's what the comments about a “centred meridional” solve mean.
+
+---
+
+#### Verification
+
+After solving using the partial path to the stop, it does not simply trust the numerical result.
+
+It traces the ray through the **entire optical system** and checks that:
+
+1. the requested object point stayed unchanged; and
+2. the ray crossed the stop centre.
+
+Only then is the chief ray cached.
+
+---
+
+### 5. Exact Image Height
+
+`ExactImageHeightFieldSpec` solves the complementary problem.
+
+Here the requirement is:
+
+> The ray must pass through the physical stop centre **and terminate at this exact local point on the image surface**.
+
+The implementation is more complicated because the easiest way to impose an exact image point is often to trace **backwards**.
+
+Conceptually:
+
+```text
+requested image point
+        ↓
+launch reverse ray from image
+        ↓
+adjust its direction
+        ↓
+make reverse ray pass through stop centre
+        ↓
+recover equivalent forward object launch
+        ↓
+trace forward again
+        ↓
+verify both stop and image point
+```
+
+---
+
+#### Curved image surfaces
+
+An “image height” `(x, y)` does not necessarily mean:
+
+```python
+[x, y, 0]
+```
+
+because the image surface may be curved.
+
+So `_image_surface_point()` evaluates the image surface's sag:
+
+```python
+sag = image_interface.profile.sag(x, y)
+```
+
+and targets:
+
+```python
+[x, y, sag]
+```
+
+instead.
+
+That is an important reason why solving actual geometry rather than assuming a flat paraxial image plane matters.
+
+---
+
+### 6. Native RayOptics shortcut
+
+The image-height implementation doesn't reinvent everything.
+
+For a relatively simple geometry:
+
+* infinite object conjugate,
+* flat image surface,
+* centred stop,
+* no stop decenter,
+
+it first calls RayOptics' existing:
+
+```python
+eval_real_image_ht()
+```
+
+But it then **strictly verifies** that result.
+
+If the native solution really does hit both the physical stop centre and requested image coordinate to the required tolerance, it keeps it.
+
+Otherwise, it falls back to this module's more general reverse-ray numerical solve.
+
+So the strategy is:
+
+```text
+Use RayOptics' fast/native solution when valid
+              ↓
+         verify it
+        ↙          ↘
+    valid          not exact
+      ↓                ↓
+   cache it      refine numerically
+```
+
+---
+
+### 7. Caching
+
+Both exact field implementations maintain caches indexed by the **absolute field coordinate**.
+
+For example, Object Height stores:
+
+```python
+_coordinate_launches
+_coordinate_tangents
+_coordinate_chief_rays
+```
+
+while Image Height additionally stores:
+
+```python
+_coordinate_aim_info
+```
+
+This serves two purposes.
+
+First, expensive nonlinear ray solves don't need to be repeated.
+
+Second, RayOptics analysis routines sometimes create copies of `Field` objects whose normal aiming cache has been cleared.
+
+`_prepare_analysis_field()` detects this and restores an appropriate exact solution before RayOptics can revert to its normal wide-angle entrance-pupil aiming logic.
+
+---
+
+### 8. Why chief rays are traced twice
+
+A subtle part is `_cache_verified_chief_ray()`.
+
+For verification, the module uses:
+
+```python
+raytrace.trace_raw(...)
+```
+
+because it wants to inspect the complete physical ray path precisely.
+
+But RayOptics' normal optical-path-difference calculations have their own convention for dummy object/image gaps.
+
+Therefore, once a geometry has been verified, the code retraces **the same already-solved launch** through RayOptics' standard tracing wrapper before putting it into the analysis cache.
+
+The distinction is:
+
+```text
+trace_raw()
+    → used to prove geometry is correct
+
+raytrace.trace()
+    → used to create RayOptics-compatible OPD cache
+```
+
+It is **not** re-solving the chief ray during the second trace.
+
+---
+
+### 9. Vignetting
+
+`set_vig_respecting_exact_pupil()` fixes another subtle issue specific to exact Object NA.
+
+For exact NA, normalized pupil radius `1` means:
+
+> this is the actual requested physical edge of the angular cone.
+
+Therefore RayOptics must not search **outside** that radius looking for some larger physical aperture.
+
+The code tests the four cardinal edge rays first:
+
+```text
+        +Y
+         •
+         |
+-X •-----+-----• +X
+         |
+         •
+        -Y
+```
+
+If an edge ray passes through the actual apertures, its vignetting is exactly zero.
+
+If it is blocked, RayOptics' existing bisection algorithm searches **inward** to find the surviving pupil boundary.
+
+For other pupil modes it simply calls normal RayOptics `set_vig()`.
+
+---
+
+### 10. Apertures are intentionally ignored during specification solving
+
+During the numerical solves, most ray traces use:
+
+```python
+check_apertures=False
+```
+
+This is intentional.
+
+The question during specification resolution is:
+
+> Does the mathematical optical system admit the required ray?
+
+rather than:
+
+> Does some mechanical aperture happen to clip it?
+
+Physical clipping is handled later by vignetting.
+
+It therefore separates two concepts cleanly:
+
+```text
+exact specification solving
+    = determine required geometrical ray
+
+vignetting
+    = determine whether apertures physically pass that ray
+```
+
+---
+
+### 11. Error handling is deliberately strict
+
+There is no “try exact, then silently fall back to paraxial” behaviour once exact mode is requested.
+
+The file defines:
+
+```python
+ExactSpecError
+ExactSpecTraceError
+ExactSpecConvergenceError
+```
+
+Failures such as:
+
+* total internal reflection,
+* missing a surface,
+* impossible target geometry,
+* numerical non-convergence,
+* invalid F/#,
+* impossible NA,
+
+become explicit exact-spec errors.
+
+That is a good property for this kind of functionality because silently reverting to an approximate ray would mean the program was claiming to satisfy a physical constraint that it actually did not.
+
+---
+
+### 12. Numerical accuracy
+
+The final physical tests use:
+
+```python
+EXACT_SPEC_RELATIVE_TOLERANCE = 1e-9
+EXACT_SPEC_ABSOLUTE_TOLERANCE = 1e-9
+```
+
+while the internal nonlinear solvers use tighter `1e-12`-scale convergence settings.
+
+That distinction makes sense:
+
+```text
+solver tolerance   ≈ 1e-12
+       ↓
+final physical acceptance ≈ 1e-9
+```
+
+The solver is pushed tighter than the actual contract being verified.
+
+---
+
+### The overall architecture
+
+The entire module can be thought of as this pipeline:
+
+```text
+                User optical specification
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+       Field spec                    Pupil spec
+          │                             │
+  Object / Image Height        Object NA / Image F/#
+          │                             │
+          ↓                             ↓
+solve exact chief ray       solve exact pupil geometry
+through physical stop       using traced marginal rays
+          │                             │
+          └──────────────┬──────────────┘
+                         ↓
+                  verified launch
+                         ↓
+                full real-ray trace
+                         ↓
+           strict 1e-9 geometry check
+                         ↓
+           RayOptics-compatible cache
+                         ↓
+              normal analysis code
+```
+
+So it isn't a replacement ray tracer.
+
+**It is an exact-specification and aiming layer around RayOptics' existing ray tracer.**
+
+---
+
+### In one sentence
+
+`optical_specs.py` makes wide-angle RayOptics specifications **physically enforceable constraints**: it numerically finds the real chief/marginal rays that satisfy the requested field, stop, NA or F/# geometry, verifies them, and then feeds those verified rays back into the normal RayOptics analysis system.
+
+If you're modifying this code, the most useful next step would be to trace one concrete example—say **Image F/# = 2**—through:
+
+```text
+update_model()
+    ↓
+_resolve_image_f_number()
+    ↓
+ray_start_from_osp()
+    ↓
+trace_base()
+```
+
+because that shows how the classes cooperate end-to-end.
+
+---
+
+## Technical reference
+
+The preceding section introduces the motivation and end-to-end workflow. This
+reference documents the precise current behavior of
+[`optical_specs.py`](../src/python/src/rayoptics_web_utils/optical_specs.py)
+against the project's pinned
 [RayOptics 0.9.8](../src/python/pyproject.toml); it does not propose a different
 API or tracing model.
 
@@ -34,7 +709,7 @@ Paraxial quantities may therefore be used for reporting, for an entrance-pupil
 plane, or for an initial search scale. They are never accepted as proof that an
 exact physical constraint has been met.
 
-## Coordinates and ray names
+### Coordinates and ray names
 
 The nominal optical axis is +Z, from object space toward image space. +X and
 +Y are the transverse axes, and every ray intersection and direction is
@@ -52,7 +727,7 @@ For relative pupil coordinate $(\xi,\eta)$:
 The +Y label identifies the launched pupil boundary. After refraction, that
 ray's image-space Y direction need not remain positive.
 
-## Opted-in exact specifications
+### Opted-in exact specifications
 
 | Specification | Physical constraint | Exact launch quantity | Final verification |
 | --- | --- | --- | --- |
@@ -68,9 +743,9 @@ height key. `ExactObjectHeightFieldSpec` also rejects an infinite object
 conjugate. Without the opt-in, those classes do not impose these constraints
 and instead delegate.
 
-## Pupil constraints
+### Pupil constraints
 
-### Image-space geometric F-number
+#### Image-space geometric F-number
 
 Let $u'$ be the unsigned angle between the last-segment directions of the
 on-axis chief ray and the on-axis +Y marginal ray:
@@ -104,7 +779,7 @@ module's **geometric angular F-number**. It is not a diffraction F-number, a
 radiometric or transmission-weighted effective F-number, an image-space NA, or
 a paraxial replacement for the real ray angle.
 
-### Object-space numerical aperture
+#### Object-space numerical aperture
 
 At the reference wavelength, let $n_o$ be the absolute refractive index of the
 object-space gap and let $u_1$ be the unsigned angle between the first-segment
@@ -139,7 +814,7 @@ removes RayOptics propagation-sign bookkeeping while retaining the physical
 medium index. The same central/reference wavelength is used for the
 verification trace.
 
-### Chief-centred launch axes
+#### Chief-centred launch axes
 
 For a unit chief direction $\boldsymbol c$, the angular cone and the
 infinite-conjugate EPD launch use a transverse orthonormal basis. Starting from
@@ -169,7 +844,7 @@ construction. Thus every radius is linear in direction sine, and $(0,1)$
 makes exactly the requested angle with the chief direction even for an
 off-axis chief ray.
 
-### Object EPD at finite and infinite conjugates
+#### Object EPD at finite and infinite conjugates
 
 Let $D_o$ be either a requested object EPD or the EPD resolved from image-space
 F-number.
@@ -226,7 +901,7 @@ the chief-centred angular basis above. Image F/# first resolves its physical
 object EPD and then uses the finite EPD construction. Thus Object EPD, Object
 NA, and Image F/# all preserve the requested object point for every pupil ray.
 
-## Wavelength-specific finite OPD indices
+### Wavelength-specific finite OPD indices
 
 RayOptics' cached `FirstOrderData` describes the configured reference
 wavelength. Its finite wave-aberration equations also read `n_obj` and `n_img`
@@ -252,9 +927,9 @@ consumer without mutating cached paraxial data or changing the public grid
 interface. The afocal plane-wave OPD path is unchanged because it already
 evaluates both boundary media directly at the traced wavelength.
 
-## Exact finite Object Height fields
+### Exact finite Object Height fields
 
-### Fixed point and direction-only solve
+#### Fixed point and direction-only solve
 
 `ExactObjectHeightFieldSpec` reads absolute `Field.xv` and `Field.yv`, so
 relative samples already include the configured maximum height. It fixes the
@@ -290,7 +965,7 @@ this chief solve. A physically decentered or tilted stop is therefore handled
 by its transformed local intercept, while an aperture offset remains a local
 centre offset.
 
-### Continuation, symmetry, and final verification
+#### Continuation, symmetry, and final verification
 
 The axial object point is solved and cached first, including when it is absent
 from the configured field list. Each distinct requested coordinate then
@@ -319,9 +994,9 @@ constraint is the meaningful alternative. The exact class consequently raises
 a clear error rather than inventing an input-plane anchor or changing field
 type.
 
-## Exact image-height fields
+### Exact image-height fields
 
-### The target is a point on the image profile
+#### The target is a point on the image profile
 
 `ExactImageHeightFieldSpec` reads `Field.xv` and `Field.yv`. These are absolute
 field coordinates: for a relative field they already include multiplication by
@@ -335,7 +1010,7 @@ Consequently, image height is not a request for the paraxial image plane or
 for a flat $z=0$ target on a curved image surface. The profile's own sag
 function supplies Z in the model's length units.
 
-### Native-first solve and strict verification
+#### Native-first solve and strict verification
 
 For an infinite-conjugate model with a flat image and a centred, non-decentered
 stop, each distinct configured coordinate first calls RayOptics 0.9.8's
@@ -387,9 +1062,9 @@ Forward verification is mandatory even after the reverse solver reports
 success. The image profile intersection itself supplies the target Z, so the
 explicit final comparison uses image X/Y together with stop X/Y.
 
-## Numerical design choices
+### Numerical design choices
 
-### Continuation stays on a reachable real-ray branch
+#### Continuation stays on a reachable real-ray branch
 
 A nonlinear optical system can have multiple mathematical roots, and a distant
 field or large pupil jump can move a local solver to another branch. The
@@ -417,7 +1092,7 @@ continuation is entered only for an extension geometry or strict refinement.
 Any missed profile or total internal reflection along that continuation is a
 physical loss of the branch, not a reason to jump to a paraxial answer.
 
-### Meridional symmetry is solved in one dimension
+#### Meridional symmetry is solved in one dimension
 
 In a centred system, a Y-only object or image target, a stop centre with zero X
 offset, and a zero sagittal starting tangent define a ray in the Y-Z
@@ -431,7 +1106,7 @@ tangential direction. It then restores a zero sagittal tangent and still
 checks the full two-component stop residual. General X/Y targets and offset
 stops retain the two-dimensional solve.
 
-### Solver convergence is not physical acceptance
+#### Solver convergence is not physical acceptance
 
 The scalar Brent solve uses root tolerances of $10^{-12}$. The default vector
 least-squares solve uses `xtol`, `ftol`, and `gtol` of $10^{-12}$ and at most
@@ -450,7 +1125,7 @@ residuals, reverse image-height stop residual, and forward image-height stop
 and image residuals. For a zero target residual, the effective requirement is
 the $10^{-9}$ absolute tolerance.
 
-## Apertures, vignetting, updates, and failures
+### Apertures, vignetting, updates, and failures
 
 Specification rays are unvignetted and unclipped. Pupil traces explicitly use
 `apply_vignetting=False` and `check_apertures=False`; reverse and verification
