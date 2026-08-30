@@ -9,7 +9,7 @@ export function generateRowId(): string {
   return `row-surface-${nextId++}`;
 }
 
-/** Converts sequential surfaces to Object, generated physical-surface, and Image grid rows. */
+/** Converts sequential surfaces to Object, generated physical-surface, and Image grid rows while retaining defined optional comments. */
 export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
   const objectRow: GridRow = {
     id: OBJECT_ROW_ID,
@@ -23,6 +23,7 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
     id: generateRowId(),
     kind: "surface" as const,
     label: s.label,
+    ...(s.comment !== undefined ? { comment: s.comment } : {}),
     curvatureRadius: s.curvatureRadius,
     thickness: s.thickness,
     medium: s.medium,
@@ -49,6 +50,7 @@ export function surfacesToGridRows(surfaces: Surfaces): GridRow[] {
  * Converts ordered grid rows to sequential surfaces without throwing for missing
  * Object or Image rows. Missing required values use the editor defaults: Default
  * label, zero radii/thickness, air, empty manufacturer, and semi-diameter one.
+ * Defined comments are retained; omitted comments remain omitted.
  */
 export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
   const objectRow = rows.find((r): r is GridRow & { kind: "object" } => r.kind === "object");
@@ -64,6 +66,9 @@ export function gridRowsToSurfaces(rows: GridRow[]): Surfaces {
       manufacturer: r.manufacturer ?? "",
       semiDiameter: r.semiDiameter ?? 1,
     };
+    if (r.comment !== undefined) {
+      surface.comment = r.comment;
+    }
     if (r.aspherical !== undefined) {
       surface.aspherical = r.aspherical;
     }

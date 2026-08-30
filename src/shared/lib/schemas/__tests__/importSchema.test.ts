@@ -27,6 +27,34 @@ const baseModel: OpticalModel = {
 };
 
 describe("validateImportedLensData", () => {
+  it.each([undefined, "", "Front element"])("accepts an optional string surface comment %p", (comment) => {
+    const surface = {
+      label: "Default",
+      curvatureRadius: 10,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+      ...(comment !== undefined ? { comment } : {}),
+    };
+
+    expect(validateImportedLensData({ ...baseModel, surfaces: [surface] })).toBe(true);
+  });
+
+  it.each([null, 42, false, { text: "Front element" }])("rejects non-string surface comment %p", (comment) => {
+    const surface = {
+      label: "Default",
+      curvatureRadius: 10,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+      comment,
+    };
+
+    expect(validateImportedLensData({ ...baseModel, surfaces: [surface] })).toBe(false);
+  });
+
   it.each([
     { space: "object", type: "epd", value: 25 },
     { space: "object", type: "NA", value: 0.8 },

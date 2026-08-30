@@ -125,9 +125,11 @@ type AsphericalConfig =
 /** Supported aspherical configuration discriminators. */
 export type AsphericalType = AsphericalConfig["kind"];
 
-/** Represents a single optical surface in the sequential model. */
+/** Represents a single optical surface in the sequential model, including an optional user-authored comment retained only by the web application. */
 export interface Surface {
   label: "Default" | "Stop";
+  /** Optional single-line, untrimmed annotation; omitted comments remain `undefined`. */
+  comment?: string;
   curvatureRadius: number; // 0 means flat (infinite radius).
   thickness: number;
   medium: string; // can be "air" or "REFL"

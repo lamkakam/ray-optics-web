@@ -182,6 +182,7 @@ function isInsertedPropagationGapSurface(
     && !isMirrorMedium(row.medium)
     && row.thickness > 0
     && row.semiDiameter === previousSurface.semiDiameter
+    && row.comment === undefined
     && row.aspherical === undefined
     && row.decenter === undefined
     && row.diffractionGrating === undefined;
@@ -287,7 +288,7 @@ function setGap(rows: GridRow[], surfaceSelectorIndex: number, gap: GapPropertie
   });
 }
 
-/** Reverses an inclusive Object/physical-surface span while preserving surface-owned data and moving gap-owned data with each propagation gap. */
+/** Reverses an inclusive Object/physical-surface span while preserving surface-owned data, including comments, and moving gap-owned data with each propagation gap. */
 export function reverseRows(rows: readonly GridRow[], { first, last }: ReverseRowsOptions): GridRow[] {
   const normalized = normalizeReverseRows(rows, { first, last });
   const sourceRows = normalized.rows;

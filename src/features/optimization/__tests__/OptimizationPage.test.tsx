@@ -762,6 +762,7 @@ describe("OptimizationPage", () => {
     expect(Array.from(headers, (header) => header.textContent)).toEqual([
       "Index",
       "Surface",
+      "Comment",
       "Radius of Curvature",
       "Var.",
       "Thickness",

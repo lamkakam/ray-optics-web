@@ -56,6 +56,18 @@ const wideAngleModel: OpticalModel = {
 };
 
 describe("buildOpticalModelScript", () => {
+  it("does not emit surface comments into generated Python", () => {
+    const marker = "COMMENT_MUST_NOT_REACH_PYTHON_9f81";
+    const model: OpticalModel = {
+      ...baseModel,
+      surfaces: [{ ...baseModel.surfaces[0], comment: marker }],
+    };
+
+    expect(buildOpticalModelScript(model)).not.toContain(marker);
+    expect(buildScript(model, (opm) => `analyze(${opm})`)).not.toContain(marker);
+    expect(buildExportScript(model)).not.toContain(marker);
+  });
+
   it("uses user_defined_materials lookup for Custom media", () => {
     const script = buildOpticalModelScript({
       ...baseModel,

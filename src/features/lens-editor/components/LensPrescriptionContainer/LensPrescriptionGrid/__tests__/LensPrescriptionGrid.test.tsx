@@ -17,6 +17,7 @@ const testRows: GridRow[] = [
     id: "s1",
     kind: "surface",
     label: "Default",
+    comment: "Front element",
     curvatureRadius: 50,
     thickness: 5,
     medium: "BK7",
@@ -92,7 +93,7 @@ describe("LensPrescriptionGrid", () => {
     const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
     const headerTexts = Array.from(headers).map((h) => h.textContent);
 
-    expect(headerTexts.slice(0, 3)).toEqual(["", "Index", "Surface"]);
+    expect(headerTexts.slice(0, 5)).toEqual(["", "Index", "Surface", "Comment", "Radius of Curvature"]);
     expect(headerTexts).toContain("Surface");
     expect(headerTexts).toContain("Radius of Curvature");
     expect(headerTexts).toContain("Thickness");
@@ -104,6 +105,28 @@ describe("LensPrescriptionGrid", () => {
     ]);
     expect(headerTexts).toContain("Tilt & Decenter");
     expect(headerTexts).toContain("Diffraction Grating");
+  });
+
+  it("renders physical comments as editable text, blanks object/image, and commits edits", async () => {
+    const user = userEvent.setup();
+    const onRowChange = jest.fn();
+    render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
+    const renderedRows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
+    const commentColumnIndex = 3;
+
+    expect(renderedRows[0].querySelectorAll("td")[commentColumnIndex]).toBeEmptyDOMElement();
+    expect(renderedRows[3].querySelectorAll("td")[commentColumnIndex]).toBeEmptyDOMElement();
+    const commentInputs = screen.getAllByRole("textbox").filter((input) => (
+      input.closest("td") === renderedRows[1].querySelectorAll("td")[commentColumnIndex]
+      || input.closest("td") === renderedRows[2].querySelectorAll("td")[commentColumnIndex]
+    ));
+    expect(commentInputs).toHaveLength(2);
+    expect(commentInputs[0]).toHaveValue("Front element");
+    expect(commentInputs[1]).toHaveValue("");
+
+    await user.clear(commentInputs[0]);
+    await user.type(commentInputs[0], "Updated comment{enter}");
+    expect(onRowChange).toHaveBeenCalledWith("s1", { comment: "Updated comment" });
   });
 
   it("pins the Index column to the left", () => {
@@ -236,12 +259,12 @@ describe("LensPrescriptionGrid", () => {
     const s1Cells = rows[1].querySelectorAll("td");
     const s2Cells = rows[2].querySelectorAll("td");
 
-    expect(Array.from([s1Cells[8], s1Cells[9], s1Cells[10]], (cell) => cell.textContent)).toEqual([
+    expect(Array.from([s1Cells[9], s1Cells[10], s1Cells[11]], (cell) => cell.textContent)).toEqual([
       "None",
       "decenter",
       "600 lp/mm",
     ]);
-    expect(Array.from([s2Cells[8], s2Cells[9], s2Cells[10]], (cell) => cell.textContent)).toEqual([
+    expect(Array.from([s2Cells[9], s2Cells[10], s2Cells[11]], (cell) => cell.textContent)).toEqual([
       "Conic",
       "None",
       "None",
@@ -266,7 +289,7 @@ describe("LensPrescriptionGrid", () => {
     // s1: radius, thickness, semi-diam (3)
     // s2: radius, thickness, semi-diam (3)
     // image: radius (1)
-    expect(inputs).toHaveLength(8);
+    expect(inputs).toHaveLength(10);
   });
 
   it("calls onRowChange when a numeric cell value changes", async () => {
@@ -274,9 +297,9 @@ describe("LensPrescriptionGrid", () => {
     render(<LensPrescriptionGrid {...defaultProps} onRowChange={onRowChange} />);
     const inputs = screen.getAllByRole("textbox");
 
-    // Second textbox should be s1 radius (value 50) — first is object thickness
-    await userEvent.clear(inputs[1]);
-    await userEvent.type(inputs[1], "100");
+    // Third textbox is s1 radius (value 50): Object thickness and s1 comment precede it.
+    await userEvent.clear(inputs[2]);
+    await userEvent.type(inputs[2], "100");
     await userEvent.tab();
 
     expect(onRowChange).toHaveBeenCalledWith("s1", { curvatureRadius: 100 });
@@ -295,8 +318,8 @@ describe("LensPrescriptionGrid", () => {
     );
     const inputs = screen.getAllByRole("textbox");
 
-    await user.clear(inputs[1]);
-    await user.type(inputs[1], "125");
+    await user.clear(inputs[2]);
+    await user.type(inputs[2], "125");
     await user.click(screen.getAllByRole("button", { name: "Edit medium" })[1]);
 
     expect(onRowChange).toHaveBeenCalledWith("s1", { curvatureRadius: 125 });
@@ -495,15 +518,15 @@ describe("LensPrescriptionGrid", () => {
   it("renders semi-diam inputs for surface rows when semiDiameterReadonly is false (default)", () => {
     render(<LensPrescriptionGrid {...defaultProps} semiDiameterReadonly={false} />);
     const inputs = screen.getAllByRole("textbox");
-    // object: thickness (1), s1: radius, thickness, semi-diam (3), s2: radius, thickness, semi-diam (3), image: radius (1) = 8
-    expect(inputs).toHaveLength(8);
+    // Numeric inputs (8) plus one comment input per physical surface (2).
+    expect(inputs).toHaveLength(10);
   });
 
   it("renders no semi-diam inputs for surface rows when semiDiameterReadonly is true", () => {
     render(<LensPrescriptionGrid {...defaultProps} semiDiameterReadonly={true} />);
     const inputs = screen.getAllByRole("textbox");
-    // object: thickness (1), s1: radius, thickness (2), s2: radius, thickness (2), image: radius (1) = 6
-    expect(inputs).toHaveLength(6);
+    // Numeric inputs (6) plus one comment input per physical surface (2).
+    expect(inputs).toHaveLength(8);
   });
 
   // --- AG Grid theme integration ---

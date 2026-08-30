@@ -12,6 +12,7 @@ const surfaceRow: GridRow = {
   id: "surface-1",
   kind: "surface",
   label: "Default",
+  comment: "Optimization note",
   curvatureRadius: 50,
   thickness: 5,
   medium: "BK7",
@@ -95,8 +96,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
     );
 
     let renderedRows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
-    expect(renderedRows[0].querySelectorAll("td")[7]).toHaveTextContent("12.5");
-    expect(renderedRows[1].querySelectorAll("td")[7]).toHaveTextContent("11.25");
+    expect(renderedRows[0].querySelectorAll("td")[8]).toHaveTextContent("12.5");
+    expect(renderedRows[1].querySelectorAll("td")[8]).toHaveTextContent("11.25");
 
     rerender(
       <OptimizationLensPrescriptionGrid
@@ -120,8 +121,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
     );
 
     renderedRows = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr");
-    expect(renderedRows[0].querySelectorAll("td")[7]).toHaveTextContent("10");
-    expect(renderedRows[1].querySelectorAll("td")[7]).toBeEmptyDOMElement();
+    expect(renderedRows[0].querySelectorAll("td")[8]).toHaveTextContent("10");
+    expect(renderedRows[1].querySelectorAll("td")[8]).toBeEmptyDOMElement();
   });
 
   it("uses normal AG Grid layout with responsive fixed grid heights", () => {
@@ -193,6 +194,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(Array.from(headers, (header) => header.textContent)).toEqual([
       "Index",
       "Surface",
+      "Comment",
       "Radius of Curvature",
       "Var.",
       "Thickness",
@@ -214,6 +216,8 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(screen.getByText("Asph.")).toBeInTheDocument();
     expect(screen.getByText("Tilt & Decenter")).toBeInTheDocument();
     expect(screen.getByText("Diffraction Grating")).toBeInTheDocument();
+    expect(screen.getByText("Optimization note")).toBeInTheDocument();
+    expect(screen.queryByDisplayValue("Optimization note")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Radius mode for surface 1" }));
     expect(onOpenRadiusModal).toHaveBeenCalledWith(1);
@@ -275,6 +279,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
       "Object",
       "",
       "",
+      "",
       "10000000000",
       "",
       "air",
@@ -288,6 +293,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(Array.from(rows[1].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
       "1",
       "Default",
+      "Optimization note",
       "50",
       "C",
       "5",
@@ -303,6 +309,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(Array.from(rows[2].querySelectorAll("td"), (cell) => cell.textContent)).toEqual([
       "",
       "Image",
+      "",
       "0",
       "C",
       "",
@@ -511,13 +518,13 @@ describe("OptimizationLensPrescriptionGrid", () => {
 
     const rowCells = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr")[0].querySelectorAll("td");
 
-    await user.click(rowCells[3].firstElementChild!);
+    await user.click(rowCells[4].firstElementChild!);
     expect(onOpenRadiusModal).toHaveBeenCalledWith(1);
 
-    await user.click(rowCells[5].firstElementChild!);
+    await user.click(rowCells[6].firstElementChild!);
     expect(onOpenThicknessModal).toHaveBeenCalledWith(1);
 
-    await user.click(rowCells[10].firstElementChild!);
+    await user.click(rowCells[11].firstElementChild!);
     expect(onOpenAsphereVarModal).toHaveBeenCalledWith(1);
   });
 
@@ -581,9 +588,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
     );
 
     const rowCells = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr")[0].querySelectorAll("td");
-    const radiusTooltipTrigger = rowCells[3].firstElementChild!.firstElementChild!;
-    const thicknessTooltipTrigger = rowCells[5].firstElementChild!.firstElementChild!;
-    const asphereTooltipTrigger = rowCells[10].firstElementChild!.firstElementChild!;
+    const radiusTooltipTrigger = rowCells[4].firstElementChild!.firstElementChild!;
+    const thicknessTooltipTrigger = rowCells[6].firstElementChild!.firstElementChild!;
+    const asphereTooltipTrigger = rowCells[11].firstElementChild!.firstElementChild!;
 
     await user.hover(radiusTooltipTrigger);
     expect(screen.getByText("Click to configure radius variable or pickup")).toHaveClass("opacity-100");
@@ -636,6 +643,7 @@ describe("OptimizationLensPrescriptionGrid", () => {
     expect(Array.from(screen.getByTestId("ag-grid-mock").querySelectorAll("th"), (header) => header.textContent)).toEqual([
       "Index",
       "Surface",
+      "Comment",
       "Radius of Curvature",
       "Var.",
       "Thickness",

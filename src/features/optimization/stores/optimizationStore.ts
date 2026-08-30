@@ -38,7 +38,7 @@
  * - `syncFromOpticalModel()` resets wavelength weights from `model.specs.wavelengths.weights[*][1]` only when editor wavelength specs changed since the last baseline.
  * - Editor wide-angle mode changes update `optimizationModel.specs.field.isWideAngle` but do not count as field-spec changes for Optimization settings reset purposes.
  * - Editor reference wavelength changes update `optimizationModel.specs.wavelengths.referenceIndex` but do not count as wavelength-spec changes for Optimization settings reset purposes.
- * - `syncFromOpticalModel()` resets radius, thickness, glass, and asphere variable/pickup modes to constants when the editor prescription changed with the default `"resetOptimizationModes"` policy.
+ * - `syncFromOpticalModel()` resets radius, thickness, glass, and asphere variable/pickup modes to constants when the computational editor prescription changed with the default `"resetOptimizationModes"` policy. Surface comments are excluded from that fingerprint, so comment-only edits merge into any unapplied local optimized model without replacing its computational values, resetting modes, or clearing result state.
  * - `syncFromOpticalModel()` updates `optimizationModel` and the baseline without clearing prescription modes when the editor prescription changed with `"preserveOptimizationModes"`.
  * - Algorithm settings and operand rows are never reset by editor sync.
  * - The store starts with no operand rows. `addOperand()` appends the default `focal_length` row with target `"100"` and weight `"1"`; switching that row to `opd_difference`, either axis-specific OPD Difference operand, `rms_spot_size`, or `rms_wavefront_error` resets the target to `"0"` without changing the weight.
@@ -946,8 +946,26 @@ function fingerprintPrescription(model: OpticalModel): string {
   return JSON.stringify({
     object: model.object,
     image: model.image,
-    surfaces: model.surfaces,
+    surfaces: model.surfaces.map(({ comment: _comment, ...surface }) => surface),
   });
+}
+
+function mergeEditorCommentsIntoOptimizationModel(
+  optimizationModel: OpticalModel,
+  editorModel: OpticalModel,
+): OpticalModel {
+  return {
+    ...optimizationModel,
+    setAutoAperture: editorModel.setAutoAperture,
+    specs: editorModel.specs,
+    surfaces: optimizationModel.surfaces.map((surface, index) => {
+      const { comment: _comment, ...surfaceWithoutComment } = surface;
+      const editorComment = editorModel.surfaces[index]?.comment;
+      return editorComment === undefined
+        ? surfaceWithoutComment
+        : { ...surfaceWithoutComment, comment: editorComment };
+    }),
+  };
 }
 
 function createEditorSyncBaseline(model: OpticalModel): EditorSyncBaseline {
@@ -1225,9 +1243,14 @@ export const createOptimizationSlice: StateCreator<OptimizationState> = (set, ge
         fieldSpecsChanged
         || wavelengthSpecsChanged
         || shouldResetPrescriptionModes;
+      const nextOptimizationModel = state.hasUnappliedOptimizationResult
+        && !clearsUnappliedOptimizationResult
+        && !prescriptionChanged
+        ? mergeEditorCommentsIntoOptimizationModel(state.optimizationModel, model)
+        : model;
 
       return {
-        optimizationModel: model,
+        optimizationModel: nextOptimizationModel,
         editorSyncBaseline: nextBaseline,
         hasUnappliedOptimizationResult: clearsUnappliedOptimizationResult
           ? false

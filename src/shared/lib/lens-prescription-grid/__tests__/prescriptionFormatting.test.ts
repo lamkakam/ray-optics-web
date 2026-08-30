@@ -118,6 +118,25 @@ const baseSurfaces: Surfaces = {
 };
 
 describe("prescriptionFormatting", () => {
+  it("preserves surface comments through scaling and moves them with surfaces during reversal", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: baseSurfaces.surfaces.slice(0, 2).map((surface, index) => ({
+        ...surface,
+        comment: index === 0 ? "First surface" : "Second surface",
+      })),
+    });
+
+    expect(surfaceRows(scaleRows(rows, { first: 1, last: 2, factor: 2 })).map((row) => row.comment)).toEqual([
+      "First surface",
+      "Second surface",
+    ]);
+    expect(surfaceRows(reverseRows(rows, { first: 1, last: 2 })).map((row) => row.comment)).toEqual([
+      "Second surface",
+      "First surface",
+    ]);
+  });
+
   it("exports the object distance infinity threshold", () => {
     expect(OBJECT_DISTANCE_INFINITY_THRESHOLD).toBe(1e10);
   });

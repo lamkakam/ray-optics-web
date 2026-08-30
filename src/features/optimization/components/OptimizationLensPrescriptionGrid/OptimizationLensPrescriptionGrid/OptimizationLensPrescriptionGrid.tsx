@@ -11,6 +11,7 @@ import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { useAgGridTheme } from "@/shared/hooks/useAgGridTheme";
 import {
   createAsphericalColumn,
+  createCommentColumn,
   createApertureColumn,
   createDecenterColumn,
   createDiffractionGratingColumn,
@@ -131,7 +132,7 @@ export interface OptimizationLensPrescriptionGridProps {
  * - Composes common prescription columns from `shared/lib/lens-prescription-grid` with `getGridRow: (data) => data.row`; optimization-only columns remain local.
  * - Passes optimization-specific tooltip copy for the read-only `Medium`, `Asph.`, and `Diffraction Grating` inspection cells so they say `Click to view ...` without changing the editor page grid.
  * - Prepends an `Index` column before `Surface`; it is blank for `Object` and `Image`, shows `1..N` for real surface rows using the existing optimization surface numbering, and uses the shared lens prescription grid `Index` config so it has the shared initial width and is pinned left.
- * - The `Index`, `Surface`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`.
+ * - The `Index`, `Surface`, `Comment`, `Radius of Curvature`, `Thickness`, `Medium`, `Semi-diam.`, `Aperture`, `Asph.`, `Tilt & Decenter`, and `Diffraction Grating` initial widths come from `shared/lib/lens-prescription-grid`. Comment is displayed for physical surfaces but remains entirely read-only because Optimization supplies no change callback; Object and Image stay blank.
  * - The radius and thickness `Var.` cells use the same `ActionWrapper` plus Tooltip-wrapped native `<button>` pattern as `Medium`; clicking either the button or the surrounding cell body opens the corresponding optimization modal for the surface. Their Tooltip trigger fills the cell action wrapper so hovering anywhere in the cell action area displays the tooltip. The buttons show the saved optimization mode as `C` for missing or `constant` modes, `V` for `variable`, and `P` for `pickup`.
  * - Adds a `Var.` column after `Asph.` for configuring asphere variable/pickup optimization targets; shown only for real surface rows. The button summarizes all saved asphere term modes as `C` when the asphere state is missing or every term is `constant`, `V` when any term is variable-only, `P` when any term is pickup-only, and `V,P` when variable and pickup terms are both present. Requires `asphereStates` and `onOpenAsphereVarModal` props.
  * - When `canOptimizeGlass` is true, inserts a fourth `Var.` column immediately after `Medium`. It renders `C`/`V` controls for Object gap `0` and every physical surface gap `1..N`; Image is blank. The column is omitted entirely for existing optimizers.
@@ -172,6 +173,7 @@ export function OptimizationLensPrescriptionGrid({
       },
     },
     createSurfaceColumn<RadiusRow>({ getGridRow: (data) => data.row }),
+    createCommentColumn<RadiusRow>({ getGridRow: (data) => data.row }),
     createRadiusOfCurvatureColumn<RadiusRow>({ getGridRow: (data) => data.row }),
     {
       headerName: "Var.",
