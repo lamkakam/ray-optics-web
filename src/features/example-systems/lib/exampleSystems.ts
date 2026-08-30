@@ -2043,6 +2043,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r13",
       curvatureRadius: 27.2037,
       thickness: 4.5524,
       medium: "S-FPL53",
@@ -2051,6 +2052,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r12",
       curvatureRadius: -13.7643,
       thickness: 1.7263,
       medium: "S-FSL 5",
@@ -2059,6 +2061,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r11",
       curvatureRadius: 0,
       thickness: 0.1456,
       medium: "air",
@@ -2067,6 +2070,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r10",
       curvatureRadius: 12.8532,
       thickness: 4.8337,
       medium: "S-FPL51",
@@ -2075,6 +2079,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r9",
       curvatureRadius: -807.1999,
       thickness: 0.3428,
       medium: "air",
@@ -2083,6 +2088,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r8",
       curvatureRadius: 7.6436,
       thickness: 3.2984,
       medium: "S-FPL53",
@@ -2091,6 +2097,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r7",
       curvatureRadius: 29.6562,
       thickness: 1.7813,
       medium: "S-LAL61",
@@ -2099,6 +2106,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r6",
       curvatureRadius: 4.747,
       thickness: 5.0716,
       medium: "air",
@@ -2107,6 +2115,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r5",
       curvatureRadius: -8.4888,
       thickness: 1.4344,
       medium: "S-LAL61",
@@ -2115,6 +2124,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r4",
       curvatureRadius: 9.747,
       thickness: 8.0632,
       medium: "S-FPL51",
@@ -2123,6 +2133,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r3",
       curvatureRadius: -15.3969,
       thickness: 0.97,
       medium: "air",
@@ -2131,6 +2142,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r2",
       curvatureRadius: 24.8478,
       thickness: 2.4262,
       medium: "S-BSL 7",
@@ -2139,6 +2151,7 @@ const superachromaticAirMicroscopeObjective: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "r1",
       curvatureRadius: -15.4116,
       thickness: 13.186,
       medium: "air",
