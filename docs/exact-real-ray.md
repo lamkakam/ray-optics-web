@@ -472,6 +472,13 @@ Second, RayOptics analysis routines sometimes create copies of `Field` objects w
 
 `_prepare_analysis_field()` detects this and restores an appropriate exact solution before RayOptics can revert to its normal wide-angle entrance-pupil aiming logic.
 
+The coordinate cache owns the solved launch and the initial analysis metadata,
+not every later wavelength-specific chief ray. A coordinate cache hit restores
+that metadata only when the field's chief-ray cache is empty. If RayOptics has
+already installed a chief ray for the wavelength currently being analysed,
+`obj_coords()` returns the cached launch without replacing that chromatic chief
+with the reference-wavelength package.
+
 ---
 
 ### 8. Why chief rays are traced twice
@@ -1167,8 +1174,11 @@ Exact state is update-scoped:
   requested coordinate against that current data.
 - Launches are cached both by field identity and by absolute $(x,y)$
   coordinate. Duplicate coordinates share a solution. Each configured field
-  receives a complete `chief_ray` package, so later analysis does not repeat
-  entrance-pupil aiming for the same configured chief. Exact Image Height also
+  initially receives a complete reference-wavelength `chief_ray` package, so
+  later analysis does not repeat entrance-pupil aiming for the same configured
+  chief. Coordinate lookup is launch caching only once analysis installs a
+  wavelength-specific chief ray: `obj_coords()` preserves that chromatic package
+  instead of restoring the coordinate's reference-wavelength metadata. Exact Image Height also
   retains its compatible scalar `aim_info`; Object Height needs no scalar
   wide-angle entrance-pupil surrogate because all supported pupil launches use
   its solved point and chief direction directly. The strict forward-verification

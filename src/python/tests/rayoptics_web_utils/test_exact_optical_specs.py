@@ -6,8 +6,9 @@ ray at its requested object point and solves the chief direction locally;
 Image Height reuses native real-image-height aiming when it meets the stricter
 project tolerance. Both cache chief rays with the optical-path convention
 expected by OPD analysis, keyed by absolute field coordinate so ``Field.update``
-can safely restore the matching launch and metadata. False and omitted flags
-delegate to plain RayOptics.
+can safely restore the matching launch and metadata without replacing a
+wavelength-specific chief ray already installed by analysis. False and omitted
+flags delegate to plain RayOptics.
 Exact Object-NA vignetting treats the unit angular-pupil boundary as a hard
 limit, while aperture-clipped boundary rays retain RayOptics' inward bisection.
 These tests exercise the public exact model and field classes through normal
@@ -48,6 +49,7 @@ from rayoptics_web_utils.optical_specs import (
 
 
 REFERENCE_WAVELENGTH_NM = 587.562
+CHROMATIC_WAVELENGTHS_NM = [486.133, REFERENCE_WAVELENGTH_NM, 656.273]
 
 
 def test_exact_object_height_field_is_a_lazy_public_export():
@@ -1226,6 +1228,58 @@ def test_cached_native_chief_ray_keeps_reference_wavelength_opd_zero():
         )
         assert result[axis]["x"][zero_index] == pytest.approx(0.0, abs=1.0e-12)
         assert result[axis]["y"][zero_index] == pytest.approx(0.0, abs=1.0e-9)
+
+
+@pytest.mark.parametrize(
+    "field_key, object_distance",
+    [
+        (("object", "height"), 120.0),
+        (("image", "height"), 1.0e10),
+    ],
+)
+def test_exact_height_chief_ray_opd_is_zero_at_every_wavelength(
+    field_key,
+    object_distance,
+):
+    """Coordinate caching must preserve RayOptics' chromatic chief ray."""
+    from rayoptics_web_utils.analysis import get_opd_fan_data_for_wavelength
+
+    opm = _build_cooke(
+        ExactOpticalModel,
+        pupil_key=("object", "epd"),
+        pupil_value=8.0,
+        field_key=field_key,
+        max_field=0.01,
+        fields=[1.0],
+        object_distance=object_distance,
+        update=False,
+    )
+    osp = opm["optical_spec"]
+    osp["wvls"] = WvlSpec(
+        [(wavelength, 1.0) for wavelength in CHROMATIC_WAVELENGTHS_NM],
+        ref_wl=1,
+    )
+    opm.update_model()
+
+    for wavelength_index in range(len(CHROMATIC_WAVELENGTHS_NM)):
+        result = get_opd_fan_data_for_wavelength(
+            opm,
+            fi=0,
+            wvl_idx=wavelength_index,
+        )
+        for axis in ("Tangential", "Sagittal"):
+            zero_index = min(
+                range(len(result[axis]["x"])),
+                key=lambda index: abs(result[axis]["x"][index]),
+            )
+            assert result[axis]["x"][zero_index] == pytest.approx(
+                0.0,
+                abs=1.0e-12,
+            )
+            assert result[axis]["y"][zero_index] == pytest.approx(
+                0.0,
+                abs=1.0e-9,
+            )
 
 
 def test_meridional_image_height_uses_a_nonsingular_scalar_solve():
