@@ -3,18 +3,22 @@
  *
  * @remarks
  * Public computations are stateless: each builds an optical model inside one
- * `runPython` call. The singleton owns only the initialized runtime, user-defined
- * material registry, and active optimization-interrupt lifecycle shared by
- * continuous and glass-expert runs.
+ * `runPython` call using a disposable copy of the initialized Python globals. The
+ * singleton owns only the initialized runtime, imports, user-defined material
+ * registry, and active optimization-interrupt lifecycle shared by continuous and
+ * glass-expert runs.
  *
  * `init` reports deterministic startup milestones while loading the pinned Pyodide
  * runtime, Python dependencies, and local wheel. Injectable `_*` variants accept a
  * `runPython` dependency for isolated testing; their individual contracts live on
  * their declarations. Comlink exposes the public wrappers at the end of this module.
  *
- * All public computations obtain the executor through `requirePyodide`, which throws
- * until initialization succeeds. Initialization clears the singleton on failure so
- * callers can retry, and prefixes the pinned `rayoptics_web_utils-0.29.2` wheel
+ * All public computations obtain a lifecycle-safe executor through `requirePyodide`,
+ * which throws until initialization succeeds. Computation namespaces and unexpected
+ * result proxies are explicitly destroyed without conversion; initialization uses
+ * persistent globals but applies the same result contract. Initialization clears the
+ * singleton on failure so callers can retry, releases received Comlink callbacks,
+ * and prefixes the pinned `rayoptics_web_utils-0.29.2` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -26,7 +30,7 @@
  * parsing, and transport failures may still reject. Stop requests affect only the
  * matching active run id.
  */
-import { expose } from "comlink";
+import { expose, releaseProxy } from "comlink";
 import { loadPyodide, version } from "pyodide";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
@@ -70,6 +74,18 @@ def _json_default(value):
 `;
 
 type InitProgressCallback = (progress: InitProgress) => void | Promise<void>;
+type DestroyablePyProxy = { destroy(): void };
+type ReleasableCallback = { [releaseProxy]?: () => void };
+type LifecycleSafePyodideRuntime = {
+  readonly ffi: {
+    readonly PyProxy: { [Symbol.hasInstance](value: unknown): boolean };
+  };
+  runPython(code: string): unknown;
+  runPythonAsync(
+    code: string,
+    options?: { readonly globals?: DestroyablePyProxy },
+  ): Promise<unknown>;
+};
 type RawFanAxisData = {
   readonly x: number[];
   readonly y: ReadonlyArray<number | null | undefined>;
@@ -89,6 +105,50 @@ async function emitInitProgress(
   status: string,
 ): Promise<void> {
   await onProgress?.({ value, status });
+}
+
+/** Releases a received Comlink callback proxy while accepting plain local test callbacks. */
+function releaseCallbackProxy(callback: unknown): void {
+  const release = (callback as ReleasableCallback | undefined)?.[releaseProxy];
+  release?.call(callback);
+}
+
+/** Enforces the worker boundary contract without creating nested proxies via `toJs()`. */
+function rejectUnexpectedPyProxy(
+  runtime: LifecycleSafePyodideRuntime,
+  result: unknown,
+  mode: "initialization" | "computation",
+): unknown {
+  if (runtime.ffi.PyProxy[Symbol.hasInstance](result)) {
+    (result as DestroyablePyProxy).destroy();
+    throw new Error(`Pyodide ${mode} returned an unexpected PyProxy result`);
+  }
+  return result;
+}
+
+/** Executes initialization code in persistent globals and rejects leaked result proxies. */
+function createInitializationExecutor(
+  runtime: LifecycleSafePyodideRuntime,
+): (code: string) => Promise<unknown> {
+  return async (code: string): Promise<unknown> => {
+    const result = await runtime.runPythonAsync(code);
+    return rejectUnexpectedPyProxy(runtime, result, "initialization");
+  };
+}
+
+/** Executes one computation in a disposable shallow copy of the initialized globals. */
+function createComputationExecutor(
+  runtime: LifecycleSafePyodideRuntime,
+): (code: string) => Promise<unknown> {
+  return async (code: string): Promise<unknown> => {
+    const scopedGlobals = runtime.runPython("dict(globals())") as DestroyablePyProxy;
+    try {
+      const result = await runtime.runPythonAsync(code, { globals: scopedGlobals });
+      return rejectUnexpectedPyProxy(runtime, result, "computation");
+    } finally {
+      scopedGlobals.destroy();
+    }
+  };
 }
 
 /** For testing only — resets the singleton so init() can be re-tested. */
@@ -196,44 +256,48 @@ from rayoptics_web_utils.optimization.failure_reports import (
  * Repeated calls are no-ops except for reporting the ready milestone.
  */
 export async function init(onProgress?: InitProgressCallback): Promise<void> {
-  if (pyodide) {
-    await emitInitProgress(onProgress, 100, "Ready");
-    return;
-  }
   try {
-    await emitInitProgress(onProgress, 0, "Starting worker");
-    await emitInitProgress(onProgress, 10, "Loading Pyodide loader");
-    await emitInitProgress(onProgress, 25, "Starting Pyodide runtime");
-    const createPyodideModule = await loadPyodideModule(CDN);
-    pyodide = await loadPyodide({
-      indexURL: `${CDN}/`,
-      createPyodideModule,
-    });
+    if (pyodide) {
+      await emitInitProgress(onProgress, 100, "Ready");
+      return;
+    }
+    try {
+      await emitInitProgress(onProgress, 0, "Starting worker");
+      await emitInitProgress(onProgress, 10, "Loading Pyodide loader");
+      await emitInitProgress(onProgress, 25, "Starting Pyodide runtime");
+      const createPyodideModule = await loadPyodideModule(CDN);
+      pyodide = await loadPyodide({
+        indexURL: `${CDN}/`,
+        createPyodideModule,
+      });
 
-    await emitInitProgress(onProgress, 40, "Loading Pyodide packages");
-    await pyodide.loadPackage([
-      "micropip",
-      "numpy",
-      "scipy",
-      "matplotlib",
-      "pandas",
-      "xlrd",
-      "traitlets",
-      "packaging",
-      "pyyaml",
-      "requests",
-      "deprecation",
-    ]);
+      await emitInitProgress(onProgress, 40, "Loading Pyodide packages");
+      await pyodide.loadPackage([
+        "micropip",
+        "numpy",
+        "scipy",
+        "matplotlib",
+        "pandas",
+        "xlrd",
+        "traitlets",
+        "packaging",
+        "pyyaml",
+        "requests",
+        "deprecation",
+      ]);
 
-    const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-    const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.29.2-py3-none-any.whl`;
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.29.2-py3-none-any.whl`;
 
-    await _init(pyodide.runPythonAsync.bind(pyodide), wheelUrl, onProgress);
-    await emitInitProgress(onProgress, 100, "Ready");
-  } catch (err) {
-    pyodide = null;
-    console.error(err);
-    throw err;
+      await _init(createInitializationExecutor(pyodide), wheelUrl, onProgress);
+      await emitInitProgress(onProgress, 100, "Ready");
+    } catch (err) {
+      pyodide = null;
+      console.error(err);
+      throw err;
+    }
+  } finally {
+    releaseCallbackProxy(onProgress);
   }
 }
 
@@ -241,7 +305,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
 
 function requirePyodide(): (code: string) => Promise<unknown> {
   if (!pyodide) throw new Error("Pyodide not initialized. Call init() first.");
-  return pyodide.runPythonAsync.bind(pyodide);
+  return createComputationExecutor(pyodide);
 }
 
 function normalizeFanAxis(axis: RawFanAxisData): {
@@ -820,22 +884,26 @@ json.dumps(_optimization_report)
     return JSON.parse(json) as TReport;
   } finally {
     try {
-      if (interruptBindingStarted) {
-        try {
-          pyodide.setInterruptBuffer(undefined);
-        } finally {
-          if (activeOptimizationInterruptView !== undefined) {
-            Atomics.store(activeOptimizationInterruptView, 0, 0);
+      try {
+        if (interruptBindingStarted) {
+          try {
+            pyodide.setInterruptBuffer(undefined);
+          } finally {
+            if (activeOptimizationInterruptView !== undefined) {
+              Atomics.store(activeOptimizationInterruptView, 0, 0);
+            }
+            activeOptimizationRunId = undefined;
+            activeOptimizationInterruptBuffer = undefined;
+            activeOptimizationInterruptView = undefined;
           }
-          activeOptimizationRunId = undefined;
-          activeOptimizationInterruptBuffer = undefined;
-          activeOptimizationInterruptView = undefined;
+        }
+      } finally {
+        if (progressBindingStarted) {
+          pyodide.globals.delete("_optimization_progress_callback");
         }
       }
     } finally {
-      if (progressBindingStarted) {
-        pyodide.globals.delete("_optimization_progress_callback");
-      }
+      releaseCallbackProxy(progressCallback);
     }
   }
 }
