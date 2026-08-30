@@ -47,7 +47,8 @@ const PARAXIAL_ATTRIBUTE_LABELS: Readonly<Record<string, string>> = {
  * @remarks
  * - Rows preserve worker entry order and values are rendered without formatting or rounding.
  * - Documented fields show a readable label followed by their raw key; unknown fields show the raw key.
- * - The Data column is right-aligned inside a vertically scrollable container capped at `80dvh`.
+ * - The Data column is right-aligned, and vertical scrolling is delegated to the shared modal body
+ *   within the dialog's existing `90dvh` limit.
  * - The fixed-footer Ok button is the sole dismissal action; backdrop clicks and Escape do not close it.
  */
 export function ParaxialDataModal({ isOpen, data, onClose }: ParaxialDataModalProps) {
@@ -68,13 +69,11 @@ export function ParaxialDataModal({ isOpen, data, onClose }: ParaxialDataModalPr
         </div>
       )}
     >
-      <div data-testid="paraxial-data-table-container" className="max-h-[80dvh] overflow-y-auto">
-        <Table
-          headers={["Attribute", "Data"]}
-          rows={rows}
-          columnAlignments={["left", "right"]}
-        />
-      </div>
+      <Table
+        headers={["Attribute", "Data"]}
+        rows={rows}
+        columnAlignments={["left", "right"]}
+      />
     </Modal>
   );
 }
