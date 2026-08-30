@@ -1564,6 +1564,7 @@ const transmissiveDiffractionGrating: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "Diffraction grating",
       curvatureRadius: 0,
       thickness: 2,
       medium: "SF10",
@@ -1687,6 +1688,7 @@ const reflectiveDiffractionGrating: OpticalModel = {
     },
     {
       label: "Default",
+      comment: "Diffraction grating",
       curvatureRadius: 0,
       thickness: 0,
       medium: "REFL",
