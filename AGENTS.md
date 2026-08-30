@@ -30,7 +30,7 @@
 
 - When including link to any GitHub page, always use the domain name `redirect.github.com`. Never use the domain name of `github.com`
 
-- End your commit message with "Co-Authored-By: <model-name-with-precise-version-number> with an email address "no-reply@<domain-name>" for auditing purpose (eg. `"Co-Authored-By: GPT-5.6-sol <noreply@openai.com>"`)
+- End your commit message with "Co-Authored-By: <model-name-with-precise-version-number> with an email address "noreply@<domain-name>" for auditing purpose (eg. `"Co-Authored-By: GPT-5.6-sol <noreply@openai.com>"`)
 
 - Use `gh` outside the sandbox when making a Pull Request
 
