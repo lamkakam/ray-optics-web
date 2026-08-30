@@ -28,7 +28,9 @@ launch only when strict forward verification requires it.  Finite conjugates,
 curved images, decentered stops, and continuation retain the extension's
 reverse solve through the physical stop centre.  Both exact field classes
 cache launches and RayOptics-compatible analysis metadata by absolute field
-coordinate.  Cached chief rays retain the verified geometry but use
+coordinate. Coordinate cache hits restore metadata only when the field's
+chief-ray cache is empty, preserving wavelength-specific chief rays installed
+by RayOptics analysis. Cached chief rays retain the verified geometry but use
 RayOptics' standard optical-path normalization so dummy gaps cannot contaminate
 OPD results.
 Analysis-created field copies whose cache was deliberately cleared are
@@ -478,7 +480,7 @@ class ExactObjectHeightFieldSpec(FieldSpec):
         return result
 
     def obj_coords(self, fld):
-        """Resolve the absolute coordinate and restore its launch metadata."""
+        """Resolve a coordinate without replacing a chromatic chief cache."""
         if self.key != ("object", "height") or self.is_wide_angle is not True:
             return super().obj_coords(fld)
         self._require_finite_object_conjugate()
@@ -486,11 +488,13 @@ class ExactObjectHeightFieldSpec(FieldSpec):
         coordinate = self._absolute_field_coordinate(fld)
         key = self._coordinate_key(coordinate)
         launch = self._coordinate_launches.get(key)
+        restore_coordinate_metadata = launch is None or fld.chief_ray is None
         if launch is None:
             solution = self._solve_coordinate_from_axis(coordinate)
             self._store_coordinate_solution(coordinate, solution)
             launch = solution[1]
-        self._apply_coordinate_solution(fld, coordinate)
+        if restore_coordinate_metadata:
+            self._apply_coordinate_solution(fld, coordinate)
         point, direction = launch
         return np.array(point, copy=True), np.array(direction, copy=True)
 
@@ -828,13 +832,14 @@ class ExactImageHeightFieldSpec(FieldSpec):
         return result
 
     def obj_coords(self, fld):
-        """Resolve the absolute coordinate and restore its launch metadata."""
+        """Resolve a coordinate without replacing a chromatic chief cache."""
         if self.key != ("image", "height") or self.is_wide_angle is not True:
             return super().obj_coords(fld)
 
         coordinate = self._absolute_field_coordinate(fld)
         key = self._coordinate_key(coordinate)
         launch = self._coordinate_launches.get(key)
+        restore_coordinate_metadata = launch is None or fld.chief_ray is None
         if launch is None:
             if self._supports_native_image_height_evaluator():
                 solution = self._solve_native_first(fld, coordinate)
@@ -842,7 +847,8 @@ class ExactImageHeightFieldSpec(FieldSpec):
                 solution = self._solve_coordinate_from_axis(coordinate)
             self._store_coordinate_solution(coordinate, solution)
             launch = solution[1]
-        self._apply_coordinate_solution(fld, coordinate)
+        if restore_coordinate_metadata:
+            self._apply_coordinate_solution(fld, coordinate)
         point, direction = launch
         return np.array(point, copy=True), np.array(direction, copy=True)
 
