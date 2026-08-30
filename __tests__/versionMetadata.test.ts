@@ -19,6 +19,7 @@ describe("version metadata", () => {
   };
 
   it("keeps app package metadata in sync", () => {
+    expect(packageJson.version).toBe("0.42.0");
     expect(packageJson.version).toMatch(semverPattern);
     expect(packageLockJson.version).toBe(packageJson.version);
     expect(packageLockJson.packages[""].version).toBe(packageJson.version);
