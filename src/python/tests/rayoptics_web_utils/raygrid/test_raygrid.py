@@ -114,41 +114,73 @@ class TestMakeRayGrid:
         sig = inspect.signature(make_ray_grid)
         assert sig.parameters["image_point"].default == "chief_ray"
 
-    def test_chief_ray_mode_does_not_pass_image_point_override(self, monkeypatch):
-        """chief_ray mode should not provide image_pt_2d to RayGrid."""
+    def test_chief_ray_mode_does_not_resolve_centroid(self, cooke_triplet, monkeypatch):
+        """Chief-ray mode does not enter the centroid reference implementation."""
         import rayoptics_web_utils.raygrid.raygrid as module
-
-        captured_kwargs = {}
-
-        class FakeRayGrid:
-            def __init__(self, *args, **kwargs):
-                captured_kwargs.update(kwargs)
 
         monkeypatch.setattr(module, "_resolve_image_point", lambda *args, **kwargs: pytest.fail("unexpected centroid helper"))
-        monkeypatch.setattr("rayoptics.raytr.analyses.RayGrid", FakeRayGrid)
+        wavelength = cooke_triplet.optical_spec.spectral_region.central_wvl
+        result = module.make_ray_grid(cooke_triplet, fi=1, wavelength_nm=wavelength)
 
-        make_ray_grid = module.make_ray_grid
-        make_ray_grid(object(), fi=1, wavelength_nm=587.0)
+        assert result.image_pt_2d is None
 
-        assert "image_pt_2d" not in captured_kwargs
-
-    def test_centroid_mode_passes_image_point_override(self, monkeypatch):
-        """centroid mode should compute and forward image_pt_2d."""
+    def test_centroid_mode_uses_centroid_ray_grid(self, cooke_triplet):
+        """Centroid mode uses the rebuild-capable best-fit RayGrid subclass."""
         import rayoptics_web_utils.raygrid.raygrid as module
 
-        captured_kwargs = {}
-        opm = object()
+        wavelength = cooke_triplet.optical_spec.spectral_region.wavelengths[0]
+        result = module.make_ray_grid(
+            cooke_triplet, fi=2, wavelength_nm=wavelength,
+            num_rays=9, image_point="centroid"
+        )
 
-        class FakeRayGrid:
-            def __init__(self, *args, **kwargs):
-                captured_kwargs.update(kwargs)
+        assert isinstance(result, module.CentroidRayGrid)
+        rebuilt = result.update_data(build="rebuild")
+        assert rebuilt is result
 
-        monkeypatch.setattr(module, "_resolve_image_point", lambda *args, **kwargs: np.array([1.25, -2.5]))
-        monkeypatch.setattr("rayoptics.raytr.analyses.RayGrid", FakeRayGrid)
+    def test_centroid_wavefront_removes_piston_and_both_tilts(self, cooke_triplet):
+        """The centroid wavefront reference is a weighted best-fit sphere."""
+        from rayoptics_web_utils.raygrid import make_ray_grid
 
-        module.make_ray_grid(opm, fi=2, wavelength_nm=656.0, num_rays=9, image_point="centroid")
+        wavelength = cooke_triplet.optical_spec.spectral_region.wavelengths[0]
+        ray_grid = make_ray_grid(
+            cooke_triplet,
+            fi=2,
+            wavelength_nm=wavelength,
+            num_rays=11,
+            image_point="centroid",
+        )
+        pupil_x, pupil_y, opd = ray_grid.grid
+        valid = np.isfinite(opd)
+        design = np.column_stack(
+            [np.ones(np.count_nonzero(valid)), pupil_x[valid], pupil_y[valid]]
+        )
+        coefficients = np.linalg.lstsq(design, opd[valid], rcond=None)[0]
 
-        assert captured_kwargs["image_pt_2d"] == pytest.approx([1.25, -2.5])
+        assert coefficients == pytest.approx([0.0, 0.0, 0.0], abs=1.0e-8)
+
+    def test_afocal_centroid_wavefront_removes_piston_and_both_tilts(
+        self, afocal_two_lens
+    ):
+        """The centroid plane-wave reference also removes all linear phase."""
+        from rayoptics_web_utils.raygrid import make_ray_grid
+
+        wavelength = afocal_two_lens.optical_spec.spectral_region.central_wvl
+        ray_grid = make_ray_grid(
+            afocal_two_lens,
+            fi=1,
+            wavelength_nm=wavelength,
+            num_rays=9,
+            image_point="centroid",
+        )
+        pupil_x, pupil_y, opd = ray_grid.grid
+        valid = np.isfinite(opd)
+        design = np.column_stack(
+            [np.ones(np.count_nonzero(valid)), pupil_x[valid], pupil_y[valid]]
+        )
+        coefficients = np.linalg.lstsq(design, opd[valid], rcond=None)[0]
+
+        assert coefficients == pytest.approx([0.0, 0.0, 0.0], abs=1.0e-8)
 
 
 class TestResolveImagePoint:
@@ -175,6 +207,11 @@ class TestResolveImagePoint:
 
         class FakeOpticalModel:
             optical_spec = FakeOpticalSpec()
+            seq_model = type(
+                "FakeSequentialModel",
+                (),
+                {"ifcs": [type("Image", (), {"profile": type("Profile", (), {"sag": staticmethod(lambda x, y: 0.0)})()})()]},
+            )()
 
             def __getitem__(self, key):
                 if key == "osp":
@@ -188,7 +225,13 @@ class TestResolveImagePoint:
             [[0.5, 0.0, (ray_b, None, 587.0)]],
         ]
 
-        monkeypatch.setattr(module, "trace_ray_grid", lambda *args, **kwargs: grid)
+        captured = {}
+
+        def fake_trace_ray_grid(*args, **kwargs):
+            captured.update(kwargs)
+            return grid
+
+        monkeypatch.setattr(module, "trace_ray_grid", fake_trace_ray_grid)
 
         result = module._resolve_image_point(
             FakeOpticalModel(),
@@ -199,7 +242,53 @@ class TestResolveImagePoint:
             image_point="centroid",
         )
 
-        assert result == pytest.approx([2.0, 4.0])
+        assert result == pytest.approx([2.0, 4.0, 0.0])
+        assert captured["apply_vignetting"] is False
+
+    def test_centroid_restores_curved_image_surface_sag(self, monkeypatch):
+        """The finite reference retains local image sag plus focus."""
+        import rayoptics_web_utils.raygrid.opd_reference as module
+
+        class FakeProfile:
+            @staticmethod
+            def sag(x, y):
+                return x * x + 2.0 * y
+
+        class FakeField:
+            def vignetting_bbox(self, pupil):
+                return [np.array([-1.0, -1.0]), np.array([1.0, 1.0])]
+
+        class FakeOpticalSpec:
+            field_of_view = type("FakeFov", (), {"fields": [FakeField()]})()
+            pupil = object()
+
+        class FakeOpticalModel:
+            optical_spec = FakeOpticalSpec()
+            seq_model = type(
+                "FakeSequentialModel",
+                (),
+                {"ifcs": [object(), type("Image", (), {"profile": FakeProfile()})()]},
+            )()
+
+        ray = [[None, None, None], [np.array([2.0, 3.0, 0.0]), np.array([0.0, 0.0, 1.0]), None]]
+        monkeypatch.setattr(
+            module,
+            "trace_ray_grid",
+            lambda *args, **kwargs: [[[0.0, 0.0, (ray, None, 587.0)]]],
+        )
+
+        result = module._resolve_image_point(
+            FakeOpticalModel(), 0, 587.0, 0.5, 3, "centroid"
+        )
+
+        assert result == pytest.approx([2.0, 3.0, 10.5])
+
+    def test_weighted_centroid_rejects_all_zero_weights(self):
+        """A spectral centroid requires positive effective throughput."""
+        from rayoptics_web_utils.raygrid.opd_reference import weighted_centroid
+
+        with pytest.raises(ValueError, match="positively weighted"):
+            weighted_centroid([np.array([1.0, 2.0])], [0.0])
 
     def test_centroid_raises_when_no_valid_rays(self, monkeypatch):
         import rayoptics_web_utils.raygrid.opd_reference as module

@@ -18,7 +18,7 @@
  * result proxies are explicitly destroyed without conversion; initialization uses
  * persistent globals but applies the same result contract. Initialization clears the
  * singleton on failure so callers can retry, releases received Comlink callbacks,
- * and prefixes the pinned `rayoptics_web_utils-0.29.2` wheel
+ * and prefixes the pinned `rayoptics_web_utils-0.29.3` wheel
  * URL with `NEXT_PUBLIC_BASE_PATH`. Model builds import both exact height-field
  * solvers, exact unit-pupil vignetting, and `set_vig_with_ronchi_envelopes` so
  * Object-NA searches remain inside the requested angular pupil while Ronchi
@@ -287,7 +287,7 @@ export async function init(onProgress?: InitProgressCallback): Promise<void> {
       ]);
 
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.29.2-py3-none-any.whl`;
+      const wheelUrl = `${self.location.origin}${basePath}/rayoptics_web_utils-0.29.3-py3-none-any.whl`;
 
       await _init(createInitializationExecutor(pyodide), wheelUrl, onProgress);
       await emitInitProgress(onProgress, 100, "Ready");

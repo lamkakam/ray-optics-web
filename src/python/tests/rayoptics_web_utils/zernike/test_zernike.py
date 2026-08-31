@@ -529,8 +529,8 @@ class TestGetZernikeCoefficients:
                 f"Z{j}: rms*N = {reconstructed}, coeff = {coeffs[j-1]}"
             )
 
-    def test_raygrid_called_with_check_apertures_and_apply_vignetting(self, cooke_triplet):
-        """RayGrid must be created with check_apertures=True and apply_vignetting=True."""
+    def test_raygrid_checks_apertures_without_reapplying_vignetting(self, cooke_triplet):
+        """RayGrid checks apertures but does not transform its vignetted box twice."""
         from unittest.mock import patch
         from rayoptics.raytr.analyses import RayGrid as RealRayGrid
         from rayoptics_web_utils.zernike import get_zernike_coefficients
@@ -550,8 +550,8 @@ class TestGetZernikeCoefficients:
         assert captured_kwargs.get('check_apertures') is True, (
             f"Expected check_apertures=True, got {captured_kwargs.get('check_apertures')}"
         )
-        assert captured_kwargs.get('apply_vignetting') is True, (
-            f"Expected apply_vignetting=True, got {captured_kwargs.get('apply_vignetting')}"
+        assert captured_kwargs.get('apply_vignetting') is False, (
+            f"Expected apply_vignetting=False, got {captured_kwargs.get('apply_vignetting')}"
         )
 
 

@@ -3,6 +3,7 @@ from rayoptics.environment import OpticalModel
 from rayoptics.raytr import trace
 
 from rayoptics_web_utils.raygrid import _resolve_image_point
+from rayoptics_web_utils.raygrid.raygrid import _reference_sphere
 from rayoptics_web_utils.analysis._afocal import is_afocal_image_space
 
 
@@ -13,6 +14,7 @@ def _trace_fan_series(
     fan_filter,
     image_point: str = "chief_ray",
     wvl_idx: int | None = None,
+    finite_reference_point=None,
 ) -> tuple[list[list[float]], list[list[float | None]]]:
     """Trace one pupil fan at one or every configured wavelength.
 
@@ -21,6 +23,8 @@ def _trace_fan_series(
     - Delegates fan ordinate calculation to the provided `fan_filter` callback.
     - Blocked rays (eg. from annular central-obstruction samples) are represented as `None` ordinates.
     - When `wvl_idx` is supplied, the returned outer lists contain exactly one series for that configured wavelength.
+    - ``finite_reference_point`` lets wavefront callers reuse one already-fit
+      three-dimensional reference geometry for both fan axes.
 
     Args:
         opm: RayOptics optical model.
@@ -29,6 +33,7 @@ def _trace_fan_series(
         fan_filter: Callback that calculates each fan ordinate.
         image_point: Image-point reference convention.
         wvl_idx: Optional configured wavelength index to trace exclusively.
+        finite_reference_point: Optional complete finite image reference point.
 
     Returns:
         Tuple of x-axis values and pupil-fan series for the selected wavelength set.
@@ -42,17 +47,16 @@ def _trace_fan_series(
         if not isinstance(wvl_idx, int) or wvl_idx < 0 or wvl_idx >= len(wavelengths):
             raise IndexError(f"wavelength index {wvl_idx} is out of range")
         selected_wavelengths = [wavelengths[wvl_idx]]
-    central_wvl = opm.seq_model.central_wavelength()
     foc = osp.defocus.get_focus()
-
-    image_pt = None if is_afocal_image_space(opm) else _resolve_image_point(
-        opm, fi=fi, wavelength_nm=central_wvl, foc=foc,
-        num_rays=21, image_point=image_point,
-    )
-    ref_sphere, chief_ray = trace.setup_pupil_coords(opm, fld, central_wvl, foc, image_pt=image_pt)
-    fld.chief_ray = chief_ray
-    fld.ref_sphere = ref_sphere
-    ref_img_pt = image_pt if image_pt is not None else ref_sphere[0]
+    chief_reference_point = None
+    if not is_afocal_image_space(opm) and image_point == "chief_ray":
+        central_wavelength = opm.seq_model.central_wavelength()
+        central_sphere, central_chief_ray = trace.setup_pupil_coords(
+            opm, fld, central_wavelength, foc
+        )
+        fld.chief_ray = central_chief_ray
+        fld.ref_sphere = central_sphere
+        chief_reference_point = central_sphere[0]
 
     fan_start = np.array([0.0, 0.0])
     fan_stop = np.array([0.0, 0.0])
@@ -63,13 +67,33 @@ def _trace_fan_series(
     fans_x: list[list[float]] = []
     fans_y: list[list[float | None]] = []
     for wavelength_nm in selected_wavelengths:
+        image_pt = None
+        if not is_afocal_image_space(opm) and image_point == "centroid":
+            image_pt = (
+                np.asarray(finite_reference_point, dtype=float)
+                if finite_reference_point is not None
+                else _resolve_image_point(
+                opm,
+                fi=fi,
+                wavelength_nm=wavelength_nm,
+                foc=foc,
+                num_rays=21,
+                image_point=image_point,
+            )
+            )
+        elif chief_reference_point is not None:
+            image_pt = chief_reference_point
         ref_sphere, chief_ray = trace.setup_pupil_coords(
             opm,
             fld,
             wavelength_nm,
             foc,
-            image_pt=ref_img_pt,
+            image_pt=image_pt,
         )
+        if image_pt is not None:
+            # RayOptics accepts only transverse overrides and otherwise replaces
+            # the curved-surface axial coordinate with ``foc``.
+            ref_sphere = _reference_sphere(opm, chief_ray, image_pt)
         fld.chief_ray = chief_ray
         fld.ref_sphere = ref_sphere
         wavelength_x: list[float] = []
