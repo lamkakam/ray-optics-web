@@ -60,7 +60,7 @@ test("updates the immersion objective at 0.1 mm half-field", async ({
   await expect(updateButton).toBeEnabled({ timeout: 120_000 });
 
   await expect(page.getByRole("dialog", { name: "Error" })).toBeHidden();
-  await expect(page.getByText("Paraxial first-order results")).toBeVisible();
+  await expect(page.getByText(/^EFL:/)).toBeVisible();
   await expect(page.getByRole("img", { name: "Lens layout diagram" })).toBeVisible();
 });
 
@@ -118,7 +118,7 @@ for (const objective of forwardObjectiveCases) {
     await expect(updateButton).toBeEnabled({ timeout: 120_000 });
 
     await expect(page.getByRole("dialog", { name: "Error" })).toBeHidden();
-    await expect(page.getByText("Paraxial first-order results")).toBeVisible();
+    await expect(page.getByText(/^EFL:/)).toBeVisible();
     await expect(page.getByRole("img", { name: "Lens layout diagram" })).toBeVisible();
 
     const plotTypeSelect = page.getByLabel("Plot type");

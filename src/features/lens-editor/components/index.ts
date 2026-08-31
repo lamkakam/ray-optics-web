@@ -12,6 +12,7 @@ export * from "./LensLayoutPanel";
 export * from "./LensEditorConfigToolbar";
 export * from "./LensPrescriptionContainer";
 export * from "./MediumCell";
+export * from "./ParaxialDataModal";
 export * from "./SeidelAberrModal";
 export * from "./SpecsConfiguratorContainer";
 export * from "./SpecsConfiguratorPanel";
