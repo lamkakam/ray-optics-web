@@ -121,6 +121,10 @@ def _chief_ray_pkg(opm, fld, wavelength_nm):
 def _raw_grid(opm, fld, wavelength_nm, num_rays):
     """Returns a ray grid, preserving blocked rays as `None` packages instead of dropping them.
     The returned grid is a list of lists of `(p_x, p_y, ray_pkg)` tuples.
+    `fld.vignetting_bbox` has already transformed the normalized pupil bounds, so
+    `trace_ray_grid` receives `apply_vignetting=False` to avoid applying the field's
+    vignetting factors a second time. Aperture checking remains enabled so rays that
+    are actually blocked are still represented by `None` packages.
 
     Args:
         opm: RayOptics optical model.
@@ -483,7 +487,30 @@ def make_afocal_ray_grid(opm, fi, wavelength_nm, num_rays=64, image_point="chief
     plane_point, _ = exit_pupil_plane(opm, fld, wavelength_nm, chief_pkg=chief_pkg)
     central_wavelength_sys = opm.nm_to_sys_units(opm.optical_spec.spectral_region.central_wvl)
 
-    def opd_values(candidate_reference):
+    def opd_values(candidate_reference: np.ndarray) -> np.ndarray:
+        """Return system-unit OPD values for a candidate plane-wave direction.
+
+        Valid rays are evaluated against the candidate reference while blocked or
+        failed cells remain `NaN`, preserving the raw grid's regular shape and mask.
+
+        Args:
+            candidate_reference: Unit plane-wave propagation direction in the
+                optical model's coordinates. Element `0` is its sagittal x
+                component, element `1` is its tangential y component, and element
+                `2` is its longitudinal z component; the vector is also the normal
+                of the candidate reference plane.
+
+        Returns:
+            A two-dimensional `np.ndarray` with shape
+            `(num_rays, num_rays)`, aligned cell-for-cell with `raw_grid`;
+            and its cells are scalar values.
+            In `values[i, j]`, axis `0` (`i`) selects the sampled sagittal pupil-x
+            coordinate and axis `1` (`j`) selects the sampled tangential pupil-y
+            coordinate. The scalar at `values[i, j]` is the plane-wave OPD of the
+            ray in `raw_grid[i][j]` relative to the chief ray, in system length
+            units, for the plane normal `candidate_reference`. It is `NaN` when
+            that corresponding ray was blocked or failed to trace.
+        """
         values = np.full((num_rays, num_rays), np.nan, dtype=float)
         for row_idx, row in enumerate(raw_grid):
             for col_idx, (_, _, ray_pkg) in enumerate(row):
@@ -498,7 +525,26 @@ def make_afocal_ray_grid(opm, fi, wavelength_nm, num_rays=64, image_point="chief
                     )
         return values
 
-    def linear_coefficients(values):
+    def linear_coefficients(values: np.ndarray) -> np.ndarray:
+        """Fit and return the pupil-plane coefficients `[piston, x_slope, y_slope]`.
+
+        The least-squares plane is fitted only to finite OPD values from valid rays:
+        `OPD = piston + x_slope * pupil_x + y_slope * pupil_y`. Three
+        non-collinear samples are required so all coefficients are identifiable.
+
+        Args:
+            values: A two-dimensional `np.ndarray` with shape
+                `(num_rays, num_rays)`, normally returned by `opd_values`. In
+                `values[i, j]`, axis `0` (`i`) selects the sampled sagittal
+                pupil-x coordinate and axis `1` (`j`) selects the sampled
+                tangential pupil-y coordinate. Each finite scalar cell is the
+                plane-wave OPD, in system length units, of the corresponding ray
+                in `raw_grid[i][j]`; `NaN` identifies a blocked or failed ray and
+                is excluded from the fit.
+
+        Returns:
+            The fitted `[piston, x_slope, y_slope]` coefficient array.
+        """
         coordinates = []
         samples = []
         for row, value_row in zip(raw_grid, values, strict=True):
