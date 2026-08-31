@@ -334,6 +334,32 @@ class TestGetZernikeCoefficients:
             )
         )
 
+    def test_finite_centroid_returns_all_terms_and_finite_metrics(
+        self, cooke_triplet
+    ):
+        """Finite centroid grids should expose exit-pupil data to Zernike fitting."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        result = get_zernike_coefficients(
+            cooke_triplet,
+            field_index=1,
+            wvl_index=1,
+            zernike_terms=NOLL_TERMS_22,
+            image_point="centroid",
+            num_rays=11,
+        )
+
+        assert result["num_terms"] == len(NOLL_TERMS_22)
+        assert len(result["coefficients"]) == len(NOLL_TERMS_22)
+        assert len(result["rms_normalized_coefficients"]) == len(NOLL_TERMS_22)
+        assert np.all(np.isfinite(result["coefficients"]))
+        assert np.all(np.isfinite(result["rms_normalized_coefficients"]))
+        assert np.all(
+            np.isfinite(
+                [result["rms_wfe"], result["pv_wfe"], result["strehl_ratio"]]
+            )
+        )
+
     def test_returns_dict_with_expected_keys(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         import inspect

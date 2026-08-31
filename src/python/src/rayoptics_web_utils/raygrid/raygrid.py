@@ -69,6 +69,10 @@ class CentroidRayGrid(RayGrid):
     geometric centroid, shifts transversely until both fitted OPD phase slopes
     vanish, then removes weighted mean OPD as piston. Rebuilds repeat the same
     operation and retain the public ``RayGrid`` attributes and grid schema.
+    ``grid_pkg`` follows RayOptics' finite-grid ``(raw_grid, upd_grid)``
+    contract: every valid ray has exit-pupil preprocessing data calculated
+    against the final centroid reference sphere, while blocked rays remain
+    ``None``.
     """
 
     def __init__(self, opt_model, f, wl, foc, num_rays):
@@ -174,7 +178,24 @@ class CentroidRayGrid(RayGrid):
         grid[2] = opd_values
         self.grid = grid
         self.raw_grid = raw_grid
-        self.grid_pkg = (raw_grid, None)
+        upd_grid = [
+            [
+                None
+                if ray_pkg is None
+                else waveabr.wave_abr_pre_calc(
+                    first_order_data,
+                    self.fld,
+                    self.wvl,
+                    self.foc,
+                    ray_pkg,
+                    chief_ray_pkg,
+                    ref_sphere,
+                )
+                for _, _, ray_pkg in row
+            ]
+            for row in raw_grid
+        ]
+        self.grid_pkg = (raw_grid, upd_grid)
         self.image_point = image_point
         self.ref_sphere = ref_sphere
         self.chief_ray_pkg = chief_ray_pkg
