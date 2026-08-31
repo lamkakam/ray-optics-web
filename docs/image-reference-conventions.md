@@ -22,15 +22,19 @@ A finite centroid wavefront begins at the geometric centroid and fits a shifted
 and tilted reference sphere. The transverse sphere centre is solved so the
 weighted OPD fit has zero sagittal and tangential pupil slopes. An afocal
 centroid wavefront analogously fits the normal of a plane-wave reference with
-two transverse angular parameters. After the reference geometry is fixed, the
-weighted mean OPD is removed as piston.
+two transverse angular parameters.
 
-Monochromatic OPD fits the selected wavelength. An all-wavelength OPD analysis
-fits reference geometry at the configured primary wavelength and reuses that
-geometry for every wavelength, while refractive indices, traced optical paths,
-and conversion to waves remain wavelength-specific. Wavefront maps,
-diffraction PSF and MTF, Strehl, Zernike, and wavefront optimization consume the
-same centroid reference through the shared ray-grid factory.
+OPD fans use that centroid-fitted geometry while retaining RayOptics' fan
+piston convention: the chief ray at normalized pupil coordinate zero has zero
+OPD in both sagittal and tangential fans. Two-dimensional wavefront-grid
+consumers instead remove the valid-cell mean after fixing the reference
+geometry. That zero-mean grid convention remains shared by wavefront maps,
+diffraction PSF and MTF, Strehl, Zernike, and wavefront optimization.
+
+Monochromatic OPD-fan geometry fits the selected wavelength. An all-wavelength
+OPD fan fits reference geometry at the configured primary wavelength and
+reuses that geometry for every wavelength, while refractive indices, traced
+optical paths, and conversion to waves remain wavelength-specific.
 
 ## Sampling and rejected rays
 

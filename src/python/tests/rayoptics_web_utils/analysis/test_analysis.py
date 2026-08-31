@@ -305,6 +305,37 @@ class TestGetRayFanData:
 class TestGetOpdFanData:
     """Tests for get_opd_fan_data()."""
 
+    @pytest.mark.parametrize(
+        "model_fixture",
+        ["sasian_triplet_autoaperture", "quad_schiefspiegler_autoaperture"],
+        ids=["Sasian-Triplet", "Quad-Schiefspiegler"],
+    )
+    def test_centroid_fans_keep_chief_ray_zero_piston_at_every_wavelength(
+        self,
+        request,
+        model_fixture,
+    ):
+        """Centroid geometry must not change the chief-ray-zero fan gauge."""
+        from rayoptics_web_utils.analysis import get_opd_fan_data
+
+        opm = request.getfixturevalue(model_fixture)
+        result = get_opd_fan_data(opm, fi=0, image_point="centroid")
+
+        centre_opds = []
+        for entry in result:
+            for axis in ("Sagittal", "Tangential"):
+                centre_index = int(np.argmin(np.abs(entry[axis]["x"])))
+                assert entry[axis]["x"][centre_index] == pytest.approx(
+                    0.0,
+                    abs=1.0e-12,
+                )
+                centre_opds.append(entry[axis]["y"][centre_index])
+
+        assert centre_opds == pytest.approx(
+            [0.0] * (2 * len(result)),
+            abs=1.0e-10,
+        )
+
     @pytest.mark.parametrize("wvl_idx", [0, 1, 2], ids=["F", "d", "C"])
     def test_finite_opd_uses_traced_wavelength_boundary_indices_without_mutation(
         self,
@@ -368,7 +399,7 @@ class TestGetOpdFanData:
         fake_grid = type(
             "Grid",
             (),
-            {"image_point": np.array([1.0, 2.0, 3.0]), "piston": 0.0},
+            {"image_point": np.array([1.0, 2.0, 3.0])},
         )()
 
         def fake_trace_fan_series(

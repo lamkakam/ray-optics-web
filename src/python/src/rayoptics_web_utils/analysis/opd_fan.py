@@ -30,11 +30,14 @@ def get_opd_fan_data_for_wavelength(
     wavelength first-order data is not changed.
     Infinite image space uses the shared exit-pupil plane-wave OPD, excludes the
     artificial final gap, makes chief-ray OPD zero, and converts to the traced
-    wavelength's waves. `image_point="chief_ray"` preserves the historical
-    reference, while `"centroid"` uses the shared centroid image point. The
-    selected wavelength's best-fit afocal reference is shared by both fan axes.
-    The all-wavelength API instead establishes centroid reference geometry at
-    the configured primary wavelength and shares it across wavelengths.
+    wavelength's waves. Both image-point modes preserve the RayOptics fan
+    convention that chief-ray OPD is zero. `image_point="chief_ray"` preserves
+    the historical geometry, while `"centroid"` changes only the fitted
+    reference geometry; unlike zero-mean wavefront-grid consumers, fans do not
+    remove the fitted grid's piston. The selected wavelength's best-fit afocal
+    reference is shared by both fan axes. The all-wavelength API instead
+    establishes centroid reference geometry at the configured primary
+    wavelength and shares it across wavelengths.
 
     Args:
         opm: RayOptics optical model.
@@ -63,7 +66,6 @@ def _get_opd_fan_data_for_wavelength(
     references = {}
     finite_first_order_data = {}
     finite_reference_point = None
-    centroid_piston = 0.0
     if image_point == "centroid":
         reference_wavelength = opm.optical_spec.spectral_region.wavelengths[
             reference_wvl_idx
@@ -83,7 +85,6 @@ def _get_opd_fan_data_for_wavelength(
             )
         else:
             finite_reference_point = fitted_grid.image_point
-            centroid_piston = fitted_grid.piston
 
     def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
         if ray_pkg[mc.ray] is not None:
@@ -107,8 +108,6 @@ def _get_opd_fan_data_for_wavelength(
                 )
             fod = finite_first_order_data[wvl]
             opd_val = wave_abr_full_calc(fod, fld, wvl, foc, ray_pkg, fld.chief_ray, fld.ref_sphere)
-            if reference_wvl_idx == wvl_idx and image_point == "centroid":
-                opd_val -= centroid_piston
             return opd_val / opm.nm_to_sys_units(wvl)
         return None
 
@@ -154,7 +153,9 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
     same ordering and schema as `get_ray_fan_data`, with `unitY="waves"`, by
     evaluating each configured wavelength with one shared primary-wavelength
     centroid geometry. Direct single-wavelength calls fit the selected
-    wavelength instead.
+    wavelength instead. Every fan retains chief-ray-zero piston even when its
+    reference geometry is centroid-fitted; zero-mean piston removal is reserved
+    for two-dimensional centroid wavefront-grid consumers.
 
     Args:
         opm: RayOptics optical model.

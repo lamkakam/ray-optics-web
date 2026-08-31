@@ -111,6 +111,66 @@ def sasian_triplet_autoaperture():
 
 
 @pytest.fixture(scope="session")
+def quad_schiefspiegler_autoaperture():
+    """Build the app's Quad-Schiefspiegler example, including its dummy surface."""
+    from rayoptics.elem.profiles import EvenPolynomial
+    from rayoptics.elem.surface import Circular, DecenterData
+    from rayoptics.environment import OpticalModel
+    from rayoptics.raytr.opticalspec import FieldSpec, PupilSpec, WvlSpec
+    from rayoptics.seq.medium import decode_medium
+    from rayoptics_web_utils.aperture import set_vig_with_ronchi_envelopes
+
+    opm = OpticalModel()
+    osp = opm["optical_spec"]
+    sm = opm["seq_model"]
+    opm.system_spec.dimensions = "mm"
+    osp["pupil"] = PupilSpec(osp, key=["object", "epd"], value=318)
+    osp["fov"] = FieldSpec(
+        osp,
+        key=["object", "angle"],
+        value=0.125,
+        flds=[0, 0.5, 1],
+        is_relative=True,
+    )
+    osp["wvls"] = WvlSpec(
+        [
+            (435.835, 0.035),
+            (486.133, 0.18),
+            (546.073, 0.98),
+            (656.273, 0.075),
+            (706.519, 0.0028),
+        ],
+        ref_wl=2,
+    )
+    opm.radius_mode = True
+    sm.do_apertures = True
+    sm.gaps[0].thi = 1e10
+    sm.gaps[0].medium = decode_medium("air")
+
+    sm.add_surface([0, 0, "air"])
+    sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=159)]
+    sm.add_surface([-7620, -2172, "REFL"])
+    sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=159)]
+    sm.set_stop()
+    sm.ifcs[sm.cur_surface].profile = EvenPolynomial(r=-7620, cc=-0.55)
+    sm.ifcs[sm.cur_surface].decenter = DecenterData("bend", alpha=-3.15)
+
+    sm.add_surface([-7620, 1700, "REFL"])
+    sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=73.096057)]
+    sm.ifcs[sm.cur_surface].decenter = DecenterData("bend", alpha=9.6)
+
+    sm.add_surface([-53238, -1122.4, "REFL"])
+    sm.ifcs[sm.cur_surface].clear_apertures = [Circular(radius=38.475044)]
+    sm.ifcs[sm.cur_surface].decenter = DecenterData("bend", alpha=38.55)
+    sm.ifcs[-1].profile.r = 0
+    sm.ifcs[-1].decenter = DecenterData("decenter", alpha=-9.15)
+
+    opm.update_model()
+    set_vig_with_ronchi_envelopes(opm)
+    return opm
+
+
+@pytest.fixture(scope="session")
 def tilted_houghton():
     """Build the Tilted Houghton-Herschel 150mm f/8 example system."""
     from rayoptics.environment import OpticalModel
