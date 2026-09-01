@@ -22,7 +22,29 @@ from rayoptics_web_utils.raygrid.opd_reference import (
 
 
 def _reference_sphere(opm, chief_ray_pkg, image_point: np.ndarray):
-    """Build a RayOptics reference sphere around a complete local image point."""
+    """Build a RayOptics reference sphere around a complete local image point.
+
+    Args:
+        opm: A RayOptics optical model or compatible wavelength-specific model
+            view. Its sequential model supplies the final image gap and local
+            surface transform.
+        chief_ray_pkg: A two-item RayOptics tuple
+            ``(chief_ray, chief_exit_pupil_segment)``. The exit-pupil segment
+            is a RaySeg-compatible sequence whose point entry is a
+            floating-point Cartesian vector with shape ``(3,)``.
+        image_point: A numeric array-like Cartesian image point ``[x, y, z]``
+            with shape ``(3,)``, in local image-surface coordinates and system
+            length units.
+
+    Returns:
+        A four-item RayOptics reference-sphere tuple
+        ``(image_point, reference_direction, radius, local_transform)``.
+        ``image_point`` and the unit ``reference_direction`` are floating-point
+        arrays with shape ``(3,)``; ``radius`` is a ``float`` in system length
+        units; and ``local_transform`` is the two-item ``(rotation,
+        translation)`` transform from the final optical surface to the image
+        surface, with array shapes ``(3, 3)`` and ``(3,)`` respectively.
+    """
     _, chief_exit_pupil_segment = chief_ray_pkg
     image_point = np.asarray(image_point, dtype=float)
     point_after_image_gap = image_point.copy()
@@ -42,7 +64,23 @@ def _reference_sphere(opm, chief_ray_pkg, image_point: np.ndarray):
 
 
 def _linear_opd_coefficients(raw_grid, opd_values) -> np.ndarray:
-    """Fit piston and normalized-pupil phase tilts to valid OPD samples."""
+    """Fit piston and normalized-pupil phase tilts to valid OPD samples.
+
+    Args:
+        raw_grid: A rectangular nested sequence of pupil cells. Each cell is a
+            three-item sequence ``(pupil_x, pupil_y, ray_pkg)`` containing two
+            normalized-pupil ``float`` coordinates and either a RayOptics ray
+            package or ``None`` for an invalid or blocked ray. A ray package is
+            ``(ray_segments, optical_path_length, wavelength_nm)``.
+        opd_values: A two-dimensional numeric array-like with the same row and
+            column shape as ``raw_grid``. Each cell is an OPD sample or a
+            non-finite value for an unusable sample.
+
+    Returns:
+        A floating-point ``np.ndarray`` with shape ``(3,)`` containing the
+        least-squares coefficients ``[piston, x_tilt, y_tilt]`` in the same
+        units as ``opd_values``.
+    """
     coordinates = []
     values = []
     for row, opd_row in zip(raw_grid, opd_values, strict=True):
@@ -76,6 +114,20 @@ class CentroidRayGrid(RayGrid):
     """
 
     def __init__(self, opt_model, f, wl, foc, num_rays):
+        """Initialize and immediately build a centroid-referenced ray grid.
+
+        Args:
+            opt_model: The RayOptics ``OpticalModel`` to sample.
+            f: An ``int`` index into the optical model's field list.
+            wl: A ``float`` wavelength in nanometres.
+            foc: A ``float`` focus shift in system length units.
+            num_rays: An ``int`` number of samples along each axis of the
+                square pupil grid.
+
+        Returns:
+            ``None``. The initialized instance contains the grid data built by
+            ``update_data``.
+        """
         self.opt_model = opt_model
         self.fld = opt_model.optical_spec.field_of_view.fields[f]
         self.wvl = wl
@@ -93,7 +145,23 @@ class CentroidRayGrid(RayGrid):
         self.update_data()
 
     def update_data(self, **kwargs):
-        """Rebuild the best-fit reference and its piston-free OPD grid."""
+        """Rebuild the best-fit reference and its piston-free OPD grid.
+
+        Args:
+            **kwargs: Keyword options accepted for compatibility with the
+                RayOptics ``RayGrid.update_data`` interface. This
+                implementation always performs a complete rebuild and ignores
+                their values.
+
+        Returns:
+            This ``CentroidRayGrid`` instance after updating ``grid`` to a
+            floating-point array with shape ``(3, num_rays, num_rays)``. Its
+            planes contain pupil x coordinates, pupil y coordinates, and OPD
+            values respectively. ``grid_pkg`` is a two-item tuple
+            ``(raw_grid, updated_grid)`` of equally shaped nested square grids;
+            each updated cell contains RayOptics OPD preprocessing data or
+            ``None`` for an invalid ray.
+        """
         wavelength_model = model_view_for_wavelength_opd(self.opt_model, self.wvl)
         geometric_point = _resolve_image_point(
             self.opt_model,
