@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
@@ -32,6 +32,7 @@ import { useImagePoint } from "@/shared/components/providers/ImagePointProvider"
 import { useGlassCatalogs } from "@/shared/components/providers/GlassCatalogProvider";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { mapPhysicalSurfaceSemiDiameters } from "@/features/lens-editor/lib/autoSemiDiameters";
+import { registerLensPrescriptionTools } from "@/features/lens-editor/lib/lensPrescriptionWebMcp";
 
 /** Worker readiness and error-handling dependencies for the page-level editor. */
 export interface LensEditorProps {
@@ -79,6 +80,7 @@ export interface LensEditorProps {
  * - `handleSubmit` passes `theme === "dark"` into `proxy.plotLensLayout(...)`; the worker then derives whether to enable wavelength ray-fan overlays from any `surface.diffractiveElement.diffractionGrating`
  * - Submit flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
  * - Example-system loading now lives on `/example-systems`; LensEditor no longer renders the old example dropdown or overwrite confirmation.
+ * - While mounted, LensEditor registers five same-origin WebMCP prescription tools when `document.modelContext` is available and unregisters them with a shared `AbortController` on cleanup.
  */
 export function LensEditor({
   proxy,
@@ -95,6 +97,11 @@ export function LensEditor({
   const analysisPlotStore = useAnalysisPlotStore();
   const analysisDataStore = useAnalysisDataStore();
   const lensLayoutImageStore = useLensLayoutImageStore();
+
+  useEffect(() => {
+    const controller = registerLensPrescriptionTools(lensStore);
+    return () => controller?.abort();
+  }, [lensStore]);
 
   const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);

@@ -16,6 +16,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
+    "types": [
+      "webmcp-types"
+    ],
     "incremental": true,
     "plugins": [
       {
