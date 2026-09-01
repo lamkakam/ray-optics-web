@@ -2,6 +2,7 @@ import { createStore, type StoreApi } from "zustand";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { createLensPrescriptionTools } from "@/features/lens-editor/lib/lensPrescriptionWebMcp";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 
 const basePrescription = {
   object: { distance: 1e10, medium: "air", manufacturer: "" },
@@ -9,10 +10,21 @@ const basePrescription = {
   image: { curvatureRadius: 0 },
 };
 
-function setup() {
+const emptyLookupMaps: GlassLookupMaps = {
+  manufacturerMap: new Map(), mediumMap: new Map(), customMediumMap: new Map(),
+};
+
+const lookupMaps: GlassLookupMaps = {
+  manufacturerMap: new Map([["schott", "Schott"]]),
+  mediumMap: new Map([["schott:n-bk7", { medium: "N-BK7", manufacturer: "Schott" }]]),
+  customMediumMap: new Map([["user glass", { medium: "User Glass", manufacturer: "Custom" }]]),
+};
+
+function setup(options: { lookupMaps?: GlassLookupMaps } = {}) {
   const store = createStore<LensEditorState>(createLensEditorSlice);
   store.getState().setRows(surfacesToGridRows(basePrescription));
-  const tools = new Map(createLensPrescriptionTools(store).map((tool) => [tool.name, tool]));
+  const maps = Object.hasOwn(options, "lookupMaps") ? options.lookupMaps : emptyLookupMaps;
+  const tools = new Map(createLensPrescriptionTools(store, maps).map((tool) => [tool.name, tool]));
   const execute = async (name: string, input: unknown, signal = new AbortController().signal) => {
     const tool = tools.get(name);
     if (!tool) throw new Error(`Missing tool ${name}`);
@@ -82,6 +94,71 @@ describe("lens prescription WebMCP tools", () => {
     expect(spy).toHaveBeenCalledTimes(1);
     expect(store.getState().prescriptionRevision).toBe(before + 1);
     expect(result).toEqual(expect.objectContaining({ revision: before + 1, surfaceCount: 2, systemUpdateRequired: true }));
+  });
+
+  it("canonicalizes catalog and Custom media in a complete replacement", async () => {
+    const { store, execute } = setup({ lookupMaps });
+    const replacement = {
+      ...basePrescription,
+      surfaces: [
+        { ...basePrescription.surfaces[0], medium: "n-bk7", manufacturer: "SCHOTT" },
+        { ...basePrescription.surfaces[0], medium: "USER GLASS", manufacturer: "wrong" },
+      ],
+    };
+    await execute("set_lens_prescription", replacement);
+    expect(store.getState().rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ medium: "N-BK7", manufacturer: "Schott" }),
+      expect.objectContaining({ medium: "User Glass", manufacturer: "Custom" }),
+    ]));
+  });
+
+  it("writes both canonical material fields atomically for partial material updates", async () => {
+    const { store, execute } = setup({ lookupMaps });
+    await execute("set_lens_prescription", {
+      ...basePrescription,
+      surfaces: [{ ...basePrescription.surfaces[0], medium: "N-BK7", manufacturer: "Schott" }],
+    });
+    const spy = jest.spyOn(store.getState(), "updateRow");
+
+    await execute("update_lens_row", { row: 1, values: { manufacturer: "SCHOTT" } });
+    expect(spy).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({
+      medium: "N-BK7", manufacturer: "Schott",
+    }));
+
+    await execute("update_lens_row", { row: 1, values: { medium: "USER GLASS" } });
+    expect(spy).toHaveBeenLastCalledWith(expect.any(String), expect.objectContaining({
+      medium: "User Glass", manufacturer: "Custom",
+    }));
+  });
+
+  it.each([
+    [lookupMaps, /\/surfaces\/0\/medium.*unknown/i],
+    [undefined, /\/object\/medium.*catalog.*unavailable/i],
+  ])("rejects unresolved set media without changing rows or revision %#", async (maps, message) => {
+    const { store, execute } = setup({ lookupMaps: maps });
+    const before = snapshot(store);
+    const replacement = maps === undefined
+      ? basePrescription
+      : { ...basePrescription, surfaces: [{ ...basePrescription.surfaces[0], medium: "Mystery", manufacturer: "Acme" }] };
+    await expect(execute("set_lens_prescription", replacement)).rejects.toThrow(message);
+    expect(snapshot(store)).toEqual(before);
+  });
+
+  it("rejects an unknown merged update candidate at its zero-based path without mutation", async () => {
+    const { store, execute } = setup({ lookupMaps });
+    const before = snapshot(store);
+    await expect(execute("update_lens_row", {
+      row: 1, values: { medium: "Mystery", manufacturer: "Acme" },
+    })).rejects.toThrow(/\/surfaces\/0\/medium.*unknown/i);
+    expect(snapshot(store)).toEqual(before);
+  });
+
+  it("rejects updates while catalogs are unavailable without changing state", async () => {
+    const { store, execute } = setup({ lookupMaps: undefined });
+    const before = snapshot(store);
+    await expect(execute("update_lens_row", { row: 1, values: { thickness: 6 } }))
+      .rejects.toThrow(/\/object\/medium.*catalog.*unavailable/i);
+    expect(snapshot(store)).toEqual(before);
   });
 
   it("inserts after object and resolves shifted visible surface selectors", async () => {

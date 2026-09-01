@@ -80,7 +80,7 @@ export interface LensEditorProps {
  * - `handleSubmit` passes `theme === "dark"` into `proxy.plotLensLayout(...)`; the worker then derives whether to enable wavelength ray-fan overlays from any `surface.diffractiveElement.diffractionGrating`
  * - Submit flows always store typed analysis chart data via the matching analysis-plot store setter; the legacy analysis PNG result path is no longer used
  * - Example-system loading now lives on `/example-systems`; LensEditor no longer renders the old example dropdown or overwrite confirmation.
- * - `useLensPrescriptionWebMCP(lensStore)` supplies the five prescription descriptors to the shared `useWebMCP` lifecycle abstraction; unsupported browsers are skipped and each registration is aborted on cleanup.
+ * - `useLensPrescriptionWebMCP(lensStore, lookupMaps)` supplies the five prescription descriptors and the current catalog snapshot to the shared `useWebMCP` lifecycle abstraction. Descriptor executions observe newly loaded or updated Custom glass maps through its latest-descriptor ref; unsupported browsers are skipped and each registration is aborted on cleanup.
  */
 export function LensEditor({
   proxy,
@@ -98,7 +98,7 @@ export function LensEditor({
   const analysisDataStore = useAnalysisDataStore();
   const lensLayoutImageStore = useLensLayoutImageStore();
 
-  useLensPrescriptionWebMCP(lensStore);
+  useLensPrescriptionWebMCP(lensStore, lookupMaps);
 
   const selectedFieldIndex = useStore(analysisPlotStore, (s) => s.selectedFieldIndex);
   const selectedWavelengthIndex = useStore(analysisPlotStore, (s) => s.selectedWavelengthIndex);

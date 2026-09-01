@@ -5,10 +5,15 @@
  */
 import type { ErrorObject, ValidateFunction } from "ajv";
 import type { StoreApi } from "zustand";
+import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
 import { gridRowsToSurfaces, surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { Surfaces } from "@/shared/lib/types/opticalModel";
+import {
+  resolvePrescriptionMedia,
+  type PrescriptionMediaResolution,
+} from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import {
   asphericalSchema,
   clearApertureSchema,
@@ -168,8 +173,38 @@ function candidateRows(rows: GridRow[], rowId: string, patch: Partial<GridRow>):
   return rows.map((row) => row.id === rowId ? { ...row, ...patch, id: row.id, kind: row.kind } as GridRow : row);
 }
 
-/** Creates the five validated tool descriptors bound to the supplied Lens Editor store. */
-export function createLensPrescriptionTools(store: StoreApi<LensEditorState>): readonly WebMCP.ModelContextTool[] {
+function assertResolvedMedia<T extends Surfaces>(
+  result: PrescriptionMediaResolution<T>,
+): T {
+  if (result.kind === "resolved") return result.model;
+  if (result.kind === "catalog-unavailable") {
+    throw new Error(`Invalid input at ${result.path}: glass catalogs are unavailable`);
+  }
+  const issue = result.issues[0];
+  throw new Error(
+    `Invalid input at ${issue.path}: unknown medium ${issue.manufacturer.trim() === "" ? "Custom" : issue.manufacturer}: ${issue.medium}`,
+  );
+}
+
+function resolvedRowMedium(
+  prescription: Surfaces,
+  selector: RowSelector,
+): { readonly medium: string; readonly manufacturer: string } | undefined {
+  if (selector === "image") return undefined;
+  const medium = selector === "object" ? prescription.object : prescription.surfaces[selector - 1];
+  return medium === undefined ? undefined : { medium: medium.medium, manufacturer: medium.manufacturer };
+}
+
+/**
+ * Creates the five validated tool descriptors bound to the supplied Lens Editor
+ * store and current glass lookup snapshot. Set and update resolve the complete
+ * candidate before mutation; material edits commit both canonical fields in one
+ * `updateRow` call.
+ */
+export function createLensPrescriptionTools(
+  store: StoreApi<LensEditorState>,
+  lookupMaps: GlassLookupMaps | undefined,
+): readonly WebMCP.ModelContextTool[] {
   return [
     {
       name: "get_lens_prescription",
@@ -195,7 +230,8 @@ export function createLensPrescriptionTools(store: StoreApi<LensEditorState>): r
       execute: (input, { signal }) => {
         assertInput(validators.set, input);
         assertNotCancelled(signal);
-        store.getState().setRows(surfacesToGridRows(input));
+        const prescription = assertResolvedMedia(resolvePrescriptionMedia(input, lookupMaps));
+        store.getState().setRows(surfacesToGridRows(prescription));
         return mutationResult(store.getState(), { replaced: true });
       },
     },
@@ -234,11 +270,15 @@ export function createLensPrescriptionTools(store: StoreApi<LensEditorState>): r
           if (state.autoAperture) semanticError("/row", "semiDiameter is read-only while auto aperture is enabled");
           if (row.clear_aperture?.shape === "rectangular") semanticError("/row", "semiDiameter is read-only for a rectangular clear aperture");
         }
-        const patch = buildPatch(row, values, input.clear as string[] | undefined);
+        let patch = buildPatch(row, values, input.clear as string[] | undefined);
         const prescription = gridRowsToSurfaces(candidateRows(state.rows, row.id, patch));
         if (!validators.set(prescription)) {
           const error = validators.set.errors?.[0];
           throw new Error(`Invalid candidate prescription at ${errorPath(error)}: ${error?.message ?? "schema check failed"}`);
+        }
+        const resolvedPrescription = assertResolvedMedia(resolvePrescriptionMedia(prescription, lookupMaps));
+        if (values?.medium !== undefined || values?.manufacturer !== undefined) {
+          patch = { ...patch, ...resolvedRowMedium(resolvedPrescription, selector) };
         }
         state.updateRow(row.id, patch);
         const next = store.getState();

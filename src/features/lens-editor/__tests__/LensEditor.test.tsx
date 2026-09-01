@@ -299,7 +299,7 @@ function renderLensEditor(overrides?: {
   const onError = overrides?.onError ?? jest.fn();
   const glassCatalogContextValue: GlassCatalogContextValue = overrides?.glassCatalogContextValue ?? {
     catalogs: undefined,
-    lookupMaps: undefined,
+    lookupMaps: { manufacturerMap: new Map(), mediumMap: new Map(), customMediumMap: new Map() },
     error: undefined,
     isLoaded: false,
     isLoading: false,
@@ -710,6 +710,63 @@ describe("LensEditor", () => {
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByText("Load Config")).toBeInTheDocument();
+  });
+
+  it("canonicalizes catalog and Custom media before JSON confirmation and import", async () => {
+    const lookupMaps = {
+      manufacturerMap: new Map([["schott", "Schott" as const]]),
+      mediumMap: new Map([["schott:n-bk7", { medium: "N-BK7", manufacturer: "Schott" }]]),
+      customMediumMap: new Map([["user glass", { medium: "User Glass", manufacturer: "Custom" }]]),
+    };
+    const { lensStore } = renderLensEditor({
+      glassCatalogContextValue: {
+        catalogs: {}, lookupMaps, error: undefined, isLoaded: true, isLoading: false, preload: jest.fn(),
+      },
+    });
+    const imported = {
+      ...testImportModel,
+      surfaces: [
+        { label: "Default", curvatureRadius: 10, thickness: 2, medium: "n-bk7", manufacturer: "SCHOTT", semiDiameter: 3 },
+        { label: "Default", curvatureRadius: -10, thickness: 2, medium: "USER GLASS", manufacturer: "wrong", semiDiameter: 3 },
+      ],
+    };
+
+    const fileInput = document.querySelector('input[accept=".json"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, new File([JSON.stringify(imported)], "lens.json", { type: "application/json" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Load" }));
+
+    expect(lensStore.getState().rows).toEqual(expect.arrayContaining([
+      expect.objectContaining({ medium: "N-BK7", manufacturer: "Schott" }),
+      expect.objectContaining({ medium: "User Glass", manufacturer: "Custom" }),
+    ]));
+  });
+
+  it("rejects all unique unknown JSON media before confirmation or store mutation", async () => {
+    const { lensStore } = renderLensEditor();
+    const before = lensStore.getState().rows;
+    const unknownSurface = { label: "Default" as const, curvatureRadius: 10, thickness: 2, medium: "Mystery", manufacturer: "Acme", semiDiameter: 3 };
+    const imported = { ...testImportModel, surfaces: [unknownSurface, { ...unknownSurface }] };
+
+    const fileInput = document.querySelector('input[accept=".json"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, new File([JSON.stringify(imported)], "lens.json", { type: "application/json" }));
+
+    expect(await screen.findByText(/Unknown glass in prescription: Acme: Mystery\./)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Load" })).not.toBeInTheDocument();
+    expect(lensStore.getState().rows).toEqual(before);
+  });
+
+  it("rejects JSON import while catalogs are unavailable", async () => {
+    const { lensStore } = renderLensEditor({
+      glassCatalogContextValue: {
+        catalogs: undefined, lookupMaps: undefined, error: undefined, isLoaded: false, isLoading: true, preload: jest.fn(),
+      },
+    });
+    const before = lensStore.getState().rows;
+    const fileInput = document.querySelector('input[accept=".json"]') as HTMLInputElement;
+    await userEvent.upload(fileInput, new File([JSON.stringify(testImportModel)], "lens.json", { type: "application/json" }));
+
+    expect(await screen.findByText(/glass catalogs are unavailable/i)).toBeInTheDocument();
+    expect(lensStore.getState().rows).toEqual(before);
   });
 
   it("does not import if user cancels the import confirmation", async () => {
