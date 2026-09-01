@@ -305,6 +305,37 @@ class TestGetRayFanData:
 class TestGetOpdFanData:
     """Tests for get_opd_fan_data()."""
 
+    @pytest.mark.parametrize(
+        "model_fixture",
+        ["sasian_triplet_autoaperture", "quad_schiefspiegler_autoaperture"],
+        ids=["Sasian-Triplet", "Quad-Schiefspiegler"],
+    )
+    def test_centroid_fans_keep_chief_ray_zero_piston_at_every_wavelength(
+        self,
+        request,
+        model_fixture,
+    ):
+        """Centroid geometry must not change the chief-ray-zero fan gauge."""
+        from rayoptics_web_utils.analysis import get_opd_fan_data
+
+        opm = request.getfixturevalue(model_fixture)
+        result = get_opd_fan_data(opm, fi=0, image_point="centroid")
+
+        centre_opds = []
+        for entry in result:
+            for axis in ("Sagittal", "Tangential"):
+                centre_index = int(np.argmin(np.abs(entry[axis]["x"])))
+                assert entry[axis]["x"][centre_index] == pytest.approx(
+                    0.0,
+                    abs=1.0e-12,
+                )
+                centre_opds.append(entry[axis]["y"][centre_index])
+
+        assert centre_opds == pytest.approx(
+            [0.0] * (2 * len(result)),
+            abs=1.0e-10,
+        )
+
     @pytest.mark.parametrize("wvl_idx", [0, 1, 2], ids=["F", "d", "C"])
     def test_finite_opd_uses_traced_wavelength_boundary_indices_without_mutation(
         self,
@@ -358,8 +389,18 @@ class TestGetOpdFanData:
     def test_single_wavelength_forwards_requested_index_to_both_fan_axes(self, monkeypatch):
         import rayoptics_web_utils.analysis.opd_fan as opd_fan_module
 
-        opm = object()
+        opm = type(
+            "FakeModel",
+            (),
+            {"optical_spec": type("Osp", (), {"spectral_region": type("Wvls", (), {"wavelengths": [486.0, 587.0, 656.0]})()})()},
+        )()
         calls = []
+
+        fake_grid = type(
+            "Grid",
+            (),
+            {"image_point": np.array([1.0, 2.0, 3.0])},
+        )()
 
         def fake_trace_fan_series(
             opm_arg,
@@ -368,13 +409,15 @@ class TestGetOpdFanData:
             fan_filter,
             image_point="chief_ray",
             wvl_idx=None,
+            finite_reference_point=None,
         ):
             del fan_filter
-            calls.append((opm_arg, fi, xy, image_point, wvl_idx))
+            calls.append((opm_arg, fi, xy, image_point, wvl_idx, finite_reference_point))
             return [[-1.0, 1.0]], [[float(xy), float(xy + 1)]]
 
         monkeypatch.setattr(opd_fan_module, "is_afocal_image_space", lambda _opm: False)
         monkeypatch.setattr(opd_fan_module, "_trace_fan_series", fake_trace_fan_series)
+        monkeypatch.setattr(opd_fan_module, "make_ray_grid", lambda *args, **kwargs: fake_grid)
 
         result = opd_fan_module.get_opd_fan_data_for_wavelength(
             opm,
@@ -384,8 +427,8 @@ class TestGetOpdFanData:
         )
 
         assert calls == [
-            (opm, 3, 0, "centroid", 2),
-            (opm, 3, 1, "centroid", 2),
+            (opm, 3, 0, "centroid", 2, pytest.approx([1.0, 2.0, 3.0])),
+            (opm, 3, 1, "centroid", 2, pytest.approx([1.0, 2.0, 3.0])),
         ]
         assert result == {
             "fieldIdx": 3,
@@ -403,13 +446,17 @@ class TestGetOpdFanData:
 
         opm = SimpleNamespace(
             optical_spec=SimpleNamespace(
-                spectral_region=SimpleNamespace(wavelengths=[486.133, 587.562, 656.273]),
+                spectral_region=SimpleNamespace(
+                    wavelengths=[486.133, 587.562, 656.273], reference_wvl=1
+                ),
             ),
         )
         calls = []
 
-        def fake_single_wavelength(opm_arg, fi, wvl_idx, image_point="chief_ray"):
-            calls.append((opm_arg, fi, wvl_idx, image_point))
+        def fake_single_wavelength(
+            opm_arg, fi, wvl_idx, image_point, reference_wvl_idx
+        ):
+            calls.append((opm_arg, fi, wvl_idx, image_point, reference_wvl_idx))
             return {
                 "fieldIdx": fi,
                 "wvlIdx": wvl_idx,
@@ -421,16 +468,16 @@ class TestGetOpdFanData:
 
         monkeypatch.setattr(
             opd_fan_module,
-            "get_opd_fan_data_for_wavelength",
+            "_get_opd_fan_data_for_wavelength",
             fake_single_wavelength,
         )
 
         result = opd_fan_module.get_opd_fan_data(opm, fi=2, image_point="centroid")
 
         assert calls == [
-            (opm, 2, 0, "centroid"),
-            (opm, 2, 1, "centroid"),
-            (opm, 2, 2, "centroid"),
+            (opm, 2, 0, "centroid", 1),
+            (opm, 2, 1, "centroid", 1),
+            (opm, 2, 2, "centroid", 1),
         ]
         assert [entry["wvlIdx"] for entry in result] == [0, 1, 2]
         assert all(
@@ -555,14 +602,41 @@ class TestGetSpotData:
 
         json.dumps(result)
 
-    def test_centroid_image_point_recenters_each_wavelength_cloud(self, cooke_triplet):
+    def test_centroid_image_point_recenters_weighted_polychromatic_cloud(self, cooke_triplet):
         from rayoptics_web_utils.analysis import get_spot_data
 
         result = get_spot_data(cooke_triplet, fi=1, image_point="centroid")
+        weights = cooke_triplet.optical_spec.spectral_region.spectral_wts
+        weighted_x = []
+        weighted_y = []
+        sample_weights = []
+        wavelength_means = []
 
-        for entry in result:
-            assert np.mean(entry["x"]) == pytest.approx(0.0, abs=1e-12)
-            assert np.mean(entry["y"]) == pytest.approx(0.0, abs=1e-12)
+        for weight, entry in zip(weights, result, strict=True):
+            weighted_x.extend(entry["x"])
+            weighted_y.extend(entry["y"])
+            sample_weights.extend([weight] * len(entry["x"]))
+            wavelength_means.append(np.mean(entry["y"]))
+
+        assert np.average(weighted_x, weights=sample_weights) == pytest.approx(0.0, abs=1e-12)
+        assert np.average(weighted_y, weights=sample_weights) == pytest.approx(0.0, abs=1e-12)
+        assert max(wavelength_means) - min(wavelength_means) > 1.0e-6
+
+    def test_centroid_spot_rejects_all_zero_spectral_weights(
+        self, cooke_triplet, monkeypatch
+    ):
+        """A polychromatic centroid requires positive spectral throughput."""
+        from rayoptics_web_utils.analysis import get_spot_data
+
+        wavelengths = cooke_triplet.optical_spec.spectral_region.wavelengths
+        monkeypatch.setattr(
+            cooke_triplet.optical_spec.spectral_region,
+            "spectral_wts",
+            [0.0] * len(wavelengths),
+        )
+
+        with pytest.raises(ValueError, match="positively weighted"):
+            get_spot_data(cooke_triplet, fi=1, image_point="centroid")
 
 
 class TestGetWavefrontData:

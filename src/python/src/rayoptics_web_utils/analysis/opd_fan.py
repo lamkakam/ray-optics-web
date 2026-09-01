@@ -7,6 +7,7 @@ from rayoptics.raytr.waveabr import wave_abr_full_calc
 from rayoptics_web_utils._finite_opd import first_order_data_for_wavelength
 from rayoptics_web_utils.analysis._fan import _trace_fan_series
 from rayoptics_web_utils.analysis._afocal import afocal_opd, exit_pupil_plane, is_afocal_image_space, reference_direction
+from rayoptics_web_utils.raygrid import make_ray_grid
 from rayoptics_web_utils.utils import _json_float_list
 
 
@@ -29,9 +30,14 @@ def get_opd_fan_data_for_wavelength(
     wavelength first-order data is not changed.
     Infinite image space uses the shared exit-pupil plane-wave OPD, excludes the
     artificial final gap, makes chief-ray OPD zero, and converts to the traced
-    wavelength's waves. `image_point="chief_ray"` preserves the historical
-    reference, while `"centroid"` uses the shared centroid image point. The
-    selected wavelength's afocal reference is shared by both fan axes.
+    wavelength's waves. Both image-point modes preserve the RayOptics fan
+    convention that chief-ray OPD is zero. `image_point="chief_ray"` preserves
+    the historical geometry, while `"centroid"` changes only the fitted
+    reference geometry; unlike zero-mean wavefront-grid consumers, fans do not
+    remove the fitted grid's piston. The selected wavelength's best-fit afocal
+    reference is shared by both fan axes. The all-wavelength API instead
+    establishes centroid reference geometry at the configured primary
+    wavelength and shares it across wavelengths.
 
     Args:
         opm: RayOptics optical model.
@@ -43,18 +49,57 @@ def get_opd_fan_data_for_wavelength(
         OPD fan data for one field and wavelength.
     """
 
+    return _get_opd_fan_data_for_wavelength(
+        opm, fi, wvl_idx, image_point, reference_wvl_idx=wvl_idx
+    )
+
+
+def _get_opd_fan_data_for_wavelength(
+    opm,
+    fi: int,
+    wvl_idx: int,
+    image_point: str,
+    reference_wvl_idx: int,
+) -> dict:
+    """Trace one OPD fan using explicit monochromatic/reference geometry policy."""
     afocal = is_afocal_image_space(opm)
     references = {}
     finite_first_order_data = {}
+    finite_reference_point = None
+    if image_point == "centroid":
+        reference_wavelength = opm.optical_spec.spectral_region.wavelengths[
+            reference_wvl_idx
+        ]
+        fitted_grid = make_ray_grid(
+            opm,
+            fi=fi,
+            wavelength_nm=reference_wavelength,
+            num_rays=21,
+            image_point="centroid",
+        )
+        if afocal:
+            references["shared"] = (
+                fitted_grid.reference_direction,
+                fitted_grid.chief_ray_pkg,
+                fitted_grid.exit_pupil_point,
+            )
+        else:
+            finite_reference_point = fitted_grid.image_point
 
     def _opd_abr(p, xy, ray_pkg, fld, wvl, foc):
         if ray_pkg[mc.ray] is not None:
             if afocal:
-                if wvl not in references:
+                if "shared" in references:
+                    reference, _, plane_point = references["shared"]
+                    _, chief_pkg = reference_direction(
+                        opm, fi, wvl, image_point="chief_ray"
+                    )
+                elif wvl not in references:
                     reference, chief_pkg = reference_direction(opm, fi, wvl, image_point=image_point)
                     plane_point, _ = exit_pupil_plane(opm, fld, wvl, chief_pkg=chief_pkg)
                     references[wvl] = (reference, chief_pkg, plane_point)
-                reference, chief_pkg, plane_point = references[wvl]
+                else:
+                    reference, chief_pkg, plane_point = references[wvl]
                 return afocal_opd(opm, ray_pkg, chief_pkg, plane_point, reference, wvl) / opm.nm_to_sys_units(wvl)
             if wvl not in finite_first_order_data:
                 finite_first_order_data[wvl] = first_order_data_for_wavelength(
@@ -73,6 +118,7 @@ def get_opd_fan_data_for_wavelength(
         _opd_abr,
         image_point=image_point,
         wvl_idx=wvl_idx,
+        finite_reference_point=finite_reference_point,
     )
     tangential_x, tangential_y = _trace_fan_series(
         opm,
@@ -81,6 +127,7 @@ def get_opd_fan_data_for_wavelength(
         _opd_abr,
         image_point=image_point,
         wvl_idx=wvl_idx,
+        finite_reference_point=finite_reference_point,
     )
 
     return {
@@ -104,8 +151,11 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
 
     The public all-wavelength plotting contract is unchanged. Results retain the
     same ordering and schema as `get_ray_fan_data`, with `unitY="waves"`, by
-    delegating once per configured wavelength to
-    `get_opd_fan_data_for_wavelength`.
+    evaluating each configured wavelength with one shared primary-wavelength
+    centroid geometry. Direct single-wavelength calls fit the selected
+    wavelength instead. Every fan retains chief-ray-zero piston even when its
+    reference geometry is centroid-fitted; zero-mean piston removal is reserved
+    for two-dimensional centroid wavefront-grid consumers.
 
     Args:
         opm: RayOptics optical model.
@@ -115,7 +165,24 @@ def get_opd_fan_data(opm: OpticalModel, fi: int, image_point: str = "chief_ray")
     Returns:
         OPD fan data for all configured wavelengths at field index ``fi``.
     """
+    if image_point == "chief_ray":
+        return [
+            get_opd_fan_data_for_wavelength(
+                opm, fi, wvl_idx, image_point=image_point
+            )
+            for wvl_idx in range(
+                len(opm.optical_spec.spectral_region.wavelengths)
+            )
+        ]
+
+    primary_wvl_idx = int(opm.optical_spec.spectral_region.reference_wvl)
     return [
-        get_opd_fan_data_for_wavelength(opm, fi, wvl_idx, image_point=image_point)
+        _get_opd_fan_data_for_wavelength(
+            opm,
+            fi,
+            wvl_idx,
+            image_point,
+            reference_wvl_idx=primary_wvl_idx,
+        )
         for wvl_idx in range(len(opm.optical_spec.spectral_region.wavelengths))
     ]

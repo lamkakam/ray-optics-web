@@ -334,6 +334,32 @@ class TestGetZernikeCoefficients:
             )
         )
 
+    def test_finite_centroid_returns_all_terms_and_finite_metrics(
+        self, cooke_triplet
+    ):
+        """Finite centroid grids should expose exit-pupil data to Zernike fitting."""
+        from rayoptics_web_utils.zernike import get_zernike_coefficients
+
+        result = get_zernike_coefficients(
+            cooke_triplet,
+            field_index=1,
+            wvl_index=1,
+            zernike_terms=NOLL_TERMS_22,
+            image_point="centroid",
+            num_rays=11,
+        )
+
+        assert result["num_terms"] == len(NOLL_TERMS_22)
+        assert len(result["coefficients"]) == len(NOLL_TERMS_22)
+        assert len(result["rms_normalized_coefficients"]) == len(NOLL_TERMS_22)
+        assert np.all(np.isfinite(result["coefficients"]))
+        assert np.all(np.isfinite(result["rms_normalized_coefficients"]))
+        assert np.all(
+            np.isfinite(
+                [result["rms_wfe"], result["pv_wfe"], result["strehl_ratio"]]
+            )
+        )
+
     def test_returns_dict_with_expected_keys(self, cooke_triplet):
         from rayoptics_web_utils.zernike import get_zernike_coefficients
         import inspect
@@ -529,8 +555,8 @@ class TestGetZernikeCoefficients:
                 f"Z{j}: rms*N = {reconstructed}, coeff = {coeffs[j-1]}"
             )
 
-    def test_raygrid_called_with_check_apertures_and_apply_vignetting(self, cooke_triplet):
-        """RayGrid must be created with check_apertures=True and apply_vignetting=True."""
+    def test_raygrid_checks_apertures_without_reapplying_vignetting(self, cooke_triplet):
+        """RayGrid checks apertures but does not transform its vignetted box twice."""
         from unittest.mock import patch
         from rayoptics.raytr.analyses import RayGrid as RealRayGrid
         from rayoptics_web_utils.zernike import get_zernike_coefficients
@@ -550,8 +576,8 @@ class TestGetZernikeCoefficients:
         assert captured_kwargs.get('check_apertures') is True, (
             f"Expected check_apertures=True, got {captured_kwargs.get('check_apertures')}"
         )
-        assert captured_kwargs.get('apply_vignetting') is True, (
-            f"Expected apply_vignetting=True, got {captured_kwargs.get('apply_vignetting')}"
+        assert captured_kwargs.get('apply_vignetting') is False, (
+            f"Expected apply_vignetting=False, got {captured_kwargs.get('apply_vignetting')}"
         )
 
 

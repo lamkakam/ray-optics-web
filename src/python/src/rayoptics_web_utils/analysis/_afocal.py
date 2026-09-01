@@ -9,7 +9,7 @@ This module does not define a separate public result model. It returns NumPy val
 
 - A normalized pupil coordinate is `p = (p_x, p_y)`. Axis index `0` is sagittal and axis index `1` is tangential throughout this module. Pupil coordinates are dimensionless; `-1` and `+1` select opposite normalized clear-pupil boundaries after RayOptics vignetting is applied.
 
-- **d_ref** is the unit reference direction. It is either the chief-ray output direction or the normalized, unweighted arithmetic mean of all valid sampled output directions. **d_c** denotes the chief-ray direction even when **d_ref** is the angular-centroid direction.
+- **d_ref** is the unit reference direction. Geometric analyses use either the chief-ray output direction or the normalized arithmetic mean of valid sampled output directions. A centroid wavefront starts there and fits two transverse angular parameters until both pupil phase slopes vanish. **d_c** denotes the chief-ray direction even when **d_ref** differs.
 
 - **e_s** and **e_t** are the unit sagittal and tangential transverse axes. They are mutually orthogonal and normal to **d_ref**. Vector components along either axis are projections formed with a dot product.
 
@@ -37,6 +37,7 @@ import rayoptics.optical.model_constants as mc
 from rayoptics.raytr import trace
 from rayoptics.raytr.analyses import trace_ray_grid
 from rayoptics.raytr.waveabr import eic_distance
+from scipy.optimize import least_squares
 
 from rayoptics_web_utils.raygrid.opd_reference import _validate_image_point
 
@@ -120,6 +121,10 @@ def _chief_ray_pkg(opm, fld, wavelength_nm):
 def _raw_grid(opm, fld, wavelength_nm, num_rays):
     """Returns a ray grid, preserving blocked rays as `None` packages instead of dropping them.
     The returned grid is a list of lists of `(p_x, p_y, ray_pkg)` tuples.
+    `fld.vignetting_bbox` has already transformed the normalized pupil bounds, so
+    `trace_ray_grid` receives `apply_vignetting=False` to avoid applying the field's
+    vignetting factors a second time. Aperture checking remains enabled so rays that
+    are actually blocked are still represented by `None` packages.
 
     Args:
         opm: RayOptics optical model.
@@ -139,7 +144,7 @@ def _raw_grid(opm, fld, wavelength_nm, num_rays):
         opm.optical_spec.defocus.get_focus(),
         append_if_none=True,
         check_apertures=True,
-        apply_vignetting=True,
+        apply_vignetting=False,
     )
 
 
@@ -454,11 +459,12 @@ def afocal_opd(opm, ray_pkg, chief_pkg, plane_point, reference_direction, wavele
 def make_afocal_ray_grid(opm, fi, wavelength_nm, num_rays=64, image_point="chief_ray"):
     """Return a RayGrid-compatible pupil/plane-wave-OPD grid in central-wavelength waves.
 
-    - Creates one vignetting-aware raw grid and reuses it for the angular-centroid calculation when that reference is requested. It estimates the exit-pupil point from the chief ray, converts the model's central spectral wavelength to system length units, and allocates a floating-point array of shape `(3, num_rays, num_rays)`:
+    - Creates one already-vignetted raw grid and reuses it for the angular-centroid calculation when that reference is requested. The bounding box applies vignetting once and tracing retains aperture checks with a second vignetting transform disabled. It estimates the exit-pupil point from the chief ray, converts the model's central spectral wavelength to system length units, and allocates a floating-point array of shape `(3, num_rays, num_rays)`:
         - channel `0` stores the returned normalized `pupil_x` coordinate at every raw-grid position;
         - channel `1` stores `pupil_y`;
         - channel `2` stores plane-wave OPD divided by the central wavelength in system units.
 
+    - For centroid mode, two transverse angular parameters tilt the plane normal until a least-squares OPD fit has zero sagittal and tangential phase slopes; the valid-cell mean is then removed as piston. Insufficient non-collinear samples or solver failure raises an explicit error.
     - The entire OPD channel is initialized to `NaN`. Valid ray packages overwrite their cells; blocked or failed `None` packages remain `NaN`, preserving the pupil mask and regular array shape. Note that `wavelength_nm` selects the wavelength used to trace and calculate OPD, but the stored wave count is initially normalized by `optical_spec.spectral_region.central_wvl`. Downstream polychromatic consumers rescale it to waves at the requested wavelength.
 
     - The returned `SimpleNamespace` contains `grid`, `raw_grid`, `reference_direction`, `chief_ray_pkg`, and `exit_pupil_point` so existing RayGrid-based consumers can use the afocal result without an API or shape change.
@@ -480,6 +486,114 @@ def make_afocal_ray_grid(opm, fi, wavelength_nm, num_rays=64, image_point="chief
     )
     plane_point, _ = exit_pupil_plane(opm, fld, wavelength_nm, chief_pkg=chief_pkg)
     central_wavelength_sys = opm.nm_to_sys_units(opm.optical_spec.spectral_region.central_wvl)
+
+    def opd_values(candidate_reference: np.ndarray) -> np.ndarray:
+        """Return system-unit OPD values for a candidate plane-wave direction.
+
+        Valid rays are evaluated against the candidate reference while blocked or
+        failed cells remain `NaN`, preserving the raw grid's regular shape and mask.
+
+        Args:
+            candidate_reference: Unit plane-wave propagation direction in the
+                optical model's coordinates. Element `0` is its sagittal x
+                component, element `1` is its tangential y component, and element
+                `2` is its longitudinal z component; the vector is also the normal
+                of the candidate reference plane.
+
+        Returns:
+            A two-dimensional `np.ndarray` with shape
+            `(num_rays, num_rays)`, aligned cell-for-cell with `raw_grid`;
+            and its cells are scalar values.
+            In `values[i, j]`, axis `0` (`i`) selects the sampled sagittal pupil-x
+            coordinate and axis `1` (`j`) selects the sampled tangential pupil-y
+            coordinate. The scalar at `values[i, j]` is the plane-wave OPD of the
+            ray in `raw_grid[i][j]` relative to the chief ray, in system length
+            units, for the plane normal `candidate_reference`. It is `NaN` when
+            that corresponding ray was blocked or failed to trace.
+        """
+        values = np.full((num_rays, num_rays), np.nan, dtype=float)
+        for row_idx, row in enumerate(raw_grid):
+            for col_idx, (_, _, ray_pkg) in enumerate(row):
+                if ray_pkg is not None:
+                    values[row_idx, col_idx] = afocal_opd(
+                        opm,
+                        ray_pkg,
+                        chief_pkg,
+                        plane_point,
+                        candidate_reference,
+                        wavelength_nm,
+                    )
+        return values
+
+    def linear_coefficients(values: np.ndarray) -> np.ndarray:
+        """Fit and return the pupil-plane coefficients `[piston, x_slope, y_slope]`.
+
+        The least-squares plane is fitted only to finite OPD values from valid rays:
+        `OPD = piston + x_slope * pupil_x + y_slope * pupil_y`. Three
+        non-collinear samples are required so all coefficients are identifiable.
+
+        Args:
+            values: A two-dimensional `np.ndarray` with shape
+                `(num_rays, num_rays)`, normally returned by `opd_values`. In
+                `values[i, j]`, axis `0` (`i`) selects the sampled sagittal
+                pupil-x coordinate and axis `1` (`j`) selects the sampled
+                tangential pupil-y coordinate. Each finite scalar cell is the
+                plane-wave OPD, in system length units, of the corresponding ray
+                in `raw_grid[i][j]`; `NaN` identifies a blocked or failed ray and
+                is excluded from the fit.
+
+        Returns:
+            The fitted `[piston, x_slope, y_slope]` coefficient array.
+        """
+        coordinates = []
+        samples = []
+        for row, value_row in zip(raw_grid, values, strict=True):
+            for (pupil_x, pupil_y, ray_pkg), value in zip(
+                row, value_row, strict=True
+            ):
+                if ray_pkg is not None and np.isfinite(value):
+                    coordinates.append([1.0, float(pupil_x), float(pupil_y)])
+                    samples.append(float(value))
+        if len(samples) < 3 or np.linalg.matrix_rank(coordinates) < 3:
+            raise ValueError(
+                "Centroid plane-wave reference requires three non-collinear valid rays."
+            )
+        return np.linalg.lstsq(
+            np.asarray(coordinates), np.asarray(samples), rcond=None
+        )[0]
+
+    if image_point == "centroid":
+        sagittal, tangential = transverse_axes(reference)
+
+        def candidate(angles):
+            return _unit(reference + angles[0] * sagittal + angles[1] * tangential)
+
+        solution = least_squares(
+            lambda angles: linear_coefficients(opd_values(candidate(angles)))[1:],
+            np.zeros(2),
+            xtol=1.0e-12,
+            ftol=1.0e-12,
+            gtol=1.0e-12,
+            max_nfev=100,
+        )
+        if not solution.success:
+            raise ValueError(
+                "Centroid reference-plane solve did not converge: "
+                f"{solution.message}"
+            )
+        reference = candidate(solution.x)
+
+    final_opd = opd_values(reference)
+    if image_point == "centroid":
+        coefficients = linear_coefficients(final_opd)
+        tolerance = 1.0e-10 * max(1.0, np.nanmax(np.abs(final_opd)))
+        if np.any(np.abs(coefficients[1:]) > tolerance):
+            raise ValueError(
+                "Centroid reference-plane solve retained non-zero phase tilt."
+            )
+        valid = np.isfinite(final_opd)
+        final_opd[valid] -= float(np.mean(final_opd[valid]))
+
     grid = np.empty((3, num_rays, num_rays), dtype=float)
     grid[2].fill(np.nan)
     for row_idx, row in enumerate(raw_grid):
@@ -487,9 +601,9 @@ def make_afocal_ray_grid(opm, fi, wavelength_nm, num_rays=64, image_point="chief
             grid[0, row_idx, col_idx] = pupil_x
             grid[1, row_idx, col_idx] = pupil_y
             if ray_pkg is not None:
-                grid[2, row_idx, col_idx] = afocal_opd(
-                    opm, ray_pkg, chief_pkg, plane_point, reference, wavelength_nm,
-                ) / central_wavelength_sys
+                grid[2, row_idx, col_idx] = (
+                    final_opd[row_idx, col_idx] / central_wavelength_sys
+                )
     return SimpleNamespace(
         grid=grid, raw_grid=raw_grid, reference_direction=reference,
         chief_ray_pkg=chief_pkg, exit_pupil_point=plane_point,
