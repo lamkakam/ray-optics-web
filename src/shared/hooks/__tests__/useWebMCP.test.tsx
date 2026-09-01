@@ -60,6 +60,19 @@ describe("useWebMCP", () => {
     expect(registerTool).toHaveBeenCalledTimes(1);
   });
 
+  it("supplies a signal when the native callback omits execution options", async () => {
+    const registerTool = jest.fn().mockResolvedValue(undefined);
+    setModelContext({ registerTool });
+    const execute = jest.fn().mockReturnValue("ok");
+    renderHook(() => useWebMCP(tool(execute)));
+    const registered = registerTool.mock.calls[0][0] as WebMCP.ModelContextTool;
+
+    const result = await (registered.execute as unknown as (input: Record<string, unknown>) => unknown)({});
+
+    expect(result).toBe("ok");
+    expect(execute).toHaveBeenCalledWith({}, { signal: expect.any(AbortSignal) });
+  });
+
   it("re-registers when an explicit dependency changes", () => {
     const registerTool = jest.fn().mockResolvedValue(undefined);
     setModelContext({ registerTool });

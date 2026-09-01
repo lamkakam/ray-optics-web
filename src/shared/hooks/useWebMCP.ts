@@ -24,7 +24,10 @@ export function useWebMCP(tool: WebMCP.ModelContextTool, dependencies: Dependenc
     const controller = new AbortController();
     const registeredTool: WebMCP.ModelContextTool = {
       ...committedToolRef.current,
-      execute: (input, options) => committedToolRef.current.execute(input, options),
+      execute: (input, options) => committedToolRef.current.execute(
+        input,
+        options ?? { signal: controller.signal },
+      ),
     };
 
     try {
