@@ -341,7 +341,7 @@ beforeEach(() => {
 });
 
 describe("LensEditor", () => {
-  it("registers WebMCP tools while mounted and aborts their shared signal on cleanup", () => {
+  it("registers WebMCP tools while mounted and aborts every registration on cleanup", () => {
     const registrations: Array<{ tool: WebMCP.ModelContextTool; options?: WebMCP.ModelContextRegisterToolOptions }> = [];
     const registerTool = jest.fn(async (tool: WebMCP.ModelContextTool, options?: WebMCP.ModelContextRegisterToolOptions) => {
       registrations.push({ tool, options });
@@ -359,11 +359,11 @@ describe("LensEditor", () => {
       "update_lens_row",
       "delete_lens_surface",
     ]);
-    const signal = registrations[0].options?.signal;
-    expect(signal?.aborted).toBe(false);
+    const signals = registrations.map(({ options }) => options?.signal);
+    expect(signals.every((signal) => signal?.aborted === false)).toBe(true);
 
     unmount();
-    expect(signal?.aborted).toBe(true);
+    expect(signals.every((signal) => signal?.aborted === true)).toBe(true);
     Object.defineProperty(document, "modelContext", { configurable: true, value: undefined });
   });
 

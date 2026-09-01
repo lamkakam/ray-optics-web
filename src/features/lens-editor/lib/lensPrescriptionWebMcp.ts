@@ -168,7 +168,8 @@ function candidateRows(rows: GridRow[], rowId: string, patch: Partial<GridRow>):
   return rows.map((row) => row.id === rowId ? { ...row, ...patch, id: row.id, kind: row.kind } as GridRow : row);
 }
 
-function registrationTools(store: StoreApi<LensEditorState>): WebMCP.ModelContextTool[] {
+/** Creates the five validated tool descriptors bound to the supplied Lens Editor store. */
+export function createLensPrescriptionTools(store: StoreApi<LensEditorState>): readonly WebMCP.ModelContextTool[] {
   return [
     {
       name: "get_lens_prescription",
@@ -261,17 +262,4 @@ function registrationTools(store: StoreApi<LensEditorState>): WebMCP.ModelContex
       },
     },
   ];
-}
-
-/** Registers all five tools and returns the controller used to unregister them. */
-export function registerLensPrescriptionTools(
-  store: StoreApi<LensEditorState>,
-  modelContext: WebMCP.ModelContext | undefined = document.modelContext,
-): AbortController | undefined {
-  if (!modelContext) return undefined;
-  const controller = new AbortController();
-  for (const tool of registrationTools(store)) {
-    void modelContext.registerTool(tool, { signal: controller.signal });
-  }
-  return controller;
 }

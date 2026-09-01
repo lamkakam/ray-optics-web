@@ -1,6 +1,6 @@
 import { createStore, type StoreApi } from "zustand";
 import { createLensEditorSlice, type LensEditorState } from "@/features/lens-editor/stores/lensEditorStore";
-import { registerLensPrescriptionTools } from "@/features/lens-editor/lib/lensPrescriptionWebMcp";
+import { createLensPrescriptionTools } from "@/features/lens-editor/lib/lensPrescriptionWebMcp";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
 
 const basePrescription = {
@@ -9,23 +9,16 @@ const basePrescription = {
   image: { curvatureRadius: 0 },
 };
 
-type Registered = WebMCP.ModelContextTool & { options?: WebMCP.ModelContextRegisterToolOptions };
-
 function setup() {
   const store = createStore<LensEditorState>(createLensEditorSlice);
   store.getState().setRows(surfacesToGridRows(basePrescription));
-  const tools = new Map<string, Registered>();
-  const registerTool = jest.fn(async (tool: WebMCP.ModelContextTool, options?: WebMCP.ModelContextRegisterToolOptions) => {
-    tools.set(tool.name, { ...tool, options });
-  });
-  const modelContext = { registerTool } as unknown as WebMCP.ModelContext;
-  const controller = registerLensPrescriptionTools(store, modelContext);
+  const tools = new Map(createLensPrescriptionTools(store).map((tool) => [tool.name, tool]));
   const execute = async (name: string, input: unknown, signal = new AbortController().signal) => {
     const tool = tools.get(name);
     if (!tool) throw new Error(`Missing tool ${name}`);
     return tool.execute(input as Record<string, unknown>, { signal });
   };
-  return { store, tools, registerTool, controller, execute };
+  return { store, tools, execute };
 }
 
 function snapshot(store: StoreApi<LensEditorState>) {
@@ -39,26 +32,16 @@ function snapshot(store: StoreApi<LensEditorState>) {
 }
 
 describe("lens prescription WebMCP tools", () => {
-  it("registers five same-origin tools with annotations and a shared cleanup signal", () => {
-    const { tools, registerTool, controller } = setup();
-    expect(registerTool).toHaveBeenCalledTimes(5);
+  it("creates five strict descriptors with the expected annotations", () => {
+    const { tools } = setup();
     expect([...tools.keys()]).toEqual([
       "get_lens_prescription", "set_lens_prescription", "insert_lens_surface", "update_lens_row", "delete_lens_surface",
     ]);
     expect(tools.get("get_lens_prescription")?.annotations?.readOnlyHint).toBe(true);
     expect(tools.get("set_lens_prescription")?.annotations?.readOnlyHint).toBe(false);
     for (const tool of tools.values()) {
-      expect(tool.options).toEqual({ signal: controller?.signal });
-      expect(tool.options).not.toHaveProperty("exposedTo");
       expect(tool.inputSchema).toEqual(expect.objectContaining({ type: "object", additionalProperties: false }));
     }
-    controller?.abort();
-    expect(controller?.signal.aborted).toBe(true);
-  });
-
-  it("skips registration when WebMCP is unavailable", () => {
-    const store = createStore<LensEditorState>(createLensEditorSlice);
-    expect(registerLensPrescriptionTools(store, undefined)).toBeUndefined();
   });
 
   it.each([
