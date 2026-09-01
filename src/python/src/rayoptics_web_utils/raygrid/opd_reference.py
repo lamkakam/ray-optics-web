@@ -113,18 +113,33 @@ def projected_image_points(grid, foc: float) -> list[np.ndarray]:
     for row in grid:
         for _, _, ray_pkg in row:
             if ray_pkg is None:
+                # None marks a pupil sample that produced no usable ray, for example
+                # because an aperture blocked it, it lay outside the traceable pupil,
+                # or tracing failed. With no propagated ray there is no image-surface
+                # intersection to project or include in the centroid.
                 continue
             ray = ray_pkg[mc.ray]
             point = np.asarray(ray[-1][mc.p], dtype=float)
+
             if point.shape[0] < 3 or not np.all(np.isfinite(point)):
+                # A physical image intersection needs finite local x, y, and z
+                # coordinates. A shorter or non-finite point cannot locate where
+                # the ray reaches the image surface, so it cannot define an image
+                # point or contribute to the centroid.
                 continue
             if foc != 0.0:
                 direction = np.asarray(ray[-1][mc.d], dtype=float)
+
                 if (
                     direction.shape[0] < 3
                     or not np.all(np.isfinite(direction))
                     or abs(float(direction[2])) <= np.finfo(float).eps
                 ):
+                    # Refocusing projects the ray by the distance foc / direction_z.
+                    # A missing or non-finite direction is not a physical propagation
+                    # vector. An effectively zero axial component means the ray runs
+                    # parallel to the shifted image plane and cannot intersect it at
+                    # a finite distance; dividing by it would also be unstable.
                     continue
                 point = point + (foc / direction[2]) * direction
             if np.all(np.isfinite(point)):
