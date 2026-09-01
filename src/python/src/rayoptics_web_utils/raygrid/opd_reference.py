@@ -25,6 +25,16 @@ def weighted_centroid(values, weights) -> np.ndarray:
     weights are rejected. A clear error is raised when no positive effective
     weight remains; pupil-cell area, ray energy, polarization, and apodization
     are deliberately not inferred here.
+
+    Args:
+        values: An iterable of same-shaped numeric array-like coordinates. Each
+            value is converted to a floating-point ``np.ndarray``.
+        weights: An iterable of ``float``-convertible scalar weights, with
+            exactly one weight for each element of ``values``.
+
+    Returns:
+        A floating-point ``np.ndarray`` with the same shape as one element of
+        ``values``, containing the weighted centroid.
     """
     accepted_values = []
     accepted_weights = []
@@ -56,6 +66,21 @@ def sample_valid_rays(opm, fld, wavelength_nm: float, foc: float, num_rays: int)
     therefore tracing explicitly disables RayOptics' second vignetting
     transform while retaining aperture checks. Failed and blocked cells remain
     represented by ``None`` in the returned regular grid.
+
+    Args:
+        opm: The RayOptics ``OpticalModel`` to trace.
+        fld: The RayOptics ``Field`` to trace.
+        wavelength_nm: A ``float`` wavelength in nanometres.
+        foc: A ``float`` focus shift in system length units.
+        num_rays: An ``int`` giving the number of samples along each pupil-grid
+            axis.
+
+    Returns:
+        A ``list`` of ``num_rays`` rows, each containing ``num_rays`` cells.
+        Each cell is the three-item list ``[pupil_x, pupil_y, ray_pkg]``, where
+        both pupil coordinates are ``float`` values and ``ray_pkg`` is either a
+        RayOptics ``RayPkg``-compatible tuple or ``None``. A ray package is
+        ``(ray_segments, optical_path_length, wavelength_nm)``.
     """
     vig_bbox = fld.vignetting_bbox(opm.optical_spec.pupil)
     return trace_ray_grid(
@@ -71,7 +96,19 @@ def sample_valid_rays(opm, fld, wavelength_nm: float, foc: float, num_rays: int)
 
 
 def projected_image_points(grid, foc: float) -> list[np.ndarray]:
-    """Return finite final-ray points projected through the requested focus."""
+    """Return finite final-ray points projected through the requested focus.
+
+    Args:
+        grid: A nested ``list`` in the format returned by
+            ``sample_valid_rays``. Each cell is
+            ``[pupil_x: float, pupil_y: float, ray_pkg: RayPkg | None]``.
+        foc: A ``float`` focus shift in system length units.
+
+    Returns:
+        A ``list[np.ndarray]`` of finite, floating-point image-space points
+        after applying the focus projection. Each array has shape ``(3,)`` and
+        contains ``[x, y, z]``.
+    """
     points = []
     for row in grid:
         for _, _, ray_pkg in row:
