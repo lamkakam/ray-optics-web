@@ -1,4 +1,9 @@
-import { formatMissingGlassMessage, getMissingPrescriptionGlasses } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
+import {
+  formatMissingGlassMessage,
+  getMissingPrescriptionGlasses,
+  resolvePrescriptionMedia,
+  resolvePrescriptionMedium,
+} from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 
@@ -37,6 +42,81 @@ function modelWithMedia(media: ReadonlyArray<readonly [string, string]>): Optica
 }
 
 describe("glassValidation", () => {
+  it.each([
+    [{ medium: " AIR ", manufacturer: "anything" }, { medium: "air", manufacturer: "" }],
+    [{ medium: "refl", manufacturer: "" }, { medium: "REFL", manufacturer: "" }],
+    [{ medium: " 1.458 ", manufacturer: " 51.38 " }, { medium: "1.458", manufacturer: "51.38" }],
+  ])("canonicalizes lookup-independent medium %#", (input, expected) => {
+    expect(resolvePrescriptionMedium(input, undefined)).toEqual({ kind: "resolved", value: expected });
+  });
+
+  it("resolves Special, catalog, and Custom media in precedence order", () => {
+    const maps: GlassLookupMaps = {
+      manufacturerMap: new Map([["schott", "Schott"]]),
+      mediumMap: new Map([
+        ["water", { medium: "Water", manufacturer: "" }],
+        ["schott:n-bk7", { medium: "N-BK7", manufacturer: "Schott" }],
+      ]),
+      customMediumMap: new Map([
+        ["n-bk7", { medium: "My N-BK7", manufacturer: "Custom" }],
+        ["user glass", { medium: "User Glass", manufacturer: "Custom" }],
+      ]),
+    };
+
+    expect(resolvePrescriptionMedium({ medium: "water", manufacturer: "Schott" }, maps)).toEqual({
+      kind: "resolved", value: { medium: "Water", manufacturer: "" },
+    });
+    expect(resolvePrescriptionMedium({ medium: "n-bk7", manufacturer: "SCHOTT" }, maps)).toEqual({
+      kind: "resolved", value: { medium: "N-BK7", manufacturer: "Schott" },
+    });
+    expect(resolvePrescriptionMedium({ medium: "USER GLASS", manufacturer: "wrong" }, maps)).toEqual({
+      kind: "resolved", value: { medium: "User Glass", manufacturer: "Custom" },
+    });
+  });
+
+  it("distinguishes unavailable catalogs from an unknown medium", () => {
+    expect(resolvePrescriptionMedium({ medium: "N-BK7", manufacturer: "Schott" }, undefined)).toEqual({
+      kind: "catalog-unavailable",
+    });
+    expect(resolvePrescriptionMedium({ medium: "N-BK7", manufacturer: "Schott" }, makeLookupMaps([]))).toEqual({
+      kind: "unknown-medium", medium: "N-BK7", manufacturer: "Schott",
+    });
+  });
+
+  it("canonicalizes a whole prescription and reports all unknown rows with JSON-pointer paths", () => {
+    const model = {
+      ...modelWithMedia([["n-bk7", "SCHOTT"], ["missing", "Hoya"], ["MISSING", "hoya"]]),
+      object: { distance: 1e10, medium: "AIR", manufacturer: "ignored" },
+    };
+    const maps: GlassLookupMaps = {
+      manufacturerMap: new Map([["schott", "Schott"], ["hoya", "Hoya"]]),
+      mediumMap: new Map([["schott:n-bk7", { medium: "N-BK7", manufacturer: "Schott" }]]),
+      customMediumMap: new Map(),
+    };
+    expect(resolvePrescriptionMedia(model, maps)).toEqual({
+      kind: "unknown-medium",
+      issues: [
+        { path: "/surfaces/1/medium", medium: "missing", manufacturer: "Hoya" },
+        { path: "/surfaces/2/medium", medium: "MISSING", manufacturer: "hoya" },
+      ],
+    });
+
+    expect(resolvePrescriptionMedia(modelWithMedia([["n-bk7", "SCHOTT"]]), maps)).toEqual({
+      kind: "resolved",
+      model: expect.objectContaining({
+        object: { distance: 1e10, medium: "air", manufacturer: "" },
+        surfaces: [expect.objectContaining({ medium: "N-BK7", manufacturer: "Schott" })],
+      }),
+    });
+  });
+
+  it("reports unavailable catalogs for whole-prescription resolution", () => {
+    expect(resolvePrescriptionMedia(modelWithMedia([["N-BK7", "Schott"]]), undefined)).toEqual({
+      kind: "catalog-unavailable",
+      path: "/object/medium",
+    });
+  });
+
   it("passes when a built-in catalog glass exists in the lookup map", () => {
     expect(getMissingPrescriptionGlasses(
       modelWithMedia([["N-BK7", "Schott"]]),

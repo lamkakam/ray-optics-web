@@ -4,6 +4,11 @@
 import React, { useRef, useState } from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
+import {
+  formatMissingGlassMessage,
+  formatUnknownMediumIssues,
+  resolvePrescriptionMedia,
+} from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import { Button } from "@/shared/components/primitives/Button";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
@@ -33,7 +38,7 @@ interface LensEditorConfigToolbarProps {
  * ## Behavior
  *
  * - `Update System` calls `onUpdateSystem` and respects `isUpdateSystemDisabled`.
- * - `Load Config` opens the hidden JSON file input. File contents are parsed and validated with `validateImportedLensData`; valid data opens `ConfirmImportModal`, invalid data opens `ErrorModal`.
+ * - `Load Config` opens the hidden JSON file input. File contents are structurally validated with `validateImportedLensData`, then every Object/surface medium is resolved through the live catalog maps before `ConfirmImportModal` opens. The pending model contains canonical medium/manufacturer values. Unknown media and unavailable catalogs open `ErrorModal` without mutating stores.
  * - `Import a file from Photons to Photos` opens the hidden TXT file input. Non-`.txt` filenames are rejected before reading. Prime TXT files are parsed with app-wide glass lookup maps when available, AJV-validated, and sent to `ConfirmImportModal`. Zoom TXT files first open `FocalLengthSelectionModal`; confirming the focal length resolves and validates that column before opening `ConfirmImportModal`.
  * - Confirming the import calls `onImportJson(pendingImportData)` and clears pending state. Canceling clears pending state without mutating stores.
  * - `Download Config` serializes `getOpticalModel()` as pretty JSON and downloads it as `lens-config.json`.
@@ -81,7 +86,7 @@ export function LensEditorConfigToolbar({
       try {
         const parsed: unknown = JSON.parse(String(event.target?.result ?? ""));
         if (validateImportedLensData(parsed)) {
-          setPendingImportData(parsed);
+          setResolvedPendingImport(parsed);
         } else {
           setImportErrorMessage("The JSON file is invalid. Schema validation failed.");
           setImportErrorOpen(true);
@@ -95,9 +100,23 @@ export function LensEditorConfigToolbar({
     e.target.value = "";
   };
 
+  const setResolvedPendingImport = (data: OpticalModel) => {
+    const resolution = resolvePrescriptionMedia(data, lookupMaps);
+    if (resolution.kind === "resolved") {
+      setPendingImportData(resolution.model);
+      return;
+    }
+    if (resolution.kind === "catalog-unavailable") {
+      setImportErrorMessage("Glass catalogs are unavailable. Wait for the catalogs to load and try again.");
+    } else {
+      setImportErrorMessage(formatMissingGlassMessage(formatUnknownMediumIssues(resolution.issues))!);
+    }
+    setImportErrorOpen(true);
+  };
+
   const setValidatedPendingImport = (data: OpticalModel, sourceLabel: string) => {
     if (validateImportedLensData(data)) {
-      setPendingImportData(data);
+      setResolvedPendingImport(data);
       return;
     }
     setImportErrorMessage(`${sourceLabel} schema validation failed.`);

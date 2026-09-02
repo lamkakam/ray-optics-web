@@ -1,4 +1,5 @@
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
+import { resolvePrescriptionMedium } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import type { OpticalModel, OpticalSpecs, Surface } from "@/shared/lib/types/opticalModel";
 
 /** Selectable focal-length column discovered in a zoom prescription. */
@@ -67,7 +68,7 @@ const RADIUS_TOLERANCE = 1e-6;
  * - `[lens data]` material columns are interpreted by tab-delimited position: cell 4 (`row[3]`) is refractive index `nd`, cell 6 (`row[5]`) is Abbe number `vd`, cell 7 (`row[6]`) is the material/glass label, and cell 8 (`row[7]`) is the catalog/manufacturer label.
  * - Lens-data aperture values become `semiDiameter = aperture / 2`.
  * - Rows with `AS` radius are aperture stops (`label: "Stop"`). Rows with `FS` radius are flat non-stop surfaces (`label: "Default"`).
- * - Glass name/catalog columns take precedence. When lookup maps are provided, special media and catalog glasses resolve case-insensitively to canonical app names. Special media `CaF2`, `Fused silica`, and `Water` use an empty manufacturer, and `fluorite` / `fluorspar` resolve to `CaF2`.
+ * - Glass name/catalog columns take precedence and use the shared catalog-aware medium resolver. When lookup maps are provided, special media and catalog glasses resolve case-insensitively to canonical app names. Special media `CaF2`, `Fused silica`, and `Water` use an empty manufacturer, and `fluorite` / `fluorspar` resolve to `CaF2`.
  * - User-defined custom glass resolves case-insensitively from the cell 7 material/glass label only. The cell 8 catalog/manufacturer label is ignored for this custom-glass import path, so blank, wrong, or mismatched catalog cells still resolve to the canonical stored custom label with `manufacturer: "Custom"`; Python script export then emits `user_defined_materials["<label>"]`.
  * - Unsupported named glasses never import the literal glass name as the medium. After lookup failure, with or without lookup maps, parser falls back to model-glass data: `nd` becomes `medium`, `vd` becomes `manufacturer`, blank `vd` becomes an empty manufacturer, and blank `nd` maps to air with an empty manufacturer.
  * - Without glass names, the same model-glass fallback is used: `nd` and `vd` are preserved as string `medium` and `manufacturer`; blank material data maps to air.
@@ -366,30 +367,11 @@ function resolveNamedMaterial(
   row: LensRow,
   lookupMaps: GlassLookupMaps | undefined,
 ): Pick<Surface, "medium" | "manufacturer"> | undefined {
-  if (lookupMaps === undefined) {
-    return undefined;
-  }
-
-  const specialMaterial = lookupMaps.mediumMap.get(normalizeLookupKey(row.glassName));
-  if (specialMaterial !== undefined) {
-    return specialMaterial;
-  }
-
-  const canonicalManufacturer = lookupMaps.manufacturerMap.get(normalizeLookupKey(row.catalog));
-  if (canonicalManufacturer !== undefined) {
-    const catalogMaterial = lookupMaps.mediumMap.get(
-      `${normalizeLookupKey(canonicalManufacturer)}:${normalizeLookupKey(row.glassName)}`,
-    );
-    if (catalogMaterial !== undefined) {
-      return catalogMaterial;
-    }
-  }
-
-  return lookupMaps.customMediumMap.get(normalizeLookupKey(row.glassName));
-}
-
-function normalizeLookupKey(value: string): string {
-  return value.trim().toLowerCase();
+  const result = resolvePrescriptionMedium(
+    { medium: row.glassName, manufacturer: row.catalog },
+    lookupMaps,
+  );
+  return result.kind === "resolved" ? result.value : undefined;
 }
 
 function getRequiredVariable(
