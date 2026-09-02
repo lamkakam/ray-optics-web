@@ -55,6 +55,17 @@ const wideAngleModel: OpticalModel = {
   },
 };
 
+const customMaterialModel: OpticalModel = {
+  ...baseModel,
+  surfaces: [
+    {
+      ...baseModel.surfaces[0],
+      medium: "CUSTOM_A",
+      manufacturer: "Custom",
+    },
+  ],
+};
+
 describe("buildOpticalModelScript", () => {
   it("does not emit surface comments into generated Python", () => {
     const marker = "COMMENT_MUST_NOT_REACH_PYTHON_9f81";
@@ -664,6 +675,44 @@ describe("buildOpticalModelScript", () => {
 });
 
 describe("buildExportScript", () => {
+  it.each([
+    ["regular", baseModel],
+    ["wide-angle", wideAngleModel],
+    ["custom-material", customMaterialModel],
+  ] as const)("includes the custom-glass loader in every %s export", (_name, model) => {
+    const script = buildExportScript(model);
+    const jsonPathPlaceholder = 'custom_glass_json_path = "path/to/custom-glass.json"';
+
+    expect(script.match(new RegExp(jsonPathPlaceholder, "g"))).toHaveLength(1);
+    expect(script).toContain("import json");
+    expect(script).toContain("from opticalglass.opticalmedium import InterpolatedMedium");
+  });
+
+  it("parses the version-1.0 Custom envelope into the registry before material lookup and model construction", () => {
+    const script = buildExportScript(customMaterialModel);
+    const registryIdx = script.indexOf("user_defined_materials = {");
+    const lookupIdx = script.indexOf('user_defined_materials["CUSTOM_A"]');
+    const modelIdx = script.indexOf("opm = OpticalModel()");
+
+    expect(script).toContain("custom_glass_data = json.load(custom_glass_file)");
+    expect(script).toContain('for label, material in custom_glass_data["Custom"].items()');
+    expect(script).toContain('InterpolatedMedium(label, pairs=material["data"], cat="custom")');
+    expect(registryIdx).toBeGreaterThan(-1);
+    expect(lookupIdx).toBeGreaterThan(registryIdx);
+    expect(modelIdx).toBeGreaterThan(registryIdx);
+  });
+
+  it("keeps the custom-glass file loader out of worker-oriented scripts", () => {
+    const opticalModelScript = buildOpticalModelScript(customMaterialModel);
+    const workerScript = buildScript(customMaterialModel, (opm) => `analyze(${opm})`);
+
+    for (const script of [opticalModelScript, workerScript]) {
+      expect(script).not.toContain("custom_glass_json_path");
+      expect(script).not.toContain("from opticalglass.opticalmedium import InterpolatedMedium");
+      expect(script).not.toContain("json.load(custom_glass_file)");
+    }
+  });
+
   it("keeps the generated aperture helper block in sync with the Python source files", () => {
     expect(pythonExportApertureHelpers).toBe(readPythonApertureHelperSources());
   });

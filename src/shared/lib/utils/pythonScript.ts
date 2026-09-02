@@ -12,7 +12,7 @@
  * - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
  * - Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.
  * - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.
- * - Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`, so worker computations use the user-defined material table initialized by Pyodide.
+ * - Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`. Worker computations use the user-defined material table initialized by Pyodide; standalone exports initialize their table from the editable version-1.0 `custom-glass.json` path in the export preamble.
  * - Wide-angle Object Angle, Object Height, and Image Height models use `ExactOpticalModel`. Object Height uses `ExactObjectHeightFieldSpec`, Image Height uses `ExactImageHeightFieldSpec`, and Object Angle retains `FieldSpec`. False or omitted flags use RayOptics `OpticalModel` and `FieldSpec`.
  * - `OffsetCircular` is required only when a circular aperture offset is nonzero. `Annular` is required when a clear aperture has `shape: "annular"`. `RonchiRuling` is required when a clear aperture has `shape: "ronchi"`. `OffsetRotatedRectangular` is required when a clear or edge aperture has `shape: "rectangular"`. Worker scripts get these helpers from `rayoptics_web_utils.aperture`; export scripts define them inline from the generated TypeScript string so copied notebook code remains standalone without installing `rayoptics_web_utils`.
  * - Generated helper blocks exactly match their Python sources. NPM lifecycle scripts regenerate both ignored TypeScript outputs before install/check/test/build commands, and Jest keeps the standalone export behavior pinned to those sources.
@@ -357,15 +357,26 @@ function buildExportPreamble(opticalModel: OpticalModel): string {
     : "";
   return `
 isdark = False
+import json
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData, Circular, Aperture, Rectangular
 from rayoptics.elem.profiles import XToroid, YToroid
 from rayoptics.seq.medium import decode_medium
+from opticalglass.opticalmedium import InterpolatedMedium
 from opticalglass.rindexinfo import create_material
 
 ${pythonExportApertureHelpers}
 ${exactSpecHelpers}
+
+custom_glass_json_path = "path/to/custom-glass.json"
+with open(custom_glass_json_path, "r", encoding="utf-8") as custom_glass_file:
+    custom_glass_data = json.load(custom_glass_file)
+
+user_defined_materials = {
+    label: InterpolatedMedium(label, pairs=material["data"], cat="custom")
+    for label, material in custom_glass_data["Custom"].items()
+}
 
 caf2_url = 'https://refractiveindex.info/database/data/main/CaF2/nk/Malitson.yml'
 caf2 = create_glass(caf2_url, "rindexinfo")
@@ -458,6 +469,7 @@ export function buildScript(
  * > **Warning**: Not for execution inside the Pyodide worker. This script is intended for copy-paste into a Jupyter / RayOptics notebook environment.
  *
  * 1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface` (`DecenterData`, `Circular`, `Aperture`, `Rectangular`), `rayoptics.elem.profiles`, `rayoptics.seq.medium`, and `opticalglass.rindexinfo`. It always interpolates the generated standalone aperture classes and interpolates the exact-spec classes from `optical_specs.py` only for explicit compatible wide-angle models, before creating `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`.
+ *    The preamble also imports `json` and `InterpolatedMedium`, exposes one editable `custom_glass_json_path = "path/to/custom-glass.json"` placeholder, and loads the Import Custom Glass page's strict version-1.0 JSON envelope. Every entry in the envelope's `Custom` object becomes `InterpolatedMedium(label, pairs=material["data"], cat="custom")` in `user_defined_materials` before model construction. An empty `Custom` object produces an empty registry; a custom surface label absent from the file raises Python `KeyError` during the generated lookup.
  * 2. The full output of `buildOpticalModelScript(model)`.
  * 3. Calls to `sm.list_model()`, `pm.first_order_data()`, and `plt.figure(FigureClass=InteractiveLayout, ...)`.
  *
