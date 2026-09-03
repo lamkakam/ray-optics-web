@@ -61,17 +61,18 @@ describe("GlassScatterPlot", () => {
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
-  it("names the chart and supports keyboard point selection", () => {
-    render(<GlassScatterPlot {...defaultProps} />);
+  it("names the chart without exposing individual points to assistive technology", () => {
+    const { container } = render(<GlassScatterPlot {...defaultProps} />);
 
     expect(screen.getByRole("img", { name: "Glass map" })).toBeInTheDocument();
-    const point = screen.getByRole("button", { name: "Select N-BK7 from Schott" });
-    fireEvent.keyDown(point, { key: "Enter" });
-    expect(defaultProps.onPointClick).toHaveBeenCalledWith({
-      catalogName: "Schott",
-      glassName: "N-BK7",
-      data: glassData,
-    });
+    expect(container.querySelector("svg > title")).not.toBeInTheDocument();
+    for (const point of screen.getAllByTestId("glass-point")) {
+      expect(point).not.toHaveAttribute("role");
+      expect(point).not.toHaveAttribute("tabindex");
+      expect(point).not.toHaveAttribute("aria-label");
+    }
+    fireEvent.keyDown(screen.getAllByTestId("glass-point")[0], { key: "Enter" });
+    expect(defaultProps.onPointClick).not.toHaveBeenCalled();
   });
 
   it("applies touch-action none on the main svg container for mobile pinch handling", () => {
