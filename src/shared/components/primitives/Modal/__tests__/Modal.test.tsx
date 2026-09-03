@@ -133,11 +133,12 @@ describe("Modal", () => {
     expect(screen.getByTestId("modal-backdrop")).toHaveClass("touch-none");
   });
 
-  it("keeps vertical scrolling on the body instead of the dialog panel", () => {
+  it("keeps two-dimensional scrolling on the body instead of the dialog panel", () => {
     render(<Modal isOpen={true} title="Test Modal"><p>content</p></Modal>);
 
     expect(screen.getByRole("dialog")).not.toHaveClass("overflow-y-auto");
     expect(screen.getByRole("dialog")).toHaveClass("overflow-hidden");
-    expect(screen.getByTestId("modal-body")).toHaveClass("overflow-y-auto");
+    expect(screen.getByTestId("modal-body")).toHaveClass("overflow-auto");
+    expect(screen.getByTestId("modal-body")).not.toHaveClass("overflow-y-auto");
   });
 });

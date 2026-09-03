@@ -1,5 +1,5 @@
 /**
- * Builds the Python source code string that reconstructs the definition of an optical system for RayOptics inside the Pyodide worker. It is also for UI components to let users copy the Python snippet to the clipboard so that users may use the code string for their own RayOptics instance on Jupyter notebook.
+ * Builds Python source code that reconstructs the definition of an optical system for RayOptics inside the Pyodide worker. It is also used by UI components to let users copy the Python snippet to the clipboard so that users may use the code string for their own RayOptics instance on Jupyter notebook.
  *
  * @remarks
  * Special-material recognition and Python-variable mappings are imported from `specialMaterials.ts` so other UI behavior uses the same definitions. `field.isWideAngle === true` selects `ExactOpticalModel`; opted-in Image Height and Object Height additionally select `ExactImageHeightFieldSpec` and `ExactObjectHeightFieldSpec`, respectively. False or omitted flags use RayOptics' `OpticalModel` and `FieldSpec`. Standalone exports inline the exact-spec implementation from `rayoptics_web_utils/optical_specs.py` only for models that opt in, while worker scripts import the definitions from the local wheel. Final vignetting setup calls `set_vig_with_ronchi_envelopes(...)`, which sizes against every Ronchi ruling's circular envelope and restores its binary bands before analysis. Exact models inject `set_vig_respecting_exact_pupil`, so a passing Object-NA unit boundary receives zero vignetting without RayOptics probing outside the requested angular pupil; other exact pupil modes delegate to native vignetting.
@@ -12,7 +12,7 @@
  * - `polynomialCoefficients` is required for `kind: "EvenAspherical"`, `kind: "RadialPolynomial"`, `kind: "XToroid"`, and `kind: "YToroid"`; conic surfaces use `kind: "Conic"` and emit only `r` and `cc`. `r` must be the same as the curvature radius defined to the same surface.
  * - Toroidal kinds additionally emit `cr=toricSweepRadiusOfCurvature`.
  * - `CaF2`, `Fused Silica`, `Water`, and `D263TECO` media are emitted as the bare variables `caf2`, `fused_silica`, `water`, and `d263teco` (no quotes); `buildExportScript` provides those bindings in its preamble. Callers using `buildScript` in the worker have the same names defined via `_init`.
- * - Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`, so worker computations use the user-defined material table initialized by Pyodide.
+ * - Custom media are emitted as `user_defined_materials["<label>"]` when the surface manufacturer is `"Custom"`. Worker computations use the user-defined material table initialized by Pyodide; standalone exports initialize their table from the editable version-1.0 `custom-glass.json` path in the `userDefinedMaterials` export section.
  * - Wide-angle Object Angle, Object Height, and Image Height models use `ExactOpticalModel`. Object Height uses `ExactObjectHeightFieldSpec`, Image Height uses `ExactImageHeightFieldSpec`, and Object Angle retains `FieldSpec`. False or omitted flags use RayOptics `OpticalModel` and `FieldSpec`.
  * - `OffsetCircular` is required only when a circular aperture offset is nonzero. `Annular` is required when a clear aperture has `shape: "annular"`. `RonchiRuling` is required when a clear aperture has `shape: "ronchi"`. `OffsetRotatedRectangular` is required when a clear or edge aperture has `shape: "rectangular"`. Worker scripts get these helpers from `rayoptics_web_utils.aperture`; export scripts define them inline from the generated TypeScript string so copied notebook code remains standalone without installing `rayoptics_web_utils`.
  * - Generated helper blocks exactly match their Python sources. NPM lifecycle scripts regenerate both ignored TypeScript outputs before install/check/test/build commands, and Jest keeps the standalone export behavior pinned to those sources.
@@ -32,6 +32,14 @@ type SurfaceBuildStep = {
   mutationLines: SurfaceMutationLine[];
 };
 type Surface = OpticalModel["surfaces"][number];
+
+/** The two copyable source-code sections produced for a standalone Python export. */
+export interface PythonExportScriptSections {
+  /** A self-contained loader for the user's version-1.0 custom-glass JSON file. */
+  readonly userDefinedMaterials: string;
+  /** The remaining imports, helpers, optical-model construction, and output code. */
+  readonly remainingScript: string;
+}
 
 /** Returns whether a field explicitly selects the exact real-ray stack. */
 function usesExactRealRayStack(opticalModel: OpticalModel): boolean {
@@ -351,12 +359,25 @@ function renderPythonBlock(lines: PythonLine[]): string {
   return lines.join("\n");
 }
 
-function buildExportPreamble(opticalModel: OpticalModel): string {
+function buildUserDefinedMaterialsScript(): string {
+  return `import json
+from opticalglass.opticalmedium import InterpolatedMedium
+
+custom_glass_json_path = "<PATH TO CUSTOM GLASS JSON FILE>"
+with open(custom_glass_json_path, "r", encoding="utf-8") as custom_glass_file:
+    custom_glass_data = json.load(custom_glass_file)
+
+user_defined_materials = {
+    label: InterpolatedMedium(label, pairs=material["data"], cat="custom")
+    for label, material in custom_glass_data["Custom"].items()
+}`;
+}
+
+function buildRemainingExportScript(opticalModel: OpticalModel): string {
   const exactSpecHelpers = usesExactRealRayStack(opticalModel)
     ? `\n${pythonExportExactSpecHelpers}\n`
     : "";
-  return `
-isdark = False
+  return `isdark = False
 from rayoptics.environment import *
 from rayoptics.raytr.vigcalc import set_vig
 from rayoptics.elem.surface import DecenterData, Circular, Aperture, Rectangular
@@ -377,8 +398,7 @@ water_url = 'https://refractiveindex.info/database/data/main/H2O/nk/Daimon-20.0C
 water = create_glass(water_url, "rindexinfo")
 
 d263teco_url = 'https://refractiveindex.info/database/data/specs/schott/misc/D263TECO.yml'
-d263teco = create_glass(d263teco_url, "rindexinfo")
-`;
+d263teco = create_glass(d263teco_url, "rindexinfo")`;
 }
 
 /**
@@ -457,19 +477,28 @@ export function buildScript(
  * Returns a string with:
  * > **Warning**: Not for execution inside the Pyodide worker. This script is intended for copy-paste into a Jupyter / RayOptics notebook environment.
  *
- * 1. A preamble that sets `isdark = False` and imports from `rayoptics.environment`, `rayoptics.raytr.vigcalc`, `rayoptics.elem.surface` (`DecenterData`, `Circular`, `Aperture`, `Rectangular`), `rayoptics.elem.profiles`, `rayoptics.seq.medium`, and `opticalglass.rindexinfo`. It always interpolates the generated standalone aperture classes and interpolates the exact-spec classes from `optical_specs.py` only for explicit compatible wide-angle models, before creating `caf2`, `fused_silica`, `water`, and `d263teco` glass objects from `refractiveindex.info`.
- * 2. The full output of `buildOpticalModelScript(model)`.
- * 3. Calls to `sm.list_model()`, `pm.first_order_data()`, and `plt.figure(FigureClass=InteractiveLayout, ...)`.
+ * `buildExportScriptSections(model)` returns:
+ * 1. `userDefinedMaterials`, a self-contained block that imports `json` and `InterpolatedMedium`, exposes the conspicuous editable `custom_glass_json_path = "<PATH TO CUSTOM GLASS JSON FILE>"` placeholder, loads the Import Custom Glass page's strict version-1.0 JSON envelope, and constructs `user_defined_materials`. Every entry in the envelope's `Custom` object becomes `InterpolatedMedium(label, pairs=material["data"], cat="custom")` before model construction. An empty `Custom` object produces an empty registry; a custom surface label absent from the file raises Python `KeyError` during the generated lookup.
+ * 2. `remainingScript`, containing the other imports, generated standalone helpers, the full output of `buildOpticalModelScript(model)`, and calls to `sm.list_model()`, `pm.first_order_data()`, and `plt.figure(FigureClass=InteractiveLayout, ...)`.
  *
- * The import preamble is built separately from the model-construction lines so future export-only dependencies, such as a `DiffractionGrating` import, can be added without changing model-step generation.
+ * `buildExportScript(model)` preserves the string API by joining these sections with exactly two newline characters. The combined string is therefore the payload used by the modal's `Copy all` action.
  */
-export function buildExportScript(opticalModel: OpticalModel) {
-  return `${buildExportPreamble(opticalModel)}
+export function buildExportScriptSections(opticalModel: OpticalModel): PythonExportScriptSections {
+  return {
+    userDefinedMaterials: buildUserDefinedMaterialsScript(),
+    remainingScript: `${buildRemainingExportScript(opticalModel)}
+
 ${buildOpticalModelScript(opticalModel)}
 
 sm.list_model()
 pm.first_order_data()
 
-layout_plt = plt.figure(FigureClass=InteractiveLayout, opt_model=opm,do_draw_rays=True, do_paraxial_layout=False,is_dark=isdark).plot()
-`;
+layout_plt = plt.figure(FigureClass=InteractiveLayout, opt_model=opm,do_draw_rays=True, do_paraxial_layout=False,is_dark=isdark).plot()`,
+  };
+}
+
+/** Joins the standalone export sections into the complete copyable Python script. */
+export function buildExportScript(opticalModel: OpticalModel): string {
+  const sections = buildExportScriptSections(opticalModel);
+  return [sections.userDefinedMaterials, sections.remainingScript].join("\n\n");
 }

@@ -5,7 +5,7 @@ import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import { type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel, AsphericalType } from "@/shared/lib/types/opticalModel";
-import { buildExportScript } from "@/shared/lib/utils/pythonScript";
+import { buildExportScriptSections } from "@/shared/lib/utils/pythonScript";
 import { Button } from "@/shared/components/primitives/Button";
 import { ErrorModal } from "@/shared/components/primitives/ErrorModal";
 import { Switch } from "@/shared/components/primitives/Switch";
@@ -94,7 +94,7 @@ function getInitialToricSweepRadiusOfCurvature(asphericalRow: GridRow | undefine
  * - `getInitialAsphericalType`, `getInitialAsphericalCoefficients`, and `getInitialToricSweepRadiusOfCurvature` preload modal state from the selected row so toroidal and radial polynomial surfaces reopen with the correct draft values.
  * - `DiffractionGratingModal` only applies to `surface` rows and writes `surface.diffractiveElement.diffractionGrating` back into the row state on confirm; removal omits the wrapper.
  * - `ApertureModal` only applies to `surface` rows. The selected row's `semiDiameter` is passed so annular clear apertures can validate their central obstruction and Ronchi rulings can use it as their circular envelope; `autoAperture` is passed so Clear Rectangular fields are labeled Length Ratio / Width Ratio while auto aperture dimensions are enabled. Confirm writes the selected circular, annular, rectangular, or Ronchi `clear_aperture`; it writes an explicit circular or rectangular `edge_aperture` when selected and clears `edge_aperture` when Edge Aperture follows Clear Aperture. Rectangular clear aperture confirm also stores `semiDiameter: 0` so the semi-diameter cell remains blank and non-editable while the rectangle owns the aperture size. Ronchi density, rotation, and offsets remain stored while automatic aperture calculation changes only the surface semi-diameter/envelope.
- * - `PythonScriptModal` receives an empty string for `script` when closed, generating the script only when open.
+ * - `PythonScriptModal` receives empty `userDefinedMaterials` and `remainingScript` strings when closed, while `buildExportScriptSections(getOpticalModel())` is called only when the export modal is open.
  * - The `Formatting` toolbar button opens `FormattingModal` beside `Export Python Script`. Successful Scale confirms call `store.getState().setRows(updatedRows)` immediately so the prescription revision and Optimization sync policy follow normal prescription mutation behavior.
  * - Successful Reverse confirms first check the resulting first physical surface. If it has nonzero tilt or decenter, the container closes `FormattingModal`, stores the reversed rows in `pendingReferenceSurfaceRows`, and opens `AddReferenceSurfaceModal` without mutating the store.
  * - In `AddReferenceSurfaceModal`, `No` applies the reversed rows unchanged, while `Yes` inserts a flat zero-thickness air reference surface immediately after Object and then applies rows.
@@ -163,6 +163,9 @@ export function LensPrescriptionContainer({
   const diffractionGratingRow = rows.find((r) => r.id === diffractionGratingModal.rowId);
   const apertureRow = rows.find((r) => r.id === apertureModal.rowId);
   const isObjectMediumRow = mediumRow?.kind === "object";
+  const pythonScriptSections = pythonScriptOpen
+    ? buildExportScriptSections(getOpticalModel())
+    : { userDefinedMaterials: "", remainingScript: "" };
 
   return (
     <div className="min-[1440px]:flex min-[1440px]:h-full min-[1440px]:flex-col">
@@ -335,7 +338,8 @@ export function LensPrescriptionContainer({
 
       <PythonScriptModal
         isOpen={pythonScriptOpen}
-        script={pythonScriptOpen ? buildExportScript(getOpticalModel()) : ""}
+        userDefinedMaterials={pythonScriptSections.userDefinedMaterials}
+        remainingScript={pythonScriptSections.remainingScript}
         onClose={() => setPythonScriptOpen(false)}
       />
 

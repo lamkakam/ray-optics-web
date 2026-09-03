@@ -41,7 +41,7 @@ interface ModalProps {
  * - `onKeyDown` on the outer wrapper calls `stopPropagation` to prevent key events from leaking to the page.
  * - Panel animates in via `animate-modal-enter` CSS class.
  * - Panel is a flex column with `max-h-[90dvh]` and `overflow-hidden`.
- * - Children render inside `data-testid="modal-body"`, which owns vertical scrolling via `overflow-y-auto`.
+ * - Children render inside `data-testid="modal-body"`, which owns horizontal and vertical scrolling via `overflow-auto`.
  * - When `footer` is provided, it renders in `data-testid="modal-footer"` below the body with a top border and is not part of the scrollable body.
  */
 export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, footer, children }: ModalProps) {
@@ -67,7 +67,7 @@ export function Modal({ isOpen, title, titleId, size = "md", onBackdropClick, fo
         className={`relative z-10 flex max-h-[90dvh] flex-col overflow-hidden border animate-modal-enter ${panel} ${sizeClasses[size]} mx-4 sm:mx-0`}
       >
         <Header level={2} id={resolvedTitleId} className={clsx(titleBorderClass, cx.modal.size.titlePadding, cx.modal.size.titleMargin)}>{title}</Header>
-        <div data-testid="modal-body" className="min-h-0 flex-1 overflow-y-auto">
+        <div data-testid="modal-body" className="min-h-0 flex-1 overflow-auto">
           {children}
         </div>
         {footer === undefined ? undefined : (

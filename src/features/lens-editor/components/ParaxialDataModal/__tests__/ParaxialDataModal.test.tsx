@@ -107,16 +107,15 @@ describe("ParaxialDataModal", () => {
     expect(screen.getByRole("cell", { name: "50.123457" })).toBeInTheDocument();
   });
 
-  it("right-aligns the Data column and delegates scrolling to the shared modal body", () => {
+  it("right-aligns the Data column and delegates two-dimensional scrolling to the shared modal body", () => {
     render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
 
     expect(screen.getByRole("columnheader", { name: "Data" })).toHaveClass("text-right");
     expect(screen.getByRole("cell", { name: "50.123457" })).toHaveClass("text-right");
 
-    const dialog = screen.getByRole("dialog", { name: "Paraxial Data" });
-    const verticalScrollers = dialog.querySelectorAll(".overflow-y-auto");
-    expect(verticalScrollers).toHaveLength(1);
-    expect(verticalScrollers[0]).toBe(screen.getByTestId("modal-body"));
+    const body = screen.getByTestId("modal-body");
+    expect(body).toHaveClass("overflow-auto");
+    expect(body).not.toHaveClass("overflow-y-auto");
   });
 
   it("can only be dismissed with the fixed-footer Ok action", async () => {
