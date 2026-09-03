@@ -12,6 +12,7 @@ const REMAINING_SCRIPT = "import rayoptics\nprint('hello')";
 const COPY_ALL_LABEL = "Copy all to clipboard";
 const COPY_USER_DEFINED_MATERIALS_LABEL = "Copy user-defined materials to clipboard";
 const COPY_REMAINING_SCRIPT_LABEL = "Copy remaining script to clipboard";
+const CODE_BACKGROUND_CLASSES = ["bg-gray-100", "dark:bg-gray-950"];
 
 function renderPythonScriptModal(onClose = jest.fn()) {
   return render(
@@ -59,12 +60,59 @@ describe("PythonScriptModal", () => {
     expect(codeElements[1]).toHaveTextContent(REMAINING_SCRIPT, { normalizeWhitespace: false });
   });
 
+  it("keeps the second section horizontally scrollable without its own vertical constraint", () => {
+    renderPythonScriptModal();
+    const preElements = screen.getByRole("dialog").querySelectorAll("pre");
+    const secondScrollContainer = preElements[1].parentElement!;
+
+    expect(secondScrollContainer).toHaveClass("overflow-x-auto");
+    expect(secondScrollContainer).not.toHaveClass("overflow-auto");
+    expect(secondScrollContainer).not.toHaveClass("overflow-y-auto");
+    expect(secondScrollContainer.className).not.toMatch(/\bmax-h-/);
+  });
+
+  it("groups the two code sections with a 16px gap", () => {
+    renderPythonScriptModal();
+    const preElements = screen.getByRole("dialog").querySelectorAll("pre");
+    const firstSection = preElements[0].closest("div.relative")!;
+    const secondSection = preElements[1].closest("div.relative")!;
+    const sectionsContainer = firstSection.parentElement!;
+
+    expect(secondSection.parentElement).toBe(sectionsContainer);
+    expect(sectionsContainer).toHaveClass("flex", "flex-col", "gap-4");
+    expect(firstSection).not.toHaveClass("mb-4");
+  });
+
+  it("uses the shared background on both block-code regions", () => {
+    renderPythonScriptModal();
+    const preElements = screen.getByRole("dialog").querySelectorAll("pre");
+
+    for (const preElement of preElements) {
+      expect(preElement).toHaveClass(...CODE_BACKGROUND_CLASSES);
+    }
+  });
+
+  it("renders the custom glass path placeholder as inline code without a copy button", () => {
+    renderPythonScriptModal();
+    const placeholder = screen.getByText("<PATH TO CUSTOM GLASS JSON FILE>", { exact: true });
+
+    expect(placeholder.tagName).toBe("CODE");
+    expect(placeholder).toHaveClass(
+      ...CODE_BACKGROUND_CLASSES,
+      "font-mono",
+      "px-1",
+      "py-0.5",
+      "rounded",
+    );
+    expect(placeholder.closest("button")).not.toBeInTheDocument();
+  });
+
   it("instructs users to replace the custom glass JSON path", () => {
     renderPythonScriptModal();
 
-    expect(screen.getByText(
+    expect(screen.getByText(/Replace/)).toHaveTextContent(
       "Replace <PATH TO CUSTOM GLASS JSON FILE> with the real path to your custom glass JSON file before running the script.",
-    )).toBeInTheDocument();
+    );
   });
 
   it("calls onClose when OK button is clicked", async () => {
