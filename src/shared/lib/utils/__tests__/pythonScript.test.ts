@@ -1,4 +1,9 @@
-import { buildOpticalModelScript, buildScript, buildExportScript } from "../pythonScript";
+import {
+  buildExportScript,
+  buildExportScriptSections,
+  buildOpticalModelScript,
+  buildScript,
+} from "../pythonScript";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -679,27 +684,65 @@ describe("buildExportScript", () => {
     ["regular", baseModel],
     ["wide-angle", wideAngleModel],
     ["custom-material", customMaterialModel],
-  ] as const)("includes the custom-glass loader in every %s export", (_name, model) => {
-    const script = buildExportScript(model);
-    const jsonPathPlaceholder = 'custom_glass_json_path = "path/to/custom-glass.json"';
+  ] as const)("splits every %s export into a custom-material loader and remaining script", (_name, model) => {
+    const sections = buildExportScriptSections(model);
 
-    expect(script.match(new RegExp(jsonPathPlaceholder, "g"))).toHaveLength(1);
-    expect(script).toContain("import json");
-    expect(script).toContain("from opticalglass.opticalmedium import InterpolatedMedium");
+    expect(sections.userDefinedMaterials).toContain("import json");
+    expect(sections.userDefinedMaterials).toContain("from opticalglass.opticalmedium import InterpolatedMedium");
+    expect(sections.userDefinedMaterials).toContain(
+      'custom_glass_json_path = "<PATH TO CUSTOM GLASS JSON FILE>"',
+    );
+    expect(sections.userDefinedMaterials).toContain("custom_glass_data = json.load(custom_glass_file)");
+    expect(sections.userDefinedMaterials).toContain("user_defined_materials = {");
+    expect(sections.remainingScript).toContain("from rayoptics.environment import *");
+    expect(sections.remainingScript).toContain("opm = ");
+    expect(sections.remainingScript).toContain("sm.list_model()");
+    expect(sections.remainingScript).not.toContain("import json");
+    expect(sections.remainingScript).not.toContain("from opticalglass.opticalmedium import InterpolatedMedium");
+    expect(sections.remainingScript).not.toContain("custom_glass_json_path");
+    expect(sections.remainingScript).not.toContain("custom_glass_file");
+    expect(sections.remainingScript).not.toContain("custom_glass_data");
+    expect(sections.remainingScript).not.toContain("user_defined_materials = {");
   });
 
-  it("parses the version-1.0 Custom envelope into the registry before material lookup and model construction", () => {
+  it("orders the custom-material loader before its registry construction", () => {
+    const { userDefinedMaterials } = buildExportScriptSections(customMaterialModel);
+    const importJsonIdx = userDefinedMaterials.indexOf("import json");
+    const mediumImportIdx = userDefinedMaterials.indexOf("from opticalglass.opticalmedium import InterpolatedMedium");
+    const placeholderIdx = userDefinedMaterials.indexOf("custom_glass_json_path =");
+    const loadIdx = userDefinedMaterials.indexOf("custom_glass_data = json.load(custom_glass_file)");
+    const registryIdx = userDefinedMaterials.indexOf("user_defined_materials = {");
+
+    expect(userDefinedMaterials).toContain('for label, material in custom_glass_data["Custom"].items()');
+    expect(userDefinedMaterials).toContain('InterpolatedMedium(label, pairs=material["data"], cat="custom")');
+    expect(importJsonIdx).toBeGreaterThanOrEqual(0);
+    expect(mediumImportIdx).toBeGreaterThan(importJsonIdx);
+    expect(placeholderIdx).toBeGreaterThan(mediumImportIdx);
+    expect(loadIdx).toBeGreaterThan(placeholderIdx);
+    expect(registryIdx).toBeGreaterThan(loadIdx);
+  });
+
+  it("places custom material lookup and model construction after the loader section", () => {
+    const sections = buildExportScriptSections(customMaterialModel);
     const script = buildExportScript(customMaterialModel);
     const registryIdx = script.indexOf("user_defined_materials = {");
     const lookupIdx = script.indexOf('user_defined_materials["CUSTOM_A"]');
     const modelIdx = script.indexOf("opm = OpticalModel()");
 
-    expect(script).toContain("custom_glass_data = json.load(custom_glass_file)");
-    expect(script).toContain('for label, material in custom_glass_data["Custom"].items()');
-    expect(script).toContain('InterpolatedMedium(label, pairs=material["data"], cat="custom")');
-    expect(registryIdx).toBeGreaterThan(-1);
+    expect(script).toBe([sections.userDefinedMaterials, sections.remainingScript].join("\n\n"));
+    expect(registryIdx).toBeGreaterThanOrEqual(0);
     expect(lookupIdx).toBeGreaterThan(registryIdx);
     expect(modelIdx).toBeGreaterThan(registryIdx);
+  });
+
+  it("reconstructs the exact combined export from its two sections", () => {
+    for (const model of [baseModel, wideAngleModel, customMaterialModel]) {
+      const sections = buildExportScriptSections(model);
+
+      expect(buildExportScript(model)).toBe(
+        [sections.userDefinedMaterials, sections.remainingScript].join("\n\n"),
+      );
+    }
   });
 
   it("keeps the custom-glass file loader out of worker-oriented scripts", () => {

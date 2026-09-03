@@ -6,14 +6,31 @@ jest.mock("@/shared/components/providers/ThemeProvider", () => ({
   useTheme: () => ({ theme: "light", toggleTheme: jest.fn() }),
 }));
 
-const SAMPLE_SCRIPT = "import rayoptics\nprint('hello')";
+const USER_DEFINED_MATERIALS = "import json\nuser_defined_materials = {}";
+const REMAINING_SCRIPT = "import rayoptics\nprint('hello')";
+
+const COPY_ALL_LABEL = "Copy all to clipboard";
+const COPY_USER_DEFINED_MATERIALS_LABEL = "Copy user-defined materials to clipboard";
+const COPY_REMAINING_SCRIPT_LABEL = "Copy remaining script to clipboard";
+
+function renderPythonScriptModal(onClose = jest.fn()) {
+  return render(
+    <PythonScriptModal
+      isOpen={true}
+      userDefinedMaterials={USER_DEFINED_MATERIALS}
+      remainingScript={REMAINING_SCRIPT}
+      onClose={onClose}
+    />,
+  );
+}
 
 describe("PythonScriptModal", () => {
   it("does not render when isOpen=false", () => {
     render(
       <PythonScriptModal
         isOpen={false}
-        script={SAMPLE_SCRIPT}
+        userDefinedMaterials={USER_DEFINED_MATERIALS}
+        remainingScript={REMAINING_SCRIPT}
         onClose={jest.fn()}
       />
     );
@@ -24,7 +41,8 @@ describe("PythonScriptModal", () => {
     render(
       <PythonScriptModal
         isOpen={true}
-        script={SAMPLE_SCRIPT}
+        userDefinedMaterials={USER_DEFINED_MATERIALS}
+        remainingScript={REMAINING_SCRIPT}
         onClose={jest.fn()}
       />
     );
@@ -32,87 +50,136 @@ describe("PythonScriptModal", () => {
     expect(screen.getByText("Python Script")).toBeInTheDocument();
   });
 
-  it("displays the script string in a <code> element", () => {
-    render(
-      <PythonScriptModal
-        isOpen={true}
-        script={SAMPLE_SCRIPT}
-        onClose={jest.fn()}
-      />
-    );
-    const code = screen.getByRole("dialog").querySelector("code");
-    expect(code).toBeInTheDocument();
-    expect(code).toHaveTextContent(SAMPLE_SCRIPT, { normalizeWhitespace: false });
+  it("displays the two sections in separate <pre><code> blocks", () => {
+    renderPythonScriptModal();
+    const codeElements = screen.getByRole("dialog").querySelectorAll("pre > code");
+
+    expect(codeElements).toHaveLength(2);
+    expect(codeElements[0]).toHaveTextContent(USER_DEFINED_MATERIALS, { normalizeWhitespace: false });
+    expect(codeElements[1]).toHaveTextContent(REMAINING_SCRIPT, { normalizeWhitespace: false });
+  });
+
+  it("instructs users to replace the custom glass JSON path", () => {
+    renderPythonScriptModal();
+
+    expect(screen.getByText(
+      "Replace <PATH TO CUSTOM GLASS JSON FILE> with the real path to your custom glass JSON file before running the script.",
+    )).toBeInTheDocument();
   });
 
   it("calls onClose when OK button is clicked", async () => {
     const onClose = jest.fn();
     render(
-      <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={onClose} />
+      <PythonScriptModal
+        isOpen={true}
+        userDefinedMaterials={USER_DEFINED_MATERIALS}
+        remainingScript={REMAINING_SCRIPT}
+        onClose={onClose}
+      />
     );
     await userEvent.click(screen.getByRole("button", { name: "Ok" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   describe("copy button", () => {
+    let writeText: jest.Mock;
+
     beforeEach(() => {
+      writeText = jest.fn().mockResolvedValue(undefined);
       Object.defineProperty(navigator, "clipboard", {
-        value: { writeText: jest.fn().mockResolvedValue(undefined) },
+        value: { writeText },
         writable: true,
       });
     });
 
-    it("renders copy button when isOpen=true", () => {
-      render(
-        <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
-      );
-      expect(screen.getByRole("button", { name: "Copy to clipboard" })).toBeInTheDocument();
+    it("renders one Copy all button and one floating Copy button for each section", () => {
+      renderPythonScriptModal();
+
+      expect(screen.getByRole("button", { name: COPY_ALL_LABEL })).toHaveTextContent("Copy all");
+      expect(screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL })).toHaveTextContent("Copy");
+      expect(screen.getByRole("button", { name: COPY_REMAINING_SCRIPT_LABEL })).toHaveTextContent("Copy");
+      expect(screen.getAllByRole("button")).toHaveLength(4);
     });
 
-    it("calls clipboard API with script on click", async () => {
-      render(
-        <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
+    it("copies the combined script or the selected section", async () => {
+      renderPythonScriptModal();
+
+      await userEvent.click(screen.getByRole("button", { name: COPY_ALL_LABEL }));
+      await userEvent.click(screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL }));
+      await userEvent.click(screen.getByRole("button", { name: COPY_REMAINING_SCRIPT_LABEL }));
+
+      expect(writeText).toHaveBeenNthCalledWith(
+        1,
+        [USER_DEFINED_MATERIALS, REMAINING_SCRIPT].join("\n\n"),
       );
-      await userEvent.click(screen.getByRole("button", { name: "Copy to clipboard" }));
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(SAMPLE_SCRIPT);
+      expect(writeText).toHaveBeenNthCalledWith(2, USER_DEFINED_MATERIALS);
+      expect(writeText).toHaveBeenNthCalledWith(3, REMAINING_SCRIPT);
     });
 
-    it("shows 'Copied!' feedback then reverts to 'Copy' after 2s", async () => {
+    it("resets each section's Copied feedback on its own two-second timer", async () => {
       jest.useFakeTimers();
-      render(
-        <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
-      );
-      const button = screen.getByRole("button", { name: "Copy to clipboard" });
+      renderPythonScriptModal();
+      const materialsButton = screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL });
+      const remainingButton = screen.getByRole("button", { name: COPY_REMAINING_SCRIPT_LABEL });
+
       await act(async () => {
-        fireEvent.click(button);
+        fireEvent.click(materialsButton);
       });
-      expect(button).toHaveTextContent("Copied!");
+      expect(materialsButton).toHaveTextContent("Copied!");
+      expect(remainingButton).toHaveTextContent("Copy");
+
       act(() => {
-        jest.advanceTimersByTime(2000);
+        jest.advanceTimersByTime(1000);
       });
-      expect(button).toHaveTextContent("Copy");
+
+      await act(async () => {
+        fireEvent.click(remainingButton);
+      });
+      expect(materialsButton).toHaveTextContent("Copied!");
+      expect(remainingButton).toHaveTextContent("Copied!");
+
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(materialsButton).toHaveTextContent("Copy");
+      expect(remainingButton).toHaveTextContent("Copied!");
+
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(remainingButton).toHaveTextContent("Copy");
       jest.useRealTimers();
     });
   });
 
   // --- Tooltip tests ---
 
-  it("Copy button has a tooltip that becomes visible on hover", () => {
-    render(
-      <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
-    );
-    const btn = screen.getByRole("button", { name: "Copy to clipboard" });
-    // Fire mouseEnter on the Tooltip's span wrapper (direct parent of the button)
-    act(() => { fireEvent.mouseEnter(btn.parentElement!); });
-    expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
+  it("gives each copy button distinct tooltip text", () => {
+    renderPythonScriptModal();
+
+    expect(screen.getByRole("tooltip", { name: COPY_ALL_LABEL })).toBeInTheDocument();
+    expect(screen.getByRole("tooltip", { name: COPY_USER_DEFINED_MATERIALS_LABEL })).toBeInTheDocument();
+    expect(screen.getByRole("tooltip", { name: COPY_REMAINING_SCRIPT_LABEL })).toBeInTheDocument();
   });
 
-  it("Copy button wrapper div has absolute positioning classes", () => {
-    render(
-      <PythonScriptModal isOpen={true} script={SAMPLE_SCRIPT} onClose={jest.fn()} />
-    );
-    const btn = screen.getByRole("button", { name: "Copy to clipboard" });
-    const wrapper = btn.closest("div.absolute");
-    expect(wrapper).toHaveClass("absolute", "right-6", "top-6");
+  it("shows the hovered section tooltip", () => {
+    renderPythonScriptModal();
+    const btn = screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL });
+
+    act(() => { fireEvent.mouseEnter(btn.parentElement!); });
+    expect(screen.getByRole("tooltip", { name: COPY_USER_DEFINED_MATERIALS_LABEL })).toHaveClass("opacity-100");
+  });
+
+  it("section Copy buttons have absolute positioning classes", () => {
+    renderPythonScriptModal();
+    const buttons = [
+      screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL }),
+      screen.getByRole("button", { name: COPY_REMAINING_SCRIPT_LABEL }),
+    ];
+
+    for (const button of buttons) {
+      const wrapper = button.closest("div.absolute");
+      expect(wrapper).toHaveClass("absolute", "right-6", "top-6");
+    }
   });
 });
