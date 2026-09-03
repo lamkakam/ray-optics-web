@@ -60,15 +60,29 @@ describe("PythonScriptModal", () => {
     expect(codeElements[1]).toHaveTextContent(REMAINING_SCRIPT, { normalizeWhitespace: false });
   });
 
-  it("keeps the second section horizontally scrollable without its own vertical constraint", () => {
+  it("gives both code blocks 16px padding and intrinsic width with a full-width minimum", () => {
     renderPythonScriptModal();
     const preElements = screen.getByRole("dialog").querySelectorAll("pre");
-    const secondScrollContainer = preElements[1].parentElement!;
 
-    expect(secondScrollContainer).toHaveClass("overflow-x-auto");
-    expect(secondScrollContainer).not.toHaveClass("overflow-auto");
-    expect(secondScrollContainer).not.toHaveClass("overflow-y-auto");
-    expect(secondScrollContainer.className).not.toMatch(/\bmax-h-/);
+    for (const preElement of preElements) {
+      expect(preElement).toHaveClass("p-4", "w-max", "min-w-full");
+    }
+  });
+
+  it("uses the modal body as the only scroll container for both code sections", () => {
+    renderPythonScriptModal();
+    const dialog = screen.getByRole("dialog");
+    const body = screen.getByTestId("modal-body");
+    const preElements = dialog.querySelectorAll("pre");
+
+    expect(body).toHaveClass("overflow-auto");
+    expect(body.querySelectorAll(".overflow-auto, .overflow-x-auto, .overflow-y-auto")).toHaveLength(0);
+
+    for (const preElement of preElements) {
+      expect(preElement.parentElement).toHaveClass("relative", "w-full");
+      expect(preElement.parentElement).not.toHaveClass("overflow-auto", "overflow-x-auto", "overflow-y-auto");
+      expect(preElement.className).not.toMatch(/\bmax-h-/);
+    }
   });
 
   it("groups the two code sections with a 16px gap", () => {
@@ -149,6 +163,13 @@ describe("PythonScriptModal", () => {
       expect(screen.getAllByRole("button")).toHaveLength(4);
     });
 
+    it("insets the Copy all row by 16px so its right edge aligns with section Copy buttons", () => {
+      renderPythonScriptModal();
+      const copyAllButton = screen.getByRole("button", { name: COPY_ALL_LABEL });
+
+      expect(copyAllButton.closest("div.mb-3")).toHaveClass("pr-4");
+    });
+
     it("copies the combined script or the selected section", async () => {
       renderPythonScriptModal();
 
@@ -218,7 +239,7 @@ describe("PythonScriptModal", () => {
     expect(screen.getByRole("tooltip", { name: COPY_USER_DEFINED_MATERIALS_LABEL })).toHaveClass("opacity-100");
   });
 
-  it("section Copy buttons have absolute positioning classes", () => {
+  it("section Copy buttons have aligned 16px positioning classes", () => {
     renderPythonScriptModal();
     const buttons = [
       screen.getByRole("button", { name: COPY_USER_DEFINED_MATERIALS_LABEL }),
@@ -227,7 +248,9 @@ describe("PythonScriptModal", () => {
 
     for (const button of buttons) {
       const wrapper = button.closest("div.absolute");
-      expect(wrapper).toHaveClass("absolute", "right-6", "top-6");
+      expect(wrapper).toHaveClass("absolute", "right-4", "top-4");
+      expect(button).toHaveClass("right-0", "top-0");
+      expect(button).not.toHaveClass("right-2", "top-2");
     }
   });
 });

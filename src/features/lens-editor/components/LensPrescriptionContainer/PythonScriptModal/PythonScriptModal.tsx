@@ -34,6 +34,7 @@ interface CopyButtonProps {
  *
  * @remarks
  * Clipboard failures intentionally leave the button in its current state because feedback is only shown from the fulfilled `writeText` promise.
+ * Floating buttons override the primitive's default `top-2 right-2` offset so their wrapper controls the 16px code-block inset.
  */
 function CopyButton({ script, label, idleLabel, variant }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
@@ -60,7 +61,12 @@ function CopyButton({ script, label, idleLabel, variant }: CopyButtonProps) {
 
   return (
     <Tooltip text={label} portal noTouch>
-      <Button variant={variant} aria-label={label} onClick={handleCopy}>
+      <Button
+        variant={variant}
+        className={variant === "floating" ? "right-0 top-0" : undefined}
+        aria-label={label}
+        onClick={handleCopy}
+      >
         {copied ? "Copied!" : idleLabel}
       </Button>
     </Tooltip>
@@ -68,7 +74,7 @@ function CopyButton({ script, label, idleLabel, variant }: CopyButtonProps) {
 }
 
 /**
- * Modal that displays the standalone Python export as two code blocks. The first block keeps bounded scrolling, while the second expands vertically with the modal body and only scrolls horizontally. It provides a right-aligned `Copy all` action and a floating `Copy` action for each block; every action uses the Clipboard API and shows its own transient `Copied!` confirmation.
+ * Modal that displays the standalone Python export as two intrinsic-width code blocks. The modal body owns both scroll axes while the header and footer remain fixed. It provides a right-aligned `Copy all` action and a floating `Copy` action for each block; every action uses the Clipboard API and shows its own transient `Copied!` confirmation.
  *
  * @remarks
  * ## Key Behaviors
@@ -77,7 +83,9 @@ function CopyButton({ script, label, idleLabel, variant }: CopyButtonProps) {
  * - The second `<pre><code>` block displays `remainingScript`.
  * - Both block-code regions use `componentTokens.code.color.bgColor`; the path placeholder is an inline `<code>` element with the same background, monospace text, compact padding, and rounded corners.
  * - The two code sections are separated by a `gap-4` layout gap.
- * - The first code section retains its `max-h-[60vh]` bounded `overflow-auto` container. The second code section uses horizontal-only `overflow-x-auto` with no maximum height, leaving the modal body as its sole vertical scrollbar for that content.
+ * - Each `<pre>` uses `p-4`, `w-max`, and `min-w-full`, so its code background and 16px padding extend to the intrinsic text width while remaining at least as wide as the modal body.
+ * - The shared modal body is the sole horizontal and vertical scroll container via `overflow-auto`; code sections have no nested overflow containers or height constraints.
+ * - The `Copy all` row and both section copy buttons share a 16px right inset.
  * - The `Copy all` action writes the exact two-section combination, joined with two newline characters, while each floating `Copy` action writes only its own section.
  * - The caller computes both sections lazily only when `isOpen` is `true` (performance optimization).
  * - Each copy action has distinct tooltip and ARIA text and independent two-second feedback.
@@ -115,7 +123,7 @@ export function PythonScriptModal({
           </code>{" "}
           with the real path to your custom glass JSON file before running the script.
         </p>
-        <div className="mb-3 flex justify-end">
+        <div className="mb-3 flex justify-end pr-4">
           <CopyButton
             script={combinedScript}
             label="Copy all to clipboard"
@@ -125,10 +133,8 @@ export function PythonScriptModal({
         </div>
         <div className="flex w-full flex-col gap-4">
           <div className="relative w-full">
-            <div className="max-h-[60vh] w-full overflow-auto">
-              <pre className={clsx("w-full whitespace-pre font-mono text-xs", cx.code.color.bgColor)}><code>{userDefinedMaterials}</code></pre>
-            </div>
-            <div className="absolute right-6 top-6">
+            <pre className={clsx("w-max min-w-full whitespace-pre p-4 font-mono text-xs", cx.code.color.bgColor)}><code>{userDefinedMaterials}</code></pre>
+            <div className="absolute right-4 top-4">
               <CopyButton
                 script={userDefinedMaterials}
                 label="Copy user-defined materials to clipboard"
@@ -138,10 +144,8 @@ export function PythonScriptModal({
             </div>
           </div>
           <div className="relative w-full">
-            <div className="w-full overflow-x-auto">
-              <pre className={clsx("w-full whitespace-pre font-mono text-xs", cx.code.color.bgColor)}><code>{remainingScript}</code></pre>
-            </div>
-            <div className="absolute right-6 top-6">
+            <pre className={clsx("w-max min-w-full whitespace-pre p-4 font-mono text-xs", cx.code.color.bgColor)}><code>{remainingScript}</code></pre>
+            <div className="absolute right-4 top-4">
               <CopyButton
                 script={remainingScript}
                 label="Copy remaining script to clipboard"
