@@ -61,6 +61,19 @@ describe("GlassScatterPlot", () => {
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
+  it("names the chart and supports keyboard point selection", () => {
+    render(<GlassScatterPlot {...defaultProps} />);
+
+    expect(screen.getByRole("img", { name: "Glass map" })).toBeInTheDocument();
+    const point = screen.getByRole("button", { name: "Select N-BK7 from Schott" });
+    fireEvent.keyDown(point, { key: "Enter" });
+    expect(defaultProps.onPointClick).toHaveBeenCalledWith({
+      catalogName: "Schott",
+      glassName: "N-BK7",
+      data: glassData,
+    });
+  });
+
   it("applies touch-action none on the main svg container for mobile pinch handling", () => {
     const { container } = render(<GlassScatterPlot {...defaultProps} />);
     const svg = container.querySelector("svg") as SVGSVGElement | null;

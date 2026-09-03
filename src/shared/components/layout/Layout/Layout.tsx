@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/shared/components/primitives/Button";
 import { Header } from "@/shared/components/primitives/Header";
 import { SideNav } from "@/shared/components/layout/SideNav";

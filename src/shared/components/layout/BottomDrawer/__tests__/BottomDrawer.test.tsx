@@ -37,6 +37,25 @@ describe("BottomDrawer", () => {
     });
   });
 
+  it("exposes resize values and supports keyboard resizing", () => {
+    const onHeightCommit = jest.fn();
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>Specs</div> }]}
+        initialHeight={300}
+        onHeightCommit={onHeightCommit}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+
+    expect(handle).toHaveAttribute("aria-valuemin", "48");
+    expect(handle).toHaveAttribute("aria-valuemax", "850");
+    expect(handle).toHaveAttribute("aria-valuenow", "300");
+    fireEvent.keyDown(handle, { key: "ArrowUp" });
+    expect(handle).toHaveAttribute("aria-valuenow", "310");
+    expect(onHeightCommit).toHaveBeenLastCalledWith(310);
+  });
+
   it("renders with tabs", () => {
     render(
       <BottomDrawer

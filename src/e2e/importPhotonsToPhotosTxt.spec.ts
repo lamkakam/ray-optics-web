@@ -12,7 +12,7 @@
  * - Fixtures are reused from `src/__tests__/data/photons-to-photos`.
  * - The test intentionally verifies imported UI state rather than running an optical compute.
  */
-import path from "path";
+import path from "node:path";
 import { test, expect } from "./fixtures";
 import { dismissAnyOpenDialog, getColId } from "./utils";
 

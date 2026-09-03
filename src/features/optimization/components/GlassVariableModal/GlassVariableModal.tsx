@@ -28,7 +28,7 @@ import {
 } from "ag-grid-community";
 import { CATALOG_NAMES, type AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import type { GlassCandidateConfig, GlassCatalogName } from "@/features/optimization/types/optimizationWorkerTypes";
+import type { GlassCatalogName } from "@/features/optimization/types/optimizationWorkerTypes";
 import type { GlassMode, GlassModeDraft } from "@/features/optimization/stores/optimizationStore";
 import {
   formatOptionalSixDecimal,
@@ -83,11 +83,7 @@ export function GlassVariableModal({
   onClose,
 }: GlassVariableModalProps) {
   if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined) {
-    return (
-      <Modal isOpen={false} title="Glass Variable">
-        <></>
-      </Modal>
-    );
+    return <Modal isOpen={false} title="Glass Variable" />;
   }
 
   const target = surfaceIndex === 0
@@ -265,7 +261,7 @@ function GlassVariableModalEditor({
     if (gridApiRef.current !== undefined) {
       synchronizeGridSelection(gridApiRef.current);
     }
-  }, [rows, synchronizeGridSelection]);
+  }, [synchronizeGridSelection]);
 
   const handleGridReady = useCallback((event: GridReadyEvent<GlassCandidateRow>) => {
     gridApiRef.current = event.api;

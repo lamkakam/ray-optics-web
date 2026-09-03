@@ -17,7 +17,7 @@
  * - The test validates the state displayed in the text action cells and the modals triggered from those cells, which is the acceptance target for this import path.
  * - The selectors scope each text action button to the specific AG Grid column cell after resolving the row through the pinned `Index` column, so duplicate pinned/center row containers do not cause Playwright strict-mode failures.
  */
-import path from "path";
+import path from "node:path";
 import { test, expect } from "./fixtures";
 import {
   dismissAnyOpenDialog,

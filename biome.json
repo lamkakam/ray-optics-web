@@ -1,0 +1,113 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.11/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!!node_modules",
+      "!!.next",
+      "!!out",
+      "!!coverage",
+      "!!src/python",
+      "!!scripts",
+      "!!src/shared/lib/utils/generated"
+    ]
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "formatter": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended"
+    },
+    "domains": {
+      "next": "recommended",
+      "react": "recommended",
+      "test": "recommended",
+      "playwright": "recommended"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noStaticElementInteractions": "off",
+            "useButtonType": "off"
+          },
+          "complexity": {
+            "noArguments": "off"
+          },
+          "correctness": {
+            "noUnsafeOptionalChaining": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          },
+          "suspicious": {
+            "noApproximativeNumericConstant": "off",
+            "noNonNullAssertedOptionalChain": "off",
+            "useIterableCallbackReturn": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/__mocks__/ag-grid-react.tsx",
+        "src/features/analysis/components/cartesianPlotDeckHelpers.tsx",
+        "src/shared/components/primitives/Table/Table.tsx"
+      ],
+      "linter": { "rules": { "suspicious": { "noArrayIndexKey": "off" } } }
+    },
+    {
+      "includes": [
+        "src/features/glass-map/components/GlassScatterPlot/GlassScatterPlot.tsx",
+        "src/shared/components/layout/BottomDrawer/BottomDrawer.tsx",
+        "src/shared/lib/lens-prescription-grid/LensPrescriptionGridCells.tsx"
+      ],
+      "linter": { "rules": { "a11y": { "noStaticElementInteractions": "off", "useKeyWithClickEvents": "off", "useSemanticElements": "off" } } }
+    },
+    {
+      "includes": [
+        "src/features/glass-map/components/GlassMapCatalogSelector/GlassMapCatalogSelector.tsx",
+        "src/shared/components/primitives/Label/Label.tsx"
+      ],
+      "linter": { "rules": { "a11y": { "noLabelWithoutControl": "off" } } }
+    },
+    {
+      "includes": [
+        "src/shared/components/primitives/Modal/Modal.tsx",
+        "src/shared/components/primitives/Tooltip/Tooltip.tsx"
+      ],
+      "linter": { "rules": { "a11y": { "noStaticElementInteractions": "off", "useKeyWithClickEvents": "off" } } }
+    },
+    {
+      "includes": ["src/features/lens-editor/components/LensLayoutPanel/LensLayoutPanel.tsx"],
+      "linter": { "rules": { "performance": { "noImgElement": "off" } } }
+    },
+    {
+      "includes": ["src/shared/lib/schemas/prescriptionSchema.ts"],
+      "linter": { "rules": { "suspicious": { "noThenProperty": "off" } } }
+    },
+    {
+      "includes": [
+        "src/features/import-custom-glass/components/CustomGlassModal/CustomGlassModal.tsx",
+        "src/features/optimization/OptimizationPage.tsx",
+        "src/shared/hooks/useWebMCP.ts"
+      ],
+      "linter": { "rules": { "correctness": { "useExhaustiveDependencies": "off" } } }
+    }
+  ]
+}

@@ -7,7 +7,7 @@
  * - `create`, `StateCreator` from `zustand`.
  * - `SeidelData` from `@/features/lens-editor/types/seidelData`.
  */
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
 
 export interface AnalysisDataState {

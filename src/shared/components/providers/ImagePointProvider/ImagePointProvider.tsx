@@ -1,7 +1,8 @@
 "use client";
 /** App-wide image-reference selection and its persistent browser-storage contract. */
 
-import React, { createContext, useCallback, useContext, useState } from "react";
+import type React from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 
 /** Reference point used by spot, wavefront-like, and OPD-related analyses. */
 export type ImagePoint = "chief_ray" | "centroid";

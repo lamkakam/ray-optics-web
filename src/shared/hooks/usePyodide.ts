@@ -136,7 +136,9 @@ function initOnce(): Promise<void> {
     const proxy = getProxy();
     singletonInitPromise = proxy.init(comlinkProxy((progress: InitProgress) => {
       singletonInitProgress = progress;
-      initProgressListeners.forEach((listener) => listener(progress));
+      initProgressListeners.forEach((listener) => {
+        listener(progress);
+      });
     }));
   }
   return singletonInitPromise;

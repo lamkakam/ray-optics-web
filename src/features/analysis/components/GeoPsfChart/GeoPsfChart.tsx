@@ -74,6 +74,7 @@ export function GeoPsfChart({
   return (
     <div ref={containerRef} className="h-full w-full min-h-0">
       <div
+        role="img"
         data-testid="geo-psf-chart"
         aria-label="Geometric PSF plot"
         className="relative overflow-hidden text-zinc-700 dark:text-zinc-200"

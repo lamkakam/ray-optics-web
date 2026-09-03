@@ -8,7 +8,7 @@
  * - `PlotType` (type-only) from `@/features/analysis/components`.
  * - `RayFanData`, `OpdFanData`, `SpotDiagramData`, `FieldCurveData`, `AstigmatismCurveData`, `LongitudinalSphericalAberrationData`, `GeoPsfData`, `DiffractionPsfData`, `DiffractionMtfData`, `StrehlVsWavelengthData`, and `WavefrontMapData` (type-only) from `@/features/analysis/types/plotData`.
  */
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 import type { PlotType } from "@/features/analysis/components";
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 

@@ -6,7 +6,6 @@ import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTrans
 import { IMAGE_ROW_ID, OBJECT_ROW_ID, type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import {
   collectSurfaceScalingNumericValues,
-  OBJECT_DISTANCE_INFINITY_THRESHOLD,
   scaleSurfaceValueRow,
 } from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
 

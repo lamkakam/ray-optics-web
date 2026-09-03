@@ -1,5 +1,6 @@
 /** Specs configurator presentation and keyed aperture-draft editing behavior. */
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import { Button } from "@/shared/components/primitives/Button";
 import { Select } from "@/shared/components/primitives/Select";
@@ -139,7 +140,7 @@ function ApertureValueInput({ pupilValue, onCommit }: ApertureValueInputProps) {
   const handleValueBlur = () => {
     const trimmed = valueStr.trim();
     const parsed = Number(trimmed);
-    if (trimmed !== "" && !isNaN(parsed)) {
+    if (trimmed !== "" && !Number.isNaN(parsed)) {
       onCommit(parsed);
       return;
     }

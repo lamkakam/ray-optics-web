@@ -1,5 +1,6 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import type React from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { Theme } from "@/shared/tokens/theme";
 
 interface ThemeContextValue {

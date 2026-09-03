@@ -21,7 +21,7 @@
  *
  * The test identifies the target prescription row by its displayed `Index` value rather than its positional AG Grid row index. Because changing an operand kind can recreate the operand-grid columns, the weight edit targets the stable Weight cell position in the single operand row rather than retaining a transient AG Grid column ID.
  */
-import path from "path";
+import path from "node:path";
 import type { Page } from "@playwright/test";
 import { test, expect } from "./fixtures";
 import {

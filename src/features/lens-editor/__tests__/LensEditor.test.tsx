@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { readFileSync } from "fs";
-import path from "path";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { DiffractionMtfData, DiffractionPsfData, WavefrontMapData } from "@/features/analysis/types/plotData";
@@ -397,7 +397,7 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => {
-      expect(proxy!.plotLensLayout).toHaveBeenCalledWith(expect.anything(), true);
+      expect(proxy?.plotLensLayout).toHaveBeenCalledWith(expect.anything(), true);
     });
   });
 
@@ -416,7 +416,7 @@ describe("LensEditor", () => {
     await waitFor(() => expect(lensStore.getState().autoSemiDiameters).toEqual(
       { [lensStore.getState().rows[1].id]: 11.5 },
     ));
-    expect(proxy!.getSurfaceSemiDiameters).toHaveBeenCalledTimes(1);
+    expect(proxy?.getSurfaceSemiDiameters).toHaveBeenCalledTimes(1);
     expect((lensStore.getState().rows[1] as { semiDiameter: number }).semiDiameter).toBe(10);
   });
 
@@ -427,7 +427,7 @@ describe("LensEditor", () => {
     await userEvent.setup().click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => expect(lensStore.getState().autoSemiDiameters).toEqual({}));
-    expect(proxy!.getSurfaceSemiDiameters).not.toHaveBeenCalled();
+    expect(proxy?.getSurfaceSemiDiameters).not.toHaveBeenCalled();
   });
 
   it("preserves the old computed cache when an auto update fails", async () => {
@@ -455,7 +455,7 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => {
-      expect(proxy!.plotLensLayout).toHaveBeenCalledWith(
+      expect(proxy?.plotLensLayout).toHaveBeenCalledWith(
         expect.objectContaining({
           surfaces: expect.arrayContaining([
             expect.objectContaining({
@@ -478,7 +478,7 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => {
-      expect(proxy!.getWavefrontData).toHaveBeenCalled();
+      expect(proxy?.getWavefrontData).toHaveBeenCalled();
     });
     expect(analysisPlotStore.getState().wavefrontMapData).toEqual(mockWavefrontMapData);
   });
@@ -493,7 +493,7 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => {
-      expect(proxy!.getDiffractionPSFData).toHaveBeenCalled();
+      expect(proxy?.getDiffractionPSFData).toHaveBeenCalled();
     });
     expect(analysisPlotStore.getState().diffractionPsfData).toEqual(mockDiffractionPsfData);
   });
@@ -508,7 +508,7 @@ describe("LensEditor", () => {
     await user.click(screen.getByTestId("update-system-btn"));
 
     await waitFor(() => {
-      expect(proxy!.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, "centroid");
+      expect(proxy?.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, "centroid");
     });
     expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData);
   });

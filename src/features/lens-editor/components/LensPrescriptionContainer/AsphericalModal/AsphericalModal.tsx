@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { MathJax } from "better-react-mathjax";
 import { Button } from "@/shared/components/primitives/Button";
 import { Input } from "@/shared/components/primitives/Input";

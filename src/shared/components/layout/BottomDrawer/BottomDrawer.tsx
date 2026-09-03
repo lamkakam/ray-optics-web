@@ -1,9 +1,10 @@
 "use client";
 /** Resizable and collapsible tabbed bottom drawer. */
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import type React from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import clsx from "clsx";
-import { Tabs, TabItem } from "@/shared/components/primitives/Tabs";
+import { Tabs, type TabItem } from "@/shared/components/primitives/Tabs";
 
 export type { TabItem };
 
@@ -29,9 +30,16 @@ interface BottomDrawerProps {
 const SNAP_COLLAPSED = 48;
 const DEFAULT_OPEN_HEIGHT_RATIO = 0.4;
 const MAX_HEIGHT_RATIO = 0.85;
+const SERVER_VIEWPORT_HEIGHT = 1000;
 
 function getDefaultOpenHeight(): number {
   return Math.round(window.innerHeight * DEFAULT_OPEN_HEIGHT_RATIO);
+}
+
+/** Returns the keyboard/ARIA resize ceiling, including a deterministic server-render fallback. */
+function getMaximumHeight(): number {
+  const viewportHeight = typeof window === "undefined" ? SERVER_VIEWPORT_HEIGHT : window.innerHeight;
+  return Math.round(viewportHeight * MAX_HEIGHT_RATIO);
 }
 
 function isCollapsedHeight(height: number): boolean {
@@ -45,6 +53,7 @@ function isCollapsedHeight(height: number): boolean {
  * ## Key Behaviors
  *
  * - Pointer events use `setPointerCapture` to track drag outside the handle element.
+ * - The resize separator exposes its current/minimum/maximum height and supports Arrow Up/Down, Home, and End keyboard resizing.
  * - While dragging, the drawer height updates continuously within a bounded range of 48px to 85% of the viewport height.
  * - While dragging, `onHeightChange` receives the current live height on every pointer move.
  * - On pointer-up, dragging stops without snapping to preset heights and commits the final height through `onHeightCommit`.
@@ -73,6 +82,10 @@ export function BottomDrawer({
   const [height, setHeight] = useState(resolvedInitialHeight);
   /** Whether the drawer is collapsed to its minimum height. */
   const [collapsed, setCollapsed] = useState(resolvedInitialCollapsed);
+  /** Current viewport-derived maximum, initialized deterministically for hydration. */
+  const [maximumHeight, setMaximumHeight] = useState(
+    Math.round(SERVER_VIEWPORT_HEIGHT * MAX_HEIGHT_RATIO),
+  );
   /** Whether the resize handle currently owns an active pointer drag. */
   const dragging = useRef(false);
   /** Pointer Y coordinate captured at the start of a drag. */
@@ -83,6 +96,7 @@ export function BottomDrawer({
   const collapsedRef = useRef(resolvedInitialCollapsed);
 
   useEffect(() => {
+    setMaximumHeight(getMaximumHeight());
     if (initialHeight !== undefined) {
       return;
     }
@@ -132,6 +146,31 @@ export function BottomDrawer({
     onHeightCommit?.(collapsedRef.current ? SNAP_COLLAPSED : heightRef.current);
   }, [onHeightCommit]);
 
+  const commitKeyboardHeight = useCallback((nextHeight: number) => {
+    const roundedHeight = Math.round(nextHeight);
+    const nextCollapsed = isCollapsedHeight(roundedHeight);
+    heightRef.current = roundedHeight;
+    collapsedRef.current = nextCollapsed;
+    setHeight(roundedHeight);
+    setCollapsed(nextCollapsed);
+    const committedHeight = nextCollapsed ? SNAP_COLLAPSED : roundedHeight;
+    onHeightChange?.(committedHeight);
+    onHeightCommit?.(committedHeight);
+  }, [onHeightChange, onHeightCommit]);
+
+  const handleResizeKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    const maximumHeight = getMaximumHeight();
+    const currentHeight = collapsedRef.current ? SNAP_COLLAPSED : heightRef.current;
+    const nextHeight = event.key === "ArrowUp" ? Math.min(maximumHeight, currentHeight + 10)
+      : event.key === "ArrowDown" ? Math.max(SNAP_COLLAPSED, currentHeight - 10)
+        : event.key === "Home" ? SNAP_COLLAPSED
+          : event.key === "End" ? maximumHeight
+            : undefined;
+    if (nextHeight === undefined) return;
+    event.preventDefault();
+    commitKeyboardHeight(nextHeight);
+  }, [commitKeyboardHeight]);
+
   const toggleCollapse = useCallback(() => {
     if (collapsed) {
       const defaultHeight = getDefaultOpenHeight();
@@ -173,10 +212,16 @@ export function BottomDrawer({
       <div
         role="separator"
         aria-label="Resize drawer"
+        aria-orientation="horizontal"
+        aria-valuemin={SNAP_COLLAPSED}
+        aria-valuemax={maximumHeight}
+        aria-valuenow={collapsed ? SNAP_COLLAPSED : height}
+        tabIndex={0}
         className="flex shrink-0 cursor-row-resize items-center justify-center py-1"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onKeyDown={handleResizeKeyDown}
       >
         <div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-gray-600" />
       </div>

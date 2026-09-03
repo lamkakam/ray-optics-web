@@ -97,6 +97,7 @@ export function DiffractionPsfChart({
   return (
     <div ref={containerRef} className="h-full w-full min-h-0">
       <div
+        role="img"
         data-testid="diffraction-psf-chart"
         aria-label="Diffraction PSF plot"
         className="relative overflow-hidden text-zinc-700 dark:text-zinc-200"

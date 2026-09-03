@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { AstigmatismChart } from "@/features/analysis/components/AstigmatismChart";
 import { DiffractionMtfChart } from "@/features/analysis/components/DiffractionMtfChart";
 import { DiffractionPsfChart } from "@/features/analysis/components/DiffractionPsfChart";

@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";

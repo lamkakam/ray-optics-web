@@ -5,7 +5,7 @@ type WorkerFixtures = {
   pyodidePage: Page;
 };
 
-export const test = base.extend<{}, WorkerFixtures>({
+export const test = base.extend<Record<never, never>, WorkerFixtures>({
   pyodidePage: [
     async ({ browser }, use) => {
       const context = await browser.newContext({

@@ -18,7 +18,7 @@
  *
  */
 import type { ColumnState } from "ag-grid-community";
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 
 export const IMPORT_CUSTOM_GLASS_DATA_COLUMN_IDS = [
   "label",

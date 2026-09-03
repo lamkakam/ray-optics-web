@@ -5,6 +5,7 @@ import { useStore } from "zustand";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { FocusingPanel } from "@/features/lens-editor/components/FocusingPanel";
 import { LoadingOverlay } from "@/shared/components/primitives/LoadingOverlay";
@@ -92,7 +93,7 @@ export function FocusingContainer({
     setFocusing(true);
     try {
       const model = getOpticalModel();
-      let result;
+      let result: FocusingResult;
       if (chromaticity === "mono" && metric === "rmsSpot") {
         result = await proxy.focusByMonoRmsSpot(model, fieldIndex);
       } else if (chromaticity === "mono" && metric === "wavefront") {

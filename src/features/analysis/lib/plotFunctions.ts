@@ -202,7 +202,7 @@ export function commitAnalysisPlotResult(
       return;
     default: {
       const exhaustive: never = plotResult;
-      return exhaustive;
+      throw new Error(`Unsupported analysis plot result: ${String(exhaustive)}`);
     }
   }
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useStore } from "zustand";
 import { useLensEditorStore } from "@/features/lens-editor/providers/LensEditorStoreProvider";
-import { type GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
+import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel, AsphericalType } from "@/shared/lib/types/opticalModel";
 import { buildExportScriptSections } from "@/shared/lib/utils/pythonScript";
 import { Button } from "@/shared/components/primitives/Button";

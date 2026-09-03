@@ -296,7 +296,7 @@ function buildFieldSpec(
       space: "object",
       type: "angle",
       maxField: fullAngleOfView / 2,
-      fields: [0, 0.707, 1],
+      fields: [0, Math.SQRT1_2, 1],
       isRelative: true,
       isWideAngle: fullAngleOfView >= 80,
     };
@@ -307,7 +307,7 @@ function buildFieldSpec(
     space: "image",
     type: "height",
     maxField: imageHeight / 2,
-    fields: [0, 0.707, 1],
+    fields: [0, Math.SQRT1_2, 1],
     isRelative: true,
     isWideAngle: pupil.type === "NA" ? pupil.value >= 0.5 : false,
   };

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import type React from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { MathJax } from "better-react-mathjax";
 import { Button } from "@/shared/components/primitives/Button";
 import { Modal } from "@/shared/components/primitives/Modal";

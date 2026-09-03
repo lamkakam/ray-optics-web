@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useId } from "react";
+import type React from "react";
+import { useId } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 import { Header } from "@/shared/components/primitives/Header";
@@ -27,7 +28,8 @@ interface ModalProps {
   readonly onBackdropClick?: () => void;
   /** Optional fixed footer content rendered outside the scrollable body region */
   readonly footer?: React.ReactNode;
-  readonly children: React.ReactNode;
+  /** Dialog body. May be omitted when rendering a closed shell. */
+  readonly children?: React.ReactNode;
 }
 
 /**

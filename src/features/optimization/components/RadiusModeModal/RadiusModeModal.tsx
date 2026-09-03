@@ -68,11 +68,7 @@ export function RadiusModeModal({
   onClose,
 }: RadiusModeModalProps) {
   if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined) {
-    return (
-      <Modal isOpen={false} title="Radius Variable / Pickup">
-        <></>
-      </Modal>
-    );
+    return <Modal isOpen={false} title="Radius Variable / Pickup" />;
   }
 
   return (

@@ -168,20 +168,20 @@ describe("LensPrescriptionGridCells", () => {
 
   it("keeps tooltip-backed action cells touch-scroll safe", () => {
     const { rerender } = render(<MediumCell medium="AIR" onOpenModal={() => {}} />);
-    expect(screen.getByRole("button", { name: "Edit medium" }).parentElement!.style.touchAction).not.toBe("none");
+    expect(screen.getByRole("button", { name: "Edit medium" }).parentElement?.style.touchAction).not.toBe("none");
 
     rerender(<AsphericalCell aspherical={undefined} onOpenModal={() => {}} />);
     expect(
-      screen.getByRole("button", { name: "Edit aspherical parameters" }).parentElement!.style.touchAction,
+      screen.getByRole("button", { name: "Edit aspherical parameters" }).parentElement?.style.touchAction,
     ).not.toBe("none");
 
     rerender(<DecenterCell decenter={undefined} onOpenModal={() => {}} />);
-    expect(screen.getByRole("button", { name: "Edit decenter and tilt" }).parentElement!.style.touchAction).not.toBe(
+    expect(screen.getByRole("button", { name: "Edit decenter and tilt" }).parentElement?.style.touchAction).not.toBe(
       "none",
     );
 
     rerender(<DiffractionGratingCell diffractionGrating={undefined} onOpenModal={() => {}} />);
-    expect(screen.getByRole("button", { name: "Edit diffraction grating" }).parentElement!.style.touchAction).not.toBe(
+    expect(screen.getByRole("button", { name: "Edit diffraction grating" }).parentElement?.style.touchAction).not.toBe(
       "none",
     );
   });

@@ -467,7 +467,7 @@ export function buildScript(
   const modelScript = buildOpticalModelScript(opticalModel);
   const indented = modelScript
     .split('\n')
-    .map(line => (line.length > 0 ? '    ' + line : line))
+    .map(line => (line.length > 0 ? `    ${line}` : line))
     .join('\n');
   const opmExpr = '_build_opm()';
   return `def _build_opm():\n${indented}\n    return opm\n${computation(opmExpr)}`;

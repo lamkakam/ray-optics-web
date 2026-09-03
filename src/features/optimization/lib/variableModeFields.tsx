@@ -1,7 +1,6 @@
 import { BoundedVariableModeFields } from "@/features/optimization/lib/BoundedVariableModeFields/BoundedVariableModeFields";
 import { UnboundedVariableModeFields } from "@/features/optimization/lib/UnboundedVariableModeFields/UnboundedVariableModeFields";
 import type {
-  VariableModeFieldsProps,
   VariableModeFieldsRenderer,
 } from "@/features/optimization/types/optimizationVariableFieldTypes";
 

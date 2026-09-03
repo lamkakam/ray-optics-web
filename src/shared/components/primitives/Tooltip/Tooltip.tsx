@@ -1,5 +1,6 @@
 /** Portal and in-flow tooltip positioning, viewport correction, and touch behavior. */
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import type React from "react";
 import type { Theme } from "@/shared/tokens/theme";
 import { useTheme } from "@/shared/components/providers/ThemeProvider";
 import { Header } from "@/shared/components/primitives/Header";

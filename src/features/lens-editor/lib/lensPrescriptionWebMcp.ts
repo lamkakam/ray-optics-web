@@ -250,7 +250,9 @@ export function createLensPrescriptionTools(
         state.addRowAfter(row.id);
         const next = store.getState();
         const insertedIndex = next.rows.filter((item) => item.kind === "surface").findIndex((item) => !state.rows.some((old) => old.id === item.id)) + 1;
-        return mutationResult(next, { surface: insertedIndex, row: externalRow(resolveRow(next.rows, insertedIndex)!) });
+        const insertedRow = resolveRow(next.rows, insertedIndex);
+        if (!insertedRow) semanticError("/surface", `${insertedIndex} does not exist`);
+        return mutationResult(next, { surface: insertedIndex, row: externalRow(insertedRow) });
       },
     },
     {
@@ -282,7 +284,9 @@ export function createLensPrescriptionTools(
         }
         state.updateRow(row.id, patch);
         const next = store.getState();
-        return mutationResult(next, { row: selector, value: externalRow(resolveRow(next.rows, selector)!) });
+        const updatedRow = resolveRow(next.rows, selector);
+        if (!updatedRow) semanticError("/row", `${String(selector)} does not exist`);
+        return mutationResult(next, { row: selector, value: externalRow(updatedRow) });
       },
     },
     {
@@ -296,7 +300,7 @@ export function createLensPrescriptionTools(
         const state = store.getState();
         const surface = input.surface as number;
         const row = resolveRow(state.rows, surface);
-        if (!row || row.kind !== "surface") semanticError("/surface", `${surface} does not exist`);
+        if (row?.kind !== "surface") semanticError("/surface", `${surface} does not exist`);
         state.deleteRow(row.id);
         return mutationResult(store.getState(), { surface });
       },

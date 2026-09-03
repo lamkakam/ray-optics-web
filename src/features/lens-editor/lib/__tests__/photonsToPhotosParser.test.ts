@@ -1,5 +1,5 @@
-import { readFileSync } from "fs";
-import path from "path";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import type { GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import { parsePhotonsToPhotosText } from "@/features/lens-editor/lib/photonsToPhotosParser";
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
@@ -98,7 +98,7 @@ describe("parsePhotonsToPhotosText", () => {
       space: "object",
       type: "angle",
       maxField: 6,
-      fields: [0, 0.707, 1],
+      fields: [0, Math.SQRT1_2, 1],
       isRelative: true,
       isWideAngle: false,
     });
@@ -355,7 +355,7 @@ describe("parsePhotonsToPhotosText", () => {
       space: "image",
       type: "height",
       maxField: 20,
-      fields: [0, 0.707, 1],
+      fields: [0, Math.SQRT1_2, 1],
       isRelative: true,
       isWideAngle: true,
     });
@@ -384,7 +384,7 @@ describe("parsePhotonsToPhotosText", () => {
       space: "image",
       type: "height",
       maxField: 12,
-      fields: [0, 0.707, 1],
+      fields: [0, Math.SQRT1_2, 1],
       isRelative: true,
       isWideAngle: true,
     });

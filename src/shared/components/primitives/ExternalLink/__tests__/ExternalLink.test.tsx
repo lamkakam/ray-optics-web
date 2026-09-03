@@ -1,4 +1,4 @@
-import React from "react";
+
 import { render, screen } from "@testing-library/react";
 import { ExternalLink } from "@/shared/components/primitives/ExternalLink";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";

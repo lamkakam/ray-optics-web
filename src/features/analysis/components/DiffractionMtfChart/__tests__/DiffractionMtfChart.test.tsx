@@ -59,8 +59,6 @@ describe("DiffractionMtfChart", () => {
       observe = mockResizeObserverObserve;
       unobserve = jest.fn();
       disconnect = mockResizeObserverDisconnect;
-
-      constructor(_callback: ResizeObserverCallback) {}
     }
 
     Object.defineProperty(window, "ResizeObserver", {

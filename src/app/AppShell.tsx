@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { MathJaxContext } from "better-react-mathjax";
 import { usePathname, useRouter } from "next/navigation";
@@ -237,7 +238,7 @@ export default function AppShell({ children }: AppShellProps) {
       href: getCurrentWindowHref(),
       state: window.history.state,
     };
-  }, [pathname]);
+  }, []);
 
   useEffect(() => {
     const handler = (event: PopStateEvent) => {

@@ -126,7 +126,7 @@ describe("CATALOG_COLOR_MAP", () => {
 describe("completeAllCatalogsData", () => {
   it("passes through frontend-ready catalog glass data", () => {
     const result = completeAllCatalogsData(rawCatalogsData);
-    expect(result.CDGM["BK7"].refractiveIndexD).toBe(1.5168);
+    expect(result.CDGM.BK7.refractiveIndexD).toBe(1.5168);
     expect(result.Schott["N-BK7"].abbeNumberD).toBe(64.17);
   });
 

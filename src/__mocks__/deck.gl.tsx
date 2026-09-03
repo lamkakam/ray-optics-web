@@ -34,10 +34,10 @@ class MockDeckConstructible {
   }
 }
 
-export class GridLayer<TData> extends MockDeckConstructible {}
+export class GridLayer<_TData> extends MockDeckConstructible {}
 
-export class BitmapLayer<TData> extends MockDeckConstructible {}
+export class BitmapLayer<_TData> extends MockDeckConstructible {}
 
-export class ScatterplotLayer<TData> extends MockDeckConstructible {}
+export class ScatterplotLayer<_TData> extends MockDeckConstructible {}
 
 export class OrthographicView extends MockDeckConstructible {}

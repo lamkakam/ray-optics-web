@@ -9,7 +9,7 @@
  * - Provides a writable `window.matchMedia` test double with listener and dispatch methods backed by Jest mocks.
  */
 import "@testing-library/jest-dom";
-import { TextDecoder, TextEncoder } from "util";
+import { TextDecoder, TextEncoder } from "node:util";
 
 global.TextDecoder = TextDecoder as typeof global.TextDecoder;
 global.TextEncoder = TextEncoder as typeof global.TextEncoder;

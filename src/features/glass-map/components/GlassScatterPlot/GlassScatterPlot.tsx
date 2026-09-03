@@ -30,6 +30,7 @@
  * - leaving the plot ends an active drag
  * - Crosshair lines: when `selectedGlass` is set and its matching `PlotPoint` is found in `points`, two dashed `<line>` elements are rendered inside the clip group at `axisXScale(point.x)` (vertical) and `axisYScale(point.y)` (horizontal); stroke uses CSS variable `--crosshair-stroke` (defined in `globals.css`)
  * - `data-testid="glass-point"` on each circle for test selection
+ * - The chart has an image role and title, and each glass point is a named keyboard-operable button.
  * - `data-testid="crosshair-h"` / `data-testid="crosshair-v"` on crosshair lines for test selection
  * - Circle radius: 4 (default), 6 + stroke (selected); during zoom, points are re-positioned in screen coordinates while radius and stroke width remain fixed so the apparent size stays constant
  * - x-axis domain reversed (high Abbe number on left, low on right — standard glass map convention)
@@ -55,7 +56,8 @@
  * - Crosshair lines are not rendered when the selected glass is not found in the current `points` array (e.g. its catalog is disabled)
  */
 
-import React, { useCallback } from "react";
+import type React from "react";
+import { useCallback } from "react";
 import { ParentSize } from "@visx/responsive";
 import { scaleLinear } from "@visx/scale";
 import { AxisBottom, AxisLeft } from "@visx/axis";
@@ -287,11 +289,14 @@ function InnerPlot({
 
           return (
             <svg
+              role="img"
+              aria-label="Glass map"
               width={width}
               height={height}
               ref={zoom.containerRef}
               style={{ touchAction: "none" }}
             >
+              <title>Glass map</title>
               <defs>
                 <clipPath id={clipId}>
                   <rect x={0} y={0} width={innerWidth} height={innerHeight} />
@@ -379,6 +384,9 @@ function InnerPlot({
 
                     return (
                       <circle
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Select ${point.glassName} from ${point.catalogName}`}
                         key={`${point.catalogName}-${point.glassName}`}
                         data-testid="glass-point"
                         cx={circleStyle.cx}
@@ -390,6 +398,12 @@ function InnerPlot({
                         opacity={0.8}
                         style={{ cursor: "pointer" }}
                         onClick={() => handlePointClick(point)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handlePointClick(point);
+                          }
+                        }}
                         onMouseEnter={(e) => {
                           const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
                           showTooltip({

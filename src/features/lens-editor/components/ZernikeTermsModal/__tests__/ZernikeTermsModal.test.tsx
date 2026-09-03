@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";

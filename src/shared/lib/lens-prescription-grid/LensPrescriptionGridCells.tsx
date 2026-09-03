@@ -18,7 +18,7 @@
  * - Optimization passes view-oriented tooltip copy through the shared column builders.
  */
 
-import React from "react";
+import type React from "react";
 import { Tooltip } from "@/shared/components/primitives/Tooltip";
 import {
   formatAsphericalLabel,

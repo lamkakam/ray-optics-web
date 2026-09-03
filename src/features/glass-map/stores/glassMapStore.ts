@@ -8,7 +8,7 @@
  * - Only successful normalized catalog data is committed into this store through `setCatalogsData(data)`.
  * - Catalog data and lookup maps are committed together as one initialization unit; lookup construction is delegated to `buildGlassLookupMaps` in the glass-map runtime library.
  */
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 import {
   CATALOG_NAMES,
   type AbbeNumCenterLine,

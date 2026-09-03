@@ -185,7 +185,7 @@ export function CustomGlassTable({ rows, checked, onCheckedChange }: CustomGlass
         node.setSelected(shouldBeSelected);
       }
     });
-  }, [checked, rows]);
+  }, [checked]);
 
   const handleGridReady = (event: GridReadyEvent<CustomGlassRow>) => {
     gridApiRef.current = event.api;

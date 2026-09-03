@@ -94,11 +94,11 @@ test("returns with a newly selected glass and commits it only after confirmation
   await expect(page).toHaveURL(/\/$/);
   const modal = page.getByRole("dialog", { name: "Select Medium" });
   await expect(modal).toBeVisible();
-  await expect(modal.getByLabel("Catalog")).toHaveValue(selectedCatalog!.trim());
-  await expect(modal.getByLabel("Glass", { exact: true })).toHaveValue(selectedGlass!.trim());
-  await expect(objectRow).not.toContainText(selectedGlass!.trim());
+  await expect(modal.getByLabel("Catalog")).toHaveValue(selectedCatalog?.trim());
+  await expect(modal.getByLabel("Glass", { exact: true })).toHaveValue(selectedGlass?.trim());
+  await expect(objectRow).not.toContainText(selectedGlass?.trim());
 
   await modal.getByRole("button", { name: "Confirm" }).click();
   await expect(modal).toBeHidden();
-  await expect(objectRow).toContainText(selectedGlass!.trim());
+  await expect(objectRow).toContainText(selectedGlass?.trim());
 });

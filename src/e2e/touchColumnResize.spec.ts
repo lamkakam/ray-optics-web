@@ -47,8 +47,8 @@ test("allows native viewport panning and resizes a column with a touchscreen dra
     const box = await resizeHandle.boundingBox();
     expect(box).not.toBeNull();
 
-    const startX = box!.x + box!.width / 2;
-    const startY = box!.y + box!.height / 2;
+    const startX = box?.x + box?.width / 2;
+    const startY = box?.y + box?.height / 2;
     const pointer = {
       pointerId: 1,
       pointerType: "touch",
