@@ -236,8 +236,10 @@ describe("OptimizationPage", () => {
     });
   });
 
-  it("renders the five requested tabs and action buttons", () => {
-    renderOptimizationPage(makeProxy());
+  it("renders the five requested tabs and action buttons", async () => {
+    await act(async () => {
+      renderOptimizationPage(makeProxy());
+    });
 
     expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Apply to Editor" })).toBeInTheDocument();
@@ -344,8 +346,9 @@ describe("OptimizationPage", () => {
     )).toBeInTheDocument();
   });
 
-  it("renders the optimization tabs inside a draggable bottom drawer on large screens", () => {
-    const { container } = renderOptimizationPage(makeProxy());
+  it("renders the optimization tabs inside a draggable bottom drawer on large screens", async () => {
+    const rendered = await act(async () => renderOptimizationPage(makeProxy()));
+    const { container } = rendered;
     const pageShell = container.firstElementChild;
 
     expect(pageShell).not.toHaveClass("p-4");
@@ -357,10 +360,11 @@ describe("OptimizationPage", () => {
     expect(screen.getByTestId("optimization-bottom-drawer-wrapper")).not.toHaveClass("px-4");
   });
 
-  it("renders the optimization tabs inside a non-draggable bottom drawer on small screens", () => {
+  it("renders the optimization tabs inside a non-draggable bottom drawer on small screens", async () => {
     jest.mocked(useScreenBreakpoint).mockReturnValue("screenSM");
 
-    const { container } = renderOptimizationPage(makeProxy());
+    const rendered = await act(async () => renderOptimizationPage(makeProxy()));
+    const { container } = rendered;
     const pageShell = container.firstElementChild;
 
     expect(pageShell).not.toHaveClass("p-4");

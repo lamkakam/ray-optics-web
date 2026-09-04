@@ -305,7 +305,9 @@ describe("FocusingContainer", () => {
     );
     await userEvent.click(screen.getByRole("button", { name: "Focus" }));
     expect(screen.getByText("Focusing…")).toBeInTheDocument();
-    resolveProxy();
+    await act(async () => {
+      resolveProxy();
+    });
     await waitFor(() => expect(screen.queryByText("Focusing…")).not.toBeInTheDocument());
   });
 
