@@ -46,7 +46,9 @@ export const MenuContainer = React.forwardRef<HTMLMenuElement, MenuContainerProp
 
       event.preventDefault();
 
-      const activeIndex = menuButtons.findIndex((button) => button === document.activeElement);
+      const activeIndex = document.activeElement instanceof HTMLButtonElement
+        ? menuButtons.indexOf(document.activeElement)
+        : -1;
       const targetIndex = event.key === "ArrowDown"
         ? activeIndex === -1
           ? 0
@@ -55,6 +57,9 @@ export const MenuContainer = React.forwardRef<HTMLMenuElement, MenuContainerProp
           ? menuButtons.length - 1
           : (activeIndex - 1 + menuButtons.length) % menuButtons.length;
       const targetButton = menuButtons[targetIndex];
+      if (targetButton === undefined) {
+        return;
+      }
 
       targetButton.focus();
       targetButton.click();

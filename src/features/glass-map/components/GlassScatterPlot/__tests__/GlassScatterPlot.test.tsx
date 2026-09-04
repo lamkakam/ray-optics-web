@@ -61,6 +61,20 @@ describe("GlassScatterPlot", () => {
     expect(container.querySelector("svg")).toBeInTheDocument();
   });
 
+  it("names the chart without exposing individual points to assistive technology", () => {
+    const { container } = render(<GlassScatterPlot {...defaultProps} />);
+
+    expect(screen.getByRole("img", { name: "Glass map" })).toBeInTheDocument();
+    expect(container.querySelector("svg > title")).not.toBeInTheDocument();
+    for (const point of screen.getAllByTestId("glass-point")) {
+      expect(point).not.toHaveAttribute("role");
+      expect(point).not.toHaveAttribute("tabindex");
+      expect(point).not.toHaveAttribute("aria-label");
+    }
+    fireEvent.keyDown(screen.getAllByTestId("glass-point")[0], { key: "Enter" });
+    expect(defaultProps.onPointClick).not.toHaveBeenCalled();
+  });
+
   it("applies touch-action none on the main svg container for mobile pinch handling", () => {
     const { container } = render(<GlassScatterPlot {...defaultProps} />);
     const svg = container.querySelector("svg") as SVGSVGElement | null;

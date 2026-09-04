@@ -54,7 +54,7 @@
  * - The non-zero contribution helper is intentionally shape-based and does not branch on specific operand kind names, so future operands inherit the check automatically if they use the same config contract.
  * - `RadiusMode`, `RadiusModeDraft`, `GlassMode`, `GlassModeDraft`, `AsphereMode`, `AsphereTermModeDraft`, and `AsphereOptimizationState` remain store-local because they represent UI draft/persisted form state rather than the shared optimization worker contract.
  */
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { AsphericalType, OpticalModel } from "@/shared/lib/types/opticalModel";
 import type {
@@ -774,7 +774,7 @@ function buildGlassVariables(
       if (candidate.catalog === "Special" && !ELIGIBLE_SPECIAL_GLASS_NAME_SET.has(candidate.name)) {
         throw new Error(`Glass candidate "Special: ${candidate.name}" is not eligible.`);
       }
-      if (!Object.prototype.hasOwnProperty.call(catalogs[candidate.catalog] ?? {}, candidate.name)) {
+      if (!Object.hasOwn(catalogs[candidate.catalog] ?? {}, candidate.name)) {
         throw new Error(`Glass candidate "${candidate.catalog}: ${candidate.name}" is unavailable.`);
       }
     }

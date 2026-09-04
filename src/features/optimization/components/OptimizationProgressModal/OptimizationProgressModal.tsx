@@ -202,6 +202,7 @@ export function OptimizationProgressModal({
             : "Optimization finished. Review the merit-function history, then close this dialog."}
         </Paragraph>
         <div
+          role="img"
           ref={chartContainerRef}
           data-testid="optimization-progress-chart"
           aria-label="Optimization progress chart"

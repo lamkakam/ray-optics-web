@@ -45,6 +45,5 @@ export function useWebMCP(tool: WebMCP.ModelContextTool, dependencies: Dependenc
 
     return () => controller.abort();
     // Public dependencies deliberately control descriptor re-registration.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tool.name, tool.description, ...dependencies]);
 }

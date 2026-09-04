@@ -162,7 +162,7 @@ export function CustomGlassModal({
         return true;
       },
     },
-  ], [duplicates]);
+  ], [duplicates, updateRow]);
 
   return (
     <Modal

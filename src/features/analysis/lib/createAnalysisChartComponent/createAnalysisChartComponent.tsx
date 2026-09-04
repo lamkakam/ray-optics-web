@@ -179,6 +179,7 @@ export function createAnalysisChartComponent<
 
     return (
       <div
+        role="img"
         ref={chartContainerRef}
         data-testid={testId}
         aria-label={ariaLabel}

@@ -9,14 +9,14 @@ import type { LeastSquaresMethod } from "@/features/optimization/types/optimizat
 /** Least-squares method capabilities derived from `OPTIMIZER_UI_CONFIG` so validation and rendering cannot drift. */
 const METHOD_CAPABILITIES: Record<LeastSquaresMethod, OptimizationMethodCapabilities> =
   OPTIMIZER_UI_CONFIG.least_squares.methods.reduce<Record<LeastSquaresMethod, OptimizationMethodCapabilities>>(
-    (capabilities, method) => ({
-      ...capabilities,
-      [method.kind]: {
+    (capabilities, method) => {
+      capabilities[method.kind] = {
         canUseBounds: method.canUseBounds,
         canOptimizeGlass: method.canOptimizeGlass,
         requiresResidualCountAtLeastVariableCount: method.requiresResidualCountAtLeastVariableCount,
-      },
-    }),
+      };
+      return capabilities;
+    },
     {} as Record<LeastSquaresMethod, OptimizationMethodCapabilities>,
   );
 

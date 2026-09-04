@@ -1,7 +1,8 @@
 "use client";
 /** Controlled and uncontrolled tab navigation. */
 
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import clsx from "clsx";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
@@ -69,6 +70,7 @@ export function Tabs({
         <div role="tablist" className="flex flex-1 gap-1 overflow-x-auto min-w-0">
           {tabs.map((tab) => (
             <button
+              type="button"
               key={tab.id}
               role="tab"
               aria-label={tab.label}

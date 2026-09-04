@@ -64,8 +64,8 @@ describe("usePyodide", () => {
       expect(result.current.isReady).toBe(true);
     });
     expect(result.current.proxy).toBeDefined();
-    expect(result.current.proxy!.getFirstOrderData).toBeDefined();
-    expect(result.current.proxy!.plotLensLayout).toBeDefined();
+    expect(result.current.proxy?.getFirstOrderData).toBeDefined();
+    expect(result.current.proxy?.plotLensLayout).toBeDefined();
   });
 
   it("sets error state when init fails", async () => {

@@ -62,10 +62,10 @@ function formatAttributeKey(key: string): string {
 export function ParaxialDataModal({ isOpen, data, onClose }: ParaxialDataModalProps) {
   const rows = Object.entries(data).map(([key, value]) => {
     const readableLabel = PARAXIAL_ATTRIBUTE_LABELS[key];
-    const keyChip = <Chip>{formatAttributeKey(key)}</Chip>;
+    const keyChip = <Chip key={`${key}-key`}>{formatAttributeKey(key)}</Chip>;
     const attribute = readableLabel === undefined
       ? keyChip
-      : <span className="inline-flex items-center gap-2">{readableLabel}{keyChip}</span>;
+      : <span key={`${key}-label`} className="inline-flex items-center gap-2">{readableLabel}{keyChip}</span>;
 
     return [attribute, formatOptionalSixDecimal({ value })] as const;
   });

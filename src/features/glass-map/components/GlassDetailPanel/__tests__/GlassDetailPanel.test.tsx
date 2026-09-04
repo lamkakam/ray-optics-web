@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { render, screen } from "@testing-library/react";
 import { GlassDetailPanel } from "@/features/glass-map/components/GlassDetailPanel";
 import type { SelectedGlass } from "@/features/glass-map/types/glassMap";

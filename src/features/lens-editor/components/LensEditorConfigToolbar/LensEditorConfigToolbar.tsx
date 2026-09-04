@@ -1,7 +1,8 @@
 "use client";
 /** Lens-editor JSON and Photons to Photos import/export controls. */
 
-import React, { useRef, useState } from "react";
+import type React from "react";
+import { useRef, useState } from "react";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import { validateImportedLensData } from "@/shared/lib/schemas/importSchema";
 import {
@@ -109,7 +110,8 @@ export function LensEditorConfigToolbar({
     if (resolution.kind === "catalog-unavailable") {
       setImportErrorMessage("Glass catalogs are unavailable. Wait for the catalogs to load and try again.");
     } else {
-      setImportErrorMessage(formatMissingGlassMessage(formatUnknownMediumIssues(resolution.issues))!);
+      const missingGlassMessage = formatMissingGlassMessage(formatUnknownMediumIssues(resolution.issues));
+      setImportErrorMessage(missingGlassMessage ?? "The imported file references unavailable glass.");
     }
     setImportErrorOpen(true);
   };

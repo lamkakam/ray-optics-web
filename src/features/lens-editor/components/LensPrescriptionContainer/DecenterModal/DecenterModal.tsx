@@ -6,7 +6,7 @@ import { Input } from "@/shared/components/primitives/Input";
 import { Label } from "@/shared/components/primitives/Label";
 import { Modal } from "@/shared/components/primitives/Modal";
 import { Select } from "@/shared/components/primitives/Select";
-import { type DecenterConfig } from "@/shared/lib/types/opticalModel";
+import type { DecenterConfig } from "@/shared/lib/types/opticalModel";
 
 type DecenterCoordinateSystemStrategy = DecenterConfig["coordinateSystemStrategy"];
 /** Editable optical-surface decenter configuration. */

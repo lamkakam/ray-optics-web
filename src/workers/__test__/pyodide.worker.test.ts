@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "@jest/globals";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { type OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import { loadPyodide } from "pyodide";
 import { releaseProxy } from "comlink";
 
@@ -45,7 +45,7 @@ const allSphericalOpticalModel: OpticalModel = {
   setAutoAperture: "manualAperture",
   specs: {
     pupil: { space: "object", type: "epd", value: 12.5 },
-    field: { space: "object", type: "angle", maxField: 20.0, fields: [0., 0.707, 1.], isRelative: true, isWideAngle: true },
+    field: { space: "object", type: "angle", maxField: 20.0, fields: [0., Math.SQRT1_2, 1.], isRelative: true, isWideAngle: true },
     wavelengths: { weights: [[656.3, 1.], [587., 2.], [486.1, 1.]], referenceIndex: 1 },
   },
   object: { distance: 1e10, medium: "air", manufacturer: "" },

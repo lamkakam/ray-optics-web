@@ -1,7 +1,8 @@
 "use client";
 /** Client context connecting routed pages to runtime state owned by `AppShell`. */
 
-import React, { createContext, useContext } from "react";
+import type React from "react";
+import { createContext, useContext } from "react";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 
 interface AppShellContextValue {

@@ -12,7 +12,7 @@
  *
  * Prescription assertions resolve surface rows by displayed `Index` values and resolve the `Object`/`Image` rows by their displayed labels. The helpers bridge from AG Grid's pinned `Index` row to the matching center-row container before reading non-index cells or clicking action buttons.
  */
-import path from "path";
+import path from "node:path";
 import { test, expect } from "./fixtures";
 import {
   dismissAnyOpenDialog,

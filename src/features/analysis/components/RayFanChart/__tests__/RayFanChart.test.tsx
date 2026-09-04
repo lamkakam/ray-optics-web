@@ -51,7 +51,6 @@ describe("RayFanChart", () => {
   class ResizeObserverMock {
     public observe = jest.fn();
     public disconnect = jest.fn();
-    public constructor(_callback: () => void) {}
   }
 
   beforeEach(() => {

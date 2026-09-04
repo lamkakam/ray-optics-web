@@ -26,7 +26,7 @@ import { surfacesToGridRows, gridRowsToSurfaces } from "@/shared/lib/lens-prescr
 import { formatMissingGlassMessage, getMissingPrescriptionGlasses } from "@/shared/lib/lens-prescription-grid/lib/glassValidation";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { OpticalModel, OpticalSpecs } from "@/shared/lib/types/opticalModel";
-import type { OptimizationProgressEntry, OptimizationReport } from "./types/optimizationWorkerTypes";
+import type { OptimizationConfig, OptimizationProgressEntry, OptimizationReport } from "./types/optimizationWorkerTypes";
 import type { AllGlassCatalogsData } from "@/features/glass-map/types/glassMap";
 import type { PyodideWorkerAPI } from "@/shared/hooks/usePyodide";
 import { useDebouncedCallback } from "@/shared/hooks/useDebouncedCallback";
@@ -298,23 +298,10 @@ export function OptimizationPage({
       prescriptionSyncPolicy: optimizationSyncPolicy,
     });
   }, [
-    editorRows,
-    prescriptionRevision,
-    optimizationSyncPolicy,
-    editorAutoAperture,
-    editorAutoSemiDiameters,
-    pupilSpace,
-    pupilType,
-    pupilValue,
-    fieldSpace,
-    fieldType,
-    maxField,
-    relativeFields,
-    isWideAngle,
-    wavelengthWeightsFromEditor,
-    referenceIndex,
-    optimizationStore,
-    specsStore,
+    editorRows, prescriptionRevision, optimizationSyncPolicy, editorAutoAperture,
+    editorAutoSemiDiameters, pupilSpace, pupilType, pupilValue, fieldSpace, fieldType,
+    maxField, relativeFields, isWideAngle, wavelengthWeightsFromEditor, referenceIndex,
+    optimizationStore, specsStore,
   ]);
 
   useEffect(() => {
@@ -465,7 +452,7 @@ export function OptimizationPage({
     currentImagePoint: typeof imagePoint,
     catalogSnapshot: AllGlassCatalogsData | undefined,
   ) => {
-    let config;
+    let config: OptimizationConfig;
     try {
       config = optimizationStore.getState().buildOptimizationEvaluationConfig(catalogSnapshot);
     } catch {
@@ -526,25 +513,10 @@ export function OptimizationPage({
       cancelDebouncedEvaluation();
     };
   }, [
-    isReady,
-    proxy,
-    optimizationModel,
-    optimizationStore,
-    canBuildOptimizationConfig,
-    missingGlassMessage,
-    catalogs,
-    optimizer,
-    fieldWeights,
-    wavelengthWeights,
-    radiusModes,
-    thicknessModes,
-    glassModes,
-    asphereStates,
-    operands,
-    gridEditStopRevision,
-    imagePoint,
-    runDebouncedEvaluation,
-    cancelDebouncedEvaluation,
+    isReady, proxy, optimizationModel, optimizationStore, canBuildOptimizationConfig,
+    missingGlassMessage, catalogs, optimizer, fieldWeights, wavelengthWeights,
+    radiusModes, thicknessModes, glassModes, asphereStates, operands,
+    gridEditStopRevision, imagePoint, runDebouncedEvaluation, cancelDebouncedEvaluation,
   ]);
 
   const handleGridCellEditingStarted = useCallback(() => {

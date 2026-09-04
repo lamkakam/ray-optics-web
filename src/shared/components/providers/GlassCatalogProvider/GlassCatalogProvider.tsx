@@ -1,7 +1,8 @@
 "use client";
 /** App-wide catalog data and preload status injected by `AppShell`. */
 
-import React, { createContext, useContext } from "react";
+import type React from "react";
+import { createContext, useContext } from "react";
 import type { AllGlassCatalogsData, GlassLookupMaps } from "@/features/glass-map/types/glassMap";
 import type { GlassCatalogsLoadResult } from "@/features/glass-map/lib/glassCatalogLoader";
 

@@ -88,6 +88,7 @@ export function WavefrontMapChart({
   return (
     <div ref={containerRef} className="h-full w-full min-h-0">
       <div
+        role="img"
         data-testid="wavefront-map-chart"
         aria-label="Wavefront Map plot"
         className="relative overflow-hidden text-zinc-700 dark:text-zinc-200"

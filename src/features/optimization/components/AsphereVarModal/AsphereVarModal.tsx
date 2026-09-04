@@ -210,11 +210,7 @@ export function AsphereVarModal({
   onClose,
 }: AsphereVarModalProps) {
   if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || asphereState === undefined) {
-    return (
-      <Modal isOpen={false} title="Asphere Variable / Pickup">
-        <></>
-      </Modal>
-    );
+    return <Modal isOpen={false} title="Asphere Variable / Pickup" />;
   }
 
   return (

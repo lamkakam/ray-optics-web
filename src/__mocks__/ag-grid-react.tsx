@@ -9,7 +9,8 @@
  * - Models pending text edits: focusing an editable input emits `onCellEditingStarted`; typing only changes the editor input until Enter is pressed or the input blurs while `stopEditingWhenCellsLoseFocus` is `true`; Enter or blur emits `onCellEditingStopped`.
  * - Select editors emit edit-start on focus, commit and emit edit-stop on change, and also emit edit-stop on blur when still editing.
  */
-import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
+import type React from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 interface ColDef {
   headerName?: string;

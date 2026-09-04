@@ -66,11 +66,7 @@ export function ThicknessModeModal({
   onClose,
 }: ThicknessModeModalProps) {
   if (!isOpen || optimizationModel === undefined || surfaceIndex === undefined || selectedMode === undefined) {
-    return (
-      <Modal isOpen={false} title="Thickness Variable / Pickup">
-        <></>
-      </Modal>
-    );
+    return <Modal isOpen={false} title="Thickness Variable / Pickup" />;
   }
 
   return (

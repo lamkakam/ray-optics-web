@@ -26,7 +26,7 @@
  *
  * Used through `LensEditorStoreProvider` and `useLensEditorStore()` rather than as a standalone exported hook from this file.
  */
-import { type StateCreator } from "zustand";
+import type { StateCreator } from "zustand";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { OBJECT_ROW_ID, IMAGE_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import { generateRowId } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
@@ -227,7 +227,7 @@ export const createLensEditorSlice: StateCreator<LensEditorState> = (set, get) =
   deleteRow: (id) => {
     const { rows } = get();
     const row = rows.find((r) => r.id === id);
-    if (!row || row.kind !== "surface") return;
+    if (row?.kind !== "surface") return;
 
     set((state) => ({
       rows: rows.filter((r) => r.id !== id),

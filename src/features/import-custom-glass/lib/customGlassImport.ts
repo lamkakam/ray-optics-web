@@ -114,7 +114,7 @@ export async function saveCustomGlass({
     return;
   }
 
-  let result;
+  let result: Record<string, UserDefinedGlassData>;
   let workerMutationSucceeded = false;
   try {
     if (mode === "add") {

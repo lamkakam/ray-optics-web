@@ -31,5 +31,9 @@ const wavelengthMap = new Map<FraunhoferSymbol, number>(
 
 /** Looks up a wavelength in nanometers by its case-sensitive Fraunhofer symbol. */
 export function lookupWavelength(symbol: FraunhoferSymbol): number {
-  return wavelengthMap.get(symbol)!;
+  const wavelength = wavelengthMap.get(symbol);
+  if (wavelength === undefined) {
+    throw new Error(`Unknown Fraunhofer symbol: ${symbol}`);
+  }
+  return wavelength;
 }

@@ -1,5 +1,5 @@
-import path from "path";
-import { test, expect } from "./fixtures";
+import path from "node:path";
+import { test, } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
 
 test("import invalid JSON shows error modal, dismissed by OK", async ({

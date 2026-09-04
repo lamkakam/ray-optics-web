@@ -2,13 +2,13 @@
 
 import { useCallback } from "react";
 import { useStore } from "zustand";
-import {
-  type PupilSpace,
-  type PupilType,
-  type FieldSpace,
-  type FieldType,
-  type WavelengthWeights,
-  type ReferenceIndex,
+import type {
+  PupilSpace,
+  PupilType,
+  FieldSpace,
+  FieldType,
+  WavelengthWeights,
+  ReferenceIndex,
 } from "@/features/lens-editor/stores/specsConfiguratorStore";
 import { useSpecsConfiguratorStore } from "@/features/lens-editor/providers/SpecsConfiguratorStoreProvider";
 import { SpecsConfiguratorPanel } from "@/features/lens-editor/components/SpecsConfiguratorPanel";

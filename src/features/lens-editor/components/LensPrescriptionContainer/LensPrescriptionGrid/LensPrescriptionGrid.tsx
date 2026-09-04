@@ -109,7 +109,7 @@ export function LensPrescriptionGrid({
     {
       ...lensPrescriptionGridIndexColumnDef,
       valueGetter: (params) => {
-        if (!params.data || params.data.kind !== "surface") {
+        if (params.data?.kind !== "surface") {
           return undefined;
         }
 
@@ -140,7 +140,7 @@ export function LensPrescriptionGrid({
   ], [surfaceIndexByRowId, semiDiameterReadonly, computedSemiDiameters, onRowChange, onOpenMediumModal, onOpenAsphericalModal, onOpenApertureModal, onOpenDecenterModal, onOpenDiffractionGratingModal, onAddRowAfter, onDeleteRow]);
 
   return (
-    <div
+    <section
       aria-label="Lens prescription editor"
       className="ag-grid-touch-scroll h-[calc(100vh-160px)] min-[1440px]:min-h-[200px] min-[1440px]:flex-1"
     >
@@ -154,6 +154,6 @@ export function LensPrescriptionGrid({
           getRowId={(params) => params.data.id}
         />
       </AgGridProvider>
-    </div>
+    </section>
   );
 }

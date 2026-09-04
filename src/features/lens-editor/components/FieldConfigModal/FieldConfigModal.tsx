@@ -167,7 +167,7 @@ function FieldConfigModalContent({
     onApply({
       space,
       type: fieldType,
-      maxField: isNaN(maxField) ? 0 : maxField,
+      maxField: Number.isNaN(maxField) ? 0 : maxField,
       relativeFields: rows.map((r) => r.value),
       isWideAngle,
     });
@@ -181,12 +181,13 @@ function FieldConfigModalContent({
       width: 100,
       cellRenderer: (params: { data: FieldRow | undefined }) => {
         if (!params.data) return undefined;
-        const isFirst = rows.findIndex((r) => r.id === params.data!.id) === 0;
+        const row = params.data;
+        const isFirst = rows.findIndex((r) => r.id === row.id) === 0;
         return (
           <GridRowButtons
-            onAdd={() => addRow(params.data!.id)}
+            onAdd={() => addRow(row.id)}
             addHidden={atLimit}
-            onDelete={!isFirst ? () => deleteRow(params.data!.id) : undefined}
+            onDelete={!isFirst ? () => deleteRow(row.id) : undefined}
             addLabel="Add field row"
             deleteLabel="Delete field row"
           />
@@ -204,7 +205,7 @@ function FieldConfigModalContent({
       },
       valueParser: (params) => {
         const parsed = parseFloat(params.newValue);
-        return isNaN(parsed) ? 0 : parsed;
+        return Number.isNaN(parsed) ? 0 : parsed;
       },
       valueSetter: (params) => {
         if (!params.data) return false;

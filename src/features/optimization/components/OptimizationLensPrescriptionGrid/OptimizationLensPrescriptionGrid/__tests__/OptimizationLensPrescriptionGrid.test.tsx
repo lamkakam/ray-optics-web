@@ -588,9 +588,9 @@ describe("OptimizationLensPrescriptionGrid", () => {
     );
 
     const rowCells = screen.getByTestId("ag-grid-mock").querySelectorAll("tbody tr")[0].querySelectorAll("td");
-    const radiusTooltipTrigger = rowCells[4].firstElementChild!.firstElementChild!;
-    const thicknessTooltipTrigger = rowCells[6].firstElementChild!.firstElementChild!;
-    const asphereTooltipTrigger = rowCells[11].firstElementChild!.firstElementChild!;
+    const radiusTooltipTrigger = rowCells[4].firstElementChild?.firstElementChild!;
+    const thicknessTooltipTrigger = rowCells[6].firstElementChild?.firstElementChild!;
+    const asphereTooltipTrigger = rowCells[11].firstElementChild?.firstElementChild!;
 
     await user.hover(radiusTooltipTrigger);
     expect(screen.getByText("Click to configure radius variable or pickup")).toHaveClass("opacity-100");

@@ -9,9 +9,9 @@
  * - Click `Apply`, confirm `Load`, and wait for navigation back to `/`.
  * - Open the Prescription tab, download the config, parse it as JSON, and assert expected top-level model keys.
  */
-import fs from "fs";
-import os from "os";
-import path from "path";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { test, expect } from "./fixtures";
 import { dismissAnyOpenDialog } from "./utils";
 

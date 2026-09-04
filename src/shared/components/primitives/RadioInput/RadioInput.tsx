@@ -1,4 +1,4 @@
-import React from "react";
+import type React from "react";
 import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 const OPTION_ROW_CLASSES = [

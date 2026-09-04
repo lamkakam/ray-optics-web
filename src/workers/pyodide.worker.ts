@@ -36,21 +36,21 @@ import type { OpticalModel } from "@/shared/lib/types/opticalModel";
 import type { FocusingResult } from "@/features/lens-editor/types/focusingResult";
 import type { AstigmatismCurveData, DiffractionMtfData, DiffractionPsfData, FieldCurveData, GeoPsfData, LongitudinalSphericalAberrationData, OpdFanData, RayFanData, SpotDiagramData, StrehlVsWavelengthData, WavefrontMapData } from "@/features/analysis/types/plotData";
 import type { SeidelData } from "@/features/lens-editor/types/seidelData";
-import {
-  type GlassOptimizationConfig,
-  type GlassOptimizationReport,
-  type OptimizationConfig,
-  type OptimizationProgressEntry,
-  type OptimizationReport,
+import type {
+  GlassOptimizationConfig,
+  GlassOptimizationReport,
+  OptimizationConfig,
+  OptimizationProgressEntry,
+  OptimizationReport,
 } from "@/features/optimization/types/optimizationWorkerTypes";
-import { type ZernikeData, type ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
+import type { ZernikeData, ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
 import { buildScript } from "@/shared/lib/utils/pythonScript";
-import {
-  type AllGlassCatalogsData,
-  type CompleteGlassCatalogsData,
-  type UserDefinedMaterialsData,
-  type UserDefinedGlassInput,
+import type {
+  AllGlassCatalogsData,
+  CompleteGlassCatalogsData,
+  UserDefinedMaterialsData,
+  UserDefinedGlassInput,
 } from "@/features/glass-map/types/glassMap";
 import type { InitProgress } from "@/shared/hooks/usePyodide";
 import type { ImagePoint } from "@/shared/components/providers/ImagePointProvider";
@@ -58,6 +58,7 @@ import { loadPyodideModule } from "@/workers/loadPyodideModule";
 
 const CDN = `https://cdn.jsdelivr.net/pyodide/v${version}/full`;
 
+// biome-ignore lint/suspicious/noExplicitAny: Pyodide's dynamic Python proxy surface is intentionally untyped at this integration boundary.
 let pyodide: any = null;
 let activeOptimizationRunId: string | undefined;
 let activeOptimizationInterruptBuffer: SharedArrayBuffer | undefined;
@@ -160,6 +161,7 @@ export function _resetPyodideForTesting(): void {
 }
 
 /** Injects or clears the Pyodide singleton and resets all optimization-interrupt state for tests. */
+// biome-ignore lint/suspicious/noExplicitAny: Tests inject partial dynamic Pyodide doubles rather than a concrete runtime interface.
 export function _setPyodideForTesting(nextPyodide: any | undefined): void {
   pyodide = nextPyodide ?? null;
   activeOptimizationRunId = undefined;

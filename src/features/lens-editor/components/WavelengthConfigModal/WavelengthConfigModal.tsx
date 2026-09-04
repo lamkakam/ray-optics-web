@@ -162,12 +162,13 @@ function WavelengthConfigModalContent({
       width: 100,
       cellRenderer: (params: { data: WavelengthRow | undefined }) => {
         if (!params.data) return undefined;
-        const isFirst = rows.findIndex((r) => r.id === params.data!.id) === 0;
+        const row = params.data;
+        const isFirst = rows.findIndex((r) => r.id === row.id) === 0;
         return (
           <GridRowButtons
-            onAdd={() => addRow(params.data!.id)}
+            onAdd={() => addRow(row.id)}
             addHidden={atLimit}
-            onDelete={!isFirst ? () => handleDeleteRow(params.data!.id) : undefined}
+            onDelete={!isFirst ? () => handleDeleteRow(row.id) : undefined}
             addLabel="Add wavelength row"
             deleteLabel="Delete wavelength row"
           />
@@ -202,7 +203,7 @@ function WavelengthConfigModalContent({
       },
       valueParser: (params) => {
         const parsed = parseFloat(params.newValue);
-        return isNaN(parsed) || parsed <= 0 ? lookupWavelength("e") : parsed;
+        return Number.isNaN(parsed) || parsed <= 0 ? lookupWavelength("e") : parsed;
       },
       valueSetter: (params) => {
         if (!params.data) return false;
@@ -223,7 +224,7 @@ function WavelengthConfigModalContent({
       },
       valueParser: (params) => {
         const parsed = parseFloat(params.newValue);
-        return isNaN(parsed) || parsed < 0 ? 1 : parsed;
+        return Number.isNaN(parsed) || parsed < 0 ? 1 : parsed;
       },
       valueSetter: (params) => {
         if (!params.data) return false;
@@ -236,7 +237,7 @@ function WavelengthConfigModalContent({
       width: 100,
       cellRenderer: (params: { data: WavelengthRow | undefined }) => {
         if (!params.data) return undefined;
-        const idx = rows.findIndex((r) => r.id === params.data!.id);
+        const idx = rows.findIndex((r) => r.id === params.data?.id);
         return (
           <input
             type="radio"

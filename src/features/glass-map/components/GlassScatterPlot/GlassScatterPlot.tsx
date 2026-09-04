@@ -30,6 +30,7 @@
  * - leaving the plot ends an active drag
  * - Crosshair lines: when `selectedGlass` is set and its matching `PlotPoint` is found in `points`, two dashed `<line>` elements are rendered inside the clip group at `axisXScale(point.x)` (vertical) and `axisYScale(point.y)` (horizontal); stroke uses CSS variable `--crosshair-stroke` (defined in `globals.css`)
  * - `data-testid="glass-point"` on each circle for test selection
+ * - The chart has an image role and accessible label; individual glass points are intentionally excluded from keyboard navigation and per-point accessibility naming because the searchable glass field is the accessible selection interface
  * - `data-testid="crosshair-h"` / `data-testid="crosshair-v"` on crosshair lines for test selection
  * - Circle radius: 4 (default), 6 + stroke (selected); during zoom, points are re-positioned in screen coordinates while radius and stroke width remain fixed so the apparent size stays constant
  * - x-axis domain reversed (high Abbe number on left, low on right — standard glass map convention)
@@ -55,7 +56,8 @@
  * - Crosshair lines are not rendered when the selected glass is not found in the current `points` array (e.g. its catalog is disabled)
  */
 
-import React, { useCallback } from "react";
+import type React from "react";
+import { useCallback } from "react";
 import { ParentSize } from "@visx/responsive";
 import { scaleLinear } from "@visx/scale";
 import { AxisBottom, AxisLeft } from "@visx/axis";
@@ -287,6 +289,8 @@ function InnerPlot({
 
           return (
             <svg
+              role="img"
+              aria-label="Glass map"
               width={width}
               height={height}
               ref={zoom.containerRef}
@@ -491,7 +495,7 @@ function InnerPlot({
   );
 }
 
-/** Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders all `PlotPoint` entries as colored circles, supports zoom/pan via mouse wheel, drag, and touch pinch, shows grid lines on both axes, shows a tooltip on hover (mouse) or single-touch tap, and draws crosshair lines for the selected glass. */
+/** Interactive zoomable scatter plot of glass data using `@visx` libraries. Renders all `PlotPoint` entries as pointer-selectable colored circles without adding them to keyboard navigation or naming them individually for assistive technology; the searchable glass field provides the accessible selection interface. Supports zoom/pan via mouse wheel, drag, and touch pinch, shows grid lines on both axes, shows a tooltip on hover (mouse) or single-touch tap, and draws crosshair lines for the selected glass. */
 export function GlassScatterPlot(props: GlassScatterPlotProps) {
   return (
     <div style={{ width: "100%", height: "100%" }}>
