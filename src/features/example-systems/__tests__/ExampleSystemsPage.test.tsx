@@ -1,5 +1,5 @@
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore } from "zustand";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
@@ -376,7 +376,9 @@ describe("ExampleSystemsPage", () => {
     expect(analysisPlotStore.getState().plotLoading).toBe(true);
     expect(analysisDataStore.getState().firstOrderData).toBeUndefined();
 
-    firstOrderDeferred.resolve({ efl: 100 });
+    await act(async () => {
+      firstOrderDeferred.resolve({ efl: 100 });
+    });
 
     await waitFor(() => expect(analysisDataStore.getState().firstOrderData).toEqual({ efl: 100 }));
     expect(specsStore.getState().committedSpecs.pupil.value).toBe(12.5);
@@ -400,7 +402,9 @@ describe("ExampleSystemsPage", () => {
     expect(proxy.getDiffractionMTFData).toHaveBeenCalledWith(expect.anything(), 0, 0, "centroid");
     expect(analysisPlotStore.getState().diffractionMtfData).toBeUndefined();
 
-    diffractionMtfDeferred.resolve(mockDiffractionMtfData);
+    await act(async () => {
+      diffractionMtfDeferred.resolve(mockDiffractionMtfData);
+    });
 
     await waitFor(() => expect(analysisPlotStore.getState().diffractionMtfData).toEqual(mockDiffractionMtfData));
   });
@@ -433,7 +437,9 @@ describe("ExampleSystemsPage", () => {
     expect(mockPush).toHaveBeenCalledWith("/");
     expect(onError).not.toHaveBeenCalled();
 
-    layoutDeferred.reject(new Error("failed"));
+    await act(async () => {
+      layoutDeferred.reject(new Error("failed"));
+    });
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
   });

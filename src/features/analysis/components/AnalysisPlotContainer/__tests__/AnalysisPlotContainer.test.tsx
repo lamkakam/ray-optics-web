@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createStore, type StoreApi } from "zustand";
 import { AnalysisPlotContainer } from "@/features/analysis/components/AnalysisPlotContainer";
@@ -395,8 +395,10 @@ describe("AnalysisPlotContainer", () => {
     const selectPromise = userEvent.selectOptions(fieldSelect, "1");
 
     await waitFor(() => expect(store.getState().plotLoading).toBe(true));
-    resolveProxy(rayFanData);
-    await selectPromise;
+    await act(async () => {
+      resolveProxy(rayFanData);
+      await selectPromise;
+    });
     await waitFor(() => expect(store.getState().plotLoading).toBe(false));
   });
 
