@@ -16,21 +16,15 @@
 
 - All type checking and linting (commands specified in the skill of "commands-for-development") must be passed
 
-- The skills md files are under `<project-root>/.claude/skills`. Before doing code changes, in plan mode or not, always read the skill of "commands-for-development". Before any change under `<project-root>/src/python/`, also read the skill of "rayoptics-headless-python".
-
 - TypeScript, TSX, and Python specifications are embedded in their source files. Symbol-specific documentation belongs at the narrowest corresponding function, component, class, type, interface, or constant; reserve the file header or module docstring for genuinely module-wide documentation. Read the relevant embedded documentation before planning or implementation. JavaScript (including MJS) and shell specifications remain in `<FILENAME_INCLUDING_FILENAME_EXTENSION>.md` sidecars. The generated `src/shared/lib/utils/generated/pythonExportApertureHelpers.ts` also retains its sidecar because its source is generated.
-
-- Do not reinvent the wheel: try to reuse existing codes.
 
 - Always update the corresponding embedded declaration or module documentation after changing TypeScript, TSX, or Python source code. Continue to update sidecar specifications after changing JavaScript, MJS, or shell source code. Update `src/shared/lib/utils/generated/pythonExportApertureHelpers.ts.md` when its generated contract changes; do not edit the generated source directly.
 
 - In TypeScript, use `undefined` instead of `null` whenever possible
 
-- Make the modules loosely coupled (eg. use DI)
-
 - When including link to any GitHub page, always use the domain name `redirect.github.com`. Never use the domain name of `github.com`
 
-- End your commit message with "Co-Authored-By: <model-name-with-precise-version-number> with an email address "noreply@<domain-name>" for auditing purpose (eg. `"Co-Authored-By: GPT-5.6-sol <noreply@openai.com>"`)
+- End your commit message with "Co-Authored-By: <model-name-with-precise-version-number> with an email address "noreply@<domain-name>" for auditing purpose (eg. "Co-Authored-By: GPT-5.6-sol <noreply@openai.com>" if you're `GPT-5.6-sol` or "Co-Authored-By: GPT-5.6-luna <noreply@openai.com>" if you're `GPT-5.6-luna`)
 
 - Use `gh` outside the sandbox when making a Pull Request
 
