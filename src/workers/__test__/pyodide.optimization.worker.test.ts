@@ -14,6 +14,7 @@ import {
   _optimizeOpm,
   _requestOptimizationStop,
   _setPyodideForTesting,
+  canInterruptOptimization,
 } from "@/workers/pyodide.worker";
 
 const baseModel: OpticalModel = {
@@ -105,6 +106,11 @@ function optimizationErrorReport(): OptimizationReport {
   };
 }
 
+/**
+ * Glass optimization contract: Python receives the flat config and live
+ * Special/Custom material catalogs, progress travels through the callback
+ * installed in Python globals, and every completion path releases both hooks.
+ */
 describe("_optimizeGlasses", () => {
   beforeEach(() => {
     _setPyodideForTesting(undefined);
@@ -118,6 +124,7 @@ describe("_optimizeGlasses", () => {
     expect(result.optimizer.kind).toBe("glass_expert");
     const source = runPython.mock.calls[0]?.[0] ?? "";
     expect(source).toContain("optimize_glasses(");
+    expect(source).toContain("image_point='chief_ray'");
     expect(source).toContain('\\"glass_optimizer\\":{\\"num_neighbours\\":2,\\"maxiter\\":20,\\"tol\\":0.0001}');
     expect(source).toContain('\\"candidates\\":[{\\"name\\":\\"N-BK7\\",\\"catalog\\":\\"Schott\\"}');
     expect(source).toContain(
@@ -164,7 +171,7 @@ describe("_optimizeGlasses", () => {
     );
   });
 
-  it("parses candidate-aware progress and forwards the final history", async () => {
+  it("parses candidate-aware progress through the callback registered in Python globals", async () => {
     const progress: OptimizationProgressEntry[] = [
       {
         iteration: 0,
@@ -202,6 +209,10 @@ describe("_optimizeGlasses", () => {
     );
 
     expect(onProgress).toHaveBeenCalledWith(progress);
+    expect(pyodideGlobalsSet).toHaveBeenCalledWith("_optimization_progress_callback", expect.any(Function));
+    const source = runPython.mock.calls[0]?.[0] ?? "";
+    expect(source).toContain("def _report_optimization_progress(progress):");
+    expect(source).toContain("progress_reporter=_report_optimization_progress");
     expect(result.optimization_progress[0]).toMatchObject({
       phase: "global",
       surface_index: 1,
@@ -308,6 +319,11 @@ describe("_optimizeOpm", () => {
     });
 
     expect(result.success).toBe(true);
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining("image_point='chief_ray'"));
+    expect(runPython).toHaveBeenCalledWith(expect.not.stringContaining("candidate_materials="));
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining(
+      "optimize_opm(_build_opm(), _optimization_config, image_point='chief_ray')",
+    ));
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining("optimize_opm("));
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));
   });
@@ -368,15 +384,21 @@ describe("_optimizeOpm", () => {
   });
 
   it("streams optimization progress through the supplied callback and returns the final history", async () => {
-    const progressCallback = jest.fn().mockResolvedValue(undefined);
+    const progressCallback = jest.fn();
+    const globalsSet = jest.fn();
+    const globalsDelete = jest.fn();
+    _setPyodideForTesting({
+      globals: { set: globalsSet, delete: globalsDelete },
+    });
     const runPython = jest.fn().mockImplementation(async () => {
-      await progressCallback([
+      const registeredCallback = globalsSet.mock.calls[0]?.[1] as ((json: string) => void) | undefined;
+      registeredCallback?.(JSON.stringify([
         { iteration: 0, merit_function_value: 25, log10_merit_function_value: Math.log10(25) },
-      ]);
-      await progressCallback([
+      ]));
+      registeredCallback?.(JSON.stringify([
         { iteration: 0, merit_function_value: 25, log10_merit_function_value: Math.log10(25) },
         { iteration: 1, merit_function_value: 4, log10_merit_function_value: Math.log10(4) },
-      ]);
+      ]));
 
       return JSON.stringify({
         success: true,
@@ -403,6 +425,9 @@ describe("_optimizeOpm", () => {
     }, "chief_ray", progressCallback);
 
     expect(progressCallback).toHaveBeenCalledTimes(2);
+    expect(globalsSet).toHaveBeenCalledWith("_optimization_progress_callback", expect.any(Function));
+    expect(globalsDelete).toHaveBeenCalledWith("_optimization_progress_callback");
+    expect(runPython.mock.calls[0]?.[0]).toContain("progress_reporter=_report_optimization_progress");
     expect(progressCallback).toHaveBeenNthCalledWith(2, [
       { iteration: 0, merit_function_value: 25, log10_merit_function_value: Math.log10(25) },
       { iteration: 1, merit_function_value: 4, log10_merit_function_value: Math.log10(4) },
@@ -412,6 +437,56 @@ describe("_optimizeOpm", () => {
       { iteration: 1, merit_function_value: 4, log10_merit_function_value: Math.log10(4) },
     ]);
   });
+
+  it("omits progress binding when the callback is absent", async () => {
+    const globalsSet = jest.fn();
+    const globalsDelete = jest.fn();
+    _setPyodideForTesting({ globals: { set: globalsSet, delete: globalsDelete } });
+    const runPython = jest.fn().mockResolvedValue(JSON.stringify(optimizationErrorReport()));
+
+    await _optimizeOpm(runPython, baseModel, {
+      optimizer: { kind: "least_squares", method: "trf", max_nfev: 1, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+      variables: [],
+      pickups: [],
+      merit_function: { operands: [] },
+    });
+
+    const source = runPython.mock.calls[0]?.[0] ?? "";
+    expect(source).not.toContain("_report_optimization_progress");
+    expect(source).not.toContain("progress_reporter=");
+    expect(globalsSet).not.toHaveBeenCalled();
+    expect(globalsDelete).not.toHaveBeenCalled();
+  });
+
+  it.each(["missing runtime", "missing globals", "missing globals.set", "missing globals.delete"] as const)(
+    "omits progress binding with %s",
+    async (missingPart) => {
+      const globalsSet = jest.fn();
+      const globalsDelete = jest.fn();
+      const runtime = missingPart === "missing runtime"
+        ? undefined
+        : missingPart === "missing globals"
+          ? {}
+          : missingPart === "missing globals.set"
+            ? { globals: { delete: globalsDelete } }
+            : { globals: { set: globalsSet } };
+      _setPyodideForTesting(runtime);
+      const onProgress = jest.fn();
+      const runPython = jest.fn().mockResolvedValue(JSON.stringify(optimizationErrorReport()));
+
+      await _optimizeOpm(runPython, baseModel, {
+        optimizer: { kind: "least_squares", method: "trf", max_nfev: 1, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+        variables: [],
+        pickups: [],
+        merit_function: { operands: [] },
+      }, "chief_ray", onProgress);
+
+      const source = runPython.mock.calls[0]?.[0] ?? "";
+      expect(source).not.toContain("_report_optimization_progress");
+      expect(source).not.toContain("progress_reporter=");
+      expect(onProgress).not.toHaveBeenCalled();
+    },
+  );
 
   it.each(["success", "failure"] as const)(
     "releases the progress callback proxy after %s",
@@ -440,46 +515,121 @@ describe("_optimizeOpm", () => {
     },
   );
 
-  it("sets and clears interrupt state around an optimization run", async () => {
-    const setInterruptBuffer = jest.fn();
-    _setPyodideForTesting({
-      setInterruptBuffer,
-      globals: { set: jest.fn(), delete: jest.fn() },
-    });
-    const interruptBuffer = new SharedArrayBuffer(4);
-    const runPython = jest.fn().mockImplementation(async () => {
-      expect(_getOptimizationInterruptStateForTesting()).toMatchObject({
-        activeRunId: "run-1",
-        interruptBuffer,
+  /**
+   * Interruption contract: a stop request sets the shared signal during the
+   * active run, and both successful and rejected execution paths clear the
+   * signal, runtime interrupt hook, callback global, and test-visible state.
+   */
+  it.each(["success", "failure"] as const)(
+    "resets the stop signal and temporary state after %s",
+    async (outcome) => {
+      const setInterruptBuffer = jest.fn();
+      const globalsSet = jest.fn();
+      const globalsDelete = jest.fn();
+      _setPyodideForTesting({
+        setInterruptBuffer,
+        globals: { set: globalsSet, delete: globalsDelete },
       });
-      return JSON.stringify({
-        success: true,
-        status: "optimized",
-        message: "done",
-        optimizer: { kind: "least_squares", method: "trf" },
-        initial_values: [],
-        final_values: [],
+      const interruptBuffer = new SharedArrayBuffer(4);
+      const interruptView = new Int32Array(interruptBuffer);
+      const onProgress = jest.fn();
+      const runPython = jest.fn().mockImplementation(async () => {
+        expect(_getOptimizationInterruptStateForTesting()).toMatchObject({
+          activeRunId: "run-1",
+          interruptBuffer,
+        });
+        expect(await _requestOptimizationStop("run-1")).toEqual({ signaled: true });
+        expect(Atomics.load(interruptView, 0)).toBe(2);
+        if (outcome === "failure") {
+          throw new Error("python failed after stop");
+        }
+        return JSON.stringify(optimizationErrorReport());
+      });
+
+      const result = _optimizeOpm(runPython, baseModel, {
+        optimizer: { kind: "least_squares", method: "trf", max_nfev: 1, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+        variables: [],
         pickups: [],
-        residuals: [],
-        merit_function: { sum_of_squares: 0, rss: 0 },
-        optimization_progress: [],
+        merit_function: { operands: [] },
+      }, "chief_ray", onProgress, "run-1", interruptBuffer);
+
+      if (outcome === "success") {
+        await expect(result).resolves.toEqual(optimizationErrorReport());
+      } else {
+        await expect(result).rejects.toThrow("python failed after stop");
+      }
+
+      expect(Atomics.load(interruptView, 0)).toBe(0);
+      expect(setInterruptBuffer).toHaveBeenNthCalledWith(1, expect.any(Int32Array));
+      expect(setInterruptBuffer.mock.calls[0]?.[0].buffer).toBe(interruptBuffer);
+      expect(setInterruptBuffer).toHaveBeenLastCalledWith(undefined);
+      expect(globalsSet).toHaveBeenCalledWith("_optimization_progress_callback", expect.any(Function));
+      expect(globalsDelete).toHaveBeenCalledWith("_optimization_progress_callback");
+      expect(_getOptimizationInterruptStateForTesting()).toEqual({
+        activeRunId: undefined,
+        interruptBuffer: undefined,
       });
+    },
+  );
+
+  it.each(["missing run id", "missing interrupt buffer", "missing runtime", "unsupported runtime"] as const)(
+    "does not bind interruption with %s",
+    async (missingPart) => {
+      const setInterruptBuffer = jest.fn();
+      const runtime = missingPart === "unsupported runtime"
+        ? { globals: { set: jest.fn(), delete: jest.fn() } }
+        : missingPart === "missing runtime"
+          ? undefined
+        : { setInterruptBuffer, globals: { set: jest.fn(), delete: jest.fn() } };
+      _setPyodideForTesting(runtime);
+      const interruptBuffer = missingPart === "missing interrupt buffer"
+        ? undefined
+        : new SharedArrayBuffer(4);
+      const runId = missingPart === "missing run id" ? undefined : "run-1";
+      const runPython = jest.fn().mockResolvedValue(JSON.stringify(optimizationErrorReport()));
+
+      await _optimizeOpm(runPython, baseModel, {
+        optimizer: { kind: "least_squares", method: "trf", max_nfev: 1, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+        variables: [],
+        pickups: [],
+        merit_function: { operands: [] },
+      }, "chief_ray", undefined, runId, interruptBuffer);
+
+      expect(setInterruptBuffer).not.toHaveBeenCalled();
+      expect(_getOptimizationInterruptStateForTesting()).toEqual({
+        activeRunId: undefined,
+        interruptBuffer: undefined,
+      });
+    },
+  );
+
+  it("reports whether the runtime supports shared-buffer interruption", async () => {
+    _setPyodideForTesting({ setInterruptBuffer: jest.fn() });
+    await expect(canInterruptOptimization()).resolves.toBe(true);
+
+    _setPyodideForTesting({});
+    await expect(canInterruptOptimization()).resolves.toBe(false);
+
+    _setPyodideForTesting(undefined);
+    await expect(canInterruptOptimization()).resolves.toBe(false);
+  });
+
+  it("reports interruption as unsupported when SharedArrayBuffer is unavailable", async () => {
+    const currentSharedArrayBuffer = globalThis.SharedArrayBuffer;
+    Object.defineProperty(globalThis, "SharedArrayBuffer", {
+      configurable: true,
+      value: undefined,
     });
 
-    await _optimizeOpm(runPython, baseModel, {
-      optimizer: { kind: "least_squares", method: "trf", max_nfev: 200, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
-      variables: [],
-      pickups: [],
-      merit_function: { operands: [{ kind: "focal_length", target: 100, weight: 1 }] },
-    }, "chief_ray", undefined, "run-1", interruptBuffer);
-
-    expect(setInterruptBuffer).toHaveBeenNthCalledWith(1, expect.any(Int32Array));
-    expect(setInterruptBuffer.mock.calls[0]?.[0].buffer).toBe(interruptBuffer);
-    expect(setInterruptBuffer).toHaveBeenLastCalledWith(undefined);
-    expect(_getOptimizationInterruptStateForTesting()).toMatchObject({
-      activeRunId: undefined,
-      interruptBuffer: undefined,
-    });
+    try {
+      _setPyodideForTesting({ setInterruptBuffer: jest.fn() });
+      await expect(canInterruptOptimization()).resolves.toBe(false);
+    } finally {
+      Object.defineProperty(globalThis, "SharedArrayBuffer", {
+        configurable: true,
+        value: currentSharedArrayBuffer,
+      });
+    }
   });
 
   it("signals only the active matching run id and treats stale stops as no-ops", async () => {
@@ -519,6 +669,11 @@ describe("_optimizeOpm", () => {
   });
 });
 
+/**
+ * Optimization script-generation contract: omitted image references resolve to
+ * the chief ray, configs survive JSON reconstruction, and evaluation does not
+ * accidentally add solver-only or glass-candidate arguments.
+ */
 describe("_evaluateOptimizationProblem", () => {
   it("runs evaluate_optimization_problem in Python and parses the JSON result", async () => {
     const runPython = jest.fn().mockResolvedValue(
@@ -556,6 +711,7 @@ describe("_evaluateOptimizationProblem", () => {
     });
 
     expect(result.status).toBe("evaluated");
+    expect(runPython).toHaveBeenCalledWith(expect.stringContaining("image_point='chief_ray'"));
     expect(result.residuals[0]?.value).toBe(0.42);
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining("evaluate_optimization_problem("));
     expect(runPython).toHaveBeenCalledWith(expect.stringContaining('\\"kind\\":\\"least_squares\\"'));

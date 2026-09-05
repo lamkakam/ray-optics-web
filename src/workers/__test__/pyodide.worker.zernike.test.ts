@@ -2,6 +2,7 @@ import { describe, it, expect } from "@jest/globals";
 import { _getZernikeCoefficients } from "../pyodide.worker";
 import type { ZernikeOrdering } from "@/features/lens-editor/types/zernikeData";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import { zernikeTermsForOrdering } from "@/features/lens-editor/lib/zernikeData";
 
 const testModel: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -99,7 +100,9 @@ describe("_getZernikeCoefficients", () => {
       capturedCode = code;
       return JSON.stringify(mockData);
     }, testModel, 0, 0);
-    expect(capturedCode).toContain("[[0,0],[1,1],[1,-1],[2,0],[2,-2],[2,2]");
+
+    const expectedTerms = JSON.stringify(zernikeTermsForOrdering("noll", 37));
+    expect(capturedCode).toContain(`zernike_terms=json.loads(${JSON.stringify(expectedTerms)})`);
   });
 
   it("passes Fringe terms to Python when specified", async () => {

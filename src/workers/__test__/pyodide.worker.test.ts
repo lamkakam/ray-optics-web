@@ -1,9 +1,12 @@
 import { describe, it, expect, afterEach } from "@jest/globals";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
-import { loadPyodide } from "pyodide";
+import type {
+  GlassOptimizationConfig,
+  OptimizationConfig,
+} from "@/features/optimization/types/optimizationWorkerTypes";
+import { loadPyodide, version } from "pyodide";
 import { releaseProxy } from "comlink";
+import { loadPyodideModule } from "@/workers/loadPyodideModule";
 
 jest.mock("@/workers/loadPyodideModule", () => ({
   loadPyodideModule: jest.fn().mockResolvedValue(jest.fn()),
@@ -30,16 +33,35 @@ import {
   _getLSAData,
   _getSurfaceSemiDiameters,
   getFirstOrderData,
+  getSurfaceSemiDiameters,
+  plotLensLayout,
+  getRayFanData,
+  getOpdFanData,
+  getSpotDiagramData,
+  getFieldCurvatureData,
+  getAstigmatismCurveData,
+  getLSAData,
+  getWavefrontData,
+  getStrehlVsWavelengthData,
+  getGeoPSFData,
+  getDiffractionMTFData,
+  get3rdOrderSeidelData,
+  getZernikeCoefficients,
+  focusByMonoRmsSpot,
+  focusByMonoStrehl,
+  focusByPolyRmsSpot,
+  focusByPolyStrehl,
+  getAllGlassCatalogsData,
+  addUserDefinedGlasses,
+  deleteUserDefinedGlasses,
+  updateUserDefinedGlasses,
+  getUserDefinedGlasses,
+  canInterruptOptimization,
+  requestOptimizationStop,
+  evaluateOptimizationProblem,
+  optimizeOpm,
+  optimizeGlasses,
 } from "../pyodide.worker";
-
-const readPyprojectVersion = (): string => {
-  const pyproject = readFileSync(join(process.cwd(), "src/python/pyproject.toml"), "utf8");
-  const projectVersionMatch = pyproject.match(/^\[project]\s*[\s\S]*?^version\s*=\s*"([^"]+)"\s*$/m);
-
-  expect(projectVersionMatch).not.toBeNull();
-
-  return projectVersionMatch?.[1] ?? "";
-};
 
 const allSphericalOpticalModel: OpticalModel = {
   setAutoAperture: "manualAperture",
@@ -60,6 +82,21 @@ const allSphericalOpticalModel: OpticalModel = {
     { label: "Default", curvatureRadius: -20.4942, thickness: 41.2365, medium: "air", manufacturer: "Schott", semiDiameter: 8.3321 },
   ],
 } as const;
+
+const minimalOptimizationConfig: OptimizationConfig = {
+  optimizer: { kind: "least_squares", method: "trf", max_nfev: 1, ftol: 1e-8, xtol: 1e-8, gtol: 1e-8 },
+  variables: [],
+  pickups: [],
+  merit_function: { operands: [] },
+};
+
+const minimalGlassOptimizationConfig: GlassOptimizationConfig = {
+  glass_optimizer: { num_neighbours: 1, maxiter: 1, tol: 1e-4 },
+  glass_variables: [],
+  variables: [],
+  pickups: [],
+  merit_function: { operands: [] },
+};
 
 
 describe("_getFirstOrderData", () => {
@@ -179,6 +216,16 @@ describe("_getRayFanData", () => {
     expect(result).toEqual(mockData);
   });
 
+  it("uses the chief ray when imagePoint is omitted", async () => {
+    let pythonScript = "";
+    await _getRayFanData(async (code) => {
+      pythonScript = code;
+      return "[]";
+    }, allSphericalOpticalModel, 0);
+
+    expect(pythonScript).toContain("get_ray_fan_data(_build_opm(), 0, image_point='chief_ray')");
+  });
+
   it("normalizes null ray fan samples to undefined gaps", async () => {
     const mockData = [
       {
@@ -234,6 +281,16 @@ describe("_getOpdFanData", () => {
     expect(result).toEqual(mockData);
   });
 
+  it("uses the chief ray when imagePoint is omitted", async () => {
+    let pythonScript = "";
+    await _getOpdFanData(async (code) => {
+      pythonScript = code;
+      return "[]";
+    }, allSphericalOpticalModel, 0);
+
+    expect(pythonScript).toContain("get_opd_fan_data(_build_opm(), 0, image_point='chief_ray')");
+  });
+
   it("normalizes null OPD fan samples to undefined gaps", async () => {
     const mockData = [
       {
@@ -256,6 +313,40 @@ describe("_getOpdFanData", () => {
 
     expect(result[0].Sagittal.y).toEqual([-0.2, undefined, 0.2]);
     expect(result[0].Tangential.y).toEqual([-0.1, undefined, 0.1]);
+  });
+});
+
+/**
+ * Injectable analysis generation contract: direct worker helpers retain their
+ * chief-ray and sampling defaults before the public wrappers supply arguments.
+ */
+describe("analysis Python generation defaults", () => {
+  it("uses the documented defaults for omitted image and sampling arguments", async () => {
+    const scripts: string[] = [];
+    const runPython = async (code: string): Promise<unknown> => {
+      scripts.push(code);
+      if (code.includes("get_spot_data")) {
+        return "[]";
+      }
+      if (code.includes("get_wavefront_data")) {
+        return JSON.stringify({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], z: [], unitX: "", unitY: "", unitZ: "" });
+      }
+      return "{}";
+    };
+
+    await _getSpotDiagramData(runPython, allSphericalOpticalModel, 0);
+    await _getWavefrontData(runPython, allSphericalOpticalModel, 0, 0);
+    await _getStrehlVsWavelengthData(runPython, allSphericalOpticalModel, 0);
+    await _getDiffractionPSFData(runPython, allSphericalOpticalModel, 0, 0);
+    await _getDiffractionMTFData(runPython, allSphericalOpticalModel, 0, 0);
+
+    expect(scripts).toEqual(expect.arrayContaining([
+      expect.stringContaining("get_spot_data(_build_opm(), 0, image_point='chief_ray')"),
+      expect.stringContaining("get_wavefront_data(_build_opm(), 0, 0, num_rays=64, image_point='chief_ray')"),
+      expect.stringContaining("get_strehl_vs_wavelength_data(_build_opm(), 0, wavelength_samples=100, num_rays=21, image_point='chief_ray')"),
+      expect.stringContaining("get_diffraction_psf_data(_build_opm(), 0, 0, num_rays=64, max_dims=256, image_point='chief_ray')"),
+      expect.stringContaining("get_diffraction_mtf_data(_build_opm(), 0, 0, num_rays=64, max_dims=256, image_point='chief_ray')"),
+    ]));
   });
 });
 
@@ -558,6 +649,11 @@ describe("_get3rdOrderSeidelData", () => {
 });
 
 
+/**
+ * Initialization generation contract: the worker installs both RayOptics and
+ * support packages, loads the local wheel, and imports every global required by
+ * later model, material, focusing, and optimization scripts.
+ */
 describe("_init", () => {
   const testWheelUrl = "http://localhost/rayoptics_web_utils-0.1.0-py3-none-any.whl";
 
@@ -599,6 +695,20 @@ describe("_init", () => {
     expect(allCode).toContain('micropip.install("opticalglass==1.1.1"');
   });
 
+  it("installs every supporting package in one micropip request", async () => {
+    const scripts: string[] = [];
+    await _init(async (code) => { scripts.push(code); }, testWheelUrl);
+    const allCode = scripts.join("\n");
+
+    expect(allCode).toContain(`await micropip.install([
+    'anytree==2.13.0',
+    'transforms3d==0.4.2',
+    'json-tricks==3.17.3',
+    'openpyxl==3.1.5',
+    'parsimonious==0.10.0',
+])`);
+  });
+
   it("should import rayoptics environment", async () => {
     const scripts: string[] = [];
     await _init(async (code) => { scripts.push(code); }, testWheelUrl);
@@ -625,8 +735,14 @@ describe("_init", () => {
   });
 });
 
+/**
+ * Runtime initialization contract: loader inputs, package dependencies, wheel
+ * location, retry state, progress milestones, and callback cleanup are all
+ * observable at the worker boundary.
+ */
 describe("init", () => {
   afterEach(() => {
+    jest.clearAllMocks();
     jest.restoreAllMocks();
     delete process.env.NEXT_PUBLIC_BASE_PATH;
     _resetPyodideForTesting();
@@ -637,9 +753,64 @@ describe("init", () => {
     // init should succeed without any fetch calls (CaF2 is bundled in the wheel)
   });
 
-  it("constructs wheel URL with base path", async () => {
+  it("passes the loader URL and options and loads required runtime packages", async () => {
+    const expectedCdn = `https://cdn.jsdelivr.net/pyodide/v${version}/full`;
+    const createPyodideModule = jest.fn();
+    const loadPackage = jest.fn().mockResolvedValue(undefined);
+    const runPythonAsync = jest.fn().mockResolvedValue(undefined);
+    jest.mocked(loadPyodideModule).mockResolvedValueOnce(createPyodideModule);
+    jest.mocked(loadPyodide).mockResolvedValueOnce({
+      loadPackage,
+      runPythonAsync,
+      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      globals: new Map(),
+    } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
+
+    await init();
+
+    expect(loadPyodideModule).toHaveBeenCalledWith(expectedCdn);
+    expect(loadPyodide).toHaveBeenCalledWith({
+      indexURL: `${expectedCdn}/`,
+      createPyodideModule,
+    });
+    expect(loadPackage).toHaveBeenCalledWith([
+      "micropip",
+      "numpy",
+      "scipy",
+      "matplotlib",
+      "pandas",
+      "xlrd",
+      "traitlets",
+      "packaging",
+      "pyyaml",
+      "requests",
+      "deprecation",
+    ]);
+    expect(runPythonAsync).toHaveBeenCalledTimes(3);
+  });
+
+  it("constructs the wheel URL without a base path", async () => {
+    const scripts: string[] = [];
+    const runPythonAsync = jest.fn().mockImplementation(async (code: string) => {
+      scripts.push(code);
+      return undefined;
+    });
+    jest.mocked(loadPyodide).mockResolvedValueOnce({
+      loadPackage: jest.fn().mockResolvedValue(undefined),
+      runPythonAsync,
+      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      globals: new Map(),
+    } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
+
+    await init();
+
+    expect(scripts.join("\n")).toContain(`micropip.install("${self.location.origin}/rayoptics_web_utils-`);
+    expect(scripts.join("\n")).toMatch(/rayoptics_web_utils-[^"\n]+-py3-none-any\.whl/);
+    expect(scripts.join("\n")).not.toContain(`${self.location.origin}//rayoptics_web_utils-`);
+  });
+
+  it("constructs the wheel URL with a base path", async () => {
     process.env.NEXT_PUBLIC_BASE_PATH = "/ray-optics-web";
-    const pyprojectVersion = readPyprojectVersion();
     const scripts: string[] = [];
     const loadPackage = jest.fn().mockResolvedValue(undefined);
     const runPythonAsync = jest.fn().mockImplementation(async (code: string) => {
@@ -660,7 +831,31 @@ describe("init", () => {
     await init();
 
     expect(loadPackage).toHaveBeenCalled();
-    expect(scripts.join("\n")).toContain(`micropip.install("http://localhost/ray-optics-web/rayoptics_web_utils-${pyprojectVersion}-py3-none-any.whl", deps=False)`);
+    expect(scripts.join("\n")).toContain(`micropip.install("${self.location.origin}/ray-optics-web/rayoptics_web_utils-`);
+    expect(scripts.join("\n")).toMatch(/ray-optics-web\/rayoptics_web_utils-[^"\n]+-py3-none-any\.whl/);
+  });
+
+  it("reuses an initialized runtime without loading it again", async () => {
+    const progress: Array<{ value: number; status: string }> = [];
+    const loadPackage = jest.fn().mockResolvedValue(undefined);
+    const runPythonAsync = jest.fn().mockResolvedValue(undefined);
+    jest.mocked(loadPyodide).mockResolvedValueOnce({
+      loadPackage,
+      runPythonAsync,
+      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+      globals: new Map(),
+    } as unknown as Awaited<ReturnType<typeof loadPyodide>>);
+
+    await init();
+    await init((entry) => {
+      progress.push(entry);
+    });
+
+    expect(loadPyodideModule).toHaveBeenCalledTimes(1);
+    expect(loadPyodide).toHaveBeenCalledTimes(1);
+    expect(loadPackage).toHaveBeenCalledTimes(1);
+    expect(runPythonAsync).toHaveBeenCalledTimes(3);
+    expect(progress).toEqual([{ value: 100, status: "Ready" }]);
   });
 
   it("emits ordered initialization milestones", async () => {
@@ -721,6 +916,106 @@ describe("init", () => {
       expect(release).toHaveBeenCalledTimes(1);
     },
   );
+});
+
+/**
+ * Public computation contract: every RPC that needs Python must reject with the
+ * same initialization error until the singleton has completed `init`; status
+ * queries and stop requests remain safe no-ops before a run exists.
+ */
+describe("public worker guards before initialization", () => {
+  afterEach(() => {
+    _resetPyodideForTesting();
+  });
+
+  it("rejects every public computation before initialization", async () => {
+    const calls: ReadonlyArray<() => Promise<unknown>> = [
+      () => getFirstOrderData(allSphericalOpticalModel),
+      () => getSurfaceSemiDiameters(allSphericalOpticalModel),
+      () => plotLensLayout(allSphericalOpticalModel, false),
+      () => getRayFanData(allSphericalOpticalModel, 0),
+      () => getOpdFanData(allSphericalOpticalModel, 0),
+      () => getSpotDiagramData(allSphericalOpticalModel, 0),
+      () => getFieldCurvatureData(allSphericalOpticalModel, 0),
+      () => getAstigmatismCurveData(allSphericalOpticalModel, 0),
+      () => getLSAData(allSphericalOpticalModel),
+      () => getWavefrontData(allSphericalOpticalModel, 0, 0),
+      () => getStrehlVsWavelengthData(allSphericalOpticalModel, 0),
+      () => getGeoPSFData(allSphericalOpticalModel, 0, 0),
+      () => getDiffractionPSFData(allSphericalOpticalModel, 0, 0),
+      () => getDiffractionMTFData(allSphericalOpticalModel, 0, 0),
+      () => get3rdOrderSeidelData(allSphericalOpticalModel),
+      () => getZernikeCoefficients(allSphericalOpticalModel, 0, 0),
+      () => focusByMonoRmsSpot(allSphericalOpticalModel, 0),
+      () => focusByMonoStrehl(allSphericalOpticalModel, 0),
+      () => focusByPolyRmsSpot(allSphericalOpticalModel, 0),
+      () => focusByPolyStrehl(allSphericalOpticalModel, 0),
+      () => getAllGlassCatalogsData(),
+      () => addUserDefinedGlasses([]),
+      () => deleteUserDefinedGlasses([]),
+      () => updateUserDefinedGlasses([]),
+      () => getUserDefinedGlasses([]),
+      () => evaluateOptimizationProblem(allSphericalOpticalModel, minimalOptimizationConfig),
+      () => optimizeOpm(allSphericalOpticalModel, minimalOptimizationConfig),
+      () => optimizeGlasses(allSphericalOpticalModel, minimalGlassOptimizationConfig),
+    ];
+
+    for (const call of calls) {
+      await expect(call()).rejects.toThrow("Pyodide not initialized. Call init() first.");
+    }
+  });
+
+  it("reports unsupported interruption and ignores a stop without an active run", async () => {
+    await expect(canInterruptOptimization()).resolves.toBe(false);
+    await expect(requestOptimizationStop("missing-run")).resolves.toEqual({ signaled: false });
+  });
+
+  it("passes chief-ray defaults through initialized public computation wrappers", async () => {
+    const scopedGlobals = { destroy: jest.fn() };
+    const runPython = jest.fn().mockReturnValue(scopedGlobals);
+    const runPythonAsync = jest.fn().mockImplementation(async (code: string) => {
+      if (code.includes("get_ray_fan_data") || code.includes("get_opd_fan_data") || code.includes("get_spot_data")) {
+        return "[]";
+      }
+      if (code.includes("get_wavefront_data")) {
+        return JSON.stringify({ fieldIdx: 0, wvlIdx: 0, x: [], y: [], z: [], unitX: "", unitY: "", unitZ: "" });
+      }
+      return "{}";
+    });
+    _setPyodideForTesting({
+      runPython,
+      runPythonAsync,
+      ffi: { PyProxy: { [Symbol.hasInstance]: jest.fn().mockReturnValue(false) } },
+    });
+
+    await getRayFanData(allSphericalOpticalModel, 0);
+    await getOpdFanData(allSphericalOpticalModel, 0);
+    await getSpotDiagramData(allSphericalOpticalModel, 0);
+    await getWavefrontData(allSphericalOpticalModel, 0, 0);
+    await getStrehlVsWavelengthData(allSphericalOpticalModel, 0);
+    await getDiffractionPSFData(allSphericalOpticalModel, 0, 0);
+    await getDiffractionMTFData(allSphericalOpticalModel, 0, 0);
+    await getZernikeCoefficients(allSphericalOpticalModel, 0, 0);
+    await evaluateOptimizationProblem(allSphericalOpticalModel, minimalOptimizationConfig);
+    await optimizeOpm(allSphericalOpticalModel, minimalOptimizationConfig);
+    await optimizeGlasses(allSphericalOpticalModel, minimalGlassOptimizationConfig);
+
+    const scripts = runPythonAsync.mock.calls.map(([code]) => code as string);
+    expect(scripts).toEqual(expect.arrayContaining([
+      expect.stringContaining("get_ray_fan_data(_build_opm(), 0, image_point='chief_ray')"),
+      expect.stringContaining("get_opd_fan_data(_build_opm(), 0, image_point='chief_ray')"),
+      expect.stringContaining("get_spot_data(_build_opm(), 0, image_point='chief_ray')"),
+      expect.stringContaining("get_wavefront_data(_build_opm(), 0, 0, num_rays=128, image_point='chief_ray')"),
+      expect.stringContaining("get_strehl_vs_wavelength_data(_build_opm(), 0, wavelength_samples=100, num_rays=21, image_point='chief_ray')"),
+      expect.stringContaining("get_diffraction_psf_data(_build_opm(), 0, 0, num_rays=128, max_dims=1024, image_point='chief_ray')"),
+      expect.stringContaining("get_diffraction_mtf_data(_build_opm(), 0, 0, num_rays=128, max_dims=256, image_point='chief_ray')"),
+      expect.stringContaining("get_zernike_coefficients(_build_opm(), 0, 0, zernike_terms=zernike_terms, image_point='chief_ray')"),
+      expect.stringContaining("evaluate_optimization_problem(_build_opm(), json.loads("),
+      expect.stringContaining("optimize_opm(_build_opm(), _optimization_config, image_point='chief_ray')"),
+      expect.stringContaining("optimize_glasses(_build_opm(), _optimization_config, image_point='chief_ray'")
+    ]));
+    expect(scripts.some((script) => script.includes("evaluate_optimization_problem(") && script.includes("image_point='chief_ray'"))).toBe(true);
+  });
 });
 
 describe("Pyodide computation executor lifecycle", () => {

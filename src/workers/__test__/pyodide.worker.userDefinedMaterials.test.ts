@@ -40,6 +40,11 @@ const rawUserDefinedData: UserDefinedMaterialsData = {
 };
 
 describe("user-defined material worker APIs", () => {
+  /**
+   * Material responses may contain NumPy scalar and array values. The generated
+   * Python must therefore keep the JSON default hook that converts both forms
+   * before raising for unsupported objects.
+   */
   it("_addUserDefinedGlasses sets materials and returns raw user-defined material data", async () => {
     let capturedCode = "";
 
@@ -51,6 +56,11 @@ describe("user-defined material worker APIs", () => {
     expect(capturedCode).toContain("user_defined_materials[name] = pairs");
     expect(capturedCode).toContain("user_defined_materials.get_materials_data(names)");
     expect(capturedCode).toContain("json.dumps(user_defined_materials.get_materials_data(names), default=_json_default)");
+    expect(capturedCode).toContain("if hasattr(value, \"tolist\"):");
+    expect(capturedCode).toContain("return value.tolist()");
+    expect(capturedCode).toContain("if hasattr(value, \"item\"):");
+    expect(capturedCode).toContain("return value.item()");
+    expect(capturedCode).toContain("raise TypeError(f\"Object of type {value.__class__.__name__} is not JSON serializable\")");
     expect(capturedCode).toContain("CUSTOM_A");
     expect(capturedCode).not.toContain("len(pairs)");
     expect(capturedCode).not.toContain("len(set(names))");
