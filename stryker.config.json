@@ -1,0 +1,44 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "jest",
+  "jest": {
+    "configFile": "jest.config.ts",
+    "enableFindRelatedTests": true
+  },
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.{test,spec}.{ts,tsx}",
+    "!src/**/{__test__,__tests__,test,tests,__mocks__,mocks,__fixtures__,fixtures,e2e,generated}/**",
+    "!src/**/*.d.ts",
+    "!src/python/**"
+  ],
+  "ignorePatterns": [
+    ".next/",
+    "out/",
+    "build/",
+    "dist/",
+    "coverage/",
+    "reports/",
+    "test-results/",
+    "playwright-report/",
+    "**/.venv/",
+    "**/__pycache__/",
+    "**/.pytest_cache/",
+    "**/.mypy_cache/",
+    "**/.ruff_cache/",
+    "**/.cache/",
+    "src/python/build/",
+    "**/*.egg-info/",
+    "**/*.pyc",
+    "**/*.whl",
+    "**/*.tsbuildinfo"
+  ],
+  "reporters": ["progress", "clear-text", "html", "json"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/mutation.html"
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  }
+}

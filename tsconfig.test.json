@@ -9,6 +9,7 @@
   ],
   "exclude": [
     "node_modules",
+    ".stryker-tmp",
     ".next",
     "src/e2e/**"
   ]

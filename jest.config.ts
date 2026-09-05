@@ -3,6 +3,9 @@
  *
  * Generated static exports under `out/` are deployment artifacts rather than
  * canonical test inputs, even when the export contains copied test files.
+ * Stryker sandboxes are excluded relative to this config's root so ordinary Jest
+ * runs skip copied tests and modules (including manual mocks), while Jest inside
+ * a mutation sandbox can run its suite without duplicate-module collisions.
  */
 import type { Config } from "jest";
 
@@ -31,10 +34,12 @@ const config: Config = {
     "^deck\\.gl$": "<rootDir>/src/__mocks__/deck.gl.tsx",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
+  modulePathIgnorePatterns: ["<rootDir>/\\.stryker-tmp/"],
   testPathIgnorePatterns: [
     "<rootDir>/node_modules/",
     "<rootDir>/.next/",
     "<rootDir>/out/",
+    "<rootDir>/\\.stryker-tmp/",
     "<rootDir>/src/e2e/",
   ],
 };

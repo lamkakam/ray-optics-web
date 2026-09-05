@@ -20,6 +20,8 @@
     "lint": "biome lint . --error-on-warnings",
     "pretest": "npm run generate:python-export-helpers",
     "test": "jest",
+    "pretest:mutation": "npm run generate:python-export-helpers",
+    "test:mutation": "stryker run",
     "pretest:e2e": "npm run generate:python-export-helpers && bash scripts/build-python-wheel.sh",
     "test:e2e": "playwright test"
   },
@@ -54,6 +56,8 @@
     "@biomejs/biome": "2.5.11",
     "@jest/globals": "30.4.1",
     "@playwright/test": "^1.49.0",
+    "@stryker-mutator/core": "9.6.1",
+    "@stryker-mutator/jest-runner": "9.6.1",
     "@tailwindcss/postcss": "^4.0.0",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "^16.1.0",

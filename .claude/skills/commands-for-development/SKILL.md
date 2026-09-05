@@ -41,6 +41,29 @@ npm run lint
 npm run test
 ```
 
+### Local mutation tests (Stryker through Jest):
+
+```bash
+# Full application campaign; can take substantially longer than Jest
+npm run test:mutation
+
+# Full-scope instrumentation and initial test run only
+npm run test:mutation -- --dryRunOnly
+
+# Bounded utility and TSX runs
+npm run test:mutation -- --mutate src/shared/lib/chart-formatting/formatPlotValue.ts
+npm run test:mutation -- --mutate src/shared/components/primitives/Button/Button.tsx
+
+# Optional worker limit; otherwise Stryker uses its default concurrency
+npm run test:mutation -- --mutate src/shared/lib/chart-formatting/formatPlotValue.ts --concurrency 2
+```
+
+Use the full-scope dry run plus focused runs to validate setup; an exhaustive mutation campaign is not needed for configuration changes. Focused runs generally take seconds to minutes. No CI workflow or mutation-score gate is configured, and incremental mode and the optional TypeScript mutant checker are disabled.
+
+The `pretest:mutation` lifecycle hook generates Python-export TypeScript helpers before Stryker copies its sandbox. Keep the six existing `.txt` fixtures under Git-ignored `src/__tests__/data/photons-to-photos/` available locally; `npm ci` does not provide them. Jest also reads Python helper sources and `src/python/pyproject.toml` as text. These files and generated helpers are copied but never mutated; no Python execution or wheel build is needed.
+
+Progress and scores appear in the console. Mutation runs write `reports/mutation/mutation.html` and `reports/mutation/mutation.json`, overwriting the previous reports; dry runs do not write reports. Reports and `.stryker-tmp/` are Git-ignored; sandboxes are excluded from ordinary Jest discovery and TypeScript checking. See the README's local mutation-testing section for scope and sandbox exclusions.
+
 ### Unit tests for the internal Python package:
 
 ```bash
