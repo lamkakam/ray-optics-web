@@ -8,7 +8,9 @@
 
 - Before working on files under `<project-root>/src/python/`, always use venv by running `source <project-root>/src/python/.venv/bin/activate`. Always check with `which pip`, `which pip3`, `which python` and `which python3` to ensure you are using the venv before running any Python script
 
-- Use TDD in all situations. Never implement anything before writing tests. The newly added tests should fail first, then you implement the feature to make the tests pass
+- Use TDD for application code changes, including new features, bug fixes, and behavior-changing refactors: write or update the test first, verify it fails for the expected reason, then implement the change until it passes
+
+- Don't use TDD for configuration or tooling-only changes or build, CI/CD configuration
 
 - Always work on a feature branch. Never work on main branch
 

@@ -25,7 +25,9 @@ Generates the ignored TypeScript string constants used to inline Python aperture
 node scripts/generate-python-export-helpers.mjs
 ```
 
-The project runs this script automatically through npm lifecycle hooks, including `postinstall`, `pretype-check`, `prelint`, `pretest`, `prebuild`, `predev`, and `pretest:e2e`. Developers may run it directly when they want to refresh the generated file without running another command.
+The project runs this script automatically through npm lifecycle hooks, including `postinstall`, `pretype-check`, `prelint`, `pretest`, `pretest:mutation`, `prebuild`, `predev`, and `pretest:e2e`. Developers may run it directly when they want to refresh the generated file without running another command.
+
+The mutation-testing hook generates both helpers before Stryker copies its sandbox. Generated outputs and the Python source inputs remain available to Jest in that sandbox, but are excluded from mutation.
 
 ## Notes
 

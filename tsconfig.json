@@ -40,6 +40,7 @@
   ],
   "exclude": [
     "node_modules",
+    ".stryker-tmp",
     "src/e2e/**"
   ]
 }

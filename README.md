@@ -100,6 +100,33 @@ npm run serve
 
 The tracked root-level reports are refreshed explicitly with `npm run generate:third-party-licenses`; this requires `src/python/.venv` to have been initialized first and refreshes both `THIRD-PARTY-LICENSES.md` and `THIRD-PARTY-PYTHON-LICENSES.md`. To refresh only the tracked Python report, run `npm run generate:python-third-party-licenses` after initializing the venv; it updates only `THIRD-PARTY-PYTHON-LICENSES.md`. The production build also generates deployment copies at `out/THIRD-PARTY-LICENSES.md` and `out/THIRD-PARTY-PYTHON-LICENSES.md` through `postbuild`.
 
+### Local mutation testing
+
+Stryker 9.6.1 runs application TypeScript and TSX mutations through the existing Jest 30 suite. It supports the development environment's Node 22.15; the Stryker packages require Node 20 or newer. Mutation testing is on demand, with no CI workflow or mutation-score gate.
+
+```bash
+# Full application mutation campaign (potentially lengthy)
+npm run test:mutation
+
+# Instrument the full scope and check the initial Jest run without testing mutants
+npm run test:mutation -- --dryRunOnly
+
+# Focus on a utility or a small TSX component
+npm run test:mutation -- --mutate src/shared/lib/chart-formatting/formatPlotValue.ts
+npm run test:mutation -- --mutate src/shared/components/primitives/Button/Button.tsx
+
+# Limit workers when memory or CPU is constrained
+npm run test:mutation -- --mutate src/shared/lib/chart-formatting/formatPlotValue.ts --concurrency 2
+```
+
+The npm lifecycle hook generates the TypeScript Python-export helpers before sandbox creation. Jest still needs the Python source files and `src/python/pyproject.toml` as text inputs; mutation testing does not execute Python. It also needs the six existing Photons to Photos `.txt` fixtures in the Git-ignored `src/__tests__/data/photons-to-photos/` directory, as required by the parser and lens-editor tests. Supply those fixtures locally before a full run; `npm ci` does not create them.
+
+Stryker copies those fixtures, generated helpers, tests, mocks, and Python sources into its sandbox even though some are Git-ignored. Mutation targets exclude tests/specs, test and mock directories, fixtures, E2E tests, declarations, Python, and generated code. Sandbox copying excludes build artifacts, Python environments, caches, and reports. Temporary `.stryker-tmp/` directories are Git-ignored and excluded from ordinary Jest discovery and TypeScript checking.
+
+Runs use per-test coverage and related-test selection with Stryker's default worker concurrency; CLI flags can override concurrency. Expect focused runs to take seconds to minutes and the full campaign to take substantially longer than Jest because it tests many mutations. Start with the full-scope dry run and focused runs when checking setup. Incremental mode and the optional TypeScript mutant checker are disabled initially.
+
+Console output summarizes progress and scores. Open `reports/mutation/mutation.html` for the interactive report or inspect `reports/mutation/mutation.json` programmatically. Each mutation run overwrites these Git-ignored reports, so copy them elsewhere to retain a result. A dry run checks instrumentation and test compatibility without measuring a mutation score or writing reports. See the [Stryker Jest runner documentation](https://stryker-mutator.io/docs/stryker-js/jest-runner/) for integration details.
+
 ## Third-Party Licenses (Including Transitive Deps)
 
 See the [list of third-party TypeScript and JavaScript package licenses](./THIRD-PARTY-LICENSES.md) and the [list of third-party Python package licenses](./THIRD-PARTY-PYTHON-LICENSES.md).
