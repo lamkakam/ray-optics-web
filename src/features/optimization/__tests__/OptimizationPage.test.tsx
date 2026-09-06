@@ -1583,6 +1583,10 @@ describe("OptimizationPage", () => {
     const chartOption = (chartInstance.setOption as jest.Mock).mock.calls.at(-1)?.[0];
     const yAxis = chartOption?.yAxis as { axisLabel?: { formatter?: (value: number) => string } } | undefined;
     expect(yAxis?.axisLabel?.formatter?.(0)).toBe("1e-9");
+
+    expect(screen.queryByText("Optimization failed.")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog", { name: "Optimization Progress" })).not.toBeInTheDocument();
   });
 
   it("disables the progress Stop control when the worker cannot interrupt optimization", async () => {
@@ -1830,6 +1834,26 @@ describe("OptimizationPage", () => {
       optimizationStore.getState().optimizationModel?.surfaces[0].curvatureRadius,
     ).toBe(50);
     expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("reports thrown worker errors and allows the completed progress modal to close", async () => {
+    const onError = jest.fn();
+    const proxy = makeProxy({
+      optimizeOpm: jest.fn().mockRejectedValue(new Error("worker failed")),
+    });
+    const user = userEvent.setup();
+
+    renderOptimizationPage(proxy, onError);
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+
+    await waitFor(() => expect(onError).toHaveBeenCalledTimes(1));
+    expect(screen.getByText("worker failed")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "OK" }));
+    expect(screen.queryByRole("dialog", { name: "Optimization Progress" })).not.toBeInTheDocument();
   });
 
   it("applies an optimized image-surface radius to the page-local model", async () => {

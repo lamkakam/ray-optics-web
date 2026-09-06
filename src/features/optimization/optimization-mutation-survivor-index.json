@@ -3696,12 +3696,12 @@
           "column": 38
         }
       },
-      "currentStatus": "Survived",
+      "currentStatus": "Killed",
       "currentReports": [
         "optimization-page.json"
       ],
-      "disposition": "environment-or-static",
-      "reason": "Modal, evaluation, optimization, and apply behavior is covered; residuals require worker failure or capability states, browser geometry, SSR drawer sizing, or static/memo configuration."
+      "disposition": "covered-behavior",
+      "reason": "Matched by file, location, operator, and replacement in a final focused campaign and killed by the final tests."
     },
     {
       "file": "src/features/optimization/OptimizationPage.tsx",

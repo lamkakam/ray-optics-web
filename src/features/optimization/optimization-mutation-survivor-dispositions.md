@@ -63,7 +63,7 @@ stores the matched campaign status and the reviewed disposition reason.
 The original counts sum to 734. Current focused campaigns killed the observable
 behavior mutants in the exercised flows; the remaining categories above are retained as
 reviewed residuals rather than hidden by changing production code or adding static-style
-tests. The exact index comparison matched 207 baseline survivors as killed, 499 as
+tests. The exact index comparison matched 208 baseline survivors as killed, 498 as
 survived, 1 as no-coverage, 1 as timeout, and left 26 without a focused campaign match;
 the latter are still covered by the file-level disposition rows and are not counted as
 kills.
@@ -75,12 +75,12 @@ as Stryker emitted them; `NoCoverage`, `Timeout`, and `RuntimeError` are campaig
 limitations, not surviving behavior claims.
 
 The pre-hardening optimization Jest baseline was 23 suites and 293 passing tests. The
-final optimization slice is 24 suites and 347 passing tests; the final repository suite
-is 172 suites and 2,507 passing tests.
+final optimization slice is 24 suites and 348 passing tests; the final repository suite
+is 172 suites and 2,508 passing tests.
 
 | Report | Total | Killed | Survived | No coverage | Timeout | Runtime error |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `optimization-page.json` | 506 | 272 | 155 | 52 | 27 | 0 |
+| `optimization-page.json` | 506 | 276 | 155 | 46 | 29 | 0 |
 | `optimization-store.json` | 1,047 | 915 | 76 | 52 | 4 | 0 |
 | `optimization-glass-modal.json` | 297 | 247 | 46 | 4 | 0 | 0 |
 | `optimization-asphere.json` | 324 | 290 | 29 | 5 | 0 | 0 |
