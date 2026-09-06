@@ -10,6 +10,11 @@ The extracted JSON retains each mutant ID, source location, mutator, and replace
 line-level review. Focused JSON reports are kept in the ignored `reports/mutation/`
 directory so later Stryker runs cannot overwrite the preserved baseline.
 
+The tracked [survivor index](./optimization-mutation-survivor-index.json) contains all
+734 exact records. It compares focused campaigns by file, start/end location, mutator,
+and replacement, deliberately excluding mutant IDs from the comparison. Each record
+stores the matched campaign status and the reviewed disposition reason.
+
 ## Disposition key
 
 - **Covered behavior** means an assertion was added or retained for the user-visible
@@ -58,7 +63,10 @@ directory so later Stryker runs cannot overwrite the preserved baseline.
 The original counts sum to 734. Current focused campaigns killed the observable
 behavior mutants in the exercised flows; the remaining categories above are retained as
 reviewed residuals rather than hidden by changing production code or adding static-style
-tests.
+tests. The exact index comparison matched 207 baseline survivors as killed, 499 as
+survived, 1 as no-coverage, 1 as timeout, and left 26 without a focused campaign match;
+the latter are still covered by the file-level disposition rows and are not counted as
+kills.
 
 ## Final focused campaign records
 
