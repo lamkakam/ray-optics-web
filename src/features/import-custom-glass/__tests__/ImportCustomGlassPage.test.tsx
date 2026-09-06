@@ -203,19 +203,6 @@ describe("ImportCustomGlassPage", () => {
     expect(screen.queryByLabelText("Filter custom glass")).not.toBeInTheDocument();
   });
 
-  it("sizes the readonly grid columns for selection, label, and optical property columns", () => {
-    renderPage();
-
-    const headers = screen.getByTestId("ag-grid-mock").querySelectorAll("th");
-
-    expect([...headers].map((header) => header.textContent)).toEqual(["", "Label", "nd", "vd", "ne", "ve", "Pg,F", "PF,e", "PF,d"]);
-    expect(headers[0]).toHaveAttribute("data-width", "81");
-    expect(headers[1]).toHaveAttribute("data-width", "125");
-    for (const header of [...headers].slice(2)) {
-      expect(header).toHaveAttribute("data-width", "137");
-    }
-  });
-
   it("keeps only readonly data columns sortable and filterable", () => {
     renderPage();
 

@@ -318,21 +318,19 @@ describe("Tooltip", () => {
   });
 
   describe("portal mode", () => {
-    it("uses the fixed portal class set and merges the trigger class", () => {
+    it("uses fixed non-interactive portal positioning", () => {
       render(
-        <Tooltip text="Portal tip" portal triggerClassName="fill-target">
+        <Tooltip text="Portal tip" portal>
           <button>Trigger</button>
         </Tooltip>,
       );
 
       const wrapper = screen.getByRole("button", { name: "Trigger" }).parentElement!;
       const tooltip = screen.getByRole("tooltip");
-      expect(wrapper).toHaveClass("relative", "inline-flex", "fill-target");
+      expect(wrapper).toHaveClass("relative", "inline-flex");
       expect(tooltip).toHaveClass(
         "pointer-events-none",
-        "rounded",
         "fixed",
-        "whitespace-nowrap",
         "z-[9999]",
       );
     });

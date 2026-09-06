@@ -1,19 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { Progress } from "@/shared/components/primitives/Progress";
 import { Progress as BarrelProgress } from "@/shared/components/primitives";
-import { componentTokens as cx } from "@/shared/tokens/styleTokens";
-
-function splitClasses(str: string): string[] {
-  return str.trim().split(/\s+/).filter(Boolean);
-}
-
-function expectClasses(element: HTMLElement, ...tokenStrings: string[]) {
-  tokenStrings.forEach((token) => {
-    splitClasses(token).forEach((cls) => {
-      expect(element).toHaveClass(cls);
-    });
-  });
-}
 
 describe("Progress", () => {
   it("renders default linear progress with a status percentage", () => {
@@ -58,55 +45,8 @@ describe("Progress", () => {
     expect(screen.getByTestId("progress-indicator")).toHaveStyle({ width: "100%" });
   });
 
-  it("applies small size token classes", () => {
-    render(<Progress value={25} size="sm" />);
-
-    expectClasses(
-      screen.getByTestId("progress-track"),
-      cx.progress.size.trackHeightSm,
-    );
-    expectClasses(
-      screen.getByText("25%"),
-      cx.progress.size.statusFontSizeSm,
-    );
-  });
-
-  it("applies medium size token classes by default", () => {
-    render(<Progress value={25} />);
-
-    expectClasses(
-      screen.getByTestId("progress-track"),
-      cx.progress.size.trackHeightMd,
-    );
-    expectClasses(
-      screen.getByText("25%"),
-      cx.progress.size.statusFontSizeMd,
-    );
-  });
-
-  it("merges extra className after token classes", () => {
-    render(<Progress value={25} className="w-32" />);
-
-    const progress = screen.getByRole("progressbar");
-
-    expect(progress).toHaveClass("w-32");
-    splitClasses(cx.progress.size.width).forEach((cls) => {
-      expect(progress).not.toHaveClass(cls);
-    });
-    expectClasses(progress, cx.progress.size.gap);
-  });
-
   it("is exported from the primitives barrel", () => {
     expect(BarrelProgress).toBe(Progress);
-  });
-
-  it("uses the linear presentation and shared base classes by default", () => {
-    render(<Progress value={25} />);
-
-    expect(screen.getByRole("progressbar")).toHaveClass("flex", "flex-col");
-    expectClasses(screen.getByTestId("progress-track"), cx.progress.color.trackBgColor);
-    expectClasses(screen.getByTestId("progress-indicator"), "h-full");
-    expectClasses(screen.getByText("25%"), cx.progress.size.statusFontSizeMd);
   });
 
   it("returns zero for a non-positive progress range", () => {

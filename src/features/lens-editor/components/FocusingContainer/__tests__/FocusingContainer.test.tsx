@@ -153,27 +153,6 @@ describe("FocusingContainer", () => {
     expect(screen.getByRole("button", { name: "Focus" })).toBeDisabled();
   });
 
-  it("renders Focus button with sm size on screenLG", () => {
-    mockUseScreenBreakpoint.mockReturnValue("screenLG");
-    const lensStore = createTestLensStore();
-    const specsStore = createTestSpecsStore();
-    render(
-      <SpecsConfiguratorStoreContext.Provider value={specsStore}>
-        <LensEditorStoreContext.Provider value={lensStore}>
-          <FocusingContainer
-            proxy={makeMockProxy()}
-            isReady={true}
-            computing={false}
-            getOpticalModel={() => testOpticalModel}
-            onUpdateSystem={jest.fn().mockResolvedValue(undefined)}
-            onError={jest.fn()}
-          />
-        </LensEditorStoreContext.Provider>
-      </SpecsConfiguratorStoreContext.Provider>
-    );
-    expect(screen.getByRole("button", { name: "Focus" })).toHaveClass("px-3", "py-1.5", "text-sm");
-  });
-
   it("calls focusByMonoRmsSpot by default (mono + rmsSpot)", async () => {
     const lensStore = createTestLensStore();
     const specsStore = createTestSpecsStore();

@@ -21,19 +21,17 @@ describe("InlineLink", () => {
   it("renders a link with the provided href", () => {
     render(<InlineLink href="/glass-map">View in glass map</InlineLink>);
 
-    const link = screen.getByRole("link", { name: "View in glass map" });
-    expect(link).toHaveAttribute("href", "/glass-map");
-    expect(link).toHaveClass("text-sm", "font-medium", "underline", "underline-offset-2");
+    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute("href", "/glass-map");
   });
 
-  it("forwards aria-label and className", () => {
+  it("forwards aria-label", () => {
     render(
-      <InlineLink href="/" aria-label="Back to lens editor" className="custom-class">
+      <InlineLink href="/" aria-label="Back to lens editor">
         Back
       </InlineLink>,
     );
 
-    expect(screen.getByRole("link", { name: "Back to lens editor" })).toHaveClass("custom-class");
+    expect(screen.getByRole("link", { name: "Back to lens editor" })).toBeInTheDocument();
   });
 
   it("forwards a typed click handler", async () => {

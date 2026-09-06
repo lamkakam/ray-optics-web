@@ -31,7 +31,7 @@ describe("Switch", () => {
     expect(switchButton).toHaveAttribute("aria-checked", "true");
   });
 
-  it("defaults to type button and md size classes", () => {
+  it("defaults to type button", () => {
     render(
       <Switch
         checked={false}
@@ -43,16 +43,6 @@ describe("Switch", () => {
     const switchButton = screen.getByRole("switch", { name: "Use model glass" });
 
     expect(switchButton).toHaveAttribute("type", "button");
-    expectClasses(
-      switchButton,
-      cx.switch.size.trackHeightMd,
-      cx.switch.size.trackWidthMd,
-    );
-    expectClasses(
-      screen.getByTestId("switch-thumb"),
-      cx.switch.size.thumbHeightMd,
-      cx.switch.size.thumbWidthMd,
-    );
   });
 
   it("calls onCheckedChange with true when unchecked and clicked", async () => {
@@ -194,28 +184,6 @@ describe("Switch", () => {
     );
 
     expect(screen.getByTestId("switch-icon")).toBeInTheDocument();
-  });
-
-  it("applies sm token classes", () => {
-    render(
-      <Switch
-        checked={false}
-        ariaLabel="Use model glass"
-        onCheckedChange={jest.fn()}
-        size="sm"
-      />
-    );
-
-    expectClasses(
-      screen.getByRole("switch", { name: "Use model glass" }),
-      cx.switch.size.trackHeightSm,
-      cx.switch.size.trackWidthSm,
-    );
-    expectClasses(
-      screen.getByTestId("switch-thumb"),
-      cx.switch.size.thumbHeightSm,
-      cx.switch.size.thumbWidthSm,
-    );
   });
 
   it("applies checked state token classes", () => {

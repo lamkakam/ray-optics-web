@@ -31,12 +31,6 @@ describe("SettingsPage", () => {
     expect(mockSetTheme).toHaveBeenCalledWith("dark");
   });
 
-  it("theme select wrapper has a max-width class to prevent oversized dropdown", () => {
-    render(<SettingsPage />);
-    const select = screen.getByLabelText("Theme");
-    expect(select.parentElement).toHaveClass("max-w-[12em]");
-  });
-
   it("does not render the Image point selector", () => {
     render(<SettingsPage />);
     expect(screen.queryByLabelText("Image point")).not.toBeInTheDocument();

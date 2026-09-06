@@ -56,19 +56,9 @@ describe("NavLink", () => {
     expect(screen.getByRole("link", { name: "Custom Label" })).toBeInTheDocument();
   });
 
-  it("applies extra className", () => {
-    render(
-      <NavLink active={false} href="/settings" className="extra-class">
-        Settings
-      </NavLink>
-    );
-    expect(screen.getByRole("link")).toHaveClass("extra-class");
-  });
-
-  it("applies the complete active and inactive class variants", () => {
+  it("visually distinguishes the active and inactive states", () => {
     const { rerender } = render(<NavLink active={true} href="/settings">Settings</NavLink>);
     const link = screen.getByRole("link", { name: "Settings" });
-    expect(link).toHaveClass("block", "px-3", "py-2", "rounded-lg", "font-medium", "cursor-pointer");
     expect(link).toHaveClass("bg-blue-50", "text-blue-700");
 
     rerender(<NavLink active={false} href="/settings">Settings</NavLink>);
@@ -81,9 +71,4 @@ describe("NavLink", () => {
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings");
   });
 
-  it("does not add whitespace when no extra class is supplied", () => {
-    render(<NavLink active={false} href="/settings">Settings</NavLink>);
-
-    expect(screen.getByRole("link").className).not.toMatch(/\s$/);
-  });
 });

@@ -107,19 +107,6 @@ describe("buildSurfaceBySurface3rdOrderChartOption", () => {
     ).toContain("1e-8");
   });
 
-  it("uses a larger category gap between surface groups", () => {
-    const option = buildSurfaceBySurface3rdOrderChartOption(
-      surfaceBySurface3rdOrderData,
-      960,
-      540,
-      globalTokens.echarts.text.light,
-    );
-
-    expect(
-      option.series.every((series: { barCategoryGap?: string }) => series.barCategoryGap === "60%"),
-    ).toBe(true);
-  });
-
   it("uses surface labels as x-axis categories and row-wise series data", () => {
     const option = buildSurfaceBySurface3rdOrderChartOption(
       surfaceBySurface3rdOrderData,

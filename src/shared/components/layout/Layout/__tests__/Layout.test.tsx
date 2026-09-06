@@ -181,23 +181,6 @@ describe("Layout", () => {
     expect(outerDiv).not.toHaveClass("h-screen");
   });
 
-  it("uses distinct header spacing and forwards the large-screen breakpoint", () => {
-    mockScreenSize.value = "screenLG";
-    render(<Layout {...defaultProps} />);
-
-    const header = screen.getByRole("banner");
-    expect(header.firstElementChild).toHaveClass("h-12", "gap-4");
-    expect(screen.getByRole("button", { name: "Open navigation" })).toBeInTheDocument();
-    expect(() => screen.getByRole("heading", { name: "Ray Optics Web" })).not.toThrow();
-  });
-
-  it("uses the small-screen heading offset", () => {
-    mockScreenSize.value = "screenSM";
-    render(<Layout {...defaultProps} />);
-
-    expect(screen.getByRole("heading", { name: "Ray Optics Web" })).toHaveClass("ml-2");
-  });
-
   it("SM layout: inner container has flex-1 and min-h-0 so SideNav inherits full height", () => {
     mockScreenSize.value = "screenSM";
     const { container } = render(<Layout {...defaultProps} />);

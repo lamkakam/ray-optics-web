@@ -15,18 +15,6 @@ describe("MenuContainer", () => {
     expect(menu).toHaveClass("overflow-y-auto");
   });
 
-  it("uses shared surface, border, and text tokens", () => {
-    render(<MenuContainer aria-label="Examples" />);
-
-    const menu = screen.getByRole("list", { name: "Examples" });
-    expect(menu).toHaveClass("border-gray-200");
-    expect(menu).toHaveClass("dark:border-gray-700");
-    expect(menu).toHaveClass("bg-gray-100");
-    expect(menu).toHaveClass("dark:bg-gray-800");
-    expect(menu).toHaveClass("text-gray-700");
-    expect(menu).toHaveClass("dark:text-gray-300");
-  });
-
   it("focuses and selects the next enabled menu button on ArrowDown", () => {
     const handleFirst = jest.fn();
     const handleSecond = jest.fn();

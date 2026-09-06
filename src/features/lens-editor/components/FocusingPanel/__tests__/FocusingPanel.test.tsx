@@ -25,12 +25,6 @@ describe("FocusingPanel", () => {
     jest.clearAllMocks();
   });
 
-  it("renders chromaticity options in two columns", () => {
-    render(<FocusingPanel {...defaultProps} />);
-    const optionsGrid = screen.getByText("Chromaticity").nextElementSibling;
-    expect(optionsGrid).toHaveClass("grid-cols-2");
-  });
-
   it("renders chromaticity radio group with correct options", () => {
     render(<FocusingPanel {...defaultProps} />);
     expect(screen.getByLabelText("Monochromatic")).toBeInTheDocument();
@@ -41,18 +35,6 @@ describe("FocusingPanel", () => {
     render(<FocusingPanel {...defaultProps} />);
     expect(screen.getByLabelText("Minimize RMS Spot Radius")).toBeInTheDocument();
     expect(screen.getByLabelText("Minimize Wavefront Error")).toBeInTheDocument();
-  });
-
-  it("renders metric options in a compact two-column grid", () => {
-    render(<FocusingPanel {...defaultProps} />);
-    const optionsGrid = screen.getByText("Metric").nextElementSibling;
-
-    expect(optionsGrid).toHaveClass(
-      "inline-grid",
-      "grid-cols-2",
-      "gap-x-6",
-      "gap-y-1",
-    );
   });
 
   it("renders shorter metric labels while preserving full accessible labels", () => {

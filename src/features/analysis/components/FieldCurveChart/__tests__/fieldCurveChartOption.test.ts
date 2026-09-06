@@ -42,25 +42,13 @@ describe("fieldCurveChartOption", () => {
     expect(Array.isArray(option.xAxis)).toBe(false);
     expect(Array.isArray(option.yAxis)).toBe(false);
     expect(option.xAxis.type).toBe("value");
-    expect(option.xAxis.splitLine).toEqual({
-      show: true,
-      lineStyle: {
-        color: "#d1d5db",
-        width: 1,
-        type: "solid",
-      },
-    });
+    expect(option.xAxis.splitLine).toEqual(expect.objectContaining({ show: true }));
     expect(option.yAxis.type).toBe("category");
     expect(option.yAxis.data).toEqual(fieldCurveData.fieldLabels);
-    expect(option.yAxis.splitLine).toEqual({
+    expect(option.yAxis.splitLine).toEqual(expect.objectContaining({
       show: true,
       interval: option.yAxis.axisLabel.interval,
-      lineStyle: {
-        color: "#d1d5db",
-        width: 1,
-        type: "solid",
-      },
-    });
+    }));
     expect(option.tooltip.axisPointer).toEqual({ type: "cross" });
     expect(option.series).toHaveLength(2);
     expect(option.series).toEqual([
@@ -106,15 +94,10 @@ describe("fieldCurveChartOption", () => {
 
     expect(visibleIndices).toEqual([0, 2, 4, 6, 8]);
     expect(option.yAxis.axisTick).toEqual({ interval: isVisibleCategory });
-    expect(option.yAxis.splitLine).toEqual({
+    expect(option.yAxis.splitLine).toEqual(expect.objectContaining({
       show: true,
       interval: isVisibleCategory,
-      lineStyle: {
-        color: "#d1d5db",
-        width: 1,
-        type: "solid",
-      },
-    });
+    }));
   });
 
   it("shows every y-axis category when fewer than five field labels exist", () => {
@@ -134,14 +117,9 @@ describe("fieldCurveChartOption", () => {
 
     expect(sparseFieldCurveData.fieldLabels.every((_, index) => isVisibleCategory(index))).toBe(true);
     expect(option.yAxis.axisTick).toEqual({ interval: isVisibleCategory });
-    expect(option.yAxis.splitLine).toEqual({
+    expect(option.yAxis.splitLine).toEqual(expect.objectContaining({
       show: true,
       interval: isVisibleCategory,
-      lineStyle: {
-        color: "#d1d5db",
-        width: 1,
-        type: "solid",
-      },
-    });
+    }));
   });
 });

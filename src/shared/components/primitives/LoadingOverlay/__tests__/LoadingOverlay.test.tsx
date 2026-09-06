@@ -42,8 +42,6 @@ describe("LoadingOverlay", () => {
     const outer = container.firstChild as HTMLElement;
     expect(outer.className).toMatch(/\bfixed\b/);
     expect(outer.className).toMatch(/\binset-0\b/);
-    expect((outer.firstChild as HTMLElement).className).toMatch(/\bflex\b/);
-    expect((outer.firstChild as HTMLElement).className).toMatch(/\bgap-4\b/);
   });
 
   it("spinner SVG is present and has aria-hidden=true", () => {

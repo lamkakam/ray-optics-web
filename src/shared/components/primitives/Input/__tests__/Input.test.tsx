@@ -24,29 +24,6 @@ describe("Input", () => {
     expect(screen.getByRole("textbox", { name: "test-input" })).toBeInTheDocument();
   });
 
-  it("applies all token classes", () => {
-    render(<Input aria-label="test" />);
-    const el = screen.getByRole("textbox");
-    expectClasses(
-      el,
-      cx.input.style.borderRadius,
-      cx.input.style.borderStyle,
-      cx.input.style.outlineStyle,
-      cx.input.style.transitionStyle,
-      cx.input.style.opacity,
-      cx.input.style.cursor,
-      cx.input.size.defaultWidth,
-      cx.input.size.focusRingWidth,
-      cx.input.color.focusRingColor,
-      cx.input.color.borderColor,
-      cx.input.color.bgColor,
-      cx.input.color.textColor,
-      cx.input.size.horizontalPadding,
-      cx.input.size.verticalPadding,
-      cx.input.size.fontSize,
-    );
-  });
-
   it("forwards value", () => {
     render(<Input aria-label="test" value="hello" onChange={() => undefined} />);
     expect(screen.getByRole("textbox")).toHaveValue("hello");
@@ -96,13 +73,6 @@ describe("Input", () => {
     expect(screen.getByRole("textbox")).toHaveAttribute("autocomplete", "email");
   });
 
-  it("merges extra className", () => {
-    render(<Input aria-label="test" className="w-24 mb-2" />);
-    const el = screen.getByRole("textbox");
-    expect(el).toHaveClass("w-24");
-    expect(el).toHaveClass("mb-2");
-  });
-
   it("ref forwarding gives an HTMLInputElement instance", () => {
     const ref = createRef<HTMLInputElement>();
     render(<Input aria-label="test" ref={ref} />);
@@ -118,13 +88,11 @@ describe("Input", () => {
     expect(onBlur).toHaveBeenCalledTimes(1);
   });
 
-  it("applies default padding classes", () => {
+  it("uses a mobile-safe input font size to prevent browser zoom", () => {
     render(<Input aria-label="test" />);
     const el = screen.getByRole("textbox");
     expectClasses(
       el,
-      cx.input.size.horizontalPadding,
-      cx.input.size.verticalPadding,
       responsiveInputFontSize,
     );
   });

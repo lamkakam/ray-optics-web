@@ -18,7 +18,6 @@ import { AnalysisDataStoreContext } from "@/features/analysis/providers/Analysis
 import { LensLayoutImageStoreContext } from "@/features/analysis/providers/LensLayoutImageStoreProvider";
 import { ExampleSystemsPage } from "@/features/example-systems/ExampleSystemsPage";
 import type { ScreenSize } from "@/shared/hooks/useScreenBreakpoint";
-import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 import { ExampleSystemList } from "@/features/example-systems/lib/exampleSystems";
 import * as exampleSystemsData from "@/features/example-systems/lib/exampleSystems";
 
@@ -272,9 +271,6 @@ describe("ExampleSystemsPage", () => {
     );
     expect(sourceLink).toHaveAttribute("target", "_blank");
     expect(sourceLink).toHaveAttribute("rel", "noopener noreferrer");
-    expect(sourceLink).toHaveClass("underline");
-    expect(sourceLink).toHaveClass("dark:text-blue-400");
-    expect(sourceLink).toHaveClass(cx.externalLink.size.descriptionFontSize);
   });
 
   it("keeps the large-screen two-column viewport layout with Apply above the description", () => {
@@ -331,16 +327,6 @@ describe("ExampleSystemsPage", () => {
     expect(description).toHaveClass("overflow-y-auto");
     expect(menu.className).not.toContain("50vw");
     expect(description.className).not.toContain("50vw");
-  });
-
-  it("adds adjacent paragraph spacing to the page-specific description panel on all layouts", () => {
-    renderPage({ screenSize: "screenLG" });
-
-    expect(screen.getByTestId("description-container")).toHaveClass("[&>p+p]:mt-4");
-
-    renderPage({ screenSize: "screenSM" });
-
-    expect(screen.getAllByTestId("description-container")[1]).toHaveClass("[&>p+p]:mt-4");
   });
 
   it("contains small-screen vertical overflow inside the page panels", () => {

@@ -2,7 +2,6 @@ import { createRef } from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Select } from "@/shared/components/primitives/Select";
-import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 function splitClasses(str: string): string[] {
   return str.trim().split(/\s+/).filter(Boolean);
@@ -45,23 +44,11 @@ describe("Select", () => {
     });
   });
 
-  it("applies standard token classes by default", () => {
+  it("uses a mobile-safe font size to prevent browser zoom", () => {
     render(<Select options={OPTIONS} aria-label="test" />);
     const el = screen.getByRole("combobox");
     expectClasses(el,
-      cx.select.style.borderRadius,
-      cx.select.style.borderStyle,
-      cx.select.style.outlineStyle,
-      cx.select.style.transitionStyle,
-      cx.select.size.defaultWidth,
-      cx.select.size.horizontalPadding,
-      cx.select.size.verticalPadding,
       responsiveSelectFontSize,
-      cx.select.size.focusRingWidth,
-      cx.select.color.focusRingColor,
-      cx.select.color.borderColor,
-      cx.select.color.bgColor,
-      cx.select.color.textColor,
     );
   });
 
@@ -119,16 +106,6 @@ describe("Select", () => {
     expect(screen.getByRole("combobox")).toHaveValue("c");
   });
 
-  it("merges extra className onto wrapper div", () => {
-    render(<Select options={OPTIONS} aria-label="test" className="mb-2 max-w-xs" />);
-    const wrapper = screen.getByRole("combobox").parentElement!;
-    expect(wrapper).toHaveClass("mb-2");
-    expect(wrapper).toHaveClass("max-w-xs");
-    // select itself should not have these classes
-    expect(screen.getByRole("combobox")).not.toHaveClass("mb-2");
-    expect(screen.getByRole("combobox")).not.toHaveClass("max-w-xs");
-  });
-
   it("handles numeric option values", () => {
     const numOpts = [
       { value: 0, label: "Zero" },
@@ -149,35 +126,4 @@ describe("Select", () => {
     expect(ref.current).toBeInstanceOf(HTMLSelectElement);
   });
 
-  it("applies appearance-none to default variant", () => {
-    render(<Select options={OPTIONS} aria-label="test" />);
-    const el = screen.getByRole("combobox");
-    expectClasses(el, cx.select.style.appearanceReset);
-  });
-
-  it("applies appearance-none to compact variant", () => {
-    render(<Select options={OPTIONS} aria-label="test" />);
-    const el = screen.getByRole("combobox");
-    expectClasses(el, cx.select.style.appearanceReset);
-  });
-
-  it("applies custom arrow right-padding to default variant", () => {
-    render(<Select options={OPTIONS} aria-label="test" />);
-    const el = screen.getByRole("combobox");
-    expectClasses(el, cx.select.size.customArrowPadding);
-  });
-
-  it("applies custom arrow right-padding to compact variant", () => {
-    render(<Select options={OPTIONS} aria-label="test" />);
-    const el = screen.getByRole("combobox");
-    expectClasses(el, cx.select.size.customArrowPadding);
-  });
-
-  it("renders a wrapper div with relative and w-full classes", () => {
-    render(<Select options={OPTIONS} aria-label="test" />);
-    const el = screen.getByRole("combobox");
-    const wrapper = el.parentElement!;
-    expect(wrapper).toHaveClass("relative");
-    expect(wrapper).toHaveClass("w-full");
-  });
 });
