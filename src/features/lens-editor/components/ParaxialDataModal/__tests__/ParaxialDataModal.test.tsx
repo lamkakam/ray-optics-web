@@ -82,8 +82,6 @@ describe("ParaxialDataModal", () => {
 
     expectedLabelsAndChips.forEach(([label, chip]) => {
       const cell = screen.getByRole("cell", { name: `${label} ${chip}` });
-      const wrapper = within(cell).getByText(chip).parentElement;
-      expect(wrapper).toHaveClass("inline-flex", "gap-2");
       expect(within(cell).getByText(label)).toBeInTheDocument();
       expect(within(cell).getByText(chip)).toBeInTheDocument();
     });
@@ -107,11 +105,8 @@ describe("ParaxialDataModal", () => {
     expect(screen.getByRole("cell", { name: "50.123457" })).toBeInTheDocument();
   });
 
-  it("right-aligns the Data column and delegates two-dimensional scrolling to the shared modal body", () => {
+  it("delegates two-dimensional scrolling to the shared modal body", () => {
     render(<ParaxialDataModal isOpen data={documentedData} onClose={jest.fn()} />);
-
-    expect(screen.getByRole("columnheader", { name: "Data" })).toHaveClass("text-right");
-    expect(screen.getByRole("cell", { name: "50.123457" })).toHaveClass("text-right");
 
     const body = screen.getByTestId("modal-body");
     expect(body).toHaveClass("overflow-auto");

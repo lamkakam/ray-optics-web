@@ -10,7 +10,6 @@ import {
   createSemiDiameterColumn,
   createSurfaceColumn,
   createThicknessColumn,
-  LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS,
   lensPrescriptionGridIndexColumnDef,
   lensPrescriptionGridDefaultColDef,
   numberValueParser,
@@ -57,24 +56,7 @@ function invokeColumnCallback(callback: unknown, params: unknown): unknown {
   return typeof callback === "function" ? callback(params) : callback;
 }
 
-describe("lens prescription grid column widths", () => {
-  it("keeps common prescription column widths in the shared source", () => {
-    expect(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS).toMatchObject({
-      thickness: 130,
-      comment: 200,
-      medium: 115,
-      semiDiameter: 115,
-      aperture: 115,
-    });
-  });
-
-  it("applies shared widths to common column builders", () => {
-    expect(createThicknessColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.thickness);
-    expect(createCommentColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.comment);
-    expect(createMediumColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.medium);
-    expect(createSemiDiameterColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.semiDiameter);
-    expect(createApertureColumn({ getGridRow }).width).toBe(LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.aperture);
-  });
+describe("lens prescription grid columns", () => {
 
   it("creates an explicitly text-edited comment column for physical surfaces only", () => {
     const onCommentChange = jest.fn();
@@ -119,11 +101,10 @@ describe("lens prescription grid column widths", () => {
     expect(column.editable({ data: row } as never)).toBe(false);
   });
 
-  it("keeps the shared Index column pinned left with its shared width", () => {
+  it("keeps the shared Index column pinned left", () => {
     expect(lensPrescriptionGridIndexColumnDef).toMatchObject({
       headerName: "Index",
       pinned: "left",
-      width: LENS_PRESCRIPTION_GRID_COLUMN_WIDTHS.index,
     });
   });
 

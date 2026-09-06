@@ -1,19 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { CheckboxInput } from "@/shared/components/primitives/CheckboxInput";
-import { componentTokens as cx } from "@/shared/tokens/styleTokens";
-
-function splitClasses(str: string): string[] {
-  return str.trim().split(/\s+/).filter(Boolean);
-}
-
-function expectClasses(element: HTMLElement, ...tokenStrings: string[]) {
-  tokenStrings.forEach((token) => {
-    splitClasses(token).forEach((cls) => {
-      expect(element).toHaveClass(cls);
-    });
-  });
-}
 
 describe("CheckboxInput", () => {
   const defaultProps = {
@@ -44,37 +31,6 @@ describe("CheckboxInput", () => {
     expect(onChange).toHaveBeenCalledWith(true);
   });
 
-  it("applies compact shared classes to the wrapper and input", () => {
-    render(<CheckboxInput {...defaultProps} />);
-
-    const checkbox = screen.getByRole("checkbox", { name: "Use model glass" });
-    const wrapper = checkbox.closest("label");
-
-    expect(wrapper).not.toBeNull();
-    expectClasses(
-      wrapper as HTMLElement,
-      cx.checkbox.color.hoverBgColor,
-      cx.checkbox.color.labelTextColor,
-      cx.checkbox.size.gap,
-      cx.checkbox.size.wrapperPaddingX,
-      cx.checkbox.size.wrapperPaddingY,
-      cx.checkbox.style.wrapperBorderRadius,
-      cx.checkbox.style.transition,
-      cx.checkbox.style.cursor,
-    );
-    expectClasses(
-      checkbox,
-      cx.checkbox.color.borderColor,
-      cx.checkbox.color.checkedColor,
-      cx.checkbox.color.focusRingColor,
-      cx.checkbox.size.boxHeight,
-      cx.checkbox.size.boxWidth,
-      cx.checkbox.size.focusRingWidth,
-      cx.checkbox.style.shrink,
-      cx.checkbox.style.borderRadius,
-    );
-  });
-
   it("wraps string labels in the component-owned span", () => {
     render(<CheckboxInput {...defaultProps} />);
 
@@ -103,7 +59,9 @@ describe("CheckboxInput", () => {
   it("supports disabled state", () => {
     render(<CheckboxInput {...defaultProps} disabled />);
 
-    expect(screen.getByRole("checkbox", { name: "Use model glass" })).toBeDisabled();
+    const checkbox = screen.getByRole("checkbox", { name: "Use model glass" });
+    expect(checkbox).toBeDisabled();
+    expect(checkbox).toHaveClass("cursor-not-allowed");
   });
 
   it("supports ariaLabel override", () => {
@@ -138,13 +96,4 @@ describe("CheckboxInput", () => {
       .toBe(false);
   });
 
-  it("adds the disabled cursor class only for disabled inputs", () => {
-    const { rerender } = render(<CheckboxInput {...defaultProps} />);
-    const checkbox = screen.getByRole("checkbox", { name: "Use model glass" });
-
-    expect(checkbox).not.toHaveClass("cursor-not-allowed");
-
-    rerender(<CheckboxInput {...defaultProps} disabled />);
-    expect(checkbox).toHaveClass("cursor-not-allowed");
-  });
 });

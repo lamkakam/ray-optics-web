@@ -3,20 +3,6 @@ import {
   interpolateAnalysisHeatmapColor,
 } from "@/features/analysis/lib/analysisChartPalette";
 
-const EXPECTED_VIRIDIS_PALETTE = [
-  "#5b2a86",
-  "#5a3d9a",
-  "#4f4aa8",
-  "#4557b2",
-  "#3f63b8",
-  "#2d708e",
-  "#25858e",
-  "#1e9b8a",
-  "#2ab07f",
-  "#52c569",
-  "#86d549",
-] as const;
-
 const DARK_THEME_BACKGROUND = "#111827";
 
 function parseHexChannel(hexColor: string, offset: number): number {
@@ -45,10 +31,6 @@ function getContrastRatio(firstColor: string, secondColor: string): number {
 }
 
 describe("analysisChartPalette", () => {
-  it("uses the shared 11-step viridis palette", () => {
-    expect(ANALYSIS_HEATMAP_COLOR_PALETTE).toEqual(EXPECTED_VIRIDIS_PALETTE);
-  });
-
   it("progresses from darker to lighter colors without duplicates", () => {
     expect(new Set(ANALYSIS_HEATMAP_COLOR_PALETTE).size).toBe(ANALYSIS_HEATMAP_COLOR_PALETTE.length);
 

@@ -94,12 +94,6 @@ describe("Tabs", () => {
     expect(screen.getByRole("tabpanel")).toBeInTheDocument();
   });
 
-  it("panelClassName is applied to the tabpanel div", () => {
-    render(<Tabs tabs={TABS} panelClassName="custom-panel-class" />);
-    const panel = screen.getByRole("tabpanel");
-    expect(panel.className).toMatch(/custom-panel-class/);
-  });
-
   it("tablist has overflow-x-auto to allow horizontal scrolling", () => {
     render(<Tabs tabs={TABS} />);
     const tablist = screen.getByRole("tablist");

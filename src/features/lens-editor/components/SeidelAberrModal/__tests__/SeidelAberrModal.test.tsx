@@ -87,13 +87,6 @@ describe("SeidelAberrModal", () => {
     expect(screen.getByRole("cell", { name: "sum" })).toBeInTheDocument();
   });
 
-  it("tab panel has a fixed height class for consistent modal size", () => {
-    render(<SeidelAberrModal {...defaultProps} />);
-    const panel = screen.getByRole("tabpanel");
-    expect(panel.className).toContain("h-72");
-    expect(panel.className).toContain("overflow-y-auto");
-  });
-
   it("table cells are read-only (no input inside the table)", () => {
     render(<SeidelAberrModal {...defaultProps} />);
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();

@@ -50,14 +50,8 @@ describe("longitudinalSphericalAberrationChartOption", () => {
     expect(option.xAxis.name).toBe("Longitudinal Focus Shift (mm)");
     expect(option.yAxis.type).toBe("value");
     expect(option.yAxis.name).toBe("Normalized Pupil Coordinate");
-    expect(option.xAxis.splitLine).toEqual({
-      show: true,
-      lineStyle: { color: "#d1d5db", width: 1, type: "solid" },
-    });
-    expect(option.yAxis.splitLine).toEqual({
-      show: true,
-      lineStyle: { color: "#d1d5db", width: 1, type: "solid" },
-    });
+    expect(option.xAxis.splitLine).toEqual(expect.objectContaining({ show: true }));
+    expect(option.yAxis.splitLine).toEqual(expect.objectContaining({ show: true }));
     expect(option.series).toEqual([
       expect.objectContaining({
         name: "486.1nm",

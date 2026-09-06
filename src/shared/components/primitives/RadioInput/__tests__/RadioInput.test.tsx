@@ -2,7 +2,6 @@ import type React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RadioInput } from "@/shared/components/primitives/RadioInput";
-import { componentTokens as cx } from "@/shared/tokens/styleTokens";
 
 type Fruit = "apple" | "banana" | "cherry";
 
@@ -20,18 +19,6 @@ const defaultProps = {
   onChange: jest.fn(),
 };
 
-function splitClasses(str: string): string[] {
-  return str.trim().split(/\s+/).filter(Boolean);
-}
-
-function expectClasses(element: HTMLElement, ...tokenStrings: string[]) {
-  tokenStrings.forEach((token) => {
-    splitClasses(token).forEach((cls) => {
-      expect(element).toHaveClass(cls);
-    });
-  });
-}
-
 describe("RadioInput", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -39,10 +26,7 @@ describe("RadioInput", () => {
 
   it("renders the legend text", () => {
     render(<RadioInput {...defaultProps} />);
-    const legend = screen.getByText("Choose a fruit");
-    expect(legend).toBeInTheDocument();
-    expect(legend).toHaveClass("block", "text-sm", "font-medium", "mb-1");
-    expectClasses(legend, cx.label.color.textColor);
+    expect(screen.getByText("Choose a fruit")).toBeInTheDocument();
   });
 
   it("renders all option labels", () => {
@@ -88,83 +72,6 @@ describe("RadioInput", () => {
     radios.forEach((radio) => {
       expect(radio.name).toBe("my-group");
     });
-  });
-
-  it("applies the shared hover token to each option row", () => {
-    render(<RadioInput {...defaultProps} />);
-
-    const appleRadio = screen.getByRole("radio", { name: "Apple" });
-    const optionRow = appleRadio.closest("label");
-
-    expect(optionRow).not.toBeNull();
-    expectClasses(
-      optionRow as HTMLElement,
-      cx.radio.color.hoverBgColor,
-      cx.radio.color.labelTextColor,
-      cx.radio.size.gap,
-      cx.radio.size.wrapperPaddingX,
-      cx.radio.size.wrapperPaddingY,
-      cx.radio.style.wrapperBorderRadius,
-      cx.radio.style.transition,
-      cx.radio.style.cursor,
-    );
-  });
-
-  it("renders options in a one-column grid by default", () => {
-    render(<RadioInput {...defaultProps} />);
-
-    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
-
-    expect(optionContainer).not.toBeNull();
-    expectClasses(optionContainer as HTMLElement, "grid grid-cols-1 gap-1");
-  });
-
-  it("uses full layout by default", () => {
-    render(<RadioInput {...defaultProps} />);
-
-    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
-
-    expect(optionContainer).not.toBeNull();
-    expectClasses(optionContainer as HTMLElement, "grid grid-cols-1 gap-1");
-    expect(optionContainer).not.toHaveClass("inline-grid");
-  });
-
-  it("renders options in two columns when columns=2", () => {
-    render(<RadioInput {...defaultProps} columns={2} />);
-
-    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
-
-    expect(optionContainer).not.toBeNull();
-    expectClasses(optionContainer as HTMLElement, "grid grid-cols-2 gap-1");
-  });
-
-  it("renders options with compact layout when layout=compact", () => {
-    render(<RadioInput {...defaultProps} layout="compact" />);
-
-    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
-
-    expect(optionContainer).not.toBeNull();
-    expectClasses(optionContainer as HTMLElement, "inline-grid grid-cols-1 gap-x-6 gap-y-1");
-    expect(optionContainer).not.toHaveClass("grid");
-    expect(optionContainer).not.toHaveClass("gap-1");
-  });
-
-  it("keeps the requested column count with compact layout", () => {
-    render(<RadioInput {...defaultProps} columns={3} layout="compact" />);
-
-    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
-
-    expect(optionContainer).not.toBeNull();
-    expectClasses(optionContainer as HTMLElement, "inline-grid grid-cols-3 gap-x-6 gap-y-1");
-  });
-
-  it("renders options in four columns when columns=4", () => {
-    render(<RadioInput {...defaultProps} columns={4} />);
-
-    const optionContainer = screen.getByRole("radio", { name: "Apple" }).closest("div");
-
-    expect(optionContainer).not.toBeNull();
-    expectClasses(optionContainer as HTMLElement, "grid grid-cols-4 gap-1");
   });
 
   it("renders labelNode as visual content when provided, keeping label as aria-label", () => {

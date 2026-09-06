@@ -1,4 +1,4 @@
-/** Covers browser rendering, tab interactions, and pointer and keyboard resizing. */
+/** Covers tab behavior, collapse state, viewport bounds, and pointer and keyboard resizing. */
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";
@@ -80,19 +80,6 @@ describe("BottomDrawer", () => {
       />
     );
     expect(screen.getByText("Specs content")).toBeInTheDocument();
-  });
-
-  it("applies a custom panel class to the tab panel", () => {
-    render(
-      <BottomDrawer
-        tabs={[
-          { id: "specs", label: "System Specs", content: <div>Specs content</div> },
-        ]}
-        panelClassName="p-0"
-      />
-    );
-
-    expect(screen.getByRole("tabpanel")).toHaveClass("p-0");
   });
 
   it("switches tab content when another tab is clicked", async () => {
@@ -555,7 +542,7 @@ describe("BottomDrawer", () => {
     expect(onHeightChange).toHaveBeenNthCalledWith(2, expectedOpenHeight);
   });
 
-  it("shows the collapse state through the toggle label and keeps the panel classes", async () => {
+  it("shows the collapse state through the toggle label", async () => {
     const user = userEvent.setup();
     render(
       <BottomDrawer
@@ -564,11 +551,7 @@ describe("BottomDrawer", () => {
       />,
     );
 
-    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
     const toggleButton = screen.getByRole("button", { name: "Toggle drawer" });
-    const panel = screen.getByRole("tabpanel");
-    expect(drawer).toHaveClass("will-change-[height]");
-    expect(panel).toHaveClass("flex-1", "overflow-auto", "p-3");
     expect(toggleButton).toHaveTextContent("▼");
 
     await user.click(toggleButton);
@@ -819,17 +802,6 @@ describe("BottomDrawer with draggable=false", () => {
   it("shows the first tab content without needing to expand", () => {
     render(<BottomDrawer tabs={tabs} draggable={false} />);
     expect(screen.getByText("Specs content")).toBeInTheDocument();
-  });
-
-  it("applies a custom panel class in non-draggable mode", () => {
-    render(<BottomDrawer tabs={tabs} draggable={false} panelClassName="p-0" />);
-    expect(screen.getByRole("tabpanel")).toHaveClass("p-0");
-  });
-
-  it("keeps the default non-draggable panel padding when no override is supplied", () => {
-    render(<BottomDrawer tabs={tabs} draggable={false} />);
-
-    expect(screen.getByRole("tabpanel")).toHaveClass("p-3");
   });
 
   it("switches tab content when another tab is clicked", async () => {

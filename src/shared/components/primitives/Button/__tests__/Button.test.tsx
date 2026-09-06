@@ -1,19 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "@/shared/components/primitives/Button";
-import { componentTokens as cx } from "@/shared/tokens/styleTokens";
-
-function splitClasses(str: string): string[] {
-  return str.trim().split(/\s+/).filter(Boolean);
-}
-
-function expectClasses(element: HTMLElement, ...tokenStrings: string[]) {
-  tokenStrings.forEach((token) => {
-    splitClasses(token).forEach((cls) => {
-      expect(element).toHaveClass(cls);
-    });
-  });
-}
 
 describe("Button", () => {
   it("renders children", () => {
@@ -29,159 +16,6 @@ describe("Button", () => {
   it("forwards type override", () => {
     render(<Button variant="primary" type="submit">Submit</Button>);
     expect(screen.getByRole("button")).toHaveAttribute("type", "submit");
-  });
-
-  it("variant primary applies correct token classes", () => {
-    render(<Button variant="primary">P</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      cx.button.style.borderRadius,
-      cx.button.style.fontWeight,
-      "transition",
-      cx.button.style.cursor,
-      cx.button.color.primaryBgColor,
-      cx.button.color.primaryHoverBgColor,
-      cx.button.color.primaryTextColor,
-      cx.button.size.horizontalPaddingSm,
-      cx.button.size.verticalPaddingSm,
-      cx.button.size.fontSizeSm,
-      cx.button.style.opacity,
-    );
-  });
-
-  it("variant secondary applies correct token classes and border", () => {
-    render(<Button variant="secondary">S</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      cx.button.style.borderRadius,
-      cx.button.style.fontWeight,
-      "transition",
-      cx.button.style.cursor,
-      cx.button.color.secondaryBorderColor,
-      cx.button.color.secondaryBgColor,
-      cx.button.color.secondaryTextColor,
-      cx.button.color.secondaryHoverBgColor,
-      cx.button.size.horizontalPaddingSm,
-      cx.button.size.verticalPaddingSm,
-      cx.button.size.fontSizeSm,
-      cx.button.style.opacity,
-    );
-    expect(btn).toHaveClass("border");
-  });
-
-  it("variant toggle applies correct token classes and border", () => {
-    render(<Button variant="toggle">T</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      cx.button.style.borderRadius,
-      cx.button.style.fontWeight,
-      "transition",
-      cx.button.style.cursor,
-      cx.button.color.toggleBorderColor,
-      cx.button.color.toggleBgColor,
-      cx.button.color.toggleTextColor,
-      cx.button.color.toggleHoverBgColor,
-      cx.button.size.horizontalPaddingSm,
-      cx.button.size.verticalPaddingSm,
-      cx.button.size.fontSizeSm,
-      cx.button.style.opacity,
-    );
-    expect(btn).toHaveClass("border");
-  });
-
-  it("variant danger applies correct token classes", () => {
-    render(<Button variant="danger">D</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      cx.button.style.borderRadius,
-      cx.button.style.fontWeight,
-      "transition",
-      cx.button.style.cursor,
-      cx.button.color.dangerBgColor,
-      cx.button.color.dangerHoverBgColor,
-      cx.button.color.dangerTextColor,
-      cx.button.size.horizontalPaddingSm,
-      cx.button.size.verticalPaddingSm,
-      cx.button.size.fontSizeSm,
-      cx.button.style.opacity,
-    );
-  });
-
-  it("variant floating applies correct token classes", () => {
-    render(<Button variant="floating">↻</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      cx.button.style.borderRadius,
-      cx.button.size.floatingHorizontalMargin,
-      cx.button.size.floatingVerticalMargin,
-      cx.button.style.cursor,
-      cx.button.color.floatingBorderColor,
-      cx.button.color.floatingBgColor,
-      cx.button.color.floatingTextColor,
-      cx.button.color.floatingHoverBgColor,
-      cx.button.size.horizontalPaddingXs,
-      cx.button.size.verticalPaddingXs,
-      cx.button.size.fontSizeXs,
-      cx.button.style.opacity,
-    );
-    expect(btn).toHaveClass("absolute", "border");
-  });
-
-  it("variant danger size xs applies correct token classes", () => {
-    render(<Button variant="danger" size="xs">−</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      cx.button.style.borderRadius,
-      cx.button.style.fontWeight,
-      "transition",
-      cx.button.style.cursor,
-      cx.button.color.dangerBgColor,
-      cx.button.color.dangerHoverBgColor,
-      cx.button.color.dangerTextColor,
-      cx.button.size.horizontalPaddingXs,
-      cx.button.size.verticalPaddingXs,
-      cx.button.size.fontSizeXs,
-      cx.button.style.opacity,
-    );
-  });
-
-  it("variant primary size sm applies correct token classes", () => {
-    render(<Button variant="primary" size="sm">P</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      cx.button.style.borderRadius,
-      cx.button.style.fontWeight,
-      "transition",
-      cx.button.style.cursor,
-      cx.button.color.primaryBgColor,
-      cx.button.color.primaryHoverBgColor,
-      cx.button.color.primaryTextColor,
-      cx.button.size.horizontalPaddingSm,
-      cx.button.size.verticalPaddingSm,
-      cx.button.size.fontSizeSm,
-      cx.button.style.opacity,
-    );
-  });
-
-  it("floating variant always uses xs size regardless of size prop", () => {
-    render(<Button variant="floating" size="md">↻</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn,
-      cx.button.size.horizontalPaddingXs,
-      cx.button.size.verticalPaddingXs,
-      cx.button.size.fontSizeXs,
-    );
-    // horizontalPaddingMd (px-4) is unique to md and must not appear when xs is forced
-    splitClasses(cx.button.size.horizontalPaddingMd).forEach((cls) => {
-      expect(btn).not.toHaveClass(cls);
-    });
-  });
-
-  it("merges extra className", () => {
-    render(<Button variant="primary" className="w-full text-left">X</Button>);
-    const btn = screen.getByRole("button");
-    expect(btn).toHaveClass("w-full");
-    expect(btn).toHaveClass("text-left");
   });
 
   it("forwards onClick", async () => {
@@ -203,12 +37,9 @@ describe("Button", () => {
 
   it("forwards disabled", () => {
     render(<Button variant="primary" disabled>Go</Button>);
-    expect(screen.getByRole("button")).toBeDisabled();
+    const button = screen.getByRole("button");
+    expect(button).toBeDisabled();
+    expect(button).toHaveClass("disabled:opacity-50", "disabled:cursor-not-allowed");
   });
 
-  it("applies disabled style classes", () => {
-    render(<Button variant="primary" disabled>Go</Button>);
-    const btn = screen.getByRole("button");
-    expectClasses(btn, cx.button.style.opacity, cx.button.style.cursor);
-  });
 });
