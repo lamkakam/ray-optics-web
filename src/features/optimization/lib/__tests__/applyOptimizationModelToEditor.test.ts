@@ -57,4 +57,21 @@ describe("applyOptimizationModelToEditor", () => {
     expect(proxy.getSurfaceSemiDiameters).not.toHaveBeenCalled();
     expect(lensStore.getState().autoSemiDiameters).toEqual({});
   });
+
+  it("loads committed specs and preserves optimization synchronization policy", async () => {
+    const { lensStore, specsStore } = stores();
+    const proxy = { getSurfaceSemiDiameters: jest.fn() };
+
+    await applyOptimizationModelToEditor({ model: { ...model, setAutoAperture: "manualAperture" }, lensStore, specsStore, proxy });
+
+    const normalizedSpecs = {
+      ...model.specs,
+      field: { ...model.specs.field, isWideAngle: false },
+    };
+    expect(specsStore.getState().toOpticalSpecs()).toEqual(normalizedSpecs);
+    expect(specsStore.getState().committedSpecs).toEqual(normalizedSpecs);
+    expect(lensStore.getState().optimizationSyncPolicy).toBe("preserveOptimizationModes");
+    expect(lensStore.getState().autoAperture).toBe(false);
+    expect(lensStore.getState().committedOpticalModel).toEqual({ ...model, setAutoAperture: "manualAperture" });
+  });
 });

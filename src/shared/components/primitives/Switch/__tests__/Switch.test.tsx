@@ -1,3 +1,4 @@
+import type React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Switch } from "@/shared/components/primitives/Switch";
@@ -99,6 +100,24 @@ describe("Switch", () => {
 
     await userEvent.click(screen.getByRole("switch", { name: "Use model glass" }));
 
+    expect(onCheckedChange).not.toHaveBeenCalled();
+  });
+
+  it("does not change state when a consumer click handler prevents default", async () => {
+    const onCheckedChange = jest.fn();
+    const onClick = jest.fn((event: React.MouseEvent<HTMLButtonElement>) => event.preventDefault());
+    render(
+      <Switch
+        checked={false}
+        ariaLabel="Use model glass"
+        onCheckedChange={onCheckedChange}
+        onClick={onClick}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole("switch", { name: "Use model glass" }));
+
+    expect(onClick).toHaveBeenCalledTimes(1);
     expect(onCheckedChange).not.toHaveBeenCalled();
   });
 
@@ -282,5 +301,20 @@ describe("Switch", () => {
       cx.switch.style.opacity,
       cx.switch.style.cursor,
     );
+  });
+
+  it("keeps the switch structure and state content non-interactive", () => {
+    render(
+      <Switch
+        checked={false}
+        ariaLabel="Use model glass"
+        onCheckedChange={jest.fn()}
+        uncheckedContent="Off"
+      />
+    );
+
+    expect(screen.getByRole("switch")).toHaveClass("relative", "inline-flex", "items-center", "border-0");
+    expect(screen.getByTestId("switch-content")).toHaveClass("pointer-events-none");
+    expect(screen.getByTestId("switch-thumb")).toHaveClass("pointer-events-none");
   });
 });

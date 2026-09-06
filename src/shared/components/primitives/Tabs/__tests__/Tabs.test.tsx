@@ -111,4 +111,60 @@ describe("Tabs", () => {
     const tab = screen.getByRole("tab", { name: "Alpha" });
     expect(tab.className).toMatch(/whitespace-nowrap/);
   });
+
+  it("falls back to the first remaining tab after the active tab is removed", async () => {
+    const { rerender } = render(<Tabs tabs={TABS} />);
+
+    await userEvent.click(screen.getByRole("tab", { name: "Beta" }));
+    rerender(<Tabs tabs={[TABS[0]]} />);
+
+    expect(screen.getByText("Alpha content")).toBeInTheDocument();
+  });
+
+  it("preserves the uncontrolled selection when controlled mode is released", async () => {
+    const { rerender } = render(<Tabs tabs={TABS} activeTabId="a" />);
+
+    await userEvent.click(screen.getByRole("tab", { name: "Beta" }));
+    rerender(<Tabs tabs={TABS} />);
+
+    expect(screen.getByText("Alpha content")).toBeInTheDocument();
+  });
+
+  it("renders an empty tab set without requiring a first tab", () => {
+    render(<Tabs tabs={[]} />);
+
+    expect(screen.getByRole("tablist")).toBeInTheDocument();
+    expect(screen.getByRole("tabpanel")).toBeInTheDocument();
+    expect(screen.getByRole("tabpanel")).toBeEmptyDOMElement();
+  });
+
+  it("keeps the first tab selected when a later tab has an empty id", () => {
+    render(
+      <Tabs
+        tabs={[
+          { id: "first", label: "First", content: <div>First content</div> },
+          { id: "", label: "Empty id", content: <div>Empty content</div> },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("First content")).toBeInTheDocument();
+    expect(screen.queryByText("Empty content")).not.toBeInTheDocument();
+  });
+
+  it("keeps an initially empty uncontrolled selection when an empty-id tab appears later", () => {
+    const { rerender } = render(<Tabs tabs={[]} />);
+
+    rerender(
+      <Tabs
+        tabs={[
+          { id: "first", label: "First", content: <div>First content</div> },
+          { id: "", label: "Empty id", content: <div>Empty content</div> },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Empty content")).toBeInTheDocument();
+    expect(screen.queryByText("First content")).not.toBeInTheDocument();
+  });
 });

@@ -65,4 +65,16 @@ describe("useAgGridTheme", () => {
     const themedGrid = (themeQuartz.withPart as jest.Mock).mock.results[0].value;
     expect(themedGrid.withParams).not.toHaveBeenCalled();
   });
+
+  it("recomputes the memoized theme when the theme changes", () => {
+    (useTheme as jest.Mock).mockReturnValue({ theme: "light" });
+    const { result, rerender } = renderHook(() => useAgGridTheme());
+    const lightTheme = result.current;
+
+    (useTheme as jest.Mock).mockReturnValue({ theme: "dark" });
+    rerender();
+
+    expect(result.current).not.toBe(lightTheme);
+    expect(result.current).toMatchObject({ theme: "quartz", part: colorSchemeDark });
+  });
 });

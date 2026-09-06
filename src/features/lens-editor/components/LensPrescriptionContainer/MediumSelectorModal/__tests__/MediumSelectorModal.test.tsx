@@ -174,6 +174,17 @@ describe("MediumSelectorModal", () => {
     expect(options).toContain("D263TECO");
   });
 
+  it("omits REFL from Special media when reflective media are disallowed", () => {
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} allowReflective={false} />,
+    );
+
+    const options = Array.from(
+      (screen.getByLabelText("Glass") as HTMLSelectElement).options,
+    ).map((option) => option.value);
+    expect(options).not.toContain("REFL");
+  });
+
   it("shows glass options synchronously when a real manufacturer is selected", async () => {
     renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
 
@@ -434,6 +445,22 @@ describe("MediumSelectorModal", () => {
     expect(onConfirm).toHaveBeenCalledWith("1.5168", "64.17");
   });
 
+  it("does not reset catalog selection while entering model-glass mode", async () => {
+    const onSelectionChange = jest.fn();
+    renderWithCatalogs(
+      <MediumSelectorModal
+        {...defaultProps}
+        initialManufacturer="Schott"
+        initialMedium="N-BK7"
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
   it.each(["0.99", "", "abc"])(
     "disables Confirm for invalid model-glass refractive index %p",
     async (refractiveIndex) => {
@@ -542,6 +569,50 @@ describe("MediumSelectorModal", () => {
     await userEvent.tab();
 
     expect(refractiveIndexInput).toHaveValue("1.0");
+  });
+
+  it("normalizes a zero refractive index to 1.0 on blur", async () => {
+    renderWithCatalogs(<MediumSelectorModal {...defaultProps} />);
+
+    await userEvent.click(screen.getByLabelText("Use model glass"));
+    const refractiveIndexInput = screen.getByLabelText("Refractive index at d-line");
+
+    await userEvent.clear(refractiveIndexInput);
+    await userEvent.type(refractiveIndexInput, "0");
+    await userEvent.tab();
+
+    expect(refractiveIndexInput).toHaveValue("1.0");
+  });
+
+  it("disables catalog controls and reports loading status before catalog preload completes", () => {
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} />,
+      {
+        ...defaultCatalogContextValue,
+        catalogs: undefined,
+        isLoaded: false,
+        isLoading: true,
+      },
+    );
+
+    expect(screen.getByText("Loading glass catalog data…")).toBeInTheDocument();
+    expect(screen.getByLabelText("Catalog")).toBeDisabled();
+    expect(screen.getByLabelText("Glass")).toBeDisabled();
+  });
+
+  it("disables catalog controls and reports a catalog load error", () => {
+    renderWithCatalogs(
+      <MediumSelectorModal {...defaultProps} />,
+      {
+        ...defaultCatalogContextValue,
+        error: "Catalog failed",
+        isLoaded: true,
+      },
+    );
+
+    expect(screen.getByText("Catalog failed")).toBeInTheDocument();
+    expect(screen.getByLabelText("Catalog")).toBeDisabled();
+    expect(screen.getByLabelText("Glass")).toBeDisabled();
   });
 
   it("preserves a valid positive refractive index on blur", async () => {

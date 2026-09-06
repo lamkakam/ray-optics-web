@@ -14,6 +14,25 @@ describe("isNextStaticAsset", () => {
     ).toBe(true);
   });
 
+  it("does not treat an unrelated same-origin path as a static asset when a base path is configured", () => {
+    expect(
+      isNextStaticAsset("https://example.com/ray-optics-web/app.js", origin, "/ray-optics-web"),
+    ).toBe(false);
+  });
+
+  it("normalizes all leading and trailing base-path slashes without removing internal slashes", () => {
+    expect(isNextStaticAsset(
+      "https://example.com/ray-optics-web/_next/static/chunks/app.js",
+      origin,
+      "///ray-optics-web///",
+    )).toBe(true);
+    expect(isNextStaticAsset(
+      "https://example.com/ray//optics/_next/static/chunks/app.js",
+      origin,
+      "/ray//optics/",
+    )).toBe(true);
+  });
+
   it("rejects cross-origin URLs and lookalike paths", () => {
     expect(
       isNextStaticAsset("https://other.example/_next/static/chunks/app.js", origin)

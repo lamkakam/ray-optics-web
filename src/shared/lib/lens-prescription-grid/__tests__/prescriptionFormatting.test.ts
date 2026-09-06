@@ -18,8 +18,9 @@ import {
   SURFACE_VALUE_SCALING_POLICY,
 } from "@/shared/lib/lens-prescription-grid/lib/surfaceValueScaling";
 import { surfacesToGridRows } from "@/shared/lib/lens-prescription-grid/lib/gridTransform";
+import { OBJECT_ROW_ID } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
 import type { GridRow } from "@/shared/lib/lens-prescription-grid/types/gridTypes";
-import type { Surfaces } from "@/shared/lib/types/opticalModel";
+import type { Surface, Surfaces } from "@/shared/lib/types/opticalModel";
 
 function surfaceRows(rows: GridRow[]): Extract<GridRow, { kind: "surface" }>[] {
   return rows.filter((row): row is Extract<GridRow, { kind: "surface" }> => row.kind === "surface");
@@ -829,5 +830,548 @@ describe("prescriptionFormatting", () => {
     expect(formatPrescriptionRows(rows, { mode: "reverse", first: 2, last: 2 }).ok).toBe(false);
     expect(formatPrescriptionRows(rows, { mode: "reverse", first: 3, last: 2 }).ok).toBe(false);
     expect(formatPrescriptionRows(rows, { mode: "reverse", first: 0, last: 5 }).ok).toBe(false);
+  });
+
+  it("scales exactly the selected Object or Image endpoint and leaves other rows untouched", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      object: { distance: 100, medium: "air", manufacturer: "" },
+    });
+
+    const objectOnly = scaleRows(rows, { first: 0, last: 0, factor: 2 });
+    expect(objectOnly[0]).toMatchObject({ kind: "object", objectDistance: 200 });
+    expect(objectOnly[1]).toBe(rows[1]);
+    expect(objectOnly.at(-1)).toBe(rows.at(-1));
+
+    const imageOnly = scaleRows(rows, { first: 5, last: 5, factor: 2 });
+    expect(imageOnly[0]).toBe(rows[0]);
+    expect(imageOnly.at(-1)).toMatchObject({ kind: "image", curvatureRadius: 18 });
+    expect(imageOnly[1]).toBe(rows[1]);
+  });
+
+  it.each([
+    [Number.NaN, "Formatting was not applied because the scale factor must be a positive finite number."],
+    [Number.POSITIVE_INFINITY, "Formatting was not applied because the scale factor must be a positive finite number."],
+    [0, "Formatting was not applied because the scale factor must be a positive finite number."],
+    [-1, "Formatting was not applied because the scale factor must be a positive finite number."],
+  ])("rejects an invalid scale factor %s before transforming rows", (factor, error) => {
+    const rows = surfacesToGridRows(baseSurfaces);
+    const result = formatPrescriptionRows(rows, { mode: "scale", first: 1, last: 2, factor });
+
+    expect(result).toEqual({ ok: false, rows: [...rows], error });
+  });
+
+  it.each([
+    [3, 2],
+    [-1, 1],
+    [0, 6],
+  ])("rejects an invalid scale range %s..%s", (first, last) => {
+    const rows = surfacesToGridRows(baseSurfaces);
+    const result = formatPrescriptionRows(rows, { mode: "scale", first, last, factor: 2 });
+
+    expect(result).toEqual({
+      ok: false,
+      rows: [...rows],
+      error: "Formatting was not applied because the selected surface range is invalid.",
+    });
+  });
+
+  it("rejects non-finite preserved values as an atomic formatting failure", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{
+        ...baseSurfaces.surfaces[0],
+        clear_aperture: { shape: "ronchi", lpmm: Number.POSITIVE_INFINITY, rotation: 0, offsetX: 0, offsetY: 0 },
+      }],
+    });
+
+    const result = formatPrescriptionRows(rows, { mode: "scale", first: 1, last: 1, factor: 2 });
+
+    expect(result).toEqual({
+      ok: false,
+      rows,
+      error: "Formatting was not applied because one or more transformed numeric values are invalid or exceed JavaScript finite number limits.",
+    });
+  });
+
+  it("returns false for all missing or zero first-surface reference inputs", () => {
+    const noRows: GridRow[] = [
+      { kind: "object", id: "row-object", objectDistance: 1e10, medium: "air", manufacturer: "" },
+      { kind: "image", id: "row-image", curvatureRadius: 0 },
+    ];
+    const noDecenter = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{ ...baseSurfaces.surfaces[0], decenter: undefined }],
+    });
+
+    expect(firstSurfaceNeedsReferenceSurface(noRows)).toBe(false);
+    expect(firstSurfaceNeedsReferenceSurface(noDecenter)).toBe(false);
+  });
+
+  it("inserts a reference surface at the start when Object is absent", () => {
+    const image: GridRow = { kind: "image", id: "row-image", curvatureRadius: 0 };
+    const surface: GridRow = {
+      kind: "surface",
+      id: "surface-1",
+      label: "Default",
+      curvatureRadius: 4,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 7,
+    };
+
+    const result = insertReferenceSurfaceAfterObject([image, surface]);
+
+    expect(result[0]).toMatchObject({ kind: "surface", curvatureRadius: 0, semiDiameter: 7 });
+    expect(result[1]).toBe(image);
+    expect(result[2]).toBe(surface);
+  });
+
+  it("uses a zero semi-diameter when a reference surface has no physical source", () => {
+    const rows: GridRow[] = [
+      { kind: "object", id: "row-object", objectDistance: 10, medium: "air", manufacturer: "" },
+      { kind: "image", id: "row-image", curvatureRadius: 0 },
+    ];
+
+    const result = insertReferenceSurfaceAfterObject(rows);
+
+    expect(result[1]).toMatchObject({ kind: "surface", semiDiameter: 0 });
+  });
+
+  it("locates the insertion point by row kind and reserved id", () => {
+    const surface: Extract<GridRow, { kind: "surface" }> = {
+      kind: "surface",
+      id: "before-object",
+      label: "Default",
+      curvatureRadius: 1,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+    };
+    const customObject: Extract<GridRow, { kind: "object" }> = {
+      kind: "object",
+      id: "custom-object-id",
+      objectDistance: 10,
+      medium: "air",
+      manufacturer: "",
+    };
+    const image: Extract<GridRow, { kind: "image" }> = { kind: "image", id: "custom-image-id", curvatureRadius: 0 };
+
+    const afterCustomObject = insertReferenceSurfaceAfterObject([surface, customObject, image]);
+    expect(afterCustomObject[0]).toBe(surface);
+    expect(afterCustomObject[1]).toBe(customObject);
+    expect(afterCustomObject[2]).toMatchObject({ kind: "surface" });
+    expect(afterCustomObject[3]).toBe(image);
+
+    const reservedSurface = { ...surface, id: OBJECT_ROW_ID };
+    const afterReservedId = insertReferenceSurfaceAfterObject([reservedSurface, image]);
+    expect(afterReservedId[0]).toBe(reservedSurface);
+    expect(afterReservedId[1]).toMatchObject({ kind: "surface" });
+    expect(afterReservedId[2]).toBe(image);
+  });
+
+  it("scales custom-id Object and Image rows according to their row kinds", () => {
+    const surface: Extract<GridRow, { kind: "surface" }> = {
+      kind: "surface",
+      id: "surface-before-endpoints",
+      label: "Default",
+      curvatureRadius: 3,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+    };
+    const object: Extract<GridRow, { kind: "object" }> = {
+      kind: "object",
+      id: "custom-object-id",
+      objectDistance: 10,
+      medium: "air",
+      manufacturer: "",
+    };
+    const image: Extract<GridRow, { kind: "image" }> = {
+      kind: "image",
+      id: "custom-image-id",
+      curvatureRadius: 7,
+    };
+    const rows = [surface, object, image] satisfies GridRow[];
+
+    const objectResult = scaleRows(rows, { first: 0, last: 0, factor: 2 });
+    expect(objectResult[0]).toMatchObject({ curvatureRadius: 3 });
+    expect(objectResult[1]).toMatchObject({ objectDistance: 20 });
+
+    const imageResult = scaleRows(rows, { first: 2, last: 2, factor: 2 });
+    expect(imageResult[2]).toMatchObject({ curvatureRadius: 14 });
+  });
+
+  it("uses the actual Object row when endpoint rows are not in canonical order", () => {
+    const surface: Extract<GridRow, { kind: "surface" }> = {
+      kind: "surface",
+      id: "surface-first",
+      label: "Default",
+      curvatureRadius: 1,
+      thickness: 2,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+      semiDiameter: 5,
+    };
+    const object: Extract<GridRow, { kind: "object" }> = {
+      kind: "object",
+      id: "custom-object",
+      objectDistance: 10,
+      medium: "air",
+      manufacturer: "Original",
+    };
+    const image: Extract<GridRow, { kind: "image" }> = { kind: "image", id: "row-image", curvatureRadius: 0 };
+
+    const result = reverseRows([surface, object, image], { first: 0, last: 0 });
+
+    expect(result[1]).toMatchObject({ kind: "object", objectDistance: 2, medium: "N-BK7", manufacturer: "Schott" });
+    expect(result[0]).toMatchObject({ kind: "surface", thickness: 10, medium: "air", manufacturer: "Original" });
+  });
+
+  it("preserves non-default Object gap fields in an Object-only reversal", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 123, medium: "N-BK7", manufacturer: "Schott" },
+      image: { curvatureRadius: 0 },
+      surfaces: [],
+    });
+
+    const result = reverseRows(rows, { first: 0, last: 0 });
+
+    expect(result[0]).toMatchObject({
+      kind: "object",
+      objectDistance: 123,
+      medium: "N-BK7",
+      manufacturer: "Schott",
+    });
+  });
+
+  it("uses the Object row even when a full mirror reversal starts with a surface row", () => {
+    const surface: Extract<GridRow, { kind: "surface" }> = {
+      kind: "surface",
+      id: "surface-first",
+      label: "Default",
+      curvatureRadius: 1,
+      thickness: 2,
+      medium: "REFL",
+      manufacturer: "Mirror",
+      semiDiameter: 5,
+    };
+    const object: Extract<GridRow, { kind: "object" }> = {
+      kind: "object",
+      id: "custom-object",
+      objectDistance: 10,
+      medium: "air",
+      manufacturer: "Original",
+    };
+    const image: Extract<GridRow, { kind: "image" }> = { kind: "image", id: "row-image", curvatureRadius: 0 };
+
+    const result = reverseRows([surface, object, { ...surface, id: "surface-last", curvatureRadius: 2 }, image], {
+      first: 0,
+      last: 2,
+    });
+
+    expect(result[1]).toMatchObject({ kind: "object", medium: "air", manufacturer: "Original" });
+  });
+
+  it("chooses the nearest non-mirror surface before the selected mirror endpoint", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "Original" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        { label: "Default", curvatureRadius: 1, thickness: 2, medium: "N-BK7", manufacturer: "First", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 2, thickness: 3, medium: "REFL", manufacturer: "Mirror", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 3, thickness: 4, medium: "F2", manufacturer: "After", semiDiameter: 5 },
+      ],
+    });
+
+    const result = reverseRows(rows, { first: 0, last: 2 });
+
+    expect(result[0]).toMatchObject({ kind: "object", medium: "N-BK7", manufacturer: "First" });
+  });
+
+  it("does not add a second propagation gap when the assigned gap is a mirror", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        { label: "Default", curvatureRadius: 1, thickness: 4, medium: "REFL", manufacturer: "M1", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 2, thickness: 3, medium: "REFL", manufacturer: "M2", semiDiameter: 5 },
+      ],
+    });
+
+    const result = reverseRows(rows, { first: 0, last: 2 });
+
+    expect(surfaceRows(result)).toHaveLength(2);
+    expect(surfaceRows(result).map((row) => row.medium)).toEqual(["REFL", "REFL"]);
+  });
+
+  it("does not add a propagation gap when the assigned gap has zero thickness", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        { label: "Default", curvatureRadius: 1, thickness: 0, medium: "air", manufacturer: "", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 2, thickness: 3, medium: "REFL", manufacturer: "M2", semiDiameter: 5 },
+      ],
+    });
+
+    expect(surfaceRows(reverseRows(rows, { first: 0, last: 2 }))).toHaveLength(2);
+  });
+
+  it.each([
+    ["previous surface is not a mirror", { previous: { medium: "air" } }],
+    ["previous mirror has a nonzero thickness", { previous: { thickness: 1 } }],
+    ["candidate is not Default", { candidate: { label: "Stop" } }],
+    ["candidate is curved", { candidate: { curvatureRadius: 1 } }],
+    ["candidate has zero thickness", { candidate: { thickness: 0 } }],
+    ["candidate has a different semi-diameter", { candidate: { semiDiameter: 6 } }],
+    ["candidate has a comment", { candidate: { comment: "explicit" } }],
+    ["candidate has aspherical data", { candidate: { aspherical: { kind: "Conic", conicConstant: 0 } } }],
+    ["candidate has decenter data", {
+      candidate: {
+        decenter: { coordinateSystemStrategy: "decenter", alpha: 0, beta: 0, gamma: 0, offsetX: 1, offsetY: 0 },
+      },
+    }],
+    ["candidate has a diffraction grating", {
+      candidate: { diffractiveElement: { diffractionGrating: { lpmm: 600, order: 1 } } },
+    }],
+  ] as Array<[string, { previous?: Partial<Surface>; candidate?: Partial<Surface> }]>)("keeps a nonmatching mirror-following row physical when %s", (_reason, overrides) => {
+    const previous: Surface = {
+      label: "Default",
+      curvatureRadius: 2,
+      thickness: 0,
+      medium: "REFL",
+      manufacturer: "Mirror",
+      semiDiameter: 5,
+      ...overrides.previous,
+    };
+    const candidate: Surface = {
+      label: "Default",
+      curvatureRadius: 0,
+      thickness: 2,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 5,
+      ...overrides.candidate,
+    };
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "" },
+      image: { curvatureRadius: 0 },
+      surfaces: [previous, candidate],
+    });
+
+    const result = reverseRows(rows, { first: 1, last: 2 });
+
+    expect(surfaceRows(result)).toHaveLength(2);
+  });
+
+  it("reverses only the requested physical span", () => {
+    const rows = surfacesToGridRows(baseSurfaces);
+
+    expect(surfaceRows(reverseRows(rows, { first: 1, last: 2 })).map((row) => row.curvatureRadius)).toEqual([
+      20,
+      -10,
+      30,
+      -40,
+    ]);
+    expect(surfaceRows(reverseRows(rows, { first: 1, last: 3 })).map((row) => row.curvatureRadius)).toEqual([
+      -30,
+      20,
+      -10,
+      -40,
+    ]);
+    expect(surfaceRows(reverseRows(rows, { first: 2, last: 3 })).map((row) => row.curvatureRadius)).toEqual([
+      10,
+      -30,
+      20,
+      -40,
+    ]);
+  });
+
+  it("keeps image curvature when a reversal does not cover both endpoints", () => {
+    const rows = surfacesToGridRows(baseSurfaces);
+
+    expect((reverseRows(rows, { first: 1, last: 4 }).at(-1) as Extract<GridRow, { kind: "image" }>).curvatureRadius).toBe(9);
+    expect((reverseRows(rows, { first: 0, last: 3 }).at(-1) as Extract<GridRow, { kind: "image" }>).curvatureRadius).toBe(9);
+  });
+
+  it("does not restore Object media when a full endpoint reversal ends at a non-mirror", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "Original" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        { label: "Default", curvatureRadius: 1, thickness: 2, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 2, thickness: 3, medium: "F2", manufacturer: "Ohara", semiDiameter: 5 },
+      ],
+    });
+
+    const result = reverseRows(rows, { first: 0, last: 2 });
+
+    expect(result[0]).toMatchObject({ kind: "object", medium: "F2", manufacturer: "Ohara" });
+  });
+
+  it("falls back to the original Object medium when a full reversal contains only mirrors", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "Original" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        { label: "Default", curvatureRadius: 1, thickness: 2, medium: "REFL", manufacturer: "M1", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 2, thickness: 3, medium: "REFL", manufacturer: "M2", semiDiameter: 5 },
+      ],
+    });
+
+    const result = reverseRows(rows, { first: 0, last: 2 });
+
+    expect(result[0]).toMatchObject({ kind: "object", medium: "air", manufacturer: "Original" });
+  });
+
+  it("does not restore Object media for a partial span whose old last surface is a mirror", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "Original" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        { label: "Default", curvatureRadius: 1, thickness: 2, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 2, thickness: 3, medium: "F2", manufacturer: "Ohara", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 3, thickness: 4, medium: "REFL", manufacturer: "Mirror", semiDiameter: 5 },
+      ],
+    });
+
+    const result = reverseRows(rows, { first: 2, last: 3 });
+
+    expect(result[0]).toMatchObject({ kind: "object", medium: "air", manufacturer: "Original" });
+  });
+
+  it("uses default Object gap values when the Object row is missing", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "N-BK7", manufacturer: "Schott" },
+      image: { curvatureRadius: 0 },
+      surfaces: [{ label: "Default", curvatureRadius: 1, thickness: 2, medium: "F2", manufacturer: "Ohara", semiDiameter: 5 }],
+    }).filter((row) => row.kind !== "object");
+
+    expect(() => reverseRows(rows, { first: 0, last: 1 })).not.toThrow();
+  });
+
+  it("keeps Object-medium restoration optional when a full mirror reversal has no Object row", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "Original" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        { label: "Default", curvatureRadius: 1, thickness: 2, medium: "REFL", manufacturer: "M1", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 2, thickness: 3, medium: "REFL", manufacturer: "M2", semiDiameter: 5 },
+      ],
+    }).filter((row) => row.kind !== "object");
+
+    expect(() => reverseRows(rows, { first: 0, last: 2 })).not.toThrow();
+    expect(surfaceRows(reverseRows(rows, { first: 0, last: 2 })).map((row) => row.medium)).toEqual(["REFL", "REFL"]);
+  });
+
+  it("preserves an explicit mirror propagation gap while normalizing and reversing rows", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        {
+          label: "Default",
+          curvatureRadius: 10,
+          thickness: 5,
+          medium: "N-BK7",
+          manufacturer: "Schott",
+          semiDiameter: 8,
+        },
+        {
+          label: "Default",
+          curvatureRadius: -20,
+          thickness: 0,
+          medium: "REFL",
+          manufacturer: "Mirror",
+          semiDiameter: 8,
+        },
+        {
+          label: "Default",
+          curvatureRadius: 0,
+          thickness: 7,
+          medium: "air",
+          manufacturer: "",
+          semiDiameter: 8,
+        },
+        {
+          label: "Stop",
+          curvatureRadius: 30,
+          thickness: 2,
+          medium: "F2",
+          manufacturer: "Schott",
+          semiDiameter: 9,
+        },
+      ],
+    });
+
+    const result = reverseRows(rows, { first: 0, last: 4 });
+    const surfaces = surfaceRows(result);
+
+    expect(surfaces.map((row) => [row.medium, row.thickness])).toEqual([
+      ["air", 7],
+      ["REFL", 0],
+      ["N-BK7", 5],
+      ["air", 10],
+    ]);
+    expect(surfaces.filter((row) => row.medium === "REFL")).toHaveLength(1);
+    expect(result[0]).toMatchObject({ kind: "object", objectDistance: 2, medium: "F2", manufacturer: "Schott" });
+  });
+
+  it("uses the nearest non-mirror surface to restore the Object medium after a full mirror reversal", () => {
+    const rows = surfacesToGridRows({
+      object: { distance: 10, medium: "air", manufacturer: "Original" },
+      image: { curvatureRadius: 0 },
+      surfaces: [
+        { label: "Default", curvatureRadius: 1, thickness: 2, medium: "N-BK7", manufacturer: "Schott", semiDiameter: 5 },
+        { label: "Default", curvatureRadius: 2, thickness: 3, medium: "REFL", manufacturer: "MirrorCo", semiDiameter: 5 },
+      ],
+    });
+
+    const result = reverseRows(rows, { first: 0, last: 2 });
+
+    expect(result[0]).toMatchObject({ kind: "object", medium: "N-BK7", manufacturer: "Schott" });
+  });
+
+  it("rejects invalid reverse ranges at both lower and upper boundaries", () => {
+    const rows = surfacesToGridRows(baseSurfaces);
+
+    expect(formatPrescriptionRows(rows, { mode: "reverse", first: -1, last: 2 })).toEqual({
+      ok: false,
+      rows: [...rows],
+      error: "Formatting was not applied because Last Surface must be after First Surface.",
+    });
+    expect(formatPrescriptionRows(rows, { mode: "reverse", first: 1, last: 5 })).toEqual({
+      ok: false,
+      rows: [...rows],
+      error: "Formatting was not applied because Last Surface must be after First Surface.",
+    });
+  });
+
+  it("accepts the inclusive Object-to-Image scale range through the formatting validator", () => {
+    const rows = surfacesToGridRows(baseSurfaces);
+
+    const result = formatPrescriptionRows(rows, { mode: "scale", first: 0, last: 5, factor: 2 });
+
+    expect(result.ok).toBe(true);
+    expect(result.ok ? result.rows.at(-1) : undefined).toMatchObject({ kind: "image", curvatureRadius: 18 });
+  });
+
+  it("reports non-finite values from a reverse transformation atomically", () => {
+    const rows = surfacesToGridRows({
+      ...baseSurfaces,
+      surfaces: [{ ...baseSurfaces.surfaces[0], curvatureRadius: Number.POSITIVE_INFINITY }],
+    });
+
+    const result = formatPrescriptionRows(rows, { mode: "reverse", first: 0, last: 1 });
+
+    expect(result).toEqual({
+      ok: false,
+      rows,
+      error: "Formatting was not applied because one or more transformed numeric values are invalid or exceed JavaScript finite number limits.",
+    });
   });
 });

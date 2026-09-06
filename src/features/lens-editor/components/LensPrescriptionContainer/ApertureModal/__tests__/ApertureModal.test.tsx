@@ -200,6 +200,41 @@ describe("ApertureModal", () => {
     });
   });
 
+  it("defaults an annular obstruction to half the clear semi-diameter", async () => {
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "annular");
+
+    expect(screen.getByRole("textbox", { name: "Central Obstruction Radius" })).toHaveValue("4");
+  });
+
+  it("defaults an auto-aperture annular obstruction to a 0.5 ratio", async () => {
+    render(
+      <ApertureModal
+        isOpen
+        autoAperture
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "annular");
+
+    expect(screen.getByRole("textbox", { name: "Central Obstruction Ratio" })).toHaveValue("0.5");
+  });
+
   it("saves rectangular clear and edge aperture values", async () => {
     const onConfirm = jest.fn();
     render(
@@ -372,6 +407,32 @@ describe("ApertureModal", () => {
     );
 
     await userEvent.selectOptions(screen.getByLabelText("Clear Aperture Shape"), "ronchi");
+    await userEvent.clear(screen.getByRole("textbox", { name: fieldName }));
+    await userEvent.type(screen.getByRole("textbox", { name: fieldName }), value);
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByText(errorMessage)).toBeInTheDocument();
+  });
+
+  it.each([
+    ["Edge Half-Length", "0", "Half-Length and Half-Width must be greater than 0."],
+    ["Edge Half-Width", "-1", "Half-Length and Half-Width must be greater than 0."],
+    ["Edge Rotation", "Infinity", "Rotation must be a finite number."],
+  ])("rejects invalid rectangular edge aperture field %s=%s", async (fieldName, value, errorMessage) => {
+    const onConfirm = jest.fn();
+    render(
+      <ApertureModal
+        isOpen
+        semiDiameter={8}
+        initialClearAperture={undefined}
+        initialEdgeAperture={undefined}
+        onConfirm={onConfirm}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await userEvent.selectOptions(screen.getByLabelText("Edge Aperture Shape"), "rectangular");
     await userEvent.clear(screen.getByRole("textbox", { name: fieldName }));
     await userEvent.type(screen.getByRole("textbox", { name: fieldName }), value);
     await userEvent.click(screen.getByRole("button", { name: "Confirm" }));

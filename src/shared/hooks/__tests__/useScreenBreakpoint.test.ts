@@ -58,6 +58,7 @@ describe("useScreenBreakpoint", () => {
     const { result } = renderHook(() => useScreenBreakpoint());
 
     expect(result.current).toBe("screenLG");
+    expect(window.matchMedia).toHaveBeenCalledWith("(min-width: 1440px)");
   });
 
   test('returns "screenSM" on mount when width < 1024px', () => {
@@ -109,6 +110,15 @@ describe("useScreenBreakpoint", () => {
     unmount();
 
     expect(mockMQL.listeners).toHaveLength(0);
+  });
+
+  test("_resetRegistry removes listeners from mounted subscribers", () => {
+    renderHook(() => useScreenBreakpoint());
+
+    _resetRegistry();
+
+    expect(mockMQL.listeners).toHaveLength(0);
+    expect(mockMQL.mql.removeEventListener).toHaveBeenCalledWith("change", expect.any(Function));
   });
 
   test("multiple hook instances each get their own listener", () => {

@@ -120,4 +120,31 @@ describe("CheckboxInput", () => {
       })
     ).toBeInTheDocument();
   });
+
+  it("keeps the native indeterminate property synchronized", () => {
+    const { rerender } = render(<CheckboxInput {...defaultProps} indeterminate />);
+    const checkbox = screen.getByRole("checkbox", { name: "Use model glass" });
+
+    expect((checkbox as HTMLInputElement).indeterminate).toBe(true);
+
+    rerender(<CheckboxInput {...defaultProps} indeterminate={false} />);
+    expect((checkbox as HTMLInputElement).indeterminate).toBe(false);
+  });
+
+  it("defaults the native indeterminate property to false", () => {
+    render(<CheckboxInput {...defaultProps} />);
+
+    expect((screen.getByRole("checkbox", { name: "Use model glass" }) as HTMLInputElement).indeterminate)
+      .toBe(false);
+  });
+
+  it("adds the disabled cursor class only for disabled inputs", () => {
+    const { rerender } = render(<CheckboxInput {...defaultProps} />);
+    const checkbox = screen.getByRole("checkbox", { name: "Use model glass" });
+
+    expect(checkbox).not.toHaveClass("cursor-not-allowed");
+
+    rerender(<CheckboxInput {...defaultProps} disabled />);
+    expect(checkbox).toHaveClass("cursor-not-allowed");
+  });
 });

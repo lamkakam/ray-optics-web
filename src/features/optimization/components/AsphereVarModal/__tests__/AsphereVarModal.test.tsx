@@ -112,6 +112,16 @@ describe("AsphereVarModal", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it.each([
+    ["optimizationModel", { optimizationModel: undefined }],
+    ["surfaceIndex", { surfaceIndex: undefined }],
+    ["asphereState", { asphereState: undefined }],
+  ] as const)("renders nothing when %s is unavailable", (_, overrides) => {
+    render(<AsphereVarModal {...defaultProps} {...overrides} />);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("renders dialog when open", () => {
     render(<AsphereVarModal {...defaultProps} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -234,6 +244,29 @@ describe("AsphereVarModal", () => {
     await user.selectOptions(selects[1], "variable");
     expect(screen.getByRole("textbox", { name: /min/i })).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: /max/i })).toBeInTheDocument();
+  });
+
+  it("preserves existing variable bounds when variable mode is selected again", async () => {
+    const onSave = jest.fn();
+    render(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({
+          type: "Conic",
+          conic: { mode: "variable", min: "-2.5", max: "3.5" },
+        })}
+        onSave={onSave}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Conic Constant mode" }), {
+      target: { value: "variable" },
+    });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
+      conic: { mode: "variable", min: "-2.5", max: "3.5" },
+    }));
   });
 
   it("hides asphere variable bounds for lm", async () => {
@@ -389,6 +422,63 @@ describe("AsphereVarModal", () => {
     await user.selectOptions(selects[2], "pickup");
     expect(screen.getByRole("combobox", { name: "a_2 source coefficient" })).toBeInTheDocument();
     expect(screen.queryByRole("textbox", { name: /source coefficient index/i })).not.toBeInTheDocument();
+  });
+
+  it("defaults a new coefficient pickup to coefficient slot zero", async () => {
+    const onSave = jest.fn();
+    const user = userEvent.setup();
+    render(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({ type: "EvenAspherical" })}
+        onSave={onSave}
+      />,
+    );
+
+    await user.selectOptions(screen.getByRole("combobox", { name: "a_2 mode" }), "pickup");
+    expect(screen.getByRole("combobox", { name: "a_2 source coefficient" })).toHaveValue("0");
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
+      coefficients: expect.arrayContaining([
+        expect.objectContaining({ mode: "pickup", sourceTermKey: "coefficient:0" }),
+      ]),
+    }));
+  });
+
+  it("preserves existing pickup fields when pickup mode is selected again", async () => {
+    const onSave = jest.fn();
+    const user = userEvent.setup();
+    render(
+      <AsphereVarModal
+        {...defaultProps}
+        asphereState={makeState({
+          type: "EvenAspherical",
+          coefficients: [
+            { mode: "pickup", sourceSurfaceIndex: "3", scale: "2.5", offset: "-1.25", sourceTermKey: "coefficient:0" },
+            ...Array.from({ length: 9 }, () => constantMode),
+          ],
+        })}
+        onSave={onSave}
+      />,
+    );
+
+    fireEvent.change(screen.getByRole("combobox", { name: "a_2 mode" }), {
+      target: { value: "pickup" },
+    });
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSave).toHaveBeenCalledWith(1, expect.objectContaining({
+      coefficients: expect.arrayContaining([
+        expect.objectContaining({
+          mode: "pickup",
+          sourceSurfaceIndex: "3",
+          scale: "2.5",
+          offset: "-1.25",
+          sourceTermKey: "coefficient:0",
+        }),
+      ]),
+    }));
   });
 
   it("uses radial source coefficient labels and saves selected zero-based coefficient slot", async () => {

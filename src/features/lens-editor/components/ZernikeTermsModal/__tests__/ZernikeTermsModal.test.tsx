@@ -179,6 +179,23 @@ describe("ZernikeTermsModal", () => {
     await act(async () => {});
   });
 
+  it("uses the latest field, wavelength, and ordering selections for subsequent fetches", async () => {
+    const onFetchData = createMockFetchData();
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+
+    await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "1");
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(1, 1, "fringe"));
+
+    await userEvent.selectOptions(screen.getByLabelText("Wavelength"), "2");
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(1, 2, "fringe"));
+
+    await userEvent.selectOptions(screen.getByLabelText("Ordering"), "noll");
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(1, 2, "noll"));
+    await waitFor(() => expect(screen.queryByTestId("loading-mask")).not.toBeInTheDocument());
+    await act(async () => {});
+  });
+
   it("wavelength dropdown change calls onFetchData with new wavelength index and current ordering", async () => {
     const onFetchData = createMockFetchData();
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
@@ -226,6 +243,7 @@ describe("ZernikeTermsModal", () => {
     // Table stays visible and loading mask appears
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByTestId("loading-mask")).toBeInTheDocument();
+    expect(screen.getAllByText("Loading…")).toHaveLength(1);
   });
 
   it("loading mask is absent when not loading with data", async () => {
@@ -301,6 +319,15 @@ describe("ZernikeTermsModal", () => {
   it("renders Ordering dropdown with label", async () => {
     renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} />);
     expect(screen.getByLabelText("Ordering")).toBeInTheDocument();
+    await act(async () => {});
+  });
+
+  it("renders both supported ordering options", async () => {
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} />);
+    const orderingSelect = screen.getByLabelText("Ordering");
+    expect(within(orderingSelect).getAllByRole("option")).toHaveLength(2);
+    expect(within(orderingSelect).getByRole("option", { name: "Fringe" })).toHaveValue("fringe");
+    expect(within(orderingSelect).getByRole("option", { name: "Noll" })).toHaveValue("noll");
     await act(async () => {});
   });
 
@@ -390,6 +417,53 @@ describe("ZernikeTermsModal", () => {
     // Must not throw; table still renders (with stale data clamped to 37 rows) + loading mask
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByTestId("loading-mask")).toBeInTheDocument();
+    const dataRows = within(screen.getByRole("table")).getAllByRole("row").slice(1);
+    expect(dataRows[4].textContent).toContain("\\(Z_{2}^{2}\\)");
+  });
+
+  it("keeps the newest selection when an older coefficient request resolves later", async () => {
+    let resolveInitial!: (value: ZernikeData) => void;
+    let resolveFirstField!: (value: ZernikeData) => void;
+    let resolveNewestField!: (value: ZernikeData) => void;
+    const firstFieldData: ZernikeData = {
+      ...mockZernikeData,
+      coefficients: mockZernikeData.coefficients.map((_, index) => (index + 5) * 0.001),
+    };
+    const newestFieldData: ZernikeData = {
+      ...mockZernikeData,
+      coefficients: mockZernikeData.coefficients.map((_, index) => (index + 9) * 0.001),
+    };
+    const onFetchData = jest.fn()
+      .mockReturnValueOnce(new Promise<ZernikeData>((resolve) => { resolveInitial = resolve; }))
+      .mockReturnValueOnce(new Promise<ZernikeData>((resolve) => { resolveFirstField = resolve; }))
+      .mockReturnValueOnce(new Promise<ZernikeData>((resolve) => { resolveNewestField = resolve; }));
+
+    renderWithSpecsStore(<ZernikeTermsModal {...defaultProps} onFetchData={onFetchData} />);
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(0, 1, "fringe"));
+
+    await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "1");
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(1, 1, "fringe"));
+    await userEvent.selectOptions(screen.getByLabelText("Half-Field"), "2");
+    await waitFor(() => expect(onFetchData).toHaveBeenCalledWith(2, 1, "fringe"));
+
+    await act(async () => {
+      resolveNewestField(newestFieldData);
+    });
+    await waitFor(() => expect(screen.getByRole("table")).toBeInTheDocument());
+    const firstRow = () => within(screen.getByRole("table")).getAllByRole("row")[1];
+    expect(firstRow()).toHaveTextContent("0.009000");
+
+    await act(async () => {
+      resolveFirstField(firstFieldData);
+    });
+    expect(firstRow()).toHaveTextContent("0.009000");
+    expect(firstRow()).not.toHaveTextContent("0.005000");
+
+    await act(async () => {
+      resolveInitial(mockZernikeData);
+    });
+    expect(firstRow()).toHaveTextContent("0.009000");
+    expect(firstRow()).not.toHaveTextContent("0.001000");
   });
 
   it("after switching to Noll, row 5 notation reflects Noll j=5 (n=2,m=-2), not Fringe j=5 (n=2,m=2)", async () => {

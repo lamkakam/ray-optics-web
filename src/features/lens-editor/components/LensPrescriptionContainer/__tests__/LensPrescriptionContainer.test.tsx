@@ -199,6 +199,18 @@ describe("LensPrescriptionContainer", () => {
     expect(surfaces.surfaces[0].curvatureRadius).toBe(50);
   });
 
+  it("commits numeric grid edits through the container store callback", async () => {
+    const { store } = renderLPC();
+    const radiusInput = screen.getAllByRole("textbox")[2];
+
+    await userEvent.clear(radiusInput);
+    await userEvent.type(radiusInput, "100");
+    await userEvent.tab();
+
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    expect(surfaceRow?.kind === "surface" ? surfaceRow.curvatureRadius : undefined).toBe(100);
+  });
+
   it("sets semi-diameter to 0 when a rectangular clear aperture is confirmed", async () => {
     const { store } = renderLPC();
     const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
@@ -413,6 +425,15 @@ describe("LensPrescriptionContainer", () => {
     expect(store.getState().mediumModal.open).toBe(false);
   });
 
+  it("does not offer reflective medium for the Object row", () => {
+    const { store } = renderLPC();
+
+    act(() => store.getState().openMediumModal(store.getState().rows[0].id));
+
+    const specialMedia = screen.getByLabelText("Glass");
+    expect(Array.from(specialMedia.querySelectorAll("option")).map((option) => option.textContent)).not.toContain("REFL");
+  });
+
   it("removes decenter from image row when Remove Decenter is clicked", async () => {
     const store = createTestStore();
     store.getState().updateRow(IMAGE_ROW_ID, {
@@ -529,6 +550,23 @@ describe("LensPrescriptionContainer", () => {
         },
       })
     );
+  });
+
+  it.each([
+    ["Conic", { kind: "Conic", conicConstant: 0 }],
+    ["EvenAspherical", { kind: "EvenAspherical", conicConstant: 0, polynomialCoefficients: [] }],
+    ["RadialPolynomial", { kind: "RadialPolynomial", conicConstant: 0, polynomialCoefficients: [] }],
+    ["YToroid", { kind: "YToroid", conicConstant: 0, toricSweepRadiusOfCurvature: 0, polynomialCoefficients: [] }],
+  ] as const)("maps %s aspherical confirmation to the domain row", async (type, expected) => {
+    const { store } = renderLPC();
+    const rowId = store.getState().rows.find((row) => row.kind === "surface")!.id;
+
+    act(() => store.getState().openAsphericalModal(rowId));
+    await userEvent.selectOptions(screen.getByLabelText("Type"), type);
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    const updatedRow = store.getState().rows.find((row) => row.id === rowId);
+    expect(updatedRow).toEqual(expect.objectContaining({ aspherical: expected }));
   });
 
   it("renders DiffractionGratingModal when diffractionGratingModal is open", () => {
@@ -877,6 +915,23 @@ describe("LensPrescriptionContainer", () => {
     await userEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-checked", "true");
     expect(toggle).toHaveTextContent("Auto");
+  });
+
+  it("renders computed semi-diameters and makes them read-only in Auto mode", () => {
+    const { store } = renderLPC();
+    const surfaceRow = store.getState().rows.find((row) => row.kind === "surface");
+    if (surfaceRow?.kind !== "surface") {
+      throw new Error("Expected a surface row");
+    }
+
+    act(() => {
+      store.getState().setAutoAperture(true);
+      store.getState().setAutoSemiDiameters({ [surfaceRow.id]: 12.5 });
+    });
+
+    const surfaceSemiDiameter = screen.getByText("12.5");
+    expect(surfaceSemiDiameter.closest("td")).toBeInTheDocument();
+    expect(surfaceSemiDiameter.closest("td")?.querySelector("input")).toBeNull();
   });
 
   it("shows clear rectangular aperture ratio labels when auto aperture dimensions are enabled", async () => {

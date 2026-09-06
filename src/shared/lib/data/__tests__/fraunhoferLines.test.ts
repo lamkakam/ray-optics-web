@@ -38,6 +38,9 @@ describe("lookupWavelength", () => {
   });
 
   it("returns correct wavelength for all symbols", () => {
+    expect(lookupWavelength("t")).toBe(1013.98);
+    expect(lookupWavelength("s")).toBe(852.11);
+    expect(lookupWavelength("A'")).toBe(768.19);
     expect(lookupWavelength("C")).toBe(656.273);
     expect(lookupWavelength("F")).toBe(486.133);
     expect(lookupWavelength("r")).toBe(706.519);
@@ -46,5 +49,9 @@ describe("lookupWavelength", () => {
     expect(lookupWavelength("g")).toBe(435.835);
     expect(lookupWavelength("h")).toBe(404.656);
     expect(lookupWavelength("i")).toBe(365.015);
+  });
+
+  it("throws for an unknown symbol instead of returning an absent wavelength", () => {
+    expect(() => lookupWavelength("unknown" as never)).toThrow("Unknown Fraunhofer symbol: unknown");
   });
 });

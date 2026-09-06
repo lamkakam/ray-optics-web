@@ -69,6 +69,37 @@ describe("OptimizationProgressModal", () => {
     expect(option.xAxis.min).toBe(51);
   });
 
+  it("floors non-positive values and toggles point symbols at the one-point boundary", () => {
+    const { rerender } = render(
+      <OptimizationProgressModal
+        isOpen={true}
+        isOptimizing={true}
+        progress={[{ iteration: 4, merit_function_value: 0, log10_merit_function_value: 0 }]}
+        onClose={jest.fn()}
+      />,
+    );
+
+    const onePointOption = mockSetOption.mock.calls.at(-1)?.[0];
+    expect(onePointOption.series[0].showSymbol).toBe(true);
+    expect(onePointOption.series[0].data).toEqual([[4, 1e-9]]);
+
+    rerender(
+      <OptimizationProgressModal
+        isOpen={true}
+        isOptimizing={true}
+        progress={[
+          { iteration: 4, merit_function_value: 0, log10_merit_function_value: 0 },
+          { iteration: 5, merit_function_value: 2, log10_merit_function_value: Math.log10(2) },
+        ]}
+        onClose={jest.fn()}
+      />,
+    );
+
+    const twoPointOption = mockSetOption.mock.calls.at(-1)?.[0];
+    expect(twoPointOption.series[0].showSymbol).toBe(false);
+    expect(twoPointOption.series[0].data).toEqual([[4, 1e-9], [5, 2]]);
+  });
+
   it("renders a danger Stop button while running and hides OK", () => {
     render(
       <OptimizationProgressModal
@@ -118,6 +149,49 @@ describe("OptimizationProgressModal", () => {
     );
 
     expect(screen.getByRole("button", { name: "Stopping optimization" })).toBeDisabled();
+  });
+
+  it("disables stopping and reports unsupported interrupts", async () => {
+    const onStop = jest.fn();
+    render(
+      <OptimizationProgressModal
+        isOpen={true}
+        isOptimizing={true}
+        progress={makeProgress(1)}
+        onClose={jest.fn()}
+        onStop={onStop}
+        canStop={false}
+      />,
+    );
+
+    const stopButton = screen.getByRole("button", {
+      name: "Stop unavailable: optimization interrupts are unsupported",
+    });
+    expect(stopButton).toBeDisabled();
+    await userEvent.setup().click(stopButton);
+    expect(onStop).not.toHaveBeenCalled();
+  });
+
+  it("disposes the chart when the modal closes", () => {
+    const { rerender } = render(
+      <OptimizationProgressModal
+        isOpen={true}
+        isOptimizing={true}
+        progress={makeProgress(1)}
+        onClose={jest.fn()}
+      />,
+    );
+
+    rerender(
+      <OptimizationProgressModal
+        isOpen={false}
+        isOptimizing={false}
+        progress={[]}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(mockDispose).toHaveBeenCalledTimes(1);
   });
 
   it("renders OK and no Stop after a stopped run completes", () => {

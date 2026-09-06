@@ -220,6 +220,52 @@ describe("OptimizationInspectionModals", () => {
     expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
   });
 
+  it("renders decenter inspection values as read-only", () => {
+    const row: GridRow = {
+      id: "surface-1",
+      kind: "surface",
+      label: "Default",
+      curvatureRadius: 50,
+      thickness: 5,
+      medium: "air",
+      manufacturer: "",
+      semiDiameter: 10,
+      decenter: {
+        coordinateSystemStrategy: "decenter",
+        alpha: 1,
+        beta: -2,
+        gamma: 3,
+        offsetX: 4,
+        offsetY: -5,
+      },
+    };
+
+    renderInspectionModals({
+      mediumModalRow: undefined,
+      asphericalModalRow: undefined,
+      apertureModalRow: undefined,
+      decenterModalRow: row,
+      diffractionGratingModalRow: undefined,
+      onCloseMediumModal: jest.fn(),
+      onCloseAsphericalModal: jest.fn(),
+      onCloseApertureModal: jest.fn(),
+      onCloseDecenterModal: jest.fn(),
+      onCloseDiffractionGratingModal: jest.fn(),
+    });
+
+    expect(screen.getByLabelText("Coordinate system for this and following surfaces")).toHaveValue("decenter");
+    expect(screen.getByLabelText("Alpha (°)")).toHaveValue("1");
+    expect(screen.getByLabelText("Beta (°)")).toHaveValue("-2");
+    expect(screen.getByLabelText("Gamma (°)")).toHaveValue("3");
+    expect(screen.getByLabelText("Offset X")).toHaveValue("4");
+    expect(screen.getByLabelText("Offset Y")).toHaveValue("-5");
+    expect(screen.getByLabelText("Coordinate system for this and following surfaces")).toBeDisabled();
+    for (const label of ["Alpha (°)", "Beta (°)", "Gamma (°)", "Offset X", "Offset Y"]) {
+      expect(screen.getByLabelText(label)).toBeDisabled();
+    }
+    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+  });
+
   it("preloads nested diffraction-grating data in read-only mode", () => {
     const row: GridRow = {
       id: "surface-1",

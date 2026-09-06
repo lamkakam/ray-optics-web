@@ -165,6 +165,21 @@ describe("lensEditorStore", () => {
       store.getState().setRows(rows);
       store.getState().updateRow("nonexistent", { curvatureRadius: 999 });
       expect(store.getState().rows).toEqual(rows);
+      expect(store.getState().prescriptionRevision).toBe(1);
+      expect(store.getState().optimizationSyncPolicy).toBe("resetOptimizationModes");
+    });
+
+    it("preserves the target row identity even when an update patch includes id or kind", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+
+      store.getState().updateRow("s1", { id: "wrong-id", kind: "object" } as Partial<GridRow>);
+
+      expect(store.getState().rows.find((row) => row.id === "s1")).toEqual(expect.objectContaining({
+        id: "s1",
+        kind: "surface",
+      }));
+      expect(store.getState().rows.find((row) => row.id === "wrong-id")).toBeUndefined();
     });
   });
 
@@ -324,8 +339,11 @@ describe("lensEditorStore", () => {
       expect(newRow.kind).toBe("surface");
       if (newRow.kind === "surface") {
         expect(newRow.label).toBe("Default");
+        expect(newRow.curvatureRadius).toBe(0);
+        expect(newRow.thickness).toBe(0);
         expect(newRow.medium).toBe("air");
         expect(newRow.manufacturer).toBe("");
+        expect(newRow.semiDiameter).toBe(1);
       }
     });
 
@@ -350,6 +368,7 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
       store.getState().addRowAfter(IMAGE_ROW_ID);
       expect(store.getState().rows).toHaveLength(4);
+      expect(store.getState().prescriptionRevision).toBe(1);
     });
 
     it("does nothing for non-existent id", () => {
@@ -357,6 +376,7 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
       store.getState().addRowAfter("nonexistent");
       expect(store.getState().rows).toHaveLength(4);
+      expect(store.getState().prescriptionRevision).toBe(1);
     });
   });
 
@@ -434,6 +454,29 @@ describe("lensEditorStore", () => {
       expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
       expect(store.getState().pendingMediumSelection).toBeUndefined();
     });
+
+    it("does not seed a pending medium selection for the protected image row", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+
+      store.getState().openMediumModal(IMAGE_ROW_ID);
+
+      expect(store.getState().mediumModal).toEqual({ open: true, rowId: IMAGE_ROW_ID });
+      expect(store.getState().pendingMediumSelection).toBeUndefined();
+    });
+
+    it("closes an empty medium modal without changing the prescription", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      const before = store.getState().rows;
+
+      store.getState().openMediumModal("missing");
+      store.getState().commitPendingMediumSelection();
+
+      expect(store.getState().rows).toBe(before);
+      expect(store.getState().prescriptionRevision).toBe(1);
+      expect(store.getState().mediumModal).toEqual({ open: false, rowId: "" });
+    });
   });
 
   describe("deleteRow", () => {
@@ -459,6 +502,7 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
       store.getState().deleteRow(IMAGE_ROW_ID);
       expect(store.getState().rows).toHaveLength(4);
+      expect(store.getState().prescriptionRevision).toBe(1);
     });
 
     it("does nothing for non-existent id", () => {
@@ -466,6 +510,18 @@ describe("lensEditorStore", () => {
       store.getState().setRows(makeTestRows());
       store.getState().deleteRow("nonexistent");
       expect(store.getState().rows).toHaveLength(4);
+      expect(store.getState().prescriptionRevision).toBe(1);
+    });
+
+    it("preserves another row's selection when deleting a different surface", () => {
+      const store = makeStore();
+      store.getState().setRows(makeTestRows());
+      store.getState().setSelectedRowId("s2");
+
+      store.getState().deleteRow("s1");
+
+      expect(store.getState().selectedRowId).toBe("s2");
+      expect(store.getState().prescriptionRevision).toBe(2);
     });
   });
 

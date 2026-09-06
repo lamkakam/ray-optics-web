@@ -27,6 +27,151 @@ const baseModel: OpticalModel = {
 };
 
 describe("validateImportedLensData", () => {
+  it.each(["setAutoAperture", "specs", "object", "image", "surfaces"])(
+    "requires the root field %s",
+    (field) => {
+      const model = { ...baseModel } as Record<string, unknown>;
+      delete model[field];
+
+      expect(validateImportedLensData(model)).toBe(false);
+    },
+  );
+
+  it.each(["pupil", "field", "wavelengths"])("requires specs.%s", (field) => {
+    const specs = { ...baseModel.specs } as Record<string, unknown>;
+    delete specs[field];
+
+    expect(validateImportedLensData({ ...baseModel, specs })).toBe(false);
+  });
+
+  it.each(["weights", "referenceIndex"])("requires specs.wavelengths.%s", (field) => {
+    const wavelengths = { ...baseModel.specs.wavelengths } as Record<string, unknown>;
+    delete wavelengths[field];
+
+    expect(validateImportedLensData({
+      ...baseModel,
+      specs: { ...baseModel.specs, wavelengths },
+    })).toBe(false);
+  });
+
+  it.each([
+    ["object pupil", baseModel.specs.pupil],
+    ["image pupil", { space: "image", type: "f/#", value: 4 }],
+  ])("requires every %s field", (_label, pupil) => {
+    for (const field of ["space", "type", "value"]) {
+      const invalidPupil = { ...pupil } as Record<string, unknown>;
+      delete invalidPupil[field];
+
+      expect(validateImportedLensData({
+        ...baseModel,
+        specs: { ...baseModel.specs, pupil: invalidPupil },
+      })).toBe(false);
+    }
+  });
+
+  it.each([
+    ["object field", { ...baseModel.specs.field, space: "object", type: "angle" }],
+    ["image field", { ...baseModel.specs.field, space: "image", type: "height" }],
+  ])("requires every %s field", (_label, fieldValue) => {
+    for (const field of ["space", "type", "maxField", "fields", "isRelative"]) {
+      const invalidField = { ...fieldValue } as Record<string, unknown>;
+      delete invalidField[field];
+
+      expect(validateImportedLensData({
+        ...baseModel,
+        specs: { ...baseModel.specs, field: invalidField },
+      })).toBe(false);
+    }
+  });
+
+  it.each([
+    ["root", { unexpected: true }],
+    ["specs", { unexpected: true }],
+    ["pupil", { unexpected: true }],
+    ["image pupil", { unexpected: true }],
+    ["field", { unexpected: true }],
+    ["image field", { unexpected: true }],
+    ["wavelengths", { unexpected: true }],
+    ["object", { unexpected: true }],
+    ["image", { unexpected: true }],
+    ["surface", { unexpected: true }],
+  ])("rejects an unknown property in the %s schema", (location, value) => {
+    let model: Record<string, unknown> = { ...baseModel };
+    if (location === "root") model = { ...model, unexpected: true };
+    if (location === "specs") model = { ...model, specs: { ...baseModel.specs, ...value } };
+    if (location === "pupil") model = { ...model, specs: { ...baseModel.specs, pupil: { ...baseModel.specs.pupil, ...value } } };
+    if (location === "image pupil") model = { ...model, specs: { ...baseModel.specs, pupil: { space: "image", type: "f/#", value: 4, ...value } } };
+    if (location === "field") model = { ...model, specs: { ...baseModel.specs, field: { ...baseModel.specs.field, ...value } } };
+    if (location === "image field") model = { ...model, specs: { ...baseModel.specs, field: { space: "image", type: "height", maxField: 1, fields: [0], isRelative: false, ...value } } };
+    if (location === "wavelengths") model = { ...model, specs: { ...baseModel.specs, wavelengths: { ...baseModel.specs.wavelengths, ...value } } };
+    if (location === "object") model = { ...model, object: { ...baseModel.object, ...value } };
+    if (location === "image") model = { ...model, image: { ...baseModel.image, ...value } };
+    if (location === "surface") model = {
+      ...model,
+      surfaces: [{
+        label: "Default",
+        curvatureRadius: 10,
+        thickness: 2,
+        medium: "air",
+        manufacturer: "",
+        semiDiameter: 5,
+        ...value,
+      }],
+    };
+
+    expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it.each(["invalid", "auto", "manualAperture", "autoAperture"])(
+    "accepts only a supported aperture mode when setAutoAperture is %s",
+    (setAutoAperture) => {
+      const accepted = setAutoAperture === "manualAperture" || setAutoAperture === "autoAperture";
+
+      expect(validateImportedLensData({ ...baseModel, setAutoAperture })).toBe(accepted);
+    },
+  );
+
+  it.each([
+    { space: "object", type: "invalid", value: 1 },
+    { space: "invalid", type: "epd", value: 1 },
+    { space: "image", type: "f/#", value: Number.NaN },
+    { space: "object", type: "epd", value: Number.POSITIVE_INFINITY },
+  ])("rejects invalid pupil values %#", (pupil) => {
+    expect(validateImportedLensData({
+      ...baseModel,
+      specs: { ...baseModel.specs, pupil },
+    })).toBe(false);
+  });
+
+  it.each([
+    { space: "object", type: "angle", maxField: Number.NaN, fields: [0], isRelative: false },
+    { space: "object", type: "height", maxField: 1, fields: [Number.POSITIVE_INFINITY], isRelative: false },
+    { space: "object", type: "angle", maxField: 1, fields: [0], isRelative: "false" },
+    { space: "image", type: "angle", maxField: 1, fields: [0], isRelative: false },
+  ])("rejects invalid field values %#", (field) => {
+    expect(validateImportedLensData({
+      ...baseModel,
+      specs: { ...baseModel.specs, field },
+    })).toBe(false);
+  });
+
+  it("allows an empty wavelength list", () => {
+    expect(validateImportedLensData({
+      ...baseModel,
+      specs: { ...baseModel.specs, wavelengths: { ...baseModel.specs.wavelengths, weights: [] } },
+    })).toBe(true);
+  });
+
+  it.each([
+    { weights: [[587.562]] },
+    { weights: [[587.562, 1, 2]] },
+  ])("rejects wavelength weights with invalid entries", ({ weights }) => {
+    expect(validateImportedLensData({
+      ...baseModel,
+      specs: { ...baseModel.specs, wavelengths: { ...baseModel.specs.wavelengths, weights } },
+    })).toBe(false);
+  });
+
   it.each([undefined, "", "Front element"])("accepts an optional string surface comment %p", (comment) => {
     const surface = {
       label: "Default",
@@ -121,6 +266,41 @@ describe("validateImportedLensData", () => {
     };
 
     expect(validateImportedLensData(model)).toBe(false);
+  });
+
+  it("rejects an unsupported object-space field type", () => {
+    expect(validateImportedLensData({
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: { ...baseModel.specs.field, type: "width" },
+      },
+    })).toBe(false);
+  });
+
+  it.each([
+    ["maxField", "invalid"],
+    ["fields", [Number.NaN]],
+    ["isRelative", "false"],
+    ["isWideAngle", "yes"],
+  ])("rejects invalid image-space field.%s", (field, value) => {
+    expect(validateImportedLensData({
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: {
+          space: "image",
+          type: "height",
+          maxField: 1,
+          fields: [0],
+          isRelative: false,
+          ...(field === "maxField" ? { maxField: value } : {}),
+          ...(field === "fields" ? { fields: value } : {}),
+          ...(field === "isRelative" ? { isRelative: value } : {}),
+          ...(field === "isWideAngle" ? { isWideAngle: value } : {}),
+        },
+      },
+    })).toBe(false);
   });
 
   it("accepts models with field.isWideAngle set to true", () => {
@@ -906,6 +1086,42 @@ describe("validateImportedCustomGlassData", () => {
 
   it("accepts version 1.0 tabulated custom glass data", () => {
     expect(validateImportedCustomGlassData(validPayload)).toBe(true);
+  });
+
+  it.each(["version", "Custom"])("requires the custom-glass field %s", (field) => {
+    const payload = { ...validPayload } as Record<string, unknown>;
+    delete payload[field];
+
+    expect(validateImportedCustomGlassData(payload)).toBe(false);
+  });
+
+  it.each(["type", "data"])("requires each custom material field %s", (field) => {
+    const material = { ...validPayload.Custom.CUSTOM_A } as Record<string, unknown>;
+    delete material[field];
+
+    expect(validateImportedCustomGlassData({
+      ...validPayload,
+      Custom: { CUSTOM_A: material },
+    })).toBe(false);
+  });
+
+  it("rejects unknown properties at the envelope and material levels", () => {
+    expect(validateImportedCustomGlassData({ ...validPayload, extra: true })).toBe(false);
+    expect(validateImportedCustomGlassData({
+      ...validPayload,
+      Custom: { CUSTOM_A: { ...validPayload.Custom.CUSTOM_A, extra: true } },
+    })).toBe(false);
+  });
+
+  it.each([
+    [[[486.13, 1.5224], [546.07, 1.5187], [587.56, 1.5168]]],
+    [[[486.13, 1.5224], [546.07, 1.5187], [587.56, 1.5168], [656.27, 0]]],
+    [[[486.13, 1.5224], [546.07, Number.NaN], [587.56, 1.5168], [656.27, 1.5143]]],
+  ])("rejects custom glass data outside positive finite boundaries", (data) => {
+    expect(validateImportedCustomGlassData({
+      ...validPayload,
+      Custom: { CUSTOM_A: { ...validPayload.Custom.CUSTOM_A, data } },
+    })).toBe(false);
   });
 
   it.each([

@@ -350,4 +350,90 @@ describe("AsphericalModal", () => {
       toricSweepRadiusOfCurvature: 0,
     });
   });
+
+  it("returns no coefficients when every polynomial coefficient is zero", async () => {
+    const onConfirm = jest.fn();
+    render(
+      <AsphericalModal
+        {...defaultProps}
+        initialType="EvenAspherical"
+        initialCoefficients={[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]}
+        onConfirm={onConfirm}
+      />
+    );
+
+    await userEvent.click(screen.getByText("Confirm"));
+
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "EvenAspherical",
+        polynomialCoefficients: [],
+      })
+    );
+  });
+
+  it("preserves the initial coefficient when an edited coefficient is not numeric", async () => {
+    const onConfirm = jest.fn();
+    render(
+      <AsphericalModal
+        {...defaultProps}
+        initialType="EvenAspherical"
+        initialCoefficients={[0.25, 0]}
+        onConfirm={onConfirm}
+      />
+    );
+
+    const input = screen.getByLabelText("a2");
+    await userEvent.clear(input);
+    await userEvent.type(input, "not-a-number");
+    await userEvent.click(screen.getByText("Confirm"));
+
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        polynomialCoefficients: [0.25],
+      })
+    );
+  });
+
+  it("updates one coefficient without discarding the other coefficients", async () => {
+    const onConfirm = jest.fn();
+    render(
+      <AsphericalModal
+        {...defaultProps}
+        initialType="EvenAspherical"
+        initialCoefficients={[0.01, 0.02]}
+        onConfirm={onConfirm}
+      />
+    );
+
+    const input = screen.getByLabelText("a4");
+    await userEvent.clear(input);
+    await userEvent.type(input, "0.03");
+    await userEvent.click(screen.getByText("Confirm"));
+
+    expect(onConfirm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        polynomialCoefficients: [0.01, 0.03],
+      })
+    );
+  });
+
+  it.each([
+    ["EvenAspherical", ["a2", "a4", "a6", "a8", "a10", "a12", "a14", "a16", "a18", "a20"]],
+    ["RadialPolynomial", ["radial-a1", "radial-a2", "radial-a3", "radial-a4", "radial-a5", "radial-a6", "radial-a7", "radial-a8", "radial-a9", "radial-a10"]],
+    ["XToroid", ["x-toroid-a2", "x-toroid-a4", "x-toroid-a6", "x-toroid-a8", "x-toroid-a10", "x-toroid-a12", "x-toroid-a14", "x-toroid-a16", "x-toroid-a18", "x-toroid-a20"]],
+    ["YToroid", ["y-toroid-a2", "y-toroid-a4", "y-toroid-a6", "y-toroid-a8", "y-toroid-a10", "y-toroid-a12", "y-toroid-a14", "y-toroid-a16", "y-toroid-a18", "y-toroid-a20"]],
+  ] as const)("renders all coefficient labels for %s", (type, labels) => {
+    render(
+      <AsphericalModal
+        {...defaultProps}
+        initialType={type}
+        initialCoefficients={Array.from({ length: 10 }, () => 0)}
+      />
+    );
+
+    for (const label of labels) {
+      expect(screen.getByLabelText(label)).toBeInTheDocument();
+    }
+  });
 });

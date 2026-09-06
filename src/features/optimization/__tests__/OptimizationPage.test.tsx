@@ -159,10 +159,17 @@ function mockPointerCapture(element: HTMLElement) {
   });
 }
 
+/** Optional setup overrides for the page-level worker/store harness. */
+interface RenderOptimizationPageOptions {
+  readonly isReady?: boolean;
+  readonly onApplyToEditor?: (model: OpticalModel) => Promise<void> | void;
+}
+
 function renderOptimizationPage(
   proxy: PyodideWorkerAPI,
   onError = jest.fn(),
   glassCatalogOverrides?: Partial<GlassCatalogContextValue>,
+  options: RenderOptimizationPageOptions = {},
 ) {
   const specsStore = createStore<SpecsConfiguratorState>(createSpecsConfiguratorSlice);
   const lensStore = createStore<LensEditorState>(createLensEditorSlice);
@@ -199,7 +206,12 @@ function renderOptimizationPage(
       <SpecsConfiguratorStoreContext.Provider value={specsStore}>
         <LensEditorStoreContext.Provider value={lensStore}>
           <OptimizationStoreContext.Provider value={optimizationStore}>
-            <OptimizationPage proxy={proxy} isReady={true} onError={onError} />
+            <OptimizationPage
+              proxy={proxy}
+              isReady={options.isReady ?? true}
+              onError={onError}
+              onApplyToEditor={options.onApplyToEditor}
+            />
           </OptimizationStoreContext.Provider>
         </LensEditorStoreContext.Provider>
       </SpecsConfiguratorStoreContext.Provider>
@@ -248,6 +260,50 @@ describe("OptimizationPage", () => {
     expect(screen.getByRole("tab", { name: "Wavelengths" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Lens Prescription" })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Operands" })).toBeInTheDocument();
+  });
+
+  it("keeps Optimize disabled when the Pyodide runtime is not ready", async () => {
+    const proxy = makeProxy();
+    const { optimizationStore } = renderOptimizationPage(proxy, jest.fn(), undefined, { isReady: false });
+
+    await waitFor(() => expect(optimizationStore.getState().optimizationModel).toBeDefined());
+    act(() => {
+      optimizationStore.getState().replaceOperands([
+        { id: "operand-ready", kind: "focal_length", target: "100", weight: "1" },
+      ]);
+    });
+
+    await waitFor(() => expect(optimizationStore.getState().operands).toHaveLength(1));
+    expect(screen.getByRole("button", { name: "Optimize" })).toBeDisabled();
+  });
+
+  it("preserves zero weights and defaults missing field and wavelength weights to one", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy());
+    const user = userEvent.setup();
+
+    act(() => {
+      optimizationStore.setState({ fieldWeights: [0], wavelengthWeights: [0] });
+    });
+
+    await user.click(screen.getByRole("tab", { name: "Half-Fields" }));
+    let grid = screen.getByTestId("optimization-weights-grid");
+    expect(within(grid).getAllByRole("textbox").map((input) => input)).toHaveLength(3);
+    expect(within(grid).getAllByRole("textbox").map((input) => (input as HTMLInputElement).value)).toEqual([
+      "0",
+      "1",
+      "1",
+    ]);
+    expect(within(grid).getByText("0.00°")).toBeInTheDocument();
+    expect(within(grid).getByText("14.0°")).toBeInTheDocument();
+    expect(within(grid).getByText("20.0°")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Wavelengths" }));
+    grid = screen.getByTestId("optimization-weights-grid");
+    expect(within(grid).getAllByRole("textbox").map((input) => (input as HTMLInputElement).value)).toEqual([
+      "0",
+      "1",
+      "1",
+    ]);
   });
 
   it("updates the optimizer method in store when Levenberg-Marquardt is selected", async () => {
@@ -899,6 +955,48 @@ describe("OptimizationPage", () => {
     expect(screen.getByText("2.750000")).toBeInTheDocument();
   });
 
+  it("ignores a stale evaluation response after a newer config request starts", async () => {
+    let resolveFirst: ((report: ReturnType<typeof makeEvaluationReport>) => void) | undefined;
+    let resolveSecond: ((report: ReturnType<typeof makeEvaluationReport>) => void) | undefined;
+    const secondReport = {
+      ...makeEvaluationReport(),
+      residuals: [{
+        ...makeEvaluationReport().residuals[0],
+        target: 125,
+        value: 124.25,
+        operand_weight: 2.75,
+        total_weight: 2.75,
+        weighted_residual: -2.0625,
+      }],
+    };
+    const evaluateOptimizationProblem = jest.fn()
+      .mockImplementationOnce(() => new Promise<ReturnType<typeof makeEvaluationReport>>((resolve) => {
+        resolveFirst = resolve;
+      }))
+      .mockImplementationOnce(() => new Promise<ReturnType<typeof makeEvaluationReport>>((resolve) => {
+        resolveSecond = resolve;
+      }));
+    const proxy = makeProxy({ evaluateOptimizationProblem });
+    renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await waitFor(() => expect(evaluateOptimizationProblem).toHaveBeenCalledTimes(1));
+
+    const inputs = screen.getAllByRole("textbox");
+    await user.clear(inputs[0]);
+    await user.type(inputs[0], "125");
+    await user.tab();
+    await waitFor(() => expect(evaluateOptimizationProblem).toHaveBeenCalledTimes(2));
+
+    resolveFirst?.(makeEvaluationReport());
+    await waitFor(() => expect(screen.queryByText("98.500000")).not.toBeInTheDocument());
+
+    resolveSecond?.(secondReport);
+    expect(await screen.findByText("124.250000")).toBeInTheDocument();
+  });
+
   it("does not refresh the live evaluation table for radius edits until Done is pressed", async () => {
     jest.useFakeTimers();
 
@@ -1400,6 +1498,32 @@ describe("OptimizationPage", () => {
     expect(yAxis?.axisLabel?.formatter?.(0)).toBe("1e-9");
   });
 
+  it("disables the progress Stop control when the worker cannot interrupt optimization", async () => {
+    let resolveOptimization: ((value: ReturnType<typeof makeEvaluationReport>) => void) | undefined;
+    const optimizationPromise = new Promise<ReturnType<typeof makeEvaluationReport>>((resolve) => {
+      resolveOptimization = resolve;
+    });
+    const canInterruptOptimization = jest.fn().mockResolvedValue(false);
+    const optimizeOpm = jest.fn().mockImplementation(() => optimizationPromise);
+    const proxy = makeProxy({ canInterruptOptimization, optimizeOpm });
+    renderOptimizationPage(proxy);
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Operands" }));
+    await user.click(screen.getByRole("button", { name: "Add operand" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Optimize" })).toBeEnabled());
+    await user.click(screen.getByRole("button", { name: "Optimize" }));
+
+    const stopButton = await screen.findByRole("button", {
+      name: "Stop unavailable: optimization interrupts are unsupported",
+    });
+    expect(stopButton).toBeDisabled();
+    expect(canInterruptOptimization).toHaveBeenCalled();
+
+    resolveOptimization?.(makeEvaluationReport());
+    await waitFor(() => expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument());
+  });
+
   it("requests stop with the active run id and applies a successful stopped report without warning", async () => {
     let resolveOptimization: ((value: {
       success: true;
@@ -1443,6 +1567,8 @@ describe("OptimizationPage", () => {
     await waitFor(() => expect(requestOptimizationStop).toHaveBeenCalledWith(expect.any(String)));
     expect(requestOptimizationStop.mock.calls[0]?.[0]).toBe(optimizeOpm.mock.calls[0]?.[4]);
     expect(screen.getByRole("button", { name: "Stopping optimization" })).toBeDisabled();
+    const interruptBuffer = optimizeOpm.mock.calls[0]?.[5] as SharedArrayBuffer;
+    expect(Atomics.load(new Int32Array(interruptBuffer), 0)).toBe(2);
 
     resolveOptimization?.({
       success: true,
@@ -1648,7 +1774,8 @@ describe("OptimizationPage", () => {
 
   it("confirms Apply to Editor and overwrites the lens editor rows with the optimized model", async () => {
     const proxy = makeProxy();
-    const { lensStore, optimizationStore } = renderOptimizationPage(proxy);
+    const onApplyToEditor = jest.fn();
+    const { lensStore, optimizationStore } = renderOptimizationPage(proxy, jest.fn(), undefined, { onApplyToEditor });
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("tab", { name: "Operands" }));
@@ -1668,6 +1795,9 @@ describe("OptimizationPage", () => {
     await user.click(screen.getByRole("button", { name: "Apply" }));
 
     expect(lensStore.getState().rows[1]).toMatchObject({ curvatureRadius: 42 });
+    await waitFor(() => expect(onApplyToEditor).toHaveBeenCalledWith(expect.objectContaining({
+      surfaces: expect.any(Array),
+    })));
     await waitFor(() => {
       expect(optimizationStore.getState().radiusModes[0]).toMatchObject({ mode: "variable" });
     });

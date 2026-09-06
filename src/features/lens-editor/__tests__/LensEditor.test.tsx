@@ -389,6 +389,40 @@ describe("LensEditor", () => {
     expect(wrapper).toHaveClass("overflow-y-auto");
   });
 
+  it("disables Update System while Pyodide is not ready", () => {
+    renderLensEditor({ isReady: false });
+
+    expect(screen.getByRole("button", { name: "Update System" })).toBeDisabled();
+  });
+
+  it("does not call workers when Update System is clicked without a proxy", async () => {
+    const { onError } = renderLensEditor({ proxy: undefined });
+
+    expect(screen.getByTestId("update-system-btn")).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByTestId("update-system-btn"));
+
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("shows computing and loading state until all update requests settle", async () => {
+    let resolveLayout: ((value: string) => void) | undefined;
+    const proxy = makeProxy();
+    (proxy.plotLensLayout as jest.Mock).mockImplementation(
+      () => new Promise<string>((resolve) => { resolveLayout = resolve; }),
+    );
+    const { lensLayoutImageStore, analysisPlotStore } = renderLensEditor({ proxy });
+
+    await userEvent.setup().click(screen.getByTestId("update-system-btn"));
+    expect(screen.getByRole("button", { name: "Update System" })).toBeDisabled();
+    expect(lensLayoutImageStore.getState().layoutLoading).toBe(true);
+    expect(analysisPlotStore.getState().plotLoading).toBe(true);
+
+    act(() => resolveLayout?.("layout-resolved"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Update System" })).toBeEnabled());
+    expect(lensLayoutImageStore.getState().layoutLoading).toBe(false);
+    expect(analysisPlotStore.getState().plotLoading).toBe(false);
+  });
+
   it("Update System passes isDark=true to plotLensLayout when the theme is dark", async () => {
     jest.mocked(useTheme).mockReturnValue({ theme: "dark", setTheme: jest.fn() });
     const { proxy } = renderLensEditor();

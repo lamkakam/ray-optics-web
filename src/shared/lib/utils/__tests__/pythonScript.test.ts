@@ -122,6 +122,7 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain(
       "osp['fov'] = ExactImageHeightFieldSpec(osp, key=['image', 'height']",
     );
+    expect(script).not.toContain("ExactObjectHeightFieldSpec(");
   });
 
   it.each([undefined, false])(
@@ -149,6 +150,27 @@ describe("buildOpticalModelScript", () => {
       expect(script).not.toContain("ExactImageHeightFieldSpec(");
     },
   );
+
+  it("uses the plain object-height field and emits False for a non-relative field", () => {
+    const script = buildOpticalModelScript({
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: {
+          space: "object",
+          type: "height",
+          maxField: 2,
+          fields: [0, 1],
+          isRelative: false,
+        },
+      },
+    });
+
+    expect(script).toContain(
+      "osp['fov'] = FieldSpec(osp, key=['object', 'height'], value=2, flds=[0,1], is_relative=False)",
+    );
+    expect(script).not.toContain("ExactObjectHeightFieldSpec(");
+  });
 
   it("uses the exact model and object-height field class when opted in", () => {
     const script = buildOpticalModelScript({
@@ -677,6 +699,94 @@ describe("buildOpticalModelScript", () => {
     expect(script).toContain("opm = ExactOpticalModel()");
     expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True, is_wide_angle=True)");
   });
+
+  it("omits the wide-angle flag when exact real-ray mode is not selected", () => {
+    const script = buildOpticalModelScript(baseModel);
+
+    expect(script).toContain("osp['fov'] = FieldSpec(osp, key=['object', 'angle']");
+    expect(script).not.toContain("is_wide_angle=True");
+  });
+
+  it("uses OffsetCircular when exactly one circular-aperture offset is nonzero", () => {
+    const script = buildOpticalModelScript({
+      ...baseModel,
+      surfaces: [{
+        ...baseModel.surfaces[0],
+        semiDiameter: 3,
+        clear_aperture: { shape: "circular", offsetX: 0, offsetY: 1 },
+        edge_aperture: { shape: "circular", radius: 2.5, offsetX: 1, offsetY: 0 },
+      }],
+    });
+
+    expect(script).toContain("clear_apertures = [OffsetCircular(radius=3, x_offset=0, y_offset=1)]");
+    expect(script).toContain("edge_apertures = [OffsetCircular(radius=2.5, x_offset=1, y_offset=0)]");
+    expect(script).not.toContain("clear_apertures = [Circular(radius=3");
+    expect(script).not.toContain("edge_apertures = [Circular(radius=2.5");
+  });
+
+  it("does not add an empty line when a surface has no clear-aperture assignment", () => {
+    const script = buildOpticalModelScript({
+      ...baseModel,
+      surfaces: [{ ...baseModel.surfaces[0], semiDiameter: 0 }],
+    });
+
+    expect(script).toContain(
+      "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])\nsm.ifcs[-1].profile.r = -42",
+    );
+    expect(script).not.toContain(
+      "sm.add_surface([23.713, 4.831, \"N-LAK9\", \"Schott\"])\n\nsm.ifcs[-1].profile.r = -42",
+    );
+  });
+
+  it("emits the stop command only for surfaces labelled Stop", () => {
+    const script = buildOpticalModelScript(baseModel);
+
+    expect((script.match(/sm\.set_stop\(\)/g) ?? [])).toHaveLength(1);
+  });
+
+  it("handles reflected and ordinary object media independently", () => {
+    const reflectedScript = buildOpticalModelScript({
+      ...baseModel,
+      object: { ...baseModel.object, medium: "REFL", manufacturer: "Schott" },
+    });
+    const ordinaryScript = buildOpticalModelScript({
+      ...baseModel,
+      object: { ...baseModel.object, medium: "N-BK7", manufacturer: "Schott" },
+    });
+
+    expect(reflectedScript).toContain('sm.gaps[0].medium = decode_medium("air")');
+    expect(reflectedScript).not.toContain('decode_medium("REFL", "Schott")');
+    expect(ordinaryScript).toContain('sm.gaps[0].medium = decode_medium("N-BK7", "Schott")');
+    expect(ordinaryScript).not.toContain('decode_medium("air")');
+  });
+
+  it("preserves the intentional blank lines in the generated model script", () => {
+    const lines = buildOpticalModelScript(baseModel).split("\n");
+
+    expect(lines.slice(0, 16)).toEqual([
+      "opm = OpticalModel()",
+      "sm  = opm['seq_model']",
+      "osp = opm['optical_spec']",
+      "pm  = opm['parax_model']",
+      "",
+      "opm.system_spec.dimensions = 'mm'",
+      "",
+      "osp['pupil'] = PupilSpec(osp, key=['object', 'epd'], value=12.5)",
+      "osp['fov'] = FieldSpec(osp, key=['object', 'angle'], value=20, flds=[0,0.707,1], is_relative=True)",
+      "osp['wvls'] = WvlSpec([(656.3, 1),(587, 2),(486.1, 1)], ref_wl=1)",
+      "",
+      "opm.radius_mode = True",
+      "sm.do_apertures = False",
+      "",
+      "sm.gaps[0].thi=10000000000",
+      'sm.gaps[0].medium = decode_medium("air")',
+    ]);
+
+    const imageIndex = lines.indexOf("sm.ifcs[-1].profile.r = -42");
+    expect(imageIndex).toBeGreaterThan(-1);
+    expect(lines[imageIndex + 1]).toBe("");
+    expect(lines[imageIndex + 2]).toBe("opm.update_model()");
+  });
 });
 
 describe("buildExportScript", () => {
@@ -803,6 +913,7 @@ describe("buildExportScript", () => {
     expect(script).not.toContain("class ExactOpticalModel(OpticalModel):");
     expect(script).not.toContain("class ExactImageHeightFieldSpec(FieldSpec):");
     expect(script).not.toContain("class ExactObjectHeightFieldSpec(FieldSpec):");
+    expect(script).not.toContain("Stryker was here!");
     expect(script).toContain("opm = OpticalModel()");
   });
 
@@ -876,5 +987,12 @@ describe("buildScript", () => {
     const lines = script.split('\n');
     const bareOpmAssignment = lines.filter(line => /^opm\s*=/.test(line));
     expect(bareOpmAssignment).toHaveLength(0);
+  });
+
+  it("keeps blank model lines unindented inside the builder function", () => {
+    const script = buildScript(baseModel, (opm) => `compute(${opm})`);
+
+    expect(script).toContain("\n\n");
+    expect(script.split("\n")).toContain("");
   });
 });

@@ -85,6 +85,17 @@ describe("lens prescription WebMCP tools", () => {
     expect(snapshot(store)).toEqual(before);
   });
 
+  it.each([
+    ["get_lens_prescription", { extra: true }, /Invalid input at \/extra/i],
+    ["insert_lens_surface", {}, /Invalid input at \/after/i],
+    ["update_lens_row", { values: { comment: "missing row" } }, /Invalid input at \/row/i],
+    ["delete_lens_surface", {}, /Invalid input at \/surface/i],
+  ])("reports the precise schema path for %s", async (name, input, message) => {
+    const { execute } = setup();
+
+    await expect(execute(name, input)).rejects.toThrow(message);
+  });
+
   it("replaces a fully validated prescription with one setRows call and one revision", async () => {
     const { store, execute } = setup();
     const spy = jest.spyOn(store.getState(), "setRows");
@@ -169,6 +180,23 @@ describe("lens prescription WebMCP tools", () => {
     expect(store.getState().rows[2]).toEqual(expect.objectContaining({ comment: "formerly first", curvatureRadius: 50 }));
   });
 
+  it("returns the inserted surface index when inserting after an existing surface", async () => {
+    const { store, execute } = setup();
+    await execute("set_lens_prescription", {
+      ...basePrescription,
+      surfaces: [
+        basePrescription.surfaces[0],
+        { ...basePrescription.surfaces[0], curvatureRadius: -25 },
+      ],
+    });
+
+    const result = JSON.parse(String(await execute("insert_lens_surface", { after: 1 })));
+    expect(result).toEqual(expect.objectContaining({ surface: 2, surfaceCount: 3 }));
+    expect(store.getState().rows.filter((row) => row.kind === "surface")[1]).toEqual(
+      expect.objectContaining({ curvatureRadius: 0, thickness: 0, medium: "air", manufacturer: "" }),
+    );
+  });
+
   it("updates simple and nested fields, and clears optional fields", async () => {
     const { store, execute } = setup();
     await execute("update_lens_row", {
@@ -213,6 +241,26 @@ describe("lens prescription WebMCP tools", () => {
     await expect(execute("update_lens_row", { row: 1, values: { semiDiameter: 4 } })).rejects.toThrow(/rectangular/i);
   });
 
+  it("zeroes semi-diameter when a surface becomes rectangular", async () => {
+    const { store, execute } = setup();
+
+    await execute("update_lens_row", {
+      row: 1,
+      values: { clear_aperture: { shape: "rectangular", xHalfWidth: 4, yHalfWidth: 3, rotation: 0, offsetX: 0, offsetY: 0 } },
+    });
+
+    expect(store.getState().rows[1]).toEqual(expect.objectContaining({ semiDiameter: 0 }));
+  });
+
+  it("labels unknown custom media with the Custom catalog", async () => {
+    const { execute } = setup({ lookupMaps });
+
+    await expect(execute("set_lens_prescription", {
+      ...basePrescription,
+      surfaces: [{ ...basePrescription.surfaces[0], medium: "Mystery", manufacturer: "   " }],
+    })).rejects.toThrow(/\/surfaces\/0\/medium.*unknown medium Custom: Mystery/i);
+  });
+
   it("deletes only a current positive surface index and clears its selection", async () => {
     const { store, execute } = setup();
     store.getState().setSelectedRowId(store.getState().rows[1].id);
@@ -229,7 +277,10 @@ describe("lens prescription WebMCP tools", () => {
     const controller = new AbortController();
     controller.abort();
     await expect(execute("get_lens_prescription", {}, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
+    await expect(execute("set_lens_prescription", basePrescription, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
     await expect(execute("insert_lens_surface", { after: "object" }, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
+    await expect(execute("update_lens_row", { row: 1, values: { thickness: 6 } }, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
+    await expect(execute("delete_lens_surface", { surface: 1 }, controller.signal)).rejects.toMatchObject({ name: "AbortError" });
     expect(snapshot(store)).toEqual(before);
   });
 });
