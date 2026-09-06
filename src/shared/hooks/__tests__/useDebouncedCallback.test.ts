@@ -66,6 +66,18 @@ describe("useDebouncedCallback", () => {
     expect(callback).not.toHaveBeenCalled();
   });
 
+  it("does not clear a browser timer when no work is pending", () => {
+    const clearTimeout = jest.spyOn(window, "clearTimeout");
+    const { result } = renderHook(() => useDebouncedCallback(jest.fn(), 200));
+
+    act(() => {
+      result.current.cancel();
+    });
+
+    expect(clearTimeout).not.toHaveBeenCalled();
+    clearTimeout.mockRestore();
+  });
+
   it("cancels pending work on unmount", () => {
     const callback = jest.fn();
     const { result, unmount } = renderHook(() => useDebouncedCallback(callback, 200));
@@ -103,5 +115,29 @@ describe("useDebouncedCallback", () => {
 
     expect(firstCallback).not.toHaveBeenCalled();
     expect(secondCallback).toHaveBeenCalledWith("first");
+  });
+
+  it("uses a changed delay after rerendering and keeps controls stable otherwise", () => {
+    const callback = jest.fn();
+    const { result, rerender } = renderHook(
+      ({ delay }) => useDebouncedCallback(callback, delay),
+      { initialProps: { delay: 200 } },
+    );
+    const firstRun = result.current.run;
+    const firstCancel = result.current.cancel;
+
+    rerender({ delay: 50 });
+    expect(result.current.run).not.toBe(firstRun);
+    expect(result.current.cancel).toBe(firstCancel);
+
+    act(() => {
+      result.current.run("changed delay");
+      jest.advanceTimersByTime(49);
+    });
+    expect(callback).not.toHaveBeenCalled();
+    act(() => {
+      jest.advanceTimersByTime(1);
+    });
+    expect(callback).toHaveBeenCalledWith("changed delay");
   });
 });

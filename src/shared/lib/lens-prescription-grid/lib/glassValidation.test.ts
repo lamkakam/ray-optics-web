@@ -50,6 +50,12 @@ describe("glassValidation", () => {
     expect(resolvePrescriptionMedium(input, undefined)).toEqual({ kind: "resolved", value: expected });
   });
 
+  it("does not treat whitespace-only media as numeric glass", () => {
+    expect(resolvePrescriptionMedium({ medium: "   ", manufacturer: "" }, undefined)).toEqual({
+      kind: "catalog-unavailable",
+    });
+  });
+
   it("resolves Special, catalog, and Custom media in precedence order", () => {
     const maps: GlassLookupMaps = {
       manufacturerMap: new Map([["schott", "Schott"]]),
@@ -108,6 +114,17 @@ describe("glassValidation", () => {
         surfaces: [expect.objectContaining({ medium: "N-BK7", manufacturer: "Schott" })],
       }),
     });
+  });
+
+  it("reports an unknown Object medium at the Object JSON-pointer path", () => {
+    const maps = makeLookupMaps([]);
+    const model = { ...modelWithMedia([]), object: { distance: 10, medium: "  Missing ", manufacturer: " Hoya " } };
+
+    expect(resolvePrescriptionMedia(model, maps)).toEqual({
+      kind: "unknown-medium",
+      issues: [{ path: "/object/medium", medium: "  Missing ", manufacturer: " Hoya " }],
+    });
+    expect(getMissingPrescriptionGlasses(model, maps)).toEqual(["Hoya: Missing"]);
   });
 
   it("reports unavailable catalogs for whole-prescription resolution", () => {

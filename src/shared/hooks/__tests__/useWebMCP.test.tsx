@@ -22,7 +22,10 @@ afterEach(() => {
 
 describe("useWebMCP", () => {
   it("does nothing when the browser has no model context", () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+
     expect(() => renderHook(() => useWebMCP(tool()))).not.toThrow();
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it("registers a same-origin tool and aborts its signal on unmount", () => {
@@ -73,6 +76,24 @@ describe("useWebMCP", () => {
     expect(execute).toHaveBeenCalledWith({}, { signal: expect.any(AbortSignal) });
   });
 
+  it("aborts the signal supplied to an execution after unmount", async () => {
+    const registerTool = jest.fn().mockResolvedValue(undefined);
+    const execute = jest.fn().mockReturnValue("ok");
+    setModelContext({ registerTool });
+    const { unmount } = renderHook(() => useWebMCP(tool(execute)));
+    const registered = registerTool.mock.calls[0][0] as WebMCP.ModelContextTool;
+
+    await (registered.execute as unknown as (
+      input: Record<string, unknown>,
+      options?: WebMCP.ToolExecuteCallbackOptions,
+    ) => unknown)({}, undefined);
+    const executionOptions = execute.mock.calls[0][1] as WebMCP.ToolExecuteCallbackOptions;
+    expect(executionOptions.signal.aborted).toBe(false);
+
+    unmount();
+    expect(executionOptions.signal.aborted).toBe(true);
+  });
+
   it("re-registers when an explicit dependency changes", () => {
     const registerTool = jest.fn().mockResolvedValue(undefined);
     setModelContext({ registerTool });
@@ -99,5 +120,17 @@ describe("useWebMCP", () => {
     await Promise.resolve();
 
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("example_tool"), error);
+  });
+
+  it("does not warn when a rejected registration is already aborted by unmount", async () => {
+    const registerTool = jest.fn().mockRejectedValue(new Error("late registration failure"));
+    setModelContext({ registerTool });
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { unmount } = renderHook(() => useWebMCP(tool()));
+
+    unmount();
+    await Promise.resolve();
+
+    expect(warn).not.toHaveBeenCalled();
   });
 });

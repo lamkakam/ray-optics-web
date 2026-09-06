@@ -21,7 +21,9 @@ describe("InlineLink", () => {
   it("renders a link with the provided href", () => {
     render(<InlineLink href="/glass-map">View in glass map</InlineLink>);
 
-    expect(screen.getByRole("link", { name: "View in glass map" })).toHaveAttribute("href", "/glass-map");
+    const link = screen.getByRole("link", { name: "View in glass map" });
+    expect(link).toHaveAttribute("href", "/glass-map");
+    expect(link).toHaveClass("text-sm", "font-medium", "underline", "underline-offset-2");
   });
 
   it("forwards aria-label and className", () => {

@@ -92,4 +92,18 @@ describe("useServiceWorkerRegistration", () => {
       updateViaCache: "none",
     });
   });
+
+  it("registers only once across rerenders", () => {
+    const mockRegister = jest.fn().mockResolvedValue({});
+    Object.defineProperty(global, "navigator", {
+      configurable: true,
+      value: { serviceWorker: { register: mockRegister } },
+      writable: true,
+    });
+    const { rerender } = renderHook(() => useServiceWorkerRegistration());
+
+    rerender();
+
+    expect(mockRegister).toHaveBeenCalledTimes(1);
+  });
 });

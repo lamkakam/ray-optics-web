@@ -39,7 +39,10 @@ describe("RadioInput", () => {
 
   it("renders the legend text", () => {
     render(<RadioInput {...defaultProps} />);
-    expect(screen.getByText("Choose a fruit")).toBeInTheDocument();
+    const legend = screen.getByText("Choose a fruit");
+    expect(legend).toBeInTheDocument();
+    expect(legend).toHaveClass("block", "text-sm", "font-medium", "mb-1");
+    expectClasses(legend, cx.label.color.textColor);
   });
 
   it("renders all option labels", () => {

@@ -26,6 +26,8 @@ describe("Datalist", () => {
     const listId = input.getAttribute("list");
 
     expect(listId).toBeTruthy();
+    expect(listId).not.toContain(":");
+    expect(listId).toMatch(/^datalist-[A-Za-z0-9_]+$/);
     expect(container.querySelector(`datalist#${listId}`)).toBeInTheDocument();
     expect(container.querySelectorAll("datalist option")).toHaveLength(2);
     expect(container.querySelector('option[value="N-BK7"]')).toHaveTextContent("N-BK7");
