@@ -33,7 +33,12 @@ const catalogs: AllGlassCatalogsData = {
     D263TECO: glass(),
     Unexpected: glass(),
   },
-  Custom: { CUSTOM_A: glass() },
+  Custom: {
+    CUSTOM_A: glass(),
+    Air: glass(),
+    ReFl: glass(),
+    "1.6": glass(),
+  },
 };
 
 const baseModel: OpticalModel = {
@@ -104,12 +109,20 @@ describe("glass candidate selection helpers", () => {
 
   it.each([
     [0, { medium: "CaF2", manufacturer: "" }, "Special"],
+    [0, { medium: "  CaF2  ", manufacturer: "" }, "Special"],
     [1, { medium: "BK7", manufacturer: "Schott" }, "Schott"],
     [1, { medium: "1.6", manufacturer: "40" }, undefined],
     [1, { medium: "AIR", manufacturer: "" }, undefined],
     [1, { medium: "refl", manufacturer: "" }, undefined],
+    [1, { medium: "  Air  ", manufacturer: "" }, undefined],
+    [1, { medium: "  rEfL  ", manufacturer: "" }, undefined],
+    [1, { medium: "  1.6  ", manufacturer: "" }, undefined],
     [1, { medium: "CUSTOM_A", manufacturer: "" }, "Custom"],
+    [1, { medium: "  CUSTOM_A  ", manufacturer: "" }, "Custom"],
+    [1, { medium: "CUSTOM_A", manufacturer: "Schott" }, "Schott"],
     [1, { medium: "CaF2", manufacturer: "Schott" }, "Schott"],
+    [1, { medium: "Air", manufacturer: "Custom" }, undefined],
+    [1, { medium: "ReFl", manufacturer: "" }, undefined],
     [2, { medium: "BK7", manufacturer: "Schott" }, undefined],
   ] as const)("resolves incumbent catalog for surface index %s", (surfaceIndex, material, expected) => {
     const model = surfaceIndex === 0
@@ -117,5 +130,14 @@ describe("glass candidate selection helpers", () => {
       : { ...baseModel, surfaces: [{ ...baseModel.surfaces[0], ...material }] };
 
     expect(getIncumbentGlassCatalog(model, surfaceIndex, catalogs)).toBe(expected);
+  });
+
+  it("does not use the Custom fallback when catalog data is unavailable", () => {
+    const model = {
+      ...baseModel,
+      surfaces: [{ ...baseModel.surfaces[0], medium: "CUSTOM_A", manufacturer: "" }],
+    };
+
+    expect(getIncumbentGlassCatalog(model, 1, undefined)).toBeUndefined();
   });
 });

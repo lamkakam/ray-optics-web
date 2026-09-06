@@ -5,6 +5,7 @@ import type { OptimizationReport } from "@/features/optimization/types/optimizat
 import {
   createOptimizationSlice,
   hasNonZeroOptimizationContribution,
+  type AsphereTermKey,
   type OptimizationState,
 } from "@/features/optimization/stores/optimizationStore";
 
@@ -232,6 +233,51 @@ describe("optimizationStore", () => {
     ]);
     expect(state.operands).toEqual([]);
     expect(state.hasUnappliedOptimizationResult).toBe(false);
+    expect(state.isOptimizing).toBe(false);
+    expect(state.applyConfirmOpen).toBe(false);
+    expect(state.radiusModal).toEqual({ open: false, surfaceIndex: undefined });
+    expect(state.thicknessModal).toEqual({ open: false, surfaceIndex: undefined });
+    expect(state.asphereModal).toEqual({ open: false, surfaceIndex: undefined });
+    expect(state.glassModal).toEqual({ open: false, surfaceIndex: undefined });
+  });
+
+  it("opens and closes every store-backed modal and updates page flags", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().setActiveTabId("operands");
+    store.getState().setIsOptimizing(true);
+    store.getState().openApplyConfirm();
+    store.getState().openRadiusModal(1);
+    store.getState().openThicknessModal(2);
+    store.getState().openAsphereModal(1);
+    store.getState().openGlassModal(0);
+
+    expect(store.getState()).toEqual(expect.objectContaining({
+      activeTabId: "operands",
+      isOptimizing: true,
+      applyConfirmOpen: true,
+      radiusModal: { open: true, surfaceIndex: 1 },
+      thicknessModal: { open: true, surfaceIndex: 2 },
+      asphereModal: { open: true, surfaceIndex: 1 },
+      glassModal: { open: true, surfaceIndex: 0 },
+    }));
+
+    store.getState().closeApplyConfirm();
+    store.getState().closeRadiusModal();
+    store.getState().closeThicknessModal();
+    store.getState().closeAsphereModal();
+    store.getState().closeGlassModal();
+    store.getState().setIsOptimizing(false);
+
+    expect(store.getState()).toEqual(expect.objectContaining({
+      isOptimizing: false,
+      applyConfirmOpen: false,
+      radiusModal: { open: false, surfaceIndex: undefined },
+      thicknessModal: { open: false, surfaceIndex: undefined },
+      asphereModal: { open: false, surfaceIndex: undefined },
+      glassModal: { open: false, surfaceIndex: undefined },
+    }));
   });
 
   it("adds the default focal-length operand row on demand", () => {
@@ -826,7 +872,8 @@ describe("optimizationStore", () => {
       },
     ]);
 
-    expect(store.getState().buildOptimizationConfig()).toEqual(expect.objectContaining({
+    const config = store.getState().buildOptimizationConfig();
+    expect(config).toEqual(expect.objectContaining({
       variables: expect.arrayContaining([
         {
           kind: "asphere_conic_constant",
@@ -857,6 +904,29 @@ describe("optimizationStore", () => {
         },
       ]),
     }));
+    expect(config.variables).toHaveLength(2);
+    expect(config.pickups).toHaveLength(1);
+  });
+
+  it("ignores toric-sweep modes when the selected asphere type is not toroidal", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().setAsphereType(1, "RadialPolynomial");
+    store.getState().setAsphereTermMode(1, "toricSweep", {
+      mode: "variable", min: "-10", max: "-1",
+    });
+    store.getState().replaceOperands([{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]);
+
+    expect(store.getState().buildOptimizationConfig().variables).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: "asphere_toric_sweep_radius" }),
+    ]));
+
+    store.getState().setAsphereTermMode(1, "toricSweep", {
+      mode: "pickup", sourceSurfaceIndex: "2", scale: "1", offset: "0",
+    });
+    expect(store.getState().buildOptimizationConfig().pickups).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: "asphere_toric_sweep_radius" }),
+    ]));
   });
 
   it("builds an asphere coefficient pickup with zero-based source coefficient index 0", () => {
@@ -890,6 +960,75 @@ describe("optimizationStore", () => {
         source_coefficient_index: 0,
         scale: 1.5,
         offset: -0.25,
+      },
+    ]));
+  });
+
+  it("rejects negative and fractional asphere source coefficient indices", () => {
+    for (const sourceCoefficientIndex of ["-1", "1.5"]) {
+      const store = createStore<OptimizationState>(createOptimizationSlice);
+      store.getState().initializeFromOpticalModel(asphericModel);
+      store.getState().setAsphereTermMode(1, "coefficient", {
+        mode: "pickup",
+        coefficientIndex: 1,
+        sourceSurfaceIndex: "1",
+        sourceTermKey: `coefficient:${sourceCoefficientIndex}` as AsphereTermKey,
+        scale: "1",
+        offset: "0",
+      });
+      store.getState().replaceOperands([
+        { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+      ]);
+
+      expect(() => store.getState().buildOptimizationConfig()).toThrow(
+        "Source coefficient index must be a non-negative integer.",
+      );
+    }
+  });
+
+  it("builds conic and toric-sweep asphere pickups", () => {
+    const conicStore = createStore<OptimizationState>(createOptimizationSlice);
+    conicStore.getState().initializeFromOpticalModel(asphericModel);
+    conicStore.getState().setAsphereTermMode(1, "conic", {
+      mode: "pickup",
+      sourceSurfaceIndex: "2",
+      scale: "-1",
+      offset: "0.5",
+    });
+    conicStore.getState().replaceOperands([
+      { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+    ]);
+    expect(conicStore.getState().buildOptimizationConfig().pickups).toEqual(expect.arrayContaining([
+      {
+        kind: "asphere_conic_constant",
+        surface_index: 1,
+        asphere_kind: "RadialPolynomial",
+        source_surface_index: 2,
+        scale: -1,
+        offset: 0.5,
+      },
+    ]));
+
+    const toricStore = createStore<OptimizationState>(createOptimizationSlice);
+    toricStore.getState().initializeFromOpticalModel(baseModel);
+    toricStore.getState().setAsphereType(1, "YToroid");
+    toricStore.getState().setAsphereTermMode(1, "toricSweep", {
+      mode: "pickup",
+      sourceSurfaceIndex: "2",
+      scale: "2",
+      offset: "-3",
+    });
+    toricStore.getState().replaceOperands([
+      { id: "operand-1", kind: "focal_length", target: "100", weight: "1" },
+    ]);
+    expect(toricStore.getState().buildOptimizationConfig().pickups).toEqual(expect.arrayContaining([
+      {
+        kind: "asphere_toric_sweep_radius",
+        surface_index: 1,
+        asphere_kind: "YToroid",
+        source_surface_index: 2,
+        scale: 2,
+        offset: -3,
       },
     ]));
   });
@@ -944,7 +1083,7 @@ describe("optimizationStore", () => {
           kind: "asphere_toric_sweep_radius",
           surface_index: 2,
           asphere_kind: "XToroid",
-          value: -40,
+          value: -35,
         },
         {
           kind: "asphere_polynomial_coefficient",
@@ -963,7 +1102,7 @@ describe("optimizationStore", () => {
     expect(store.getState().optimizationModel?.surfaces[1]?.aspherical).toEqual({
       kind: "XToroid",
       conicConstant: -0.75,
-      toricSweepRadiusOfCurvature: -40,
+      toricSweepRadiusOfCurvature: -35,
       polynomialCoefficients: [0, 0, 0, 0.0002],
     });
   });
@@ -1504,6 +1643,7 @@ describe("optimizationStore", () => {
       ["Infinity", "60"],
       ["40", "Infinity"],
       ["60", "40"],
+      ["40", "40"],
     ] as const;
 
     for (const [min, max] of cases) {
@@ -1527,6 +1667,38 @@ describe("optimizationStore", () => {
     const firstId = store.getState().operands[0].id;
     store.getState().updateOperand(firstId, { target: "999" });
     expect(store.getState().operands[0].target).toBe("999");
+  });
+
+  it("preserves a direct target edit when the operand kind is unchanged", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().replaceOperands([{ id: "operand-1", kind: "f_number", target: "10", weight: "1" }]);
+
+    store.getState().updateOperand("operand-1", { target: "999" });
+
+    expect(store.getState().operands[0]).toEqual({
+      id: "operand-1", kind: "f_number", target: "999", weight: "1",
+    });
+  });
+
+  it("reports a missing model and preserves continuous optimizer settings for evaluation", () => {
+    const uninitializedStore = createStore<OptimizationState>(createOptimizationSlice);
+    expect(() => uninitializedStore.getState().buildOptimizationConfig()).toThrow(
+      "No optical model available for optimization.",
+    );
+
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().addOperand();
+    store.setState((state) => ({
+      optimizer: state.optimizer.kind === "least_squares"
+        ? { ...state.optimizer, method: "lm" }
+        : state.optimizer,
+    }));
+
+    expect(store.getState().buildOptimizationEvaluationConfig().optimizer).toEqual(expect.objectContaining({
+      method: "lm",
+    }));
   });
 
   it("does not allow an optimization-only asphere type to replace a locked editor type", () => {
@@ -1593,6 +1765,29 @@ describe("optimizationStore", () => {
     expect(store.getState().radiusModes).toHaveLength(2);
   });
 
+  it("initializes every optimization dimension on the first sync", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+
+    store.getState().syncFromOpticalModel(baseModel);
+
+    expect(store.getState()).toEqual(expect.objectContaining({
+      fieldWeights: [1, 0, 0],
+      wavelengthWeights: [1, 2, 1],
+      glassModes: [
+        { surfaceIndex: 0, mode: "constant" },
+        { surfaceIndex: 1, mode: "constant" },
+        { surfaceIndex: 2, mode: "constant" },
+      ],
+      asphereStates: [
+        expect.objectContaining({ surfaceIndex: 1, type: undefined, lockedType: false }),
+        expect.objectContaining({ surfaceIndex: 2, type: undefined, lockedType: false }),
+      ],
+      operands: [],
+      lastOptimizationReport: undefined,
+      hasUnappliedOptimizationResult: false,
+    }));
+  });
+
   it("locks a previously free asphere type when the editor supplies one", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel(baseModel);
@@ -1628,6 +1823,27 @@ describe("optimizationStore", () => {
     expect(store.getState().wavelengthWeights).toEqual([3, 4]);
   });
 
+  it("clears an unapplied result when either field or wavelength specifications change", () => {
+    const changedModels: OpticalModel[] = [
+      {
+        ...baseModel,
+        specs: { ...baseModel.specs, field: { ...baseModel.specs.field, fields: [0, 1] } },
+      },
+      {
+        ...baseModel,
+        specs: { ...baseModel.specs, wavelengths: { weights: [[546.073, 3], [656.273, 4]], referenceIndex: 0 } },
+      },
+    ];
+
+    for (const changedModel of changedModels) {
+      const store = createStore<OptimizationState>(createOptimizationSlice);
+      store.getState().initializeFromOpticalModel(baseModel);
+      store.setState({ hasUnappliedOptimizationResult: true });
+      store.getState().syncFromOpticalModel(changedModel);
+      expect(store.getState().hasUnappliedOptimizationResult).toBe(false);
+    }
+  });
+
   it("merges comment removal without discarding an unapplied optimized value", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     store.getState().initializeFromOpticalModel({
@@ -1659,6 +1875,23 @@ describe("optimizationStore", () => {
     expect(store.getState().fieldWeights).toEqual([1, 0.5, 0]);
   });
 
+  it("backfills a missing editor-sync baseline when initialization is called again", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.setState({ optimizationModel: baseModel, editorSyncBaseline: undefined });
+
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    expect(store.getState().editorSyncBaseline).toEqual({
+      fieldSpecs: JSON.stringify(baseModel.specs.field),
+      wavelengthSpecs: JSON.stringify({ weights: baseModel.specs.wavelengths.weights }),
+      prescription: JSON.stringify({
+        object: baseModel.object,
+        image: baseModel.image,
+        surfaces: baseModel.surfaces,
+      }),
+    });
+  });
+
   it("leaves an uninitialized store unchanged when applying a result", () => {
     const store = createStore<OptimizationState>(createOptimizationSlice);
     const before = store.getState();
@@ -1682,5 +1915,104 @@ describe("optimizationStore", () => {
 
     expect(store.getState().optimizationModel?.surfaces[0].aspherical).toEqual({ kind: "Conic", conicConstant: -0.5 });
     expect(store.getState().optimizationModel?.surfaces[1].aspherical).toBeUndefined();
+  });
+
+  it("trims trailing zero asphere coefficients and caps the padded coefficient list", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel({
+      ...baseModel,
+      surfaces: [{
+        ...baseModel.surfaces[0],
+        aspherical: {
+          kind: "RadialPolynomial",
+          conicConstant: 0,
+          polynomialCoefficients: Array.from({ length: 12 }, (_, index) => index === 0 ? 0.1 : index === 11 ? 0.2 : 0),
+        },
+      }, baseModel.surfaces[1]],
+    });
+
+    store.getState().applyOptimizationResult(continuousReport([
+      {
+        kind: "asphere_polynomial_coefficient",
+        surface_index: 1,
+        asphere_kind: "RadialPolynomial",
+        coefficient_index: 0,
+        value: 0,
+      },
+    ]));
+
+    expect(store.getState().optimizationModel?.surfaces[0].aspherical).toEqual({
+      kind: "RadialPolynomial",
+      conicConstant: 0,
+      polynomialCoefficients: [],
+    });
+  });
+
+  it("keeps a leading polynomial coefficient when it is the only non-zero result", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().applyOptimizationResult(continuousReport([
+      {
+        kind: "asphere_polynomial_coefficient",
+        surface_index: 1,
+        asphere_kind: "RadialPolynomial",
+        coefficient_index: 0,
+        value: 0.25,
+      },
+    ]));
+
+    expect(store.getState().optimizationModel?.surfaces[0].aspherical).toEqual({
+      kind: "RadialPolynomial",
+      conicConstant: 0,
+      polynomialCoefficients: [0.25],
+    });
+  });
+
+  it("preserves the remaining polynomial coefficients when a leading term becomes zero", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(asphericModel);
+
+    store.getState().applyOptimizationResult(continuousReport([
+      {
+        kind: "asphere_polynomial_coefficient",
+        surface_index: 1,
+        asphere_kind: "RadialPolynomial",
+        coefficient_index: 0,
+        value: 0,
+      },
+    ]));
+
+    expect(store.getState().optimizationModel?.surfaces[0].aspherical).toEqual({
+      kind: "RadialPolynomial",
+      conicConstant: -1.25,
+      polynomialCoefficients: [0, 0, 0.0003],
+    });
+  });
+
+  it("keeps a non-polynomial asphere unchanged for an incompatible coefficient result", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel({
+      ...baseModel,
+      surfaces: [{
+        ...baseModel.surfaces[0],
+        aspherical: { kind: "Conic", conicConstant: -1 },
+      }, baseModel.surfaces[1]],
+    });
+
+    store.getState().applyOptimizationResult(continuousReport([
+      {
+        kind: "asphere_polynomial_coefficient",
+        surface_index: 1,
+        asphere_kind: "Conic",
+        coefficient_index: 0,
+        value: 0.25,
+      },
+    ]));
+
+    expect(store.getState().optimizationModel?.surfaces[0].aspherical).toEqual({
+      kind: "Conic",
+      conicConstant: -1,
+    });
   });
 });

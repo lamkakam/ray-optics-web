@@ -106,6 +106,19 @@ describe("createEvaluationRow", () => {
     });
   });
 
+  it("keeps a missing target empty while formatting a visible residual", () => {
+    const row = createEvaluationRow({
+      kind: "ray_fan_tangential",
+      value: 0,
+      operand_weight: 1,
+      total_weight: 1,
+      weighted_residual: 0,
+    }, 0);
+
+    expect(row?.target).toBe("N/A");
+    expect(row?.weight).toBe("1.000000");
+  });
+
   it("resolves labels for axis-specific operands", () => {
     expect(createEvaluationRow({
       kind: "opd_difference_tangential",

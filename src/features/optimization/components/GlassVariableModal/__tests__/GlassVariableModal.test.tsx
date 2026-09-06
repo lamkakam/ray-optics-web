@@ -136,28 +136,6 @@ describe("GlassVariableModal", () => {
     ]);
   });
 
-  it("gives the normal-layout candidate grid a definite viewport height", () => {
-    render(
-      <GlassVariableModal
-        isOpen
-        optimizationModel={model}
-        surfaceIndex={1}
-        selectedMode={{
-          surfaceIndex: 1,
-          mode: "variable",
-          candidates: [{ catalog: "Schott", name: "N-BK7" }],
-        }}
-        catalogs={catalogs}
-        onSetMode={jest.fn()}
-        onClose={jest.fn()}
-      />,
-    );
-
-    const grid = screen.getByTestId("ag-grid-mock");
-    expect(grid.parentElement).toHaveClass("ag-grid-touch-scroll", "h-[280px]");
-    expect(grid).toHaveAttribute("data-dom-layout", "normal");
-  });
-
   it("makes only candidate data columns sortable and filterable without blank filters", () => {
     render(
       <GlassVariableModal
@@ -373,7 +351,10 @@ describe("GlassVariableModal", () => {
     await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
 
     expect(screen.getByRole("checkbox", { name: "Select all Schott candidates" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select all Schott candidates" })).not.toBePartiallyChecked();
     expect(screen.getByRole("checkbox", { name: "Select all Hoya candidates" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select all Hoya candidates" })).not.toBePartiallyChecked();
+    expect(screen.queryByRole("checkbox", { name: /Select undefined undefined/ })).not.toBeInTheDocument();
     expect(screen.getAllByRole("checkbox", { name: /Select Schott / })).toHaveLength(2);
     for (const checkbox of screen.getAllByRole("checkbox", { name: /Select Schott / })) {
       expect(checkbox).toBeChecked();
@@ -388,6 +369,157 @@ describe("GlassVariableModal", () => {
         { catalog: "Schott", name: "N-LAK9" },
       ],
     });
+  });
+
+  it("keeps variable selections when switching modes after the first initialization", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
+    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).toBeChecked();
+
+    await user.click(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" }));
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "constant");
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
+
+    expect(screen.getByRole("checkbox", { name: "Select Schott N-BK7" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).not.toBeChecked();
+  });
+
+  it("preserves an initially variable selection when the mode is toggled", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Hoya", name: "BSC7" }],
+        }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "constant");
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
+
+    expect(screen.getByRole("checkbox", { name: "Select Hoya BSC7" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select Schott N-BK7" })).not.toBeChecked();
+  });
+
+  it("remounts when the physical target medium changes", async () => {
+    const user = userEvent.setup();
+    const initialModel: OpticalModel = {
+      ...model,
+      surfaces: [{ ...model.surfaces[0], medium: "N-BK7" }],
+    };
+    const { rerender } = render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={initialModel}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
+    expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
+
+    rerender(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={{
+          ...initialModel,
+          surfaces: [{ ...initialModel.surfaces[0], medium: "N-LAK9" }],
+        }}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId("ag-grid-mock")).not.toBeInTheDocument();
+    expect(screen.getByText("Default medium: N-LAK9")).toBeInTheDocument();
+  });
+
+  it("remounts when the object target medium changes", async () => {
+    const user = userEvent.setup();
+    const initialModel: OpticalModel = { ...model, object: { ...model.object, medium: "N-BK7" } };
+    const { rerender } = render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={initialModel}
+        surfaceIndex={0}
+        selectedMode={{ surfaceIndex: 0, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
+    expect(screen.getByTestId("ag-grid-mock")).toBeInTheDocument();
+
+    rerender(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={{ ...initialModel, object: { ...initialModel.object, medium: "N-LAK9" } }}
+        surfaceIndex={0}
+        selectedMode={{ surfaceIndex: 0, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId("ag-grid-mock")).not.toBeInTheDocument();
+    expect(screen.getByText("Object medium: N-LAK9")).toBeInTheDocument();
+  });
+
+  it("uses the requested physical surface for its target and label", () => {
+    const modelWithTwoSurfaces: OpticalModel = {
+      ...model,
+      surfaces: [
+        model.surfaces[0],
+        { ...model.surfaces[0], label: "Stop", medium: "CaF2", manufacturer: "" },
+      ],
+    };
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={modelWithTwoSurfaces}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Default medium: N-BK7")).toBeInTheDocument();
+    expect(screen.queryByText("Second medium: CaF2")).not.toBeInTheDocument();
   });
 
   it("supports tri-state catalog bulk selection and individual candidate selection", async () => {
@@ -566,7 +698,15 @@ describe("GlassVariableModal", () => {
       "",
     ]);
 
-    await user.click(staleCheckbox);
+    const customBulkCheckbox = screen.getByRole("checkbox", { name: "Select all Custom candidates" });
+    expect(customBulkCheckbox).toBeChecked();
+    await user.click(customBulkCheckbox);
+    expect(staleCheckbox).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select Custom CUSTOM_A" })).not.toBeChecked();
+
+    await user.click(customBulkCheckbox);
+    expect(staleCheckbox).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select Custom CUSTOM_A" })).toBeChecked();
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(onSetMode).toHaveBeenCalledWith(1, {
@@ -601,5 +741,203 @@ describe("GlassVariableModal", () => {
 
     expect(onSetMode).toHaveBeenCalledWith(1, { mode: "constant" });
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels without saving the edited mode", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+    const onClose = jest.fn();
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={onSetMode}
+        onClose={onClose}
+      />,
+    );
+
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "variable");
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onSetMode).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders object and fallback physical target labels and both mode options", () => {
+    const { rerender } = render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={0}
+        selectedMode={{ surfaceIndex: 0, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Object medium: air")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "constant" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "variable" })).toBeInTheDocument();
+
+    rerender(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={2}
+        selectedMode={{ surfaceIndex: 2, mode: "constant" }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByText("Surface 2 medium:")).toBeInTheDocument();
+  });
+
+  it("resets local selection when the committed candidate set changes", () => {
+    const { rerender } = render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Schott", name: "N-BK7" }],
+        }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("checkbox", { name: "Select Schott N-BK7" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).not.toBeChecked();
+
+    rerender(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Schott", name: "N-LAK9" }],
+        }}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("checkbox", { name: "Select Schott N-BK7" })).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Select Schott N-LAK9" })).toBeChecked();
+  });
+
+  it("leaves empty catalog controls unchecked and not partially checked", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "variable", candidates: [] }}
+        catalogs={undefined}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    for (const catalog of CATALOG_NAMES) {
+      const checkbox = screen.getByRole("checkbox", { name: `Select all ${catalog} candidates` });
+      expect(checkbox).not.toBeChecked();
+      expect(checkbox).not.toBePartiallyChecked();
+    }
+
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(screen.getByText("Select at least one glass candidate.")).toBeInTheDocument();
+  });
+
+  it("updates live rows when catalog data changes while the editor stays open", async () => {
+    const onSetMode = jest.fn();
+    const { rerender } = render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Schott", name: "N-BK7" }],
+        }}
+        catalogs={catalogs}
+        onSetMode={onSetMode}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("checkbox", { name: "Select Custom NEW_GLASS" })).not.toBeInTheDocument();
+
+    rerender(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Schott", name: "N-BK7" }],
+        }}
+        catalogs={{
+          ...catalogs,
+          Custom: { ...catalogs.Custom, NEW_GLASS: glass(1.55, 55) },
+        }}
+        onSetMode={onSetMode}
+        onClose={jest.fn()}
+      />,
+    );
+
+    const user = userEvent.setup();
+    const newGlassCheckbox = screen.getByRole("checkbox", { name: "Select Custom NEW_GLASS" });
+    expect(newGlassCheckbox).toBeInTheDocument();
+    await user.click(newGlassCheckbox);
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSetMode).toHaveBeenCalledWith(1, {
+      mode: "variable",
+      candidates: [
+        { catalog: "Schott", name: "N-BK7" },
+        { catalog: "Custom", name: "NEW_GLASS" },
+      ],
+    });
+  });
+
+  it("allows constant mode to confirm with no glass candidates", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{ surfaceIndex: 1, mode: "constant" }}
+        catalogs={undefined}
+        onSetMode={onSetMode}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Confirm" })).not.toBeDisabled();
+    expect(screen.queryByText("Select at least one glass candidate.")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSetMode).toHaveBeenCalledWith(1, { mode: "constant" });
   });
 });

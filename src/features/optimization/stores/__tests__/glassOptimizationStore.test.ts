@@ -309,6 +309,24 @@ describe("glass optimization store", () => {
     );
   });
 
+  it("rejects air and REFL incumbents regardless of casing", () => {
+    for (const medium of ["AiR", "rEfL"]) {
+      const store = createInitializedStore({
+        ...baseModel,
+        surfaces: [{ ...baseModel.surfaces[0], medium, manufacturer: "" }, baseModel.surfaces[1]],
+      });
+      store.getState().setOptimizerKind("glass_expert");
+      store.getState().setGlassMode(1, {
+        mode: "variable",
+        candidates: [{ catalog: "Schott", name: "BK7" }],
+      });
+
+      expect(() => store.getState().buildOptimizationConfig(catalogs)).toThrow(
+        `${medium} cannot be optimized as a glass variable at surface 1.`,
+      );
+    }
+  });
+
   it("keeps numeric ModelGlass incumbents as the membership-validation exception", () => {
     const store = createInitializedStore({
       ...baseModel,
@@ -321,6 +339,48 @@ describe("glass optimization store", () => {
     });
 
     expect(() => store.getState().buildOptimizationConfig(catalogs)).not.toThrow();
+  });
+
+  it("rejects empty, duplicate, unloaded, unsupported, and out-of-range glass pools", () => {
+    const emptyStore = createInitializedStore();
+    emptyStore.getState().setOptimizerKind("glass_expert");
+    emptyStore.getState().setGlassMode(1, { mode: "variable", candidates: [] });
+    expect(() => emptyStore.getState().buildOptimizationConfig(catalogs)).toThrow(
+      "Glass variable surface 1 must provide candidates.",
+    );
+
+    const duplicateStore = createInitializedStore();
+    duplicateStore.getState().setOptimizerKind("glass_expert");
+    duplicateStore.getState().setGlassMode(1, {
+      mode: "variable",
+      candidates: [
+        { catalog: "Schott", name: "BK7" },
+        { catalog: "Schott", name: "BK7" },
+      ],
+    });
+    expect(() => duplicateStore.getState().buildOptimizationConfig(catalogs)).toThrow(
+      'Duplicate glass candidate "Schott: BK7".',
+    );
+
+    const unloadedStore = createInitializedStore();
+    unloadedStore.getState().setOptimizerKind("glass_expert");
+    unloadedStore.getState().setGlassMode(1, {
+      mode: "variable", candidates: [{ catalog: "Schott", name: "BK7" }],
+    });
+    expect(() => unloadedStore.getState().buildOptimizationConfig()).toThrow("Glass catalog data is not loaded.");
+
+    const unsupportedStore = createInitializedStore({
+      ...baseModel,
+      surfaces: [{ ...baseModel.surfaces[0], medium: "Mystery", manufacturer: "Unknown" }, baseModel.surfaces[1]],
+    });
+    unsupportedStore.getState().setOptimizerKind("glass_expert");
+    unsupportedStore.getState().setGlassMode(1, {
+      mode: "variable", candidates: [{ catalog: "Schott", name: "BK7" }],
+    });
+    expect(() => unsupportedStore.getState().buildOptimizationConfig(catalogs)).toThrow(
+      "Unsupported current material at surface 1: Mystery, Unknown",
+    );
+
   });
 
   it("applies standard, Special, and Custom final glass identities and marks them unapplied", () => {
@@ -353,5 +413,14 @@ describe("glass optimization store", () => {
     });
     expect(store.getState().lastOptimizationReport?.optimizer.kind).toBe("glass_expert");
     expect(store.getState().hasUnappliedOptimizationResult).toBe(true);
+  });
+
+  it("does not mark an empty Glass Expert result as unapplied", () => {
+    const store = createInitializedStore();
+    store.getState().setOptimizerKind("glass_expert");
+
+    store.getState().applyOptimizationResult(glassReport([]));
+
+    expect(store.getState().hasUnappliedOptimizationResult).toBe(false);
   });
 });

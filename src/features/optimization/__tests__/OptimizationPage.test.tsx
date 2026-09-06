@@ -845,6 +845,93 @@ describe("OptimizationPage", () => {
     expect(screen.getByText("Diffraction Grating")).toBeInTheDocument();
   });
 
+  it("routes optimization and inspection modal actions through the page state", async () => {
+    const { optimizationStore } = renderOptimizationPage(makeProxy(), jest.fn(), {
+      catalogs: {
+        CDGM: {},
+        Hikari: {},
+        Hoya: {},
+        Ohara: {},
+        Schott: {
+          BK7: {
+            refractiveIndexD: 1.5,
+            refractiveIndexE: 1.501,
+            abbeNumberD: 60,
+            abbeNumberE: 59.9,
+            partialDispersions: { P_gF: 0.5, P_fe: 0.4, P_Fd: 0.6 },
+            dispersionCoeffKind: "Sellmeier3T",
+            dispersionCoeffs: [1, 2, 3],
+          },
+        },
+        Sumita: {},
+        Special: {},
+      },
+    });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("tab", { name: "Lens Prescription" }));
+
+    await user.click(screen.getByRole("button", { name: "Radius mode for surface 1" }));
+    expect(optimizationStore.getState().radiusModal).toEqual({ open: true, surfaceIndex: 1 });
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(optimizationStore.getState().radiusModal.open).toBe(false);
+
+    await user.click(screen.getByRole("button", { name: "Thickness mode for surface 1" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Thickness mode" }), "variable");
+    await user.clear(screen.getByRole("textbox", { name: "Thickness Min." }));
+    await user.type(screen.getByRole("textbox", { name: "Thickness Min." }), "-1");
+    await user.clear(screen.getByRole("textbox", { name: "Thickness Max." }));
+    await user.type(screen.getByRole("textbox", { name: "Thickness Max." }), "1");
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(optimizationStore.getState().thicknessModes[0]).toMatchObject({
+      surfaceIndex: 1,
+      mode: "variable",
+      min: "-1",
+      max: "1",
+    });
+
+    await user.click(screen.getByRole("button", { name: "Asphere mode for surface 1" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Asphere type" }), "Conic");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Conic Constant mode" }), "variable");
+    await user.clear(screen.getByRole("textbox", { name: "Conic Constant Min." }));
+    await user.type(screen.getByRole("textbox", { name: "Conic Constant Min." }), "-1");
+    await user.clear(screen.getByRole("textbox", { name: "Conic Constant Max." }));
+    await user.type(screen.getByRole("textbox", { name: "Conic Constant Max." }), "1");
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(optimizationStore.getState().asphereStates[0]).toMatchObject({
+      surfaceIndex: 1,
+      type: "Conic",
+      conic: { mode: "variable", min: "-1", max: "1" },
+    });
+
+    act(() => {
+      optimizationStore.getState().setOptimizerKind("glass_expert");
+    });
+    await waitFor(() => expect(screen.getByRole("button", { name: "Glass mode for surface 1" })).toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Glass mode for surface 1" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Glass mode" }), "variable");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled());
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+    expect(optimizationStore.getState().glassModes[1]).toMatchObject({
+      surfaceIndex: 1,
+      mode: "variable",
+    });
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+
+    for (const label of [
+      "Edit medium",
+      "Edit aspherical parameters",
+      "Edit aperture",
+      "Edit decenter and tilt",
+      "Edit diffraction grating",
+    ]) {
+      await user.click(screen.getAllByRole("button", { name: label })[0]);
+      expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Close" }));
+      expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+    }
+  });
+
   it("exposes OPD Difference in the operand kind selector and resets the target when selected", async () => {
     const { optimizationStore } = renderOptimizationPage(makeProxy());
     const user = userEvent.setup();
@@ -1792,6 +1879,10 @@ describe("OptimizationPage", () => {
 
     await user.click(screen.getByRole("button", { name: "Apply to Editor" }));
     expect(screen.getByText(/overwrite the lens prescription/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByText(/overwrite the lens prescription/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Apply to Editor" }));
     await user.click(screen.getByRole("button", { name: "Apply" }));
 
     expect(lensStore.getState().rows[1]).toMatchObject({ curvatureRadius: 42 });
