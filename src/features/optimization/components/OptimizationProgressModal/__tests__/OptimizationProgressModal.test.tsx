@@ -194,13 +194,14 @@ describe("OptimizationProgressModal", () => {
     expect(mockDispose).toHaveBeenCalledTimes(1);
   });
 
-  it("renders OK and no Stop after a stopped run completes", () => {
+  it("renders OK and closes after a stopped run completes", async () => {
+    const onClose = jest.fn();
     render(
       <OptimizationProgressModal
         isOpen={true}
         isOptimizing={false}
         progress={makeProgress(1)}
-        onClose={jest.fn()}
+        onClose={onClose}
         onStop={jest.fn()}
         isStopping={false}
         canStop={true}
@@ -209,5 +210,8 @@ describe("OptimizationProgressModal", () => {
 
     expect(screen.getByRole("button", { name: "OK" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Stop optimization|Stopping optimization/ })).not.toBeInTheDocument();
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "OK" }));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

@@ -165,6 +165,12 @@ describe("optimization modal helpers", () => {
   });
 
   it("serializes radius modes for keyed remounts", () => {
+    const variableMode: RadiusMode = {
+      surfaceIndex: 2,
+      mode: "variable",
+      min: "-5",
+      max: "-1",
+    };
     const pickupMode: RadiusMode = {
       surfaceIndex: 3,
       mode: "pickup",
@@ -173,6 +179,7 @@ describe("optimization modal helpers", () => {
       offset: "0.5",
     };
 
+    expect(serializeRadiusMode(variableMode)).toBe("variable:-5:-1");
     expect(serializeRadiusMode(pickupMode)).toBe("pickup:1:2:0.5");
     expect(serializeRadiusMode({ surfaceIndex: 1, mode: "constant" })).toBe("constant");
   });

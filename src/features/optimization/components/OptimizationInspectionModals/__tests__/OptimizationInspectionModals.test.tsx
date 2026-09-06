@@ -183,6 +183,35 @@ describe("OptimizationInspectionModals", () => {
     expect(screen.getByLabelText("Glass")).toHaveValue("S-FPL53");
   });
 
+  it("removes reflective special media while inspecting an object row", () => {
+    const objectRow: GridRow = {
+      id: "object-1",
+      kind: "object",
+      objectDistance: 100,
+      medium: "air",
+      manufacturer: "",
+    };
+
+    renderInspectionModals({
+      mediumModalRow: objectRow,
+      asphericalModalRow: undefined,
+      apertureModalRow: undefined,
+      decenterModalRow: undefined,
+      diffractionGratingModalRow: undefined,
+      onCloseMediumModal: jest.fn(),
+      onCloseAsphericalModal: jest.fn(),
+      onCloseApertureModal: jest.fn(),
+      onCloseDecenterModal: jest.fn(),
+      onCloseDiffractionGratingModal: jest.fn(),
+    });
+
+    expect(screen.getByLabelText("Catalog")).toHaveValue("Special");
+    expect(screen.getByLabelText("Glass")).toHaveValue("air");
+    expect(
+      Array.from(screen.getByLabelText("Glass").querySelectorAll("option")).map((option) => option.value),
+    ).not.toContain("REFL");
+  });
+
   it("renders aperture inspection as read-only", () => {
     const row: GridRow = {
       id: "surface-1",

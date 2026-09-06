@@ -246,6 +246,8 @@ describe("OptimizationVariableModals", () => {
 
     await user.clear(screen.getByRole("textbox", { name: "scale" }));
     await user.type(screen.getByRole("textbox", { name: "scale" }), "2");
+    await user.clear(screen.getByRole("textbox", { name: "offset" }));
+    await user.type(screen.getByRole("textbox", { name: "offset" }), "-1");
     expect(screen.getByDisplayValue("2")).toBeInTheDocument();
     expect(onSetMode).not.toHaveBeenCalled();
 
@@ -255,7 +257,7 @@ describe("OptimizationVariableModals", () => {
       mode: "pickup",
       sourceSurfaceIndex: "1",
       scale: "2",
-      offset: "0",
+      offset: "-1",
     });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
