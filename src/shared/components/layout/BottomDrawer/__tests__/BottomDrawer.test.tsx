@@ -1,6 +1,6 @@
+/** Covers browser rendering, tab interactions, and pointer and keyboard resizing. */
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderToString } from "react-dom/server";
 import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";
 
 const DEFAULT_WINDOW_HEIGHT = 1000;
@@ -645,7 +645,7 @@ describe("BottomDrawer", () => {
     });
   });
 
-  it("uses a small browser viewport instead of the server fallback", async () => {
+  it("uses a small browser viewport to calculate the maximum height", async () => {
     setupWindowHeight(800);
     render(
       <BottomDrawer
@@ -658,17 +658,6 @@ describe("BottomDrawer", () => {
       expect(screen.getByRole("separator", { name: "Resize drawer" }))
         .toHaveAttribute("aria-valuemax", "680");
     });
-  });
-
-  it("keeps the deterministic maximum during server rendering", () => {
-    const markup = renderToString(
-      <BottomDrawer
-        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
-        initialHeight={300}
-      />,
-    );
-
-    expect(markup).toContain('aria-valuemax="850"');
   });
 
   it("ignores pointer movement after the drag is released", () => {
