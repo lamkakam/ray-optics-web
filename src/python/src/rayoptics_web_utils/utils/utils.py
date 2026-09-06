@@ -12,7 +12,8 @@ def _fig_to_base64(fig: Figure, dpi: int=150) -> str:
     """Return a base64-encoded PNG and close the matplotlib figure.
 
     The image is saved through an in-memory buffer at ``dpi`` with a tight bounding
-    box. Closing the figure prevents accumulation in long-running Pyodide sessions.
+    box. The buffer and figure close even if saving or encoding raises, preventing
+    accumulation in long-running Pyodide sessions. Exceptions propagate unchanged.
 
     Args:
         fig: Matplotlib figure to encode.
@@ -21,13 +22,13 @@ def _fig_to_base64(fig: Figure, dpi: int=150) -> str:
     Returns:
         Base64-encoded PNG image.
     """
-    buf = BytesIO()
-    fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight')
-    buf.seek(0)
-    data = base64.b64encode(buf.read()).decode('utf-8')
-    buf.close()
-    plt.close(fig)
-    return data
+    try:
+        with BytesIO() as buf:
+            fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight')
+            buf.seek(0)
+            return base64.b64encode(buf.read()).decode('utf-8')
+    finally:
+        plt.close(fig)
 
 
 def _get_wvl_lbl(opm: OpticalModel, idx: int) -> str:

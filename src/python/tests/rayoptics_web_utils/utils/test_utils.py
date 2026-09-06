@@ -2,7 +2,25 @@
 
 
 class TestFigToBase64:
-    """Tests for the _fig_to_base64 helper."""
+    """Encoding closes registered figures on success and on save failures."""
+
+    def test_closes_figure_when_save_fails(self, monkeypatch):
+        import matplotlib.pyplot as plt
+        import pytest
+        from rayoptics_web_utils.utils import _fig_to_base64
+
+        fig = plt.figure()
+
+        def fail_save(*args, **kwargs):
+            raise RuntimeError("save failed")
+
+        monkeypatch.setattr(fig, "savefig", fail_save)
+        try:
+            with pytest.raises(RuntimeError, match="save failed"):
+                _fig_to_base64(fig)
+            assert not plt.fignum_exists(fig.number)
+        finally:
+            plt.close(fig)
 
     def test_returns_base64_string(self):
         import matplotlib.pyplot as plt
