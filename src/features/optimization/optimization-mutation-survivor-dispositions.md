@@ -74,6 +74,10 @@ These reports were generated after the final test additions. Counts are reported
 as Stryker emitted them; `NoCoverage`, `Timeout`, and `RuntimeError` are campaign
 limitations, not surviving behavior claims.
 
+The pre-hardening optimization Jest baseline was 23 suites and 293 passing tests. The
+final optimization slice is 24 suites and 347 passing tests; the final repository suite
+is 172 suites and 2,507 passing tests.
+
 | Report | Total | Killed | Survived | No coverage | Timeout | Runtime error |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | `optimization-page.json` | 506 | 272 | 155 | 52 | 27 | 0 |
