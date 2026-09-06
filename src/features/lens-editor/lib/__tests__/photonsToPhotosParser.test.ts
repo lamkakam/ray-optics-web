@@ -60,6 +60,20 @@ function makeObjectSideText({
   ].join("\n");
 }
 
+function makeNaImageHeightText(na: string): string {
+  return [
+    "[descriptive data]",
+    "title\tParser NA fallback test",
+    "[variable distances]",
+    "Focal Length\t50",
+    `NA\t${na}`,
+    "Image Height\t10",
+    "d0\tInfinity",
+    "[lens data]",
+    ["1", "100", "5", "", "20", "", "", ""].join("\t"),
+  ].join("\n");
+}
+
 function parseSingleSurfaceMaterial(
   row: Parameters<typeof makeSingleSurfaceText>[0],
   lookupMaps?: GlassLookupMaps,
@@ -442,6 +456,123 @@ describe("parsePhotonsToPhotosText", () => {
     expect(() => parsePhotonsToPhotosText("[descriptive data]\ntitle\tBad")).toThrow(
       /missing required section/i,
     );
+  });
+
+  it.each([
+    "prefix [descriptive data]",
+    "[descriptive data] suffix",
+  ])("does not treat embedded section markers as sections: %s", (marker) => {
+    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" }).replace(
+      "[descriptive data]",
+      marker,
+    );
+
+    expect(() => parsePhotonsToPhotosText(text)).toThrow(/missing required section/i);
+  });
+
+  it("ignores rows without a variable or surface key and preserves non-empty variable cells", () => {
+    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" })
+      .replace("[variable distances]", "[variable distances]\n\tignored")
+      .replace("F-Number\t4", "F-Number\t\t4")
+      .replace("[lens data]", "[lens data]\n\tignored");
+
+    const result = parsePhotonsToPhotosText(text);
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+
+    expect(result.model.specs.pupil).toEqual({ space: "image", type: "f/#", value: 4 });
+    expect(result.model.surfaces).toHaveLength(1);
+  });
+
+  it("accepts an aspherical radius that exactly matches a flat lens radius", () => {
+    const text = [
+      "[descriptive data]",
+      "title\tExact asphere radius",
+      "[variable distances]",
+      "Focal Length\t50",
+      "F-Number\t4",
+      "Angle of View\t20",
+      "d0\tInfinity",
+      "[lens data]",
+      ["1", "0", "5", "", "20", "", "", ""].join("\t"),
+      "[aspherical data]",
+      ["1", "0", "0"].join("\t"),
+    ].join("\n");
+
+    const result = parsePhotonsToPhotosText(text);
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+    expect(result.model.surfaces[0].aspherical).toEqual({
+      kind: "EvenAspherical",
+      conicConstant: 0,
+      polynomialCoefficients: [],
+    });
+  });
+
+  it("uses the inclusive full-angle wide-angle boundary", () => {
+    const text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" }).replace(
+      "Angle of View\t20",
+      "Angle of View\t80",
+    );
+    const result = parsePhotonsToPhotosText(text);
+
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+    expect(result.model.specs.field).toMatchObject({ maxField: 40, isWideAngle: true });
+  });
+
+  it("uses the inclusive NA boundary for image-height field fallback", () => {
+    const result = parsePhotonsToPhotosText(makeNaImageHeightText("0.5"));
+
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+    expect(result.model.specs).toMatchObject({
+      pupil: { space: "object", type: "NA", value: 0.5 },
+      field: { space: "image", type: "height", maxField: 5, isWideAngle: true },
+    });
+  });
+
+  it("falls back to an empty object side without removing all-zero-thickness surfaces", () => {
+    const text = makeObjectSideText({ nd: "", vd: "", glassName: "", catalog: "" })
+      .replace("\n1\tInfinity\t5\t", "\n1\tInfinity\t0\t")
+      .replace("\n2\t100\t5\t", "\n2\t100\t0\t");
+
+    const result = parsePhotonsToPhotosText(text);
+    expect(result.kind).toBe("prime");
+    if (result.kind !== "prime") throw new Error("Expected prime result");
+    expect(result.model.object).toEqual({ distance: 0, medium: "air", manufacturer: "" });
+    expect(result.model.surfaces).toHaveLength(2);
+  });
+
+  it("rejects invalid prefixes and suffixes for numeric parser tokens", () => {
+    const variants = [
+      ["surface number", "surface-1", "[lens data]"],
+      ["radius", "FS-extra", "[lens data]"],
+      ["radius", "extra-FS", "[lens data]"],
+      ["radius", "Infinity-extra", "[lens data]"],
+      ["radius", "extra-Infinity", "[lens data]"],
+      ["thickness", "Infinity-extra", "[lens data]"],
+      ["thickness", "extra-Infinity", "[lens data]"],
+      ["variable value", "undefined-extra", "[variable distances]"],
+      ["variable value", "extra-undefined", "[variable distances]"],
+      ["radius", "AS-extra", "[lens data]"],
+      ["radius", "extra-AS", "[lens data]"],
+    ] as const;
+
+    for (const [kind, token] of variants) {
+      let text = makeSingleSurfaceText({ nd: "", vd: "", glassName: "", catalog: "" });
+      if (kind === "surface number") {
+        text = text.replace("\n1\t100\t", `\n${token}\t100\t`);
+      } else if (kind === "radius") {
+        text = text.replace("\n1\t100\t", `\n1\t${token}\t`);
+      } else if (kind === "thickness") {
+        text = text.replace("\t100\t5\t", `\t100\t${token}\t`);
+      } else {
+        text = text.replace("F-Number\t4", `F-Number\t${token}`);
+      }
+
+      expect(() => parsePhotonsToPhotosText(text)).toThrow();
+    }
   });
 
   it("rejects unresolved variable distances", () => {

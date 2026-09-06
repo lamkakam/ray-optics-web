@@ -292,4 +292,122 @@ describe("WavelengthConfigModal", () => {
     const updatedRadios = screen.getAllByRole("radio") as HTMLInputElement[];
     expect(updatedRadios[2].checked).toBe(true);
   });
+
+  it("derives Fraunhofer symbols from the initial wavelengths", () => {
+    render(<WavelengthConfigModal {...defaultProps} />);
+
+    const symbols = screen.getAllByLabelText("Fraunhofer") as HTMLSelectElement[];
+    expect(symbols.map((select) => select.value)).toEqual(["F", "d", "C"]);
+  });
+
+  it("updates the wavelength when a Fraunhofer symbol is edited", async () => {
+    const onApply = jest.fn();
+    render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
+
+    const symbols = screen.getAllByLabelText("Fraunhofer") as HTMLSelectElement[];
+    await userEvent.selectOptions(symbols[0], "g");
+    await userEvent.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        weights: [
+          [435.835, 1],
+          [587.562, 1],
+          [656.273, 1],
+        ],
+      })
+    );
+  });
+
+  it("updates the symbol for an exact wavelength", async () => {
+    const user = userEvent.setup();
+    render(<WavelengthConfigModal {...defaultProps} />);
+
+    const wavelength = screen.getAllByRole("textbox")[0];
+    await user.clear(wavelength);
+    await user.type(wavelength, "589.294");
+    await user.keyboard("{Enter}");
+    expect((screen.getAllByLabelText("Fraunhofer")[0] as HTMLSelectElement).value).toBe("D");
+  });
+
+  it("clears the symbol when a wavelength is outside the matching tolerance", async () => {
+    const user = userEvent.setup();
+    render(<WavelengthConfigModal {...defaultProps} />);
+
+    const wavelength = screen.getAllByRole("textbox")[0];
+    await user.clear(wavelength);
+    await user.type(wavelength, "486.134");
+    await user.keyboard("{Enter}");
+    // The native select displays its first option when the model has no matching symbol.
+    expect((screen.getAllByLabelText("Fraunhofer")[0] as HTMLSelectElement).value).toBe("t");
+  });
+
+  it("uses the default wavelength and weight for invalid edits", async () => {
+    const onApply = jest.fn();
+    const user = userEvent.setup();
+    render(<WavelengthConfigModal {...defaultProps} onApply={onApply} />);
+
+    let textboxes = screen.getAllByRole("textbox");
+    await user.clear(textboxes[0]);
+    await user.type(textboxes[0], "0");
+    await user.keyboard("{Enter}");
+    textboxes = screen.getAllByRole("textbox");
+    await user.clear(textboxes[1]);
+    await user.type(textboxes[1], "-1");
+    await user.keyboard("{Enter}");
+    await user.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        weights: [
+          [546.073, 1],
+          [587.562, 1],
+          [656.273, 1],
+        ],
+      })
+    );
+  });
+
+  it("inserts the default e-line row after the clicked row", async () => {
+    const onApply = jest.fn();
+    render(
+      <WavelengthConfigModal
+        {...defaultProps}
+        initialWeights={[[486.133, 1], [656.273, 1]]}
+        initialReferenceIndex={0}
+        onApply={onApply}
+      />
+    );
+
+    await userEvent.click(screen.getAllByLabelText("Add wavelength row")[0]);
+    await userEvent.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        weights: [
+          [486.133, 1],
+          [546.073, 1],
+          [656.273, 1],
+        ],
+      })
+    );
+  });
+
+  it("moves the reference to the first row when the reference row is deleted", async () => {
+    const onApply = jest.fn();
+    render(
+      <WavelengthConfigModal
+        {...defaultProps}
+        initialReferenceIndex={1}
+        onApply={onApply}
+      />
+    );
+
+    await userEvent.click(screen.getAllByLabelText("Delete wavelength row")[0]);
+    await userEvent.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ referenceIndex: 0 })
+    );
+  });
 });

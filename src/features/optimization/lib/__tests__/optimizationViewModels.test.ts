@@ -1,5 +1,26 @@
-import { createEvaluationRow } from "@/features/optimization/lib/optimizationViewModels";
+import {
+  createEvaluationRow,
+  getRadiusLabel,
+  getRadiusValue,
+  getThicknessValue,
+} from "@/features/optimization/lib/optimizationViewModels";
 import type { OptimizationResidualEntry } from "@/features/optimization/types/optimizationWorkerTypes";
+import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+
+const model: OpticalModel = {
+  setAutoAperture: "manualAperture",
+  object: { distance: 1e10, medium: "air", manufacturer: "" },
+  surfaces: [
+    { label: "Default", curvatureRadius: 25, thickness: 4, medium: "air", manufacturer: "", semiDiameter: 5 },
+    { label: "Stop", curvatureRadius: -30, thickness: 2, medium: "air", manufacturer: "", semiDiameter: 5 },
+  ],
+  image: { curvatureRadius: 100 },
+  specs: {
+    pupil: { space: "object", type: "epd", value: 1 },
+    field: { space: "object", type: "angle", maxField: 1, fields: [0], isRelative: true },
+    wavelengths: { weights: [[587.562, 1]], referenceIndex: 0 },
+  },
+};
 
 describe("createEvaluationRow", () => {
   it("creates a table row for residuals with a non-zero effective weight", () => {
@@ -110,5 +131,23 @@ describe("createEvaluationRow", () => {
       total_weight: 1,
       weighted_residual: 0.5,
     }, 1)?.operandType).toBe("Ray Fan (Sagittal)");
+  });
+});
+
+describe("optimization prescription view models", () => {
+  it("labels physical surfaces and the image using one-based indices", () => {
+    expect(getRadiusLabel(1, model)).toBe("Default");
+    expect(getRadiusLabel(2, model)).toBe("Stop");
+    expect(getRadiusLabel(3, model)).toBe("Image");
+    expect(getRadiusLabel(4, model)).toBe("Surface 4");
+  });
+
+  it("reads radius and thickness values at physical, image, and missing indices", () => {
+    expect(getRadiusValue(model, 1)).toBe(25);
+    expect(getRadiusValue(model, 3)).toBe(100);
+    expect(getRadiusValue(model, 4)).toBe(0);
+    expect(getThicknessValue(model, 2)).toBe(2);
+    expect(getThicknessValue(model, 3)).toBe(0);
+    expect(getThicknessValue(model, 4)).toBe(0);
   });
 });

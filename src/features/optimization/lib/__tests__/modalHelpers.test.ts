@@ -5,7 +5,9 @@ import {
   curvatureRadiusCrossesZero,
   createPickupDraft,
   createVariableDraft,
+  getRadiusPickupSourceSurfaceOptions,
   getCurvatureRadiusBoundsErrorText,
+  getThicknessPickupSourceSurfaceOptions,
   curvatureRadiusNoZeroStraddleRule,
   minLessThanMaxRule,
   serializeRadiusMode,
@@ -27,6 +29,13 @@ describe("optimization modal helpers", () => {
     it("returns false when either bound is not finite", () => {
       expect(curvatureRadiusCrossesZero("foo", "5")).toBe(false);
       expect(curvatureRadiusCrossesZero("-5", "bar")).toBe(false);
+      expect(curvatureRadiusCrossesZero("Infinity", "5")).toBe(false);
+      expect(curvatureRadiusCrossesZero("-5", "Infinity")).toBe(false);
+    });
+
+    it("does not count a zero endpoint as straddling zero", () => {
+      expect(curvatureRadiusCrossesZero("-5", "0")).toBe(false);
+      expect(curvatureRadiusCrossesZero("0", "5")).toBe(false);
     });
   });
 
@@ -44,6 +53,12 @@ describe("optimization modal helpers", () => {
         "Thickness variable bounds must have Min. less than Max.",
       );
       expect(validateVariableBounds("Thickness", "1", "Infinity", [minLessThanMaxRule])).toBe(
+        "Thickness variable bounds must have Min. less than Max.",
+      );
+      expect(validateVariableBounds("Thickness", "Infinity", "5", [minLessThanMaxRule])).toBe(
+        "Thickness variable bounds must have Min. less than Max.",
+      );
+      expect(validateVariableBounds("Thickness", "1", "NaN", [minLessThanMaxRule])).toBe(
         "Thickness variable bounds must have Min. less than Max.",
       );
     });
@@ -110,6 +125,20 @@ describe("optimization modal helpers", () => {
     });
   });
 
+  it("builds radius and thickness pickup options at zero-surface boundaries", () => {
+    expect(getRadiusPickupSourceSurfaceOptions(0, 1)).toEqual([]);
+    expect(getRadiusPickupSourceSurfaceOptions(2, 1)).toEqual([
+      { value: 2, label: "2" },
+      { value: 3, label: "Image" },
+    ]);
+    expect(getRadiusPickupSourceSurfaceOptions(2, 3)).toEqual([
+      { value: 1, label: "1" },
+      { value: 2, label: "2" },
+    ]);
+    expect(getThicknessPickupSourceSurfaceOptions(0, 1)).toEqual([]);
+    expect(getThicknessPickupSourceSurfaceOptions(2, 1)).toEqual([{ value: 2, label: "2" }]);
+  });
+
   it("converts a radius mode into a draft", () => {
     const variableMode: RadiusMode = {
       surfaceIndex: 3,
@@ -125,6 +154,16 @@ describe("optimization modal helpers", () => {
     });
   });
 
+  it("converts each committed radius mode into its matching draft shape", () => {
+    expect(toRadiusModeDraft({ surfaceIndex: 1, mode: "constant" })).toEqual({ mode: "constant" });
+    expect(toRadiusModeDraft({ surfaceIndex: 1, mode: "pickup", sourceSurfaceIndex: "2", scale: "-1", offset: "3" })).toEqual({
+      mode: "pickup",
+      sourceSurfaceIndex: "2",
+      scale: "-1",
+      offset: "3",
+    });
+  });
+
   it("serializes radius modes for keyed remounts", () => {
     const pickupMode: RadiusMode = {
       surfaceIndex: 3,
@@ -135,5 +174,6 @@ describe("optimization modal helpers", () => {
     };
 
     expect(serializeRadiusMode(pickupMode)).toBe("pickup:1:2:0.5");
+    expect(serializeRadiusMode({ surfaceIndex: 1, mode: "constant" })).toBe("constant");
   });
 });

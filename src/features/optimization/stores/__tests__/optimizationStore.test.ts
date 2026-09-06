@@ -1,6 +1,7 @@
 import { createStore } from "zustand";
 import { formatOptimizerUiDefaultValue, OPTIMIZER_UI_CONFIG } from "@/features/optimization/lib/optimizerUiConfig";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { OptimizationReport } from "@/features/optimization/types/optimizationWorkerTypes";
 import {
   createOptimizationSlice,
   hasNonZeroOptimizationContribution,
@@ -64,6 +65,25 @@ const asphericModel: OpticalModel = {
     },
   ],
 };
+
+/** Builds a minimal successful continuous-optimizer report for state-transition tests. */
+function continuousReport(
+  finalValues: OptimizationReport["final_values"] = [],
+  pickups: OptimizationReport["pickups"] = [],
+): OptimizationReport {
+  return {
+    success: true,
+    status: "optimized",
+    message: "done",
+    optimizer: { kind: "least_squares", method: "trf" },
+    initial_values: [],
+    final_values: finalValues,
+    pickups,
+    residuals: [],
+    merit_function: { sum_of_squares: 0, rss: 0 },
+    optimization_progress: [],
+  };
+}
 
 describe("optimizationStore", () => {
   it("detects non-zero optimization contribution for operand-only rows", () => {
@@ -1361,5 +1381,306 @@ describe("optimizationStore", () => {
     expect(store.getState().asphereStates[0].conic).toMatchObject({ mode: "variable", min: "-2", max: "0" });
     expect(store.getState().operands).toHaveLength(1);
     expect(store.getState().optimizer.kind).toBe("differential_evolution");
+  });
+
+  it("treats missing or empty weight dimensions as neutral factors", () => {
+    expect(hasNonZeroOptimizationContribution({
+      merit_function: {
+        operands: [{ kind: "focal_length", target: 100, weight: 1, fields: [] }],
+      },
+    })).toBe(true);
+    expect(hasNonZeroOptimizationContribution({
+      merit_function: {
+        operands: [{ kind: "focal_length", target: 100, weight: 1, wavelengths: [] }],
+      },
+    })).toBe(true);
+  });
+
+  it("requires the combined operand, field, and wavelength weight product to be positive", () => {
+    expect(hasNonZeroOptimizationContribution({
+      merit_function: {
+        operands: [{
+          kind: "rms_spot_size",
+          target: 0,
+          weight: 1,
+          fields: [{ index: 0, weight: 1 }],
+          wavelengths: [{ index: 0, weight: 0 }],
+        }],
+      },
+    })).toBe(false);
+  });
+
+  it("normalizes invalid optimization weights independently for fields and wavelengths", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().setFieldWeight(0, 0);
+    store.getState().setFieldWeight(1, "Infinity");
+    store.getState().setFieldWeight(2, "-1");
+    store.getState().setWavelengthWeight(0, "NaN");
+    store.getState().setWavelengthWeight(1, 0);
+    store.getState().setWavelengthWeight(2, "-1");
+
+    expect(store.getState().fieldWeights).toEqual([0, 1, 1]);
+    expect(store.getState().wavelengthWeights).toEqual([1, 0, 1]);
+    const fieldWeights = store.getState().fieldWeights;
+    store.getState().setFieldWeight(99, 0.25);
+    expect(store.getState().fieldWeights).toEqual(fieldWeights);
+  });
+
+  it("rejects optimizer numeric values at each relevant lower boundary", () => {
+    const cases = [
+      ["least_squares", "max_nfev", "0", /Max\. num of steps must be a positive integer/],
+      ["least_squares", "max_nfev", "-1", /Max\. num of steps must be a positive integer/],
+      ["least_squares", "ftol", "0", /Merit function change tolerance must be a positive non-zero number/],
+      ["least_squares", "ftol", "Infinity", /Merit function change tolerance must be a positive non-zero number/],
+      ["differential_evolution", "tol", "0", /Relative tolerance must be a positive non-zero number/],
+      ["differential_evolution", "atol", "-1", /Absolute tolerance must be a non-negative number/],
+      ["differential_evolution", "atol", "Infinity", /Absolute tolerance must be a non-negative number/],
+      ["glass_expert", "tol", "0", /Tolerance must be a positive non-zero number/],
+    ] as const;
+
+    for (const [kind, field, value, message] of cases) {
+      const store = createStore<OptimizationState>(createOptimizationSlice);
+      store.getState().initializeFromOpticalModel(baseModel);
+      store.getState().addOperand();
+      store.setState((state) => ({
+        optimizer: { ...state.optimizer, [field]: value } as OptimizationState["optimizer"],
+      }));
+
+      if (kind !== "least_squares") {
+        store.getState().setOptimizerKind(kind);
+        store.setState((state) => ({
+          optimizer: { ...state.optimizer, [field]: value } as OptimizationState["optimizer"],
+        }));
+      }
+
+      expect(() => store.getState().buildOptimizationConfig()).toThrow(message);
+    }
+  });
+
+  it("accepts exactly enough residual samples for Levenberg-Marquardt", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.setState((state) => ({
+      optimizer: { ...state.optimizer, method: "lm" },
+    }));
+    store.getState().setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().replaceOperands([{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]);
+
+    expect(() => store.getState().buildOptimizationConfig()).not.toThrow();
+  });
+
+  it("validates surface pickup sources against radius and thickness boundaries", () => {
+    const radiusSourceStore = createStore<OptimizationState>(createOptimizationSlice);
+    radiusSourceStore.getState().initializeFromOpticalModel(baseModel);
+    radiusSourceStore.getState().setRadiusMode(1, {
+      mode: "pickup", sourceSurfaceIndex: "3", scale: "1", offset: "0",
+    });
+    radiusSourceStore.getState().replaceOperands([{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]);
+    expect(radiusSourceStore.getState().buildOptimizationConfig().pickups).toEqual([
+      { kind: "radius", surface_index: 1, source_surface_index: 3, scale: 1, offset: 0 },
+    ]);
+
+    const thicknessRangeStore = createStore<OptimizationState>(createOptimizationSlice);
+    thicknessRangeStore.getState().initializeFromOpticalModel(baseModel);
+    thicknessRangeStore.getState().setThicknessMode(1, {
+      mode: "pickup", sourceSurfaceIndex: "3", scale: "1", offset: "0",
+    });
+    thicknessRangeStore.getState().replaceOperands([{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]);
+    expect(() => thicknessRangeStore.getState().buildOptimizationConfig()).toThrow(/out of range/);
+
+    const sameSurfaceStore = createStore<OptimizationState>(createOptimizationSlice);
+    sameSurfaceStore.getState().initializeFromOpticalModel(baseModel);
+    sameSurfaceStore.getState().setRadiusMode(3, {
+      mode: "pickup", sourceSurfaceIndex: "3", scale: "1", offset: "0",
+    });
+    sameSurfaceStore.getState().replaceOperands([{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]);
+    expect(() => sameSurfaceStore.getState().buildOptimizationConfig()).toThrow(/must not equal/);
+  });
+
+  it("rejects independently non-finite and inverted variable bounds", () => {
+    const cases = [
+      ["Infinity", "60"],
+      ["40", "Infinity"],
+      ["60", "40"],
+    ] as const;
+
+    for (const [min, max] of cases) {
+      const store = createStore<OptimizationState>(createOptimizationSlice);
+      store.getState().initializeFromOpticalModel(baseModel);
+      store.getState().setRadiusMode(1, { mode: "variable", min, max });
+      store.getState().replaceOperands([{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]);
+      expect(() => store.getState().buildOptimizationConfig()).toThrow(/Min\. must be a number|Max\. must be a number|maximum/);
+    }
+  });
+
+  it("generates distinct sequential operand IDs and preserves direct target edits", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().addOperand();
+    store.getState().addOperand();
+
+    const [first, second] = store.getState().operands.map((operand) => Number(operand.id.replace("operand-", "")));
+    expect(second).toBe(first + 1);
+
+    const firstId = store.getState().operands[0].id;
+    store.getState().updateOperand(firstId, { target: "999" });
+    expect(store.getState().operands[0].target).toBe("999");
+  });
+
+  it("does not allow an optimization-only asphere type to replace a locked editor type", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(asphericModel);
+    store.getState().setAsphereType(1, "Conic");
+
+    expect(store.getState().asphereStates[0]).toMatchObject({
+      type: "RadialPolynomial",
+      lockedType: true,
+    });
+  });
+
+  it("omits asphere terms until a type is selected and supports Y toroid variables", () => {
+    const noTypeStore = createStore<OptimizationState>(createOptimizationSlice);
+    noTypeStore.getState().initializeFromOpticalModel(baseModel);
+    noTypeStore.getState().setAsphereTermMode(1, "conic", { mode: "variable", min: "-1", max: "0" });
+    noTypeStore.getState().replaceOperands([{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]);
+    expect(noTypeStore.getState().buildOptimizationConfig().variables).toEqual([]);
+
+    const toroidStore = createStore<OptimizationState>(createOptimizationSlice);
+    toroidStore.getState().initializeFromOpticalModel(baseModel);
+    toroidStore.getState().setAsphereType(1, "YToroid");
+    toroidStore.getState().setAsphereTermMode(1, "toricSweep", { mode: "variable", min: "-10", max: "-1" });
+    toroidStore.getState().replaceOperands([{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]);
+    expect(toroidStore.getState().buildOptimizationConfig().variables).toEqual(expect.arrayContaining([{
+      kind: "asphere_toric_sweep_radius",
+      surface_index: 1,
+      asphere_kind: "YToroid",
+      min: -10,
+      max: -1,
+    }]));
+  });
+
+  it("requires a source coefficient term for asphere coefficient pickups", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(asphericModel);
+    store.getState().setAsphereTermMode(1, "coefficient", {
+      mode: "pickup", coefficientIndex: 0, sourceSurfaceIndex: "1", scale: "1", offset: "0",
+    });
+    store.getState().replaceOperands([{ id: "operand-1", kind: "focal_length", target: "100", weight: "1" }]);
+
+    expect(() => store.getState().buildOptimizationConfig()).toThrow(/source coefficient term/);
+  });
+
+  it("initializes and reconciles optimization state when syncing model shape", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().syncFromOpticalModel(baseModel);
+    store.getState().setRadiusMode(1, { mode: "variable", min: "40", max: "60" });
+    store.getState().setAsphereType(1, "Conic");
+
+    const threeSurfaceModel: OpticalModel = {
+      ...baseModel,
+      surfaces: [...baseModel.surfaces, { ...baseModel.surfaces[0] }],
+    };
+    store.getState().syncFromOpticalModel(threeSurfaceModel, { prescriptionSyncPolicy: "preserveOptimizationModes" });
+    expect(store.getState().radiusModes).toHaveLength(4);
+    expect(store.getState().radiusModes[0]).toMatchObject({ mode: "variable" });
+    expect(store.getState().radiusModes[3]).toEqual({ surfaceIndex: 4, mode: "constant" });
+    expect(store.getState().asphereStates[2]).toMatchObject({ surfaceIndex: 3, type: undefined, lockedType: false });
+
+    store.getState().syncFromOpticalModel({ ...baseModel, surfaces: [baseModel.surfaces[0]] }, { prescriptionSyncPolicy: "preserveOptimizationModes" });
+    expect(store.getState().thicknessModes).toHaveLength(1);
+    expect(store.getState().radiusModes).toHaveLength(2);
+  });
+
+  it("locks a previously free asphere type when the editor supplies one", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().setAsphereType(1, "Conic");
+
+    store.getState().syncFromOpticalModel({
+      ...baseModel,
+      surfaces: [{
+        ...baseModel.surfaces[0],
+        aspherical: { kind: "RadialPolynomial", conicConstant: -1, polynomialCoefficients: [0.1] },
+      }, baseModel.surfaces[1]],
+    }, { prescriptionSyncPolicy: "preserveOptimizationModes" });
+
+    expect(store.getState().asphereStates[0]).toMatchObject({ type: "RadialPolynomial", lockedType: true });
+  });
+
+  it("resets both weight dimensions when both corresponding editor specs change", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().setFieldWeight(1, 0.5);
+    store.getState().setWavelengthWeight(0, 0.25);
+
+    store.getState().syncFromOpticalModel({
+      ...baseModel,
+      specs: {
+        ...baseModel.specs,
+        field: { ...baseModel.specs.field, fields: [0, 1] },
+        wavelengths: { weights: [[546.073, 3], [656.273, 4]], referenceIndex: 0 },
+      },
+    });
+
+    expect(store.getState().fieldWeights).toEqual([1, 0]);
+    expect(store.getState().wavelengthWeights).toEqual([3, 4]);
+  });
+
+  it("merges comment removal without discarding an unapplied optimized value", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel({
+      ...baseModel,
+      surfaces: [{ ...baseModel.surfaces[0], comment: "old" }, baseModel.surfaces[1]],
+    });
+    store.getState().applyOptimizationResult(continuousReport([
+      { kind: "radius", surface_index: 1, value: 42 },
+    ]));
+
+    store.getState().syncFromOpticalModel({
+      ...baseModel,
+      surfaces: [baseModel.surfaces[0], baseModel.surfaces[1]],
+    });
+
+    expect(store.getState().optimizationModel?.surfaces[0]).toEqual(expect.objectContaining({ curvatureRadius: 42 }));
+    expect(store.getState().optimizationModel?.surfaces[0].comment).toBeUndefined();
+    expect(store.getState().hasUnappliedOptimizationResult).toBe(true);
+  });
+
+  it("does not reinitialize an existing optimization model", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+    store.getState().setFieldWeight(1, 0.5);
+
+    store.getState().initializeFromOpticalModel({ ...baseModel, surfaces: [baseModel.surfaces[0]] });
+
+    expect(store.getState().optimizationModel).toBe(baseModel);
+    expect(store.getState().fieldWeights).toEqual([1, 0.5, 0]);
+  });
+
+  it("leaves an uninitialized store unchanged when applying a result", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    const before = store.getState();
+
+    store.getState().applyOptimizationResult(continuousReport([
+      { kind: "radius", surface_index: 1, value: 42 },
+    ]));
+
+    expect(store.getState().optimizationModel).toBeUndefined();
+    expect(store.getState().lastOptimizationReport).toBeUndefined();
+    expect(store.getState()).toEqual(before);
+  });
+
+  it("applies an asphere result only to its selected surface", () => {
+    const store = createStore<OptimizationState>(createOptimizationSlice);
+    store.getState().initializeFromOpticalModel(baseModel);
+
+    store.getState().applyOptimizationResult(continuousReport([
+      { kind: "asphere_conic_constant", surface_index: 1, asphere_kind: "Conic", value: -0.5 },
+    ]));
+
+    expect(store.getState().optimizationModel?.surfaces[0].aspherical).toEqual({ kind: "Conic", conicConstant: -0.5 });
+    expect(store.getState().optimizationModel?.surfaces[1].aspherical).toBeUndefined();
   });
 });

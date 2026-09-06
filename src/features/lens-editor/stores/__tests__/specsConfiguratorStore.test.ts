@@ -162,6 +162,21 @@ describe("specsConfiguratorStore", () => {
       expect(store.getState().isWideAngle).toBe(true);
       expect(store.getState().toOpticalSpecs().field.isWideAngle).toBe(true);
     });
+
+    it("normalizes an omitted wide-angle flag to false", () => {
+      const store = makeStore();
+
+      store.getState().setField({
+        space: "object",
+        type: "angle",
+        maxField: 10,
+        relativeFields: [0, 1],
+        isWideAngle: undefined as unknown as boolean,
+      });
+
+      expect(store.getState().isWideAngle).toBe(false);
+      expect(store.getState().toOpticalSpecs().field.isWideAngle).toBe(false);
+    });
   });
 
   describe("setWavelengths", () => {
@@ -193,6 +208,46 @@ describe("specsConfiguratorStore", () => {
       expect(specs.pupil.value).toBe(8);
       expect(specs.field).toEqual(sampleSpecs.field);
       expect(specs.wavelengths).toEqual(sampleSpecs.wavelengths);
+    });
+
+    it.each([
+      ["object", "epd"],
+      ["object", "NA"],
+      ["image", "f/#"],
+    ] as const)("accepts supported pupil combination %s/%s", (space, type) => {
+      const store = makeStore();
+      store.setState({ pupilSpace: space, pupilType: type });
+
+      expect(store.getState().toOpticalSpecs().pupil).toEqual({ space, type, value: 0.5 });
+    });
+
+    it.each([
+      ["object", "f/#"],
+      ["image", "epd"],
+      ["image", "NA"],
+    ] as const)("rejects unsupported pupil combination %s/%s", (space, type) => {
+      const store = makeStore();
+      store.setState({ pupilSpace: space, pupilType: type });
+
+      expect(() => store.getState().toOpticalSpecs()).toThrow(/Invalid pupil specification/);
+    });
+
+    it.each([
+      ["object", "height"],
+      ["object", "angle"],
+      ["image", "height"],
+    ] as const)("accepts supported field combination %s/%s", (space, type) => {
+      const store = makeStore();
+      store.setState({ fieldSpace: space, fieldType: type });
+
+      expect(store.getState().toOpticalSpecs().field).toEqual(expect.objectContaining({ space, type }));
+    });
+
+    it("rejects image-angle field specifications", () => {
+      const store = makeStore();
+      store.setState({ fieldSpace: "image", fieldType: "angle" });
+
+      expect(() => store.getState().toOpticalSpecs()).toThrow(/Invalid field specification/);
     });
   });
 

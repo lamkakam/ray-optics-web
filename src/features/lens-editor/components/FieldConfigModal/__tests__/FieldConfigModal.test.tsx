@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { FieldConfigModal } from "@/features/lens-editor/components/FieldConfigModal";
 
@@ -425,5 +425,47 @@ describe("FieldConfigModal", () => {
     );
 
     expect(screen.getByLabelText("Max half-field value")).toHaveValue("45");
+  });
+
+  it("keeps an object angle field when the object space is selected again", async () => {
+    render(<FieldConfigModal {...defaultProps} />);
+
+    fireEvent.change(screen.getByLabelText("Field space"), {
+      target: { value: "object" },
+    });
+
+    expect(screen.getByLabelText("Field type")).toHaveValue("angle");
+  });
+
+  it("inserts a zero-valued row immediately after the clicked row", async () => {
+    const onApply = jest.fn();
+    render(
+      <FieldConfigModal
+        {...defaultProps}
+        initialRelativeFields={[0.1, 0.2]}
+        onApply={onApply}
+      />
+    );
+
+    await userEvent.click(screen.getAllByLabelText("Add field row")[0]);
+    await userEvent.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ relativeFields: [0.1, 0, 0.2] })
+    );
+  });
+
+  it("falls back to zero for a non-numeric maximum field value", async () => {
+    const onApply = jest.fn();
+    render(<FieldConfigModal {...defaultProps} onApply={onApply} />);
+
+    const input = screen.getByLabelText("Max half-field value");
+    await userEvent.clear(input);
+    await userEvent.type(input, "not-a-number");
+    await userEvent.click(screen.getByText("Apply"));
+
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ maxField: 0 })
+    );
   });
 });

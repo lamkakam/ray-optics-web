@@ -6,6 +6,7 @@ import {
   type CatalogGlassData,
 } from "@/features/glass-map/types/glassMap";
 import type { OpticalModel } from "@/shared/lib/types/opticalModel";
+import type { GlassMode } from "@/features/optimization/stores/optimizationStore";
 import { GlassVariableModal } from "@/features/optimization/components/GlassVariableModal/GlassVariableModal";
 
 jest.mock("@/shared/components/providers/ThemeProvider", () => ({
@@ -69,7 +70,38 @@ const model: OpticalModel = {
   },
 };
 
+/** Modal state combinations that must short-circuit before rendering an editor. */
+const hiddenModalCases: ReadonlyArray<readonly [
+  string,
+  boolean,
+  OpticalModel | undefined,
+  number | undefined,
+  GlassMode | undefined,
+]> = [
+  ["closed", false, model, 1, { surfaceIndex: 1, mode: "constant" }],
+  ["without a model", true, undefined, 1, { surfaceIndex: 1, mode: "constant" }],
+  ["without a surface index", true, model, undefined, { surfaceIndex: 1, mode: "constant" }],
+  ["without a selected mode", true, model, 1, undefined],
+];
+
 describe("GlassVariableModal", () => {
+  it.each(hiddenModalCases)("renders no editor when %s", (_description, isOpen, optimizationModel, surfaceIndex, selectedMode) => {
+    render(
+      <GlassVariableModal
+        isOpen={isOpen}
+        optimizationModel={optimizationModel}
+        surfaceIndex={surfaceIndex}
+        selectedMode={selectedMode}
+        catalogs={catalogs}
+        onSetMode={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByText(/medium:/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Confirm" })).not.toBeInTheDocument();
+  });
+
   it("shows the selection plus nine-column candidate grid only in Variable mode", async () => {
     const user = userEvent.setup();
 
@@ -541,5 +573,33 @@ describe("GlassVariableModal", () => {
       mode: "variable",
       candidates: [{ catalog: "Custom", name: "CUSTOM_A" }],
     });
+  });
+
+  it("confirms constant mode without persisting variable candidates", async () => {
+    const user = userEvent.setup();
+    const onSetMode = jest.fn();
+    const onClose = jest.fn();
+
+    render(
+      <GlassVariableModal
+        isOpen
+        optimizationModel={model}
+        surfaceIndex={1}
+        selectedMode={{
+          surfaceIndex: 1,
+          mode: "variable",
+          candidates: [{ catalog: "Schott", name: "N-BK7" }],
+        }}
+        catalogs={catalogs}
+        onSetMode={onSetMode}
+        onClose={onClose}
+      />,
+    );
+
+    await user.selectOptions(screen.getByLabelText("Glass mode"), "constant");
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onSetMode).toHaveBeenCalledWith(1, { mode: "constant" });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
