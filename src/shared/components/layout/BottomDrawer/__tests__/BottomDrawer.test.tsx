@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderToString } from "react-dom/server";
 import { BottomDrawer } from "@/shared/components/layout/BottomDrawer";
 
 const DEFAULT_WINDOW_HEIGHT = 1000;
@@ -196,7 +197,7 @@ describe("BottomDrawer", () => {
     expect(drawer).toHaveClass("shrink-0");
   });
 
-  it("uses the provided initial height on first render", () => {
+  it("keeps the provided initial height after mount", async () => {
     render(
       <BottomDrawer
         tabs={[
@@ -208,7 +209,9 @@ describe("BottomDrawer", () => {
 
     const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
 
-    expect(drawer).toHaveStyle({ height: "512px" });
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: "512px" });
+    });
   });
 
   it("starts collapsed when the provided initial height is collapsed", () => {
@@ -225,6 +228,62 @@ describe("BottomDrawer", () => {
 
     expect(drawer).toHaveStyle({ height: "48px" });
     expect(screen.queryByText("content")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [58, true],
+    [59, false],
+  ] as const)("uses the inclusive collapsed threshold at %d pixels", (initialHeight, collapsed) => {
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={initialHeight}
+      />,
+    );
+
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    expect(drawer).toHaveStyle({ height: `${collapsed ? 48 : initialHeight}px` });
+    if (collapsed) {
+      expect(screen.queryByText("content")).not.toBeInTheDocument();
+    } else {
+      expect(screen.getByText("content")).toBeInTheDocument();
+    }
+  });
+
+  it("ignores pointer movement and release before a drag starts", () => {
+    const onHeightCommit = jest.fn();
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+        onHeightCommit={onHeightCommit}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    const drawer = getDrawerRoot(handle);
+
+    fireEvent.pointerMove(handle, { clientY: 0, pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(drawer).toHaveStyle({ height: "300px" });
+    expect(onHeightCommit).not.toHaveBeenCalled();
+  });
+
+  it("caps pointer resizing at 85 percent of the viewport", () => {
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    const drawer = getDrawerRoot(handle);
+    mockPointerCapture(handle);
+
+    fireEvent.pointerDown(handle, { clientY: 700, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientY: -1000, pointerId: 1 });
+
+    expect(drawer).toHaveStyle({ height: "850px" });
   });
 
   it("keeps the dragged height after pointer release instead of snapping", async () => {
@@ -296,6 +355,21 @@ describe("BottomDrawer", () => {
     expect(onHeightCommit).toHaveBeenCalledWith(500);
   });
 
+  it("captures the pointer on the resize handle", () => {
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    mockPointerCapture(handle);
+
+    fireEvent.pointerDown(handle, { clientY: 700, pointerId: 7 });
+
+    expect(handle.setPointerCapture).toHaveBeenCalledTimes(1);
+  });
+
   it("reports live height changes while dragging before the height is committed", async () => {
     const onHeightChange = jest.fn();
 
@@ -326,6 +400,41 @@ describe("BottomDrawer", () => {
     });
 
     expect(onHeightChange).toHaveBeenCalledWith(500);
+  });
+
+  it.each([
+    ["ArrowUp", 310],
+    ["ArrowDown", 290],
+    ["Home", 48],
+    ["End", 850],
+  ] as const)("supports %s keyboard resizing", (key, expectedHeight) => {
+    const onHeightCommit = jest.fn();
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+        onHeightCommit={onHeightCommit}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+
+    fireEvent.keyDown(handle, { key });
+
+    expect(handle).toHaveAttribute("aria-valuenow", `${expectedHeight}`);
+    expect(onHeightCommit).toHaveBeenCalledWith(expectedHeight);
+  });
+
+  it("ignores unrelated keyboard input and tolerates omitted callbacks", () => {
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+
+    expect(() => fireEvent.keyDown(handle, { key: "PageDown" })).not.toThrow();
+    expect(handle).toHaveAttribute("aria-valuenow", "300");
   });
 
   it("collapses when dragged down to the minimum height", async () => {
@@ -445,6 +554,261 @@ describe("BottomDrawer", () => {
     expect(onHeightChange).toHaveBeenNthCalledWith(1, 48);
     expect(onHeightChange).toHaveBeenNthCalledWith(2, expectedOpenHeight);
   });
+
+  it("shows the collapse state through the toggle label and keeps the panel classes", async () => {
+    const user = userEvent.setup();
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+      />,
+    );
+
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+    const toggleButton = screen.getByRole("button", { name: "Toggle drawer" });
+    const panel = screen.getByRole("tabpanel");
+    expect(drawer).toHaveClass("will-change-[height]");
+    expect(panel).toHaveClass("flex-1", "overflow-auto", "p-3");
+    expect(toggleButton).toHaveTextContent("▼");
+
+    await user.click(toggleButton);
+    expect(toggleButton).toHaveTextContent("▲");
+  });
+
+  it("cancels the default-height frame when unmounted", () => {
+    const cancelAnimationFrame = jest.spyOn(window, "cancelAnimationFrame");
+    const { unmount } = render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+      />,
+    );
+
+    unmount();
+
+    expect(cancelAnimationFrame).toHaveBeenCalled();
+    cancelAnimationFrame.mockRestore();
+  });
+
+  it("reruns initialization when initialHeight changes", async () => {
+    const { rerender } = render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={512}
+      />,
+    );
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+
+    rerender(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: "400px" });
+    });
+  });
+
+  it("does not replace a provided initial height during effect initialization", async () => {
+    const requestAnimationFrame = jest.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      callback(0);
+      return 0;
+    });
+
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={512}
+      />,
+    );
+    const drawer = getDrawerRoot(screen.getByRole("separator", { name: "Resize drawer" }));
+
+    await waitFor(() => {
+      expect(drawer).toHaveStyle({ height: "512px" });
+    });
+    expect(requestAnimationFrame).not.toHaveBeenCalled();
+    requestAnimationFrame.mockRestore();
+  });
+
+  it("uses the browser viewport when calculating the maximum height", async () => {
+    setupWindowHeight(1200);
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("separator", { name: "Resize drawer" }))
+        .toHaveAttribute("aria-valuemax", "1020");
+    });
+  });
+
+  it("uses a small browser viewport instead of the server fallback", async () => {
+    setupWindowHeight(800);
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("separator", { name: "Resize drawer" }))
+        .toHaveAttribute("aria-valuemax", "680");
+    });
+  });
+
+  it("keeps the deterministic maximum during server rendering", () => {
+    const markup = renderToString(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+      />,
+    );
+
+    expect(markup).toContain('aria-valuemax="850"');
+  });
+
+  it("ignores pointer movement after the drag is released", () => {
+    const onHeightChange = jest.fn();
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+        onHeightChange={onHeightChange}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    mockPointerCapture(handle);
+
+    fireEvent.pointerDown(handle, { clientY: 500, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientY: 450, pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientY: 400, pointerId: 1 });
+
+    expect(onHeightChange).toHaveBeenCalledTimes(1);
+    expect(onHeightChange).toHaveBeenLastCalledWith(350);
+  });
+
+  it("uses the latest live height callback while dragging", () => {
+    const firstCallback = jest.fn();
+    const secondCallback = jest.fn();
+    const { rerender } = render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+        onHeightChange={firstCallback}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    mockPointerCapture(handle);
+    fireEvent.pointerDown(handle, { clientY: 500, pointerId: 1 });
+
+    rerender(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+        onHeightChange={secondCallback}
+      />,
+    );
+    fireEvent.pointerMove(handle, { clientY: 450, pointerId: 1 });
+
+    expect(firstCallback).not.toHaveBeenCalled();
+    expect(secondCallback).toHaveBeenCalledWith(350);
+  });
+
+  it("uses the latest commit callback on pointer release", () => {
+    const firstCallback = jest.fn();
+    const secondCallback = jest.fn();
+    const { rerender } = render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+        onHeightCommit={firstCallback}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+    mockPointerCapture(handle);
+    fireEvent.pointerDown(handle, { clientY: 500, pointerId: 1 });
+    fireEvent.pointerMove(handle, { clientY: 450, pointerId: 1 });
+
+    rerender(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+        onHeightCommit={secondCallback}
+      />,
+    );
+    fireEvent.pointerUp(handle, { pointerId: 1 });
+
+    expect(firstCallback).not.toHaveBeenCalled();
+    expect(secondCallback).toHaveBeenCalledWith(350);
+  });
+
+  it("uses the latest callbacks for keyboard commits after rerender", () => {
+    const firstChange = jest.fn();
+    const firstCommit = jest.fn();
+    const secondChange = jest.fn();
+    const secondCommit = jest.fn();
+    const { rerender } = render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+        onHeightChange={firstChange}
+        onHeightCommit={firstCommit}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+
+    rerender(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+        onHeightChange={secondChange}
+        onHeightCommit={secondCommit}
+      />,
+    );
+    fireEvent.keyDown(handle, { key: "ArrowUp" });
+
+    expect(firstChange).not.toHaveBeenCalled();
+    expect(firstCommit).not.toHaveBeenCalled();
+    expect(secondChange).toHaveBeenCalledWith(310);
+    expect(secondCommit).toHaveBeenCalledWith(310);
+  });
+
+  it("keeps the collapsed ref synchronized with the collapse toggle", async () => {
+    const user = userEvent.setup();
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={300}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+
+    await user.click(screen.getByRole("button", { name: "Toggle drawer" }));
+    fireEvent.keyDown(handle, { key: "ArrowUp" });
+    expect(handle).toHaveAttribute("aria-valuenow", "48");
+    expect(getDrawerRoot(handle)).toHaveStyle({ height: "48px" });
+  });
+
+  it("uses the open height after expanding from collapsed state", async () => {
+    const user = userEvent.setup();
+    render(
+      <BottomDrawer
+        tabs={[{ id: "specs", label: "System Specs", content: <div>content</div> }]}
+        initialHeight={48}
+      />,
+    );
+    const handle = screen.getByRole("separator", { name: "Resize drawer" });
+
+    await user.click(screen.getByRole("button", { name: "Toggle drawer" }));
+    fireEvent.keyDown(handle, { key: "ArrowDown" });
+    expect(handle).toHaveAttribute("aria-valuenow", "390");
+    expect(getDrawerRoot(handle)).toHaveStyle({ height: "390px" });
+  });
 });
 
 describe("BottomDrawer with draggable=false", () => {
@@ -471,6 +835,12 @@ describe("BottomDrawer with draggable=false", () => {
   it("applies a custom panel class in non-draggable mode", () => {
     render(<BottomDrawer tabs={tabs} draggable={false} panelClassName="p-0" />);
     expect(screen.getByRole("tabpanel")).toHaveClass("p-0");
+  });
+
+  it("keeps the default non-draggable panel padding when no override is supplied", () => {
+    render(<BottomDrawer tabs={tabs} draggable={false} />);
+
+    expect(screen.getByRole("tabpanel")).toHaveClass("p-3");
   });
 
   it("switches tab content when another tab is clicked", async () => {

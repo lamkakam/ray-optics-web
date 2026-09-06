@@ -1,4 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { createElement, StrictMode, type ReactNode } from "react";
 import type { InitProgress } from "@/shared/hooks/usePyodide";
 
 // Mock proxy methods
@@ -23,9 +24,14 @@ jest.mock("comlink", () => ({
 }));
 
 import { usePyodide, _resetSingleton } from "@/shared/hooks/usePyodide";
+import { createPyodideWorker } from "@/workers/createPyodideWorker";
+import { wrap } from "comlink";
 
 beforeEach(() => {
   jest.clearAllMocks();
+});
+
+afterEach(() => {
   _resetSingleton();
 });
 
@@ -34,6 +40,7 @@ describe("usePyodide", () => {
     const { result } = renderHook(() => usePyodide());
     expect(result.current.isReady).toBe(false);
     expect(result.current.error).toBeUndefined();
+    expect(result.current.initProgress).toEqual({ value: 0, status: "Starting worker" });
     await act(async () => {}); // flush setIsReady(true) microtask
   });
 
@@ -78,12 +85,45 @@ describe("usePyodide", () => {
     expect(result.current.isReady).toBe(false);
   });
 
+  it("uses a stable fallback message for non-Error initialization failures", async () => {
+    mockInit.mockRejectedValueOnce("plain failure");
+    const { result } = renderHook(() => usePyodide());
+
+    await waitFor(() => {
+      expect(result.current.error).toBe("Unknown error");
+    });
+  });
+
   it("creates only one worker (singleton) across multiple hook instances", async () => {
     const { result: r1 } = renderHook(() => usePyodide());
-    renderHook(() => usePyodide());
+    const { result: r2 } = renderHook(() => usePyodide());
 
     await waitFor(() => {
       expect(r1.current.isReady).toBe(true);
+    });
+    expect(mockInit).toHaveBeenCalledTimes(1);
+    expect(r1.current.proxy).toBe(r2.current.proxy);
+    expect(createPyodideWorker).toHaveBeenCalledTimes(1);
+    expect(wrap).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not initialize twice when a hook rerenders", async () => {
+    const { result, rerender } = renderHook(() => usePyodide());
+
+    await waitFor(() => {
+      expect(result.current.isReady).toBe(true);
+    });
+    rerender();
+
+    expect(mockInit).toHaveBeenCalledTimes(1);
+  });
+
+  it("initializes only once when React replays effects in StrictMode", async () => {
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(StrictMode, null, children);
+    const { result } = renderHook(() => usePyodide(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isReady).toBe(true);
     });
     expect(mockInit).toHaveBeenCalledTimes(1);
   });

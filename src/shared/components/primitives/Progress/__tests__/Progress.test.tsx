@@ -99,4 +99,23 @@ describe("Progress", () => {
   it("is exported from the primitives barrel", () => {
     expect(BarrelProgress).toBe(Progress);
   });
+
+  it("uses the linear presentation and shared base classes by default", () => {
+    render(<Progress value={25} />);
+
+    expect(screen.getByRole("progressbar")).toHaveClass("flex", "flex-col");
+    expectClasses(screen.getByTestId("progress-track"), cx.progress.color.trackBgColor);
+    expectClasses(screen.getByTestId("progress-indicator"), "h-full");
+    expectClasses(screen.getByText("25%"), cx.progress.size.statusFontSizeMd);
+  });
+
+  it("returns zero for a non-positive progress range", () => {
+    const { rerender } = render(<Progress value={20} min={20} max={20} />);
+
+    expect(screen.getByText("0%")).toBeInTheDocument();
+    expect(screen.getByTestId("progress-indicator")).toHaveStyle({ width: "0%" });
+
+    rerender(<Progress value={20} min={30} max={20} />);
+    expect(screen.getByText("0%")).toBeInTheDocument();
+  });
 });

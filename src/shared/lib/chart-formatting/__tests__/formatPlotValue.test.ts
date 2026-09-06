@@ -42,6 +42,11 @@ describe("formatPlotValue", () => {
     expect(formatPlotValue(1000.1)).toBe("1e+3");
     expect(formatPlotValue(-1000.1)).toBe("-1e+3");
   });
+
+  it("keeps exactly 1000 in decimal formatting", () => {
+    expect(formatPlotValue(1000)).toBe("1000");
+    expect(formatPlotValue(-1000)).toBe("-1000");
+  });
 });
 
 describe("formatLogScalePlotValue", () => {

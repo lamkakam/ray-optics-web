@@ -6,7 +6,7 @@
  * - Installs Node `TextDecoder` and `TextEncoder` on `global` for browser-oriented code paths.
  * - Provides a minimal `ResizeObserver` test double for responsive chart components.
  * - Provides a configurable, writable `ImageData` test double that stores `data`, `width`, and `height` so deck.gl bitmap-backed analysis charts can construct browser image payloads in jsdom.
- * - Provides a writable `window.matchMedia` test double with listener and dispatch methods backed by Jest mocks.
+ * - Provides a writable `window.matchMedia` test double with listener and dispatch methods backed by Jest mocks when a DOM test environment is active.
  */
 import "@testing-library/jest-dom";
 import { TextDecoder, TextEncoder } from "node:util";
@@ -41,14 +41,16 @@ Object.defineProperty(globalThis, "ImageData", {
 });
 
 // Mock window.matchMedia for jsdom (not implemented by default)
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  }),
-});
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    }),
+  });
+}

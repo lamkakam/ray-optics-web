@@ -23,7 +23,9 @@ describe("Tooltip", () => {
         <button>Click me</button>
       </Tooltip>,
     );
-    expect(screen.getByRole("button", { name: "Click me" })).toBeInTheDocument();
+    const button = screen.getByRole("button", { name: "Click me" });
+    expect(button).toBeInTheDocument();
+    expect(button.parentElement).toHaveClass("group", "relative", "inline-flex");
   });
 
   it("renders tooltip text in the DOM", () => {
@@ -41,7 +43,7 @@ describe("Tooltip", () => {
         <span>child</span>
       </Tooltip>,
     );
-    expect(screen.getByRole("tooltip")).toHaveClass("opacity-0");
+    expect(screen.getByRole("tooltip")).toHaveClass("absolute", "whitespace-nowrap", "opacity-0");
   });
 
   it("defaults to top position (has bottom-full class)", () => {
@@ -102,6 +104,7 @@ describe("Tooltip", () => {
     expect(tip).not.toHaveClass("top-full");
     expect(tip).not.toHaveClass("left-1/2");
     expect(tip).not.toHaveClass("-translate-x-1/2");
+    expect(tip).not.toHaveClass("Stryker");
   });
 
   describe("viewport-aware positioning", () => {
@@ -132,6 +135,24 @@ describe("Tooltip", () => {
       expect(tooltip).toHaveStyle({ marginLeft: "88px" });
     });
 
+    it("uses the wide-content path when content is wider than the available viewport", () => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
+      render(
+        <Tooltip text="A wide tooltip" position="bottom">
+          <button>Update</button>
+        </Tooltip>,
+      );
+
+      const wrapper = screen.getByRole("button", { name: "Update" }).parentElement!;
+      const tooltip = screen.getByRole("tooltip");
+      jest.spyOn(wrapper, "getBoundingClientRect").mockReturnValue(createRect(0, 80, 32, 32));
+      jest.spyOn(tooltip, "getBoundingClientRect").mockReturnValue(createRect(-80, 116, 320, 24));
+
+      fireEvent.mouseEnter(wrapper);
+
+      expect(tooltip).toHaveStyle({ marginLeft: "88px" });
+    });
+
     it("shifts a tooltip left when it would cross the right viewport gutter", () => {
       Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
       render(
@@ -149,6 +170,43 @@ describe("Tooltip", () => {
 
       expect(tooltip).toHaveStyle({ marginLeft: "-68px" });
     });
+
+    it("distinguishes a narrow viewport from wide content near the right edge", () => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
+      render(
+        <Tooltip text="A wide tooltip" position="bottom">
+          <button>Update</button>
+        </Tooltip>,
+      );
+
+      const wrapper = screen.getByRole("button", { name: "Update" }).parentElement!;
+      const tooltip = screen.getByRole("tooltip");
+      jest.spyOn(wrapper, "getBoundingClientRect").mockReturnValue(createRect(288, 80, 32, 32));
+      jest.spyOn(tooltip, "getBoundingClientRect").mockReturnValue(createRect(220, 116, 200, 24));
+
+      fireEvent.mouseEnter(wrapper);
+
+      expect(tooltip).toHaveStyle({ marginLeft: "-108px" });
+    });
+
+    it("uses both viewport gutters when a tooltip is just wider than the safe area", () => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
+      render(
+        <Tooltip text="A wide tooltip" position="bottom">
+          <button>Update</button>
+        </Tooltip>,
+      );
+
+      const wrapper = screen.getByRole("button", { name: "Update" }).parentElement!;
+      const tooltip = screen.getByRole("tooltip");
+      jest.spyOn(wrapper, "getBoundingClientRect").mockReturnValue(createRect(100, 80, 32, 32));
+      jest.spyOn(tooltip, "getBoundingClientRect").mockReturnValue(createRect(100, 116, 308, 24));
+
+      fireEvent.mouseEnter(wrapper);
+
+      expect(tooltip).toHaveStyle({ marginLeft: "-92px" });
+    });
+
 
     it("remeasures while hovered and resets the horizontal correction on leave", () => {
       Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
@@ -189,7 +247,51 @@ describe("Tooltip", () => {
       expect(screen.getByRole("tooltip")).toHaveStyle({
         maxWidth: "calc(100vw - 16px)",
         whiteSpace: "normal",
+        overflowWrap: "break-word",
       });
+    });
+
+    it("registers and removes resize and captured scroll listeners while hovered", () => {
+      const addEventListener = jest.spyOn(window, "addEventListener");
+      const removeEventListener = jest.spyOn(window, "removeEventListener");
+      const { unmount } = render(
+        <Tooltip text="Help text">
+          <button>Update</button>
+        </Tooltip>,
+      );
+      const wrapper = screen.getByRole("button", { name: "Update" }).parentElement!;
+
+      fireEvent.mouseEnter(wrapper);
+
+      expect(addEventListener).toHaveBeenCalledWith("resize", expect.any(Function));
+      expect(addEventListener).toHaveBeenCalledWith("scroll", expect.any(Function), true);
+      unmount();
+      expect(removeEventListener).toHaveBeenCalledWith("resize", expect.any(Function));
+      expect(removeEventListener).toHaveBeenCalledWith("scroll", expect.any(Function), true);
+
+      addEventListener.mockRestore();
+      removeEventListener.mockRestore();
+    });
+
+    it("stops remeasurement after the pointer leaves", () => {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: 320 });
+      render(
+        <Tooltip text="Compute and update the optical system" position="bottom">
+          <button>Update</button>
+        </Tooltip>,
+      );
+
+      const wrapper = screen.getByRole("button", { name: "Update" }).parentElement!;
+      const tooltip = screen.getByRole("tooltip");
+      jest.spyOn(wrapper, "getBoundingClientRect").mockReturnValue(createRect(0, 80, 32, 32));
+      jest.spyOn(tooltip, "getBoundingClientRect").mockReturnValue(createRect(-80, 116, 240, 24));
+
+      fireEvent.mouseEnter(wrapper);
+      fireEvent.mouseLeave(wrapper);
+      jest.spyOn(tooltip, "getBoundingClientRect").mockReturnValue(createRect(220, 116, 160, 24));
+      fireEvent.resize(window);
+
+      expect(tooltip).toHaveStyle({ marginLeft: "0px" });
     });
   });
 
@@ -216,6 +318,64 @@ describe("Tooltip", () => {
   });
 
   describe("portal mode", () => {
+    it("uses the fixed portal class set and merges the trigger class", () => {
+      render(
+        <Tooltip text="Portal tip" portal triggerClassName="fill-target">
+          <button>Trigger</button>
+        </Tooltip>,
+      );
+
+      const wrapper = screen.getByRole("button", { name: "Trigger" }).parentElement!;
+      const tooltip = screen.getByRole("tooltip");
+      expect(wrapper).toHaveClass("relative", "inline-flex", "fill-target");
+      expect(tooltip).toHaveClass(
+        "pointer-events-none",
+        "rounded",
+        "fixed",
+        "whitespace-nowrap",
+        "z-[9999]",
+      );
+    });
+
+    it.each([
+      ["top", 196],
+      ["top-start", 196],
+      ["start", 200],
+      ["no-transform", 200],
+      ["bottom", 234],
+    ] as const)("places the portal at the trigger coordinates for %s", (position, top) => {
+      render(
+        <Tooltip text="Portal tip" position={position} portal>
+          <button>Trigger</button>
+        </Tooltip>,
+      );
+      const wrapper = screen.getByRole("button", { name: "Trigger" }).parentElement!;
+      jest.spyOn(wrapper, "getBoundingClientRect").mockReturnValue(createRect(100, 200, 40, 30));
+
+      fireEvent.mouseEnter(wrapper);
+
+      expect(screen.getByRole("tooltip")).toHaveStyle({ left: "120px", top: `${top}px` });
+    });
+
+    it("uses the position-specific top and bottom transforms", () => {
+      const { unmount } = render(
+        <Tooltip text="Portal tip" position="top" portal>
+          <button>Top</button>
+        </Tooltip>,
+      );
+      fireEvent.mouseEnter(screen.getByRole("button", { name: "Top" }).parentElement!);
+      expect(screen.getByRole("tooltip")).toHaveStyle({ transform: "translate(-50%, -100%)" });
+      unmount();
+
+      render(
+        <Tooltip text="Portal tip" position="bottom" portal>
+          <button>Bottom</button>
+        </Tooltip>,
+      );
+      fireEvent.mouseEnter(screen.getByRole("button", { name: "Bottom" }).parentElement!);
+      expect(screen.getByRole("tooltip")).toHaveStyle({ transform: "translateX(-50%)" });
+    });
+
     it("renders tooltip text in the document when portal is true", () => {
       render(
         <Tooltip text="Portal tip" portal>
@@ -289,6 +449,7 @@ describe("Tooltip", () => {
       await user.hover(screen.getByRole("button", { name: "Trigger" }));
       expect(screen.getByRole("tooltip")).not.toHaveStyle({ transform: "translate(-50%, -100%)" });
       expect(screen.getByRole("tooltip")).not.toHaveStyle({ transform: "translateX(-50%)" });
+      expect(screen.getByRole("tooltip").style.transform).toBe("");
     });
 
     describe("portal mode with noTouch", () => {
@@ -316,7 +477,7 @@ describe("Tooltip", () => {
         expect(screen.getByRole("tooltip")).toHaveClass("opacity-0");
       });
 
-      it("still shows tooltip on plain mouse hover after a prior touch interaction", () => {
+    it("still shows tooltip on plain mouse hover after a prior touch interaction", () => {
         render(
           <Tooltip text="Portal tip" portal noTouch>
             <button>Trigger</button>
@@ -331,6 +492,21 @@ describe("Tooltip", () => {
           // Simulate plain mouse hover
           fireEvent.mouseEnter(wrapper);
         });
+        expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
+      });
+
+      it("clears the touch marker after suppressing a synthetic mouse enter", () => {
+        render(
+          <Tooltip text="Portal tip" portal noTouch>
+            <button>Trigger</button>
+          </Tooltip>,
+        );
+        const wrapper = screen.getByRole("button").parentElement!;
+
+        fireEvent.touchStart(wrapper);
+        fireEvent.mouseEnter(wrapper);
+        fireEvent.mouseEnter(wrapper);
+
         expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
       });
     });

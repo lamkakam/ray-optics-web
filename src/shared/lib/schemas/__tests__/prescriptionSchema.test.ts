@@ -37,4 +37,92 @@ describe("validateLensPrescription", () => {
   ])("rejects %s", (_label, value) => {
     expect(validateLensPrescription(value)).toBe(false);
   });
+
+  it.each(["object", "surfaces", "image"])("requires the root field %s", (field) => {
+    const value = { ...prescription } as Record<string, unknown>;
+    delete value[field];
+
+    expect(validateLensPrescription(value)).toBe(false);
+  });
+
+  it.each(["label", "curvatureRadius", "thickness", "medium", "manufacturer", "semiDiameter"])(
+    "requires every physical-surface field: %s",
+    (field) => {
+      const surface = { ...prescription.surfaces[0] } as Record<string, unknown>;
+      delete surface[field];
+
+      expect(validateLensPrescription({ ...prescription, surfaces: [surface] })).toBe(false);
+    },
+  );
+
+  it("rejects unknown properties in nested structures", () => {
+    expect(validateLensPrescription({
+      ...prescription,
+      object: { ...prescription.object, extra: true },
+    })).toBe(false);
+    expect(validateLensPrescription({
+      ...prescription,
+      surfaces: [{ ...prescription.surfaces[0], decenter: { ...prescription.surfaces[0].decenter, extra: true } }],
+    })).toBe(false);
+    expect(validateLensPrescription({
+      ...prescription,
+      surfaces: [{ ...prescription.surfaces[0], clear_aperture: { ...prescription.surfaces[0].clear_aperture, extra: true } }],
+    })).toBe(false);
+  });
+
+  it.each(["bend", "dec and return", "decenter", "reverse"])(
+    "accepts decenter strategy %s",
+    (coordinateSystemStrategy) => {
+      const decenter = { ...prescription.surfaces[0].decenter, coordinateSystemStrategy };
+
+      expect(validateLensPrescription({
+        ...prescription,
+        surfaces: [{ ...prescription.surfaces[0], decenter }],
+      })).toBe(true);
+    },
+  );
+
+  it("rejects invalid enum values for labels, shapes, and strategies", () => {
+    expect(validateLensPrescription({
+      ...prescription,
+      surfaces: [{ ...prescription.surfaces[0], label: "Object" }],
+    })).toBe(false);
+    expect(validateLensPrescription({
+      ...prescription,
+      surfaces: [{ ...prescription.surfaces[0], clear_aperture: { shape: "circular", offsetX: 0, offsetY: 0 } }],
+    })).toBe(true);
+    expect(validateLensPrescription({
+      ...prescription,
+      surfaces: [{ ...prescription.surfaces[0], clear_aperture: { shape: "ellipse", offsetX: 0, offsetY: 0 } }],
+    })).toBe(false);
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "rejects non-finite values in every numeric boundary: %p",
+    (value) => {
+      expect(validateLensPrescription({
+        ...prescription,
+        object: { ...prescription.object, distance: value },
+      })).toBe(false);
+      expect(validateLensPrescription({
+        ...prescription,
+        surfaces: [{ ...prescription.surfaces[0], curvatureRadius: value }],
+      })).toBe(false);
+    },
+  );
+
+  it("enforces positive dimensions and the annular exclusive upper boundary", () => {
+    expect(validateLensPrescription({
+      ...prescription,
+      surfaces: [{ ...prescription.surfaces[0], semiDiameter: 0, clear_aperture: { shape: "circular", offsetX: 0, offsetY: 0 } }],
+    })).toBe(true);
+    expect(validateLensPrescription({
+      ...prescription,
+      surfaces: [{ ...prescription.surfaces[0], semiDiameter: 3, clear_aperture: { shape: "annular", obstructionRadius: 2.999, offsetX: 0, offsetY: 0 } }],
+    })).toBe(true);
+    expect(validateLensPrescription({
+      ...prescription,
+      surfaces: [{ ...prescription.surfaces[0], semiDiameter: 3, clear_aperture: { shape: "annular", obstructionRadius: 3, offsetX: 0, offsetY: 0 } }],
+    })).toBe(false);
+  });
 });

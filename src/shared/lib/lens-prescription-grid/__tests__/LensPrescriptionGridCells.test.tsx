@@ -41,11 +41,16 @@ describe("LensPrescriptionGridCells", () => {
     expect(formatApertureLabel(undefined, undefined)).toBe("Default");
     expect(formatApertureLabel(circularClear(0, 0), undefined)).toBe("Default");
     expect(formatApertureLabel(circularClear(-1.25, 2.5), undefined)).toBe("Cir offset (-1.25, 2.5)");
+    expect(formatApertureLabel(circularClear(-1.25, 0), undefined)).toBe("Cir offset (-1.25, 0)");
+    expect(formatApertureLabel(circularClear(0, 2.5), undefined)).toBe("Cir offset (0, 2.5)");
     expect(formatApertureLabel(annularClear(1.5, 0, 0), undefined)).toBe("Annu obs 1.5");
     expect(formatApertureLabel(annularClear(1.5, -1, 2), undefined)).toBe("Annu obs 1.5, offset (-1, 2)");
     expect(formatApertureLabel(undefined, circularEdge(3.25, 0, 0))).toBe("Default; Edge Cir 3.25");
     expect(formatApertureLabel(undefined, circularEdge(3.25, 0.5, -0.75))).toBe(
       "Default; Edge Cir 3.25, offset (0.5, -0.75)",
+    );
+    expect(formatApertureLabel(undefined, circularEdge(3.25, 0, -0.75))).toBe(
+      "Default; Edge Cir 3.25, offset (0, -0.75)",
     );
     expect(formatApertureLabel(annularClear(1.5, -1, 2), circularEdge(3.25, 0.5, -0.75))).toBe(
       "Annu obs 1.5, offset (-1, 2); Edge Cir 3.25, offset (0.5, -0.75)",
@@ -232,5 +237,42 @@ describe("LensPrescriptionGridCells", () => {
     fireEvent.mouseLeave(tooltipTrigger);
     fireEvent.mouseEnter(tooltipTrigger);
     expect(screen.getByRole("tooltip")).toHaveClass("opacity-100");
+  });
+
+  it("uses the editor-specific default tooltip text for every action cell", () => {
+    const cases = [
+      {
+        element: <MediumCell medium="AIR" onOpenModal={() => undefined} />,
+        buttonName: "Edit medium",
+        tooltip: "Click to set medium or glass",
+      },
+      {
+        element: <AsphericalCell aspherical={undefined} onOpenModal={() => undefined} />,
+        buttonName: "Edit aspherical parameters",
+        tooltip: "Click to set aspherical parameters",
+      },
+      {
+        element: <ApertureCell clearAperture={undefined} edgeAperture={undefined} onOpenModal={() => undefined} />,
+        buttonName: "Edit aperture",
+        tooltip: "Click to set aperture",
+      },
+      {
+        element: <DecenterCell decenter={undefined} onOpenModal={() => undefined} />,
+        buttonName: "Edit decenter and tilt",
+        tooltip: "Click to open settings for Tilt and Decenter",
+      },
+      {
+        element: <DiffractionGratingCell diffractionGrating={undefined} onOpenModal={() => undefined} />,
+        buttonName: "Edit diffraction grating",
+        tooltip: "Click to set diffraction grating",
+      },
+    ];
+
+    for (const { element, buttonName, tooltip } of cases) {
+      const { unmount } = render(element);
+      fireEvent.mouseEnter(screen.getByRole("button", { name: buttonName }).parentElement!);
+      expect(screen.getByRole("tooltip")).toHaveTextContent(tooltip);
+      unmount();
+    }
   });
 });
