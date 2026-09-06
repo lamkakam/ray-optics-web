@@ -10,10 +10,12 @@
     "src/**/*.{ts,tsx}",
     "!src/**/*.{test,spec}.{ts,tsx}",
     "!src/**/{__test__,__tests__,test,tests,__mocks__,mocks,__fixtures__,fixtures,e2e,generated}/**",
-    "!src/**/*.d.ts",
     "!src/python/**"
   ],
   "ignorePatterns": [
+    ".agents/",
+    ".claude/",
+    ".codex/",
     ".next/",
     "out/",
     "build/",
