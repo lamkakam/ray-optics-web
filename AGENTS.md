@@ -12,6 +12,10 @@
 
 - Don't use TDD for configuration or tooling-only changes or build, CI/CD configuration
 
+- Don't unit test static styling or assert implementation details such as CSS classes, colors, spacing, or dimensions. Test behavior and state-driven UI changes.
+
+- Use `act(...)` only when the test directly causes a React state update through an API or callback that is not already wrapped by the testing library. Don't wrap `render`, `userEvent`, `fireEvent`, `waitFor`, assertions, or entire test bodies in `act(...)`. Prefer `userEvent`, `render`, and `waitFor` over manual `act` calls.
+
 - Always work on a feature branch. Never work on main branch
 
 - Never push to main branch. Always push to a feature branch and open a PR for human approval
